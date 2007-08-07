@@ -299,6 +299,9 @@ common_dependencies = \
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(THYRA_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
+
+# Other files to add to the tarball
+EXTRA_DIST = compare-thyra-spmd-multivector-files.py
 all: all-am
 
 .SUFFIXES:

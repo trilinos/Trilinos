@@ -288,12 +288,36 @@ template<class Scalar>
 void Thyra::randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V )
 {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"randomize(...), Error!");
+  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"randomize(...), Error!");
 #endif
   const int m = V->domain()->dim();
-  for( int j = 0; j < m; ++j ) {
-    randomize( l, u, V->col(j).get() ); // Todo: call applyOp(...) directly!
-  }
+  for( int j = 0; j < m; ++j )
+    randomize( l, u, V->col(j).get() );
+  // Todo: call applyOp(...) directly!
+}
+
+template<class Scalar>
+void Thyra::Vt_S( MultiVectorBase<Scalar>* Z, const Scalar& alpha )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(Z==NULL,std::logic_error,"Vt_S(...), Error!");
+#endif
+  const int m = Z->domain()->dim();
+  for( int j = 0; j < m; ++j )
+    Vt_S( &*Z->col(j), alpha );
+  // Todo: call applyOp(...) directly!
+}
+
+template<class Scalar>
+void Thyra::Vp_S( MultiVectorBase<Scalar>* Z, const Scalar& alpha )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(Z==NULL,std::logic_error,"Vp_S(...), Error!");
+#endif
+  const int m = Z->domain()->dim();
+  for( int j = 0; j < m; ++j )
+    Vp_S( &*Z->col(j), alpha );
+  // Todo: call applyOp(...) directly!
 }
 
 template<class Scalar>

@@ -112,7 +112,7 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                 bool tmp = entry.getValue<bool>(&tmp);
               }
             }
-          else if (type=="std::string")
+          else if (type=="string")
             {
               entry.setValue<std::string>(child.getRequired("value"), 
                                      isDefault);

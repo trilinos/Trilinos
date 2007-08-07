@@ -201,8 +201,8 @@ public:
    * object.
    */
   bool readVector(
-    const std::string                                   &vName
-    ,Teuchos::RCP<Thyra::VectorBase<Scalar> >   *v
+    const std::string &vName
+    ,Teuchos::RCP<Thyra::VectorBase<Scalar> > *v
     ) const;
   
   /** \brief Read a newly allocated Vector as directed by the set parameter
@@ -224,9 +224,10 @@ private:
   mutable Teuchos::RCP<const Teuchos::ParameterList> validParamList_;
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
-  std::string                fileNameBase_;
-  Teuchos::Array<Scalar>     explicitArray_;
-  Scalar                     scaleBy_;
+  std::string fileNameBase_;
+  Teuchos::Array<Scalar> explicitArray_;
+  Scalar scaleBy_;
+  Scalar addScalar_;
 
   static const std::string FileNameBase_name_;
   static const std::string FileNameBase_default_;
@@ -237,7 +238,31 @@ private:
   static const std::string ScaleBy_name_;
   static const double ScaleBy_default_;
 
+  static const std::string AddScalar_name_;
+  static const double AddScalar_default_;
+
 };
+
+
+/** \brief Read a vector and override if one is read.
+ *
+ * \relates ParameterDrivenMultiVectorInput
+ */
+template<class Scalar>
+RCP<const VectorBase<Scalar> >
+readVectorOverride(
+  const ParameterDrivenMultiVectorInput<Scalar> &pdmvi,
+  const std::string &vName,
+  const RCP<const VectorBase<Scalar> > &defaultVector
+  )
+{
+  RCP<const VectorBase<Scalar> >
+    vector = pdmvi.readVector(vName);
+  if (!is_null(vector))
+    return vector;
+  return defaultVector;
+}
+
 
 // //////////////////////////////////////////
 // Inline functions
@@ -311,12 +336,20 @@ template<class Scalar>
 const double
 ParameterDrivenMultiVectorInput<Scalar>::ScaleBy_default_ = 1.0;
 
+template<class Scalar>
+const std::string
+ParameterDrivenMultiVectorInput<Scalar>::AddScalar_name_ = "Add Scalar";
+template<class Scalar>
+const double
+ParameterDrivenMultiVectorInput<Scalar>::AddScalar_default_ = 0.0;
+
 // Constructors/Initializers
 
 template<class Scalar>
 ParameterDrivenMultiVectorInput<Scalar>::ParameterDrivenMultiVectorInput()
-  :fileNameBase_(FileNameBase_default_)
-  ,scaleBy_(ScaleBy_default_)
+  :fileNameBase_(FileNameBase_default_),
+   scaleBy_(ScaleBy_default_),
+   addScalar_(AddScalar_default_)
 {}
 
 // Overridden from ParameterListAcceptor
@@ -336,8 +369,8 @@ void ParameterDrivenMultiVectorInput<Scalar>::setParameterList(
     ,-1     // An array of any size will do here
     ,false  // The parameter does not need to exist
     );
-  scaleBy_ = paramList_->get(
-    ScaleBy_name_,ScaleBy_default_);
+  scaleBy_ = paramList_->get(ScaleBy_name_,ScaleBy_default_);
+  addScalar_ = paramList_->get(AddScalar_name_,AddScalar_default_);
 #ifdef TEUCHOS_DEBUG
   paramList_->validateParameters(*getValidParameters(),0);
 #endif // TEUCHOS_DEBUG
@@ -390,8 +423,13 @@ ParameterDrivenMultiVectorInput<Scalar>::getValidParameters() const
       "must be set internally for this to work."
       );
     pl->set(
-      ScaleBy_name_,ScaleBy_default_
-      ,"A factor by which the read in vector will be scaled by."
+      ScaleBy_name_,ScaleBy_default_,
+      "A factor by which the read in vector will be scaled by."
+      );
+    pl->set(
+      AddScalar_name_, AddScalar_default_,
+      "A scalar that will added to the read in vector after it\n"
+      "optionally scaled."
       );
     validParamList_ = pl;
   }
@@ -445,7 +483,12 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
   if( scaleBy_ != ST::one() && vectorWasRead ) {
     if( out.get() && trace )
       *out << "\nScaling \"" << mvName << "\" by " << scaleBy_ << " ...\n";
-    scale(scaleBy_,&*mv);
+    Vt_S(&*mv,scaleBy_);
+  }
+  if( addScalar_ != ST::zero() && vectorWasRead ) {
+    if( out.get() && trace )
+      *out << "\nAdding scalar " << addScalar_ << " to \"" << mvName << "\" ...\n";
+    Vp_S(&*mv,addScalar_);
   }
   return vectorWasRead;
 }

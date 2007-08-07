@@ -274,12 +274,13 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
   ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
   ) const
 {
-  typedef ModelEvaluatorBase MEB;
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
+  typedef ModelEvaluatorBase MEB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
     "Thyra::DefaultNominalBoundsOverrideModelEvaluator",inArgs,outArgs

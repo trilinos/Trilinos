@@ -99,25 +99,27 @@ public:
     /** \brief Determines if an input argument is supported or not.  */
     bool supports(EInArgsMembers arg) const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
-    void set_x_dot( const Teuchos::RCP<const VectorBase<Scalar> > &x_dot );
+    void set_x_dot( const RCP<const VectorBase<Scalar> > &x_dot );
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
-    Teuchos::RCP<const VectorBase<Scalar> > get_x_dot() const;
+    RCP<const VectorBase<Scalar> > get_x_dot() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_x( const Teuchos::RCP<const VectorBase<Scalar> > &x );
+    void set_x( const RCP<const VectorBase<Scalar> > &x );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    Teuchos::RCP<const VectorBase<Scalar> > get_x() const;
+    RCP<const VectorBase<Scalar> > get_x() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
-    void set_x_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
+    void set_x_poly( 
+      const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
+    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
-    void set_x_dot_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
+    void set_x_dot_poly(
+      const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
-    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
+    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
     /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    void set_p( int l, const Teuchos::RCP<const VectorBase<Scalar> > &p_l );
+    void set_p( int l, const RCP<const VectorBase<Scalar> > &p_l );
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    Teuchos::RCP<const VectorBase<Scalar> > get_p(int l) const;
+    RCP<const VectorBase<Scalar> > get_p(int l) const;
     /** \brief Precondition: <tt>supports(IN_ARG_t)==true</tt>.  */
     void set_t( ScalarMag t );
     /** \brief .Precondition: <tt>supports(IN_ARG_t)==true</tt>  */
@@ -130,7 +132,8 @@ public:
     void set_beta( Scalar beta );
     /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
     Scalar get_beta() const;
-    /** \brief Set non-null arguments (does not overwrite non-NULLs with NULLs) .  */
+    /** \brief Set non-null arguments (does not overwrite non-NULLs with
+     * NULLs) .  */
     void setArgs(
       const InArgs<Scalar>& inArgs, bool ignoreUnsupported = false,
       bool cloneObjects = false
@@ -139,7 +142,9 @@ public:
     std::string description() const;
     /** \brief Create a more detailed description along about this object and
      * the ModelEvaluator that created it. */
-    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel ) const;
+    void describe(
+      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+      ) const;
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -153,17 +158,17 @@ public:
     void _setUnsupportsAndRelated( EInArgsMembers arg );
   private:
     // types
-    typedef Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > p_t;
+    typedef Teuchos::Array<RCP<const VectorBase<Scalar> > > p_t;
     // data
-    std::string                                      modelEvalDescription_;
-    Teuchos::RCP<const VectorBase<Scalar> >  x_dot_;
-    Teuchos::RCP<const VectorBase<Scalar> >  x_;
-    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
-    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
-    p_t                                              p_;
-    ScalarMag                                        t_;
-    Scalar                                           alpha_;
-    Scalar                                           beta_;
+    std::string modelEvalDescription_;
+    RCP<const VectorBase<Scalar> > x_dot_;
+    RCP<const VectorBase<Scalar> > x_;
+    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
+    RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
+    p_t p_;
+    ScalarMag t_;
+    Scalar alpha_;
+    Scalar beta_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
     // functions
     void assert_supports(EInArgsMembers arg) const;
@@ -259,11 +264,17 @@ public:
     bool                     supportsAdjoint;
     /** \brief . */
     DerivativeProperties()
-      :linearity(DERIV_LINEARITY_UNKNOWN),rank(DERIV_RANK_UNKNOWN),supportsAdjoint(false) {}
+      :linearity(DERIV_LINEARITY_UNKNOWN),
+       rank(DERIV_RANK_UNKNOWN),supportsAdjoint(false)
+      {}
     /** \brief . */
     DerivativeProperties(
-      EDerivativeLinearity in_linearity, ERankStatus in_rank, bool in_supportsAdjoint
-      ):linearity(in_linearity),rank(in_rank),supportsAdjoint(in_supportsAdjoint) {}
+      EDerivativeLinearity in_linearity, ERankStatus in_rank,
+      bool in_supportsAdjoint
+      )
+      :linearity(in_linearity),rank(in_rank),
+       supportsAdjoint(in_supportsAdjoint)
+      {}
   };
 
   /** \brief Simple aggregate class for a derivative object represented as a
@@ -276,8 +287,8 @@ public:
     DerivativeMultiVector() {}
     /** \brief . */
     DerivativeMultiVector(
-      const Teuchos::RCP<MultiVectorBase<Scalar> >  &mv
-      ,const EDerivativeMultiVectorOrientation              orientation = DERIV_MV_BY_COL
+      const RCP<MultiVectorBase<Scalar> > &mv
+      ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
       ) : mv_(mv.assert_not_null()), orientation_(orientation) {}
     /** \brief . */
     void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
@@ -286,7 +297,7 @@ public:
     const DerivativeMultiVector<Scalar>& assert_not_null() const
       { mv_.assert_not_null(); return *this; }
     /** \brief . */
-    Teuchos::RCP<MultiVectorBase<Scalar> > getMultiVector() const
+    RCP<MultiVectorBase<Scalar> > getMultiVector() const
       { return mv_; }
     /** \brief . */
     EDerivativeMultiVectorOrientation getOrientation() const
@@ -296,7 +307,7 @@ public:
       Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
       );
   private:
-    Teuchos::RCP<MultiVectorBase<Scalar> > mv_;
+    RCP<MultiVectorBase<Scalar> > mv_;
     EDerivativeMultiVectorOrientation orientation_;
   };
 
@@ -309,11 +320,11 @@ public:
     /** \brief . */
     Derivative() {}
     /** \brief . */
-    Derivative( const Teuchos::RCP<LinearOpBase<Scalar> > &lo )
+    Derivative( const RCP<LinearOpBase<Scalar> > &lo )
       : lo_(lo.assert_not_null()) {}
     /** \brief . */
     Derivative(
-      const Teuchos::RCP<MultiVectorBase<Scalar> > &mv,
+      const RCP<MultiVectorBase<Scalar> > &mv,
       const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
       ) : dmv_(mv,orientation) {}
     /** \brief . */
@@ -326,10 +337,10 @@ public:
     const Derivative<Scalar>& assert_not_null() const
       { dmv_.assert_not_null(); lo_.assert_not_null(); return *this; }
     /** \brief . */
-    Teuchos::RCP<LinearOpBase<Scalar> > getLinearOp() const
+    RCP<LinearOpBase<Scalar> > getLinearOp() const
       { return lo_; }
     /** \brief . */
-    Teuchos::RCP<MultiVectorBase<Scalar> > getMultiVector() const
+    RCP<MultiVectorBase<Scalar> > getMultiVector() const
       { return dmv_.getMultiVector(); }
     /** \brief . */
     EDerivativeMultiVectorOrientation getMultiVectorOrientation() const
@@ -362,7 +373,7 @@ public:
         }
       }
   private:
-    Teuchos::RCP<LinearOpBase<Scalar> > lo_;
+    RCP<LinearOpBase<Scalar> > lo_;
     DerivativeMultiVector<Scalar> dmv_;
   };
 
@@ -434,21 +445,21 @@ public:
      * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
-    void set_f( const Teuchos::RCP<VectorBase<Scalar> > &f );
+    void set_f( const RCP<VectorBase<Scalar> > &f );
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
-    Teuchos::RCP<VectorBase<Scalar> > get_f() const;
+    RCP<VectorBase<Scalar> > get_f() const;
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>.  */
-    void set_g( int j, const Teuchos::RCP<VectorBase<Scalar> > &g_j );
+    void set_g( int j, const RCP<VectorBase<Scalar> > &g_j );
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>..  */
-    Teuchos::RCP<VectorBase<Scalar> > get_g(int j) const;
+    RCP<VectorBase<Scalar> > get_g(int j) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
-    void set_W( const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &W );
+    void set_W( const RCP<LinearOpWithSolveBase<Scalar> > &W );
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
-    Teuchos::RCP<LinearOpWithSolveBase<Scalar> > get_W() const;
+    RCP<LinearOpWithSolveBase<Scalar> > get_W() const;
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
-    void set_W_op( const Teuchos::RCP<LinearOpBase<Scalar> > &W_op );
+    void set_W_op( const RCP<LinearOpBase<Scalar> > &W_op );
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
-    Teuchos::RCP<LinearOpBase<Scalar> > get_W_op() const;
+    RCP<LinearOpBase<Scalar> > get_W_op() const;
     /** \brief Return the known properties of <tt>W</tt> (precondition:
      * <tt>supports(OUT_ARG_f)==true</tt>). */
     DerivativeProperties get_W_properties() const;
@@ -474,9 +485,9 @@ public:
      * <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>). */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
-    void set_f_poly( const Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
+    void set_f_poly( const RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
     /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
-    Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
+    RCP<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
     /** \brief Set all arguments fron <tt>outArgs</tt> into <tt>*this</tt>.
      *
      * If <tt>ignoreUnsupported==true</tt>, then arguments in <tt>outArgs</tt>
@@ -507,7 +518,9 @@ public:
     std::string description() const;
     /** \brief Create a more detailed description along about this object and
      * the ModelEvaluator that created it. */
-    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel ) const;
+    void describe(
+      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+      ) const;
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -537,29 +550,29 @@ public:
     void _setUnsupportsAndRelated( EOutArgsMembers arg );
   private:
     // types
-    typedef Teuchos::Array<Teuchos::RCP<VectorBase<Scalar> > >     g_t;
-    typedef Teuchos::Array<Derivative<Scalar> >                            deriv_t;
-    typedef Teuchos::Array<DerivativeProperties>                           deriv_properties_t;
-    typedef Teuchos::Array<DerivativeSupport>                              supports_t;
+    typedef Teuchos::Array<RCP<VectorBase<Scalar> > > g_t;
+    typedef Teuchos::Array<Derivative<Scalar> > deriv_t;
+    typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
+    typedef Teuchos::Array<DerivativeSupport> supports_t;
     // data
-    std::string                                           modelEvalDescription_;
-    bool                                                  supports_[NUM_E_OUT_ARGS_MEMBERS];
-    supports_t                                            supports_DfDp_;   // Np
-    supports_t                                            supports_DgDx_;   // Ng
-    supports_t                                            supports_DgDp_;   // Ng x Np
-    Teuchos::RCP<VectorBase<Scalar> >             f_;
-    g_t                                                   g_;               // Ng
-    Teuchos::RCP<LinearOpWithSolveBase<Scalar> >  W_;
-    Teuchos::RCP<LinearOpBase<Scalar> >           W_op_;
-    DerivativeProperties                                  W_properties_;
-    deriv_t                                               DfDp_;            // Np
-    deriv_properties_t                                    DfDp_properties_; // Np
-    deriv_t                                               DgDx_;            // Ng
-    deriv_properties_t                                    DgDx_properties_; // Ng
-    deriv_t                                               DgDp_;            // Ng x Np
-    deriv_properties_t                                    DgDp_properties_; // Ng x Np
-    Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
-    mutable bool                                          isFailed_;
+    std::string modelEvalDescription_;
+    bool supports_[NUM_E_OUT_ARGS_MEMBERS];
+    supports_t supports_DfDp_; // Np
+    supports_t supports_DgDx_; // Ng
+    supports_t supports_DgDp_; // Ng x Np
+    RCP<VectorBase<Scalar> > f_;
+    g_t g_; // Ng
+    RCP<LinearOpWithSolveBase<Scalar> > W_;
+    RCP<LinearOpBase<Scalar> > W_op_;
+    DerivativeProperties W_properties_;
+    deriv_t DfDp_; // Np
+    deriv_properties_t DfDp_properties_; // Np
+    deriv_t DgDx_; // Ng
+    deriv_properties_t DgDx_properties_; // Ng
+    deriv_t DgDp_; // Ng x Np
+    deriv_properties_t DgDp_properties_; // Ng x Np
+    RCP<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
+    mutable bool isFailed_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
@@ -571,7 +584,8 @@ public:
 
   //@}
 
-#ifdef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS // Added since at least gcc 3.3.4 does not do the right thing here!
+// Added since at least gcc 3.3.4 does not do the right thing here!
+#ifdef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
 protected:
 #endif
 
@@ -662,7 +676,9 @@ std::string toString(ModelEvaluatorBase::EInArgsMembers);
 std::string toString(ModelEvaluatorBase::EOutArgsMembers);
 
 /** \relates ModelEvaluatorBase */
-std::string toString(ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation);
+std::string toString(
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  );
 
 //@}
 
@@ -710,7 +726,9 @@ std::string Thyra::toString(ModelEvaluatorBase::EOutArgsMembers arg)
 }
 
 inline
-std::string Thyra::toString(ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation)
+std::string Thyra::toString(
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  )
 {
   switch(orientation) {
     case ModelEvaluatorBase::DERIV_MV_BY_COL:
@@ -734,9 +752,9 @@ namespace ModelEvaluatorHelperPack {
 
 template<class Scalar>
 inline
-Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+RCP<const Thyra::VectorBase<Scalar> >
 condCloneVec(
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &vec,
+  const RCP<const Thyra::VectorBase<Scalar> > &vec,
   bool cloneObject
   )
 {
@@ -776,53 +794,64 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_
+    <<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot( const Teuchos::RCP<const VectorBase<Scalar> > &x_dot )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot(
+  const RCP<const VectorBase<Scalar> > &x_dot
+  )
 { assert_supports(IN_ARG_x_dot); x_dot_ = x_dot; }
 
 template<class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_dot() const
 { assert_supports(IN_ARG_x_dot); return x_dot_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x( const Teuchos::RCP<const VectorBase<Scalar> > &x )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x(
+  const RCP<const VectorBase<Scalar> > &x
+  )
 { assert_supports(IN_ARG_x); x_ = x; }
 
 template<class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 { assert_supports(IN_ARG_x); return x_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_poly(
+  const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly
+  )
 { assert_supports(IN_ARG_x_dot_poly); x_dot_poly_ = x_dot_poly; }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
+RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_dot_poly() const
 { assert_supports(IN_ARG_x_dot_poly); return x_dot_poly_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_poly(
+  const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly
+  )
 { assert_supports(IN_ARG_x_poly); x_poly_ = x_poly; }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
+RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_poly() const
 { assert_supports(IN_ARG_x_poly); return x_poly_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_p( int l, const Teuchos::RCP<const VectorBase<Scalar> > &p_l )
+void ModelEvaluatorBase::InArgs<Scalar>::set_p(
+  int l, const RCP<const VectorBase<Scalar> > &p_l
+  )
 { assert_l(l); p_[l] = p_l; }
 
 template<class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_p(int l) const
 { assert_l(l); return p_[l]; }
 
@@ -921,66 +950,76 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
   using Teuchos::describe;
-  typedef Teuchos::RCP<const VectorBase<Scalar> > CV_ptr;
+  using Teuchos::includesVerbLevel;
+  typedef RCP<const VectorBase<Scalar> > CV_ptr;
+
   if(verbLevel == Teuchos::VERB_NONE)
     return;
-  Teuchos::RCP<Teuchos::FancyOStream>
+
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(&out_arg,false);
+  const bool dump_x = includesVerbLevel(verbLevel,Teuchos::VERB_HIGH);
+  const Teuchos::EVerbosityLevel x_verbLevel =
+    dump_x?Teuchos::VERB_EXTREME:verbLevel;
+  const bool print_x_nrm = includesVerbLevel(verbLevel,Teuchos::VERB_LOW);
+  const bool dump_p = includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM);
+  const Teuchos::EVerbosityLevel p_verbLevel =
+    dump_p?Teuchos::VERB_EXTREME:verbLevel;
+  const bool print_p_nrm = includesVerbLevel(verbLevel,Teuchos::VERB_LOW);
   OSTab tab(out);
+
   *out <<"Thyra::ModelEvaluatorBase::InArgs<"<<ST::name()<<">:\n";
   tab.incrTab();
+
   *out <<"model = " << modelEvalDescription_ << "\n";
   *out <<"Np = " << Np() << "\n";
-  switch(verbLevel) {
-    case Teuchos::VERB_LOW:
-    case Teuchos::VERB_MEDIUM:
-    case Teuchos::VERB_HIGH:
-    case Teuchos::VERB_EXTREME:
-    {
-      if(this->supports(IN_ARG_x_dot) ) {
-        *out << "x_dot = ";
-        CV_ptr x_dot = this->get_x_dot();
-        if(x_dot.get())
-          *out << Teuchos::describe(*x_dot,verbLevel);
-        else
-          *out << " NULL\n";
-      }
-      if(this->supports(IN_ARG_x) ) {
-        *out << "x = ";
-        CV_ptr x = this->get_x();
-        if(x.get())
-          *out << Teuchos::describe(*x,verbLevel);
-        else
-          *out << " NULL\n";
-      }
-      for( int l = 0; l < Np(); ++l ) {
-        *out << "p("<<l<<") = ";
-        CV_ptr p_l = this->get_p(l);
-        if(p_l.get())
-          *out << Teuchos::describe(*p_l,verbLevel);
-        else
-          *out << " NULL\n";
-      }
-      if (this->supports(IN_ARG_t)) {
-        *out << "t = " << t_ << endl;
-      }
-      if (this->supports(IN_ARG_alpha)) {
-        *out << "alpha = " << alpha_ << endl;
-      }
-      if (this->supports(IN_ARG_beta)) {
-        *out << "beta = " << beta_ << endl;
-      }
-      // ToDo: Add output for more objects!
-      break;
-    }
-    default:
-      TEST_FOR_EXCEPT(true);
+
+  CV_ptr x_dot;
+  if ( this->supports(IN_ARG_x_dot) && !is_null(x_dot=get_x_dot()) ) {
+    *out << "x_dot = " << Teuchos::describe(*x_dot,x_verbLevel);
+    if (print_x_nrm)
+      *out << "||x_dot|| = " << norm(*x_dot) << endl;
   }
+
+  CV_ptr x;
+  if ( this->supports(IN_ARG_x) && !is_null(x=get_x()) ) {
+    *out << "x = " << Teuchos::describe(*x,x_verbLevel);
+    if (print_x_nrm)
+      *out << "||x|| = " << norm(*x) << endl;
+  }
+  
+  if (print_x_nrm) {
+    for( int l = 0; l < Np(); ++l ) {
+      CV_ptr p_l;
+      if ( !is_null(p_l = this->get_p(l)) ) {
+        *out << "p("<<l<<") = " << Teuchos::describe(*p_l,p_verbLevel);
+        if (print_p_nrm)
+          *out << "||p("<<l<<")|| = " << norm(*p_l) << endl;
+      }
+    }
+  }
+  
+  if (includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {
+    if (this->supports(IN_ARG_t)) {
+      *out << "t = " << t_ << endl;
+    }
+    if (this->supports(IN_ARG_alpha)) {
+      *out << "alpha = " << alpha_ << endl;
+    }
+    if (this->supports(IN_ARG_beta)) {
+      *out << "beta = " << beta_ << endl;
+    }
+  }
+  
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::_setModelEvalDescription( const std::string &modelEvalDescription )
-{ modelEvalDescription_ = modelEvalDescription; }
+void ModelEvaluatorBase::InArgs<Scalar>::_setModelEvalDescription(
+  const std::string &modelEvalDescription
+  )
+{
+  modelEvalDescription_ = modelEvalDescription;
+}
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_set_Np(int Np)
@@ -989,11 +1028,14 @@ void ModelEvaluatorBase::InArgs<Scalar>::_set_Np(int Np)
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool supports )
+void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
+  EInArgsMembers arg, bool supports
+  )
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!");
+    ,"model = \'"<<modelEvalDescription_
+    <<"\': Error, arg="<<toString(arg)<<" is invalid!");
   supports_[arg] = supports;
 }
 
@@ -1002,12 +1044,16 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
   const InArgs<Scalar>& inArgs, const int Np
   )
 {
-  std::copy( &inArgs.supports_[0], &inArgs.supports_[0] + NUM_E_IN_ARGS_MEMBERS, &supports_[0] );
+  std::copy(
+    &inArgs.supports_[0],
+    &inArgs.supports_[0] + NUM_E_IN_ARGS_MEMBERS, &supports_[0] );
   this->_set_Np( Np >= 0 ? Np : inArgs.Np() );
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated( EInArgsMembers arg )
+void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
+  EInArgsMembers arg
+  )
 {
   this->_setSupports(arg,false);
   switch(arg) {
@@ -1027,11 +1073,14 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated( EInArgsMember
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(EInArgsMembers arg) const
+void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(
+  EInArgsMembers arg
+  ) const
 {
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
-    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
+    ,"Thyra::ModelEvaluatorBase::InArgs<"
+    << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << toString(arg) << " is not supported!"
     );
@@ -1042,7 +1091,8 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
     !( 0 <= l && l < Np() ), std::logic_error
-    ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
+    ,"Thyra::ModelEvaluatorBase::InArgs<"
+    << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
     " model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
@@ -1083,8 +1133,8 @@ void ModelEvaluatorBase::DerivativeMultiVector<Scalar>::describe(
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
-  :isFailed_(false),
-   modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!")
+  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!"),
+   isFailed_(false)
 { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
 
 template<class Scalar>
@@ -1096,18 +1146,23 @@ int ModelEvaluatorBase::OutArgs<Scalar>::Ng() const
 { return g_.size(); }
 
 template<class Scalar>
-bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgsMembers arg
+  ) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_
+    <<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
 
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
-ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDfDp arg, int l) const
+ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgsDfDp arg, int l
+  ) const
 {
   assert_l(l);
   return supports_DfDp_[l];
@@ -1115,7 +1170,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDfDp arg, int l) const
 
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
-ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDx arg, int j) const
+ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgsDgDx arg, int j
+  ) const
 {
   assert_j(j);
   return supports_DgDx_[j];
@@ -1123,7 +1180,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDx arg, int j) const
 
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
-ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDp arg, int j, int l) const
+ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgsDgDp arg, int j, int l
+  ) const
 {
   assert_j(j);
   assert_l(l);
@@ -1131,14 +1190,16 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDp arg, int j, int l) co
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f( const Teuchos::RCP<VectorBase<Scalar> > &f )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f( 
+  const RCP<VectorBase<Scalar> > &f
+  )
 {
   assert_supports(OUT_ARG_f);
   f_ = f;
 }
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
+RCP<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 {
   assert_supports(OUT_ARG_f);
@@ -1146,14 +1207,16 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_g( int j, const Teuchos::RCP<VectorBase<Scalar> > &g_j )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_g(
+  int j, const RCP<VectorBase<Scalar> > &g_j
+  )
 {
   assert_j(j);
   g_[j] = g_j;
 }
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
+RCP<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
 { 
   assert_j(j);
@@ -1161,14 +1224,16 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_W( const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &W )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W(
+  const RCP<LinearOpWithSolveBase<Scalar> > &W
+  )
 {
   assert_supports(OUT_ARG_W);
   W_ = W;
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
+RCP<LinearOpWithSolveBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_W() const
 {
   assert_supports(OUT_ARG_W);
@@ -1176,14 +1241,16 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_W() const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_W_op( const Teuchos::RCP<LinearOpBase<Scalar> > &W_op )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W_op(
+  const RCP<LinearOpBase<Scalar> > &W_op
+  )
 {
   assert_supports(OUT_ARG_W_op);
   W_op_ = W_op;
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_W_op() const
 {
   assert_supports(OUT_ARG_W_op);
@@ -1198,7 +1265,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_DfDp( int l, const Derivative<Scalar> &DfDp_l )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_DfDp(
+  int l, const Derivative<Scalar> &DfDp_l
+  )
 {
   assert_supports(OUT_ARG_DfDp,l);
   DfDp_[l] = DfDp_l;
@@ -1221,7 +1290,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DfDp_properties(int l) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDx( int j, const Derivative<Scalar> &DgDx_j )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDx(
+  int j, const Derivative<Scalar> &DgDx_j
+  )
 {
   assert_supports(OUT_ARG_DgDx,j);
   DgDx_[j] = DgDx_j;
@@ -1244,7 +1315,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDx_properties(int j) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDp( int j, int l, const Derivative<Scalar> &DgDp_j_l )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDp(
+  int j, int l, const Derivative<Scalar> &DgDp_j_l
+  )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
   DgDp_[ j*Np() + l ] = DgDp_j_l;
@@ -1267,17 +1340,25 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_properties(int j, int l) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f_poly( const Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly )
-{ f_poly_ = f_poly; }
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f_poly(
+  const RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly
+  )
+{
+  f_poly_ = f_poly;
+}
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > >
+RCP<Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f_poly() const
-{ return f_poly_; }
+{
+  return f_poly_;
+}
 
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::setArgs( const OutArgs<Scalar>& outArgs, bool ignoreUnsupported )
+void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
+  const OutArgs<Scalar>& outArgs, bool ignoreUnsupported
+  )
 {
   const int min_Np = TEUCHOS_MIN(this->Np(),outArgs.Np());
   const int min_Ng = TEUCHOS_MIN(this->Ng(),outArgs.Ng());
@@ -1384,76 +1465,87 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   Teuchos::FancyOStream &out_arg, const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
+
   using Teuchos::OSTab;
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Teuchos::RCP<const VectorBase<Scalar> > CV_ptr;
-  typedef Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
+  typedef RCP<const VectorBase<Scalar> > CV_ptr;
+  typedef RCP<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
   typedef ModelEvaluatorBase MEB;
-  if(verbLevel == Teuchos::VERB_NONE)
+  typedef MEB::Derivative<Scalar> Deriv;
+
+  if( verbLevel == Teuchos::VERB_NONE && verbLevel == Teuchos::VERB_DEFAULT )
     return;
-  Teuchos::RCP<Teuchos::FancyOStream>
+
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(&out_arg,false);
   OSTab tab(out);
+
   *out <<"Thyra::ModelEvaluatorBase::OutArgs<"<<ST::name()<<">:\n";
   tab.incrTab();
+
   *out <<"model = " << modelEvalDescription_ << "\n";
   *out <<"Np = " << Np() << "\n";
   *out <<"Ng = " << Ng() << "\n";
-  switch(verbLevel) {
-    case Teuchos::VERB_LOW:
-    case Teuchos::VERB_MEDIUM:
-    case Teuchos::VERB_HIGH:
-    case Teuchos::VERB_EXTREME:
-    {
-      if(this->supports(OUT_ARG_f) ) {
-        *out << "f =";
-        CV_ptr f = this->get_f();
-        if(f.get())
-          *out << Teuchos::describe(*f,verbLevel);
-        else
-          *out << " NULL\n";
-      }
-      for( int j = 0; j < Ng(); ++j ) {
-        *out << "g("<<j<<") = ";
-        CV_ptr g_j = this->get_g(j);
-        if(g_j.get())
-          *out << Teuchos::describe(*g_j,verbLevel);
-        else
-          *out << " NULL\n";
-      }
-      if(this->supports(OUT_ARG_W) ) {
-        *out << "W = ";
-        CLOWS_ptr W = this->get_W();
-        if(W.get())
-          *out << Teuchos::describe(*W,verbLevel);
-        else
-          *out << " NULL\n";
-      }
-      for( int l = 0; l < Np(); ++l ) {
-        if(!this->supports(OUT_ARG_DfDp,l).none()) {
-          *out << "DfDp("<<l<<") = ";
-          this->get_DfDp(l).describe(*out,verbLevel);
-        }
-      }
-      for( int j = 0; j < Ng(); ++j ) {
-        if(!this->supports(OUT_ARG_DgDx,j).none()) {
-          *out << "DgDx("<<j<<") = ";
-          this->get_DgDx(j).describe(*out,verbLevel);
-        }
-        for( int l = 0; l < Np(); ++l ) {
-          if(!this->supports(OUT_ARG_DgDp,j,l).none()) {
-            *out << "DgDp("<<j<<","<<l<<") = ";
-            this->get_DgDp(j,l).describe(*out,verbLevel);
-          }
-        }
-      }
-      // ToDo: Add output for more objects?
-      break;
-    }
-    default:
-      TEST_FOR_EXCEPT("Should never get here!");
+
+  CV_ptr f;
+  if (this->supports(OUT_ARG_f) && !is_null(f=get_f()) ) {
+    *out << "f = " << Teuchos::describe(*f,verbLevel);
   }
+  
+  for( int j = 0; j < Ng(); ++j ) {
+    CV_ptr g_j;
+    if (!is_null(g_j=this->get_g(j)))
+      *out << "g("<<j<<") = " << Teuchos::describe(*g_j,verbLevel);
+  }
+  
+  CLOWS_ptr W;
+  if ( this->supports(OUT_ARG_W) && !is_null(W=get_W()) ) {
+    *out << "W = " << Teuchos::describe(*W,verbLevel);
+  }
+  
+  for( int l = 0; l < Np(); ++l ) {
+    Deriv DfDp_l;
+    if (
+      !this->supports(OUT_ARG_DfDp,l).none()
+      && !(DfDp_l=get_DfDp(l)).isEmpty()
+      )
+    {
+      *out << "DfDp("<<l<<") = ";
+      DfDp_l.describe(*out,verbLevel);
+    }
+  }
+  
+  for( int j = 0; j < Ng(); ++j ) {
+    
+    Deriv DgDx_j;
+    if (
+      !this->supports(OUT_ARG_DgDx,j).none()
+      && !(DgDx_j=get_DgDx(j)).isEmpty()
+      )
+    {
+      *out << "DgDx("<<j<<") = ";
+      DgDx_j.describe(*out,verbLevel);
+    }
+    
+    
+    for( int l = 0; l < Np(); ++l ) {
+      
+      Deriv DgDp_j_l;
+      if (
+        !this->supports(OUT_ARG_DgDp,j,l).none()
+        && !(DgDp_j_l=get_DgDp(j,l)).isEmpty()
+        )
+      {
+        *out << "DgDp("<<j<<","<<l<<") = ";
+        DgDp_j_l.describe(*out,verbLevel);
+      }
+    }
+    
+  }
+  
+  // ToDo: Add output for more objects?
+
 }
 
 // protected
@@ -1469,49 +1561,57 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np, int Ng)
 {
   if(Np) {
     supports_DfDp_.resize(Np);
-    DfDp_.resize(Np);                 std::fill_n(DfDp_.begin(),Np,Derivative<Scalar>());
-    DfDp_properties_.resize(Np);      std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
+    DfDp_.resize(Np); std::fill_n(DfDp_.begin(),Np,Derivative<Scalar>());
+    DfDp_properties_.resize(Np); std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
   }
   if(Ng) {
-    g_.resize(Ng);                    std::fill_n(g_.begin(),Ng,Teuchos::null);
+    g_.resize(Ng); std::fill_n(g_.begin(),Ng,Teuchos::null);
     supports_DgDx_.resize(Ng);
-    DgDx_.resize(Ng);                 std::fill_n(DgDx_.begin(),Ng,Derivative<Scalar>());
-    DgDx_properties_.resize(Ng);      std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());
+    DgDx_.resize(Ng); std::fill_n(DgDx_.begin(),Ng,Derivative<Scalar>());
+    DgDx_properties_.resize(Ng); std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());
   }
   if(Np && Ng) {
     const int NpNg = Np*Ng;
     supports_DgDp_.resize(NpNg);
-    DgDp_.resize(NpNg);                 std::fill_n(DgDp_.begin(),NpNg,Derivative<Scalar>());
-    DgDp_properties_.resize(NpNg);      std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
+    DgDp_.resize(NpNg); std::fill_n(DgDp_.begin(),NpNg,Derivative<Scalar>());
+    DgDp_properties_.resize(NpNg); std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
   }
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsMembers arg, bool supports )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgsMembers arg, bool supports )
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_
+    <<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   supports_[arg] = supports;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& supports )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgsDfDp arg, int l, const DerivativeSupport& supports
+  )
 {
   assert_l(l);
   supports_DfDp_[l] = supports;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgsDgDx arg, int j, const DerivativeSupport& supports
+  )
 {
   assert_j(j);
   supports_DgDx_[j] = supports;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports
+  )
 {
   assert_j(j);
   assert_l(l);
@@ -1519,39 +1619,51 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDp arg, int j,
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( const DerivativeProperties &properties )
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_W_properties( 
+  const DerivativeProperties &properties
+  )
 {
   W_properties_ = properties;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_DfDp_properties( int l, const DerivativeProperties &properties )
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_DfDp_properties(
+  int l, const DerivativeProperties &properties
+  )
 {
   assert_supports(OUT_ARG_DfDp,l);
   DfDp_properties_[l] = properties;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDx_properties( int j, const DerivativeProperties &properties )
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDx_properties(
+  int j, const DerivativeProperties &properties
+  )
 {
   assert_supports(OUT_ARG_DgDx,j);
   DgDx_properties_[j] = properties;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
+void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDp_properties(
+  int j, int l, const DerivativeProperties &properties
+  )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
   DgDp_properties_[ j*Np()+ l ] = properties;
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( const OutArgs<Scalar>& outArgs )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  const OutArgs<Scalar>& outArgs
+  )
 {
   typedef ModelEvaluatorBase MEB;
   const int Np = TEUCHOS_MIN(this->Np(),outArgs.Np()); 
   const int Ng = TEUCHOS_MIN(this->Ng(),outArgs.Ng()); 
-  std::copy( &outArgs.supports_[0], &outArgs.supports_[0] + NUM_E_OUT_ARGS_MEMBERS, &supports_[0] );
+  std::copy(
+    &outArgs.supports_[0],
+    &outArgs.supports_[0] + NUM_E_OUT_ARGS_MEMBERS, &supports_[0] );
   for( int l = 0; l < Np; ++l ) {
     DerivativeSupport ds = outArgs.supports(MEB::OUT_ARG_DfDp,l);
     this->_setSupports(MEB::OUT_ARG_DfDp,l,ds);
@@ -1572,7 +1684,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( const OutArgs<Scalar>& o
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated( EInArgsMembers arg )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
+  EInArgsMembers arg
+  )
 {
   switch(arg) {
     case IN_ARG_x: {
@@ -1590,7 +1704,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated( EInArgsMembe
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated( EOutArgsMembers arg )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
+  EOutArgsMembers arg
+  )
 {
   this->_setSupports(arg,false);
   switch(arg) {

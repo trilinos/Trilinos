@@ -31,12 +31,14 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp" // Gives verbose macros!
+#include "EpetraExt_ModelEvaluatorScalingTools.h"
+#include "Epetra_RowMatrix.h"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "EpetraExt_ModelEvaluatorScalingTools.h"
-#include "Epetra_RowMatrix.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 
 namespace {
@@ -51,6 +53,8 @@ Teuchos::RCP<
 stateFunctionScalingValidator;
 const std::string StateFunctionScaling_default = "None";
 
+
+// Extract out the Epetra_RowMatrix from the set W in an Epetra OutArgs object
 Teuchos::RCP<Epetra_RowMatrix>
 get_Epetra_RowMatrix(
   const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs
@@ -246,6 +250,7 @@ void EpetraModelEvaluator::setParameterList(
     );
   if( stateFunctionScaling_ != stateFunctionScaling_old )
     stateFunctionScalingVec_ = Teuchos::null;
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 #ifdef TEUCHOS_DEBUG
   paramList_->validateParameters(*getValidParameters(),0);
 #endif // TEUCHOS_DEBUG
@@ -313,6 +318,7 @@ EpetraModelEvaluator::getValidParameters() const
       "linear solves.",
       stateFunctionScalingValidator
       );
+    Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
   return validPL;
@@ -526,18 +532,36 @@ void EpetraModelEvaluator::evalModel(
   ) const
 {
 
-  using Thyra::get_Epetra_Vector;
-  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
-  using Teuchos::implicit_cast;
-
+  using Teuchos::includesVerbLevel;
   typedef EpetraExt::ModelEvaluator EME;
 
-  // Make sure that scaling has been updated!
+  //
+  // A) Initial setup
+  //
+
+  // Make sure that we are fully initialized!
   this->updateNominalValuesAndBounds();
+
+  // Make sure we grab the initial guess first!
+  InArgs<double> inArgs = this->getNominalValues();
+  // Now, copy the parameters from the input inArgs_in object to the inArgs
+  // object.  Any input objects that are set in inArgs_in will overwrite those
+  // in inArgs that will already contain the nominal values.  This will insure
+  // that all input parameters are set and those that are not set by the
+  // client will be at their nominal values (as defined by the underlying
+  // EpetraExt::ModelEvaluator object).  The full set of Thyra input arguments
+  // must be set before these can be translated into Epetra input arguments.
+  inArgs.setArgs(inArgs_in);
+
+  // Print the header and the values of the inArgs and outArgs objects!
+  typedef double Scalar; // Needed for below macro!
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
+    "Thyra::EpetraModelEvaluator",inArgs,outArgs,Teuchos::null
+    );
 
   // State function Scaling
   const bool firstTimeStateFuncScaling
@@ -545,31 +569,22 @@ void EpetraModelEvaluator::evalModel(
       stateFunctionScaling_ != STATE_FUNC_SCALING_NONE
       && is_null(stateFunctionScalingVec_)
       );
-
-  // Make sure we grab the initial guess first!
-  InArgs<double> inArgs = this->getNominalValues();
-  inArgs.setArgs(inArgs_in);
-
-  Teuchos::Time totalTimer(""), timer("");
-  totalTimer.start(true);
-
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
-
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\ninArgs =\n" << Teuchos::describe(inArgs,verbLevel)
-      << "\noutArgs on input =\n" << Teuchos::describe(outArgs,Teuchos::VERB_LOW);
   
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<double> > VOTSLOWSF;
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
+
+  Teuchos::Time timer("");
+
+  //
+  // B) Prepressess the InArgs and OutArgs in preparation to call
+  // the underlying EpetraExt::ModelEvaluator
+  //
+
+  //
+  // B.1) Translate InArgs from Thyra to Epetra objects
+  //
   
-  // InArgs
-  
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nSetting-up/creating input arguments ...\n";
   timer.start(true);
 
@@ -577,7 +592,8 @@ void EpetraModelEvaluator::evalModel(
   EME::InArgs epetraScaledInArgs = epetraModel_->createInArgs();
   convertInArgsFromThyraToEpetra( inArgs, &epetraScaledInArgs );
 
-  // Unscale the input Epetra objects
+  // Unscale the input Epetra objects which will be passed to the underlying
+  // EpetraExt::ModelEvaluator object.
   EME::InArgs epetraInArgs = epetraModel_->createInArgs();
   EpetraExt::unscaleModelVars(
     epetraScaledInArgs, epetraInArgsScaling_, &epetraInArgs,
@@ -585,289 +601,96 @@ void EpetraModelEvaluator::evalModel(
     );
 
   timer.stop();
-  if(out.get() && verbLevel >= Teuchos::VERB_LOW)
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     OSTab(out).o() << "\nTime to setup InArgs = "<<timer.totalElapsedTime()<<" sec\n";
 
-  // OutArgs
+  //
+  // B.2) Convert from Thyra to Epetra OutArgs
+  //
   
-  if(out.get() && verbLevel >= Teuchos::VERB_LOW)
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nSetting-up/creating output arguments ...\n";
   timer.start(true);
-
+  
+  // The unscaled Epetra OutArgs that will be passed to the
+  // underlying EpetraExt::ModelEvaluator object
   EME::OutArgs epetraUnscaledOutArgs = epetraModel_->createOutArgs();
 
-  RCP<VectorBase<double> > f;
-  if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
-    epetraUnscaledOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
-
-  {
-    Teuchos::RCP<VectorBase<double> > g_j;
-    for(int j = 0;  j < outArgs.Ng(); ++j ) {
-      g_j = outArgs.get_g(j);
-      if(g_j.get()) epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
-    }
-  }
-  
+  // Various objects that are needed later (see documentation in
+  // the function convertOutArgsFromThyraToEpetra(...)
   RCP<LinearOpWithSolveBase<double> > W;
-  RCP<LinearOpBase<double> >          W_op;
-  RCP<const LinearOpBase<double> >    fwdW;
-  RCP<EpetraLinearOp>                 efwdW;
-  if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-    Thyra::uninitializeOp<double>(*W_factory_,&*W,&fwdW);
-    if(fwdW.get()) {
-      efwdW = rcp_const_cast<EpetraLinearOp>(
-        rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
-    }
-    else {
-      efwdW = Teuchos::rcp(new EpetraLinearOp());
-      fwdW = efwdW;
-    }
-  }
-  if( outArgs.supports(OUT_ARG_W_op) && (W_op = outArgs.get_W_op()).get() ) {
-    if( W_op.get() && !efwdW.get() )
-      efwdW = rcp_const_cast<EpetraLinearOp>(
-        rcp_dynamic_cast<const EpetraLinearOp>(W_op,true));
-  }
+  RCP<LinearOpBase<double> > W_op;
+  RCP<const LinearOpBase<double> > fwdW;
+  RCP<EpetraLinearOp> efwdW;
   RCP<Epetra_Operator> eW;
-  if(efwdW.get()) {
-    eW = efwdW->epetra_op();
-    if(!eW.get())
-      eW = epetraModel_->create_W();
-    epetraUnscaledOutArgs.set_W(eW);
-  }
-  // NOTE: Above, if both W and W_op are set and have been through at least
-  // one prior evaluation (and therefore have Epetra_Operator objects embedded
-  // in them), then we will use the Epetra_Operator embedded in W to pass to
-  // the EpetraExt::ModelEvaluator object and ignore the Epetra_Operator
-  // object in W_op.  In the standard use case, these will be the same
-  // Epetra_Operator objects.  However, it is possible that the client could
-  // use this interface in such a way that these would have different
-  // Epetra_Operator objects embedded in them.  In this (very unlikely) case,
-  // the Epetra_Operator embedded in W_op will be discarded!  This might be
-  // surprising to a client but it is very unlikely that this will ever be a
-  // problem, but the issue is duly noted here!  Only dangerous programming
-  // use of this interface would cause any problem.
-
-  // Note: The following derivative objects update in place!
-
-  {
-    Derivative<double> DfDp_l;
-    for(int l = 0;  l < outArgs.Np(); ++l ) {
-      if( !outArgs.supports(OUT_ARG_DfDp,l).none()
-        && !(DfDp_l = outArgs.get_DfDp(l)).isEmpty() )
-      {
-        epetraUnscaledOutArgs.set_DfDp(l,convert(DfDp_l,f_map_,p_map_[l]));
-      }
-    }
-  }
-
-  {
-    Derivative<double> DgDx_j;
-    for(int j = 0;  j < outArgs.Ng(); ++j ) {
-      if( !outArgs.supports(OUT_ARG_DgDx,j).none()
-        && !(DgDx_j = outArgs.get_DgDx(j)).isEmpty() )
-      {
-        epetraUnscaledOutArgs.set_DgDx(j,convert(DgDx_j,g_map_[j],x_map_));
-      }
-    }
-  }
-
-  bool created_temp_DgDp = false;
-  {
-    DerivativeSupport DgDp_j_l_support;
-    Derivative<double> DgDp_j_l;
-    for (int j = 0;  j < outArgs.Ng(); ++j ) {
-      for (int l = 0;  l < outArgs.Np(); ++l ) {
-        if (
-          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
-          &&
-          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
-          )
-        {
-          const EME::DerivativeSupport
-            epetra_DgDp_j_l_support = epetraUnscaledOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
-          if (
-            !is_null(DgDp_j_l.getDerivativeMultiVector().getMultiVector())
-            &&
-            (
-              ( 
-                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_MV_BY_COL
-                &&
-                !epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL)
-                )
-              ||
-              ( 
-                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_TRANS_MV_BY_ROW
-                &&
-                !epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW)
-                )
-              )
-            )
-          {
-            // If you get here, then an explicit transpose must be allowed or
-            // the supported objects above would not be set the way that they
-            // are set.  Therefore, we will just go with the temp transpose
-            // and the the explicit copy later.
-            created_temp_DgDp = true;
-            RCP<Epetra_MultiVector> temp_epetra_DgDp_j_l;
-            EME::EDerivativeMultiVectorOrientation temp_epetra_DgDp_j_l_orientation;
-            if( epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL) )
-            {
-              temp_epetra_DgDp_j_l = rcp(
-                new Epetra_MultiVector(
-                  *g_map_[j], p_map_[l]->NumGlobalElements(), false
-                  )
-                );
-              temp_epetra_DgDp_j_l_orientation = EME::DERIV_MV_BY_COL;
-            }
-            else if( epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW) )
-            {
-              temp_epetra_DgDp_j_l = rcp(
-                new Epetra_MultiVector(
-                  *p_map_[l], g_map_[j]->NumGlobalElements(), false
-                  )
-                );
-              temp_epetra_DgDp_j_l_orientation = EME::DERIV_TRANS_MV_BY_ROW;
-            }
-            else {
-              TEST_FOR_EXCEPT("Should not get here!");
-            }
-            epetraUnscaledOutArgs.set_DgDp(
-              j,l,
-              EME::Derivative(
-                EME::DerivativeMultiVector(
-                  temp_epetra_DgDp_j_l,
-                  temp_epetra_DgDp_j_l_orientation
-                  )
-                )
-              );
-          }
-          else {
-            // Just assume that we can compute the object in place
-            epetraUnscaledOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
-          }
-        }
-      }
-    }
-  }
-
-  RCP<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
-  if( outArgs.supports(OUT_ARG_f_poly) && (f_poly = outArgs.get_f_poly()).get() )
-  {
-    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_f_poly = 
-      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(f_poly->degree()));
-    for (unsigned int i=0; i<=f_poly->degree(); i++) {
-      RCP<Epetra_Vector> epetra_ptr
-        = Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
-            f_poly->getCoefficient(i)));
-      epetra_f_poly->setCoefficientPtr(i,epetra_ptr);
-    }
-    epetraUnscaledOutArgs.set_f_poly(epetra_f_poly);
-  }
+  bool created_temp_DgDp;
   
-  bool createdTempEpetraW = false;
-  if (
-    firstTimeStateFuncScaling
-    && ( stateFunctionScaling_ == STATE_FUNC_SCALING_ROW_SUM )
-    && (
-      epetraUnscaledOutArgs.supports(EME::OUT_ARG_f) 
-      && epetraUnscaledOutArgs.funcOrDerivesAreSet(EME::OUT_ARG_f)
-      )
-    && (
-      epetraUnscaledOutArgs.supports(EME::OUT_ARG_W)
-      && is_null(epetraUnscaledOutArgs.get_W())
-      )
-    )
-  {
-    // This is the first pass through with scaling turned on and the client
-    // turned on automatic scaling but did not ask for W.  We must compute W
-    // in order to compute the scale factors so we must allocate a temporary W
-    // just to compute the scale factors and then throw it away.  If the
-    // client wants to evaluate W at the same point, then it should have
-    // passed W in but that is not our problem here.  The ModelEvaluator
-    // relies on the client to set up the calls to allow for efficient
-    // evaluation.
+  // Convert from Thyra to Epetra OutArgs and grap some of the intermediate
+  // objects accessed along the way that are needed later.
+  convertOutArgsFromThyraToEpetra(
+    outArgs,
+    &epetraUnscaledOutArgs,
+    &W, &W_op, &fwdW, &efwdW, &eW,
+    &created_temp_DgDp
+    );
 
-    if(out.get() && verbLevel >= Teuchos::VERB_LOW)
-      *out
-        << "\nCreating a temporary Epetra W to compute scale factors"
-        << " for f(...) ...\n";
-    epetraUnscaledOutArgs.set_W(epetraModel_->create_W());
-    if( epetraInArgs.supports(EME::IN_ARG_beta) )
-      epetraInArgs.set_beta(1.0);
-    if( epetraInArgs.supports(EME::IN_ARG_alpha) )
-      epetraInArgs.set_alpha(0.0);
-    createdTempEpetraW = true; // This flag will tell us to delete W later!
+  //
+  // B.3) Setup OutArgs to computing scaling if needed
+  //
+
+  if (firstTimeStateFuncScaling) {
+    preEvalScalingSetup(&epetraInArgs,&epetraUnscaledOutArgs,out,verbLevel);
   }
 
   timer.stop();
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to setup OutArgs = "<<timer.totalElapsedTime()<<" sec\n";
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o()
+      << "\nTime to setup OutArgs = "
+      << timer.totalElapsedTime() <<" sec\n";
 
-  // Do the evaluation
+  //
+  // C) Evaluate the underlying EpetraExt model to compute the Epetra outputs
+  //
   
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEvaluating the output functions ...\n";
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    *out << "\nEvaluating the Epetra output functions ...\n";
   timer.start(true);
 
   epetraModel_->evalModel(epetraInArgs,epetraUnscaledOutArgs);
 
   timer.stop();
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to evaluate output functions = "<<timer.totalElapsedTime()<<" sec\n";
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o()
+      << "\nTime to evaluate Epetra output functions = "
+      << timer.totalElapsedTime() <<" sec\n";
 
-  // Postprocess arguments
+  //
+  // D) Postprocess the output objects
+  //
+
+  //
+  // D.1) Compute the scaling factors if needed
+  //
   
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nCompute scale factors if needed ...\n";
   timer.start(true);
 
-  // Compute the scale factors for the state function f(...)
   if (firstTimeStateFuncScaling) {
-    switch(stateFunctionScaling_) {
-      case STATE_FUNC_SCALING_ROW_SUM: {
-        // Compute the inverse row-sum scaling from W
-        const RCP<Epetra_RowMatrix>
-          ermW = get_Epetra_RowMatrix(epetraUnscaledOutArgs);
-        // Note: Above, we get the Epetra W object directly from the Epetra
-        // OutArgs object since this might be a temporary matrix just to
-        // compute scaling factors.  In this case, the stack funtion variable
-        // eW might be empty!
-        RCP<Epetra_Vector>
-          invRowSums = rcp(new Epetra_Vector(ermW->OperatorRangeMap()));
-        // Above, From the documentation is seems that the RangeMap should be
-        // okay but who knows for sure!
-        ermW->InvRowSums(*invRowSums);
-        if(out.get() && verbLevel >= Teuchos::VERB_LOW) {
-          *out
-            << "\nComputed inverse row sum scaling from W that"
-            " will be used to scale f(...) and its derivatives:\n";
-          double minVal = 0, maxVal = 0, avgVal = 0;
-          invRowSums->MinValue(&minVal);
-          invRowSums->MaxValue(&maxVal);
-          invRowSums->MeanValue(&avgVal);
-          OSTab tab(out);
-          *out
-            << "min(invRowSums) = " << minVal << "\n"
-            << "max(invRowSums) = " << maxVal << "\n"
-            << "avg(invRowSums) = " << avgVal << "\n";
-        }
-        stateFunctionScalingVec_ = invRowSums;
-        break;
-      }
-      default:
-        TEST_FOR_EXCEPT("Should never get here!");
-    }
-    epetraOutArgsScaling_ = epetraModel_->createOutArgs();
-    epetraOutArgsScaling_.set_f(
-      rcp_const_cast<Epetra_Vector>(stateFunctionScalingVec_) );
+    postEvalScalingSetup(epetraUnscaledOutArgs,out,verbLevel);
   }
 
   timer.stop();
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to compute scale factors = "<<timer.totalElapsedTime()<<" sec\n";
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o()
+      << "\nTime to compute scale factors = "
+      << timer.totalElapsedTime() <<" sec\n";
 
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+  //
+  // D.2) Scale the output Epetra objects
+  //
+
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nScale the output objects ...\n";
   timer.start(true);
 
@@ -887,95 +710,36 @@ void EpetraModelEvaluator::evalModel(
     );
 
   timer.stop();
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to scale the output objects = "<<timer.totalElapsedTime()<<" sec\n";
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o()
+      << "\nTime to scale the output objects = "
+      << timer.totalElapsedTime() << " sec\n";
 
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+  //
+  // D.3) Convert any Epetra objects to Thyra OutArgs objects that still need to
+  // be converted
+  //
+
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nFinish processing and wrapping the output objects ...\n";
   timer.start(true);
-  
-  // Set the objects that need to be set
 
-  if(efwdW.get()) {
-    efwdW->initialize(eW);  // This will directly update W_op if W.get()==NULL!
-  }
-  
-  if( W.get() ) {
-    Thyra::initializeOp<double>(*W_factory_,fwdW,&*W);
-    W->setOStream(this->getOStream());
-  }
-
-  if( W_op.get() ) {
-    if( W_op.shares_resource(efwdW) ) {
-      // W_op was already updated above since *efwdW is the same object as *W_op
-    }
-    else {
-      rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->initialize(eW);
-    }
-  }
-
-  if ( created_temp_DgDp ) {
-    DerivativeSupport DgDp_j_l_support;
-    Derivative<double> DgDp_j_l;
-    for (int j = 0;  j < outArgs.Ng(); ++j ) {
-      for (int l = 0;  l < outArgs.Np(); ++l ) {
-        if (
-          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
-          &&
-          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
-          )
-        {
-          RCP<MultiVectorBase<double> >
-            DgDp_mv_j_l = DgDp_j_l.getDerivativeMultiVector().getMultiVector();
-          EDerivativeMultiVectorOrientation
-            DgDp_mv_j_l_orientation = DgDp_j_l.getDerivativeMultiVector().getOrientation();
-          EME::Derivative
-            e_DgDp_j_l = epetraOutArgs.get_DgDp(j,l); // Can't be empty if we are here!
-          EME::EDerivativeMultiVectorOrientation
-            e_DgDp_mv_j_l_orientation = e_DgDp_j_l.getDerivativeMultiVector().getOrientation();
-          if (
-            !is_null(DgDp_mv_j_l)
-            &&
-            DgDp_mv_j_l_orientation != convert(e_DgDp_mv_j_l_orientation)
-            )
-          {
-            // We must do an explicit multi-vector transpose copy here!
-            RCP<const Epetra_MultiVector>
-              e_DgDp_mv_j_l = e_DgDp_j_l.getMultiVector();
-            DetachedMultiVectorView<double>
-              d_DgDp_mv_j_l(*DgDp_mv_j_l);
-            const int m = d_DgDp_mv_j_l.subDim();
-            const int n = d_DgDp_mv_j_l.numSubCols();
-            TEST_FOR_EXCEPT( m != e_DgDp_mv_j_l->NumVectors() );
-            TEST_FOR_EXCEPT( n != e_DgDp_mv_j_l->Map().NumMyElements() );
-            for( int i = 0; i < m; ++i ) {
-              for( int k = 0; k < n; ++k ) {
-                d_DgDp_mv_j_l(i,k) = (*e_DgDp_mv_j_l)[i][k];
-                // Note: Above [i][k] returns the entry for the ith column and
-                // the kth row for the Epetra_MultiVector object!  This looks
-                // very backward but that is how Epetra_MultiVector is
-                // defined!
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  finishConvertingOutArgsFromEpetraToThyra(
+    epetraOutArgs, W, W_op, fwdW, efwdW, eW, created_temp_DgDp,
+    outArgs
+    );
 
   timer.stop();
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to finish processing and wrapping the output objects = "<<timer.totalElapsedTime()<<" sec\n";
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o()
+      << "\nTime to finish processing and wrapping the output objects = "
+      << timer.totalElapsedTime() <<" sec\n";
 
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\noutArgs on output =\n" << Teuchos::describe(outArgs,verbLevel);
+  //
+  // E) Print footer to end the function
+  //
 
-  totalTimer.stop();
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n"
-      << "\nLeaving Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
 }
 
@@ -1122,19 +886,440 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
 
 void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   const ModelEvaluatorBase::OutArgs<double> &outArgs,
-  EpetraExt::ModelEvaluator::OutArgs *epetraOutArgs
+  EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs_inout,
+  RCP<LinearOpWithSolveBase<double> > *W_out,
+  RCP<LinearOpBase<double> > *W_op_out,
+  RCP<const LinearOpBase<double> > *fwdW_out,
+  RCP<EpetraLinearOp> *efwdW_out,
+  RCP<Epetra_Operator> *eW_out,
+  bool *created_temp_DgDp_out
   ) const
 {
-  TEST_FOR_EXCEPT("ToDo: Implement!");
+
+
+  using Thyra::get_Epetra_Vector;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::OSTab;
+  using Teuchos::implicit_cast;
+  typedef EpetraExt::ModelEvaluator EME;
+
+  // Assert input
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT(epetraUnscaledOutArgs_inout);
+  TEUCHOS_ASSERT(W_out);
+  TEUCHOS_ASSERT(W_op_out);
+  TEUCHOS_ASSERT(fwdW_out);
+  TEUCHOS_ASSERT(efwdW_out);
+  TEUCHOS_ASSERT(eW_out);
+  TEUCHOS_ASSERT(created_temp_DgDp_out);
+#endif
+
+  // Create easy to use references
+  EpetraExt::ModelEvaluator::OutArgs &epetraUnscaledOutArgs = *epetraUnscaledOutArgs_inout;
+  RCP<LinearOpWithSolveBase<double> > &W = *W_out;
+  RCP<LinearOpBase<double> > &W_op = *W_op_out;
+  RCP<const LinearOpBase<double> > &fwdW = *fwdW_out;
+  RCP<EpetraLinearOp> &efwdW = *efwdW_out;
+  RCP<Epetra_Operator> &eW = *eW_out;
+  bool &created_temp_DgDp = *created_temp_DgDp_out;
+
+  // f
+  { 
+    RCP<VectorBase<double> > f;
+    if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
+      epetraUnscaledOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
+  }
+    
+  // g
+  {
+    Teuchos::RCP<VectorBase<double> > g_j;
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      g_j = outArgs.get_g(j);
+      if(g_j.get()) epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
+    }
+  }
+  
+  // W
+  {
+
+    if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
+      Thyra::uninitializeOp<double>(*W_factory_,&*W,&fwdW);
+      if(fwdW.get()) {
+        efwdW = rcp_const_cast<EpetraLinearOp>(
+          rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
+      }
+      else {
+        efwdW = Teuchos::rcp(new EpetraLinearOp());
+        fwdW = efwdW;
+      }
+    }
+    if( outArgs.supports(OUT_ARG_W_op) && (W_op = outArgs.get_W_op()).get() ) {
+      if( W_op.get() && !efwdW.get() )
+        efwdW = rcp_const_cast<EpetraLinearOp>(
+          rcp_dynamic_cast<const EpetraLinearOp>(W_op,true));
+    }
+    if(efwdW.get()) {
+      eW = efwdW->epetra_op();
+      if(!eW.get())
+        eW = epetraModel_->create_W();
+      epetraUnscaledOutArgs.set_W(eW);
+    }
+    // NOTE: Above, if both W and W_op are set and have been through at least
+    // one prior evaluation (and therefore have Epetra_Operator objects embedded
+    // in them), then we will use the Epetra_Operator embedded in W to pass to
+    // the EpetraExt::ModelEvaluator object and ignore the Epetra_Operator
+    // object in W_op.  In the standard use case, these will be the same
+    // Epetra_Operator objects.  However, it is possible that the client could
+    // use this interface in such a way that these would have different
+    // Epetra_Operator objects embedded in them.  In this (very unlikely) case,
+    // the Epetra_Operator embedded in W_op will be discarded!  This might be
+    // surprising to a client but it is very unlikely that this will ever be a
+    // problem, but the issue is duly noted here!  Only dangerous programming
+    // use of this interface would cause any problem.
+    
+    // Note: The following derivative objects update in place!
+
+  }
+
+  // DfDp
+  {
+    Derivative<double> DfDp_l;
+    for(int l = 0;  l < outArgs.Np(); ++l ) {
+      if( !outArgs.supports(OUT_ARG_DfDp,l).none()
+        && !(DfDp_l = outArgs.get_DfDp(l)).isEmpty() )
+      {
+        epetraUnscaledOutArgs.set_DfDp(l,convert(DfDp_l,f_map_,p_map_[l]));
+      }
+    }
+  }
+
+  // DgDx
+  {
+    Derivative<double> DgDx_j;
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      if( !outArgs.supports(OUT_ARG_DgDx,j).none()
+        && !(DgDx_j = outArgs.get_DgDx(j)).isEmpty() )
+      {
+        epetraUnscaledOutArgs.set_DgDx(j,convert(DgDx_j,g_map_[j],x_map_));
+      }
+    }
+  }
+
+  // DgDp
+  {
+    DerivativeSupport DgDp_j_l_support;
+    Derivative<double> DgDp_j_l;
+    for (int j = 0;  j < outArgs.Ng(); ++j ) {
+      for (int l = 0;  l < outArgs.Np(); ++l ) {
+        if (
+          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
+          &&
+          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
+          )
+        {
+          const EME::DerivativeSupport
+            epetra_DgDp_j_l_support = epetraUnscaledOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
+          if (
+            !is_null(DgDp_j_l.getDerivativeMultiVector().getMultiVector())
+            &&
+            (
+              ( 
+                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_MV_BY_COL
+                &&
+                !epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL)
+                )
+              ||
+              ( 
+                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_TRANS_MV_BY_ROW
+                &&
+                !epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW)
+                )
+              )
+            )
+          {
+            // If you get here, then an explicit transpose must be allowed or
+            // the supported objects above would not be set the way that they
+            // are set.  Therefore, we will just go with the temp transpose
+            // and do the explicit copy later after the evaluation.
+            created_temp_DgDp = true;
+            RCP<Epetra_MultiVector> temp_epetra_DgDp_j_l;
+            EME::EDerivativeMultiVectorOrientation temp_epetra_DgDp_j_l_orientation;
+            if( epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL) )
+            {
+              temp_epetra_DgDp_j_l = rcp(
+                new Epetra_MultiVector(
+                  *g_map_[j], p_map_[l]->NumGlobalElements(), false
+                  )
+                );
+              temp_epetra_DgDp_j_l_orientation = EME::DERIV_MV_BY_COL;
+            }
+            else if( epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW) )
+            {
+              temp_epetra_DgDp_j_l = rcp(
+                new Epetra_MultiVector(
+                  *p_map_[l], g_map_[j]->NumGlobalElements(), false
+                  )
+                );
+              temp_epetra_DgDp_j_l_orientation = EME::DERIV_TRANS_MV_BY_ROW;
+            }
+            else {
+              TEST_FOR_EXCEPT("Should not get here!");
+            }
+            epetraUnscaledOutArgs.set_DgDp(
+              j,l,
+              EME::Derivative(
+                EME::DerivativeMultiVector(
+                  temp_epetra_DgDp_j_l,
+                  temp_epetra_DgDp_j_l_orientation
+                  )
+                )
+              );
+          }
+          else {
+            // Just assume that we can compute the object in place
+            epetraUnscaledOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
+          }
+        }
+      }
+    }
+  }
+  // 2007/08/03: rabartl: ToDo: Move the above deeply nested code into its own
+  // helper function(s).
+
+  // f_poly
+  RCP<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
+  if( outArgs.supports(OUT_ARG_f_poly) && (f_poly = outArgs.get_f_poly()).get() )
+  {
+    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_f_poly = 
+      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(f_poly->degree()));
+    for (unsigned int i=0; i<=f_poly->degree(); i++) {
+      RCP<Epetra_Vector> epetra_ptr
+        = Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
+            f_poly->getCoefficient(i)));
+      epetra_f_poly->setCoefficientPtr(i,epetra_ptr);
+    }
+    epetraUnscaledOutArgs.set_f_poly(epetra_f_poly);
+  }
+
 }
 
 
-void EpetraModelEvaluator::convertOutArgsFromEpetraToThyra(
-  const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
-  ModelEvaluatorBase::OutArgs<double> *outArgs
+void EpetraModelEvaluator::preEvalScalingSetup(
+  EpetraExt::ModelEvaluator::InArgs *epetraInArgs_inout,
+  EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs_inout,
+  const Teuchos::RCP<Teuchos::FancyOStream> &out,
+  const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  TEST_FOR_EXCEPT("ToDo: Implement!");
+  
+  typedef EpetraExt::ModelEvaluator EME;
+  
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT(epetraInArgs_inout);
+  TEUCHOS_ASSERT(epetraUnscaledOutArgs_inout);
+#endif
+
+  EpetraExt::ModelEvaluator::InArgs
+    &epetraInArgs = *epetraInArgs_inout;
+  EpetraExt::ModelEvaluator::OutArgs
+    &epetraUnscaledOutArgs = *epetraUnscaledOutArgs_inout;
+
+  if (
+    ( stateFunctionScaling_ == STATE_FUNC_SCALING_ROW_SUM )
+    &&
+    (
+      epetraUnscaledOutArgs.supports(EME::OUT_ARG_f) 
+      &&
+      epetraUnscaledOutArgs.funcOrDerivesAreSet(EME::OUT_ARG_f)
+      )
+    &&
+    (
+      epetraUnscaledOutArgs.supports(EME::OUT_ARG_W)
+      &&
+      is_null(epetraUnscaledOutArgs.get_W())
+      )
+    )
+  {
+    // This is the first pass through with scaling turned on and the client
+    // turned on automatic scaling but did not ask for W.  We must compute W
+    // in order to compute the scale factors so we must allocate a temporary W
+    // just to compute the scale factors and then throw it away.  If the
+    // client wants to evaluate W at the same point, then it should have
+    // passed W in but that is not our problem here.  The ModelEvaluator
+    // relies on the client to set up the calls to allow for efficient
+    // evaluation.
+
+    if(out.get() && verbLevel >= Teuchos::VERB_LOW)
+      *out
+        << "\nCreating a temporary Epetra W to compute scale factors"
+        << " for f(...) ...\n";
+    epetraUnscaledOutArgs.set_W(epetraModel_->create_W());
+    if( epetraInArgs.supports(EME::IN_ARG_beta) )
+      epetraInArgs.set_beta(1.0);
+    if( epetraInArgs.supports(EME::IN_ARG_alpha) )
+      epetraInArgs.set_alpha(0.0);
+  }
+  
+}
+
+
+void EpetraModelEvaluator::postEvalScalingSetup(
+  const EpetraExt::ModelEvaluator::OutArgs &epetraUnscaledOutArgs,
+  const Teuchos::RCP<Teuchos::FancyOStream> &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+
+  using Teuchos::OSTab;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::includesVerbLevel;
+
+  // Compute the scale factors for the state function f(...)
+  switch(stateFunctionScaling_) {
+
+    case STATE_FUNC_SCALING_ROW_SUM: {
+
+      // Compute the inverse row-sum scaling from W
+
+      const RCP<Epetra_RowMatrix>
+        ermW = get_Epetra_RowMatrix(epetraUnscaledOutArgs);
+      // Note: Above, we get the Epetra W object directly from the Epetra
+      // OutArgs object since this might be a temporary matrix just to
+      // compute scaling factors.  In this case, the stack funtion variable
+      // eW might be empty!
+
+      RCP<Epetra_Vector>
+        invRowSums = rcp(new Epetra_Vector(ermW->OperatorRangeMap()));
+      // Above: From the documentation is seems that the RangeMap should be
+      // okay but who knows for sure!
+
+      ermW->InvRowSums(*invRowSums);
+
+      if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW)) {
+        *out
+          << "\nComputed inverse row sum scaling from W that"
+          " will be used to scale f(...) and its derivatives:\n";
+        double minVal = 0, maxVal = 0, avgVal = 0;
+        invRowSums->MinValue(&minVal);
+        invRowSums->MaxValue(&maxVal);
+        invRowSums->MeanValue(&avgVal);
+        OSTab tab(out);
+        *out
+          << "min(invRowSums) = " << minVal << "\n"
+          << "max(invRowSums) = " << maxVal << "\n"
+          << "avg(invRowSums) = " << avgVal << "\n";
+      }
+
+      stateFunctionScalingVec_ = invRowSums;
+
+      break;
+
+    }
+
+    default:
+      TEST_FOR_EXCEPT("Should never get here!");
+
+  }
+
+  epetraOutArgsScaling_ = epetraModel_->createOutArgs();
+
+  epetraOutArgsScaling_.set_f(
+    rcp_const_cast<Epetra_Vector>(stateFunctionScalingVec_) );
+
+}
+
+
+void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
+  const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
+  RCP<LinearOpWithSolveBase<double> > &W,
+  RCP<LinearOpBase<double> > &W_op,
+  RCP<const LinearOpBase<double> > &fwdW,
+  RCP<EpetraLinearOp> &efwdW,
+  RCP<Epetra_Operator> &eW,
+  const bool created_temp_DgDp,
+  const ModelEvaluatorBase::OutArgs<double> &outArgs
+  ) const
+{
+
+  using Teuchos::rcp_dynamic_cast;
+  typedef EpetraExt::ModelEvaluator EME;
+
+  if(efwdW.get()) {
+    efwdW->initialize(eW);  // This will directly update W_op if W.get()==NULL!
+  }
+  
+  if( W.get() ) {
+    Thyra::initializeOp<double>(*W_factory_,fwdW,&*W);
+    W->setOStream(this->getOStream());
+  }
+
+  if( W_op.get() ) {
+    if( W_op.shares_resource(efwdW) ) {
+      // W_op was already updated above since *efwdW is the same object as *W_op
+    }
+    else {
+      rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->initialize(eW);
+    }
+  }
+
+  if ( created_temp_DgDp ) {
+    DerivativeSupport DgDp_j_l_support;
+    Derivative<double> DgDp_j_l;
+    for (int j = 0;  j < outArgs.Ng(); ++j ) {
+      for (int l = 0;  l < outArgs.Np(); ++l ) {
+        if (
+          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
+          &&
+          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
+          )
+        {
+          RCP<MultiVectorBase<double> >
+            DgDp_mv_j_l = DgDp_j_l.getDerivativeMultiVector().getMultiVector();
+          EDerivativeMultiVectorOrientation
+            DgDp_mv_j_l_orientation
+            = DgDp_j_l.getDerivativeMultiVector().getOrientation();
+          EME::Derivative
+            e_DgDp_j_l
+            = epetraOutArgs.get_DgDp(j,l); // Can't be empty if we are here!
+          EME::EDerivativeMultiVectorOrientation
+            e_DgDp_mv_j_l_orientation
+            = e_DgDp_j_l.getDerivativeMultiVector().getOrientation();
+          if (
+            !is_null(DgDp_mv_j_l)
+            &&
+            DgDp_mv_j_l_orientation != convert(e_DgDp_mv_j_l_orientation)
+            )
+          {
+            // We must do an explicit multi-vector transpose copy here!
+            RCP<const Epetra_MultiVector>
+              e_DgDp_mv_j_l = e_DgDp_j_l.getMultiVector();
+            DetachedMultiVectorView<double>
+              d_DgDp_mv_j_l(*DgDp_mv_j_l);
+            const int m = d_DgDp_mv_j_l.subDim();
+            const int n = d_DgDp_mv_j_l.numSubCols();
+            TEST_FOR_EXCEPT( m != e_DgDp_mv_j_l->NumVectors() );
+            TEST_FOR_EXCEPT( n != e_DgDp_mv_j_l->Map().NumMyElements() );
+            for( int i = 0; i < m; ++i ) {
+              for( int k = 0; k < n; ++k ) {
+                d_DgDp_mv_j_l(i,k) = (*e_DgDp_mv_j_l)[i][k];
+                // Note: Above [i][k] returns the entry for the ith column and
+                // the kth row for the Epetra_MultiVector object!  This looks
+                // very backward but that is how Epetra_MultiVector is
+                // defined!
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  // 2007/08/03: rabartl: ToDo: Copy the above code to its own helper
+  // function(s) to clean this up!
+
 }
 
 

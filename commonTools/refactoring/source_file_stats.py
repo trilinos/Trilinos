@@ -10,8 +10,8 @@ for files of different types.
 # 1) Count the number of tokens in all of the source code lines
 # 2) Count the number of total non-space chars in all of the source code lines
 # 3) Count the number of total non-space chars in all of the documentation lines
-# 4) Separate out the copyright header comment lines for the the other comment
-#    lines and print the count for these separately
+# 4) Separate out the copyright header comment lines from the other comment
+#    lines and print the line counts for these separately
 
 import sys
 import os
@@ -74,8 +74,8 @@ if __name__ == '__main__':
   (numBlankLines,numCommentLines,numCodeLines,numTotalLines) \
     = countLines(sys.argv[1])
   print "File: ", os.path.basename(sys.argv[1])
-  print "Number of blank lines    =", numBlankLines
-  print "Number of comment lines  =", numCommentLines
   print "Number of code lines     =", numCodeLines
+  print "Number of comment lines  =", numCommentLines
+  print "Number of blank lines    =", numBlankLines
   print "numTotalLines (", numTotalLines, ")"
 

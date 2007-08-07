@@ -378,15 +378,51 @@ private:
 
   /** \brief . */
   void convertOutArgsFromThyraToEpetra(
+    // Thyra form of the outArgs
     const ModelEvaluatorBase::OutArgs<double> &outArgs,
-    EpetraExt::ModelEvaluator::OutArgs *epetraOutArgs
+    // Epetra form of the unscaled output arguments 
+    EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs,
+    // The passed-in form(s) of W
+    RCP<LinearOpWithSolveBase<double> > *W,
+    RCP<LinearOpBase<double> > *W_op,
+    // The wrapped Thyra forward operators
+    RCP<const LinearOpBase<double> > *fwdW,
+    RCP<EpetraLinearOp> *efwdW,
+    // The actual Epetra object passed to the underylying EpetraExt::ModelEvaluator
+    RCP<Epetra_Operator> *eW,
+    // Flag for if we created at least one temp DgDp(j,l) object
+    bool *created_temp_DgDp
     ) const;
 
   /** \brief . */
-  void convertOutArgsFromEpetraToThyra(
-    const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
-    ModelEvaluatorBase::OutArgs<double> *outArgs
+  void preEvalScalingSetup(
+    EpetraExt::ModelEvaluator::InArgs *epetraInArgs,
+    EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs,
+    const Teuchos::RCP<Teuchos::FancyOStream> &out,
+    const Teuchos::EVerbosityLevel verbLevel
     ) const;
+
+  /** \brief . */
+  void postEvalScalingSetup(
+    const EpetraExt::ModelEvaluator::OutArgs &epetraUnscaledOutArgs,
+    const Teuchos::RCP<Teuchos::FancyOStream> &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
+
+  /** \brief . */
+  void finishConvertingOutArgsFromEpetraToThyra(
+    const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
+    RCP<LinearOpWithSolveBase<double> > &W,
+    RCP<LinearOpBase<double> > &W_op,
+    RCP<const LinearOpBase<double> > &fwdW,
+    RCP<EpetraLinearOp> &efwdW,
+    RCP<Epetra_Operator> &eW,
+    const bool created_temp_DgDp,
+    const ModelEvaluatorBase::OutArgs<double> &outArgs // Output!
+    ) const;
+  // 2007/08/03: rabartl: Above, I pass many of the RCP objects by non-const
+  // reference since I don't want the compiler to perform any implicit
+  // conversions on this RCP objects.
 
   /** \brief . */
   void updateNominalValuesAndBounds() const;

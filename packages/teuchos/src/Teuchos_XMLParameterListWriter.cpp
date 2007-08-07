@@ -78,7 +78,7 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
     }
   else if (entry.isType<std::string>())
     {
-      type = "std::string";
+      type = "string";
       value = toString(any_cast<std::string>(entry.getAny(false)));
     }
   else if (entry.isType<char>())

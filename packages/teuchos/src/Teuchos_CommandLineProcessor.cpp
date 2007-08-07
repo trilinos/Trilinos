@@ -330,8 +330,12 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 #endif
       << "Echo the command-line but continue as normal"
       << std::endl;
-    for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
-      // print top line with option name, type and short documentation std::string
+    for(
+      itr = options_documentation_list_.begin();
+      itr != options_documentation_list_.end();
+      ++itr )
+    {
+      // print top line with option name, type and short documentation string
       out
         << spc_chars
         << "--"

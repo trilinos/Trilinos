@@ -40,16 +40,18 @@ namespace RTOpPack {
  * The seed for the random number generator can be set by
  * <tt>TOpRandomize<Scalar>::set_seed(s)</tt> where <tt>s</tt> is some
  * unsigned integer.  Note that this class generates random numbers based on
- * the initial seed and the global element ID so this should produce the save
- * elements independent of the number of processors being used.
+ * the initial seed and the global element ID so this should produce the same
+ * pseudo-random elements independent of the number of processors being used.
  *
- * The seed changes every time a new object is created
+ * The seed changes every time a new object is created in order to improve the
+ * randomness to some degree.
  */
 template<class Scalar>
 class TOpRandomize : public ROpScalarScalarTransformationBase<Scalar> {
 public:
   /** \brief . */
-  static void set_static_seed( const unsigned int static_seed ) { static_seed_ = static_seed; }
+  static void set_static_seed( const unsigned int static_seed )
+    { static_seed_ = static_seed; }
   /** \brief . */
   static unsigned int get_static_seed() { return static_seed_; }
   /** \brief . */
@@ -63,7 +65,8 @@ public:
       ++static_seed_; // By default we will just increment the seed!
     }
   /** \brief . */
-  void set_bounds( const Scalar& l, const Scalar& u ) { this->scalarData1(l); this->scalarData2(u); }
+  void set_bounds( const Scalar& l, const Scalar& u )
+    { this->scalarData1(l); this->scalarData2(u); }
   /** \brief . */
   void set_seed( const unsigned int seed ) { seed_ = seed; }
   /** \brief . */
@@ -78,11 +81,13 @@ public:
     ) const
     {
       const Scalar l = this->scalarData1(), u = this->scalarData2();
-      const Scalar a = Scalar(0.5)*(u-l), b = Scalar(0.5)*(u+l) ; // Linear coefficients for translating from [-1,+1] to [l,b]
+       // Linear coefficients for translating from [-1,+1] to [l,b]
+      const Scalar a = Scalar(0.5)*(u-l), b = Scalar(0.5)*(u+l) ;
       RTOP_APPLY_OP_0_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s ) {
         Teuchos::ScalarTraits<Scalar>::seedrandom(seed_+globalOffset+i);
-        *z0_val = a * Teuchos::ScalarTraits<Scalar>::random() + b; // Should be in the range [l,b]
+        *z0_val = a * Teuchos::ScalarTraits<Scalar>::random() + b;
+        // Above should be in the range [l,b]
       }
     }
   //@}

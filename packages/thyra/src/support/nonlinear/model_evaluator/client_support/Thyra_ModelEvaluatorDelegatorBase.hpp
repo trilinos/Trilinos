@@ -32,6 +32,7 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace Thyra {
 
@@ -71,22 +72,22 @@ public:
 
   /** \brief Calls <tt>initialize()</tt>. */
   ModelEvaluatorDelegatorBase(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
+    const RCP<ModelEvaluator<Scalar> > &model
     );
 
   /** \brief Calls <tt>initialize()</tt>. */
   ModelEvaluatorDelegatorBase(
-    const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
+    const RCP<const ModelEvaluator<Scalar> > &model
     );
 
   /** \brief Initialize given a non-const model evaluator. */
   void initialize(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
+    const RCP<ModelEvaluator<Scalar> >   &model
     );
 
   /** \brief Initialize given a const model evaluator. */
   void initialize(
-    const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
+    const RCP<const ModelEvaluator<Scalar> >   &model
     );
 
   /** \brief Uninitialize. */
@@ -101,10 +102,10 @@ public:
   virtual bool isUnderlyingModelConst() const;
 
   /** \brief . */
-  virtual Teuchos::RCP<ModelEvaluator<Scalar> > getNonconstUnderlyingModel();
+  virtual RCP<ModelEvaluator<Scalar> > getNonconstUnderlyingModel();
 
   /** \brief . */
-  virtual Teuchos::RCP<const ModelEvaluator<Scalar> > getUnderlyingModel() const;
+  virtual RCP<const ModelEvaluator<Scalar> > getUnderlyingModel() const;
 
   //@}
 
@@ -116,15 +117,15 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -132,63 +133,99 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
+  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
+  RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+  RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
   void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-    ,const bool                                   wasSolved
+    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+    const bool wasSolved
     );
 
   //@}
 
+protected:
+
+  /** \brief Set a valid parameter for reading the local verbosity level. */
+  void setLocalVerbosityLevelValidatedParameter(
+    ParameterList *paramList
+    ) const;
+
+  /** \brief Read the local verbosity level parameter. */
+  Teuchos::EVerbosityLevel readLocalVerbosityLevelValidatedParameter(
+    ParameterList &paramList 
+    ) const;
+
 private:
 
   Teuchos::ConstNonconstObjectContainer<ModelEvaluator<Scalar> > model_;
+
+  static
+  RCP<
+    Teuchos::StringToIntegralParameterEntryValidator<
+      Teuchos::EVerbosityLevel
+      >
+    > LocalVerbosityLevel_validator_;
+  static const std::string LocalVerbosityLevel_name_;
+  static const Teuchos::EVerbosityLevel LocalVerbosityLevel_enum_default_;
+  static const std::string LocalVerbosityLevel_default_;
   
 };
 
 
-#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(CLASS_NAME,INARGS,OUTARGS,UNDERLYINGMODEL) \
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_LOCALVERBLEVEL_BEGIN(CLASS_NAME,INARGS,OUTARGS,UNDERLYINGMODEL,LOCALVERBLEVEL) \
   \
-  const std::string _classNameStr \
+  using Teuchos::includesVerbLevel; \
+  using Teuchos::RCP; \
+  using Teuchos::EVerbosityLevel; \
+  const std::string blahblah_classNameStr \
     = std::string(CLASS_NAME)+"<"+Teuchos::ScalarTraits<Scalar>::name()+">"; \
-  const std::string _classFuncNameStr \
-    = _classNameStr+"::evalModel(...)"; \
-  TEUCHOS_FUNC_TIME_MONITOR(_classFuncNameStr); \
+  const std::string blahblah_classFuncNameStr \
+    = blahblah_classNameStr+"::evalModel(...)"; \
+  TEUCHOS_FUNC_TIME_MONITOR(blahblah_classFuncNameStr); \
   \
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &blahblah_outArgs = (OUTARGS); \
   \
   Teuchos::Time totalTimer(""); \
   totalTimer.start(true); \
   \
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream(); \
-  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel(); \
+  const RCP<Teuchos::FancyOStream> out = this->getOStream(); \
+  const EVerbosityLevel verbLevel = this->getVerbLevel(); \
+  const EVerbosityLevel localVerbLevelInput = (LOCALVERBLEVEL); \
+  const EVerbosityLevel localVerbLevel = \
+    ( localVerbLevelInput==Teuchos::VERB_DEFAULT ? verbLevel : localVerbLevelInput ); \
   Teuchos::OSTab tab(out); \
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) \
-    *out << "\nEntering " << _classFuncNameStr << " ...\n"; \
+  if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW)) \
+    *out << "\nEntering " << blahblah_classFuncNameStr << " ...\n"; \
   \
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME)) \
+  if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_MEDIUM)) \
     *out \
-      << "\ninArgs =\n" << Teuchos::describe((INARGS),verbLevel) \
+      << "\ninArgs =\n" << Teuchos::describe((INARGS),localVerbLevel) \
       << "\noutArgs on input =\n" << Teuchos::describe((OUTARGS),Teuchos::VERB_LOW); \
   \
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > \
+  const RCP<const Thyra::ModelEvaluator<Scalar> > \
     thyraModel = (UNDERLYINGMODEL); \
   \
   typedef Teuchos::VerboseObjectTempState<Thyra::ModelEvaluatorBase> VOTSME; \
   VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel)
+
+
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_LOCALVERBLEVEL_BEGIN(CLASS_NAME,INARGS,OUTARGS,LOCALVERBLEVEL) \
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_LOCALVERBLEVEL_BEGIN(CLASS_NAME,INARGS,OUTARGS,this->getUnderlyingModel(),LOCALVERBLEVEL)
+
+
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(CLASS_NAME,INARGS,OUTARGS,UNDERLYINGMODEL) \
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_LOCALVERBLEVEL_BEGIN(CLASS_NAME,INARGS,OUTARGS,UNDERLYINGMODEL,Teuchos::VERB_DEFAULT)
 
 
 #define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(CLASS_NAME,INARGS,OUTARGS) \
@@ -196,19 +233,49 @@ private:
 
 
 #define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END() \
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME)) \
+  if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_MEDIUM)) \
     *out \
-      << "\noutArgs on output =\n" << Teuchos::describe(blahblah_outArgs,verbLevel); \
+      << "\noutArgs on output =\n" << Teuchos::describe(blahblah_outArgs,localVerbLevel); \
   \
   totalTimer.stop(); \
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) \
+  if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW)) \
     *out \
       << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n" \
-      << "\nLeaving " << _classFuncNameStr << " ...\n"
+      << "\nLeaving " << blahblah_classFuncNameStr << " ...\n"
 
 
 // /////////////////////////////////
 // Implementations
+
+
+// Static class data members
+
+
+template<class Scalar>
+RCP<
+  Teuchos::StringToIntegralParameterEntryValidator<
+  Teuchos::EVerbosityLevel
+  >
+>
+ModelEvaluatorDelegatorBase<Scalar>::LocalVerbosityLevel_validator_;
+
+template<class Scalar>
+const std::string
+ModelEvaluatorDelegatorBase<Scalar>::LocalVerbosityLevel_name_
+= "Local Verbosity Level";
+
+template<class Scalar>
+const Teuchos::EVerbosityLevel
+ModelEvaluatorDelegatorBase<Scalar>::LocalVerbosityLevel_enum_default_
+= Teuchos::VERB_DEFAULT;
+
+template<class Scalar>
+const std::string
+ModelEvaluatorDelegatorBase<Scalar>::LocalVerbosityLevel_default_
+= getVerbosityLevelParameterValueName(
+  ModelEvaluatorDelegatorBase<Scalar>::LocalVerbosityLevel_enum_default_
+  );
+
 
 // Constructors/initializers
 
@@ -218,7 +285,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase()
 
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
+  const RCP<ModelEvaluator<Scalar> >   &model
   )
 {
   this->initialize(model);
@@ -226,7 +293,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
 
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
+  const RCP<const ModelEvaluator<Scalar> >   &model
   )
 {
   this->initialize(model);
@@ -234,7 +301,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
 
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::initialize(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
+  const RCP<ModelEvaluator<Scalar> >   &model
   )
 {
   model_.initialize(model);
@@ -242,7 +309,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::initialize(
 
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::initialize(
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
+  const RCP<const ModelEvaluator<Scalar> >   &model
   )
 {
   model_.initialize(model);
@@ -263,14 +330,14 @@ bool ModelEvaluatorDelegatorBase<Scalar>::isUnderlyingModelConst() const
 }
 
 template<class Scalar>
-Teuchos::RCP<ModelEvaluator<Scalar> >
+RCP<ModelEvaluator<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::getNonconstUnderlyingModel()
 {
   return model_.getNonconstObj();
 }
 
 template<class Scalar>
-Teuchos::RCP<const ModelEvaluator<Scalar> >
+RCP<const ModelEvaluator<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::getUnderlyingModel() const
 {
   return model_.getConstObj();
@@ -291,35 +358,35 @@ int ModelEvaluatorDelegatorBase<Scalar>::Ng() const
 }
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_x_space() const
 {
   return getUnderlyingModel()->get_x_space();
 }
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_f_space() const
 {
   return getUnderlyingModel()->get_f_space();
 }
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_p_space(int l) const
 {
   return getUnderlyingModel()->get_p_space(l);
 }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Array<std::string> >
+RCP<const Teuchos::Array<std::string> >
 ModelEvaluatorDelegatorBase<Scalar>::get_p_names(int l) const
 {
   return getUnderlyingModel()->get_p_names(l);
 }
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_g_space(int j) const
 {
   return getUnderlyingModel()->get_g_space(j);
@@ -347,35 +414,35 @@ ModelEvaluatorDelegatorBase<Scalar>::getUpperBounds() const
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
+RCP<LinearOpWithSolveBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W() const
 {
   return getUnderlyingModel()->create_W();
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W_op() const
 {
   return getUnderlyingModel()->create_W_op();
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_DfDp_op(int l) const
 {
   return getUnderlyingModel()->create_DfDp_op(l);
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_DgDx_op(int j) const
 {
   return getUnderlyingModel()->create_DgDx_op(j);
 }
 
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_DgDp_op( int j, int l ) const
 {
   return getUnderlyingModel()->create_DgDp_op(j,l);
@@ -407,6 +474,43 @@ void ModelEvaluatorDelegatorBase<Scalar>::reportFinalPoint(
 {
   getNonconstUnderlyingModel()->reportFinalPoint(finalPoint,wasSolved);
 }
+
+
+// protected
+
+
+template<class Scalar>
+void ModelEvaluatorDelegatorBase<Scalar>::setLocalVerbosityLevelValidatedParameter(
+    ParameterList *paramList
+    ) const
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  if (is_null(LocalVerbosityLevel_validator_))
+    LocalVerbosityLevel_validator_ =
+      Teuchos::verbosityLevelParameterEntryValidator(
+        LocalVerbosityLevel_name_
+        );
+  paramList->set(
+    LocalVerbosityLevel_name_, LocalVerbosityLevel_default_,
+    "Overriding verbosity level for this model evaluator object.\n"
+    "This level will not propagate to nested model evaluator objects\n"
+    "The value of \"default\" result in the object verbosity level being\n"
+    "used instead.",
+    LocalVerbosityLevel_validator_
+    );
+}
+
+
+template<class Scalar>
+Teuchos::EVerbosityLevel
+ModelEvaluatorDelegatorBase<Scalar>::readLocalVerbosityLevelValidatedParameter(
+  ParameterList &paramList 
+  ) const
+{
+  return LocalVerbosityLevel_validator_->getIntegralValue(
+    paramList, LocalVerbosityLevel_name_, LocalVerbosityLevel_default_ );
+}
+
 
 } // namespace Thyra
 

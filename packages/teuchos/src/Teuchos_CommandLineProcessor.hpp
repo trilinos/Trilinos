@@ -590,7 +590,7 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
       str = "double";
       break;
     case OPT_STRING:
-      str = "std::string";
+      str = "string";
       break;
     case OPT_ENUM_INT:
       str = "enum";

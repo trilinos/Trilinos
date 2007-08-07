@@ -95,3 +95,6 @@ common_ldadd = $(EXPORT_LIBS)
 
 # This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
 LIBS =
+
+# Other files to add to the tarball
+EXTRA_DIST = compare-thyra-spmd-multivector-files.py
