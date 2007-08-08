@@ -767,7 +767,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   ML_Set_PrintLevel(OutputLevel);
 
   verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
-
+  
   if( verbose_ ) 
     ML_print_line("-",78);
   
@@ -917,8 +917,10 @@ agg_->keep_P_tentative = 1;
     const Epetra_MpiComm* C2 = dynamic_cast<const Epetra_MpiComm*>(&Comm());
     ml_->comm->USR_comm = C2->Comm();
 #endif
-
     ml_->output_level = OutputLevel;
+
+    
+    
 
 #ifdef HAVE_ML_EPETRAEXT
     RowMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,RowMatrixColMapTrans_,
@@ -1112,6 +1114,8 @@ agg_->keep_P_tentative = 1;
       Direction = ML_DECREASING;
     ML_Set_LevelID(ml_,Direction);
 
+    ml_->output_level = OutputLevel;
+    
     // if curl-curl and mass matrix were given separately, add them
     if (CurlCurlMatrix_) {
 #ifdef HAVE_ML_EPETRAEXT
