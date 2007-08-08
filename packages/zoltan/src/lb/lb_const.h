@@ -16,6 +16,7 @@
 #define __LB_CONST_H
 
 #include "zoltan.h"
+#include "zoltan_dd.h"
 #include "params_const.h"
 
 #ifdef __cplusplus
@@ -48,6 +49,8 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
                                     double, double, double,
                                     double, double, double,
                                     int*, int*, int *, int *);
+  /* 2d partitioning */
+typedef int ZOLTAN_LB_PART2D_FN(struct Zoltan_Struct *);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -69,7 +72,6 @@ typedef enum Zoltan_LB_Method {
   HIER,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
-
 
 /*
  * Values indicating which lists (import, export, export including
@@ -182,6 +184,10 @@ struct Zoltan_LB_Struct {
                                   /*  Pointer to the function that performs
                                       Box_Assign; this ptr is set based on 
                                       the method used.                       */
+  ZOLTAN_LB_PART2D_FN *Part2d_Fn; /*  Pointer to the function that performs
+                                      2d partitioning.                       */
+  Zoltan_DD_Directory *RowColDir; /* 2d: Directory of rows and columns. */
+  Zoltan_DD_Directory *NzDir;     /* 2d: Directory of nonzeros. */
 };
 
 struct Zoltan_Migrate_Struct {
@@ -282,6 +288,9 @@ extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 extern ZOLTAN_LB_FN Zoltan_PHG;
 extern ZOLTAN_LB_FN Zoltan_Hier;
+
+extern ZOLTAN_LB_PART2D_FN Zoltan_Random2d;
+extern ZOLTAN_LB_PART2D_FN Zoltan_2d_from_1d;
 
 /* FREE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
