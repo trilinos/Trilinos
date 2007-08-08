@@ -130,7 +130,7 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
 {
  
   // Copy the xVector
-  x_vec_ = source.x_vec_;
+  *x_vec_ = *source.x_vec_;
   
   is_valid_f_ = source.is_valid_f_;
   is_valid_jacobian_ = source.is_valid_jacobian_;
