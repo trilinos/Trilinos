@@ -351,6 +351,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   B_allocated = B_total_Nnz * 2;
   B_allocated_int = Bmatrix->blocks + 1;
   B_allocated_int = B_allocated_int*2;
+  B_allocated_int =  B_total_Nnz;  //this line needs to go sometime and be replaced by those above it
   lots_of_space = 0;
 
   Bcols     = NULL; B_indx = NULL; Bvals = NULL;
@@ -1833,7 +1834,8 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        cur_data = NULL;
      }
      cur_matrix = in_matrix;
-     cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
+     if(cur_matrix->sub_matrix != NULL)
+       cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
    }
    else
    {
@@ -1943,7 +1945,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 /*   if(in_matrix->N_nonzeros <= 0)*/ 
    /*We don't have a good estimate so lets get one this code is used since 
      N_nonzeros even when set is not always correct*/
-   for(i=0; i<in_matrix->invec_leng;i++)
+   for(i=0; i<in_matrix->outvec_leng;i++)
    {  
      in_matrix->getrow->func_ptr(in_matrix, 1, &(i), A_i_allocated, A_i_cols, accum_val, &row_length);
      nnz += row_length;
@@ -1956,7 +1958,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      nnz = in_matrix->N_nonzeros;*/
 
    /*10 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
-   vals = (double *) ML_allocate(nnz*3*sizeof(double));
+   vals = (double *) ML_allocate(nnz*10*sizeof(double));
    i = 10;
    if(vals == NULL) /*if we don't have 10 times the space lets start trying smaller*/
    {
