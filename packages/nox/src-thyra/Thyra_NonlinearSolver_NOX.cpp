@@ -127,9 +127,10 @@ solve(VectorBase<double> *x,
     vec.getThyraVector();
 
   if (delta)
-    Thyra::V_StVpStV<double>(delta,1.0,new_x,-1.0,*x);
+    ::Thyra::V_StVpStV<double>(delta,1.0,new_x,-1.0,*x);
 
-  *x = new_x;
+  //*x = new_x;
+  ::Thyra::assign(x, new_x);
 
   return t_status;
 }
