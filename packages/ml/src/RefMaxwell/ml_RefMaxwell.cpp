@@ -56,7 +56,6 @@ void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx){
 
 void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
   if(A.Comm().NumProc()==1){
-    int MaxNumIndices = A.MaxNumEntries();
     int* Indices;
     double* Values; 
     int NumIndices;
@@ -363,7 +362,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(!HasOnlyDirichletNodes){
     string solver22=List_.get("refmaxwell: 22solver","multilevel");
     Teuchos::ParameterList List22=List_.get("refmaxwell: 22list",dummy);
-    SetDefaultsSA(List22,0,0,false);
+    SetDefaults("SA",List22,0,0,false);
     if(solver22=="multilevel") NodePC=new MultiLevelPreconditioner(*TMT_Matrix_,List22);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (2,2) block preconditioner\n");return -1;}
     //NTS: Add Adaptive, MatrixFree
@@ -758,7 +757,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   Teuchos::ParameterList & List11c_=List11_.sublist("edge matrix free: coarse");
 
   /* Build Teuchos List: (1,1) coarse */    
-  ML_Epetra::SetDefaultsSA(List11c);
+  ML_Epetra::SetDefaults("SA",List11c);
   List11c.set("cycle applications",1);
   List11c.set("smoother: type","Chebyshev");
   List11c.set("aggregation: threshold",.01);//CMS 
@@ -766,7 +765,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
   
   /* Build Teuchos List: (1,1) */
-  ML_Epetra::SetDefaultsSA(List11);
+  ML_Epetra::SetDefaults("SA",List11);
   List11.set("cycle applications",1);
   List11.set("aggregation: type","Uncoupled");
   List11.set("smoother: sweeps",0);
@@ -775,7 +774,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   ML_Epetra::UpdateList(List11,List11_,OverWrite);
   
   /* Build Teuchos List: (2,2) */  
-  ML_Epetra::SetDefaultsSA(List22);  
+  ML_Epetra::SetDefaults("SA",List22);  
   List22.set("cycle applications",1);
   List22.set("smoother: type","Chebyshev");
   List22.set("aggregation: type","Uncoupled");
@@ -788,7 +787,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   ML_Epetra::UpdateList(List22,List22_,OverWrite);    
   
   /* Build Teuchos List: Overall */  
-  SetDefaultsMaxwell(ListRF,false);
+  SetDefaults("maxwell",ListRF,0,0,false);
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");

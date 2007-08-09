@@ -590,7 +590,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct ML_vbrdata *input_matrix;
-   int  i, j, array_place, offset, point_rows, iminus1;
+   int  i, j, offset, point_rows, iminus1;
    int *cpntr, *bindx, *rpntr, *indx, *bpntr, startblock, endblock;
    double *val, cur_val;
   

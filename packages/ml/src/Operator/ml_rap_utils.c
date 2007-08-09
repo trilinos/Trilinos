@@ -335,10 +335,10 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
         int **values, int row_lengths[], int index)
 {
-   int    i, *mapper, *t1, row;
+   int    i, *t1, row;
+   /*int *mapper; */
    ML_Operator *next;
    int *t2;
-   struct aztec_context *context;
    struct ML_vbrdata *matrix;
    int    *rowptr, *bindx, *col_ptr, itemp, j;
    int    *val_start;

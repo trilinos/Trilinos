@@ -86,8 +86,8 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   int         *actual_send_length, *actual_recv_length, *start_send_proc;
   int         Nneighbors, *neighbor, *remap;
   int         Nrows_new, *cols_new, *rowptr_new, Nrows_send, Nrows, max_per_row;
-  int         *ibuff, total_num_recv, total_send, total_recv, *iptr;
-  double      *vals_new, *dtemp, *dbuff, *dummy1, *dptr;
+  int         *ibuff, total_num_recv, total_send, total_recv;
+  double      *vals_new, *dtemp, *dbuff, *dummy1;
   int         i, j, k, ii, jj, *newmap, *orig_map, nonNULL_rcv_list, *dummy2;
   static int  type = ML_MPI_MSG_NUM;
   struct      ML_CSR_MSRdata *temp;

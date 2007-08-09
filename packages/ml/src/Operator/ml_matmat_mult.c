@@ -58,14 +58,12 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   double *Avalues;
   double *Bvalues;
   int save_ints[6];
-  struct aztec_context *Acontext, *Bcontext;
   struct ML_vbrdata *A_VBR, *B_VBR;
   int NrowsPerBlock, NcolsPerBlock, Nghost = 0, InnerDim,iii,jjj,kkk;
   int LargestRowsPerBlock = 1, NnzPerBlock, RowOffset, RowOffsetBlocks, next_value;
   double sum, *Cvalues;
   double *tmp_val_ptr;
   int    *Ccpntr, *Crpntr, oldstart = 0;
-  struct aztec_context  *Ccontext;
   struct ML_vbrdata     *Cvbr_mat;
   int hashTableIsPowerOfTwo = 0;
   int nearbyIndex;

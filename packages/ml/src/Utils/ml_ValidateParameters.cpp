@@ -26,7 +26,13 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
   try{
   validList=GetValidMLPParameters();
   }
-  catch(...) {std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;exit(1);}
+  catch(...) {
+    std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(1);
+  }
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }
@@ -87,8 +93,11 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("smoother: sweeps",2,"Number of smoothing sweeps",PL);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL); 
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<std::string>("pre","post","both"),PL);
-  PL->set("smoother: Aztec options",(int*)0);
-  PL->set("smoother: Aztec params",(double*)0);
+
+  RCP<std::vector<int> > options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+  RCP<std::vector<double> > params = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+  PL->set("smoother: Aztec options",options);
+  PL->set("smoother: Aztec params",params);
   PL->set("smoother: Aztec as solver",false);
   setDoubleParameter("smoother: Chebyshev alpha",20.0,"Damping radius for Chebyshev",PL);
   setDoubleParameter("smoother: MLS alpha",20.0,"Damping radius for Chebyshev",PL);
@@ -186,7 +195,6 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
   setIntParameter("smoother: MLS polynomial order",2,"Unlisted option",PL);  
- 
   return PL;
 }
 
@@ -210,7 +218,13 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   try{
   validList=GetValidRefMaxwellParameters();
   }
-  catch(...) {std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;exit(1);}
+  catch(...) {
+    std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(1);
+  }
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }

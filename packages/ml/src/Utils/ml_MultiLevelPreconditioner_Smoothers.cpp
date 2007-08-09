@@ -79,11 +79,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   string Smoother = List_.get("smoother: type","Chebyshev");
 
 #ifdef HAVE_ML_AZTECOO
-  int* SmootherOptionsPtr = (int*)0;
-  SmootherOptionsPtr = List_.get("smoother: Aztec options",SmootherOptionsPtr);
-
-  double* SmootherParamsPtr = (double*)0;
-  SmootherParamsPtr = List_.get("smoother: Aztec params",SmootherParamsPtr);
+  RCP<std::vector<int> > rcpOptions = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+  RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",rcpOptions);
+  RCP<std::vector<double> > rcpParams = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+  RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",rcpParams);
+  int* SmootherOptionsPtr = &(*aztecOptions)[0];
+  double* SmootherParamsPtr = &(*aztecParams)[0];
 
   bool AztecSmootherAsASolver = List_.get("smoother: Aztec as solver",false);
   int aztec_its;
@@ -423,7 +424,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ======= //
       // AztecOO //
       // ======= //
-      
+
+      // These should remain int* and double*, rather than Teuchos::RCP's.
+      // The user created the options & params arrays, so he is responsible for
+      // freeing them.
       sprintf(parameter,"smoother: Aztec options (level %d)", LevelID_[level]);
       int* MySmootherOptionsPtr = List_.get(parameter, SmootherOptionsPtr);
       sprintf(parameter,"smoother: Aztec params (level %d)", LevelID_[level]);

@@ -3,9 +3,7 @@
  *
  *  \brief ML black-box defaults for Epetra_RowMatrix derived classes.
  *
- *  \author Marzio Sala, SNL, 9214
- *
- *  \date Last update do Doxygen: 22-Jul-04
+ *  \authors Marzio Sala, Ray Tuminaro, Jonathan Hu, Chris Siefert, Michael Gee
  *
  */
 
@@ -49,21 +47,26 @@ using namespace ML_Epetra;
 // ============================================================================
 
 int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, 
-			   int * options, double * params, const bool OverWrite)
+			   int * ioptions, double * iparams, const bool OverWrite)
 {
-  
-  // allocate some memory if the user is not passing the vectors.
-  // This is cute, but it may cause memory leaks.
+  RCP<std::vector<int> >    options;
+  RCP<std::vector<double> > params;
 
 #ifdef HAVE_ML_AZTECOO
   bool SetDefaults = false;
-  if (options == NULL || params == NULL)
+  if (ioptions == NULL || iparams == NULL)
     SetDefaults = true;
 
-  if (options == NULL) options = new int[AZ_OPTIONS_SIZE];
-  if (params  == NULL) params  = new double[AZ_PARAMS_SIZE];
+  if (ioptions == NULL)
+    options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+  else
+    options = rcp(new std::vector<int>(ioptions,ioptions+AZ_OPTIONS_SIZE+1));
+  if (iparams  == NULL)
+    params  = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+  else
+    params = rcp(new std::vector<double>(iparams,iparams+AZ_PARAMS_SIZE+1));
   if (SetDefaults)
-    AZ_defaults(options,params);
+    AZ_defaults(&(*options)[0],&(*params)[0]);
 #endif
 
   if( ProblemType == "SA" ) {
@@ -73,8 +76,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
     ML_CHK_ERR( ML_Epetra::SetDefaultsDD(List, options, params, OverWrite ) );
   }
   else if( ProblemType == "DD-ML" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels(List, options,
-                params,OverWrite) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels(List, options, params,OverWrite) );
   }
   else if( ProblemType == "maxwell" || ProblemType == "Maxwell" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsMaxwell(List, options, params,OverWrite));
@@ -83,8 +85,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
     ML_CHK_ERR( ML_Epetra::SetDefaultsNSSA(List, options, params, OverWrite) );
   }
   else if( ProblemType == "DD-ML-LU" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels_LU(List, options, params,
-                OverWrite ) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels_LU(List, options, params, OverWrite ) );
   }
   else if( ProblemType == "DD-LU" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsDD_LU(List, options, params, OverWrite ));
@@ -101,7 +102,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
 }
 
 // ============================================================================
-/*! Set default values for classical smoothed aggregation:
+/*! Set default values for classical smoothed aggregation.
   - \c "default values" \c = \c "SA"
    - General
         - \c "max levels" \c = \c 10
@@ -120,9 +121,13 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
    - Coarse Solution
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("SA",...) should be used.
  */
 int ML_Epetra::SetDefaultsSA(ParameterList & inList, 
-			     int * options, double * params, bool OverWrite)
+                 Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -174,9 +179,13 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
    - Coarse Solution
         - \c "coarse: type" = Amesos-KLU"
         - \c "coarse: max size" = 128
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD",...) should be used.
  */
 int ML_Epetra::SetDefaultsDD(ParameterList & inList, 
-			     int * options, double * params, bool OverWrite) 
+                 Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -195,8 +204,8 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
   List.set("smoother: pre or post","both");
 #ifdef HAVE_ML_AZTECOO
   List.set("smoother: type","Aztec");
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_ilu;
+  (*options)[AZ_precond] = AZ_dom_decomp;
+  (*options)[AZ_subdomain_solve] = AZ_ilu;
   List.set("smoother: Aztec options",options);
   List.set("smoother: Aztec params",params);
   List.set("smoother: Aztec as solver",false);
@@ -237,9 +246,13 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
    - Coarse Solution
         - \c "coarse: type" = "Amesos-KLU"
         - \c "coarse: max size" = 128
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD-ML",...) should be used.
  */
 int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList, 
-				     int * options, double * params, bool OverWrite)
+                 Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -260,8 +273,8 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
   List.set("smoother: pre or post","both");
 #ifdef HAVE_ML_AZTECOO
   List.set("smoother: type","Aztec");
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_ilu;
+  (*options)[AZ_precond] = AZ_dom_decomp;
+  (*options)[AZ_subdomain_solve] = AZ_ilu;
   List.set("smoother: Aztec options",options);
   List.set("smoother: Aztec params",params);
   List.set("smoother: Aztec as solver",false);
@@ -304,9 +317,13 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
    - Coarse Solution
        - \c "coarse: type" \c = \c "Amesos-KLU"
        - \c "coarse: max size" \c = \c 128
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("maxwell",...) should be used.
  */
 int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList, 
-			  int * options, double * params, bool OverWrite)
+                 Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -364,9 +381,13 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
    - Coarse Solution
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 256
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("NSSA",...) should be used.
  */
 int ML_Epetra::SetDefaultsNSSA(ParameterList & inList, 
-			     int * options, double * params, bool OverWrite)
+                 Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -419,9 +440,13 @@ int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
    - Coarse Solution
         - \c "coarse: type" = Amesos-KLU"
         - \c "coarse: max size" = 128
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD-LU",...) should be used.
  */
 int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList, 
-				int * options, double * params, bool OverWrite) 
+                 Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -441,8 +466,8 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
 
 #ifdef HAVE_ML_AZTECOO
   List.set("smoother: type","Aztec");
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_lu;
+  (*options)[AZ_precond] = AZ_dom_decomp;
+  (*options)[AZ_subdomain_solve] = AZ_lu;
   List.set("smoother: Aztec options",options);
   List.set("smoother: Aztec params",params);
   List.set("smoother: Aztec as solver",false);
@@ -485,9 +510,13 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
    - Coarse Solution
         - \c "coarse: type" = "Amesos-KLU"
         - \c "coarse: max size" = 128
+    Note: This method should not be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD-ML-LU",...) should be used.
  */
 int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList, 
-					int * options, double * params, bool OverWrite)
+			     Teuchos::RCP<std::vector<int> > &options,
+                 Teuchos::RCP<std::vector<double> > &params,
+                 bool OverWrite)
 {
   ParameterList List;
 
@@ -505,8 +534,8 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
   List.set("smoother: pre or post","both");
 #ifdef HAVE_ML_AZTECOO
   List.set("smoother: type","Aztec");
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_lu;
+  (*options)[AZ_precond] = AZ_dom_decomp;
+  (*options)[AZ_subdomain_solve] = AZ_lu;
   List.set("smoother: Aztec options",options);
   List.set("smoother: Aztec params",params);
   List.set("smoother: Aztec as solver",false);

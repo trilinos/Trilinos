@@ -699,6 +699,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   {
     if (Comm_->MyPID() == 0)
       std::cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<std::endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
     exit(1);
   }
 
