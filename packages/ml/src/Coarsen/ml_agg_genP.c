@@ -2692,6 +2692,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Operator *Amat;
    ML_Aggregate *ag = (ML_Aggregate *) data;
    struct ML_Field_Of_Values * fov;
+   int flag=0; /* For the return value */
 #if defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
    double dtemp, dtemp2, eta;
 #endif
@@ -2902,12 +2903,12 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    switch (ag->minimizing_energy) {
    case -1:
    case 0:
-     ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
+     flag=ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
      break;
    case 1: /* Z_1 */
    case 2: /* Z_2 */
    case 3: /* Z_1 */
-     ML_AGG_Gen_Prolongator_MinEnergy(ml,level,clevel,data);   
+     flag=ML_AGG_Gen_Prolongator_MinEnergy(ml,level,clevel,data);   
      break;
    default:
      printf("Value of ag->minimizing_energy not correct (%d)\n"
@@ -2918,7 +2919,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      exit(EXIT_FAILURE);
    }
    
-   return 0;
+   return flag;
 }
 
 /* ************************************************************************* */
