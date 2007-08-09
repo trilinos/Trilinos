@@ -15,7 +15,8 @@
     DIRS = lapack/NOX,
            lapack/NOX_Group,
            lapack/NOX_NewTest,
-           lapack/StatusTests;
+           lapack/StatusTests,
+           lapack/UserDefinedObjects;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
     COMM = SERIAL, MPI(1);

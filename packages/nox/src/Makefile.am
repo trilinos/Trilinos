@@ -143,30 +143,34 @@ ABSTRACT = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
+	$(srcdir)/NOX_LineSearch_Factory.H \
+	$(srcdir)/NOX_LineSearch_UserDefinedFactory.H \
+	$(srcdir)/NOX_LineSearch_UserDefinedFactoryT.H \
 	$(srcdir)/NOX_LineSearch_Utils_Slope.H \
 	$(srcdir)/NOX_LineSearch_Utils_Printing.H \
 	$(srcdir)/NOX_LineSearch_Utils_Counters.H \
 	$(srcdir)/NOX_LineSearch_FullStep.H \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
-	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 LINESEARCH = \
+	$(srcdir)/NOX_LineSearch_Factory.C \
 	$(srcdir)/NOX_LineSearch_Utils_Slope.C \
 	$(srcdir)/NOX_LineSearch_Utils_Printing.C \
 	$(srcdir)/NOX_LineSearch_Utils_Counters.C \
 	$(srcdir)/NOX_LineSearch_FullStep.C \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
-	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
-	$(srcdir)/NOX_Direction_Manager.H \
+	$(srcdir)/NOX_Direction_Factory.H \
+	$(srcdir)/NOX_Direction_UserDefinedFactory.H \
+	$(srcdir)/NOX_Direction_UserDefinedFactoryT.H \
 	$(srcdir)/NOX_Direction_Newton.H \
 	$(srcdir)/NOX_Direction_Broyden.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
@@ -174,8 +178,8 @@ DIRECTION_H = \
         $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 DIRECTION = \
-	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
+	$(srcdir)/NOX_Direction_Factory.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_Broyden.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \

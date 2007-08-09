@@ -52,6 +52,8 @@ endif
 StatusTests_SOURCES = \
 			$(srcdir)/StatusTests.C
 
-StatusTests_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+StatusTests_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+			$(top_builddir)/src-lapack/libnoxlapack.a \
+			$(top_builddir)/test/utils/libnoxtestutils.a
 
 StatusTests_LDADD = $(TEST_LIBS)

@@ -49,6 +49,8 @@
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_Solver_PrePostOperator.H"
 #include "NOX_Solver_SolverUtils.H"
+#include "NOX_Direction_Generic.H"
+#include "NOX_Direction_Factory.H"
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -73,8 +75,6 @@ InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   testPtr(t),			// pointer to t
   paramsPtr(p),			// copy p
   inNewtonUtils(globalDataPtr, paramsPtr->sublist("Direction")),
-  newton(globalDataPtr),		// initialize direction
-  cauchy(globalDataPtr),		// initialize direction
   radius(0.0),
   meritFuncPtr(globalDataPtr->getMeritFunction()),
   useCauchyInNewtonDirection(false),
@@ -146,8 +146,10 @@ void NOX::Solver::InexactTrustRegionBased::init()
   paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent")
     .get("Scaling Type", "Quadratic Model Min");
 
-  newton.reset(globalDataPtr, paramsPtr->sublist("Direction"));
-  cauchy.reset(globalDataPtr, paramsPtr->sublist("Cauchy Direction"));
+  newtonPtr = NOX::Direction::
+    buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
+  cauchyPtr = NOX::Direction::
+    buildDirection(globalDataPtr, paramsPtr->sublist("Cauchy Direction"));
   inNewtonUtils.reset(globalDataPtr, paramsPtr->sublist("Direction"));
 
   minRadius = paramsPtr->sublist("Trust Region")
@@ -371,7 +373,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
 
   // Compute Cauchy and Newton points
   bool ok;
-  ok = newton.compute(*newtonVecPtr, soln, *this);
+  ok = newtonPtr->compute(*newtonVecPtr, soln, *this);
   if (!ok) 
   {
     utils->out() << "NOX::Solver::InexactTrustRegionBased::iterate - "
@@ -380,7 +382,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     return status;
   }
 
-  ok = cauchy.compute(*cauchyVecPtr, soln, *this);
+  ok = cauchyPtr->compute(*cauchyVecPtr, soln, *this);
   if (!ok) 
   {
     utils->out() << "NOX::Solver::InexactTrustRegionBased::iterate - "
@@ -685,7 +687,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   oldSoln = soln;
 
   // Compute Cauchy direction
-  bool ok = cauchy.compute(cauchyVec, oldSoln, *this);
+  bool ok = cauchyPtr->compute(cauchyVec, oldSoln, *this);
   if (!ok) {
     utils->out() << "NOX::Solver::InexactTrustRegionBased::iterate - "
 	 << "unable to calculate Cauchy direction" << endl;

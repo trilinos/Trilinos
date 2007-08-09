@@ -929,6 +929,7 @@ AC_CONFIG_FILES([
                 test/lapack/Makefile
 		test/lapack/NOX/Makefile
 		test/lapack/StatusTests/Makefile
+		test/lapack/UserDefinedObjects/Makefile
                 test/lapack/NOX_NewTest/Makefile
                 test/lapack/NOX_Group/Makefile
 		test/lapack/LOCA_TestProblems/Makefile

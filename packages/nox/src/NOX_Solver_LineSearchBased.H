@@ -43,8 +43,6 @@
 #define NOX_SOLVER_LINESEARCHBASED_H
 
 #include "NOX_Solver_Generic.H"	         // base class
-#include "NOX_LineSearch_Manager.H"      // class data element
-#include "NOX_Direction_Manager.H"       // class data element
 #include "NOX_Solver_PrePostOperator.H"  // class data element
 #include "Teuchos_ParameterList.hpp"	         // class data element
 #include "NOX_Utils.H"		         // class data element
@@ -53,6 +51,12 @@
 // Forward declarations
 namespace NOX {
   class GlobalData;
+  namespace LineSearch {
+    class Generic;
+  }
+  namespace Direction {
+    class Generic;
+  }
 }
 
 namespace NOX {
@@ -171,10 +175,10 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
   //! Linesearch. 
-  NOX::LineSearch::Manager lineSearch; 
+  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr; 
 
   //! %Search %Direction. 
-  NOX::Direction::Manager direction; 
+  Teuchos::RCP<NOX::Direction::Generic> directionPtr; 
 
   //! Current step.
   double stepSize;			

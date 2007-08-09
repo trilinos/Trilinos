@@ -43,15 +43,17 @@
 #define NOX_SOLVER_TRUSTREGIONBASED_H
 
 #include "NOX_Solver_Generic.H"	        // base class
-#include "NOX_LineSearch_Manager.H"     // class data element
-#include "NOX_Direction_Manager.H"      // class data element
-#include "Teuchos_ParameterList.hpp"	        // class data element
+#include "Teuchos_ParameterList.hpp"	// class data element
 #include "NOX_Utils.H"	                // class data element
 #include "NOX_Solver_PrePostOperator.H" // class data element
 
 // Forward declaration
 namespace NOX {
+  class GlobalData;
   namespace MeritFunction {
+    class Generic;
+  }
+  namespace Direction {
     class Generic;
   }
 }
@@ -318,10 +320,10 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
   //! %Newton %Search %Direction. 
-  NOX::Direction::Manager newton; 
+  Teuchos::RCP<NOX::Direction::Generic> newtonPtr; 
 
   //! Cauchy %Search %Direction. 
-  NOX::Direction::Manager cauchy; 
+  Teuchos::RCP<NOX::Direction::Generic> cauchyPtr; 
 
   //! Radius of the trust region
   double radius;

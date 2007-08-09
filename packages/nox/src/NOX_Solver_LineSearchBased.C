@@ -47,6 +47,10 @@
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Solver_SolverUtils.H"
+#include "NOX_LineSearch_Generic.H"
+#include "NOX_LineSearch_Factory.H"
+#include "NOX_Direction_Generic.H"
+#include "NOX_Direction_Factory.H"
 
 NOX::Solver::LineSearchBased::
 LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
@@ -57,10 +61,8 @@ LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   solnPtr(xGrp),		                       // pointer to xGrp
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
   dirPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
-  testPtr(t),		
-  paramsPtr(p),		               
-  lineSearch(globalDataPtr, paramsPtr->sublist("Line Search")), 
-  direction(globalDataPtr, paramsPtr->sublist("Direction")),   
+  testPtr(t),	
+  paramsPtr(p),   
   prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
 {
   init();
@@ -74,6 +76,12 @@ void NOX::Solver::LineSearchBased::init()
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
+
+  lineSearchPtr = NOX::LineSearch::
+    buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));
+
+  directionPtr = NOX::Direction::
+    buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) 
@@ -153,7 +161,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 
   // Compute the direction for the update vector at the current solution.
   bool ok;
-  ok = direction.compute(*dirPtr, soln, *this);
+  ok = directionPtr->compute(*dirPtr, soln, *this);
   if (!ok) 
   {
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
@@ -169,7 +177,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   *oldSolnPtr = *solnPtr;
 
   // Do line search and compute new soln.
-  ok = lineSearch.compute(soln, stepSize, *dirPtr, *this);
+  ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
   if (!ok) 
   {
     if (stepSize == 0.0) 

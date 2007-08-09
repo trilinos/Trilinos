@@ -44,8 +44,6 @@
 
 #include "NOX_Solver_Generic.H"	    // base class
 #include "NOX_Solver_PrePostOperator.H"  // class data member
-#include "NOX_LineSearch_Manager.H" // class data element
-#include "NOX_Direction_Manager.H"  // class data element
 #include "Teuchos_ParameterList.hpp"	    // class data element
 #include "NOX_Utils.H"	            // class data element
 #include "Teuchos_RCP.hpp"  // class data element
@@ -57,6 +55,11 @@
 
 
 namespace NOX {
+
+  namespace Direction {
+    class Generic;
+  }
+
 namespace Solver {
 
 /*! 
@@ -100,7 +103,7 @@ namespace Solver {
   <ul>
 
   <li> "Direction" - Sublist of the direction parameters, passed to
-       the NOX::Direction::Manager constructor. Defaults to an empty
+       the NOX::Direction::Factory constructor. Defaults to an empty
        list.
 
        <ul>

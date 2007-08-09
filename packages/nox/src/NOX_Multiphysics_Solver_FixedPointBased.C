@@ -42,6 +42,10 @@
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
+#include "NOX_LineSearch_Generic.H"
+#include "NOX_LineSearch_Factory.H"
+#include "NOX_Direction_Generic.H"
+#include "NOX_Direction_Factory.H"
 
 NOX::Multiphysics::Solver::FixedPointBased::
 FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
@@ -55,9 +59,7 @@ FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > 
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr( Teuchos::rcp(new Group(solvers, t, p)) ),
   testPtr(t),		
-  paramsPtr(p),		               
-  lineSearch(globalDataPtr, paramsPtr->sublist("Line Search")), 
-  direction(globalDataPtr, paramsPtr->sublist("Direction")),   
+  paramsPtr(p),		                  
   prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
 {
   init();
@@ -72,6 +74,10 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
   stepSize = 0.0;
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
+  
+  lineSearchPtr = NOX::LineSearch::buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));
+
+  directionPtr = NOX::Direction::buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
 
   // Get the checktype
   //   Python interface can't create enumerated types in a python
@@ -125,8 +131,8 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
   testPtr = t;
   paramsPtr = p;		
   utilsPtr = globalDataPtr->getUtils();
-  lineSearch.reset(globalDataPtr, paramsPtr->sublist("Line Search"));	
-  direction.reset(globalDataPtr, paramsPtr->sublist("Direction"));
+  lineSearchPtr = NOX::LineSearch::buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));	
+  directionPtr = NOX::Direction::buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
   prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
 
   init();

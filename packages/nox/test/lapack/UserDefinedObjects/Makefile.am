@@ -30,5 +30,31 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = NOX_NewTest NOX_Group NOX StatusTests UserDefinedObjects \
-          LOCA_TestProblems LOCA_UnitTests LOCA_ChanProblem
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
+EXEEXT = .exe
+
+if BUILD_LAPACK_TESTS
+noinst_PROGRAMS = UserDefinedObjects
+endif
+
+UserDefinedObjects_SOURCES = \
+			$(srcdir)/UserDefinedObjects.C
+
+UserDefinedObjects_DEPENDENCIES = \
+			$(top_builddir)/src/libnox.a \
+			$(top_builddir)/src-lapack/libnoxlapack.a \
+			$(top_builddir)/test/utils/libnoxtestutils.a
+
+UserDefinedObjects_LDADD = $(TEST_LIBS)

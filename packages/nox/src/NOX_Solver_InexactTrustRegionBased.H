@@ -44,9 +44,7 @@
 
 #include "NOX_Solver_Generic.H"	    // base class
 
-// Class data elements
-#include "NOX_LineSearch_Manager.H" 
-#include "NOX_Direction_Manager.H"  
+// Class data elements 
 #include "Teuchos_ParameterList.hpp"	    
 #include "NOX_Direction_Utils_InexactNewton.H" 
 #include "NOX_Solver_PrePostOperator.H"
@@ -57,6 +55,9 @@ namespace NOX {
   class Utils;
   class GlobalData;
   namespace MeritFunction {
+    class Generic;
+  }
+  namespace Direction {
     class Generic;
   }
 }
@@ -398,10 +399,10 @@ protected:
   NOX::Direction::Utils::InexactNewton inNewtonUtils;
 
   //! %Newton %Search %Direction. 
-  NOX::Direction::Manager newton; 
+  Teuchos::RCP<NOX::Direction::Generic> newtonPtr; 
 
   //! Cauchy %Search %Direction. 
-  NOX::Direction::Manager cauchy; 
+  Teuchos::RCP<NOX::Direction::Generic> cauchyPtr; 
 
   //! Radius of the trust region
   double radius;

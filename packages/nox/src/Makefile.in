@@ -115,17 +115,17 @@ am__DEPENDENCIES_1 =
 libnox_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = libnox_a-NOX_Abstract_Vector.$(OBJEXT) \
 	libnox_a-NOX_Abstract_Group.$(OBJEXT)
-am__objects_2 = libnox_a-NOX_LineSearch_Utils_Slope.$(OBJEXT) \
+am__objects_2 = libnox_a-NOX_LineSearch_Factory.$(OBJEXT) \
+	libnox_a-NOX_LineSearch_Utils_Slope.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_Utils_Printing.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_Utils_Counters.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_FullStep.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_Backtrack.$(OBJEXT) \
-	libnox_a-NOX_LineSearch_Manager.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_MoreThuente.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_NonlinearCG.$(OBJEXT) \
 	libnox_a-NOX_LineSearch_Polynomial.$(OBJEXT)
-am__objects_3 = libnox_a-NOX_Direction_Manager.$(OBJEXT) \
-	libnox_a-NOX_Direction_Generic.$(OBJEXT) \
+am__objects_3 = libnox_a-NOX_Direction_Generic.$(OBJEXT) \
+	libnox_a-NOX_Direction_Factory.$(OBJEXT) \
 	libnox_a-NOX_Direction_Newton.$(OBJEXT) \
 	libnox_a-NOX_Direction_Broyden.$(OBJEXT) \
 	libnox_a-NOX_Direction_NonlinearCG.$(OBJEXT) \
@@ -418,30 +418,34 @@ ABSTRACT = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
+	$(srcdir)/NOX_LineSearch_Factory.H \
+	$(srcdir)/NOX_LineSearch_UserDefinedFactory.H \
+	$(srcdir)/NOX_LineSearch_UserDefinedFactoryT.H \
 	$(srcdir)/NOX_LineSearch_Utils_Slope.H \
 	$(srcdir)/NOX_LineSearch_Utils_Printing.H \
 	$(srcdir)/NOX_LineSearch_Utils_Counters.H \
 	$(srcdir)/NOX_LineSearch_FullStep.H \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
-	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 LINESEARCH = \
+	$(srcdir)/NOX_LineSearch_Factory.C \
 	$(srcdir)/NOX_LineSearch_Utils_Slope.C \
 	$(srcdir)/NOX_LineSearch_Utils_Printing.C \
 	$(srcdir)/NOX_LineSearch_Utils_Counters.C \
 	$(srcdir)/NOX_LineSearch_FullStep.C \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
-	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
 	$(srcdir)/NOX_LineSearch_NonlinearCG.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
-	$(srcdir)/NOX_Direction_Manager.H \
+	$(srcdir)/NOX_Direction_Factory.H \
+	$(srcdir)/NOX_Direction_UserDefinedFactory.H \
+	$(srcdir)/NOX_Direction_UserDefinedFactoryT.H \
 	$(srcdir)/NOX_Direction_Newton.H \
 	$(srcdir)/NOX_Direction_Broyden.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
@@ -449,8 +453,8 @@ DIRECTION_H = \
         $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 DIRECTION = \
-	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
+	$(srcdir)/NOX_Direction_Factory.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_Broyden.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
@@ -661,8 +665,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Abstract_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Abstract_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_Broyden.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_Generic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_ModifiedNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_NonlinearCG.Po@am__quote@
@@ -672,8 +676,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Direction_Utils_InexactNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_GlobalData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_Backtrack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_FullStep.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_MoreThuente.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_NonlinearCG.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_Polynomial.Po@am__quote@
@@ -750,6 +754,20 @@ libnox_a-NOX_Abstract_Group.obj: $(srcdir)/NOX_Abstract_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Abstract_Group.obj `if test -f '$(srcdir)/NOX_Abstract_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Abstract_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Abstract_Group.C'; fi`
 
+libnox_a-NOX_LineSearch_Factory.o: $(srcdir)/NOX_LineSearch_Factory.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_LineSearch_Factory.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Tpo -c -o libnox_a-NOX_LineSearch_Factory.o `test -f '$(srcdir)/NOX_LineSearch_Factory.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Factory.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Tpo $(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LineSearch_Factory.C' object='libnox_a-NOX_LineSearch_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_LineSearch_Factory.o `test -f '$(srcdir)/NOX_LineSearch_Factory.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Factory.C
+
+libnox_a-NOX_LineSearch_Factory.obj: $(srcdir)/NOX_LineSearch_Factory.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_LineSearch_Factory.obj -MD -MP -MF $(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Tpo -c -o libnox_a-NOX_LineSearch_Factory.obj `if test -f '$(srcdir)/NOX_LineSearch_Factory.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LineSearch_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LineSearch_Factory.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Tpo $(DEPDIR)/libnox_a-NOX_LineSearch_Factory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LineSearch_Factory.C' object='libnox_a-NOX_LineSearch_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_LineSearch_Factory.obj `if test -f '$(srcdir)/NOX_LineSearch_Factory.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LineSearch_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LineSearch_Factory.C'; fi`
+
 libnox_a-NOX_LineSearch_Utils_Slope.o: $(srcdir)/NOX_LineSearch_Utils_Slope.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_LineSearch_Utils_Slope.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_LineSearch_Utils_Slope.Tpo -c -o libnox_a-NOX_LineSearch_Utils_Slope.o `test -f '$(srcdir)/NOX_LineSearch_Utils_Slope.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Utils_Slope.C
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_LineSearch_Utils_Slope.Tpo $(DEPDIR)/libnox_a-NOX_LineSearch_Utils_Slope.Po
@@ -820,20 +838,6 @@ libnox_a-NOX_LineSearch_Backtrack.obj: $(srcdir)/NOX_LineSearch_Backtrack.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_LineSearch_Backtrack.obj `if test -f '$(srcdir)/NOX_LineSearch_Backtrack.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LineSearch_Backtrack.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LineSearch_Backtrack.C'; fi`
 
-libnox_a-NOX_LineSearch_Manager.o: $(srcdir)/NOX_LineSearch_Manager.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_LineSearch_Manager.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Tpo -c -o libnox_a-NOX_LineSearch_Manager.o `test -f '$(srcdir)/NOX_LineSearch_Manager.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Manager.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Tpo $(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LineSearch_Manager.C' object='libnox_a-NOX_LineSearch_Manager.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_LineSearch_Manager.o `test -f '$(srcdir)/NOX_LineSearch_Manager.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Manager.C
-
-libnox_a-NOX_LineSearch_Manager.obj: $(srcdir)/NOX_LineSearch_Manager.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_LineSearch_Manager.obj -MD -MP -MF $(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Tpo -c -o libnox_a-NOX_LineSearch_Manager.obj `if test -f '$(srcdir)/NOX_LineSearch_Manager.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LineSearch_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LineSearch_Manager.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Tpo $(DEPDIR)/libnox_a-NOX_LineSearch_Manager.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_LineSearch_Manager.C' object='libnox_a-NOX_LineSearch_Manager.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_LineSearch_Manager.obj `if test -f '$(srcdir)/NOX_LineSearch_Manager.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LineSearch_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LineSearch_Manager.C'; fi`
-
 libnox_a-NOX_LineSearch_MoreThuente.o: $(srcdir)/NOX_LineSearch_MoreThuente.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_LineSearch_MoreThuente.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_LineSearch_MoreThuente.Tpo -c -o libnox_a-NOX_LineSearch_MoreThuente.o `test -f '$(srcdir)/NOX_LineSearch_MoreThuente.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_MoreThuente.C
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_LineSearch_MoreThuente.Tpo $(DEPDIR)/libnox_a-NOX_LineSearch_MoreThuente.Po
@@ -876,20 +880,6 @@ libnox_a-NOX_LineSearch_Polynomial.obj: $(srcdir)/NOX_LineSearch_Polynomial.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_LineSearch_Polynomial.obj `if test -f '$(srcdir)/NOX_LineSearch_Polynomial.C'; then $(CYGPATH_W) '$(srcdir)/NOX_LineSearch_Polynomial.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_LineSearch_Polynomial.C'; fi`
 
-libnox_a-NOX_Direction_Manager.o: $(srcdir)/NOX_Direction_Manager.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Direction_Manager.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_Direction_Manager.Tpo -c -o libnox_a-NOX_Direction_Manager.o `test -f '$(srcdir)/NOX_Direction_Manager.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Manager.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_Direction_Manager.Tpo $(DEPDIR)/libnox_a-NOX_Direction_Manager.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Direction_Manager.C' object='libnox_a-NOX_Direction_Manager.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Direction_Manager.o `test -f '$(srcdir)/NOX_Direction_Manager.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Manager.C
-
-libnox_a-NOX_Direction_Manager.obj: $(srcdir)/NOX_Direction_Manager.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Direction_Manager.obj -MD -MP -MF $(DEPDIR)/libnox_a-NOX_Direction_Manager.Tpo -c -o libnox_a-NOX_Direction_Manager.obj `if test -f '$(srcdir)/NOX_Direction_Manager.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Direction_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Direction_Manager.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_Direction_Manager.Tpo $(DEPDIR)/libnox_a-NOX_Direction_Manager.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Direction_Manager.C' object='libnox_a-NOX_Direction_Manager.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Direction_Manager.obj `if test -f '$(srcdir)/NOX_Direction_Manager.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Direction_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Direction_Manager.C'; fi`
-
 libnox_a-NOX_Direction_Generic.o: $(srcdir)/NOX_Direction_Generic.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Direction_Generic.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_Direction_Generic.Tpo -c -o libnox_a-NOX_Direction_Generic.o `test -f '$(srcdir)/NOX_Direction_Generic.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Generic.C
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_Direction_Generic.Tpo $(DEPDIR)/libnox_a-NOX_Direction_Generic.Po
@@ -903,6 +893,20 @@ libnox_a-NOX_Direction_Generic.obj: $(srcdir)/NOX_Direction_Generic.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Direction_Generic.C' object='libnox_a-NOX_Direction_Generic.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Direction_Generic.obj `if test -f '$(srcdir)/NOX_Direction_Generic.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Direction_Generic.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Direction_Generic.C'; fi`
+
+libnox_a-NOX_Direction_Factory.o: $(srcdir)/NOX_Direction_Factory.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Direction_Factory.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_Direction_Factory.Tpo -c -o libnox_a-NOX_Direction_Factory.o `test -f '$(srcdir)/NOX_Direction_Factory.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Factory.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_Direction_Factory.Tpo $(DEPDIR)/libnox_a-NOX_Direction_Factory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Direction_Factory.C' object='libnox_a-NOX_Direction_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Direction_Factory.o `test -f '$(srcdir)/NOX_Direction_Factory.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Factory.C
+
+libnox_a-NOX_Direction_Factory.obj: $(srcdir)/NOX_Direction_Factory.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Direction_Factory.obj -MD -MP -MF $(DEPDIR)/libnox_a-NOX_Direction_Factory.Tpo -c -o libnox_a-NOX_Direction_Factory.obj `if test -f '$(srcdir)/NOX_Direction_Factory.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Direction_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Direction_Factory.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_Direction_Factory.Tpo $(DEPDIR)/libnox_a-NOX_Direction_Factory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Direction_Factory.C' object='libnox_a-NOX_Direction_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Direction_Factory.obj `if test -f '$(srcdir)/NOX_Direction_Factory.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Direction_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Direction_Factory.C'; fi`
 
 libnox_a-NOX_Direction_Newton.o: $(srcdir)/NOX_Direction_Newton.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Direction_Newton.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_Direction_Newton.Tpo -c -o libnox_a-NOX_Direction_Newton.o `test -f '$(srcdir)/NOX_Direction_Newton.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Newton.C
