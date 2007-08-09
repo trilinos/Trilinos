@@ -216,6 +216,10 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 /*                  indx while index2 is used for values.            */
 /*********************************************************************/
 
+/*Another version of this function exists without the index and with 
+  fewer values passed by reference in version 1.73 if this file and
+  associated checkins*/
+
 int VBR_block_getrow(ML_Operator *data, int requested_row,
    int *int_space, int *values_space, int *blocks, int **bindx,
    int **indx, double **values, int *row_length, int index, int index2)
