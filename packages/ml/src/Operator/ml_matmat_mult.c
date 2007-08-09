@@ -397,7 +397,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     Bptr[0] = 0;
     if (lots_of_space) {
       for (i = 0; i < Bmatrix->getrow->N_block_rows; i++ ) {
-	    VBR_block_getrow_ind(Bmatrix, i, &B_allocated_int, &B_allocated, &blocks, &Bcols, &B_indx, &Bvals, &row2_N, itemp, itemp2);
+	    VBR_block_getrow(Bmatrix, i, &B_allocated_int, &B_allocated, &blocks, &Bcols, &B_indx, &Bvals, &row2_N, itemp, itemp2);
 	    itemp += blocks;
         itemp2 += row2_N;
 	    Bptr[i+1] = itemp;
@@ -421,7 +421,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 	    if (rows[jj] == i) {
 	      jj++;
 	      k = B_allocated;
-	      VBR_block_getrow_ind(Bmatrix, i, &B_allocated_int, &B_allocated, &blocks, &Bcols, &B_indx, &Bvals, &row2_N, itemp, itemp2);
+	      VBR_block_getrow(Bmatrix, i, &B_allocated_int, &B_allocated, &blocks, &Bcols, &B_indx, &Bvals, &row2_N, itemp, itemp2);
     	  itemp += blocks;
           itemp2 += row2_N;
     	}
@@ -1578,8 +1578,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   than 0.  All other parameters are ignored as there are not important to the final result.
   However rpntr and cpntr are allocated and used in the new VBR structure.
 
-  The matrix passed in should not be a submatrix and will be untouched however its 
-  submatrices will be converted.
+  The matrix passed in should not be a submatrix and its sub-matrix will be untouched.
                                   */
 /*********************************************************************************/
 

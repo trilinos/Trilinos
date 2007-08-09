@@ -178,127 +178,6 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 /*********************************************************************/
 /* Get one block matrix row(requested_row)                           */
 /* from the user's matrix and return this information  in            */
-/* 'blocks, bindx, indx, values, row_length'.                        */
-/* If there is not enough space to complete this operation, return 0.*/
-/* Otherwise, return 1.                                              */
-/*                                                                   */
-/* Parameters                                                        */
-/* ==========                                                        */
-/* data             On input, points to user's data containing       */
-/*                  matrix values.                                   */
-/* requested_row    On input, requested_row                          */
-/*                  gives the row indice of the block row for which  */
-/*                  nonzero blocks are returned.                     */
-/* row_length       On output, row_length is the number of           */
-/*                  elements in the nonzero blocks in the row        */
-/*                  'requested_row'                                  */
-/* columns,blocksize,values                                          */
-/*                  On output, columns[k] is the number of c  and values[k] contains the */
-/*                  column number and value of a matrix nonzero where*/
-/*                  all the nonzeros for requested_rows[0] appear    */
-/*                  first followed by the nonzeros for               */
-/*                  requested_rows[1], etc. NOTE: these arrays are   */
-/*                  of size 'allocated_space'.                       */
-/*                  Blocksize[k] contains the number of elements in  */
-/*                  each non-zero block                              */
-/* bindx_space, indx_space, values_space                             */
-/*                  On input, indicates the space available in       */
-/*                  'bindx', 'indx' and 'values' for storing         */
-/*                  nonzeros.  If more space is needed, return 0.    */
-/*********************************************************************/
-
-int VBR_block_getrow(ML_Operator *data, int requested_row,
-   int bindx_space, int indx_space, int values_space, int *blocks, int bindx[],
-   int indx[], double values[], int *row_length)
-{
-   struct ML_vbrdata *input_matrix;
-   int  i, bpntr_rows, bpntr_rows_1;
-   int *bindx_old, *indx_old, *bpntr, start, finish;
-   double *val;
-   int done = 0;
-   int col_size;
-   ML_Operator *place_holder;
-                             
-   place_holder = data;
-   /*Find matrix to query*/
-   while(!done)
-   {
-     if(place_holder->sub_matrix == NULL)
-       done = 1;
-     else
-     {
-       if(requested_row < place_holder->sub_matrix->getrow->N_block_rows)
-         place_holder = place_holder->sub_matrix;
-       else
-       {
-         requested_row -= place_holder->sub_matrix->getrow->N_block_rows;
-         done = 1;
-       }
-     }
-   }
-
-   /*set alliases*/
-   input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(place_holder);
-   bpntr  = input_matrix->bpntr;
-   indx_old = input_matrix->indx;
-
-   /*store frquently used data for faster access*/
-   bpntr_rows = bpntr[requested_row];
-   bpntr_rows_1 = bpntr[requested_row+1];
-   start = indx_old[bpntr_rows];
-   finish = indx_old[bpntr_rows_1];
-
-   /*calculate block row information*/
-   *row_length = finish - start;
-   *blocks = bpntr_rows_1 - bpntr_rows;   
-   
-   /*Make sure we have enough space to store the block row variables*/
-   if(*blocks > bindx_space){
-     ML_avoid_unused_param( (void *) &blocks);
-     return(0);
-   }
-   if(*blocks >= indx_space){
-     ML_avoid_unused_param( (void *) &blocks);
-     return(0);
-   }
-   if (*row_length > values_space) {
-     ML_avoid_unused_param( (void *) &blocks);
-     return(0);
-   }
-   
-   /*iterate over the blocking data and store it*/
-   *indx++ = 0;
-   bindx_old = &(input_matrix->bindx[bpntr_rows]); 
-   indx_old = &(input_matrix->indx[bpntr_rows]);
-   for(i = 0; i < *blocks; i++)
-   {
-     *bindx++ = *bindx_old++;
-     *indx = indx[-1] - *indx_old++;
-     *indx++ += *indx_old;
-   }
-
-   /*if we need to convert to global ids this will only be with the right B matrix*/
-   if(place_holder->getrow->use_loc_glob_map == ML_YES)
-   {
-     col_size = input_matrix->cpntr[1]-input_matrix->cpntr[0];
-     for(i = -*blocks; i < 0; i++)
-     {
-       bindx[i] = place_holder->getrow->loc_glob_map[bindx[i]*col_size]/col_size;
-     }
-   }
-                                                                                                                
-   /*iterate over the data and copy it*/
-   val = &(input_matrix->val[start]);
-   for(i = start; i < finish; i++)
-   {
-     *values++ = *val++;
-   }
-   return(1);
-}
-
-/*********************************************************************/
-/* Get one block matrix row(requested_row)                           */
-/* from the user's matrix and return this information  in            */
 /* 'blocks, bindx, indx, values, row_length, blocks'.                */
 /* If there is not enough space to complete this operation, allocate */
 /* it.  Otherwise, return 1.                                         */
@@ -337,7 +216,7 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
 /*                  indx while index2 is used for values.            */
 /*********************************************************************/
 
-int VBR_block_getrow_ind(ML_Operator *data, int requested_row,
+int VBR_block_getrow(ML_Operator *data, int requested_row,
    int *int_space, int *values_space, int *blocks, int **bindx,
    int **indx, double **values, int *row_length, int index, int index2)
 {
