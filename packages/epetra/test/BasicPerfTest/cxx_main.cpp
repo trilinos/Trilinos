@@ -27,7 +27,7 @@
 //@HEADER
 
 #define EPETRA_HAVE_JADMATRIX
-#define EPETRA_SHORT_PERFTEST
+#define EPETRA_VERY_SHORT_PERFTEST
 #define EPETRA_HAVE_STATICPROFILE
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -336,14 +336,18 @@ int main(int argc, char *argv[])
   Epetra_Flops flopcounter;
   Epetra_Time timer(comm);
 
-#ifdef EPETRA_SHORT_PERFTEST
+#ifdef EPETRA_VERY_SHORT_PERFTEST
+  int jstop = 1;
+#elif EPETRA_SHORT_PERFTEST
   int jstop = 1;
 #else
   int jstop = 2;
 #endif
   for (int j=0; j<jstop; j++) {
     for (int k=1; k<17; k++) {
-#ifdef EPETRA_SHORT_PERFTEST
+#ifdef EPETRA_VERY_SHORT_PERFTEST
+      if (k<3 || (k%4==0 && k<9)) {
+#elif EPETRA_SHORT_PERFTEST
       if (k<6 || k%4==0) {
 #else
       if (k<7 || k%2==0) {
