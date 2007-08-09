@@ -222,8 +222,6 @@ top_srcdir = @top_srcdir@
 # For packages whose tests are located in this directory, rather than
 # in a subdirectory of this directory, use the Makefile.am located in
 # test1/ rather than this file.
-
-#SUBDIRS = DD_ML
 SUBDIRS = 
 EXTRA_DIST = definition
 all: all-recursive

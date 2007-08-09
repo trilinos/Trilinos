@@ -37,7 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = ml_nox_1Delasticity_example$(EXEEXT)
-subdir = example/ml/NonlinML
+subdir = examples/ml/NonlinML
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
@@ -224,9 +224,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/ml/NonlinML/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/ml/NonlinML/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/ml/NonlinML/Makefile
+	  $(AUTOMAKE) --foreign  examples/ml/NonlinML/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

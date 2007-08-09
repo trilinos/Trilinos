@@ -142,23 +142,29 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building trilinoscouplings tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building trilinoscouplings tests."
+	@echo ""
 else
 tests:
 	@echo "trilinoscouplings tests were disabled at configure time"
 endif
 
-examples:
-	@echo "trilinoscouplings does not have any examples yet"
+examples: FORCE
+	cd $(top_builddir)/examples && $(MAKE)
 
 install-examples:
-	@echo "trilinoscouplings does not have any examples yet"
+	cd $(top_builddir)/examples && $(MAKE) install
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
 
 clean-examples:
-	@echo "trilinoscouplings does not have any examples yet"
+	cd $(top_builddir)/examples && $(MAKE) clean
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
@@ -168,6 +174,8 @@ clean-everything:
 
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
+
+FORCE:
 
 SUBDIRS = src $(TEST_SUBDIR)
 
@@ -207,38 +215,38 @@ else
 TRILINOSCOUPLINGS_CHECK_COMM=serial
 endif
 
-# run-examples:
-# 	@echo
-# 	@echo "==================================="
-# 	@echo "Running the TrilinosCouplings examples..."
-# 	@echo "==================================="
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=TrilinosCouplingsExamples \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=trilinoscouplings
+run-examples:
+	@echo
+	@echo "==================================="
+	@echo "Running the TrilinosCouplings examples..."
+	@echo "==================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+ 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+ 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
+ 	--mpi-go="$(TRILINOS_MPI_GO)" \
+ 	--build-dir=$(TRILINOS_BUILD_DIR) \
+ 	--category=TCExamples \
+ 	--output-dir=@abs_top_builddir@/test/runtests-results \
+ 	--verbosity=1 \
+ 	--packages=trilinoscouplings
 
-# run-tests:
-# 	@echo
-# 	@echo "================================"
-# 	@echo "Running the TrilinosCouplings tests..."
-# 	@echo "================================"
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=FRAMEWORK \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=trilinoscouplings
+run-tests:
+	@echo
+	@echo "================================"
+	@echo "Running the TrilinosCouplings tests..."
+	@echo "================================"
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+ 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+ 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
+ 	--mpi-go="$(TRILINOS_MPI_GO)" \
+ 	--build-dir=$(TRILINOS_BUILD_DIR) \
+ 	--category=FRAMEWORK \
+ 	--output-dir=@abs_top_builddir@/test/runtests-results \
+ 	--verbosity=1 \
+ 	--packages=trilinoscouplings

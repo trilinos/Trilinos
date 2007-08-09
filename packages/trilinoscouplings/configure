@@ -9941,7 +9941,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.trilinoscouplings src/Makefile test/Makefile example/Makefile example/ml/NonlinML/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.trilinoscouplings src/Makefile test/Makefile examples/Makefile examples/ml/NonlinML/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10618,8 +10618,8 @@ do
     "Makefile.export.trilinoscouplings") CONFIG_FILES="$CONFIG_FILES Makefile.export.trilinoscouplings" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-    "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-    "example/ml/NonlinML/Makefile") CONFIG_FILES="$CONFIG_FILES example/ml/NonlinML/Makefile" ;;
+    "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+    "examples/ml/NonlinML/Makefile") CONFIG_FILES="$CONFIG_FILES examples/ml/NonlinML/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

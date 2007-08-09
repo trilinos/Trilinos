@@ -94,7 +94,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0;
+  int ierr = EXIT_SUCCESS;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -113,18 +113,33 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Get the number of elements from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " <number_of_elements>" << endl;
-    exit(1);
+  int NumGlobalElements;
+  switch(argc) {
+    case 2:
+      NumGlobalElements = atoi(argv[1]) + 1;
+      break;
+    case 1:
+      NumGlobalElements = 5001;
+      break;
+    default:
+      cout << "Usage: " << argv[0] << " <number_of_elements>" << endl;
+#     ifdef HAVE_MPI
+      MPI_Finalize() ;
+#     endif
+      exit(EXIT_FAILURE);
+      break;
   }
-  int NumGlobalElements = atoi(argv[1]) + 1;
+  cout << NumGlobalElements << endl;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
   if (NumGlobalElements < NumProc) {
     cout << "numGlobalBlocks = " << NumGlobalElements 
 	 << " cannot be < number of processors = " << NumProc << endl;
-    exit(1);
+#   ifdef HAVE_MPI
+    MPI_Finalize() ;
+#   endif
+    exit(EXIT_FAILURE);
   }
 
   // Create the FiniteElementProblem class.  This creates all required
@@ -418,19 +433,18 @@ int main(int argc, char *argv[])
    {
       if (Comm.MyPID()==0)
          cout << "***WRN***: ML/NOX not converged!";
-      return(1);
+#     ifdef HAVE_MPI
+      MPI_Finalize() ;
+#     endif
+      exit(EXIT_FAILURE);
    }
-   else
-      return(0);
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
+  exit(EXIT_SUCCESS);
 
-/* end main
-*/
-return ierr ;
-}
+} /* end main */
 
 
 

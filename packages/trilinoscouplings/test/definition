@@ -2,13 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, INSTALL) {
-    DIRS = Hello_Test, Jambo_Test, test1;
-    ARGS = -v;
+(FRAMEWORK, INSTALL, TCExamples) {
+    DIRS = ../examples/ml/NonlinML;
     COMM = SERIAL, MPI;
-}
-
-(DOCUMENTATION) {
-    TESTS = ../example/generate-sample-output.pl;
-    COMM = SERIAL;
 }

@@ -741,21 +741,27 @@ all-local:
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
 
 @BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building trilinoscouplings tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building trilinoscouplings tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "trilinoscouplings tests were disabled at configure time"
 
-examples:
-	@echo "trilinoscouplings does not have any examples yet"
+examples: FORCE
+	cd $(top_builddir)/examples && $(MAKE)
 
 install-examples:
-	@echo "trilinoscouplings does not have any examples yet"
+	cd $(top_builddir)/examples && $(MAKE) install
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
 
 clean-examples:
-	@echo "trilinoscouplings does not have any examples yet"
+	cd $(top_builddir)/examples && $(MAKE) clean
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
@@ -765,6 +771,8 @@ clean-everything:
 
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
+
+FORCE:
 
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
@@ -787,41 +795,41 @@ runtests-mpi :
   --verbosity=1 \
   --packages=trilinoscouplings
 
-# run-examples:
-# 	@echo
-# 	@echo "==================================="
-# 	@echo "Running the TrilinosCouplings examples..."
-# 	@echo "==================================="
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=TrilinosCouplingsExamples \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=trilinoscouplings
+run-examples:
+	@echo
+	@echo "==================================="
+	@echo "Running the TrilinosCouplings examples..."
+	@echo "==================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+ 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+ 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
+ 	--mpi-go="$(TRILINOS_MPI_GO)" \
+ 	--build-dir=$(TRILINOS_BUILD_DIR) \
+ 	--category=TCExamples \
+ 	--output-dir=@abs_top_builddir@/test/runtests-results \
+ 	--verbosity=1 \
+ 	--packages=trilinoscouplings
 
-# run-tests:
-# 	@echo
-# 	@echo "================================"
-# 	@echo "Running the TrilinosCouplings tests..."
-# 	@echo "================================"
-# 	@echo
-# 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-# 	@echo
-# 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-# 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-# 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
-# 	--mpi-go="$(TRILINOS_MPI_GO)" \
-# 	--build-dir=$(TRILINOS_BUILD_DIR) \
-# 	--category=FRAMEWORK \
-# 	--output-dir=@abs_top_builddir@/test/runtests-results \
-# 	--verbosity=1 \
-# 	--packages=trilinoscouplings
+run-tests:
+	@echo
+	@echo "================================"
+	@echo "Running the TrilinosCouplings tests..."
+	@echo "================================"
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+ 	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+ 	--comm=$(TRILINOSCOUPLINGS_CHECK_COMM) \
+ 	--mpi-go="$(TRILINOS_MPI_GO)" \
+ 	--build-dir=$(TRILINOS_BUILD_DIR) \
+ 	--category=FRAMEWORK \
+ 	--output-dir=@abs_top_builddir@/test/runtests-results \
+ 	--verbosity=1 \
+ 	--packages=trilinoscouplings
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

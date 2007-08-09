@@ -40,7 +40,6 @@ all-local:
 # in a subdirectory of this directory, use the Makefile.am located in
 # test1/ rather than this file.
 
-#SUBDIRS = DD_ML
 SUBDIRS =
 
 EXTRA_DIST = definition
