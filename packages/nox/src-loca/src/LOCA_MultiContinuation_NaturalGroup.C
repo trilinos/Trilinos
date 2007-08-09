@@ -39,6 +39,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_MultiContinuation_NaturalGroup.H"
 #include "LOCA_MultiContinuation_NaturalConstraint.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
@@ -54,10 +55,11 @@ LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
 					   continuationParams,
 					   grp, pred, paramIDs)
 {
+  bool skip_dfdp = continuationParams->get("Skip Parameter Derivative", true);
   Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> cons 
     = Teuchos::rcp(new LOCA::MultiContinuation::NaturalConstraint(
 	globalData, Teuchos::rcp(this, false)));
-  LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons);
+  LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons, skip_dfdp);
 }
 
 LOCA::MultiContinuation::NaturalGroup::NaturalGroup(

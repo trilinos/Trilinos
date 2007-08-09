@@ -427,7 +427,7 @@ namespace LOCA {
        * This allows the constraint object to be set after the group
        * is constructed using the above constructor.
        */
-      virtual void setConstraints(const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints);
+      virtual void setConstraints(const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints, bool skip_dfdp);
 
     private:
 

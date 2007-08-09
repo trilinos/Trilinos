@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList& locaStepperList = 
       locaParamsList.sublist("Stepper");
     locaStepperList.set("Continuation Method", "Natural");
+    locaStepperList.set("Skip Parameter Derivative", false);
     locaStepperList.set("Continuation Parameter", "Right BC");
     locaStepperList.set("Initial Value", 0.1);
     locaStepperList.set("Max Value", 0.3);
@@ -291,7 +292,7 @@ int main(int argc, char *argv[])
 
     // Re-run the problem skipping df/dp computations
 
-    locaStepperList.set("Skip df/dp", true);
+    locaStepperList.set("Skip Parameter Derivative", true);
     interface->numFillsF = 0;
     stepper.reset(globalData, grp, combo, paramList);
     status = stepper.run();

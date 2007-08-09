@@ -59,7 +59,8 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
        const Teuchos::RCP<Teuchos::ParameterList>& conParams,
        const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& g,
        const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints,
-       const vector<int>& paramIDs)
+       const vector<int>& paramIDs,
+       bool skip_dfdp)
   : globalData(global_data),
     parsedParams(topParams),
     constraintParams(conParams),
@@ -87,7 +88,7 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     isValidNewton(false),
     isValidGradient(false),
     isBordered(false),
-    skipDfDp(false)
+    skipDfDp(skip_dfdp)
 {
   // Set up multi-vector views
   setupViews(); 
@@ -109,9 +110,6 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
   bordered_grp = 
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
-
-  // Determine whether we should skip df/dp
-  skipDfDp = constraintParams->get("Skip df/dp", false);
 
   // Create Jacobian operator for bordered solver
   jacOp = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grpPtr));

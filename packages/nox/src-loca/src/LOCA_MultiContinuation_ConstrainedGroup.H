@@ -107,7 +107,9 @@ namespace LOCA {
        * bordered solver method.
        * \param grp [in] Group representing \f$f\f$.
        * \param constraints [in] Constraint object representing \f$g\f$.
-       * \param paramIDs [in] Parameter IDs of the constraint parameters.
+       * \param paramIDs [in] Parameter IDs of the constraint parameters
+       * \param skip_dfdp [in] Whether to skip computation of df/dp when
+       *        computing extended Jacobian.
        */
       ConstrainedGroup(
        const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -115,7 +117,8 @@ namespace LOCA {
        const Teuchos::RCP<Teuchos::ParameterList>& constraintParams,
        const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
        const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints,
-       const vector<int>& paramIDs);
+       const vector<int>& paramIDs,
+       bool skip_dfdp = false);
 
       //! Copy constructor
       ConstrainedGroup(const ConstrainedGroup& source, 

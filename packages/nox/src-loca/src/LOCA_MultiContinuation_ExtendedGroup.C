@@ -602,12 +602,13 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints)
+LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints, bool skip_dfdp)
 {
   // Form constrained group using original group and continuation constraints
   conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
 					       continuationParams,
 					       grpPtr, constraints,
-					       conParamIDs));
+					       conParamIDs,
+					       skip_dfdp));
   grpPtr = conGroup->getGroup();
 }
