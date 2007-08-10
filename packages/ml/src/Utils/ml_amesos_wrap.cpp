@@ -17,11 +17,13 @@
 #include "Epetra_Time.h"
 #include "ml_amesos.h"
 #include "ml_amesos_wrap.h"
+#include "ml_mat_formats.h"
 #include "ml_RowMatrix.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos.h" 
 #include "ml_amesos_wrap.h"
 #include "Teuchos_ParameterList.hpp"
+
 
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_RowMatrixOut.h"
@@ -61,6 +63,17 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 {
 
   ML_Operator *Ke = &(ml->Amat[curr_level]);
+
+  /* Sanity Checking - Zero Diagonals */
+  if (Ke->getrow->func_ptr == MSR_getrows) {
+    struct ML_CSR_MSRdata * input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(Ke);
+    double *val  = input_matrix->values;
+    int N = Ke->outvec_leng;
+    for(int i=0;i<N;i++)
+      if(val[i] == 0.0)
+	val[i]=1.0;
+  }
+
   ML_Epetra::RowMatrix* Amesos_Matrix = 
     new ML_Epetra::RowMatrix(Ke, 0, false, ml->comm->USR_comm);
   assert (Amesos_Matrix != 0);
