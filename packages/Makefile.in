@@ -89,9 +89,9 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
 	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
-	belos anasazi pliris ml moertel stratimikos meros sacado nox \
-	rythmos trilinoscouplings new_package moocho PyTrilinos \
-	didasko WebTrilinos external
+	belos anasazi rbgen pliris ml aristos moertel stratimikos \
+	meros sacado nox capo rythmos trilinoscouplings new_package \
+	moocho PyTrilinos didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -183,8 +183,10 @@ ACLOCAL_AMFLAGS = -I config
 # changing three lines!
 @BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
 @BUILD_ANASAZI_TRUE@ANASAZI_SUBDIR = anasazi
+@BUILD_ARISTOS_TRUE@ARISTOS_SUBDIR = aristos
 @BUILD_AZTECOO_TRUE@AZTECOO_SUBDIR = aztecoo
 @BUILD_BELOS_TRUE@BELOS_SUBDIR = belos
+@BUILD_CAPO_TRUE@CAPO_SUBDIR = capo
 @BUILD_CLAPS_TRUE@CLAPS_SUBDIR = claps
 @BUILD_DIDASKO_TRUE@DIDASKO_SUBDIR = didasko
 @BUILD_EPETRA_TRUE@EPETRA_SUBDIR = epetra
@@ -203,6 +205,7 @@ ACLOCAL_AMFLAGS = -I config
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
 @BUILD_PLIRIS_TRUE@PLIRIS_SUBDIR = pliris
 @BUILD_PYTRILINOS_TRUE@PYTRILINOS_SUBDIR = PyTrilinos 
+@BUILD_RBGEN_TRUE@RBGEN_SUBDIR = rbgen
 @BUILD_RYTHMOS_TRUE@RYTHMOS_SUBDIR = rythmos
 @BUILD_SACADO_TRUE@SACADO_SUBDIR = sacado
 @BUILD_TEUCHOS_TRUE@TEUCHOS_SUBDIR = teuchos
@@ -242,13 +245,16 @@ PACKAGE_NAMES = \
 	$(CLAPS_SUBDIR)        \
 	$(BELOS_SUBDIR)        \
 	$(ANASAZI_SUBDIR)      \
+	$(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
+	$(ARISTOS_SUBDIR)      \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
+	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \

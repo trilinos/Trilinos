@@ -75,12 +75,20 @@ if BUILD_ANASAZI
 ANASAZI_SUBDIR = anasazi
 endif
 
+if BUILD_ARISTOS
+ARISTOS_SUBDIR = aristos
+endif
+
 if BUILD_AZTECOO
 AZTECOO_SUBDIR = aztecoo
 endif
 
 if BUILD_BELOS
 BELOS_SUBDIR = belos
+endif
+
+if BUILD_CAPO
+CAPO_SUBDIR = capo
 endif
 
 if BUILD_CLAPS
@@ -153,6 +161,10 @@ endif
 
 if BUILD_PYTRILINOS
 PYTRILINOS_SUBDIR = PyTrilinos 
+endif
+
+if BUILD_RBGEN
+RBGEN_SUBDIR = rbgen
 endif
 
 if BUILD_RYTHMOS
@@ -228,13 +240,16 @@ PACKAGE_NAMES = \
 	$(CLAPS_SUBDIR)        \
 	$(BELOS_SUBDIR)        \
 	$(ANASAZI_SUBDIR)      \
+	$(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
+	$(ARISTOS_SUBDIR)      \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
+	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \
