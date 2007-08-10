@@ -613,7 +613,7 @@ public: // Bad bad bad
 
 /** \brief Traits specialization.
  *
- * \relates RCP
+ * \ingroup teuchos_mem_mng_grp
  */
 template<typename T>
 class TypeNameTraits<RCP<T> > {
@@ -965,24 +965,12 @@ template<class T2, class T1> inline RCP<T2> rcp_dynamic_cast( const RCP<T1>& p1 
  * \relates RCP
  */
 template<class T1, class T2>
-void set_extra_data( const T1 &extra_data, const std::string& name, RCP<T2> *p
-                     ,EPrePostDestruction destroy_when
-#ifndef __sun
-                     = POST_DESTROY
-#endif
-                     ,bool force_unique
-#ifndef __sun
-                     = true
-#endif
+void set_extra_data(
+  const T1 &extra_data,
+  const std::string& name, RCP<T2> *p,
+  EPrePostDestruction destroy_when = POST_DESTROY,
+  bool force_unique = true
   );
-#ifdef __sun
-template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, RCP<T2> *p )
-{ set_extra_data( extra_data, name, p, POST_DESTROY, true ); }
-template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, RCP<T2> *p, EPrePostDestruction destroy_when )
-{ set_extra_data( extra_data, name, p, destroy_when, true ); }
-#endif
 
 /** \brief Get a non-const reference to extra data associated with a <tt>RCP</tt> object.
  *
@@ -1172,6 +1160,24 @@ const Dealloc_T* get_optional_dealloc( const RCP<T>& p );
  */
 template<class T>
 std::ostream& operator<<( std::ostream& out, const RCP<T>& p );
+
+/** \brief Print the list of currently active RCP nodes.
+ *
+ * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
+ * defined, this function will print out all of the RCP nodes that are
+ * currently active.  This function can be called at any time during a
+ * program.
+ *
+ * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
+ * defined this function will get called automatically after the program ends
+ * and all of the local and global RCP objects have been destroyed.  If any
+ * RCP nodes are printed at that time, then this is an indication that there
+ * may be some circular references that will caused memory leaks.  You memory
+ * checking tool such as valgrind or purify should complain about this!
+ *
+ * \relates RCP
+ */
+void print_active_RCP_nodes(std::ostream &out);
 
 } // end namespace Teuchos
 

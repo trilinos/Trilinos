@@ -30,7 +30,42 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
+
+namespace {
+
+
+struct InfoAndCallNumber {
+  InfoAndCallNumber()
+    :call_number(-1)
+  {}
+  InfoAndCallNumber(
+		    const std::string &info_in,
+		    const int &call_number_in
+		    )
+    :info(info_in), call_number(call_number_in)
+
+  {}
+  std::string info;
+  int call_number;
+};
+
+
+typedef std::map<Teuchos::PrivateUtilityPack::RCP_node*,InfoAndCallNumber>
+rcp_node_list_t;
+
+
+// Here we must let the PrintActiveRCPNodes constructor and destructor handle
+// the creation and destruction of this map object.  This will ensure that
+// this map object will be valid when any global/static RCP objects are
+// destroyed!
+rcp_node_list_t *rcp_node_list = 0;
+
+
+} // namespace
+
+
 namespace Teuchos {
+
 
 void PrivateUtilityPack::throw_null( const std::string &type_name )
 {
@@ -40,7 +75,9 @@ void PrivateUtilityPack::throw_null( const std::string &type_name )
     " call operator->() or operator*() if get()==NULL!" );
 }
 
+
 namespace PrivateUtilityPack {
+
 
 void RCP_node::set_extra_data(
   const any &extra_data, const std::string& name
@@ -61,6 +98,7 @@ void RCP_node::set_extra_data(
   (*extra_data_map_)[type_and_name] = extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
 }
 
+
 any& RCP_node::get_extra_data( const std::string& type_name, const std::string& name )
 {
   TEST_FOR_EXCEPTION(
@@ -75,6 +113,7 @@ any& RCP_node::get_extra_data( const std::string& type_name, const std::string& 
   return *extra_data; // Will never be executed!
 }
 
+
 any* RCP_node::get_optional_extra_data( const std::string& type_name, const std::string& name )
 {
   if( extra_data_map_ == NULL ) return NULL;
@@ -85,6 +124,7 @@ any* RCP_node::get_optional_extra_data( const std::string& type_name, const std:
   return NULL;
 }
 
+
 void RCP_node::impl_pre_delete_extra_data()
 {
   for( extra_data_map_t::iterator itr = extra_data_map_->begin(); itr != extra_data_map_->end(); ++itr ) {
@@ -94,77 +134,53 @@ void RCP_node::impl_pre_delete_extra_data()
   }
 }
 
-struct InfoAndCallNumber {
-  InfoAndCallNumber()
-    :call_number(-1)
-  {}
-  InfoAndCallNumber(
-		    const std::string &info_in,
-		    const int &call_number_in
-		    )
-    :info(info_in), call_number(call_number_in)
-
-  {}
-  std::string info;
-  int call_number;
-};
 
 } // namespace PrivateUtilityPack
 
-typedef std::map<PrivateUtilityPack::RCP_node*,PrivateUtilityPack::InfoAndCallNumber>  rcp_node_list_t;
 
-rcp_node_list_t rcp_node_list;
+// Define this macro here locally and rebuild just this *.cpp file and update
+// the Teuchos library and you will get node tracing turned on when debugging
+// support is enabled!  Note that you also have to TEUCHOS_DEBUG defined as
+// well (using --enable-teuchos-debug at configure time).
+
+//#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+
 
 void PrivateUtilityPack::add_new_RCP_node( RCP_node* rcp_node, const std::string &info )
 {
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  TEST_FOR_EXCEPT(0==rcp_node_list);
   static int call_number = 0;
-  rcp_node_list[rcp_node] = InfoAndCallNumber(info,call_number);
+  (*rcp_node_list)[rcp_node] = InfoAndCallNumber(info,call_number);
   ++call_number;
+#endif
 }
+
 
 void PrivateUtilityPack::remove_RCP_node( RCP_node* rcp_node )
 {
-  const rcp_node_list_t::iterator itr = rcp_node_list.find(rcp_node);
-  TEST_FOR_EXCEPT_PRINT(itr==rcp_node_list.end(),&std::cerr);
-  rcp_node_list.erase(itr);
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  TEST_FOR_EXCEPT(0==rcp_node_list);
+  const rcp_node_list_t::iterator itr = rcp_node_list->find(rcp_node);
+  TEST_FOR_EXCEPT_PRINT(itr==rcp_node_list->end(),&std::cerr);
+  rcp_node_list->erase(itr);
+#endif
 }
 
-void PrivateUtilityPack::print_active_RCP_nodes(std::ostream &out)
-{
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
-  std::cerr << "\nCalled PrivateUtilityPack::print_active_RCP_nodes() : rcp_node_list.size() = " << rcp_node_list.size() << "\n";
-#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
-  rcp_node_list_t::const_iterator itr = rcp_node_list.begin();
-  if(itr != rcp_node_list.end()) {
-    out
-      << "\n***"
-      << "\n*** Warning! The following Teucho::RCP_node objects were created but have"
-      << "\n*** not been destoryed yet.  This may be an indication that these objects may"
-      << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
-      << "\n*** that these objects are not destoryed correctly."
-      << "\n***\n";
-    while( itr != rcp_node_list.end() ) {
-      const rcp_node_list_t::value_type
-        entry = *itr;
-      out
-	<< "\n  RCP_node address = \'" << entry.first
-	<< "\', information = " << entry.second.info
-	<< ", call number = " << entry.second.call_number;
-      ++itr;
-    }
-    out << "\n";
-  }
-}
 
 namespace PrivateUtilityPack {
+
 
 PrintActiveRCPNodes::PrintActiveRCPNodes()
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   std::cerr << "\nCalled PrintActiveRCPNodes::PrintActiveRCPNodes() : count = " << count_ << "\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  if (!rcp_node_list)
+    rcp_node_list = new rcp_node_list_t;
   ++count_;
 }
+
 
 PrintActiveRCPNodes::~PrintActiveRCPNodes()
 {
@@ -176,8 +192,11 @@ PrintActiveRCPNodes::~PrintActiveRCPNodes()
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     print_active_RCP_nodes(std::cerr);
+    TEST_FOR_EXCEPT(0==rcp_node_list);
+    delete rcp_node_list;
   }
 }
+
 
 void PrintActiveRCPNodes::foo()
 {
@@ -185,8 +204,43 @@ void PrintActiveRCPNodes::foo()
   ++dummy; // Avoid unused variable warning (bug 2664)
 }
 
+
 int PrintActiveRCPNodes::count_ = 0;
+
 
 } // namespace PrivateUtilityPack
 
+
 } // namespace Teuchos
+ 
+
+void Teuchos::print_active_RCP_nodes(std::ostream &out)
+{
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+  out
+    << "\nCalled PrivateUtilityPack::print_active_RCP_nodes() :"
+    << " rcp_node_list.size() = " << rcp_node_list.size() << "\n";
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  TEST_FOR_EXCEPT(0==rcp_node_list);
+  rcp_node_list_t::const_iterator itr = rcp_node_list->begin();
+  if(itr != rcp_node_list->end()) {
+    out
+      << "\n***"
+      << "\n*** Warning! The following Teucho::RCP_node objects were created but have"
+      << "\n*** not been destoryed yet.  This may be an indication that these objects may"
+      << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
+      << "\n*** that these objects are not destoryed correctly."
+      << "\n***\n";
+    while( itr != rcp_node_list->end() ) {
+      const rcp_node_list_t::value_type &entry = *itr;
+      out
+        << "\n  RCP_node address = \'" << entry.first << "\',"
+        << " information = " << entry.second.info << ","
+        << " call number = " << entry.second.call_number;
+      ++itr;
+    }
+    out << "\n";
+  }
+#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+}

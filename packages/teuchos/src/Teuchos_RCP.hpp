@@ -159,9 +159,6 @@ void add_new_RCP_node( RCP_node* rcp_node, const std::string &info );
 // Remove RCP from global list
 void remove_RCP_node( RCP_node* rcp_node );
 
-// Print global list
-void print_active_RCP_nodes(std::ostream &out);
-
 // Print global list on destruction
 class PrintActiveRCPNodes {
 public:
@@ -176,8 +173,6 @@ private:
 
 } // namespace Teuchos
 
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-
 namespace {
 // This static variable should be delcared before all other static variables
 // that depend on RCP and therefore This static varaible should be
@@ -185,11 +180,12 @@ namespace {
 // RCP go away!
 Teuchos::PrivateUtilityPack::PrintActiveRCPNodes printActiveRCPNodes;
 } // namespace
-#endif
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 
 namespace Teuchos {
 
-#endif
 
 // /////////////////////////////////////////////////////////////////////////////////
 // Inline member functions for RCP<...>.
@@ -224,7 +220,7 @@ REFCOUNTPTR_INLINE
 RCP<T>::~RCP()
 {
   if(node_ && node_->deincr_count() == 0 ) {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+#ifdef TEUCHOS_DEBUG
     printActiveRCPNodes.foo(); // Make sure this object is used!
     remove_RCP_node(node_);
 #endif
@@ -239,7 +235,7 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
   if( this == &r_ptr )
     return *this; // Assignment to self
   if( node_ && !node_->deincr_count() ) {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+#ifdef TEUCHOS_DEBUG
     remove_RCP_node(node_);
 #endif
     delete node_;

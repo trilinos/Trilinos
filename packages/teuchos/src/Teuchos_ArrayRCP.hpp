@@ -36,23 +36,6 @@
 
 namespace Teuchos {
 
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-
-namespace {
-// This static variable should be delcared before all other static variables
-// that depend on ArrayRCP and therefore This static varaible should be
-// deleted *after* all of these other static variables that depend on
-// ArrayRCP go away!
-Teuchos::PrivateUtilityPack::PrintActiveArrayRCPNodes
-printActiveArrayRCPNodes;
-} // namespace
-
-#endif //  TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-
-} // namespace Teuchos
-
-namespace Teuchos {
-
 // Constructors/Initializers
 
 template<class T>
@@ -80,7 +63,7 @@ ArrayRCP<T>::~ArrayRCP()
 {
   if(node_ && node_->deincr_count() == 0 ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-    printActiveArrayRCPNodes.foo(); // Make sure this object is used!
+    printActiveRCPNodes.foo(); // Make sure this object is used!
     remove_RCP_node(node_);
 #endif
     delete node_;
@@ -95,7 +78,7 @@ ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
     return *this; // Assignment to self
   if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-    remove_ArrayRCP_node(node_);
+    remove_RCP_node(node_);
 #endif
     delete node_;
   }
@@ -408,7 +391,7 @@ ArrayRCP<T>::ArrayRCP(
   if(node_) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
-    add_new_ArrayRCP_node(node_,os.str());
+    add_new_RCP_node(node_,os.str());
   }
 #endif
 }

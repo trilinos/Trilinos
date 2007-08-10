@@ -569,7 +569,7 @@ int main( int argc, char* argv[] ) {
   
   try {
     // This should show that the A and C RCP objects are still around!
-    Teuchos::PrivateUtilityPack::print_active_RCP_nodes(out);
+    Teuchos::print_active_RCP_nodes(out);
 	} // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   
