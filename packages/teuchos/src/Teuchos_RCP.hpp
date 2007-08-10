@@ -240,7 +240,7 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
     return *this; // Assignment to self
   if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-    remove_ArrayRCP_node(node_);
+    remove_RCP_node(node_);
 #endif
     delete node_;
   }

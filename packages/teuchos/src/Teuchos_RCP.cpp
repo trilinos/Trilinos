@@ -94,15 +94,32 @@ void RCP_node::impl_pre_delete_extra_data()
   }
 }
 
+struct InfoAndCallNumber {
+  InfoAndCallNumber()
+    :call_number(-1)
+  {}
+  InfoAndCallNumber(
+		    const std::string &info_in,
+		    const int &call_number_in
+		    )
+    :info(info_in), call_number(call_number_in)
+
+  {}
+  std::string info;
+  int call_number;
+};
+
 } // namespace PrivateUtilityPack
 
-typedef std::map<PrivateUtilityPack::RCP_node*,std::string>  rcp_node_list_t;
+typedef std::map<PrivateUtilityPack::RCP_node*,PrivateUtilityPack::InfoAndCallNumber>  rcp_node_list_t;
 
 rcp_node_list_t rcp_node_list;
 
 void PrivateUtilityPack::add_new_RCP_node( RCP_node* rcp_node, const std::string &info )
 {
-  rcp_node_list[rcp_node] = info;
+  static int call_number = 0;
+  rcp_node_list[rcp_node] = InfoAndCallNumber(info,call_number);
+  ++call_number;
 }
 
 void PrivateUtilityPack::remove_RCP_node( RCP_node* rcp_node )
@@ -129,7 +146,10 @@ void PrivateUtilityPack::print_active_RCP_nodes(std::ostream &out)
     while( itr != rcp_node_list.end() ) {
       const rcp_node_list_t::value_type
         entry = *itr;
-      out << "\n  RCP_node address = \'" << entry.first << "\', information = " << entry.second;
+      out
+	<< "\n  RCP_node address = \'" << entry.first
+	<< "\', information = " << entry.second.info
+	<< ", call number = " << entry.second.call_number;
       ++itr;
     }
     out << "\n";

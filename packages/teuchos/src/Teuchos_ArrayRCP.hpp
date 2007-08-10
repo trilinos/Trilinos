@@ -81,7 +81,7 @@ ArrayRCP<T>::~ArrayRCP()
   if(node_ && node_->deincr_count() == 0 ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
     printActiveArrayRCPNodes.foo(); // Make sure this object is used!
-    remove_ArrayRCP_node(node_);
+    remove_RCP_node(node_);
 #endif
     delete node_;
   }
