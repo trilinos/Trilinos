@@ -69,6 +69,11 @@ type(PARIO_INFO) :: pio_info
 !/***************************** BEGIN EXECUTION ******************************/
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Set appropriate callbacks for this file type.
+  Test_Hypergraph_Callbacks = 1
+  Test_Graph_Callbacks = 0
+
 ! Read the MatrixMarket file.
 
   if (Proc == 0) then

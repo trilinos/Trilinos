@@ -48,28 +48,42 @@ Source code for <i>zdrive</i> is in the <i>driver</i> and <i>ch</i> directories 
 the Zoltan distribution. Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.  The source code for <i>zCPPdrive</i> is also in <i>driver</i>, and uses some
 of the same C source files (in <i>driver</i> and <i>ch</i>) that <i>zdrive</i> uses.
 <p>
-To compile the test drivers,
+To compile the C and C++ test drivers,
 use the following commands:
 <ul>gmake [options] zdrive</ul>
 <ul>gmake [options] zCPPdrive</ul>
+where the options are described below.
+<p>
+To compile the F90 driver, you must first link to the appropriate
+version of 
+<a href="../ug_html/ug_fortran.html#fortran ug api"><i>zoltan_user_data.f90</i></a>.  (This link needs to be established only once.)  
+<blockquote>
+cd Zoltan/fort<br>
+mv zoltan_user_data.f90 zoltan_user_data.f90.zoltan<br>
+ln -s ../fdriver/zoltan_user_data.f90 .<br>
+cd ..<br>
+</blockquote>
+Then you can compile the F90 driver <i>zfdrive</i>.
 <ul>gmake YES_FORTRAN=1 [options] zfdrive</ul>
 where the options are described below.
+<p>
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td WIDTH="20%"><b>Options to gmake:</b></td>
+<td WIDTH="30%"><b>Options to gmake:</b></td>
 
-<td WIDTH="80%">&nbsp;</td>
+<td WIDTH="70%">&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform&gt;</i></td>
+<td VALIGN=TOP><i>ZOLTAN_ARCH=&lt;platform&gt;</i></td>
 
-<td>Specify the target architecture.&nbsp; A corresponding
+<td VALIGN=TOP>Specify the target architecture.&nbsp; A corresponding
 file, <a href="../ug_html/ug_usage.html#Building the Library"><i>Utilities/Config/Config.&lt;platform&gt;</i></a>, containing environment definitions
 for <i>&lt;platform</i>&gt;, must be created in the
 <i>Utilities/Config</i> directory.</td>
 </tr>
 </table>
+<p>
 The drivers
 are placed in the <i>Obj_&lt;platform&gt;</i> directory.
 <h3>

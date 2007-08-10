@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   zz->Set_Num_Obj_Fn(exGetNumberOfAssignedObjects, NULL);
   zz->Set_Obj_List_Fn(exGetObjectList, NULL);
   zz->Set_Num_Geom_Fn(exGetObjectSize, NULL);
-  zz->Set_Geom_Multi_Fn(exGetObject, NULL);
+  zz->Set_Geom_Multi_Fn(exGetObjectCoords, NULL);
 
   // Perform the load balancing partitioning
 

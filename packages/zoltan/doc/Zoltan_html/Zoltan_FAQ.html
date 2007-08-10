@@ -14,7 +14,7 @@
    <title>Zoltan</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000-2006, Sandia National Laboratories.                !
+ ! Copyright (c) 2000-2007, Sandia National Laboratories.                !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
 -->
@@ -117,7 +117,7 @@ Developer's Guide</a></font></b></td>
 <tr ALIGN=LEFT VALIGN=TOP>
 <td VALIGN=TOP WIDTH="150"><!----------- 2A-nd little turquoise bevel button ------------>
 <table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
-<tr ALIGN=CENTER VALIGN=CENTER> 
+<tr ALIGN=CENTER VALIGN=CENTER>
 <td><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_FAQ.html">
 Frequently Asked Questions</a></font></b></td>
 </tr>
@@ -130,7 +130,6 @@ Frequently Asked Questions</a></font></b></td>
 <tr VALIGN=TOP>
 <td COLSPAN="2"></td>
 </tr>
-
 
 <!-------------------------------------------------------------------------->
 <tr ALIGN=LEFT VALIGN=TOP>
@@ -234,129 +233,128 @@ Zoltan</a></font></b></td>
 <td COLSPAN="2"></td>
 </tr>
 <!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 8th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica">
+<a href="http://www.sandia.gov/general/privacy-security/index.html">Sandia Privacy and Security Notice</a></font></b></td>
+</tr>
 </table>
 </td>
 
-<td VALIGN=TOP>
-<!--MAIN CONTENT AREA STARTS HERE-->
-<!----------------THIS IS A CHANGE AREA---------------->
-<!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------>
-<b><font face="Verdana, Arial, Helvetica"><font size=+2>
-Zoltan:
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+</table>
+</td>
+
+<td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Parallel Partitioning, Load Balancing and Data-Management Services 
+<p>
+Frequently Asked Questions
 </font></font></b>
-<br>
-<b><font face="Verdana, Arial, Helvetica"><font size=+2>
-Data-Management Services for Parallel Applications
-</font></font></b>
-<p>
-<!---------------END OF THIS CHANGE AREA--------------->
-<!----------------THIS IS A CHANGE AREA---------------->
-<!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
-<b><font face="Verdana, Arial, Helvetica"><font size=+2>
-How to Cite Zoltan
-</font></font></b><br>
-<hr>
-<!---------------------------------------------------------------------------->
+
+<hr WIDTH="100%">
+<p>
+<ol>
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------  Type questions here; hyperlink to answers below. ---------->
+<!------------  Keep them in the same order!                     ---------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<li>  <a href="#DEPFILES">What does the following message mean during 
+compilation of <i>zoltan</i>?
+<blockquote>
+Makefile:28: mem.d: No such file or directory
+</blockquote></a>
+<li>  <a href="#MPILEAK">On some platforms, why do Zoltan partitioning 
+methods RCB and RIB use an increasing amount of memory over multiple 
+invocations?</a>
+<li>  <a href="#ZOLTANUSERDATA">Why does compilation of the Fortran90 driver <i>zfdrive</i> fail in fdr_const.f90?</a>
+</ol>
+<p>
+<hr WIDTH="100%">
+<hr WIDTH="100%">
+<p>
+<ol>
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------  Type answers here.                         ---------------->
+<!------------  Keep them in the same order as list above! ---------------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<li>  <a NAME="DEPFILES"></a>What does the following message mean during
+compilation of Zoltan?
+<blockquote>
+Makefile:28: mem.d: No such file or directory</blockquote>
+Every time Zoltan is built, gmake looks for a dependency file <i>filename</i>.d 
+for each source file <i>filename</i>.c.  The first time Zoltan is built for a 
+given platform, the dependency files do not exist.  The dependency files are
+also removed by "gmake clean."  Don't worry, though; after producing this
+warning, gmake will create the dependency files it needs and continue 
+compilation.
+
+<hr WIDTH="100%">
+<li>  <a name="MPILEAK"></a>On some platforms, why do Zoltan partitioning 
+methods RCB and RIB use an increasing amount of memory over multiple 
+invocations?
+<p>
+Zoltan partitioning methods RCB and RIB use MPI_Comm_dup and MPI_Comm_split 
+to recursively create communicators with subsets of processors.  
+Some implementations of 
+MPI (e.g., the default MPI on Sandia's Thunderbird cluster) do not correctly
+release memory associated with these communicators during MPI_Comm_free,
+resulting in growing memory use over multiple invocations of RCB or RIB.  
+An undocumented workaround in 
+Zoltan is to set the TFLOPS_SPECIAL parameter to 1 (e.g., 
+<a href="ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>(zz,"TFLOPS_SPECIAL","1");), which causes an 
+implementation that doesn't use MPI_Comm_split to be invoked.
+
+<hr WIDTH="100%">
+<li>  <a name="ZOLTANUSERDATA"></a>Why does compilation of the Fortran90 driver <i>zfdrive</i> fail in fdr_const.f90?
+The Fortran90 driver <i>zfdrive</i> uses user-defined data types for a mesh
+data structure.  It passes these data types to the Zoltan query functions
+through the <i>void *data</i> argument.  Strict type checking in Fortran90
+requires that the query interface have these user-defined data types compiled
+into the interface.  The solution is as follows: 
+<blockquote>
+cd Zoltan/fort<br>
+mv zoltan_user_data.f90 zoltan_user_data.f90.zoltan<br>
+ln -s ../fdriver/zoltan_user_data.f90 .<br>
+cd ..<br>
+touch fdriver/zoltan_user_data.f90 fort/zoltan_user_data.f90<br>
+gmake zfdrive<br>
+</blockquote>
+See the <a href="ug_html/ug_fortran.html#fortran ug api">Fortran90 API</a>
+description in the User's Guide 
+and <a href="dev_html/dev_driver.html">instructions for using <i>zfdrive</i></a>
+in the Developer's Guide for more details.
+</ol>
 
 <p>
-Please use the following references when you cite Zoltan:
+<hr WIDTH="100%">
+Updated:  $Date$
 
-<p>
-<small>
-@Article{<b>ZoltanOverviewArticle</b>,<br>
-&nbsp;&nbsp; author        = {Karen Devine and Erik Boman and Robert Heaphy and 
-                              Bruce Hendrickson and Courtenay Vaughan}, <br>
-&nbsp;&nbsp; title         = {{Zoltan} Data Management Services for Parallel 
-                              Dynamic Applications}, <br>
-&nbsp;&nbsp; journal       = {Computing in Science and Engineering}, <br>
-&nbsp;&nbsp; year          = {2002}, <br>
-&nbsp;&nbsp; volume        = {4}, <br>
-&nbsp;&nbsp; number        = {2}, <br>
-&nbsp;&nbsp; pages         = {90--97} <br>
-} <br>
-</small>
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+Copyright (c) 2000-2007, Sandia National Laboratories. <br>
+The Zoltan Library and its documentation are released
+under the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License (LGPL)</a>.  
+See the README file in the main Zoltan directory for more information.
+<hr WIDTH="100%">
 
-<p>
-<small>
-@Unpublished{<b>ZoltanHomePage</b>,<br>
-&nbsp;&nbsp; author  = {Erik Boman and Karen Devine and Lee Ann Fisk and
-                        Robert Heaphy and Bruce Hendrickson and Vitus Leung
-                        and Courtenay Vaughan and Umit Catalyurek and
-                        Doruk Bozdag and William Mitchell},<br>
-&nbsp;&nbsp; title   = {{Zoltan} home page},<br>
-&nbsp;&nbsp; note    = {\url{http://www.cs.sandia.gov/Zoltan}},<br>
-&nbsp;&nbsp; year    = {1999}}<br>
-}<br>
-</small>
-
-<p>
-<small>
-@Manual{<b>ZoltanUsersGuideV2</b>,<br>
-&nbsp;&nbsp; title         = {{Zoltan 2.0}: Data Management Services for 
-                             Parallel Applications; User's Guide},<br>
-&nbsp;&nbsp; author        = {Erik Boman and Karen Devine and Lee Ann Fisk and
-                              Robert Heaphy and Bruce Hendrickson and
-                              Courtenay Vaughan and Umit Catalyurek and
-                              Doruk Bozdag and William Mitchell},<br>
-&nbsp;&nbsp; organization  = {Sandia National Laboratories},<br>
-&nbsp;&nbsp; address       = {Albuquerque, NM},<br>
-&nbsp;&nbsp; year          = {2006},<br>
-&nbsp;&nbsp; note          = {Tech. Report SAND2006-2958
-                   \url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}}<br>
-}<br>
-</small>
-
-<p>
-<small>
-@Manual{<b>ZoltanDevelopersGuideV2</b>,<br>
-&nbsp;&nbsp; title         = {{Zoltan 2.0}: Data Management Services for 
-                             Parallel Applications; Developer's Guide},<br>
-&nbsp;&nbsp; author        = {Erik Boman and Karen Devine and Lee Ann Fisk and
-                             Robert Heaphy and Bruce Hendrickson and
-                             Courtenay Vaughan and Umit Catalyurek and
-                             Doruk Bozdag and William Mitchell},<br>
-&nbsp;&nbsp; organization  = {Sandia National Laboratories},<br>
-&nbsp;&nbsp; address       = {Albuquerque, NM},<br>
-&nbsp;&nbsp; year          = {2006},<br>
-&nbsp;&nbsp; note          = {Tech. Report SAND2006-2955
-                  \url{http://www.cs.sandia.gov/Zoltan/dev_html/dev.html}}<br>
-}<br>
-</small>
-
-<p>
-<small>
-@Inproceedings{<b>ZoltanHypergraphIPDPS06</b>,<br>
-&nbsp;&nbsp; title         = {Parallel Hypergraph Partitioning for
-                              Scientific Computing},<br>
-&nbsp;&nbsp; author        = {Karen D. Devine and Erik G. Boman and
-                              Robert T. Heaphy and Rob H. Bisseling
-                              and Umit V. Catalyurek},<br>
-&nbsp;&nbsp; conference    = {IPDPS'06},<br>
-&nbsp;&nbsp; publisher     = {IEEE},<br>
-&nbsp;&nbsp; year          = {2006}<br>
-}<br>
-</small>
-
-<p>
-<small>
-@Inproceedings{<b>ZoltanParHypRepart07</b>,<br>
-&nbsp;&nbsp; title = {Hypergraph-based Dynamic Load Balancing for Adaptive 
-                      Scientific Computations},<br>
-&nbsp;&nbsp; author = {U.V. Catalyurek and E.G. Boman and K.D. Devine 
-                       and D. Bozdag and R.T.  Heaphy and L.A. Riesen},<br>
-&nbsp;&nbsp; booktitle = {Proc. of 21st International Parallel and 
-                          Distributed Processing Symposium (IPDPS'07)},<br>
-&nbsp;&nbsp; publisher = {IEEE},<br>
-&nbsp;&nbsp; year = {2007},<br>
-&nbsp;&nbsp; note = {Best Algorithms Paper Award.}<br>
-}<br>
-</small>
-<p>
-
-<hr>
 <!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
 </tr>
 </table>

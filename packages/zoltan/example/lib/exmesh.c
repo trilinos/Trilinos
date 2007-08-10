@@ -153,10 +153,14 @@ int exGetNumberOfAssignedObjects(void *userDefinedData, int *err)
   *err = 0;
   return NumPoints;
 }
-void exGetObjectList(void *userDefinedData, int numGlobalIds, int numLids,
+void exGetObjectList(void *userDefinedData, int numGlobalIds, int numLocalIds,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts,
   int *err)
 {
+/* ZOLTAN_OBJ_LIST_FN callback function.
+** Returns list of objects owned by this processor.
+** lids[i] = local index of object in array.
+*/
   int i;
     
   for (i=0; i<NumPoints; i++)
@@ -174,9 +178,12 @@ int exGetObjectSize(void *userDefinedData, int *err)
   *err = 0; 
   return 3;
 } 
-void exGetObject(void *userDefinedData, int numGlobalIds, int numLids, int numObjs,
+void exGetObjectCoords(void *userDefinedData, int numGlobalIds, int numLocalIds, int numObjs,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int numDim, double *pts, int *err)
 { 
+/* ZOLTAN_GEOM_MULTI_FN callback.
+** Returns coordinates of objects listed in gids and lids.
+*/
   int i, id, id3;
   int next = 0;
   

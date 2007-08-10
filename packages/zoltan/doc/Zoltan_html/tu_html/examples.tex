@@ -48,18 +48,18 @@ This example is a C program which uses Zoltan to partition
 in parallel 36 objects, each of which has a weight.  The goal is
 to balance the weights across the parallel application.
 
-It uses the Zoltan method called SIMPLE. 
+It uses the Zoltan method called BLOCK. 
 This method really exists as an example for developers
 who want to learn how to write partitioning methods.  It was
 not intended to be a partitioning strategy for real applications.
 However it is a good choice for an example.  
 
 If you are a new user of Zoltan, you may want to initially get your
-application working with the SIMPLE method.  Once you have
+application working with the BLOCK method.  Once you have
 that first step accomplished, you can modify it to use one of the
 other partitioning methods.
 
-In order to use the SIMPLE method, we must define two query functions:
+In order to use the BLOCK method, we must define two query functions:
 
 \begin{itemize}
 \item A function of type ZOLTAN\_NUM\_OBJ\_FN which provides the number of objects belonging to this process.  In our example we call this function \textbf{get\_number\_of\_objects}.
@@ -80,7 +80,7 @@ Zoltan will also include them when querying your application for data.
 
 A version of the 
 code listed below may be found in the Zoltan source in file
-\textbf{examples/C/simpleSIMPLE.c}. 
+\textbf{examples/C/simpleBLOCK.c}. 
 
 \begin{flushleft}
 \begin{verbatim}
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "LB_METHOD", "SIMPLE");  /* name of Zoltan method */
+  Zoltan_Set_Param(zz, "LB_METHOD", "BLOCK");  /* name of Zoltan method */
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); /* size of global ID    */
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"); /* no local IDs         */
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); /* weights are 1 float   */

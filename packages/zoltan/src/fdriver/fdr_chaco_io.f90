@@ -61,6 +61,10 @@ type(ELEM_INFO), pointer :: elements(:)
   integer(Zoltan_INT) :: fp
 !/***************************** BEGIN EXECUTION ******************************/
 
+! Set appropriate callbacks for this file type.
+  Test_Graph_Callbacks = 1
+  Test_Hypergraph_Callbacks = 0
+
   nullify(start, adj, vwgts, vtxdist, ewgts, x, y, z)
 
   if (Proc == 0) then

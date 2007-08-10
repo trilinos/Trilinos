@@ -169,8 +169,8 @@ endif
 
 # zfdrive can only handle plain MatrixMarket format, so run only these
 if ( $yes_fortran ) then
-  set hg_name  = (diag500_4 cage10 FluidDFT)
-  set hg_nproc = (  4       11     8)
+  set hg_name  = (diag500_4 cage10 )
+  set hg_nproc = (  4       11     )
 endif
 
 # Determine what command to use to launch a parallel program based on $arch

@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "LB_METHOD", "SIMPLE");  /* Zoltan method: "SIMPLE" */
+  Zoltan_Set_Param(zz, "LB_METHOD", "BLOCK");  /* Zoltan method: "BLOCK" */
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); /* global ID is 1 integer */
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"); /* no local IDs */
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); /* weights are 1 float */

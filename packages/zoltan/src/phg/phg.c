@@ -688,6 +688,7 @@ int Zoltan_PHG_Initialize_Params(
   char *package = hgp->hgraph_pkg; 
   char *method = hgp->hgraph_method;
   char *phg = "PHG";
+  char buf[1024];
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
                                    another param at least it will be 0 */
@@ -760,8 +761,6 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
   /* LB.Approach is initialized to "repartition", and set in Set_Key_Params  */
   strncpy(hgp->hgraph_method,  zz->LB.Approach, MAX_PARAM_STRING_LEN);
-
-  /* Parameters default to hgraph_method "partition" */
 
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
@@ -880,6 +879,18 @@ int Zoltan_PHG_Initialize_Params(
       package = phg;          /* "phg" */
     }
 
+  if ((strcasecmp(method, "partition")) &&
+      (strcasecmp(method, "repart")) &&
+      (strcasecmp(method, "fast_repart")) &&
+      (strcasecmp(method, "refine")) &&
+      (strcasecmp(method, "multilevel_refine"))){
+  
+    sprintf(buf,"%s is not a valid hypergraph method\n",method);
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, buf);
+    err = ZOLTAN_FATAL;
+    goto End;
+  }
+
   /* Adjust refinement parameters using hgp->refinement_quality */
   if (hgp->refinement_quality < 0.5/hgp->fm_loop_limit) 
     /* No refinement */
@@ -922,6 +933,7 @@ int Zoltan_PHG_Initialize_Params(
            for phg_refine ("no"). */        
         zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
+
     }
     if (!strcasecmp(method, "MULTILEVEL_REFINE")){
         /* UVCUVC: as a heuristic we prefer local matching;

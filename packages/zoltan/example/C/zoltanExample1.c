@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, exGetNumberOfAssignedObjects, NULL);
   Zoltan_Set_Obj_List_Fn(zz, exGetObjectList, NULL);
   Zoltan_Set_Num_Geom_Fn(zz, exGetObjectSize, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, exGetObject, NULL);
+  Zoltan_Set_Geom_Multi_Fn(zz, exGetObjectCoords, NULL);
 
 
   ZOLTAN_TIMER_START(zz->ZTime, timers[rcb], zz->Communicator);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, exGetNumberOfAssignedObjects, NULL);
   Zoltan_Set_Obj_List_Fn(zz, exGetObjectList, NULL);
   Zoltan_Set_Num_Geom_Fn(zz, exGetObjectSize, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, exGetObject, NULL);
+  Zoltan_Set_Geom_Multi_Fn(zz, exGetObjectCoords, NULL);
 
   ZOLTAN_TIMER_START(zz->ZTime, timers[rib], zz->Communicator);
 
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, exGetNumberOfAssignedObjects, NULL);
   Zoltan_Set_Obj_List_Fn(zz, exGetObjectList, NULL);
   Zoltan_Set_Num_Geom_Fn(zz, exGetObjectSize, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, exGetObject, NULL);
+  Zoltan_Set_Geom_Multi_Fn(zz, exGetObjectCoords, NULL);
 
   ZOLTAN_TIMER_START(zz->ZTime, timers[hsfc], zz->Communicator);
 

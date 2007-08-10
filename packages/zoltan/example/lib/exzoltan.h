@@ -27,7 +27,7 @@ int exGetObjectSize(void *userDefinedData, int *err);
 void exGetObjectList(void *userDefinedData, int numGlobalIds, int numLids,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts,
   int *err);
-void exGetObject(void *userDefinedData, int numGlobalIds, int numLids, 
+void exGetObjectCoords(void *userDefinedData, int numGlobalIds, int numLids, 
   int numObjs, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int numDim, 
   double *pts, int *err);
 

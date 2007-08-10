@@ -14,20 +14,47 @@ FAST_SERVER_CVSROOT /space/sandiacvs/CVS-FAST
 #
 FAST_PROJECT        zoltan
 
+# Args are:
+# csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}'
+#   1: zoltan_arch
+#   2: $tname (filled in by FAST)
+#   3: zdrive name (normally zdrive, but could be zfdrive)
+#   4: testdirs (globbing is allowed in 'apostrophes' e.g. 'test/hg_*'
+
 
 Test zoltan-sun-nightly
 seamus
-csh -f ../../zoltan.build gcctest $tname
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*,nem_*}'
 
-Test zoltan-linux-smoke
+Test zoltan-sun_base-nightly
+seamus
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*,nem_*}'
+
+#; cd Zoltan/fort; mv zoltan_user_data.f90 zoltan_user_data.f90.zoltan; 
+# ln -s ../fdriver/zoltan_user_data.f90 .; cd ../..;  
+# csh -f ../../zoltan.build gcctest $tname zfdrive 'test/{ch_*}'
+
+Test zoltan-lin32-smoke
 bobo.sandia.gov
-csh -f ../../zoltan.build linux $tname
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build linux $tname zdrive 'test/{ch_*,hg_*}'
 
-Test zoltan-linux64-nightly
+Test zoltan-lin64-nightly
 pill.sandia.gov
-csh -f ../../zoltan.build lin64test $tname
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
+
+Test zoltan-lin64_base-nightly
+pill.sandia.gov
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
+
+#Test zoltan-sunf-nightly
+#seamus
+#csh -f ../../zoltan.build gcctest $tname zfdrive 'test/ch_*'
 
 Test zoltan-codecheck
 software.sandia.gov
-csh -f ../../zoltan.build --codecheck $tname
+cvs -d /space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build --codecheck $tname zdrive 'test/{ch_*,hg_*}'
+
+Test zoltan-lin32_base-nightly
+sadl14088
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
 

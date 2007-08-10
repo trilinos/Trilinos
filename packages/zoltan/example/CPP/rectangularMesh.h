@@ -166,7 +166,7 @@ protected:
 
 public:
   // Constructors
-  rectangularMesh::rectangularMesh()
+  rectangularMesh()
     {
     this->x_dim   =5;
     this->y_dim   =5;
@@ -194,7 +194,7 @@ public:
     }
 
   // Destructor
-  rectangularMesh::~rectangularMesh()
+  ~rectangularMesh()
     { 
     reset_totals();
     }

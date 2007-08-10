@@ -510,6 +510,7 @@ char msg[256];
   }
 }
 
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -686,7 +687,7 @@ int idx;
   /* For dynamic weights test, multiply size by vertex weight. */
   /* This simulates mesh refinement. */
   if (Test.Dynamic_Weights){
-    size *= current_elem->cpu_wgt[0];
+    size *= ((current_elem->cpu_wgt[0] > 1.0) ? current_elem->cpu_wgt[0] : 1.0);
   }
 
   return (size);

@@ -3,10 +3,10 @@
 # Examples, written in C, of parallel applications that use the Zoltan library
 # to partition a collection of objects. 
 #
-# simpleSIMPLE.c - The most basic example, with 25 objects, each of which
-#   has a global ID and a weight.  The partitioning method is SIMPLE, a
+# simpleBLOCK.c - The most basic example, with 25 objects, each of which
+#   has a global ID and a weight.  The partitioning method is BLOCK, a
 #   method which exists as a guide to Zoltan developers on how to write a
-#   Zoltan partitioning method.  SIMPLE is not expected to be useful in
+#   Zoltan partitioning method.  BLOCK is not expected to be useful in
 #   most real world problems.
 #
 # simpleRCB.c - Recursive coordinate bisection, a geometric method, with
@@ -47,7 +47,7 @@ ifdef PARMETIS_LIBPATH
 GRAPH_EXAMPLE=simpleGRAPH
 endif
 
-CEXAMPLES = simpleSIMPLE simpleRCB $(GRAPH_EXAMPLE) simpleHG zoltanSimple zoltanExample1 subDirs phgExample
+CEXAMPLES = simpleBLOCK simpleRCB $(GRAPH_EXAMPLE) simpleHG zoltanSimple zoltanExample1 subDirs phgExample
 
 
 LIBZOLTAN = ../lib/libexzoltan.a $(ZOLTAN_LIB_DIR)/libzoltan.a
@@ -62,7 +62,7 @@ else
 all:    $(CEXAMPLES)
 endif
 
-simpleSIMPLE : simpleSIMPLE.c simpleGraph.h simpleQueries.h $(LIBZOLTAN)
+simpleBLOCK : simpleBLOCK.c simpleGraph.h simpleQueries.h $(LIBZOLTAN)
 	@echo "Building $@"
 	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 

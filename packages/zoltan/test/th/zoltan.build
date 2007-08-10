@@ -6,11 +6,14 @@
 # todo: set appropriate revision
 
 #
-# inherited from run_fast
-$CVSCMD Zoltan
+# inherited from run_fast -- added to config.fast
+# $CVSCMD Zoltan
 
 # fix issue with python in /usr/local
 setenv LD_LIBRARY_PATH /usr/local/lib
+
+# turn off globbing, to prevent expanding 'test/*' and similar args
+set noglob
 
 set dir=`pwd`
 set fastdir="$dir/../../fast/client"
@@ -19,28 +22,43 @@ set driver="$fastdir/driver"
 cd Zoltan
 set zdir=`pwd`
 
-if ("$1" == "--codecheck") then
-  $driver --o=$dir/test --I=$fastdir --name="$2" check --config=test/th/codechecks.cfg
+# from config.fast:  lin64test $tname zdrive 'test/{ch_*,hg_*}'
+set arch="$1"
+set tname="$2"
+set zdrive="$3"
+set testdirs="$4"
+
+set tag='nightly'
+echo "$tname" | grep 'smoke' > /dev/null && set tag='smoke'
+
+
+cat << _DONE_ >& $dir/test/config.out
+Config:
+    ZOLTAN_ARCH=$arch
+    tag=$tag
+    Test name=$tname
+    zdrive=$zdrive
+    testdirs=$testdirs
+_DONE_
+
+# check other args here
+if ("$arch" == "--codecheck") then
+  $driver --o=$dir/test --I=$fastdir --name="$tname" check --config=test/th/codechecks.cfg
+
 else
 
-# $1 contains either the architecture, or "--codecheck"
-  set arch="$1"
 
-  echo "config: ZOLTAN_ARCH=$arch" >& $dir/test/config.out
-  $driver --o=$dir/test --I=$fastdir --name="$2" configure --logfile=$dir/test/config.out
+  $driver --o=$dir/test --I=$fastdir --name="$tname" configure --logfile=$dir/test/config.out
 
-  gmake "ZOLTAN_ARCH=$arch" zoltan zdrive >& $dir/test/build.out
+  gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
 
-  $driver --o=$dir/test --I=$fastdir --name="$2" build --logfile=$dir/test/build.out
+  $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
 
   # create the test data, xml files, factor files
   ( cd test ; csh -f mktests >& $dir/mktest.out )
 
-  set tag=nightly
-  echo "$2" | grep 'smoke' > /dev/null && set tag=smoke
-
   #
   # Test
-  $driver --o=$dir/test --I=$fastdir --name="$2" test --testdirs='test/{ch_*,hg_*}' --tag=$tag
+  $driver --o=$dir/test --I=$fastdir --name="$tname" test --testdirs="$testdirs" --tag=$tag
 
 endif

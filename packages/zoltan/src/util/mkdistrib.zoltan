@@ -15,7 +15,9 @@ rm -rf Zoltan ParMETIS3_1 siMPI
 rm -f zoltan_distrib.tar.gz
 cvs checkout -P Zoltan
 cvs checkout -P ParMETIS3_1
-cvs checkout -P siMPI
+#cvs checkout -P siMPI
+#Get siMPI directly from Pat Miller's sourceforge. miller2007
+cvs -t -z3 -d:ext:knogard@pympi.cvs.sourceforge.net:/cvsroot/pympi co -P -d siMPI pyMPI/siMPI
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
@@ -78,5 +80,7 @@ gzip zoltan_distrib.tar
 # Tag repository.
 cvs rtag ${ACT_TAG} Zoltan 
 cvs rtag ${ACT_TAG} ParMETIS3_1
-cvs rtag ${ACT_TAG} siMPI
+#cvs rtag ${ACT_TAG} siMPI
+#Tag Pat Miller's cvs repository on sourceforge miller2007
+cvs -d:ext:knogard@pympi.cvs.sourceforge.net:/cvsroot/pympi rtag ${ACT_TAG} pyMPI/siMPI
 exit 0
