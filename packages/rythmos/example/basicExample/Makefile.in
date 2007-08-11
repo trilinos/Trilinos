@@ -269,6 +269,15 @@ EXTRA_DIST = $(srcdir)/ExampleApplication.hpp
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@LINK_DIAGONAL_BELOS = basicExample_belos.exe
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_BELOS_IFPACK = basicExample_belos_ifpack.exe
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_BELOS_ML = basicExample_belos_ml.exe
+BASIC_EXE_LINKS = \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
+
 
 #
 # Common stuff
@@ -550,7 +559,7 @@ uninstall-am:
 	uninstall-am
 
 
-all-local: make-links
+all-local: $(BASIC_EXE_LINKS)
 	@echo ""
 	@echo "rythmos/example/basicExample built successfully."
 	@echo ""
@@ -575,15 +584,6 @@ basicExample_belos_ifpack.exe:
 
 basicExample_belos_ml.exe:
 	ln -s ./basicExample.exe basicExample_belos_ml.exe
-
-make-links: \
-  $(LINK_DIAGONAL_AMESOS) \
-  $(LINK_DIAGONAL_AZTECOO) \
-  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
-  $(LINK_DIAGONAL_AZTECOO_ML) \
-  $(LINK_DIAGONAL_BELOS) \
-  $(LINK_DIAGONAL_BELOS_IFPACK) \
-  $(LINK_DIAGONAL_BELOS_ML)
 
 include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

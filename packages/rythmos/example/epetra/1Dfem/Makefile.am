@@ -50,7 +50,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 EXEEXT = .exe
 
-all-local: make-links
+all-local: $(1DFEM_EXE_LINKS)
 	@echo ""
 	@echo "rythmos/example/epetra/1Dfem/1DfemTransient built successfully."
 	@echo ""
@@ -126,7 +126,7 @@ endif
 1DfemTransient_belos_ml.exe:
 	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ml.exe
 
-make-links: \
+1DFEM_EXE_LINKS = \
   $(LINK_DIAGONAL_AMESOS) \
   $(LINK_DIAGONAL_AZTECOO) \
   $(LINK_DIAGONAL_AZTECOO_IFPACK) \
@@ -134,5 +134,3 @@ make-links: \
   $(LINK_DIAGONAL_BELOS) \
   $(LINK_DIAGONAL_BELOS_IFPACK) \
   $(LINK_DIAGONAL_BELOS_ML)
-
-

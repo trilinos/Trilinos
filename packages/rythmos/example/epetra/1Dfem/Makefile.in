@@ -282,6 +282,15 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@LINK_DIAGONAL_BELOS = 1DfemTransient_belos.exe
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_BELOS_IFPACK = 1DfemTransient_belos_ifpack.exe
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_BELOS_ML = 1DfemTransient_belos_ml.exe
+1DFEM_EXE_LINKS = \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
+
 all: all-am
 
 .SUFFIXES:
@@ -594,7 +603,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.rythmos
 include $(top_builddir)/../nox/Makefile.export.nox
 
-all-local: make-links
+all-local: $(1DFEM_EXE_LINKS)
 	@echo ""
 	@echo "rythmos/example/epetra/1Dfem/1DfemTransient built successfully."
 	@echo ""
@@ -619,15 +628,6 @@ all-local: make-links
 
 1DfemTransient_belos_ml.exe:
 	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ml.exe
-
-make-links: \
-  $(LINK_DIAGONAL_AMESOS) \
-  $(LINK_DIAGONAL_AZTECOO) \
-  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
-  $(LINK_DIAGONAL_AZTECOO_ML) \
-  $(LINK_DIAGONAL_BELOS) \
-  $(LINK_DIAGONAL_BELOS_IFPACK) \
-  $(LINK_DIAGONAL_BELOS_ML)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

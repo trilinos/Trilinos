@@ -269,6 +269,15 @@ diagonalTransient_LDADD = $(common_ldadd)
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@LINK_DIAGONAL_BELOS = diagonalTransient_belos.exe
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_BELOS_IFPACK = diagonalTransient_belos_ifpack.exe
 @ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_BELOS_ML = diagonalTransient_belos_ml.exe
+DIAGONAL_EXE_LINKS = \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
+
 
 #
 # Common stuff
@@ -550,40 +559,31 @@ uninstall-am:
 	uninstall-am
 
 
-all-local: make-links
+all-local: $(DIAGONAL_EXE_LINKS)
 	@echo ""
 	@echo "rythmos/example/diagonalTransient built successfully."
 	@echo ""
 
-diagonalTransient_amesos.exe:
+diagonalTransient_amesos.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_amesos.exe
 
-diagonalTransient_aztecoo.exe:
+diagonalTransient_aztecoo.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo.exe
 
-diagonalTransient_aztecoo_ifpack.exe:
+diagonalTransient_aztecoo_ifpack.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ifpack.exe
 
-diagonalTransient_aztecoo_ml.exe:
+diagonalTransient_aztecoo_ml.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ml.exe
 
-diagonalTransient_belos.exe:
+diagonalTransient_belos.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_belos.exe
 
-diagonalTransient_belos_ifpack.exe:
+diagonalTransient_belos_ifpack.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_belos_ifpack.exe
 
-diagonalTransient_belos_ml.exe:
+diagonalTransient_belos_ml.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_belos_ml.exe
-
-make-links: \
-  $(LINK_DIAGONAL_AMESOS) \
-  $(LINK_DIAGONAL_AZTECOO) \
-  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
-  $(LINK_DIAGONAL_AZTECOO_ML) \
-  $(LINK_DIAGONAL_BELOS) \
-  $(LINK_DIAGONAL_BELOS_IFPACK) \
-  $(LINK_DIAGONAL_BELOS_ML)
 
 include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

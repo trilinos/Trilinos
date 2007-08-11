@@ -28,7 +28,7 @@
 
 EXEEXT = .exe
 
-all-local: make-links
+all-local: $(BASIC_EXE_LINKS)
 	@echo ""
 	@echo "rythmos/example/basicExample built successfully."
 	@echo ""
@@ -100,7 +100,7 @@ basicExample_belos_ifpack.exe:
 basicExample_belos_ml.exe:
 	ln -s ./basicExample.exe basicExample_belos_ml.exe
 
-make-links: \
+BASIC_EXE_LINKS = \
   $(LINK_DIAGONAL_AMESOS) \
   $(LINK_DIAGONAL_AZTECOO) \
   $(LINK_DIAGONAL_AZTECOO_IFPACK) \

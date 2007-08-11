@@ -28,7 +28,7 @@
 
 EXEEXT = .exe
 
-all-local: make-links
+all-local: $(DIAGONAL_EXE_LINKS)
 	@echo ""
 	@echo "rythmos/example/diagonalTransient built successfully."
 	@echo ""
@@ -78,28 +78,28 @@ LINK_DIAGONAL_BELOS_ML=diagonalTransient_belos_ml.exe
 endif
 endif
 
-diagonalTransient_amesos.exe:
+diagonalTransient_amesos.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_amesos.exe
 
-diagonalTransient_aztecoo.exe:
+diagonalTransient_aztecoo.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo.exe
 
-diagonalTransient_aztecoo_ifpack.exe:
+diagonalTransient_aztecoo_ifpack.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ifpack.exe
 
-diagonalTransient_aztecoo_ml.exe:
+diagonalTransient_aztecoo_ml.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ml.exe
 
-diagonalTransient_belos.exe:
+diagonalTransient_belos.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_belos.exe
 
-diagonalTransient_belos_ifpack.exe:
+diagonalTransient_belos_ifpack.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_belos_ifpack.exe
 
-diagonalTransient_belos_ml.exe:
+diagonalTransient_belos_ml.exe: diagonalTransient.exe
 	ln -s ./diagonalTransient.exe diagonalTransient_belos_ml.exe
 
-make-links: \
+DIAGONAL_EXE_LINKS = \
   $(LINK_DIAGONAL_AMESOS) \
   $(LINK_DIAGONAL_AZTECOO) \
   $(LINK_DIAGONAL_AZTECOO_IFPACK) \
