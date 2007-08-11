@@ -349,7 +349,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   B_allocated = B_total_Nnz * 2;
   B_allocated_int = Bmatrix->blocks + 1;
   B_allocated_int = B_allocated_int*2;
-  B_allocated_int =  B_total_Nnz;  //this line needs to go sometime and be replaced by those above it
+  B_allocated_int =  B_total_Nnz;  /*this line needs to go sometime and be replaced by those above it*/
   lots_of_space = 0;
 
   Bcols     = NULL; B_indx = NULL; Bvals = NULL;
