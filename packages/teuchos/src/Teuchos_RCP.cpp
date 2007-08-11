@@ -191,6 +191,7 @@ PrintActiveRCPNodes::~PrintActiveRCPNodes()
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
+    std::cout << std::flush;
     print_active_RCP_nodes(std::cerr);
     TEST_FOR_EXCEPT(0==rcp_node_list);
     delete rcp_node_list;

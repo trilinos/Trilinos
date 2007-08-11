@@ -531,9 +531,6 @@ uninstall-am:
 
 
 all-local: FourByFour.xml make-links
-	@echo ""
-	@echo "Trilinos package stratimikos subdirectory test built successfully."
-	@echo ""
 
 #test_stratimikos_driver_SOURCES = $(srcdir)/test_stratimikos_driver.cpp $(common_sources)
 #test_stratimikos_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
@@ -550,19 +547,19 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
 	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
 
-test_single_stratimikos_solver_driver_amesos.exe:
+test_single_stratimikos_solver_driver_amesos.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_amesos.exe
 
-test_single_stratimikos_solver_driver_aztecoo_ifpack.exe:
+test_single_stratimikos_solver_driver_aztecoo_ifpack.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
 
-test_single_stratimikos_solver_driver_aztecoo_ml.exe:
+test_single_stratimikos_solver_driver_aztecoo_ml.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ml.exe
 
-test_single_stratimikos_solver_driver_belos_ifpack.exe:
+test_single_stratimikos_solver_driver_belos_ifpack.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ifpack.exe
 
-test_single_stratimikos_solver_driver_belos_ml.exe:
+test_single_stratimikos_solver_driver_belos_ml.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ml.exe
 
 # Main links

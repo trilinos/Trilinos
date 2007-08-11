@@ -29,9 +29,6 @@
 EXEEXT = .exe
 
 all-local: FourByFour.xml make-links
-	@echo ""
-	@echo "Trilinos package stratimikos subdirectory test built successfully."
-	@echo ""
 
 #
 # Actual programs
@@ -72,7 +69,7 @@ if ENABLE_STRATIMIKOS_AMESOS
 LINK_TESTDRIVER_AMESOS=test_single_stratimikos_solver_driver_amesos.exe
 endif
 
-test_single_stratimikos_solver_driver_amesos.exe:
+test_single_stratimikos_solver_driver_amesos.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_amesos.exe
 
 # Links for aztecoo executables
@@ -86,10 +83,10 @@ LINK_TESTDRIVER_AZTECOO_ML=test_single_stratimikos_solver_driver_aztecoo_ml.exe
 endif
 endif
 
-test_single_stratimikos_solver_driver_aztecoo_ifpack.exe:
+test_single_stratimikos_solver_driver_aztecoo_ifpack.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
 
-test_single_stratimikos_solver_driver_aztecoo_ml.exe:
+test_single_stratimikos_solver_driver_aztecoo_ml.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ml.exe
 
 # Links for belos executables
@@ -103,10 +100,10 @@ LINK_TESTDRIVER_BELOS_ML=test_single_stratimikos_solver_driver_belos_ml.exe
 endif
 endif
 
-test_single_stratimikos_solver_driver_belos_ifpack.exe:
+test_single_stratimikos_solver_driver_belos_ifpack.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ifpack.exe
 
-test_single_stratimikos_solver_driver_belos_ml.exe:
+test_single_stratimikos_solver_driver_belos_ml.exe: test_single_stratimikos_solver_driver.exe
 	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ml.exe
 
 # Main links

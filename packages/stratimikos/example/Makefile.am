@@ -29,9 +29,6 @@
 EXEEXT = .exe
 
 all-local: generate-sample-output.pl amesos.klu.xml MixedOrderPhysicsBasedPreconditioner.Base.xml make-links
-	@echo ""
-	@echo "Trilinos package stratimikos subdirectory example built successfully."
-	@echo ""
 
 generate-sample-output.pl : generate-sample-output.pl.stub
 	cp generate-sample-output.pl.stub generate-sample-output.pl
@@ -88,10 +85,10 @@ LINK_SIMPLE_AMESOS=simple_stratimikos_example_amesos.exe
 LINK_MIXEDORDER_AMESOS=MixedOrderPhysicsBasedPreconditioner_amesos.exe
 endif
 
-simple_stratimikos_example_amesos.exe:
+simple_stratimikos_example_amesos.exe: simple_stratimikos_example.exe
 	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_amesos.exe
 
-MixedOrderPhysicsBasedPreconditioner_amesos.exe:
+MixedOrderPhysicsBasedPreconditioner_amesos.exe: MixedOrderPhysicsBasedPreconditioner.exe
 	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_amesos.exe
 
 # Links for aztecoo executables
@@ -107,16 +104,16 @@ LINK_MIXEDORDER_AZTECOO_ML=MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe
 endif
 endif
 
-simple_stratimikos_example_aztecoo_ifpack.exe:
+simple_stratimikos_example_aztecoo_ifpack.exe: simple_stratimikos_example.exe
 	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_aztecoo_ifpack.exe
 
-MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe:
+MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe: MixedOrderPhysicsBasedPreconditioner.exe
 	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe
 
-simple_stratimikos_example_aztecoo_ml.exe:
+simple_stratimikos_example_aztecoo_ml.exe: simple_stratimikos_example.exe
 	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_aztecoo_ml.exe
 
-MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe:
+MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe: MixedOrderPhysicsBasedPreconditioner.exe
 	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe
 
 # Links for belos executables
@@ -132,16 +129,16 @@ LINK_MIXEDORDER_BELOS_ML=MixedOrderPhysicsBasedPreconditioner_belos_ml.exe
 endif
 endif
 
-simple_stratimikos_example_belos_ifpack.exe:
+simple_stratimikos_example_belos_ifpack.exe: simple_stratimikos_example.exe
 	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_belos_ifpack.exe
 
-MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe:
+MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe: MixedOrderPhysicsBasedPreconditioner.exe
 	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe
 
-simple_stratimikos_example_belos_ml.exe:
+simple_stratimikos_example_belos_ml.exe: simple_stratimikos_example.exe
 	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_belos_ml.exe
 
-MixedOrderPhysicsBasedPreconditioner_belos_ml.exe:
+MixedOrderPhysicsBasedPreconditioner_belos_ml.exe: MixedOrderPhysicsBasedPreconditioner.exe
 	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_belos_ml.exe
 
 # Main links
