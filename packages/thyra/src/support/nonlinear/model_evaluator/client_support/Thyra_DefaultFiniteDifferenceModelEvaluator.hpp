@@ -173,7 +173,6 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
   ) const
 {
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;

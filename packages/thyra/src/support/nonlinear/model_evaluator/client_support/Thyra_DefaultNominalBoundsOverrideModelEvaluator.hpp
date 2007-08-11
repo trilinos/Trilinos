@@ -275,7 +275,6 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
   ) const
 {
 
-  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;

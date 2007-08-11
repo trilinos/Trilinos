@@ -657,8 +657,6 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
   ) const
 {
 
-  using Teuchos::Array;
-  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -761,7 +759,6 @@ template<class Scalar>
 void ForwardSensitivityModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 {
 
-  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::ModelEvaluatorBase MEB;
 

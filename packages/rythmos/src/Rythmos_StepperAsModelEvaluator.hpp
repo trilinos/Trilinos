@@ -254,7 +254,6 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
 {
 
   using Teuchos::as;
-  using Teuchos::RCP;
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSSB;

@@ -676,7 +676,6 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
 {
 
   using Teuchos::Array;
-  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
