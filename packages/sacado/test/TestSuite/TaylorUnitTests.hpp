@@ -388,7 +388,7 @@ public:
     ScalarT t4 = 3.2e5;
     t1 *= cos(a + exp(t1)) / 6. - tan(t1*sqrt(fabs(a * log10(fabs(b)))));
     t1 -= acos((6.+asin(pow(fabs(a),b)/t2))/t3) * asin(pow(fabs(b),2.)*1.0/t4) * atan((b*pow(2.,log(fabs(a))))/(t3*t4));
-    t1 /= cosh(b - 0.7) + 7.*sinh(t1 + 0.8)*tanh(9./a) - 9.;
+    t1 /= cosh(b - 0.7) + 7.*sinh(t1 + 0.8)*tanh(9./(a+1.)) - 9.;
     t1 += pow(fabs(a*4.),b-8.)/cos(a*b*a);
     
   return t1;
