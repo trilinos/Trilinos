@@ -91,8 +91,10 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestSuite_exe_SOURCES_DIST = $(srcdir)/DFadUnitTests.hpp \
 	$(srcdir)/DFadUnitTests.cpp $(srcdir)/CacheDFadUnitTests.hpp \
-	$(srcdir)/CacheDFadUnitTests.cpp $(srcdir)/SFadUnitTests.hpp \
-	$(srcdir)/SFadUnitTests.cpp $(srcdir)/CacheTaylorUnitTests.hpp \
+	$(srcdir)/CacheDFadUnitTests.cpp \
+	$(srcdir)/ELRDFadUnitTests.hpp $(srcdir)/ELRDFadUnitTests.cpp \
+	$(srcdir)/SFadUnitTests.hpp $(srcdir)/SFadUnitTests.cpp \
+	$(srcdir)/CacheTaylorUnitTests.hpp \
 	$(srcdir)/CacheTaylorUnitTests.cpp \
 	$(srcdir)/TaylorUnitTests.hpp $(srcdir)/TaylorUnitTests.cpp \
 	$(srcdir)/TestSuite.cpp
@@ -100,6 +102,7 @@ am__TestSuite_exe_SOURCES_DIST = $(srcdir)/DFadUnitTests.hpp \
 @ENABLE_ADOLC_TRUE@	TestSuite_exe-TaylorUnitTests.$(OBJEXT)
 am_TestSuite_exe_OBJECTS = TestSuite_exe-DFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-CacheDFadUnitTests.$(OBJEXT) \
+	TestSuite_exe-ELRDFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-SFadUnitTests.$(OBJEXT) $(am__objects_1) \
 	TestSuite_exe-TestSuite.$(OBJEXT)
 TestSuite_exe_OBJECTS = $(am_TestSuite_exe_OBJECTS)
@@ -262,6 +265,8 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/DFadUnitTests.cpp \
 	$(srcdir)/CacheDFadUnitTests.hpp \
 	$(srcdir)/CacheDFadUnitTests.cpp \
+	$(srcdir)/ELRDFadUnitTests.hpp \
+	$(srcdir)/ELRDFadUnitTests.cpp \
 	$(srcdir)/SFadUnitTests.hpp \
 	$(srcdir)/SFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
@@ -334,6 +339,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-CacheDFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-CacheTaylorUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-DFadUnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-SFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-TaylorUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-TestSuite.Po@am__quote@
@@ -379,6 +385,20 @@ TestSuite_exe-CacheDFadUnitTests.obj: $(srcdir)/CacheDFadUnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CacheDFadUnitTests.cpp' object='TestSuite_exe-CacheDFadUnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-CacheDFadUnitTests.obj `if test -f '$(srcdir)/CacheDFadUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/CacheDFadUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CacheDFadUnitTests.cpp'; fi`
+
+TestSuite_exe-ELRDFadUnitTests.o: $(srcdir)/ELRDFadUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-ELRDFadUnitTests.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Tpo -c -o TestSuite_exe-ELRDFadUnitTests.o `test -f '$(srcdir)/ELRDFadUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ELRDFadUnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Tpo $(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ELRDFadUnitTests.cpp' object='TestSuite_exe-ELRDFadUnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-ELRDFadUnitTests.o `test -f '$(srcdir)/ELRDFadUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ELRDFadUnitTests.cpp
+
+TestSuite_exe-ELRDFadUnitTests.obj: $(srcdir)/ELRDFadUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-ELRDFadUnitTests.obj -MD -MP -MF $(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Tpo -c -o TestSuite_exe-ELRDFadUnitTests.obj `if test -f '$(srcdir)/ELRDFadUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ELRDFadUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ELRDFadUnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Tpo $(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ELRDFadUnitTests.cpp' object='TestSuite_exe-ELRDFadUnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-ELRDFadUnitTests.obj `if test -f '$(srcdir)/ELRDFadUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ELRDFadUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ELRDFadUnitTests.cpp'; fi`
 
 TestSuite_exe-SFadUnitTests.o: $(srcdir)/SFadUnitTests.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-SFadUnitTests.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-SFadUnitTests.Tpo -c -o TestSuite_exe-SFadUnitTests.o `test -f '$(srcdir)/SFadUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/SFadUnitTests.cpp

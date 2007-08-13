@@ -43,6 +43,14 @@ namespace Sacado {							\
     Expr< UnaryExpr< Expr<T>, FADOP > > OP (const Expr<T>&);		\
   }									\
 									\
+  namespace ELRFad {							\
+    template <typename T> class FADOP;					\
+    template <typename T> class Expr;					\
+    template <typename T, template<typename> class Op> class UnaryExpr;	\
+    template <typename T>						\
+    Expr< UnaryExpr< Expr<T>, FADOP > > OP (const Expr<T>&);		\
+  }									\
+									\
   namespace CacheFad {							\
     template <typename T> class FADOP;					\
     template <typename T> class Expr;					\
@@ -72,6 +80,7 @@ namespace Sacado {							\
                                                                         \
 namespace std {                                                         \
   using Sacado::Fad::OP;						\
+  using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
   using Sacado::Tay::OP;						\
   using Sacado::FlopCounterPack::OP;					\
@@ -103,6 +112,27 @@ UNARYFUNC_MACRO(fabs, FAbsOp)
 namespace Sacado {							\
 									\
   namespace Fad {							\
+    template <typename T1, typename T2> class FADOP;			\
+    template <typename T> class Expr;					\
+    template <typename T> class ConstExpr;				\
+    template <typename T1, typename T2,					\
+	      template<typename,typename> class Op> class BinaryExpr;	\
+    template <typename T1, typename T2>					\
+    Expr< BinaryExpr< Expr<T1>, Expr<T2>, FADOP > >			\
+    OP (const Expr<T1>&, const Expr<T2>&);				\
+									\
+    template <typename T>						\
+    Expr< BinaryExpr< ConstExpr<typename Expr<T>::value_type>,		\
+		      Expr<T>, FADOP > >				\
+    OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
+									\
+    template <typename T>						\
+    Expr< BinaryExpr< Expr<T>, ConstExpr<typename Expr<T>::value_type>, \
+		      FADOP > >						\
+    OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
+  }									\
+									\
+  namespace ELRFad {							\
     template <typename T1, typename T2> class FADOP;			\
     template <typename T> class Expr;					\
     template <typename T> class ConstExpr;				\
@@ -223,6 +253,7 @@ namespace Sacado {							\
                                                                         \
 namespace std {                                                         \
   using Sacado::Fad::OP;						\
+  using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
   using Sacado::Tay::OP;						\
   using Sacado::FlopCounterPack::OP;					\

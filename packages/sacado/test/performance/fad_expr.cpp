@@ -31,6 +31,7 @@
 
 #include "Sacado_Random.hpp"
 #include "Sacado.hpp"
+#include "Sacado_ELRFad_DFad.hpp"
 
 #include "Fad/fad.h"
 #include "TinyFadET/tfad.h"
@@ -51,7 +52,8 @@ void FAD::error(const char *msg) {
 template <typename T>
 inline void
 func1(const T& x1, const T& x2, T& y) {
-  y = x1*x2 + sin(x1)/x2;
+  T t = x1*x2 + sin(x1)/x2;
+  y = t;
 }
 
 template <typename FadType>
@@ -120,7 +122,10 @@ int main(int argc, char* argv[]) {
     t = do_time< Sacado::Fad::DFad<double> >(nderiv, nloop);
     std::cout << "DFad:      " << std::setw(w) << t << std::endl;
 
-   t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
+    t = do_time< Sacado::ELRFad::DFad<double> >(nderiv, nloop);
+    std::cout << "ELRDFad:   " << std::setw(w) << t << std::endl;
+
+    t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
     std::cout << "DMFad:     " << std::setw(w) << t << std::endl; 
 
     t = do_time< Sacado::Fad::SFad<double,10> >(nderiv, nloop);

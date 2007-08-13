@@ -31,6 +31,7 @@
 
 #include "Sacado_Random.hpp"
 #include "Sacado_Fad_DFad.hpp"
+#include "Sacado_ELRFad_DFad.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 #include "Fad/fad.h"
 #include "Teuchos_Time.hpp"
@@ -215,6 +216,7 @@ do_times(const std::string& name)
 int main() {
   do_times< FAD::Fad<double> >("FAD::Fad");
   do_times< Sacado::Fad::DFad<double> >("Sacado::Fad::DFad");
+  do_times< Sacado::ELRFad::DFad<double> >("Sacado::ELRFad::DFad");
   do_times< Sacado::CacheFad::DFad<double> >("Sacado::CacheFad::DFad");
 
   return 0;

@@ -520,7 +520,7 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 @USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_RE1.exe" -DRAD_REINIT=1 $$i.cpp $(LIBS);\
 @USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_RE2.exe" -DRAD_REINIT=2 $$i.cpp $(LIBS);\
 @USING_GNUMAKE_FALSE@		done;\
-@USING_GNUMAKE_FALSE@	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
+@USING_GNUMAKE_FALSE@	echo '#!/bin/sh' >tradoptest.exe; echo 'echo OK' >>tradoptest.exe; chmod +x tradoptest.exe
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

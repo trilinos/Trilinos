@@ -29,26 +29,26 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_HPP
-#define SACADO_HPP
+#ifndef SACADO_MPL_INTEGRAL_C_HPP
+#define SACADO_MPL_INTEGRAL_C_HPP
 
-#include "Sacado_Version.hpp"
+namespace Sacado {
 
-#include "Sacado_MathFunctions.hpp"
+  namespace mpl {
 
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_ELRFad_DFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_Fad_SFad.hpp"
-#include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_DMFad.hpp"
-#include "Sacado_Fad_ExpressionTraits.hpp"
+    // Type wrapper for storing an integral value
+    template <class T, T N>
+    struct integral_c {
+      static const T value = N;
+      typedef integral_c<T,N> type;
+      typedef T value_type;
+      typedef integral_c<T,N+1> next;
+      typedef integral_c<T,N-1> prior;
+      operator T() const { return N; }
+    };
 
-#include "Sacado_trad.hpp"
+  }
 
-#include "Sacado_Tay_Taylor.hpp"
+}
 
-#include "Sacado_ScalarFlopCounter.hpp"
-
-#endif // SACADO_HPP 
+#endif

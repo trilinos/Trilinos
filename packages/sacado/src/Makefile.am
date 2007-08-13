@@ -65,6 +65,15 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp
 
+SACADO_ELRFAD_H = \
+	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
+	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
+	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_ELRFad_Expression.hpp \
+	$(srcdir)/Sacado_ELRFad_Ops.hpp \
+	$(srcdir)/Sacado_ELRFad_DFadTraits.hpp \
+	$(srcdir)/Sacado_ELRFad_DFad.hpp
+
 SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_CacheFad_GeneralFadImp.hpp \
@@ -157,6 +166,7 @@ SACADO_H = \
 	$(srcdir)/Sacado.hpp \
 	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(SACADO_FAD_H) \
+	$(SACADO_ELRFAD_H) \
 	$(SACADO_CACHEFAD_H) \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \

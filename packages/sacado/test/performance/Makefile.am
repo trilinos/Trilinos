@@ -44,7 +44,7 @@ noinst_PROGRAMS = \
 endif
 
 fad_expr_depth_SOURCES = fad_expr_depth.cpp 
-fad_expr_depth_CXXFLAGS = -O2  \
+fad_expr_depth_CXXFLAGS = -O3  \
 	$(SACADO_INCLUDES) \
 	-I$(top_srcdir)/Fad \
 	-I$(top_srcdir)/test/utils
