@@ -68,8 +68,10 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   paramsPtr = &params;
   Teuchos::ParameterList& nlcgParams = paramsPtr->sublist("Nonlinear CG");
   restartFrequency = nlcgParams.get("Restart Frequency", 10);
+  doPrecondition = false;
   if(  nlcgParams.get("Precondition", "Off") == "On" )
     doPrecondition = true;
+  usePRbeta = false;
   if( nlcgParams.get("Orthogonalize", "Fletcher-Reeves") ==  "Polak-Ribiere" )
     usePRbeta = true;
 
