@@ -219,22 +219,28 @@ int main(int argc, char *argv[]) {
     lsParams.set("Solve Measure Denominator", "Norm Initial Residual");
     Teuchos::ParameterList& aztecParams =
       stratParams.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings");
+    if (verbose) {
+      aztecParams.set("Output Frequency", 1);
+    }
 
     // Belos Linear Solver
 //     stratParams.set("Linear Solver Type", "Belos");
 //     lsParams.set("Solve Measure Denominator", "Norm RHS");
-    Teuchos::ParameterList& belosParams =
-      stratParams.sublist("Linear Solver Types").sublist("Belos");
+//     Teuchos::ParameterList& belosParams =
+//       stratParams.sublist("Linear Solver Types").sublist("Belos");
+//     Teuchos::ParameterList& bgmresParams = 
+//       belosParams.sublist("Solver Types").sublist("Block GMRES");
+//     bgmresParams.set("Block Size", 2);
+//     bgmresParams.set("Convergence Tolerance", 1.0);
+//     if (verbose) {
+//       bgmresParams.set("Output Frequency", 1);
+//       bgmresParams.set("Verbosity", 32);
+//       belosParams.sublist("VerboseObject").set("Verbosity Level", "high");
+//     }
     
     // Ifpack preconditioner
     stratParams.set("Preconditioner Type", "Ifpack");
     
-    if (verbose) {
-      aztecParams.set("Output Frequency", 1);
-      belosParams.sublist("Outputter").set("Output Frequency", 1);
-      belosParams.sublist("VerboseObject").set("Verbosity Level", "low");
-    }
-
     // Create the linear solver type with Stratimikos
     ::Thyra::DefaultRealLinearSolverBuilder builder;
     builder.setParameterList(Teuchos::rcp(&stratParams,false));
