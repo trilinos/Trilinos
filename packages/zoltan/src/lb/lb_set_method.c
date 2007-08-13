@@ -178,6 +178,24 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
 #endif
   }
+#if 0
+  else if (strcmp(method_upper, "MATRIX_MULTIPLY") == 0) {
+#ifdef ZOLTAN_HG
+    zz->LB.Method = MATRIX_MULTIPLY;
+    zz->LB.LB_Fn = Zoltan_Matrix_Multiply;
+    zz->LB.Free_Structure = Zoltan_MM_Free_Structure;
+    zz->LB.Copy_Structure = NULL;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "Matrix Multiply uses Hypergraph method but it's not available; "
+                       "Compile with ZOLTAN_HG=1.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
+  }
+#endif
   else if (strcmp(method_upper, "HIER") == 0) {
 #ifdef ZOLTAN_HIER
     zz->LB.Method = HIER;
