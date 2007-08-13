@@ -172,6 +172,8 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_integral_c.hpp \
+	$(srcdir)/mpl/Sacado_mpl_range_c.hpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
@@ -282,6 +284,8 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_integral_c.hpp \
+	$(srcdir)/mpl/Sacado_mpl_range_c.hpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
@@ -540,7 +544,9 @@ SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_vector.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
-	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp
+	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_integral_c.hpp \
+	$(srcdir)/mpl/Sacado_mpl_range_c.hpp 
 
 SACADO_SFC_H = \
 	$(srcdir)/Sacado_ScalarFlopCounter.hpp \

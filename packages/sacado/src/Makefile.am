@@ -150,7 +150,9 @@ SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_vector.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
-	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp
+	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_integral_c.hpp \
+	$(srcdir)/mpl/Sacado_mpl_range_c.hpp 
 
 SACADO_SFC_H = \
 	$(srcdir)/Sacado_ScalarFlopCounter.hpp \
