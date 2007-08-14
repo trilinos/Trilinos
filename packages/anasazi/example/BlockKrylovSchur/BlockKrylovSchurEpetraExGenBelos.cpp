@@ -150,7 +150,6 @@ int main(int argc, char *argv[]) {
   //*******************************************************/
   //
   int blockSize = 3; // block size used by linear solver and eigensolver [ not required to be the same ]
-  double tol = 1.0e-8;
   int maxits = K->NumGlobalRows(); // maximum number of iterations to run
   //
   // Create the Belos::LinearProblem
@@ -170,8 +169,8 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Teuchos::ParameterList> My_List = Teuchos::rcp( new Teuchos::ParameterList() );
   My_List->set( "Solver", "BlockCG" );
   My_List->set( "Maximum Iterations", maxits );
-  My_List->set( "Block Size", blockSize );
-  My_List->set( "Convergence Tolerance", tol/100 );
+  My_List->set( "Block Size", 1 );
+  My_List->set( "Convergence Tolerance", 1e-12 );
   //
   // Create the Belos::EpetraOperator
   //
@@ -184,6 +183,7 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Arnoldi Method
   //
+  double tol = 1.0e-8;
   int nev = 10;
   int numBlocks = 3*nev/blockSize;
   int maxRestarts = 5;

@@ -149,8 +149,6 @@ int main(int argc, char *argv[]) {
   // Set up AztecOO CG operator for inner iteration
   // *******************************************************
   //
-  double tol = 1.0e-8;
-  
   // Create Epetra linear problem class to solve "Ax = b"
   Epetra_LinearProblem precProblem;
   precProblem.SetOperator(K.get());
@@ -163,7 +161,7 @@ int main(int argc, char *argv[]) {
   
   // Use AztecOO solver to create the AztecOO_Operator
   Teuchos::RCP<AztecOO_Operator> precOperator =
-    Teuchos::rcp( new AztecOO_Operator(&precSolver, K->NumGlobalRows(), tol/100) );
+    Teuchos::rcp( new AztecOO_Operator(&precSolver, K->NumGlobalRows(), 1e-12) );	
   //
   // ************************************
   // Start the block Arnoldi iteration
@@ -171,6 +169,7 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Arnoldi Method
   //
+  double tol = 1.0e-8;
   int nev = 10;
   int blockSize = 3;  
   int numBlocks = 3*nev/blockSize;
