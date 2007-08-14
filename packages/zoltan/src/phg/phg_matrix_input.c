@@ -51,6 +51,21 @@ static PARAM_VARS MATRIX_MULTIPLY_params[] = {
 */
 struct Zoltan_MM_Data_Struct{
   ZZ *zzLib;    /* PHG problem created by Zoltan from user's sparse matrix */
+
+  int nRows;         /* user's sparse matrix - globally */
+  int nCols;
+  int nRowsPlusColumns;  /* save frequent addition */
+  int nNonZeroes;
+
+  int nMyNonZeroes;  /* non-zeroes initally on local process */
+  int *nonZeroGNO;   /* global numbers assigned by us to these non-zeroes (hash of i and j?)*/
+  int *nonZeroPart;  /* partition to which we assign these non-zeroes */
+
+  int nMyVtx;        /* my number of vertices in hypergraph */
+  int *vtxGNO;       /* global numbers of my vertices - each has an assoc. hyperedge */
+  double *vtxWgt;    /* probably number of pins in my hyperedge */
+  int *hindex;       /* index into list of pins for each vertex, last is npins */
+  int *hvertex;      /* vtx GNO of pins in my hyperedges */
 }
 
 typedef struct Zoltan_MM_Data_Struct ZOLTAN_MM_DATA;
@@ -64,7 +79,7 @@ struct Zoltan_MM_Results_Struct{
   void (*you_tell_me)();
 }
 
-typedef struct Zoltan_MM_Results)Struct ZOLTAN_MM_RESULT;
+typedef struct Zoltan_MM_Results Struct ZOLTAN_MM_RESULT;
 
 /************************************************************************/
 
@@ -85,11 +100,14 @@ void Zoltan_MM_Free_Structure(ZZ *zz)
 
   if (mmd != NULL){
 
-    Zoltan_Destroy(&(zz->zzLib));  /* we created this PHG problem */
+    Zoltan_Destroy(&(mmd->zzLib));  /* we created this PHG problem */
 
     ZOLTAN_FREE(&zz->LB.Data_Structure);
   }
 }
+
+#define ROW_TYPE 1
+#define COL_TYPE 2
 
 int Zoltan_Matrix_Multiply(
 ZZ *zz,                    /* The Zoltan structure  */
@@ -102,6 +120,11 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
   char *yo = "Zoltan_Matrix_Multiply";
   int ierr = ZOLTAN_OK;
   ZZ *zzLib = NULL;
+  int input_type=0;
+  int nvals, nnonz;
+  long int *appGids=NULL;
+  long int *appPinGids=NULL;
+  long int *appIndex=NULL;
 
   ZOLTAN_MM_DATA *mmd = MM_Initialize_Structure();
 
@@ -110,6 +133,10 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
     goto End;
   }
 
+  /* Process parameters.  We'll skip this now.  We should check DEBUG_LEVEL,
+   * etc.
+   */
+
   /* Call application defined query functions to get the non-zeroes.
    * User has a choice of giving us compressed rows or compressed columns.
    * We need global row and column IDs.  Any process can give us any of the
@@ -117,32 +144,82 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
    *
    * I'm assuming row and column IDs are long ints, not more general objects.
    *
-   * If the ccs_size_fn is defined then the user is giving us compressed
-   * columns.  If the ccr_size_fn is defined the user is giving us compressed
+   * If the csc_size_fn is defined then the user is giving us compressed
+   * columns.  If the csr_size_fn is defined the user is giving us compressed
    * rows.
    *
-   * typedef void ZOLTAN_CCS_SIZE_FN(void *data, int *num_columns,
+   * typedef void ZOLTAN_CSC_SIZE_FN(void *data, int *num_columns,
    *                                 int *num_non_zeroes, int *ierr)
    *
-   * typedef void ZOLTAN_CRS_SIZE_FN(void *data, int *num_rows,
+   * typedef void ZOLTAN_CSR_SIZE_FN(void *data, int *num_rows,
    *                                 int *num_non_zeroes, int *ierr)
    *
-   * typedef void ZOLTAN_CCS_FN(void *data, int num_columns, int num_non_zeroes,
+   * typedef void ZOLTAN_CSC_FN(void *data, int num_columns, int num_non_zeroes,
    *         long int *column_gids, long int *row_gid_index, long int *row_gids,
    *         int *ierr)
    *
-   * typedef void ZOLTAN_CRS_FN(void *data, int num_rows, int num_non_zeroes,
+   * typedef void ZOLTAN_CSR_FN(void *data, int num_rows, int num_non_zeroes,
    *         long int *row_gids, long int *col_gid_index, long int *col_gids,
    *         int *ierr)
    */
+
+  ierr = ZOLTAN_FATAL;
+
+  if ((zz->Get_CSC_Size_Fn != NULL) && (zz->Get_CSC_Fn != NULL)){
+    ierr = ZOLTAN_OK;
+    input_type = COL_TYPE;
+  }
+  else if ((zz->Get_CSR_Size_Fn != NULL) && (zz->Get_CSR_Fn != NULL)){
+    input_type = ROW_TYPE;
+    ierr = ZOLTAN_OK;
+  }
+
+  if (ierr != ZOLTAN_OK){
+    /* error message */
+    goto End;
+  }
+
+
+  if (input_type == COL_TYPE){
+    zz->Get_CSC_Size_Fn(zz->Get_CSC_Size_Data, &nvals, &nnonz, &ierr);
+    if (ierr == ZOLTAN_OK){
+      zz->Get_CSC_Fn(zz->Get_CSC_Data, nvals, nnonz, appGids, appIndex, appPinGids,
+                     &ierr);
+    }
+  }
+  else {
+    zz->Get_CSR_Size_Fn(zz->Get_CSR_Size_Data, &nvals, &nnonz, &ierr);
+    if (ierr == ZOLTAN_OK){
+      zz->Get_CSR_Fn(zz->Get_CSR_Data, nvals, nnonz, appGids, appIndex, appPinGids,
+                     &ierr);
+    }
+  }
+  appGids = (long int *)ZOLTAN_MALLOC(nvals * sizeof(long int));
+  appIndex = (long int *)ZOLTAN_MALLOC((nvals+1) * sizeof(long int));
+  appPinGids = (long int *)ZOLTAN_MALLOC(nnonz * sizeof(long int));
+  if ((nvals && !appGids) || !appIndex || (nnonz && !appPinGids)){
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+
+  if (input_type == COL_TYPE){
+    zz->Get_CSC_Fn(zz->Get_CSC_Data, nvals, nnonz, appGids, appIndex, appPinGids,
+                   &ierr);
+  }
+  else {
+    zz->Get_CSR_Fn(zz->Get_CSR_Data, nvals, nnonz, appGids, appIndex, appPinGids,
+                   &ierr);
+  }
 
   /* Hash rows to processes, columns to processes (do we need to worry about
    * balance, or just divide them up?)
    */
 
   /* Create hypergraph and query functions.  This is a simple way to do
-   * it and may change.
-   *  
+   * it and may change.  This should probably be a call to a subroutine,
+   * which can vary if we want to have different ways of creating the
+   * hypergraph.  Need to come up with an interface.
+   *              ==================================
    * Each row and column becomes a "vertex".  (So M rows, N columns yields
    * M+N vertices).  We need to remember which row or column each vertex
    * originally represented.  We may want vertex weight to be pin weight.
@@ -179,7 +256,7 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
   ierr = Zoltan_PHG(zzLib, part_sizes, etc.);
 
   /*
-   * "Partition" the non-zeroes that were returned by user in CRS or CCS in some
+   * "Partition" the non-zeroes that were returned by user in CSR or CSC in some
    * way that acheives balance and minimizes row and column cuts.  (Most
    * likely assigning to the process that either their row or their column
    * went to.)  Save info required so that when user calls 
