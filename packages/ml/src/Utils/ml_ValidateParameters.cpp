@@ -133,7 +133,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("repartition: min per proc",512,"Specifies minimum # rows / processor",PL);
   setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal heirarchy (Maxwell)",PL);
   setIntParameter("repartition: node min per proc",170,"Specifies minimum number of nodes per proc (Maxwell)",PL);
-  setIntParameter("repartition: Zoltan Dimensions",0,"Dimension of problem",PL);
+  setIntParameter("repartition: Zoltan dimensions",0,"Dimension of problem",PL);
 
   /* Analysis Options (Section 6.4.7) */
   PL->set("analyze memory",false);
@@ -195,6 +195,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
   setIntParameter("smoother: MLS polynomial order",2,"Unlisted option",PL);  
+  setIntParameter("coarse: polynomial order",2,"Unlisted option",PL);
+  setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL);
   return PL;
 }
 
@@ -252,6 +254,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: aggregate with sigma",false);
   PL->set("refmaxwell: lump m1",false);
   PL->set("refmaxwell: disable addon",false); 
+  PL->set("refmaxwell: normalize prolongator",false);
   PL->set("aggregation: respect materials",false);
   PL->set("aggregation: material type",(int*)0); 
   return PL;
