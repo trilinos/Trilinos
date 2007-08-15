@@ -1693,7 +1693,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 #ifdef ML_WITH_EPETRA
   if ((Amat_MsrBindx == NULL) && (Amat_CrsBindx == NULL))
   {
-    ierr = Epetra_ML_GetCrsDataptrs(Amat, &Amat_CrsVal, &Amat_CrsBindx,&Amat_CrsRowptr);
+    ierr = Epetra_ML_GetCrsDataptrs(Amat, &Amat_CrsVal,
+&Amat_CrsBindx,&Amat_CrsRowptr);
 
     if (ierr != 0 && ML_Get_PrintLevel() > 0
         && Amat->comm->ML_mypid == 0 && firstTime)
@@ -7098,7 +7099,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
 
-   if (smoother == (void *) ML_Gen_Smoother_Cheby) {
+   if (smoother == (void *) ML_Gen_Smoother_Cheby || smoother == (void *) ML_Gen_Smoother_MLS) {
 
 
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
