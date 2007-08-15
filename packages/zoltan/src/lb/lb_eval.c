@@ -71,7 +71,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  *   obj_wgt   - obj_wgt[0:num_vertex_weights-1] are the object weights
  *               (local for this proc)
  *   ncuts     - number of cuts (local for this proc)
- *   cut_wgt   - cut_wgt[0:num_vertex_weights-1] are the cut weights (local for this proc)
+ *   cut_wgt   - cut_wgt[0:num_vertex_weights-1] are the cut weights 
+ *               (local for this proc)
  *   nboundary - number of boundary objects (local for this proc)
  *   nadj      - the number of adjacent procs (local for this proc)
  *
@@ -440,6 +441,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
       sum += edges_per_obj[k];
     }
+printf("cuts %d cutl %lf cutn %lf\n",cuts,cutl,cutn);
     ZOLTAN_FREE(&part_arr);
     MPI_Reduce(&cutn, &gcutn, 1, MPI_FLOAT, MPI_SUM, zz->Debug_Proc, 
                  zz->Communicator);

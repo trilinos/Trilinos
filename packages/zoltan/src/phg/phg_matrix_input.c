@@ -20,9 +20,12 @@
 extern "C" {
 #endif
 
-static PARAM_VARS MATRIX_MULTIPLY_params[] = {
-  /* Add parameters here. */
-  {NULL,                              NULL,  NULL,     0}
+#include "phg.h"
+
+static PARAM_VARS MM_params[] = {
+  /* Add parameters here. MM_PARAMETER is a dummy. */
+  {"MM_PARAMETER",     NULL,  "INT",     0},
+  {NULL,               NULL,  NULL,     0}
 };
     
 /***********************************************************************
@@ -31,8 +34,9 @@ static PARAM_VARS MATRIX_MULTIPLY_params[] = {
 ** required for matrix/vector multiplication (y = Ax).  Then call
 ** Zoltan's PHG code to do the work.
 **
-** Zoltan then can return a partitioning of non-zeroes (of A), a
+** Zoltan then can return a partitioning of non-zeros (of A), a
 ** partitioning of rows (for y) and a partitioning of columns (for x).
+** (Details to be worked out yet.)
 **
 ** See Erik Boman's message to Isorropia-developers at
 ** http://software.sandia.gov/pipermail/isorropia-developers/2006-August/000065.html
@@ -45,54 +49,10 @@ static PARAM_VARS MATRIX_MULTIPLY_params[] = {
 ** to balance one.
 *************************************************************************/
 
-/************* these will go in a header file ***************************/
-/*
-** The data we will save at the user's ZZ->LB.Data_Structure
-*/
-struct Zoltan_MM_Data_Struct{
-  ZZ *zzLib;    /* PHG problem created by Zoltan from user's sparse matrix */
+static int process_matrix_input(ZZ *zz, ZOLTAN_MM_DATA *mmd);
+static int make_hypergraph(ZZ *zz, ZOLTAN_MM_DATA *mmd);
+static ZOLTAN_MM_DATA *MM_Initialize_Structure();
 
-  int nRows;         /* user's sparse matrix - globally */
-  int nCols;
-  int nRowsPlusColumns;  /* save frequent addition */
-  int nNonZeroes;
-
-  int nMyNonZeroes;  /* non-zeroes initally on local process */
-  int *nonZeroGNO;   /* global numbers assigned by us to these non-zeroes (hash of i and j?)*/
-  int *nonZeroPart;  /* partition to which we assign these non-zeroes */
-
-  int nMyVtx;        /* my number of vertices in hypergraph */
-  int *vtxGNO;       /* global numbers of my vertices - each has an assoc. hyperedge */
-  double *vtxWgt;    /* probably number of pins in my hyperedge */
-  int *hindex;       /* index into list of pins for each vertex, last is npins */
-  int *hvertex;      /* vtx GNO of pins in my hyperedges */
-}
-
-typedef struct Zoltan_MM_Data_Struct ZOLTAN_MM_DATA;
-
-/*
-** The structure we will return to user, no clue what's in it - maybe
-** just function pointers so they can query partitioning.
-*/
-
-struct Zoltan_MM_Results_Struct{
-  void (*you_tell_me)();
-}
-
-typedef struct Zoltan_MM_Results Struct ZOLTAN_MM_RESULT;
-
-/************************************************************************/
-
-static ZOLTAN_MM_DATA *MM_Initialize_Structure()
-{
-  ZOLTAN_MM_DATA *mmd = (ZOLTAN_MM_DATA *)ZOLTAN_MALLOC(sizeof(ZOLTAN_MM_DATA));
-
-  if (mmd == NULL){
-    return NULL;
-  }
-
-  mmd->zzLib = NULL;
-}
 
 void Zoltan_MM_Free_Structure(ZZ *zz)
 {
@@ -100,10 +60,28 @@ void Zoltan_MM_Free_Structure(ZZ *zz)
 
   if (mmd != NULL){
 
+    /* TODO release of any structures allocated in mmd */
+
     Zoltan_Destroy(&(mmd->zzLib));  /* we created this PHG problem */
 
     ZOLTAN_FREE(&zz->LB.Data_Structure);
   }
+}
+
+int Zoltan_MM_Initialize_Params(ZZ *zz, int *mmval)
+{
+  int ierr = ZOLTAN_OK;
+  int mmparam;
+
+  Zoltan_Bind_Param(MM_params, "MM_PARAMETER", &mmparam);  
+  mmparam = 0;  /* default */
+  ierr = Zoltan_Assign_Param_Vals(zz->Params, MM_params, zz->Debug_Level,
+          zz->Proc, zz->Debug_Proc);
+
+  if (ierr == ZOLTAN_OK){
+    *mmval = mmparam;
+  }
+  return ierr;
 }
 
 #define ROW_TYPE 1
@@ -114,17 +92,12 @@ ZZ *zz,                    /* The Zoltan structure  */
 float *part_sizes,         /* Input:  Array of size zz->Num_Global_Parts
                                 containing the percentage of work assigned
                                 to each partition. */
-ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
-                                that are computed here. To be determined. */
+ZOLTAN_MM_RESULT **results) /* Output: undefined as of yet */
 {
   char *yo = "Zoltan_Matrix_Multiply";
   int ierr = ZOLTAN_OK;
   ZZ *zzLib = NULL;
-  int input_type=0;
-  int nvals, nnonz;
-  long int *appGids=NULL;
-  long int *appPinGids=NULL;
-  long int *appIndex=NULL;
+  int npins;
 
   ZOLTAN_MM_DATA *mmd = MM_Initialize_Structure();
 
@@ -133,102 +106,76 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
     goto End;
   }
 
-  /* Process parameters.  We'll skip this now.  We should check DEBUG_LEVEL,
-   * etc.
+  /* Process parameters.  We don't have any yet.
+  ierr = Zoltan_MM_Initialize_Params(ZZ *zz, pointers to parameters);
    */
 
-  /* Call application defined query functions to get the non-zeroes.
+  /* Call application defined query functions to get the non-zeros.
    * User has a choice of giving us compressed rows or compressed columns.
    * We need global row and column IDs.  Any process can give us any of the
-   * non-zeroes, but each non-zero must be supplied by only one process.
+   * non-zeros, but each non-zero must be supplied by only one process.
    *
    * I'm assuming row and column IDs are long ints, not more general objects.
-   *
-   * If the csc_size_fn is defined then the user is giving us compressed
-   * columns.  If the csr_size_fn is defined the user is giving us compressed
-   * rows.
-   *
-   * typedef void ZOLTAN_CSC_SIZE_FN(void *data, int *num_columns,
-   *                                 int *num_non_zeroes, int *ierr)
-   *
-   * typedef void ZOLTAN_CSR_SIZE_FN(void *data, int *num_rows,
-   *                                 int *num_non_zeroes, int *ierr)
-   *
-   * typedef void ZOLTAN_CSC_FN(void *data, int num_columns, int num_non_zeroes,
-   *         long int *column_gids, long int *row_gid_index, long int *row_gids,
-   *         int *ierr)
-   *
-   * typedef void ZOLTAN_CSR_FN(void *data, int num_rows, int num_non_zeroes,
-   *         long int *row_gids, long int *col_gid_index, long int *col_gids,
-   *         int *ierr)
+   * We know we are working with a matrix, not something abstracted as
+   * a matrix.  I'm assuming the IDs are contiguous as well.
    */
 
   ierr = ZOLTAN_FATAL;
 
-  if ((zz->Get_CSC_Size_Fn != NULL) && (zz->Get_CSC_Fn != NULL)){
+  if ((zz->Get_CSC_Size != NULL) && (zz->Get_CSC != NULL)){
     ierr = ZOLTAN_OK;
-    input_type = COL_TYPE;
+    mmd->input_type = COL_TYPE;
   }
-  else if ((zz->Get_CSR_Size_Fn != NULL) && (zz->Get_CSR_Fn != NULL)){
-    input_type = ROW_TYPE;
+  else if ((zz->Get_CSR_Size != NULL) && (zz->Get_CSR != NULL)){
+    mmd->input_type = ROW_TYPE;
     ierr = ZOLTAN_OK;
   }
 
   if (ierr != ZOLTAN_OK){
-    /* error message */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Required query functions are not defined.\n");
     goto End;
   }
 
-
-  if (input_type == COL_TYPE){
-    zz->Get_CSC_Size_Fn(zz->Get_CSC_Size_Data, &nvals, &nnonz, &ierr);
-    if (ierr == ZOLTAN_OK){
-      zz->Get_CSC_Fn(zz->Get_CSC_Data, nvals, nnonz, appGids, appIndex, appPinGids,
-                     &ierr);
-    }
+  if (mmd->input_type == COL_TYPE){
+    zz->Get_CSC_Size(zz->Get_CSC_Size_Data, &mmd->nRC, &npins, &ierr);
   }
   else {
-    zz->Get_CSR_Size_Fn(zz->Get_CSR_Size_Data, &nvals, &nnonz, &ierr);
-    if (ierr == ZOLTAN_OK){
-      zz->Get_CSR_Fn(zz->Get_CSR_Data, nvals, nnonz, appGids, appIndex, appPinGids,
-                     &ierr);
-    }
+    zz->Get_CSR_Size(zz->Get_CSR_Size_Data, &mmd->nRC, &npins, &ierr);
   }
-  appGids = (long int *)ZOLTAN_MALLOC(nvals * sizeof(long int));
-  appIndex = (long int *)ZOLTAN_MALLOC((nvals+1) * sizeof(long int));
-  appPinGids = (long int *)ZOLTAN_MALLOC(nnonz * sizeof(long int));
-  if ((nvals && !appGids) || !appIndex || (nnonz && !appPinGids)){
+
+  mmd->rcGID = (long int *)ZOLTAN_MALLOC(mmd->nRC * sizeof(long int));
+  mmd->pinIndex = (long int *)ZOLTAN_MALLOC((mmd->nRC+1) * sizeof(long int));
+  mmd->pinGID = (long int *)ZOLTAN_MALLOC(npins * sizeof(long int));
+  if ((mmd->nRC && !mmd->rcGID) || !mmd->pinIndex || (npins && !mmd->pinGID)){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
-  if (input_type == COL_TYPE){
-    zz->Get_CSC_Fn(zz->Get_CSC_Data, nvals, nnonz, appGids, appIndex, appPinGids,
-                   &ierr);
+  if (mmd->input_type == COL_TYPE){
+    zz->Get_CSC(zz->Get_CSC_Data, mmd->nRC, npins, 
+                mmd->rcGID, mmd->pinIndex, mmd->pinGID, &ierr);
   }
   else {
-    zz->Get_CSR_Fn(zz->Get_CSR_Data, nvals, nnonz, appGids, appIndex, appPinGids,
-                   &ierr);
+    zz->Get_CSR(zz->Get_CSR_Data, mmd->nRC, npins, 
+                mmd->rcGID, mmd->pinIndex, mmd->pinGID, &ierr);
   }
+ 
+  mmd->pinIndex[mmd->nRC] = npins;
 
-  /* Hash rows to processes, columns to processes (do we need to worry about
-   * balance, or just divide them up?)
+  /*
+   * Determine globally how many rows and columns were returned, and if
+   * their IDs are 0 based or 1 based.  (Assume they are contiguous.)
    */
 
-  /* Create hypergraph and query functions.  This is a simple way to do
-   * it and may change.  This should probably be a call to a subroutine,
-   * which can vary if we want to have different ways of creating the
-   * hypergraph.  Need to come up with an interface.
-   *              ==================================
-   * Each row and column becomes a "vertex".  (So M rows, N columns yields
-   * M+N vertices).  We need to remember which row or column each vertex
-   * originally represented.  We may want vertex weight to be pin weight.
-   * (So non-zeroes are balanced later on if they go to owner of their row
-   * or column.)
-   *
-   * Create hyperedges for your rows and your columns, don't know if we should
-   * have edge weights.
+  ierr = process_matrix_input(zz, mmd);
+
+  /*
+   * Convert the matrix to a hypergraph.  Set the query functions we will use
+   * with PHG.  We will call one routine to do
+   * this, but eventually we could have more than one way to do this.
    */
+
+  ierr = make_hypergraph(zz, mmd);
 
   /* Update our LB.Data_Structure with everything we need to respond to queries
    * about our vertices and hyperedges.
@@ -251,12 +198,12 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
 
   /*
    * Call Zoltan_PHG to partition the rows and columns (a.k.a. vertices)
-   */
 
   ierr = Zoltan_PHG(zzLib, part_sizes, etc.);
+   */
 
   /*
-   * "Partition" the non-zeroes that were returned by user in CSR or CSC in some
+   * "Partition" the non-zeros that were returned by user in CSR or CSC in some
    * way that acheives balance and minimizes row and column cuts.  (Most
    * likely assigning to the process that either their row or their column
    * went to.)  Save info required so that when user calls 
@@ -271,14 +218,123 @@ ZOLTAN_MM_RESULT **results) /* Output: functions to call to get partitionings */
    * global information will be too big, and just save import/export lists.
    */
 
+End:
+  return ierr;
+}
+
+static int make_hypergraph(ZZ *zz, ZOLTAN_MM_DATA *mmd)
+{
+  int ierr = ZOLTAN_OK;
+
+  return ierr;
+}
+
+static int process_matrix_input(ZZ *zz, ZOLTAN_MM_DATA *mmd)
+{
+  int ierr = ZOLTAN_OK;
+  int i;
+  long int minID, maxID, minPinID, maxPinID;
+  long int npins=0;
+  long int vals[2], gvals[2];
+
+  /* get global number of rows, columns and pins, range of row and column IDs */
+
+  if (mmd->nRC > 0)
+    npins = mmd->pinIndex[mmd->nRC];
+
+  MPI_Allreduce(&npins, &mmd->nNonZeroes, 1, MPI_LONG, MPI_SUM, zz->Communicator);
+
+  maxID = maxPinID = -1;
+
+  if (mmd->nRC > 0){
+    minID = maxID = mmd->rcGID[0];
+
+    for (i=1; i<mmd->nRC; i++){
+      if (mmd->rcGID[i] < minID) minID = mmd->rcGID[i];
+      else if (mmd->rcGID[i] > maxID) maxID = mmd->rcGID[i];
+    }
+    if (npins > 0){
+      minPinID = maxPinID = mmd->pinGID[0];
+      for (i=1; i<npins; i++){
+        if (mmd->pinGID[i] < minPinID) minPinID = mmd->pinGID[i];
+        else if (mmd->pinGID[i] > maxPinID) maxPinID = mmd->pinGID[i];
+      }
+    }
+  }
+  vals[0] = maxID;
+  vals[1] = maxPinID;
+
+  MPI_Allreduce(vals, gvals, 2, MPI_LONG, MPI_MAX, zz->Communicator);
+
+  maxID = gvals[0];
+  maxPinID = gvals[1];
+
+  if (npins == 0){
+    minPinID = maxPinID;
+    if (mmd->nRC == 0){
+      minID = maxID;
+    }
+  }
+  vals[0] = minID;
+  vals[1] = minPinID;
+
+  MPI_Allreduce(vals, gvals, 2, MPI_LONG, MPI_MIN, zz->Communicator);
+
+  minID = gvals[0];
+  minPinID = gvals[1];
+
+  if (mmd->input_type == ROW_TYPE){
+    mmd->rowBaseID = minID;
+    mmd->colBaseID = minPinID;
+    mmd->nRows = maxID - minID + 1;
+    mmd->nCols = maxPinID - minPinID + 1;
+  }
+  else{
+    mmd->rowBaseID = minPinID;
+    mmd->colBaseID = minID;
+    mmd->nRows = maxPinID - minPinID + 1;
+    mmd->nCols = maxID - minID + 1;
+  }
+
   /*
-   * End:
+   * Here we could check the input.  Make sure that row and column IDs
+   * are contigous values starting at the baseID.
    */
+
+  return ierr;
+}
+static ZOLTAN_MM_DATA *MM_Initialize_Structure()
+{
+  /* 
+   * This is the structure we save at zz->LB.Data_Structure
+   */
+  ZOLTAN_MM_DATA *mmd = (ZOLTAN_MM_DATA *)ZOLTAN_MALLOC(sizeof(ZOLTAN_MM_DATA));
+
+  if (mmd == NULL){
+    return NULL;
+  }
+
+  mmd->input_type = 0;
+  mmd->nRC = 0;
+  mmd->rcGID = NULL;
+  mmd->pinIndex = NULL;
+  mmd->pinGID = NULL;
+
+  mmd->rowBaseID=0;
+  mmd->colBaseID=0;
+  mmd->nRows=0;
+  mmd->nCols=0;
+  mmd->nNonZeroes=0;
+
+  mmd->zzLib = NULL;
+
+  return mmd;
 }
 
 int Zoltan_Matrix_Multiply_Free(ZZ *zz)
 {
   /* Free our structures */
+  return ZOLTAN_OK;
 }
 
 

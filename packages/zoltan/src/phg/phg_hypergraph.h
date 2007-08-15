@@ -192,6 +192,59 @@ struct Zoltan_HGraph {
 };
 typedef struct Zoltan_HGraph ZHG;
 
+/********************************************************************
+ * Data structures used when converting an input sparse matrix
+ * to a PHG problem, running the PHG problem and retaining results
+ * for user query.  
+ ********************************************************************/
+
+struct Zoltan_MM_Data_Struct{
+  ZZ *zzLib;    /* PHG problem created by Zoltan from user's sparse matrix */
+
+  /* The local portion of sparse matrix returned by the query function */
+  int input_type;    /* ROW_TYPE or COL_TYPE */
+  int nRC;               /* number of rows or columns */
+  long int *rcGID;      /* row or column GIDs   */
+  long int *pinIndex;   /* index into pinGIDs array, last is num pins */
+  long int *pinGID;     /* non-zeroes column or row GIDs */
+
+  /* Global values filled out by process_matrix_input().                  */
+  long int rowBaseID;             /* zero or one? */
+  long int colBaseID;             /* zero or one? */
+  long int nRows;
+  long int nCols;
+  long int nNonZeroes;
+
+  /* Hypergraph generated from sparse matrix */
+
+  int nMyVtx;        /* my number of vertices in hypergraph */
+  int *vtxGID;       /* vertex GIDs */
+  double *vtxWgt;    /* weight for each vertex (1 double) */
+  int nHedges;       /* number of hyperedges */
+  int *hindex;       /* index into list of pins for each h.e., last is npins */
+  int *hvertex;      /* vtx GID of pins in my hyperedges */
+};
+
+typedef struct Zoltan_MM_Data_Struct ZOLTAN_MM_DATA;
+
+/*
+** The structure we will return to user, no clue what's in it - maybe
+** just function pointers so they can query partitioning.
+*/
+
+struct Zoltan_MM_Results_Struct{
+  void (*you_tell_me)();
+};
+
+typedef struct Zoltan_MM_Results_Struct ZOLTAN_MM_RESULT;
+
+/*
+** Wrapper around Zoltan_PHG which can be used to partition rows
+** columns and nonzeros of a sparse matrix.
+*/
+int Zoltan_Matrix_Multiply(ZZ *zz, float *part_sizes,   
+                           ZOLTAN_MM_RESULT **results);
+
 /******************************************************************************/
 /* Matching, Packing, and Grouping arrays.  Technically, they are all the same;
  * the different typedefs are not needed.  In the description below, Matching is

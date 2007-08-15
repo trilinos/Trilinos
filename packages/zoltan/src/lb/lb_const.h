@@ -288,7 +288,6 @@ extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 extern ZOLTAN_LB_FN Zoltan_PHG;
-extern ZOLTAN_LB_FN Zoltan_Matrix_Multiply;
 extern ZOLTAN_LB_FN Zoltan_Hier;
 
 extern ZOLTAN_LB_PART2D_FN Zoltan_Random2d;

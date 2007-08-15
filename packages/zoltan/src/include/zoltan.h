@@ -89,6 +89,10 @@ enum Zoltan_Fn_Type {
   ZOLTAN_HG_CS_FN_TYPE,
   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE,
   ZOLTAN_HG_EDGE_WTS_FN_TYPE,
+  ZOLTAN_CSC_SIZE_FN_TYPE,
+  ZOLTAN_CSR_SIZE_FN_TYPE,
+  ZOLTAN_CSC_FN_TYPE,
+  ZOLTAN_CSR_FN_TYPE,
   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
   ZOLTAN_HIER_NUM_LEVELS_FN_TYPE,
@@ -1864,6 +1868,100 @@ typedef void ZOLTAN_HG_EDGE_WTS_FORT_FN(
 
 /*****************************************************************************/
 /*
+ *  Function to return the size of compressed sparse column data that
+ *  will be supplied by the user to describe a sparse matrix.
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    num_columns         --  number of columns to be supplied by user
+ *    num_non_zeroes      --  total number of non-zeroes in the columns
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_CSC_SIZE_FN(
+  void *data,
+  int *num_columns,
+  int *num_non_zeroes,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the size of compressed sparse row data that
+ *  will be supplied by the user to describe a sparse matrix.
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    num_rows            --  number of rows to be supplied by user
+ *    num_non_zeroes      --  total number of non-zeroes in the columns
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_CSR_SIZE_FN(
+  void *data,
+  int *num_rows,
+  int *num_non_zeroes,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return a portion of a distributed sparse matrix using
+ *  compressed sparse column format.
+ *
+ *  Input:
+ *    data           --  pointer to user defined data structure
+ *    num_columns    --  number of columns to be supplied by user
+ *    num_non_zeroes --  total number of non-zeroes in the columns
+ *
+ *  Output:
+ *    column_gids    --  array of global IDs for the columns
+ *    row_gid_index  --  index into row_gids of start of non-zeros for each column
+ *    row_gids       --  list of global IDs of rows of non-zeros in columns
+ *    ierr           --  error code
+ */
+
+typedef void ZOLTAN_CSC_FN(
+  void *data,
+  int num_columns,
+  int num_non_zeroes,
+  long int *column_gids,
+  long int *row_gid_index,
+  long int *row_gids,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return a portion of a distributed sparse matrix using
+ *  compressed sparse row format.
+ *
+ *  Input:
+ *    data           --  pointer to user defined data structure
+ *    num_rows       --  number of rows to be supplied by user
+ *    num_non_zeroes --  total number of non-zeroes in the rows
+ *
+ *  Output:
+ *    row_gids       --  array of global IDs for the rows
+ *    column_gid_index  --  index into column_gids of start of non-zeros for each row
+ *    column_gids    --  list of global IDs of columns of non-zeros in rows
+ *    ierr           --  error code
+ */
+
+typedef void ZOLTAN_CSR_FN(
+  void *data,
+  int num_rows,
+  int num_non_zeroes,
+  long int *row_gids,
+  long int *column_gid_index,
+  long int *column_gids,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
  *  Function to return
  *  the number of objects on a given processor fixed to particular partitions.
  *  Input:  
@@ -2529,6 +2627,30 @@ extern int Zoltan_Set_HG_Size_CS_Fn(
 extern int Zoltan_Set_HG_CS_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_HG_CS_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_CSC_Size_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_CSC_SIZE_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_CSR_Size_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_CSR_SIZE_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_CSC_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_CSC_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_CSR_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_CSR_FN *fn_ptr, 
   void *data_ptr
 );
 
