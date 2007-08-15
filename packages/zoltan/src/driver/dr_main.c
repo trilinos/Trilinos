@@ -81,12 +81,10 @@ int main(int argc, char *argv[])
 
   char  *cmd_file;
   char   cmesg[256]; /* for error messages */
-  char  *delayTimeStr;
 
   float  version;
 
   int    Proc, Num_Proc;
-  int    delayTimeSec;
   int    iteration;
   int    error, gerror;
   int    print_output = 1;
@@ -107,12 +105,6 @@ int main(int argc, char *argv[])
   /* get some machine information */
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
-
-  if ((delayTimeStr = getenv("DEBUG_ME"))){
-    delayTimeSec = atoi(delayTimeStr);
-    printf("(%d) gdb %s %d\n",Proc,argv[0],getpid());
-    sleep(delayTimeSec);
-  }
 
   /* Initialize flags */
   Test.DDirectory = 0;

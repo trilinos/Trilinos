@@ -789,7 +789,6 @@ int read_mtxplus_file(
 
   /* Process 0 reads the file and broadcasts it */
 
-printf("READ_MTXPLUS_FILE\n");
   if (Proc == 0) {
     fsize = 0;
     fp = NULL;
