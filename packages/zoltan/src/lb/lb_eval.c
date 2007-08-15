@@ -441,7 +441,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
       sum += edges_per_obj[k];
     }
-printf("cuts %d cutl %lf cutn %lf\n",cuts,cutl,cutn);
     ZOLTAN_FREE(&part_arr);
     MPI_Reduce(&cutn, &gcutn, 1, MPI_FLOAT, MPI_SUM, zz->Debug_Proc, 
                  zz->Communicator);

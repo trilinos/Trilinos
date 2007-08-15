@@ -1,10 +1,8 @@
 Decomposition Method 	= rcb
 Zoltan Parameters	= 
 Zoltan Parameters       = keep_cuts=1
-Zoltan Parameters       = final_output=1
 File Type		= Chaco
 File Name		= simple
 Parallel Disk Info	= number=0
-#Test Drops		= 1
-#Test RCB Box		= 1
-#number of iterations = 4
+Test Drops		= 1
+Test RCB Box		= 1
