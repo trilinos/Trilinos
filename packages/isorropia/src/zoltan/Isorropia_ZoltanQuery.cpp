@@ -501,7 +501,7 @@ void Isorropia::ZoltanQuery::HG_Size_CS ( void * data,
     *num_pins = tmatrix_->NumMyNonzeros();
   }
 
-  *format = ZOLTAN_COMPRESSED_EDGE;
+  *format = ZOLTAN_COMPRESSED_VERTEX;
 
   *ierr = ZOLTAN_OK;
 }
