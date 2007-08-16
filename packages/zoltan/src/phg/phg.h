@@ -238,7 +238,9 @@ extern int Zoltan_PHG_ParKway(ZZ *, HGraph *, int, Partition, PHGPartParams* );
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
     int *part, int **cut, double *gain, HEAP *heap);
 
-    
+int Zoltan_Convert_To_CSR( ZZ *zz, int num_pins, int *col_ptr,
+    int *num_lists, ZOLTAN_ID_PTR *vtx_GID,
+    int **row_ptr, ZOLTAN_ID_PTR *edg_GID);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

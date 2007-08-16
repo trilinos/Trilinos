@@ -33,10 +33,6 @@ static void show_edges(char *s, ZZ *zz, int num_lists, int num_pins,
                 int *edg_GID, int *row_ptr, int *vtx_GID);
 #endif
 
-static int convert_to_CRS( ZZ *zz, int num_pins, int *col_ptr,
-    int *num_lists, ZOLTAN_ID_PTR *vtx_GID,
-    int **row_ptr, ZOLTAN_ID_PTR *edg_GID);
-
 /*****************************************************************************/
 
 int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz, 
@@ -107,7 +103,7 @@ int *rptr, *cptr;
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
       if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){
-        ierr = convert_to_CRS(zz,
+        ierr = Zoltan_Convert_To_CSR(zz,
                      np,    /* number of pins doesn't change */
                      cptr,
                      &nl,     /* replace with number of rows */
@@ -148,14 +144,17 @@ int *rptr, *cptr;
   return ierr;
 }
 /*****************************************************************************/
-static int convert_to_CRS(
+/* This is called "Convert_To_CSR" but it also converts CSR to CSC.  The
+ * conversion is symetric.
+ */
+int Zoltan_Convert_To_CSR(
     ZZ *zz, int num_pins, int *col_ptr,   /* input */
     int *num_lists,                       /* rest are input/output */
     ZOLTAN_ID_PTR *vtx_GID,
     int **row_ptr,
     ZOLTAN_ID_PTR *edg_GID)
 {
-static char *yo = "convert_to_CRS";
+static char *yo = "Zoltan_Convert_To_CSR";
 int numVerts = *num_lists;
 int numEdges, ierr, ht_size;
 ZOLTAN_ID_PTR egid, vgid;

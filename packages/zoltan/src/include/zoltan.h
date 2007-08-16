@@ -1927,9 +1927,9 @@ typedef void ZOLTAN_CSC_FN(
   void *data,
   int num_columns,
   int num_non_zeroes,
-  long int *column_gids,
-  long int *row_gid_index,
-  long int *row_gids,
+  int *column_gids,
+  int *row_gid_index,
+  int *row_gids,
   int *ierr
 );
 
@@ -1954,9 +1954,9 @@ typedef void ZOLTAN_CSR_FN(
   void *data,
   int num_rows,
   int num_non_zeroes,
-  long int *row_gids,
-  long int *column_gid_index,
-  long int *column_gids,
+  int *row_gids,
+  int *column_gid_index,
+  int *column_gids,
   int *ierr
 );
 

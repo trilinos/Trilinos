@@ -203,17 +203,25 @@ struct Zoltan_MM_Data_Struct{
 
   /* The local portion of sparse matrix returned by the query function */
   int input_type;    /* ROW_TYPE or COL_TYPE */
-  int nRC;               /* number of rows or columns */
-  long int *rcGID;      /* row or column GIDs   */
-  long int *pinIndex;   /* index into pinGIDs array, last is num pins */
-  long int *pinGID;     /* non-zeroes column or row GIDs */
+  int numRC;            /* number of rows or columns */
+  int *rcGID;      /* row or column GIDs   */
+  int *pinIndex;   /* index into pinGIDs array, last is num pins */
+  int *pinGID;     /* non-zeroes column or row GIDs */
+
+  /* Mirror specification of sparse matrix: if input was CSR, create CSC, 
+   * or in input was CSC, create CSR */
+
+  int numCR;  
+  int *crGID;
+  int *mirrorPinIndex;
+  int *mirrorPinGID; 
 
   /* Global values filled out by process_matrix_input().                  */
-  long int rowBaseID;             /* zero or one? */
-  long int colBaseID;             /* zero or one? */
-  long int nRows;
-  long int nCols;
-  long int nNonZeroes;
+  int rowBaseID;             /* zero or one? */
+  int colBaseID;             /* zero or one? */
+  int nRows;
+  int nCols;
+  int nNonZeros;
 
   /* Hypergraph generated from sparse matrix */
 
