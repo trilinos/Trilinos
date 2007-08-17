@@ -6,15 +6,15 @@
 \bibliographystyle{alpha}
 \newtheorem{remark}{Remark}
 \newcommand{\HRule}{\noindent\rule{\linewidth}{1mm}}
-\title{ML 3.1 Developer's Guide}
-\SANDnum{SAND2004--4821}
+\title{Official ML Developer's Guide}
+\SANDnum{SAND-XXXX}
 \SANDauthor{
-Marzio Sala, Jonathan J. Hu, Ray S. Tuminaro}
+Marzio Sala, Jonathan J. Hu, Ray S. Tuminaro, Ian Karlin}
 
 \SANDprintDate{September 2004}
 \SANDreleaseType{Unlimited Release}
 
-\title{ML 3.1 Developer's Guide}
+\title{Official ML Developer's Guide}
 \author{
 Marzio  Sala \\
 Computational Math \& Algorithms \\
@@ -26,7 +26,11 @@ Ray S. Tuminaro \\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
 P.O.~Box 0969, MS 9159\\
-Livermore, CA 94551-0969\\
+Livermore, CA 94551-0969\\[20pt]
+Ian Karlin \\
+Department of Computer Science\\
+Colorado University at Boulder \\
+Boulder, Colorado
 }
 
 \date{\today}
@@ -1317,6 +1321,210 @@ Two example of output are reported in Figure~\ref{fig:sparsity-pattern}.
   The lines in the matrix show the division of rows and columns among the (two) processors.}
 \label{fig:sparsity-pattern}
 \end{figure}
+
+%%%
+%%%
+%%%
+
+\section{Block Matrix Matrix Multiply}
+
+The following are working notes written by Ian Karlin during summer, 2007.
+
+The following will trace the steps needed to perform an RAP calculation using a block matrix-matrix multiply within ML.  The steps will assume that the functions and changes mentioned in the first 7 bullets of the next section are complete but the following two bullets are not complete.
+
+A block multiply in ML requires first acquiring the block matrix versions of A and $P^(t)$.  The A matrix is the user's matrix and will be provided in EPETRA block form by the user.  ML will then use A to create $P^(t)$ which currently will be a CSR matrix.  In order to perform a block multiply the first step must be to create a block version of $P^(t)$.
+ML\_convert2vbr will handle this conversion which involves creating the VBR data structure and storing zeros within nonzero blocks.
+
+Once $P^(t)$ is a VBR matrix all processors need to call ML\_exchange\_rows to
+get values stored on other processors that are needed for their calculations.
+The result of ML\_exchange\_rows will be each processor will have all the data
+it needs to perform its multiply.  Its local data will be in VBR format and its
+newly acquired data will be prepended to the local data in CSR format with all
+the zeros necessary for a VBR matrix already filled in.  The next step in the
+process will be to convert the newly acquired data back to VBR through another call to ML\_convert2vbr.
+
+With $P^(t)$ now a full-fledged VBR matrix a call to ML\_blkmatmat\_mult will now calculate A$P^(t)$ to produce the P matrix with a global column numbering.  The P then needs to be converted back to local column indices through a call to ML\_back\_to\_vbrlocal.  At this point a call to ML\_Operator\_Transpose\_byrow(need to verify this is the right transpose to call) will be used to create the R matrix which is P transpose.  ML\_convert2vbr will need to be called to convert R back into a VBR matrix.  In order to perform AP ML\_exchange\_rows needs to be called on P with the prepended exchanged data converted back to VBR using ML\_convert2VBR.
+
+ML\_blkmatmat\_mult should be performed on AP to calculate
+
+
+\subsection{Implementation work performed and still needed}
+
+The below details the functions that are needed or would be nice to have for a working block matrix-matrix multiply in ML.
+The current status and usage are documented.
+In addition issues with their design and the reason design decisions were made are detailed.
+
+\begin{enumerate}
+  \item  Additions to the ML\_Operator data structure
+
+  The following data elements were added to the ML\_Operator structure or the noted sub-structures for use with VBR matrices.   Usage of structured that are different from previous usage is noted as well.
+
+\begin{enumerate}
+
+\item Added to ML\_Operator\_Struct
+
+\begin{enumerate}
+
+\item int blocks
+
+ This field is used to store the number of nonzero blocks in a VBR matrix.  Once set it can be used when allocating space for block based parts of the data structure.  The value is not set everywhere it should be in the functions ML\_convert2vbr and ML\_blkmatmat\_mult.
+
+\end{enumerate}
+
+\item Added to ML\_GetrowFunc\_Struct
+
+\begin{enumerate}
+
+\item int N\_block\_rows
+
+Store the number of block rows in a VBR matrix.  If the matrix contains sub-matrix then it is set to the sum of the submatrices N\_block\_rows and the number of block rows in the current matrix.
+
+\item int columns\_loc\_glob
+
+This field is used to denote if the columns of a matrix are local or global and is necessary for converting CSR matrices to VBR after ML\_exchange\_rows and also when performing a point getrow on a block matrix.
+In order to accomplish this the values ML\_LOCAL\_INDICES and ML\_GLOBAL\_INDICES already defined in ml\_defs.h are overloaded and used.
+The reasons for adding this field is that when columns are globally numbered as will occur in right-hand side matrices only the whole cpntr array is not stored.
+Since the columns are of a fixed block width though only the first two values of cpntr need to be accessed and this field is what lets the functions that use this information know this.
+
+
+
+\end{enumerate}
+
+
+
+\end{enumerate}
+
+  \item  CSR to VBR converter (almost-complete)
+
+    The function ML\_convert2vbr converts right-hand side matrices both before and after ML\_exchange\_rows from CSR to VBR.
+It will also convert the left-hand side R matrix to VBR after it is created by transposing P.
+It creates the VBR structure with the proper rpntr, cpntr, bpntr, bindx, indx and values arrays for the passed in CSR matrix.
+Whenever a nonzero block is missing an entry in CSR form a zero is put in and stored explicitly.
+
+
+void ML\_convert2vbr(ML\_Operator *in\_matrix, int row\_block\_size, int rpntr[], int col\_block\_size, int cpntr[], int submatrix)
+
+    \begin{enumerate}
+      \item  Conversion of right-hand matrices to VBR (completed)
+
+      The function is called before the call to ML\_exchange\_rows by passing
+in a CSR version of $P^{(t)}$.  It is specified by setting the submatrix parameter to 0.
+Rowi and column and block sizes should be non-negative with a negative number passed in for these values returning an error.
+ If a number greater than zero is passed in for either this will be the fixed block size for the rows or columns of the matrix and anything passed into rpntr or cpntr will be ignored.  
+If a zero is passed in for the row or column block size then the corresponding rpntr or cpntr will be used as to determine the block structure.
+
+ML\_convert2vbr naively assumes for both speed and ease of conversion that the matrix is not missing necessary information for a conversion.
+The function assumes that all point-rows and point-columns within a block-row or column are stored consecutively though not necessarily in any particular order.
+The function also requires that all columns within a block exist within the matrix structure even if the block column is all zeros.
+While the function will add in zeros to all values within a block not stored in CSR format it does so naively and can not tell when a row or column was not stored due to being all zeros.
+The above decision was made to allow for the convert to work whether the matrix is in local or global ordering.
+
+It needs to be called before ML\_exchange\_rows to avoid having to figure out the blocking structure of the exchanged rows from the passing processor.  In addition this allows for a quicker convert on the passed data as no zeros have to be plugged in.  This comes at a cost of more exchanged information however though the amount depends on the density of the data being passed.
+
+      \item  Conversion of submatrices of right-hand matrices after ML\_exchange\_rows (completed)
+
+       Since ML\_exchange\_rows is a point-wise function the information that it prepends onto the matrix will be in a point format and need to be converted.
+To call this part of the routine the sub\_matrix parameter should be set to 1.  Since this will only be performed on a right-hand side matrix the column size must be a fixed width.
+The row parameters can be any legal values but will not be used in the function as this is determined by the information sent to the function.
+The communication in the function is used to determine how many rows were prepended and the size of these block rows.  
+
+The routine was originally written for exchanged data that was appended to the original matrix in a chain of submatrices of unknown length.
+As routine was being tested when it was discovered that the exchanged data is actually prepended to the matrix and not appended the ability to convert multiple prepended matrices was left in.
+This functionality has not been tested as there should never be more than one prepended matrix but was left in since the code works as is and its overhead is slight at most.
+
+
+
+      \item  Conversion of R matrices to VBR (mostly completed)
+
+      Through the use of the routine with a sub\_matrix parameter set to 0 and a fixed block row width the R matrix should be able to be converted using this routine.
+The block columns would need to be the same as the block rows of the P matrix.
+However, this has not been tested as an R matrix cannot be created using the existing transpose routine until a back to local routine for block matrices is created.
+
+The only additional code needed for this section is to make sure the values of certain parameters are set properly.  These values include but are not limited to the number of blocks, non-zeros in a matrix and function points to the proper matvec.
+ 
+    \end{enumerate}
+  \item  VBR point getrow (completed)
+
+  VBR\_getrows returns a point row from a block matrix.  It is modeled to replicate the point getrows for CSR and MSR matrices.
+It should be inherently less efficient than the CSR and MSR point getrows due to a poor memory access pattern and larger overhead.
+However, it is essential to the functioning of the block routine right now as without it ML\_exchange\_rows and other point functions could not be called on a block matrix.
+Without the ability to use point functions on block matrices the time required to recreate many of the point functions as block functions would be immense.
+While there would be performance gains from having block versions of these functions the advantage is often small enough to not make them practical to create.
+It requires that a matrix with global column indices has columns\_loc\_glob = ML\_GLOBAL\_INDICES.
+
+int VBR\_getrows(ML\_Operator *data, int N\_requested\_rows, int requested\_rows[],
+   int allocated\_space, int columns[], double values[], int row\_lengths[])
+
+The function returns 1 on success and zero on failure due to a lack of space.  It takes in the Operator to perform the getrow on along with the row to be retrieved.
+N\_requested\_rows should always be 1 as the function is not implemented for more than one row.
+Allocated\_space is equal to the size of the columns and values arrays which return the values in the point row and their associated columns on exit.
+Row\_lengths will return how many points were in the retrieved row.  
+
+  \item  VBR block getrow routines (completed)
+
+  VBR\_block\_getrow is a heavy weight routine which retrieves a single matrix block row.  The row can be appended onto a current list by setting index and index2 to the number of values stored in the bindx and values array respectively.
+The indexing functionality is used when creating the hash table in the multiply.  This routine was created as the lightweight block getrow ML\_get\_matrow\_VBR cannot be used in parallel to create the hash table as it cannot transform a matrix with submatrices into a single matrix.
+
+  VBR\_block\_getrow handles submatrices, the allocation of more memory and the conversion of local to global block ids when necessary.  It differs from ML\_get\_matrow\_VBR by returning the values array in addition to the bindx and indx arrays.
+It returns an integer so that a separate routine can be created to handle the issue of not enough memory allocated as is done by the point getrows.
+
+int VBR\_block\_getrow(ML\_Operator *data, int requested\_row,
+   int *int\_space, int *values\_space, int *blocks, int **bindx,
+   int **indx, double **values, int *row\_length, int index, int index2)
+
+The data field ins the matrix to retrieve row requested\_row from.  The int\_space and values\_space fields are used to say how much memory is allocated to the bindx, index and values arrays.  The int\_space is used for both bindx and indx.  Blocks and row\_length return the number of blocks and points in the retrieved row respectively.  The bindx, indx and values arrays are used to store the information from the retrieved row.  Finally index and index2 are used to indicate the point in bindx and values at which to start storing the newly retrieved data.
+
+  \item  VBR recursive destroy (completed)
+  
+  ML\_RECUR\_VBRdata\_Destroy which is modeled after the ML\_RECUR\_CSRdata\_Destroy will recursively free the VBR data stored in an ML\_Operator object through the use of ML\_VBRdata\_Destroy.
+ML\_RECUR\_VBRdata\_Destroy takes in the ML\_Operator with VBR data to destroy and ML\_VBRdata\_Destroy takes in a void pointer to the actual data.
+
+  \item  VBR back to local (to-do)
+
+  This function is necessary in order to use the block multiply through all
+three calculations of the RAP.  After $AP^{(t)}$ it is needs to be performed on P final so that the transpose of P can be taken.
+In addition it is necessary at the end of the RAP calculation so that the resulting matrix is in local form as the rest of ML and other packages using ML expects it.
+This would be the first routine not done that should be written.
+
+  \item  Block multiply (mostly completed)
+
+  ML\_blkmatmat\_mult takes in two ML\_Operators(Amatrix, Bmatrix) with their data stored in VBR format and returns the result in a third ML\_Operator(Cmatrix) in VBR format with global indices.
+The block structure of Amatrix is unrestrained while the Bmatrix must have its row blocks be the same as Amatrix's column blocks and the Bmatrix block columns must all be the same size.
+The routine uses the same structure as the point matrix-matrix multiply and does not exhibit many significant changes from the initial prototype from the serial multiply.
+
+Changes to the code include storing the number of block rows separately from the number of point rows to avoid confusion and keep both useful pieces of information available at once.
+The whole blocking structure is no longer fixed in all matrices.  The heavyweight blockrow is used to fix a bug with hashing after ML\_exchange\_rows in parallel.
+A fix to how the number of rows was being stored allows for the resultant matrix to have more than one submatrix.
+
+To be done is to verify that all function pointers and block matrix information is properly stored for the Cmatrix at the end of the routine.
+Getrow and number of row parameters are set but other values such as function pointers, number of non\_zeros and the number of blocks still need to be set.
+
+  \item  Block matrix-vector multiply (to-do)
+
+  A block matrix-vector multiply is not necessary for functionality but could be useful for performance.
+The point matrix-vector routine can be used instead of a block routine but will cost in terms of performance.
+After the VBR back to local routine this would be the next highest priority as the expected performance gains from this routine could be significant.
+
+\item Other block functionality that would be nice but probably never needed.
+
+These are functions that would potentially increase the speed of the multiply but would most likely not increase it significantly enough to warrant their creation.
+
+\begin{enumerate}
+
+\item Block exchange rows
+
+This would make it so that there would be no need to convert the matrix after ML\_exchange\_rows or use the point VBR getrow for the exchange.  However initial profiling shows that 2/3 to 4/5 of the cost of the exchange comes from data transfer and that the exchange is usually only about 1/4 of the cost of a multiply.  So having this routine would not create much in terms of savings and this would potentially be a difficult and time consuming routine to write.
+
+\item Block transpose
+
+A block transpose would mean that the R matrix will not have to be converted back to VBR.  Also this routine could be more efficient than a point matrix transpose on a VBR data.  Without any profiling it is hard to estimate potential savings but it is doubtful they would be significant enough to warrant major effort.
+
+\item Block creation of $P^{(t)}$
+
+This could be of use but what this entails is unclear along with what gains could be achieved.  Having routines to do this along with the two previous routines would give ML full VBR functionality and render the convert routine useless.
+
+\end{enumerate}
+\end{enumerate}
 
 %%%
 %%%
