@@ -196,62 +196,65 @@ typedef struct Zoltan_HGraph ZHG;
  * Data structures used when converting an input sparse matrix
  * to a PHG problem, running the PHG problem and retaining results
  * for user query.  
+ *
+ * For performance reasons, we'll use ints for matrix indices and
+ * sizes, but for really large matrices these may someday be longs.
+ * So typedef the row and column indices and matrix dimensions.
+ *
+ * If IJTYPE is changed, change the parameters of the
+ * CSC and CSR query functions in zoltan.h and the User's Guide.
  ********************************************************************/
 
-struct Zoltan_MM_Data_Struct{
-  ZZ *zzLib;    /* PHG problem created by Zoltan from user's sparse matrix */
+typedef unsigned int IJTYPE; /* matrix row ID, column ID or matrix size */
+enum ObjectType {ROW_TYPE = 1, COL_TYPE = 2, NZ_TYPE = 3};
+enum PartitionType {PHG_ROWS, PHG_COLUMNS};
+
+struct Zoltan_MP_Data_Struct{
+  ZZ *zzLib;    /* Problem created by Zoltan_Matrix_Partition() */
+
+  /* Parameters */
+  int approach;    /* a PartitionType, how they want us to partition the matrix */
+  int gidLen;                /* length of their IDs (must be <= sizeof(IJTYPE)) */
 
   /* The local portion of sparse matrix returned by the query function */
-  int input_type;    /* ROW_TYPE or COL_TYPE */
-  int numRC;            /* number of rows or columns */
-  int *rcGID;      /* row or column GIDs   */
-  int *pinIndex;   /* index into pinGIDs array, last is num pins */
-  int *pinGID;     /* non-zeroes column or row GIDs */
+  int input_type;    /* a ObjectType, how they supply the matrix */
+  IJTYPE numRC;            /* number of rows or columns */
+  IJTYPE *rcGID;      /* row or column GIDs   */
+  IJTYPE *pinIndex;   /* index into pinGIDs array, last is num pins */
+  IJTYPE *pinGID;     /* non-zeroes column or row GIDs */
 
   /* Mirror specification of sparse matrix: if input was CSR, create CSC, 
    * or in input was CSC, create CSR */
 
-  int numCR;  
-  int *crGID;
-  int *mirrorPinIndex;
-  int *mirrorPinGID; 
+  IJTYPE numCR;  
+  IJTYPE *crGID;
+  IJTYPE *mirrorPinIndex;
+  IJTYPE *mirrorPinGID; 
 
   /* Global values filled out by process_matrix_input().                  */
-  int rowBaseID;             /* zero or one? */
-  int colBaseID;             /* zero or one? */
-  int nRows;
-  int nCols;
-  int nNonZeros;
+  IJTYPE rowBaseID;             /* zero or one? */
+  IJTYPE colBaseID;             /* zero or one? */
+  IJTYPE nRows;
+  IJTYPE nCols;
+  IJTYPE nNonZeros;
 
   /* Hypergraph generated from sparse matrix */
 
-  int nMyVtx;        /* my number of vertices in hypergraph */
-  int *vtxGID;       /* vertex GIDs */
+  IJTYPE nMyVtx;        /* my number of vertices in hypergraph */
+  IJTYPE *vtxGID;       /* vertex GIDs */
   double *vtxWgt;    /* weight for each vertex (1 double) */
-  int nHedges;       /* number of hyperedges */
-  int *hindex;       /* index into list of pins for each h.e., last is npins */
-  int *hvertex;      /* vtx GID of pins in my hyperedges */
+  IJTYPE nHedges;       /* number of hyperedges */
+  IJTYPE *hindex;       /* index into list of pins for each h.e., last is npins */
+  IJTYPE *hvertex;      /* vtx GID of pins in my hyperedges */
 };
 
-typedef struct Zoltan_MM_Data_Struct ZOLTAN_MM_DATA;
-
-/*
-** The structure we will return to user, no clue what's in it - maybe
-** just function pointers so they can query partitioning.
-*/
-
-struct Zoltan_MM_Results_Struct{
-  void (*you_tell_me)();
-};
-
-typedef struct Zoltan_MM_Results_Struct ZOLTAN_MM_RESULT;
+typedef struct Zoltan_MP_Data_Struct ZOLTAN_MP_DATA;
 
 /*
 ** Wrapper around Zoltan_PHG which can be used to partition rows
-** columns and nonzeros of a sparse matrix.
+** columns and/or nonzeros of a sparse matrix.
 */
-int Zoltan_Matrix_Multiply(ZZ *zz, float *part_sizes,   
-                           ZOLTAN_MM_RESULT **results);
+int Zoltan_Matrix_Partition(ZZ *zz, float *part_sizes);
 
 /******************************************************************************/
 /* Matching, Packing, and Grouping arrays.  Technically, they are all the same;

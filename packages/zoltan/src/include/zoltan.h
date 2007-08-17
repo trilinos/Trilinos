@@ -1881,8 +1881,8 @@ typedef void ZOLTAN_HG_EDGE_WTS_FORT_FN(
 
 typedef void ZOLTAN_CSC_SIZE_FN(
   void *data,
-  int *num_columns,
-  int *num_non_zeroes,
+  unsigned int *num_columns,
+  unsigned int *num_non_zeroes,
   int *ierr
 );
 
@@ -1901,8 +1901,8 @@ typedef void ZOLTAN_CSC_SIZE_FN(
 
 typedef void ZOLTAN_CSR_SIZE_FN(
   void *data,
-  int *num_rows,
-  int *num_non_zeroes,
+  unsigned int *num_rows,
+  unsigned int *num_non_zeroes,
   int *ierr
 );
 
@@ -1925,11 +1925,11 @@ typedef void ZOLTAN_CSR_SIZE_FN(
 
 typedef void ZOLTAN_CSC_FN(
   void *data,
-  int num_columns,
-  int num_non_zeroes,
-  int *column_gids,
-  int *row_gid_index,
-  int *row_gids,
+  unsigned int num_columns,
+  unsigned int num_non_zeroes,
+  unsigned int *column_gids,
+  unsigned int *row_gid_index,
+  unsigned int *row_gids,
   int *ierr
 );
 
@@ -1952,11 +1952,11 @@ typedef void ZOLTAN_CSC_FN(
 
 typedef void ZOLTAN_CSR_FN(
   void *data,
-  int num_rows,
-  int num_non_zeroes,
-  int *row_gids,
-  int *column_gid_index,
-  int *column_gids,
+  unsigned int num_rows,
+  unsigned int num_non_zeroes,
+  unsigned int *row_gids,
+  unsigned int *column_gid_index,
+  unsigned int *column_gids,
   int *ierr
 );
 

@@ -14,7 +14,7 @@
 #ifndef __ZOLTAN_MATRIX_INPUT
 #define __ZOLTAN_MATRIX_INPUT
 
-/* TODO: check all the time whether mmd->numRC is zero before proceeding */
+/* TODO: check all the time whether mpd->numRC is zero before proceeding */
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -24,21 +24,20 @@ extern "C" {
 #include "phg.h"
 #include "zz_util_const.h"
 
-static PARAM_VARS MM_params[] = {
-  /* Add parameters here. MM_PARAMETER is a dummy. */
-  {"MM_PARAMETER",     NULL,  "INT",     0},
-  {NULL,               NULL,  NULL,     0}
+ZOLTAN_NUM_OBJ_FN Zoltan_MP_Get_Num_Obj;
+ZOLTAN_OBJ_LIST_FN Zoltan_MP_Get_Objs;
+ZOLTAN_HG_SIZE_CS_FN Zoltan_MP_Get_Size_Matrix;
+ZOLTAN_HG_CS_FN Zoltan_MP_Get_Matrix;
+
+static PARAM_VARS MP_params[] = {
+  {"LB_APPROACH",         NULL,  "STRING",     0},
+  {"NUM_GID_ENTRIES",     NULL,  "INT",     0},
+  {NULL,                  NULL,  NULL,     0}
 };
     
 /***********************************************************************
 ** Allow user of parallel hypergraph methods to input a sparse matrix, 
-** and have Zoltan create the hypergraph that represents communication
-** required for matrix/vector multiplication (y = Ax).  Then call
-** Zoltan's PHG code to do the work.
-**
-** Zoltan then can return a partitioning of non-zeros (of A), a
-** partitioning of rows (for y) and a partitioning of columns (for x).
-** (Details to be worked out yet.)
+** and have Zoltan create the hypergraph that best solves their problem.
 **
 ** See Erik Boman's message to Isorropia-developers at
 ** http://software.sandia.gov/pipermail/isorropia-developers/2006-August/000065.html
@@ -46,116 +45,88 @@ static PARAM_VARS MM_params[] = {
 ** This avoids the necessity of having the user figure out how our
 ** hypergraph partitioning codes work.
 **
-** We may want to change the name of Zoltan_Matrix_Multiply, since
-** it sounds like we are performing a MM instead of partitioning data
-** to balance one.
-**
 ** This source file uses "pins" and "non-zeros" interchangeably.
 *************************************************************************/
 struct vtx_node{
-  int vtxGID;
-  int vtxLID;
+  IJTYPE vtxGID;
+  int    vtxLID;
   struct vtx_node *next;
 };
 typedef struct _vtx_lookup{
   struct vtx_node *htTop;
   struct vtx_node **ht;
-  int table_size;
-  int numVtx;
+  IJTYPE table_size;
+  int    numVtx;
+  int    idLength;
 }vtx_lookup;
 
-static vtx_lookup *create_vtx_lookup_table(int *ids1, int *ids2, int len1, int len2);
+#if 0
+static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
+        IJTYPE *ids1, IJTYPE *ids2, IJTYPE len1, IJTYPE len2);
 static void free_vtx_lookup_table(vtx_lookup **vl);
-static int lookup_vtx(vtx_lookup *vl, int vtx_id);
+static int lookup_vtx(vtx_lookup *vl, IJTYPE vtx_id);
 
-static int process_matrix_input(ZZ *zz, ZOLTAN_MM_DATA *mmd);
-static int make_hypergraph(ZZ *zz, ZOLTAN_MM_DATA *mmd);
-static ZOLTAN_MM_DATA *MM_Initialize_Structure();
+static int make_hypergraph(ZZ *zz, ZOLTAN_MP_DATA *mpd);
+#endif
 
-void Zoltan_MM_Free_Structure(ZZ *zz)
+static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd);
+static int make_mirror(ZOLTAN_MP_DATA *mpd);
+static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len);
+
+static ZOLTAN_MP_DATA *MP_Initialize_Structure();
+static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd);
+
+static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd);
+
+int Zoltan_Matrix_Partition( ZZ *zz, float *part_sizes)
 {
-  ZOLTAN_MM_DATA *mmd = (ZOLTAN_MM_DATA *)zz->LB.Data_Structure;
-
-  if (mmd != NULL){
-
-    /* TODO release of any structures allocated in mmd */
-
-    Zoltan_Destroy(&(mmd->zzLib));  /* we created this PHG problem */
-
-    ZOLTAN_FREE(&zz->LB.Data_Structure);
-  }
-}
-
-int Zoltan_MM_Initialize_Params(ZZ *zz, int *mmval)
-{
-  int ierr = ZOLTAN_OK;
-  int mmparam;
-
-  Zoltan_Bind_Param(MM_params, "MM_PARAMETER", &mmparam);  
-  mmparam = 0;  /* default */
-  ierr = Zoltan_Assign_Param_Vals(zz->Params, MM_params, zz->Debug_Level,
-          zz->Proc, zz->Debug_Proc);
-
-  if (ierr == ZOLTAN_OK){
-    *mmval = mmparam;
-  }
-  return ierr;
-}
-
-#define ROW_TYPE 1
-#define COL_TYPE 2
-
-int Zoltan_Matrix_Multiply(
-ZZ *zz,                    /* The Zoltan structure  */
-float *part_sizes,         /* Input:  Array of size zz->Num_Global_Parts
-                                containing the percentage of work assigned
-                                to each partition. */
-ZOLTAN_MM_RESULT **results) /* Output: undefined as of yet */
-{
-  char *yo = "Zoltan_Matrix_Multiply";
+  char *yo = "Zoltan_Matrix_Partition";
   int ierr = ZOLTAN_OK;
   ZZ *zzLib = NULL;
-  int npins;
+  IJTYPE npins;
+  char param_val[64];
 
-  ZOLTAN_MM_DATA *mmd = MM_Initialize_Structure();
+  /* The persistent structure we will save at zz->LB.Data_Structure */
 
-  if (mmd == NULL){
+  ZOLTAN_MP_DATA *mpd = MP_Initialize_Structure();
+
+  if (mpd == NULL){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
-  /* Process parameters.  We don't have any yet.
-  ierr = Zoltan_MM_Initialize_Params(ZZ *zz, pointers to parameters);
-   */
+  /* Process parameters, write to mpd.  */
+
+  ierr = MP_Initialize_Params(zz, mpd);
+
+  if (ierr != ZOLTAN_OK){
+    goto End;
+  }
 
   /*
-   * Create the Zoltan problem that we will be solving with the
-   * input sparse matrix.
+   * Create the Zoltan problem that we will define from the input sparse matrix.
    */
 
   zzLib = Zoltan_Create(zz->Communicator);
-  Zoltan_Set_Param(zzLib, "NUM_GID_ENTRIES", "1");
+  sprintf(param_val, "%d", mpd->gidLen);
+  Zoltan_Set_Param(zzLib, "NUM_GID_ENTRIES", param_val);
   Zoltan_Set_Param(zzLib, "NUM_LID_ENTRIES", "1");
-  mmd->zzLib = zzLib;
+  mpd->zzLib = zzLib;
 
   /* Call application defined query functions to get the non-zeros.
    * User has a choice of giving us compressed rows or compressed columns.
    * We need global row and column IDs.  Any process can give us any of the
    * non-zeros, but each non-zero must be supplied by only one process.
-   *
-   * I'm assuming row and column IDs are ints, not more general objects.
-   * We know we are working with a matrix, not something abstracted as
-   * a matrix.  I'm assuming the IDs are contiguous as well.
    */
 
   ierr = ZOLTAN_FATAL;
 
   if ((zz->Get_CSC_Size != NULL) && (zz->Get_CSC != NULL)){
     ierr = ZOLTAN_OK;
-    mmd->input_type = COL_TYPE;
+    mpd->input_type = COL_TYPE;
   }
   else if ((zz->Get_CSR_Size != NULL) && (zz->Get_CSR != NULL)){
-    mmd->input_type = ROW_TYPE;
+    mpd->input_type = ROW_TYPE;
     ierr = ZOLTAN_OK;
   }
 
@@ -164,31 +135,31 @@ ZOLTAN_MM_RESULT **results) /* Output: undefined as of yet */
     goto End;
   }
 
-  if (mmd->input_type == COL_TYPE){
-    zz->Get_CSC_Size(zz->Get_CSC_Size_Data, &mmd->numRC, &npins, &ierr);
+  if (mpd->input_type == COL_TYPE){
+    zz->Get_CSC_Size(zz->Get_CSC_Size_Data, &mpd->numRC, &npins, &ierr);
   }
   else {
-    zz->Get_CSR_Size(zz->Get_CSR_Size_Data, &mmd->numRC, &npins, &ierr);
+    zz->Get_CSR_Size(zz->Get_CSR_Size_Data, &mpd->numRC, &npins, &ierr);
   }
 
-  mmd->rcGID = (int *)ZOLTAN_MALLOC(mmd->numRC * sizeof(int));
-  mmd->pinIndex = (int *)ZOLTAN_MALLOC((mmd->numRC+1) * sizeof(int));
-  mmd->pinGID = (int *)ZOLTAN_MALLOC(npins * sizeof(int));
-  if ((mmd->numRC && !mmd->rcGID) || !mmd->pinIndex || (npins && !mmd->pinGID)){
+  mpd->rcGID = (IJTYPE *)ZOLTAN_MALLOC(mpd->numRC * sizeof(IJTYPE));
+  mpd->pinIndex = (IJTYPE *)ZOLTAN_MALLOC((mpd->numRC+1) * sizeof(IJTYPE));
+  mpd->pinGID = (IJTYPE *)ZOLTAN_MALLOC(npins * sizeof(IJTYPE));
+  if ((mpd->numRC && !mpd->rcGID) || !mpd->pinIndex || (npins && !mpd->pinGID)){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
-  if (mmd->input_type == COL_TYPE){
-    zz->Get_CSC(zz->Get_CSC_Data, mmd->numRC, npins, 
-                mmd->rcGID, mmd->pinIndex, mmd->pinGID, &ierr);
+  if (mpd->input_type == COL_TYPE){
+    zz->Get_CSC(zz->Get_CSC_Data, mpd->numRC, npins, 
+                mpd->rcGID, mpd->pinIndex, mpd->pinGID, &ierr);
   }
   else {
-    zz->Get_CSR(zz->Get_CSR_Data, mmd->numRC, npins, 
-                mmd->rcGID, mmd->pinIndex, mmd->pinGID, &ierr);
+    zz->Get_CSR(zz->Get_CSR_Data, mpd->numRC, npins, 
+                mpd->rcGID, mpd->pinIndex, mpd->pinGID, &ierr);
   }
  
-  mmd->pinIndex[mmd->numRC] = npins;
+  mpd->pinIndex[mpd->numRC] = npins;
 
   /*
    * Determine globally how many rows and columns were returned, and if
@@ -196,31 +167,33 @@ ZOLTAN_MM_RESULT **results) /* Output: undefined as of yet */
    * Some row/column numbers may not appear in input if they have no pins.
    */
 
-  ierr = process_matrix_input(zz, mmd);
+  ierr = process_matrix_input(zz, mpd);
 
   /*
-   * Convert the matrix to a hypergraph.  Set the query functions we will use
-   * with PHG.  We will call one routine to do
-   * this, but eventually we could have more than one way to do this.
+   * Depending on how we are creating a hypergraph from the sparse matrix,
+   * we may need to create the hypergraph now and write it to the fields
+   * set up in mpd for that purpose.  The make_hypergraph() function is
+   * an example of this.  If the hypergraph is very simple,
+   * we don't need to do this.  The query functions we pass to Zoltan_PHG
+   * can read the hypergraph straight from the sparse matrix data.
    */
 
-  ierr = make_hypergraph(zz, mmd);
-
-  /* Update our LB.Data_Structure with everything we need to respond to queries
-   * about our vertices and hyperedges.
-   * 
-   * Update any PHG parameters that need to be set, including PHG queries.
+  /*
+   * Set the query functions and parameters required for this problem.  If
+   * you are adding a new approach, this is the section where you need
+   * to add your code.
    */
-
-  Zoltan_Set_Param(zzLib, "LB_METHOD", "HYPERGRAPH"); 
-  Zoltan_Set_Param(zzLib, "HYPERGRAPH_PACKAGE", "PHG");
-  Zoltan_Set_Param(zzLib, "LB_APPROACH", "PARTITION");
-  Zoltan_Set_Param(zzLib, "RETURN_LISTS", "ALL");    /* not sure we need "all" */
-  Zoltan_Set_Param(zzLib, "OBJ_WEIGHT_DIM", "1"); 
-  Zoltan_Set_Param(zzLib, "EDGE_WEIGHT_DIM", "0");
-  Zoltan_Set_Param(zzLib, "ADD_OBJ_WEIGHT", "pins");
-
-  mmd->zzLib = zzLib;
+  switch (mpd->approach)
+    {
+      case PHG_ROWS:
+      case PHG_COLUMNS:
+        phg_rows_or_columns(zz, mpd);
+        break;
+      default:
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+    }
 
   /*
    * Call Zoltan_PHG to partition the rows and columns (a.k.a. vertices)
@@ -247,360 +220,220 @@ ZOLTAN_MM_RESULT **results) /* Output: undefined as of yet */
 End:
   return ierr;
 }
-
-static int vertex_GID(int id, int rc, ZOLTAN_MM_DATA *mmd)
+void Zoltan_MP_Free_Structure(ZZ *zz)
 {
-  int vtxGID=-1;
-  /*
-   * Each row and column of the sparse matrix will yield a vertex and
-   * hyperedge of the hypergraph.
-   */
-  if (rc == ROW_TYPE){       /* "id" is a row GID */
-    if ( (id >= mmd->rowBaseID) && (id < (mmd->rowBaseID + mmd->nRows))){
-      vtxGID = id - mmd->rowBaseID;
-    }
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
+
+  if (mpd != NULL){
+
+    ZOLTAN_FREE(&mpd->rcGID);
+    ZOLTAN_FREE(&mpd->pinIndex);
+    ZOLTAN_FREE(&mpd->pinGID);
+
+    ZOLTAN_FREE(&mpd->crGID);
+    ZOLTAN_FREE(&mpd->mirrorPinIndex);
+    ZOLTAN_FREE(&mpd->mirrorPinGID);
+
+    ZOLTAN_FREE(&mpd->vtxGID);
+    ZOLTAN_FREE(&mpd->vtxWgt);
+    ZOLTAN_FREE(&mpd->hindex);
+    ZOLTAN_FREE(&mpd->hvertex);
+
+    Zoltan_Destroy(&(mpd->zzLib));  /* we created this PHG problem */
+
+    ZOLTAN_FREE(&zz->LB.Data_Structure);
   }
-  else if (rc == COL_TYPE){  /* "id" is a column GID */
-    if ( (id >= mmd->colBaseID) && (id < (mmd->colBaseID + mmd->nCols))){
-      vtxGID = mmd->nRows + (id - mmd->colBaseID);
-    }
-  }
-  return vtxGID;
 }
 
-static int object_owner(ZZ *zz, int gid)
+static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
-  /* If there are many rows/cols with no pins, we may get
-   * some imbalance here.  If this is a problem, we need
-   * to do more work to determine what all the GIDs are
-   * and map them to consecutive global numbers.
-   */
-  int owner = gid % zz->Num_Proc;
-  return owner;
-}
-
-static int allocate_copy(int **to, int *from, int len)
-{
-  *to = (int *)ZOLTAN_MALLOC(sizeof(int) * len);
-  memcpy(*to, from, sizeof(int) * len);
-  return ZOLTAN_OK;
-}
-
-static int send_recv_rows_columns(int rc, ZZ *zz, ZOLTAN_MM_DATA *mmd, int tag,
-  int numRC, int *rcGID, int *pinIndex, int *pinGID,           /* input */
-  int *nrecv, int **recvIDs, int **recvLen, int **recvPins) /* output */
-{
-  int i, vtxgid, len;
   int ierr = ZOLTAN_OK;
-  int *owner = NULL;
-  int *numNonZeros = NULL;
-  int *ids;
-  ZOLTAN_COMM_OBJ *plan;
+  Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", "HYPERGRAPH");
+  Zoltan_Set_Param(mpd->zzLib, "HYPERGRAPH_PACKAGE", "PHG");
+  Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(mpd->zzLib, "OBJ_WEIGHT_DIM", 0);
+  Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "PINS");
+  Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", 0);
 
-  int cr = ((rc == ROW_TYPE) ? COL_TYPE : ROW_TYPE);
+  Zoltan_Set_Num_Obj_Fn(mpd->zzLib, Zoltan_MP_Get_Num_Obj, mpd);
+  Zoltan_Set_Obj_List_Fn(mpd->zzLib, Zoltan_MP_Get_Objs, mpd);
+  Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Size_Matrix, mpd);
+  Zoltan_Set_HG_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Matrix, mpd);
 
-  /*
-   * Each row and column of the input sparse matrix is a "vertex"
-   * in the hypergraph.  And each row and column is a hyperedge,
-   * it's vertices being the non-zeros in the row or column.  We
-   * send rows and columns to their owners.
-   */
-
-  owner = (int *)ZOLTAN_MALLOC(sizeof(int) * numRC);
-  numNonZeros = (int *)ZOLTAN_MALLOC(sizeof(int) * numRC);
-
-  for (i=0; i<numRC; i++){
-    vtxgid = vertex_GID(rcGID[i], rc, mmd);
-    owner[i] = object_owner(zz, vtxgid);
-
-    numNonZeros[i] = pinIndex[i+1] - pinIndex[i];
-  }
-
-  ierr = Zoltan_Comm_Create(&plan, numRC, owner, zz->Communicator, tag, &len);
-
-  /* Send row or column numbers to owners */
-
-  *nrecv = len;
-  *recvIDs = (int *)ZOLTAN_MALLOC(sizeof(int) * len);
-
-  ids = *recvIDs;
-
-  tag--;
-
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)rcGID, sizeof(int), (char *)ids);
-
-  /* Convert input matrix row/column IDs to hg vertex IDs */
-  
-  for (i=0; i<len; i++){
-    ids[i] = vertex_GID(ids[i], rc, mmd);
-  }
-
-  /* Send number of non-zeros in row or column */
-
-  *recvLen = (int *)ZOLTAN_MALLOC(sizeof(int) * len);
-
-  tag--;
-
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)numNonZeros, sizeof(int), (char *)*recvLen);
-
-  /* Send pins in row or column */
-
-  tag--;
-
-  ierr = Zoltan_Comm_Resize(plan, numNonZeros, tag, &len);
-
-  *recvPins = (int *)ZOLTAN_MALLOC(sizeof(int) * len);
-  ids = *recvPins;
-
-  tag--;
-
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)pinGID, sizeof(int), (char *)ids);
-
-  ierr = Zoltan_Comm_Destroy(&plan);
-
-  /* Convert input matrix row/column IDs to hg vertex IDs */
-  
-  for (i=0; i<len; i++){
-    ids[i] = vertex_GID(ids[i], cr, mmd);
-  }
+  ierr = make_mirror(mpd);
 
   return ierr;
 }
 
-static int make_hypergraph(ZZ *zz, ZOLTAN_MM_DATA *mmd)
+static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
+  char *yo="MP_Initialize_Params";
   int ierr = ZOLTAN_OK;
-  int i, j, k, numIDs, lid, size_hvertex;
-  int nrecvA, nrecvB;
-  int *recvIDsA=NULL, *recvIDsB=NULL;
-  int *recvLenA=NULL, *recvLenB=NULL;
-  int *recvPinsA=NULL, *recvPinsB=NULL;
-  int *hesize=NULL;
-  int *IDs, *nPins, *pins, *vptr;
-  vtx_lookup *lu_table=NULL;
-  ZOLTAN_ID_PTR objPtr, pinPtr;
+  char approach[MAX_PARAM_STRING_LEN];
 
-  /*
-   * The user has input a sparse input in CSC or CSR format.  Create the
-   * mirror CSR or CSC format.  Convert_To_CSR program converts in place.
-   */
+  Zoltan_Bind_Param(MP_params, "LB_APPROACH", approach);  
+  Zoltan_Bind_Param(MP_params, "NUM_GID_ENTRIES", &mpd->gidLen);  
 
-  mmd->numCR = mmd->numRC;
-  allocate_copy(&mmd->crGID, mmd->rcGID, mmd->numRC);
-  allocate_copy(&mmd->mirrorPinIndex, mmd->pinIndex, mmd->numRC+1);
-  allocate_copy(&mmd->mirrorPinGID, mmd->pinGID, mmd->pinIndex[mmd->numRC]);
+  strncpy(approach, "PHG_ROWS", MAX_PARAM_STRING_LEN);
+  mpd->gidLen = 1;
 
-  objPtr = (ZOLTAN_ID_PTR)mmd->crGID;
-  pinPtr = (ZOLTAN_ID_PTR)mmd->mirrorPinGID;
+  ierr = Zoltan_Assign_Param_Vals(zz->Params, MP_params, zz->Debug_Level,
+          zz->Proc, zz->Debug_Proc);
 
-  ierr = Zoltan_Convert_To_CSR(mmd->zzLib,    /* TODO test this */
-             mmd->pinIndex[mmd->numRC],  
-             mmd->pinIndex,
-             &(mmd->numCR),
-             &objPtr,
-             &(mmd->mirrorPinIndex),
-             &pinPtr);
+  if (ierr == ZOLTAN_OK){
+    if (!strcasecmp(approach, "phg_rows"))
+      mpd->approach = PHG_ROWS;
+    else if (!strcasecmp(approach, "phg_columns"))
+      mpd->approach = PHG_COLUMNS;
 
-  mmd->crGID = (int *)objPtr;
-  mmd->mirrorPinIndex = (int *)pinPtr;
-
-  /* Send rows and columns to owners, and convert row and column IDs
-   * to hypergraph vertex IDs.
-   */
-
-  ierr = send_recv_rows_columns(mmd->input_type, zz, mmd, 40000,
-      mmd->numRC, mmd->rcGID, mmd->pinIndex, mmd->pinGID,
-      &nrecvA, &recvIDsA, &recvLenA, &recvPinsA);
-
-  ierr = send_recv_rows_columns(
-    (mmd->input_type == ROW_TYPE ? COL_TYPE : ROW_TYPE), 
-    zz, mmd, 39000,
-    mmd->numCR, mmd->crGID, mmd->mirrorPinIndex, mmd->mirrorPinGID,
-    &nrecvB, &recvIDsB, &recvLenB, &recvPinsB);
-
-
- /* 
-  * Create local portion of hypergraph from all data just received. 
-  */ 
-
-  lu_table = create_vtx_lookup_table(recvIDsA, recvIDsB, nrecvA, nrecvB);
-
-  mmd->nHedges = mmd->nMyVtx = lu_table->numVtx;
-
-  mmd->vtxGID = (int *)ZOLTAN_MALLOC(sizeof(int) * mmd->nMyVtx);
-  mmd->vtxWgt = (double *)ZOLTAN_MALLOC(sizeof(double) * mmd->nMyVtx);
-  mmd->hindex = (int *)ZOLTAN_MALLOC(sizeof(int) * (mmd->nMyVtx + 1));
-
-  /* count size of each hyperedge */
-
-  hesize = (int *)ZOLTAN_CALLOC(sizeof(int) , mmd->nHedges);
-
-  for (i=0; i<2; i++){
-    numIDs = (i ? nrecvB : nrecvA);
-    IDs = (i ? recvIDsB : recvIDsA);
-    nPins = (i ? recvLenB: recvLenA);
-    pins = (i ? recvPinsB : recvPinsA);
-
-    for (j=0; j < numIDs; j++){
-      lid = lookup_vtx(lu_table, IDs[j]);
-      hesize[lid] += nPins[j];  /* # pins I recv'd for this row or column */
+    if (mpd->gidLen > sizeof(IJTYPE)){
+      /*
+       * Maybe they want to use long ints, we only handle ints.  Change
+       * IJTYPE to make code use long ints.
+       */
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input row and column IDs are too large");
+      ierr = ZOLTAN_FATAL;
     }
   }
-
-  for (i=0; i<mmd->nHedges; i++){
-    /* "+ 1" because vtx is also part of assoc. hyperedge */
-    mmd->hindex[i+1] = mmd->hindex[i] + hesize[i] + 1; 
-  }
-  size_hvertex = mmd->hindex[mmd->nHedges];
-
-  /* write out vertices in each hyperedge */
-
-  mmd->hvertex = (int *)ZOLTAN_MALLOC(sizeof(int) * size_hvertex);
-  memset(hesize, 0, sizeof(int) * mmd->nHedges);
-
-  for (i=0; i<2; i++){
-    numIDs = (i ? nrecvB : nrecvA);
-    IDs = (i ? recvIDsB : recvIDsA);
-    nPins = (i ? recvLenB: recvLenA);
-    pins = (i ? recvPinsB : recvPinsA);
-
-    for (j=0; j < numIDs; j++){
-      lid = lookup_vtx(lu_table, IDs[j]);
-      vptr = mmd->hvertex + mmd->hindex[lid] + hesize[lid];
-      if (hesize[lid] == 0){
-        *vptr++ = IDs[j];      /* vertex is part of its assoc. hyperedge */
-        hesize[lid] += 1;
-      }
-      for (k=0; k < nPins[j]; k++){
-        *vptr++ = *pins++;
-      }
-      hesize[lid] += nPins[j];
-    }
-  }
-
-  /* Set vertex weight to size of associated hyperedge? */
-
-  for (i=0; i<mmd->nMyVtx; i++){
-    mmd->vtxWgt[i] = (double)(mmd->hindex[i+1] - mmd->hindex[i]);
-  }
-
-  ZOLTAN_FREE(&hesize);
-  ZOLTAN_FREE(&recvIDsA);
-  ZOLTAN_FREE(&recvIDsB);
-  ZOLTAN_FREE(&recvLenA);
-  ZOLTAN_FREE(&recvLenB);
-  ZOLTAN_FREE(&recvPinsA);
-  ZOLTAN_FREE(&recvPinsB);
-
- /*
-  * TODO: can we free the input sparse matrix and/or mirror now, or
-  * do we need them to reply to queries.
-  */
-
   return ierr;
 }
 
-static int process_matrix_input(ZZ *zz, ZOLTAN_MM_DATA *mmd)
+
+static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
   int ierr = ZOLTAN_OK;
   int i;
-  int minID, maxID, minPinID, maxPinID;
-  int npins=0;
-  int vals[2], gvals[2];
+  long int lpins, gpins;
+  IJTYPE minID, maxID, minPinID, maxPinID;
+  IJTYPE npins=0;
+  long int vals[2], gvals[2];
 
   /* get global number of rows, columns and pins, range of row and column IDs */
 
-  if (mmd->numRC > 0)
-    npins = mmd->pinIndex[mmd->numRC];
+  if (mpd->numRC > 0)
+    npins = mpd->pinIndex[mpd->numRC];
 
-  MPI_Allreduce(&npins, &mmd->nNonZeros, 1, MPI_LONG, MPI_SUM, zz->Communicator);
+  lpins = (long int)npins;
+
+  MPI_Allreduce(&lpins, &gpins, 1, MPI_LONG, MPI_SUM, zz->Communicator);
+
+  mpd->nNonZeros = (IJTYPE)gpins;
 
   maxID = maxPinID = -1;
 
-  if (mmd->numRC > 0){
-    minID = maxID = mmd->rcGID[0];
+  if (mpd->numRC > 0){
+    minID = maxID = mpd->rcGID[0];
 
-    for (i=1; i<mmd->numRC; i++){
-      if (mmd->rcGID[i] < minID) minID = mmd->rcGID[i];
-      else if (mmd->rcGID[i] > maxID) maxID = mmd->rcGID[i];
+    for (i=1; i<mpd->numRC; i++){
+      if (mpd->rcGID[i] < minID) minID = mpd->rcGID[i];
+      else if (mpd->rcGID[i] > maxID) maxID = mpd->rcGID[i];
     }
     if (npins > 0){
-      minPinID = maxPinID = mmd->pinGID[0];
+      minPinID = maxPinID = mpd->pinGID[0];
       for (i=1; i<npins; i++){
-        if (mmd->pinGID[i] < minPinID) minPinID = mmd->pinGID[i];
-        else if (mmd->pinGID[i] > maxPinID) maxPinID = mmd->pinGID[i];
+        if (mpd->pinGID[i] < minPinID) minPinID = mpd->pinGID[i];
+        else if (mpd->pinGID[i] > maxPinID) maxPinID = mpd->pinGID[i];
       }
     }
   }
-  vals[0] = maxID;
-  vals[1] = maxPinID;
+  vals[0] = (long int)maxID;
+  vals[1] = (long int)maxPinID;
 
   MPI_Allreduce(vals, gvals, 2, MPI_LONG, MPI_MAX, zz->Communicator);
 
-  maxID = gvals[0];
-  maxPinID = gvals[1];
+  maxID = (IJTYPE)gvals[0];
+  maxPinID = (IJTYPE)gvals[1];
 
   if (npins == 0){
     minPinID = maxPinID;
-    if (mmd->numRC == 0){
+    if (mpd->numRC == 0){
       minID = maxID;
     }
   }
-  vals[0] = minID;
-  vals[1] = minPinID;
+  vals[0] = (long int)minID;
+  vals[1] = (long int)minPinID;
 
   MPI_Allreduce(vals, gvals, 2, MPI_LONG, MPI_MIN, zz->Communicator);
 
-  minID = gvals[0];
-  minPinID = gvals[1];
+  minID = (IJTYPE)gvals[0];
+  minPinID = (IJTYPE)gvals[1];
 
-  if (mmd->input_type == ROW_TYPE){
-    mmd->rowBaseID = minID;
-    mmd->colBaseID = minPinID;
-    mmd->nRows = maxID - minID + 1;
-    mmd->nCols = maxPinID - minPinID + 1;
+  if (mpd->input_type == ROW_TYPE){
+    mpd->rowBaseID = minID;
+    mpd->colBaseID = minPinID;
+    mpd->nRows = maxID - minID + 1;
+    mpd->nCols = maxPinID - minPinID + 1;
   }
   else{
-    mmd->rowBaseID = minPinID;
-    mmd->colBaseID = minID;
-    mmd->nRows = maxPinID - minPinID + 1;
-    mmd->nCols = maxID - minID + 1;
+    mpd->rowBaseID = minPinID;
+    mpd->colBaseID = minID;
+    mpd->nRows = maxPinID - minPinID + 1;
+    mpd->nCols = maxID - minID + 1;
   }
 
   return ierr;
 }
-static ZOLTAN_MM_DATA *MM_Initialize_Structure()
+static ZOLTAN_MP_DATA *MP_Initialize_Structure()
 {
-  /* 
-   * This is the structure we save at zz->LB.Data_Structure
-   */
-  ZOLTAN_MM_DATA *mmd = (ZOLTAN_MM_DATA *)ZOLTAN_MALLOC(sizeof(ZOLTAN_MM_DATA));
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)ZOLTAN_CALLOC(sizeof(ZOLTAN_MP_DATA), 1);
 
-  if (mmd == NULL){
+  if (mpd == NULL){
     return NULL;
   }
 
-  mmd->input_type = 0;
-  mmd->numRC = 0;
-  mmd->rcGID = NULL;
-  mmd->pinIndex = NULL;
-  mmd->pinGID = NULL;
+  return mpd;
+}
+static int make_mirror(ZOLTAN_MP_DATA *mpd)
+{
+  ZOLTAN_ID_PTR objPtr, pinPtr;
+  int ierr = ZOLTAN_OK;
 
-  mmd->rowBaseID=0;
-  mmd->colBaseID=0;
-  mmd->nRows=0;
-  mmd->nCols=0;
-  mmd->nNonZeros=0;
+  /*
+   * If sparse matrix was supplied in CSC, create another in CSR format,
+   * and vice versa.
+   */
+  ZOLTAN_FREE(&mpd->crGID);
+  ZOLTAN_FREE(&mpd->mirrorPinIndex);
+  ZOLTAN_FREE(&mpd->mirrorPinGID);
 
-  mmd->zzLib = NULL;
+  mpd->numCR = mpd->numRC;
+  allocate_copy(&mpd->crGID, mpd->rcGID, mpd->numRC);
+  allocate_copy(&mpd->mirrorPinIndex, mpd->pinIndex, mpd->numRC+1);
+  allocate_copy(&mpd->mirrorPinGID, mpd->pinGID, mpd->pinIndex[mpd->numRC]);
 
-  return mmd;
+  objPtr = (ZOLTAN_ID_PTR)mpd->crGID;
+  pinPtr = (ZOLTAN_ID_PTR)mpd->mirrorPinGID;
+
+  /* TODO  Convert_to_CSR thinks some of these fields are ints
+   *         when IJTYPEs might not be ints.  FIX
+   */
+
+  ierr = Zoltan_Convert_To_CSR(mpd->zzLib,    /* TODO test this */
+             mpd->pinIndex[mpd->numRC],  
+             (int *)mpd->pinIndex,
+             (int *)&(mpd->numCR),
+             &objPtr,
+             (int **)&mpd->mirrorPinIndex,
+             &pinPtr);
+
+  mpd->crGID = (IJTYPE *)objPtr;
+  mpd->mirrorPinIndex = (IJTYPE *)pinPtr;
+
+  return ierr;
+}
+static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len)
+{
+  *to = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
+  memcpy(*to, from, sizeof(IJTYPE) * len);
+  return ZOLTAN_OK;
 }
 
-/**********************************************************
- * A search structure and routines for finding a vertex ID
- */
 
+/****************************************************************/
+/****************************************************************/
+/* A search structure and routines for finding a vertex ID      
+ */
+#if 0
 static void free_vtx_lookup_table(vtx_lookup **lu)
 {
   vtx_lookup *l = *lu;
@@ -615,18 +448,21 @@ static void free_vtx_lookup_table(vtx_lookup **lu)
 /*
  * Look up array index (local id) for vertex global ID
  */
-static int lookup_vtx(vtx_lookup *lu, int vtxGID)
+static int lookup_vtx(vtx_lookup *lu, IJTYPE vtxGID)
 {
+  char *yo="lookup_vtx";
   struct vtx_node *hn;
-  int i;
-  unsigned int dummy;
+  int i, num_id_entries;
 
   if (lu->table_size < 1) return -1;
   if (lu->numVtx < 1) return -1;
 
-  dummy = (unsigned int)vtxGID;
+  if (num_id_entries < 1){
+    ZOLTAN_PRINT_ERROR(0, yo, "code rewrite required.\n");
+    exit(0);  /* this should not happen, but just in case... */
+  }
 
-  i = Zoltan_Hash(&dummy, 1, (unsigned int) lu->table_size);
+  i = Zoltan_Hash((ZOLTAN_ID_PTR)vtxGID, lu->idLength, (unsigned int) lu->table_size);
 
   for (hn=lu->ht[i]; hn != NULL; hn = hn->next){
     if (hn->vtxGID == vtxGID){
@@ -641,19 +477,21 @@ static int lookup_vtx(vtx_lookup *lu, int vtxGID)
  * ids in a list may be repeated, the ids in each list are disjoint sets.
  * Create a lookup table.
  */
-static vtx_lookup *create_vtx_lookup_table(int *ids1, int *ids2, int len1, int len2)
+static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
+          IJTYPE *ids1, IJTYPE *ids2, IJTYPE len1, IJTYPE len2)
 {
-  int i, ii, j, tsize, numids, found, len;
-  unsigned int lookup_val;
+  int i, ii, j;
   struct vtx_node *hn;
   vtx_lookup *lu = NULL;
-  int *ids;
+  IJTYPE tsize, numids, len, found;
+  IJTYPE *ids;
 
   lu = (vtx_lookup *)ZOLTAN_MALLOC(sizeof(vtx_lookup));
   if (!lu){
     return NULL;
   }
 
+  lu->idLength = mpd->gidLen;
   numids = len1 + len2;
   tsize = numids / 4;
   if (tsize < 10) tsize = 10;
@@ -683,9 +521,7 @@ static vtx_lookup *create_vtx_lookup_table(int *ids1, int *ids2, int len1, int l
       hn->vtxGID = ids[i];
       hn->vtxLID = lu->numVtx;
 
-      lookup_val = (unsigned int)ids[i];
-  
-      j = Zoltan_Hash(&lookup_val, 1, tsize);
+      j = Zoltan_Hash((ZOLTAN_ID_PTR)(ids+i), mpd->gidLen, tsize);
   
       hn->next = lu->ht[j];
       lu->ht[j] = hn;
@@ -701,13 +537,375 @@ static vtx_lookup *create_vtx_lookup_table(int *ids1, int *ids2, int len1, int l
 
   return lu;
 }
+#endif
+/****************************************************************/
+/****************************************************************/
+/* Query functions that we supply to Zoltan_PHG
+ */
 
-/**********************************************************/
-int Zoltan_Matrix_Multiply_Free(ZZ *zz)
+
+int Zoltan_MP_Get_Num_Obj(void *data, int *ierr)
 {
-  /* Free our structures */
-  return ZOLTAN_OK;
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  int numObj = 0;
+  *ierr = ZOLTAN_OK;
+
+  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
+      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
+    numObj = mpd->numRC;
+  }
+  else{
+    numObj = mpd->numCR;
+  }
+  return numObj;
 }
+
+void Zoltan_MP_Get_Objs(void *data, int num_gid_entries, int num_lid_entries,
+  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts, int *ierr)
+{
+  int i;
+  IJTYPE *objid;
+  int *localid;
+
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+  objid = (IJTYPE *)gids;
+  localid = (int *)lids;
+
+  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
+      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
+    for (i=0; i<mpd->numRC; i++){
+      objid[i] = mpd->rcGID[i];
+      localid[i] = i;
+    }
+  }
+  else{
+    for (i=0; i<mpd->numCR; i++){
+      objid[i] = mpd->crGID[i];
+      localid[i] = i;
+    }
+  }
+}
+
+void Zoltan_MP_Get_Size_Matrix(void *data, int *num_lists, int *num_pins,
+  int *format, int *ierr)
+{
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+
+  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
+      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
+    *num_lists = mpd->numCR;
+    *num_pins  = mpd->mirrorPinIndex[mpd->numCR];
+  }
+  else{
+    *num_lists = mpd->numRC;
+    *num_pins  = mpd->pinIndex[mpd->numRC];
+  }
+  *format = ZOLTAN_COMPRESSED_EDGE;
+}
+
+void Zoltan_MP_Get_Matrix(void *data, int num_gid_entries, int num_vtx_edge,
+  int num_pins, int format, 
+  ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr)
+{
+  int i;
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+  IJTYPE *edgeGID = (IJTYPE *)vtxedge_GID;
+  IJTYPE *pinGID = (IJTYPE *)pinGID;
+
+  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
+      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
+    for (i=0; i<mpd->numCR; i++){
+      edgeGID[i] = mpd->crGID[i];
+      vtxedge_ptr[i] = mpd->mirrorPinIndex[i];
+    }
+    for (i=0; i< mpd->mirrorPinIndex[mpd->numCR]; i++){
+      pinGID[i] = mpd->mirrorPinGID[i];
+    }
+  }
+  else{
+    for (i=0; i<mpd->numRC; i++){
+      edgeGID[i] = mpd->rcGID[i];
+      vtxedge_ptr[i] = mpd->pinIndex[i];
+    }
+    for (i=0; i< mpd->pinIndex[mpd->numRC]; i++){
+      pinGID[i] = mpd->pinGID[i];
+    }
+  }
+}
+
+
+/****************************************************************/
+/****************************************************************/
+/* Code to make a hypergraph out of sparse matrix by creating an
+   object from each row and column, and a hyperedge from each
+   row and column.  This code is not used currently.  The idea
+   is to partition both rows and columns where the objects are
+   the rows and columns themselves. 
+
+   This code is not tested.
+*/
+
+#if 0
+
+static IJTYPE vertex_GID(IJTYPE id, int rc, ZOLTAN_MP_DATA *mpd);
+static int object_owner(ZZ *zz, IJTYPE gid);
+static int send_recv_rows_columns(int rc, ZZ *zz, ZOLTAN_MP_DATA *mpd, int tag,
+  int numRC, IJTYPE *rcGID, IJTYPE *pinIndex, IJTYPE *pinGID,
+  int *nrecv, IJTYPE **recvIDs, IJTYPE **recvLen, IJTYPE **recvPins); 
+
+static int make_hypergraph(ZZ *zz, ZOLTAN_MP_DATA *mpd)
+{
+  int ierr = ZOLTAN_OK;
+  int i, j, k, lid, size_hvertex;
+  IJTYPE numIDs;
+  int nrecvA, nrecvB;
+  IJTYPE *recvIDsA=NULL, *recvIDsB=NULL;
+  IJTYPE *recvLenA=NULL, *recvLenB=NULL;
+  IJTYPE *recvPinsA=NULL, *recvPinsB=NULL;
+  IJTYPE *hesize=NULL;
+  IJTYPE *IDs, *pins, *nPins, *vptr;
+  vtx_lookup *lu_table=NULL;
+
+  /*
+   * The user has input a sparse input in CSC or CSR format.  Create the
+   * mirror CSR or CSC format.  
+   */
+  ierr = make_mirror(mpd);
+
+  if (ierr != ZOLTAN_OK){
+    return ierr;
+  }
+
+  /* Send rows and columns to owners, and convert row and column IDs
+   * to hypergraph vertex IDs.
+   */
+
+  ierr = send_recv_rows_columns(mpd->input_type, zz, mpd, 40000,
+      mpd->numRC, mpd->rcGID, mpd->pinIndex, mpd->pinGID,
+      &nrecvA, &recvIDsA, &recvLenA, &recvPinsA);
+
+  ierr = send_recv_rows_columns(
+    (mpd->input_type == ROW_TYPE ? COL_TYPE : ROW_TYPE), 
+    zz, mpd, 39000,
+    mpd->numCR, mpd->crGID, mpd->mirrorPinIndex, mpd->mirrorPinGID,
+    &nrecvB, &recvIDsB, &recvLenB, &recvPinsB);
+
+
+ /* 
+  * Create local portion of hypergraph from all data just received. 
+  */ 
+
+  lu_table = create_vtx_lookup_table(mpd, recvIDsA, recvIDsB, nrecvA, nrecvB);
+
+  mpd->nHedges = mpd->nMyVtx = lu_table->numVtx;
+
+  mpd->vtxGID = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * mpd->nMyVtx);
+  mpd->hindex = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * (mpd->nMyVtx + 1));
+
+  /* count size of each hyperedge */
+
+  hesize = (IJTYPE *)ZOLTAN_CALLOC(sizeof(IJTYPE) , mpd->nHedges);
+
+  for (i=0; i<2; i++){
+    numIDs = (i ? nrecvB : nrecvA);
+    IDs = (i ? recvIDsB : recvIDsA);
+    nPins = (i ? recvLenB: recvLenA);
+    pins = (i ? recvPinsB : recvPinsA);
+
+    for (j=0; j < numIDs; j++){
+      lid = lookup_vtx(lu_table, IDs[j]);
+      hesize[lid] += nPins[j];  /* # pins I recv'd for this row or column */
+    }
+  }
+
+  for (i=0; i<mpd->nHedges; i++){
+    /* "+ 1" because vtx is also part of assoc. hyperedge */
+    mpd->hindex[i+1] = mpd->hindex[i] + hesize[i] + 1; 
+  }
+  size_hvertex = mpd->hindex[mpd->nHedges];
+
+  /* write out vertices in each hyperedge */
+
+  mpd->hvertex = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * size_hvertex);
+  memset(hesize, 0, sizeof(int) * mpd->nHedges);
+
+  for (i=0; i<2; i++){
+    numIDs = (i ? nrecvB : nrecvA);
+    IDs = (i ? recvIDsB : recvIDsA);
+    nPins = (i ? recvLenB: recvLenA);
+    pins = (i ? recvPinsB : recvPinsA);
+
+    for (j=0; j < numIDs; j++){
+      lid = lookup_vtx(lu_table, IDs[j]);
+      vptr = mpd->hvertex + mpd->hindex[lid] + hesize[lid];
+      if (hesize[lid] == 0){
+        *vptr++ = IDs[j];      /* vertex is part of its assoc. hyperedge */
+        hesize[lid] += 1;
+      }
+      for (k=0; k < nPins[j]; k++){
+        *vptr++ = *pins++;
+      }
+      hesize[lid] += nPins[j];
+    }
+  }
+
+  /* Set vertex weight 
+   *    We'll use ADD_OBJ_WEIGHT for this, let zoltan calculate weight
+   *
+
+  mpd->vtxWgt = (double *)ZOLTAN_MALLOC(sizeof(double) * mpd->nMyVtx);
+  for (i=0; i<mpd->nMyVtx; i++){
+    mpd->vtxWgt[i] = (double)(mpd->hindex[i+1] - mpd->hindex[i]);
+  }
+   */
+
+  ZOLTAN_FREE(&hesize);
+  ZOLTAN_FREE(&recvIDsA);
+  ZOLTAN_FREE(&recvIDsB);
+  ZOLTAN_FREE(&recvLenA);
+  ZOLTAN_FREE(&recvLenB);
+  ZOLTAN_FREE(&recvPinsA);
+  ZOLTAN_FREE(&recvPinsB);
+
+ /*
+  * TODO: can we free the input sparse matrix and/or mirror now, or
+  * do we need them to reply to queries.
+  */
+
+  /*
+   * Now set parameters and query functions
+   */
+
+  Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", "HYPERGRAPH"); 
+  Zoltan_Set_Param(mpd->zzLib, "HYPERGRAPH_PACKAGE", "PHG");
+  Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(mpd->zzLib, "RETURN_LISTS", "ALL");    /* not sure we need "all" */
+  Zoltan_Set_Param(mpd->zzLib, "OBJ_WEIGHT_DIM", "0"); 
+  Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", "0");
+  Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "pins");
+
+  return ierr;
+}
+
+static IJTYPE vertex_GID(IJTYPE id, int rc, ZOLTAN_MP_DATA *mpd)
+{
+  int vtxGID;
+  /*
+   * Each row and column of the sparse matrix will yield a vertex and
+   * hyperedge of the hypergraph.
+   */
+  if (rc == ROW_TYPE){       /* "id" is a row GID */
+    if ( (id >= mpd->rowBaseID) && (id < (mpd->rowBaseID + mpd->nRows))){
+      vtxGID = id - mpd->rowBaseID;
+    }
+  }
+  else if (rc == COL_TYPE){  /* "id" is a column GID */
+    if ( (id >= mpd->colBaseID) && (id < (mpd->colBaseID + mpd->nCols))){
+      vtxGID = mpd->nRows + (id - mpd->colBaseID);
+    }
+  }
+  return vtxGID;
+}
+
+static int object_owner(ZZ *zz, IJTYPE gid)
+{
+  /* If there are many rows/cols with no pins, we may get
+   * some imbalance here.  If this is a problem, we need
+   * to do more work to determine what all the GIDs are
+   * and map them to consecutive global numbers.
+   */
+  int owner = gid % zz->Num_Proc;
+  return owner;
+}
+
+static int send_recv_rows_columns(int rc, ZZ *zz, ZOLTAN_MP_DATA *mpd, int tag,
+  int numRC, IJTYPE *rcGID, IJTYPE *pinIndex, IJTYPE *pinGID,           /* input */
+  int *nrecv, IJTYPE **recvIDs, IJTYPE **recvLen, IJTYPE **recvPins) /* output */
+{
+  int i;
+  IJTYPE vtxgid, len;
+  IJTYPE *ids;
+  int ierr = ZOLTAN_OK;
+  int *owner = NULL;
+  IJTYPE *numNonZeros = NULL;
+  ZOLTAN_COMM_OBJ *plan;
+
+  int cr = ((rc == ROW_TYPE) ? COL_TYPE : ROW_TYPE);
+
+  /*
+   * Each row and column of the input sparse matrix is a "vertex"
+   * in the hypergraph.  And each row and column is a hyperedge,
+   * it's vertices being the non-zeros in the row or column.  We
+   * send rows and columns to their owners.
+   */
+
+  owner = (int *)ZOLTAN_MALLOC(sizeof(int) * numRC);
+  numNonZeros = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numRC);
+
+  for (i=0; i<numRC; i++){
+    vtxgid = vertex_GID(rcGID[i], rc, mpd);
+    owner[i] = object_owner(zz, vtxgid);
+
+    numNonZeros[i] = pinIndex[i+1] - pinIndex[i];
+  }
+
+  ierr = Zoltan_Comm_Create(&plan, numRC, owner, zz->Communicator, tag, (int *)&len);
+
+  /* Send row or column numbers to owners */
+
+  *nrecv = len;
+  *recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
+
+  ids = *recvIDs;
+
+  tag--;
+
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)rcGID, sizeof(IJTYPE), (char *)ids);
+
+  /* Convert input matrix row/column IDs to hg vertex IDs */
+  
+  for (i=0; i<len; i++){
+    ids[i] = vertex_GID(ids[i], rc, mpd);
+  }
+
+  /* Send number of non-zeros in row or column */
+
+  *recvLen = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
+
+  tag--;
+
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)numNonZeros, sizeof(IJTYPE), (char *)*recvLen);
+
+  /* Send pins in row or column */
+
+  tag--;
+
+  ierr = Zoltan_Comm_Resize(plan, (int *)numNonZeros, tag, (int *)&len);
+
+  *recvPins = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
+  ids = *recvPins;
+
+  tag--;
+
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)pinGID, sizeof(IJTYPE), (char *)ids);
+
+  ierr = Zoltan_Comm_Destroy(&plan);
+
+  /* Convert input matrix row/column IDs to hg vertex IDs */
+  
+  for (i=0; i<len; i++){
+    ids[i] = vertex_GID(ids[i], cr, mpd);
+  }
+
+  return ierr;
+}
+
+#endif
+/****************************************************************/
+/****************************************************************/
 
 
 #ifdef __cplusplus
