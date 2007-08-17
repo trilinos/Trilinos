@@ -145,7 +145,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     ML_CHK_ERR(BuildProlongator(*nullspace));
     
     /* DEBUG: Output matrices */
-    Epetra_CrsMatrix_Print(*Prolongator_,"prolongator.dat");
+    if(print_hierarchy) Epetra_CrsMatrix_Print(*Prolongator_,"prolongator.dat");
     
     /* Form the coarse matrix */
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Coarse Matrix\n");
@@ -398,6 +398,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Optimizing Prolongator\n");
   Prolongator_->FillComplete(*CoarseMap_,*EdgeRangeMap_);
   Prolongator_->OptimizeStorage();
+
+  /* EXPERIMENTAL: Normalize Prolongator Columns */
+  bool normalize_prolongator=List_.get("refmaxwell: normalize prolongator",false);
+  if(normalize_prolongator){
+    Epetra_Vector n_vector(*CoarseMap_,false);
+    Prolongator_->InvColSums(n_vector);
+    Prolongator_->RightScale(n_vector);
+  }/*end if*/
   
   /* Post-wrapping to convert to ML indexing */
 #ifdef HAVE_ML_EPETRAEXT
