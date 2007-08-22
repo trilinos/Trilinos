@@ -264,7 +264,7 @@ public:
   // U(xmax)=0
   if (MyPID==NumProc-1) {
     if (fillF)
-      (*rhs)[NumMyElements-1]= (*soln)[OverlapNumMyElements-1] - 0.0;
+      (*rhs)[NumMyElements-1]= (*soln)[NumMyElements-1] - 0.0;
     if (fillMatrix) {
       row=NumGlobalElements-1;
       column=row;
