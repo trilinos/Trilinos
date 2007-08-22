@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->set("Preconditioner Type", "Ifpack");
+  p->set("Enable Delayed Solver Construction", true);
   builder.setParameterList(p);
 
   Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
