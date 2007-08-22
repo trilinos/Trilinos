@@ -7231,15 +7231,18 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    } else if (smoother == (void *) ML_Gen_Smoother_Ifpack) {
 
      /* Incomplete factorization subsmoother */
+     char   *IfpackType;
+     void * IfpackList, *Comm;
+     int *IfpackOverlap;
 
      if (ML_Smoother_Arglist_Nargs(args) != 4)
        pr_error("ML_Smoother_Gen_Hiptmair_Data: Need 4 arguments for ML_Gen_Smoother_Ifpack() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
 
                        
-     char   *IfpackType = (char *) ML_Smoother_Arglist_Get(args, 0);
-     void * IfpackList  = ML_Smoother_Arglist_Get(args, 1);
-     int *IfpackOverlap = (int *) ML_Smoother_Arglist_Get(args, 2);
-     void *Comm         = ML_Smoother_Arglist_Get(args, 3);
+     IfpackType = (char *) ML_Smoother_Arglist_Get(args, 0);
+     IfpackList  = ML_Smoother_Arglist_Get(args, 1);
+     IfpackOverlap = (int *) ML_Smoother_Arglist_Get(args, 2);
+     Comm         = ML_Smoother_Arglist_Get(args, 3);
 
      ML_Gen_Smoother_Ifpack(*ml_subproblem, IfpackType,
                             *IfpackOverlap, 0, ML_PRESMOOTHER,
