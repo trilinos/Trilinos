@@ -39,6 +39,7 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "AnasaziHelperTraits.hpp"
 
 #include "AnasaziOrthoManager.hpp"
 
@@ -47,14 +48,6 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-#if defined(HAVE_COMPLEX)
-#define ANSZI_CPLX_CLASS std::complex
-#elif  defined(HAVE_COMPLEX_H)
-#define ANSZI_CPLX_CLASS ::complex
-#endif
-#endif
 
 /*!     \class Anasazi::BlockKrylovSchur
 
@@ -544,188 +537,6 @@ namespace Anasazi {
     int numRitzPrint_;
   };
 
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Helper function for correctly storing the Ritz values when the eigenproblem is non-Hermitian
-  // This allows us to use template specialization to compute the right index vector and correctly
-  // handle complex-conjugate pairs.
-  template<class ScalarType>
-  void sortRitzValues( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& rRV,
-                       const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
-                       std::vector<Value<ScalarType> >* RV, std::vector<int>* RO, std::vector<int>* RI )
-  {
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
-
-    int curDim = (int)rRV.size();
-    int i = 0;
-
-    // Clear the current index.
-    RI->clear();
-
-    // Place the Ritz values from rRV and iRV into the RV container.
-    while( i < curDim ) {
-      if ( iRV[i] != MT_ZERO ) {
-        //
-        // We will have this situation for real-valued, non-Hermitian matrices.
-        (*RV)[i].set(rRV[i], iRV[i]);
-        (*RV)[i+1].set(rRV[i+1], iRV[i+1]);
-        
-        // Make sure that complex conjugate pairs have their positive imaginary part first.
-        if ( (*RV)[i].imagpart < MT_ZERO ) {
-          // The negative imaginary part is first, so swap the order of the ritzValues and ritzOrders.
-          Anasazi::Value<ScalarType> tmp_ritz( (*RV)[i] );
-          (*RV)[i] = (*RV)[i+1];
-          (*RV)[i+1] = tmp_ritz;
-          
-          int tmp_order = (*RO)[i];
-          (*RO)[i] = (*RO)[i+1];
-          (*RO)[i+1] = tmp_order;
-          
-        }
-        RI->push_back(1); RI->push_back(-1);
-        i = i+2;
-      } else {
-        //
-        // The Ritz value is not complex.
-        (*RV)[i].set(rRV[i], MT_ZERO);
-        RI->push_back(0);
-        i++;
-      }
-    }
-  }
-  
-#ifdef HAVE_TEUCHOS_COMPLEX
-  // Template specialization for the complex scalar type.
-  void sortRitzValues( const std::vector<double>& rRV, 
-                       const std::vector<double>& iRV,
-                       std::vector<Value<ANSZI_CPLX_CLASS<double> > >* RV, 
-                       std::vector<int>* RO, std::vector<int>* RI )
-  {
-    int curDim = (int)rRV.size();
-    int i = 0;
-
-    // Clear the current index.
-    RI->clear();
-
-    // Place the Ritz values from rRV and iRV into the RV container.
-    while( i < curDim ) {
-      (*RV)[i].set(rRV[i], iRV[i]);
-      RI->push_back(0);
-      i++;
-    }    
-  }
-#endif
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Helper function for correctly scaling the eigenvectors of the projected eigenproblem.
-  // This allows us to use template specialization to compute the right scaling so the
-  // Ritz residuals are correct.
-  template<class ScalarType>
-  void scaleRitzVectors( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
-                         Teuchos::SerialDenseMatrix<int, ScalarType>* S )
-  {
-    ScalarType ST_ONE = Teuchos::ScalarTraits<ScalarType>::one();
-    
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
-
-    Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
-    Teuchos::BLAS<int,ScalarType> blas;
-    
-    int i = 0, curDim = S->numRows();
-    ScalarType temp;
-    ScalarType* s_ptr = S->values();
-    while( i < curDim ) {
-      if ( iRV[i] != MT_ZERO ) {
-        temp = lapack_mag.LAPY2( blas.NRM2( curDim, s_ptr+i*curDim, 1 ), 
-                                 blas.NRM2( curDim, s_ptr+(i+1)*curDim, 1 ) );
-        blas.SCAL( curDim, ST_ONE/temp, s_ptr+i*curDim, 1 );
-        blas.SCAL( curDim, ST_ONE/temp, s_ptr+(i+1)*curDim, 1 );
-        i = i+2;
-      } else {
-        temp = blas.NRM2( curDim, s_ptr+i*curDim, 1 );
-        blas.SCAL( curDim, ST_ONE/temp, s_ptr+i*curDim, 1 );
-        i++;
-      }
-    }
-  }
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-  // Template specialization for the complex scalar type.
-  void scaleRitzVectors( const std::vector<double>& iRV,
-                         Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >* S )
-  {
-    typedef ANSZI_CPLX_CLASS<double> ST;
-    ST ST_ONE = Teuchos::ScalarTraits<ST>::one();
-    
-    Teuchos::BLAS<int,ST> blas;
-    
-    int i = 0, curDim = S->numRows();
-    ST temp;
-    ST* s_ptr = S->values();
-    while( i < curDim ) {
-      temp = blas.NRM2( curDim, s_ptr+i*curDim, 1 );
-      blas.SCAL( curDim, ST_ONE/temp, s_ptr+i*curDim, 1 );
-      i++;
-    }
-  }
-#endif
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Helper function for correctly computing the Ritz residuals of the projected eigenproblem.
-  // This allows us to use template specialization to ensure the Ritz residuals are correct.
-  template<class ScalarType>
-  void computeRitzResiduals( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
-                             const Teuchos::SerialDenseMatrix<int, ScalarType>& S,
-                             std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* RR
-                             )
-  {
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
-    
-    Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
-    Teuchos::BLAS<int,ScalarType> blas;
-    
-    int i = 0;
-    int s_stride = S.stride();
-    int s_rows = S.numRows();
-    int s_cols = S.numCols();
-    ScalarType* s_ptr = S.values();
-
-    while( i < s_cols ) {
-      if ( iRV[i] != MT_ZERO ) {
-        (*RR)[i] = lapack_mag.LAPY2( blas.NRM2(s_rows, s_ptr + i*s_stride, 1),
-                                     blas.NRM2(s_rows, s_ptr + (i+1)*s_stride, 1) );
-        (*RR)[i+1] = (*RR)[i];
-        i = i+2;
-      } else {
-        (*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);
-        i++;
-      }
-    }          
-  }
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-  // Template specialization for the complex scalar type.
-  void computeRitzResiduals( const std::vector<double>& iRV,
-                             const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >& S,
-                             std::vector<double>* RR
-                             )
-  {
-    Teuchos::BLAS<int,ANSZI_CPLX_CLASS<double> > blas;
-    
-    int s_stride = S.stride();
-    int s_rows = S.numRows();
-    int s_cols = S.numCols();
-    ANSZI_CPLX_CLASS<double>* s_ptr = S.values();
-
-    for (int i=0; i<s_cols; ++i ) {
-      (*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);
-    }
-  }          
-  
-#endif
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
@@ -1661,7 +1472,7 @@ namespace Anasazi {
             //
             // Scale the eigenvectors so that their Euclidean norms are all one.
             //
-            scaleRitzVectors( tmp_iRitzValues, &S );
+            HelperTraits<ScalarType>::scaleRitzVectors( tmp_iRitzValues, &S );
             //
             // Compute ritzRes = *B_m+1^H*Q*S where the i-th column of S is 's' for the i-th Ritz-value
             //
@@ -1696,7 +1507,7 @@ namespace Anasazi {
             //
             // Compute the Ritz residuals for each Ritz value.
             // 
-            computeRitzResiduals( tmp_iRitzValues, ritzRes, &ritzResiduals_ );
+            HelperTraits<ScalarType>::computeRitzResiduals( tmp_iRitzValues, ritzRes, &ritzResiduals_ );
           }
           //
           // Sort the Ritz values.
@@ -1720,7 +1531,7 @@ namespace Anasazi {
               //
               // Sort using both the real and imaginary parts of the Ritz values.
               sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
-              sortRitzValues( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
+              HelperTraits<ScalarType>::sortRitzValues( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
             }
             //
             // Sort the ritzResiduals_ based on the ordering from the Sort Manager.
