@@ -61,6 +61,13 @@ std::string typeName( const T &t )
   int status;
   char
     *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
+
+  if (status != 0 || _demangledName==NULL) {
+    if (_demangledName != NULL) free(_demangledName);
+    std::string msg("<demangle-failed>");
+    return(msg);
+  }
+
   const std::string demangledName(_demangledName);
   free(_demangledName); // We have to free this!
   return demangledName;
@@ -82,6 +89,13 @@ public:
     int status;
     char
       *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
+
+    if (status != 0 || _demangledName==NULL) {
+      if (_demangledName != NULL) free(_demangledName);
+      std::string msg("<demangle-failed>");
+      return(msg);
+    }
+
     const std::string demangledName(_demangledName);
     free(_demangledName); // We have to free this!
     return demangledName;
