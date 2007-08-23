@@ -218,6 +218,9 @@ Fri Aug 15 16:29:47 EDT 1997
 
 #include<cstring>
 #include<cmath>
+#include <cstdlib>
+using std::malloc;
+using std::free;
 
 char* substr(const char* S, const int pos, const int len);
 void upcase(char* S);

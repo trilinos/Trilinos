@@ -89,8 +89,10 @@ using std::calloc;
 using std::free;
 using std::exit;
 using std::rand;
-#endif
-#ifdef HAVE_STDLIB_H
+using std::abort;
+using std::malloc;
+using std::free;
+#else HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #else /* JANUS_STLPORT */
