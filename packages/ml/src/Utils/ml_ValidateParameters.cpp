@@ -165,6 +165,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("ML debug mode",false);
   setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
   PL->set("ML validate parameter list",true);
+  PL->set("ResetList",true); 
+  setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<std::string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
 
   /* Unlisted Options that should probably be listed */
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL);
