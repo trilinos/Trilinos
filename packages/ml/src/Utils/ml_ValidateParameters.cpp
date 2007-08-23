@@ -31,7 +31,7 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
 #   ifdef HAVE_MPI
     MPI_Finalize();
 #   endif
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
@@ -149,6 +149,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("node: x-coordinates",(double*)0);
   PL->set("node: y-coordinates",(double*)0);
   PL->set("node: z-coordinates",(double*)0);
+  PL->set("read XML",true); 
+  PL->set("XML input file","ml_ParameterList.xml",std::string(""));
 
   /* Smoothed Aggregation and the Null Space (Section 6.4.9) */
   setStringToIntegralParameter<int>("null space: type","default vectors","Type of null space to use",tuple<std::string>("pre-computed","enriched","default vectors"),PL);
@@ -172,8 +174,6 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL);
   PL->set("low memory usage",false);
   setDoubleParameter("aggregation: edge prolongator drop threshold",0.0,"Unlisted option",PL);
-  PL->set("read XML",true); 
-  PL->set("XML input file","ml_ParameterList.xml",std::string(""));
   PL->set("zero starting solution",true);
   PL->set("print hierarchy",false);  
   PL->set("smoother: self list",dummy);
@@ -235,7 +235,7 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
 #   ifdef HAVE_MPI
     MPI_Finalize();
 #   endif
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
