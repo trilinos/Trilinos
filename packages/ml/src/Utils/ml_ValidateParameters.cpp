@@ -178,6 +178,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("print hierarchy",false);  
   PL->set("smoother: self list",dummy);
   PL->set("aggregation: block scaling",false);
+  PL->set("profile: operator iterations",false);
   
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL);
@@ -199,6 +200,13 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("smoother: MLS polynomial order",2,"Unlisted option",PL);  
   setIntParameter("coarse: polynomial order",2,"Unlisted option",PL);
   setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL);
+
+  /* Hightly experimental */
+  PL->set("aggregation: respect materials",false);
+  PL->set("aggregation: material type",(int*)0); 
+
+
+
   return PL;
 }
 
@@ -257,8 +265,6 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: lump m1",false);
   PL->set("refmaxwell: disable addon",false); 
   PL->set("refmaxwell: normalize prolongator",false);
-  PL->set("aggregation: respect materials",false);
-  PL->set("aggregation: material type",(int*)0); 
   return PL;
 }
 
