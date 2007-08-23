@@ -944,12 +944,26 @@ if (condition_number_one &&
 \end{verbatim}
 \end{itemize}
 
-\subsection{Portability}
+\subsection{Portability and compiler options}
 
 Probably, the only way to write really portable code, is to test
 extensively on all the desired (and available) architectures. Using
 \verb!g++!, the following flags can be useful to detect non-ANSI
 features: \verb!-ansi -pedantic -Wall!.
+Here are other useful compile flags:
+\be
+  \item {\tt -ftrapv} Traps for overflow.
+  \item {\tt -Wdeclaration-after-statement} Checks for variable declarations
+after executable statements.  The ISO c90 standard allows this, but some
+pre-standard compilers (e.g., Irix) complain.
+  \item {\tt -Werror} Makes all warnings fatal in the compile process.
+  %\item {\tt }
+\ee
+You can easily pass compiler options to {\tt make} on the command line, or via
+aliases:\\
+\verb!make CXXFLAGS="-O3 -ftrapv -ansi -pedantic -Wall" \!\\
+\verb!     CFLAGS="-O3 -ftrapv -ansi -pedantic -Wall"!
+
 If you are using \verb!mpich! in conjunction with \verb!-pedantic!, using
 \verb!-Wno-long-long! will disable warnings in the \verb!mpich! include file
 "mpio.h".
