@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
   solver.SetPrecOperator(MFP);
-  solver.Iterate(500, 1e-5);
+  solver.Iterate(200, 1e-5);
 
   int MFPIters = solver.NumIters();
 
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
   RHS.PutScalar(0.0);
 
   solver.SetPrecOperator(MFP_noLowMemory);
-  solver.Iterate(500, 1e-5);
+  solver.Iterate(200, 1e-5);
 
   int MFP2Iters = solver.NumIters();
 
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
   MultiLevelPreconditioner* MLP = new MultiLevelPreconditioner(*VbrA, MLList2);
 
   solver.SetPrecOperator(MLP);
-  solver.Iterate(500, 1e-5);
+  solver.Iterate(200, 1e-5);
 
   int MLPIters = solver.NumIters();
 

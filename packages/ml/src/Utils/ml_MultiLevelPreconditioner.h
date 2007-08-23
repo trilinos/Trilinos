@@ -705,9 +705,9 @@ private:
   //! proc_config for Aztec smoothers
   int   ProcConfig_[AZ_PROC_SIZE];
   //! options for Aztec smoothers
-  int   SmootherOptions_[AZ_OPTIONS_SIZE];
+  Teuchos::RCP<std::vector<int> >    SmootherOptions_;
   //! params for Aztec smoothers
-  double SmootherParams_[AZ_PARAMS_SIZE];
+  Teuchos::RCP<std::vector<double> > SmootherParams_;
   //! status for Aztec smoothers
   double SmootherStatus_[AZ_STATUS_SIZE];
 

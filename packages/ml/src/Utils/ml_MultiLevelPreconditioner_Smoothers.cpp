@@ -79,10 +79,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   string Smoother = List_.get("smoother: type","Chebyshev");
 
 #ifdef HAVE_ML_AZTECOO
-  RCP<std::vector<int> > rcpOptions = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
-  RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",rcpOptions);
-  RCP<std::vector<double> > rcpParams = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
-  RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",rcpParams);
+  RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",SmootherOptions_);
+  RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",SmootherParams_);
   int* SmootherOptionsPtr = &(*aztecOptions)[0];
   double* SmootherParamsPtr = &(*aztecParams)[0];
 
@@ -438,11 +436,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if( MyAztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
       else                                  aztec_its = Mynum_smoother_steps;
       
-      if( MySmootherOptionsPtr == NULL || MySmootherParamsPtr == NULL ) {
-      	MySmootherOptionsPtr = SmootherOptions_;
-      	MySmootherParamsPtr = SmootherParams_;
-      }
-
       if( verbose_ ) {
 	cout << msg << "Aztec";
 	if( MySmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {

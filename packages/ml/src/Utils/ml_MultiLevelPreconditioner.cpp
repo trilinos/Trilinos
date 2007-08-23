@@ -118,13 +118,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     OutputList_.set("number of destruction phases", ++NumDestroy);
   }
   
-  // may need to clean up after visualization and statistics
-  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0) ||
-        (List_.get("aggregation: aux: enable", false) ) ) 
-  {
-    ML_Aggregate_VizAndStats_Clean(ml_);
-    if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
-  }
+  ML_Aggregate_VizAndStats_Clean(ml_);
+  if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
 
   // destroy aggregate information
   if ((agg_)->aggr_info != NULL) {
@@ -621,10 +616,12 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   PrintMsg_ = "";
   
 #ifdef HAVE_ML_AZTECOO
-  AZ_defaults(SmootherOptions_,SmootherParams_);
-  SmootherOptions_[AZ_precond] = AZ_dom_decomp;
-  SmootherOptions_[AZ_subdomain_solve] = AZ_ilu;
-  SmootherOptions_[AZ_overlap] = 0;
+  SmootherOptions_ = Teuchos::rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+  SmootherParams_  = Teuchos::rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+  AZ_defaults(&(*SmootherOptions_)[0],&(*SmootherParams_)[0]);
+  (*SmootherOptions_)[AZ_precond] = AZ_dom_decomp;
+  (*SmootherOptions_)[AZ_subdomain_solve] = AZ_ilu;
+  (*SmootherOptions_)[AZ_overlap] = 0;
 #endif
 
   // Maxwell stuff is off by default
@@ -1257,24 +1254,15 @@ agg_->keep_P_tentative = 1;
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
-  if (List_.get("viz: enable", false) ||
-      List_.get("repartition: enable",0) ||
-      List_.get("aggregation: aux: enable", false))
-  { 
-    if (SolvingMaxwell_) {
-      ML_Aggregate_VizAndStats_Setup(ml_nodes_);
-    }
-    ML_Aggregate_VizAndStats_Setup(ml_);
-  }
+  if (SolvingMaxwell_)
+    ML_Aggregate_VizAndStats_Setup(ml_nodes_);
+  ML_Aggregate_VizAndStats_Setup(ml_);
 
   // ====================================================================== //
   // If present, fix the finest-level coordinates in the hierarchy          //
   // ====================================================================== //
   
-  if (List_.get("viz: enable", false) || 
-      List_.get("repartition: enable",0) ||
-      List_.get("aggregation: aux: enable", false))
-    ML_CHK_ERR(SetupCoordinates());
+  ML_CHK_ERR(SetupCoordinates());
 
   // ====================================================================== //
   // pick up coarsening strategy. METIS and ParMETIS requires additional    //
