@@ -861,7 +861,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    desired_aggre_per_proc );
    } 
    
-   grid_info = (ML_Aggregate_Viz_Stats *) Amatrix->to->Grid[ml_ag->cur_level].Grid;
+   grid_info = (ML_Aggregate_Viz_Stats *) Amatrix->to->Grid->Grid;
    N_dimensions = grid_info->Ndim;
    old_x = grid_info->x;
    old_y = grid_info->y;
