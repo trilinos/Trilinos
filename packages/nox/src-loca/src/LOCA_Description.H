@@ -182,6 +182,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	            <li> <B>"Num Blocks"</B> -- [int] (default: 30) Maximum number of blocks (equals the maximum length of the Arnoldi factorization)
 	            <li> <B>"Num Eigenvalues"</B> -- [int] (default: 4) Number of requested eigenvalues
 	            <li> <B>"Convergence Tolerance"</B> -- [double] (default: 1.0e-7) Tolerance for the converged eigenvalues
+	            <li> <B>"Linear Solve Tolerance"</B> -- [double] (default: uses the same tolerance from the nonlinear solver) Tolerance for the linear solves used by the eigensolver.
 	            <li> <B>"Step Size"</B> -- [int] (default: 1) Checks convergence every so many steps
 	            <li> <B>"Maximum Restarts"</B> -- [int] (default: 1) Number of restarts allowed
                     <li> <B>"Symmetric"</B> -- [bool] (default:  false) Is the operator symmetric

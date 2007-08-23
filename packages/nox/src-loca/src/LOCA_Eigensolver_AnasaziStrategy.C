@@ -69,8 +69,13 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
   isSymmetric(false),
   locaSort()
 {
-  solverParams = topParams->getSublist("Linear Solver");
-
+  // Copy the base linear solve list and change the tolerance if requested
+  solverParams = Teuchos::rcp(new Teuchos::ParameterList);
+  *solverParams  = *(topParams->getSublist("Linear Solver"));
+  if (Teuchos::isParameterType<double>(*eigenParams,"Linear Solve Tolerance"))
+    solverParams->set("Tolerance", Teuchos::get<double>
+		      (*eigenParams, "Linear Solve Tolerance"));
+		      
   // Get values out of parameter list
   blksz = eigenParams->get("Block Size", 1);
   nev = eigenParams->get("Num Eigenvalues", 4);
