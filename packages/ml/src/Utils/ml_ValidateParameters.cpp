@@ -73,7 +73,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("number of projected modes",0,"# of modes to be projected out before and after the V-cycle",PL);
 
   /* Aggregation and Prolongator Options (Section 6.4.3) */
-  setStringToIntegralParameter<int>("aggregation: type", "Uncoupled", "Aggregation algorithm",tuple<std::string>("Uncoupled","Coupled","MIS","Uncoupled-MIS","METIS","ParMETIS"),PL);
+  setStringToIntegralParameter<int>("aggregation: type", "Uncoupled", "Aggregation algorithm",tuple<std::string>("Uncoupled","Coupled","MIS","Uncoupled-MIS","METIS","ParMETIS","Zoltan","user"),PL);
   setDoubleParameter("aggregation: threshold",0.0,"Dropping for aggregation",PL);
   setDoubleParameter("aggregation: damping factor",1.3333,"Damping factor for smoothed aggregation",PL);
   setIntParameter("aggregation: smoothing sweeps",1,"Number of sweeps for prolongator smoother",PL);
