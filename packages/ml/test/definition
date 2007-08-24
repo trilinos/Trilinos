@@ -18,6 +18,15 @@
     COMM = SERIAL, MPI(1-4);
 }
 
+#
+# Examples with data files
+#
+(FRAMEWORK, MLExamples) {
+    DESCEND_DIRS = YES;
+	DIRS = ../examples/XML;
+    COMM = SERIAL, MPI(1-4);
+}
+
 (FRAMEWORK, MLTests) {
     DIRS = AztecSimple,
            Communicator,
