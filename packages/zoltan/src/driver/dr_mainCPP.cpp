@@ -480,6 +480,8 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
                   = mesh->vwgt_dim
                   = mesh->ewgt_dim
                   = mesh->hewgt_dim
+                  = mesh->blank_count
+                  = mesh->global_blank_count
                   = 0;
   mesh->eb_names       = NULL;
   mesh->eb_ids         = NULL;
@@ -492,6 +494,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
+  mesh->blank          = NULL;
   mesh->format         = ZOLTAN_COMPRESSED_EDGE;
   mesh->hgid           = NULL;
   mesh->hindex         = NULL;

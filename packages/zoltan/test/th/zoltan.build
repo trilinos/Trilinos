@@ -50,15 +50,29 @@ else
 
   $driver --o=$dir/test --I=$fastdir --name="$tname" configure --logfile=$dir/test/config.out
 
-  gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
+  if ("$zdrive" == "zfdrive") then
+    # Special setup required for building zfdrive -- the F90 driver.
+    # Have to use appropriate zoltan_user_data.f90.
+    # For now, just build the F90 driver zfdrive.  zfdrive requires the input
+    # file to be called "zdrive.inp"; the current framework passes the input
+    # file as a command-line argument.
+    /bin/cp -p fdriver/zoltan_user_data.f90 fort/zoltan_user_data.f90 
+    gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
 
-  $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
+    $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
 
-  # create the test data, xml files, factor files
-  ( cd test ; csh -f mktests >& $dir/mktest.out )
+  else 
+    # For all other drivers (zdrive, zCPPdrive), build AND test.
+    gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
 
-  #
-  # Test
-  $driver --o=$dir/test --I=$fastdir --name="$tname" test --testdirs="$testdirs" --tag=$tag
+    $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
+
+    # create the test data, xml files, factor files
+    ( cd test ; csh -f mktests >& $dir/mktest.out )
+
+    # Test
+    $driver --o=$dir/test --I=$fastdir --name="$tname" test --testdirs="$testdirs" --tag=$tag
+
+  endif
 
 endif

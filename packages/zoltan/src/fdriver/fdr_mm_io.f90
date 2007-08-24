@@ -54,9 +54,11 @@ type(PARIO_INFO) :: pio_info
   double precision, pointer :: mm_rval(:)
   complex, pointer :: mm_cval(:)
 
-  integer(Zoltan_INT) :: fp, iostat, allocstat, ierr, status
+  integer(Zoltan_INT) :: fp, iostat, allocstat, ierr
+  integer ::  status(MPI_STATUS_SIZE)
   integer(Zoltan_INT), pointer ::  vtxdist(:) ! vertex distribution data
   integer(Zoltan_INT), pointer ::  pindist(:) ! pin distribution data
+  integer :: sendsize
 ! Local values
   integer(Zoltan_INT) :: npins, nedges, nvtxs
   integer(Zoltan_INT), allocatable ::  iidx(:) ! pin data
@@ -274,16 +276,18 @@ type(PARIO_INFO) :: pio_info
 ! Allocate arrays to receive pins.
   call MPI_Bcast(pindist, Num_Proc+1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr);
   npins = pindist(Proc+1) - pindist(Proc)
-  allocate(iidx(0:npins-1),jidx(0:npins-1),stat=allocstat)
+  allocate(iidx(0:npins-1),stat=allocstat)
+  allocate(jidx(0:npins-1),stat=allocstat)
 
   if (Proc == 0) then
 
 !   Fill communication buffer with pins to be sent.
 !   Assume INITIAL_LINEAR edge distribution.
     do i = 1, Num_Proc-1
-      call MPI_Send(mm_iidx(pindist(i)), (pindist(i+1)-pindist(i)), MPI_INTEGER, &
+      sendsize = pindist(i+1)-pindist(i)
+      call MPI_Send(mm_iidx(pindist(i)), sendsize, MPI_INTEGER, &
                     i, 1, MPI_COMM_WORLD, ierr)
-      call MPI_Send(mm_jidx(pindist(i)), (pindist(i+1)-pindist(i)), MPI_INTEGER, &
+      call MPI_Send(mm_jidx(pindist(i)), sendsize, MPI_INTEGER, &
                     i, 2, MPI_COMM_WORLD, ierr)
     enddo
 !   Copy Proc zero's pins.
@@ -299,8 +303,10 @@ type(PARIO_INFO) :: pio_info
   endif
      
   if (associated(pindist)) deallocate(pindist)
-  if (associated(mm_iidx)) deallocate(mm_iidx)
-  if (associated(mm_jidx)) deallocate(mm_jidx)
+  if (Proc == 0) then
+    if (associated(mm_iidx)) deallocate(mm_iidx)
+    if (associated(mm_jidx)) deallocate(mm_jidx)
+  endif
 
 ! KDDKDD We assume the MatrixMarket file is sorted by row numbers.
 ! KDDKDD This sort was done on a single processor.

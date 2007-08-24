@@ -6,7 +6,7 @@
   <experiment>
     <factors>
       <factor name="zdrive">
-	<level name="ARCH">../../Obj_ARCH/zdrive</level>
+	<level name="ARCH">../../Obj_ARCH/ZDRIVE</level>
       </factor>
       <factor name="numproc">
 	<level name="np=NPROC">NPROC</level>

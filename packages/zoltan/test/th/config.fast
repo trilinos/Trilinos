@@ -24,11 +24,19 @@ FAST_PROJECT        zoltan
 
 Test zoltan-sun-nightly
 seamus
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*,nem_*}'
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}' 
+
+Test zoltan-sun-nightly-CPP
+seamus
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zCPPdrive 'test/{ch_*,hg_*}' 
+
+Test zoltan-sun-nightly-F90
+seamus
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zfdrive 'test/{ch_*,hg_*}' 
 
 Test zoltan-sun_base-nightly
 seamus
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*,nem_*}'
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}'
 
 #; cd Zoltan/fort; mv zoltan_user_data.f90 zoltan_user_data.f90.zoltan; 
 # ln -s ../fdriver/zoltan_user_data.f90 .; cd ../..;  
