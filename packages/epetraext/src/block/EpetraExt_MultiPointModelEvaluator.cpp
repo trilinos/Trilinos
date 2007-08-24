@@ -305,13 +305,14 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
     underlyingME->evalModel(underlyingInArgs, underlyingOutArgs);
     //********Eval Model ********/
 
-    // If matchingProblem, modify all g-related quantitites G = 0.5*(g-g*)^2
+    // If matchingProblem, modify all g-related quantitites G = 0.5*(g-g*)^2 / g*^2
     if (matchingProblem) {
       if (need_g) {
         double diff = (*split_g)[0] -  (*(*matching_vec)[i])[0];
-        (*split_g)[0] = 0.5 * diff * diff;
-        if (!DgDx_out.isEmpty()) split_DgDx->Scale(diff);
-        if (!DgDp_out.isEmpty()) split_DgDp->Scale(diff);
+        double nrmlz = fabs((*(*matching_vec)[i])[0]) + 1.0e-6;
+        (*split_g)[0] = 0.5 * diff * diff/(nrmlz*nrmlz);
+        if (!DgDx_out.isEmpty()) split_DgDx->Scale(diff/(nrmlz*nrmlz));
+        if (!DgDp_out.isEmpty()) split_DgDp->Scale(diff/(nrmlz*nrmlz));
       }
     }
 
