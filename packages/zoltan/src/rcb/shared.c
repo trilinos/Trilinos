@@ -1248,76 +1248,79 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
    * graph and hypergraph partitioners when FINAL_OUTPUT=1
    */
 
-  for (i = 0, max=0; i < dotnum; i++) 
-    if (dotpt[i].Part > max) max = dotpt[i].Part;
+  if (stats) {
+    for (i = 0, max=0; i < dotnum; i++) 
+      if (dotpt[i].Part > max) max = dotpt[i].Part;
 
-  MPI_Allreduce(&max,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
-  numParts++;
+    MPI_Allreduce(&max,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
+    numParts++;
 
-  lpartWgt = (double *)ZOLTAN_CALLOC(numParts, sizeof(double));
-  gpartWgt = (double *)ZOLTAN_MALLOC(numParts * sizeof(double));
+    lpartWgt = (double *)ZOLTAN_CALLOC(numParts, sizeof(double));
+    gpartWgt = (double *)ZOLTAN_MALLOC(numParts * sizeof(double));
 
-  if (numParts && (!lpartWgt || !gpartWgt)){
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return;
-  }
+    if (numParts && (!lpartWgt || !gpartWgt)){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return;
+    }
 
-  for (i = 0, move=0.0; i < dotnum; i++){
-    lpartWgt[dotpt[i].Part] += dotpt[i].Weight[0];
-    if (dotpt[i].Input_Part != dotpt[i].Part) move += (double)dotpt[i].Size;
-  }
+    for (i = 0, move=0.0; i < dotnum; i++){
+      lpartWgt[dotpt[i].Part] += dotpt[i].Weight[0];
+      if (dotpt[i].Input_Part != dotpt[i].Part) move += (double)dotpt[i].Size;
+    }
 
-  MPI_Reduce(lpartWgt, gpartWgt, numParts, MPI_DOUBLE, MPI_SUM, 
-             print_proc, zz->Communicator);
-  MPI_Reduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, print_proc, zz->Communicator);
+    MPI_Reduce(lpartWgt, gpartWgt, numParts, MPI_DOUBLE, MPI_SUM, 
+               print_proc, zz->Communicator);
+    MPI_Reduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, 
+               print_proc, zz->Communicator);
 
-  ZOLTAN_FREE(&lpartWgt);
+    ZOLTAN_FREE(&lpartWgt);
 
-  if (proc == print_proc) {
-    static int nRuns=0;
-    static double balsum, balmax, balmin;
-    static double movesum, movemax, movemin;
+    if (proc == print_proc) {
+      static int nRuns=0;
+      static double balsum, balmax, balmin;
+      static double movesum, movemax, movemin;
 
-    max_imbal = 0.0;
- 
-    if (wttot) {
-      for (i = 0; i < numParts; i++){
-        if (part_sizes[i]) {
-          ib= (gpartWgt[i]-part_sizes[i]*wttot)/(part_sizes[i]*wttot);
-          if (ib>max_imbal)
-            max_imbal = ib;
+      max_imbal = 0.0;
+   
+      if (wttot) {
+        for (i = 0; i < numParts; i++){
+          if (part_sizes[i]) {
+            ib= (gpartWgt[i]-part_sizes[i]*wttot)/(part_sizes[i]*wttot);
+            if (ib>max_imbal)
+              max_imbal = ib;
+          }
         }
       }
+  
+      bal = 1.0 + max_imbal;
+  
+      if (nRuns){
+        if (gmove > movemax) movemax = gmove;
+        if (gmove < movemin) movemin = gmove;
+        if (bal > balmax) balmax = bal;
+        if (bal < balmin) balmin = bal;
+        movesum += gmove;
+        balsum += bal;
+      }
+      else{
+        movemax = movemin = movesum = gmove;
+        balmax = balmin = balsum = bal;
+      }
+  
+      char *countType = "moveCnt";
+      if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+        countType = "moveVol";
+      }
+  
+      nRuns++;
+      printf(" STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+              nRuns, bal, balmax, balmin, balsum/nRuns);
+      printf(" STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+              nRuns, countType, gmove, movemax, movemin, movesum/nRuns);
     }
 
-    bal = 1.0 + max_imbal;
-
-    if (nRuns){
-      if (gmove > movemax) movemax = gmove;
-      if (gmove < movemin) movemin = gmove;
-      if (bal > balmax) balmax = bal;
-      if (bal < balmin) balmin = bal;
-      movesum += gmove;
-      balsum += bal;
-    }
-    else{
-      movemax = movemin = movesum = gmove;
-      balmax = balmin = balsum = bal;
-    }
-
-    char *countType = "moveCnt";
-    if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
-      countType = "moveVol";
-    }
-
-    nRuns++;
-    printf(" STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-            nRuns, bal, balmax, balmin, balsum/nRuns);
-    printf(" STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-            nRuns, countType, gmove, movemax, movemin, movesum/nRuns);
+    ZOLTAN_FREE(&gpartWgt);
   }
-
-  ZOLTAN_FREE(&gpartWgt);
   MPI_Barrier(zz->Communicator);
 }
 
