@@ -295,14 +295,14 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       ML_Comm_Barrier(ml->comm);
 
       if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"Node_before_repartitioning");
+        sprintf(str,"before_repartition");
         ML_Operator_Profile(ml->Amat+next,str);
       }
 
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE, ML_FALSE);
 
       if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"Node_after_repartitioning");
+        sprintf(str,"after_repartition");
         ML_Operator_Profile(ml->Amat+next,str);
       }
 
@@ -2623,7 +2623,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       }
       ML_Comm_Barrier(ml->comm);
       if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"Node_before_repartitioning");
+        sprintf(str,"before_repartition");
         ML_Operator_Profile(ml->Amat+next,str);
       }
 
@@ -2631,7 +2631,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
                              ML_TRUE, ML_FALSE);
 
       if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"Node_after_repartitioning");
+        sprintf(str,"after_repartition");
         ML_Operator_Profile(ml->Amat+next,str);
       }
       ML_Comm_Barrier(ml->comm);
