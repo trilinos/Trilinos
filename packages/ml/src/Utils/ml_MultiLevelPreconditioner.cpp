@@ -699,7 +699,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #   ifdef HAVE_MPI
     MPI_Finalize();
 #   endif
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   // ============================================================== //
@@ -771,9 +771,25 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if( verbose_ ) 
     ML_print_line("-",78);
   
-  // check for an XML input file
+  // check for an XML input file and validate again if necessary
   std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
-  ReadXML(XMLFileName);
+  if( ReadXML(XMLFileName)
+      &&List_.get("ML validate parameter list",true)
+      && !ValidateMLPParameters(List_))
+  {
+    if (Comm_->MyPID() == 0)
+      std::cout<< "ERROR: The file " << XMLFileName
+               << " contains an incorrect parameter!"<<std::endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(EXIT_FAILURE);
+  }
+  // check whether output level was specified in XML input file
+  OutputLevel = List_.get("ML output", -47);  
+  if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
+  ML_Set_PrintLevel(OutputLevel);
+  verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
 
   FirstApplication_ = true;
 

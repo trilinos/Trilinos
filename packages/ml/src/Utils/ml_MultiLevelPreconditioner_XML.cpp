@@ -129,31 +129,31 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
 
   if (ListToAdd.get("ResetList", false))
   {
-    if (Comm().MyPID() == 0)
+    if (verbose_ && Comm().MyPID() == 0)
       cout << "***" << " Reset stored list" << endl;
     Teuchos::ParameterList NewList;
     List_ = NewList;
   }
   else
   {
-    if (Comm().MyPID() == 0)
+    if (verbose_ && Comm().MyPID() == 0)
       cout << "***" << " Parameters are added to the stored list" << endl;
   }
 
   string xxx = ListToAdd.get("SetDefaults", "not-set");
   if (xxx != "not-set")
   {
-    if (Comm().MyPID() == 0)
+    if (verbose_ && Comm().MyPID() == 0)
       cout << "***" << " Setting default values to type `" << xxx << "'" << endl;
     SetDefaults(xxx, ListToAdd);
   }
 
   AddSubList(List_, ListToAdd);
 
-  if (Comm().MyPID() == 0)
+  if (verbose_ && Comm().MyPID() == 0)
     cout << "***" << endl;
 
-  return(0);
+  return(1);
 }
 
 #endif
