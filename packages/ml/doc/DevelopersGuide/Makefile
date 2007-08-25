@@ -38,6 +38,7 @@ force:
 
 ${PAPER}.ps:    ${PAPER}.dvi
 	dvips -Ppdf -G0 -o ${PAPER}.ps ${PAPER}
+	ps2pdf ${PAPER}.ps
 
 tarfile:
 	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE} ${SIAM}

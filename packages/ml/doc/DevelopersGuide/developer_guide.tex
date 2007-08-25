@@ -1142,12 +1142,20 @@ Detailed matrix and performance statistics are then written to the screen:
 matrix size, nonzeros, number of neighboring processors, number of active
 processors, communication time, amount of data communicated, number of applies, and apply
 time.
-In parallel, each value is typically reported with a mininum, maximum, average, and
-standard deviation.
+In parallel, each value is typically reported with a mininum, maximum, and
+average.
+
 Calls to this function will not affect the statistics printed out when the
 \verb!ML_Operator! is destroyed.
 Note that \verb!ML_Operator_Profile()! requires the macro \verb!ML_TIMING_DETAILED! to be
 defined (via the configure line option \verb!--enable-ml_timing!).
+
+The parameter list option to activate this is {\tt List.set("profile: operator
+iterations",XX)}, where {\tt XX} is an integer.  If {\tt XX} is positive, that
+many matvecs are done with each matrix in the multigrid hierarchy.  If {\tt XX}
+is negative, then \ML\ interprets the number as negative seconds and calculates
+how many matvecs must be done to hit that timing mark.  This is capped at 30
+seconds for safety.
 
 \subsection{Checking Memory Usage}
 
