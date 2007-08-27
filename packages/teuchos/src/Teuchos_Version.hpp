@@ -34,7 +34,7 @@
 namespace Teuchos {
 
 	std::string Teuchos_Version() { 
-		return("Teuchos Version 1.4d - 8/8/2006"); 
+		return("Teuchos Version 1.5d - 8/28/2007"); 
 	}
 
 } // namespace Teuchos
