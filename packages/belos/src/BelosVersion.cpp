@@ -35,7 +35,7 @@
 namespace Belos {
 
 	std::string Belos_Version() { 
-		return("Belos Version 1.0 - Not yet publicly released"); 
+		return("Belos Version 1.1d - 8/28/2007"); 
 	}
 
 } // namespace Belos 
