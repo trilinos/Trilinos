@@ -143,23 +143,9 @@ namespace Direction {
 
 <li>"Forcing Term Gamma" - \f$\gamma\f$ (used only by "Type 2"). Defaults to 0.9.
 
-<li>"Forcing Term User Defined Norm" (NOX::Parameter::UserNorm derived
-    object) - If using a Type 1 or Type 2 adjustable forcing term, the
-    norms used to calculate \f$ \eta_k \f$ should be based on the same
-    norm used in the convergence test of the linear solver.
-    Essentially this means that the norm must account for LEFT scaling
-    of any kind that is applied to the linear system during a solve.
-    If set, the computation of \f$ \eta_k \f$ will be done using a
-    used defined function that is passed in through a
-    NOX::Parameter::Arbitrary derived object. It will take the
-    arbitrary object and cast it to a NOX::Parameter::UserNorm object
-    and use it for norm computations.  If this parameter is not set,
-    this method uses the L-2 Norm for any norm computations of \f$
-    \eta_k \f$.
-
-<li>"Rescue Bad %Newton Solve" (Boolean) - True if we even if the
-    linear solve does not meet the tolerance specified by the forcing
-    term. Defaults to true.
+<li>"Rescue Bad %Newton Solve" (Boolean) - If set to true, we will use
+the computed direction even if the linear solve does not achieve the
+tolerance specified by the forcing term. Defaults to true.
 
 </ul>
 

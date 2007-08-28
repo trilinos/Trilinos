@@ -73,7 +73,7 @@ namespace NOX {
     <li> "Line Search Based" or "Newton" (NOX::Solver::LineSearchBased) [Default]
     <li> "Trust Region Based" (NOX::Solver::TrustRegionBased)
     <li> "Inexact Trust Region Based" (NOX::Solver::InexactTrustRegionBased)
-    <li> "Tensor Based" (NOX::Solver::InexactTrustRegionBased)
+    <li> "Tensor Based" (NOX::Solver::TensorBased)
     </ul>
     <li> "Line Search Based" <Teuchos::ParameterList> Sublist for the NOX::Solver::LineSearchBased solver.
     <li> "Trust Region Based" <Teuchos::ParameterList> Sublist for the NOX::Solver::TrustRegionBased solver.

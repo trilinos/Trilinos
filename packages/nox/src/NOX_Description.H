@@ -69,7 +69,7 @@
 
   \section announcements Announcements
 
-  NOX/LOCA version 7.0 will be release as part of Trilinos 7.0 in September 2006.  The libraries have undergone extensive changes.  Please read the \ref nox_release_information page for more details on these changes.
+  NOX/LOCA version 8.0 will be release as part of Trilinos 8.0 in September 2007.  Please read the \ref nox_release_information page for more details on these changes.
 
   \section technical_information Technical Information
 
@@ -89,8 +89,6 @@
   \section downloads Downloads
 
   %NOX and %LOCA are packaged and released as part of the <a href="http://trilinos.sandia.gov/">Trilinos Solver Framework</a>.  You may download %NOX (which includes %LOCA) by downloading a copy of Trilinos.  Please see the <a href="http://trilinos.sandia.gov/download">Trilinos downloads page</a> for the latest releases. <br />
-
-If you are a Sandia employee you can download the development branch of Trilinos (either without repository information at the <a href="http://trilinos.sandia.gov/download">Trilinos downloads page</a>, or directly checked-out of the repository.  Documentation on Trilinos can be found <a href="http://trilinos.sandia.gov/documentation.html">here</a>.  (If you are not a Sandia employee, to gain access to either option, send a request to <a href="mailto:trilinos-help@software.sandia.gov" target="_blank">trilinos-help@software.sandia.gov</a>.)
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -292,7 +290,7 @@ Go on to \ref step2.
 
 \section step2_instantiations Instantiations provided with NOX
 
-  %NOX includes three ready-made instantiations.
+  %NOX includes four ready-made instantiations.
 
   <ul>
   <li>
@@ -595,6 +593,11 @@ If you have problems linking %NOX and/or %LOCA, please report them using <A HREF
 
 To become a %NOX developer, contact Roger Pawlowski (rppawlo@sandia.gov).
 
+Bug Tracking: <A HREF="http://software.sandia.gov/bugzilla/">Trilinos Bugzilla Database</A>.
+
+CVS Respository View/Query Tool: <a
+href="http://software.sandia.gov/bonsai/cvsqueryform.cgi?cvsroot=/space/CVS&module=nox">Trilinos Bonsai</a>
+
 The following pages are relevant to developers.
 <ul> 
 <li>\ref cvsrepos
@@ -609,14 +612,15 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page nox_release_information NOX and LOCA Release Information (Last updated August 2nd 2007)
+/*! \page nox_release_information NOX and LOCA Release Information (Last updated August 28th 2007)
 
- %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in late August 2007.  Current changes/additions:
+ %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in early September 2007.  Current changes/additions:
 <ul>
-  <li> A support group/vector has been added for Thyra.  The group leverages the Stratimikos library to build the linear solver and preconditioner.
-  <li> A Thyra::NolinearSolver::NOX object has been added to allow Thyra users to call %NOX as a nonlinear solver for Thyra.
+  <li> All %Manager classes have been replaced with Factories.  This change clarifies what occurs during reset calls and simplifies object management.  No more handles.  The factories return "Generic" base class objects. 
+  <li> A new concrete implementation of the group/vector has been added to support %Thyra objects.  %Thyra is a set of abstract interfaces designed to provide developers of abstract numerical algorithms a single point of contact with codes.  It plays the same role as the NOX::Abstract::Group and NOX::Abstract::Vector play in NOX. More information on %Thyra can be found at <A HREF="http://trilinos.sandia.gov/packages/thyra">Thyra</A>.  The group leverages the <A HREF="http://trilinos.sandia.gov/packages/stratimikos">Stratimikos library</A> to build the linear solver and preconditioner.  In the future, we plan to move away from the direct Epetra support class as the %Thyra wrappers gain more functionality.  Examples can be found in nox/test/epetra/Thyra_2Dsim directory.
+  <li> A wrapper called Thyra::NOXNonlinearSolver has been added that derives from the Thyra::NonlinearSolverBase class.  This allows abstract numerical agorithms to use NOX as the nonlinear solver through a Thyra abstract interface.  In particular, NOX can now be used by Rythmos. 
   <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.  Please use the nonmember functions to build parameter lists instead of using the Factory object directly.
-  <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "output Information" parameter.  Setting the integer still works.  Here is an example:
+  <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "Output Information" parameter.  Setting the integer still works.  Here is an example:
 \code
 Teuchos::ParameterList p; 
 p.set("MyPID", myPID);
@@ -631,6 +635,8 @@ info.set("Outer Iteration StatusTest", true);
 info.set("Outer Iteration", true);
 NOX::Utils utils3(p);
 \endcode
+  <li> Removed all instances of enumerated types from the parameter list.  This was causing problems with the python interfaces.  Enumerated type are now string types. 
+  <li> The RefCountPtr class in Teuchos was changed to RCP to shorten the amount of code.  All instances of RefCountPtr should be changed to RCP.  There is a script available in Teuchos to automatically make this change to any package.  
 </ul>
 
  %NOX/%LOCA version 7.0 will be release as part of Trilinos 7.0 in early September 2006.  %NOX and %LOCA have undergone many important changes between the 6.0 and 7.0 release:
@@ -1565,159 +1571,186 @@ immediately before the word that is causing the link. For example,
   All parameters are specified via parameter lists as defined by the
   Teuchos::ParameterList class.
 
-  Here is the basic hierarchical structure of the top level list that
-  is passed to a NOX::Solver::Factory object.
+  Here is the basic hierarchical structure of the top level parameter
+  list that is passed to a NOX::Solver::Factory object or the builder
+  method.
 
   \note These parameters are valid for the general %NOX library.  The
-  LAPACK and Epetra support objects have their own set of parameters
-  that are documented on each object's doxygen page.
+  LAPACK, Epetra, Thyra, and PETSc Group/Vector support objects have
+  their own set of parameters that are documented on each object's
+  doxygen page.
 
 <ul>
-<li> "Nonlinear Solver" - see NOX::Solver::Factory for options and subsequent valid sublists for each solver type.
+<li> "Nonlinear Solver" [std::string] - see NOX::Solver::Factory for complete list of options. Valid choices are:
+   <ul> 
+     <li> "Line Search Based" or "Newton" (NOX::Solver::LineSearchBased) [Default]
+     <li> "Trust Region Based" (NOX::Solver::TrustRegionBased)
+     <li> "Inexact Trust Region Based" (NOX::Solver::InexactTrustRegionBased)
+     <li> "Tensor Based" (NOX::Solver::TensorBased)
+   </ul>
 
-<li> "Direction" sublist - used by NOX::Solver::LineSearchBased,
-     NOX::Solver::TrustRegionBased
+
+<li> "Direction" [sublist] - used by NOX::Solver derived objects to compute the primary direction associated with the method:
 
      <ul>
 
-     <li> "Method" - see NOX::Direction::Factory for options
+     <li> "Method" [std::string] - see NOX::Direction::Factory for complete list of options.  Valid options are:
+           <ul>
+	   <li> 
+           <li> "Newton" NOX::Direction::Newton
+	   <li> "Steepest Descent" NOX::Direction::SteepestDescent
+	   <li> "NonlinearCG" NOX::Direction::NonlinearCG
+	   <li> "Broyden" NOX::Direction::Broyden 
+	   <li> "Tensor" PRERELEASE ONLY! NOX::Direction::Tensor
+	   <li> "Modified-Newton" PRERELEASE ONLY! NOX::Direction::ModifiedNewton
+	   <li> "Quasi-Newton" PRERELEASE ONLY! NOX::Direction::QuasiNewton
+	   <li> "User Defined" - see NOX::Direction::Factory for details
+	   </ul>
 
-     <li> "User Defined Constructor" - see NOX::Direction::Factory for details
+     <li> "User Defined Constructor" [Teuchos::RCP<NOX::Direction::UserDefinedFactory>] - see NOX::Direction::Factory for details.
 
-     <li> "Newton" sublist - used by NOX::Direction::Newton,
-          see class documentation for all details.
+     <li> "Newton" [sublist] - used by NOX::Direction::Newton,
+          see class documentation for details.
 
 	  <ul>
 
-	  <li> "Forcing Term Method"
-	  <li> "Forcing Term Initial Tolerance"
-	  <li> "Forcing Term Minimum Tolerance"
-	  <li> "Forcing Term Maximum Tolerance"
-	  <li> "Forcing Term Alpha"
-	  <li> "Forcing Term Gamma"
-	  <li> "Forcing Term User Defined Norm"
-	  <li> "Rescue Bad Newton Solver"
+	  <li> "Forcing Term Method" [std::string]
+	  <li> "Forcing Term Initial Tolerance" [double]
+	  <li> "Forcing Term Minimum Tolerance" [double]
+	  <li> "Forcing Term Maximum Tolerance" [double]
+	  <li> "Forcing Term Alpha" [double]
+	  <li> "Forcing Term Gamma" [double]
+	  <li> "Rescue Bad Newton Solver" [boolean]
 
-	  <li> "Linear Solver" sublist, passed to
+	  <li> "Linear Solver" [sublist] - passed to
 	       NOX::Abstract::Group::computeNewton() by
-	       NOX::Direction::Newton
+	       NOX::Direction::Newton.
 
 	       <ul>
-
-	       <li> "Tolerance"
-
+	       <li> "Tolerance" [double]
 	       </ul>
+	       
+	       NOTE: This list will carry any number of linear solver
+	       options depending upon the concrete implementation of
+	       the linear solver used in the applyJacobianInverse()
+	       method of the NOX::Abstract::Group class.  For Epetra
+	       support, this option list can be found in the
+	       NOX::Epetra::LinearSystemAztecOO object.
 
 	  </ul>
 
-     <li> "Steepest Descent" sublist, used by
+     <li> "Steepest Descent" [sublist] - used by
           NOX::Direction::SteepestDescent, see class documentation for
           details
 
 	  <ul>
-
-	  <li> "Scaling Type"
-
+	  <li> "Scaling Type" [std::string]  Type of scaling to use.  Options are:
+               <ul>
+	       <li> "2-Norm"
+	       <li> "Quadratic Model Min"
+	       <li> "F 2-Norm"
+	       <li> "None"
+	       </ul>
 	  </ul>
 
      </ul>
 
-<li> "Cauchy Direction" sublist - used by
-     NOX::Solver::TrustRegionBased, same options as "Direction" sublist
+<li> "Cauchy Direction" [sublist] - used to specify teh second direction in dogleg trusregions methods.  See NOX::Solver::TrustRegionBased and NOX::Solver::InexactTrustRegionBased solvers for mor einformation on how this direction is used.  This sublist uses the same options as "Direction" sublist.
 
-<li> "Line Search" sublist - used by NOX::Solver::LineSearchBased
-
+<li> "Line Search" [sublist] - used by NOX::Solver::LineSearchBased solvers to specify the line search algorithm to use.
      <ul>
-
-     <li> "Method" - see NOX::LineSearch::Factory for options
-
-     <li> "User Defined Constructor" - see NOX::LineSearch::Factory for details
-
-     <li> "Backtrack" sublist - used by NOX::LineSearch::Backtrack,
-          see class documentation for all details.
-
-	  <ul>
-
-	  <li> "Minimum Step"
-	  <li> "Default Step"
-	  <li> "Recovery Step"
-	  <li> "Maximum Step"
-	  <li> "Max Iters"
-	  <li> "Decrease Condition"
-
+     <li> "Method" [std::string] - see NOX::LineSearch::Factory for a detailed list of options.  Valid options are:
+          <ul>
+	  <li> "Full Step" (NOX::LineSearch::FullStep)
+	  <li> "Backtrack" (NOX::LineSearch::Backtrack)
+	  <li> "Polynomial" (NOX::LineSearch::Polynomial)
+	  <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
+	  <li> "User Defined" - see NOX::LineSearch::Factory.
 	  </ul>
 
-     <li>"Full Step" sublist - used by NOX::LineSearch::FullStep, 
+     <li> "User Defined Constructor" [Teuchos::RCP<NOX::LineSearch::UserDefinedFactory>] - see NOX::LineSearch::Factory for details
+
+     <li>"Full Step" [sublist] - used by NOX::LineSearch::FullStep, 
          see class documentation for all details
-
 	 <ul>
-
-	 <li> "Full Step"
-
+	 <li> "Full Step" [double]
 	 </ul>
 
-     <li> "More'-Thuente" sublist - used by
-          NOX::LineSearch::MoreThuente, see class documentation for all details
-
+     <li> "Backtrack" [sublist] - used by NOX::LineSearch::Backtrack,
+          see class documentation for all details.
 	  <ul>
-
-	  <li> "Sufficient Decrease"
-	  <li> "Curvature Condition"
-	  <li> "Interval Width"
-	  <li> "Minimum Step"
-	  <li> "Maximum Step"
-	  <li> "Max Iters"
-	  <li> "Default Step"
-	  <li> "Recovery Step"
-
+	  <li> "Minimum Step" [double]
+	  <li> "Default Step" [double]
+	  <li> "Recovery Step" [double]
+	  <li> "Maximum Step" [double]
+	  <li> "Max Iters" [int]
+	  <li> "Reduction Factor" [double]
 	  </ul>
 
-
-     <li> "Polynomial" sublist - used by NOX::LineSearch::MoreThuente,
-          see class documentation for details
-
+     <li> "Polynomial" [sublist] - used by NOX::LineSearch::MoreThuente,
+          see class documentation for details.
 	  <ul>
-	  <li> "Default Step"
-	  <li> "Max Iters"
-	  <li> "Minimum Step"
-	  <li> "Recovery Step"
-	  <li> "Interpolation Type"
-	  <li> "Min Bounds Factor"
-	  <li> "Max Bounds Factor"
-	  <li> "Sufficient Decrease Condition"
-	  <li> "Alpha Factor"
-	  <li> "Force Interpolation"
-	  <li> "Use Counters"
-	  <li> "Maximum Iteration for Increase"
-	  <li> "Allowed Relative Increase"
-	  <li> "User Defined Merit Function"
-	  <li> "User Defined Norm"
+	  <li> "Default Step" [double]
+	  <li> "Max Iters" [int]
+	  <li> "Minimum Step" [double]
+	  <li> "Recovery Step" [double]
+	  <li> "Interpolation Type" [std::string] Valid options are:
+	       <ul>
+	       <li> "Quadratic"
+	       <li> "Quadratic3"
+	       <li> "Cubit"
+	       </ul>
+	  <li> "Min Bounds Factor" [double]
+	  <li> "Max Bounds Factor" [double]
+	  <li> "Sufficient Decrease Condition" [std::string] Valid options are:
+	       <ul>
+	       <li> "Armijo-Goldstein"
+	       <li> "Ared/Pred"
+	       </ul>
+	  <li> "Alpha Factor" [double]
+	  <li> "Force Interpolation" [boolean]
+	  <li> "Use Counters" [boolean]
+	  <li> "Maximum Iteration for Increase" [int]
+	  <li> "Allowed Relative Increase" [boolean]
 	  </ul>
 
+     <li> "More'-Thuente" [sublist] - used by NOX::LineSearch::MoreThuente, 
+     see class documentation for all details.
+	  <ul>
+	  <li> "Sufficient Decrease" [double]
+	  <li> "Curvature Condition" [double]
+	  <li> "Interval Width" [double]
+	  <li> "Minimum Step" [double]
+	  <li> "Maximum Step" [double]
+	  <li> "Max Iters" [int]
+	  <li> "Default Step" [double]
+	  <li> "Recovery Step Type" [double]
+	  <li> "Sufficient Decrease Condition" [std::string] Valid options are:
+	       <ul>
+	       <li> "Armijo-Goldstein"
+	       <li> "Ared/Pred"
+	       </ul>
+	  <li> "Optimize Slope Calculation" [boolean]
+	  </ul>
      </ul>
 
 
-<li> "Trust Region" sublist, used by NOX::Solver::TrustRegionBased,
+<li> "Trust Region" [sublist] - used by NOX::Solver::TrustRegionBased,
      see class documentation for details
-
      <ul>
-
-     <li> "Minimum Trust Region Radius"
-     <li> "Maximum Trust Region Radius"
-     <li> "Minimum Improvement Ratio"
-     <li> "Contraction Trigger Ratio"
-     <li> "Contraction Factor"
-     <li> "Expansion Trigger Ratio"
-     <li> "Expansion Factor"
-     <li> "Recovery Step"
-
+     <li> "Minimum Trust Region Radius" [double]
+     <li> "Maximum Trust Region Radius" [double]
+     <li> "Minimum Improvement Ratio" [double]
+     <li> "Contraction Trigger Ratio" [double]
+     <li> "Contraction Factor" [double]
+     <li> "Expansion Trigger Ratio" [double]
+     <li> "Expansion Factor" [double]
+     <li> "Recovery Step" [double]
      </ul>
 
-<li> "Solver Options" sublist used by all solvers for basic options that all solvers should support (see individual solvers to make sure the option is supported).  
+<li> "Solver Options" [sublist] - used by all solvers for basic options that all solvers should support (see individual solvers to make sure the option is supported).  
      <ul>
-
-     <li> "User Defined Pre/Post Operator" - a
-     Teuchos::RCP<NOX::Abstract::PrePostOperator> object that
+     <li> "User Defined Pre/Post Operator" [Teuchos::RCP<NOX::Abstract::PrePostOperator>] - an observer object that
      allows users to insert pre and post method calls into nox's
      solvers (before and after the NOX::Solver::Generic::step() and
      before and after the NOX::Solver::Generic::solve() methods).
@@ -1733,14 +1766,14 @@ immediately before the word that is causing the link. For example,
     <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
      \endcode
 
-     <li> "Status Test Check Type" <std::string> - References a NOX::StatusTest::CheckType that determines if all ("Complete") or just a minimal ("Minimal") set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration if it is set to NOX::StatusTest::Complete.  Options are:
+     <li> "Status Test Check Type" [std::string] - References a NOX::StatusTest::CheckType that determines if all ("Complete") or just a minimal ("Minimal") set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration if it is set to NOX::StatusTest::Complete.  Valid options are:
      <ul>
-     <li> "Complete" <std::string> - All status tests are checked at each iteration.  Use this if you want to monitor progess in certain values computed in a status test.
-     <li> "Minimal" <std::string> - Compute only enough tests as necessary.  This is useful if some status tests are expensive.  For example, if you have 3 convergence tests in an "AND" Combo, a minimal check will only check enough tests until one is not converged.  It will then not check the others since it can't return a convecged status. 
-     <li> "None" <std::string> - Use internally to turn off tests that should not be checked when using the "Minimal" option.  Users should not call this!
+     <li> "Complete" - All status tests are checked at each iteration.  Use this if you want to monitor progess in certain values computed in a status test.
+     <li> "Minimal" - Compute only enough tests as necessary.  This is useful if some status tests are expensive.  For example, if you have 3 convergence tests in an "AND" Combo, a minimal check will only check enough tests until one is not converged.  It will then not check the others since it can't return a convecged status. 
+     <li> "None" - Use internally to turn off tests that should not be checked when using the "Minimal" option.  Users should not call this!
      </ul>
 
-     <li> "User Defined Merit Function" - Teuchos::RCP<NOX::MeritFunction::Generic> object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.  
+     <li> "User Defined Merit Function" [Teuchos::RCP<NOX::MeritFunction::Generic>] - An object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.  
 
      \code
   Teuchos::RCP<UserMeritFunction> mf =
@@ -1751,33 +1784,35 @@ immediately before the word that is causing the link. For example,
 
      </ul>
 
-<li> "Printing" sublist - used to construct a NOX::Utils object.  See class documentation for details.  The basic options are shown below:
+<li> "Printing" [sublist] - used to construct a NOX::Utils object.  See class documentation for details.  The basic options are shown below:
 
      <ul>
 
-     <li> "Output Information" Sublist or <int>
+     <li> "Output Information" [sublist|int] - Either a sublist of output information booleans listed below or the integer value of the sum of the enumerated types requested.  See NOX::Utils for details on how to use the integer value.  The following sublist parameters will print information if the flag is set to true.
         <ul>
-	<li> "Error" <boolean>
-	<li> "Warning" <boolean>
-	<li> "Outer Iteration" <boolean>
-	<li> "Inner Iteration" <boolean>
-	<li> "Parameters" <boolean>
-	<li> "Details" <boolean>
-	<li> "Outer Iteration StatusTest" <boolean>
-	<li> "Linear Solver Details" <boolean>
-	<li> "Test Details" <boolean>
-	<li> "Stepper Iteration" <boolean>
-	<li> "Stepper Details" <boolean>
-	<li> "Stepper Parameters" <boolean>
-	<li> "Debug" <boolean>
+	<li> "Error" [boolean]
+	<li> "Warning" [boolean]
+	<li> "Outer Iteration" [boolean]
+	<li> "Inner Iteration" [boolean]
+	<li> "Parameters" [boolean]
+	<li> "Details" [boolean]
+	<li> "Outer Iteration StatusTest" [boolean]
+	<li> "Linear Solver Details" [boolean]
+	<li> "Test Details" [boolean]
+	<li> "Stepper Iteration" [boolean]
+	<li> "Stepper Details" [boolean]
+	<li> "Stepper Parameters" [boolean]
+	<li> "Debug" [boolean]
 	</ul>
-     <li> "MyPID" <int>
-     <li> "Output Processor" <int>
-     <li> "Output Precision" <int>
+     <li> "MyPID" [int]
+     <li> "Output Processor" [int]
+     <li> "Output Precision" [int]
      
      </ul>
 
 </ul>
+
+A user can build a set of status tests from an independent parameter list using the NOX::StatusTest::Factory.  See this objects documentation for details on how to build that parameter list.
 
 */
 
