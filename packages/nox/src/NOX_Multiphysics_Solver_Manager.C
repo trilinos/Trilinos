@@ -37,15 +37,11 @@
 //@HEADER
 
 #include "NOX_Multiphysics_Solver_Manager.H"	// class definition
-#include "NOX_Multiphysics_DataExchange_Interface.H"	// class definition
-#include "NOX_Utils.H"		// for static function doPrint
-#include "Teuchos_RCP.hpp" // for RCP 
+#include "NOX_Multiphysics_DataExchange_Interface.H"
+#include "NOX_Multiphysics_Solver_FixedPointBased.H"
+#include "NOX_Utils.H"
+#include "Teuchos_RCP.hpp"
 
-// Header files for different solvers
-#include "NOX_Multiphysics_Solver_FixedPointBased.H"	 // LineSearch method
-#ifdef WITH_PRERELEASE
-//#include "NOX_Solver_TensorBasedTest.H"  // Tensor-Krylov method
-#endif
 
 NOX::Multiphysics::Solver::Manager::Manager(
         const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
@@ -105,12 +101,6 @@ bool NOX::Multiphysics::Solver::Manager::reset(
     {	
       cplPtr = new NOX::Multiphysics::Solver::FixedPointBased(solvers, interface, tests, params);
     } 
-#ifdef WITH_PRERELEASE
-//    else if (method == "Tensor-Krylov Based") 
-//    {
-//      cplPtr = new NOX::Solver::TensorBasedTest(grp, tests, params);
-//    } 
-#endif
     else 
     {
       utils.out() << "ERROR: NOX::Multiphysics::Solver::Manager::reset - Invalid solver choice " << method << endl;

@@ -47,7 +47,7 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
 {
 
   // Commonly used variables
-  int i, ierr;
+  int ierr;
   ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);
   ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);
 
@@ -139,8 +139,8 @@ bool DennisSchnabel::evaluate(FillType f,
   }
 
   // Create the overlapped solution
-  VecScatterBegin(*soln, *overlapSolution, INSERT_VALUES, SCATTER_FORWARD, *petscMap);
-  VecScatterEnd(*soln, *overlapSolution, INSERT_VALUES, SCATTER_FORWARD, *petscMap);
+  VecScatterBegin(*petscMap, *soln, *overlapSolution, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(*petscMap, *soln, *overlapSolution, INSERT_VALUES, SCATTER_FORWARD);
   // Export Solution to Overlap vector so we have all unknowns required
   // for function and Jacobian evaluations.
   double* u;
@@ -151,8 +151,7 @@ bool DennisSchnabel::evaluate(FillType f,
 
 
   // Declare required variables
-  int i,ierr;
-  double zero = 0.0;
+  int ierr;
   double resid[2];
   int* column = new int[2];
   column[0] = 0; 

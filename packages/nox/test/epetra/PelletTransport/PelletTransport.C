@@ -66,7 +66,7 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
   xmaxHe(xmaxHe_),
   xminClad(xminClad_),
   xmaxClad(xmaxClad_),
-  dt(1.0e-1), // steady-state for now
+  dt(1.0e+10),
   restart(restart_),
   Comm(&Comm_)
 {

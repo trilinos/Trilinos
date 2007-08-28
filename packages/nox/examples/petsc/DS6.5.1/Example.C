@@ -87,15 +87,20 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr = 0;
 
   // Initialize MPI
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);CHKERRQ(ierr);
 
   // Get the process ID and the total number of processors
   int MyPID, NumProc;
+#ifdef HAVE_MPI
   ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);CHKERRQ(ierr);
   ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);CHKERRQ(ierr);
+#else
+  MyPID = 0;
+  NumProc = 1;
+#endif
 
   int NumGlobalElements = 2;  // Hardcoded for D&S Example problem
 
@@ -135,10 +140,13 @@ int main(int argc, char *argv[])
 
   NOX::Petsc::Options optionHandler(nlParams, MyPID);
 
-  // Do a check to see if the correct linesearch is set.
-  //if(!nlParams.sublist("Line Search").isParameterEqual("Method", "Polynomial"))
-  //  if(MyPID==0) cout << "\n\tWARNING: Linesearch is not set to "
-  //                    << "polynomial !!\n" << endl;
+  // Warn if not using Polynimial linesearch
+  string lsMethod = nlParams.sublist("Line Search").get("Method", "Full Step");
+  if( "Polynomial" != lsMethod )
+    if (MyPID==0) 
+      cout << "Line Search Method is set to \"" << lsMethod << "\".  This test is designed to "
+           << "work with \"Polynomial\".  You can set this using \"-nox_linesearch_type polynomial\" "
+           << "on the command line." << endl;
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created using inheritance of the abstract base class:
@@ -153,16 +161,25 @@ int main(int argc, char *argv[])
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve
-  NOX::Solver::Manager solver(grp, optionHandler.getStatusTest(), nlParamsPtr);
-  NOX::StatusTest::StatusType status = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, optionHandler.getStatusTest(), nlParamsPtr);
+  NOX::StatusTest::StatusType status = solver->solve();
 
   if (status != NOX::StatusTest::Converged)
+  {
     if (MyPID==0) 
       cout << "Nonlinear solver failed to converge!" << endl;
+  if( "Polynomial" != lsMethod )
+      if (MyPID==0) 
+        cout << "\nLine Search Method is set to \"" << lsMethod << "\".  This test is designed to "
+             << "work with \"Polynomial\".  You can set this using \"-nox_linesearch_type polynomial\" "
+             << "on the command line." << endl;
+  }
+
 
   // Get the Petsc_Vector with the final solution from the solver
   const NOX::Petsc::Group& finalGroup = 
-      dynamic_cast<const NOX::Petsc::Group&>(solver.getSolutionGroup());
+      dynamic_cast<const NOX::Petsc::Group&>(solver->getSolutionGroup());
   const Vec& finalSolution = (dynamic_cast<const NOX::Petsc::Vector&>
         (finalGroup.getX())).getPetscVector();
 

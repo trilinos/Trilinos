@@ -45,10 +45,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
+#include "NOX_StatusTest_FiniteValue.H"
 
 NOX::LineSearch::NonlinearCG::
 NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
-	    Teuchos::ParameterList& params)
+	    Teuchos::ParameterList& params) :
+  finiteValueTester( Teuchos::rcp(new StatusTest::FiniteValue()) )
 {
   reset(gd, params);
 }
@@ -86,8 +88,14 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
   // iterations to be attempted 
 
   double numerator = oldgrp.getF().innerProduct(dir);
-  double denominator = 
-    computeDirectionalDerivative(dir, oldgrp).innerProduct(dir);
+  double denominator = computeDirectionalDerivative(dir, oldgrp).innerProduct(dir);
+
+  if( finiteValueTester->finiteNumberTest(step) )
+  {
+    utils->out() << "NOX::LineSearch::NonlinearCG::compute "
+         << "- step value is NaN or Inf. " << endl;
+    throw "NOX Error";
+  }
 
   step = - numerator / denominator;
   newgrp.computeX(oldgrp, dir, step);

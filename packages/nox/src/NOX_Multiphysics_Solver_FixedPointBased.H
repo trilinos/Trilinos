@@ -109,7 +109,8 @@ namespace Solver {
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
-class FixedPointBased : public NOX::Multiphysics::Solver::Generic {
+class FixedPointBased : public NOX::Multiphysics::Solver::Generic 
+{
 
 public:
 
@@ -143,9 +144,6 @@ public:
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
 
-  //! Return the line search step size from the current iteration
-  virtual double getStepSize() const;
-
 protected:
   
   //! Print out initialization information and calcuate the RHS.
@@ -172,13 +170,7 @@ protected:
   Teuchos::RCP<NOX::Utils> utilsPtr;
   
   //! Current solution.
-  Teuchos::RCP<NOX::Multiphysics::Group> solnPtr;		
-
-  //! Previous solution pointer. 
-  Teuchos::RCP<NOX::Multiphysics::Group> oldSolnPtr;	
-
-  //! Current search direction pointer.
-  Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
+  Teuchos::RCP<NOX::Multiphysics::Group> solnPtr;
 
   //! Stopping test.
   Teuchos::RCP<NOX::StatusTest::Generic> testPtr;
@@ -186,17 +178,8 @@ protected:
   //! Input parameters.
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
 
-  //! Linesearch. 
-  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr; 
-
-  //! %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> directionPtr; 
-
-  //! Current step.
-  double stepSize;			
-
   //! Number of nonlinear iterations.
-  int nIter;                    
+  int nIter;
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;

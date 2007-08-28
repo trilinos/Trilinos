@@ -45,6 +45,9 @@
 // Forward declarations
 namespace NOX {
   class Utils;
+  namespace StatusTest {
+    class FiniteValue;
+  }
 }
 
 namespace NOX {
@@ -174,6 +177,9 @@ private:
 
   //! Temporary Group pointer used to compute directional derivatives
   Teuchos::RCP<NOX::Abstract::Group> grpPtr;
+
+  //! Utililty object to test for NaN or Inf values for computed steps
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteValueTester;
 
 };
 } // namespace LineSearch

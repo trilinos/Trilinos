@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
     NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
 
   // Initialize time integration parameters
-  int maxTimeSteps = 10000000;
+  int maxTimeSteps = 1;
   int timeStep = 0;
   double time = 100.;
   double dt = Problem->getdt();
@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
 
     // End Nonlinear Solver **************************************
 
-    if( 0 )
+    if( 1 )
     {
       // Print solution
       (void) sprintf(file_name, "T_output.%03d_%05d",MyPID,timeStep);

@@ -71,14 +71,9 @@ void
 NOX::Multiphysics::Solver::FixedPointBased::init()
 {
   // Initialize 
-  stepSize = 0.0;
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
   
-  lineSearchPtr = NOX::LineSearch::buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));
-
-  directionPtr = NOX::Direction::buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
-
   // Get the checktype
   //   Python interface can't create enumerated types in a python
   //   generated teuchos parameter list, so we need to convert int
@@ -127,12 +122,9 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
   solversVecPtr = solvers;
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   solnPtr = Teuchos::rcp( new NOX::Multiphysics::Group(solvers, t, p) );
-  oldSolnPtr = Teuchos::rcp( dynamic_cast<NOX::Multiphysics::Group*>(solnPtr->clone(DeepCopy).get() ) );
   testPtr = t;
   paramsPtr = p;		
   utilsPtr = globalDataPtr->getUtils();
-  lineSearchPtr = NOX::LineSearch::buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));	
-  directionPtr = NOX::Direction::buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
   prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
 
   init();
@@ -302,7 +294,9 @@ NOX::Multiphysics::Solver::FixedPointBased::getSolutionGroup() const
 const NOX::Abstract::Group& 
 NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup() const
 {
-  return *oldSolnPtr;
+  utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup - "
+                  << "Old group not available.  This method is not currently supported." << endl;
+  throw "NOX Error";
 }
 
 int NOX::Multiphysics::Solver::FixedPointBased::getNumIterations() const
@@ -334,10 +328,7 @@ void NOX::Multiphysics::Solver::FixedPointBased::printUpdate()
 
   // All processes participate in the computation of these norms...
   if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
-  {
     normSoln = solnPtr->getNormF();
-    //normStep = (nIter > 0) ? dirPtr->norm() : 0;
-  }
 
   // ...But only the print process actually prints the result.
   if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
@@ -345,8 +336,6 @@ void NOX::Multiphysics::Solver::FixedPointBased::printUpdate()
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- Fixed-point Solver Step " << nIter << " -- \n";
     utilsPtr->out() << "Fixed-point ||F|| = " << utilsPtr->sciformat(normSoln);
-    utilsPtr->out() << "  step = " << utilsPtr->sciformat(stepSize);
-    //utilsPtr->out() << "  dx = " << utilsPtr->sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
@@ -363,9 +352,4 @@ void NOX::Multiphysics::Solver::FixedPointBased::printUpdate()
     testPtr->print(utilsPtr->out());
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }
-}
-
-double NOX::Multiphysics::Solver::FixedPointBased::getStepSize() const
-{
-  return stepSize;
 }

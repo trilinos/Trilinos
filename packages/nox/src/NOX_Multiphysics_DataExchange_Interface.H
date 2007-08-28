@@ -41,9 +41,6 @@
 
 #include "NOX_Common.H"
   
-// Forward declarations
-class Epetra_Vector;
-
 namespace NOX {
 namespace Multiphysics {
 namespace DataExchange {
@@ -52,26 +49,10 @@ namespace DataExchange {
     \brief Provides a set of interfaces for users to provide information about exchanging data between registered NOX solvers
   */
 
-  /*!
-    \brief Supplies NOX with the set nonlinear equations.
- 
-    This is the minimum required information to solve a nonlinear
-    problem using the NOX::Epetra objects for the linear algebra
-    implementation.  Used by NOX::Epetra::Group to provide a link
-    to the external code for residual fills.
-  */
 class Interface {
 
 public:
  
-  //! Type of fill that a computeF() method is used for.  
-  /*! computeF() can be called for a variety of reasons:
-
-  - To evaluate the function residuals.
-  - To be used in an approximation to the Jacobian (finite difference or directional derivative).
-  - To be used in an approximation to the preconditioner.
-   */
-
   //! Constructor
   Interface() {};
 

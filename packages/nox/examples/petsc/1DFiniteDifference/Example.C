@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
      Evaluate initial guess; then solve nonlinear system
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  PetscReal zero = 0.0, pfive = 0.5, one = 1.0;
+  PetscReal one = 1.0;
   ierr = VecSet( x, one );CHKERRQ(ierr);
 
 // Additional NOX setup
@@ -201,21 +201,20 @@ int main(int argc, char *argv[])
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve
-  NOX::Solver::Manager solver(grp, optionHandler.getStatusTest(), nlParamsPtr);
-  NOX::StatusTest::StatusType status = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, optionHandler.getStatusTest(), nlParamsPtr);
+  NOX::StatusTest::StatusType status = solver->solve();
 
   if (status != NOX::StatusTest::Converged)
     cout << "Nonlinear solver failed to converge!" << endl;
 
   // Get the Petsc_Vector with the final solution from the solver
   const NOX::Petsc::Group& finalGroup = 
-      dynamic_cast<const NOX::Petsc::Group&>(solver.getSolutionGroup());
+      dynamic_cast<const NOX::Petsc::Group&>(solver->getSolutionGroup());
   const Vec& finalSolution = (dynamic_cast<const NOX::Petsc::Vector&>
         (finalGroup.getX())).getPetscVector();
 
   // End Nonlinear Solver **************************************
-
-  Vec& nonconst_x = const_cast<Vec&>(x);
 
   printf("\n\tHere is the solution:\n\n");
   VecView(finalSolution, PETSC_VIEWER_STDOUT_WORLD);
