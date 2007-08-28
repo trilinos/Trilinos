@@ -1398,7 +1398,7 @@ each parameter is listed.
   The following parameters are valid for this solver:
 
   - "Line Search" - Sublist of the line search parameters, passed to
-    the NOX::Linesearch::Manager constructor. Defaults to an empty list.
+    the NOX::Linesearch::Factory. Defaults to an empty list.
 
   - "Linear Solver" - Sublist of the linear solver parameters, passed
     to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
@@ -1535,11 +1535,11 @@ immediately before the word that is causing the link. For example,
   be specified, as documented in each class or on the \ref parameters.
 
   The search directions are in the NOX::Direction namespace and
-  accessed via the NOX::Direction::Manager. The default search
+  accessed via the NOX::Direction::Factory. The default search
   direction for a line-search based method in NOX::Direction::Newton.
 
   Several line searches are available, as defined in the
-  NOX::LineSearch, and accessed via the NOX::LineSearch::Manager
+  NOX::LineSearch namespace, and accessed via the NOX::LineSearch::Factory
   class. Examples include
 
   - NOX::LineSearch::FullStep
@@ -1580,9 +1580,9 @@ immediately before the word that is causing the link. For example,
 
      <ul>
 
-     <li> "Method" - see NOX::Direction::Manager for options
+     <li> "Method" - see NOX::Direction::Factory for options
 
-     <li> "User Defined Constructor" - see NOX::Direction::Manager for details
+     <li> "User Defined Constructor" - see NOX::Direction::Factory for details
 
      <li> "Newton" sublist - used by NOX::Direction::Newton,
           see class documentation for all details.
@@ -1629,9 +1629,9 @@ immediately before the word that is causing the link. For example,
 
      <ul>
 
-     <li> "Method" - see NOX::LineSearch::Manager for options
+     <li> "Method" - see NOX::LineSearch::Factory for options
 
-     <li> "User Defined Constructor" - see NOX::LineSearch::Manager for details
+     <li> "User Defined Constructor" - see NOX::LineSearch::Factory for details
 
      <li> "Backtrack" sublist - used by NOX::LineSearch::Backtrack,
           see class documentation for all details.
