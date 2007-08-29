@@ -864,20 +864,19 @@ int Zoltan_PHG_Initialize_Params(
    * specified this way:
    *     LB_METHOD=hypergraph
    *     HYPERGRAPH_PACKAGE=phg
-   *     PHG_METHOD=partition, repartition, refine or fast_repartition
+   *     LB_APPROACH=partition, repartition, refine or fast_repartition
    *
    *     MULTILEVEL_REFINE is an undocumented feature.
    */
 
-    if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
-        (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")) ||
-        (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE"))) {
-
-      method = 
-        hgp->hgraph_pkg + 4;  /* "repart", "refine" or "multilevel_refine" */
-
-      package = phg;          /* "phg" */
-    }
+  if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
+      (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")) ||
+      (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE"))) {
+    method = hgp->hgraph_pkg + 4; /* "repart", "refine", "multilevel_refine" */
+    strcpy(hgp->hgraph_method, method);
+    package = phg;                /* "phg" */
+    strcpy(hgp->hgraph_pkg, package);
+  }
 
   if ((strcasecmp(method, "partition")) &&
       (strcasecmp(method, "repart")) &&

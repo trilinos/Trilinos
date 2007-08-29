@@ -100,16 +100,20 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc  -Wall -Werror-implicit-function-declaration
-CPPC			= mpiCC  -Wall -Werror-implicit-function-declaration
+CC			= gcc34  -Wall -Werror-implicit-function-declaration
+CPPC			= g++34  -Wall -Werror-implicit-function-declaration
+PURE_CC                 = purify -best-effort -follow-child-processes=yes \
+                          -cache-dir=/tmp/purify \
+                          -chain-length=20
 
 DBG_FLAGS		= -g -Wall
 OPT_FLAGS		= -O2 
 CFLAGS 			= $(DBG_FLAGS)
 
-F90			= mpif90
+F90			= gfortran
 
-MPI_LIB		= 
+MPI_INCPATH	= $(shell mpicc --showme:compile)
+MPI_LIB		= $(shell mpicc --showme:link)
 MPI_LIBPATH	= 
 
 # Some users have needed these libraries.  If your linker can't find getarg or
@@ -117,8 +121,8 @@ MPI_LIBPATH	=
 #MPI_LIB = -lg2c
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
-PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3 
-PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+#PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3 
+#PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src

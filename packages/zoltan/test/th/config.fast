@@ -14,23 +14,41 @@ FAST_SERVER_CVSROOT /space/sandiacvs/CVS-FAST
 #
 FAST_PROJECT        zoltan
 
-# Args are:
-# csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}'
-#   1: zoltan_arch
-#   2: $tname (filled in by FAST)
-#   3: zdrive name (normally zdrive, but could be zfdrive)
-#   4: testdirs (globbing is allowed in 'apostrophes' e.g. 'test/hg_*'
+# Format for test descriptions
+# Test testname
+#   where testname must begin with "zoltan-" 
+#   and must end with either "-nightly" or "-smoke".
+# machinename
+#   where machinename is the full name recognized by the machine.
+# cvs command ; csh command
+# where
+#   cvs command specifies which branch is to be checked out 
+#   (e.g., Zoltan_v3_Release)
+#   and 
+#   csh command is as follows below:
+#   csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}'
+#     1: zoltan_arch
+#     2: $tname (filled in by FAST)
+#     3: zdrive name (normally zdrive, but could be zfdrive)
+#     4: testdirs (globbing is allowed in 'apostrophes' e.g. 'test/hg_*'
 
+Test zoltan-mac64_v3-smoke
+joda.srn.sandia.gov
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build mac64 $tname zdrive 'test/{ch_*,hg_*}' 
+
+Test zoltan-octopi_v3-nightly
+octopi.sandia.gov
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 Test zoltan-sun-nightly
 seamus
 cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}' 
 
-Test zoltan-sun-nightly-CPP
+Test zoltan-sun_CPP_v3-nightly
 seamus
 cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zCPPdrive 'test/{ch_*,hg_*}' 
 
-Test zoltan-sun-nightly-F90
+Test zoltan-sun_F90_v3-nightly
 seamus
 cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zfdrive 'test/{ch_*,hg_*}' 
 
