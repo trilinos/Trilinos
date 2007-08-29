@@ -7,7 +7,7 @@
 #include <mpi.h>
 #include "get_heap_usage.h"
 
-#define NUM_ITER 10
+#define NUM_ITER 1000
 
 size_t total_leak = 0;
 
@@ -61,6 +61,7 @@ int ierr;
 /////////////////////////////////////////////////////////////////////////////
 main(int argc, char *argv[])
 {
+  size_t beginning = get_heap_usage();
   MPI_Init(&argc, &argv);
 
   //  The first MPI_Comm_dup always leaks memory; get it over with and
@@ -76,7 +77,13 @@ main(int argc, char *argv[])
   int myproc;
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 
+  int localmax, globalmax;
+  localmax = total_leak;
+  MPI_Allreduce(&localmax, &globalmax, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD);
+
   MPI_Finalize();
+  size_t ending = get_heap_usage();
+
   std::cout << "KDDEND " << myproc 
             << " First MPI_Comm_dup leaked " << firstiteraft - firstiterbef
             << std::endl;
@@ -86,6 +93,14 @@ main(int argc, char *argv[])
   std::cout << "KDDEND " << myproc 
             << " Avg per Subsequent MPI_Comm_dup " 
             << (finalheap - initheap) / NUM_ITER
+            << std::endl;
+  std::cout << "KDDEND " << myproc 
+            << " Max per Subsequent MPI_Comm_dup " 
+            << globalmax
+            << std::endl;
+  std::cout << "KDDEND " << myproc 
+            << " Total Leak " 
+            << (ending - beginning)
             << std::endl;
 
   return(0);  
