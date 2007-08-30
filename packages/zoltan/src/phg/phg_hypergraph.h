@@ -213,11 +213,11 @@ struct Zoltan_MP_Data_Struct{
   ZZ *zzLib;    /* Problem created by Zoltan_Matrix_Partition() */
 
   /* Parameters */
-  int approach;    /* a PartitionType, how they want us to partition the matrix */
-  int gidLen;                /* length of their IDs (must be <= sizeof(IJTYPE)) */
+  int approach;       /* a PartitionType, the LB_APPROACH parameter */
+  int gidLen;         /* length of their IDs (must be <= sizeof(IJTYPE)) */
 
   /* The local portion of sparse matrix returned by the query function */
-  int input_type;    /* a ObjectType, how they supply the matrix */
+  int input_type;    /* a ObjectType, how they supply the matrix (CSC or CSR) */
   IJTYPE numRC;      /* number of rows or columns */
   IJTYPE *rcGID;     /* row or column GIDs   */
   IJTYPE *pinIndex;  /* index into pinGIDs array, last is num pins */

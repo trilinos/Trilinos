@@ -25,7 +25,7 @@ extern "C" {
 #include "zz_util_const.h"
 
 ZOLTAN_NUM_OBJ_FN Zoltan_MP_Get_Num_Obj;
-ZOLTAN_OBJ_LIST_FN Zoltan_MP_Get_Objs;
+ZOLTAN_OBJ_LIST_FN Zoltan_MP_Get_Obj_List;
 ZOLTAN_HG_SIZE_CS_FN Zoltan_MP_Get_Size_Matrix;
 ZOLTAN_HG_CS_FN Zoltan_MP_Get_Matrix;
 
@@ -550,6 +550,59 @@ static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
  *  the hyperedges are the rows.
  */
 
+static int my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
+{
+  int nProcs, me;
+  IJTYPE i, n, *obj;
+  int ierr = ZOLTAN_OK;
+
+  nProcs = mpd->zzLib->Num_Proc;
+  me = mpd->zzLib->Proc;
+  n = 0;
+  obj=NULL;
+
+  if (mpd->approach == PHG_ROWS){
+    for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
+      if (i % nProcs == me){
+        n++;
+      }
+    }
+  }
+  else{
+    for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
+      if (i % nProcs == me){
+        n++;
+      }
+    }
+  }
+
+  obj = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * n);
+  if (n && !obj){
+    ierr = ZOLTAN_MEMERR;
+  }
+  else{
+    *objIDs = obj;
+    *nobj = n;
+
+    if (mpd->approach == PHG_ROWS){
+      for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
+        if (i % nProcs == me){
+          *obj++ = i;
+        }
+      }
+    }
+    else{
+      for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
+        if (i % nProcs == me){
+          *obj++ = i;
+        }
+      }
+    }
+  }
+
+  return ierr;
+}
+
 static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
   int ierr = ZOLTAN_OK;
@@ -565,11 +618,15 @@ static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
   Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", "0");
 
   Zoltan_Set_Num_Obj_Fn(mpd->zzLib, Zoltan_MP_Get_Num_Obj, mpd);
-  Zoltan_Set_Obj_List_Fn(mpd->zzLib, Zoltan_MP_Get_Objs, mpd);
+  Zoltan_Set_Obj_List_Fn(mpd->zzLib, Zoltan_MP_Get_Obj_List, mpd);
   Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Size_Matrix, mpd);
   Zoltan_Set_HG_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Matrix, mpd);
 
   ierr = make_mirror(mpd);
+
+  if (ierr == ZOLTAN_OK){
+    ierr = my_objects(mpd, &mpd->nMyVtx, &mpd->vtxGID);
+  }
 
   return ierr;
 }
@@ -577,62 +634,21 @@ static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 int Zoltan_MP_Get_Num_Obj(void *data, int *ierr)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
-  int nProcs, me, i;
-  int numObj = 0;
   *ierr = ZOLTAN_OK;
 
-  nProcs = mpd->zzLib->Num_Proc;
-  me = mpd->zzLib->Proc;
-
-  if (mpd->approach == PHG_ROWS){
-    for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
-      if (i % nProcs == me){
-        numObj++;
-      }
-    }
-  }
-  else{
-    for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
-      if (i % nProcs == me){
-        numObj++;
-      }
-    }
-  }
-  return numObj;
+  return mpd->nMyVtx;
 }
 
-void Zoltan_MP_Get_Objs(void *data, int num_gid_entries, int num_lid_entries,
+void Zoltan_MP_Get_Obj_List(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts, int *ierr)
 {
-  int nProcs, me, nextID;
-  IJTYPE *objid, i;
-  int *localid;
-
+  IJTYPE i;
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
-
-  nProcs = mpd->zzLib->Num_Proc;
-  me = mpd->zzLib->Proc;
-
-  objid = (IJTYPE *)gids;
-  localid = (int *)lids;
-  nextID = 0;
-
-  if (mpd->approach == PHG_ROWS){
-    for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
-      if (i % nProcs == me){
-        objid[i] =   i;
-        localid[i] = nextID++;
-      }
-    }
-  }
-  else{
-    for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
-      if (i % nProcs == me){
-        objid[i] =   i;
-        localid[i] = nextID++;
-      }
-    }
+ 
+  for (i=0; i<mpd->nMyVtx; i++){
+    gids[i] = (ZOLTAN_ID_TYPE)mpd->vtxGID[i];
+    lids[i] = (ZOLTAN_ID_TYPE)i;
   }
 }
 
