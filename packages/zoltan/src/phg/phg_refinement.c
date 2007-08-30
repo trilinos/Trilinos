@@ -20,16 +20,18 @@ extern "C" {
 #include <float.h>
 #include "phg.h"
 #include "zz_heap.h"
-    
+
+#define BADBALANCE  2.0
 #define HANDLE_ISOLATED_VERTICES    
 #define USE_SERIAL_REFINEMENT_ON_ONE_PROC
 
 
 
+
     
 /*
-#define _DEBUG          
-#define _DEBUG2
+#define _DEBUG  
+#define _DEBUG2  
 #define _DEBUG3
 */
     
@@ -289,11 +291,11 @@ int    best_imbalance, imbalance;
 
 #ifdef _DEBUG
         imbal = (tw0==0.0) ? 0.0 : (part_weight[0]-tw0)/tw0;
-        uprintf(hg->comm, "%4d: moving %4d from %d to %d cut=%6.0lf bal=%.3lf\n", step, vertex, sour, dest, cur_cutsize, imbal);
+        uprintf(hg->comm, "%4d: SEQ moving %4d from %d to %d cut=%6.0lf bal=%.3lf\n", step, vertex, sour, dest, cur_cutsize, imbal);
         /* Just for debugging */
         cutsize = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part, p);
         if (cur_cutsize!=cutsize) {
-            errexit("%s: after move cutsize=%.2lf Verify: total=%.2lf\n", uMe(hg->comm), cur_cutsize,
+            errexit("%s: SEQ after move cutsize=%.2lf Verify: total=%.2lf\n", uMe(hg->comm), cur_cutsize,
                     cutsize);
         }
 #endif
@@ -318,7 +320,7 @@ int    best_imbalance, imbalance;
     }
 
 #ifdef _DEBUG
-    uprintf(hg->comm, "Best CUT=%6.0lf at move %d\n", best_cutsize, best_locked);
+    uprintf(hg->comm, "SEQ Best CUT=%6.0lf at move %d\n", best_cutsize, best_locked);
 #endif
     
     /* rollback */
@@ -369,7 +371,7 @@ int    best_imbalance, imbalance;
           }
 #ifdef _DEBUG      
       isoimbal = (targetw0==0) ? 0.0 : (part_weight[0] - targetw0)/ targetw0;
-      uprintf(hg->comm, "%d isolated vertices, balance before: %.3lf  after: %.3lf\n", isocnt, isoimbalbefore, isoimbal);
+      uprintf(hg->comm, "SEQ %d isolated vertices, balance before: %.3lf  after: %.3lf\n", isocnt, isoimbalbefore, isoimbal);
 #endif
   }
 #endif  
@@ -500,8 +502,9 @@ static int refine_fm2 (ZZ *zz,
     int    *moves=NULL, *mark=NULL, *adj=NULL, passcnt=0;
     float  *gain=NULL, *lgain=NULL;
     int    best_cutsizeat, cont, successivefails=0;
-    double total_weight, weights[2], lweights[2], lwadjust[2],
-        max_weight[2], lmax_weight[2];
+    double total_weight, weights[2], total_lweight, lweights[2], lwadjust[2],
+        max_weight[2], lmax_weight[2], avail[2], gavail[2];
+    int availcnt[2], gavailcnt[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
     double cutsize, best_cutsize, 
         best_limbal, imbal, limbal;
@@ -548,6 +551,7 @@ static int refine_fm2 (ZZ *zz,
         return ZOLTAN_OK;
     }
 
+
 #ifdef USE_SERIAL_REFINEMENT_ON_ONE_PROC
     if (hgc->nProc==1) /* only one proc? use serial code */
         return serial_fm2 (zz, hg, p, part_sizes, part, hgp, bal_tol);
@@ -582,7 +586,7 @@ static int refine_fm2 (ZZ *zz,
        knowedge about global hypergraph */
     Zoltan_PHG_Find_Root(hg->nPins, hgc->myProc_y, hgc->col_comm, 
                          &root.nPins, &root.rank);
-    
+
     /* Calculate the weights in each partition and total, then maxima */
     weights[0] = weights[1] = 0.0;
     lweights[0] = lweights[1] = 0.0;
@@ -604,11 +608,12 @@ static int refine_fm2 (ZZ *zz,
     max_weight[0] = total_weight * bal_tol * part_sizes[0];
     max_weight[1] = total_weight * bal_tol * part_sizes[1]; /* should be (1 - part_sizes[0]) */
 
+
     if (weights[0]==0.0) {
         ltargetw0 = targetw0 / hgc->nProc_x;
         lmax_weight[0] = max_weight[0] / hgc->nProc_x;
     } else {
-        lmax_weight[0] = lweights[0] +
+        lmax_weight[0] = (weights[0]==0.0) ? 0.0 : lweights[0] +
             (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
         ltargetw0 = targetw0 * ( lweights[0] / weights[0] ); /* local target weight */
     }
@@ -618,7 +623,26 @@ static int refine_fm2 (ZZ *zz,
         lmax_weight[1] = (weights[1]==0.0) ? 0.0 : lweights[1] +
             (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
 
+    total_lweight = lweights[0]+lweights[1];
+    
+    avail[0] = MAX(0.0, lmax_weight[0]-total_lweight);
+    avail[1] = MAX(0.0, lmax_weight[1]-total_lweight);
+    availcnt[0] = (avail[0] == 0) ? 1 : 0;
+    availcnt[1] = (avail[1] == 0) ? 1 : 0; 
+    MPI_Allreduce(avail, gavail, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
+    MPI_Allreduce(availcnt, gavailcnt, 2, MPI_INT, MPI_SUM, hgc->row_comm);
 
+#ifdef _DEBUG
+    if (gavailcnt[0] || gavailcnt[1])
+        uprintf(hgc, "before adjustment, LMW[%.1lf, %.1lf]\n", lmax_weight[0], lmax_weight[1]);
+#endif
+
+    if (gavailcnt[0]) 
+        lmax_weight[0] += gavail[0] / (double) gavailcnt[0];
+    
+    if (gavailcnt[1]) 
+        lmax_weight[1] += gavail[1] / (double) gavailcnt[1];
+    
     /* Our strategy is to stay close to the current local weight balance.
        We do not need the same local balance on each proc, as long as
        we achieve approximate global balance.                            */
@@ -626,7 +650,7 @@ static int refine_fm2 (ZZ *zz,
 #ifdef _DEBUG
     imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
     limbal = (ltargetw0==0.0) ? 0.0 : fabs(lweights[0]-ltargetw0)/ltargetw0;
-    uprintf(hgc, "FM2: W[%.1lf, %.1lf] MW:[%.1lf, %.1lf] I=%.3lf  LW[%.1lf, %.1lf] LMW[%.1lf, %.1lf] LI=%.3lf\n", weights[0], weights[1], max_weight[0], max_weight[1], imbal, lweights[0], lweights[1], lmax_weight[0], lmax_weight[1], limbal);
+    uprintf(hgc, "H(%d, %d, %d), FM2: W[%.1lf, %.1lf] MW:[%.1lf, %.1lf] I=%.3lf  LW[%.1lf, %.1lf] LMW[%.1lf, %.1lf] LI=%.3lf\n", hg->nVtx, hg->nEdge, hg->nPins, weights[0], weights[1], max_weight[0], max_weight[1], imbal, lweights[0], lweights[1], lmax_weight[0], lmax_weight[1], limbal);
 #endif
 
     
@@ -714,20 +738,20 @@ static int refine_fm2 (ZZ *zz,
         MPI_Allreduce(&cutsize, &best_cutsize, 1, MPI_DOUBLE, MPI_SUM, hgc->col_comm);
         cutsize = best_cutsize;
 
+        imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;        
         best_limbal = limbal = (ltargetw0==0.0) ? 0.0
             : fabs(lweights[0]-ltargetw0)/ltargetw0;
 
         /* UVCUVC: it looks like instead of moving always from overloaded
            part, alternating the 'from' part gives better results.
-           Hence it is default in the code */
-#if 1 
-        from = passcnt % 2; 
-#else
-        /* decide which way the moves will be in this pass */
-        from = (weights[0] < targetw0) ? 1 : 0;
+           Hence if the imbal is not really bad (2x worse) we use that approach  */
+        if (imbal > BADBALANCE*(bal_tol-1.0) ) /* decide which way the moves will be in this pass */
+            from = (weights[0] < targetw0) ? 1 : 0;
+        else 
+            from = passcnt % 2; 
         /* we want to be sure that everybody!!! picks the same source */
         MPI_Bcast(&from, 1, MPI_INT, 0, hgc->Communicator); 
-#endif
+
         to = 1-from;
         
 #ifdef _DEBUG
@@ -813,8 +837,11 @@ static int refine_fm2 (ZZ *zz,
             }
 
             while ((neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
-                if (Zoltan_Heap_Empty(&heap[from])) /* too bad it is empty */
+                if (Zoltan_Heap_Empty(&heap[from])) { /* too bad it is empty */
+                    v = -1;
                     break;
+                }
+                
                 v = Zoltan_Heap_Extract_Max(&heap[from]);    
                 
 #ifdef _DEBUG
@@ -850,12 +877,12 @@ static int refine_fm2 (ZZ *zz,
                 limbal = (ltargetw0==0.0) ? 0.0
                     : fabs(lweights[0]-ltargetw0)/ltargetw0;
 
-                if ((cutsize<best_cutsize) || (cutsize==best_cutsize && limbal < best_limbal)
-                    || notfeasible) {
+                if (notfeasible || (cutsize<best_cutsize) ||
+                                   (cutsize==best_cutsize && limbal < best_limbal)) {
 #ifdef _DEBUG2                    
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d W[%4.0lf, %4.0lf] I:%.2lf LW[%4.0lf, %4.0lf] LI:%.2lf C:%.1lf<-- Best\n", uMe(hgc), movecnt, v, gain[v], from, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal, cutsize); /* after move gain is -oldgain */
 #endif
-                    notfeasible = 0;
+                    notfeasible = weights[from]>max_weight[from];
                     best_cutsize = cutsize;
                     best_cutsizeat = movecnt+1;
                     best_limbal = limbal;
