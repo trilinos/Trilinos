@@ -21,7 +21,14 @@
 extern "C" {
 #endif
 
+/*
+ * Assumption is we are creating a hypergraph and using Zoltan_PHG
+ * to partition objects, but eventually this code should come out
+ * of the phg directory and be more general, using other partitioning
+ * methods on the sparse matrix.
+ */
 #include "phg.h"
+/*******************/
 #include "zz_util_const.h"
 
 ZOLTAN_NUM_OBJ_FN Zoltan_MP_Get_Num_Obj;
@@ -56,6 +63,9 @@ static PARAM_VARS MP_params[] = {
 **                
 **    PHG_COLS    use Zoltan's PHG to partition the columns (objects
 **                are columns, hyperedges are rows)
+**
+** To find the code that must be added if you add a new approach,
+** search for "LB_APPROACH" in this source file.
 *************************************************************************/
 struct vtx_node{
   IJTYPE vtxGID;
@@ -86,8 +96,28 @@ static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len);
 static ZOLTAN_MP_DATA *MP_Initialize_Structure();
 static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 
-static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd);
+static int phg_rows_or_columns(ZOLTAN_MP_DATA *mpd);
+static int phg_rows_or_columns_result(ZOLTAN_MP_DATA *mpd,
+  int num_export,
+  unsigned int *export_global_ids, unsigned int *export_local_ids, 
+  unsigned int *export_procs, unsigned int *export_to_part);
 
+/****************************************************************/
+/****************************************************************/
+/* API:
+ *
+ *  Zoltan_Matrix_Partition()     must be called by all processes
+ *
+ *  Queries (not all queries are defined for all LB_APPROACH):
+ *
+ *  Zoltan_MP_Get_Local_Rows()   assignment of rows of my non-zeroes
+ *  Zoltan_MP_Get_Local_Cols()  assignment of columns of my non-zeroes
+ *  Zoltan_MP_Get_Local_NZ()      assignment of my non-zeroes
+ *
+ *  To evaluate partitioning:
+ *
+ *  Zoltan_Matrix_Partition_Eval()   must be called by all procs
+ */
 int Zoltan_Matrix_Partition(ZZ *zz)
 {
   char *yo = "Zoltan_Matrix_Partition";
@@ -176,24 +206,15 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   ierr = process_matrix_input(zz, mpd);
 
   /*
-   * Depending on how we are creating a hypergraph from the sparse matrix,
-   * we may need to create the hypergraph now and write it to the fields
-   * set up in mpd for that purpose.  The make_hypergraph() function is
-   * an example of this.  If the hypergraph is very simple, we don't
-   * need to do this, because query functions we pass to Zoltan_PHG
-   * can read the hypergraph straight from the sparse matrix data.
-   */
-
-  /*
-   * Set the query functions and parameters required for this problem.  If
-   * you are adding a new approach, this is the section where you need
-   * to add your code.
+   * Set the query functions and parameters required for this problem.
+   * Precompute hypergraph if necessary.  This is the code that needs
+   * to be written if you are implementing a new LB_APPROACH.
    */
   switch (mpd->approach)
     {
       case PHG_ROWS:
       case PHG_COLUMNS:
-        phg_rows_or_columns(zz, mpd);
+        phg_rows_or_columns(mpd);
         break;
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
@@ -202,7 +223,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
     }
 
   /*
-   * Call Zoltan_LB to partition the objects
+   * Call Zoltan_LB_Partition to partition the objects
    */
 
   int changes, num_gid_entries, num_lid_entries, num_import, num_export;
@@ -212,32 +233,50 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   int *import_procs, *export_procs;
 
   ierr = Zoltan_LB_Partition(zzLib,
-           &changes, &num_gid_entries, &num_lid_entries, 
-           &num_import,
-           &import_global_ids, &import_local_ids, &import_procs, &import_to_part,
-           &num_export,
-           &export_global_ids, &export_local_ids, &export_procs, &export_to_part);
-
+      &changes, &num_gid_entries, &num_lid_entries, 
+      &num_import,
+      &import_global_ids, &import_local_ids, &import_procs, &import_to_part,
+      &num_export,
+      &export_global_ids, &export_local_ids, &export_procs, &export_to_part);
 
   /*
-   * "Partition" the non-zeros that were returned by user in CSR or CSC in some
-   * way that acheives balance and minimizes row and column cuts.  (Most
-   * likely assigning to the process that either their row or their column
-   * went to.)  Save info required so that when user calls 
-   * Zoltan_Get_Sparse_Matrix_NonZero_Partition_Assigned(i, j) for their
-   * non-zero, we can answer it.  (Maybe it should have a different name...)
+   * Save the data required to respond to the queries that are
+   * supported by each LB_APPROACH.
    */
 
-  /* 
-   * Write to a results structure either the global row/column partitionings
-   * or a way to get them (function pointer).  Write the local non-zero
-   * partitionings or a way to get them (function pointer).  Maybe row/column
-   * global information will be too big, and just save import/export lists.
-   */
+  switch (mpd->approach)
+    {
+      case PHG_ROWS:
+      case PHG_COLUMNS:
+        /*
+         * Save row or column assignment for all rows or columns
+         * in my non-zeroes.  Each of my non-zeroes is assigned to
+         * the row or column that it's row or column is assigned to.
+         *
+         * PHG_ROWS - we don't repond to Local_Cols query.
+         * PHG_COLUMNS - we don't repond to Local_Rows query.
+         */
+        phg_rows_or_columns_result(mpd, num_export,
+            export_global_ids, export_local_ids, export_procs, export_to_part);
+        break;
+      default:
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+    }
 
 End:
+  Zoltan_Multifree(__FILE__, __LINE__, 8,
+    &import_global_ids, &import_local_ids, &import_procs, &import_to_part,
+    &export_global_ids, &export_local_ids, &export_procs, &export_to_part);
+
   return ierr;
 }
+/****************************************************************/
+/****************************************************************/
+/*
+ * Called by Zoltan_Destroy()
+ */
 void Zoltan_MP_Free_Structure(ZZ *zz)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
@@ -263,6 +302,11 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
   }
 }
 
+/****************************************************************/
+/****************************************************************/
+/*
+ * Functions used by Zoltan_Matrix_Partition()
+ */
 
 static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
@@ -280,6 +324,7 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
           zz->Proc, zz->Debug_Proc);
 
   if (ierr == ZOLTAN_OK){
+    /* Update this if you add a new LB_APPROACH */
     if (!strcasecmp(approach, "phg_rows"))
       mpd->approach = PHG_ROWS;
     else if (!strcasecmp(approach, "phg_columns"))
@@ -603,7 +648,7 @@ static int my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
   return ierr;
 }
 
-static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
+static int phg_rows_or_columns(ZOLTAN_MP_DATA *mpd)
 {
   int ierr = ZOLTAN_OK;
 
@@ -699,6 +744,17 @@ void Zoltan_MP_Get_Matrix(void *data, int num_gid_entries, int num_vtx_edge,
       pinGID[i] = mpd->pinGID[i];
     }
   }
+}
+
+static int phg_rows_or_columns_result(ZOLTAN_MP_DATA *mpd,
+  int num_export,
+  unsigned int *export_global_ids, unsigned int *export_local_ids, 
+  unsigned int *export_procs, unsigned int *export_to_part)
+{
+  char *yo = "phg_rows_or_columns_result";
+  int ierr = ZOLTAN_OK;
+
+  return ierr;
 }
 
 
