@@ -218,10 +218,10 @@ struct Zoltan_MP_Data_Struct{
 
   /* The local portion of sparse matrix returned by the query function */
   int input_type;    /* a ObjectType, how they supply the matrix */
-  IJTYPE numRC;            /* number of rows or columns */
-  IJTYPE *rcGID;      /* row or column GIDs   */
-  IJTYPE *pinIndex;   /* index into pinGIDs array, last is num pins */
-  IJTYPE *pinGID;     /* non-zeroes column or row GIDs */
+  IJTYPE numRC;      /* number of rows or columns */
+  IJTYPE *rcGID;     /* row or column GIDs   */
+  IJTYPE *pinIndex;  /* index into pinGIDs array, last is num pins */
+  IJTYPE *pinGID;    /* non-zeroes column or row GIDs */
 
   /* Mirror specification of sparse matrix: if input was CSR, create CSC, 
    * or in input was CSC, create CSR */
@@ -232,20 +232,21 @@ struct Zoltan_MP_Data_Struct{
   IJTYPE *mirrorPinGID; 
 
   /* Global values filled out by process_matrix_input().                  */
-  IJTYPE rowBaseID;             /* zero or one? */
-  IJTYPE colBaseID;             /* zero or one? */
+  IJTYPE rowBaseID;   /* most likely zero or one */
+  IJTYPE colBaseID;   /* most likely zero or one */
   IJTYPE nRows;
   IJTYPE nCols;
   IJTYPE nNonZeros;
 
-  /* Hypergraph generated from sparse matrix */
+  /* Hypergraph generated from sparse matrix (if not obvious 
+   * from sparse matrix representation) */
 
-  IJTYPE nMyVtx;        /* my number of vertices in hypergraph */
-  IJTYPE *vtxGID;       /* vertex GIDs */
-  double *vtxWgt;    /* weight for each vertex (1 double) */
-  IJTYPE nHedges;       /* number of hyperedges */
-  IJTYPE *hindex;       /* index into list of pins for each h.e., last is npins */
-  IJTYPE *hvertex;      /* vtx GID of pins in my hyperedges */
+  IJTYPE nMyVtx;    /* my number of vertices in hypergraph */
+  IJTYPE *vtxGID;   /* vertex GIDs */
+  double *vtxWgt;   /* weight for each vertex (1 double) */
+  IJTYPE nHedges;   /* number of hyperedges */
+  IJTYPE *hindex;   /* index into list of pins for each h.e., last is npins */
+  IJTYPE *hvertex;  /* vtx GID of pins in my hyperedges */
 };
 
 typedef struct Zoltan_MP_Data_Struct ZOLTAN_MP_DATA;
@@ -254,7 +255,7 @@ typedef struct Zoltan_MP_Data_Struct ZOLTAN_MP_DATA;
 ** Wrapper around Zoltan_PHG which can be used to partition rows
 ** columns and/or nonzeros of a sparse matrix.
 */
-int Zoltan_Matrix_Partition(ZZ *zz, float *part_sizes);
+int Zoltan_Matrix_Partition(ZZ *zz);
 
 /******************************************************************************/
 /* Matching, Packing, and Grouping arrays.  Technically, they are all the same;

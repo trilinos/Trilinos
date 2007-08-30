@@ -45,7 +45,9 @@ static PARAM_VARS MP_params[] = {
 ** This avoids the necessity of having the user figure out how our
 ** hypergraph partitioning codes work.
 **
-** This source file uses "pins" and "non-zeros" interchangeably.
+** This source file uses the terms "pins" and "non-zeros" interchangeably.
+**
+** An IJTYPE is the type of a row or column ID.
 *************************************************************************/
 struct vtx_node{
   IJTYPE vtxGID;
@@ -78,13 +80,12 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 
 static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 
-int Zoltan_Matrix_Partition( ZZ *zz, float *part_sizes)
+int Zoltan_Matrix_Partition(ZZ *zz)
 {
   char *yo = "Zoltan_Matrix_Partition";
   int ierr = ZOLTAN_OK;
   ZZ *zzLib = NULL;
   IJTYPE npins;
-  char param_val[64];
 
   /* The persistent structure we will save at zz->LB.Data_Structure */
 
@@ -108,9 +109,6 @@ int Zoltan_Matrix_Partition( ZZ *zz, float *part_sizes)
    */
 
   zzLib = Zoltan_Create(zz->Communicator);
-  sprintf(param_val, "%d", mpd->gidLen);
-  Zoltan_Set_Param(zzLib, "NUM_GID_ENTRIES", param_val);
-  Zoltan_Set_Param(zzLib, "NUM_LID_ENTRIES", "1");
   mpd->zzLib = zzLib;
 
   /* Call application defined query functions to get the non-zeros.
@@ -173,8 +171,8 @@ int Zoltan_Matrix_Partition( ZZ *zz, float *part_sizes)
    * Depending on how we are creating a hypergraph from the sparse matrix,
    * we may need to create the hypergraph now and write it to the fields
    * set up in mpd for that purpose.  The make_hypergraph() function is
-   * an example of this.  If the hypergraph is very simple,
-   * we don't need to do this.  The query functions we pass to Zoltan_PHG
+   * an example of this.  If the hypergraph is very simple, we don't
+   * need to do this, because query functions we pass to Zoltan_PHG
    * can read the hypergraph straight from the sparse matrix data.
    */
 
@@ -196,10 +194,22 @@ int Zoltan_Matrix_Partition( ZZ *zz, float *part_sizes)
     }
 
   /*
-   * Call Zoltan_PHG to partition the rows and columns (a.k.a. vertices)
-
-  ierr = Zoltan_PHG(zzLib, part_sizes, etc.);
+   * Call Zoltan_LB to partition the objects
    */
+
+  int changes, num_gid_entries, num_lid_entries, num_import, num_export;
+  unsigned int *import_global_ids, *import_local_ids;
+  unsigned int *export_global_ids, *export_local_ids;
+  int *import_to_part, *export_to_part;
+  int *import_procs, *export_procs;
+
+  ierr = Zoltan_LB_Partition(zzLib,
+           &changes, &num_gid_entries, &num_lid_entries, 
+           &num_import,
+           &import_global_ids, &import_local_ids, &import_procs, &import_to_part,
+           &num_export,
+           &export_global_ids, &export_local_ids, &export_procs, &export_to_part);
+
 
   /*
    * "Partition" the non-zeros that were returned by user in CSR or CSC in some
@@ -245,25 +255,6 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
   }
 }
 
-static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
-{
-  int ierr = ZOLTAN_OK;
-  Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", "HYPERGRAPH");
-  Zoltan_Set_Param(mpd->zzLib, "HYPERGRAPH_PACKAGE", "PHG");
-  Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
-  Zoltan_Set_Param(mpd->zzLib, "OBJ_WEIGHT_DIM", 0);
-  Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "PINS");
-  Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", 0);
-
-  Zoltan_Set_Num_Obj_Fn(mpd->zzLib, Zoltan_MP_Get_Num_Obj, mpd);
-  Zoltan_Set_Obj_List_Fn(mpd->zzLib, Zoltan_MP_Get_Objs, mpd);
-  Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Size_Matrix, mpd);
-  Zoltan_Set_HG_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Matrix, mpd);
-
-  ierr = make_mirror(mpd);
-
-  return ierr;
-}
 
 static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
@@ -373,6 +364,8 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 
   return ierr;
 }
+/* TODO - need to copy structure too.
+ */
 static ZOLTAN_MP_DATA *MP_Initialize_Structure()
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)ZOLTAN_CALLOC(sizeof(ZOLTAN_MP_DATA), 1);
@@ -385,8 +378,8 @@ static ZOLTAN_MP_DATA *MP_Initialize_Structure()
 }
 static int make_mirror(ZOLTAN_MP_DATA *mpd)
 {
-  ZOLTAN_ID_PTR objPtr, pinPtr;
   int ierr = ZOLTAN_OK;
+  int npins, nIDs;
 
   /*
    * If sparse matrix was supplied in CSC, create another in CSR format,
@@ -396,28 +389,25 @@ static int make_mirror(ZOLTAN_MP_DATA *mpd)
   ZOLTAN_FREE(&mpd->mirrorPinIndex);
   ZOLTAN_FREE(&mpd->mirrorPinGID);
 
-  mpd->numCR = mpd->numRC;
-  allocate_copy(&mpd->crGID, mpd->rcGID, mpd->numRC);
-  allocate_copy(&mpd->mirrorPinIndex, mpd->pinIndex, mpd->numRC+1);
-  allocate_copy(&mpd->mirrorPinGID, mpd->pinGID, mpd->pinIndex[mpd->numRC]);
+  nIDs = mpd->numRC;
+  npins = mpd->pinIndex[nIDs];
 
-  objPtr = (ZOLTAN_ID_PTR)mpd->crGID;
-  pinPtr = (ZOLTAN_ID_PTR)mpd->mirrorPinGID;
+  mpd->numCR = mpd->numRC;
+  allocate_copy(&mpd->crGID, mpd->pinGID, npins);
+  allocate_copy(&mpd->mirrorPinIndex, mpd->pinIndex, nIDs+1);
+  allocate_copy(&mpd->mirrorPinGID, mpd->rcGID, nIDs);
 
   /* TODO  Convert_to_CSR thinks some of these fields are ints
-   *         when IJTYPEs might not be ints.  FIX
+   *         when IJTYPEs might not be ints.  FIX, but OK for now.
+   *
    */
 
-  ierr = Zoltan_Convert_To_CSR(mpd->zzLib,    /* TODO test this */
-             mpd->pinIndex[mpd->numRC],  
-             (int *)mpd->pinIndex,
+  ierr = Zoltan_Convert_To_CSR(mpd->zzLib, npins, (int *)mpd->pinIndex,
+             /* The following get overwritten with mirror */
              (int *)&(mpd->numCR),
-             &objPtr,
-             (int **)&mpd->mirrorPinIndex,
-             &pinPtr);
-
-  mpd->crGID = (IJTYPE *)objPtr;
-  mpd->mirrorPinIndex = (IJTYPE *)pinPtr;
+             (ZOLTAN_ID_PTR *)&(mpd->mirrorPinGID),
+             (int **)&(mpd->mirrorPinIndex),
+             (ZOLTAN_ID_PTR *)&(mpd->crGID));
 
   return ierr;
 }
@@ -540,22 +530,65 @@ static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
 #endif
 /****************************************************************/
 /****************************************************************/
-/* Query functions that we supply to Zoltan_PHG
+/* Functions that support LB_APPROACH = PHG_ROWS or PHG_COLS
+ *
+ * The objects to be partitioned are the matrix rows or columns,
+ * and we are using Zoltan's PHG to do it.
+ *
+ * PHG_ROWS: the objects are the sparse matrix rows, and the
+ *  hyperedges are the columns of the sparse matrix.
+ *
+ * PHG_COLS: the objects are the sparse matrix columns, and
+ *  the hyperedges are the rows.
  */
 
+static int phg_rows_or_columns(ZZ *zz, ZOLTAN_MP_DATA *mpd)
+{
+  int ierr = ZOLTAN_OK;
+
+  Zoltan_Set_Param(mpd->zzLib, "NUM_GID_ENTRIES", "1");
+  Zoltan_Set_Param(mpd->zzLib, "NUM_LID_ENTRIES", "1");
+
+  Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", "HYPERGRAPH");
+  Zoltan_Set_Param(mpd->zzLib, "HYPERGRAPH_PACKAGE", "PHG");
+  Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(mpd->zzLib, "OBJ_WEIGHT_DIM", "0");
+  Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "PINS");
+  Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", "0");
+
+  Zoltan_Set_Num_Obj_Fn(mpd->zzLib, Zoltan_MP_Get_Num_Obj, mpd);
+  Zoltan_Set_Obj_List_Fn(mpd->zzLib, Zoltan_MP_Get_Objs, mpd);
+  Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Size_Matrix, mpd);
+  Zoltan_Set_HG_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Matrix, mpd);
+
+  ierr = make_mirror(mpd);
+
+  return ierr;
+}
 
 int Zoltan_MP_Get_Num_Obj(void *data, int *ierr)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  int nProcs, me, i;
   int numObj = 0;
   *ierr = ZOLTAN_OK;
 
-  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
-      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
-    numObj = mpd->numRC;
+  nProcs = mpd->zzLib->Num_Proc;
+  me = mpd->zzLib->Proc;
+
+  if (mpd->approach == PHG_ROWS){
+    for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
+      if (i % nProcs == me){
+        numObj++;
+      }
+    }
   }
   else{
-    numObj = mpd->numCR;
+    for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
+      if (i % nProcs == me){
+        numObj++;
+      }
+    }
   }
   return numObj;
 }
@@ -563,26 +596,34 @@ int Zoltan_MP_Get_Num_Obj(void *data, int *ierr)
 void Zoltan_MP_Get_Objs(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts, int *ierr)
 {
-  int i;
-  IJTYPE *objid;
+  int nProcs, me, nextID;
+  IJTYPE *objid, i;
   int *localid;
 
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
+
+  nProcs = mpd->zzLib->Num_Proc;
+  me = mpd->zzLib->Proc;
+
   objid = (IJTYPE *)gids;
   localid = (int *)lids;
+  nextID = 0;
 
-  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
-      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
-    for (i=0; i<mpd->numRC; i++){
-      objid[i] = mpd->rcGID[i];
-      localid[i] = i;
+  if (mpd->approach == PHG_ROWS){
+    for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
+      if (i % nProcs == me){
+        objid[i] =   i;
+        localid[i] = nextID++;
+      }
     }
   }
   else{
-    for (i=0; i<mpd->numCR; i++){
-      objid[i] = mpd->crGID[i];
-      localid[i] = i;
+    for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
+      if (i % nProcs == me){
+        objid[i] =   i;
+        localid[i] = nextID++;
+      }
     }
   }
 }
@@ -613,7 +654,7 @@ void Zoltan_MP_Get_Matrix(void *data, int num_gid_entries, int num_vtx_edge,
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
   IJTYPE *edgeGID = (IJTYPE *)vtxedge_GID;
-  IJTYPE *pinGID = (IJTYPE *)pinGID;
+  IJTYPE *pinGID = (IJTYPE *)pin_GID;
 
   if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
       ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
