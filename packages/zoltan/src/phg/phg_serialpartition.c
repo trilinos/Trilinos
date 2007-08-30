@@ -548,7 +548,7 @@ static int seq_part (
         cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
       }
     }
-    if (hgp->output_level >= PHG_DEBUG_ALL)
+    if (hgp->output_level >= PHG_DEBUG_PRINT)
       printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n", 
        i, j, part[j], part_sum, cutoff);
   }
@@ -757,7 +757,7 @@ static int greedy_grow_part (
 
     part_sum += hg->vwgt[vtx*vwgtdim];
     part[vtx] = 1;
-    if (hgp->output_level >= PHG_DEBUG_ALL)
+    if (hgp->output_level >= PHG_DEBUG_PRINT)
       printf("COARSE_PART vtx=%2d, part[%2d]=%2d, part_sum=%f\n",
               vtx,vtx,part[vtx],part_sum);
 
