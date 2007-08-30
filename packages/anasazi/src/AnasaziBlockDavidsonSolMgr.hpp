@@ -129,12 +129,14 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - Convergence parameters (if using default convergence test; see setGlobalStatusTest())
    *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
+   *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M" 
    *   - Locking parameters (if using default locking test; see setLockingStatusTest())
    *      - \c "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
    *      - \c "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
    *      - \c "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
    *      - \c "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
    *      - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
+   *      - \c "Locking Norm" - a \c string specifying the norm for locking testing: "2" or "M" 
    */
   BlockDavidsonSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
@@ -213,6 +215,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   int lockQuorum_;
   bool inSituRestart_;
   int numRestartBlocks_;
+  enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_, lockNorm_;
 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
@@ -249,6 +252,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
 
+  std::string strtmp;
+
   // which values to solve for
   whch_ = pl.get("Which",whch_);
   TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
@@ -256,6 +261,18 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   // convergence tolerance
   convtol_ = pl.get("Convergence Tolerance",convtol_);
   relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
+  strtmp = pl.get("Convergence Norm",std::string("2"));
+  if (strtmp == "2") {
+    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+  }
+  else if (strtmp == "M") {
+    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+  }
+  else {
+    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+        "Anasazi::BlockDavidsonSolMgr: Invalid Convergence Norm.");
+  }
+
   
   // locking tolerance
   useLocking_ = pl.get("Use Locking",useLocking_);
@@ -263,6 +280,17 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   // default: should be less than convtol_
   locktol_ = convtol_/10;
   locktol_ = pl.get("Locking Tolerance",locktol_);
+  strtmp = pl.get("Locking Norm",std::string("2"));
+  if (strtmp == "2") {
+    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+  }
+  else if (strtmp == "M") {
+    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+  }
+  else {
+    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+        "Anasazi::BlockDavidsonSolMgr: Invalid Locking Norm.");
+  }
 
   // maximum number of restarts
   maxRestarts_ = pl.get("Maximum Restarts",maxRestarts_);
@@ -353,7 +381,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // convergence
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convtest;
   if (globalTest_ == Teuchos::null) {
-    convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(convtol_,nev,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
+    convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(convtol_,nev,convNorm_,relconvtol_) );
   }
   else {
     convtest = globalTest_;
@@ -364,7 +392,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > locktest;
   if (useLocking_) {
     if (lockingTest_ == Teuchos::null) {
-      locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
+      locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,lockNorm_,rellocktol_) );
     }
     else {
       locktest = lockingTest_;
@@ -972,10 +1000,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
       }
     }
-    catch (std::exception e) {
-      printer->stream(Errors) << "Error! Caught exception in BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << std::endl 
-                              << e.what() << std::endl;
-      throw;
+    catch (AnasaziError err) {
+      printer->stream(Errors) 
+        << "Anasazi::BlockDavidsonSolMgr::solve() caught unexpected exception from Anasazi::BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << std::endl
+        << err.what() << std::endl
+        << "Anasazi::BlockDavidsonSolMgr::solve() returning Unconverged with no solutions." << std::endl;
+      return Unconverged;
     }
   }
 

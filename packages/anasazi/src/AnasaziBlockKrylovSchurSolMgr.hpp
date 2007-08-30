@@ -648,10 +648,12 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
         }
       }
-      catch (std::exception e) {
-        printer->stream(Errors) << "Error! Caught exception in BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << std::endl 
-                                << e.what() << std::endl;
-        throw;
+      catch (AnasaziError err) {
+        printer->stream(Errors) 
+          << "Anasazi::BlockKrylovSchurSolMgr::solve() caught unexpected exception from Anasazi::BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << std::endl
+          << err.what() << std::endl
+          << "Anasazi::BlockKrylovSchurSolMgr::solve() returning Unconverged with no solutions." << std::endl;
+        return Unconverged;
       }
     }
 
