@@ -48,6 +48,14 @@ static PARAM_VARS MP_params[] = {
 ** This source file uses the terms "pins" and "non-zeros" interchangeably.
 **
 ** An IJTYPE is the type of a row or column ID.
+**
+** LB_METHOD = SPARSE_MATRIX
+** LB_APPROACH:
+**    PHG_ROWS    use Zoltan's PHG to partition the rows (objects are
+**                rows, hyperedges are columns)
+**                
+**    PHG_COLS    use Zoltan's PHG to partition the columns (objects
+**                are columns, hyperedges are rows)
 *************************************************************************/
 struct vtx_node{
   IJTYPE vtxGID;
