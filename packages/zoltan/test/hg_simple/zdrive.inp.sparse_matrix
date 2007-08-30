@@ -1,0 +1,6 @@
+Decomposition Method 	= sparse_matrix
+Zoltan Parameters       = lb_approach=phg_rows
+#Zoltan Parameters       = lb_approach=phg_cols
+File Type		= matrixmarket+
+File Name		= simple
+Parallel Disk Info	= number=0
