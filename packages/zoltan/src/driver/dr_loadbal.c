@@ -51,6 +51,8 @@ static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 static void setup_fixed_obj(MESH_INFO_PTR mesh);
 
+extern int Zoltan_Matrix_Partition(struct Zoltan_Struct *zz);
+
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -93,12 +95,17 @@ ZOLTAN_HG_EDGE_WTS_FN get_hg_edge_weights;
 ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
 ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
 
+ZOLTAN_CSR_SIZE_FN get_sparse_matrix_size;
+ZOLTAN_CSC_SIZE_FN get_sparse_matrix_size;
+ZOLTAN_CSR_FN get_sparse_matrix;
+ZOLTAN_CSC_FN get_sparse_matrix;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
 int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
-                 MESH_INFO_PTR mesh)
+                 MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info)
 {
 /* Local declarations. */
   char *yo = "setup_zoltan";
@@ -487,6 +494,37 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
 
+  /* Functions for partitioning sparse matrices */
+
+  if (pio_info->init_dist_pins == INITIAL_ROW){
+    if (Zoltan_Set_Fn(zz, ZOLTAN_CSR_SIZE_FN_TYPE,
+                      (void (*)()) get_sparse_matrix_size,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if (Zoltan_Set_Fn(zz, ZOLTAN_CSR_FN_TYPE,
+                      (void (*)()) get_sparse_matrix,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  }
+  else{
+    if (Zoltan_Set_Fn(zz, ZOLTAN_CSC_SIZE_FN_TYPE,
+                      (void (*)()) get_sparse_matrix_size,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if (Zoltan_Set_Fn(zz, ZOLTAN_CSC_FN_TYPE,
+                      (void (*)()) get_sparse_matrix,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  }
+
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
@@ -562,6 +600,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
+
     ierr = Zoltan_LB_Partition(zz, &new_decomp, 
                  &num_gid_entries, &num_lid_entries,
                  &num_imported, &import_gids,
@@ -836,6 +875,86 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       safe_free((void **) &lids);
   }
 
+  
+  DEBUG_TRACE_END(Proc, yo);
+  return 1;
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz, 
+               int Proc, PROB_INFO_PTR prob,
+               MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info)
+{
+/* Local declarations. */
+  char *yo = "run_zoltan_sparse_matrix";
+  int ierr=ZOLTAN_OK;
+  double stime = 0.0, mytime = 0.0, maxtime = 0.0;
+
+/***************************** BEGIN EXECUTION ******************************/
+
+  DEBUG_TRACE_START(Proc, yo);
+
+  if (Driver_Action & 1){
+
+    /* Load balancing part */
+  
+    /*
+     * Call Zoltan
+     */
+#ifdef TIMER_CALLBACKS
+    Timer_Callback_Time = 0.0;
+#endif /* TIMER_CALLBACKS */
+
+    MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
+    stime = MPI_Wtime();
+
+    ierr = Zoltan_Matrix_Partition(zz);
+
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
+      return 0;
+    }
+
+    mytime = MPI_Wtime() - stime;
+    MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (Proc == 0)
+      printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
+    Total_Partition_Time += maxtime;
+
+#ifdef TIMER_CALLBACKS
+    MPI_Allreduce(&Timer_Callback_Time, &Timer_Global_Callback_Time, 
+                   1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (Proc == 0)
+      printf("DRIVER:  Callback time = %g\n", Timer_Global_Callback_Time);
+#endif /* TIMER_CALLBACKS */
+
+
+    /* We will have some queries to follow up partitioning.  Not written yet.
+     */
+
+    }
+
+#if 0
+    /*
+     * Test copy function TODO - copy ZOLTAN_MP_DATA structure
+     */
+    zz_copy = Zoltan_Copy(zz);
+    if (zz_copy == NULL){
+        Gen_Error(0, "fatal:  Zoltan_Copy failure\n");
+        return 0;
+    }
+    if (Zoltan_Copy_To(zz, zz_copy)){
+        Gen_Error(0, "fatal:  Zoltan_Copy_To failure\n");
+        return 0;
+    }
+
+    Zoltan_Destroy(&zz_copy);
+#endif
+
+  /* TODO - evaluate balance - can't use Zoltan_LB_Eval because we
+   * don't require sparse_matrix app to define those queries.
+   */
   
   DEBUG_TRACE_END(Proc, yo);
   return 1;
@@ -1696,6 +1815,79 @@ void get_hg_size_edge_weights(
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+void get_sparse_matrix_size(
+  void *data,
+  unsigned int *numrc,
+  unsigned int *numnz,
+  int *ierr)
+{
+  MESH_INFO_PTR mesh;
+
+  START_CALLBACK_TIMER;
+  *ierr = ZOLTAN_OK;
+
+  mesh = (MESH_INFO_PTR) data;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  *numrc = mesh->nhedges;
+  *numnz = mesh->hindex[mesh->nhedges];
+ 
+End:
+
+  STOP_CALLBACK_TIMER;
+} 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_sparse_matrix(
+  void *data,
+  unsigned int numrc,
+  unsigned int numnz,
+  unsigned int *rc_gids,
+  unsigned int *cr_index,
+  unsigned int *cr_gids,
+  int *ierr)
+{
+  MESH_INFO_PTR mesh;
+  int i, numIDs;
+
+  START_CALLBACK_TIMER;
+  *ierr = ZOLTAN_OK;
+
+  mesh = (MESH_INFO_PTR) data;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  numIDs = mesh->nhedges;
+
+  if ((numrc != numIDs) || (numnz != mesh->hindex[numIDs])){
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  /* we could use memcpy's , but maybe someday these won't
+   * be the same objects.
+   */
+  for (i=0; i<numIDs; i++){
+    rc_gids[i] = mesh->hgid[i];
+    cr_index[i] = mesh->hindex[i];
+  }
+  for (i=0; i<numnz; i++){
+    cr_gids[i] = mesh->hvertex[i];
+  }
+    
+End:
+
+  STOP_CALLBACK_TIMER;
+} 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 void get_hg_compressed_pin_storage(
   void *data,
   int num_gid_entries,
@@ -1738,20 +1930,20 @@ void get_hg_compressed_pin_storage(
     }
     *edg_GID++ = mesh->hgid[i];
   }
-    
+
   for (i=0; i<npins; i++){
     for (k=0; k<gid; k++){
       *vtx_GID++ = 0;
     }
     *vtx_GID++ = mesh->hvertex[i];
   }
-    
+
   memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
- 
+
 End:
 
   STOP_CALLBACK_TIMER;
-} 
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  if (!setup_zoltan(zz, Proc, &prob, &mesh)) {
+  if (!setup_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
     error_report(Proc);
     print_output = 0;
@@ -301,12 +301,22 @@ int main(int argc, char *argv[])
      * now run Zoltan to get a new load balance and perform
      * the migration
      */
-
-    if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
-      Gen_Error(0, "fatal: Error returned from run_zoltan\n");
-      error_report(Proc);
-      print_output = 0;
-      goto End;
+  
+    if (!strcasecmp(prob.method, "SPARSE_MATRIX")){
+      if (!run_zoltan_sparse_matrix(zz, Proc, &prob, &mesh, &pio_info)) {
+        Gen_Error(0, "fatal: Error returned from run_zoltan_sparse_matrix\n");
+        error_report(Proc);
+        print_output = 0;
+        goto End;
+      }
+    }
+    else{
+      if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
+        Gen_Error(0, "fatal: Error returned from run_zoltan\n");
+        error_report(Proc);
+        print_output = 0;
+        goto End;
+      }
     }
 
     /* Reset the mesh data structure for next iteration. */
