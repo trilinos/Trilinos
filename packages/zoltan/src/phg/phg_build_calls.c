@@ -314,6 +314,7 @@ End:
   *vtx_GID = pins;
   ZOLTAN_FREE(edg_GID);
   *edg_GID = edges;
+  ZOLTAN_FREE(row_ptr);
   *row_ptr = vIdx;
 
   ZOLTAN_TRACE_EXIT(zz, yo);
