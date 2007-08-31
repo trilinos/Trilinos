@@ -11,10 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __ZOLTAN_MATRIX_INPUT
-#define __ZOLTAN_MATRIX_INPUT
-
-/* TODO: check all the time whether mpd->numRC is zero before proceeding */
+#ifndef __ZOLTAN_MATRIX_PARTITION
+#define __ZOLTAN_MATRIX_PARTITION
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -31,11 +29,12 @@ extern "C" {
 /*******************/
 #include "zz_util_const.h"
 
-ZOLTAN_NUM_OBJ_FN Zoltan_MP_Get_Num_Obj;
-ZOLTAN_OBJ_LIST_FN Zoltan_MP_Get_Obj_List;
-ZOLTAN_HG_SIZE_CS_FN Zoltan_MP_Get_Size_Matrix;
-ZOLTAN_HG_CS_FN Zoltan_MP_Get_Matrix;
+/* Query functions set up by Zoltan_Matrix_Partition for the
+ * Zoltan library
+ */
 
+/* Parameters for Zoltan method SPARSE_MATRIX
+ */
 static PARAM_VARS MP_params[] = {
   {"LB_APPROACH",         NULL,  "STRING",     0},
   {"NUM_GID_ENTRIES",     NULL,  "INT",     0},
@@ -64,31 +63,16 @@ static PARAM_VARS MP_params[] = {
 **    PHG_COLS    use Zoltan's PHG to partition the columns (objects
 **                are columns, hyperedges are rows)
 **
-** To find the code that must be added if you add a new approach,
-** search for "LB_APPROACH" in this source file.
+** If you want to add a new approach to Zoltan_Matrix_Partition, you
+** need to write functions analygous to the 5 functions written
+** for the PHG_ROWS and PHG_COLS approaches: phg_rc_setup, phg_rc_results,
+** phg_rc_get_pins, phg_rc_get_rows, and phg_rc_get_columns.
+**
 *************************************************************************/
-struct vtx_node{
-  IJTYPE vtxGID;
-  int    vtxLID;
-  struct vtx_node *next;
-};
-typedef struct _vtx_lookup{
-  struct vtx_node *htTop;
-  struct vtx_node **ht;
-  IJTYPE table_size;
-  int    numVtx;
-  int    idLength;
-}vtx_lookup;
 
-#if 0
-static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
-        IJTYPE *ids1, IJTYPE *ids2, IJTYPE len1, IJTYPE len2);
-static void free_vtx_lookup_table(vtx_lookup **vl);
-static int lookup_vtx(vtx_lookup *vl, IJTYPE vtx_id);
-
-static int make_hypergraph(ZZ *zz, ZOLTAN_MP_DATA *mpd);
-#endif
-
+/*
+ * General matrix partition functions
+ */
 static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 static int make_mirror(ZOLTAN_MP_DATA *mpd);
 static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len);
@@ -96,11 +80,31 @@ static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len);
 static ZOLTAN_MP_DATA *MP_Initialize_Structure();
 static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 
-static int phg_rows_or_columns(ZOLTAN_MP_DATA *mpd);
-static int phg_rows_or_columns_result(ZOLTAN_MP_DATA *mpd,
+/*
+ * Functions specifically to process approaches PHG_ROWS and PHG_COLUMNS
+ */
+static int phg_rc_setup(ZOLTAN_MP_DATA *mpd);
+static int phg_rc_result(ZOLTAN_MP_DATA *mpd,
   int num_export,
   unsigned int *export_global_ids, unsigned int *export_local_ids, 
-  unsigned int *export_procs, unsigned int *export_to_part);
+  int *export_procs, int *export_to_part);
+static int phg_rc_get_pins(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
+static int phg_rc_get_rows(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nRows, IJTYPE *rowIDs, int *rowProcs, int *rowParts);
+static int phg_rc_get_columns(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nCols, IJTYPE *colIDs, int *colProcs, int *colParts);
+
+/*
+ * Functions to create a search structure to locate rows, columns
+ * or non-zeros in the ZOLTAN_MP_DATA structure.  To support
+ * sparse matrix queries that can be called when Zoltan_Matrix_Partition
+ * has completed.  The lookup function Zoltan_Lookup_Obj is global.
+ */
+static void free_obj_lookup_table(obj_lookup **lu);
+static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs);
+static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
+                   IJTYPE *listI, IJTYPE *indexJ, IJTYPE *listJ);
 
 /****************************************************************/
 /****************************************************************/
@@ -110,14 +114,96 @@ static int phg_rows_or_columns_result(ZOLTAN_MP_DATA *mpd,
  *
  *  Queries (not all queries are defined for all LB_APPROACH):
  *
- *  Zoltan_MP_Get_Local_Rows()   assignment of rows of my non-zeroes
- *  Zoltan_MP_Get_Local_Cols()  assignment of columns of my non-zeroes
- *  Zoltan_MP_Get_Local_NZ()      assignment of my non-zeroes
+ *  Zoltan_MP_Get_Row_Assignment()
+ *  Zoltan_MP_Get_Column_Assignment()
+ *  Zoltan_MP_Get_NonZero_Assignment()
  *
  *  To evaluate partitioning:
  *
  *  Zoltan_Matrix_Partition_Eval()   must be called by all procs
  */
+
+int Zoltan_MP_Get_Row_Assignment(ZZ *zz, int nRows, IJTYPE *rowIDs,
+        int *rowProcs, int *rowParts)
+{
+  char *yo = "Zoltan_MP_Get_Row_Assignment";
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
+  int ierr = ZOLTAN_FATAL;
+
+  /*
+   * Row assignment depends on the LB_APPROACH.  We can only
+   * return row assignments for rows that this process gave us
+   * non-zeroes for.
+   */
+
+  if (mpd){
+    switch (mpd->approach)
+    {
+      case PHG_ROWS:
+      case PHG_COLUMNS:
+        ierr = phg_rc_get_rows(mpd, nRows, rowIDs, rowProcs, rowParts);
+        break;
+      default:
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
+    }
+  }
+
+  return ierr;
+}
+int Zoltan_MP_Get_Column_Assignment(ZZ *zz, int nCols, IJTYPE *colIDs,
+        int *colProcs, int *colParts)
+{
+  char *yo = "Zoltan_MP_Get_Column_Assignment";
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
+  int ierr = ZOLTAN_FATAL;
+
+  /*
+   * Column assignment depends on the LB_APPROACH.  We can only
+   * return column assignments for columns that this process gave us
+   * non-zeroes for.
+   */
+
+  if (mpd){
+    switch (mpd->approach)
+    {
+      case PHG_ROWS:
+      case PHG_COLUMNS:
+        ierr = phg_rc_get_columns(mpd, nCols, colIDs, colProcs, colParts);
+        break;
+      default:
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
+    }
+  }
+
+  return ierr;
+}
+int Zoltan_MP_Get_NonZero_Assignment(ZZ *zz, int nNZ, 
+        IJTYPE *rowIDs, IJTYPE *colIDs, int *nzProcs, int *nzParts)
+{
+  char *yo = "Zoltan_MP_Get_NonZero_Assignment";
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
+  int ierr = ZOLTAN_FATAL;
+
+  /*
+   * Nonzero assignment depends on the LB_APPROACH.  We can only
+   * return nonzero assignments for nonzeroes that were returned
+   * by this process in the query functions.
+   */
+
+  if (mpd){
+    switch (mpd->approach)
+    {
+      case PHG_ROWS:
+      case PHG_COLUMNS:
+        ierr = phg_rc_get_pins(mpd, nNZ, rowIDs, colIDs, nzProcs, nzParts);
+        break;
+      default:
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
+    }
+  }
+
+  return ierr;
+}
 int Zoltan_Matrix_Partition(ZZ *zz)
 {
   char *yo = "Zoltan_Matrix_Partition";
@@ -133,6 +219,12 @@ int Zoltan_Matrix_Partition(ZZ *zz)
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
+
+  if (zz->LB.Data_Structure){
+    
+    zz->LB.Free_Structure(zz);
+  }
+  zz->LB.Data_Structure = mpd;
 
   /* Process parameters, write to mpd.  */
 
@@ -214,7 +306,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
     {
       case PHG_ROWS:
       case PHG_COLUMNS:
-        phg_rows_or_columns(mpd);
+        phg_rc_setup(mpd);
         break;
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
@@ -253,10 +345,10 @@ int Zoltan_Matrix_Partition(ZZ *zz)
          * in my non-zeroes.  Each of my non-zeroes is assigned to
          * the row or column that it's row or column is assigned to.
          *
-         * PHG_ROWS - we don't repond to Local_Cols query.
-         * PHG_COLUMNS - we don't repond to Local_Rows query.
+         * PHG_ROWS - we only give row and nonzero assignments
+         * PHG_COLUMNS - we only give column and nonzero assignments
          */
-        phg_rows_or_columns_result(mpd, num_export,
+        phg_rc_result(mpd, num_export,
             export_global_ids, export_local_ids, export_procs, export_to_part);
         break;
       default:
@@ -295,6 +387,17 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
     ZOLTAN_FREE(&mpd->vtxWgt);
     ZOLTAN_FREE(&mpd->hindex);
     ZOLTAN_FREE(&mpd->hvertex);
+
+    ZOLTAN_FREE(&mpd->rowproc);
+    ZOLTAN_FREE(&mpd->rowpart);
+    ZOLTAN_FREE(&mpd->colproc);
+    ZOLTAN_FREE(&mpd->colpart);
+    ZOLTAN_FREE(&mpd->pinproc);
+    ZOLTAN_FREE(&mpd->pinpart);
+
+    free_obj_lookup_table(&mpd->row_lookup);
+    free_obj_lookup_table(&mpd->col_lookup);
+    free_obj_lookup_table(&mpd->pin_lookup);
 
     Zoltan_Destroy(&(mpd->zzLib));  /* we created this PHG problem */
 
@@ -421,7 +524,8 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
  */
 static ZOLTAN_MP_DATA *MP_Initialize_Structure()
 {
-  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)ZOLTAN_CALLOC(sizeof(ZOLTAN_MP_DATA), 1);
+  ZOLTAN_MP_DATA *mpd = 
+    (ZOLTAN_MP_DATA *)ZOLTAN_CALLOC(sizeof(ZOLTAN_MP_DATA), 1);
 
   if (mpd == NULL){
     return NULL;
@@ -470,16 +574,15 @@ static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len)
   memcpy(*to, from, sizeof(IJTYPE) * len);
   return ZOLTAN_OK;
 }
-
-
 /****************************************************************/
 /****************************************************************/
-/* A search structure and routines for finding a vertex ID      
+/* Functions to support a hash table mapping global IDs to local
+ * IDs, which are indices into an array.  The global ID can be
+ * a single IJTYPE or an IJTYPE pair.
  */
-#if 0
-static void free_vtx_lookup_table(vtx_lookup **lu)
+static void free_obj_lookup_table(obj_lookup **lu)
 {
-  vtx_lookup *l = *lu;
+  obj_lookup *l = *lu;
 
   if (l == NULL) return;
 
@@ -487,100 +590,145 @@ static void free_vtx_lookup_table(vtx_lookup **lu)
   ZOLTAN_FREE(&l->ht);
   ZOLTAN_FREE(lu);
 }
-
 /*
- * Look up array index (local id) for vertex global ID
+ * Look up array index for global ID or for (i,j) pair.
+ * This is a global function, in case other parts of Zoltan
+ * library want to use the lookup tables.
  */
-static int lookup_vtx(vtx_lookup *lu, IJTYPE vtxGID)
+int Zoltan_Lookup_Obj(obj_lookup *lu, IJTYPE I, IJTYPE J)
 {
-  char *yo="lookup_vtx";
-  struct vtx_node *hn;
-  int i, num_id_entries;
+  struct obj_node *hn;
+  unsigned int hashVal;
+  ZOLTAN_ID_TYPE ids[2];
 
-  if (lu->table_size < 1) return -1;
-  if (lu->numVtx < 1) return -1;
+  ids[0] = I;
+  if (lu->key_size > 1) ids[1] = J;
 
-  if (num_id_entries < 1){
-    ZOLTAN_PRINT_ERROR(0, yo, "code rewrite required.\n");
-    exit(0);  /* this should not happen, but just in case... */
-  }
+  hashVal = Zoltan_Hash(ids, lu->key_size, lu->table_size);
 
-  i = Zoltan_Hash((ZOLTAN_ID_PTR)vtxGID, lu->idLength, (unsigned int) lu->table_size);
-
-  for (hn=lu->ht[i]; hn != NULL; hn = hn->next){
-    if (hn->vtxGID == vtxGID){
-      return hn->vtxLID;
+  for (hn=lu->ht[hashVal]; hn != NULL; hn = hn->next){
+    if (hn->i == I){
+      if ((lu->key_size == 1) || (hn->j == J)){
+        return hn->objLID;
+      }
     }
   }
   return -1;
 }
-
 /*
- * Given two lists of vertex ids, map them to local ids (array indices).  The
- * ids in a list may be repeated, the ids in each list are disjoint sets.
- * Create a lookup table.
- */
-static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
-          IJTYPE *ids1, IJTYPE *ids2, IJTYPE len1, IJTYPE len2)
+** Create a hash table mapping the list of GIDs in objGIDs to their
+** array index in the objGIDs list.  GIDs in objGIDs are unique.
+*/
+static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs)
 {
-  int i, ii, j;
-  struct vtx_node *hn;
-  vtx_lookup *lu = NULL;
-  IJTYPE tsize, numids, len, found;
-  IJTYPE *ids;
+  IJTYPE i;
+  unsigned int hashVal;
+  struct obj_node *hn;
+  obj_lookup *lu = NULL;
+  int size_id;
 
-  lu = (vtx_lookup *)ZOLTAN_MALLOC(sizeof(vtx_lookup));
+  lu = (obj_lookup *)ZOLTAN_MALLOC(sizeof(obj_lookup));
   if (!lu){
     return NULL;
   }
 
-  lu->idLength = mpd->gidLen;
-  numids = len1 + len2;
-  tsize = numids / 4;
-  if (tsize < 10) tsize = 10;
+  lu->key_size = 1;
+  lu->table_size = numObjs / 4;
+  if (lu->table_size < 4) lu->table_size = 4;
 
-  lu->ht = (struct vtx_node **)ZOLTAN_CALLOC(sizeof(struct vtx_node*) , tsize);
-  hn = lu->htTop = (struct vtx_node *)ZOLTAN_MALLOC(sizeof(struct vtx_node) * numids);
+  lu->ht = 
+  (struct obj_node **)ZOLTAN_CALLOC(sizeof(struct obj_node*) , lu->table_size);
 
-  if (tsize && (!lu->htTop || !lu->ht)){
+  hn = lu->htTop = 
+  (struct obj_node *)ZOLTAN_MALLOC(sizeof(struct obj_node) * numObjs);
+
+  if (lu->table_size && (!lu->htTop || !lu->ht)){
     ZOLTAN_FREE(&lu);
     ZOLTAN_FREE(&lu->htTop);
     ZOLTAN_FREE(&lu->ht);
     return NULL;
   }
 
-  lu->table_size = tsize;
-  lu->numVtx = 0;
+  size_id = sizeof(IJTYPE) / sizeof(ZOLTAN_ID_TYPE);
+  if (size_id < 1) size_id = 1;
 
-  for (ii=0; ii<2; ii++){
-    ids = ((ii) ? ids2 : ids1);
-    len = ((ii) ? len2 : len1);
-    for (i=0; i<len; i++){
-  
-      found = lookup_vtx(lu, ids[i]);
-  
-      if (found >= 0) continue;
-  
-      hn->vtxGID = ids[i];
-      hn->vtxLID = lu->numVtx;
+  for (i=0; i<numObjs; i++){
 
-      j = Zoltan_Hash((ZOLTAN_ID_PTR)(ids+i), mpd->gidLen, tsize);
-  
-      hn->next = lu->ht[j];
-      lu->ht[j] = hn;
-  
-      hn++;
-      lu->numVtx++;
-    }
-  }
+    hn->i = objGIDs[i];
+    hn->j = 0;
+    hn->objLID = i;
 
-  if (lu->numVtx < numids){
-    lu->htTop = (struct vtx_node *)ZOLTAN_REALLOC(lu->htTop, sizeof(struct vtx_node) * lu->numVtx);
+    hashVal = Zoltan_Hash((ZOLTAN_ID_PTR)&objGIDs[i], size_id, lu->table_size);
+
+    hn->next = lu->ht[hashVal];
+    lu->ht[hashVal] = hn;
+
+    hn++;
   }
 
   return lu;
 }
-#endif
+/*
+** Create a hash table mapping the (I,J) pairs to their location in
+** listJ.  IDs in listI are unique.  Number of pairs is sizeJ.
+*/
+static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
+                   IJTYPE *listI, IJTYPE *indexJ, IJTYPE *listJ)
+{
+  IJTYPE i, j;
+  unsigned int hashVal;
+  struct obj_node *hn;
+  obj_lookup *lu = NULL;
+  ZOLTAN_ID_TYPE ids[2];
+
+  if (sizeof(IJTYPE) > sizeof(ZOLTAN_ID_TYPE)){
+    ZOLTAN_PRINT_ERROR(0, "create_obj_lookup_table2", 
+                       "code rewrite required.\n");
+    exit(1);
+  }
+
+  lu = (obj_lookup *)ZOLTAN_MALLOC(sizeof(obj_lookup));
+  if (!lu){
+    return NULL;
+  }
+
+  lu->key_size = 2;
+  lu->table_size = sizeJ / 4;
+  if (lu->table_size < 4) lu->table_size = 4;
+
+  lu->ht = 
+  (struct obj_node **)ZOLTAN_CALLOC(sizeof(struct obj_node*) , lu->table_size);
+
+  hn = lu->htTop = 
+  (struct obj_node *)ZOLTAN_MALLOC(sizeof(struct obj_node) * sizeJ);
+
+  if (lu->table_size && (!lu->htTop || !lu->ht)){
+    ZOLTAN_FREE(&lu);
+    ZOLTAN_FREE(&lu->htTop);
+    ZOLTAN_FREE(&lu->ht);
+    return NULL;
+  }
+
+  for (i=0; i<sizeI; i++){
+    for (j = indexJ[i]; j < indexJ[i+1]; j++){
+      hn->i = listI[i];
+      hn->j = listJ[j];
+      hn->objLID = j;
+
+      ids[0] = listI[i];
+      ids[1] = listJ[j];
+
+      hashVal = Zoltan_Hash(ids, 2, lu->table_size);
+
+      hn->next = lu->ht[hashVal];
+      lu->ht[hashVal] = hn;
+
+      hn++;
+    }
+  }
+  return lu;
+}
+
 /****************************************************************/
 /****************************************************************/
 /* Functions that support LB_APPROACH = PHG_ROWS or PHG_COLS
@@ -595,52 +743,117 @@ static vtx_lookup *create_vtx_lookup_table(ZOLTAN_MP_DATA *mpd,
  *  the hyperedges are the rows.
  */
 
-static int my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
+ZOLTAN_NUM_OBJ_FN phg_rc_get_num_obj;
+ZOLTAN_OBJ_LIST_FN phg_rc_get_obj_list;
+ZOLTAN_HG_SIZE_CS_FN phg_rc_get_size_matrix;
+ZOLTAN_HG_CS_FN phg_rc_get_matrix;
+static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
+  unsigned int *gids, int *procs, int *parts,
+  IJTYPE nobj, IJTYPE *objList, int *objProcs, int *objParts);
+static int phg_rc_obj_to_proc(ZOLTAN_MP_DATA *mpd, IJTYPE objID);
+static int phg_rc_my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs);
+/*
+ *
+ */
+static int phg_rc_get_pins(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts)
 {
-  int nProcs, me;
-  IJTYPE i, n, *obj;
-  int ierr = ZOLTAN_OK;
-
-  nProcs = mpd->zzLib->Num_Proc;
-  me = mpd->zzLib->Proc;
-  n = 0;
-  obj=NULL;
-
   if (mpd->approach == PHG_ROWS){
-    for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
-      if (i % nProcs == me){
-        n++;
-      }
-    }
+    /* The pin belongs to the partition its row belongs to */
+    return phg_rc_get_rows(mpd, nPins, I, ijProcs, ijParts);
   }
   else{
-    for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
-      if (i % nProcs == me){
-        n++;
-      }
+    /* The pin belongs to the partition its column belongs to */
+    return phg_rc_get_columns(mpd, nPins, J, ijProcs, ijParts);
+  }
+}
+static int phg_rc_get_columns(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nCols, IJTYPE *colIDs, int *colProcs, int *colParts)
+{
+  int idx, i;
+  char *yo = "phg_rc_get_columns";
+  int nTotalCols = ((mpd->input_type == ROW_TYPE) ? mpd->numCR : mpd->numRC);
+
+  if (mpd->approach != PHG_COLUMNS){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
+     "chosen LB_APPROACH does not support obtaining column partitions\n");
+    return ZOLTAN_FATAL; 
+  }
+
+  for (i=0; i<nCols; i++){ 
+    idx = Zoltan_Lookup_Obj(mpd->col_lookup, colIDs[i], 0);
+    if ((idx < 0) || (idx >= nTotalCols)){
+      ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Unable to determine column partition\n");
+     return ZOLTAN_FATAL; 
+    }
+    colProcs[i] = mpd->colproc[idx];
+    colParts[i] = mpd->colpart[idx];
+  }
+  return ZOLTAN_OK;
+}
+static int phg_rc_get_rows(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nRows, IJTYPE *rowIDs, int *rowProcs, int *rowParts)
+{
+  int idx, i;
+  char *yo = "phg_rc_get_rows";
+  int nTotalRows = ((mpd->input_type == ROW_TYPE) ? mpd->numRC : mpd->numCR);
+
+  if (mpd->approach != PHG_ROWS){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
+     "chosen LB_APPROACH does not support obtaining row partitions\n");
+    return ZOLTAN_FATAL; 
+  }
+
+  for (i=0; i<nRows; i++){ 
+    idx = Zoltan_Lookup_Obj(mpd->row_lookup, rowIDs[i], 0);
+    if ((idx < 0) || (idx >= nTotalRows)){
+      ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Unable to determine row partition\n");
+     return ZOLTAN_FATAL; 
+    }
+    rowProcs[i] = mpd->rowproc[idx];
+    rowParts[i] = mpd->rowpart[idx];
+  }
+  return ZOLTAN_OK;
+}
+static int phg_rc_obj_to_proc(ZOLTAN_MP_DATA *mpd, IJTYPE objID)
+{
+  int nProcs = mpd->zzLib->Num_Proc;
+
+  return objID % nProcs;
+}
+static int phg_rc_my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
+{
+  IJTYPE i, nmyids=0, *obj=NULL;
+  IJTYPE baseid, lastid;
+  int ierr = ZOLTAN_OK;
+  int me = mpd->zzLib->Proc;
+
+  if (mpd->approach == PHG_ROWS){
+    baseid = mpd->rowBaseID;
+    lastid = mpd->rowBaseID +  mpd->nRows - 1;
+  }
+  else{
+    baseid = mpd->colBaseID;
+    lastid = mpd->colBaseID +  mpd->nCols - 1;
+  }
+
+  for (i=baseid; i<=lastid; i++){
+    if (phg_rc_obj_to_proc(mpd, i) == me){
+      nmyids++;
     }
   }
 
-  obj = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * n);
-  if (n && !obj){
+  obj = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * nmyids);
+  if (nmyids && !obj){
     ierr = ZOLTAN_MEMERR;
   }
   else{
     *objIDs = obj;
-    *nobj = n;
+    *nobj = nmyids;
 
-    if (mpd->approach == PHG_ROWS){
-      for (i=mpd->rowBaseID; i <mpd->rowBaseID + mpd->nRows; i++){
-        if (i % nProcs == me){
-          *obj++ = i;
-        }
-      }
-    }
-    else{
-      for (i=mpd->colBaseID; i <mpd->colBaseID + mpd->nCols; i++){
-        if (i % nProcs == me){
-          *obj++ = i;
-        }
+    for (i=baseid; i<=lastid; i++){
+      if (phg_rc_obj_to_proc(mpd, i) == me){
+        *obj++ = i;
       }
     }
   }
@@ -648,8 +861,9 @@ static int my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
   return ierr;
 }
 
-static int phg_rows_or_columns(ZOLTAN_MP_DATA *mpd)
+static int phg_rc_setup(ZOLTAN_MP_DATA *mpd)
 {
+  char *yo = "phg_rc_setup";
   int ierr = ZOLTAN_OK;
 
   Zoltan_Set_Param(mpd->zzLib, "NUM_GID_ENTRIES", "1");
@@ -662,21 +876,27 @@ static int phg_rows_or_columns(ZOLTAN_MP_DATA *mpd)
   Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "PINS");
   Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", "0");
 
-  Zoltan_Set_Num_Obj_Fn(mpd->zzLib, Zoltan_MP_Get_Num_Obj, mpd);
-  Zoltan_Set_Obj_List_Fn(mpd->zzLib, Zoltan_MP_Get_Obj_List, mpd);
-  Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Size_Matrix, mpd);
-  Zoltan_Set_HG_CS_Fn(mpd->zzLib, Zoltan_MP_Get_Matrix, mpd);
+  /* Request export list that has proc/part for every object */
+  Zoltan_Set_Param(mpd->zzLib, "RETURN_LISTS", "PARTITION");
+
+  Zoltan_Set_Num_Obj_Fn(mpd->zzLib, phg_rc_get_num_obj, mpd);
+  Zoltan_Set_Obj_List_Fn(mpd->zzLib, phg_rc_get_obj_list, mpd);
+  Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, phg_rc_get_size_matrix, mpd);
+  Zoltan_Set_HG_CS_Fn(mpd->zzLib, phg_rc_get_matrix, mpd);
 
   ierr = make_mirror(mpd);
 
-  if (ierr == ZOLTAN_OK){
-    ierr = my_objects(mpd, &mpd->nMyVtx, &mpd->vtxGID);
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "make_mirror error\n");
+  }
+  else{
+    ierr = phg_rc_my_objects(mpd, &mpd->nMyVtx, &mpd->vtxGID);
   }
 
   return ierr;
 }
 
-int Zoltan_MP_Get_Num_Obj(void *data, int *ierr)
+int phg_rc_get_num_obj(void *data, int *ierr)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
@@ -684,7 +904,7 @@ int Zoltan_MP_Get_Num_Obj(void *data, int *ierr)
   return mpd->nMyVtx;
 }
 
-void Zoltan_MP_Get_Obj_List(void *data, int num_gid_entries, int num_lid_entries,
+void phg_rc_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts, int *ierr)
 {
   IJTYPE i;
@@ -697,7 +917,7 @@ void Zoltan_MP_Get_Obj_List(void *data, int num_gid_entries, int num_lid_entries
   }
 }
 
-void Zoltan_MP_Get_Size_Matrix(void *data, int *num_lists, int *num_pins,
+void phg_rc_get_size_matrix(void *data, int *num_lists, int *num_pins,
   int *format, int *ierr)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
@@ -715,7 +935,7 @@ void Zoltan_MP_Get_Size_Matrix(void *data, int *num_lists, int *num_pins,
   *format = ZOLTAN_COMPRESSED_EDGE;
 }
 
-void Zoltan_MP_Get_Matrix(void *data, int num_gid_entries, int num_vtx_edge,
+void phg_rc_get_matrix(void *data, int num_gid_entries, int num_vtx_edge,
   int num_pins, int format, 
   ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr)
 {
@@ -746,291 +966,153 @@ void Zoltan_MP_Get_Matrix(void *data, int num_gid_entries, int num_vtx_edge,
   }
 }
 
-static int phg_rows_or_columns_result(ZOLTAN_MP_DATA *mpd,
+static int phg_rc_result(ZOLTAN_MP_DATA *mpd,
   int num_export,
   unsigned int *export_global_ids, unsigned int *export_local_ids, 
-  unsigned int *export_procs, unsigned int *export_to_part)
+  int *export_procs, int *export_to_part)
 {
-  char *yo = "phg_rows_or_columns_result";
+  char *yo = "phg_rc_result";
   int ierr = ZOLTAN_OK;
+  int *proclist=NULL, *partlist=NULL;
+  obj_lookup *lu=NULL;
+  IJTYPE nobj=0;
+  IJTYPE *objList=NULL;
 
-  return ierr;
-}
-
-
-/****************************************************************/
-/****************************************************************/
-/* Code to make a hypergraph out of sparse matrix by creating an
-   object from each row and column, and a hyperedge from each
-   row and column.  This code is not used currently.  The idea
-   is to partition both rows and columns where the objects are
-   the rows and columns themselves. 
-
-   This code is not tested.
-*/
-
-#if 0
-
-static IJTYPE vertex_GID(IJTYPE id, int rc, ZOLTAN_MP_DATA *mpd);
-static int object_owner(ZZ *zz, IJTYPE gid);
-static int send_recv_rows_columns(int rc, ZZ *zz, ZOLTAN_MP_DATA *mpd, int tag,
-  int numRC, IJTYPE *rcGID, IJTYPE *pinIndex, IJTYPE *pinGID,
-  int *nrecv, IJTYPE **recvIDs, IJTYPE **recvLen, IJTYPE **recvPins); 
-
-static int make_hypergraph(ZZ *zz, ZOLTAN_MP_DATA *mpd)
-{
-  int ierr = ZOLTAN_OK;
-  int i, j, k, lid, size_hvertex;
-  IJTYPE numIDs;
-  int nrecvA, nrecvB;
-  IJTYPE *recvIDsA=NULL, *recvIDsB=NULL;
-  IJTYPE *recvLenA=NULL, *recvLenB=NULL;
-  IJTYPE *recvPinsA=NULL, *recvPinsB=NULL;
-  IJTYPE *hesize=NULL;
-  IJTYPE *IDs, *pins, *nPins, *vptr;
-  vtx_lookup *lu_table=NULL;
-
-  /*
-   * The user has input a sparse input in CSC or CSR format.  Create the
-   * mirror CSR or CSC format.  
-   */
-  ierr = make_mirror(mpd);
-
-  if (ierr != ZOLTAN_OK){
-    return ierr;
-  }
-
-  /* Send rows and columns to owners, and convert row and column IDs
-   * to hypergraph vertex IDs.
-   */
-
-  ierr = send_recv_rows_columns(mpd->input_type, zz, mpd, 40000,
-      mpd->numRC, mpd->rcGID, mpd->pinIndex, mpd->pinGID,
-      &nrecvA, &recvIDsA, &recvLenA, &recvPinsA);
-
-  ierr = send_recv_rows_columns(
-    (mpd->input_type == ROW_TYPE ? COL_TYPE : ROW_TYPE), 
-    zz, mpd, 39000,
-    mpd->numCR, mpd->crGID, mpd->mirrorPinIndex, mpd->mirrorPinGID,
-    &nrecvB, &recvIDsB, &recvLenB, &recvPinsB);
-
-
- /* 
-  * Create local portion of hypergraph from all data just received. 
-  */ 
-
-  lu_table = create_vtx_lookup_table(mpd, recvIDsA, recvIDsB, nrecvA, nrecvB);
-
-  mpd->nHedges = mpd->nMyVtx = lu_table->numVtx;
-
-  mpd->vtxGID = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * mpd->nMyVtx);
-  mpd->hindex = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * (mpd->nMyVtx + 1));
-
-  /* count size of each hyperedge */
-
-  hesize = (IJTYPE *)ZOLTAN_CALLOC(sizeof(IJTYPE) , mpd->nHedges);
-
-  for (i=0; i<2; i++){
-    numIDs = (i ? nrecvB : nrecvA);
-    IDs = (i ? recvIDsB : recvIDsA);
-    nPins = (i ? recvLenB: recvLenA);
-    pins = (i ? recvPinsB : recvPinsA);
-
-    for (j=0; j < numIDs; j++){
-      lid = lookup_vtx(lu_table, IDs[j]);
-      hesize[lid] += nPins[j];  /* # pins I recv'd for this row or column */
+  if (mpd->approach == PHG_ROWS){
+    if (mpd->input_type == ROW_TYPE){
+      nobj = mpd->numRC;
+      objList = mpd->rcGID;
     }
-  }
-
-  for (i=0; i<mpd->nHedges; i++){
-    /* "+ 1" because vtx is also part of assoc. hyperedge */
-    mpd->hindex[i+1] = mpd->hindex[i] + hesize[i] + 1; 
-  }
-  size_hvertex = mpd->hindex[mpd->nHedges];
-
-  /* write out vertices in each hyperedge */
-
-  mpd->hvertex = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * size_hvertex);
-  memset(hesize, 0, sizeof(int) * mpd->nHedges);
-
-  for (i=0; i<2; i++){
-    numIDs = (i ? nrecvB : nrecvA);
-    IDs = (i ? recvIDsB : recvIDsA);
-    nPins = (i ? recvLenB: recvLenA);
-    pins = (i ? recvPinsB : recvPinsA);
-
-    for (j=0; j < numIDs; j++){
-      lid = lookup_vtx(lu_table, IDs[j]);
-      vptr = mpd->hvertex + mpd->hindex[lid] + hesize[lid];
-      if (hesize[lid] == 0){
-        *vptr++ = IDs[j];      /* vertex is part of its assoc. hyperedge */
-        hesize[lid] += 1;
-      }
-      for (k=0; k < nPins[j]; k++){
-        *vptr++ = *pins++;
-      }
-      hesize[lid] += nPins[j];
+    else{
+      nobj = mpd->numCR;
+      objList = mpd->rcGID;
     }
+    lu = mpd->row_lookup = create_obj_lookup_table(nobj, objList);
+    proclist = mpd->rowproc = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
+    partlist = mpd->rowpart = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
   }
-
-  /* Set vertex weight 
-   *    We'll use ADD_OBJ_WEIGHT for this, let zoltan calculate weight
-   *
-
-  mpd->vtxWgt = (double *)ZOLTAN_MALLOC(sizeof(double) * mpd->nMyVtx);
-  for (i=0; i<mpd->nMyVtx; i++){
-    mpd->vtxWgt[i] = (double)(mpd->hindex[i+1] - mpd->hindex[i]);
-  }
-   */
-
-  ZOLTAN_FREE(&hesize);
-  ZOLTAN_FREE(&recvIDsA);
-  ZOLTAN_FREE(&recvIDsB);
-  ZOLTAN_FREE(&recvLenA);
-  ZOLTAN_FREE(&recvLenB);
-  ZOLTAN_FREE(&recvPinsA);
-  ZOLTAN_FREE(&recvPinsB);
-
- /*
-  * TODO: can we free the input sparse matrix and/or mirror now, or
-  * do we need them to reply to queries.
-  */
-
-  /*
-   * Now set parameters and query functions
-   */
-
-  Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", "HYPERGRAPH"); 
-  Zoltan_Set_Param(mpd->zzLib, "HYPERGRAPH_PACKAGE", "PHG");
-  Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
-  Zoltan_Set_Param(mpd->zzLib, "RETURN_LISTS", "ALL");    /* not sure we need "all" */
-  Zoltan_Set_Param(mpd->zzLib, "OBJ_WEIGHT_DIM", "0"); 
-  Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", "0");
-  Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "pins");
-
-  return ierr;
-}
-
-static IJTYPE vertex_GID(IJTYPE id, int rc, ZOLTAN_MP_DATA *mpd)
-{
-  int vtxGID;
-  /*
-   * Each row and column of the sparse matrix will yield a vertex and
-   * hyperedge of the hypergraph.
-   */
-  if (rc == ROW_TYPE){       /* "id" is a row GID */
-    if ( (id >= mpd->rowBaseID) && (id < (mpd->rowBaseID + mpd->nRows))){
-      vtxGID = id - mpd->rowBaseID;
+  else{
+    if (mpd->input_type == ROW_TYPE){
+      nobj = mpd->numCR;
+      objList = mpd->crGID;
     }
-  }
-  else if (rc == COL_TYPE){  /* "id" is a column GID */
-    if ( (id >= mpd->colBaseID) && (id < (mpd->colBaseID + mpd->nCols))){
-      vtxGID = mpd->nRows + (id - mpd->colBaseID);
+    else{
+      nobj = mpd->numRC;
+      objList = mpd->rcGID;
     }
-  }
-  return vtxGID;
-}
-
-static int object_owner(ZZ *zz, IJTYPE gid)
-{
-  /* If there are many rows/cols with no pins, we may get
-   * some imbalance here.  If this is a problem, we need
-   * to do more work to determine what all the GIDs are
-   * and map them to consecutive global numbers.
-   */
-  int owner = gid % zz->Num_Proc;
-  return owner;
-}
-
-static int send_recv_rows_columns(int rc, ZZ *zz, ZOLTAN_MP_DATA *mpd, int tag,
-  int numRC, IJTYPE *rcGID, IJTYPE *pinIndex, IJTYPE *pinGID,           /* input */
-  int *nrecv, IJTYPE **recvIDs, IJTYPE **recvLen, IJTYPE **recvPins) /* output */
-{
-  int i;
-  IJTYPE vtxgid, len;
-  IJTYPE *ids;
-  int ierr = ZOLTAN_OK;
-  int *owner = NULL;
-  IJTYPE *numNonZeros = NULL;
-  ZOLTAN_COMM_OBJ *plan;
-
-  int cr = ((rc == ROW_TYPE) ? COL_TYPE : ROW_TYPE);
-
-  /*
-   * Each row and column of the input sparse matrix is a "vertex"
-   * in the hypergraph.  And each row and column is a hyperedge,
-   * it's vertices being the non-zeros in the row or column.  We
-   * send rows and columns to their owners.
-   */
-
-  owner = (int *)ZOLTAN_MALLOC(sizeof(int) * numRC);
-  numNonZeros = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numRC);
-
-  for (i=0; i<numRC; i++){
-    vtxgid = vertex_GID(rcGID[i], rc, mpd);
-    owner[i] = object_owner(zz, vtxgid);
-
-    numNonZeros[i] = pinIndex[i+1] - pinIndex[i];
+    lu = mpd->col_lookup = create_obj_lookup_table(nobj, objList);
+    proclist = mpd->colproc = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
+    partlist = mpd->colpart = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
   }
 
-  ierr = Zoltan_Comm_Create(&plan, numRC, owner, zz->Communicator, tag, (int *)&len);
-
-  /* Send row or column numbers to owners */
-
-  *nrecv = len;
-  *recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
-
-  ids = *recvIDs;
-
-  tag--;
-
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)rcGID, sizeof(IJTYPE), (char *)ids);
-
-  /* Convert input matrix row/column IDs to hg vertex IDs */
-  
-  for (i=0; i<len; i++){
-    ids[i] = vertex_GID(ids[i], rc, mpd);
+  if (nobj && (!lu || !proclist || !partlist)){
+    free_obj_lookup_table(&lu);
+    ZOLTAN_FREE(&proclist);
+    ZOLTAN_FREE(&partlist);
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Out of memory.\n");
+    ierr = ZOLTAN_MEMERR;
   }
-
-  /* Send number of non-zeros in row or column */
-
-  *recvLen = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
-
-  tag--;
-
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)numNonZeros, sizeof(IJTYPE), (char *)*recvLen);
-
-  /* Send pins in row or column */
-
-  tag--;
-
-  ierr = Zoltan_Comm_Resize(plan, (int *)numNonZeros, tag, (int *)&len);
-
-  *recvPins = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * len);
-  ids = *recvPins;
-
-  tag--;
-
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)pinGID, sizeof(IJTYPE), (char *)ids);
-
-  ierr = Zoltan_Comm_Destroy(&plan);
-
-  /* Convert input matrix row/column IDs to hg vertex IDs */
-  
-  for (i=0; i<len; i++){
-    ids[i] = vertex_GID(ids[i], cr, mpd);
+  else{
+    ierr = get_proc_part(mpd, num_export, 
+         export_global_ids, export_procs, export_to_part, 
+         nobj, objList, proclist, partlist);
   }
 
   return ierr;
 }
 
-#endif
+static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
+  unsigned int *gids, int *procs, int *parts,
+  IJTYPE nobj, IJTYPE *objList, int *objProcs, int *objParts)
+{
+  obj_lookup *myIDs=NULL;
+  ZOLTAN_COMM_OBJ *plan=NULL;
+  int *toProc=NULL, *outprocs=NULL, *outparts=NULL;
+  IJTYPE *idReqs=NULL;
+  int tag = 35000, nrecv=0, idx, i;
+  MPI_Comm comm = mpd->zzLib->Communicator;
+  int ierr = ZOLTAN_OK;
+
+  /*
+   * Create lookup table for my gids so I can reply to other procs.
+   */
+  myIDs = create_obj_lookup_table(num_export, gids);
+  if (myIDs == NULL){
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  /*
+   * Create a communication plan, requesting new proc/part for
+   * all IDs in my objList.
+   */
+  toProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
+  if (nobj && !toProc){
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+  for (i=0; i<nobj; i++){
+    toProc[i] = phg_rc_obj_to_proc(mpd, objList[i]);
+  }
+
+  ierr = Zoltan_Comm_Create(&plan, nobj, toProc, comm, tag, &nrecv);
+  if (ierr != ZOLTAN_OK) goto End;
+  /*
+   * Send list of obj IDs I need proc/part for, get list from others.
+   */
+  idReqs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * nrecv);
+  outprocs = (int *)ZOLTAN_MALLOC(sizeof(int) * nrecv);
+  outparts = (int *)ZOLTAN_MALLOC(sizeof(int) * nrecv);
+  if (nrecv && (!idReqs || outprocs || outparts)){
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+
+  ierr = Zoltan_Comm_Do(plan, --tag, (char *)objList, sizeof(IJTYPE),
+                        (char *)idReqs);
+  if (ierr != ZOLTAN_OK) goto End;
+
+  /*
+   * Create list of proc/part for all requests I received.
+   */
+  for (i=0; i<nrecv; i++){
+    idx = Zoltan_Lookup_Obj(myIDs, idReqs[i], 0);
+    if (idx == -1){
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+    outprocs[i] = procs[idx];
+    outparts[i] = parts[idx];
+  }
+
+  /*
+   * Send proc/parts to others and also get my requests.
+   */
+  ierr = Zoltan_Comm_Do_Reverse(plan, --tag, (char *)outprocs,
+             sizeof(unsigned int), NULL, (char *)objProcs);
+  if (ierr != ZOLTAN_OK) goto End;
+
+  ierr = Zoltan_Comm_Do_Reverse(plan, --tag, (char *)outparts,
+             sizeof(unsigned int), NULL, (char *)objParts);
+  if (ierr != ZOLTAN_OK) goto End;
+
+End:
+  Zoltan_Comm_Destroy(&plan); 
+  free_obj_lookup_table(&myIDs);
+  ZOLTAN_FREE(&toProc);
+  ZOLTAN_FREE(&idReqs);
+  ZOLTAN_FREE(&outprocs);
+  ZOLTAN_FREE(&outparts);
+
+  return ierr;
+}
 /****************************************************************/
 /****************************************************************/
 
-
+/****************************************************************/
+/****************************************************************/
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
 
-#endif   /* __ZOLTAN_MATRIX_INPUT */
+#endif   /* __ZOLTAN_MATRIX_PARTITION */

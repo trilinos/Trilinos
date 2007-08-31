@@ -203,11 +203,29 @@ typedef struct Zoltan_HGraph ZHG;
  *
  * If IJTYPE is changed, change the parameters of the
  * CSC and CSR query functions in zoltan.h and the User's Guide.
+ *
+ * This should be moved out of phg to somewhere more general.  The
+ * Zoltan algorithm used for the sparse matrix need not be PHG.
  ********************************************************************/
 
 typedef unsigned int IJTYPE; /* matrix row ID, column ID or matrix size */
 enum ObjectType {ROW_TYPE = 1, COL_TYPE = 2, NZ_TYPE = 3};
 enum PartitionType {PHG_ROWS, PHG_COLUMNS};
+
+struct obj_node{
+  IJTYPE i;
+  IJTYPE j;
+  IJTYPE objLID;
+  struct obj_node *next;
+};
+typedef struct _obj_lookup{
+  struct obj_node *htTop;
+  struct obj_node **ht;
+  IJTYPE table_size;
+  int    key_size;
+} obj_lookup;
+
+extern int Zoltan_Lookup_Obj(obj_lookup *lu, IJTYPE I, IJTYPE J);
 
 struct Zoltan_MP_Data_Struct{
   ZZ *zzLib;    /* Problem created by Zoltan_Matrix_Partition() */
@@ -247,6 +265,17 @@ struct Zoltan_MP_Data_Struct{
   IJTYPE nHedges;   /* number of hyperedges */
   IJTYPE *hindex;   /* index into list of pins for each h.e., last is npins */
   IJTYPE *hvertex;  /* vtx GID of pins in my hyperedges */
+
+  /* Results, to supply data to query functions */
+  int *rowproc;
+  int *rowpart;
+  obj_lookup *row_lookup;
+  int *colproc;
+  int *colpart;
+  obj_lookup *col_lookup;
+  int *pinproc;
+  int *pinpart;
+  obj_lookup *pin_lookup;
 };
 
 typedef struct Zoltan_MP_Data_Struct ZOLTAN_MP_DATA;
