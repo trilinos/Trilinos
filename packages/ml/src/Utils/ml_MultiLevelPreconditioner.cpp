@@ -216,17 +216,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     RowMatrix_ = NULL;
   }
   
-  // stick data in OutputList. Note that ApplicationTime_ does not include the
-  // time for the first application.
-
-  OutputList_.set("time: total", FirstApplicationTime_+ApplicationTime_);
-
-  OutputList_.set("time: first application", FirstApplicationTime_);
-
-  OutputList_.set("time: construction", ConstructionTime_);
-
-  OutputList_.set("number of applications", NumApplications_);
-
   int min[ML_MEM_SIZE], max[ML_MEM_SIZE], sum[ML_MEM_SIZE];
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) sum[i] = 0;
 
@@ -240,27 +229,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     Comm().SumAll(memory_,sum,ML_MEM_SIZE);
   }
   
-  if (verbose_ && NumApplications_) {
-
-    // print on screen
-    
-    ML_print_line("-",78);
-    double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-    std::cout << PrintMsg_ << "   ML time information                    total          avg" << std::endl << std::endl
-     << PrintMsg_ << "   1- Construction time             = " 
-         << std::setw(10) << ConstructionTime_ << "  "
-         << std::setw(10) << ConstructionTime_ / NumConstructions_ << " (s)" << std::endl;
-    std::cout << PrintMsg_ << "   2- Time for all applications     = " 
-         << std::setw(10) << ApplicationTime_ << "  "
-         << std::setw(10) << ApplicationTime_ / NumApplications_ << " (s)" << std::endl;
-    std::cout << PrintMsg_ << "      (w/o first application time)" << std::endl;
-    std::cout << PrintMsg_ << "   3- Time for first application(s) = " 
-         << std::setw(10) << FirstApplicationTime_ << "  " 
-         << std::setw(10) << FirstApplicationTime_ / NumConstructions_ << " (s)" << std::endl;
-    std::cout << PrintMsg_ << "   4- Total time required by ML so far is " 
-         << ConstructionTime_ + TotalTime << " (s)" << std::endl;
-    std::cout << PrintMsg_ << "      (constr + all applications)" << std::endl;
-  }
+  if (verbose_ && NumApplications_)
+    ReportTime();
 
   if (verbose_ && AnalyzeMemory_) {
     
@@ -687,8 +657,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if (List_.get("ML debug mode", false))
     ML_BreakForDebugger(*Comm_);
 
-  if (List_.get("ML print parameter list",false))
-    PrintList(0);
+  int ProcID;
+  if ((ProcID = List_.get("ML print input list",-2)) > -2) {
+    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
+  }
 
   // Validate Parameter List
   if(List_.get("ML validate parameter list",true)
@@ -785,7 +757,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #   endif
     exit(EXIT_FAILURE);
   }
-  // check whether output level was specified in XML input file
+  // check for options that might have been set in the output file
+  if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
+  if ((ProcID = List_.get("ML print input list",-2)) > -2)
+    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
   OutputLevel = List_.get("ML output", -47);  
   if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);
@@ -1750,8 +1725,11 @@ agg_->keep_P_tentative = 1;
   
   // print unused parameters
   if (List_.isParameter("print unused")) {
-    int ProcID = List_.get("print unused",-2);
+    ProcID = List_.get("print unused",-2);
     if ((Comm().MyPID() == ProcID || ProcID == -1) && verbose_) PrintUnused();
+  }
+  if ((ProcID = List_.get("ML print final list",-2)) > -2) {
+    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
   }
 
   // ===================================================================== //
@@ -1784,8 +1762,8 @@ agg_->keep_P_tentative = 1;
     ML_print_line("-",78);
 
   ConstructionTime_ += Time.ElapsedTime();
+  OutputList_.set("time: construction", ConstructionTime_);
   ++NumConstructions_;
-
  } 
  catch(...)
  {
@@ -1794,7 +1772,7 @@ agg_->keep_P_tentative = 1;
      fprintf(stderr,"ML failed to compute the multigrid preconditioner. The\n");
      fprintf(stderr,"most common problem is an incorrect  data type in ML's\n");
      fprintf(stderr,"parameter list (e.g. 'int' instead of 'bool').\n\n");
-     fprintf(stderr,"Note: List.set(\"ML print parameter list\",true) might help\nfigure out the bad one.\n");
+     fprintf(stderr,"Note: List.set(\"ML print input list\",X) might help\nfigure out the bad one on pid X.\n");
      fprintf(stderr,"*********************************************************\n\n");
    }
 
@@ -1924,7 +1902,9 @@ ReComputePreconditioner()
     ML_print_line("-",78);
 
   ConstructionTime_ += InitialTime.ElapsedTime();
+  OutputList_.set("time: construction", ConstructionTime_);
   ++NumConstructions_;
+  OutputList_.set("number of constructions", NumConstructions_);
 
  }
  catch(...)
@@ -2029,17 +2009,18 @@ void ML_Epetra::MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 
 // ============================================================================
 
-void ML_Epetra::MultiLevelPreconditioner::PrintList(int MyPID) 
+void ML_Epetra::MultiLevelPreconditioner::PrintList()
 {
-  if( Comm().MyPID() == MyPID ) {
-    std::cout << "+++++++++++++++++++++++++++++++++++" << std::endl;
-    std::cout << "++++ start of ML parameter list +++" << std::endl;
-    std::cout << "+++++++++++++++++++++++++++++++++++" << std::endl;
-    List_.print(std::cout);
-    std::cout << "-----------------------------------" << std::endl;
-    std::cout << "---- end of ML parameter list -----" << std::endl;
-    std::cout << "-----------------------------------" << std::endl;
-  }
+  using namespace std;
+  ML_print_line("+",78);
+  cout << "+++ Printing ML parameter list \"" << List_.name()
+       << "\" on pid " << Comm().MyPID() << endl;
+  ML_print_line("+",78);
+  List_.print(cout);
+  ML_print_line("-",49);
+  cout << "----------- end of ML parameter list ------------" << endl;
+  ML_print_line("-",49);
+  cout << endl;
 }
 
 // ============================================================================
@@ -2107,7 +2088,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
   
   return 0;
     
-}
+} //MLP::CreateLabel()
 
 // ============================================================================
 
@@ -2247,6 +2228,7 @@ ApplyInverse(const Epetra_MultiVector& X,
   if (FirstApplication_) {
     This->FirstApplication_ = false;
     This->FirstApplicationTime_ += t;
+    This->OutputList_.set("time: first application", This->FirstApplicationTime_);
     This->memory_[ML_MEM_PREC_FIRST] = after - before;
 #ifdef ML_MALLOC
     This->memory_[ML_MEM_PREC_FIRST_MALLOC] = before_malloc - after_malloc;
@@ -2258,12 +2240,14 @@ ApplyInverse(const Epetra_MultiVector& X,
     This->memory_[ML_MEM_PREC_OTHER_MALLOC] = before_malloc - after_malloc;
 #endif
     This->ApplicationTime_ += t;
+    This->OutputList_.set("time: total apply", This->FirstApplicationTime_+This->ApplicationTime_);
   }
   
   ++(This->NumApplications_);
+  This->OutputList_.set("number of applications", This->NumApplications_);
 
   return 0;
-}
+} //MLP::ApplyInverse
 
 // ============================================================================
 /*! Values for \c "coarse: type"
@@ -3506,5 +3490,43 @@ ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
 } //ModifyEpetraMatrixColMap()
 #endif
 
+// ============================================================================
+
+void ML_Epetra::MultiLevelPreconditioner::
+ReportTime()
+{
+  using namespace std;
+  ML_print_line("-",78);
+  double TotalTime = FirstApplicationTime_ + ApplicationTime_;
+  cout << PrintMsg_ << "   ML time information (seconds)          total          avg" << endl << endl
+   << PrintMsg_ << "   1- Construction                  = " 
+       << setw(10) << ConstructionTime_ << "  "
+       << setw(10) << ConstructionTime_ / NumConstructions_ << endl;
+  cout << PrintMsg_ << "   2- Preconditioner apply          = " 
+       << setw(10) << TotalTime << endl;
+  cout << PrintMsg_ << "     a- first application(s) only   = " 
+       << setw(10) << FirstApplicationTime_ << "  " 
+       << setw(10) << FirstApplicationTime_ / NumConstructions_
+       << endl;
+  cout << PrintMsg_ << "     b- remaining applications      = " 
+       << setw(10) << ApplicationTime_ << "  "
+       << setw(10) << ApplicationTime_ / NumApplications_ << endl;
+  cout << endl;
+  cout << PrintMsg_ << "   3- Total time required by ML so far is " 
+       << ConstructionTime_ + TotalTime << " seconds" << endl;
+  cout << PrintMsg_ << "      (constr + all applications)" << endl;
+} //MLP::ReportTime()
+
+// ============================================================================
+
+/*
+void ML_Epetra::MultiLevelPreconditioner::
+ResetTime()
+{
+  FirstApplicationTime_ = 0.0;
+  ApplicationTime_      = 0.0;
+  NumApplications_      = 0;
+} //MLP::ResetTime()
+*/
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */

@@ -377,8 +377,8 @@ public:
     return OutputList_;
   }
 
-  //! Prints on \c std::cout the values of the internally stored parameter list for processor \c MyPID
-  void PrintList(int MyPID);
+  //! Prints on \c std::cout the values of the internally stored parameter list
+  void PrintList();
 
   //! Copies \c List into the internally stored parameter list object.
   int SetParameterList(const Teuchos::ParameterList& List);
@@ -587,6 +587,8 @@ public:
       allocate/reallocate any memory.
   */
   int CreateLabel();
+
+  void ReportTime();
 
 //@}
 
