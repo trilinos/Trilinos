@@ -1309,8 +1309,17 @@ detailed output).  Default: 0.}
     will be printed on all processes. If -2, nothing will be printed. 
     Default: -2.}
 
-\choicebox{\tt ML print parameter list}{[{\tt int}] If true, will print all
-  parameters on processor 0.  Default: {\tt false}.}
+\choicebox{\tt ML print initial list}{[{\tt int}] If non-negative, will print all
+  parameters in the parameter list supplied to the constructor on the
+  specified processor. If $-1$, parameters will be printed on all processes.
+  If $-2$, nothing will be printed.  Default: $-2$.}
+
+\choicebox{\tt ML print final list}{[{\tt int}] If non-negative, will print all
+  parameters in the final list used by the constructor on the specified
+  processor.  (The constructor will add entries to the list.)
+  If $-1$, parameters will be printed on all processes. If $-2$,
+  nothing will be printed.  Default: $-2$.}
+
 
 %\smallskip
 
