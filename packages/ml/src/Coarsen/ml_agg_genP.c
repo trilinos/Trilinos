@@ -571,7 +571,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
       ml->spectral_radius[level] = 1.0;
       widget.omega  = 0.0;
       if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() )
-        printf("\nProlongator/Restriction smoother (level %d) : damping factor = 0.0\n\n", level );
+        printf("\nProlongator/Restriction smoother (level %d) : damping factor = 0.0\n", level );
 
    } /* if ( ag->smoothP_damping_factor != 0.0 ) */
 
@@ -586,6 +586,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        ML_AGG_Calculate_Smoothing_Factors(numSmSweeps, dampingFactors);
 
      if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+       printf("\n");
        for (ii=0; ii<numSmSweeps; ii++)
        {
          if (ag->minimizing_energy == -1)
@@ -596,7 +597,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
          }
          else
          {
-           printf("\nProlongator/Restriction smoother (level %d) : damping factor #%d = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n",
+           printf("Prolongator/Restriction smoother (level %d) : damping factor #%d = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n",
                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
                   dampingFactors[ii], max_eigen );
          }
