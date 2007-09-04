@@ -131,6 +131,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("SA default values");
   List.set("default values","SA");
   List.set("max levels",10);
   List.set("prec type","MGV");
@@ -189,6 +190,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("DD default values");
   List.set("default values","DD");
   List.set("max levels",2);
   List.set("prec type","MGV");
@@ -256,6 +258,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("DD-ML default values");
   List.set("default values","DD-ML");
 
   List.set("max levels",3);
@@ -327,6 +330,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("Maxwell default values");
   List.set("default values","maxwell");
   List.set("max levels",10);
   List.set("prec type","MGV");
@@ -391,6 +395,7 @@ int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("NSSA default values");
   List.set("default values","NSSA");
   List.set("max levels",10);
   List.set("prec type","MGW");
@@ -450,6 +455,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("DD-LU default values");
   List.set("default values","DD-LU");
   List.set("max levels",2);
   List.set("prec type","MGV");
@@ -520,6 +526,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
 {
   ParameterList List;
 
+  inList.setName("DD-ML-LU default values");
   List.set("default values","DD-ML-LU");
   List.set("max levels",3);
   List.set("prec type","MGV");
