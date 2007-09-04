@@ -472,6 +472,8 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
   
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     return NOX::Abstract::Group::Ok;
+  else if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED)
+    return NOX::Abstract::Group::NotConverged;
   
   return NOX::Abstract::Group::Failed;
 }
