@@ -136,11 +136,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   // Hiptmair-specific declarations
   string SubSmType,NodeSubSmType,EdgeSubSmType;
   int NodeSubSmIts = 1, EdgeSubSmIts = 1;
-  double EdgeSubSmLOF, NodeSubSmLOF;
-  int EdgeSubSmOverlap, NodeSubSmOverlap;
-  double EdgeSubSmOmega, NodeSubSmOmega, EdgeSubSmAlpha, NodeSubSmAlpha;
-  double EdgeSubSmRelThreshold, NodeSubSmRelThreshold;
-  double EdgeSubSmAbsThreshold, NodeSubSmAbsThreshold;
+  double EdgeSubSmLOF=0., NodeSubSmLOF=0.;
+  int EdgeSubSmOverlap=0, NodeSubSmOverlap=0;
+  double EdgeSubSmOmega=0., NodeSubSmOmega=0.,
+         EdgeSubSmAlpha=0., NodeSubSmAlpha=0.;
+  double EdgeSubSmRelThreshold=0., NodeSubSmRelThreshold=0.;
+  double EdgeSubSmAbsThreshold=0., NodeSubSmAbsThreshold=0.;
 
   if (SolvingMaxwell_ == true) {
     if (Comm().NumProc() == 1) EdgeSubSmOmega = 1.0;
@@ -706,7 +707,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       }
 
       char EdgeSmootherInfo[80], NodeSmootherInfo[80];
-      char *SmInfo;
+      char *SmInfo=0;
 
       int logical_level = LevelID_[level];
       void *edge_smoother = 0, *nodal_smoother = 0;
@@ -761,12 +762,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       enum nodeOrEdge {NODE, EDGE, DONE};
       for (enum nodeOrEdge ne=NODE; ne!= DONE; ne=nodeOrEdge(ne+1)) {
 
-        string *MySubSmType;
-        int *MySubSmIts, *MySubSmOverlap;
-        double MySubSmLOF,MySubSmRelThreshold,MySubSmAbsThreshold,
-               *MySubSmOmega, MySubSmAlpha;
-        Teuchos::ParameterList *ifpackList;
-        void **argList;
+        string *MySubSmType=0;
+        int *MySubSmIts=0, *MySubSmOverlap=0;
+        double MySubSmLOF=0.,MySubSmRelThreshold=0.,MySubSmAbsThreshold=0.,
+               *MySubSmOmega=0, MySubSmAlpha=0.;
+        Teuchos::ParameterList *ifpackList=0;
+        void **argList=0;
 
         switch(ne) {
           case NODE:
@@ -803,8 +804,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           // --------------------------------------
           // Chebyshev subsmoother
           // --------------------------------------
-          double *coarsening_rate;
-          int Nfine,Ncoarse;
+          double *coarsening_rate=0;
+          int Nfine=0,Ncoarse=0;
           if (ne == EDGE) {
             edge_smoother=(void *) ML_Gen_Smoother_Cheby;
             edge_args_ = ML_Smoother_Arglist_Create(2);
