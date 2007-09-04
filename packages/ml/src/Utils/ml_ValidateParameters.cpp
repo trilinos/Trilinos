@@ -66,7 +66,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   /* General Options (Section 6.4.1) */
   setIntParameter("ML output",0,"Output Level",PL,intParam);
   setIntParameter("print unused",-2,"Print unused parameters",PL,intParam);
-  PL->set("ML print parameter list",false);
+  setIntParameter("ML print initial list",-2,"Print initial list supplied to constructor",PL,intParam);
+  setIntParameter("ML print final list",-2,"Print final list used by constructor",PL,intParam);
   setIntParameter("PDE equations",1,"# of PDE equations per node",PL,intParam);
   setStringToIntegralParameter<int>("eigen-analysis: type","cg","Scheme to compute spectral radius",
                                tuple<std::string>("cg","Anorm","power-method"),PL);
