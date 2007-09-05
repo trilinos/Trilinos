@@ -47,7 +47,7 @@ static char *yo = "Zoltan_Call_Hypergraph_Pin_Query";
 int ierr = ZOLTAN_OK;
 int nl, np, format, have_pins, row_storage;
 ZOLTAN_ID_PTR vid, eid;
-int *rptr, *cptr;
+int *rptr=NULL, *cptr=NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   /*
