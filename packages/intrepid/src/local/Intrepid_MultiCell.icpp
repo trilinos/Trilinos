@@ -1,0 +1,245 @@
+// @HEADER
+// ************************************************************************
+//
+//                           Intrepid Package
+//                 Copyright (2007) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
+//                    Denis Ridzal (dridzal@sandia.gov).
+//
+// ************************************************************************
+// @HEADER
+
+
+/** \file   Intrepid_MultiCell.icpp
+    \brief  Contains inline function definitions for the Intrepid::MultiCell interface.
+    \author Created by P. Bochev, D. Ridzal, and D. Day.
+*/
+
+namespace Intrepid {
+
+  //-------------------------------------------------------------------------------------//
+  //       Accessors operating on the multicell instance -> using my_cell_type           //
+  //-------------------------------------------------------------------------------------//
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getMyAmbientDimension() const {
+  return ambient_dimension;
+}
+
+template<class Scalar>
+inline CellType MultiCell<Scalar>::getMyType() const {
+  return my_cell_type;
+}
+
+template<class Scalar>
+inline const char* MultiCell<Scalar>::getMyName() const {
+  return cell_type_names[my_cell_type];
+}
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getMyTopoDimension() const {
+  return (my_cell_type > MAXCANONICAL ?
+            conn_map_custom[my_cell_type-MAXCANONICAL-1][0].topo_dimension :
+            conn_map_canonical[my_cell_type][0].topo_dimension
+         );
+}
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getMyNumNodes() const {
+  return (NODE == my_cell_type ?
+            1:
+            (my_cell_type > MAXCANONICAL ?
+               conn_map_custom[my_cell_type-MAXCANONICAL-1][conn_map_custom[my_cell_type-MAXCANONICAL-1][0].topo_dimension-1].num_nodes_per_subcell[0] :
+               conn_map_canonical[my_cell_type][conn_map_canonical[my_cell_type][0].topo_dimension-1].num_nodes_per_subcell[0]
+            )
+         );
+}
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getMyNumSubcells(const int target_dim_) const {
+  return (my_cell_type != NODE && target_dim_ > 0 ?
+            (my_cell_type > MAXCANONICAL ?
+               conn_map_custom[my_cell_type-MAXCANONICAL-1][target_dim_-1].num_subcells :
+               conn_map_canonical[my_cell_type][target_dim_-1].num_subcells
+            ) :
+            (target_dim_ ? -1 : getMyNumNodes())
+         );
+}
+
+template<class Scalar>
+inline CellType MultiCell<Scalar>::getMySubcellType(const int target_dim_,
+                                                    const int subcell_index_) const {
+  return (!target_dim_ ?
+            NODE :
+            (getMyTopoDimension() == target_dim_ ?
+               my_cell_type :
+               (my_cell_type > MAXCANONICAL ?
+                  conn_map_custom[my_cell_type-MAXCANONICAL-1][target_dim_-1].type_subcell[subcell_index_] :
+                  conn_map_canonical[my_cell_type][target_dim_-1].type_subcell[subcell_index_]
+               )
+            )
+         );
+}
+
+template<class Scalar>
+inline void MultiCell<Scalar>::getMySubcellNodes(const int target_dim_,
+                                                 const int subcell_index_,
+                                                 std::vector<int> & subcell_node_conn_) const {
+  int num_nodes = getNumNodes(getMySubcellType(target_dim_, subcell_index_));	// num nodes of the desired subcell
+  subcell_node_conn_.resize(num_nodes);
+  for (int i=0; i < num_nodes; i++)
+    subcell_node_conn_[i] =
+      (NODE == my_cell_type && 0 == target_dim_ && 0 == subcell_index_ ?
+         0 :
+         (0 == target_dim_ ?
+            subcell_index_ :
+            (my_cell_type > MAXCANONICAL ?
+               conn_map_custom[my_cell_type-MAXCANONICAL-1][target_dim_-1].node_conn[subcell_index_][i] :
+               conn_map_canonical[my_cell_type][target_dim_-1].node_conn[subcell_index_][i]
+            )
+         )
+      );
+}
+template<class Scalar>
+inline void MultiCell<Scalar>::getMyOrientations(const int cell_ID,
+                                                 const int subcell_dim,
+                                                 std::vector<short> & subcell_orient) const
+{
+  assert((orients_status == DEFINED) && (subcell_dim == 1 || subcell_dim ==2));
+  subcell_orient = (subcell_dim == 1) ? edge_orients[cell_ID] : face_orients[cell_ID];
+}
+
+
+
+//-------------------------------------------------------------------------------------//
+//                Accessors operating on any cell type specified by type_              //
+//-------------------------------------------------------------------------------------//
+
+template<class Scalar>
+inline CellType MultiCell<Scalar>::getType(const char* name_) {
+  for (CellType i = NODE; i < MAXTYPE; i++) {
+    if (0 == strcmp(name_, cell_type_names[i]))
+      return i;
+  }
+  return MAXTYPE;
+}
+
+
+template<class Scalar>
+inline const char* MultiCell<Scalar>::getName(const CellType type_) {
+  return cell_type_names[type_];
+}
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getTopoDimension(const CellType type_) {
+  return (type_ > MAXCANONICAL ?
+            conn_map_custom[type_-MAXCANONICAL-1][0].topo_dimension :
+            conn_map_canonical[type_][0].topo_dimension
+         );
+}
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getNumNodes(const CellType type_) {
+  return (NODE == type_ ?
+            1 :
+            (type_ > MAXCANONICAL ?
+               conn_map_custom[type_-MAXCANONICAL-1][conn_map_custom[type_-MAXCANONICAL-1][0].topo_dimension-1].num_nodes_per_subcell[0] :
+               conn_map_canonical[type_][conn_map_canonical[type_][0].topo_dimension-1].num_nodes_per_subcell[0]
+            )
+         );
+}
+
+template<class Scalar>
+inline int MultiCell<Scalar>::getNumSubcells(const CellType type_, const int target_dim_) {
+  return (type_ != NODE && target_dim_ > 0 ?
+            (type_ > MAXCANONICAL ?
+               conn_map_custom[type_-MAXCANONICAL-1][target_dim_-1].num_subcells :
+               conn_map_canonical[type_][target_dim_-1].num_subcells
+            ) :
+            (target_dim_ ?
+               -1 :
+               getNumNodes(type_)
+            )
+         );
+}
+
+template<class Scalar>
+inline CellType MultiCell<Scalar>::getSubcellType(const CellType type_, const int target_dim_,
+                                                  const int subcell_index_) {
+  return (!target_dim_ ?
+            NODE :
+            (getTopoDimension(type_) == target_dim_ ?
+               type_ :
+               (type_ > MAXCANONICAL ?
+                  conn_map_custom[type_-MAXCANONICAL-1][target_dim_-1].type_subcell[subcell_index_] :
+                  conn_map_canonical[type_][target_dim_-1].type_subcell[subcell_index_]
+               )
+            )
+         );
+}
+
+template<class Scalar>
+inline void MultiCell<Scalar>::getSubcellNodes(const CellType type_, const int target_dim_,
+                                               const int subcell_index_, std::vector<int> &subcell_node_conn_) {
+  int num_nodes = getNumNodes(getSubcellType(type_, target_dim_, subcell_index_));
+  subcell_node_conn_.resize(num_nodes);
+  for (int i=0; i < num_nodes; i++)
+    subcell_node_conn_[i] =
+      (NODE == type_ && 0 == target_dim_ && 0 == subcell_index_ ?
+         0 :
+         (0 == target_dim_ ?
+            subcell_index_ :
+            (type_ > MAXCANONICAL ?
+               conn_map_custom[type_-MAXCANONICAL-1][target_dim_-1].node_conn[subcell_index_][i] :
+               conn_map_canonical[type_][target_dim_-1].node_conn[subcell_index_][i]
+            )
+         )
+      );  
+}
+
+
+template<class Scalar>
+StatusType MultiCell<Scalar>::getPullbackStatus() const {
+  return pullback_status;
+}
+
+template<class Scalar>
+const char* MultiCell<Scalar>::getPullbackInfo() const {
+  return StatusNames[pullback_status];
+}
+
+template<class Scalar>
+inline const Point<Scalar> & MultiCell<Scalar>::getPoint(const int cell_id_,
+                                                         const int point_id_) const {
+  return node_coords[cell_id_][point_id_];
+                                                         }
+
+template<class Scalar>
+inline const std::vector< Point<Scalar> > & MultiCell<Scalar>::getCell(const int cell_id_) const {
+  return node_coords[cell_id_];
+}
+
+template<class Scalar>
+inline const std::vector< Point<Scalar> > & MultiCell<Scalar>::operator [] (const int cell_id_) const {
+  return node_coords[cell_id_];
+}
+
+} // namespace Intrepid
