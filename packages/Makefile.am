@@ -115,6 +115,10 @@ if BUILD_IFPACK
 IFPACK_SUBDIR = ifpack
 endif
 
+if BUILD_INTREPID
+INTREPID_SUBDIR = intrepid
+endif
+
 if BUILD_GALERI
 GALERI_SUBDIR = galeri 
 endif
@@ -244,6 +248,7 @@ PACKAGE_NAMES = \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
 	$(ARISTOS_SUBDIR)      \
+	$(INTREPID_SUBDIR)     \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \

@@ -69,6 +69,8 @@ TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditioner package], IFPACK)
 
+TAC_ARG_ENABLE_FEATURE(intrepid, [Build intrepid, a discretization package], INTREPID, no)
+
 TAC_ARG_ENABLE_FEATURE(isorropia, [Build isorropia, a repartitioning/rebalancing package], ISORROPIA, no)
 
 TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos, a sparse kernels package], KOKKOS, no)
@@ -396,6 +398,17 @@ else
   BUILD_ARISTOS=no
 fi
 AM_CONDITIONAL(BUILD_ARISTOS, test "X$BUILD_ARISTOS" != "Xno")
+
+if test "X$ac_cv_use_intrepid" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/intrepid])
+  BUILD_INTREPID=yes
+  if test "X$ac_cv_use_intrepid_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-intrepid"
+  fi
+else
+  BUILD_INTREPID=no
+fi
+AM_CONDITIONAL(BUILD_INTREPID, test "X$BUILD_INTREPID" != "Xno")
 
 if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])

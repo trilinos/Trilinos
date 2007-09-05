@@ -89,9 +89,9 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
 	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
-	belos anasazi rbgen pliris ml aristos moertel stratimikos \
-	meros sacado nox capo rythmos trilinoscouplings new_package \
-	moocho PyTrilinos didasko WebTrilinos external
+	belos anasazi rbgen pliris ml aristos intrepid moertel \
+	stratimikos meros sacado nox capo rythmos trilinoscouplings \
+	new_package moocho PyTrilinos didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -193,6 +193,7 @@ ACLOCAL_AMFLAGS = -I config
 @BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
 @BUILD_EXTERNAL_TRUE@EXTERNAL_SUBDIR = external
 @BUILD_IFPACK_TRUE@IFPACK_SUBDIR = ifpack
+@BUILD_INTREPID_TRUE@INTREPID_SUBDIR = intrepid
 @BUILD_GALERI_TRUE@GALERI_SUBDIR = galeri 
 @BUILD_KOKKOS_TRUE@KOKKOS_SUBDIR = kokkos
 @BUILD_KOMPLEX_TRUE@KOMPLEX_SUBDIR = komplex
@@ -249,6 +250,7 @@ PACKAGE_NAMES = \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
 	$(ARISTOS_SUBDIR)      \
+	$(INTREPID_SUBDIR)     \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
