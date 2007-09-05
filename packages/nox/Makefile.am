@@ -47,7 +47,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 EXTRA_DIST = LICENSE config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 
 ## #######################################################################
@@ -88,7 +89,13 @@ endif
 
 if BUILD_NOX_TESTS 
 tests:  examples
+	@echo ""
+	@echo "Now building nox tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building nox tests."
+	@echo ""
 else
 tests:
 	@echo "nox tests were disabled at configure time"
@@ -96,7 +103,13 @@ endif
 
 if BUILD_NOX_EXAMPLES
 examples: FORCE
+	@echo ""
+	@echo "Now building nox examples."
+	@echo ""
 	cd $(top_builddir)/examples && $(MAKE)
+	@echo ""
+	@echo "Finished building nox examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/examples && $(MAKE) install

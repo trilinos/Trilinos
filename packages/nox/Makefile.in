@@ -272,7 +272,8 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = LICENSE config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -724,12 +725,24 @@ all-local:
 	@echo "Trilinos package nox built successfully"
 
 @BUILD_NOX_TESTS_TRUE@tests:  examples
+@BUILD_NOX_TESTS_TRUE@	@echo ""
+@BUILD_NOX_TESTS_TRUE@	@echo "Now building nox tests."
+@BUILD_NOX_TESTS_TRUE@	@echo ""
 @BUILD_NOX_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_NOX_TESTS_TRUE@	@echo ""
+@BUILD_NOX_TESTS_TRUE@	@echo "Finished building nox tests."
+@BUILD_NOX_TESTS_TRUE@	@echo ""
 @BUILD_NOX_TESTS_FALSE@tests:
 @BUILD_NOX_TESTS_FALSE@	@echo "nox tests were disabled at configure time"
 
 @BUILD_NOX_EXAMPLES_TRUE@examples: FORCE
+@BUILD_NOX_EXAMPLES_TRUE@	@echo ""
+@BUILD_NOX_EXAMPLES_TRUE@	@echo "Now building nox examples."
+@BUILD_NOX_EXAMPLES_TRUE@	@echo ""
 @BUILD_NOX_EXAMPLES_TRUE@	cd $(top_builddir)/examples && $(MAKE)
+@BUILD_NOX_EXAMPLES_TRUE@	@echo ""
+@BUILD_NOX_EXAMPLES_TRUE@	@echo "Finished building nox examples."
+@BUILD_NOX_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_NOX_EXAMPLES_TRUE@install-examples:
 @BUILD_NOX_EXAMPLES_TRUE@	cd $(top_builddir)/examples && $(MAKE) install
