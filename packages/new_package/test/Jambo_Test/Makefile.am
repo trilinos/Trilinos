@@ -32,15 +32,17 @@
 
 if HAVE_NEWP_SWAHILI
 
+include $(top_builddir)/Makefile.export.new_package
+
 bin_PROGRAMS = Jambo_Test.exe
 
 Jambo_Test_exe_SOURCES = $(srcdir)/Jambo_Test.cpp
 
 Jambo_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 
-Jambo_Test_exe_LDADD = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
+Jambo_Test_exe_LDADD = $(NEW_PACKAGE_LIBS)
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../new_package/src -I$(top_builddir)../new_package/src
+AM_CPPFLAGS = $(NEW_PACKAGE_INCLUDES)
 
 else
 endif

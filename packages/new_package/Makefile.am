@@ -71,6 +71,7 @@ config/config.guess                       config/tac_arg_with_libdirs.m4 \
 config/config.sub                         config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
 config/tac_arg_with_perl.m4 		  config/string-replace.pl \
+config/token-replace.pl \
 bootstrap 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -150,7 +151,13 @@ endif
 #  #np# - @echo "new_package does not have any tests yet"
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building new_package tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building new_package tests."
+	@echo ""
 else
 tests:
 	@echo "new_package tests were disabled at configure time"
@@ -158,7 +165,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building new_package examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building new_package examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
