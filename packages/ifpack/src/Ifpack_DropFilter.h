@@ -253,12 +253,12 @@ private:
   int NumNonzeros_;
 
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable vector<int> Indices_;
+  mutable std::vector<int> Indices_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable vector<double> Values_;
+  mutable std::vector<double> Values_;
   //! Label for \c this object.
   char Label_[80];
-  vector<int> NumEntries_;
+  std::vector<int> NumEntries_;
 
 };
 

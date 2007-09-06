@@ -117,9 +117,9 @@ private:
   //! If \c true, the reordering has been successfully computed.
   bool IsComputed_;
   //! Contains the reordering.
-  vector<int> Reorder_;
+  std::vector<int> Reorder_;
   //! Contains the inverse reordering.
-  vector<int> InvReorder_;
+  std::vector<int> InvReorder_;
 }; 
 
 #endif

@@ -176,6 +176,7 @@ int Ifpack_PointRelaxation::Initialize()
 //==============================================================================
 int Ifpack_PointRelaxation::Compute()
 {
+  int ierr = 0;
   if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
 
@@ -185,7 +186,8 @@ int Ifpack_PointRelaxation::Compute()
   IsComputed_ = false;
   Condest_ = -1.0;
 
-  if (NumSweeps_ <= 0)
+  if (NumSweeps_ == 0) ierr = 1; // Warning: no sweeps performed.
+  if (NumSweeps_ < 0)
     IFPACK_CHK_ERR(-2); // at least one application
   
   Diagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
@@ -233,6 +235,7 @@ int Ifpack_PointRelaxation::Compute()
   ComputeTime_ += Time_->ElapsedTime();
   IsComputed_ = true;
 
+  IFPACK_CHK_ERR(ierr);
   return(0);
 }
 

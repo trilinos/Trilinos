@@ -268,9 +268,9 @@ private:
   //! Multiplies A(i,i) by this value.
   double RelativeThreshold_;
   //! Stores the position of the diagonal element, or -1 if not present.
-  vector<int> pos_;
+  std::vector<int> pos_;
   //! Stores as additional diagonal contribution due to the filter.
-  vector<double> val_;
+  std::vector<double> val_;
 
 };
 

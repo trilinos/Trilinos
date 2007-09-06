@@ -182,10 +182,10 @@ protected:
   //! Number of local subgraphs
   int NumLocalParts_;
   //! Partition_[i] contains the ID of non-overlapping part it belongs to
-  vector<int> Partition_; 
+  std::vector<int> Partition_; 
   //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping) 
   // partition i
-  vector<vector<int> > Parts_;
+  std::vector<std::vector<int> > Parts_;
   //! Reference to the graph to be partitioned
   const Ifpack_Graph* Graph_;
   //! Overlapping level.

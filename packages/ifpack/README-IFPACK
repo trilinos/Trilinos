@@ -19,7 +19,7 @@ section 0: where you should look for IFPACK documentation
 
 You can download the IFPACK User's Guide at the web address
 
-   http://software.sandia.gov/trilinos/packages/ml/
+   http://trilinos.sandia.gov/packages/ml/
 
 This address also contains up-to-date doxygen documentation. 
 You can create a local Doxygen documentation by simply typing 

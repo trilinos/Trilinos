@@ -44,7 +44,8 @@ EXTRA_DIST = README-IFPACK ChangeLog-IFPACK \
        config/replace-install-prefix.pl config/string-replace.pl \
        doc/Doxyfile doc/IFPACKLogo.gif doc/Doxyfile_c_wrappers \
        doc/Doxyfile_internals doc/footer.html doc/header.html \
-       doc/header.tex doc/index.doc doc/UsersGuide/manual.ps
+       doc/header.tex doc/index.doc doc/UsersGuide/manual.ps \
+       config/token-replace.pl
 
 
 # #######################################################################
@@ -103,8 +104,14 @@ EXAMPLE_SUBDIR=example
 endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building ifpack tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building ifpack tests."
+	@echo ""
 else
 tests:
 	@echo "ifpack tests were disabled at configure time"
@@ -112,7 +119,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building ifpack examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building ifpack examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

@@ -254,13 +254,13 @@ private:
   string Type_;
 
   // Factorization in MSR format.
-  vector<double> alu_;
-  vector<int> jlu_;
-  vector<int> ju_;
+  std::vector<double> alu_;
+  std::vector<int> jlu_;
+  std::vector<int> ju_;
 
   string Label_;
   // Permutation vector if required by ILUTP and ILUDP.
-  vector<int> iperm_;
+  std::vector<int> iperm_;
 
   double Condest_;
 

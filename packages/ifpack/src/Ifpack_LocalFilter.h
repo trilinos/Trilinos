@@ -387,11 +387,11 @@ private:
   //! Maximum number of nonzero entries in a row for Matrix_.
   int MaxNumEntriesA_;
   //! NumEntries_[i] contains the nonzero entries in row `i'.
-  vector<int> NumEntries_;
+  std::vector<int> NumEntries_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable vector<int> Indices_;
+  mutable std::vector<int> Indices_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable vector<double> Values_;
+  mutable std::vector<double> Values_;
   //! If true, the tranpose of the local matrix will be used.
   bool UseTranspose_;
   //! Label for \c this object.

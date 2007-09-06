@@ -528,9 +528,9 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
   }
 
   int Length = Matrix.MaxNumEntries();
-  vector<double> Values;
+  std::vector<double> Values;
   Values.resize(Length);
-  vector<int> Indices;
+  std::vector<int> Indices;
   Indices.resize(Length);
 
   for (int j = 0 ; j < NumRows_ ; ++j) {

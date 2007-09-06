@@ -368,7 +368,7 @@ private:
   //! Containers_[i] contains all the necessary information to solve on each subblock.
   //! Pointers to the matrix to be preconditioned.
   Teuchos::RefCountPtr< const Epetra_RowMatrix > Matrix_;
-  mutable vector<Teuchos::RefCountPtr<T> > Containers_;
+  mutable std::vector<Teuchos::RefCountPtr<T> > Containers_;
   //! Contains information about non-overlapping partitions.
   Teuchos::RefCountPtr<Ifpack_Partitioner> Partitioner_;
   string PartitionerType_;
@@ -722,8 +722,8 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // cycle over all local subdomains
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
 
   int NumMyRows = Matrix().NumMyRows();
   int NumVectors = X.NumVectors();
@@ -838,8 +838,8 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
   int NumVectors = X.NumVectors();
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
+  std::vector<int> Indices;
+  std::vector<double> Values;
   Indices.resize(Length);
   Values.resize(Length);
 

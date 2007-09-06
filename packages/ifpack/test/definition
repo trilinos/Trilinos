@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, IFPACKTests) {
+(FRAMEWORK, INSTALL, IFPACKTests) {
     DIRS = CompareWithAztecOO,
            Container,
            CrsRiluk,

@@ -140,8 +140,8 @@ class Ifpack_HashTable
         return;
       }
 
-      vector<int> new_key;
-      vector<double> new_val;
+      std::vector<int> new_key;
+      std::vector<double> new_val;
 
       keys_.push_back(new_key);
       vals_.push_back(new_val);
@@ -202,9 +202,9 @@ class Ifpack_HashTable
 
     int n_keys_;
     int n_sets_;
-    vector<vector<double> > vals_;
-    vector<vector<int> > keys_;
-    vector<int> counter_;
+    std::vector<std::vector<double> > vals_;
+    std::vector<std::vector<int> > keys_;
+    std::vector<int> counter_;
     unsigned int seed_;
 };
 #endif
