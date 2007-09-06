@@ -30,9 +30,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package isorropia subdirectory test built successfully."
-	@echo ""
 
 if BUILD_ZOLTAN
 ZOLTAN_TEST_DIR = zoltan

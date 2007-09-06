@@ -43,7 +43,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 
 ## #######################################################################
@@ -89,7 +90,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building isorropia tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building isorropia tests."
+	@echo ""
 else
 tests:
 	@echo "isorropia tests were disabled at configure time"
@@ -97,7 +104,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building isorropia examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building isorropia examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

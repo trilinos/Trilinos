@@ -1,8 +1,9 @@
 Welcome to Isorropia, a package for partitioning and load-balancing
 in the Trilinos framework!
 
-This package is in the early stages of development, so no examples
-are in place yet, but there is a working test program in
-test/rebalance_1d_default.
+Several example programs reside in the example subdirectory, to
+demonstrate using Isorropia to rebalance Epetra objects.
 
+For documentation, see our website:
+http://trilinos.sandia.gov/packages/isorropia/documentation.html
 
