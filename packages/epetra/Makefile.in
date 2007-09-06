@@ -241,7 +241,8 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -699,13 +700,25 @@ all-local:
 	@echo "contained in Trilinos/doc/check_installation.txt"
 	@echo ""
 
-@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@tests: examples
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building epetra tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building epetra tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "epetra tests were disabled at configure time"
 
 @BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Now building epetra examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Finished building epetra examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install

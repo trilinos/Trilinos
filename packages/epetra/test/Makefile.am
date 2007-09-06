@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package epetra subdirectory test built successfully."
-	@echo ""
 
 SUBDIRS = src BlockMap CrsGraph CrsMatrix RowMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \

@@ -42,7 +42,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -86,8 +87,14 @@ EXAMPLE_SUBDIR=example
 endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building epetra tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building epetra tests."
+	@echo ""
 else
 tests:
 	@echo "epetra tests were disabled at configure time"
@@ -95,7 +102,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building epetra examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building epetra examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
