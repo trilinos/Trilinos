@@ -41,6 +41,7 @@ EXEEXT = .$(MEXEXT_VALUE)
 if BUILD_ML_MATLAB
 bin_PROGRAMS = mlmex 
 bin_SCRIPTS = ml.m
+EXTRA_DIST = ml.m
 
 mlmex_SOURCES      = mlmex.cpp
 mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
