@@ -39,7 +39,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST =
+EXTRA_DIST = config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+             config/token-replace.pl
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -78,7 +79,13 @@ tests:
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building komplex examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building komplex examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

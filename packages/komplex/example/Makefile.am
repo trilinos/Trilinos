@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package komplex subdirectory example built successfully."
-	@echo ""
 
 #SUBDIRS = komplex_hb
 SUBDIRS = 
