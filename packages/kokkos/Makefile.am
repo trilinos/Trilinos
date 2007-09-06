@@ -44,7 +44,7 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST =
+EXTRA_DIST = config/token-replace.pl
  
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -91,7 +91,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building kokkos tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building kokkos tests."
+	@echo ""
 else
 tests:
 	@echo "kokkos tests were disabled at configure time"
@@ -99,7 +105,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building kokkos examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building kokkos examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

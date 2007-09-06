@@ -31,7 +31,7 @@
 namespace Kokkos {
 
 	string Kokkos_Version() { 
-		return("Kokkos Version 1.2d - 09/21/2006"); 
+		return("Kokkos Version 1.3d - 09/06/2007"); 
 	}
 
 } // namespace Kokkos 
