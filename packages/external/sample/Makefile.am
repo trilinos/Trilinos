@@ -21,7 +21,7 @@ ACLOCAL_AMFLAGS = -I config
 #np# configure script for other packages. 
 EXTRA_DIST = \
 config/config.guess  config/config.sub  config/install-sh  \
-config/missing bootstrap 
+config/token-replace.pl config/missing bootstrap 
 
 ## #######################################################################
 ## Tools in the auxillary directory 
