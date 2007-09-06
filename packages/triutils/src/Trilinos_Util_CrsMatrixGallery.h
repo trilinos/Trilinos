@@ -395,7 +395,7 @@ protected:
   int * MyGlobalElements_;
   string MapType_;
   bool ContiguousMap_;
-  vector<int> MapMap_;
+  std::vector<int> MapMap_;
   string ExactSolutionType_;
   string StartingSolutionType_;
   string ExpandType_;

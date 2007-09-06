@@ -242,7 +242,8 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -685,7 +686,13 @@ all-local:
 	@echo "Trilinos package triutils built successfully"
 
 @BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building triutils tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building triutils tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "triutils tests were disabled at configure time"
 

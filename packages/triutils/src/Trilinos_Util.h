@@ -92,7 +92,7 @@ using std::rand;
 using std::abort;
 using std::malloc;
 using std::free;
-#else HAVE_STDLIB_H
+#else /* HAVE_STDLIB_H */
 #include <stdlib.h>
 #endif
 #else /* JANUS_STLPORT */

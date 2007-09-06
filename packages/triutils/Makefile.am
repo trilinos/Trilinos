@@ -41,7 +41,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -71,7 +72,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building triutils tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building triutils tests."
+	@echo ""
 else
 tests:
 	@echo "triutils tests were disabled at configure time"
