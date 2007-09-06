@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(moertel, 1.1d, mwgee@software.sandia.gov)
+AC_INIT(moertel, 1.2d, mwgee@software.sandia.gov)
 
 # Hello World!
 #  #auto np# - package name below
@@ -189,6 +189,9 @@ AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 #TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
+TAC_ARG_ENABLE_FEATURE(galeri, [Build examples that depend on galeri], GALERI, no)
+AM_CONDITIONAL(BUILD_GALERI, test "X$ac_cv_use_galeri" != "Xno")
 
 # ------------------------------------------------------------------------
 # Enable optional python wrappers

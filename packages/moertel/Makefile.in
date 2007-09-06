@@ -250,7 +250,7 @@ config/ac_cxx_namespaces.m4               config/tac_arg_check_mpi.m4 \
 config/tac_arg_config_mpi.m4 		  config/tac_arg_enable_feature.m4 \
 config/generate-makeoptions.pl    config/tac_arg_enable_feature_sub_check.m4 \
 config/replace-install-prefix.pl 	  config/string-replace.pl \
-config/tac_arg_enable_export-makefiles.m4 \
+config/tac_arg_enable_export-makefiles.m4 config/token-replace.pl \
 config/ac_cxx_std_sprintf.m4 \
 config/tac_arg_with_ar.m4 \
 config/tac_arg_with_flags.m4 \
@@ -746,7 +746,13 @@ tests:
 	@echo "moertel does not have any tests yet"
 
 @BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Now building moertel examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Finished building moertel examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install

@@ -23,6 +23,9 @@
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
+/* Define if want to build galeri */
+#undef HAVE_GALERI
+
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 

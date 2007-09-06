@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = TwoSquares$(EXEEXT) Hex_3D$(EXEEXT) test1$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) test1$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -87,6 +87,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Moertel_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_GALERI_TRUE@am__EXEEXT_1 = TwoSquares$(EXEEXT) Hex_3D$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Hex_3D_OBJECTS = Hex_3D-Hex_3D.$(OBJEXT)
 Hex_3D_OBJECTS = $(am_Hex_3D_OBJECTS)
@@ -238,7 +239,9 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = 
-EXTRA_DIST = TwoSquares.grid Hex_3D.grid TwoSquares.m
+@BUILD_GALERI_FALSE@GALERI_DEP_EXAMPLES = 
+@BUILD_GALERI_TRUE@GALERI_DEP_EXAMPLES = TwoSquares Hex_3D
+EXTRA_DIST = TwoSquares.grid Hex_3D.grid TwoSquares.m TwoSquares.cpp Hex_3D.cpp
 TwoSquares_SOURCES = $(srcdir)/TwoSquares.cpp
 TwoSquares_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
 TwoSquares_CXXFLAGS = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
@@ -644,12 +647,9 @@ uninstall-am:
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package moertel subdirectory example built successfully."
-	@echo ""
 
 include $(top_builddir)/Makefile.export.moertel
-include $(top_builddir)/../galeri/Makefile.export.galeri
+@BUILD_GALERI_TRUE@include $(top_builddir)/../galeri/Makefile.export.galeri
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
