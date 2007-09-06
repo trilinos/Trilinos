@@ -6,3 +6,6 @@
 all-local:
 
 SUBDIRS = BlockCG BlockGmres MVOPTester
+
+EXTRA_DIST = definition
+
