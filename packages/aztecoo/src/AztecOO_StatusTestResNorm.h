@@ -55,6 +55,8 @@ class Epetra_Operator;
    The value of \f$\tau\f$ can be reset using the ResetTolerance() method.
    </ul>
 
+  \warning Presently it is not valid to associate one status test instance with two different AztecOO objects.
+
 */
 
 class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {

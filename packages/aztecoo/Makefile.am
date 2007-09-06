@@ -42,7 +42,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       config/token-replace.pl
 
 
 ## #######################################################################
@@ -94,8 +95,14 @@ endif
 #Here we define the make targets that will build and clean tests and examples
 
 if BUILD_TESTS
-tests:
-	cd $(top_builddir)/example && $(MAKE) && cd ../test && $(MAKE)
+tests: examples
+	@echo ""
+	@echo "Now building aztecoo tests."
+	@echo ""
+	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building aztecoo tests."
+	@echo ""
 else
 tests:
 	@echo "aztecoo tests were disabled at configure time"
@@ -103,7 +110,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building aztecoo examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building aztecoo examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

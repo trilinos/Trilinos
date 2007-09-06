@@ -43,6 +43,8 @@ class Epetra_MultiVector;
    including composite tests. In this situation, two existing AztecOO_StatusTest objects 
    test1 and test2 can be used to create a new test.  See AztecOO_StatusTestCombo for details
 
+  \warning Presently it is not valid to associate one status test instance with two different AztecOO objects.
+
 */
 
 class AztecOO_StatusTest {

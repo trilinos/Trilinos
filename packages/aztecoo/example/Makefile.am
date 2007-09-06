@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package aztecoo subdirectory example built successfully."
-	@echo ""
 
 #SUBDIRS = azoo_iterate_hb aztec_app aztec_hb AztecOO AztecOO_UserOpUserMat \
 #	IfpackAztecOO simple_epetra_aztecoo

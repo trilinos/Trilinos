@@ -32,7 +32,7 @@
 #include "AztecOO.h"
 
 	string AztecOO_Version() { 
-		return("AztecOO Version 3.6d - 09/21/2006"); 
+		return("AztecOO Version 3.7d - 09/06/2007"); 
 	}
 
 #endif /* AZTECOO_VERSION_H */

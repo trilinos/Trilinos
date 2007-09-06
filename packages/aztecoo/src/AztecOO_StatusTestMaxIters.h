@@ -38,6 +38,8 @@ class Epetra_MultiVector;
 
 /* This implementation of the AztecOO_StatusTest base class tests the number of iterations performed
    against a maximum number allowed.
+
+  \warning Presently it is not valid to associate one status test instance with two different AztecOO objects.
 */
 
 class AztecOO_StatusTestMaxIters: public AztecOO_StatusTest {

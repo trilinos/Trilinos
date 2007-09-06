@@ -63,6 +63,7 @@ class Epetra_MultiVector;
    until the implicit residual is small.
    </ol>
    
+  \warning Presently it is not valid to associate one status test instance with two different AztecOO objects.
 
 */
 
