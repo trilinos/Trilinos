@@ -567,9 +567,6 @@ uninstall-am:
 
 
 all-local:
-	@echo ""
-	@echo "Trilinos package galeri subdirectory example built successfully."
-	@echo ""
 
 include $(top_builddir)/Makefile.export.galeri
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

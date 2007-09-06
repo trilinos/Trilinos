@@ -69,7 +69,7 @@ config/config.sub                       config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl		config/strip_dup_libs.pl \
 config/generate-makeoptions.pl		config/replace-install-prefix.pl \
 config/string-replace.pl		bootstrap \
-README-Galeri \
+config/token-replace.pl                 README-Galeri \
 ChangeLog-Galeri \
 TODO-Galeri \
 data/Square.grid \
@@ -139,8 +139,14 @@ EXAMPLE_SUBDIR=example example-fem
 endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building galeri tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building galeri tests."
+	@echo ""
 else
 tests:
 	@echo "galeri tests were disabled at configure time"
@@ -148,7 +154,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building galeri examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE) && cd ../example-fem && $(MAKE)
+	@echo ""
+	@echo "Finished building galeri examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install && cd ../example-fem && $(MAKE) install

@@ -32,7 +32,7 @@
 #include "Galeri_ConfigDefs.h"
 
 string Galeri_Version() { 
-	return("Galeri Version 1.1 - 09-Oct-06"); 
+	return("Galeri Version 1.2d - 06-Sept-2007"); 
 };
 
 #endif /* GALERI_VERSION_H */

@@ -273,7 +273,7 @@ config/config.sub                       config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl		config/strip_dup_libs.pl \
 config/generate-makeoptions.pl		config/replace-install-prefix.pl \
 config/string-replace.pl		bootstrap \
-README-Galeri \
+config/token-replace.pl                 README-Galeri \
 ChangeLog-Galeri \
 TODO-Galeri \
 data/Square.grid \
@@ -756,13 +756,25 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo 
 
-@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@tests: examples
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building galeri tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building galeri tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "galeri tests were disabled at configure time"
 
 @BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Now building galeri examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) && cd ../example-fem && $(MAKE)
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Finished building galeri examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install && cd ../example-fem && $(MAKE) install
