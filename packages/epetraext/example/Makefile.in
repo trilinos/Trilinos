@@ -244,7 +244,10 @@ EXTRA_DIST = model_evaluator/GLpApp/data/square/square.1.000 \
 	model_evaluator/GLpApp/GLpApp_GLpYUEpetraDataPool.hpp \
 	model_evaluator/GLpApp/rect2DMeshGenerator.hpp \
 	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp \
-	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp \
+	model_evaluator/4dopt/EpetraModelEval4DOpt.hpp \
+	model_evaluator/4dopt/EpetraMultiPointModelEval4DOpt.hpp \
+	model_evaluator/2dsim/EpetraModelEval2DSim.hpp
 
 all: all-recursive
 
@@ -554,9 +557,6 @@ uninstall-am:
 
 
 all-local:
-	@echo ""
-	@echo "Trilinos package epetraext subdirectory example built successfully."
-	@echo ""
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

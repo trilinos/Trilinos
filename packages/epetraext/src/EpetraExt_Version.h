@@ -34,7 +34,7 @@
 namespace EpetraExt {
 
 	std::string EpetraExt_Version() { 
-		return("EpetraExt Version 3.6d - 09/21/2006"); 
+		return("EpetraExt Version 3.7d - 09/06/2007"); 
 	}
 } // namespace EpetraExt
 

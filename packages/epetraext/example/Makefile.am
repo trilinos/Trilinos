@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package epetraext subdirectory example built successfully."
-	@echo ""
 
 if BUILD_EXAMPLES
 
@@ -76,4 +73,8 @@ EXTRA_DIST = model_evaluator/GLpApp/data/square/square.1.000 \
 	model_evaluator/GLpApp/GLpApp_GLpYUEpetraDataPool.hpp \
 	model_evaluator/GLpApp/rect2DMeshGenerator.hpp \
 	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp \
-	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp \
+	model_evaluator/4dopt/EpetraModelEval4DOpt.hpp \
+	model_evaluator/4dopt/EpetraMultiPointModelEval4DOpt.hpp \
+	model_evaluator/2dsim/EpetraModelEval2DSim.hpp
+

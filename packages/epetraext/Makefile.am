@@ -42,7 +42,7 @@ ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
-       example/inout/matlab.h5
+       config/token-replace.pl example/inout/matlab.h5
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -87,7 +87,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building epetraext tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building epetraext tests."
+	@echo ""
 else
 tests:
 	@echo "epetraext tests were disabled at configure time"
@@ -95,7 +101,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building epetraext examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building epetraext examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

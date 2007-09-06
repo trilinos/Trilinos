@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package epetraext subdirectory test built successfully."
-	@echo ""
 
 if BUILD_TESTS
 
