@@ -23,7 +23,7 @@ You can find the latest Amesos User's Guide in the subdirectory
 
 Alternatively, you can download the Amesos User's Guide at the web address
 
-   http://software.sandia.gov/trilinos/packages/amesos/AmesosReferenceGuide.pdf
+   http://trilinos.sandia.gov/packages/amesos/AmesosReferenceGuide.pdf
 
 This address also contains up-to-date doxygen documentation. 
 You can create a local Doxygen documentation as follows:

@@ -8,9 +8,9 @@
 #include "TestKlu.h"
 #include "Amesos.h"
  
-int TestAllClasses( const vector<string> AmesosClasses,
+int TestAllClasses( const std::vector<string> AmesosClasses,
 		    int EpetraMatrixType,
-		    const vector<bool> AmesosClassesInstalled,
+		    const std::vector<bool> AmesosClassesInstalled,
 		    Epetra_CrsMatrix *& Amat, 
 		    const bool transpose, 
 		    const bool verbose, 

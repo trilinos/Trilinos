@@ -350,7 +350,7 @@ code.
 
 <P>Amesos is distributed through the Trilinos project, and can be
 downloaded from the web site
-http://software.sandia.gov/trilinos/downloads.
+http://trilinos.sandia.gov/download.
 
 <P>As all other Trilinos packages,
 Amesos is configured and built using the GNU autoconf
@@ -695,7 +695,7 @@ Amesos has an interface to PyTrilinos, and therefore all the enabled
 third-party libraries can be used within Python to solve problems
 defined using Python/Epetra objects. Please refer to the PyTrilinos
 documentation 
-http://software.sandia.gov/trilinos/packages/pytrilinos/overview.html
+http://trilinos.sandia.gov/packages/pytrilinos/overview.html
 for more details.
 
 \section am_thyra Thyra support

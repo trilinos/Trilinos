@@ -71,7 +71,7 @@ public:
 			    const Epetra_LinearProblem& LinearProblem );
 
   /** \brief Creation method for string input. */
-  Amesos_BaseSolver *Create(const string CT,
+  Amesos_BaseSolver *Create(const std::string CT,
 			    const Epetra_LinearProblem& LinearProblem );
   // @}
   
@@ -82,7 +82,7 @@ public:
   bool Query(const char * ClassType);
 
   /** \brief Queries whether a given interface is avaiable or not. */
-  bool Query(const string CT);
+  bool Query(const std::string CT);
 
   /** \brief Get the list of valid parameters. */
   static Teuchos::ParameterList GetValidParameters(); 

@@ -3,6 +3,7 @@
 #
 
 (FRAMEWORK, INSTALL, AmesosExamples ) {
+    DESCEND_DIRS = YES;
     DIRS = ../example;
     COMM = SERIAL, MPI(1-4);
 }
@@ -43,15 +44,6 @@
 #  when run from within TestAmesos and TestQuietAmesos  Bug #1960  
 #
 #
-#  The install test should take less than a minute or two.
-#
-(INSTALL ) {   
-    DIRS = TestOptions;
-    ARGS = -s; 
-    X-HOST = atlantis;
-    COMM = SERIAL, MPI(1-4); 
-}
-
 # 
 (FRAMEWORK ) {   
    DIRS = TestOptions;

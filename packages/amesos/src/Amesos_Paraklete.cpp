@@ -174,10 +174,8 @@ int Amesos_Paraklete::ExportToSerial()
 	  SerialCrsMatrixA_->InsertGlobalValues( i, 1, &zero, &i ) ;
       SerialCrsMatrixA_->SetTracebackMode( OriginalTracebackMode ) ; 
     }
-
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
-    AMESOS_CHK_ERR(SerialCrsMatrixA_->OptimizeStorage());
-
+    //AMESOS_CHK_ERR(SerialCrsMatrixA_->OptimizeStorage());
 
     if( !AddZeroToDiag_ && numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
       cerr << " Amesos_Paraklete cannot handle this matrix.  " ;
@@ -194,7 +192,6 @@ int Amesos_Paraklete::ExportToSerial()
       }
     }
   }
-  
   return 0;
 }
 //=============================================================================

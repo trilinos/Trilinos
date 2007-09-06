@@ -44,7 +44,7 @@ EXTRA_DIST = README-Amesos ChangeLog-Amesos \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
        doc/Doxyfile doc/AmesosLogo.eps doc/AmesosLogo.jpeg \
-       doc/Doxyfile doc/footer.html doc/index.doc \
+       doc/Doxyfile doc/footer.html doc/index.doc config/token-replace.pl \
        doc/header.tex doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf
 
 
@@ -111,8 +111,14 @@ EXAMPLE_SUBDIR=example
 endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building amesos tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building amesos tests."
+	@echo ""
 else
 tests:
 	@echo "amesos tests were disabled at configure time"
@@ -120,7 +126,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building amesos examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building amesos examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
