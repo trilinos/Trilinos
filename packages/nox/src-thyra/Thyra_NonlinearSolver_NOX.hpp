@@ -36,24 +36,41 @@ public:
   /** @name Overridden from ParameterListAcceptor */
   //@{
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  /** \brief . */
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  RCP<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  RCP<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  RCP<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
   /** @name Overridden from NonlinearSolverBase */
   //@{
 
-  void setModel(const Teuchos::RCP< const ModelEvaluator<double> > &model);
-  Teuchos::RCP< const ModelEvaluator<double> > getModel() const;
-  SolveStatus<double> solve(VectorBase<double> *x,
-			    const SolveCriteria<double> *solveCriteria,
-			    VectorBase<double> *delta);
-  Teuchos::RCP< LinearOpWithSolveBase<double> > get_nonconst_W();
-  Teuchos::RCP< const LinearOpWithSolveBase<double> > get_W() const;
+  /** \brief . */
+  void setModel(const RCP< const ModelEvaluator<double> > &model);
+  /** \brief . */
+  RCP< const ModelEvaluator<double> > getModel() const;
+  /** \brief . */
+  SolveStatus<double> solve(
+    VectorBase<double> *x,
+    const SolveCriteria<double> *solveCriteria,
+    VectorBase<double> *delta
+    );
+  /** \brief . */
+  RCP<const VectorBase<double> > get_current_x() const;
+  /** \brief . */
+  bool is_W_current() const;
+  /** \brief . */
+  RCP< LinearOpWithSolveBase<double> >
+  get_nonconst_W(const bool forceUpToDate);
+  /** \brief . */
+  RCP< const LinearOpWithSolveBase<double> > get_W() const;
   
   //@}
 
@@ -63,19 +80,18 @@ private:
   void resetSolver();
 
   //! Builds status tests - first looks for parameter list to use, otherwise builds a default set of status tests.
-  Teuchos::RCP<NOX::StatusTest::Generic> 
+  RCP<NOX::StatusTest::Generic> 
   buildStatusTests(Teuchos::ParameterList& p);
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList> param_list_;
-  Teuchos::RCP<Teuchos::ParameterList> valid_param_list_;
-  Teuchos::RCP<const ModelEvaluator<double> > model_;
-  Teuchos::RCP<LinearOpWithSolveBase<double> > J_;
+  RCP<Teuchos::ParameterList> param_list_;
+  RCP<Teuchos::ParameterList> valid_param_list_;
+  RCP<const ModelEvaluator<double> > model_;
 
-  Teuchos::RCP<NOX::Thyra::Group> nox_group_;
-  Teuchos::RCP<NOX::StatusTest::Generic> status_test_;
-  Teuchos::RCP<NOX::Solver::Generic> solver_;
+  RCP<NOX::Thyra::Group> nox_group_;
+  RCP<NOX::StatusTest::Generic> status_test_;
+  RCP<NOX::Solver::Generic> solver_;
 
 };
 

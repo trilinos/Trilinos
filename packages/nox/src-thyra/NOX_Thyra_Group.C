@@ -156,16 +156,42 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   return *this;
 }
 
+
+Teuchos::RCP<const ::Thyra::VectorBase<double> >
+NOX::Thyra::Group::get_current_x() const
+{
+  if (is_null(x_vec_))
+    return Teuchos::null;
+  return x_vec_->getThyraRCPVector();
+}
+
+
+Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
+NOX::Thyra::Group::getNonconstJacobian()
+{
+  return shared_jacobian_->getObject(this);
+}
+
+
+Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> >
+NOX::Thyra::Group::getJacobian() const
+{
+  return shared_jacobian_->getObject();
+}
+
+
 void NOX::Thyra::Group::setX(const NOX::Abstract::Vector& y) 
 {
   setX(dynamic_cast<const NOX::Thyra::Vector&> (y));
 }
+
 
 void NOX::Thyra::Group::setX(const NOX::Thyra::Vector& y) 
 {
   resetIsValidFlags();
   *x_vec_ = y;
 }
+
 
 void NOX::Thyra::Group::computeX(const NOX::Abstract::Group& grp, 
 				 const NOX::Abstract::Vector& d, 

@@ -86,6 +86,16 @@ namespace NOX {
       //! See above.
       NOX::Abstract::Group& operator=(const NOX::Thyra::Group& source);
 
+      /** \brief . */
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > get_current_x() const;
+
+      /** \brief . */
+      Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
+      getNonconstJacobian();
+
+      /** \brief . */
+      Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> > getJacobian() const;
+
       /** @name "Compute" functions. */
       //@{
 
@@ -246,9 +256,11 @@ namespace NOX {
       
       //! Shared Jacobian operator
       Teuchos::RCP< 
-	NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double, double>, 
-			     NOX::Thyra::Group >
-                  > shared_jacobian_;
+        NOX::SharedObject<
+          ::Thyra::LinearOpWithSolveBase<double>,
+          NOX::Thyra::Group
+          >
+        > shared_jacobian_;
     
       //! Residual InArgs
       ::Thyra::ModelEvaluatorBase::InArgs<double> in_args_;

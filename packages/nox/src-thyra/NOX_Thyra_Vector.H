@@ -83,7 +83,10 @@ namespace NOX {
       virtual const ::Thyra::VectorBase<double>& getThyraVector() const;
       
       //! Get RCP to underlying Thyra vector.
-      virtual Teuchos::RCP< ::Thyra::VectorBase<double> >& getThyraRCPVector();
+      virtual Teuchos::RCP< ::Thyra::VectorBase<double> > getThyraRCPVector();
+      
+      //! Get RCP to underlying Thyra vector.
+      virtual Teuchos::RCP<const ::Thyra::VectorBase<double> > getThyraRCPVector() const;
       
       //@} 
 

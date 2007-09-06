@@ -17,9 +17,7 @@ Thyra::NOXNonlinearSolver::NOXNonlinearSolver()
 // ****************************************************************
 // ****************************************************************
 Thyra::NOXNonlinearSolver::~NOXNonlinearSolver()
-{
-  
-}
+{}
 
 // ****************************************************************
 // ****************************************************************
@@ -72,7 +70,6 @@ setModel(const Teuchos::RCP<const ModelEvaluator<double> >& model)
 {
   TEST_FOR_EXCEPT(model.get()==NULL);
   model_ = model;
-  J_ = Teuchos::null;
 }
 
 // ****************************************************************
@@ -133,20 +130,40 @@ solve(VectorBase<double> *x,
   ::Thyra::assign(x, new_x);
 
   return t_status;
+
 }
 
-
-Teuchos::RCP< Thyra::LinearOpWithSolveBase<double> >
-Thyra::NOXNonlinearSolver::get_nonconst_W()
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP<const Thyra::VectorBase<double> >
+Thyra::NOXNonlinearSolver::get_current_x() const
 {
-  return J_;
+  return nox_group_->get_current_x();
 }
 
+// ****************************************************************
+// ****************************************************************
+bool Thyra::NOXNonlinearSolver::is_W_current() const
+{
+  return nox_group_->isJacobian();
+}
 
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP< Thyra::LinearOpWithSolveBase<double> >
+Thyra::NOXNonlinearSolver::get_nonconst_W(const bool forceUpToDate)
+{
+  if (forceUpToDate && !nox_group_->isJacobian())
+    nox_group_->computeJacobian();
+  return nox_group_->getNonconstJacobian();
+}
+
+// ****************************************************************
+// ****************************************************************
 Teuchos::RCP<const Thyra::LinearOpWithSolveBase<double> >
 Thyra::NOXNonlinearSolver::get_W() const
 {
-  return J_;
+  return nox_group_->getJacobian();
 }
 
 // ****************************************************************

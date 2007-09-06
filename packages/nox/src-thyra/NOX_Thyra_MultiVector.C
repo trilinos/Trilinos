@@ -365,8 +365,8 @@ isContiguous(const vector<int>& index) const
   if (index.size()==0)
     return true;
   int i0 = index[0];
-  for (unsigned int i=1; i<index.size(); i++)
-    if (index[i] != i0+i)
+  for (std::size_t i=1; i<index.size(); i++)
+    if (index[i] != static_cast<int>(i0+i))
       return false;
   return true;
 }

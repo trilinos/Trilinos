@@ -99,9 +99,16 @@ getThyraVector() const
   return *thyraVec;
 }
 
-Teuchos::RCP< ::Thyra::VectorBase<double> >& 
+Teuchos::RCP< ::Thyra::VectorBase<double> > 
 NOX::Thyra::Vector::
 getThyraRCPVector()
+{
+  return thyraVec;
+}
+
+Teuchos::RCP<const ::Thyra::VectorBase<double> > 
+NOX::Thyra::Vector::
+getThyraRCPVector() const
 {
   return thyraVec;
 }
