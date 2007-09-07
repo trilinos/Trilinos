@@ -40,7 +40,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = config/strip_dup_incl_paths.pl
+EXTRA_DIST = config/strip_dup_incl_paths.pl    config/strip_dup_libs.pl \
+             config/token-replace.pl
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -80,7 +81,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building tpetra tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building tpetra tests."
+	@echo ""
 else
 tests:
 	@echo "tpetra tests were disabled at configure time"
@@ -88,7 +95,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building tpetra examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building tpetra examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

@@ -229,6 +229,7 @@ top_srcdir = @top_srcdir@
 STANDARD_SUBDIRS = Platform Comm Distributor ElementSpace Directory ImportExport BlockElementSpace VectorSpace Vector CisMatrix DistObject BasicPerfTest
 #endif
 SUBDIRS = $(STANDARD_SUBDIRS)
+EXTRA_DIST = tpetra_test_util.hpp
 all: all-recursive
 
 .SUFFIXES:
@@ -537,9 +538,6 @@ uninstall-am:
 
 
 all-local:
-	@echo ""
-	@echo "Trilinos package tpetra subdirectory test built successfully."
-	@echo ""
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
