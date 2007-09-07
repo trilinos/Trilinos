@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(pliris, 1.2d, jdkotul@sandia.gov)
+AC_INIT(pliris, 1.3d, jdkotul@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"

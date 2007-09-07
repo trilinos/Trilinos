@@ -195,7 +195,9 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # Pliris library specifications
 # ------------------------------------------------------------------------
 
-PLIRIS_LIBS = libdpliris.a libspliris.a libzpliris.a libcpliris.a
+#It would make more sense to say PLIRIS_LIBS here, but that name is
+#reserved for the Makefile.export system.
+PLIRIS_LIB = libdpliris.a libspliris.a libzpliris.a libcpliris.a
 
 PLIRIS_H = \
 	$(CORE_H) \
@@ -309,7 +311,7 @@ libzpliris_a_LIBADD = $(XTRALDADD)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(PLIRIS_LIBS)
+lib_LIBRARIES = $(PLIRIS_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)

@@ -33,6 +33,6 @@
 #include "PlirisVersion.h"
 
 string Pliris_Version() { 
-	return("Pliris Version 1.0d - 01/28/2005"); 
+	return("Pliris Version 1.3d - 09/07/2007"); 
 }
 

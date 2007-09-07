@@ -51,7 +51,7 @@ EXTRA_DIST = \
 config/ac_cxx_bool.m4                   config/depcomp \
 config/install-sh 			config/compile \
 config/ac_cxx_have_stl.m4               config/missing \
-config/ac_cxx_mutable.m4 \
+config/ac_cxx_mutable.m4                config/token-replace.pl \
 config/ac_cxx_namespaces.m4             config/tac_arg_check_mpi.m4 \
 config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
 config/tac_arg_enable_feature.m4 \
@@ -114,7 +114,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building pliris tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building pliris tests."
+	@echo ""
 else
 tests:
 	@echo "pliris tests were disabled at configure time"
