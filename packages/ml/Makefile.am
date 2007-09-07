@@ -57,7 +57,8 @@ EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
        doc/Doxyfile doc/mainpage.doxygen doc/mlguide.pdf \
-       doc/footer.html doc/header.tex doc/ml-image.jpg
+       doc/footer.html doc/header.tex doc/ml-image.jpg \
+       config/token-replace.pl
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -128,8 +129,14 @@ MATLAB_SUBDIR=matlab
 endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building ml tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building ml tests."
+	@echo ""
 else
 tests:
 	@echo "ml tests were disabled at configure time"
@@ -137,7 +144,13 @@ endif
 
 if ML_BUILD_EXAMPLES
 examples: FORCE
+	@echo ""
+	@echo "Now building ml examples."
+	@echo ""
 	cd $(top_builddir)/examples && $(MAKE)
+	@echo ""
+	@echo "Finished building ml examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/examples && $(MAKE) install
