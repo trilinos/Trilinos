@@ -598,7 +598,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_Operator * QQ = NULL;
    ML_Operator *Pstart = NULL;
    int starting_aggr_count;
-   char str[80], * str2;
+   char str[80];
    double * new_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
    int N_dimensions = 0;
@@ -1577,14 +1577,14 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
    ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->bc);
-   str2 = (char *)ML_allocate(80*sizeof(char));
-   sprintf(str2,"%s",(*Pmatrix)->label);
-   ML_Operator_Set_Label( Pmatrix2,str2);
+   /* JJH I've observed that (*Pmatrix)->label is sometimes null.
+      JJH Not sure if this is a problem. */
+   if ((*Pmatrix)->label) ML_Operator_Set_Label(Pmatrix2,(*Pmatrix)->label);
+   else                   ML_Operator_Set_Label(Pmatrix2,"unknown");
 /* this must be set so that the hierarchy generation does not abort early
    in adaptive SA */
    Pmatrix2->num_PDEs = nullspace_dim;   
 
-   ML_free(str2);
 
    ML_Operator_Clean( *Pmatrix );
 
