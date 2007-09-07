@@ -29,16 +29,27 @@
 EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
 	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
 	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i \
-	     Epetra_Vectors.i EpetraExt.i Galeri.i IFPACK.i Komplex.i \
+	     Epetra_Vectors.i Epetra_NumPyIntSerialDenseMatrix.cpp \
+	     Epetra_NumPyIntSerialDenseMatrix.h \
+	     Epetra_NumPyIntSerialDenseVector.cpp \
+	     Epetra_NumPyIntSerialDenseVector.h \
+	     Epetra_NumPySerialDenseMatrix.cpp Epetra_NumPySerialDenseMatrix.h \
+	     Epetra_NumPySerialDenseVector.cpp Epetra_NumPySerialDenseVector.h \
+	     Epetra_NumPyIntVector.cpp Epetra_NumPyIntVector.h \
+	     Epetra_NumPyMultiVector.cpp Epetra_NumPyMultiVector.h \
+	     Epetra_NumPyVector.cpp Epetra_NumPyVector.h \
+	     Epetra_NumPyFEVector.cpp Epetra_NumPyFEVector.h \
+	     Epetra_RowMatrix_Utils.i EpetraExt.i Galeri.i IFPACK.i Komplex.i \
 	     LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
 	     LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i LOCA.LAPACK.i \
-	     LOCA.MultiContinuation.i LOCA.TimeDependent.i \
-	     ML.i NOX.__init__.i NOX.Abstract.i NOX.Epetra.__init__.i \
+	     LOCA.MultiContinuation.i LOCA.TimeDependent.i ML.i \
+	     MLAPI_PyMatrix.h NOX.__init__.i NOX.Abstract.i \
+	     NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     Teuchos.i Teuchos_ParameterList_ext.i \
-	     Thyra.i TriUtils.i numpy.i \
-	     MakefileVariables.py PyTrilinosExtension.py setup.py \
-	     SharedUtils.py
+	     Teuchos.i Teuchos_Epetra.i Teuchos_ParameterList_ext.i \
+	     Teuchos_PythonParameter.h Thyra.i TriUtils.i \
+	     UserArray.patch NumPyImporter.h numpy.i numpy_include.h \
+	     setup.py scripts/ParamConvert.py
 
 # Configuration macros
 @HAVE_MPI_TRUE@HAVE_MPI = 1
@@ -259,8 +270,8 @@ all-am:
 package: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
-install: $(WRAPPERS)
-	$(PYTHON) $(srcdir)/setup.py install
+install: package
+	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
 
 uninstall:
 	$(PYTHON) $(srcdir)/setup.py uninstall

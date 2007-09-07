@@ -50,6 +50,7 @@ ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = \
 config/replace-install-prefix.pl  config/strip_dup_incl_paths.pl \
 config/string-replace.pl          config/strip_dup_libs.pl       \
+config/token-replace.pl \
 INSTALL
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -97,7 +98,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building PyTrilinos tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building PyTrilinos tests."
+	@echo ""
 else
 tests:
 	@echo "PyTrilinos tests were disabled at configure time"
@@ -105,7 +112,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building PyTrilinos examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building PyTrilinos examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

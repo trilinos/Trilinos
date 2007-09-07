@@ -98,7 +98,6 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
-#include "Epetra_JadOperator.h"
 
 // Epetra python includes
 #include "NumPyImporter.h"
