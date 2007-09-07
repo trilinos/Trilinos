@@ -240,20 +240,37 @@ int main (int argc, char *argv[])
           ZOLTAN_SET_ID (param.glen, glist + i * param.glen, ((Data *)p)->id) ;
            i++ ;
           }
-        err = Zoltan_DD_Find (dd, glist, llist, ulist, plist, param.count, olist) ;
+ 
+        if (loop % 5 == 0)
+           err = Zoltan_DD_Find (dd, glist, NULL, ulist, plist, param.count, olist) ;
+        else if (loop % 7 == 0)
+           err = Zoltan_DD_Find (dd, glist, llist, NULL, plist, param.count, olist) ;
+        else if (loop % 9 == 0)
+           err = Zoltan_DD_Find (dd, glist, llist, ulist, NULL, param.count, olist) ;
+        else if (loop % 2 == 0) 
+           err = Zoltan_DD_Find (dd, glist, llist, ulist, plist, param.count, NULL) ;
+        else
+           err = Zoltan_DD_Find (dd, glist, llist, ulist, plist, param.count, olist) ;
         if (err != ZOLTAN_DD_NORMAL_RETURN)
            ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Find") ;
 
-       errcount = 0 ;
-       for (i = 0 ; i < param.count ; i++)
-          if (olist[i] != ((Data *)(store + i * param.slen))->new_owner)
-             errcount++ ;
-       if (errcount > 0)
-          sprintf (str, "LOOP %d TEST FAILED, errcount is %d", loop, errcount) ;
+       if (loop % 2)
+          {
+          errcount = 0 ;
+          for (i = 0 ; i < param.count ; i++)
+             if (olist[i] != ((Data *)(store + i * param.slen))->new_owner)
+                errcount++ ;
+          if (errcount > 0)
+             sprintf (str, "LOOP %d TEST FAILED, errcount is %d", loop, errcount) ;
+          else
+             sprintf (str, "LOOP %d TEST SUCCESSFUL", loop) ;
+          ZOLTAN_PRINT_INFO (myproc, yo, str) ;
+          }
        else
-          sprintf (str, "LOOP %d TEST SUCCESSFUL", loop) ;
-       ZOLTAN_PRINT_INFO (myproc, yo, str) ;
-
+          {
+          sprintf (str, "LOOP %d Completed", loop) ;
+          ZOLTAN_PRINT_INFO (myproc, yo, str) ;
+          }
 
        /* randomly remove a percentage of GIDs from the directory */
        count = 0 ;
@@ -389,7 +406,7 @@ static int get_params (Param *param)
     {
     /* establish default values */
 /*  param->count       = 250000 ;  KDD */ /* 1500000 ; */
-    param->count       = 2000 ; /* 1500000 ; */
+    param->count       = 200000 ; /* 1500000 ; */
     param->pmove       = 10 ;
     param->pdelete     = 3 ;
     param->pscatter    = 4 ;
@@ -399,10 +416,10 @@ static int get_params (Param *param)
     param->glen        = 5 ;
     param->llen        = 5 ;
     param->ulen        = 10 ;
-    param->tlen        = 5000 ;
+    param->tlen        = 0 ;
 
-/*  param->debug_level = 1 ;  KDD */
-    param->debug_level = 3 ;
+    param->debug_level = 1 ; /*  KDD */
+/*    param->debug_level = 3 ;  */
     param->name_scheme = DD_TEST_NAME_NUMERIC ;
 
     param->rseed = 31415926 ;

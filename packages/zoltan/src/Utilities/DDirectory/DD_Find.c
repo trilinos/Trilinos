@@ -43,7 +43,7 @@ int Zoltan_DD_Find (
  ZOLTAN_ID_PTR data,      /* Outgoing optional corresponding user data     */
  int *partition,          /* Outgoing optional partition information       */
  int  count,              /* Count of GIDs in above list (in)              */
- int *owner)              /* Outgoing corresponding list of data locations */
+ int *owner)              /* Outgoing optional list of data owners         */
    {
    ZOLTAN_COMM_OBJ *plan  = NULL ;  /* efficient MPI communication     */
    char            *rbuff = NULL ;  /* receive buffer                  */
@@ -61,7 +61,7 @@ int Zoltan_DD_Find (
       ZOLTAN_TRACE_IN(dd->my_proc, yo, NULL);
 
    /* input sanity check */
-   if (dd == NULL || count < 0 || ((owner == NULL || gid == NULL) && count > 0))
+   if (dd == NULL || count < 0 || (gid == NULL && count > 0))
       {
       ZOLTAN_PRINT_ERROR ((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc),
        yo, "Invalid input argument.") ;
@@ -172,7 +172,8 @@ int Zoltan_DD_Find (
       {
       ptr = (DD_Find_Msg *) (sbuff + i*dd->find_msg_size) ;
 
-      owner[ptr->index] = ptr->proc ;
+      if (owner)
+         owner[ptr->index] = ptr->proc ;
 
       if (partition != NULL)
          partition[ptr->index] = ptr->partition ;
