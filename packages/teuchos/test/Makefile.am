@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package teuchos subdirectory test built successfully."
-	@echo ""
 
 if HAVE_TEUCHOS_EXTENDED
 CONTAINERS_SUBDIR = Containers
