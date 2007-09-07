@@ -71,6 +71,7 @@ config/config.guess                       config/tac_arg_with_libdirs.m4 \
 config/config.sub                         config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
 config/tac_arg_with_perl.m4 		  config/string-replace.pl \
+config/token-replace.pl \
 bootstrap 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -140,6 +141,10 @@ if SUB_TEST
 TEST_SUBDIR=test
 endif
 
+if SUB_EXAMPLE
+EXAMPLE_SUBDIR=examples
+endif
+
 if BUILD_TESTS
 tests:
 	@echo ""
@@ -177,7 +182,7 @@ install-everything:
 
 FORCE:
 
-SUBDIRS = src $(TEST_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

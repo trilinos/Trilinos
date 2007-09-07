@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package trilinoscouplings subdirectory test built successfully."
-	@echo ""
 
 # Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 # List all subdirectories even if one or more are configured/built only

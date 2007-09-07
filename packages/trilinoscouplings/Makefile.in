@@ -106,7 +106,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test
+DIST_SUBDIRS = src examples test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -264,6 +264,7 @@ config/config.guess                       config/tac_arg_with_libdirs.m4 \
 config/config.sub                         config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
 config/tac_arg_with_perl.m4 		  config/string-replace.pl \
+config/token-replace.pl \
 bootstrap 
 
 #
@@ -286,7 +287,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #defined, so that the tests and examples are included in the distribution
 #tarball.  (Triutils does not currently have any examples.)
 @SUB_TEST_TRUE@TEST_SUBDIR = test
-SUBDIRS = src $(TEST_SUBDIR)
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = examples
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_TEST_CATEGORY = INSTALL

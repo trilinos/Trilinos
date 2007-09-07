@@ -334,8 +334,10 @@ RefCountPtr<Epetra_MapColoring> NLNML::Standardcoloring(
 /*----------------------------------------------------------------------*
  |                                                           m.gee 11/05|
  *----------------------------------------------------------------------*/
+#include <cstdio>
 bool NLNML::Print_Epetra_CrsMatrix(Epetra_CrsMatrix& matrix)
 {
+  using namespace std;
   for (int i=0; i<matrix.NumMyRows(); ++i)
   {
     printf("Lrow %5d:  ",i); fflush(stdout);

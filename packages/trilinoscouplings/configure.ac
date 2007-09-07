@@ -12,7 +12,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  package name, version number, and e-mail address below
-AC_INIT(trilinoscouplings, 1.0, jhu@sandia.gov)
+AC_INIT(trilinoscouplings, 1.1d, jhu@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -241,7 +241,7 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_trilinoscouplings_tests" != "Xno")
 #defined, so that the tests and examples are included in the distribution
 #tarball.  (Triutils does not currently have any examples.)
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
-#AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
+AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
