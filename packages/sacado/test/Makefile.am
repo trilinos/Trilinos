@@ -30,9 +30,6 @@
 # @HEADER
 
 all-local:
-	@echo ""
-	@echo "Trilinos package sacado subdirectory test built successfully."
-	@echo ""
 
 if HAVE_CPPUNIT
 CPPUNIT_TESTDIRS = TestSuite

@@ -542,9 +542,6 @@ uninstall-am:
 
 
 all-local:
-	@echo ""
-	@echo "Trilinos package sacado subdirectory test built successfully."
-	@echo ""
 
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
