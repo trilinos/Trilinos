@@ -54,7 +54,8 @@ EXTRA_DIST = bootstrap \
   config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
   config/depcomp config/generate-makeoptions.pl \
   config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-  config/replace-install-prefix.pl config/string-replace.pl
+  config/replace-install-prefix.pl config/string-replace.pl \
+  config/token-replace.pl
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -99,29 +100,16 @@ if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 
-if ENABLE_STRATIMIKOS_THYRA_EPETRA
-BUILD_STRATIMIKOS_BELOS_TESTS=cd adapters/belos/test && $(MAKE)
-CLEAN_CMD1=clean
-endif
-
-if ENABLE_STRATIMIKOS_THYRA_TPETRA
-BUILD_STRATIMIKOS_BELOS_EXAMPLES=cd adapters/belos/example && $(MAKE)
-CLEAN_CMD2=clean
-INSTALL_CMD=install
-endif
-
-if ENABLE_STRATIMIKOS_THYRA_EPETRAEXT
-BUILD_STRATIMIKOS_AMESOS_TESTS=cd adapters/amesos/test && $(MAKE)
-BUILD_STRATIMIKOS_AZTECOO_TESTS=cd adapters/aztecoo/test && $(MAKE)
-CLEAN_CMD3=clean
-endif
-
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building stratimikos tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
-	$(BUILD_STRATIMIKOS_BELOS_TESTS)
-	$(BUILD_STRATIMIKOS_AMESOS_TESTS)
-	$(BUILD_STRATIMIKOS_AZTECOO_TESTS)
+	cd $(top_builddir)/adapters && $(MAKE) tests
+	@echo ""
+	@echo "Finished building stratimikos tests."
+	@echo ""
 else
 tests:
 	@echo "stratimikos tests were disabled at configure time"
@@ -129,12 +117,17 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building stratimikos examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
-	$(BUILD_STRATIMIKOS_BELOS_EXAMPLES)
+	cd $(top_builddir)/adapters && $(MAKE) examples
+	@echo ""
+	@echo "Finished building stratimikos examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
-	$(BUILD_STRATIMIKOS_BELOS_EXAMPLES) $(INSTALL_CMD)
 else
 examples:
 	@echo "stratimikos examples were disabled at configure time"
@@ -145,13 +138,11 @@ endif
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
-	$(BUILD_STRATIMIKOS_BELOS_TESTS) $(CLEAN_CMD1)
-	$(BUILD_STRATIMIKOS_AMESOS_TESTS) $(CLEAN_CMD3)
-	$(BUILD_STRATIMIKOS_AZTECOO_TESTS) $(CLEAN_CMD3)
+	cd $(top_builddir)/adapters && $(MAKE) clean-tests
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
-	$(BUILD_STRATIMIKOS_BELOS_EXAMPLES) $(CLEAN_CMD2)
+	cd $(top_builddir)/adapters && $(MAKE) clean-examples
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
@@ -208,9 +199,9 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.stratimikos \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/adapters/amesos/src:@abs_top_srcdir@/adapters/aztecoo/src:@abs_top_srcdir@/adapters/ifpack/src:@abs_top_srcdir@/adapters/ml/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/amesos/src:@abs_top_builddir@/adapters/aztecoo/src:@abs_top_builddir@/adapters/ifpack/src:@abs_top_builddir@/adapters/ml/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/adapters/amesos/src:@abs_top_srcdir@/adapters/aztecoo/src:@abs_top_srcdir@/adapters/belos/src:@abs_top_srcdir@/adapters/ifpack/src:@abs_top_srcdir@/adapters/ml/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/amesos/src:@abs_top_builddir@/adapters/aztecoo/src:@abs_top_builddir@/adapters/belos/src:@abs_top_builddir@/adapters/ifpack/src:@abs_top_builddir@/adapters/ml/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml:@abs_top_builddir@/../triutils
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile STRATIMIKOS > $(exec_prefix)/include/Makefile.export.stratimikos.macros
 
 uninstall-hook:
