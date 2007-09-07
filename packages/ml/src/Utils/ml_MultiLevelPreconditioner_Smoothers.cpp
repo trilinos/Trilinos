@@ -44,6 +44,8 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
                                                double * LambdaMax );
 }
 
+double ML_Smoother_ChebyshevAlpha(double, ML*, int, int);
+
 using namespace Teuchos;
 
 // ============================================================================
@@ -356,66 +358,51 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // Chebyshev //
       // ========= //
 
-      int logical_level = LevelID_[level];
+      int thisLevel = LevelID_[level];     // current level
+      int nextLevel = LevelID_[level+1];   // next coarser level
       sprintf(parameter,"smoother: MLS polynomial order (level %d)",
-              logical_level);
+              thisLevel);
       int MyChebyshevPolyOrder = List_.get(parameter,ChebyshevPolyOrder);
       if (MyChebyshevPolyOrder == -97) {
          sprintf(parameter,"smoother: polynomial order (level %d)",
-                 logical_level);
+                 thisLevel);
          MyChebyshevPolyOrder = List_.get(parameter,MyChebyshevPolyOrder);
       }
       if (MyChebyshevPolyOrder== -97) MyChebyshevPolyOrder=Mynum_smoother_steps;
 
-      sprintf(parameter,"smoother: MLS alpha (level %d)",logical_level);
+      sprintf(parameter,"smoother: MLS alpha (level %d)",thisLevel);
       double MyChebyshevAlpha = List_.get(parameter,ChebyshevAlpha);
       if (MyChebyshevAlpha == -2.) {
-        sprintf(parameter,"smoother: Chebyshev alpha (level %d)",logical_level);
+        sprintf(parameter,"smoother: Chebyshev alpha (level %d)",thisLevel);
          MyChebyshevAlpha = List_.get(parameter,MyChebyshevAlpha);
       }
       if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
+      MyChebyshevAlpha = ML_Smoother_ChebyshevAlpha(MyChebyshevAlpha, ml_,
+                                                    thisLevel, nextLevel);
 
-      if (verbose_) 
+      if (verbose_) {
         if (MyChebyshevPolyOrder > 0)
         {
-          cout << msg << "MLS/Chebyshev, polynomial order = " << MyChebyshevPolyOrder
-               << ", alpha = " << MyChebyshevAlpha << ", " << MyPreOrPostSmoother << endl;
+          cout << msg << "MLS/Chebyshev, polynomial order = "
+               <<  MyChebyshevPolyOrder
+               << ", alpha = " << MyChebyshevAlpha << ", "
+               << MyPreOrPostSmoother << endl;
         }
         else
         {
           cout << msg << "MLS, polynomial order = " << -MyChebyshevPolyOrder
-               << ", alpha = " << MyChebyshevAlpha << ", " << MyPreOrPostSmoother << endl;
+               << ", alpha = " << MyChebyshevAlpha << ", "
+               << MyPreOrPostSmoother << endl;
         }
-
-
-      if (SolvingMaxwell_) {
-        int Nfine_edge = Tmat_array[logical_level]->outvec_leng;
-        int itmp, Ncoarse_edge;
-        int coarsest_level = ml_->ML_coarsest_level;
-        double edge_coarsening_rate=0.0;
-        ML_gsum_scalar_int(&Nfine_edge, &itmp, ml_->comm);
-        if (logical_level != coarsest_level) {
-          Ncoarse_edge = Tmat_array[logical_level-1]->outvec_leng;
-          ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_->comm);
-          if (Ncoarse_edge != 0.0)
-            edge_coarsening_rate =  2.*((double) Nfine_edge)/
-                                    ((double) Ncoarse_edge);
-        }
-        printf("level %d, before, edge_coarsening_rate = %e\n",
-                logical_level, edge_coarsening_rate);
-        if (edge_coarsening_rate < MyChebyshevAlpha)
-          edge_coarsening_rate =  MyChebyshevAlpha;
-
-        MyChebyshevAlpha = edge_coarsening_rate;
-      } //if (SolvingMaxwell_)
+      }
 
       ML_Gen_Smoother_Cheby(ml_, LevelID_[level], pre_or_post,
                           MyChebyshevAlpha, MyChebyshevPolyOrder);
 
       if (verbose_) {
         ML_Operator* this_A = &(ml_->Amat[LevelID_[level]]);
-	cout << msg << "lambda_min = " << this_A->lambda_min
-	     << ", lambda_max = " << this_A->lambda_max << endl;
+        cout << msg << "lambda_min = " << this_A->lambda_min
+             << ", lambda_max = " << this_A->lambda_max << endl;
       }
     } else if( MySmoother == "Aztec" ) {
       
@@ -569,9 +556,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 #ifdef HAVE_ML_IFPACK
       int logical_level = LevelID_[level];
 
-      if (SolvingMaxwell_)
-        ML_CHK_ERR(-1); // not supported at this point
-
       sprintf(parameter,"smoother: MLS polynomial order (level %d)",
               logical_level);
       int MyChebyshevPolyOrder = List_.get(parameter,ChebyshevPolyOrder);
@@ -589,6 +573,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
          MyChebyshevAlpha = List_.get(parameter,MyChebyshevAlpha);
       }
       if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
+
+      MyChebyshevAlpha = ML_Smoother_ChebyshevAlpha(MyChebyshevAlpha, ml_,
+                                       LevelID_[level], LevelID_[level+1]);
 
       if( verbose_ ) {
 	cout << msg << "IFPACK Chebyshev, order = " << MyChebyshevPolyOrder
@@ -621,7 +608,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     } else if( MySmoother == "self" ) {
 
 #ifdef HAVE_ML_IFPACK
-      int MyIfpackOverlap = List_.get("smoother: self overlap",0);
+      sprintf(parameter,"smoother: self overlap (level %d)", LevelID_[level]);
+      int MyIfpackOverlap;
+      if(List_.isParameter(parameter))
+        MyIfpackOverlap = List_.get(parameter,0);
+      else
+        MyIfpackOverlap = List_.get("smoother: self overlap",0);
       
       if( verbose_ ) {
 	cout << msg << "ML as self-smoother, " << endl
@@ -630,9 +622,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       }
 
       Teuchos::ParameterList& SelfList = List_.sublist("smoother: self list");
+      string xxx = SelfList.get("SetDefaults", "not-set");
+      if (xxx != "not-set") {
+        if (verbose_ && Comm().MyPID() == 0)
+          cout << "***" << " Setting self-smoother default values to type `" << xxx << "'" << endl;
+        SetDefaults(xxx, SelfList,0,0,false);
+      }
 
+      if (verbose_ && Comm().MyPID() == 0)
+        cout << "*************" << endl
+             << "Start of self-smoother generation" << endl
+             << "*************" << endl;
       ML_Gen_Smoother_Self(ml_, MyIfpackOverlap, LevelID_[level], pre_or_post,
                            SelfList,*Comm_);
+      if (verbose_ && Comm().MyPID() == 0)
+        cout << "*************" << endl
+             << "End of self-smoother generation" << endl
+             << "*************" << endl;
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
@@ -709,7 +715,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       char EdgeSmootherInfo[80], NodeSmootherInfo[80];
       char *SmInfo=0;
 
-      int logical_level = LevelID_[level];
+      int thisLevel = LevelID_[level];   // current level
+      int nextLevel = LevelID_[level+1]; // next coarser level
       void *edge_smoother = 0, *nodal_smoother = 0;
       double edge_coarsening_rate=0.0, node_coarsening_rate=0.0;
 
@@ -806,22 +813,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           // --------------------------------------
           double *coarsening_rate=0;
           int Nfine=0,Ncoarse=0;
+          ML  *mlptr=0;
           if (ne == EDGE) {
             edge_smoother=(void *) ML_Gen_Smoother_Cheby;
             edge_args_ = ML_Smoother_Arglist_Create(2);
             argList = edge_args_;
             coarsening_rate = &edge_coarsening_rate;
-            Nfine = Tmat_array[logical_level]->outvec_leng;
-            if (logical_level != ml_->ML_coarsest_level)
-              Ncoarse = Tmat_array[logical_level-1]->outvec_leng;
+            Nfine = Tmat_array[thisLevel]->outvec_leng;
+            if (thisLevel != ml_->ML_coarsest_level)
+              Ncoarse = Tmat_array[nextLevel]->outvec_leng;
+            mlptr = ml_;
           } else if (ne == NODE) { 
             nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
             nodal_args_ = ML_Smoother_Arglist_Create(2);
             argList = nodal_args_;
             coarsening_rate = &node_coarsening_rate;
-            Nfine = Tmat_array[logical_level]->invec_leng;
-            if (logical_level != ml_->ML_coarsest_level)
-              Ncoarse = Tmat_array[logical_level-1]->invec_leng;
+            Nfine = Tmat_array[thisLevel]->invec_leng;
+            if (thisLevel != ml_->ML_coarsest_level)
+              Ncoarse = Tmat_array[nextLevel]->invec_leng;
+            mlptr = ml_nodes_;
           }
           // This is for backward compatibility 
           int itemp = List_.get("subsmoother: MLS polynomial order",-97);
@@ -833,16 +843,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           double SubAlpha = List_.get("subsmoother: MLS alpha",MySubSmAlpha);
           if (SubAlpha == -2.) SubAlpha=List_.get("subsmoother: Chebyshev alpha", -2.);
           if (SubAlpha == -2.) SubAlpha = 20.;
-
-          if (logical_level != ml_->ML_coarsest_level) {
-            int itmp;
-            ML_gsum_scalar_int(&Ncoarse, &itmp, ml_->comm);
-            if (Ncoarse != 0.0)
-              *coarsening_rate =  2.*((double) Nfine)/ ((double) Ncoarse);
-          }
-          else *coarsening_rate = 0.0;
-          if (*coarsening_rate < SubAlpha) *coarsening_rate =  SubAlpha;
-                                                                                  
+          *coarsening_rate = ML_Smoother_ChebyshevAlpha(SubAlpha, mlptr,
+                                                        thisLevel, nextLevel);
           ML_Smoother_Arglist_Set(argList, 0, MySubSmIts);
           ML_Smoother_Arglist_Set(argList, 1, coarsening_rate);
 
@@ -924,7 +926,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
              << msg << "edge: " << EdgeSmootherInfo << endl
              << msg << "node: " << NodeSmootherInfo << endl;
         
-      ML_Gen_Smoother_Hiptmair2(ml_, logical_level, ML_BOTH,
+      ML_Gen_Smoother_Hiptmair2(ml_, thisLevel, ML_BOTH,
                                 Mynum_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
                                 MassMatrix_array,TtATMatrixML_,
                                 edge_smoother, edge_args_, nodal_smoother, nodal_args_,
@@ -941,12 +943,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       {
         if (verbose_ && Comm().MyPID() == 0)
           cout << "ML*WRN* "
-             << "Resetting nodal smoother on level " << logical_level << endl
+             << "Resetting nodal smoother on level " << thisLevel << endl
              << "ML*WRN* to account for negative mass matrix." << endl;
         //pre-smoother
 
         ML_Sm_Hiptmair_Data *hiptmairSmData =
-           (ML_Sm_Hiptmair_Data *) ml_->pre_smoother[logical_level].smoother->data;
+           (ML_Sm_Hiptmair_Data *) ml_->pre_smoother[thisLevel].smoother->data;
         ML *ml_subproblem = hiptmairSmData->ml_nodal;
                                                                                 
         struct MLSthing *widget =
@@ -964,7 +966,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                                                                                 
            //post-smoother
            hiptmairSmData = (ML_Sm_Hiptmair_Data *)
-                          ml_->post_smoother[logical_level].smoother->data;
+                          ml_->post_smoother[thisLevel].smoother->data;
            ml_subproblem = hiptmairSmData->ml_nodal;
                                                                                 
            // Note:  this is correct because the pre_smoother is the only one
@@ -1048,6 +1050,36 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
   return(0);
 }
+
+/*------------------------------------------------------------------------
+function ML_Smoother_ChebyshevAlpha()
+   alpha  -- default alpha for Chebyshev polynomial
+   ml     -- pointer to the ML structure
+   here   -- level number of this level
+   next   -- level number of next coarser level
+------------------------------------------------------------------------*/
+double ML_Smoother_ChebyshevAlpha(double alpha, ML* ml,int here, int next)
+{
+  int itmp, Ncoarse,
+      Nfine = ml->Amat[here].outvec_leng,
+      coarsest_level = ml->ML_coarsest_level;
+  double coarsening_rate=0.0;
+
+  ML_gsum_scalar_int(&Nfine, &itmp, ml->comm);
+  if (here != coarsest_level) {
+    Ncoarse = ml->Amat[next].outvec_leng;
+    ML_gsum_scalar_int(&Ncoarse, &itmp, ml->comm);
+    if (Ncoarse != 0.0)
+      coarsening_rate =  ((double) Nfine) / ((double) Ncoarse);
+      //coarsening_rate =  2.0*((double) Nfine) / ((double) Ncoarse);
+  }
+  //printf("level %d, before, coarsening_rate = %e, nc = %d, nf = %d\n",
+  //        here, coarsening_rate, Ncoarse, Nfine);
+  if (coarsening_rate < alpha)
+    coarsening_rate =  alpha;
+  return coarsening_rate;
+} //ML_Smoother_ChebyshevAlpha()
+
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
 
