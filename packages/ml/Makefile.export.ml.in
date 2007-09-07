@@ -91,3 +91,7 @@ _ML_EXTRA_LIBS =
 
 #ML_LINK = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 ML_LINK = $(CXX) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+
+# Macro that can be added to a user's Makefile as a dependency to ensure
+# relinking if the ML library changes.
+ML_LIB_DEP = @abs_top_builddir@/src/libml.a
