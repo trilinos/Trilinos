@@ -8,6 +8,7 @@ FFLAGS=-O3 \
 --with-mpi-compilers \
 --cache-file=config.cache \
 --disable-default-packages \
+--with-swig=/home/wfspotz/bin/swig \
 --enable-amesos \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
@@ -32,6 +33,7 @@ FFLAGS=-O3 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
+--enable-external \
 --enable-galeri \
 --enable-ifpack \
 --enable-isorropia \
@@ -46,7 +48,7 @@ FFLAGS=-O3 \
 --enable-moertel \
 --enable-moocho \
 --enable-new_package \
---enable-new_swahili \
+--enable-newp_swahili \
 --enable-nox \
 --enable-nox-epetra \
 --enable-nox-epetra-examples \
@@ -70,4 +72,5 @@ FFLAGS=-O3 \
 --enable-sacado \
 --enable-sacado-alltests \
 --enable-stratimikos \
+--enable-webtrilinos \
 --with-gnumake

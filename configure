@@ -1417,6 +1417,8 @@ Optional Features:
   --enable-galeri         Build galeri, a gallery package (default is no)
   --enable-webtrilinos    Build WebTrilinos, a web interface package (default
                           is no)
+  --enable-shared         Build shared libraries in addition to static
+                          libraries (default is no)
   --enable-aztecoo-teuchos
                           Enable AztecOO Teuchos::ParameterList interface.
                           Default is no. Requires Teuchos package.
@@ -3548,6 +3550,34 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+
+# Check whether --enable-shared was given.
+if test "${enable_shared+set}" = set; then
+  enableval=$enable_shared; ac_cv_use_shared=$enableval
+ac_cv_use_shared_explicit=$enableval
+else
+  ac_cv_use_shared=no
+ac_cv_use_shared_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use shared" >&5
+echo $ECHO_N "checking whether to use shared... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_shared" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SHARED
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
 # Check whether --enable-aztecoo-teuchos was given.
 if test "${enable_aztecoo_teuchos+set}" = set; then
   enableval=$enable_aztecoo_teuchos; ac_cv_use_aztecoo_teuchos=$enableval
@@ -4159,11 +4189,18 @@ fi
 
 
 if test "X$ac_cv_use_pytrilinos" != "Xno" ||
-	test "X$ac_cv_use_webtrilinos" != "Xno"; then
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
+	test "X$ac_cv_use_shared" != "Xno"; then
   subdirs="$subdirs packages/PyTrilinos"
 
   BUILD_PYTRILINOS=yes
-  if test "X$ac_cv_use_pytrilinos_explicit" != "Xyes"; then
+#Below we have to list all packages that depend on pytrilinos
+#because if pytrilinos is being configured only because shared is
+#enabled, we don't need to enable pytrilinos.  Note that adding
+#additional dependent packages would result in a statement like
+#if pytrilinos_explicit != yes && (webtrilinos != no || packageB != no)
+  if test "X$ac_cv_use_pytrilinos_explicit" != "Xyes" &&
+	test "X$ac_cv_use_webtrilinos" != "Xno"; then
     ac_configure_args="$ac_configure_args --enable-pytrilinos"
   fi
 else

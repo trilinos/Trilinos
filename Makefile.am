@@ -86,8 +86,7 @@ EXTRA_DIST = \
 	config/makeall \
 	sampleScripts/cygwin_icl.pl sampleScripts/stratus_ar.pl \
 	doc/Tutorial/README RELEASE_NOTES \
-	doc/build_docs.pl \
-	doc/check_installation.txt
+	doc/build_docs.pl
 
 ## #######################################################################
 ## Tools in the auxillary directory 

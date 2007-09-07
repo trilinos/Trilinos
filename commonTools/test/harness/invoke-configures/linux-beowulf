@@ -34,7 +34,7 @@ FFLAGS=-O3 \
 --with-ml-64bit-integer="long long" \
 --enable-moertel \
 --enable-new_package \
---enable-new_swahili \
+--enable-newp_swahili \
 --enable-nox \
 --enable-nox-epetra \
 --enable-nox-epetra-examples \

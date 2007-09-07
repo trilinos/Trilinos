@@ -121,6 +121,8 @@ TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri, a gallery package], GALERI, no)
 
 TAC_ARG_ENABLE_FEATURE(webtrilinos, [Build WebTrilinos, a web interface package], WEBTRILINOS, no)
 
+TAC_ARG_ENABLE_FEATURE(shared, [Build shared libraries in addition to static libraries], SHARED, no)
+
 AC_ARG_ENABLE(aztecoo-teuchos,
  [AC_HELP_STRING([--enable-aztecoo-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
  ac_cv_use_aztecoo_teuchos=$enableval, ac_cv_use_aztecoo_teuchos=no)
@@ -504,10 +506,17 @@ fi
 AM_CONDITIONAL(BUILD_MOERTEL, test "X$BUILD_MOERTEL" != "Xno")
 
 if test "X$ac_cv_use_pytrilinos" != "Xno" ||
-	test "X$ac_cv_use_webtrilinos" != "Xno"; then
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
+	test "X$ac_cv_use_shared" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/PyTrilinos])
   BUILD_PYTRILINOS=yes
-  if test "X$ac_cv_use_pytrilinos_explicit" != "Xyes"; then
+#Below we have to list all packages that depend on pytrilinos
+#because if pytrilinos is being configured only because shared is
+#enabled, we don't need to enable pytrilinos.  Note that adding
+#additional dependent packages would result in a statement like
+#if pytrilinos_explicit != yes && (webtrilinos != no || packageB != no)
+  if test "X$ac_cv_use_pytrilinos_explicit" != "Xyes" &&
+	test "X$ac_cv_use_webtrilinos" != "Xno"; then
     ac_configure_args="$ac_configure_args --enable-pytrilinos"
   fi
 else
