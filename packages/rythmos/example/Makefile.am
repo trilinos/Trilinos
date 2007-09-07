@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package rythmos subdirectory example built successfully."
-	@echo ""
 
 if ENABLE_RYTHMOS_STRATIMIKOS
 if ENABLE_RYTHMOS_THYRA_EPETRAEXT
