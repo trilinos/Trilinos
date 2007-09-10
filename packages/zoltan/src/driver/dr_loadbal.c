@@ -26,7 +26,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -38,6 +38,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include "ch_init_dist_const.h"
 #include "dr_param_file.h"
 #include "zoltan_id.h"
+#include "phg_matrix_input.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -47,12 +48,14 @@ extern "C" {
 static int Num_Global_Parts;
 static int Num_GID = 1, Num_LID = 1;
 static int Export_Lists_Special = 0;
+static int Matrix_Partition_Approach = 0;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 static void setup_fixed_obj(MESH_INFO_PTR mesh);
+static int sorted_unique_list(unsigned int *l, int len, 
+   unsigned int **newl, int *newLen);
 
 extern int Zoltan_Matrix_Partition(struct Zoltan_Struct *zz);
-
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -151,6 +154,21 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0) 
       Export_Lists_Special = (strstr(prob->params[i].Val,"partition") != NULL);
+    else if (strcasecmp(prob->params[i].Name, "SPARSE_MATRIX_APPROACH") == 0) {
+      if ((strstr(prob->params[i].Val,"phg_rows") != NULL) ||
+          (strstr(prob->params[i].Val,"phg_row") != NULL)){
+        Matrix_Partition_Approach = PHG_ROWS;
+      }
+      else if ((strstr(prob->params[i].Val,"phg_columns") != NULL) ||
+               (strstr(prob->params[i].Val,"phg_cols") != NULL)    ||
+               (strstr(prob->params[i].Val,"phg_col") != NULL)) {
+        Matrix_Partition_Approach = PHG_COLS;
+      }
+      else{
+        /* Zoltan_Matrix_Partition defaults to using phg on s.m. rows */
+        Matrix_Partition_Approach = PHG_ROWS;
+      }
+    }
   }
 
   /* Set the load-balance method */
@@ -890,6 +908,15 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
   char *yo = "run_zoltan_sparse_matrix";
   int ierr=ZOLTAN_OK;
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
+  int i, j, numRows=0, numCols=0, numNZs=0, numGIDs=0, numIDs=0;
+  int Num_Proc;
+  unsigned int *gidList=NULL;
+  int *procList=NULL, *partList=NULL; 
+  unsigned int *idx1=NULL, *idx2=NULL;
+  unsigned int *rowIDs=NULL, *colIDs=NULL, *idList=NULL;
+  char rowcol[8];
+
+  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -912,7 +939,7 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
     ierr = Zoltan_Matrix_Partition(zz);
 
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
-      Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
+      Gen_Error(0, "fatal:  error returned from Zoltan_Matrix_Partition()\n");
       return 0;
     }
 
@@ -930,10 +957,151 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
 #endif /* TIMER_CALLBACKS */
 
 
-    /* We will have some queries to follow up partitioning.  Not written yet.
+    /* 
+     * We will call the sparse matrix partitioning queries.  Really
+     * we should call Zoltan_Matrix_Partition_Eval(), but it isn't
+     * written yet.  Eval() should call these queries and compute
+     * a balance.
+     *
+     * zdrive parameter:
+     * "init_dist_pins=INITIAL_COL"     we gave Zoltan CSC
+     * "init_dist_pins=INITIAL_ROW or anything else"   CSR
+     *
+     * Zoltan parameter:
+     * "SPARSE_MATRIX_APPROACH=PHG_ROWS"  we asked Zoltan to partition rows
+     * "SPARSE_MATRIXAPPROACH=PHG_COLS"  we asked Zoltan to partition columns 
+     *
      */
 
+    numNZs = mesh->hindex[mesh->nhedges];
+
+    ierr = sorted_unique_list((unsigned int *)mesh->hvertex, 
+                               numNZs, &gidList, &numGIDs);
+
+    if (ierr != ZOLTAN_OK){
+      Gen_Error(0, "fatal:  error returned from sorted_unique_list()\n");
+      return 0;
     }
+
+    if (pio_info->init_dist_pins != INITIAL_COL){ 
+      numRows = mesh->nhedges;
+      numCols = numGIDs;
+      rowIDs = (unsigned int *)mesh->hgid;
+      colIDs = gidList;
+    }
+    else{
+      numRows = numGIDs;
+      numCols = mesh->nhedges;
+      rowIDs = gidList;
+      colIDs = (unsigned int *)mesh->hgid;
+    }
+
+    if (Matrix_Partition_Approach == PHG_ROWS){
+      /* 
+       * Get partitioning assignment of sparse matrix rows
+       */
+    
+      procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
+      partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
+
+      ierr = Zoltan_MP_Get_Row_Assignment(zz, numRows, rowIDs,
+                      procList, partList);
+
+      if (ierr != ZOLTAN_OK){
+        Gen_Error(0, 
+        "fatal:  error returned from Zoltan_MP_Get_Row_Assignment()\n");
+        return 0;
+      }
+      strcpy(rowcol, "Row");
+      idList = rowIDs;
+      numIDs = numRows;
+    }
+    else if (Matrix_Partition_Approach == PHG_COLS){
+      /* 
+       * Get partitioning assignment of sparse matrix columns
+       */
+      procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
+      partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
+
+      ierr = Zoltan_MP_Get_Column_Assignment(zz, numCols, colIDs,
+                      procList, partList);
+
+      if (ierr != ZOLTAN_OK){
+        Gen_Error(0, "fatal:  error returned from Zoltan_MP_Get_Column_Assignment()\n");
+        return 0;
+      }
+      strcpy(rowcol, "Column");
+      idList = colIDs;
+      numIDs = numCols;
+    }
+
+    for (i=0; i<Num_Proc; i++){
+      if (i == Proc){
+        printf("(Process %d) %s assignments (process/partition)\n",i,rowcol);
+        for (j=0; j<numIDs; j++){
+          printf("%d (%d / %d)\n",idList[j],procList[j],partList[j]);
+        }
+        printf("\n");
+        fflush(stdout);
+      }
+    }
+    ZOLTAN_FREE(&procList);
+    ZOLTAN_FREE(&partList);
+    ZOLTAN_FREE(&gidList);
+
+    /*
+     * Get the assignment of my non-zeroes
+     */
+
+    procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numNZs);
+    partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numNZs);
+    idx1 = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * numNZs);
+    idx2 = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * numNZs);
+
+    if (numNZs && (!procList || !partList || !idx1 || !idx2)){
+      Gen_Error(0, "fatal: memory error in run_zoltan_sparse_matrix\n");
+      return 0;
+    }
+
+    for (i=0, numNZs=0; i<mesh->nhedges; i++){
+      for (j=mesh->hindex[i]; j<mesh->hindex[i+1]; j++){
+        idx1[numNZs] = (unsigned int)mesh->hgid[i];
+        idx2[numNZs] = (unsigned int)mesh->hvertex[j];
+        numNZs++;
+      }
+    }
+
+    if (pio_info->init_dist_pins != INITIAL_COL){ 
+      ierr = Zoltan_MP_Get_NonZero_Assignment(zz, numNZs,
+                     idx1, idx2, procList, partList);
+    }else{
+      ierr = Zoltan_MP_Get_NonZero_Assignment(zz, numNZs,
+                     idx2, idx1, procList, partList);
+    }
+    if (ierr != ZOLTAN_OK){
+      Gen_Error(0, "fatal:  error returned from Zoltan_MP_Get_NonZero_Assignment()\n");
+      return 0;
+    }
+
+    for (i=0; i<Num_Proc; i++){
+      if (i == Proc){
+        printf("(Process %d) Pin (row, column) assignments (process / partition)\n",i);
+        for (j=0; j<numNZs; j++){
+          printf("(%d, %d) %d / %d\n",
+            ((pio_info->init_dist_pins != INITIAL_COL) ? idx1[j] : idx2[j]),
+            ((pio_info->init_dist_pins != INITIAL_COL) ? idx2[j] : idx1[j]),
+             procList[j],partList[j]);
+        }
+        printf("\n");
+        fflush(stdout);
+      }
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    ZOLTAN_FREE(&procList);
+    ZOLTAN_FREE(&partList);
+    ZOLTAN_FREE(&idx1);
+    ZOLTAN_FREE(&idx2);
+  }
 
 #if 0
     /*
@@ -960,6 +1128,50 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
   return 1;
 }
 
+static int increasingOrder(const void *p1, const void *p2)
+{
+  unsigned int *a = (unsigned int *)p1;
+  unsigned int *b = (unsigned int *)p2;
+
+  if (*a < *b) return -1;
+  else if (*a == *b) return 0;
+  else return 1;
+}
+static int sorted_unique_list(unsigned int *l, int len, 
+                              unsigned int **newl, int *newLen)
+{
+  int i, j, len2;
+  unsigned int *l2;
+
+  if (len < 1) return ZOLTAN_OK;
+
+  l2 = *newl = (unsigned int *)malloc(sizeof(unsigned int) * len);
+  if (!l2){
+    return ZOLTAN_MEMERR;
+  }
+  memcpy(l2, l, sizeof(unsigned int) * len);
+
+  qsort((void *)l2, len, sizeof(unsigned int), increasingOrder);
+
+  j = 0;
+  for (i=1; i<len; i++){
+    if (l2[i] == l2[j]) continue;
+    if (i > j)
+       l2[j+1] = l2[i];
+    j++;
+  }
+  len2 = *newLen = j+1;
+
+  if (len2 < len){
+    l2 = *newl =
+    (unsigned int *)realloc(l2, sizeof(unsigned int) * len2);
+    if (!l2){
+      return ZOLTAN_MEMERR;
+    }
+  }
+
+  return ZOLTAN_OK;
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
