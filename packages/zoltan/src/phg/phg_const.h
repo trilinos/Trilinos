@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 int Zoltan_PHG_Set_Param (char*, char*);
+int Zoltan_MP_Set_Param (char*, char*);
 
 #define PHG_ADD_UNIT_WEIGHT 1
 #define PHG_ADD_PINS_WEIGHT 2

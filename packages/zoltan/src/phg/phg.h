@@ -186,7 +186,6 @@ extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, float *, Partition,
                                       PHGPartParams*);
 ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*,
                                                                  int*);
-
 /************************/
 /* Refinement functions */ 
 /************************/

@@ -25,9 +25,11 @@ extern "C" {
  * of the phg directory and be more general, using other partitioning
  * methods on the sparse matrix.
  */
-#include "phg.h"
+#include "phg_matrix_input.h"
 /*******************/
-#include "zz_util_const.h"
+
+#include "phg.h"   /* for Zoltan_Convert_To_CSR */
+#include "zz_util_const.h"   /* for Zoltan_Hash */
 
 /* Query functions set up by Zoltan_Matrix_Partition for the
  * Zoltan library
@@ -36,10 +38,42 @@ extern "C" {
 /* Parameters for Zoltan method SPARSE_MATRIX
  */
 static PARAM_VARS MP_params[] = {
-  {"LB_APPROACH",         NULL,  "STRING",     0},
-  {"NUM_GID_ENTRIES",     NULL,  "INT",     0},
+  {"SPARSE_MATRIX_APPROACH",         NULL,  "STRING",     0},
   {NULL,                  NULL,  NULL,     0}
 };
+
+int Zoltan_MP_Set_Param(
+  char *name,                     /* name of variable */
+  char *val)                      /* value of variable */
+{
+  /* associates value to named variable for MP partitioning parameters */
+  PARAM_UTYPE result;         /* value returned from Check_Param */
+  int index;                  /* index returned from Check_Param */
+  int status;
+  int i;
+
+  char *valid_approach[] = {
+        "PHG_ROWS", "PHG_ROW", 
+        "PHG_COLS", "PHG_COLUMNS", "PHG_COL",
+         NULL };
+
+  status = Zoltan_Check_Param(name, val, MP_params, &result, &index);
+
+  if (status == 0){
+    if (strcasecmp(name, "SPARSE_MATRIX_APPROACH") == 0){
+      status = 2;
+      for (i=0; valid_approach[i] != NULL; i++){
+        if (strcasecmp(val, valid_approach[i]) == 0){
+          status = 0;
+          break;
+        }
+      }
+    }
+  }
+  return(status);
+}
+
+
     
 /***********************************************************************
 ** Allow user of parallel hypergraph methods to input a sparse matrix, 
@@ -56,7 +90,7 @@ static PARAM_VARS MP_params[] = {
 ** An IJTYPE is the type of a row or column ID.
 **
 ** LB_METHOD = SPARSE_MATRIX
-** LB_APPROACH:
+** SPARSE_MATRIX_APPROACH:
 **    PHG_ROWS    use Zoltan's PHG to partition the rows (objects are
 **                rows, hyperedges are columns)
 **                
@@ -77,11 +111,11 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 static int make_mirror(ZOLTAN_MP_DATA *mpd);
 static int allocate_copy(IJTYPE **to, IJTYPE *from, IJTYPE len);
 
-static ZOLTAN_MP_DATA *MP_Initialize_Structure();
+static ZOLTAN_MP_DATA *MP_Initialize_Structure(ZZ *zz);
 static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd);
 
 /*
- * Functions specifically to process approaches PHG_ROWS and PHG_COLUMNS
+ * Functions specifically to process approaches PHG_ROWS and PHG_COLS
  */
 static int phg_rc_setup(ZOLTAN_MP_DATA *mpd);
 static int phg_rc_result(ZOLTAN_MP_DATA *mpd,
@@ -112,7 +146,7 @@ static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
  *
  *  Zoltan_Matrix_Partition()     must be called by all processes
  *
- *  Queries (not all queries are defined for all LB_APPROACH):
+ *  Queries (not all queries are defined for all SPARSE_MATRIX_APPROACH):
  *
  *  Zoltan_MP_Get_Row_Assignment()
  *  Zoltan_MP_Get_Column_Assignment()
@@ -131,7 +165,7 @@ int Zoltan_MP_Get_Row_Assignment(ZZ *zz, int nRows, IJTYPE *rowIDs,
   int ierr = ZOLTAN_FATAL;
 
   /*
-   * Row assignment depends on the LB_APPROACH.  We can only
+   * Row assignment depends on the SPARSE_MATRIX_APPROACH.  We can only
    * return row assignments for rows that this process gave us
    * non-zeroes for.
    */
@@ -139,8 +173,8 @@ int Zoltan_MP_Get_Row_Assignment(ZZ *zz, int nRows, IJTYPE *rowIDs,
   if (mpd){
     switch (mpd->approach)
     {
-      case PHG_ROWS:
-      case PHG_COLUMNS:
+      case PHG_ROW_TYPE:
+      case PHG_COLUMN_TYPE:
         ierr = phg_rc_get_rows(mpd, nRows, rowIDs, rowProcs, rowParts);
         break;
       default:
@@ -158,7 +192,7 @@ int Zoltan_MP_Get_Column_Assignment(ZZ *zz, int nCols, IJTYPE *colIDs,
   int ierr = ZOLTAN_FATAL;
 
   /*
-   * Column assignment depends on the LB_APPROACH.  We can only
+   * Column assignment depends on the SPARSE_MATRIX_APPROACH.  We can only
    * return column assignments for columns that this process gave us
    * non-zeroes for.
    */
@@ -166,8 +200,8 @@ int Zoltan_MP_Get_Column_Assignment(ZZ *zz, int nCols, IJTYPE *colIDs,
   if (mpd){
     switch (mpd->approach)
     {
-      case PHG_ROWS:
-      case PHG_COLUMNS:
+      case PHG_ROW_TYPE:
+      case PHG_COLUMN_TYPE:
         ierr = phg_rc_get_columns(mpd, nCols, colIDs, colProcs, colParts);
         break;
       default:
@@ -185,7 +219,7 @@ int Zoltan_MP_Get_NonZero_Assignment(ZZ *zz, int nNZ,
   int ierr = ZOLTAN_FATAL;
 
   /*
-   * Nonzero assignment depends on the LB_APPROACH.  We can only
+   * Nonzero assignment depends on the SPARSE_MATRIX_APPROACH.  We can only
    * return nonzero assignments for nonzeroes that were returned
    * by this process in the query functions.
    */
@@ -193,8 +227,8 @@ int Zoltan_MP_Get_NonZero_Assignment(ZZ *zz, int nNZ,
   if (mpd){
     switch (mpd->approach)
     {
-      case PHG_ROWS:
-      case PHG_COLUMNS:
+      case PHG_ROW_TYPE:
+      case PHG_COLUMN_TYPE:
         ierr = phg_rc_get_pins(mpd, nNZ, rowIDs, colIDs, nzProcs, nzParts);
         break;
       default:
@@ -213,7 +247,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
 
   /* The persistent structure we will save at zz->LB.Data_Structure */
 
-  ZOLTAN_MP_DATA *mpd = MP_Initialize_Structure();
+  ZOLTAN_MP_DATA *mpd = MP_Initialize_Structure(zz);
 
   if (mpd == NULL){
     ierr = ZOLTAN_MEMERR;
@@ -221,7 +255,6 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   }
 
   if (zz->LB.Data_Structure){
-    
     zz->LB.Free_Structure(zz);
   }
   zz->LB.Data_Structure = mpd;
@@ -259,7 +292,8 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   }
 
   if (ierr != ZOLTAN_OK){
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Required query functions are not defined.\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+      "Required query functions are not defined.\n");
     goto End;
   }
 
@@ -268,6 +302,11 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   }
   else {
     zz->Get_CSR_Size(zz->Get_CSR_Size_Data, &mpd->numRC, &npins, &ierr);
+  }
+
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "query function failed\n");
+    goto End;
   }
 
   mpd->rcGID = (IJTYPE *)ZOLTAN_MALLOC(mpd->numRC * sizeof(IJTYPE));
@@ -286,6 +325,11 @@ int Zoltan_Matrix_Partition(ZZ *zz)
     zz->Get_CSR(zz->Get_CSR_Data, mpd->numRC, npins, 
                 mpd->rcGID, mpd->pinIndex, mpd->pinGID, &ierr);
   }
+
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "query function 2 failed\n");
+    goto End;
+  }
  
   mpd->pinIndex[mpd->numRC] = npins;
 
@@ -297,22 +341,33 @@ int Zoltan_Matrix_Partition(ZZ *zz)
 
   ierr = process_matrix_input(zz, mpd);
 
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "process_matrix_input\n");
+    goto End;
+  }
+
   /*
    * Set the query functions and parameters required for this problem.
    * Precompute hypergraph if necessary.  This is the code that needs
-   * to be written if you are implementing a new LB_APPROACH.
+   * to be written if you are implementing a new SPARSE_MATRIX_APPROACH.
    */
   switch (mpd->approach)
     {
-      case PHG_ROWS:
-      case PHG_COLUMNS:
-        phg_rc_setup(mpd);
+      case PHG_ROW_TYPE:
+      case PHG_COLUMN_TYPE:
+        ierr = phg_rc_setup(mpd);
+        if (ierr != ZOLTAN_OK){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "setup for partitioning\n");
+        }
         break;
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
         ierr = ZOLTAN_FATAL;
-        goto End;
     }
+
+  if (ierr != ZOLTAN_OK){
+    goto End;
+  }
 
   /*
    * Call Zoltan_LB_Partition to partition the objects
@@ -331,31 +386,43 @@ int Zoltan_Matrix_Partition(ZZ *zz)
       &num_export,
       &export_global_ids, &export_local_ids, &export_procs, &export_to_part);
 
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "partitioning\n");
+    goto End;
+  }
+
   /*
    * Save the data required to respond to the queries that are
-   * supported by each LB_APPROACH.
+   * supported by each SPARSE_MATRIX_APPROACH.
    */
 
   switch (mpd->approach)
     {
-      case PHG_ROWS:
-      case PHG_COLUMNS:
+      case PHG_ROW_TYPE:
+      case PHG_COLUMN_TYPE:
         /*
          * Save row or column assignment for all rows or columns
          * in my non-zeroes.  Each of my non-zeroes is assigned to
          * the row or column that it's row or column is assigned to.
          *
-         * PHG_ROWS - we only give row and nonzero assignments
-         * PHG_COLUMNS - we only give column and nonzero assignments
+         * PHG_ROW_TYPE - we only give row and nonzero assignments
+         * PHG_COLUMN_TYPE - we only give column and nonzero assignments
          */
-        phg_rc_result(mpd, num_export,
+        ierr = phg_rc_result(mpd, num_export,
             export_global_ids, export_local_ids, export_procs, export_to_part);
+        if (ierr != ZOLTAN_OK){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,"processing results of partitioning\n");
+        }
         break;
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
         ierr = ZOLTAN_FATAL;
-        goto End;
     }
+
+  if (ierr != ZOLTAN_OK){
+    goto End;
+  }
+
 
 End:
   Zoltan_Multifree(__FILE__, __LINE__, 8,
@@ -417,7 +484,7 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
   int ierr = ZOLTAN_OK;
   char approach[MAX_PARAM_STRING_LEN];
 
-  Zoltan_Bind_Param(MP_params, "LB_APPROACH", approach);  
+  Zoltan_Bind_Param(MP_params, "SPARSE_MATRIX_APPROACH", approach);  
   Zoltan_Bind_Param(MP_params, "NUM_GID_ENTRIES", &mpd->gidLen);  
 
   strncpy(approach, "PHG_ROWS", MAX_PARAM_STRING_LEN);
@@ -427,20 +494,26 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
           zz->Proc, zz->Debug_Proc);
 
   if (ierr == ZOLTAN_OK){
-    /* Update this if you add a new LB_APPROACH */
-    if (!strcasecmp(approach, "phg_rows"))
-      mpd->approach = PHG_ROWS;
-    else if (!strcasecmp(approach, "phg_columns"))
-      mpd->approach = PHG_COLUMNS;
+    /* Update this if you add a new SPARSE_MATRIX_APPROACH */
+    if ((!strcasecmp(approach, "phg_rows")) ||
+        (!strcasecmp(approach, "phg_row")) )
+      mpd->approach = PHG_ROW_TYPE;
+    else if ((!strcasecmp(approach, "phg_columns")) ||
+             (!strcasecmp(approach, "phg_cols"))    ||
+             (!strcasecmp(approach, "phg_col")) )
+      mpd->approach = PHG_COLUMN_TYPE;
 
     if (mpd->gidLen > sizeof(IJTYPE)){
       /*
        * Maybe they want to use long ints, we only handle ints.  Change
        * IJTYPE to make code use long ints.
        */
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input row and column IDs are too large");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input row and column IDs are too large\n");
       ierr = ZOLTAN_FATAL;
     }
+  }
+  else{
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_Assign_Param_Vals\n");
   }
   return ierr;
 }
@@ -522,12 +595,13 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 }
 /* TODO - need to copy structure too.
  */
-static ZOLTAN_MP_DATA *MP_Initialize_Structure()
+static ZOLTAN_MP_DATA *MP_Initialize_Structure(ZZ *zz)
 {
   ZOLTAN_MP_DATA *mpd = 
     (ZOLTAN_MP_DATA *)ZOLTAN_CALLOC(sizeof(ZOLTAN_MP_DATA), 1);
 
   if (mpd == NULL){
+    ZOLTAN_PRINT_ERROR(zz->Proc, "MP_Initialize_Structure", "Memory error\n");
     return NULL;
   }
 
@@ -593,7 +667,8 @@ static void free_obj_lookup_table(obj_lookup **lu)
 /*
  * Look up array index for global ID or for (i,j) pair.
  * This is a global function, in case other parts of Zoltan
- * library want to use the lookup tables.
+ * library want to use the lookup tables in the ZOLTAN_MP_DATA
+ * object that is saved at zz->LB.Data_Structure.
  */
 int Zoltan_Lookup_Obj(obj_lookup *lu, IJTYPE I, IJTYPE J)
 {
@@ -731,7 +806,7 @@ static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
 
 /****************************************************************/
 /****************************************************************/
-/* Functions that support LB_APPROACH = PHG_ROWS or PHG_COLS
+/* Functions that support SPARSE_MATRIX_APPROACH = PHG_ROWS or PHG_COLS
  *
  * The objects to be partitioned are the matrix rows or columns,
  * and we are using Zoltan's PHG to do it.
@@ -758,7 +833,7 @@ static int phg_rc_my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
 static int phg_rc_get_pins(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts)
 {
-  if (mpd->approach == PHG_ROWS){
+  if (mpd->approach == PHG_ROW_TYPE){
     /* The pin belongs to the partition its row belongs to */
     return phg_rc_get_rows(mpd, nPins, I, ijProcs, ijParts);
   }
@@ -774,9 +849,9 @@ static int phg_rc_get_columns(ZOLTAN_MP_DATA *mpd,
   char *yo = "phg_rc_get_columns";
   int nTotalCols = ((mpd->input_type == ROW_TYPE) ? mpd->numCR : mpd->numRC);
 
-  if (mpd->approach != PHG_COLUMNS){
+  if (mpd->approach != PHG_COLUMN_TYPE){
     ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
-     "chosen LB_APPROACH does not support obtaining column partitions\n");
+     "chosen SPARSE_MATRIX_APPROACH does not support obtaining column partitions\n");
     return ZOLTAN_FATAL; 
   }
 
@@ -798,9 +873,9 @@ static int phg_rc_get_rows(ZOLTAN_MP_DATA *mpd,
   char *yo = "phg_rc_get_rows";
   int nTotalRows = ((mpd->input_type == ROW_TYPE) ? mpd->numRC : mpd->numCR);
 
-  if (mpd->approach != PHG_ROWS){
+  if (mpd->approach != PHG_ROW_TYPE){
     ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
-     "chosen LB_APPROACH does not support obtaining row partitions\n");
+     "chosen SPARSE_MATRIX_APPROACH does not support obtaining row partitions\n");
     return ZOLTAN_FATAL; 
   }
 
@@ -828,7 +903,7 @@ static int phg_rc_my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs)
   int ierr = ZOLTAN_OK;
   int me = mpd->zzLib->Proc;
 
-  if (mpd->approach == PHG_ROWS){
+  if (mpd->approach == PHG_ROW_TYPE){
     baseid = mpd->rowBaseID;
     lastid = mpd->rowBaseID +  mpd->nRows - 1;
   }
@@ -923,8 +998,8 @@ void phg_rc_get_size_matrix(void *data, int *num_lists, int *num_pins,
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
 
-  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
-      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
+  if (((mpd->approach == PHG_ROW_TYPE) && (mpd->input_type == ROW_TYPE)) ||
+      ((mpd->approach == PHG_COLUMN_TYPE) && (mpd->input_type == COL_TYPE)) ){
     *num_lists = mpd->numCR;
     *num_pins  = mpd->mirrorPinIndex[mpd->numCR];
   }
@@ -945,8 +1020,8 @@ void phg_rc_get_matrix(void *data, int num_gid_entries, int num_vtx_edge,
   IJTYPE *edgeGID = (IJTYPE *)vtxedge_GID;
   IJTYPE *pinGID = (IJTYPE *)pin_GID;
 
-  if (((mpd->approach == PHG_ROWS) && (mpd->input_type == ROW_TYPE)) ||
-      ((mpd->approach == PHG_COLUMNS) && (mpd->input_type == COL_TYPE)) ){
+  if (((mpd->approach == PHG_ROW_TYPE) && (mpd->input_type == ROW_TYPE)) ||
+      ((mpd->approach == PHG_COLUMN_TYPE) && (mpd->input_type == COL_TYPE)) ){
     for (i=0; i<mpd->numCR; i++){
       edgeGID[i] = mpd->crGID[i];
       vtxedge_ptr[i] = mpd->mirrorPinIndex[i];
@@ -978,14 +1053,14 @@ static int phg_rc_result(ZOLTAN_MP_DATA *mpd,
   IJTYPE nobj=0;
   IJTYPE *objList=NULL;
 
-  if (mpd->approach == PHG_ROWS){
+  if (mpd->approach == PHG_ROW_TYPE){
     if (mpd->input_type == ROW_TYPE){
       nobj = mpd->numRC;
       objList = mpd->rcGID;
     }
     else{
       nobj = mpd->numCR;
-      objList = mpd->rcGID;
+      objList = mpd->crGID;
     }
     lu = mpd->row_lookup = create_obj_lookup_table(nobj, objList);
     proclist = mpd->rowproc = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
@@ -1025,6 +1100,7 @@ static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
   unsigned int *gids, int *procs, int *parts,
   IJTYPE nobj, IJTYPE *objList, int *objProcs, int *objParts)
 {
+  char *yo = "get_proc_part";
   obj_lookup *myIDs=NULL;
   ZOLTAN_COMM_OBJ *plan=NULL;
   int *toProc=NULL, *outprocs=NULL, *outparts=NULL;
@@ -1038,6 +1114,7 @@ static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
    */
   myIDs = create_obj_lookup_table(num_export, gids);
   if (myIDs == NULL){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "create_obj_lookup_table\n");
     ierr = ZOLTAN_FATAL;
     goto End;
   }
@@ -1048,6 +1125,7 @@ static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
    */
   toProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
   if (nobj && !toProc){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "memory\n");
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
@@ -1056,21 +1134,28 @@ static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
   }
 
   ierr = Zoltan_Comm_Create(&plan, nobj, toProc, comm, tag, &nrecv);
-  if (ierr != ZOLTAN_OK) goto End;
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "comm create\n");
+    goto End;
+  }
   /*
    * Send list of obj IDs I need proc/part for, get list from others.
    */
   idReqs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * nrecv);
   outprocs = (int *)ZOLTAN_MALLOC(sizeof(int) * nrecv);
   outparts = (int *)ZOLTAN_MALLOC(sizeof(int) * nrecv);
-  if (nrecv && (!idReqs || outprocs || outparts)){
+  if (nrecv && (!idReqs || !outprocs || !outparts)){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "memory\n");
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
   ierr = Zoltan_Comm_Do(plan, --tag, (char *)objList, sizeof(IJTYPE),
                         (char *)idReqs);
-  if (ierr != ZOLTAN_OK) goto End;
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "comm do\n");
+    goto End;
+  }
 
   /*
    * Create list of proc/part for all requests I received.
@@ -1079,6 +1164,7 @@ static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
     idx = Zoltan_Lookup_Obj(myIDs, idReqs[i], 0);
     if (idx == -1){
       ierr = ZOLTAN_FATAL;
+      ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Zoltan_Lookup_Obj\n");
       goto End;
     }
     outprocs[i] = procs[idx];
@@ -1090,11 +1176,17 @@ static int get_proc_part(ZOLTAN_MP_DATA *mpd, int num_export,
    */
   ierr = Zoltan_Comm_Do_Reverse(plan, --tag, (char *)outprocs,
              sizeof(unsigned int), NULL, (char *)objProcs);
-  if (ierr != ZOLTAN_OK) goto End;
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "comm do reverse\n");
+    goto End;
+  }
 
   ierr = Zoltan_Comm_Do_Reverse(plan, --tag, (char *)outparts,
              sizeof(unsigned int), NULL, (char *)objParts);
-  if (ierr != ZOLTAN_OK) goto End;
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "comm do reverse 2\n");
+    goto End;
+  }
 
 End:
   Zoltan_Comm_Destroy(&plan); 
