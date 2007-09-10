@@ -187,6 +187,7 @@ int read_cmd_file (
               else if (!strcmp(value, "row"))     i = INITIAL_ROW;
               else if (!strcmp(value, "rows"))    i = INITIAL_ROW;
               else if (!strcmp(value, "column"))  i = INITIAL_COL;
+              else if (!strcmp(value, "columns"))  i = INITIAL_COL;
               else if (!strcmp(value, "col"))     i = INITIAL_COL;
               else if (!strcmp(value, "cols"))    i = INITIAL_COL;
               else  {
