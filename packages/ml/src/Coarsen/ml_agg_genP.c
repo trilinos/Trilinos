@@ -2911,6 +2911,9 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    case 3: /* Z_1 */
      flag=ML_AGG_Gen_Prolongator_MinEnergy(ml,level,clevel,data);   
      break;
+   case 4: 
+     flag = ML_AGG_Gen_Prolongator_MandelMinEnergy(ml,level,clevel,data);  
+     break;
    default:
      printf("Value of ag->minimizing_energy not correct (%d)\n"
             "(file %s, line %d)\n",
@@ -3020,6 +3023,9 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     case 2: /* Z_2 */
     case 3: /* Z_3 */
       ML_AGG_Gen_Restriction_MinEnergy(ml, level, next, data);   
+      break;
+    case 4: 
+      ML_Gen_Restrictor_TransP(ml, level, next, NULL);
       break;
     default:
       printf("Value of ag->minimizing_energy not correct (%d)\n"
