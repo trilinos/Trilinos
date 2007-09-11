@@ -44,10 +44,18 @@
 #ifndef NOX_THYRA_VECTOR_H
 #define NOX_THYRA_VECTOR_H
 
-#include "Teuchos_RCP.hpp"
-
 #include "NOX_Abstract_Vector.H" // base class
 #include "Thyra_VectorBase.hpp"
+#include "Teuchos_RCP.hpp"
+
+#ifndef TEUCHOS_DISABLE_ALL_TIMERS
+// Define this to see selected timers
+#define ENABLE_NOX_THYRA_TIMERS
+#endif
+
+#ifdef ENABLE_NOX_THYRA_TIMERS
+#include "Teuchos_TimeMonitor.hpp"
+#endif
 
 namespace NOX {
 

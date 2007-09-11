@@ -87,9 +87,14 @@ solve(VectorBase<double> *x,
       const SolveCriteria<double> *solveCriteria,
       VectorBase<double> *delta)
 {
+
+#ifdef ENABLE_NOX_THYRA_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Thyra::NOXNonlinearSolver::solve");
+#endif
+
   TEST_FOR_EXCEPT(model_.get()==NULL);
   TEST_FOR_EXCEPT(param_list_.get()==NULL);
- 
+  
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
   if (Teuchos::is_null(solver_)) {
