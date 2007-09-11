@@ -27,7 +27,7 @@
 // ************************************************************************
 //@HEADER
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>

@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _Isorropia_CostDescriber_hpp_
 #define _Isorropia_CostDescriber_hpp_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 /** Isorropia is the namespace that contains isorropia's declarations

@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _ispatest_epetra_test_utils_hpp_
 #define _ispatest_epetra_test_utils_hpp_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 #ifdef HAVE_EPETRA
 

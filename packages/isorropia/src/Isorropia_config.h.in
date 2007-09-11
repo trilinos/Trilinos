@@ -1,4 +1,4 @@
-/* src/Isorropia_autoheader.h.in.  Generated from configure.ac by autoheader.  */
+/* src/Isorropia_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */

@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _Isorropia_Exception_hpp_
 #define _Isorropia_Exception_hpp_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 /** Isorropia is the namespace that contains Isorropia's declarations
   for classes and functions.

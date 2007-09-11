@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _Isorropia_Zoltan_Repartition_hpp_
 #define _Isorropia_Zoltan_Repartition_hpp_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
 

@@ -30,8 +30,8 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_configdefs_hpp_
-#define _Isorropia_configdefs_hpp_
+#ifndef _Isorropia_ConfigDefs_hpp_
+#define _Isorropia_ConfigDefs_hpp_
 
 /*
    The macros PACKAGE, PACKAGE_NAME, etc, get defined in the automatically-
@@ -67,7 +67,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #undef VERSION
 #endif
 
-#include <Isorropia_autoheader.h>
+#include <Isorropia_config.h>
 
 #ifdef HAVE_IOSTREAM
 #include <iostream>
@@ -103,5 +103,5 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <time.h>
 #endif
 
-#endif //_Isorropia_configdefs_hpp_
+#endif //_Isorropia_ConfigDefs_hpp_
 

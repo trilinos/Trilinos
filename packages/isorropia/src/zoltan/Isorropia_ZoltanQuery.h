@@ -30,7 +30,7 @@
 #ifndef ISORROPIA_ZOLTANQUERY_H
 #define ISORROPIA_ZOLTANQUERY_H
 
-#include "Isorropia_configdefs.hpp"
+#include "Isorropia_ConfigDefs.hpp"
 
 #include <IZoltan_QueryObject.h>
 #include <Teuchos_RefCountPtr.hpp>

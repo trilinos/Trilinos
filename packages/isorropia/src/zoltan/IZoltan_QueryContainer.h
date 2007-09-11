@@ -29,7 +29,7 @@
 #ifndef ZOLTAN_QUERYCONTAINER_H_
 #define ZOLTAN_QUERYCONTAINER_H_
 
-#include "Isorropia_configdefs.hpp"
+#include "Isorropia_ConfigDefs.hpp"
 
 #include <map>
 

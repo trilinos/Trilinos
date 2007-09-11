@@ -12,7 +12,7 @@
 #ifndef ZOLTAN_LOADBALANCE_H_
 #define ZOLTAN_LOADBALANCE_H_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 #include <zoltan.h>
 

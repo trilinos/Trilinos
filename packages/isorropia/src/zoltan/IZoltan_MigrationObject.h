@@ -12,7 +12,7 @@
 #ifndef ZOLTAN_MIGRATIONOBJECT_H_
 #define ZOLTAN_MIGRATIONOBJECT_H_
 
-#include "Isorropia_configdefs.hpp"
+#include "Isorropia_ConfigDefs.hpp"
 
 #include <zoltan.h>
 

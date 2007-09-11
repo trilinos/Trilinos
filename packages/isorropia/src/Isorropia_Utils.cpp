@@ -29,7 +29,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_Exception.hpp>
 
 /** Isorropia is the namespace that contains isorropia's declarations

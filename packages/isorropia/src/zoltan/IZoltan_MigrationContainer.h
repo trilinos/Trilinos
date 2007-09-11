@@ -29,7 +29,7 @@
 #ifndef ZOLTAN_MIGRATIONCONTAINER_H_
 #define ZOLTAN_MIGRATIONCONTAINER_H_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 #include <map>
 

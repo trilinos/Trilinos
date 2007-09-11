@@ -72,7 +72,7 @@ host_triplet = @host@
 target_triplet = @target@
 subdir = src
 DIST_COMMON = $(am__include_HEADERS_DIST) \
-	$(srcdir)/Isorropia_autoheader.h.in $(srcdir)/Makefile.in \
+	$(srcdir)/Isorropia_config.h.in $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.include.am $(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -105,7 +105,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
-CONFIG_HEADER = Isorropia_autoheader.h
+CONFIG_HEADER = Isorropia_config.h
 CONFIG_CLEAN_FILES = Makefile
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -165,7 +165,8 @@ am__include_HEADERS_DIST = $(srcdir)/Isorropia_CostDescriber.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp $(srcdir)/Isorropia_Epetra.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
-	$(srcdir)/Isorropia_configdefs.hpp \
+	$(srcdir)/Isorropia_ConfigDefs.hpp \
+	$(builddir)/Isorropia_config.h \
 	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.hpp \
 	$(srcdir)/zoltan/Isorropia_ZoltanQuery.h \
 	$(srcdir)/zoltan/IZoltan_LoadBalance.h \
@@ -326,7 +327,8 @@ CORE_H = \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Epetra.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
-	$(srcdir)/Isorropia_configdefs.hpp
+	$(srcdir)/Isorropia_ConfigDefs.hpp \
+	$(builddir)/Isorropia_config.h
 
 ZOLTAN = \
 	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
@@ -390,7 +392,7 @@ include_HEADERS = $(CORE_H) $(ZOLTAN_HEADERFILES)
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-all: Isorropia_autoheader.h
+all: Isorropia_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
@@ -425,22 +427,22 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-Isorropia_autoheader.h: stamp-h1
+Isorropia_config.h: stamp-h1
 	@if test ! -f $@; then \
 	  rm -f stamp-h1; \
 	  $(MAKE) $(AM_MAKEFLAGS) stamp-h1; \
 	else :; fi
 
-stamp-h1: $(srcdir)/Isorropia_autoheader.h.in $(top_builddir)/config.status
+stamp-h1: $(srcdir)/Isorropia_config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
-	cd $(top_builddir) && $(SHELL) ./config.status src/Isorropia_autoheader.h
-$(srcdir)/Isorropia_autoheader.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+	cd $(top_builddir) && $(SHELL) ./config.status src/Isorropia_config.h
+$(srcdir)/Isorropia_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
 	cd $(top_srcdir) && $(AUTOHEADER)
 	rm -f stamp-h1
 	touch $@
 
 distclean-hdr:
-	-rm -f Isorropia_autoheader.h stamp-h1
+	-rm -f Isorropia_config.h stamp-h1
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-libLIBRARIES: $(lib_LIBRARIES)
@@ -750,11 +752,11 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES) Isorropia_autoheader.h.in $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES) Isorropia_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) Isorropia_autoheader.h.in $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS) Isorropia_config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -766,11 +768,11 @@ TAGS:  $(HEADERS) $(SOURCES) Isorropia_autoheader.h.in $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES) Isorropia_autoheader.h.in $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES) Isorropia_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) Isorropia_autoheader.h.in $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS) Isorropia_config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -816,8 +818,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile.include $(LIBRARIES) $(HEADERS) \
-		Isorropia_autoheader.h
+all-am: Makefile.include $(LIBRARIES) $(HEADERS) Isorropia_config.h
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \

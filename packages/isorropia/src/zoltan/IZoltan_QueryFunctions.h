@@ -30,7 +30,7 @@
 #ifndef ZOLTAN_QUERYFUNCTIONS_H_
 #define ZOLTAN_QUERYFUNCTIONS_H_
 
-#include "Isorropia_configdefs.hpp"
+#include "Isorropia_ConfigDefs.hpp"
 
 #include <zoltan.h>
 

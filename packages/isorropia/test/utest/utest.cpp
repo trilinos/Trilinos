@@ -27,7 +27,7 @@
 // ************************************************************************
 //@HEADER
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 #include <ispatest_utils.hpp>
 
 #ifdef HAVE_MPI

@@ -97,7 +97,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
-CONFIG_HEADER = $(top_builddir)/src/Isorropia_autoheader.h
+CONFIG_HEADER = $(top_builddir)/src/Isorropia_config.h
 CONFIG_CLEAN_FILES = Makefile
 @BUILD_EXAMPLES_TRUE@am__EXEEXT_1 = matrix_1$(EXEEXT) \
 @BUILD_EXAMPLES_TRUE@	part_redist$(EXEEXT) \

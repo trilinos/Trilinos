@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _ispatest_utils_hpp_
 #define _ispatest_utils_hpp_
 
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 /** ispatest is the namespace that contains isorropia's test-utilities.
   These test-utilities are for internal testing, and are not generally

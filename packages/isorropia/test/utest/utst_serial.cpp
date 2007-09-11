@@ -38,7 +38,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 //---------------------------------------------------------------
 //Include-directives, to include relevant Isorropia declarations 
 //
-#include <Isorropia_configdefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Utils.hpp>
 

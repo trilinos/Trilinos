@@ -54,10 +54,10 @@ AC_CONFIG_SRCDIR([test/utest/utest.cpp])
 
 AC_CONFIG_AUX_DIR(config)
 
-# Configure should create src/Isorropia_autoheader.h from
-# src/Isorropia_autoheader.h.in
+# Configure should create src/Isorropia_config.h from
+# src/Isorropia_config.h.in
 
-AM_CONFIG_HEADER(src/Isorropia_autoheader.h:src/Isorropia_autoheader.h.in)
+AM_CONFIG_HEADER(src/Isorropia_config.h:src/Isorropia_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
