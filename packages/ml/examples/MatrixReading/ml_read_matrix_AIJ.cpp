@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
   ML_Epetra::SetDefaults("SA", MLList);          // Use NSSA for highly nonsymmetric
   MLList.set("smoother: type", "Chebyshev");
-  MLList.set("smoother : sweeps", 3);
+  MLList.set("smoother: sweeps", 3);
   MLList.set("eigen-analysis: type", "cg");     // use power-method and 15
   MLList.set("eigen-analysis: iterations", 10); // iterations for nonsymmetric
                                                 // systems.
