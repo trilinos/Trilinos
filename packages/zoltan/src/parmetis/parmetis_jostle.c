@@ -1396,6 +1396,18 @@ static int Zoltan_ParMetis_Jostle(
 
     /* Fill in the Zoltan Order Struct */
     /* EBEB: For now, discard separator info */ 
+    if (0){ /* DEBUG: Print separator sizes to file */
+      FILE *fp;
+      fp = fopen("separators.txt", "w");
+      fprintf(fp, "%i\n", num_part);
+      for (i=0; i<num_part; ++i)
+        fprintf(fp, "%i ", sep_sizes[i]);
+      fprintf(fp, "\n");
+      for (i=num_part; i<2*num_part-1; ++i)
+        fprintf(fp, "%i ", sep_sizes[i]);
+      fprintf(fp, "\n");
+      fclose(fp);
+    }
     ZOLTAN_FREE(&sep_sizes); 
   }
   else{

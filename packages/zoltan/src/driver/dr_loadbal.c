@@ -154,19 +154,19 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0) 
       Export_Lists_Special = (strstr(prob->params[i].Val,"partition") != NULL);
-    else if (strcasecmp(prob->params[i].Name, "SPARSE_MATRIX_APPROACH") == 0) {
-      if ((strstr(prob->params[i].Val,"phg_rows") != NULL) ||
-          (strstr(prob->params[i].Val,"phg_row") != NULL)){
-        Matrix_Partition_Approach = PHG_ROWS;
+    else if (strcasecmp(prob->params[i].Name, "MATRIX_APPROACH") == 0) {
+      if ((strstr(prob->params[i].Val,"rows") != NULL) ||
+          (strstr(prob->params[i].Val,"row") != NULL)){
+        Matrix_Partition_Approach = MP_ROWS;
       }
-      else if ((strstr(prob->params[i].Val,"phg_columns") != NULL) ||
-               (strstr(prob->params[i].Val,"phg_cols") != NULL)    ||
-               (strstr(prob->params[i].Val,"phg_col") != NULL)) {
-        Matrix_Partition_Approach = PHG_COLS;
+      else if ((strstr(prob->params[i].Val,"columns") != NULL) ||
+               (strstr(prob->params[i].Val,"cols") != NULL)    ||
+               (strstr(prob->params[i].Val,"col") != NULL)) {
+        Matrix_Partition_Approach = MP_COLS;
       }
       else{
         /* Zoltan_Matrix_Partition defaults to using phg on s.m. rows */
-        Matrix_Partition_Approach = PHG_ROWS;
+        Matrix_Partition_Approach = MP_ROWS;
       }
     }
   }
@@ -976,8 +976,8 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
        * "init_dist_pins=INITIAL_ROW or anything else"   CSR
        *
        * Zoltan parameter:
-       * "SPARSE_MATRIX_APPROACH=PHG_ROWS"  we asked Zoltan to partition rows
-       * "SPARSE_MATRIXAPPROACH=PHG_COLS"  we asked Zoltan to partition columns 
+       * "MATRIX_APPROACH=MP_ROWS"  we asked Zoltan to partition rows
+       * "MATRIX_APPROACH=MP_COLS"  we asked Zoltan to partition columns 
        *
        */
   
@@ -1004,7 +1004,7 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
         colIDs = (unsigned int *)mesh->hgid;
       }
   
-      if (Matrix_Partition_Approach == PHG_ROWS){
+      if (Matrix_Partition_Approach == MP_ROWS){
         /* 
          * Get partitioning assignment of sparse matrix rows
          */
@@ -1024,7 +1024,7 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
         idList = rowIDs;
         numIDs = numRows;
       }
-      else if (Matrix_Partition_Approach == PHG_COLS){
+      else if (Matrix_Partition_Approach == MP_COLS){
         /* 
          * Get partitioning assignment of sparse matrix columns
          */

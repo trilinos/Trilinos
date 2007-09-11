@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+#include "params_const.h" /* for MAX_PARAM_STRING_LEN */
+
 /********************************************************************
  * Data structures used when converting an input sparse matrix
  * to a PHG problem, running the PHG problem and retaining results
@@ -39,7 +41,7 @@ typedef unsigned int IJTYPE; /* matrix row ID, column ID or matrix size */
 
 enum ObjectType {ROW_TYPE = 1, COL_TYPE = 2, NZ_TYPE = 3};
 
-enum PartitionType {PHG_ROW_TYPE=1, PHG_COLUMN_TYPE=2};
+enum PartitionType {MP_ROW_TYPE=1, MP_COLUMN_TYPE=2, MP_GENERAL_TYPE=3};
 
 struct obj_node{
   IJTYPE i;
@@ -59,6 +61,7 @@ struct Zoltan_MP_Data_Struct{
 
   /* Parameters */
   int approach;       /* a PartitionType, the LB_APPROACH parameter */
+  char method[MAX_PARAM_STRING_LEN]; /* string, partitioning method */
 
   /* The local portion of sparse matrix returned by the query function */
   int input_type;    /* a ObjectType, how they supply the matrix (CSC or CSR) */
