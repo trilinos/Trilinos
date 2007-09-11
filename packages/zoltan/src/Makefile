@@ -179,7 +179,7 @@ SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
 		  ../phg  ../simple ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
-                  ../order ../ha ../reftree ../hier \
+                  ../order ../ha ../reftree ../hier ../matrix \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer
 SUBINCPATH	= -I../include -I../Utilities/shared \
@@ -187,13 +187,13 @@ SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../coloring -I../simple -I../oct  \
 		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
-		  -I../parmetis -I../timer \
+		  -I../parmetis -I../timer -I../matrix \
                   -I../ha -I../hier -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
 		  coloring oct phg simple util \
-                  hsfc parmetis params hier \
+                  hsfc parmetis params hier matrix \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory Utilities/Timer
@@ -246,7 +246,7 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 ifdef ZOLTAN_HG
 PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
-		  phg_matrix_input.c phg_coarse.c phg_distrib.c phg_gather.c \
+		  phg_coarse.c phg_distrib.c phg_gather.c \
 		  phg_match.c phg_plot.c \
 		  phg_refinement.c phg_serialpartition.c \
 		  phg_Vcycle.c phg_rdivide.c phg_util.c \
@@ -293,6 +293,9 @@ else
 HIER_CSRC       = 
 HIER_INC        = 
 endif
+
+MATRIX_CSRC	= matrix_partition.c
+MATRIX_INC	= matrix_partition.h
 
 # source code and defines for zdrive and zCPPdrive
 DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
@@ -345,7 +348,8 @@ ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) \
-		  $(HIER_CSRC) $(THIRD_PARTY_CSRC) $(SIMPLE_CSRC)
+		  $(HIER_CSRC) $(THIRD_PARTY_CSRC) $(SIMPLE_CSRC) \
+		  $(MATRIX_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 

@@ -38,7 +38,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include "ch_init_dist_const.h"
 #include "dr_param_file.h"
 #include "zoltan_id.h"
-#include "phg_matrix_input.h"
+#include "matrix_partition.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
