@@ -59,7 +59,6 @@ struct Zoltan_MP_Data_Struct{
 
   /* Parameters */
   int approach;       /* a PartitionType, the LB_APPROACH parameter */
-  int gidLen;         /* length of their IDs (must be <= sizeof(IJTYPE)) */
 
   /* The local portion of sparse matrix returned by the query function */
   int input_type;    /* a ObjectType, how they supply the matrix (CSC or CSR) */
@@ -114,6 +113,9 @@ int Zoltan_MP_Get_Column_Assignment(struct Zoltan_Struct *zz, int nCols, IJTYPE 
 int Zoltan_MP_Get_Row_Assignment(struct Zoltan_Struct *zz, int nRows, IJTYPE *rowIDs,
         int *rowProcs, int *rowParts);
 int Zoltan_Lookup_Obj(obj_lookup *lu, IJTYPE I, IJTYPE J);
+
+void Zoltan_MP_Debug_Partitioning(struct Zoltan_Struct *zz);
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

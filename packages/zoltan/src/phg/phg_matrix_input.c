@@ -485,10 +485,8 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
   char approach[MAX_PARAM_STRING_LEN];
 
   Zoltan_Bind_Param(MP_params, "SPARSE_MATRIX_APPROACH", approach);  
-  Zoltan_Bind_Param(MP_params, "NUM_GID_ENTRIES", &mpd->gidLen);  
 
   strncpy(approach, "PHG_ROWS", MAX_PARAM_STRING_LEN);
-  mpd->gidLen = 1;
 
   ierr = Zoltan_Assign_Param_Vals(zz->Params, MP_params, zz->Debug_Level,
           zz->Proc, zz->Debug_Proc);
@@ -503,7 +501,7 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
              (!strcasecmp(approach, "phg_col")) )
       mpd->approach = PHG_COLUMN_TYPE;
 
-    if (mpd->gidLen > sizeof(IJTYPE)){
+    if (zz->Num_GID > sizeof(IJTYPE)){
       /*
        * Maybe they want to use long ints, we only handle ints.  Change
        * IJTYPE to make code use long ints.
@@ -861,8 +859,8 @@ static int phg_rc_get_columns(ZOLTAN_MP_DATA *mpd,
       ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Unable to determine column partition\n");
      return ZOLTAN_FATAL; 
     }
-    colProcs[i] = mpd->colproc[idx];
-    colParts[i] = mpd->colpart[idx];
+    if (colProcs) colProcs[i] = mpd->colproc[idx];
+    if (colParts) colParts[i] = mpd->colpart[idx];
   }
   return ZOLTAN_OK;
 }
@@ -885,8 +883,8 @@ static int phg_rc_get_rows(ZOLTAN_MP_DATA *mpd,
       ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Unable to determine row partition\n");
      return ZOLTAN_FATAL; 
     }
-    rowProcs[i] = mpd->rowproc[idx];
-    rowParts[i] = mpd->rowpart[idx];
+    if (rowProcs) rowProcs[i] = mpd->rowproc[idx];
+    if (rowParts) rowParts[i] = mpd->rowpart[idx];
   }
   return ZOLTAN_OK;
 }
@@ -1200,6 +1198,356 @@ End:
 }
 /****************************************************************/
 /****************************************************************/
+
+/* For small sparse matrices used in testing, process 0 prints
+ * out the matrix with each pin value equal to the pin's partition.
+ * Matrix should be small enough that we can print it out.
+ */
+void Zoltan_MP_Debug_Partitioning(ZZ *zz)
+{
+  char *yo = "Zoltan_MP_Debug_Partitioning";
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
+  IJTYPE *colIDs, *rowIDs, *pinIDs, *pinIdx, *IDs, *counts=NULL;
+  IJTYPE numRows, numCols, numIDs, row, col, numPins, baseID, idx;
+  IJTYPE totalCount=0, *recvIDs=NULL, *pins=NULL;
+  int rc, me, nprocs, i, j, nextIdx, oops, numParts;
+  int totColCuts, totRowCuts, width;
+  MPI_Comm comm = zz->Communicator;
+  int *parts=NULL, *recvParts=NULL, *recvDisp=NULL, *recvCounts=NULL;
+  int **A=NULL;
+  int *colCuts=NULL, *rowCuts=NULL, *countParts=NULL;
+
+  if ((mpd->nRows > 100) || (mpd->nCols > 100)){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Matrix is too large.\n");
+    exit(0);
+  }
+
+  if (sizeof(IJTYPE) != sizeof(unsigned int)){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
+      "REWRITE required due to change in IJTYPE\n");
+    exit(0);
+  }
+
+  me = mpd->zzLib->Proc;
+  nprocs = mpd->zzLib->Num_Proc;
+
+  /* Find out where the pins are */
+
+  if (me == 0){
+    A = (int **)ZOLTAN_MALLOC(sizeof(int *) * mpd->nRows);
+    for (i=0; i<mpd->nRows; i++){
+      A[i] = (int *)ZOLTAN_MALLOC(sizeof(int) * mpd->nCols);
+      for (j=0; j < mpd->nCols; j++){
+        A[i][j] = -2;       /* not a pin */
+      }
+    }
+  }
+
+  if (mpd->input_type == ROW_TYPE){
+    rowIDs = mpd->rcGID;
+    numRows = mpd->numRC;
+    colIDs = mpd->crGID;
+    numCols = mpd->numCR;
+    pinIDs = mpd->pinGID;            /* GID of pin column */
+    pinIdx = mpd->pinIndex;
+  }
+  else{
+    rowIDs = mpd->crGID;
+    numRows = mpd->numCR;
+    colIDs = mpd->rcGID;
+    numCols = mpd->numRC;
+    pinIDs = mpd->mirrorPinGID;      /* GID of pin column */
+    pinIdx = mpd->mirrorPinIndex;
+  }
+
+  numPins = pinIdx[numRows] * 2;
+
+  pins = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numPins);
+  for (i=0,nextIdx=0; i<numRows; i++){
+    row = rowIDs[i] - mpd->rowBaseID;
+    for (j=pinIdx[i]; j<pinIdx[i+1]; j++){
+      col = pinIDs[j] - mpd->colBaseID;
+      pins[nextIdx++] = row;
+      pins[nextIdx++] = col;
+    }
+  }
+
+  if (me == 0){
+    recvCounts = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
+    recvDisp = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
+  }
+
+  MPI_Gather(&numPins, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
+
+  if (me == 0){
+    totalCount = 0;
+    for (i=0; i<nprocs; i++){
+      recvDisp[i] = totalCount;
+      totalCount += recvCounts[i]; 
+    }
+    recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totalCount);
+  }
+
+  MPI_Gatherv(pins, numPins, MPI_UNSIGNED,
+              recvIDs, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
+
+  if (me == 0){
+    for (i=0,nextIdx=0; i<nprocs; i++){
+      for (j=0; j<recvCounts[i]; j+=2){
+        row = recvIDs[recvDisp[i]+j];
+        col = recvIDs[recvDisp[i]+j+1];
+        if ( (row < 0) || (row > mpd->nRows) ||
+             (col < 0) || (col > mpd->nCols)){
+          ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Bad ID\n");
+          exit(0);
+        }
+        A[row][col] = -1;     /* it's a pin */
+      }   
+    }
+    numPins = totalCount/2;
+  }
+
+  ZOLTAN_FREE(&recvIDs);
+  ZOLTAN_FREE(&recvCounts);
+  ZOLTAN_FREE(&recvDisp);
+  ZOLTAN_FREE(&pins);
+
+  /* Find out what partitions the rows or columns have been assigned
+   * to.  We aren't handling partitioning strategies that partition
+   * non zeroes individually.  That's TODO.
+   */
+
+  if (mpd->row_lookup){
+    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
+    rc = Zoltan_MP_Get_Row_Assignment(zz, numRows, rowIDs, NULL, parts);
+    IDs = rowIDs;
+    numIDs = numRows;
+  }
+  else if (mpd->col_lookup){
+    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
+    rc = Zoltan_MP_Get_Column_Assignment(zz, numCols, colIDs, NULL, parts);
+    IDs = colIDs;
+    numIDs = numCols;
+  }
+  else if (mpd->pin_lookup){
+    /* TODO */
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
+                      "Print out of pin partitioning not done yet.\n");
+    return;
+  }
+  else{
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Partitioning not saved\n");
+    return;
+  }
+
+  if (me == 0){
+    recvCounts = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
+    recvDisp = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
+  }
+
+  MPI_Gather(&numIDs, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
+
+  if (me == 0){
+    totalCount = 0;
+    for (i=0; i<nprocs; i++){
+      recvDisp[i] = totalCount;
+      totalCount += recvCounts[i];
+    }
+    recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totalCount);
+    recvParts = (int *)ZOLTAN_MALLOC(sizeof(int) * totalCount);
+  }
+
+  MPI_Gatherv(IDs, numIDs, MPI_UNSIGNED, 
+              recvIDs, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
+
+  MPI_Gatherv(parts, numIDs, MPI_INT, 
+              recvParts, recvCounts, recvDisp, MPI_INT, 0, comm);
+
+  ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&counts);
+
+  if (me == 0){
+    if (IDs == colIDs){
+      numIDs = mpd->nCols - mpd->colBaseID + 1;
+      baseID = mpd->colBaseID;
+    }
+    else{
+      numIDs = mpd->nRows - mpd->rowBaseID + 1;
+      baseID = mpd->rowBaseID;
+    }
+  
+    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numIDs);
+  
+    for (i=0; i<numIDs; i++){
+      parts[i] = -1;
+    }
+  
+    numParts = 0;
+    for (i=0; i<nprocs; i++){
+      for (j=recvDisp[i]; j < recvDisp[i] + recvCounts[i]; j++){
+        idx = recvIDs[j] - baseID;
+  
+        if ((idx < 0) || (idx >= numIDs)){
+          ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "bad id\n");
+          exit(0);
+        }
+        parts[idx] = recvParts[j];
+        if (recvParts[j] > numParts) numParts = recvParts[j];
+      }
+    }
+    numParts++;
+    ZOLTAN_FREE(&recvIDs);
+    ZOLTAN_FREE(&recvParts);
+
+    for (i=0; i<mpd->nRows; i++){
+      for (j=0; j<mpd->nCols; j++){
+        if (A[i][j] == -1){
+          if (IDs == rowIDs){
+            A[i][j] = parts[i];
+          }
+          else{
+            A[i][j] = parts[j];
+          }
+        }
+      }
+    }
+  }
+
+  /* Process zero can print out the matrix */
+
+  fflush(stdout);
+  MPI_Barrier(comm);
+  if (me == 0){
+    /* count the cuts in rows and columns */
+    oops = 0;
+    colCuts = (int *)ZOLTAN_CALLOC(sizeof(int) , mpd->nCols);
+    rowCuts = (int *)ZOLTAN_CALLOC(sizeof(int) , mpd->nRows);
+    countParts = (int *)ZOLTAN_CALLOC(sizeof(int), numParts);
+    totColCuts = totRowCuts = 0;
+    for (i=0; i<mpd->nRows; i++){
+      for (j=0; j<mpd->nCols; j++){
+        if (A[i][j] >= 0) countParts[A[i][j]] = i+1;
+      }
+      rowCuts[i] = -1;
+      for (j=0; j<numParts; j++){
+        if (countParts[j] > i) rowCuts[i]++;
+      }
+      if (rowCuts[i] > 0){
+        totRowCuts += rowCuts[i];
+      }
+      else{
+        rowCuts[i] = 0;
+      }
+    }
+    memset(countParts, 0, sizeof(int) * numParts);
+    for (j=0; j<mpd->nCols; j++){
+      for (i=0; i<mpd->nRows; i++){
+        if (A[i][j] >= 0) countParts[A[i][j]] = j+1;
+      }
+      colCuts[j] = -1;
+      for (i=0; i<numParts; i++){
+        if (countParts[i] > j) colCuts[j]++;
+      }
+      if (colCuts[j] > 0){
+        totColCuts += colCuts[j];
+      }
+      else{
+        colCuts[j] = 0;
+      }
+    }
+    ZOLTAN_FREE(&countParts);
+
+    /* print out the sparse matrix */
+
+    if (numParts > 10) width = 3;
+    else               width = 2;
+
+    printf("\n     ");
+    for (j=0; j<mpd->nCols; j++){
+      if (width==3)
+        printf("%3d",(j + mpd->colBaseID) % 100);
+      else
+        printf("%2d",(j + mpd->colBaseID) % 10);
+    }
+    printf("| cuts\n");
+    j = 5 + (mpd->nCols * ((width==3) ? 3 : 2));
+    for (i=0; i<j; i++) printf("=");
+    printf("|\n");
+
+    for (i=0; i<mpd->nRows; i++){
+      if (width==3){
+        printf("%3d | ",i + mpd->rowBaseID);
+        for (j=0; j<mpd->nCols; j++){
+          if (A[i][j] == -2) printf(" - "); 
+          else if (A[i][j] == -1){
+            printf(" e ");
+            oops = 1;
+          }
+          else{
+            printf("%3d",A[i][j]);
+          }
+        }
+        printf("|%3d\n",rowCuts[i]);
+      }
+      else{
+        printf("%2d | ",i + mpd->rowBaseID);
+        for (j=0; j<mpd->nCols; j++){
+          if (A[i][j] == -2) printf(" -"); 
+          else if (A[i][j] == -1){
+            printf(" e");
+            oops = 1;
+          }
+          else{
+            printf("%2d",A[i][j]);
+          }
+        }
+        printf("|%2d\n",rowCuts[i]);
+      }
+    }
+    j = 5 + (mpd->nCols * ((width==3) ? 3 : 2));
+    for (i=0; i<j; i++) printf("=");
+    printf("|\n cuts ");
+    for (j=0; j<mpd->nCols; j++){
+      if (width == 3)
+        printf("%3d",colCuts[j]);
+      else
+        printf("%2d",colCuts[j]);
+    }
+    printf("\n\n"); 
+
+    ZOLTAN_FREE(&rowCuts);
+    ZOLTAN_FREE(&colCuts);
+
+    printf("Row cuts: total %d average %f\n",
+           totRowCuts,(double)totRowCuts/mpd->nRows);
+    printf("Col cuts: total %d average %f\n",
+           totColCuts,(double)totColCuts/mpd->nCols);
+    printf("Number of non-zeroes: %d\n",numPins);
+  
+    if (oops){
+      printf("An \"e\" means an error - we don't know the partition\n");
+    }
+    printf("\n");
+  }
+  fflush(stdout);
+  MPI_Barrier(comm);
+  fflush(stdout);
+  MPI_Barrier(comm);
+  
+/*End:*/
+  ZOLTAN_FREE(&pins);
+  ZOLTAN_FREE(&recvCounts);
+  ZOLTAN_FREE(&recvDisp);
+  ZOLTAN_FREE(&recvIDs);
+  ZOLTAN_FREE(&recvParts);
+  ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&counts);
+
+  if (A != NULL){
+    for (i=0; i<mpd->nRows; i++) {ZOLTAN_FREE(&A[i]);}
+    ZOLTAN_FREE(&A);
+  }
+}
 
 /****************************************************************/
 /****************************************************************/
