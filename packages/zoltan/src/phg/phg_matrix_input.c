@@ -1475,8 +1475,8 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     printf("|\n");
 
     for (i=0; i<mpd->nRows; i++){
+      printf("%3d |",i + mpd->rowBaseID);
       if (width==3){
-        printf("%3d | ",i + mpd->rowBaseID);
         for (j=0; j<mpd->nCols; j++){
           if (A[i][j] == -2) printf(" - "); 
           else if (A[i][j] == -1){
@@ -1490,7 +1490,6 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
         printf("|%3d\n",rowCuts[i]);
       }
       else{
-        printf("%2d | ",i + mpd->rowBaseID);
         for (j=0; j<mpd->nCols; j++){
           if (A[i][j] == -2) printf(" -"); 
           else if (A[i][j] == -1){
@@ -1506,7 +1505,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     }
     j = 5 + (mpd->nCols * ((width==3) ? 3 : 2));
     for (i=0; i<j; i++) printf("=");
-    printf("|\n cuts ");
+    printf("|\n cuts");
     for (j=0; j<mpd->nCols; j++){
       if (width == 3)
         printf("%3d",colCuts[j]);
