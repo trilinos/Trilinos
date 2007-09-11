@@ -1368,11 +1368,11 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
 
   if (me == 0){
     if (IDs == colIDs){
-      numIDs = mpd->nCols - mpd->colBaseID + 1;
+      numIDs = mpd->nCols;
       baseID = mpd->colBaseID;
     }
     else{
-      numIDs = mpd->nRows - mpd->rowBaseID + 1;
+      numIDs = mpd->nRows;
       baseID = mpd->rowBaseID;
     }
   
