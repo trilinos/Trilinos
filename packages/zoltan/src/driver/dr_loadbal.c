@@ -949,158 +949,169 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
       printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
     Total_Partition_Time += maxtime;
 
+
 #ifdef TIMER_CALLBACKS
     MPI_Allreduce(&Timer_Callback_Time, &Timer_Global_Callback_Time, 
                    1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
     if (Proc == 0)
       printf("DRIVER:  Callback time = %g\n", Timer_Global_Callback_Time);
 #endif /* TIMER_CALLBACKS */
 
-
-    /* 
-     * We will call the sparse matrix partitioning queries.  Really
-     * we should call Zoltan_Matrix_Partition_Eval(), but it isn't
-     * written yet.  Eval() should call these queries and compute
-     * a balance.
-     *
-     * zdrive parameter:
-     * "init_dist_pins=INITIAL_COL"     we gave Zoltan CSC
-     * "init_dist_pins=INITIAL_ROW or anything else"   CSR
-     *
-     * Zoltan parameter:
-     * "SPARSE_MATRIX_APPROACH=PHG_ROWS"  we asked Zoltan to partition rows
-     * "SPARSE_MATRIXAPPROACH=PHG_COLS"  we asked Zoltan to partition columns 
-     *
-     */
-
-    numNZs = mesh->hindex[mesh->nhedges];
-
-    ierr = sorted_unique_list((unsigned int *)mesh->hvertex, 
-                               numNZs, &gidList, &numGIDs);
-
-    if (ierr != ZOLTAN_OK){
-      Gen_Error(0, "fatal:  error returned from sorted_unique_list()\n");
-      return 0;
-    }
-
-    if (pio_info->init_dist_pins != INITIAL_COL){ 
-      numRows = mesh->nhedges;
-      numCols = numGIDs;
-      rowIDs = (unsigned int *)mesh->hgid;
-      colIDs = gidList;
-    }
-    else{
-      numRows = numGIDs;
-      numCols = mesh->nhedges;
-      rowIDs = gidList;
-      colIDs = (unsigned int *)mesh->hgid;
-    }
-
-    if (Matrix_Partition_Approach == PHG_ROWS){
-      /* 
-       * Get partitioning assignment of sparse matrix rows
+    if (Debug_Driver > 5) {
+      /* Display entire matrix - only works if matrix no larger
+       * than 100 x 100.
        */
-    
-      procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
-      partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
-
-      ierr = Zoltan_MP_Get_Row_Assignment(zz, numRows, rowIDs,
-                      procList, partList);
-
+      Zoltan_MP_Debug_Partitioning(zz);
+    }
+    else if (Debug_Driver > 2){
+      /* 
+       * We will call the sparse matrix partitioning queries.  Really
+       * we should call Zoltan_Matrix_Partition_Eval(), but it isn't
+       * written yet.  Eval() should call these queries and compute
+       * a balance.
+       *
+       * zdrive parameter:
+       * "init_dist_pins=INITIAL_COL"     we gave Zoltan CSC
+       * "init_dist_pins=INITIAL_ROW or anything else"   CSR
+       *
+       * Zoltan parameter:
+       * "SPARSE_MATRIX_APPROACH=PHG_ROWS"  we asked Zoltan to partition rows
+       * "SPARSE_MATRIXAPPROACH=PHG_COLS"  we asked Zoltan to partition columns 
+       *
+       */
+  
+      numNZs = mesh->hindex[mesh->nhedges];
+  
+      ierr = sorted_unique_list((unsigned int *)mesh->hvertex, 
+                                 numNZs, &gidList, &numGIDs);
+  
+      if (ierr != ZOLTAN_OK){
+        Gen_Error(0, "fatal:  error returned from sorted_unique_list()\n");
+        return 0;
+      }
+  
+      if (pio_info->init_dist_pins != INITIAL_COL){ 
+        numRows = mesh->nhedges;
+        numCols = numGIDs;
+        rowIDs = (unsigned int *)mesh->hgid;
+        colIDs = gidList;
+      }
+      else{
+        numRows = numGIDs;
+        numCols = mesh->nhedges;
+        rowIDs = gidList;
+        colIDs = (unsigned int *)mesh->hgid;
+      }
+  
+      if (Matrix_Partition_Approach == PHG_ROWS){
+        /* 
+         * Get partitioning assignment of sparse matrix rows
+         */
+      
+        procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
+        partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
+  
+        ierr = Zoltan_MP_Get_Row_Assignment(zz, numRows, rowIDs,
+                        procList, partList);
+  
+        if (ierr != ZOLTAN_OK){
+          Gen_Error(0, 
+          "fatal:  error returned from Zoltan_MP_Get_Row_Assignment()\n");
+          return 0;
+        }
+        strcpy(rowcol, "Row");
+        idList = rowIDs;
+        numIDs = numRows;
+      }
+      else if (Matrix_Partition_Approach == PHG_COLS){
+        /* 
+         * Get partitioning assignment of sparse matrix columns
+         */
+        procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
+        partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
+  
+        ierr = Zoltan_MP_Get_Column_Assignment(zz, numCols, colIDs,
+                        procList, partList);
+  
+        if (ierr != ZOLTAN_OK){
+          Gen_Error(0, "fatal:  error returned from Zoltan_MP_Get_Column_Assignment()\n");
+          return 0;
+        }
+        strcpy(rowcol, "Column");
+        idList = colIDs;
+        numIDs = numCols;
+      }
+  
+      for (i=0; i<Num_Proc; i++){
+        if (i == Proc){
+          printf("(Process %d) %s assignments (process/partition)\n",i,rowcol);
+          for (j=0; j<numIDs; j++){
+            printf("%d (%d / %d)\n",idList[j],procList[j],partList[j]);
+          }
+          printf("\n");
+          fflush(stdout);
+        }
+      }
+      ZOLTAN_FREE(&procList);
+      ZOLTAN_FREE(&partList);
+      ZOLTAN_FREE(&gidList);
+  
+      /*
+       * Get the assignment of my non-zeroes
+       */
+  
+      procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numNZs);
+      partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numNZs);
+      idx1 = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * numNZs);
+      idx2 = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * numNZs);
+  
+      if (numNZs && (!procList || !partList || !idx1 || !idx2)){
+        Gen_Error(0, "fatal: memory error in run_zoltan_sparse_matrix\n");
+        return 0;
+      }
+  
+      for (i=0, numNZs=0; i<mesh->nhedges; i++){
+        for (j=mesh->hindex[i]; j<mesh->hindex[i+1]; j++){
+          idx1[numNZs] = (unsigned int)mesh->hgid[i];
+          idx2[numNZs] = (unsigned int)mesh->hvertex[j];
+          numNZs++;
+        }
+      }
+  
+      if (pio_info->init_dist_pins != INITIAL_COL){ 
+        ierr = Zoltan_MP_Get_NonZero_Assignment(zz, numNZs,
+                       idx1, idx2, procList, partList);
+      }else{
+        ierr = Zoltan_MP_Get_NonZero_Assignment(zz, numNZs,
+                       idx2, idx1, procList, partList);
+      }
       if (ierr != ZOLTAN_OK){
         Gen_Error(0, 
-        "fatal:  error returned from Zoltan_MP_Get_Row_Assignment()\n");
+        "fatal:  error returned from Zoltan_MP_Get_NonZero_Assignment()\n");
         return 0;
       }
-      strcpy(rowcol, "Row");
-      idList = rowIDs;
-      numIDs = numRows;
-    }
-    else if (Matrix_Partition_Approach == PHG_COLS){
-      /* 
-       * Get partitioning assignment of sparse matrix columns
-       */
-      procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
-      partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
-
-      ierr = Zoltan_MP_Get_Column_Assignment(zz, numCols, colIDs,
-                      procList, partList);
-
-      if (ierr != ZOLTAN_OK){
-        Gen_Error(0, "fatal:  error returned from Zoltan_MP_Get_Column_Assignment()\n");
-        return 0;
-      }
-      strcpy(rowcol, "Column");
-      idList = colIDs;
-      numIDs = numCols;
-    }
-
-    for (i=0; i<Num_Proc; i++){
-      if (i == Proc){
-        printf("(Process %d) %s assignments (process/partition)\n",i,rowcol);
-        for (j=0; j<numIDs; j++){
-          printf("%d (%d / %d)\n",idList[j],procList[j],partList[j]);
+  
+      fflush(stdout);
+      for (i=0; i<Num_Proc; i++){
+        if (i == Proc){
+          printf("(Process %d) Pin (row, column) assignments (process / partition)\n",i);
+          for (j=0; j<numNZs; j++){
+            printf("(%d, %d) %d / %d\n",
+              ((pio_info->init_dist_pins != INITIAL_COL) ? idx1[j] : idx2[j]),
+              ((pio_info->init_dist_pins != INITIAL_COL) ? idx2[j] : idx1[j]),
+               procList[j],partList[j]);
+          }
+          printf("\n");
+          fflush(stdout);
         }
-        printf("\n");
-        fflush(stdout);
       }
+      MPI_Barrier(MPI_COMM_WORLD);
+      ZOLTAN_FREE(&procList);
+      ZOLTAN_FREE(&partList);
+      ZOLTAN_FREE(&idx1);
+      ZOLTAN_FREE(&idx2);
     }
-    ZOLTAN_FREE(&procList);
-    ZOLTAN_FREE(&partList);
-    ZOLTAN_FREE(&gidList);
-
-    /*
-     * Get the assignment of my non-zeroes
-     */
-
-    procList = (int *)ZOLTAN_MALLOC(sizeof(int) * numNZs);
-    partList = (int *)ZOLTAN_MALLOC(sizeof(int) * numNZs);
-    idx1 = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * numNZs);
-    idx2 = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * numNZs);
-
-    if (numNZs && (!procList || !partList || !idx1 || !idx2)){
-      Gen_Error(0, "fatal: memory error in run_zoltan_sparse_matrix\n");
-      return 0;
-    }
-
-    for (i=0, numNZs=0; i<mesh->nhedges; i++){
-      for (j=mesh->hindex[i]; j<mesh->hindex[i+1]; j++){
-        idx1[numNZs] = (unsigned int)mesh->hgid[i];
-        idx2[numNZs] = (unsigned int)mesh->hvertex[j];
-        numNZs++;
-      }
-    }
-
-    if (pio_info->init_dist_pins != INITIAL_COL){ 
-      ierr = Zoltan_MP_Get_NonZero_Assignment(zz, numNZs,
-                     idx1, idx2, procList, partList);
-    }else{
-      ierr = Zoltan_MP_Get_NonZero_Assignment(zz, numNZs,
-                     idx2, idx1, procList, partList);
-    }
-    if (ierr != ZOLTAN_OK){
-      Gen_Error(0, "fatal:  error returned from Zoltan_MP_Get_NonZero_Assignment()\n");
-      return 0;
-    }
-
-    for (i=0; i<Num_Proc; i++){
-      if (i == Proc){
-        printf("(Process %d) Pin (row, column) assignments (process / partition)\n",i);
-        for (j=0; j<numNZs; j++){
-          printf("(%d, %d) %d / %d\n",
-            ((pio_info->init_dist_pins != INITIAL_COL) ? idx1[j] : idx2[j]),
-            ((pio_info->init_dist_pins != INITIAL_COL) ? idx2[j] : idx1[j]),
-             procList[j],partList[j]);
-        }
-        printf("\n");
-        fflush(stdout);
-      }
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-    ZOLTAN_FREE(&procList);
-    ZOLTAN_FREE(&partList);
-    ZOLTAN_FREE(&idx1);
-    ZOLTAN_FREE(&idx2);
   }
 
 #if 0
