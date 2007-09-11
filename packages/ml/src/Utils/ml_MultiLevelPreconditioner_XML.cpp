@@ -106,15 +106,18 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
 
   Comm().SumAll(&i, &j, 1);
 
-  if (j == 0)
-    return(0);
-  
-  if (verbose_)
-  {
-    cout << "***" << endl;
-    cout << "***" << " Reading XML file `" << FileName << "'..." << endl;
-  }
+  int OutputLevel=0;
+  if  (List_.isParameter("ML output")) OutputLevel = List_.get("ML output", 0);
+  else if (List_.isParameter("output")) OutputLevel = List_.get("output", 0);
 
+  if (j == 0) {
+    if (OutputLevel && Comm().MyPID() == 0)
+      cout << "***" << endl
+           << "*** Unable to open XML input file '" << FileName << "'" << endl
+           << "***" << endl;
+    return(0);
+  }
+  
   Teuchos::FileInputSource fileSrc(FileName);
   Teuchos::XMLObject fileXML = fileSrc.getObject();
 
@@ -127,31 +130,36 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
     ListToAdd = ListReader.toParameterList(fileXML);
   }
 
+  int ao=-1; //append or overwrite
   if (ListToAdd.get("ResetList", false))
   {
-    if (verbose_ && Comm().MyPID() == 0)
-      cout << "***" << " Reset stored list" << endl;
+    ao = 0;
     Teuchos::ParameterList NewList;
     List_ = NewList;
   }
   else
-  {
-    if (verbose_ && Comm().MyPID() == 0)
-      cout << "***" << " Parameters are added to the stored list" << endl;
-  }
+    ao = 1;
 
   string xxx = ListToAdd.get("SetDefaults", "not-set");
   if (xxx != "not-set")
-  {
-    if (verbose_ && Comm().MyPID() == 0)
-      cout << "***" << " Setting default values to type `" << xxx << "'" << endl;
     SetDefaults(xxx, ListToAdd);
-  }
 
   AddSubList(List_, ListToAdd);
 
-  if (verbose_ && Comm().MyPID() == 0)
+  if  (List_.isParameter("ML output")) OutputLevel = List_.get("ML output", 0);
+  else if (List_.isParameter("output")) OutputLevel = List_.get("output", 0);
+  if ( (5 < OutputLevel) && (Comm().MyPID() == 0) ) {
     cout << "***" << endl;
+    cout << "***" << " Reading XML file `" << FileName << "'..." << endl;
+    if (ao == 0)
+      cout << "***" << " Reset stored list" << endl;
+    else if (ao == 1)
+      cout << "***" << " Parameters are added to the stored list" << endl;
+    if (xxx != "not-set")
+      cout << "***" << " Setting default values to type `"
+           << xxx << "'" << endl;
+    cout << "***" << endl;
+  }
 
   return(1);
 }

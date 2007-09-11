@@ -654,17 +654,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
  try {
 
-  if (List_.get("ML debug mode", false))
-    ML_BreakForDebugger(*Comm_);
-
-  int ProcID;
-  if ((ProcID = List_.get("ML print input list",-2)) > -2) {
-    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
-  }
-
   // Validate Parameter List
+  int depth=List_.get("ML validate depth",0);
   if(List_.get("ML validate parameter list",true)
-     && !ValidateMLPParameters(List_))
+     && !ValidateMLPParameters(List_,depth))
   {
     if (Comm_->MyPID() == 0)
       std::cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<std::endl;
@@ -699,7 +692,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // get rid of what done before 
     ML_CHK_ERR(DestroyPreconditioner());
     
-  } // nothing else if left
+  } // nothing else is left
 
   // ======================== //
   // build the preconditioner //
@@ -726,45 +719,40 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
 #endif
 
-  // user's defined output message
-  PrintMsg_ = List_.get("output prefix",PrintMsg_);
-  
-  NumLevels_ = List_.get("max levels",10);  
-  MaxLevels_ = NumLevels_;
+  // check for an XML input file and validate again if necessary
+  std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
+  if ( ReadXML(XMLFileName) && List_.get("ML validate parameter list",true) )
+  {
+    int depth=List_.get("ML validate depth",0);
+    if (!ValidateMLPParameters(List_,depth))
+    {
+      if (Comm_->MyPID() == 0)
+        std::cout<< "ERROR: The file " << XMLFileName
+                 << " contains an incorrect parameter!"<<std::endl;
+#     ifdef HAVE_MPI
+      MPI_Finalize();
+#     endif
+      exit(EXIT_FAILURE);
+    }
+  }
 
+  if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
+  int ProcID;
+  if ((ProcID = List_.get("ML print initial list",-2)) > -2)
+    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
   // 'ML output' replaces just 'output' but for backward compatibility
   // we still allow just 'output' if 'ML output' is not set.
   int OutputLevel = List_.get("ML output", -47);  
   if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);
-
   verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
-  
+  // user's defined output message
+  PrintMsg_ = List_.get("output prefix",PrintMsg_);
+  NumLevels_ = List_.get("max levels",10);  
+  MaxLevels_ = NumLevels_;
+
   if( verbose_ ) 
     ML_print_line("-",78);
-  
-  // check for an XML input file and validate again if necessary
-  std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
-  if( ReadXML(XMLFileName)
-      &&List_.get("ML validate parameter list",true)
-      && !ValidateMLPParameters(List_))
-  {
-    if (Comm_->MyPID() == 0)
-      std::cout<< "ERROR: The file " << XMLFileName
-               << " contains an incorrect parameter!"<<std::endl;
-#   ifdef HAVE_MPI
-    MPI_Finalize();
-#   endif
-    exit(EXIT_FAILURE);
-  }
-  // check for options that might have been set in the output file
-  if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
-  if ((ProcID = List_.get("ML print input list",-2)) > -2)
-    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
-  OutputLevel = List_.get("ML output", -47);  
-  if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
-  ML_Set_PrintLevel(OutputLevel);
-  verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
 
   FirstApplication_ = true;
 
@@ -1772,7 +1760,7 @@ agg_->keep_P_tentative = 1;
      fprintf(stderr,"ML failed to compute the multigrid preconditioner. The\n");
      fprintf(stderr,"most common problem is an incorrect  data type in ML's\n");
      fprintf(stderr,"parameter list (e.g. 'int' instead of 'bool').\n\n");
-     fprintf(stderr,"Note: List.set(\"ML print input list\",X) might help\nfigure out the bad one on pid X.\n");
+     fprintf(stderr,"Note: List.set(\"ML print initial list\",X) might help\nfigure out the bad one on pid X.\n");
      fprintf(stderr,"*********************************************************\n\n");
    }
 

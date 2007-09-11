@@ -10,7 +10,7 @@ using namespace Teuchos;
 using namespace ML_Epetra;
 
 
-bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
+bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int depth){
   Teuchos::ParameterList List,*validList;
   bool rv=true;
     
@@ -36,7 +36,7 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
     exit(EXIT_FAILURE);
   }
   try{
-    List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
+    List.validateParameters(*validList,depth,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }
   catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
@@ -60,8 +60,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   strParam.allowString(true); 
 
   /* Allocate List for Smoothing Options */
-  const int num_smoothers=18;
-  const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi","ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel","Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu","Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined","SuperLU","IFPACK-Chebyshev"};
+  const int num_smoothers=19;
+  const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi","ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel","Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu","Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined","SuperLU","IFPACK-Chebyshev","self"};
   Array<std::string> smoothers(num_smoothers);
   for(int i=0;i<num_smoothers;i++) smoothers[i] = smoother_strings[i];
 
@@ -178,6 +178,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("ML debug mode",false);
   setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
   PL->set("ML validate parameter list",true);
+  setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true); 
   setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<std::string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
   setIntParameter("smoother: self overlap",0,"experimental option",PL,intParam);
@@ -193,7 +194,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);
   setDoubleParameter("subsmoother: edge alpha",20.0,"alpha for edge Chebyshev polynomial in Hiptmair",PL,dblParam); 
   setDoubleParameter("subsmoother: node alpha",20.0,"alpha for node Chebyshev polynomial in Hiptmair",PL,dblParam); 
-  
+
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL,intParam);
   setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL,intParam);

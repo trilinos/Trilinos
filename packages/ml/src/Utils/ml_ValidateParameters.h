@@ -51,7 +51,7 @@ namespace ML_Epetra
   
   //! Validates the parameters of inList (warning: level-specific parameters
   //! will not be validated) for MultiLevelPreconditioner.
-  bool ValidateMLPParameters(const Teuchos::ParameterList &inList);
+  bool ValidateMLPParameters(const Teuchos::ParameterList &inList, int depth=0);
 
   //! Builds a list of "valid" parameters for parameter validation for RefMaxwell.
   Teuchos::ParameterList * GetValidRefMaxwellParameters();
