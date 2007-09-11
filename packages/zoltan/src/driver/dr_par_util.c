@@ -100,6 +100,7 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
 {
   int         from, to, flag;
   MPI_Status  status;
+  MPI_Request req;
 
 #ifdef DEBUG_PSYNC
   (void) printf("\t\tEND OF PRINT_SYNC SECTION, Proc = %4d\n", proc);
@@ -117,14 +118,19 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
     }
   }
 
-  MPI_Send((void *) &flag, 1, MPI_INT, to, 0, MPI_COMM_WORLD);
   if (proc == 0) {
     from = nprocs - 1;
-    MPI_Recv((void *) &flag, 1, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
+    MPI_Irecv((void *) &flag, 1, MPI_INT, from, 0, MPI_COMM_WORLD, &req);
 
 #ifdef DEBUG_PSYNC
-    (void) printf("\t\t\t Proc 0 received message from %5d\n", from);
+    (void) printf("\t\t\t Proc 0 posted receive from %5d\n", from);
 #endif
+  }
+
+  MPI_Send((void *) &flag, 1, MPI_INT, to, 0, MPI_COMM_WORLD);
+
+  if (proc == 0) {
+    MPI_Wait(&req, &status);
   }
 
   /*
