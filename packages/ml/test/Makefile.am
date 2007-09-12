@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package ml subdirectory test built successfully."
-	@echo ""
 
 SUBDIRS = MultiLevelPreconditioner_NonSym    \
       MultiLevelPreconditioner_Sym       \

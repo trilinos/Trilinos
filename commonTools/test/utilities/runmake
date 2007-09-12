@@ -283,7 +283,23 @@ exit $exitStatus;
             printMessage($message, $v1+$v2+$v3);
             $message = "! FAILED ";
             printMessage($message, $v1+$v2+$v3);
-        } else {
+        } elsif ($makeCmd =~ m/tests/ || $makeCmd =~ m/examples/) {
+            $madePackages = detectMadePackagesTE($makeOutput);
+            if ($makeExitStatus) {
+                $brokenPackage = detectBrokenPackageTE($makeOutput);
+                if ($makeCmd =~ m/tests/) { $brokenSubdir = "tests"; }
+                if ($makeCmd =~ m/examples/) { $brokenSubdir = "examples"; }
+                $message = sprintf("%-30s", " broken: $brokenPackage:$brokenSubdir ");
+                printMessage($message, $v1+$v2+$v3);
+                $message = "! FAILED ";
+                printMessage($message, $v1+$v2+$v3);
+            } else {
+                $message = sprintf("%-30s", "");
+                printMessage($message, $v1+$v2+$v3);
+                $message = "  passed ";
+                printMessage($message, $v1+$v2+$v3);
+            }
+        } else {  
             $madePackages = detectMadePackages($makeOutput);
             if ($makeExitStatus) {
                 ($brokenPackage, $brokenSubdir) = detectBrokenPackage($makeOutput);
@@ -484,6 +500,11 @@ exit $exitStatus;
         for (my $i=0; $i<scalar(@enabledPackages); $i++) {
             $enabledPackages[$i] = lc($enabledPackages[$i]);
         }
+
+        my $subdirKey = "SUBDIRS";
+        if ($file =~ m/^SUBDIRS = \$\(PACKAGE_NAMES\)$/m) {
+            $subdirKey = "PACKAGE_NAMES";
+        }
         
         # Parse packages/Makefile, extracting subdir list.
         open (PACKAGES_MAKEFILE, "<$packagesMakefile")
@@ -492,7 +513,7 @@ exit $exitStatus;
         while (my $line = <PACKAGES_MAKEFILE>) {
             $line =~ s/^\s*//;  # trim leading spaces
             $line =~ s/\s*$//;  # trim trailing spaces
-            if ($line =~ m/^SUBDIRS = .*?$/) {
+            if ($line =~ m/^$subdirKey = .*?$/) {
                 $continue = 1;
             }
             if ($continue) {
@@ -591,8 +612,17 @@ exit $exitStatus;
         my @enabledSubdirs = ();
         my @subdirOrder = ();
          
-        # Parse packages/BROKEN_PACKAGE/Makefile, compiling a list of enabled subdirs.
-        my $packageMakefile = "$buildDir/packages/".getDirName($brokenPackage)."/Makefile";
+        my $dirName = "";
+        if (!getDirName($brokenPackage)) {
+            printMessage("Missing entry in file test/utilities/packages!", $v1+$v2+$v3);
+            $dirName = $brokenPackage;
+        } else {
+            $dirName = getDirName($brokenPackage);
+        }
+            
+        # Parse packages/BROKEN_PACKAGE/Makefile, compiling a list of enabled 
+        # subdirs.
+        my $packageMakefile = "$buildDir/packages/".$dirName."/Makefile";
         open (PACKAGE_MAKEFILE, "<$packageMakefile") or die "can't open $packageMakefile";
         undef $/;                       # undefine input record separator
         $file=<PACKAGE_MAKEFILE>;       # copy entire file
@@ -710,6 +740,76 @@ exit $exitStatus;
         return ($brokenPackage, $brokenSubdir);
            
     } # detectBrokenPackage()
+    
+    ############################################################################
+    # detectBrokenPackageTE()
+    #
+    # Figure out which package failed to compile for a `make tests` or `make 
+    # examples`.
+    #
+    #   - args:     $makeOutput     (standard out and standard error from make)
+    #
+    #   - returns:  $brokenPackage  (name of the package that failed to compile)
+    #
+
+    sub detectBrokenPackageTE {
+        my $makeOutput = $_[0];
+        
+        # Grab the last banner.
+        my $brokenPackage = "UNKNOWN";
+        if ($makeOutput =~ m/.*^(Now|Finished) building (\w*?) (tests|examples)\.$/ms) {
+            $brokenPackage = $2;        
+            $brokenPackage = lc($brokenPackage);
+        }
+        
+        return $brokenPackage;
+           
+    } # detectBrokenPackageTE()
+
+    ############################################################################
+    # detectMadePackagesTE()
+    #
+    # Compile a list of the packages that successfully compiled.
+    #
+    #   - args:     $makeOutput     (standard out and standard error from make)
+    #
+    #   - returns:  $madePackages   (list of packages that compiled successfully)
+    #
+
+    sub detectMadePackagesTE {
+        my $makeOutput = $_[0];
+
+        my @builtPackages= ();
+
+        if ($makeCmd =~ m/tests/) {
+            my @builtStrings = $makeOutput =~ m/(Finished building \w+? tests.)/g;
+            foreach my $builtString (@builtStrings) {
+                my $package = "";
+                if ($builtString && $builtString =~ m/Finished building (\w+?) tests./) {
+                    $package = lc($1);
+                    push (@builtPackages, $package);
+                }
+            }
+        } elsif ($makeCmd =~ m/examples/) {
+            my @builtStrings = $makeOutput =~ m/(Finished building \w+? examples.)/g;
+            foreach my $builtString (@builtStrings) {
+                my $package = "";
+                if ($builtString && $builtString =~ m/Finished building (\w+?) examples./) {
+                    $package = lc($1);
+                    push (@builtPackages, $package);
+                }
+            }
+        }
+        
+        # Create list of made packages and subdirs
+        my $builtPackagesString = ""; 
+        foreach my $package (@builtPackages) {
+            $builtPackagesString .= "$package; ";
+        }  
+        
+        return $builtPackagesString;
+           
+    } # detectMadePackagesTE()
     
     ############################################################################
     # detectMadePackages()

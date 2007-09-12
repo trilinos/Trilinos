@@ -165,7 +165,11 @@ endif
 # NOX examples
 if HAVE_PYTRILINOS_NOX
 if HAVE_PYTRILINOS_NOX_EPETRA
+if HAVE_MPI
+NOX_EXAMPLES = 
+else
 NOX_EXAMPLES = exNOX_1Dfem.py
+endif
 endif
 endif
 
@@ -180,9 +184,6 @@ GRE__115 = gre__115.rua
 
 # The following line helps the test harness recover from build errors.
 all:
-	@echo ""
-	@echo "Trilinos package PyTrilinos subdirectory example built successfully."
-	@echo ""
 
 all-local: $(SETPATH) $(EXAMPLE_SUITE) $(GRE__115)
 

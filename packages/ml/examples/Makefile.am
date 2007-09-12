@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	echo "Trilinos package ml subdirectory examples built successfully."
-	@echo ""
 
 SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other MLAPI Visualization MatrixFree XML
 

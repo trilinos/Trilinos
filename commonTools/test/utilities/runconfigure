@@ -30,6 +30,7 @@ my $buildDir;           # build directory           (required argument)
 my $invokeConfigure;    # complete invoke-configure (required argument)
 my $recover;            # recover mode?
 my $resume;             # resume mode? (use existing invoke-configure)
+my $newMakeTarget;      # new make target? (use last invoke-configure)
 my $makeBrokenPackage;  # package the failed to make
 my $makeBrokenSubdir;   # package subdirectory in which make failed
 
@@ -88,6 +89,7 @@ exit $exitStatus;
                     "invoke-configure=s" => \$invokeConfigure,
                     "recover" => \$recover,
                     "resume" => \$resume,
+                    "new-make-target" => \$newMakeTarget,
                     "make-broken-package=s" => \$makeBrokenPackage,
                     "make-broken-subdir=s" => \$makeBrokenSubdir,
                     "output-dir=s" => \$outputDir,
@@ -122,7 +124,7 @@ exit $exitStatus;
             if ($buildDir !~ m/^\//) {
                 $buildDir = "$trilinosDir/$buildDir";
             }
-            if (!$makeBrokenPackage && !$resume) {
+            if (!$makeBrokenPackage && !$resume && !$newMakeTarget) {
                 system ("rm -rf $buildDir");
                 system("mkdir $buildDir") == 0 or die "cannot create build-dir: $buildDir\n";
             }
@@ -134,16 +136,23 @@ exit $exitStatus;
         }
         
         # Prevent problems with uninitialized value
+        if (!$newMakeTarget) {
+            $newMakeTarget = "";
+        }
+        
+        # Prevent problems with uninitialized value
         if (!$resume) {
             $resume = "";
         }
         
         # Check for existance of invoke-configure argument and actual file
-        if (!$invokeConfigure && !$resume) {
-            die "invoke-configure value required, see --help for more information\n"; 
+        if (!$invokeConfigure && !$resume && !$newMakeTarget && !$makeBrokenPackage) {
+            die "invoke-configure, resume, new-make-target, or make-broken-package required, see --help for more information\n"; 
         } elsif ($invokeConfigure && $resume) {
             die "invoke-configure and resume options mutually exclusive\n";
-        } elsif ($resume) {
+        } elsif ($invokeConfigure && $newMakeTarget) {
+            die "invoke-configure and new-make-target options mutually exclusive\n";
+        } elsif ($resume || $newMakeTarget || $makeBrokenPackage) {
             $invokeConfigure = "";
         } else {
             if ($invokeConfigure !~ m/^\//) {
@@ -238,6 +247,7 @@ exit $exitStatus;
         $message .= "  \$makeBrokenSubdir = ".($makeBrokenSubdir?$makeBrokenSubdir:"")."\n"; 
         $message .= "  \$recover = $recover\n";
         $message .= "  \$resume = $resume\n";
+        $message .= "  \$newMakeTarget = $newMakeTarget\n";
         $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
         $message .= "  \$logVerbosity = $logVerbosity\n";
@@ -260,23 +270,27 @@ exit $exitStatus;
     sub run {
         
         # Copy invoke-configure
-        if (!$makeBrokenPackage && !$resume) {
-            system("cp $invokeConfigure $buildDir/invoke-configure") == 0
-                or die "cannot copy invoke-configure, died";
-        } elsif (!$resume) {                
-            # Move aside current, broken invoke-configure.  Serialize
-            # broken invoke-configures so that all are preserved.
-            my $icBrokenNumber = "00";
-            while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
-                $icBrokenNumber++;
+        if (!$resume && !$newMakeTarget) {
+            if (!$makeBrokenPackage) {
+                system("cp $invokeConfigure $buildDir/invoke-configure") == 0
+                    or die "cannot copy invoke-configure, died";
+            } else {
+                # Move aside current, broken invoke-configure.  Serialize
+                # broken invoke-configures so that all are preserved.
+                my $icBrokenNumber = "00";
+                while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
+                    $icBrokenNumber++;
+                }
+                system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
+                    or die "can't copy invoke-configure, died";
+                
+                if ($makeBrokenSubdir ne "tests" && $makeBrokenSubdir ne "examples") {
+                    my $packageDir  = "$buildDir/packages/".getDirName($makeBrokenPackage);        
+                    system("rm -rf $packageDir");
+                }
+                my $result = cleanInvokeConfigure($makeBrokenPackage, $makeBrokenSubdir);
+                if ($result == 86) { return 86; }
             }
-            system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
-                or die "can't copy invoke-configure, died";
-            
-            my $packageDir  = "$buildDir/packages/".getDirName($makeBrokenPackage);        
-            system("rm -rf $packageDir");
-            my $result = cleanInvokeConfigure($makeBrokenPackage, $makeBrokenSubdir);
-            if ($result == 86) { return 86; }
         }
         
         chdir $buildDir or die "cannot chdir to $buildDir, died";
@@ -602,7 +616,8 @@ exit $exitStatus;
     #
     # Remove the given package and its dependents from the invoke-configure.
     #
-    #   - args:     $brokenPackage    (name of package to clean from invoke-configure)
+    #   - args:     $brokenPackage    (name of package to clean from 
+    #                                 invoke-configure)
     #
     #   - returns:  NONE
     #
@@ -610,39 +625,44 @@ exit $exitStatus;
     sub cleanInvokeConfigure {
         my $brokenPackage = $_[0];
         my $brokenSubdir = $_[1];
+        my @flagsToInsert = ();
+        my $newInvokeConfigure = "";
+        my $changeMade = 0;
         
+        # Add tests and examples flags to be inserted
+        if ($brokenSubdir eq "tests") {
+            push (@flagsToInsert, "--disable-$brokenPackage-tests");
+        }
+        if ($brokenSubdir eq "examples") {
+            push (@flagsToInsert, "--disable-$brokenPackage-examples");
+        }
+    
+        # If there isn't a list of actions for this subdirectory, then
+        # use the default package-level recovery actions
+        if ($brokenSubdir ne "tests" && $brokenSubdir ne "examples" && 
+            !exists $dependencies{$brokenPackage}{$brokenSubdir}) {
+            $brokenSubdir = "default";
+        }
+            
         # Open invoke-configure for reading.
         open (INVOKE_CONFIGURE, "<$buildDir/invoke-configure")
             or die "can't open invoke-configure, died";
             
         # Parse it, extracting lines to keep.
-        my $newInvokeConfigure = "";
-        my $changeMade = 0;
         while (my $line = <INVOKE_CONFIGURE>) {
             $line =~ s/^\s*//;  # trim leading spaces
             $line =~ s/\s*$//;  # trim trailing spaces
-            
             # Compare lines to package dependencies.
             my $dropLine = 0;            
-            
-            # If there isn't a list of actions for this subdirectory, then
-            # use the default package-level recovery actions
-            if (!exists $dependencies{$brokenPackage}{$brokenSubdir}) {
-                $brokenSubdir = "default";
-            }
-            
             my $lastElementIndex = $#{$dependencies{$brokenPackage}{$brokenSubdir}};
             for (my $i=0; $i<=$lastElementIndex; $i++) { 
-                
                 if ($dependencies{$brokenPackage}{$brokenSubdir}[$i] =~ m/REMOVE ((\w|-)+)/) {
                     my $flag = $1;            
                     if ($line =~ m/$flag\b/i) {
                         $dropLine = 1;
                     }                    
                 }
-                
             }    
-            
             # Write line if it isn't a dependency.
             if (!$dropLine) {                             
                 $newInvokeConfigure .= "$line\n";
@@ -652,9 +672,8 @@ exit $exitStatus;
         } # while ($line)   
         
         close INVOKE_CONFIGURE;     
-        
+
         # Look for INSERT commands
-        my @flagsToInsert = ();
         my $lastElementIndex = $#{$dependencies{$brokenPackage}{$brokenSubdir}};
         for (my $i=0; $i<=$lastElementIndex; $i++) {             
             if ($dependencies{$brokenPackage}{$brokenSubdir}[$i] =~ m/INSERT (.+)/) {
@@ -662,7 +681,7 @@ exit $exitStatus;
                 push (@flagsToInsert, $flag);
             }            
         } 
-        
+
         # Open invoke-configure so we can check to see that we don't add a flag
         # that is already present.  Otherwise, the invoke-configure would 
         # perpetually continue to change, but not change functionally at all.

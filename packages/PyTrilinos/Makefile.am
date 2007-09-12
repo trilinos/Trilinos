@@ -88,6 +88,10 @@ all-local:
 #defined, so that the tests and examples are included in the distribution
 #tarball.
 
+if BUILD_PYTRILINOS
+SRC_SUBDIR=src
+endif
+
 if SUB_TEST
 TEST_SUBDIR=test
 endif
@@ -145,7 +149,7 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = shared $(SRC_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

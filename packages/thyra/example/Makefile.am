@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local: generate-sample-output.pl
-	@echo ""
-	@echo "Trilinos package thyra subdirectory example built successfully."
-	@echo ""
 
 if USING_EXPORT_MAKEFILES
 EXTERNAL_MAKEFILE_EXAMPLE = external

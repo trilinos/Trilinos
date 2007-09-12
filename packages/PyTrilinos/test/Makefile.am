@@ -21,7 +21,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
@@ -123,9 +123,6 @@ SETPATH     = setpath.py
 
 # The following line helps the test harness recover from build errors.
 all:
-	@echo ""
-	@echo "Trilinos package PyTrilinos subdirectory test built successfully."
-	@echo ""
 
 all-local: $(SETPATH) $(TEST_SUITE)
 

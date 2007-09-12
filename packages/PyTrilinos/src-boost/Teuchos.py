@@ -31,7 +31,7 @@ import sys
 PyTrilinos.Teuchos is the python interface to Trilinos package
 Teuchos:
 
-    http://software.sandia.gov/trilinos/packages/teuchos
+    http://trilinos.sandia.gov/packages/teuchos
 
 The purpose of Teuchos is to provide a number of utilities often
 needed by numerical applications, but that are not necessarily

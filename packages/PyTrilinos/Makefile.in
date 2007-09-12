@@ -63,7 +63,6 @@ target_triplet = @target@
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	$(top_srcdir)/src-boost/PyTrilinos/.dummy.in \
 	$(top_srcdir)/src/.deps/dummy.in \
 	$(top_srcdir)/src/PyTrilinos/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/LOCA/.dummy.in \
@@ -71,6 +70,7 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(top_srcdir)/src/PyTrilinos/NOX/Epetra/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in \
 	$(top_srcdir)/util/MakefileVariables.py.in \
+	$(top_srcdir)/util/PyTrilinosExtension.py.in \
 	$(top_srcdir)/util/SharedUtils.py.in \
 	$(top_srcdir)/util/pkg_info.py.in INSTALL config/config.guess \
 	config/config.sub config/depcomp config/install-sh \
@@ -93,11 +93,11 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
-CONFIG_CLEAN_FILES = util/MakefileVariables.py util/SharedUtils.py \
+CONFIG_CLEAN_FILES = util/MakefileVariables.py \
+	util/PyTrilinosExtension.py util/SharedUtils.py \
 	util/pkg_info.py src/.deps/dummy src/PyTrilinos/.dummy \
 	src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy \
-	src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy \
-	src-boost/PyTrilinos/.dummy
+	src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -111,7 +111,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example
+DIST_SUBDIRS = shared src test example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -271,9 +271,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
 #defined, so that the tests and examples are included in the distribution
 #tarball.
+@BUILD_PYTRILINOS_TRUE@SRC_SUBDIR = src
 @SUB_TEST_TRUE@TEST_SUBDIR = test
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = shared $(SRC_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_TEST_CATEGORY = INSTALL
@@ -317,6 +318,8 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 util/MakefileVariables.py: $(top_builddir)/config.status $(top_srcdir)/util/MakefileVariables.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+util/PyTrilinosExtension.py: $(top_builddir)/config.status $(top_srcdir)/util/PyTrilinosExtension.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 util/SharedUtils.py: $(top_builddir)/config.status $(top_srcdir)/util/SharedUtils.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 util/pkg_info.py: $(top_builddir)/config.status $(top_srcdir)/util/pkg_info.py.in
@@ -332,8 +335,6 @@ src/PyTrilinos/NOX/Epetra/.dummy: $(top_builddir)/config.status $(top_srcdir)/sr
 src/PyTrilinos/NOX/LAPACK/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/PyTrilinos/LOCA/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/LOCA/.dummy.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-src-boost/PyTrilinos/.dummy: $(top_builddir)/config.status $(top_srcdir)/src-boost/PyTrilinos/.dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 # This directory's subdirectories are mostly independent; you can cd
