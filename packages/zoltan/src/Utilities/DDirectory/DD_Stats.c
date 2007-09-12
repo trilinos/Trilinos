@@ -55,7 +55,7 @@ void Zoltan_DD_Stats (
       return ;
       }
 
-   if (dd->debug_level > 1)
+   if (dd->debug_level > 4)
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* walk down each list in hash table to find every Node */
@@ -67,7 +67,7 @@ void Zoltan_DD_Stats (
 
       for (ptr = dd->table[i] ; ptr != NULL ; ptr = ptr->next)
          {
-         if (dd->debug_level > 1)
+         if (dd->debug_level > 6)
             {
             sprintf (str, "GID %4u, Owner %d, Table Index %d.", *ptr->gid,
              ptr->owner, i) ;
@@ -84,7 +84,7 @@ void Zoltan_DD_Stats (
     dd->table_length, node_count, list_count, maxlength) ;
    ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
 
-   if (dd->debug_level > 1)
+   if (dd->debug_level > 4)
       ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
    }
 

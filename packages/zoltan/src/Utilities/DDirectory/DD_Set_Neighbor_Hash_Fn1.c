@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-/*  NOTE: See file, README, for associated documentation. (RTH) */
-
 
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc) ;
@@ -49,21 +47,19 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
  Zoltan_DD_Directory *dd,          /* directory state information */
  int size)                         /* number of reserved GIDs per CPU */
    {
-   char *yo = "Zoltan_DD_Set_Hash_Fn1" ;
+   char *yo = "Zoltan_DD_Set_Hash_Fn1";
 
-   if (dd == NULL || size < 1)
-      {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
-      return ZOLTAN_DD_INPUT_ERROR ;
-      }
+   if (dd == NULL || size < 1)  {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
+      return ZOLTAN_FATAL;
+   }
 
-   groupsize   = size ;
-   dd->hash    = dd_nh1 ;
-   dd->cleanup = NULL ;                 /* no need to free anything */
+   groupsize   = size;
+   dd->hash    = dd_nh1;
+   dd->cleanup = NULL;                 /* no need to free anything */
+   max_gid     = size * dd->nproc;     /* larger GIDs out of range */
 
-   max_gid     = size * dd->nproc ;     /* larger GIDs out of range */
-
-   return ZOLTAN_DD_NORMAL_RETURN ;
+   return ZOLTAN_OK;
    }
 
 
@@ -71,8 +67,8 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc)
    {
-   int id = (signed) *gid ;
-   return (id < max_gid) ? (id / groupsize) : (id % nproc) ;
+   int id = (signed) *gid;
+   return (id < max_gid) ? (id / groupsize) : (id % nproc);
    }
 
 #ifdef __cplusplus

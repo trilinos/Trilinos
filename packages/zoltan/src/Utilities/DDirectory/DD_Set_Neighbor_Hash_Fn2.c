@@ -25,31 +25,29 @@ extern "C" {
 #endif
 
 
-/*  NOTE: See file, README, for associated documentation. (RTH)  */
-
 
 typedef struct
    {
-   int high ;
-   int low ;
-   int proc ;
-   } Range_Info ;
+   int high;
+   int low;
+   int proc;
+   } Range_Info;
 
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc) ;
+ unsigned int nproc);
 
-static int compare_sort   (const void *a, const void *b) ;
-static int compare_search (const void *a, const void *b) ;
+static int compare_sort   (const void *a, const void *b);
+static int compare_search (const void *a, const void *b);
 
-static void dd_nh2_cleanup (void) ;
+static void dd_nh2_cleanup (void);
 
-static Range_Info *ptr ;
-static int         nproc ;
-static int         low_limit ;
-static int         high_limit ;
-static int         debug_level ;
-static int         count ;
+static Range_Info *ptr;
+static int nproc;
+static int low_limit;
+static int high_limit;
+static int debug_level;
+static int count;
 
 
 /*************  Zoltan_DD_Set_Hash_Fn2()  ***********************/
@@ -71,43 +69,40 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
  int *high,                   /* highest GID for corresponding processor */
  int n)                       /* number of processors in above lists */
    {
-   int i ;
-   char *yo = "Zoltan_DD_Set_Hash_Fn2" ;
+   int i;
+   char *yo = "Zoltan_DD_Set_Hash_Fn2";
 
-   if (dd == NULL || proc == NULL || low == NULL || high == NULL)
-      {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
-      return ZOLTAN_DD_INPUT_ERROR ;
-      }
+   if (dd == NULL || proc == NULL || low == NULL || high == NULL)  {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
+      return ZOLTAN_FATAL;
+   }
 
    /* register functions for automatic invocation */
-   dd->hash    = dd_nh2 ;
-   dd->cleanup = dd_nh2_cleanup ;
+   dd->hash    = dd_nh2;
+   dd->cleanup = dd_nh2_cleanup;
 
    /* malloc and initialize storage for range information structures */
-   ptr = (Range_Info *)  ZOLTAN_MALLOC (n * sizeof (Range_Info)) ;
-   if (ptr == NULL)
-      {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info") ;
-      return ZOLTAN_DD_MEMORY_ERROR ;
-      }
-   for (i = 0 ;  i < n ; i++)
-      {
+   ptr = (Range_Info*)  ZOLTAN_MALLOC (n * sizeof (Range_Info));
+   if (ptr == NULL)  {
+      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info");
+      return ZOLTAN_MEMERR;
+   }
+   for (i = 0;  i < n; i++)  {
       ptr[i].high = high[i] ;
       ptr[i].low  = low [i] ;
-      ptr[i].proc = (proc[i] < n) ? proc[i] : 0 ;
-      }
+      ptr[i].proc = (proc[i] < n) ? proc[i] : 0;
+   }
 
    /* do not assume user lists were ordered */
-   qsort (ptr, n, sizeof (Range_Info), compare_sort) ;
+   qsort (ptr, n, sizeof (Range_Info), compare_sort);
 
-   low_limit   = ptr[0].low ;
-   high_limit  = ptr[n-1].high ;
-   debug_level = dd->debug_level ;
-   count       = n ;
-   nproc       = dd->nproc ;
+   low_limit   = ptr[0].low;
+   high_limit  = ptr[n-1].high;
+   debug_level = dd->debug_level;
+   count       = n;
+   nproc       = dd->nproc;
 
-   return ZOLTAN_DD_NORMAL_RETURN ;
+   return ZOLTAN_OK;
    }
 
 
@@ -115,27 +110,24 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int junk)
    {
-   Range_Info *p ;
-   char *yo = "dd_ny2" ;
-   int id = (signed) *gid ;
+   Range_Info *p;
+   char *yo = "dd_ny2";
+   int id = (signed) *gid;
 
    /* check if gid is out of range */
    if (id > high_limit || id < low_limit)
-      {
-      return id % nproc ;
-      }
+      return id % nproc;
 
-   p = (Range_Info *) bsearch (gid, ptr, count, sizeof (Range_Info),
-    compare_search) ;
+   p = (Range_Info*) bsearch (gid, ptr, count, sizeof (Range_Info),
+    compare_search);
 
-   if (p == NULL)              /* shouldn't happen */
-      {
+   if (p == NULL) {             /* shouldn't happen */
       if (debug_level > 1)
          ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL.") ;
-      return id % nproc ;
-      }
+      return id % nproc;
+   }
 
-   return p->proc ;
+   return p->proc;
    }
 
 
@@ -146,17 +138,17 @@ static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
 
 static int compare_sort (const void *a, const void *b)
     {
-    if (((Range_Info *) a)->low < ((Range_Info *) b)->low) return -1 ;
-    if (((Range_Info *) a)->low > ((Range_Info *) b)->low) return  1 ;
+    if (((Range_Info*) a)->low < ((Range_Info *) b)->low) return -1;
+    if (((Range_Info*) a)->low > ((Range_Info *) b)->low) return  1;
     else return 0 ;
     }
 
 
 static int compare_search (const void *a, const void *b)
     {
-    int temp = (signed) *((ZOLTAN_ID_TYPE *) a) ;
-    if (temp < ((Range_Info *) b)->low)  return -1 ;
-    if (temp > ((Range_Info *) b)->high) return  1 ;
+    int temp = (signed) *((ZOLTAN_ID_TYPE *) a);
+    if (temp < ((Range_Info*) b)->low)  return -1;
+    if (temp > ((Range_Info*) b)->high) return  1;
     else return 0 ;
     }
 
@@ -166,7 +158,7 @@ static int compare_search (const void *a, const void *b)
 
 static void dd_nh2_cleanup (void)
    {
-   ZOLTAN_FREE (&ptr) ;
+   ZOLTAN_FREE (&ptr);
    }
 
 #ifdef __cplusplus

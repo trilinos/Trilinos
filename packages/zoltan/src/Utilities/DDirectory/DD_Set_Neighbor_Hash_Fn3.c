@@ -25,16 +25,14 @@ extern "C" {
 #endif
 
 
-/*  NOTE: See file, README, for associated documentation. (RTH) */
-
 
 static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc) ;
+ unsigned int nproc);
 
-static int remainder ;
-static int average ;
-static int breakpt ;
-static int total_ ;
+static int remainder;
+static int average;
+static int breakpt;
+static int total_;
 
 
 /*************  Zoltan_DD_Set_Hash_Fn3() ***********************/
@@ -52,23 +50,22 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn3 (
  Zoltan_DD_Directory *dd,          /* directory state information */
  int total)                        /* total number of GIDS */
    {
-   char *yo = "Zoltan_DD_Set_Hash_Fn3" ;
+   char *yo = "Zoltan_DD_Set_Hash_Fn3";
 
-   if (dd == NULL || total < 1)
-      {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
-      return ZOLTAN_DD_INPUT_ERROR ;
-      }
+   if (dd == NULL || total < 1) {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
+      return ZOLTAN_FATAL;
+   }
 
-   total_    = total ;
-   average   = total / dd->nproc ;
-   remainder = total % dd->nproc ;
-   breakpt   = (average+1) * remainder ;
+   total_    = total;
+   average   = total / dd->nproc;
+   remainder = total % dd->nproc;
+   breakpt   = (average+1) * remainder;
 
-   dd->hash    = dd_nh3 ;
-   dd->cleanup = NULL ;                 /* no need to free anything */
+   dd->hash    = dd_nh3;
+   dd->cleanup = NULL;                 /* no need to free anything */
 
-   return ZOLTAN_DD_NORMAL_RETURN ;
+   return ZOLTAN_OK;
    }
 
 
@@ -76,13 +73,13 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn3 (
 static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc)
    {
-   int id = (signed) *gid ;
+   int id = (signed) *gid;
    if (id < breakpt)
-      return  id/(average+1) ;
+      return  id/(average+1);
    if (id < total_)
-      return remainder + (id-breakpt)/average ;
+      return remainder + (id-breakpt)/average;
 
-   return 0 ;                    /* error, gid is out of range */
+   return 0;                    /* error, gid is out of range */
    }
 
 #ifdef __cplusplus

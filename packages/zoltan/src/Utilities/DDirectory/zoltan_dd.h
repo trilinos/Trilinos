@@ -33,17 +33,6 @@ struct Zoltan_DD_Struct;
 typedef struct Zoltan_DD_Struct Zoltan_DD_Directory;
 
 
-/* The following are used as return value error codes */
-#define ZOLTAN_DD_NORMAL_RETURN         ZOLTAN_OK
-#define ZOLTAN_DD_INPUT_ERROR           ZOLTAN_WARN
-#define ZOLTAN_DD_MEMORY_ERROR          ZOLTAN_MEMERR
-#define ZOLTAN_DD_MPI_ERROR             ZOLTAN_FATAL
-#define ZOLTAN_DD_COMM_ERROR            ZOLTAN_FATAL
-#define ZOLTAN_DD_GID_ADDED             ZOLTAN_WARN
-#define ZOLTAN_DD_GID_NOT_FOUND_ERROR   ZOLTAN_WARN
-#define ZOLTAN_DD_GID_REDEFINED_ERROR   ZOLTAN_FATAL
-
-
 /***********  Distributed Directory Function Prototypes ************/
 
 int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
