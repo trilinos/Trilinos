@@ -85,15 +85,9 @@ struct Zoltan_MP_Data_Struct{
   IJTYPE nCols;
   IJTYPE nNonZeros;
 
-  /* Hypergraph generated from sparse matrix (if not obvious 
-   * from sparse matrix representation) */
-
-  IJTYPE nMyVtx;    /* my number of vertices in hypergraph */
-  IJTYPE *vtxGID;   /* vertex GIDs */
-  double *vtxWgt;   /* weight for each vertex (1 double) */
-  IJTYPE nHedges;   /* number of hyperedges */
-  IJTYPE *hindex;   /* index into list of nz for each h.e., last is nnz */
-  IJTYPE *hvertex;  /* vtx GID of nz in my hyperedges */
+  /* Redundant information, remove? */
+  IJTYPE nMyVtx;    /* 1d model: my number of vertices */
+  IJTYPE *vtxGID;   /* 1d model: vertex GIDs */
 
   /* Results, to supply data to query functions */
   int *rowproc;

@@ -451,9 +451,6 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
     ZOLTAN_FREE(&mpd->mirrorNzGID);
 
     ZOLTAN_FREE(&mpd->vtxGID);
-    ZOLTAN_FREE(&mpd->vtxWgt);
-    ZOLTAN_FREE(&mpd->hindex);
-    ZOLTAN_FREE(&mpd->hvertex);
 
     ZOLTAN_FREE(&mpd->rowproc);
     ZOLTAN_FREE(&mpd->rowpart);
