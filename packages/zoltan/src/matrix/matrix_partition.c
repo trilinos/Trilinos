@@ -86,22 +86,21 @@ int Zoltan_MP_Set_Param(
 ** This avoids the necessity of having the user figure out how our
 ** hypergraph partitioning codes work.
 **
-** This source file uses the terms "pins" and "non-zeros" interchangeably.
-**
 ** An IJTYPE is the type of a row or column ID.
 **
-** LB_METHOD = SPARSE_MATRIX
 ** MATRIX_APPROACH:
-**    MP_ROWS    use Zoltan's PHG to partition the rows (objects are
-**                rows, hyperedges are columns)
+**    MP_ROWS    partition the rows (objects are rows, 
+**                for hypergraph model hyperedges are columns)
 **                
-**    MP_COLS    use Zoltan's PHG to partition the columns (objects
-**                are columns, hyperedges are rows)
+**    MP_COLS    partition the columns (objects are columns
+**                for hypergraph model hyperedges are rows)
+**
+**    MP_NONZEROS    partition the nonzeros 
 **
 ** If you want to add a new approach to Zoltan_Matrix_Partition, you
-** need to write functions analygous to the 5 functions written
+** need to write functions analogous to the 5 functions written
 ** for the MP_ROWS and MP_COLS approaches: mp_1d_setup, mp_1d_results,
-** mp_1d_get_pins, mp_1d_get_rows, and mp_1d_get_columns.
+** mp_1d_get_nzs, mp_1d_get_rows, and mp_1d_get_columns.
 **
 *************************************************************************/
 
@@ -123,7 +122,7 @@ static int mp_1d_result(ZOLTAN_MP_DATA *mpd,
   int num_export,
   unsigned int *export_global_ids, unsigned int *export_local_ids, 
   int *export_procs, int *export_to_part);
-static int mp_1d_get_pins(ZOLTAN_MP_DATA *mpd, 
+static int mp_1d_get_nzs(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
 static int mp_1d_get_rows(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nRows, IJTYPE *rowIDs, int *rowProcs, int *rowParts);
@@ -230,7 +229,7 @@ int Zoltan_MP_Get_NonZero_Assignment(ZZ *zz, int nNZ,
     {
       case MP_ROW_TYPE:
       case MP_COLUMN_TYPE:
-        ierr = mp_1d_get_pins(mpd, nNZ, rowIDs, colIDs, nzProcs, nzParts);
+        ierr = mp_1d_get_nzs(mpd, nNZ, rowIDs, colIDs, nzProcs, nzParts);
         break;
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
@@ -244,7 +243,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   char *yo = "Zoltan_Matrix_Partition";
   int ierr = ZOLTAN_OK;
   ZZ *zzLib = NULL;
-  IJTYPE npins;
+  IJTYPE nnz;
 
   /* The persistent structure we will save at zz->LB.Data_Structure */
 
@@ -299,10 +298,10 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   }
 
   if (mpd->input_type == COL_TYPE){
-    zz->Get_CSC_Size(zz->Get_CSC_Size_Data, &mpd->numRC, &npins, &ierr);
+    zz->Get_CSC_Size(zz->Get_CSC_Size_Data, &mpd->numRC, &nnz, &ierr);
   }
   else {
-    zz->Get_CSR_Size(zz->Get_CSR_Size_Data, &mpd->numRC, &npins, &ierr);
+    zz->Get_CSR_Size(zz->Get_CSR_Size_Data, &mpd->numRC, &nnz, &ierr);
   }
 
   if (ierr != ZOLTAN_OK){
@@ -311,20 +310,20 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   }
 
   mpd->rcGID = (IJTYPE *)ZOLTAN_MALLOC(mpd->numRC * sizeof(IJTYPE));
-  mpd->pinIndex = (IJTYPE *)ZOLTAN_MALLOC((mpd->numRC+1) * sizeof(IJTYPE));
-  mpd->pinGID = (IJTYPE *)ZOLTAN_MALLOC(npins * sizeof(IJTYPE));
-  if ((mpd->numRC && !mpd->rcGID) || !mpd->pinIndex || (npins && !mpd->pinGID)){
+  mpd->nzIndex = (IJTYPE *)ZOLTAN_MALLOC((mpd->numRC+1) * sizeof(IJTYPE));
+  mpd->nzGID = (IJTYPE *)ZOLTAN_MALLOC(nnz * sizeof(IJTYPE));
+  if ((mpd->numRC && !mpd->rcGID) || !mpd->nzIndex || (nnz && !mpd->nzGID)){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
   if (mpd->input_type == COL_TYPE){
-    zz->Get_CSC(zz->Get_CSC_Data, mpd->numRC, npins, 
-                mpd->rcGID, mpd->pinIndex, mpd->pinGID, &ierr);
+    zz->Get_CSC(zz->Get_CSC_Data, mpd->numRC, nnz, 
+                mpd->rcGID, mpd->nzIndex, mpd->nzGID, &ierr);
   }
   else {
-    zz->Get_CSR(zz->Get_CSR_Data, mpd->numRC, npins, 
-                mpd->rcGID, mpd->pinIndex, mpd->pinGID, &ierr);
+    zz->Get_CSR(zz->Get_CSR_Data, mpd->numRC, nnz, 
+                mpd->rcGID, mpd->nzIndex, mpd->nzGID, &ierr);
   }
 
   if (ierr != ZOLTAN_OK){
@@ -332,12 +331,12 @@ int Zoltan_Matrix_Partition(ZZ *zz)
     goto End;
   }
  
-  mpd->pinIndex[mpd->numRC] = npins;
+  mpd->nzIndex[mpd->numRC] = nnz;
 
   /*
    * Determine globally how many rows and columns were returned, and if
    * their IDs are 0 based or 1 based.  (Assume they are contiguous.)
-   * Some row/column numbers may not appear in input if they have no pins.
+   * Some row/column numbers may not appear in input if they have no nzs.
    */
 
   ierr = process_matrix_input(zz, mpd);
@@ -444,8 +443,8 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
   if (mpd != NULL){
 
     ZOLTAN_FREE(&mpd->rcGID);
-    ZOLTAN_FREE(&mpd->pinIndex);
-    ZOLTAN_FREE(&mpd->pinGID);
+    ZOLTAN_FREE(&mpd->nzIndex);
+    ZOLTAN_FREE(&mpd->nzGID);
 
     ZOLTAN_FREE(&mpd->crGID);
     ZOLTAN_FREE(&mpd->mirrorPinIndex);
@@ -460,12 +459,12 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
     ZOLTAN_FREE(&mpd->rowpart);
     ZOLTAN_FREE(&mpd->colproc);
     ZOLTAN_FREE(&mpd->colpart);
-    ZOLTAN_FREE(&mpd->pinproc);
-    ZOLTAN_FREE(&mpd->pinpart);
+    ZOLTAN_FREE(&mpd->nzproc);
+    ZOLTAN_FREE(&mpd->nzpart);
 
     free_obj_lookup_table(&mpd->row_lookup);
     free_obj_lookup_table(&mpd->col_lookup);
-    free_obj_lookup_table(&mpd->pin_lookup);
+    free_obj_lookup_table(&mpd->nz_lookup);
 
     Zoltan_Destroy(&(mpd->zzLib));  /* we created this PHG problem */
 
@@ -530,21 +529,21 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 {
   int ierr = ZOLTAN_OK;
   int i;
-  long int lpins, gpins;
+  long int lnzs, gnzs;
   IJTYPE minID, maxID, minPinID, maxPinID;
-  IJTYPE npins=0;
+  IJTYPE nnz=0;
   long int vals[2], gvals[2];
 
-  /* get global number of rows, columns and pins, range of row and column IDs */
+  /* get global number of rows, columns and nzs, range of row and column IDs */
 
   if (mpd->numRC > 0)
-    npins = mpd->pinIndex[mpd->numRC];
+    nnz = mpd->nzIndex[mpd->numRC];
 
-  lpins = (long int)npins;
+  lnzs = (long int)nnz;
 
-  MPI_Allreduce(&lpins, &gpins, 1, MPI_LONG, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&lnzs, &gnzs, 1, MPI_LONG, MPI_SUM, zz->Communicator);
 
-  mpd->nNonZeros = (IJTYPE)gpins;
+  mpd->nNonZeros = (IJTYPE)gnzs;
 
   maxID = maxPinID = -1;
 
@@ -555,11 +554,11 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
       if (mpd->rcGID[i] < minID) minID = mpd->rcGID[i];
       else if (mpd->rcGID[i] > maxID) maxID = mpd->rcGID[i];
     }
-    if (npins > 0){
-      minPinID = maxPinID = mpd->pinGID[0];
-      for (i=1; i<npins; i++){
-        if (mpd->pinGID[i] < minPinID) minPinID = mpd->pinGID[i];
-        else if (mpd->pinGID[i] > maxPinID) maxPinID = mpd->pinGID[i];
+    if (nnz > 0){
+      minPinID = maxPinID = mpd->nzGID[0];
+      for (i=1; i<nnz; i++){
+        if (mpd->nzGID[i] < minPinID) minPinID = mpd->nzGID[i];
+        else if (mpd->nzGID[i] > maxPinID) maxPinID = mpd->nzGID[i];
       }
     }
   }
@@ -571,7 +570,7 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
   maxID = (IJTYPE)gvals[0];
   maxPinID = (IJTYPE)gvals[1];
 
-  if (npins == 0){
+  if (nnz == 0){
     minPinID = maxPinID;
     if (mpd->numRC == 0){
       minID = maxID;
@@ -617,7 +616,7 @@ static ZOLTAN_MP_DATA *MP_Initialize_Structure(ZZ *zz)
 static int make_mirror(ZOLTAN_MP_DATA *mpd)
 {
   int ierr = ZOLTAN_OK;
-  int npins, nIDs;
+  int nnz, nIDs;
 
   /*
    * If sparse matrix was supplied in CSC, create another in CSR format,
@@ -628,11 +627,11 @@ static int make_mirror(ZOLTAN_MP_DATA *mpd)
   ZOLTAN_FREE(&mpd->mirrorPinGID);
 
   nIDs = mpd->numRC;
-  npins = mpd->pinIndex[nIDs];
+  nnz = mpd->nzIndex[nIDs];
 
   mpd->numCR = mpd->numRC;
-  allocate_copy(&mpd->crGID, mpd->pinGID, npins);
-  allocate_copy(&mpd->mirrorPinIndex, mpd->pinIndex, nIDs+1);
+  allocate_copy(&mpd->crGID, mpd->nzGID, nnz);
+  allocate_copy(&mpd->mirrorPinIndex, mpd->nzIndex, nIDs+1);
   allocate_copy(&mpd->mirrorPinGID, mpd->rcGID, nIDs);
 
   /* TODO  Convert_to_CSR thinks some of these fields are ints
@@ -640,7 +639,7 @@ static int make_mirror(ZOLTAN_MP_DATA *mpd)
    *
    */
 
-  ierr = Zoltan_Convert_To_CSR(mpd->zzLib, npins, (int *)mpd->pinIndex,
+  ierr = Zoltan_Convert_To_CSR(mpd->zzLib, nnz, (int *)mpd->nzIndex,
              /* The following get overwritten with mirror */
              (int *)&(mpd->numCR),
              (ZOLTAN_ID_PTR *)&(mpd->mirrorPinGID),
@@ -837,15 +836,15 @@ static int mp_1d_my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs);
 /*
  *
  */
-static int mp_1d_get_pins(ZOLTAN_MP_DATA *mpd, 
+static int mp_1d_get_nzs(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts)
 {
   if (mpd->approach == MP_ROW_TYPE){
-    /* The pin belongs to the partition its row belongs to */
+    /* The nz belongs to the partition its row belongs to */
     return mp_1d_get_rows(mpd, nPins, I, ijProcs, ijParts);
   }
   else{
-    /* The pin belongs to the partition its column belongs to */
+    /* The nz belongs to the partition its column belongs to */
     return mp_1d_get_columns(mpd, nPins, J, ijProcs, ijParts);
   }
 }
@@ -1002,7 +1001,7 @@ void mp_1d_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
   }
 }
 
-void mp_1d_get_size_matrix(void *data, int *num_lists, int *num_pins,
+void mp_1d_get_size_matrix(void *data, int *num_lists, int *num_nzs,
   int *format, int *ierr)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
@@ -1011,24 +1010,24 @@ void mp_1d_get_size_matrix(void *data, int *num_lists, int *num_pins,
   if (((mpd->approach == MP_ROW_TYPE) && (mpd->input_type == ROW_TYPE)) ||
       ((mpd->approach == MP_COLUMN_TYPE) && (mpd->input_type == COL_TYPE)) ){
     *num_lists = mpd->numCR;
-    *num_pins  = mpd->mirrorPinIndex[mpd->numCR];
+    *num_nzs  = mpd->mirrorPinIndex[mpd->numCR];
   }
   else{
     *num_lists = mpd->numRC;
-    *num_pins  = mpd->pinIndex[mpd->numRC];
+    *num_nzs  = mpd->nzIndex[mpd->numRC];
   }
   *format = ZOLTAN_COMPRESSED_EDGE;
 }
 
 void mp_1d_get_matrix(void *data, int num_gid_entries, int num_vtx_edge,
-  int num_pins, int format, 
-  ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr)
+  int num_nzs, int format, 
+  ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR nz_GID, int *ierr)
 {
   int i;
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
   IJTYPE *edgeGID = (IJTYPE *)vtxedge_GID;
-  IJTYPE *pinGID = (IJTYPE *)pin_GID;
+  IJTYPE *nzGID = (IJTYPE *)nz_GID;
 
   if (((mpd->approach == MP_ROW_TYPE) && (mpd->input_type == ROW_TYPE)) ||
       ((mpd->approach == MP_COLUMN_TYPE) && (mpd->input_type == COL_TYPE)) ){
@@ -1037,16 +1036,16 @@ void mp_1d_get_matrix(void *data, int num_gid_entries, int num_vtx_edge,
       vtxedge_ptr[i] = mpd->mirrorPinIndex[i];
     }
     for (i=0; i< mpd->mirrorPinIndex[mpd->numCR]; i++){
-      pinGID[i] = mpd->mirrorPinGID[i];
+      nzGID[i] = mpd->mirrorPinGID[i];
     }
   }
   else{
     for (i=0; i<mpd->numRC; i++){
       edgeGID[i] = mpd->rcGID[i];
-      vtxedge_ptr[i] = mpd->pinIndex[i];
+      vtxedge_ptr[i] = mpd->nzIndex[i];
     }
-    for (i=0; i< mpd->pinIndex[mpd->numRC]; i++){
-      pinGID[i] = mpd->pinGID[i];
+    for (i=0; i< mpd->nzIndex[mpd->numRC]; i++){
+      nzGID[i] = mpd->nzGID[i];
     }
   }
 }
@@ -1212,16 +1211,16 @@ End:
 /****************************************************************/
 
 /* For small sparse matrices used in testing, process 0 prints
- * out the matrix with each pin value equal to the pin's partition.
+ * out the matrix with each nz value equal to the nz's partition.
  * Matrix should be small enough that we can print it out.
  */
 void Zoltan_MP_Debug_Partitioning(ZZ *zz)
 {
   char *yo = "Zoltan_MP_Debug_Partitioning";
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
-  IJTYPE *colIDs, *rowIDs, *pinIDs, *pinIdx, *IDs, *counts=NULL;
+  IJTYPE *colIDs, *rowIDs, *nzIDs, *nzIdx, *IDs, *counts=NULL;
   IJTYPE numRows, numCols, numIDs, row, col, numPins, baseID, idx;
-  IJTYPE totalCount=0, *recvIDs=NULL, *pins=NULL;
+  IJTYPE totalCount=0, *recvIDs=NULL, *nzs=NULL;
   int rc, me, nprocs, i, j, nextIdx, oops, numParts;
   int totColCuts, totRowCuts, width;
   MPI_Comm comm = zz->Communicator;
@@ -1243,14 +1242,14 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   me = mpd->zzLib->Proc;
   nprocs = mpd->zzLib->Num_Proc;
 
-  /* Find out where the pins are */
+  /* Find out where the nzs are */
 
   if (me == 0){
     A = (int **)ZOLTAN_MALLOC(sizeof(int *) * mpd->nRows);
     for (i=0; i<mpd->nRows; i++){
       A[i] = (int *)ZOLTAN_MALLOC(sizeof(int) * mpd->nCols);
       for (j=0; j < mpd->nCols; j++){
-        A[i][j] = -2;       /* not a pin */
+        A[i][j] = -2;       /* not a nz */
       }
     }
   }
@@ -1260,27 +1259,27 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     numRows = mpd->numRC;
     colIDs = mpd->crGID;
     numCols = mpd->numCR;
-    pinIDs = mpd->pinGID;            /* GID of pin column */
-    pinIdx = mpd->pinIndex;
+    nzIDs = mpd->nzGID;            /* GID of nz column */
+    nzIdx = mpd->nzIndex;
   }
   else{
     rowIDs = mpd->crGID;
     numRows = mpd->numCR;
     colIDs = mpd->rcGID;
     numCols = mpd->numRC;
-    pinIDs = mpd->mirrorPinGID;      /* GID of pin column */
-    pinIdx = mpd->mirrorPinIndex;
+    nzIDs = mpd->mirrorPinGID;      /* GID of nz column */
+    nzIdx = mpd->mirrorPinIndex;
   }
 
-  numPins = pinIdx[numRows] * 2;
+  numPins = nzIdx[numRows] * 2;
 
-  pins = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numPins);
+  nzs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numPins);
   for (i=0,nextIdx=0; i<numRows; i++){
     row = rowIDs[i] - mpd->rowBaseID;
-    for (j=pinIdx[i]; j<pinIdx[i+1]; j++){
-      col = pinIDs[j] - mpd->colBaseID;
-      pins[nextIdx++] = row;
-      pins[nextIdx++] = col;
+    for (j=nzIdx[i]; j<nzIdx[i+1]; j++){
+      col = nzIDs[j] - mpd->colBaseID;
+      nzs[nextIdx++] = row;
+      nzs[nextIdx++] = col;
     }
   }
 
@@ -1300,7 +1299,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totalCount);
   }
 
-  MPI_Gatherv(pins, numPins, MPI_UNSIGNED,
+  MPI_Gatherv(nzs, numPins, MPI_UNSIGNED,
               recvIDs, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
 
   if (me == 0){
@@ -1313,7 +1312,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
           ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Bad ID\n");
           exit(0);
         }
-        A[row][col] = -1;     /* it's a pin */
+        A[row][col] = -1;     /* it's a nz */
       }   
     }
     numPins = totalCount/2;
@@ -1322,7 +1321,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   ZOLTAN_FREE(&recvIDs);
   ZOLTAN_FREE(&recvCounts);
   ZOLTAN_FREE(&recvDisp);
-  ZOLTAN_FREE(&pins);
+  ZOLTAN_FREE(&nzs);
 
   /* Find out what partitions the rows or columns have been assigned
    * to.  We aren't handling partitioning strategies that partition
@@ -1341,10 +1340,10 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     IDs = colIDs;
     numIDs = numCols;
   }
-  else if (mpd->pin_lookup){
+  else if (mpd->nz_lookup){
     /* TODO */
     ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
-                      "Print out of pin partitioning not done yet.\n");
+                      "Print out of nz partitioning not done yet.\n");
     return;
   }
   else{
@@ -1546,7 +1545,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   MPI_Barrier(comm);
   
 /*End:*/
-  ZOLTAN_FREE(&pins);
+  ZOLTAN_FREE(&nzs);
   ZOLTAN_FREE(&recvCounts);
   ZOLTAN_FREE(&recvDisp);
   ZOLTAN_FREE(&recvIDs);

@@ -67,8 +67,8 @@ struct Zoltan_MP_Data_Struct{
   int input_type;    /* a ObjectType, how they supply the matrix (CSC or CSR) */
   IJTYPE numRC;      /* number of rows or columns */
   IJTYPE *rcGID;     /* row or column GIDs   */
-  IJTYPE *pinIndex;  /* index into pinGIDs array, last is num pins */
-  IJTYPE *pinGID;    /* non-zeroes column or row GIDs */
+  IJTYPE *nzIndex;  /* index into nzGIDs array, last is num nz */
+  IJTYPE *nzGID;    /* non-zeros column or row GIDs */
 
   /* Mirror specification of sparse matrix: if input was CSR, create CSC, 
    * or in input was CSC, create CSR */
@@ -92,8 +92,8 @@ struct Zoltan_MP_Data_Struct{
   IJTYPE *vtxGID;   /* vertex GIDs */
   double *vtxWgt;   /* weight for each vertex (1 double) */
   IJTYPE nHedges;   /* number of hyperedges */
-  IJTYPE *hindex;   /* index into list of pins for each h.e., last is npins */
-  IJTYPE *hvertex;  /* vtx GID of pins in my hyperedges */
+  IJTYPE *hindex;   /* index into list of nz for each h.e., last is nnz */
+  IJTYPE *hvertex;  /* vtx GID of nz in my hyperedges */
 
   /* Results, to supply data to query functions */
   int *rowproc;
@@ -102,9 +102,9 @@ struct Zoltan_MP_Data_Struct{
   int *colproc;
   int *colpart;
   obj_lookup *col_lookup;
-  int *pinproc;
-  int *pinpart;
-  obj_lookup *pin_lookup;
+  int *nzproc;
+  int *nzpart;
+  obj_lookup *nz_lookup;
 };
 
 typedef struct Zoltan_MP_Data_Struct ZOLTAN_MP_DATA;
