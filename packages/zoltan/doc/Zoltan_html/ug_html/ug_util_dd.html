@@ -35,10 +35,12 @@
 <h2>
 <a NAME="Distributed Directory Utility"></a>Distributed Directory Utility
 </h2>
-A distributed directory may be viewed as a distributed hash table.
-The owner (i.e. the processor number) of any computational object is
-subject to change during load balancing.  An application may use this
-directory utility to manage its objects' locations.  A distributed
+A distributed directory may be viewed as a distributed hash table pointing to
+the information stored in the directory.
+An application may use this
+directory utility to manage its objects' locations after data migrations or
+to make information globally accessable.
+A distributed
 directory balances the load (in terms of memory and processing time)
 and avoids the bottle neck of a centralized directory design.
 <p>
@@ -47,17 +49,19 @@ with Zoltan's load balancing capability and memory and communication
 services.  The user should note that external names (subroutines, etc.)
 prefaced by Zoltan_DD_ are reserved when using this module.
 Since the distributed directory uses collective communication,
-it is important that all processes (processors) call the same
-routine (function).
+it is important that all processors call the same function at the same time
+in their processing.
 <p>
 The user initially creates an empty distributed directory using
-<a href="#DD_Create">Zoltan_DD_Create</a>. Then global ID (GID) information is added
+<a href="#DD_Create">Zoltan_DD_Create</a>. Then each global ID (GID), which are the
+directory keys, together with other optional information is added
 to the directory using <a href="#DD_Update">Zoltan_DD_Update</a>.
 The directory maintains the GID's basic information: local ID
 (optional), partition (optional), arbitrary user
-data (optional), and the current data owner. <a href="#DD_Update">
-Zoltan_DD_Update</a> is also called after data migration
-or refinements. <a href="#DD_Find">Zoltan_DD_Find</a> returns the directory
+data (optional), and the current data owner (optional). <a href="#DD_Update">
+Zoltan_DD_Update</a> is also called after data migration or whenever it is
+useful to update the information in the directory.
+<a href="#DD_Find">Zoltan_DD_Find</a> returns the directory
 information for a list of GIDs.  
 A selected list of GIDs may be removed from the
 directory by <a href="#DD_Remove">Zoltan_DD_Remove</a>.
@@ -69,14 +73,16 @@ An object is known by its GID.  Hashing provides very fast
 lookup for the information associated with a GID in a two step
 process.  The first hash of the GID yields the processor number
 owning the directory entry for that GID.  The directory entry
-owner remains constant even if the object (GID) migrates in time.
-Second, a different hash algorithm of the GID looks up the
+owner remains constant even if the object associated with the GID migrates or changes
+over time.
+Second, a different hash algorithm on the GID looks up the
 associated information in directory processor's hash table.  The user
 may optionally register their own (first) hash function to take
 advantage of their knowledge of their GID naming scheme and the
 GID's neighboring processors. See the documentation for
 <a href="#DD_Set_Hash_Fn">Zoltan_DD_Set_Hash_Fn</a> for more information.
-If no user hash function is registered, Zoltan's <b><a href="../dev_html/dev_services_hash.html">Zoltan_Hash</a></b> will be used. This
+If no user hash function is registered, Zoltan's <b>
+<a href="../dev_html/dev_services_hash.html">Zoltan_Hash</a></b> will be used. This
 module's design was strongly influenced by the paper  "Communication
 Support for Adaptive Computation" by Pinar and Hendrickson.
 <p>
@@ -97,6 +103,18 @@ of the directory.  The companion routine <a href="#DD_Stats">Zoltan_DD_Stats</a>
 prints out a summary of the hash table size, number of linked lists, and the
 length of the longest linked list.  This may be useful when the user
 creates their own hash functions.
+<p>
+All modules use the following response to the debug_level:<br>
+debug_level=0, Output is silent except for FATAL or MEMERR errors.<br>
+debug_level=1, Turns on checking for legal, but possibly wrong conditions such as
+updating the same directory multiple times in one update cycle.<br>
+debug_level=5, Adds tracing information for the routines defined below.<br>
+debug_level=6, Adds tracing information for all DD routines.<br>
+debug_level=7, Adds tracing within each routine, <br>
+debug_level>7, Adds information about each object when used.<br>
+<p>
+Calling DD_Stats or DD_Print is automatically verbose independent of the
+debug_level.
 <p>
 The C++ interface to this utility is defined in the header file
 <I>zoltan_dd_cpp.h</I> as the class <B>Zoltan_DD</B>.  A single
@@ -226,18 +244,9 @@ routines. MPI must be initialized prior to calling this routine.
 The Zoltan_DD_Struct must be passed to all other distributed directory
 routines.  The MPI Comm argument designates the processors used for the
 distributed directory.  The MPI Comm argument is duplicated and stored for
-later use.
+later use. The length of the GID, length of the LID, and the length of the
+optional user data (user_length) must be consistent for all processors.
 <p>
-The user can set the debug level argument in the <b>Zoltan_DD_Create</b>
-to determine the module's response to multiple updates for any GID
-within one update cycle.  If the argument is set to 0, all multiple updates
-are ignored (but the last determines the directory information.)  If the
-argument is set to 1, an error is returned if the multiple updates
-represent different owners for the same GID.  If the debug level is 2,
-an error return and an error message are generated if multiple updates
-represent different owners for the same GID.  If the level is 3, an
-error return and an error message are generated for a multiple update even
-if the updates represent the same owner for a GID.
 <br>&nbsp;
 <table WIDTH="100%">
 <tr VALIGN=TOP>
@@ -254,15 +263,15 @@ if the updates represent the same owner for a GID.
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;user_length</i></td>
 <td>Length of user defined data field (optional, may be zero).</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;table_length</i></td>
-<td>Length of hash table (zero forces default value of <b>50,000</b> slots).
+<td>Length of hash table (zero forces default value of <b>100,000</b> slots).
 For large problems, this value should be increased to approximately 
 the number of
 global GIDs / number of processors (if you have enough memory) in order to 
 improve performance.
 </td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;debug_level</i></td>
-<td>Legal values range in [0,3]. Sets response to various error
-conditions where 3 is the most verbose.</td></tr>
+<td>Legal values range in [0,9]. Sets the output response to various error
+conditions where 9 is the most verbose.</td></tr>
 <tr>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
@@ -274,9 +283,9 @@ num_lid_entries,</i> or <i>user_length
 </i> do
 not match globally.
 <br>
-ZOLTAN_WARN is returned for illegal input arguements such as <i>dd</i> being NULL.
-<br>
 ZOLTAN_MEMERR is returned if sufficient memory can not be allocated.
+<br>
+ZOLTAN_OK is the normal return value.
 <p>
 In the C++ interface, the distributed directory
 is represented by a <B>Zoltan_DD</B> object.  It is created when the
@@ -523,7 +532,7 @@ int *<i>owner</i>) const;
 </table>
 <hr>
 Given a list of GIDs, <b>Zoltan_DD_Find</b> returns corresponding
-lists of the GIDs' owners, local IDs, partitions, and optional
+lists of the GIDs' owners, local IDs, partitions, data owners, and optional
 user data.  NULL lists must be provided for optional information not
 being used.
 <br>&nbsp;
@@ -552,15 +561,15 @@ being used.
 </table>
 
 <p>
-The normal return "error code" is ZOLTAN_OK.
+ZOLTAN_OK is the normal return.
 <br>
 ZOLTAN_WARN is returned when at
-least one GID in the <i>gid</i> list is not found. The corresponding element in
-optional <i>owner</i> list is set to -1 if the <i>owner</i> array is not NULL. Setting the debug_level
-higher (> 0) will show an error message to confirm this problem.
+least one GID in the <i>gid</i> list is not found AND debug level > 0. 
 <br>
-ZOLTAN_WARN is returned whenever there is a problem with the input arguments (such as
-<i>dd</i> being NULL). In this case an error message is always printed.
+ZOLTAN_MEMERR is returned whenever memory can not be allocated.
+<br>
+ZOLTAN_FATAL is returned whenever there is a problem with the input arguments (such as
+<i>dd</i> being NULL) or communications error.
 <p>
 
 <!------------------------------------------------------------------------->
