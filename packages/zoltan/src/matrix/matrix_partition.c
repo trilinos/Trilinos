@@ -128,6 +128,10 @@ static int mp_1d_get_rows(ZOLTAN_MP_DATA *mpd,
         IJTYPE nRows, IJTYPE *rowIDs, int *rowProcs, int *rowParts);
 static int mp_1d_get_columns(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nCols, IJTYPE *colIDs, int *colProcs, int *colParts);
+/*
+ * Functions specifically to process approach MP_NZ. 
+ */
+static int mp_2d_setup(ZOLTAN_MP_DATA *mpd);
 
 /*
  * Functions to create a search structure to locate rows, columns
@@ -356,6 +360,12 @@ int Zoltan_Matrix_Partition(ZZ *zz)
       case MP_ROW_TYPE:
       case MP_COLUMN_TYPE:
         ierr = mp_1d_setup(mpd);
+        if (ierr != ZOLTAN_OK){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "setup for partitioning\n");
+        }
+        break;
+      case MP_NZ_TYPE:
+        ierr = mp_2d_setup(mpd);
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "setup for partitioning\n");
         }
@@ -947,11 +957,9 @@ static int mp_1d_setup(ZOLTAN_MP_DATA *mpd)
   Zoltan_Set_Param(mpd->zzLib, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(mpd->zzLib, "NUM_LID_ENTRIES", "1");
 
-  /* Zoltan_Set_Param(mpd->zzLib, "HYPERGRAPH_PACKAGE", "PHG"); */
   Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
   Zoltan_Set_Param(mpd->zzLib, "OBJ_WEIGHT_DIM", "0");
   Zoltan_Set_Param(mpd->zzLib, "ADD_OBJ_WEIGHT", "PINS");
-  Zoltan_Set_Param(mpd->zzLib, "EDGE_WEIGHT_DIM", "0");
 
   /* Request export list that has proc/part for every object */
   Zoltan_Set_Param(mpd->zzLib, "RETURN_LISTS", "PARTITION");
@@ -1204,6 +1212,82 @@ End:
 
   return ierr;
 }
+
+/****************************************************************/
+/****************************************************************/
+/* Functions that support MATRIX_APPROACH = MP_NONZEROS
+ *
+ * The objects to be partitioned are the matrix nonzeros.
+ *
+ */
+
+ZOLTAN_NUM_OBJ_FN mp_2d_get_num_obj;
+ZOLTAN_OBJ_LIST_FN mp_2d_get_obj_list;
+/* ZOLTAN_HG_SIZE_CS_FN mp_2d_get_size_matrix; */
+/* ZOLTAN_HG_CS_FN mp_2d_get_matrix; */
+
+static int mp_2d_setup(ZOLTAN_MP_DATA *mpd)
+{
+  int ierr = ZOLTAN_OK;
+
+  Zoltan_Set_Param(mpd->zzLib, "NUM_GID_ENTRIES", "2");
+  Zoltan_Set_Param(mpd->zzLib, "NUM_LID_ENTRIES", "2");
+
+  Zoltan_Set_Param(mpd->zzLib, "LB_APPROACH", "PARTITION");
+
+  /* Request export list that has proc/part for every object */
+  Zoltan_Set_Param(mpd->zzLib, "RETURN_LISTS", "PARTITION");
+
+  /* Set LB_METHOD from MP_METHOD, default is HYPERGRAPH. */
+  if (strcmp(mpd->method, "HYPERGRAPH")==0) /* TODO */
+    strcpy(mpd->method, "BLOCK"); 
+  Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", mpd->method);
+
+  Zoltan_Set_Num_Obj_Fn(mpd->zzLib, mp_2d_get_num_obj, mpd);
+  Zoltan_Set_Obj_List_Fn(mpd->zzLib, mp_2d_get_obj_list, mpd);
+  /* Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, mp_2d_get_size_matrix, mpd); */
+  /* Zoltan_Set_HG_CS_Fn(mpd->zzLib, mp_2d_get_matrix, mpd); */
+
+/*
+  ierr = make_mirror(mpd);
+
+  if (ierr != ZOLTAN_OK){
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "make_mirror error\n");
+  }
+  else{
+    ierr = mp_1d_my_objects(mpd, &mpd->nMyVtx, &mpd->vtxGID);
+  }
+*/
+
+  return ierr;
+}
+
+int mp_2d_get_num_obj(void *data, int *ierr)
+{
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+
+  return mpd->nzIndex[mpd->numRC];
+}
+
+void mp_2d_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
+  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int wgt_dim, float *obj_wgts, int *ierr)
+{
+  IJTYPE i, j;
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+ 
+  /* Loop over nonzeros. Each ID is an (i,j) pair. */
+  for (i=0; i<mpd->numRC; i++){
+    lids[2*i] = (ZOLTAN_ID_TYPE)i;
+    gids[2*i] = (ZOLTAN_ID_TYPE)mpd->rcGID[i];
+    for (j=mpd->nzIndex[i]; j<mpd->nzIndex[i+1]; j++){
+      lids[2*i+1] = (ZOLTAN_ID_TYPE)j;
+      gids[2*i+1] = (ZOLTAN_ID_TYPE)mpd->nzGID[j];
+    }
+  }
+}
+
 /****************************************************************/
 /****************************************************************/
 

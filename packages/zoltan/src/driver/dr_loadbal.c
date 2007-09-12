@@ -1095,7 +1095,7 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
       fflush(stdout);
       for (i=0; i<Num_Proc; i++){
         if (i == Proc){
-          printf("(Process %d) Pin (row, column) assignments (process / partition)\n",i);
+          printf("(Process %d) Nonzero (row, column) assignments (process / partition)\n",i);
           for (j=0; j<numNZs; j++){
             printf("(%d, %d) %d / %d\n",
               ((pio_info->init_dist_pins != INITIAL_COL) ? idx1[j] : idx2[j]),
