@@ -123,7 +123,7 @@ static int mp_1d_result(ZOLTAN_MP_DATA *mpd,
   unsigned int *export_global_ids, unsigned int *export_local_ids, 
   int *export_procs, int *export_to_part);
 static int mp_1d_get_nzs(ZOLTAN_MP_DATA *mpd, 
-        IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
+        IJTYPE nNzs, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
 static int mp_1d_get_rows(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nRows, IJTYPE *rowIDs, int *rowProcs, int *rowParts);
 static int mp_1d_get_columns(ZOLTAN_MP_DATA *mpd, 
@@ -447,8 +447,8 @@ void Zoltan_MP_Free_Structure(ZZ *zz)
     ZOLTAN_FREE(&mpd->nzGID);
 
     ZOLTAN_FREE(&mpd->crGID);
-    ZOLTAN_FREE(&mpd->mirrorPinIndex);
-    ZOLTAN_FREE(&mpd->mirrorPinGID);
+    ZOLTAN_FREE(&mpd->mirrorNzIndex);
+    ZOLTAN_FREE(&mpd->mirrorNzGID);
 
     ZOLTAN_FREE(&mpd->vtxGID);
     ZOLTAN_FREE(&mpd->vtxWgt);
@@ -505,7 +505,7 @@ static int MP_Initialize_Params(ZZ *zz, ZOLTAN_MP_DATA *mpd)
     else if ((!strcasecmp(approach, "general")) ||
              (!strcasecmp(approach, "nonzeros")) ||
              (!strcasecmp(approach, "nonzero")) )
-      mpd->approach = MP_GENERAL_TYPE;
+      mpd->approach = MP_NZ_TYPE;
     else {
     }
 
@@ -530,7 +530,7 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
   int ierr = ZOLTAN_OK;
   int i;
   long int lnzs, gnzs;
-  IJTYPE minID, maxID, minPinID, maxPinID;
+  IJTYPE minID, maxID, minNzID, maxNzID;
   IJTYPE nnz=0;
   long int vals[2], gvals[2];
 
@@ -545,7 +545,7 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
 
   mpd->nNonZeros = (IJTYPE)gnzs;
 
-  maxID = maxPinID = -1;
+  maxID = maxNzID = -1;
 
   if (mpd->numRC > 0){
     minID = maxID = mpd->rcGID[0];
@@ -555,45 +555,45 @@ static int process_matrix_input(ZZ *zz, ZOLTAN_MP_DATA *mpd)
       else if (mpd->rcGID[i] > maxID) maxID = mpd->rcGID[i];
     }
     if (nnz > 0){
-      minPinID = maxPinID = mpd->nzGID[0];
+      minNzID = maxNzID = mpd->nzGID[0];
       for (i=1; i<nnz; i++){
-        if (mpd->nzGID[i] < minPinID) minPinID = mpd->nzGID[i];
-        else if (mpd->nzGID[i] > maxPinID) maxPinID = mpd->nzGID[i];
+        if (mpd->nzGID[i] < minNzID) minNzID = mpd->nzGID[i];
+        else if (mpd->nzGID[i] > maxNzID) maxNzID = mpd->nzGID[i];
       }
     }
   }
   vals[0] = (long int)maxID;
-  vals[1] = (long int)maxPinID;
+  vals[1] = (long int)maxNzID;
 
   MPI_Allreduce(vals, gvals, 2, MPI_LONG, MPI_MAX, zz->Communicator);
 
   maxID = (IJTYPE)gvals[0];
-  maxPinID = (IJTYPE)gvals[1];
+  maxNzID = (IJTYPE)gvals[1];
 
   if (nnz == 0){
-    minPinID = maxPinID;
+    minNzID = maxNzID;
     if (mpd->numRC == 0){
       minID = maxID;
     }
   }
   vals[0] = (long int)minID;
-  vals[1] = (long int)minPinID;
+  vals[1] = (long int)minNzID;
 
   MPI_Allreduce(vals, gvals, 2, MPI_LONG, MPI_MIN, zz->Communicator);
 
   minID = (IJTYPE)gvals[0];
-  minPinID = (IJTYPE)gvals[1];
+  minNzID = (IJTYPE)gvals[1];
 
   if (mpd->input_type == ROW_TYPE){
     mpd->rowBaseID = minID;
-    mpd->colBaseID = minPinID;
+    mpd->colBaseID = minNzID;
     mpd->nRows = maxID - minID + 1;
-    mpd->nCols = maxPinID - minPinID + 1;
+    mpd->nCols = maxNzID - minNzID + 1;
   }
   else{
-    mpd->rowBaseID = minPinID;
+    mpd->rowBaseID = minNzID;
     mpd->colBaseID = minID;
-    mpd->nRows = maxPinID - minPinID + 1;
+    mpd->nRows = maxNzID - minNzID + 1;
     mpd->nCols = maxID - minID + 1;
   }
 
@@ -623,16 +623,16 @@ static int make_mirror(ZOLTAN_MP_DATA *mpd)
    * and vice versa.
    */
   ZOLTAN_FREE(&mpd->crGID);
-  ZOLTAN_FREE(&mpd->mirrorPinIndex);
-  ZOLTAN_FREE(&mpd->mirrorPinGID);
+  ZOLTAN_FREE(&mpd->mirrorNzIndex);
+  ZOLTAN_FREE(&mpd->mirrorNzGID);
 
   nIDs = mpd->numRC;
   nnz = mpd->nzIndex[nIDs];
 
   mpd->numCR = mpd->numRC;
   allocate_copy(&mpd->crGID, mpd->nzGID, nnz);
-  allocate_copy(&mpd->mirrorPinIndex, mpd->nzIndex, nIDs+1);
-  allocate_copy(&mpd->mirrorPinGID, mpd->rcGID, nIDs);
+  allocate_copy(&mpd->mirrorNzIndex, mpd->nzIndex, nIDs+1);
+  allocate_copy(&mpd->mirrorNzGID, mpd->rcGID, nIDs);
 
   /* TODO  Convert_to_CSR thinks some of these fields are ints
    *         when IJTYPEs might not be ints.  FIX, but OK for now.
@@ -642,8 +642,8 @@ static int make_mirror(ZOLTAN_MP_DATA *mpd)
   ierr = Zoltan_Convert_To_CSR(mpd->zzLib, nnz, (int *)mpd->nzIndex,
              /* The following get overwritten with mirror */
              (int *)&(mpd->numCR),
-             (ZOLTAN_ID_PTR *)&(mpd->mirrorPinGID),
-             (int **)&(mpd->mirrorPinIndex),
+             (ZOLTAN_ID_PTR *)&(mpd->mirrorNzGID),
+             (int **)&(mpd->mirrorNzIndex),
              (ZOLTAN_ID_PTR *)&(mpd->crGID));
 
   return ierr;
@@ -837,15 +837,15 @@ static int mp_1d_my_objects(ZOLTAN_MP_DATA *mpd, IJTYPE *nobj, IJTYPE **objIDs);
  *
  */
 static int mp_1d_get_nzs(ZOLTAN_MP_DATA *mpd, 
-        IJTYPE nPins, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts)
+        IJTYPE nNzs, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts)
 {
   if (mpd->approach == MP_ROW_TYPE){
     /* The nz belongs to the partition its row belongs to */
-    return mp_1d_get_rows(mpd, nPins, I, ijProcs, ijParts);
+    return mp_1d_get_rows(mpd, nNzs, I, ijProcs, ijParts);
   }
   else{
     /* The nz belongs to the partition its column belongs to */
-    return mp_1d_get_columns(mpd, nPins, J, ijProcs, ijParts);
+    return mp_1d_get_columns(mpd, nNzs, J, ijProcs, ijParts);
   }
 }
 static int mp_1d_get_columns(ZOLTAN_MP_DATA *mpd, 
@@ -1010,7 +1010,7 @@ void mp_1d_get_size_matrix(void *data, int *num_lists, int *num_nzs,
   if (((mpd->approach == MP_ROW_TYPE) && (mpd->input_type == ROW_TYPE)) ||
       ((mpd->approach == MP_COLUMN_TYPE) && (mpd->input_type == COL_TYPE)) ){
     *num_lists = mpd->numCR;
-    *num_nzs  = mpd->mirrorPinIndex[mpd->numCR];
+    *num_nzs  = mpd->mirrorNzIndex[mpd->numCR];
   }
   else{
     *num_lists = mpd->numRC;
@@ -1033,10 +1033,10 @@ void mp_1d_get_matrix(void *data, int num_gid_entries, int num_vtx_edge,
       ((mpd->approach == MP_COLUMN_TYPE) && (mpd->input_type == COL_TYPE)) ){
     for (i=0; i<mpd->numCR; i++){
       edgeGID[i] = mpd->crGID[i];
-      vtxedge_ptr[i] = mpd->mirrorPinIndex[i];
+      vtxedge_ptr[i] = mpd->mirrorNzIndex[i];
     }
-    for (i=0; i< mpd->mirrorPinIndex[mpd->numCR]; i++){
-      nzGID[i] = mpd->mirrorPinGID[i];
+    for (i=0; i< mpd->mirrorNzIndex[mpd->numCR]; i++){
+      nzGID[i] = mpd->mirrorNzGID[i];
     }
   }
   else{
@@ -1219,7 +1219,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   char *yo = "Zoltan_MP_Debug_Partitioning";
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
   IJTYPE *colIDs, *rowIDs, *nzIDs, *nzIdx, *IDs, *counts=NULL;
-  IJTYPE numRows, numCols, numIDs, row, col, numPins, baseID, idx;
+  IJTYPE numRows, numCols, numIDs, row, col, numNzs, baseID, idx;
   IJTYPE totalCount=0, *recvIDs=NULL, *nzs=NULL;
   int rc, me, nprocs, i, j, nextIdx, oops, numParts;
   int totColCuts, totRowCuts, width;
@@ -1267,13 +1267,13 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     numRows = mpd->numCR;
     colIDs = mpd->rcGID;
     numCols = mpd->numRC;
-    nzIDs = mpd->mirrorPinGID;      /* GID of nz column */
-    nzIdx = mpd->mirrorPinIndex;
+    nzIDs = mpd->mirrorNzGID;      /* GID of nz column */
+    nzIdx = mpd->mirrorNzIndex;
   }
 
-  numPins = nzIdx[numRows] * 2;
+  numNzs = nzIdx[numRows] * 2;
 
-  nzs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numPins);
+  nzs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numNzs);
   for (i=0,nextIdx=0; i<numRows; i++){
     row = rowIDs[i] - mpd->rowBaseID;
     for (j=nzIdx[i]; j<nzIdx[i+1]; j++){
@@ -1288,7 +1288,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     recvDisp = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
   }
 
-  MPI_Gather(&numPins, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
+  MPI_Gather(&numNzs, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
 
   if (me == 0){
     totalCount = 0;
@@ -1299,7 +1299,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totalCount);
   }
 
-  MPI_Gatherv(nzs, numPins, MPI_UNSIGNED,
+  MPI_Gatherv(nzs, numNzs, MPI_UNSIGNED,
               recvIDs, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
 
   if (me == 0){
@@ -1315,7 +1315,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
         A[row][col] = -1;     /* it's a nz */
       }   
     }
-    numPins = totalCount/2;
+    numNzs = totalCount/2;
   }
 
   ZOLTAN_FREE(&recvIDs);
@@ -1532,7 +1532,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
            totRowCuts,(double)totRowCuts/mpd->nRows);
     printf("Col cuts: total %d average %f\n",
            totColCuts,(double)totColCuts/mpd->nCols);
-    printf("Number of non-zeroes: %d\n",numPins);
+    printf("Number of non-zeroes: %d\n",numNzs);
   
     if (oops){
       printf("An \"e\" means an error - we don't know the partition\n");

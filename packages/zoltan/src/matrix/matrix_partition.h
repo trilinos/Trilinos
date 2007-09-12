@@ -41,7 +41,7 @@ typedef unsigned int IJTYPE; /* matrix row ID, column ID or matrix size */
 
 enum ObjectType {ROW_TYPE = 1, COL_TYPE = 2, NZ_TYPE = 3};
 
-enum PartitionType {MP_ROW_TYPE=1, MP_COLUMN_TYPE=2, MP_GENERAL_TYPE=3};
+enum PartitionType {MP_ROW_TYPE=1, MP_COLUMN_TYPE=2, MP_NZ_TYPE=3};
 
 struct obj_node{
   IJTYPE i;
@@ -75,8 +75,8 @@ struct Zoltan_MP_Data_Struct{
 
   IJTYPE numCR;  
   IJTYPE *crGID;
-  IJTYPE *mirrorPinIndex;
-  IJTYPE *mirrorPinGID; 
+  IJTYPE *mirrorNzIndex;
+  IJTYPE *mirrorNzGID; 
 
   /* Global values filled out by process_matrix_input().                  */
   IJTYPE rowBaseID;   /* most likely zero or one */
