@@ -85,11 +85,13 @@ struct Zoltan_MP_Data_Struct{
   IJTYPE nCols;
   IJTYPE nNonZeros;
 
-  /* Redundant information, remove? */
+  /* "Local" objects. For 1d partitioning, we need know which rows are ours.  */
   IJTYPE nMyVtx;    /* 1d model: my number of vertices */
-  IJTYPE *vtxGID;   /* 1d model: vertex GIDs */
+  IJTYPE *vtxGID;   /* 1d model: local vertex GIDs */
 
   /* Results, to supply data to query functions */
+  /* The results are stored in flattened arrays and the lookup functions */
+  /* will return index to these arrays. */
   int *rowproc;
   int *rowpart;
   obj_lookup *row_lookup;

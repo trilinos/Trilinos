@@ -132,6 +132,12 @@ static int mp_1d_get_columns(ZOLTAN_MP_DATA *mpd,
  * Functions specifically to process approach MP_NZ. 
  */
 static int mp_2d_setup(ZOLTAN_MP_DATA *mpd);
+static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
+  int num_export,
+  unsigned int *export_global_ids, unsigned int *export_local_ids, 
+  int *export_procs, int *export_to_part);
+static int mp_2d_get_nzs(ZOLTAN_MP_DATA *mpd, 
+        IJTYPE nNzs, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
 
 /*
  * Functions to create a search structure to locate rows, columns
@@ -419,6 +425,16 @@ int Zoltan_Matrix_Partition(ZZ *zz)
          * MP_COLUMN_TYPE - we only give column and nonzero assignments
          */
         ierr = mp_1d_result(mpd, num_export,
+            export_global_ids, export_local_ids, export_procs, export_to_part);
+        if (ierr != ZOLTAN_OK){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,"processing results of partitioning\n");
+        }
+        break;
+      case MP_NZ_TYPE:
+        /*
+         * Save nonzero assignment for all local nonzeros.
+         */
+        ierr = mp_2d_result(mpd, num_export,
             export_global_ids, export_local_ids, export_procs, export_to_part);
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo,"processing results of partitioning\n");
@@ -954,6 +970,8 @@ static int mp_1d_setup(ZOLTAN_MP_DATA *mpd)
   char *yo = "mp_1d_setup";
   int ierr = ZOLTAN_OK;
 
+  /* TODO Copy parameters from parent ZZ instance. */
+  /* Set specific parmeters for Zoltan subproblem. */
   Zoltan_Set_Param(mpd->zzLib, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(mpd->zzLib, "NUM_LID_ENTRIES", "1");
 
@@ -1276,8 +1294,16 @@ void mp_2d_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
   IJTYPE i, j;
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
   *ierr = ZOLTAN_OK;
+  char *yo = "mp_2d_get_obj_list";
  
+  if (!((num_gid_entries==2) && (num_gid_entries==2))){
+    ZOLTAN_PRINT_ERROR(0, yo, "Assumed num_gid_entries==num_gid_entries==2");
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
   /* Loop over nonzeros. Each ID is an (i,j) pair. */
+  /* Note: Row major, i.e. outer loop = rows (i), inner loop = columns (j). */
   for (i=0; i<mpd->numRC; i++){
     lids[2*i] = (ZOLTAN_ID_TYPE)i;
     gids[2*i] = (ZOLTAN_ID_TYPE)mpd->rcGID[i];
@@ -1286,6 +1312,40 @@ void mp_2d_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
       gids[2*i+1] = (ZOLTAN_ID_TYPE)mpd->nzGID[j];
     }
   }
+}
+
+static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
+  int num_export,
+  unsigned int *export_global_ids, unsigned int *export_local_ids, 
+  int *export_procs, int *export_to_part)
+{
+  char *yo = "mp_2d_result";
+  int ierr = ZOLTAN_OK;
+  int *proclist=NULL, *partlist=NULL;
+  obj_lookup *lu=NULL;
+  IJTYPE nobj=0;
+  IJTYPE i, j;
+
+  nobj = mpd->nMyVtx;
+  // TODO What are i and j and arrays for create_obj_lookup_table2?
+  lu = mpd->nz_lookup = create_obj_lookup_table2(i, j, NULL, NULL, NULL);
+  proclist = mpd->nzproc = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
+  partlist = mpd->nzpart = (int *)ZOLTAN_MALLOC(sizeof(int) * nobj);
+
+  if (nobj && (!lu || !proclist || !partlist)){
+    free_obj_lookup_table(&lu);
+    ZOLTAN_FREE(&proclist);
+    ZOLTAN_FREE(&partlist);
+    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Out of memory.\n");
+    ierr = ZOLTAN_MEMERR;
+  }
+  else{
+    /* Copy partition results to proclist and partlist. */
+    memcpy(proclist, export_procs, nobj*sizeof(int));
+    memcpy(partlist, export_to_part, nobj*sizeof(int));
+  }
+
+  return ierr;
 }
 
 /****************************************************************/
