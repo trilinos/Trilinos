@@ -114,21 +114,21 @@ int ML_Operator_Clean( ML_Operator *mat)
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    double mflops, maxfl,minfl,avgfl;
-   int NumActiveProc, proc_active;
+   int NumActiveProc=0, proc_active=0;
    int i;
    char tmplabel[80];
 #endif
 
    if (mat == NULL) return 0;
 #ifdef ML_TIMING_DETAILED
+   /* FIXME is the label always going to be NULL?! */
    if (mat->label != NULL) {
       if (mat->invec_leng > 0 || mat->outvec_leng > 0)
         proc_active = 1;
       else proc_active = 0;
       NumActiveProc = ML_gsum_int(proc_active, mat->comm);
    }
-
-   if ( (mat->label != NULL) && ( mat->build_time != 0.0) && (NumActiveProc>0))
+   if ( (mat->label != NULL) && (NumActiveProc>0) )
    {
       if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
          printf(" Active processors for %s = %d\n",mat->label,NumActiveProc);
@@ -180,11 +180,12 @@ int ML_Operator_Clean( ML_Operator *mat)
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
 #if ! ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
-   /* this could be wrong if one processor does nothing with a particular
-      operator, but others do something. */
-   if  (mat->label != NULL && mat->apply_time != 0.0)
+   if  (mat->label != NULL)
    {
-     mflops = (double) mat->nflop / mat->apply_time;
+     if (mat->apply_time != 0.0)
+       mflops = (double) mat->nflop / mat->apply_time;
+     else
+       mflops = 0.0;
      mflops = mflops / (1024. * 1024.);
      avgfl = ML_gsum_double(mflops, mat->comm) / ((double)mat->comm->ML_nprocs);
      maxfl = ML_gmax_double(mflops, mat->comm);
