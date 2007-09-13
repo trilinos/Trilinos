@@ -33,7 +33,7 @@
 The User's Guide and Developer's Guide for NOX and LOCA is combined on
 a single website found at:
 
-  http://software.sandia.gov/nox
+  http://trilinos.sandia.gov/packages/nox
 
 Alternatively, you can build the documentation as html pages yourself
 from the source code using the doxygen program.  To build the

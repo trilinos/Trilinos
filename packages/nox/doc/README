@@ -35,7 +35,7 @@ You may access/create the NOX documentation in three ways...
 
 1. ONLINE DOCUMENTATION
 
-   The documentation is online at http://software.sandia.gov/nox/.
+   The documentation is online at http://trilinos.sandia.gov/packages/nox.
 
 2. MANUALLY GENERATE THE DOCUMENTATION
 
@@ -43,7 +43,13 @@ You may access/create the NOX documentation in three ways...
 
    > doxygen Doxyfile.default
 
-   Then browse to doc/html/index.html to get started.
+   Then browse to doc/html/index.html to get started.  
+
+   Note that graphical dependency trees will not be generated with this option,
+   since doxygen requires the "dot" library out of the graphviz
+   package to build the graphics.  By using option 3 below, the
+   configure script will check for the dot library and build the extra
+   documentation.
 
 3. AUTOMATICALLY GENERATE THE DOCUMENTATION
 
