@@ -1156,7 +1156,7 @@ static int sorted_unique_list(unsigned int *l, int len,
 
   if (len < 1) return ZOLTAN_OK;
 
-  l2 = *newl = (unsigned int *)malloc(sizeof(unsigned int) * len);
+  l2 = *newl = (unsigned int *)ZOLTAN_MALLOC(sizeof(unsigned int) * len);
   if (!l2){
     return ZOLTAN_MEMERR;
   }
@@ -1175,7 +1175,7 @@ static int sorted_unique_list(unsigned int *l, int len,
 
   if (len2 < len){
     l2 = *newl =
-    (unsigned int *)realloc(l2, sizeof(unsigned int) * len2);
+    (unsigned int *)ZOLTAN_REALLOC(l2, sizeof(unsigned int) * len2);
     if (!l2){
       return ZOLTAN_MEMERR;
     }
