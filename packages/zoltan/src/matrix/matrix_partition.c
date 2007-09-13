@@ -1299,11 +1299,11 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
 {
   char *yo = "Zoltan_MP_Debug_Partitioning";
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)zz->LB.Data_Structure;
-  IJTYPE *colIDs, *rowIDs, *nzIDs, *nzIdx, *IDs, *counts=NULL;
-  IJTYPE numRows, numCols, numIDs, row, col, numNzs, baseID, idx;
-  IJTYPE totalCount=0, *recvIDs=NULL, *nzs=NULL;
-  int rc, me, nprocs, i, j, nextIdx, oops, numParts;
-  int totColCuts, totRowCuts, width;
+  IJTYPE *colIDs, *rowIDs, *nzIDs, *nzIdx, *IDs, *counts=NULL, *recvIDs2=NULL;
+  IJTYPE numRows, numCols, numIDs, row, col, numNzs, numIJs, totNumNzs, baseID, idx;
+  IJTYPE totNumIJs=0, *recvIDs=NULL, *nzs=NULL, *Ival=NULL;
+  int rc, me, nprocs, i, j, nextIdx, oops, numParts, part2D;
+  int totColCuts, totRowCuts, width, totCount;
   MPI_Comm comm = zz->Communicator;
   int *parts=NULL, *recvParts=NULL, *recvDisp=NULL, *recvCounts=NULL;
   int **A=NULL;
@@ -1323,7 +1323,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   me = mpd->zzLib->Proc;
   nprocs = mpd->zzLib->Num_Proc;
 
-  /* Find out where the nzs are */
+  /* Find out where the non-zeroes are */
 
   if (me == 0){
     A = (int **)ZOLTAN_MALLOC(sizeof(int *) * mpd->nRows);
@@ -1352,9 +1352,10 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     nzIdx = mpd->mirrorNzIndex;
   }
 
-  numNzs = nzIdx[numRows] * 2;
+  numNzs = nzIdx[numRows];
+  numIJs = numNzs * 2;
 
-  nzs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numNzs);
+  nzs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numIJs);
   for (i=0,nextIdx=0; i<numRows; i++){
     row = rowIDs[i] - mpd->rowBaseID;
     for (j=nzIdx[i]; j<nzIdx[i+1]; j++){
@@ -1369,18 +1370,18 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
     recvDisp = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
   }
 
-  MPI_Gather(&numNzs, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
+  MPI_Gather(&numIJs, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
 
   if (me == 0){
-    totalCount = 0;
+    totNumIJs = 0;
     for (i=0; i<nprocs; i++){
-      recvDisp[i] = totalCount;
-      totalCount += recvCounts[i]; 
+      recvDisp[i] = totNumIJs;
+      totNumIJs += recvCounts[i]; 
     }
-    recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totalCount);
+    recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totNumIJs);
   }
 
-  MPI_Gatherv(nzs, numNzs, MPI_UNSIGNED,
+  MPI_Gatherv(nzs, numIJs, MPI_UNSIGNED,
               recvIDs, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
 
   if (me == 0){
@@ -1396,7 +1397,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
         A[row][col] = -1;     /* it's a nz */
       }   
     }
-    numNzs = totalCount/2;
+    totNumNzs = totNumIJs/2;
   }
 
   ZOLTAN_FREE(&recvIDs);
@@ -1404,32 +1405,48 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   ZOLTAN_FREE(&recvDisp);
   ZOLTAN_FREE(&nzs);
 
-  /* Find out what partitions the rows or columns have been assigned
-   * to.  We aren't handling partitioning strategies that partition
-   * non zeroes individually.  That's TODO.
-   */
+  /* Get the partition assignments of the rows, columns or non-zeroes. */
 
-  if (mpd->row_lookup){
-    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
-    rc = Zoltan_MP_Get_Row_Assignment(zz, numRows, rowIDs, NULL, parts);
-    IDs = rowIDs;
-    numIDs = numRows;
-  }
-  else if (mpd->col_lookup){
-    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
-    rc = Zoltan_MP_Get_Column_Assignment(zz, numCols, colIDs, NULL, parts);
-    IDs = colIDs;
-    numIDs = numCols;
+  if ((mpd->row_lookup) || (mpd->col_lookup)){
+    part2D = 0;                 /* 1 dimensional partitioning */
   }
   else if (mpd->nz_lookup){
-    /* TODO */
-    ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, 
-                      "Print out of nz partitioning not done yet.\n");
-    return;
+    part2D = 1;                 /* 2 dimensional partitioning */
   }
   else{
     ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Partitioning not saved\n");
     return;
+  }
+
+  if (part2D){
+    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numNzs);
+    Ival = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * numNzs);
+    for (i=0; i<numRows; i++){
+      for (j=0; j<(nzIdx[i+1]-nzIdx[i]); j++){
+        Ival[nzIdx[i]+j] = rowIDs[i];
+      }
+    }
+
+    rc = Zoltan_MP_Get_NonZero_Assignment(zz, numNzs,
+                   Ival, nzIDs,    /* I, J coords of my non-zeroes */
+                   NULL, parts);
+
+    IDs = Ival;       /* will also send nzIDs */
+    numIDs = numNzs;
+  }
+  else{
+    if (mpd->row_lookup){
+      parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numRows);
+      rc = Zoltan_MP_Get_Row_Assignment(zz, numRows, rowIDs, NULL, parts);
+      IDs = rowIDs;
+      numIDs = numRows;
+    }
+    else if (mpd->col_lookup){
+      parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numCols);
+      rc = Zoltan_MP_Get_Column_Assignment(zz, numCols, colIDs, NULL, parts);
+      IDs = colIDs;
+      numIDs = numCols;
+    }
   }
 
   if (me == 0){
@@ -1440,69 +1457,91 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
   MPI_Gather(&numIDs, 1, MPI_UNSIGNED, recvCounts, 1, MPI_INT, 0, comm);
 
   if (me == 0){
-    totalCount = 0;
+    totCount = 0;
     for (i=0; i<nprocs; i++){
-      recvDisp[i] = totalCount;
-      totalCount += recvCounts[i];
+      recvDisp[i] = totCount;
+      totCount += recvCounts[i];
     }
-    recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totalCount);
-    recvParts = (int *)ZOLTAN_MALLOC(sizeof(int) * totalCount);
+    recvIDs = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totCount);
+    recvParts = (int *)ZOLTAN_MALLOC(sizeof(int) * totCount);
+
+    if (part2D){
+      recvIDs2 = (IJTYPE *)ZOLTAN_MALLOC(sizeof(IJTYPE) * totCount);
+    }
   }
 
   MPI_Gatherv(IDs, numIDs, MPI_UNSIGNED, 
               recvIDs, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
 
+  if (part2D){
+    MPI_Gatherv(nzIDs, numIDs, MPI_UNSIGNED, 
+              recvIDs2, recvCounts, recvDisp, MPI_UNSIGNED, 0, comm);
+  }
+
   MPI_Gatherv(parts, numIDs, MPI_INT, 
               recvParts, recvCounts, recvDisp, MPI_INT, 0, comm);
 
   ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&Ival);
   ZOLTAN_FREE(&counts);
 
   if (me == 0){
-    if (IDs == colIDs){
-      numIDs = mpd->nCols;
-      baseID = mpd->colBaseID;
+    numParts = 0;
+
+    if (part2D){
+      for (nextIdx=0; nextIdx<totCount; nextIdx++){
+        i = recvIDs[nextIdx] - mpd->rowBaseID; 
+        j = recvIDs2[nextIdx] - mpd->colBaseID; 
+        A[i][j] = recvParts[nextIdx];
+        if (recvParts[nextIdx] > numParts) numParts = recvParts[nextIdx];
+      }
     }
     else{
-      numIDs = mpd->nRows;
-      baseID = mpd->rowBaseID;
-    }
-  
-    parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numIDs);
-  
-    for (i=0; i<numIDs; i++){
-      parts[i] = -1;
-    }
-  
-    numParts = 0;
-    for (i=0; i<nprocs; i++){
-      for (j=recvDisp[i]; j < recvDisp[i] + recvCounts[i]; j++){
-        idx = recvIDs[j] - baseID;
-  
-        if ((idx < 0) || (idx >= numIDs)){
-          ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "bad id\n");
-          exit(0);
-        }
-        parts[idx] = recvParts[j];
-        if (recvParts[j] > numParts) numParts = recvParts[j];
+      if (mpd->row_lookup){
+        numIDs = mpd->nRows;
+        baseID = mpd->rowBaseID;
       }
+      else{
+        numIDs = mpd->nCols;
+        baseID = mpd->colBaseID;
+      }
+    
+      parts = (int *)ZOLTAN_MALLOC(sizeof(int) * numIDs);
+    
+      for (i=0; i<numIDs; i++){
+        parts[i] = -1;
+      }
+    
+      for (i=0; i<nprocs; i++){
+        for (j=recvDisp[i]; j < recvDisp[i] + recvCounts[i]; j++){
+          idx = recvIDs[j] - baseID;
+    
+          if ((idx < 0) || (idx >= numIDs)){
+            ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "bad id\n");
+            exit(0);
+          }
+          if (parts[idx] < 0){
+            parts[idx] = recvParts[j];
+            if (parts[idx] > numParts) numParts = parts[idx];
+            if (mpd->row_lookup){
+              for (nextIdx=0; nextIdx<mpd->nCols; nextIdx++){
+                if (A[idx][nextIdx] == -1) A[idx][nextIdx] = parts[idx];
+              }
+            }
+            else{
+              for (nextIdx=0; nextIdx<mpd->nRows; nextIdx++){
+                if (A[nextIdx][idx] == -1) A[nextIdx][idx] = parts[idx];
+              }
+            }
+          }
+        }
+      }
+      ZOLTAN_FREE(&parts);
     }
     numParts++;
     ZOLTAN_FREE(&recvIDs);
+    ZOLTAN_FREE(&recvIDs2);
     ZOLTAN_FREE(&recvParts);
-
-    for (i=0; i<mpd->nRows; i++){
-      for (j=0; j<mpd->nCols; j++){
-        if (A[i][j] == -1){
-          if (IDs == rowIDs){
-            A[i][j] = parts[i];
-          }
-          else{
-            A[i][j] = parts[j];
-          }
-        }
-      }
-    }
   }
 
   /* Process zero can print out the matrix */
@@ -1613,7 +1652,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
            totRowCuts,(double)totRowCuts/mpd->nRows);
     printf("Col cuts: total %d average %f\n",
            totColCuts,(double)totColCuts/mpd->nCols);
-    printf("Number of non-zeroes: %d\n",numNzs);
+    printf("Number of non-zeroes: %d\n",totNumNzs);
   
     if (oops){
       printf("An \"e\" means an error - we don't know the partition\n");
