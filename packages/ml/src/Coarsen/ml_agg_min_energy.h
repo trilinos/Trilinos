@@ -14,7 +14,7 @@ extern "C"
 int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data);
 int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data);
 
-inline static void ML_multiply_all_vscale(ML_Operator* left, ML_Operator* right,
+void ML_multiply_all_vscale(ML_Operator* left, ML_Operator* right,
                                double* InnerProd, double* diagonal);
 void ML_ImplicitAbs_Destroy(void *data);
 int ML_ImplicitAbs_Getrow(ML_Operator *data, int N_requested_rows,

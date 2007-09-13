@@ -858,7 +858,7 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 //
 // Note: Must be CSR matrices but it is easy to change for a generic getrow()
 //
-inline static void ML_multiply_all_vscale(ML_Operator* left, ML_Operator* right,
+void ML_multiply_all_vscale(ML_Operator* left, ML_Operator* right,
                                 double* InnerProd, double* diagonal)
 {
   int n = left->invec_leng;
