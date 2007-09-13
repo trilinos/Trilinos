@@ -44,6 +44,7 @@
 #include "Sacado_Fad_MemPoolManager.hpp"
 #include "Sacado_Fad_DMFad.hpp"
 #include "Sacado_Fad_ExpressionTraits.hpp"
+#include "Sacado_ELRFad_ExpressionTraits.hpp"
 
 #include "Sacado_trad.hpp"
 

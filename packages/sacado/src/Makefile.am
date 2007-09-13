@@ -69,6 +69,7 @@ SACADO_ELRFAD_H = \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_ELRFad_ExpressionTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_Expression.hpp \
 	$(srcdir)/Sacado_ELRFad_Ops.hpp \
 	$(srcdir)/Sacado_ELRFad_DFadTraits.hpp \
