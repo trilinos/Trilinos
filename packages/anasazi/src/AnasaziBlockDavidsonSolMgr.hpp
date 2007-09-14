@@ -43,6 +43,7 @@
 #include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
+#include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
@@ -203,7 +204,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
 
-  std::string whch_; 
+  std::string whch_, ortho_;
 
   MagnitudeType convtol_, locktol_;
   int maxRestarts_;
@@ -230,6 +231,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
         Teuchos::ParameterList &pl ) : 
   problem_(problem),
   whch_("SR"),
+  ortho_("SVQB"),
   convtol_(MT::prec()),
   maxRestarts_(20),
   useLocking_(false),
@@ -257,6 +259,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   // which values to solve for
   whch_ = pl.get("Which",whch_);
   TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
+
+  // which orthogonalization to use
+  ortho_ = pl.get("Orthogonalization",ortho_);
+  if (ortho_ != "DGKS" && ortho_ != "SVQB") {
+    ortho_ = "SVQB";
+  }
 
   // convergence tolerance
   convtol_ = pl.get("Convergence Tolerance",convtol_);
@@ -417,8 +425,14 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  Teuchos::RCP<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
-    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
+  Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho; 
+  if (ortho_=="SVQB") {
+    ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
+  } else if (ortho_=="DGKS") {
+    ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
+  } else {
+    TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid orthogonalization type.");
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list

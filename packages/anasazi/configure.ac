@@ -325,6 +325,9 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes) 
 AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB(teuchos, debug, [Enable optional extra debugging checks], TEUCHOS_DEBUG, yes) 
+AM_CONDITIONAL(BUILD_TEUCHOS_DEBUG, [test "X$ac_cv_use_teuchos_debug" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE_SUB(anasazi, experimental, [Build examples/tests which use experimental code], ANASAZI_EXPERIMENTAL, no) 
 AM_CONDITIONAL(BUILD_ANASAZI_EXPERIMENTAL, [test "X$ac_cv_use_anasazi_experimental" != "Xno"])
 

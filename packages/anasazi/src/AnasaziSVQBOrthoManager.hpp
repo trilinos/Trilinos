@@ -675,8 +675,10 @@ namespace Anasazi {
           // compute the eigenvalue decomposition of S=U*Lambda*U^T (using upper part)
           int info;
           lapack.HEEV('V', 'U', xc, XtMX.values(), XtMX.stride(), &lambda[0], &work[0], work.size(), &rwork[0], &info);
+          std::stringstream os;
+          os << "Anasazi::SVQBOrthoManager::findBasis(): Error code " << info << " from HEEV";
           TEST_FOR_EXCEPTION( info != 0, OrthoError, 
-                              "Anasazi::SVQBOrthoManager::findBasis(): Error code from HEEV" );
+                              os.str() );
           if (debug_) {
             std::cout << dbgstr << "eigenvalues of XtMX: (";
             for (int i=0; i<xc-1; i++) {

@@ -35,7 +35,7 @@
 #define ANASAZI_CONFIGDEFS_HPP
 
 #ifndef __cplusplus
-#define __cplusplus
+#  define __cplusplus
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -45,131 +45,127 @@
  * be undef'd here to avoid warnings when this file is included from another package.
  * KL 11/25/02
  */
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
+#  ifdef PACKAGE
+#    undef PACKAGE
+#  endif
 
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
+#  ifdef PACKAGE_NAME
+#    undef PACKAGE_NAME
+#  endif
 
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
+#  ifdef PACKAGE_BUGREPORT
+#    undef PACKAGE_BUGREPORT
+#  endif
 
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
+#  ifdef PACKAGE_STRING
+#    undef PACKAGE_STRING
+#  endif
 
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
+#  ifdef PACKAGE_TARNAME
+#    undef PACKAGE_TARNAME
+#  endif
 
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
+#  ifdef PACKAGE_VERSION
+#    undef PACKAGE_VERSION
+#  endif
 
-#ifdef VERSION
-#undef VERSION
-#endif
+#  ifdef VERSION
+#    undef VERSION
+#  endif
 
-#include <Anasazi_config.h>
+#  include <Anasazi_config.h>
 
-#ifdef HAVE_MPI
-#ifndef EPETRA_MPI
-#define EPETRA_MPI
-#endif
-#endif
+#  ifdef HAVE_MPI
+#    ifndef EPETRA_MPI
+#      define EPETRA_MPI
+#    endif
+#  endif
 
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
-#else
-#include <stdlib.h>
-#endif
+#  ifdef HAVE_CSTDLIB
+#    include <cstdlib>
+#  else
+#    include <stdlib.h>
+#  endif
 
-#ifdef HAVE_CSTDIO
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
+#  ifdef HAVE_CSTDIO
+#    include <cstdio>
+#  else
+#    include <stdio.h>
+#  endif
 
-#ifdef HAVE_STRING
-#include <string>
-#else
-#include <string.h>
-#endif
+#  ifdef HAVE_STRING
+#    include <string>
+#  else
+#    include <string.h>
+#  endif
 
-#ifdef HAVE_VECTOR
-#include <vector>
-#else
-#include <vector.h>
-#endif
+#  ifdef HAVE_VECTOR
+#    include <vector>
+#  else
+#    include <vector.h>
+#  endif
 
-#ifdef HAVE_NUMERIC
-#include <numeric>
-#else
-#include <algo.h>
-#endif
+#  ifdef HAVE_NUMERIC
+#    include <numeric>
+#  else
+#    include <algo.h>
+#  endif
 
-#ifdef HAVE_COMPLEX
-#include <complex>
-#else
-#include <complex.h>
-#endif
+#  ifdef HAVE_COMPLEX
+#    include <complex>
+#  else
+#    include <complex.h>
+#  endif
 
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#else
-#include <iostream.h>
-#endif
+#  ifdef HAVE_IOSTREAM
+#    include <iostream>
+#  else
+#    include <iostream.h>
+#  endif
 
-#ifdef HAVE_ITERATOR
-#include <iterator>
-#else
-#include <iterator.h>
-#endif
+#  ifdef HAVE_ITERATOR
+#    include <iterator>
+#  else
+#    include <iterator.h>
+#  endif
 
-#if HAVE_STDEXCEPT
-#include <stdexcept>
-#elif HAVE_STDEXCEPT_H
-#include <stdexcept.h>
-#endif
+#  if HAVE_STDEXCEPT
+#    include <stdexcept>
+#  elif HAVE_STDEXCEPT_H
+#    include <stdexcept.h>
+#  endif
 
-#ifndef JANUS_STLPORT
-#ifdef HAVE_CMATH
-#include <cmath>
-#else
-#include <math.h>
-#endif
-#else /* JANUS_STLPORT */
-#include <math.h>
-#endif /* JANUS_STLPORT */
+#  ifndef JANUS_STLPORT
+#    ifdef HAVE_CMATH
+#      include <cmath>
+#    else
+#      include <math.h>
+#    endif
+#  else /* JANUS_STLPORT */
+#    include <math.h>
+#  endif /* JANUS_STLPORT */
 
 #else /*HAVE_CONFIG_H is not defined*/
 
-#include <iterator>
-#include <iostream>
-#include <string>
+#  include <iterator>
+#  include <iostream>
+#  include <string>
 
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined (TFLOP)
+#  if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined (TFLOP)
+#    include <stdlib.h>
+#    include <stdio.h>
+#    include <math.h>
+#  else
+#    include <cstdlib>
+#    include <cstdio>
+#    include <cmath>
+#  endif
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-#else
-
-#include <cstdlib>
-#include <cstdio>
-#include <cmath>
-
-#endif
-
-#include <vector>
-#include <map>
-#include <deque>
-#include <algorithm>
-#include <numeric>
+#  include <vector>
+#  include <map>
+#  include <deque>
+#  include <algorithm>
+#  include <numeric>
 
 #endif /*HAVE_CONFIG_H*/
 
@@ -179,11 +175,15 @@
 #define ANASAZI_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#if defined(HAVE_COMPLEX)
-#define ANSZI_CPLX_CLASS std::complex
-#elif  defined(HAVE_COMPLEX_H)
-#define ANSZI_CPLX_CLASS ::complex
+#  if defined(HAVE_COMPLEX)
+#    define ANSZI_CPLX_CLASS std::complex
+#  elif  defined(HAVE_COMPLEX_H)
+#    define ANSZI_CPLX_CLASS ::complex
+#  endif
 #endif
+
+#ifdef HAVE_TEUCHOS_DEBUG
+#  define TEUCHOS_DEBUG
 #endif
 
 /*

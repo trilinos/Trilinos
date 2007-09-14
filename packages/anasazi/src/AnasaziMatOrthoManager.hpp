@@ -333,6 +333,14 @@ namespace Anasazi {
       // there is no matrix vector
       MVT::MvTransMv(SCT::one(),X,Y,Z);
     }
+#ifdef TEUCHOS_DEBUG
+    for (int j=0; j<Z.numCols(); j++) {
+      for (int i=0; i<Z.numRows(); i++) {
+        TEST_FOR_EXCEPTION(SCT::isnaninf(Z(i,j)), std::logic_error,
+            "Anasazi::MatOrthoManager::innerProdMat(): detected NaN/inf.");
+      }
+    }
+#endif
   }
 
   template <class ScalarType, class MV, class OP>
@@ -369,6 +377,12 @@ namespace Anasazi {
       Xi = MVT::CloneView(X,ind);
       MXi = MVT::CloneView(*MX,ind);
       MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
+#ifdef TEUCHOS_DEBUG
+      if (SCT::isComparable) {
+        TEST_FOR_EXCEPTION(z(0,0) <= 0,std::logic_error,
+            "Anasazi::MatOrthoManager::normMat(): x'*M*x is negative.");
+      }
+#endif
       (*normvec)[i] = SCT::magnitude( SCT::squareroot( z(0,0) ) );
     }
   }
