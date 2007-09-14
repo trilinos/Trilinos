@@ -1241,6 +1241,8 @@ End:
 
 ZOLTAN_NUM_OBJ_FN mp_2d_get_num_obj;
 ZOLTAN_OBJ_LIST_FN mp_2d_get_obj_list;
+ZOLTAN_NUM_GEOM_FN mp_2d_get_num_geom;
+ZOLTAN_GEOM_MULTI_FN mp_2d_get_geom;
 /* ZOLTAN_HG_SIZE_CS_FN mp_2d_get_size_matrix; */
 /* ZOLTAN_HG_CS_FN mp_2d_get_matrix; */
 
@@ -1280,6 +1282,7 @@ static int mp_2d_setup(ZOLTAN_MP_DATA *mpd)
   return ierr;
 }
 
+/* Basic 2d query functions. Each nonzero is a Zoltan object. */
 int mp_2d_get_num_obj(void *data, int *ierr)
 {
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
@@ -1293,11 +1296,15 @@ void mp_2d_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
 {
   IJTYPE i, j;
   ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
-  *ierr = ZOLTAN_OK;
   char *yo = "mp_2d_get_obj_list";
  
-  if (!((num_gid_entries==2) && (num_gid_entries==2))){
-    ZOLTAN_PRINT_ERROR(0, yo, "Assumed num_gid_entries==num_gid_entries==2");
+  if (mpd) 
+    *ierr = ZOLTAN_OK;
+  else
+    *ierr = ZOLTAN_FATAL;
+
+  if (!(num_gid_entries==2)){
+    ZOLTAN_PRINT_ERROR(0, yo, "Assumed num_gid_entries==2");
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -1314,6 +1321,46 @@ void mp_2d_get_obj_list(void *data, int num_gid_entries, int num_lid_entries,
   }
 }
 
+/* Geometric 2d query functions. Each nonzero has coordinates (i,j) */
+int mp_2d_get_num_geom(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+
+  return 2;
+}
+
+void mp_2d_get_geom(
+       void *data, int num_gid_entries, int num_lid_entries, 
+       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
+       int num_dim, double *geom_vec, int *ierr)
+{
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  int i;
+  char *yo = "mp_2d_get_geom";
+
+  if (mpd) 
+    *ierr = ZOLTAN_OK;
+  else
+    *ierr = ZOLTAN_FATAL;
+
+  if (!(num_gid_entries==2)){
+    ZOLTAN_PRINT_ERROR(0, yo, "Assumed num_gid_entries==2");
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  /* Map matrix so A(1,1) is at (0,0) and is top left. */
+  for (i=0; i<num_obj; i++){
+    geom_vec[2*i]   = (double) global_ids[2*i+1] - 1.;
+    geom_vec[2*i+1] = (double) -(global_ids[2*i]-1.);
+  }
+
+}
+
+
+/* TODO: Hypergraph query functions. These should build fine-grain hgraph. */
+
+/* Store partition results in mpd struct. */
 static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
   int num_export,
   unsigned int *export_global_ids, unsigned int *export_local_ids, 
