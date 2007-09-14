@@ -2142,12 +2142,20 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
       i =ML_gmax_int((t1 == mat->apply_time ? mypid:0),mat->comm);
       if (mypid == 0)
          printf("%s: max apply+comm time (pid %d) \t= %2.3e\n",mat->label,i,t1);
+      t1 = ML_gsum_double( (mypid==i ? mat->apply_without_comm_time:0.0),
+                           mat->comm);
+      if (mypid == 0)
+         printf("%s:     apply only time (pid %d) \t= %2.3e\n",mat->label,i,t1);
       t1 = - mat->apply_time;
       t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
       t1 = - t1;
       i =ML_gmax_int((t1 == mat->apply_time ? mypid:0),mat->comm);
       if (mypid == 0)
          printf("%s: min apply+comm time (pid %d) \t= %2.3e\n",mat->label,i,t1);
+      t1 = ML_gsum_double( (mypid==i ? mat->apply_without_comm_time:0.0),
+                           mat->comm);
+      if (mypid == 0)
+         printf("%s:     apply only time (pid %d) \t= %2.3e\n",mat->label,i,t1);
       t1 = ML_gsum_double( (proc_active ? mat->apply_time : 0.0), mat->comm);
       t1 = t1/((double) NumActiveProc);
       if (mypid == 0)
@@ -2163,6 +2171,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
       i =ML_gmax_int((t1 == mat->apply_without_comm_time ? mypid:0),mat->comm);
       if (mypid == 0)
          printf("%s: min apply only time (pid %d) \t= %2.3e\n",mat->label,i,t1);
+
       t1 = ML_gsum_double( (proc_active ? mat->apply_without_comm_time:0.0),
                             mat->comm);
       t1 = t1/((double) NumActiveProc);
@@ -2203,6 +2212,8 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
   double *xvec,*bvec;
   double apply_time, apply_without_comm_time, pre_time=0.0, post_time=0.0;
   double t0;
+  double totalPreTime=0.0;
+  double totalPostTime=0.0;
 
   if (ML_Get_PrintLevel() == 0) return;
 
@@ -2231,9 +2242,9 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
     /* Figure out how many iterations we need to do get apply+comm time
        equal to abs(numits) seconds, but don't let the user shoot herself
        in the foot. */
+    int proc_active, NumActiveProc;
     numits = -numits;
     if (numits > 30) numits = 30;
-    int proc_active, NumActiveProc;
     ML_Comm_Barrier(A->comm);
     ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
     if (A->invec_leng > 0 || A->outvec_leng > 0) proc_active = 1;
@@ -2264,9 +2275,14 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
   /* always creates its own communication widget via ML_CommInfoOP_Generate() */
   /* which can be used to estimate communication time.                        */
 
+  if (A->getrow->pre_comm != NULL)
+    totalPreTime = ML_gsum_double(A->getrow->pre_comm->time,A->comm);
+  if (A->getrow->post_comm != NULL)
+    totalPostTime = ML_gsum_double(A->getrow->post_comm->time,A->comm);
+
   if ( (A->comm->ML_nprocs > 1) && (A->getrow->pre_comm != NULL) &&
-       (A->getrow->pre_comm->time == 0.0) &&
-       ((A->getrow->post_comm == NULL) || (A->getrow->post_comm->time == 0.0))){
+       (totalPreTime == 0.0) &&
+       ((A->getrow->post_comm == NULL) || (totalPostTime == 0.0))){
 
     if ( (ML_Get_PrintLevel() != 0) && (A->comm->ML_mypid == 0))
        printf("==> %s communication time that follows is only an estimate!!\n",
