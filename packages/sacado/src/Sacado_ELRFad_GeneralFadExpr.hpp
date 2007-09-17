@@ -49,6 +49,12 @@ namespace Sacado {
 
     public:
 
+      //! Typename of values
+      typedef T value_type;
+
+      //! Typename of base-expressions
+      typedef GeneralFad<T,Storage> base_expr_type;
+
       //! Number of arguments
       static const int num_args = 1;
 

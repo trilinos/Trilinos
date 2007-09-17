@@ -66,6 +66,7 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp
 
 SACADO_ELRFAD_H = \
+	$(srcdir)/Sacado_ELRFad_GeneralFadTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \

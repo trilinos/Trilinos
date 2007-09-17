@@ -355,25 +355,19 @@ namespace Sacado {
 
 //-------------------------- I/O Operators -----------------------
 
-// namespace Sacado {
+namespace Sacado {
 
-//   namespace ELRFad {
+  namespace ELRFad {
 
-//     template <typename ExprT>
-//     std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
-//       os << x.val() << "  [";
-      
-//       for (int i=0; i< x.size(); i++) {
-// 	os << " " << x.dx(i);
-//       }
+    template <typename ExprT>
+    std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
+      typedef typename Expr<ExprT>::base_expr_type base_expr_type;
+      return os << base_expr_type(x);
+    }
 
-//       os << " ]\n";
-//       return os;
-//     }
+  } // namespace Fad
 
-//   } // namespace Fad
-
-// } // namespace Sacado
+} // namespace Sacado
 
 
 #endif // SACADO_FAD_OPS_HPP

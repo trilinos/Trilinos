@@ -73,6 +73,9 @@ namespace Sacado {
       //! Typename of values
       typedef typename ExprT::value_type value_type;
 
+      //! Typename of base-expressions
+      typedef typename ExprT::base_expr_type base_expr_type;
+
       //! Number of arguments
       static const int num_args = ExprT::num_args;
 
@@ -126,6 +129,9 @@ namespace Sacado {
       //! Typename of argument values
       typedef ConstT value_type;
 
+      //! Typename of base-expressions
+      typedef ConstT base_expr_type;
+
       //! Number of arguments
       static const int num_args = 0;
 
@@ -174,6 +180,11 @@ namespace Sacado {
 
       //! Typename of argument value
       typedef typename ExprT::value_type value_type;
+
+      //! Typename of base-expressions
+      typedef typename ExprT::base_expr_type base_expr_type;
+
+      //! Typename of op
       typedef Op<ExprT> OpT;
 
       //! Number of arguments
@@ -252,6 +263,16 @@ namespace Sacado {
       //! Typename of the expression values
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+
+      //! Typename of base-expression of first argument
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+
+      //! Typename of base-expression of second argument
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+
+      //! Typename of base-expression
+      typedef typename Sacado::Promote<base_expr_type_1,
+				       base_expr_type_2>::type base_expr_type;
 
       //! Number of arguments of left arg
       static const int num_args1 = ExprT1::num_args;
