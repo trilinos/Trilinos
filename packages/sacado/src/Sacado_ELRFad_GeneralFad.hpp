@@ -55,7 +55,6 @@
 #define SACADO_ELRFAD_GENERALFAD_HPP
 
 #include "Sacado_ELRFad_Expression.hpp"
-#include "Sacado_ELRFad_GeneralFadTraits.hpp"
 
 namespace Sacado {
 

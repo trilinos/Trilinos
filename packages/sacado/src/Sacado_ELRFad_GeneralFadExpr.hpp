@@ -118,6 +118,18 @@ namespace Sacado {
       T getTangent(int i) const { return this->s_.dx_[i]; }
 
     }; // class Expr<GeneralFad>
+    
+    //! Specialization of %ExprPromote to GeneralFad types
+    template <typename T, typename S>
+    struct ExprPromote< GeneralFad<T,S>, T > {
+      typedef GeneralFad<T,S> type;
+    };
+    
+    //! Specialization of %ExprPromote to GeneralFad types
+    template <typename T, typename S>
+    struct ExprPromote< T, GeneralFad<T,S> > {
+      typedef GeneralFad<T,S> type;
+    };
 
   } // namespace ELRFad
 

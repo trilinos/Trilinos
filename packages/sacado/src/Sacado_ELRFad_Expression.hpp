@@ -60,6 +60,18 @@ namespace Sacado {
 
   namespace ELRFad {
 
+    //! Base template specification for %ExprPromote
+    /*!
+     * The %ExprPromote classes provide a mechanism for computing the 
+     * promoted expression-type of a binary operation.
+     */
+    template <typename A, typename B> struct ExprPromote {};
+
+    //! Specialization of %ExprPromote for a single type
+    template <typename A> struct ExprPromote<A,A> {
+      typedef A type;
+    };
+
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all Fad expression
@@ -271,8 +283,8 @@ namespace Sacado {
       typedef typename ExprT2::base_expr_type base_expr_type_2;
 
       //! Typename of base-expression
-      typedef typename Sacado::Promote<base_expr_type_1,
-				       base_expr_type_2>::type base_expr_type;
+      typedef typename ExprPromote<base_expr_type_1,
+				   base_expr_type_2>::type base_expr_type;
 
       //! Number of arguments of left arg
       static const int num_args1 = ExprT1::num_args;

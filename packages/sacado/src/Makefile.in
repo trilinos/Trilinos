@@ -131,7 +131,6 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
-	$(srcdir)/Sacado_ELRFad_GeneralFadTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
@@ -245,7 +244,6 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
-	$(srcdir)/Sacado_ELRFad_GeneralFadTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
@@ -467,7 +465,6 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp
 
 SACADO_ELRFAD_H = \
-	$(srcdir)/Sacado_ELRFad_GeneralFadTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
