@@ -22,7 +22,7 @@ PROJECT_NAME           = "ML: Multi Level Preconditioning Package"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version 5.0"
+PROJECT_NUMBER         = "Version of the Day"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -251,7 +251,7 @@ INPUT                 += ../src/Coarsen
 INPUT                 += ../src/Main
 INPUT                 += ../src/MLAPI
 INPUT                 += ../src/MatrixFree
-INPUT                 += ../src/NonlinML
+INPUT                 += ../src/RefMaxwell
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -272,8 +272,6 @@ FILE_PATTERNS         += ml_RowMatrix.h
 FILE_PATTERNS         += ml_Ifpack_ML.h
 FILE_PATTERNS         += MLAPI*.h
 FILE_PATTERNS         += ml_Epetra_wrap_CrsGraph_as_RowMatrix.H
-FILE_PATTERNS         += nlnml_preconditioner.H
-FILE_PATTERNS         += nlnml_finelevelnoxinterface.H
 FILE_PATTERNS         += ml_Abstract*.h 
 FILE_PATTERNS         += ml_*Grid*.h 
 FILE_PATTERNS         += ml_*Quadrature*.h
@@ -281,6 +279,8 @@ FILE_PATTERNS         += ml_*Problem*.h
 FILE_PATTERNS         += ml_*Variational*.h
 FILE_PATTERNS         += ml_Workspace.h
 FILE_PATTERNS         += ml_MatrixFreePreconditioner.h
+FILE_PATTERNS         += ml_RefMaxwell*.h
+FILE_PATTERNS         += ml_EdgeMatrixFreePreconditioner.h
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
