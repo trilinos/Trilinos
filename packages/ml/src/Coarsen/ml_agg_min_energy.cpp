@@ -1042,11 +1042,8 @@ ML_Operator *ML_Operator_ImplicitAbs(ML_Operator *Amat, int OnDestroy_FreeChild)
   matrix = ML_Operator_Create(Amat->comm);
 
   new_data = (struct ml_matscale *) ML_allocate( sizeof(struct ml_matscale));
-  if (new_data == NULL) {
-    printf("ML_Operator_ImplicitAbs: out of space\n");
-    return NULL;
-    exit(1);
-  }
+  if (new_data == NULL)
+    pr_error("ML_Operator_ImplicitAbs: out of space\n");
   new_data->Amat          = Amat;
   new_data->destroy_child = 0;
   ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, 
@@ -1835,7 +1832,7 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
   if ( ml->comm->ML_nprocs > 1 )
     {	cerr << "ML_AGG_Gen_Prolongator_MinEnergy only works in serial" << endl;   exit(EXIT_FAILURE); }
 	
-  int         Ncoarse, Nfine, gNfine;
+  int         Ncoarse;
   ML_Operator **prev_P_tentatives;
   ML_Aggregate * ag = (ML_Aggregate *) data;
   double *Bzero;
@@ -1850,8 +1847,6 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
 
   Amat->num_PDEs = ag->num_PDE_eqns;
 
-  Nfine    = Amat->outvec_leng;
-  gNfine   = ML_Comm_GsumInt(ml->comm, Nfine);
   ML_Aggregate_Set_CurrentLevel(ag, level);
 
   //-----------------JBS----------------------------------------
