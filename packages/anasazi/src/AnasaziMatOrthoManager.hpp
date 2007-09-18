@@ -378,10 +378,8 @@ namespace Anasazi {
       MXi = MVT::CloneView(*MX,ind);
       MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
 #ifdef TEUCHOS_DEBUG
-      if (SCT::isComparable) {
-        TEST_FOR_EXCEPTION(z(0,0) <= 0,std::logic_error,
-            "Anasazi::MatOrthoManager::normMat(): x'*M*x is negative.");
-      }
+      TEST_FOR_EXCEPTION(SCT::real(z(0,0)) <= 0,std::logic_error,
+          "Anasazi::MatOrthoManager::normMat(): x'*M*x is negative.");
 #endif
       (*normvec)[i] = SCT::magnitude( SCT::squareroot( z(0,0) ) );
     }
