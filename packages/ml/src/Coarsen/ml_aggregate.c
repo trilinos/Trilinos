@@ -62,7 +62,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->coarsen_scheme             = ML_AGGR_UNCOUPLED;
    (*ag)->threshold                  = 0.0;
    (*ag)->smoothP_damping_factor     = 4.0/3.0;
-   (*ag)->smoothP_damping_sweeps     = 1;
+   (*ag)->smoothP_damping_sweeps     = NULL;
    (*ag)->smoothP_type               = 0;  /* point type */
    (*ag)->num_PDE_eqns               = 1;
    (*ag)->nullspace_dim              = 1;
@@ -176,7 +176,8 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
          ML_free((*ag)->vblock_data);
          (*ag)->vblock_data = NULL;
       }
-
+      if ((*ag)->smoothP_damping_sweeps != NULL)
+        ML_free((*ag)->smoothP_damping_sweeps);
 
       ML_memory_free( (void **) ag );
       (*ag) = NULL;
@@ -709,14 +710,21 @@ int ML_Aggregate_Set_DampingFactor( ML_Aggregate *ag, double factor )
 /* set number of damping sweeps for the smoothed prolongator                 */
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps )
+int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps, int level )
 {
    if ( ag->ML_id != ML_ID_AGGRE ) 
    {
       printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
       exit(-1);
    }
-   ag->smoothP_damping_sweeps = numSweeps;
+   if (ag->smoothP_damping_sweeps==NULL)
+     pr_error("ML_Aggregate_Set_DampingSweeps:  Memory not allocated.  Call ML_Aggregate_Set_MaxLevels() first.\n");
+   if (level == ML_ALL_LEVELS) {
+     int i;
+     for (i=0; i<ag->max_levels; i++) ag->smoothP_damping_sweeps[i] = numSweeps;
+   }
+   else
+     ag->smoothP_damping_sweeps[level] = numSweeps;
    return 0;
 }
 
@@ -725,14 +733,14 @@ int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps )
 /* retrieve number of damping sweeps for the smoothed prolongator            */
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag)
+int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag, int level)
 {
    if ( ag->ML_id != ML_ID_AGGRE ) 
-   {
-      printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
-      exit(-1);
-   }
-   return ag->smoothP_damping_sweeps;
+     pr_error("ML_Aggregate_Set_DampingFactor : wrong object. \n");
+   if (level >= ag->max_levels)
+     pr_error("ML_Aggregate_Get_DampingSweeps: largest allowable level = %d\n",
+              ag->max_levels);
+   return ag->smoothP_damping_sweeps[level];
 }
 
 /* ************************************************************************* */
@@ -764,6 +772,12 @@ int ML_Aggregate_Set_MaxLevels( ML_Aggregate *ag, int level )
       printf("ML_Aggregate_Set_MaxLevels : wrong object. \n");
       exit(-1);
    }
+   if (ag->max_levels != 0) {
+     if (ag->max_levels != level)
+       pr_error("ML_Aggregate_Set_MaxLevels : max_levels is already set.\n");
+     else
+       return 0;
+   }
    ag->max_levels = level;
 #ifdef ML_CPP
    ML_memory_alloc((void**) &(ag->aggr_info), level*sizeof(int*),"AGu");
@@ -776,6 +790,12 @@ int ML_Aggregate_Set_MaxLevels( ML_Aggregate *ag, int level )
 #else
    ML_memory_alloc((void*) &(ag->aggr_count), level*sizeof(int),"AGx");
 #endif
+   if (ag->smoothP_damping_sweeps == NULL) {
+     ag->smoothP_damping_sweeps = (int*) ML_allocate(level*sizeof(int));
+     ML_Aggregate_Set_DampingSweeps(ag,1,ML_ALL_LEVELS);
+   }
+   else
+     pr_error("ML_Aggregate_Set_MaxLevels: array 'smoothP_damping_sweeps' already allocated\n");
    return 0;
 }
 
@@ -2099,7 +2119,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   int UseImplicitTranspose;
   ML_Partitioner which_partitioner;
   ML_Aggregate_Viz_Stats *grid_info;
-  int N_dimensions;
+  int N_dimensions=0;
   int haveCoordinates = 0;
   double t0=0.0,delta=0.0;
 

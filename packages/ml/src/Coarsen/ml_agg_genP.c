@@ -353,7 +353,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 #endif
 
    Amat = &(ml->Amat[level]);
-   numSmSweeps = ML_Aggregate_Get_DampingSweeps(ag);
+   numSmSweeps = ML_Aggregate_Get_DampingSweeps(ag,level);
 
    if (Amat->num_PDEs < ag->num_PDE_eqns) Amat->num_PDEs = ag->num_PDE_eqns;
    if (ag->block_scaled_SA == 1) {
@@ -382,7 +382,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
-   if (ag->smoothP_damping_factor != 0.0)
+   if ( (ag->smoothP_damping_factor!=0.0) && (numSmSweeps>0) )
    {
      if ((ag->keep_P_tentative == ML_YES) && (prev_P_tentatives != NULL) &&
          (prev_P_tentatives[clevel] != NULL))
@@ -467,7 +467,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      return -1;
    }
 
-   if ( ag->smoothP_damping_factor != 0.0 || numSmSweeps > 1 )
+   if ( ag->smoothP_damping_factor != 0.0 && numSmSweeps > 0 )
    {
      /*********************************************************
      * If we symmetrize we need the symmetrized matrix so we
@@ -562,7 +562,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      ml->spectral_radius[level] = max_eigen;
      
      if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel())
-       printf("Gen_Prolongator (level %d) : Max eigenvalue = %e\n",
+       printf("Gen_Prolongator (level %d) : Max eigenvalue = %2.4e\n",
           ag->cur_level, max_eigen);
      
    }
@@ -571,12 +571,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
       ml->spectral_radius[level] = 1.0;
       widget.omega  = 0.0;
       if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() )
-        printf("\nProlongator/Restriction smoother (level %d) : damping factor = 0.0\n", level );
+        printf("\nProlongator/Restriction smoother (level %d) : damping = %2.3e , sweeps = %d\n", level, ag->smoothP_damping_factor, numSmSweeps );
 
    } /* if ( ag->smoothP_damping_factor != 0.0 ) */
 
    /* Smooth tentative prolongator. */
-   if ( ag->smoothP_damping_factor != 0.0 || numSmSweeps > 1 )
+   if ( ag->smoothP_damping_factor != 0.0 && numSmSweeps > 0 )
    {
      dampingFactors = (double *) ML_allocate( sizeof(double) * numSmSweeps );
      if (numSmSweeps == 1)
@@ -591,13 +591,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
        {
          if (ag->minimizing_energy == -1)
          {
-           printf("\nProlongator smoother (level %d) : damping factor #%d = %e\nProlongator smoother (level %d) : ( = %e / %e)\nNon-smoothed restriction is used.\n",
+           printf("\nProlongator smoother (level %d) : damping factor #%d = %2.4e\nProlongator smoother (level %d) : ( = %2.4e / %2.4e)\nNon-smoothed restriction is used.\n",
                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
                   dampingFactors[ii], max_eigen );
          }
          else
          {
-           printf("Prolongator/Restriction smoother (level %d) : damping factor #%d = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n",
+           printf("Prolongator/Restriction smoother (level %d) : damping factor #%d = %2.4e\nProlongator/Restriction smoother (level %d) : ( = %2.4e / %2.4e)\n",
                   level, ii+1, dampingFactors[ii]/ max_eigen, level,
                   dampingFactors[ii], max_eigen );
          }
@@ -679,7 +679,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      }
 
    } /* if ( ag->smoothP_damping_factor != 0.0 ) */
-
+   else if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() )
+     printf("Gen_Prolongator (level %d) : not smoothing prolongator\n", level);
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 

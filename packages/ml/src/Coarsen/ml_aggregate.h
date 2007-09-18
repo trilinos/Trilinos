@@ -47,7 +47,7 @@ typedef struct ML_Aggregate_Struct
    double drop_tol_for_smoothing;      /**<  self-explanatory              */
    int    attach_scheme;               /**<  aggregate shape control       */
    double smoothP_damping_factor;      /**<  for prolongator smoother      */
-   int    smoothP_damping_sweeps;      /**<  #prolongator smoother sweeps  */
+   int   * smoothP_damping_sweeps;     /**<  #prolongator smoother sweeps  */
    int    smoothP_type;                /**<  point, block                  */
    int    coarsen_scheme;              /**<  Uncoupled, Coupled, MIS       */
    int   * coarsen_scheme_level;  
@@ -266,8 +266,8 @@ int ML_Aggregate_Set_DampingFactor( ML_Aggregate *, double factor );
 int ML_Aggregate_Set_PSmootherType( ML_Aggregate *, int stype );
 int ML_Aggregate_Set_PointDiagScaling( ML_Aggregate *ag);
 int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag);
-int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps );
-int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag);
+int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps, int level );
+int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag, int level);
 
 /* ------------------------------------------------------------------------- */
 /* accessing aggregation information                                         */

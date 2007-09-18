@@ -863,6 +863,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
   
   ML_Aggregate_Create(&agg_);
+  ML_Aggregate_Set_MaxLevels(agg_, MaxCreationLevels);
   ML_Comm_Create(&ml_comm_);
 #ifdef EMIN_IN_PAPER
 printf("this is garbage for NSR \n");
@@ -2819,8 +2820,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
   
   // Check for additional smoothing of prolongator.  This should be used in
   // conjunction with more aggressive coarsening.
-  int prolongatorSmSweeps = List_.get("aggregation: smoothing sweeps", 1);
-  ML_Aggregate_Set_DampingSweeps(agg_,prolongatorSmSweeps);
+  int PSmSweeps = List_.get("aggregation: smoothing sweeps", 1);
+  for (int i=0; i<MaxLevels_; i++) {
+    char str[80];
+    sprintf(str,"aggregation: smoothing sweeps (level %d)",i);
+    int MyPSmSweeps = List_.get(str,PSmSweeps);
+    ML_Aggregate_Set_DampingSweeps(agg_,MyPSmSweeps,LevelID_[i]);
+  }
   //ML_Aggregate_Set_BlockDiagScaling(agg_);
 
   /* ********************************************************************** */
