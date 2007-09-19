@@ -26,9 +26,9 @@ special situations by request. These are: Claps and Tpetra.
 In addition to many new features across most packages, Trilinos Release 8.0
 contains 3 packages that are being released for the first time:
 
-- Belos (Next-generation Iterative Solvers)
-- Sacado (Automatic Differentiation)
-- TrilinosCouplings (Trilinos Package Interfaces)
+- Belos (Next-generation iterative solvers)
+- Sacado (Automatic differentiation)
+- TrilinosCouplings (Select trilinos package interfaces)
 
 Package-specific features for these new packages, as well as many of
 the other packages are listed below.
