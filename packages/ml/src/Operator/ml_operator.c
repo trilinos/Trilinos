@@ -1049,7 +1049,6 @@ int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
  * Don't assume that this function works!  Although my tests indicated that 
  * it does work in serial. 
 */
-  struct ml_matvscale *temp;
   double * scale_vec;
   int    status = 1, i;
   struct ml_matvscale * tempdata;
@@ -2095,7 +2094,6 @@ Create an array of ML_Operator pointers.
 ****************************************************************************/
 ML_Operator **ML_Operator_ArrayCreate( int length)
 {
-
   return((ML_Operator **)  ML_allocate(length*sizeof(ML_Operator *)));
 }
 /****************************************************************************
