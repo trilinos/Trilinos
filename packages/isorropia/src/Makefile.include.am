@@ -52,8 +52,7 @@ CORE_H = \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Epetra.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
-	$(srcdir)/Isorropia_ConfigDefs.hpp \
-	$(builddir)/Isorropia_config.h
+	$(srcdir)/Isorropia_ConfigDefs.hpp
 
 ZOLTAN = \
 	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
@@ -127,6 +126,18 @@ libisorropia_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 lib_LIBRARIES = $(ISORROPIA_LIB)
 
 include_HEADERS = $(CORE_H) $(ZOLTAN_HEADERFILES)
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(execincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Isorropia_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = Isorropia_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
