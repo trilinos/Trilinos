@@ -71,6 +71,7 @@
 %ignore Epetra_CrsGraph::ExtractMyRowView(int, int&, int*&) const;
 %rename(CrsGraph) Epetra_CrsGraph;
 %epetra_exception(Epetra_CrsGraph,Epetra_CrsGraph)
+%epetra_exception(Epetra_CrsGraph,FillComplete)
 %epetra_exception(Epetra_CrsGraph,OptimizeStorage)
 %apply (int DIM1, int* IN_ARRAY1) {(int NumRows,    const int * NumIndicesPerRow)};
 %apply (int DIM1, int* IN_ARRAY1) {(int NumIndices, int       * Indices         )};

@@ -37,16 +37,23 @@ from MakefileVariables import *
 
 ######################################################################
 
+def sysName():
+    """
+    Return the system name.  Some system names returned by os.uname have
+    irrelevant suffixes which we truncated here.
+    """
+    uname = os.uname()[0]
+    if uname.startswith("CYGWIN"): uname = uname[:6]
+    return uname
+
+######################################################################
+
 def buildSharedLibraries():
     """
     Return boolean indicating whether the shared libraries need to be built.
-    Returns True if the operating system is either Darwin or Linux and this is
-    an MPI build.
+    Returns True if the operating system is either Darwin or Linux.
     """
-    #if os.uname()[0] not in ("Darwin", "Linux"): return False
-    #makefileVars = processMakefile("Makefile")
-    #return bool(makefileVars["HAVE_MPI"])
-    return os.uname()[0] in ("Darwin","Linux")
+    return sysName() in ("Darwin", "Linux", "CYGWIN")
 
 ######################################################################
 
@@ -121,26 +128,93 @@ class SharedTrilinosBuilder:
         self.__package      = package
         self.__packageLower = package.lower()
         self.__packageUpper = package.upper()
-        self.__sysName      = os.uname()[0]
+        self.__sysName      = sysName()
         self.__libPathVar   = self.getLibPathVarName()
         self.__libOption    = "-l"  + self.__packageLower
         self.__dylibName    = self.getDylibName()
-        if self.__packageLower == "loca":
-            self.__topBuildDir  = os.path.join("..", "..", "nox")
-            self.__buildDir     = os.path.join(self.__topBuildDir, "src-loca",
-                                               "src")
-        elif self.__packageLower == "noxepetra":
-            self.__topBuildDir  = os.path.join("..", "..", "nox")
-            self.__buildDir     = os.path.join(self.__topBuildDir, "src-epetra")
-        else:
-            self.__topBuildDir  = os.path.join("..", "..", self.__packageLower)
-            self.__buildDir     = os.path.join(self.__topBuildDir, "src")
-        self.__pythonDir    = os.path.join(self.__topBuildDir, "python", "src")
+        self.getBuildDirs()
+        self.__libVar       = self.getLibVarName()
         self.__thisDir      = os.getcwd()
         self.__absDylibName = os.path.join(self.__thisDir, self.__dylibName)
         self.__makeMacros   = self.getMakeMacros()
         self.__linkCmd      = self.getLinkCmd()
         self.__supported    = buildSharedLibraries()
+
+    ######################################################################
+
+    def getBuildDirs(self):
+        """
+        Given a lower-case package name, implement specialized rules to obtain
+        the top build directory and the build directory for the given package.
+        The results are stored in self.__topBuildDir and self.__buildDir.
+        """
+
+        # Initialization
+        self.__buildDir    = None
+        self.__topBuildDir = None
+        pkg1               = None
+        pkg2               = None
+        loca               = "loca"
+        nox                = "nox"
+        stratimikos        = "stratimikos"
+        thyra              = "thyra"
+
+        # Thyra and Stratimikos follow similar rules
+        if self.__packageLower.startswith(thyra):
+            pkg1 = thyra
+            pkg2 = self.__packageLower.replace(thyra,"")
+        if self.__packageLower.startswith(stratimikos):
+            pkg1 = stratimikos
+            pkg2 = self.__packageLower.replace(stratimikos,"")
+        if pkg1 and pkg2:
+            self.__topBuildDir = os.path.join("..", "..", pkg1, "adapters",
+                                              pkg2)
+
+        # NOX can be a little specialized
+        if self.__packageLower.startswith(nox):
+            pkg2 = self.__packageLower.replace(nox,"")
+            self.__topBuildDir = os.path.join("..", "..", "nox")
+            if pkg2: self.__buildDir = os.path.join(self.__topBuildDir,
+                                                    "src-"+pkg2)
+
+        # LOCA is under the NOX package
+        if self.__packageLower.startswith(loca):
+            pkg2 = self.__packageLower.replace(loca,"")
+            self.__topBuildDir = os.path.join("..", "..", "nox")
+            if pkg2: self.__buildDir = os.path.join(self.__topBuildDir,
+                                                    "src-loca", "src-"+pkg2)
+            else:    self.__buildDir = os.path.join(self.__topBuildDir,
+                                                    "src-loca", "src")
+
+        # MOOCHO/Thyra
+        if self.__packageLower == "moochothyra":
+            self.__topBuildDir = os.path.join("..", "..", "moocho")
+            self.__buildDir    = os.path.join(self.__topBuildDir, "thyra", "src")
+
+        # Default behavior
+        if not self.__topBuildDir:
+            self.__topBuildDir = os.path.join("..", "..", self.__packageLower)
+        if not self.__buildDir:
+            self.__buildDir = os.path.join(self.__topBuildDir, "src")
+
+    ######################################################################
+
+    def getLibVarName(self):
+        """
+        Determine the name of the Makefile variable that contains the names of
+        the libraries to link against.
+        """
+        special = ["THYRA",
+                   "STRATIMIKOS",
+                   "NOX",
+                   "LOCA",
+                   "MOOCHO"]
+        prefix = self.__packageUpper
+        for package in special:
+            if self.__packageUpper.startswith(package):
+                prefix = package
+                break
+        return prefix + "_LIBS"
 
     ######################################################################
 
@@ -165,6 +239,8 @@ class SharedTrilinosBuilder:
             return "lib" + self.__packageLower + ".dylib"
         elif self.__sysName in ("Linux",):
             return "lib" + self.__packageLower + ".so"
+        elif self.__sysName in ("CYGWIN",):
+            return "cyg" + self.__packageLower + ".dll"
         else:
             return "lib" + self.__packageLower + ".?"
 
@@ -184,11 +260,7 @@ class SharedTrilinosBuilder:
         package.
         """
         cxx = self.__makeMacros["CXX"]
-        if self.__packageLower == "noxepetra":
-            libVar = "NOX_LIBS"
-        else:
-            libVar = self.__packageUpper + "_LIBS"
-        default = self.__makeMacros[libVar]
+        default = self.__makeMacros.get(self.__libVar, "")
         ldFlags = self.__makeMacros.get(self.__packageUpper + "_PYTHON_LIBS",
                                         default)
         ldFlags = ldFlags.replace(self.__libOption+" ", "")  # Remove -lpackage
@@ -205,6 +277,14 @@ class SharedTrilinosBuilder:
                                               options,
                                               self.__dylibName,
                                               ldFlags)
+        elif self.__sysName == "CYGWIN":
+            options = "-shared -Wl,--out-implib=lib%s.dll.a " + \
+                      "=Wl,--export-all-symbols -Wl,--enable-auto-import" + \
+                      "-Wl,--whole-archive *.o" + \
+                      "-Wl,--no-whole-archive %s" % self.__packageLower
+                                                     
+            linkCmd = "%s %s -o %s *.o -Wl,--no-whole-archive %s" % \
+                      (cxx, options, self.__dylibName, ldFlags)
         else:
             linkCmd = "echo %s not supported" % self.__sysName
         return linkCmd

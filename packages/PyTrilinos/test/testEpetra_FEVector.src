@@ -24,7 +24,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
 # @HEADER
@@ -67,8 +67,8 @@ else:
 
 ##########################################################################
 
-class EpetraVectorTestCase(unittest.TestCase):
-    "TestCase class for Vector objects"
+class EpetraFEVectorTestCase(unittest.TestCase):
+    "TestCase class for FEVector objects"
 
     def setUp(self):
         self.length      = 9
@@ -148,11 +148,9 @@ class EpetraVectorTestCase(unittest.TestCase):
         for i in range(len(gids)):
             gid = gids[i]
             lid = lids[i]
+            self.assertEquals(result, 0)
             if lid >= 0:
-                self.assertEquals(result, 0)
                 self.assertAlmostEquals(ev[lid], 1.1*gid)
-            else:
-                self.assertEquals(result, 1)
 
     def testReplaceMyValue1(self):
         "Test Epetra.FEVector ReplaceMyValue method"
@@ -188,11 +186,9 @@ class EpetraVectorTestCase(unittest.TestCase):
         for i in range(len(gids)):
             gid = gids[i]
             lid = lids[i]
+            self.assertEquals(result, 0)
             if lid >= 0:
-                self.assertEquals(result, 0)
                 self.assertAlmostEquals(ev[lid], 0.125*lid+1.1*gid)
-            else:
-                self.assertEquals(result, 1)
 
     def testSumIntoMyValue1(self):
         "Test Epetra.FEVector SumIntoMyValue method"
@@ -456,7 +452,7 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(EpetraVectorTestCase))
+    suite.addTest(unittest.makeSuite(EpetraFEVectorTestCase))
 
     # Create a communicator
     comm    = Epetra.PyComm()

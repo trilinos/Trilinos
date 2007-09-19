@@ -116,6 +116,10 @@ example subdirectory of the PyTrilinos package:
 // Turn on autodocumentation
 %feature("autodoc", "1");
 
+// Include Galeri documentation
+%include "Galeri_dox.i"    // Doxygen-generated documentation
+%include "Galeri_doc.i"    // Manually-written documentation
+
 // Typemap support for STL
 %include "stl.i"
 

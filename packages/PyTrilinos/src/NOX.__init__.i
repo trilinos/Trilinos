@@ -74,7 +74,11 @@ script in the example subdirectory of the PyTrilinos package:
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Manager.H"
+#include "NOX_Solver_LineSearchBased.H"
+#include "NOX_Solver_TrustRegionBased.H"
+#include "NOX_Solver_InexactTrustRegionBased.H"
+#include "NOX_Solver_TensorBased.H"
+#include "NOX_Solver_Factory.H"
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_StatusTest_NormF.H"
@@ -91,6 +95,10 @@ script in the example subdirectory of the PyTrilinos package:
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+// Include NOX documentation
+%include "NOX_dox.i"    // Doxygen-generated documentation
+%include "NOX_doc.i"    // Manually written documentation
 
 // SWIG library includes
 %include "stl.i"

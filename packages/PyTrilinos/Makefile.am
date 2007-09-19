@@ -50,8 +50,14 @@ ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = \
 config/replace-install-prefix.pl  config/strip_dup_incl_paths.pl \
 config/string-replace.pl          config/strip_dup_libs.pl       \
-config/token-replace.pl \
-INSTALL
+config/token-replace.pl           INSTALL                        \
+doc/Doxygen/Teuchos_dox.i  	  doc/Doxygen/Epetra_dox.i       \
+doc/Doxygen/TriUtils_dox.i 	  doc/Doxygen/EpetraExt_dox.i    \
+doc/Doxygen/AztecOO_dox.i  	  doc/Doxygen/Galeri_dox.i       \
+doc/Doxygen/Amesos_dox.i   	  doc/Doxygen/IFPACK_dox.i       \
+doc/Doxygen/Anasazi_dox.i  	  doc/Doxygen/ML_dox.i           \
+doc/Doxygen/NOX_dox.i             doc/build_docs                 \
+doc/DoxyfileWeb
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.

@@ -69,6 +69,10 @@ NOX.Abstract provides the following user-level classes:
 %ignore *::operator=;
 %ignore *::operator[];
 
+// Include NOX documentation
+%include "NOX_dox.i"    // Doxygen-generated documentation
+%include "NOX_doc.i"    // Manually written documentation
+
 // Trilinos module imports
 %import "Teuchos.i"
 

@@ -106,6 +106,9 @@ example subdirectory of the PyTrilinos package:
 // Auto-documentation feature
 %feature("autodoc", "1");
 
+// Include AztecOO documentation
+%include "AztecOO_dox.i"
+
 // Include the NumPy typemaps
 %include "numpy.i"
 

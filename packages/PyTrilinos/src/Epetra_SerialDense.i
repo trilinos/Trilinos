@@ -110,7 +110,6 @@
 %ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
 %rename(SerialDenseSolver) Epetra_SerialDenseSolver;
 %epetra_exception(Epetra_SerialDenseSolver, ReciprocalConditionEstimate)
-%include "Epetra_SerialDenseSolver.h"
 %epetra_intarray1d_output_method(Epetra_SerialDenseSolver,IPIV,M)
 %epetra_array2d_output_method(Epetra_SerialDenseSolver,A,M,N    )
 %epetra_array2d_output_method(Epetra_SerialDenseSolver,B,N,NRHS )
@@ -133,6 +132,7 @@
     return value;
   }
 }
+%include "Epetra_SerialDenseSolver.h"
 
 ///////////////////////////////////
 // Epetra_SerialDenseSVD support //

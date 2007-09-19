@@ -117,6 +117,9 @@ example subdirectory of the PyTrilinos package:
 // Auto-documentation feature
 %feature("autodoc", "1");
 
+// Include IFPACK documentation
+%include "IFPACK_dox.i"
+
 // External Trilinos modules
 %import "Teuchos.i"
 %ignore Epetra_Version();

@@ -24,7 +24,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
 # @HEADER
@@ -101,7 +101,7 @@ else:
 if options.plot:
     import pylab as mp
 
-######################################################################
+# ######################################################################
 
 class Interface(NOX.Epetra.Interface.Required):
 
@@ -126,12 +126,12 @@ class Interface(NOX.Epetra.Interface.Required):
         if self.__myPID > 0:                newElements.insert(0,newElements[0]-1)
         if self.__myPID < self.__numProc-1: newElements.append(newElements[-1]+1)
         self.__overlapMap        = Epetra.Map(-1,newElements,0,comm)
-        self.__importer          = Epetra.Import(self.__overlapMap, self.__stdMap)
-        self.__initialSoln       = Epetra.Vector(self.__stdMap)
+        self.__soln              = Epetra.Vector(self.__overlapMap)
         self.__rhs               = Epetra.Vector(self.__stdMap)
+        self.computeSlices()
         self.createGraph()
-        x = array(self.__stdMap.MyGlobalElements()) / (numGlobalElements-1.0)
-        self.__x                 = Epetra.Vector(self.__stdMap,x)
+        x = array(self.__overlapMap.MyGlobalElements()) / (numGlobalElements-1.0)
+        self.__x                 = Epetra.Vector(self.__overlapMap,x)
         self.__h                 = (self.__xmax - self.__xmin) / (len(self.__x)-1)
         self.initializeSoln()
 
@@ -141,20 +141,38 @@ class Interface(NOX.Epetra.Interface.Required):
         Arguments u and F are provided as Epetra.Vector objects, complete with
         numpy interface.
         """
+        flagStr = ["Residual", "Jac"   , "Prec", "FD_Res",
+                   "MF_Res"  , "MF_Jac", "User"          ]
+        if len(u) == len(F):
+            f1 = 1
+            f2 = len(F) - 1
+            u1 = f1
+            u2 = f2
+        else:
+            f1 = self.__f1
+            f2 = self.__f2
+            u1 = self.__u1
+            u2 = self.__u2
         try:
+            output = "Proc " + str(self.__comm.MyPID()) + ":\n  flag = " + \
+                     flagStr[flag] + "\n  len(u) = " + str(len(u)) + \
+                     "\n    u1 = " + str(u1) + "\n    u2 = " + str(u2) + \
+                     "\n  len(F) = " + str(len(F)) + "\n    f1 = " + str(f1) + \
+                     "\n    f2 = " + str(f2)
+            print output
             # Compute the residual on the interior
-            F[1:-1] = (u[:-2] - 2*u[1:-1] + u[2:]) / (self.__h*self.__h) - \
-                      self.__k * u[1:-1] * u[1:-1]
+            F[f1:f2] = (u[u1-1:u2-1] - 2*u[u1:u2] + u[u1+1:u2+1]) / \
+                       (self.__h*self.__h) - self.__k * u[u1:u2] * u[u1:u2]
             # Compute the residual on the boundaries
             if self.__haveBC0: F[ 0] = u[ 0] - self.__bc0
             if self.__haveBC1: F[-1] = u[-1] - self.__bc1
             return True
         except Exception, e:
-            print e
+            print "Interface.computeF() has thrown an exception:\n", e
             return False
 
     def getSolution(self):
-        return self.__initialSoln
+        return self.__soln
 
     def getMesh(self):
         return self.__x
@@ -164,9 +182,10 @@ class Interface(NOX.Epetra.Interface.Required):
         return True
 
     def createGraph(self):
-        self.__graph = Epetra.CrsGraph(Epetra.Copy, self.__stdMap, 5)
-        for lid in self.__stdMap.MyGlobalElements():
-            gid = self.__stdMap.GID(lid)
+        self.__graph = Epetra.CrsGraph(Epetra.Copy, self.__stdMap,
+                                       self.__overlapMap, 3)
+        for gid in self.__stdMap.MyGlobalElements():
+            lid = self.__stdMap.LID(gid)
             if gid in (0,self.__numGlobalElements-1):  # Boundaries
                 self.__graph.InsertGlobalIndices(lid,[gid])
             else:                                      # Interior
@@ -174,10 +193,22 @@ class Interface(NOX.Epetra.Interface.Required):
         self.__graph.FillComplete()
         return True
 
+    def computeSlices(self):
+        n = self.__numMyElements
+        # Determine slice range for F
+        if self.__haveBC0: self.__f1 = 1
+        else:              self.__f1 = 0
+        if self.__haveBC1: self.__f2 = n-1
+        else:              self.__f2 = n
+        # Determine slice range for u
+        self.__u1 = 1
+        if self.__haveBC0: self.__u2 = self.__f2
+        else:              self.__u2 = self.__f2 + 1
+
     def initializeSoln(self):
-        self.__initialSoln.PutScalar((self.__bc0 + self.__bc1)/2)
-        if self.__haveBC0: self.__initialSoln[ 0] = self.__bc0
-        if self.__haveBC1: self.__initialSoln[-1] = self.__bc1
+        self.__soln.PutScalar((self.__bc0 + self.__bc1)/2)
+        if self.__haveBC0: self.__soln[ 0] = self.__bc0
+        if self.__haveBC1: self.__soln[-1] = self.__bc1
         return True
 
     def getGraph(self):
@@ -234,7 +265,7 @@ def main():
                                       "Tolerance"       : 1e-4,
                                       "Preconditioner"  : "Ifpack",
                                       "Max Age Of Prec" : 5       },
-                #"Solver Options"   : {"Status Test Check Type" : NOX.StatusTest.Complete}
+                "Solver Options"   : {"Status Test Check Type" : "Complete"}
                 }
     printParams = nlParams["Printing"]
     lsParams    = nlParams["Linear Solver"]
@@ -253,7 +284,8 @@ def main():
     # Define the Jacobian linear system
     mf     = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
     fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
-                                                 soln, interface.getGraph())
+                                                 soln, interface.getGraph(),
+                                                 True)
     linSys = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
                                             fdc, soln)
 
@@ -279,7 +311,7 @@ def main():
     combo.addStatusTest(maxIters )
 
     # Create and execute the solver
-    solver      = NOX.Solver.Manager(group, combo, nlParams)
+    solver      = NOX.Solver.buildSolver(group, combo, nlParams)
     solveStatus = solver.solve()
 
     ### End Nonlinear Solver ###
@@ -338,7 +370,7 @@ def main():
 
     return status
 
-######################################################################
+# ######################################################################
 
 if __name__ == "__main__":
 

@@ -93,6 +93,9 @@ example subdirectory of the PyTrilinos package:
 // Auto-documentation feature
 %feature("autodoc", "1");
 
+// Include the TriUtils documentation
+%include "TriUtils_dox.i"    // Doxygen-generated documentation
+
 // General ignore directives
 #pragma SWIG nowarn=503
 %ignore *::operator<< ;

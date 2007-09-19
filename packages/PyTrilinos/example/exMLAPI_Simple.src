@@ -91,7 +91,8 @@ def main(comm):
     "max levels"        : 3, 
     "output"            : 10,
     "smoother: type"    : "symmetric Gauss-Seidel",
-    "aggregation: type" : "Uncoupled"
+    "aggregation: type" : "Uncoupled",
+    "ML validate parameter list" : False
     }
 
   # creates the preconditioner and computes it

@@ -61,6 +61,7 @@ and functions:
     * RowMatrixToMatrixMarketFile    - Write a RowMatrix to an MM file
     * RowMatrixToMatlabFile          - Write a RowMatrix to an ML file
     * Add                            - Add two CrsMatrix objects
+    * Multiply                       - Multiply two CrsMatrix objects
 
 For examples of usage, please consult the following scripts in the
 example subdirectory of the PyTrilinos package:
@@ -169,6 +170,10 @@ Epetra_ ## ClassName * Read ## ClassName(std::string name)
 %import "Teuchos.i"
 %import "Epetra.i"
 
+// Include EpetraExt documentation
+%include "EpetraExt_dox.i"    // Doxygen-generated documentation
+%include "EpetraExt_doc.i"    // Manually written documentation
+
 ///////////////////////////////
 // EpetraExt_Version support //
 ///////////////////////////////
@@ -265,9 +270,9 @@ namespace EpetraExt {
 ///////////////////////////////
 %include "EpetraExt_BlockMapOut.h"
 
-/////////////////////////////
-// EpetraExt.Add() support //
-/////////////////////////////
+////////////////////////////////////////////
+// EpetraExt.Add() and Multiply() support //
+////////////////////////////////////////////
 %inline %{
   namespace EpetraExt {
     int Add(Epetra_CrsMatrix& A, const bool flag, const double ValA,

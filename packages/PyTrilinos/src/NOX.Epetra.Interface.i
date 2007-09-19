@@ -80,6 +80,10 @@ NOX.Epetra.Interface provides the following user-level classes:
 // General ignore directives
 %ignore *::operator=;
 
+// Include NOX documentation
+%include "NOX_dox.i"    // Doxygen-generated documentation
+%include "NOX_doc.i"    // Manually written documentation
+
 // STL support
 %include "stl.i"
 

@@ -107,22 +107,23 @@ using Teuchos::RCP;
 %}
 
 // Namespace flattening
+using std::string;
 using Teuchos::RCP;
 
 // Global swig features
 %feature("autodoc", "1");
 %feature("compactdefaultargs");
 
+// Include Teuchos documentation
+%include "Teuchos_dox.i"    // Doxygen-generated documentation
+%include "Teuchos_doc.i"    // Manually written documentation
+
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers
 // and makes certain conversions seamless, such as between std::string
 // and python strings.
 %include "stl.i"
-using std::string;
-namespace std {
-  class logic_error;
-  class runtime_error;
-}
+%include "std_except.i"
 
 // Define macro for handling exceptions thrown by Teuchos methods and
 // constructors
@@ -190,9 +191,9 @@ __version__ = Teuchos_Version().split()[2]
 %ignore Teuchos::ParameterList::get;
 %ignore Teuchos::ParameterList::getPtr;
 %ignore Teuchos::ParameterList::getEntryPtr;
-%ignore Teuchos::ParameterList::sublist(const string &) const;
-%ignore Teuchos::ParameterList::isType(const string &) const;
-%ignore Teuchos::ParameterList::isType(const string &, any*) const;
+%ignore Teuchos::ParameterList::sublist(const std::string &) const;
+%ignore Teuchos::ParameterList::isType(const std::string &) const;
+%ignore Teuchos::ParameterList::isType(const std::string &, any*) const;
 %ignore Teuchos::ParameterList::unused(ostream &) const;
 %ignore Teuchos::ParameterList::begin() const;
 %ignore Teuchos::ParameterList::end() const;
@@ -281,14 +282,14 @@ Teuchos::ParameterList &
 %teuchos_exception(XMLObject, addRequiredBool  )
 %teuchos_exception(XMLObject, addChild         )
 %teuchos_exception(XMLObject, toString         )
-%ignore Teuchos::XMLObject(XMLObjectImplem*);
+%ignore Teuchos::XMLObject::XMLObject(XMLObjectImplem*);
 %extend Teuchos::XMLObject {
-  string __str__() const {
+  std::string __str__() const {
     try {
       return self->toString();
     }
     catch(std::logic_error e) {
-      return string("");
+      return std::string("");
     }
   }
 }
@@ -354,7 +355,9 @@ def ScalarTraits(scalarType):
 // This has been specialized for RCP, because the constructor for
 // creating an RCP has an additional argument: a boolean false.
 %define %extend_RCP(Type...)
-%typemap(in, noblock=1) const SWIGTYPE & SMARTPOINTER (void* argp = 0, int res = 0) {
+%typemap(in, noblock=1) const SWIGTYPE & SMARTPOINTER
+(void* argp = 0, int res = 0)
+{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     res = SWIG_ConvertPtr($input, &argp, $descriptor(Type*), %convertptr_flags);
@@ -370,7 +373,8 @@ def ScalarTraits(scalarType):
   }
 }
 
-%typecheck(1200) const SWIGTYPE & SMARTPOINTER {
+%typecheck(1200) const SWIGTYPE & SMARTPOINTER
+{
   static void * argp = 0;
   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
   if (!$1)
@@ -378,9 +382,15 @@ def ScalarTraits(scalarType):
 					 %convertptr_flags)) ? 1 : 0;
 }
 
-%typemap(freearg) const SWIGTYPE & SMARTPOINTER {
+%typemap(freearg) const SWIGTYPE & SMARTPOINTER
+{
   delete $1;
 }
+
+//%typemap(out) SWIGTYPE SMARTPOINTER
+//{
+//  $result = SWIG_NewPointerObj($1.get(), $descriptor(Type*), 1);
+//}
 
 %extend_smart_pointer(RCP< Type >)
 %template()           RCP< Type >;
@@ -397,10 +407,50 @@ def ScalarTraits(scalarType):
 
 %enddef
 
-// The following directives are for the special case of an RCP that
-// points to a Teuchos::ParameterList
-
 // Apply the RCP typemap macros to selected Teuchos classes
-%ignore RCP< Teuchos::ParameterList >::get() const;
-%teuchos_rcp_typemaps(Teuchos::ParameterList)
-%teuchos_rcp_typemaps(Teuchos::Time         )
+%teuchos_rcp_typemaps(Teuchos::Time)
+
+// Provide specialized typemaps for RCP<Teuchos::ParameterList>
+%typemap(in) RCP<Teuchos::ParameterList>
+(Teuchos::ParameterList * params = NULL)
+{
+  int                      res          = 0;
+  void                  *  argp         = NULL;
+  static swig_type_info *  swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
+  if (PyDict_Check($input))
+    {
+      params = Teuchos::pyDictToNewParameterList($input);
+      if (!params)
+	{
+	  PyErr_SetString(PyExc_TypeError,
+			  "Python dictionary cannot be converted to ParameterList");
+	  SWIG_fail;
+	}
+    }
+  else
+    {
+      res = SWIG_ConvertPtr($input, &argp, swig_TPL_ptr, 0);
+      if (!SWIG_IsOK(res))
+	{
+	  PyErr_SetString(PyExc_TypeError,
+			  "Argument $argnum cannot be converted to ParameterList");
+	  SWIG_fail;
+	}
+      params = reinterpret_cast< Teuchos::ParameterList * >(argp);
+    }
+  $1 = new Teuchos::RCP<Teuchos::ParameterList> (params, false);
+}
+%typemap(freearg) RCP<Teuchos::ParameterList>
+{
+  if (params$argnum) delete $1;
+}
+%apply RCP<Teuchos::ParameterList>
+{
+  RCP<Teuchos::ParameterList>&,
+  const RCP<Teuchos::ParameterList>,
+  const RCP<Teuchos::ParameterList>&,
+  Teuchos::RCP<Teuchos::ParameterList>,
+  Teuchos::RCP<Teuchos::ParameterList>&,
+  const Teuchos::RCP<Teuchos::ParameterList>,
+  const Teuchos::RCP<Teuchos::ParameterList>&
+};

@@ -27,7 +27,7 @@
 # @HEADER
 
 EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
-	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
+	     Epetra.i Epetra_doc.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
 	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i \
 	     Epetra_Vectors.i Epetra_NumPyIntSerialDenseMatrix.cpp \
 	     Epetra_NumPyIntSerialDenseMatrix.h \
@@ -39,14 +39,14 @@ EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
 	     Epetra_NumPyMultiVector.cpp Epetra_NumPyMultiVector.h \
 	     Epetra_NumPyVector.cpp Epetra_NumPyVector.h \
 	     Epetra_NumPyFEVector.cpp Epetra_NumPyFEVector.h \
-	     Epetra_RowMatrix_Utils.i EpetraExt.i Galeri.i IFPACK.i Komplex.i \
-	     LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
-	     LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i LOCA.LAPACK.i \
-	     LOCA.MultiContinuation.i LOCA.TimeDependent.i ML.i \
-	     MLAPI_PyMatrix.h NOX.__init__.i NOX.Abstract.i \
+	     Epetra_RowMatrix_Utils.i EpetraExt.i EpetraExt_doc.i Galeri.i \
+	     Galeri_doc.i IFPACK.i Komplex.i LOCA.__init__.i LOCA.Abstract.i \
+	     LOCA.Bifurcation.i LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i \
+	     LOCA.LAPACK.i LOCA.MultiContinuation.i LOCA.TimeDependent.i ML.i \
+	     MLAPI_PyMatrix.h NOX.__init__.i NOX_doc.i NOX.Abstract.i \
 	     NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     Teuchos.i Teuchos_Epetra.i Teuchos_ParameterList_ext.i \
+	     Teuchos.i Teuchos_doc.i Teuchos_Epetra.i Teuchos_ParameterList_ext.i \
 	     Teuchos_PythonParameter.h Thyra.i TriUtils.i \
 	     UserArray.patch NumPyImporter.h numpy.i numpy_include.h \
 	     setup.py scripts/ParamConvert.py
@@ -70,6 +70,8 @@ ENABLE_THYRA=
 
 @HAVE_PYTRILINOS_EPETRAEXT_TRUE@ENABLE_EPETRAEXT=true
 @HAVE_PYTRILINOS_EPETRAEXT_FALSE@ENABLE_EPETRAEXT=
+@HAVE_PYTRILINOS_EPETRAEXT_HDF5_TRUE@ENABLE_EPETRAEXT_HDF5=true
+@HAVE_PYTRILINOS_EPETRAEXT_HDF5_FALSE@ENABLE_EPETRAEXT_HDF5=
 
 @HAVE_PYTRILINOS_AZTECOO_TRUE@ENABLE_AZTECOO=true
 @HAVE_PYTRILINOS_AZTECOO_FALSE@ENABLE_AZTECOO=
@@ -109,10 +111,9 @@ all-local: package
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
+SWIG_OPTS = -I$(top_srcdir)/doc/Doxygen
 if HAVE_MPI
-SWIG_OPTS = -DHAVE_MPI
-else
-SWIG_OPTS =
+SWIG_OPTS += -DHAVE_MPI
 endif
 
 # For the package-enabling macros that follow, I would have preferred
@@ -156,6 +157,9 @@ if HAVE_PYTRILINOS_EPETRAEXT
 include $(top_builddir)/../epetraext/Makefile.export.epetraext
 EPETRAEXT_INTERFACES = EpetraExt.i
 EPETRAEXT_PROXIES = PyTrilinos/EpetraExt.py
+if HAVE_PYTRILINOS_EPETRAEXT_HDF5
+SWIG_OPTS += -DHAVE_EPETRAEXT_HDF5
+endif
 endif
 
 # AztecOO

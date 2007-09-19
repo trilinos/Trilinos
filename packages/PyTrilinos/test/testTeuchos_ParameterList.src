@@ -24,7 +24,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
 # @HEADER
@@ -305,7 +305,8 @@ class ParameterListTestCase(unittest.TestCase):
         f.close()
         lines = open(fName,"r").readlines()
         for i in range(len(lines)):
-            self.assertEqual(lines[i], "    %s = %g   [unused]\n" % (names[i], values[i]))
+            self.assertEqual(lines[i].strip(), "%s = %g   [unused]" %
+                             (names[i], values[i]))
 
     def testPrint3(self):
         "Test Teuchos.ParameterList _print method for non-empty list, indentation and types"
@@ -320,7 +321,7 @@ class ParameterListTestCase(unittest.TestCase):
         f.close()
         lines = open(fName,"r").readlines()
         for i in range(len(lines)):
-            self.assertEqual(lines[i], "    %s : %s = %g   [unused]\n" %
+            self.assertEqual(lines[i].strip(), "%s : %s = %g   [unused]" %
                              (names[i], types[i], values[i]))
 
     def testUnused(self):

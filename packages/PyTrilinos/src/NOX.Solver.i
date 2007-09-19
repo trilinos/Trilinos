@@ -35,11 +35,22 @@ of the Trilinos package NOX:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of NOX.Solver is to provide a solver manager class for
+The purpose of NOX.Solver is to provide solver manager classes for
 NOX.  NOX.Solver provides the following user-level classes:
 
-    * Generic  - Base class for solver managers
-    * Manager  - Concrete solver manager
+    * Generic                  - Base class for solver managers
+    * LineSearchBased          - Line-search-based solver manager
+    * TrustRegionBased         - Trust-region-based solver manager
+    * InexactTrustRegionBased  - Inexact-trust-region-based solver
+                                 manager
+    * TensorBased              - Tensor-based solver manager
+
+in addition to the following factory function:
+
+    * buildSolver              - Recommended method for creating solver
+                                 managers (note that without loss of
+                                 functionality, the Factory class is not
+                                 currently provided).
 "
 %enddef
 
@@ -63,7 +74,11 @@ NOX.  NOX.Solver provides the following user-level classes:
 #include "NOX_StatusTest_NormUpdate.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Manager.H"
+#include "NOX_Solver_LineSearchBased.H"
+#include "NOX_Solver_TrustRegionBased.H"
+#include "NOX_Solver_InexactTrustRegionBased.H"
+#include "NOX_Solver_TensorBased.H"
+#include "NOX_Solver_Factory.H"
 
 // Namespace flattening
 using Teuchos::RCP;
@@ -71,8 +86,8 @@ using Teuchos::RCP;
 
 // Define macro for handling exceptions thrown by NOX.Solver methods and
 // constructors
-%define %nox_solver_exception(className,methodName)
-  %exception NOX::Solver::className::methodName {
+%define %nox_solver_exception(functionName)
+  %exception NOX::Solver::functionName {
   try {
     $action
     if (PyErr_Occurred()) SWIG_fail;
@@ -96,6 +111,10 @@ using Teuchos::RCP;
 }
 %enddef
 
+// Include NOX documentation
+%include "NOX_dox.i"    // Doxygen-generated documentation
+%include "NOX_doc.i"    // Manually written documentation
+
 // General ignore directives
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );
 %ignore *::print(ostream& stream, int indent = 0) const;
@@ -113,104 +132,91 @@ using Teuchos::RCP;
 // NOX::Solver::Generic support //
 //////////////////////////////////
 %include "NOX_Solver_Generic.H"
+%teuchos_rcp_typemaps(NOX::Solver::Generic)
 
-//////////////////////////////////
-// NOX::Solver::Manager support //
-//////////////////////////////////
-%nox_solver_exception(Manager,Manager)
-%nox_solver_exception(Manager,getList)
-%ignore NOX::Solver::Manager::Manager(const RCP< NOX::Abstract::Group & >,
-                                   const RCP< NOX::StatusTest::Generic & >,
-                                   const RCP< Teuchos::ParameterList > &);
-%ignore NOX::Solver::Manager::reset(const RCP< NOX::Abstract::Group & >,
-                                 const RCP< NOX::StatusTest::Generic & >,
-                                 const RCP< Teuchos::ParameterList & >);
-%extend NOX::Solver::Manager {
+//////////////////////////////////////////
+// NOX::Solver::LineSearchBased support //
+//////////////////////////////////////////
+%include "NOX_Solver_LineSearchBased.H"
+%teuchos_rcp_typemaps(NOX::Solver::LineSearchBased)
 
-  // The Manager constructor and reset() method both take an
-  // RCP<Teuchos::ParameterList > argument.  I have typemaps for
-  // RCP<...> and typemaps for Teuchos::ParameterList, but I cannot
-  // get a special typemap for the two combined to work.  Therefore I
-  // brute force the two functions here.
+///////////////////////////////////////////
+// NOX::Solver::TrustRegionBased support //
+///////////////////////////////////////////
+%include "NOX_Solver_TrustRegionBased.H"
+%teuchos_rcp_typemaps(NOX::Solver::TrustRegionBased)
 
-  Manager(const RCP< NOX::Abstract::Group > & grp,
-	  const RCP< NOX::StatusTest::Generic > & test,
-	  PyObject * dict) {
+//////////////////////////////////////////////////
+// NOX::Solver::InexactTrustRegionBased support //
+//////////////////////////////////////////////////
+%include "NOX_Solver_InexactTrustRegionBased.H"
+%teuchos_rcp_typemaps(NOX::Solver::InexactTrustRegionBased)
 
-    // Initialization
-    int                      res    = 0;
-    Teuchos::ParameterList * params = NULL;
-    void                   * argp   = NULL;
-    NOX::Solver::Manager   * mgr    = NULL;
-    RCP<Teuchos::ParameterList> * params_rcp = NULL;
-    static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
+//////////////////////////////////////
+// NOX::Solver::TensorBased support //
+//////////////////////////////////////
+%include "NOX_Solver_TensorBased.H"
+%teuchos_rcp_typemaps(NOX::Solver::TensorBased)
 
-    // Convert third argument to a RCP<Teuchos::ParameterList> *
-    if (PyDict_Check(dict)) {
-      params = Teuchos::pyDictToNewParameterList(dict);
-      if (params == NULL) {
-	PyErr_SetString(PyExc_ValueError,
-			"Python dictionary cannot be converted to ParameterList");
-	goto fail;
-      }
+//////////////////////////////////////
+// NOX::Solver::buildSolver support //
+//////////////////////////////////////
+%rename (buildSolver) myBuildSolver;
+%nox_solver_exception(myBuildSolver)
+// NOX::Solver::buildSolver in NOX_Solver_Factory.H returns a
+// Teuchos::RCP<NOX::Solver::Generic>.  As far as I can tall, SWIG
+// cannot properly upcast the NOX::Solver::Generic object wrapped
+// within the Teuchos::RCP<> in order to, say, call its solve()
+// method.  Therefore, I write my own wrapper around buildSolver()
+// that does this upcasting explicitly and returns a python wrapper
+// around the appropriate derived class.
+%inline
+{
+  PyObject *
+    myBuildSolver(const Teuchos::RCP<NOX::Abstract::Group>     & grp,
+		  const Teuchos::RCP<NOX::StatusTest::Generic> & tests,
+		  const Teuchos::RCP<Teuchos::ParameterList>   & params)
+  {
+    // SWIG type queries
+    static swig_type_info * swig_NSLSB_ptr  =
+      SWIG_TypeQuery("NOX::Solver::LineSearchBased*");
+    static swig_type_info * swig_NSTRB_ptr  =
+      SWIG_TypeQuery("NOX::Solver::TrustRegionBased*");
+    static swig_type_info * swig_NSITRB_ptr =
+      SWIG_TypeQuery("NOX::Solver::InexactTrustRegionBased*");
+    static swig_type_info * swig_NSTB_ptr   =
+      SWIG_TypeQuery("NOX::Solver::TensorBased*");
+    // Build a NOX::Solver::Generic object via the buildSolver factory
+    Teuchos::RCP<NOX::Solver::Generic> rcp_solver =
+      NOX::Solver::buildSolver(grp, tests, params);
+    NOX::Solver::Generic * solver_ptr = rcp_solver.release();
+    // Try to upcast to a derived class
+    {
+      NOX::Solver::LineSearchBased * result =
+	reinterpret_cast<NOX::Solver::LineSearchBased*>(solver_ptr);
+      if (result)
+	return SWIG_NewPointerObj(result, swig_NSLSB_ptr, 1);
     }
-    else {
-      res = SWIG_ConvertPtr(dict, &argp, swig_TPL_ptr, 0);
-      if (!SWIG_IsOK(res)) {
-	PyErr_SetString(PyExc_TypeError,
-			"Argument 3 cannot be converted to ParameterList");
-	goto fail;
-      }
-      params = reinterpret_cast< Teuchos::ParameterList * >(argp);
+    {
+      NOX::Solver::TrustRegionBased * result =
+	reinterpret_cast<NOX::Solver::TrustRegionBased*>(solver_ptr);
+      if (result)
+	return SWIG_NewPointerObj(result, swig_NSTRB_ptr, 1);
     }
-    params_rcp = new RCP<Teuchos::ParameterList> (params, false);
-
-    // Construct and return a new Manager object
-    mgr = new NOX::Solver::Manager(grp, test, *params_rcp);
-    delete params_rcp;
-    return mgr;
-  fail:
+    {
+      NOX::Solver::InexactTrustRegionBased * result =
+	reinterpret_cast<NOX::Solver::InexactTrustRegionBased*>(solver_ptr);
+      if (result)
+	return SWIG_NewPointerObj(result, swig_NSITRB_ptr, 1);
+    }
+    {
+      NOX::Solver::TensorBased * result =
+	reinterpret_cast<NOX::Solver::TensorBased*>(solver_ptr);
+      if (result)
+	return SWIG_NewPointerObj(result, swig_NSTB_ptr, 1);
+    }
+    PyErr_SetString(PyExc_RuntimeError, "NOX::Solver::buildSolver returned unrecognized "
+		    "derivative of NOX::Solver::Generic");
     return NULL;
   }
-
-  bool reset(const RCP< NOX::Abstract::Group > & grp,
-	     const RCP< NOX::StatusTest::Generic > & test,
-	     PyObject * dict) {
-
-    // Initialization
-    int                      res    = 0;
-    bool                     result = false;
-    Teuchos::ParameterList * params = NULL;
-    void                   * argp   = NULL;
-    RCP<Teuchos::ParameterList> * params_rcp = NULL;
-    static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
-
-    // Convert third argument to a RCP<Teuchos::ParameterList> *
-    if (PyDict_Check(dict)) {
-      params = Teuchos::pyDictToNewParameterList(dict);
-      if (params == NULL) {
-	PyErr_SetString(PyExc_ValueError,
-			"Python dictionary cannot be converted to ParameterList");
-	goto fail;
-      }
-    }
-    else {
-      res = SWIG_ConvertPtr(dict, &argp, swig_TPL_ptr, 0);
-      if (!SWIG_IsOK(res)) {
-	PyErr_SetString(PyExc_TypeError,
-			"Argument 3 cannot be converted to ParameterList");
-	goto fail;
-      }
-      params = reinterpret_cast< Teuchos::ParameterList * >(argp);
-    }
-    params_rcp = new RCP<Teuchos::ParameterList> (params, false);
-
-    // Call result() method and return the result
-    result = self->reset(grp, test, *params_rcp);
-    delete params_rcp;
-    return result;
-  fail:
-    return false;
-  }
 }
-%include "NOX_Solver_Manager.H"

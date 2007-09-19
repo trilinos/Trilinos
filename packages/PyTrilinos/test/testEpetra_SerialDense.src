@@ -24,7 +24,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
 # @HEADER
@@ -71,13 +71,14 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     "TestCase class for Epetra SerialDense Matrices"
 
     def setUp(self):
-        self.comm  = Epetra.PyComm()
-        self.size  = 4
-        self.rows  = 3
-        self.cols  = 4
-        self.array = [[0.1, 2.3, 4.5, 6.7],
+        self.comm   = Epetra.PyComm()
+        self.size   = 4
+        self.rows   = 3
+        self.cols   = 4
+        self.array  = [[0.1, 2.3, 4.5, 6.7],
                       [6.7, 8.9, 0.1, 2.3],
                       [2.3, 4.5, 6.7, 8.9]]
+        self.serial = not hasattr(Epetra, "MpiComm")
         # Query whether Copy objects are actually Copy objects.  For older
         # versions of SWIG, they are View objects, but newer versions of SWIG
         # get it right
@@ -116,13 +117,15 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
 
     def testConstructor03(self):
         "Test Epetra.SerialDenseMatrix (int,int) constructor, negative rows"
-        self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix, -self.rows,
-                          self.cols)
+        if self.serial:
+            self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
+                              -self.rows, self.cols)
 
     def testConstructor04(self):
         "Test Epetra.SerialDenseMatrix (int,int) constructor, negative columns"
-        self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix, self.rows,
-                          -self.cols)
+        if self.serial:
+            self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
+                              self.rows, -self.cols)
 
     def testConstructor05(self):
         "Test Epetra.SerialDenseMatrix (int,int,bool) constructor"

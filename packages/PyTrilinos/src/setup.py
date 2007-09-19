@@ -29,11 +29,9 @@
 # @HEADER
 
 # The first purpose of this script is to provide a PyTrilinos/__init__.py file
-# that specifies all of the PyTrilinos modules.  The second purpose, in the case
-# of MPI builds, is to create shared versions of static Trilinos libraries.  The
-# third purpose is the standard setup.py purpose: define the distutils Extension
-# objects and call the distutils setup function in order to build the PyTrilinos
-# package.
+# that specifies all of the PyTrilinos modules.  The second purpose is the
+# standard setup.py purpose: define the distutils Extension objects and call the
+# distutils setup function in order to build the PyTrilinos package.
 
 # Module names: define the names of the modules that could be configured to be a
 # part of the PyTrilinos package.  These should be put in dependency order.
@@ -60,6 +58,9 @@ from   distutils      import sysconfig
 from   distutils.util import get_platform
 import os
 import sys
+
+# Set the python path to find the PyTrilinos utilities
+sys.path.append(os.path.join("..", "util"))
 
 # Local imports
 from   MakefileVariables   import *
@@ -126,46 +127,6 @@ if __name__ == "__main__":
     libDir            = os.path.join(prefix, "lib")
     pyTrilinosDir     = os.path.join(pythonPrefix, "lib", pyVersion, "site-packages",
                                      PyTrilinos)
-
-    ######################################################
-    # Build/clean/install/uninstall the shared libraries #
-    ######################################################
-
-    if SharedUtils.buildSharedLibraries():
-
-        # Create the shared library builders
-        builders = [ ]
-        for module in enabledModules:
-            builders.append(SharedUtils.SharedTrilinosBuilder(module))
-        if makeMacros["ENABLE_NOX_EPETRA"] == "true":
-            noxEpetraBuilder = SharedUtils.SharedTrilinosBuilder("NoxEpetra")
-            builders.append(noxEpetraBuilder)
-
-        # Build command
-        if command in ("build", "install"):
-            # Convert package libraries to shared
-            for builder in builders:
-                builder.buildShared()
-
-        # Clean command
-        if command == "clean":
-            # Remove any dynamic libraries
-            for builder in builders:
-                builder.clean()
-
-        # Install command
-        if command == "install":
-            # Make sure the lib directory exists
-            SharedUtils.runCommand(" ".join([mkdir, libDir]))
-            # Install the shared libraries and extension modules
-            for builder in builders:
-                builder.install()
-
-        # Uninstall command
-        if command == "uninstall":
-            # Uninstall the dynamic libraries
-            for builder in builders:
-                builder.uninstall()
 
     #########################################################
     # Build/clean/uninstall the PyTrilinos __init__.py file #
@@ -239,8 +200,9 @@ if __name__ == "__main__":
           description  = "Python interface to Trilinos",
           author       = "Bill Spotz",
           author_email = "wfspotz@sandia.gov",
-          url          = "http://software.sandia.gov/trilinos/packages/pytrilinos",
-          download_url = "http://software.sandia.gov/trilinos/downloads/trilinos-7.0.html",
+          url          = "http://trilinos.sandia.gov/packages/pytrilinos",
+          download_url = "http://trilinos.sandia.gov/downloads/trilinos-8.0.html",
+          license      = "GNU Lesser General Public License",
           packages     = packages,
           ext_modules  = ext_modules,
           scripts      = scripts

@@ -15,6 +15,9 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
+/* Define if want to build pytrilinos */
+#undef HAVE_PYTRILINOS
+
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_AMESOS
 
@@ -28,10 +31,19 @@
 #undef HAVE_PYTRILINOS_AZTECOO_TEUCHOS
 
 /* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_BELOS
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_CLAPS
+
+/* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_EPETRA
 
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_EPETRAEXT
+
+/* Define if want to build epetraext-hdf5 */
+#undef HAVE_PYTRILINOS_EPETRAEXT_HDF5
 
 /* Define if want to build pytrilinos-examples */
 #undef HAVE_PYTRILINOS_EXAMPLES
@@ -43,19 +55,46 @@
 #undef HAVE_PYTRILINOS_IFPACK
 
 /* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_ISORROPIA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_KOKKOS
+
+/* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_KOMPLEX
 
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_LOCA
 
 /* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_MEROS
+
+/* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_ML
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_MOERTEL
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_MOOCHO
 
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_NOX
 
 /* Define if want to build nox-epetra */
 #undef HAVE_PYTRILINOS_NOX_EPETRA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_RTOP
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_RYTHMOS
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_SACADO
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_STRATIMIKOS
 
 /* Define if want to build pytrilinos-tests */
 #undef HAVE_PYTRILINOS_TESTS
@@ -65,6 +104,9 @@
 
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_THYRA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_TPETRA
 
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_TRIUTILS

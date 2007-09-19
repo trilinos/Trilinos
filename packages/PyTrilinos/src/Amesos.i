@@ -144,6 +144,9 @@ exAmesos_Factory.py.
 // Auto-documentation feature
 %feature("autodoc", "1");
 
+// Include Amesos documentation
+%include "Amesos_dox.i"
+
 // SWIG library includes
 %include "stl.i"
 

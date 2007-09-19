@@ -2,12 +2,9 @@
 PyTrilinos To Do List
 =====================
 
-==================================================
-Summer, 2007, List of Project Tasks (Tentative)
-
 * Complete wrapping of Epetra
   - Other classes
-  - Interfacing with python Numeric
+  - Interfacing with python numpy
   - Unit tests
   - Examples
 
@@ -16,6 +13,7 @@ Summer, 2007, List of Project Tasks (Tentative)
   - Automatic: can we use doxygen with interface files?
   - Evaluation of pydoc, happydoc, etc. for generating web pages
   - Users Manual
+  - Developers Manual
 
 * Software quality
   - Unit/regression tests on different platforms

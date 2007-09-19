@@ -82,6 +82,7 @@ def main():
         matrix[grid,grid] = grid
 
     matrix.FillComplete()
+    matrix.Print()
 
     # -------------------------------- #
     # Part I: Write elements to a file #

@@ -140,6 +140,9 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 // Auto-documentation feature
 %feature("autodoc", "1");
 
+// Include ML documentation
+%include "ML_dox.i"
+
 // External Trilinos package imports
 %include "Epetra_RowMatrix_Utils.i"
 %import  "Teuchos.i"

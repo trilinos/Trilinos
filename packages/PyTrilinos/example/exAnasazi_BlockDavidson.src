@@ -68,6 +68,7 @@ import numpy
 
 def main():
    comm = Epetra.PyComm()
+   iAmRoot = comm.MyPID() == 0
    nx = 10
    ny = nx
    galeriList = {"n"  : nx * ny,  # for Linear map
@@ -77,7 +78,7 @@ def main():
    map    = Galeri.CreateMap("Linear", comm, galeriList)
    name   = "Laplace2D"
    matrix = Galeri.CreateCrsMatrix("Laplace2D", map, galeriList)
-   print "Problem name: %s\n" % name
+   if iAmRoot: print "Problem name: %s\n" % name
 
    printer = Anasazi.BasicOutputManager()
 
@@ -128,30 +129,36 @@ def main():
    # Check the eigensolutions
    lhs = Epetra.MultiVector(map, sol.numVecs)
    matrix.Apply(evecs, lhs)
-   print "Eig#  Value     Error"
-   print "----  --------  ----------"
+   if iAmRoot:
+      print "Eig#  Value     Error"
+      print "----  --------  ----------"
    failures = 0
    for i in range(nev):
       # Verify that the eigensolution is non-complex
       assert(index[i] == 0)
       rhs   = evecs[i] * evals[i].real
       diff  = lhs[i] - rhs
-      diff.Scale(1.0/abs(evals[i]))
+      diff.Scale(1.0/abs(evals[i].real))
       error = diff.Norm2()[0]
-      print "%4d%10.4f  %10.4e" % (i, evals[i].real, error)
+      if iAmRoot:
+         print "%4d%10.4f  %10.4e" % (i, evals[i].real, error)
       if (error > tol):
          failures += 1
 
-   return failures
+   totalFailures = comm.SumAll(failures)
+   return totalFailures
 
 ################################################################################
 
 if __name__ == "__main__":
 
+   comm     = Epetra.PyComm()
+   iAmRoot  = comm.MyPID() == 0
    failures = main()
-   print
-   if failures == 0:
-      print "End result: TEST PASSED"
-   else:
-      print "Eigensolution errors are too large"
-      print "End result: TEST FAILED"
+   if iAmRoot:
+      print
+      if failures == 0:
+         print "End result: TEST PASSED"
+      else:
+         print "Eigensolution errors are too large"
+         print "End result: TEST FAILED"
