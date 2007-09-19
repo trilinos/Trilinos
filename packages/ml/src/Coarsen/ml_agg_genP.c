@@ -2609,7 +2609,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
       ag = (ML_Aggregate*) user_data;
       /* project the coordinates (if any) to the next coarser level */
-      if (ag->P_tentative != NULL)
+      if (ag->P_tentative != NULL && ag->P_tentative[next] != NULL)
         Ptent = ag->P_tentative[next];
       else
         Ptent = &(ml->Pmat[next]);
@@ -2647,7 +2647,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 #if 0
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]), &(ml->Pmat[next]), ML_TRUE);
 #endif
-      if (((ML_Aggregate*)user_data)->P_tentative != NULL)
+      if (ag->P_tentative != NULL && ag->P_tentative[next] != NULL)
       {
         Ptent = ((ML_Aggregate*)user_data)->P_tentative[next];
         if (Ptent != NULL)
