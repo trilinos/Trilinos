@@ -33,32 +33,19 @@
 #include "Teuchos_TestForException.hpp"
 
 
-/** \brief This macro is designed to be a short version of
- * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+/** \brief This macro is throws when an assert fails.
  *
- * @param  throw_exception_test
- *               [in] Test for when to throw the std::exception.  This can and
- *               should be an expression that may mean something to the user.
- *               The text verbatim of this expression is included in the
- *               formed error std::string.
- *
- * \note The std::exception thrown is <tt>std::logic_error</tt>.
+ * \note <tt>The std::exception</tt> thrown is <tt>std::logic_error</tt>.
  *
  * \ingroup TestForException_grp
  */
 #define TEUCHOS_ASSERT(assertion_test) TEST_FOR_EXCEPT(!(assertion_test))
 
 
-/** \brief This macro is designed to be a short version of
- * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+/** \brief This macro asserts that an integral number fallis in the range
+ * <tt>[lower_inclusive,upper_exclusive)</tt>
  *
- * @param  throw_exception_test
- *               [in] Test for when to throw the std::exception.  This can and
- *               should be an expression that may mean something to the user.
- *               The text verbatim of this expression is included in the
- *               formed error std::string.
- *
- * \note The std::exception thrown is <tt>std::logic_error</tt>.
+ * \note <tt>The std::exception</tt> thrown is <tt>std::logic_error</tt>.
  *
  * \ingroup TestForException_grp
  */
@@ -70,5 +57,21 @@
       "Error, the index " #index " = " << (index) << " does not fall in the range" \
       "["<<(lower_inclusive)<<","<<(upper_exclusive)<<")!" ); \
   }
+
+
+/** \brief This macro is checks that to numbers are equal and if not then
+ * throws an exception with a good error message.
+ *
+ * \note The <tt>std::exception</tt> thrown is <tt>std::logic_error</tt>.
+ *
+ * \ingroup TestForException_grp
+ */
+#define TEUCHOS_ASSERT_EQUALITY( val1, val2 ) \
+  { \
+    TEST_FOR_EXCEPTION( \
+      (val1) != (val2), std::out_of_range, \
+      "Error, (" #val1 " = " << (val1) << ") != (" #val2 " = " << (val2) << ")!" ); \
+  }
+
 
 #endif // TEUCHOS_ASSERT_HPP

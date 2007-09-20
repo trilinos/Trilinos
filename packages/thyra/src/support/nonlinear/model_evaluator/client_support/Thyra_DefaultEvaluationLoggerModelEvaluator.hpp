@@ -55,8 +55,8 @@ public:
 
   /** \brief . */
   DefaultEvaluationLoggerModelEvaluator(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
-    ,const Teuchos::RCP<std::ostream>             &tableOut
+    const RCP<ModelEvaluator<Scalar> >   &thyraModel
+    ,const RCP<std::ostream>             &tableOut
     );
 
   /** \brief Initalize.
@@ -72,20 +72,9 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
-    ,const Teuchos::RCP<std::ostream>             &tableOut
+    const RCP<ModelEvaluator<Scalar> >   &thyraModel
+    ,const RCP<std::ostream>             &tableOut
     );
-
-  //@}
-
-  /** \name Public functions overridden from ModelEvaulator. */
-  //@{
-
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
-    ) const;
 
   //@}
 
@@ -99,20 +88,33 @@ public:
 
 private:
 
-  Teuchos::RCP<std::ostream>  tableOut_;
-  Teuchos::Time                       timer_;
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase */
+  //@{
 
-  mutable bool                        headerPrinted_;
-  mutable bool                        supports_f_;
-  mutable bool                        supports_W_;
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
+    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
+    ) const;
 
-  static const int    flt_width_;
-  static const int    flt_sciPrec_;
-  static const int    flt_prec_;
-  static const char   flt_line_[];
-  static const int    int_width_;
-  static const char   int_line_[];
+  //@}
 
+private:
+
+  RCP<std::ostream> tableOut_;
+  Teuchos::Time timer_;
+  
+  mutable bool headerPrinted_;
+  mutable bool supports_f_;
+  mutable bool supports_W_;
+  
+  static const int flt_width_;
+  static const int flt_sciPrec_;
+  static const int flt_prec_;
+  static const char flt_line_[];
+  static const int int_width_;
+  static const char int_line_[];
+  
   void printHeader( const ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const;
   void printLine( const ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const;
   
@@ -143,8 +145,8 @@ DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvalu
 
 template<class Scalar>
 DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvaluator(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
-  ,const Teuchos::RCP<std::ostream>             &tableOut
+  const RCP<ModelEvaluator<Scalar> >   &thyraModel
+  ,const RCP<std::ostream>             &tableOut
   )
   :timer_(""),headerPrinted_(false)
 {
@@ -153,8 +155,8 @@ DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvalu
 
 template<class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::initialize(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
-  ,const Teuchos::RCP<std::ostream>             &tableOut
+  const RCP<ModelEvaluator<Scalar> >   &thyraModel
+  ,const RCP<std::ostream>             &tableOut
   )
 {
   TEST_FOR_EXCEPT( tableOut.get()==NULL );
@@ -164,10 +166,32 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::initialize(
   headerPrinted_ = false;
 }
 
-// Overridden from ModelEvaulator.
+
+// Public functions overridden from Teuchos::Describable
+
 
 template<class Scalar>
-void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(
+std::string DefaultEvaluationLoggerModelEvaluator<Scalar>::description() const
+{
+  const RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  std::ostringstream oss;
+  oss << "Thyra::DefaultEvaluationLoggerModelEvaluator{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
+
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
+template<class Scalar>
+void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModelImpl(
   const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
   ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
   ) const
@@ -189,25 +213,9 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(
   
 }
 
-// Public functions overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultEvaluationLoggerModelEvaluator<Scalar>::description() const
-{
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  std::ostringstream oss;
-  oss << "Thyra::DefaultEvaluationLoggerModelEvaluator{";
-  oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
-}
 
 // private
+
 
 template<class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::printHeader(
@@ -271,7 +279,7 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::printLine(
 
   const int Ng = outArgs.Ng();
 
-  Teuchos::RCP<const VectorBase<Scalar> > f, g_j;
+  RCP<const VectorBase<Scalar> > f, g_j;
   
   *tableOut_ << "  " << setprecision(flt_prec_) << right << setw(flt_width_) << timer_.totalElapsedTime(true);
   for( int j = 0; j < Ng; ++j ) {

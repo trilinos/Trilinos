@@ -316,30 +316,38 @@ public:
 
   //@}
 
-  /** \name Public functions overridden from ModelEvaulator. */
-  //@{
-
-  /** \brief . */
-  int Ng() const;
-  /** \brief . */
-  RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
-  /** \brief . */
-  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
-
-  //@}
-
   /** \name Public functions overridden from Teuchos::Describable. */
   //@{
 
   /** \brief . */
   std::string description() const;
+
+  //@}
+
+  /** \name Public functions overridden from ModelEvaulator. */
+  //@{
+
+  /** \brief . */
+  RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  /** \brief . */
+  RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  /** \brief . */
+  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
+  /** \brief . */
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
 
   //@}
 
@@ -353,9 +361,13 @@ private:
 
   RCP<const VectorSpaceBase<Scalar> > inv_g_space_;
 
+  mutable ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
+  mutable ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
+  mutable bool usingObservationTargetAsParameter_;
+
   int obs_idx_;
   int p_idx_;
-  int Ng_;
+
 
   double observationMultiplier_;
   double parameterMultiplier_; 
@@ -395,6 +407,10 @@ private:
   // Private member functions
 
   void initializeDefaults();
+
+  void initializeInArgsOutArgs() const;
+
+  RCP<const VectorSpaceBase<Scalar> > get_obs_space() const;
 
 };
 
@@ -506,7 +522,8 @@ DefaultInverseModelEvaluator<Scalar>::ParameterBaseVector_name_
 
 template<class Scalar>
 DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator()
-  :obs_idx_(-1),p_idx_(0), observationTargetAsParameter_(false),
+  :usingObservationTargetAsParameter_(false), obs_idx_(-1),p_idx_(0),
+   observationTargetAsParameter_(false),
    observationPassThrough_(ObservationPassThrough_default_),
    localVerbLevel_(Teuchos::VERB_DEFAULT)
 {}
@@ -514,12 +531,14 @@ DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator()
 
 template<class Scalar>
 void DefaultInverseModelEvaluator<Scalar>::initialize(
-  const RCP<ModelEvaluator<Scalar> >   &thyraModel
+  const RCP<ModelEvaluator<Scalar> > &thyraModel
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
-  Ng_ = thyraModel->Ng()+1;
   inv_g_space_= thyraModel->get_x_space()->smallVecSpcFcty()->createVecSpc(1);
+  // Get ready for reinitalization
+  prototypeInArgs_ = ModelEvaluatorBase::InArgs<Scalar>();
+  prototypeOutArgs_ = ModelEvaluatorBase::OutArgs<Scalar>();
 }
 
 
@@ -570,9 +589,7 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
     observationTargetAsParameter_ = paramList_->get(
       ObservationTargetAsParameter_name_, ObservationTargetAsParameter_default_ );
     if(get_observationTargetIO().get()) {
-      observationTargetReader_.set_vecSpc(
-        obs_idx_ < 0 ? this->get_x_space() : this->get_g_space(obs_idx_)
-        );
+      observationTargetReader_.set_vecSpc(get_obs_space());
       Teuchos::VerboseObjectTempState<ParameterDrivenMultiVectorInput<Scalar> >
         vots_observationTargetReader(
           rcp(&observationTargetReader_,false)
@@ -622,6 +639,10 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
 #ifdef TEUCHOS_DEBUG
   paramList_->validateParameters(*getValidParameters(),0);
 #endif // TEUCHOS_DEBUG
+
+  // Get ready for reinitalization
+  prototypeInArgs_ = ModelEvaluatorBase::InArgs<Scalar>();
+  prototypeOutArgs_ = ModelEvaluatorBase::OutArgs<Scalar>();
 
 }
 
@@ -704,9 +725,14 @@ DefaultInverseModelEvaluator<Scalar>::getValidParameters() const
 
 
 template<class Scalar>
-int DefaultInverseModelEvaluator<Scalar>::Ng() const
+RCP<const VectorSpaceBase<Scalar> >
+DefaultInverseModelEvaluator<Scalar>::get_p_space(int l) const
 {
-  return Ng_;
+  if (prototypeInArgs_.Np()==0)
+    initializeInArgsOutArgs();
+  if ( l == prototypeInArgs_.Np()-1 && usingObservationTargetAsParameter_ )
+    return get_obs_space();
+  return this->getUnderlyingModel()->get_p_space(l);
 }
 
 
@@ -714,7 +740,9 @@ template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
 DefaultInverseModelEvaluator<Scalar>::get_g_space(int j) const
 {
-  if(j==Ng_-1)
+  if (prototypeOutArgs_.Np()==0)
+    initializeInArgsOutArgs();
+  if (j==prototypeOutArgs_.Ng()-1)
     return inv_g_space_;
   return this->getUnderlyingModel()->get_g_space(j);
 }
@@ -724,59 +752,69 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DefaultInverseModelEvaluator<Scalar>::createInArgs() const
 {
-  typedef ModelEvaluatorBase MEB;
+  if (prototypeInArgs_.Np()==0)
+    initializeInArgsOutArgs();
+  return prototypeInArgs_;
+}
+
+
+// Public functions overridden from Teuchos::Describable
+
+
+template<class Scalar>
+std::string DefaultInverseModelEvaluator<Scalar>::description() const
+{
   const RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
-  const MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
-  const int wrapped_Np = wrappedInArgs.Np();
-  MEB::InArgsSetup<Scalar> inArgs;
-  inArgs.setModelEvalDescription(this->description());
-  const bool supports_x = wrappedInArgs.supports(MEB::IN_ARG_x);
-  inArgs.setSupports(
-    wrappedInArgs,
-    wrapped_Np + ( supports_x && observationTargetAsParameter_ ? 1 : 0 )
-    );
-  return inArgs;
+  std::ostringstream oss;
+  oss << "Thyra::DefaultInverseModelEvaluator{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
 }
+
+
+// Private functions overridden from ModelEvaulatorDefaultBase
 
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-DefaultInverseModelEvaluator<Scalar>::createOutArgs() const
+DefaultInverseModelEvaluator<Scalar>::createOutArgsImpl() const
 {
-  typedef ModelEvaluatorBase MEB;
-  const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
-  const int Np = wrappedOutArgs.Np(), Ng = wrappedOutArgs.Ng();
-  MEB::OutArgsSetup<Scalar> outArgs;
-  outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(Np,Ng+1);
-  outArgs.setSupports(wrappedOutArgs);
-  outArgs.setSupports(MEB::OUT_ARG_DgDx,Ng,MEB::DERIV_TRANS_MV_BY_ROW);
-  outArgs.setSupports(MEB::OUT_ARG_DgDp,Ng,p_idx_,MEB::DERIV_TRANS_MV_BY_ROW);
-  return outArgs;
+  if (prototypeOutArgs_.Np()==0)
+    initializeInArgsOutArgs();
+  return prototypeOutArgs_;
 }
 
 
 template<class Scalar>
-void DefaultInverseModelEvaluator<Scalar>::evalModel(
+void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
   const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
 
-  typedef ModelEvaluatorBase MEB;
+  using std::endl;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   typedef typename ST::magnitudeType ScalarMag;
+  typedef ModelEvaluatorBase MEB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_LOCALVERBLEVEL_BEGIN(
     "Thyra::DefaultInverseModelEvaluator",inArgs,outArgs,localVerbLevel_
     );
+
+  const bool trace = out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW);
+  const bool print_p = out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_MEDIUM);
+  const bool print_x = out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_EXTREME);
+  const bool print_o = print_x;
 
   //
   // A) See what needs to be computed
@@ -798,24 +836,27 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
   // B) Compute all of the needed functions from the base model
   //
 
-  if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
-    *out << "\nComputing the base point ...\n";
+  if(trace)
+    *out << "\nComputing the base point and the observation(s) ...\n";
 
   MEB::InArgs<Scalar>  wrappedInArgs = thyraModel->createInArgs();
   wrappedInArgs.setArgs(inArgs,true);
   MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   wrappedOutArgs.setArgs(outArgs,true);
   RCP<VectorBase<Scalar> > wrapped_o;
-  MEB::DerivativeMultiVector<Scalar> wrapped_DoDx_trans, wrapped_DoDp_trans;
+  MEB::Derivative<Scalar> wrapped_DoDx;
+  MEB::Derivative<Scalar> wrapped_DoDp_trans;
   if( obs_idx_ >= 0 && computeInverseFunction )
   {
     wrapped_o = createMember(thyraModel->get_g_space(obs_idx_));
     wrappedOutArgs.set_g(obs_idx_,wrapped_o);
     if( DgDx_inv_trans_out ) {
-      wrapped_DoDx_trans = create_DgDx_mv(
-        *thyraModel, obs_idx_, MEB::DERIV_TRANS_MV_BY_ROW
-        );
-      wrappedOutArgs.set_DgDx(obs_idx_,wrapped_DoDx_trans);
+      if (!observationPassThrough_)
+        wrapped_DoDx = thyraModel->create_DgDx_op(obs_idx_);
+      else
+        wrapped_DoDx = Thyra::create_DgDx_mv(
+          *thyraModel, obs_idx_, MEB::DERIV_TRANS_MV_BY_ROW );
+      wrappedOutArgs.set_DgDx(obs_idx_,wrapped_DoDx);
     }
     if( DgDp_inv_trans_out ) {
       wrapped_DoDp_trans = create_DgDp_mv(
@@ -828,8 +869,15 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
     // need to make sure that they are of the correct form or we need to throw
     // an exception!
   }
-  
-  thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
+
+  if (!wrappedOutArgs.isEmpty()) {
+    thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
+  }
+  else {
+    if(trace)
+      *out << "\nSkipping the evaluation of the underlying model since "
+           << "there is nothing to compute ...\n";
+  }
   
   bool failed = wrappedOutArgs.isFailed();
 
@@ -853,12 +901,17 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
       p = ( !is_null(p_in) ? p_in : nominalValues.get_p(p_idx_).assert_not_null() );
 
     const RCP<const VectorSpaceBase<Scalar> >
-      o_space = ( obs_idx_ >= 0 ? this->get_g_space(obs_idx_) : this->get_x_space() ),
+      o_space = get_obs_space(),
       p_space = this->get_p_space(p_idx_);
 
     const Index
       no = o_space->dim(),
       np = p_space->dim();
+    
+    if (trace)
+      *out << "\nno = " << no
+           << "\nnp = " << np
+           << endl;
 
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
@@ -869,10 +922,12 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
 #endif
 
     // Compute diff_o if needed
+    RCP<const VectorBase<Scalar> > o;
     RCP<VectorBase<Scalar> > diff_o;
     if( !observationPassThrough_ && ( g_inv_out || DgDx_inv_trans_out )  ) {
-      const VectorBase<Scalar>
-        &o = ( obs_idx_ < 0 ? *x : *wrapped_o );
+      if (obs_idx_ < 0 ) o = x; else o = wrapped_o; // can't use ( test ? x : wrapped_o )!
+      if(trace) *out << "\n||o||inf = " << norm_inf(*o) << endl;
+      if (print_o) *out << "\no = " << *o;
       diff_o = createMember(o_space);
       RCP<const VectorBase<Scalar> >
         observationTarget
@@ -880,26 +935,41 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
           ? inArgs.get_p(inArgs.Np()-1)
           : Teuchos::null
           );
-      if (is_null(observationTarget) )
+      if (is_null(observationTarget) ) {
         observationTarget = observationTarget_;
+        if (trace)
+          *out << "\n||ot||inf = " << norm_inf(*observationTarget) << endl;
+        if (print_o)
+          *out << "\not = " << *observationTarget;
+      }
       if (!is_null(observationTarget)) {
-        V_VmV( &*diff_o, o, *observationTarget );
+        V_VmV( &*diff_o, *o, *observationTarget );
       }
       else {
-        assign( &*diff_o, o );
+        assign( &*diff_o, *o );
       }
+      if(trace)
+        *out << "\n||diff_o||inf = " << norm_inf(*diff_o) << endl;
+      if (print_o)
+        *out << "\ndiff_o = " << *diff_o;
     }
   
     // Compute diff_p if needed
     RCP<VectorBase<Scalar> > diff_p;
     if( g_inv_out || DgDp_inv_trans_out ) {
+      if(trace) *out << "\n||p||inf = " << norm_inf(*p) << endl;
+      if(print_p) *out << "\np = " << Teuchos::describe(*p,Teuchos::VERB_EXTREME);
       diff_p = createMember(p_space);
       if (!is_null(parameterBase_) ) {
+        if(trace) *out << "\n||pt||inf = " << norm_inf(*parameterBase_) << endl;
+        if(print_p) *out << "\npt = " << Teuchos::describe(*parameterBase_,Teuchos::VERB_EXTREME);
         V_VmV( &*diff_p, *p, *parameterBase_ );
       }
       else {
         assign( &*diff_p, *p );
       }
+      if(trace) *out << "\n||diff_p|| = " << norm(*diff_p) << endl;
+      if(print_p) *out << "\ndiff_p = " << Teuchos::describe(*diff_p,Teuchos::VERB_EXTREME);
     }
     
 
@@ -940,7 +1010,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
       Q_o_diff_o = createMember(Q_o->range()); // Should be same as domain!
       apply( *Q_o, NOTRANS, *diff_o, &*Q_o_diff_o );
     }
-
+    
     // Compute Q_p * diff_p
     RCP<VectorBase<Scalar> > Q_p_diff_p;
     if ( !is_null(Q_p)  && !is_null(diff_p)  ) {
@@ -950,8 +1020,8 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
 
     // Compute g_inv(x,p)
     if(g_inv_out) {
-      if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
-        *out << "\nComputing inverse response function g(Np-1) ...\n";
+      if(trace)
+        *out << "\nComputing inverse response function ginv = g(Np-1) ...\n";
       const Scalar observationTerm
         = ( observationPassThrough_
           ? get_ele(*wrapped_o,0) // ToDo; Verify that this is already a scalar
@@ -971,26 +1041,29 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
             )
           : ST::zero()
           );
-      if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
+      const Scalar g_inv_val = observationTerm+parameterTerm;
+      if(trace)
         *out
-          << "\nObservation matching term of g(Np-1):"
-          << "\n  observationMultiplier*observationMatch(x,p) = "
-          << observationTerm
-          << "\nParameter regularization term of g(Np-1):"
-          << "\n  parameterMultiplier*parameterRegularization(p) = "
-          << parameterTerm
+          << "\nObservation matching term of ginv = g(Np-1):"
+          << "\n  observationMultiplier = " << observationMultiplier_
+          << "\n  observationMultiplier*observationMatch(x,p) = " << observationTerm
+          << "\nParameter regularization term of ginv = g(Np-1):"
+          << "\n  parameterMultiplier = " << parameterMultiplier_
+          << "\n  parameterMultiplier*parameterRegularization(p) = " << parameterTerm
+          << "\nginv = " << g_inv_val
           << "\n";
       set_ele(0,observationTerm+parameterTerm,g_inv_out);
     }
 
     // Compute d(g_inv)/d(x)^T
     if(DgDx_inv_trans_out) {
-      if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
-        *out << "\nComputing inverse response function derivative DgDx_trans ...\n";
+      if(trace)
+        *out << "\nComputing inverse response function derivative DginvDx^T:\n";
       if (!observationPassThrough_) {
         if( obs_idx_ < 0 ) {
           if (!is_null(Q_o)) {
-            // DgDx^T = observationMultiplier * Q_o * diff_x
+            if (trace)
+              *out << "\nDginvDx^T = observationMultiplier * Q_o * diff_o ...\n";
             V_StV(
               &*DgDx_inv_trans_out->col(0),
               observationMultiplier_,
@@ -998,7 +1071,8 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
               );
           }
           else {
-            // DgDx^T = observationMultiplier * (1/no) * diff_x
+            if (trace)
+              *out << "\nDginvDx^T = observationMultiplier * (1/no) * diff_o ...\n";
             V_StV(
               &*DgDx_inv_trans_out->col(0),
               Scalar(observationMultiplier_*(1.0/no)),
@@ -1007,19 +1081,25 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
           }
         }
         else {
+          //if (trace)
+          //  *out << "\n||DoDx^T||inf = " << norms_inf(*wrapped_DoDx.getMultiVector()) << endl;
+          if (print_o && print_x)
+            *out << "\nDoDx = " << *wrapped_DoDx.getLinearOp();
           if (!is_null(Q_o)) {
-            // DgDx^T = observationMultiplier * (DoDx^T) * Q_o * diff_o
+            if (trace)
+              *out << "\nDginvDx^T = observationMultiplier * DoDx^T * Q_o * diff_o ...\n";
             apply(
-              *wrapped_DoDx_trans.getMultiVector(), NOTRANS,
+              *wrapped_DoDx.getLinearOp(), CONJTRANS,
               *Q_o_diff_o,
               &*DgDx_inv_trans_out->col(0),
               observationMultiplier_
               );
           }
           else {
-            // DgDx^T = (observationMultiplier*(1/no)) * (DoDx^T) * diff_o
+            if (trace)
+              *out << "\nDginvDx^T = (observationMultiplier*(1/no)) * DoDx^T * diff_o ...\n";
             apply(
-              *wrapped_DoDx_trans.getMultiVector(), NOTRANS,
+              *wrapped_DoDx.getLinearOp(), CONJTRANS,
               *diff_o,
               &*DgDx_inv_trans_out->col(0),
               Scalar(observationMultiplier_*(1.0/no))
@@ -1028,27 +1108,38 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
         }
       }
       else {
-        // DgDx^T = observationMultiplier * DoDx^T
+        if (trace)
+          *out << "\nDginvDx^T = observationMultiplier * DoDx^T ...\n";
         V_StV(
           &*DgDx_inv_trans_out->col(0), observationMultiplier_,
-          *wrapped_DoDx_trans.getMultiVector()->col(0)
+          *wrapped_DoDx.getMultiVector()->col(0)
           );
       }
-      if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
-        *out << "\n||DgDx_trans||inf = " << norm_inf(*DgDx_inv_trans_out->col(0)) << "\n";
+      if(trace)
+        *out << "\n||DginvDx^T||inf = " << norms_inf(*DgDx_inv_trans_out) << "\n";
+      if (print_x)
+        *out << "\nDginvDx^T = " << *DgDx_inv_trans_out;
     }
 
     // Compute d(g_inv)/d(p)^T
     if(DgDp_inv_trans_out) {
-      if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
-        *out << "\nComputing inverse response function derivative DgDp_trans ...\n";
-      // DgDp^T = 0
+      if(trace)
+        *out << "\nComputing inverse response function derivative DginvDp^T ...\n";
+      if (obs_idx_ >= 0) {
+        if (trace)
+          *out << "\n||DoDp^T|| = " << norms_inf(*wrapped_DoDp_trans.getMultiVector()) << endl;
+        if (print_p)
+          *out << "\nDoDp^T = " << Teuchos::describe(*wrapped_DoDp_trans.getMultiVector(),Teuchos::VERB_EXTREME);
+      }
+      if(trace)
+        *out << "\nDginvDp^T = 0 ...\n";
       assign( &*DgDp_inv_trans_out->col(0), ST::zero() );
       // DgDp^T += observationMultiplier * d(observationMatch)/d(p)^T
       if (!observationPassThrough_) {
         if ( obs_idx_ >= 0 ) {
           if ( !is_null(Q_o) ) {
-            // DgDp^T += observationMultiplier* * (DoDp^T) * Q_o * diff_o
+            if(trace)
+              *out << "\nDginvDp^T += observationMultiplier* * (DoDp^T) * Q_o * diff_o ...\n";
             apply(
               *wrapped_DoDp_trans.getMultiVector(), NOTRANS,
               *Q_o_diff_o,
@@ -1058,7 +1149,8 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
               );
           }
           else {
-            // DgDp^T += (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
+            if(trace)
+              *out << "\nDgDp^T += observationMultiplier* * (DoDp^T) * Q_o * diff_o ...\n";
             apply(
               *wrapped_DoDp_trans.getMultiVector(), NOTRANS,
               *diff_o,
@@ -1067,13 +1159,18 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
               ST::one()
               );
           }
+          if(trace)
+            *out << "\n||DginvDp^T||inf = " << norms_inf(*DgDp_inv_trans_out) << "\n";
+          if (print_p)
+            *out << "\nDginvDp^T = " << *DgDp_inv_trans_out;
         }
         else {
           // d(observationMatch)/d(p)^T = 0, nothing to do!
         }
       }
       else {
-        // DgDp^T += (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
+        if(trace)
+          *out << "\nDginvDp^T += (observationMultiplier*(1/no)) * (DoDp^T) * diff_o ...\n";
         Vp_StV(
           &*DgDp_inv_trans_out->col(0), observationMultiplier_,
           *wrapped_DoDp_trans.getMultiVector()->col(0)
@@ -1083,7 +1180,8 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
       // DgDp^T += parameterMultiplier * d(parameterRegularization)/d(p)^T
       if( parameterMultiplier_ != ST::zero() ) {
         if ( !is_null(Q_p) ) {
-          // DgDp^T += parameterMultiplier * Q_p * diff_p
+          if(trace)
+            *out << "\nDginvDp^T += parameterMultiplier * Q_p * diff_p ...\n";
           Vp_StV(
             &*DgDp_inv_trans_out->col(0),
             parameterMultiplier_,
@@ -1091,45 +1189,28 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
             );
         }
         else {
-          // DgDp^T += (parameterMultiplier*(1.0/np)) * diff_p
+          if(trace)
+            *out << "\nDginvDp^T += (parameterMultiplier*(1.0/np)) * diff_p ...\n";
           Vp_StV(
             &*DgDp_inv_trans_out->col(0),
             Scalar(parameterMultiplier_*(1.0/np)),
             *diff_p
             );
         }
+        if(trace)
+          *out << "\n||DginvDp^T||inf = " << norms_inf(*DgDp_inv_trans_out) << "\n";
+        if (print_p)
+        *out << "\nDginvDp^T = " << *DgDp_inv_trans_out;
       }
       else {
         // This term is zero so there is nothing to do!
       }
-      if(out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
-        *out << "\n||DgDp_trans||inf = " << norm_inf(*DgDp_inv_trans_out->col(0)) << "\n";
     }
 
   }
   
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
-}
-
-
-// Public functions overridden from Teuchos::Describable
-
-
-template<class Scalar>
-std::string DefaultInverseModelEvaluator<Scalar>::description() const
-{
-  const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  std::ostringstream oss;
-  oss << "Thyra::DefaultInverseModelEvaluator{";
-  oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
 }
 
 
@@ -1141,9 +1222,52 @@ void DefaultInverseModelEvaluator<Scalar>::initializeDefaults()
 {
   obs_idx_ = ObservationIndex_default_;
   p_idx_ = ParameterSubvectorIndex_default_;
-  Ng_ = 0;
   observationMultiplier_ = ObservationMultiplier_default_;
   parameterMultiplier_ = ParameterMultiplier_default_; 
+}
+
+
+template<class Scalar>
+void DefaultInverseModelEvaluator<Scalar>::initializeInArgsOutArgs() const
+{
+
+  typedef ModelEvaluatorBase MEB;
+
+  const RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+
+  const MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
+  const int wrapped_Np = wrappedInArgs.Np();
+
+  MEB::InArgsSetup<Scalar> inArgs;
+  inArgs.setModelEvalDescription(this->description());
+  const bool supports_x = wrappedInArgs.supports(MEB::IN_ARG_x);
+  usingObservationTargetAsParameter_ = ( supports_x && observationTargetAsParameter_ );
+  inArgs.setSupports(
+    wrappedInArgs,
+    wrapped_Np + ( usingObservationTargetAsParameter_ ? 1 : 0 )
+    );
+  prototypeInArgs_ = inArgs;
+
+  const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
+  const int wrapped_Ng = wrappedOutArgs.Ng();
+
+  MEB::OutArgsSetup<Scalar> outArgs;
+  outArgs.setModelEvalDescription(inArgs.modelEvalDescription());
+  outArgs.set_Np_Ng( prototypeInArgs_.Np(), wrapped_Ng+1 );
+  outArgs.setSupports(wrappedOutArgs);
+  outArgs.setSupports(MEB::OUT_ARG_DgDx,wrapped_Ng,MEB::DERIV_TRANS_MV_BY_ROW);
+  outArgs.setSupports(MEB::OUT_ARG_DgDp,wrapped_Ng,p_idx_,MEB::DERIV_TRANS_MV_BY_ROW);
+  prototypeOutArgs_ = outArgs;
+  
+}
+
+
+template<class Scalar>
+RCP<const VectorSpaceBase<Scalar> >
+DefaultInverseModelEvaluator<Scalar>::get_obs_space() const
+{
+  return ( obs_idx_ < 0 ? this->get_x_space() : this->get_g_space(obs_idx_) );
 }
 
 

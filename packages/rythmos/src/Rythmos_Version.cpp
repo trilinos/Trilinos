@@ -27,11 +27,12 @@
 //@HEADER
 
 #include "Rythmos_ConfigDefs.h"
+#include "Rythmos_Version.h"
 
 namespace Rythmos {
 
 	std::string Rythmos_Version() { 
-		return("Rythmos Version 1.0 - September 2006"); 
+		return("Rythmos Version 2.0 - September 2007"); 
 	}
 
 } // namespace Rythmos

@@ -310,7 +310,6 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::validateOps()
 {
-  typedef std::string s;
   using Teuchos::toString;
 #ifdef TEUCHOS_DEBUG
   try {
@@ -318,10 +317,10 @@ void DefaultMultipliedLinearOp<Scalar>::validateOps()
     for( int k = 0; k < numOps; ++k ) {
       TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
       if( k < numOps-1 ) {
-        THYRA_ASSERT_VEC_SPACES_NAMES(
+        THYRA_ASSERT_LINEAR_OP_TIMES_LINEAR_OP_SPACES_NAMES(
           "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
-          ,*Ops_[k]()->domain(),("(*Ops_["+toString(k)+"]->domain())")
-          ,*Ops_[k+1]()->range(),("(*Ops_["+toString(k+1)+"]->range())")
+          ,*Ops_[k].getConstObj(),NOTRANS,("Ops["+toString(k)+"]")
+          ,*Ops_[k+1].getConstObj(),NOTRANS,("Ops["+toString(k+1)+"]")
           );
       }
     }

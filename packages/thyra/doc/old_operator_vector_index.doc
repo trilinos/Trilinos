@@ -198,7 +198,7 @@ deleted.  It is a form of garbage collection but is not as general or fail-
 safe as in languages with built in garbage collection.  For more information
 see:
 
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf
 
 and click on: <tt>Teuchos::RCP</tt>
 
@@ -224,7 +224,7 @@ compiled using the macro define <tt>-D_DEBUG</tt>.
 
 For more information see Item 3 in Appendix B in 
 
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf
 
 \subsection Thyra_Op_Vec_faq_rcp_everywhere_sec Q: Should my code use RCP's everywhere?
 
@@ -234,7 +234,7 @@ use raw C++ references and pointers.
 
 For more information see the main body and Appendix D of the document:
 
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf
 
 \section Thyra_Op_Vec_faq_itfc_sec Questions about Fundamental Thyra Operator/Vector Interfaces
 
@@ -382,7 +382,7 @@ and \ref Thyra_Op_Vec_Exceptions_grp "basic exception classes".
 
 <!-- The details behind the design of these interfaces are described in detail
 in <a
-href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">this
+href="http://trilinos.sandia.gov/packages/tsfcore/TSFCoreSAND.pdf">this
 report</a> and in the documentation for each individual C++ class. --> One
 important paper describing the RTOp approach which provides the foundation for
 <tt>RTOpPack::RTOpT</tt> can be found in <a
@@ -1103,7 +1103,7 @@ supported).
 <b>Warning!</b> using the utility classes below it is very easy to
 obtain direct access to vector and multi-vector elements but in
 general, this is a very bad idea.  However, as described in <a
-href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">this
+href="http://trilinos.sandia.gov/packages/tsfcore/TSFCoreSAND.pdf">this
 report</a>, there are some types of ANAs that require direct element
 access to certain kinds of vectors and multi-vectors (for example,
 vectors and multi-vectors that lie is the domain space of a

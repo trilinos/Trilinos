@@ -63,7 +63,7 @@ public:
 
   /** \brief Return if this stepper supports cloning or not.
    *
-   * If <tt>returnVal==true</tt>, then <tt>cloneStepper()</tt> will clone
+   * If <tt>returnVal==true</tt>, then <tt>cloneStepperAlgorithm()</tt> will clone
    * <tt>*this</tt> object and return an non-null RCP.
    *
    * The default implementation of this function simply returns false.
@@ -90,7 +90,7 @@ public:
    * derived class to support cloning, then <tt>supportsCloning()</tt> must be
    * overridden to return <tt>true</tt>.
    */
-  virtual RCP<StepperBase<Scalar> > cloneStepper() const;
+  virtual RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief Return if this stepper is an implicit stepper.
    *
@@ -187,12 +187,16 @@ public:
    * then <tt>*this</tt> is guaranteed to be in the same state after the
    * function returns as it was before the function was called.  This allows a
    * client to try a different step size or make other adjustments.
+   *
+   * If stepType == STEP_TYPE_VARIABLE, and returnVal <= 0.0 then no variable step
+   * will succeed in its current state. 
    */
   virtual Scalar takeStep(Scalar dt, StepSizeType stepType) = 0;
 
   /** \brief Get current stepper status after a step has been taken.
    *
-   * ToDo: Determine what this returns before a step has ever been taken.
+   * This function must have a low <tt>O(1)</tt> complexity.  In other words,
+   * it should be essentially free to call this function!
    */
   virtual const StepStatus<Scalar> getStepStatus() const = 0;
 
@@ -204,6 +208,15 @@ public:
    * The default implementation simply does nothing so be warned!
    */
   virtual void setStepControlData(const StepperBase & stepper);
+
+  /** \brief getTimeRange stepper specific behavior.
+   *
+   * If the stepper is uninitialized, then getTimeRange returns invalid time range
+   * If the stepper is initialized but has not taken a step, then getTimeRange
+   *     returns lower==upper==time point of initial condition.
+   * If the stepper is initialized and has taken a step, then getTimeRange 
+   *     returns a non-trivial range.
+   */
 
 };
 
@@ -235,7 +248,7 @@ bool StepperBase<Scalar>::supportsCloning() const
 
 template<class Scalar>
 RCP<StepperBase<Scalar> >
-StepperBase<Scalar>::cloneStepper() const
+StepperBase<Scalar>::cloneStepperAlgorithm() const
 {
   return Teuchos::null;
 }

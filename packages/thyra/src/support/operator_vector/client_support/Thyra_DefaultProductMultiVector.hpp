@@ -122,6 +122,70 @@ void DefaultProductMultiVector<Scalar>::uninitialize()
 }
 
 
+// Overridden from Teuchos::Describable
+
+                                                
+template<class Scalar>
+std::string DefaultProductMultiVector<Scalar>::description() const
+{
+  std::ostringstream oss;
+  oss
+    << Teuchos::Describable::description()
+    << "{"
+    << "rangeDim="<<this->range()->dim()
+    << ",domainDim="<<this->domain()->dim()
+    << ",numBlocks = "<<numBlocks_
+    << "}";
+  return oss.str();
+}
+
+
+template<class Scalar>
+void DefaultProductMultiVector<Scalar>::describe(
+  Teuchos::FancyOStream &out_arg,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RCP;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::describe;
+  if (verbLevel == Teuchos::VERB_NONE)
+    return;
+  RCP<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT: // fall through
+    case Teuchos::VERB_LOW: // fall through
+      *out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM: // fall through
+    case Teuchos::VERB_HIGH: // fall through
+    case Teuchos::VERB_EXTREME:
+    {
+      *out
+        << Teuchos::Describable::description() << "{"
+        << "rangeDim="<<this->range()->dim()
+        << ",domainDim="<<this->domain()->dim()
+        << "}\n";
+      OSTab tab(out);
+      *out
+        <<  "numBlocks="<< numBlocks_ << std::endl
+        <<  "Constituent multi-vector objects V[0], V[1], ... V[numBlocks-1]:\n";
+      tab.incrTab();
+      for( int k = 0; k < numBlocks_; ++k ) {
+        *out << "V["<<k<<"] = "
+             << Teuchos::describe(*multiVecs_[k].getConstObj(),verbLevel);
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
+
 // Overridden from ProductMultiVectorBase
 
 

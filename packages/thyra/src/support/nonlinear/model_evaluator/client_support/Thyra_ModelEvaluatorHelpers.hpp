@@ -29,40 +29,278 @@
 #ifndef THYRA_MODEL_EVALUATOR_HELPERS_HPP
 #define THYRA_MODEL_EVALUATOR_HELPERS_HPP
 
+
 #include "Thyra_ModelEvaluator.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Create a clone of an InArgs object.
  *
  * Warning!  This function only creates a shallow copy of the underlying input
  * objects.  Therefore, be careful if you try to modify any of these.
  *
- * \relates ModelEvaluator
+ * \relates ModelEvaluatorDefaultBase
  */
 template<class Scalar>
-Teuchos::RCP<ModelEvaluatorBase::InArgs<Scalar> >
-clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs )
+RCP<ModelEvaluatorBase::InArgs<Scalar> >
+clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+create_DfDp_mv(
+  const ModelEvaluator<Scalar>& model,
+  int l,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+create_DgDx_dot_mv(
+  const ModelEvaluator<Scalar>& model,
+  int j,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+create_DgDx_mv(
+  const ModelEvaluator<Scalar>& model,
+  int j,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+create_DgDp_mv(
+  const ModelEvaluator<Scalar>& model,
+  int j,
+  int l,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+get_dmv(
+  const ModelEvaluatorBase::Derivative<Scalar> &deriv
+  ,const std::string &derivName
+  );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+get_mv(
+  const ModelEvaluatorBase::Derivative<Scalar> &deriv
+  ,const std::string &derivName
+  ,ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  );
+
+
+/** \brief Assert that that Thyra objects imbedded in a Derivative object
+ * matches its function and variable spaces.
+ *
+ * \relates ModelEvaluatorDefaultBase
+ */
+template<class Scalar>
+void assertDerivSpaces(
+  const std::string &modelEvalDescription,
+  const ModelEvaluatorBase::Derivative<Scalar> &deriv,
+  const std::string &deriv_name,
+  const VectorSpaceBase<Scalar> &fnc_space,
+  const std::string &fnc_space_name,
+  const VectorSpaceBase<Scalar> &var_space,
+  const std::string &var_space_name
+  );
+
+
+/** \brief Assert that an InArgs and OutArgs object are setup consistently.
+ *
+ * \relates ModelEvaluatorDefaultBase
+ */
+template<class Scalar>
+void assertInArgsOutArgsSetup(
+  const std::string &modelEvalDescription,
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  );
+
+
+/** \brief Assert that the objects in an InArgs object match a given model.
+ *
+ * \relates ModelEvaluatorDefaultBase
+ */
+template<class Scalar>
+void assertInArgsEvalObjects(
+  const ModelEvaluator<Scalar> &model,
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs
+  );
+
+
+/** \brief Assert that the objects in an OutArgs object match a given model.
+ *
+ * \relates ModelEvaluatorDefaultBase
+ */
+template<class Scalar>
+void assertOutArgsEvalObjects(
+  const ModelEvaluator<Scalar> &model,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  );
+
+
+/** \brief Evaluate <tt>f(x)</tt>. */
+template<class Scalar>
+void eval_f(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x
+  ,VectorBase<Scalar> *f
+  );
+
+
+/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = DfDx(x)</tt>. */
+template<class Scalar>
+void eval_f_W(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x
+  ,VectorBase<Scalar> *f
+  ,LinearOpWithSolveBase<Scalar> *W
+  );
+
+
+/** \brief Evaluate <tt>f(x,t)</tt>. */
+template<class Scalar>
+void eval_f(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x
+  ,const Scalar &t
+  ,VectorBase<Scalar> *f
+  );
+
+
+/** \brief Evaluate <tt>g(j)(p))</tt>. */
+template<class Scalar>
+void eval_g(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const int j,
+  VectorBase<Scalar> *g_j
+  );
+
+
+/** \brief Evaluate <tt>g(j)(p,t))</tt>. */
+template<class Scalar>
+void eval_g(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const Scalar &t,
+  const int j,
+  VectorBase<Scalar> *g_j
+  );
+
+
+/** \brief Evaluate <tt>f(x_dot,x,t)</tt>. */
+template<class Scalar>
+void eval_f(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x_dot
+  ,const VectorBase<Scalar> &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,VectorBase<Scalar> *f
+  );
+
+
+/** \brief Evaluate <tt>f(x_dot,x,t)</tt> and <tt>W(x_dot,x,t,alpha,beta) =
+ * alpha*DfDx_dot(x_dot,x,t) + beta*DfDx(x_dot,x,t)</tt>. */
+template<class Scalar>
+void eval_f_W(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x_dot
+  ,const VectorBase<Scalar> &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,const Scalar &alpha
+  ,const Scalar &beta
+  ,VectorBase<Scalar> *f
+  ,LinearOpWithSolveBase<Scalar> *W
+  );
+
+
+/** \brief . */
+template<class Scalar>
+void eval_f_poly(
+  const ModelEvaluator<Scalar> &model
+  ,const Teuchos::Polynomial< VectorBase<Scalar> > &x_poly
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,Teuchos::Polynomial< VectorBase<Scalar> > *f_poly
+  );
+
+
+/** \brief . */
+template<class Scalar>
+void eval_f_poly(
+  const ModelEvaluator<Scalar> &model
+  ,const Teuchos::Polynomial< VectorBase<Scalar> > &x_dot_poly
+  ,const VectorBase<Scalar> &x_poly
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,Teuchos::Polynomial< VectorBase<Scalar> > *f_poly
+  );
+
+
+} // namespace Thyra
+
+
+//
+// Implementations
+//
+
+
+#include "Thyra_AssertOp.hpp"
+#include "Teuchos_Utils.hpp"
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::ModelEvaluatorBase::InArgs<Scalar> >
+Thyra::clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs )
 {
-  Teuchos::RCP<ModelEvaluatorBase::InArgs<Scalar> >
+  RCP<ModelEvaluatorBase::InArgs<Scalar> >
     newInArgs = Teuchos::rcp(new ModelEvaluatorBase::InArgs<Scalar>);
   *newInArgs = inArgs;
   return newInArgs;
 }
 
-/** \relates ModelEvaluator */
+
 template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-create_DfDp_mv( const ModelEvaluator<Scalar>& model, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
+Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+Thyra::create_DfDp_mv(
+  const ModelEvaluator<Scalar>& model,
+  int l,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  )
 {
   TEST_FOR_EXCEPT(!(orientation==ModelEvaluatorBase::DERIV_MV_BY_COL));
   return createMembers( model.get_f_space(), model.get_p_space(l)->dim() );
 }
 
-/** \relates ModelEvaluator */
+
 template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-create_DgDx_mv( const ModelEvaluator<Scalar>& model, int j, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
+Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+Thyra::create_DgDx_dot_mv(
+  const ModelEvaluator<Scalar>& model,
+  int j,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  )
 {
   typedef ModelEvaluatorBase MEB;
   switch(orientation) {
@@ -81,13 +319,30 @@ create_DgDx_mv( const ModelEvaluator<Scalar>& model, int j, ModelEvaluatorBase::
     default:
       TEST_FOR_EXCEPT(true);
   }
-  return ModelEvaluatorBase::DerivativeMultiVector<Scalar>(); // Never be executed!
+  return MEB::DerivativeMultiVector<Scalar>(); // Never executed!
 }
 
-/** \relates ModelEvaluator */
+
 template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-create_DgDp_mv( const ModelEvaluator<Scalar>& model, int j, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
+Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+Thyra::create_DgDx_mv(
+  const ModelEvaluator<Scalar>& model,
+  int j,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  )
+{
+  return create_DgDx_dot_mv(model,j,orientation);
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+Thyra::create_DgDp_mv(
+  const ModelEvaluator<Scalar>& model,
+  int j,
+  int l,
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
+  )
 {
   typedef ModelEvaluatorBase MEB;
   switch(orientation) {
@@ -106,15 +361,15 @@ create_DgDp_mv( const ModelEvaluator<Scalar>& model, int j, int l, ModelEvaluato
     default:
       TEST_FOR_EXCEPT(true);
   }
-  return ModelEvaluatorBase::DerivativeMultiVector<Scalar>(); // Never be executed!
+  return MEB::DerivativeMultiVector<Scalar>(); // Never executed!
 }
 
-/** \relates ModelEvaluator */
+
 template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-get_dmv(
-  const ModelEvaluatorBase::Derivative<Scalar>             &deriv
-  ,const std::string                                       &derivName
+Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+Thyra::get_dmv(
+  const ModelEvaluatorBase::Derivative<Scalar> &deriv
+  ,const std::string &derivName
   )
 {
   TEST_FOR_EXCEPTION(
@@ -124,13 +379,13 @@ get_dmv(
   return deriv.getDerivativeMultiVector();
 }
 
-/** \relates ModelEvaluator */
+
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-get_mv(
-  const ModelEvaluatorBase::Derivative<Scalar>             &deriv
-  ,const std::string                                       &derivName
-  ,ModelEvaluatorBase::EDerivativeMultiVectorOrientation   orientation
+Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
+Thyra::get_mv(
+  const ModelEvaluatorBase::Derivative<Scalar> &deriv
+  ,const std::string &derivName
+  ,ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
   )
 {
   typedef ModelEvaluatorBase MEB;
@@ -140,7 +395,7 @@ get_mv(
     );
   MEB::DerivativeMultiVector<Scalar>
     dmv = deriv.getDerivativeMultiVector();
-  Teuchos::RCP<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
     mv = dmv.getMultiVector();
   if( mv.get() ) {
     TEST_FOR_EXCEPTION(
@@ -153,59 +408,365 @@ get_mv(
   return mv;
 }
 
-/** \brief Evaluate <tt>f(x)</tt>. */
+
 template<class Scalar>
-void eval_f(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x
-  ,VectorBase<Scalar>                                             *f
+void Thyra::assertDerivSpaces(
+  const std::string &modelEvalDescription,
+  const ModelEvaluatorBase::Derivative<Scalar> &deriv,
+  const std::string &deriv_name,
+  const VectorSpaceBase<Scalar> &fnc_space,
+  const std::string &fnc_space_name,
+  const VectorSpaceBase<Scalar> &var_space,
+  const std::string &var_space_name
   )
 {
   typedef ModelEvaluatorBase MEB;
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  if (!is_null(deriv.getLinearOp())) {
+    const RCP<const LinearOpBase<Scalar> > lo = deriv.getLinearOp();
+    if (!is_null(lo->range())) {
+      THYRA_ASSERT_VEC_SPACES_NAMES(
+        modelEvalDescription,
+        *lo->range(), deriv_name + ".range()",
+        fnc_space, fnc_space_name
+        );
+      THYRA_ASSERT_VEC_SPACES_NAMES(
+        modelEvalDescription,
+        *lo->domain(), deriv_name + ".domain()",
+        var_space, var_space_name
+        );
+    }
+  }
+  else if(!is_null(deriv.getMultiVector())) {
+    const RCP<const LinearOpBase<Scalar> > mv = deriv.getMultiVector();
+    switch(deriv.getMultiVectorOrientation()) {
+      case MEB::DERIV_MV_BY_COL: {
+        THYRA_ASSERT_VEC_SPACES_NAMES(
+          modelEvalDescription,
+          *mv->range(), deriv_name + ".range()",
+          fnc_space, fnc_space_name
+          );
+        THYRA_ASSERT_VEC_SPACES_NAMES(
+          modelEvalDescription,
+          *mv->domain(), deriv_name + ".domain()",
+          var_space, var_space_name
+          );
+        break;
+      }
+      case MEB::DERIV_TRANS_MV_BY_ROW: {
+        THYRA_ASSERT_VEC_SPACES_NAMES(
+          modelEvalDescription,
+          *mv->range(), deriv_name + "^T.range()",
+          var_space, var_space_name
+          );
+        THYRA_ASSERT_VEC_SPACES_NAMES(
+          modelEvalDescription,
+          *mv->domain(), deriv_name + "^T.domain()",
+          fnc_space, fnc_space_name
+          );
+        break;
+      }
+#ifdef TEUCHOS_DEBUG
+      default:
+        TEST_FOR_EXCEPT(true);
+#endif
+    }
+  }
+}
+
+
+template<class Scalar>
+void Thyra::assertInArgsOutArgsSetup(
+  const std::string &modelEvalDescription,
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  )
+{
+
+  typedef ModelEvaluatorBase MEB;
+
+  const int Ng = outArgs.Ng();
+  const int Np = outArgs.Np();
+
+  // Description
+  TEUCHOS_ASSERT_EQUALITY(inArgs.modelEvalDescription(), modelEvalDescription);
+  TEUCHOS_ASSERT_EQUALITY(outArgs.modelEvalDescription(), modelEvalDescription);
+
+  // Np
+  TEST_FOR_EXCEPTION(
+    inArgs.Np() != outArgs.Np(), std::logic_error,
+    "Error: The underlying model " << modelEvalDescription << " incorrectly\n"
+    "set inArgs.Np() = "<<inArgs.Np()<<" != outArgs.Np() = "
+    <<outArgs.Np()<<"!"
+    );
+
+  // x_dot
+  TEST_FOR_EXCEPTION(
+    inArgs.supports(MEB::IN_ARG_x_dot) && !inArgs.supports(MEB::IN_ARG_x),
+    std::logic_error,
+    "Error: The underlying model " << modelEvalDescription << " supports\n"
+    "x_dot but does not support x!"
+    );
+
+  // t
+  TEST_FOR_EXCEPTION(
+    inArgs.supports(MEB::IN_ARG_x_dot) && !inArgs.supports(MEB::IN_ARG_t),
+    std::logic_error,
+    "Error: The underlying model " << modelEvalDescription << " supports\n"
+    "x_dot but does not support t!"
+    );
+
+  // W and W_op
+  TEST_FOR_EXCEPTION(
+    (
+      ( outArgs.supports(MEB::OUT_ARG_W) || outArgs.supports(MEB::OUT_ARG_W_op) )
+      &&
+      !inArgs.supports(MEB::IN_ARG_x)
+      ),
+    std::logic_error,
+    "Error: The underlying model " << modelEvalDescription << " says that\n"
+    "it supports W and/or W_op but it does not support x!"
+    );
+  TEST_FOR_EXCEPTION(
+    (
+      ( outArgs.supports(MEB::OUT_ARG_W) || outArgs.supports(MEB::OUT_ARG_W_op) )
+      &&
+      inArgs.supports(MEB::IN_ARG_x_dot)
+      &&
+      !( inArgs.supports(MEB::IN_ARG_alpha) && inArgs.supports(MEB::IN_ARG_beta) )
+      ),
+    std::logic_error,
+    "Error: The underlying model " << modelEvalDescription << " supports W and/or W_op\n"
+    "and x_dot but it does not support alpha and beta as InArgs!"
+    );
+
+  for ( int l = 0; l < Np; ++l ) {
+
+    // DfDp(l): OutArgs checks this automatically!
+
+    for ( int j = 0; j < Ng; ++j ) {
+
+      // DgDx_dot(j)
+      TEST_FOR_EXCEPTION(
+        ( !outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).none()
+          && !inArgs.supports(MEB::IN_ARG_x_dot) ),
+        std::logic_error,
+        "Error: The underlying model " << modelEvalDescription << " says that\n"
+        "it supports DgDx_dot("<<j<<") but it does not support x_dot!"
+        );
+
+      // DgDx(j)
+      TEST_FOR_EXCEPTION(
+        ( !outArgs.supports(MEB::OUT_ARG_DgDx,j).none()
+          && !inArgs.supports(MEB::IN_ARG_x) ),
+        std::logic_error,
+        "Error: The underlying model " << modelEvalDescription << " says that\n"
+        "it supports DgDx("<<j<<") but it does not support x!"
+        );
+
+      // DgDp(j,l): OutArgs checks this automatically!
+
+    }
+
+  }
+
+}
+
+
+template<class Scalar>
+void Thyra::assertInArgsEvalObjects(
+  const ModelEvaluator<Scalar> &model,
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs
+  )
+{
+
+  typedef ModelEvaluatorBase MEB;
+
+  const std::string description = model.description();
+  const int Np = inArgs.Np();
+
+  model.createInArgs().assertSameSupport(inArgs);
+
+  // x_dot
+  if ( inArgs.supports(MEB::IN_ARG_x_dot) && !is_null(inArgs.get_x_dot()) ) {
+    THYRA_ASSERT_VEC_SPACES(
+      description, *inArgs.get_x_dot()->space(), *model.get_x_space() );
+  }
+
+  // x
+  if ( inArgs.supports(MEB::IN_ARG_x) && !is_null(inArgs.get_x()) ) {
+    THYRA_ASSERT_VEC_SPACES(
+      description, *inArgs.get_x()->space(), *model.get_x_space() );
+  }
+    
+  // p(l)
+  for ( int l = 0; l < Np; ++l ) {
+    if (!is_null(inArgs.get_p(l))) {
+      THYRA_ASSERT_VEC_SPACES(
+        description, *inArgs.get_p(l)->space(), *model.get_p_space(l) );
+    }
+  }
+
+}
+
+
+template<class Scalar>
+void Thyra::assertOutArgsEvalObjects(
+  const ModelEvaluator<Scalar> &model,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  )
+{
+
+  typedef Teuchos::Utils TU;
+  typedef ModelEvaluatorBase MEB;
+
+  const std::string description = model.description();
+  const int Ng = outArgs.Ng();
+  const int Np = outArgs.Np();
+
+  model.createOutArgs().assertSameSupport(outArgs);
+
+  // f
+  if ( outArgs.supports(MEB::OUT_ARG_f) && !is_null(outArgs.get_f()) ) {
+    THYRA_ASSERT_VEC_SPACES(
+      description, *outArgs.get_f()->space(), *model.get_f_space() );
+  }
+
+  // W
+  if ( outArgs.supports(MEB::OUT_ARG_W) && !is_null(outArgs.get_W()) ) {
+    if (!is_null(outArgs.get_W()->range())) {
+      THYRA_ASSERT_VEC_SPACES(
+        description, *outArgs.get_W()->range(), *model.get_f_space() );
+      THYRA_ASSERT_VEC_SPACES(
+        description, *outArgs.get_W()->domain(), *model.get_x_space() );
+    }
+  }
+    
+  // W_op
+  if ( outArgs.supports(MEB::OUT_ARG_W_op) && !is_null(outArgs.get_W_op()) ) {
+    if (!is_null(outArgs.get_W_op()->range())) {
+      THYRA_ASSERT_VEC_SPACES(
+        description, *outArgs.get_W_op()->range(), *model.get_f_space() );
+      THYRA_ASSERT_VEC_SPACES(
+        description, *outArgs.get_W_op()->domain(), *model.get_x_space() );
+    }
+  }
+
+  // DfDp(l)
+  if (outArgs.supports(MEB::OUT_ARG_f)) {
+    for ( int l = 0; l < Np; ++l ) {
+      if (!outArgs.supports(MEB::OUT_ARG_DfDp,l).none()) {
+        assertDerivSpaces(
+          description,
+          outArgs.get_DfDp(l), "DfDp("+TU::toString(l)+")",
+          *model.get_f_space(), "f_space",
+          *model.get_p_space(l), "p_space("+TU::toString(l)+")"
+          );
+      }
+    }
+  }
+    
+  // g(l)
+  for ( int j = 0; j < Ng; ++j ) {
+    if (!is_null(outArgs.get_g(j))) {
+      THYRA_ASSERT_VEC_SPACES(
+        description, *outArgs.get_g(j)->space(), *model.get_g_space(j) );
+    }
+  }
+
+  // DgDx_dot(j)
+  for ( int j = 0; j < Ng; ++j ) {
+    if (!outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).none()) {
+      assertDerivSpaces(
+        description,
+        outArgs.get_DgDx_dot(j), "DgDx_dot("+TU::toString(j)+")",
+        *model.get_g_space(j), "g_space("+TU::toString(j)+")",
+        *model.get_x_space(), "x_space"
+        );
+    }
+  }
+
+  // DgDx(j)
+  for ( int j = 0; j < Ng; ++j ) {
+    if (!outArgs.supports(MEB::OUT_ARG_DgDx,j).none()) {
+      assertDerivSpaces(
+        description,
+        outArgs.get_DgDx(j), "DgDx("+TU::toString(j)+")",
+        *model.get_g_space(j), "g_space("+TU::toString(j)+")",
+        *model.get_x_space(), "x_space"
+        );
+    }
+  }
+
+  // Assert DgDp(j,l)
+  for ( int j = 0; j < Ng; ++j ) {
+    for ( int l = 0; l < Np; ++l ) {
+      if (!outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()) {
+        const std::string j_str = TU::toString(j);
+        const std::string l_str = TU::toString(l);
+        assertDerivSpaces(
+          description,
+          outArgs.get_DgDp(j,l), "DgDp("+j_str+","+l_str+")",
+          *model.get_g_space(j), "g_space("+j_str+")",
+          *model.get_p_space(l), "p_space("+l_str+")"
+          );
+      }
+    }
+  }
+
+}
+
+
+template<class Scalar>
+void Thyra::eval_f(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x
+  ,VectorBase<Scalar> *f
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
   inArgs.set_x(Teuchos::rcp(&x,false));
   outArgs.set_f(Teuchos::rcp(f,false));
   model.evalModel(inArgs,outArgs);
 }
 
-/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = DfDx(x)</tt>. */
+
 template<class Scalar>
-void eval_f_W(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x
-  ,VectorBase<Scalar>                                             *f
-  ,LinearOpWithSolveBase<Scalar>                                  *W
+void Thyra::eval_f_W(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x
+  ,VectorBase<Scalar> *f
+  ,LinearOpWithSolveBase<Scalar> *W
   )
 {
 
   typedef ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
 
   inArgs.set_x(Teuchos::rcp(&x,false));
 
-  outArgs.set_f(Teuchos::rcp(f,false));
-  if(W) outArgs.set_W(Teuchos::rcp(W,false));
+  if (f) outArgs.set_f(Teuchos::rcp(f,false));
+  if (W) outArgs.set_W(Teuchos::rcp(W,false));
 
   model.evalModel(inArgs,outArgs);
 
 }
 
 
-/** \brief Evaluate <tt>f(x,t)</tt>. */
 template<class Scalar>
-void eval_f(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x
-  ,const Scalar                                                   &t
-  ,VectorBase<Scalar>                                             *f
+void Thyra::eval_f(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x
+  ,const Scalar &t
+  ,VectorBase<Scalar> *f
   )
 {
   typedef ModelEvaluatorBase MEB;
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
   inArgs.set_x(Teuchos::rcp(&x,false));
   if(inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(t);
   outArgs.set_f(Teuchos::rcp(f,false));
@@ -213,9 +774,26 @@ void eval_f(
 }
 
 
-/** \brief Evaluate <tt>g(j)(p,t))</tt>. */
 template<class Scalar>
-void eval_g(
+void Thyra::eval_g(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const int j,
+  VectorBase<Scalar> *g_j
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs= model.createOutArgs();
+  inArgs.set_p(l,Teuchos::rcp(&p_l,false));
+  outArgs.set_g(j,Teuchos::rcp(g_j,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+
+template<class Scalar>
+void Thyra::eval_g(
   const ModelEvaluator<Scalar> &model,
   const int l,
   const VectorBase<Scalar> &p_l,
@@ -234,21 +812,20 @@ void eval_g(
 }
 
 
-/** \brief Evaluate <tt>f(x_dot,x,t)</tt>. */
 template<class Scalar>
-void eval_f(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x_dot
-  ,const VectorBase<Scalar>                                       &x
-  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
-  ,VectorBase<Scalar>                                             *f
+void Thyra::eval_f(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x_dot
+  ,const VectorBase<Scalar> &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,VectorBase<Scalar> *f
   )
 {
 
   typedef ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
 
   inArgs.set_x_dot(Teuchos::rcp(&x_dot,false));
   inArgs.set_x(Teuchos::rcp(&x,false));
@@ -261,25 +838,24 @@ void eval_f(
 
 }
 
-/** \brief Evaluate <tt>f(x_dot,x,t)</tt> and
- * <tt>W(x_dot,x,t,alpha,beta) = beta*DfDx_dot(x_dot,x,t)beta*DfDx(x_dot,x,t)</tt>. */
+
 template<class Scalar>
-void eval_f_W(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x_dot
-  ,const VectorBase<Scalar>                                       &x
-  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
-  ,const Scalar                                                   &alpha
-  ,const Scalar                                                   &beta
-  ,VectorBase<Scalar>                                             *f
-  ,LinearOpWithSolveBase<Scalar>                                  *W
+void Thyra::eval_f_W(
+  const ModelEvaluator<Scalar> &model
+  ,const VectorBase<Scalar> &x_dot
+  ,const VectorBase<Scalar> &x
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,const Scalar &alpha
+  ,const Scalar &beta
+  ,VectorBase<Scalar> *f
+  ,LinearOpWithSolveBase<Scalar> *W
   )
 {
 
   typedef ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
 
   inArgs.set_x_dot(Teuchos::rcp(&x_dot,false));
   inArgs.set_x(Teuchos::rcp(&x,false));
@@ -295,20 +871,20 @@ void eval_f_W(
 
 }
 
-/** \brief . */
+
 template<class Scalar>
-void eval_f_poly(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const Teuchos::Polynomial< VectorBase<Scalar> >                &x_poly
-  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
-  ,Teuchos::Polynomial< VectorBase<Scalar> >                      *f_poly
+void Thyra::eval_f_poly(
+  const ModelEvaluator<Scalar> &model
+  ,const Teuchos::Polynomial< VectorBase<Scalar> > &x_poly
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,Teuchos::Polynomial< VectorBase<Scalar> > *f_poly
   )
 {
 
   typedef ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
 
   inArgs.set_x_poly(Teuchos::rcp(&x_poly,false));
   if(inArgs.supports(MEB::IN_ARG_t))
@@ -320,21 +896,21 @@ void eval_f_poly(
 
 }
 
-/** \brief . */
+
 template<class Scalar>
-void eval_f_poly(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const Teuchos::Polynomial< VectorBase<Scalar> >                &x_dot_poly
-  ,const VectorBase<Scalar>                                       &x_poly
-  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
-  ,Teuchos::Polynomial< VectorBase<Scalar> >                      *f_poly
+void Thyra::eval_f_poly(
+  const ModelEvaluator<Scalar> &model
+  ,const Teuchos::Polynomial< VectorBase<Scalar> > &x_dot_poly
+  ,const VectorBase<Scalar> &x_poly
+  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
+  ,Teuchos::Polynomial< VectorBase<Scalar> > *f_poly
   )
 {
 
   typedef ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
 
   inArgs.set_x_dot_poly(Teuchos::rcp(&x_dot_poly,false));
   inArgs.set_x_poly(Teuchos::rcp(&x_poly,false));
@@ -346,8 +922,6 @@ void eval_f_poly(
   model.evalModel(inArgs,outArgs);
 
 }
-
-} // namespace Thyra
 
 
 #endif // THYRA_MODEL_EVALUATOR_HELPERS_HPP

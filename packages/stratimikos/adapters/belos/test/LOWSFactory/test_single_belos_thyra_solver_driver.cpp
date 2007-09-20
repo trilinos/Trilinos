@@ -81,17 +81,17 @@ int main(int argc, char* argv[])
     belosLOWSFPL_gmres.set("Output Frequency",int(outputFrequency));
     belosLOWSFPL_gmres.set("Show Maximum Residual Norm Only",bool(outputMaxResOnly));
 
+    Teuchos::ParameterList precPL("Ifpack");
     if(usePreconditioner) {
-      Teuchos::ParameterList &ifpackPFSL = belosLOWSFPL.sublist("Ifpack");
-      ifpackPFSL.set("Overlap",int(2));
-      ifpackPFSL.set("Prec Type","ILUT");
+      precPL.set("Overlap",int(2));
+      precPL.set("Prec Type","ILUT");
     }
     
     success
       = Thyra::test_single_belos_thyra_solver(
         matrixFile,testTranspose,usePreconditioner,numRhs,numRandomVectors
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
-        ,&belosLOWSFPL
+        ,&belosLOWSFPL,&precPL
         ,verbose?&*out:0
         );
 

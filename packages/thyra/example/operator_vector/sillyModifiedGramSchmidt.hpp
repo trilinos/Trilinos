@@ -35,18 +35,20 @@
 #include "Thyra_DetachedMultiVectorView.hpp"
 
 /** \brief Silly little implementation of the modified Gram-Schmidt algorithm
- * to compute a QR factorization of V=Q*R of a multi-vector V.
+ * to compute a QR factorization V=Q*R of a multi-vector V.
  *
  * \param   V   [in/out] On input, contains the columns to compute the factorization
  *              for.  On output, contains the columns of Q.
  * \param   R   [out] On output, contains the upper triangular matrix R.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_examples_cg_grp
  */
 template<class Scalar>
 void sillyModifiedGramSchmidt(
-  Thyra::MultiVectorBase<Scalar>                             *V_inout
-  ,Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >     *R_out
+  Thyra::MultiVectorBase<Scalar> *V_inout
+  ,Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > *R_out
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;

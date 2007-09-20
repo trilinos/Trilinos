@@ -32,6 +32,7 @@
 
 #include "Thyra_DefaultMultiVectorProductVectorDecl.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Thyra {
@@ -60,7 +61,7 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
     "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace,multiVec)",
     *multiVec->range(), *productSpace->getBlock(0)
     );
-  TEST_FOR_EXCEPT( multiVec->domain()->dim() != productSpace->numBlocks() );
+  TEUCHOS_ASSERT_EQUALITY( multiVec->domain()->dim(), productSpace->numBlocks());
 #endif
 
   numBlocks_ = productSpace->numBlocks();
@@ -85,7 +86,7 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
     "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace,multiVec)",
     *multiVec->range(), *productSpace->getBlock(0)
     );
-  TEST_FOR_EXCEPT( multiVec->domain()->dim() != productSpace->numBlocks() );
+  TEUCHOS_ASSERT_EQUALITY( multiVec->domain()->dim(), productSpace->numBlocks() );
 #endif
 
   numBlocks_ = productSpace->numBlocks();
@@ -181,7 +182,9 @@ template <class Scalar>
 Teuchos::RCP<VectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( k, 0, numBlocks_ );
+#endif
   return multiVec_.getNonconstObj()->col(k);
 }
 
@@ -190,7 +193,9 @@ template <class Scalar>
 Teuchos::RCP<const VectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getVectorBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( k, 0, numBlocks_ );
+#endif
   return multiVec_.getConstObj()->col(k);
 }
 
@@ -209,7 +214,9 @@ DefaultMultiVectorProductVector<Scalar>::productSpace() const
 template <class Scalar>
 bool DefaultMultiVectorProductVector<Scalar>::blockIsConst(const int k) const
 {
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( k, 0, numBlocks_ );
+#endif
   return multiVec_.isConst();
 }
 

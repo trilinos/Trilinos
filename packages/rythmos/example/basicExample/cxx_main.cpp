@@ -80,7 +80,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
-enum EStepMethod { FIXED_STEP, VARIABLE_STEP };
+enum EStepMethod { STEP_TYPE_FIXED, STEP_TYPE_VARIABLE };
 
 int main(int argc, char *argv[])
 {
@@ -117,9 +117,9 @@ int main(int argc, char *argv[])
     const char * method_names[] = { "FE", "BE", "ERK", "BDF" };
     EMethod method_val = METHOD_ERK;
     const int num_step_methods = 2;
-    const EStepMethod step_method_values[] = { FIXED_STEP, VARIABLE_STEP };
+    const EStepMethod step_method_values[] = { STEP_TYPE_FIXED, STEP_TYPE_VARIABLE };
     const char * step_method_names[] = { "fixed", "variable" };
-    EStepMethod step_method_val = FIXED_STEP;
+    EStepMethod step_method_val = STEP_TYPE_FIXED;
     double maxError = 1e-6;
     double maxRestepError = 1.0e4*Teuchos::ScalarTraits<double>::prec();
     bool version = false;  // display version information 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
       ERKparams->set( "outputLevel", as<int>(verbLevel) );
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
-      step_method_val = FIXED_STEP;
+      step_method_val = STEP_TYPE_FIXED;
     }
     else if (method_val == METHOD_FE) {
       stepper_ptr = rcp(new Rythmos::ForwardEulerStepper<double>(model));
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
       FEparams->set( "outputLevel", as<int>(verbLevel));
       stepper_ptr->setParameterList(FEparams);
       method = "Forward Euler";
-      step_method_val = FIXED_STEP;
+      step_method_val = STEP_TYPE_FIXED;
     }
     else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
       RCP<Thyra::NonlinearSolverBase<double> >
@@ -278,19 +278,27 @@ int main(int argc, char *argv[])
           );
         stepper_ptr->setParameterList(BEparams);
         method = "Backward Euler";
-        step_method_val = FIXED_STEP;
+        step_method_val = STEP_TYPE_FIXED;
       } 
       else {
         RCP<Teuchos::ParameterList>
           BDFparams = rcp(new Teuchos::ParameterList);
-        BDFparams->set( "stopTime", finalTime );
-        BDFparams->set( "maxOrder", maxOrder );
-        BDFparams->set( "relErrTol", reltol );
-        BDFparams->set( "absErrTol", abstol );
+        RCP<Teuchos::ParameterList> BDFStepControlPL =
+          Teuchos::sublist(BDFparams,RythmosStepControlSettings_name);
+
         BDFparams->sublist("VerboseObject").set(
           "Verbosity Level",
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
           );
+
+        BDFStepControlPL->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
+        BDFStepControlPL->set( "stopTime", finalTime );
+        BDFStepControlPL->set( "maxOrder", maxOrder );
+        BDFStepControlPL->set( "relErrTol", reltol );
+        BDFStepControlPL->set( "absErrTol", abstol );
         stepper_ptr = rcp(
           new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
         stepperSlave_ptr = rcp(
@@ -312,7 +320,7 @@ int main(int argc, char *argv[])
     double time = t0;
 
     RCP<const Thyra::VectorBase<double> > x_computed_thyra_ptr;
-    if (step_method_val == FIXED_STEP)
+    if (step_method_val == STEP_TYPE_FIXED)
     {
       if (useIntegrator)
       {
@@ -339,12 +347,7 @@ int main(int argc, char *argv[])
         Array<RCP<const Thyra::VectorBase<double> > > x_vec;
         Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
         Array<double> accuracy_vec;
-        bool status = integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
-        if (!status) 
-        {
-          std::cout << "ERROR:  Integrator.getPoints returned failure" << std::endl;
-          return(-1);
-        }
+        integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
         // Get solution out of stepper:
         x_computed_thyra_ptr = x_vec.back();
       }
@@ -353,7 +356,7 @@ int main(int argc, char *argv[])
         // Integrate forward with fixed step sizes:
         for (int i=1 ; i<=N ; ++i)
         {
-          double dt_taken = stepper.takeStep(dt,Rythmos::FIXED_STEP);
+          double dt_taken = stepper.takeStep(dt,Rythmos::STEP_TYPE_FIXED);
           time += dt_taken;
           numSteps++;
           if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
@@ -370,7 +373,7 @@ int main(int argc, char *argv[])
         x_computed_thyra_ptr = stepStatus.solution;
       }
     }
-    else // (step_method_val == VARIABLE_STEP)
+    else // (step_method_val == STEP_TYPE_VARIABLE)
     {
       if (useIntegrator)
       {
@@ -400,12 +403,7 @@ int main(int argc, char *argv[])
         Array<RCP<const Thyra::VectorBase<double> > > x_vec;
         Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
         Array<double> accuracy_vec;
-        bool status = integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
-        if (!status) 
-        {
-          std::cout << "ERROR:  Integrator.getPoints returned failure" << std::endl;
-          return(-1);
-        }
+        integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
         // Get solution out of stepper:
         x_computed_thyra_ptr = x_vec.back();
       }
@@ -416,12 +414,11 @@ int main(int argc, char *argv[])
         Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
         x_computed_thyra_ptr = stepStatus.solution;
         // Convert Thyra::VectorBase to Epetra_Vector
-        RCP<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
         // Create a place to store the exact numerical solution
-        RCP<Epetra_Vector> x_numerical_exact_ptr = rcp(new Epetra_Vector(x_computed_ptr->Map()));
+        RCP<Epetra_Vector> x_numerical_exact_ptr = rcp(new Epetra_Vector(*epetraModel->get_x_map()));
         Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
         // Create a place to store the relative difference:
-        RCP<Epetra_Vector> x_rel_diff_ptr = rcp(new Epetra_Vector(x_computed_ptr->Map()));
+        RCP<Epetra_Vector> x_rel_diff_ptr = rcp(new Epetra_Vector(*epetraModel->get_x_map()));
         Epetra_Vector& x_rel_diff = *x_rel_diff_ptr;
         // get lambda from the problem:
         RCP<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
@@ -429,10 +426,10 @@ int main(int argc, char *argv[])
 
         while (time < finalTime)
         {
-          double dt_taken = stepper.takeStep(0.0,Rythmos::VARIABLE_STEP);
+          double dt_taken = stepper.takeStep(0.0,Rythmos::STEP_TYPE_VARIABLE);
           if (method_val == METHOD_BDF) {
             stepperSlave_ptr->setStepControlData(stepper);
-            double slave_dt_taken = stepperSlave_ptr->takeStep(dt_taken,Rythmos::FIXED_STEP);
+            double slave_dt_taken = stepperSlave_ptr->takeStep(dt_taken,Rythmos::STEP_TYPE_FIXED);
             // Check that returned dt matches exactly
             TEST_FOR_EXCEPT(dt_taken != slave_dt_taken);
             Rythmos::StepStatus<double> stepStatusMaster = stepper.getStepStatus();
@@ -454,6 +451,9 @@ int main(int argc, char *argv[])
             TEST_FOR_EXCEPTION(
               normLETDiff > maxRestepError, std::logic_error,
               "Error, normLETDiff = " << normLETDiff << " > maxRestepError = " << maxRestepError << "!" );
+            if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+              *out << "normLETDiff = " << normLETDiff << std::endl;
+            }
             // Create a non-const Thyra VectorBase to use as a temp vector
             RCP<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
             // Check that the solution matches exactly
@@ -465,12 +465,18 @@ int main(int argc, char *argv[])
             const double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
             TEST_FOR_EXCEPT(normSolutionDiff > eps);
             // Check that solution dot matches exactly
-            Thyra::V_StVpStV<double>(&*vec_temp,1.0,*stepStatusMaster.solutionDot,-1.0,*stepStatusSlave.solutionDot);
-            double normSolutionDotDiff = Thyra::norm_inf<double>(*vec_temp);
-            if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-              *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;
+            {
+
+              RCP<const Thyra::VectorBase<double> >
+                master_x_dot = get_xdot(stepper,stepStatusMaster.time),
+                slave_x_dot = get_xdot(*stepperSlave_ptr,stepStatusSlave.time);
+              Thyra::V_VmV<double>(&*vec_temp,*master_x_dot,*slave_x_dot);
+              double normSolutionDotDiff = Thyra::norm_inf<double>(*vec_temp);
+              if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+                *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;
+              }
+              TEST_FOR_EXCEPT(normSolutionDotDiff > eps);
             }
-            TEST_FOR_EXCEPT(normSolutionDotDiff > eps);
             // Do not check that the residual matches because the residual isn't stored in ImplicitBDFStepper.
           }
           numSteps++;
@@ -487,7 +493,8 @@ int main(int argc, char *argv[])
             stepStatus = stepper.getStepStatus();
             x_computed_thyra_ptr = stepStatus.solution;
             // Convert Thyra::VectorBase to Epetra_Vector
-            x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+            RCP<const Epetra_Vector>
+              x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
             if ((method_val == METHOD_BDF) && (maxOrder == 1))
             {
               int myN = x_numerical_exact.MyLength();

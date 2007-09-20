@@ -42,12 +42,15 @@ template<class Scalar>
 class ExplicitRKStepper : virtual public StepperBase<Scalar>
 {
   public:
-
+    typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     
     /** \brief . */
     ExplicitRKStepper();
     ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model_);
+
+    /** \brief . */
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 
     /** \brief . */
     void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
@@ -75,33 +78,27 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
-    bool setPoints(
+    void addPoints(
       const Array<Scalar>& time_vec
       ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
       ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const Array<ScalarMag> & accuracy_vec 
       );
-    
+
     /// Get values from buffer
-    bool getPoints(
+    void getPoints(
       const Array<Scalar>& time_vec
       ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
       ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,Array<ScalarMag>* accuracy_vec) const;
 
-    /// Fill data in from another interpolation buffer
-    bool setRange(
-      const TimeRange<Scalar>& range,
-      const InterpolationBufferBase<Scalar> & IB);
-
     /** \brief . */
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(Array<Scalar>* time_vec) const;
+    void getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(Array<Scalar>& time_vec);
+    void removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -134,6 +131,11 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
     Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
+    bool isInitialized_;
+
+    // Private member functions:
+    void initialize_();
+
 };
 
 template<class Scalar>
@@ -141,13 +143,14 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::Mod
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
-  out->setMaxLenLinePrefix(30);
-  //out->pushLinePrefix("Rythmos::ExplicitRKStepper");
-  //out->setShowLinePrefix(true);
-  //out->setTabIndentStr("    ");
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  model_ = model;
+  this->setModel(model);
+  initialize_();
+}
+
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::initialize_()
+{
   t_ = ST::zero();
   solution_vector_ = model_->getNominalValues().get_x()->clone_v();
   stages_ = 4; // 4 stage ERK
@@ -279,10 +282,12 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::Mod
   b_c_[2] = onehalf;
   b_c_[3] = one;
 
+  isInitialized_ = true;
 }
 
 template<class Scalar>
 ExplicitRKStepper<Scalar>::ExplicitRKStepper()
+  : isInitialized_(false)
 {
 }
 
@@ -292,11 +297,17 @@ ExplicitRKStepper<Scalar>::~ExplicitRKStepper()
 }
 
 template<class Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > ExplicitRKStepper<Scalar>::get_x_space() const
+{
+  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call get_x_space before initialization!\n");
+  return(solution_vector_->space());
+}
+
+template<class Scalar>
 Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
-  if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
+  if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }
   dt_ = dt;
@@ -328,7 +339,6 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 template<class Scalar>
 const StepStatus<Scalar> ExplicitRKStepper<Scalar>::getStepStatus() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   StepStatus<Scalar> stepStatus;
 
   stepStatus.stepSize = dt_;
@@ -383,33 +393,23 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::setPoints(
+void ExplicitRKStepper<Scalar>::addPoints(
     const Array<Scalar>& time_vec
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const Array<ScalarMag> & accuracy_vec 
     )
 {
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ExplicitRKStepper at this time.\n");
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::getPoints(
+void ExplicitRKStepper<Scalar>::getPoints(
     const Array<Scalar>& time_vec
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,Array<ScalarMag>* accuracy_vec) const
 {
-  return(false);
-}
-
-template<class Scalar>
-bool ExplicitRKStepper<Scalar>::setRange(
-  const TimeRange<Scalar>& range,
-  const InterpolationBufferBase<Scalar>& IB
-  )
-{
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getPoints is not implemented for ExplicitRKStepper at this time.\n");
 }
 
 template<class Scalar>
@@ -419,15 +419,15 @@ TimeRange<Scalar> ExplicitRKStepper<Scalar>::getTimeRange() const
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
+void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getNodes is not implemented for ExplicitRKStepper at this time.\n");
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
+void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ExplicitRKStepper at this time.\n");
 }
 
 template<class Scalar>

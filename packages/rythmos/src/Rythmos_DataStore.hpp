@@ -50,10 +50,13 @@ class DataStore : virtual public Teuchos::Describable
     DataStore() {};
 
     /** \brief. */
-    DataStore(Scalar &time_
-      ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_
-      ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &xdot_
-      ,ScalarMag &accuracy_);
+    DataStore(Scalar& time_
+      ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_
+      ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot_
+      ,ScalarMag& accuracy_);
+
+    /** \brief. */
+    DataStore(const DataStore<Scalar>& ds_in);
 
     /// Time value of data:
     Scalar time;
@@ -168,6 +171,17 @@ DataStore<Scalar>::DataStore(
   x = x_;
   xdot = xdot_;
   accuracy = accuracy_;
+}
+
+template<class Scalar>
+DataStore<Scalar>::DataStore(
+    const DataStore<Scalar>& ds_in
+    )
+{
+  time = ds_in.time;
+  x = ds_in.x;
+  xdot = ds_in.xdot;
+  accuracy = ds_in.accuracy;
 }
 
 template<class Scalar>

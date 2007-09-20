@@ -91,9 +91,11 @@ void RCP_node::set_extra_data(
   const std::string type_and_name( extra_data.typeName() + std::string(":") + name );
   if( !extra_data_map_->empty() && force_unique ) {
     extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       itr != extra_data_map_->end(), std::invalid_argument
       ,"Error, the type:name pair \'" << type_and_name << "\' already exists and force_unique==true!" );
+#endif
   }
   (*extra_data_map_)[type_and_name] = extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
 }
@@ -101,15 +103,19 @@ void RCP_node::set_extra_data(
 
 any& RCP_node::get_extra_data( const std::string& type_name, const std::string& name )
 {
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     extra_data_map_==NULL, std::invalid_argument
     ,"Error, no extra data has been set yet!" );
+#endif
   any *extra_data = get_optional_extra_data(type_name,name);
   if(extra_data) return *extra_data;
   const std::string type_and_name( type_name + std::string(":") + name );
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     extra_data == NULL, std::invalid_argument
     ,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
+#endif
   return *extra_data; // Will never be executed!
 }
 

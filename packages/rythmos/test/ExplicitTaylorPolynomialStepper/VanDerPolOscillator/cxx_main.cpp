@@ -62,7 +62,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF, METHOD_ETI };
-enum EStepMethod { FIXED_STEP, VARIABLE_STEP };
+enum EStepMethod { STEP_TYPE_FIXED, STEP_TYPE_VARIABLE };
 
 int main(int argc, char *argv[])
 {
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 	if (verbose)
 	  cout << "t = " << t << endl;
 
-	dt = stepper.takeStep(0.0, Rythmos::VARIABLE_STEP);
+	dt = stepper.takeStep(0.0, Rythmos::STEP_TYPE_VARIABLE);
 	t += dt;
 	step++;
 
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
       for (int i=1 ; i<=N ; ++i, step++) {
 	if (verbose)
 	  cout << "t = " << t << endl;
-	double dt_taken = stepper.takeStep(dt, Rythmos::FIXED_STEP);
+	double dt_taken = stepper.takeStep(dt, Rythmos::STEP_TYPE_FIXED);
 	if (dt_taken != dt) {
 	  cerr << "Error, stepper took step of dt = " << dt_taken 
 	       << " when asked to take step of dt = " << dt << std::endl;

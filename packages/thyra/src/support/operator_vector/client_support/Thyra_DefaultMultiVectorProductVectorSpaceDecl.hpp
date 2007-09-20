@@ -82,12 +82,12 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const VectorSpaceBase<Scalar> > &space,
+    const RCP<const VectorSpaceBase<Scalar> > &space,
     const int numColumns
     );
 
   /** \brief . */
-  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >
+  RCP<const DefaultProductVectorSpace<Scalar> >
   getDefaultProductVectorSpace() const;
 
   /** \brief Uninitialize.
@@ -110,7 +110,7 @@ public:
    * still using them.
    */
   void uninitialize(
-    Teuchos::RCP<const VectorSpaceBase<Scalar> > *space = 0,
+    RCP<const VectorSpaceBase<Scalar> > *space = 0,
     int *numColumns = 0
     );
     
@@ -122,7 +122,7 @@ public:
   /** \brief . */
   int numBlocks() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
+  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
 
   //@}
 
@@ -134,7 +134,7 @@ public:
   /** \brief . */
   bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const;
   /** \brief Returns a <tt>DefaultMultiVectorProductVector</tt> object. */
-  Teuchos::RCP< VectorBase<Scalar> > createMember() const;
+  RCP< VectorBase<Scalar> > createMember() const;
   /** \brief Returns the sum of the scalar products of the constituent vectors. */
   Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /** \brief Returns the sum of the scalar products of each of the columns of
@@ -146,7 +146,7 @@ public:
    */
   bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
   /** \brief Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>. */
-  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
   /** \brief Returns a <tt>DefaultColumnwiseMultiVector</tt> object.
    *
    * ToDo: It is possible an general and well optimized multi-vector
@@ -155,9 +155,9 @@ public:
    * numBlocks*numMembers total columns.  However, this class is not needed at this
    * time so it is not provided.
    */
-  Teuchos::RCP< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
+  RCP< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
   /** \brief Clones the object as promised. */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > clone() const;
+  RCP< const VectorSpaceBase<Scalar> > clone() const;
 
   //@}
 
@@ -188,9 +188,9 @@ private:
   // ///////////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > space_;
+  RCP<const VectorSpaceBase<Scalar> > space_;
   int numColumns_;
-  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > defaultProdVecSpc_;
+  RCP<const DefaultProductVectorSpace<Scalar> > defaultProdVecSpc_;
 
   // ///////////////////////////////////
   // Private member functions
@@ -206,13 +206,13 @@ private:
  */
 template<class Scalar>
 inline
-Teuchos::RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
+RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
 multiVectorProductVectorSpace(
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> > &space,
+  const RCP<const VectorSpaceBase<Scalar> > &space,
   const int numColumns
   )
 {
-  Teuchos::RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
+  RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
     multiVecProdVecSpace
     = Teuchos::rcp(new DefaultMultiVectorProductVectorSpace<Scalar>());
   multiVecProdVecSpace->initialize(space,numColumns);
@@ -226,7 +226,7 @@ multiVectorProductVectorSpace(
 
 template<class Scalar>
 inline
-Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >
+RCP<const DefaultProductVectorSpace<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::getDefaultProductVectorSpace() const
 {
   return defaultProdVecSpc_;

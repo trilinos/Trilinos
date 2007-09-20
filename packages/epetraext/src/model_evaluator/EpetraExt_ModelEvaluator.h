@@ -355,6 +355,11 @@ public:
   };
 
   /** \brief . */
+  enum EOutArgsDgDx_dot {
+    OUT_ARG_DgDx_dot   ///< .
+  };
+
+  /** \brief . */
   enum EOutArgsDgDx {
     OUT_ARG_DgDx   ///< .
   };
@@ -380,6 +385,8 @@ public:
     /** \brief <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDfDp arg, int l) const;
     /** \brief <tt>0 <= j && j < Ng()</tt>.  */
+    const DerivativeSupport& supports(EOutArgsDgDx_dot arg, int j) const;
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
     /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
@@ -403,6 +410,12 @@ public:
     Derivative get_DfDp(int l) const;
     /** \brief . */
     DerivativeProperties get_DfDp_properties(int l) const;
+    /** \brief .  */
+    void set_DgDx_dot(int j, const Derivative &DgDx_dot_j);
+    /** \brief .  */
+    Derivative get_DgDx_dot(int j) const;
+    /** \brief . */
+    DerivativeProperties get_DgDx_dot_properties(int j) const;
     /** \brief .  */
     void set_DgDx(int j, const Derivative &DgDx_j);
     /** \brief .  */
@@ -431,6 +444,8 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& );
     /** \brief . */
+    void _setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& );
+    /** \brief . */
     void _setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& );
     /** \brief . */
     void _setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
@@ -438,6 +453,8 @@ public:
     void _set_W_properties( const DerivativeProperties &W_properties );
     /** \brief . */
     void _set_DfDp_properties( int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DgDx_dot_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void _set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
@@ -452,6 +469,7 @@ public:
     std::string modelEvalDescription_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
     supports_t supports_DfDp_; // Np
+    supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
     Evaluation<Epetra_Vector> f_;
@@ -460,7 +478,9 @@ public:
     DerivativeProperties W_properties_;
     deriv_t DfDp_; // Np
     deriv_properties_t DfDp_properties_; // Np
+    deriv_t DgDx_dot_; // Ng
     deriv_t DgDx_; // Ng
+    deriv_properties_t DgDx_dot_properties_; // Ng
     deriv_properties_t DgDx_properties_; // Ng
     deriv_t DgDp_; // Ng x Np
     deriv_properties_t DgDp_properties_; // Ng x Np
@@ -468,6 +488,7 @@ public:
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
+    void assert_supports(EOutArgsDgDx_dot arg, int j) const;
     void assert_supports(EOutArgsDgDx arg, int j) const;
     void assert_supports(EOutArgsDgDp arg, int j, int l) const;
     void assert_l(int l) const;
@@ -577,7 +598,8 @@ public:
   /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
 
-  // ToDo: Add functions for creating D(g(j))/D(x_dot) if needed!
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
@@ -629,6 +651,8 @@ protected:
     /** \brief . */
     void setSupports(EOutArgsDfDp arg, int l, const DerivativeSupport& );
     /** \brief . */
+    void setSupports(EOutArgsDgDx_dot arg, int j, const DerivativeSupport& );
+    /** \brief . */
     void setSupports(EOutArgsDgDx arg, int j, const DerivativeSupport& );
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
@@ -636,6 +660,8 @@ protected:
     void set_W_properties( const DerivativeProperties &properties );
     /** \brief . */
     void set_DfDp_properties( int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DgDx_dot_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
@@ -687,6 +713,14 @@ Teuchos::RefCountPtr<Epetra_MultiVector>
 get_DfDp_mv(
   const int l
   ,const ModelEvaluator::OutArgs &outArgs
+  );
+
+/** \brief . */
+Teuchos::RefCountPtr<Epetra_MultiVector>
+get_DgDx_dot_mv(
+  const int j
+  ,const ModelEvaluator::OutArgs &outArgs
+  ,const ModelEvaluator::EDerivativeMultiVectorOrientation mvOrientation
   );
 
 /** \brief . */
@@ -877,6 +911,29 @@ ModelEvaluator::OutArgs::get_DfDp_properties(int l) const
 }
 
 inline
+void ModelEvaluator::OutArgs::set_DgDx_dot( int j, const Derivative &DgDx_dot_j )
+{
+  assert_supports(OUT_ARG_DgDx_dot,j);
+  DgDx_dot_[j] = DgDx_dot_j;
+}
+
+inline
+ModelEvaluator::Derivative
+ModelEvaluator::OutArgs::get_DgDx_dot(int j) const
+{
+  assert_supports(OUT_ARG_DgDx_dot,j);
+  return DgDx_dot_[j];
+}
+
+inline
+ModelEvaluator::DerivativeProperties
+ModelEvaluator::OutArgs::get_DgDx_dot_properties(int j) const
+{
+  assert_supports(OUT_ARG_DgDx_dot,j);
+  return DgDx_dot_properties_[j];
+}
+
+inline
 void ModelEvaluator::OutArgs::set_DgDx( int j, const Derivative &DgDx_j )
 {
   assert_supports(OUT_ARG_DgDx,j);
@@ -972,6 +1029,10 @@ void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDfDp arg, int l, const D
 { this->_setSupports(arg,l,supports); }
 
 inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& supports )
+{ this->_setSupports(arg,j,supports); }
+
+inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
 { this->_setSupports(arg,j,supports); }
 
@@ -987,6 +1048,12 @@ inline
 void ModelEvaluator::OutArgsSetup::set_DfDp_properties( int l, const DerivativeProperties &properties )
 {
   this->_set_DfDp_properties(l,properties);
+}
+
+inline
+void ModelEvaluator::OutArgsSetup::set_DgDx_dot_properties( int j, const DerivativeProperties &properties )
+{
+  this->_set_DgDx_dot_properties(j,properties);
 }
 
 inline

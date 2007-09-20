@@ -33,7 +33,7 @@ deleted.  It is a form of garbage collection but is not as general or fail-
 safe as in languages with built in garbage collection.  For more information
 see:
 
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
+"http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf
 
 and click on: <tt>Teuchos::RCP</tt>
 
@@ -53,9 +53,9 @@ C *c_rptr2 = &*c_ptr;     // Checked in debug build and will not return NULL
 You should use <tt>c_ptr.get()</tt> when it is okay for the pointer to be
 <tt>NULL</tt>.  On the other hand, you should use <tt>&*c_ptr</tt> when you
 don't want to allow the raw pointer to be <tt>NULL</tt>.  This is because the
-operator function <tt>Teuchos::RCP::operator*() </tt> will throw an
-exception if <tt>Teuchos::RCP::get()==NULL</tt> when the code is
-compiled using the macro define <tt>-D_DEBUG</tt>.
+operator function Teuchos::RCP::operator*() will throw an exception if
+<tt>Teuchos::RCP::get()==NULL</tt> when the code is configured using
+<tt>--enable-teuchos-debug</tt>.
 
 For more information see Item 3 in Appendix B in 
 
@@ -75,16 +75,15 @@ http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
 
 \subsection thyra_faq_why_helper_funcs_sec Q: Why is Thyra written with so many non-member helper functions instead of member functions?
 
-In standard C++ class students were told that the beauty of OOP is that functions and data
-can be put together into classes to combine the operations with the data on which they
-operate.
+In many standard C++ classes students are told that the beauty of OOP is that
+functions and data can be put together into classes to combine the operations
+with the data on which they operate.  Is this not correct?
 
 <b>A:</b> Generally member functions should only be used over non-member
 functions when direct access to private or protected data for functions is
 required.  By minimizing the amount of code that can access non-public data
-you greatly simplify maintenance.  See section 11.3.1 in "The C++ Programming
-Language: Special Edition" for a discussion of this topic.
-
+you greatly simplify maintenance.  See Item 44 in "C++ Coding Standards" by
+Sutter and Alexandrescu for a discussion of this topic.
 
 \subsection thyra_faq_Scalar_sec Q: Where is the Scalar class, and how do I use it to replace my underlying data-type, e.g. double, in my ANA? 
 
@@ -96,8 +95,8 @@ the interfaces, the composite classes, and many of the concrete
 implementations are fully templated some are not and can only support one
 scalar type (e.g. see the Epetra/Thyra adapters).
 
-See the <tt>Thyra::sillyCgSolve()</tt> and <tt>Thyra::sillyPowerMethod()</tt>
-examples for how this templating is used.
+See the <tt>sillyCgSolve()</tt> and <tt>sillyPowerMethod()</tt> examples for
+how this templating is used.
 
 \subsection thyra_faq_creating_vecs_multivecs_sec Q: How do I create a Thyra::VectorBase or Thyra::MultiVectorBase object?
 
@@ -106,8 +105,8 @@ Thyra::VectorSpaceBase::createMembers() are protected and can not be called by
 client code.
 
 <b>A:</b> You must use the non-member functions <tt>Thyra::createMember()</tt>
-and <tt>Thyra::createMembers()</tt> described \ref
-Thyra_Op_Vec_createMember_grp "here".
+and <tt>Thyra::createMembers()</tt> described \ref Thyra_Op_Vec_createMember_grp "here"
+and also used in the examples <tt>sillyCgSolve()</tt> and <tt>sillyModifiedGramSchmidt()</tt>.
 
 <!-- \subsection thyra_faq_xxx_sec Q: -->
 

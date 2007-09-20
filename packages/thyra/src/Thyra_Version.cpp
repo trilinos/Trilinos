@@ -30,5 +30,5 @@
 
 std::string Thyra::Thyra_Version()
 { 
-  return("Thyra Version of the Day"); 
+  return("Thyra 3.0 in Trilinos 8.0"); 
 }

@@ -44,7 +44,7 @@ unsigned int FileInputStream::readBytes(unsigned char* const toFill,
 																				const unsigned int maxToRead)
 {
 	if (
-#ifdef ICL
+#if defined(ICL) || defined(__sgi)
     feof(file_)
 #else
     std::feof(file_)
@@ -56,7 +56,7 @@ unsigned int FileInputStream::readBytes(unsigned char* const toFill,
 
   const bool
     is_eof
-#ifdef ICL
+#if defined(ICL) || defined(__sgi)
     = feof(file_)
 #else
     = std::feof(file_)

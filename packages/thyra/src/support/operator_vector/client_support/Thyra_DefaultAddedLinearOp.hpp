@@ -237,6 +237,11 @@ void DefaultAddedLinearOp<Scalar>::apply(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+#ifdef TEUCHOS_DEBUG
+  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
+    "DefaultAddedLinearOp<Scalar>::apply(...)",*this,M_trans,X,Y
+    );
+#endif // TEUCHOS_DEBUG  
   //
   // Y = alpha * op(M) * X + beta*Y
   //
@@ -264,15 +269,10 @@ void DefaultAddedLinearOp<Scalar>::validateOps()
     for( int k = 0; k < numOps; ++k ) {
       TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
       if( k > 0 ) {
-        THYRA_ASSERT_VEC_SPACES_NAMES(
-          "DefaultAddedLinearOp<Scalar>::initialize(...)"
-          ,*Ops_[k]()->range(),("(*Ops["+toString(k)+"]->range())")
-          ,*Ops_[0]()->range(),"(*Ops[0]->range())"
-          );
-        THYRA_ASSERT_VEC_SPACES_NAMES(
-          "DefaultAddedLinearOp<Scalar>::initialize(...)"
-          ,*Ops_[k]()->domain(),("(*Ops["+toString(k)+"]->domain())")
-          ,*Ops_[0]()->domain(),"(*Ops[0]->domain())"
+        THYRA_ASSERT_LINEAR_OP_PLUS_LINEAR_OP_SPACES_NAMES(
+          "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
+          ,*Ops_[0].getConstObj(),NOTRANS,("Ops[0]")
+          ,*Ops_[k].getConstObj(),NOTRANS,("Ops["+toString(k)+"]")
           );
       }
     }

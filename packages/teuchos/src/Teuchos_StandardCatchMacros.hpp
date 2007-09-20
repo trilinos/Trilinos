@@ -62,6 +62,7 @@
         << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard std::exception of type \'" \
         <<Teuchos::typeName(excpt)<<"\' :\n\n"; \
         Teuchos::OSTab(oss).o() << excpt.what() << std::endl; \
+        std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
     } \
@@ -73,6 +74,7 @@
         << "\np="<<::Teuchos::GlobalMPISession::getRank() \
         << ": *** Caught an integer std::exception with value = " \
         << excpt_code << std::endl; \
+        std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
     } \
@@ -80,7 +82,8 @@
   catch( ... ) { \
     if((VERBOSE)) { \
       std::ostringstream oss; \
-      oss << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown std::exception\n"; \
+      oss << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown exception\n"; \
+      std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
       (SUCCESS_FLAG) = false; \
     } \

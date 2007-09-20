@@ -38,6 +38,7 @@
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_as.hpp"
 
+
 namespace Rythmos {
 
 
@@ -64,8 +65,8 @@ namespace Rythmos {
  */
 template<class Scalar>
 class SingleResidualModelEvaluator
-  : virtual public SingleResidualModelEvaluatorBase<Scalar>, // Public interface
-    virtual protected Thyra::ModelEvaluatorDelegatorBase<Scalar> // Implementation detail
+  : virtual public SingleResidualModelEvaluatorBase<Scalar>,
+    virtual public Thyra::ModelEvaluatorDelegatorBase<Scalar>
 {
 public:
 
@@ -82,28 +83,28 @@ public:
 
   /** \brief . */
   void initializeSingleResidualModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const Scalar &coeff_x_dot,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
+    const RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
     const Scalar &coeff_x,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_base,
+    const RCP<const Thyra::VectorBase<Scalar> > &x_base,
     const Scalar &t_base,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
+    const RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
     );
 
   /** \brief . */
   Scalar get_coeff_x_dot() const;
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+  RCP<const Thyra::VectorBase<Scalar> >
   get_x_dot_base() const;
 
   /** \brief . */
   Scalar get_coeff_x() const;
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+  RCP<const Thyra::VectorBase<Scalar> >
   get_x_base() const;
 
   /** \brief . */
@@ -111,38 +112,46 @@ public:
 
   //@}
 
-  /** \name Overridden from ModelEvaluator */
+  /** \name Public functions overridden from ModelEvaluator */
   //@{
 
   /** \breif . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase */
+  //@{
+
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
-  void evalModel(
+  void evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs
     ) const;
 
   //@}
 
+
 private:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   Scalar coeff_x_dot_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_dot_base_;
+  RCP<const Thyra::VectorBase<Scalar> > x_dot_base_;
   Scalar coeff_x_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_base_;
+  RCP<const Thyra::VectorBase<Scalar> > x_base_;
   Scalar t_base_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
   // cache
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_;
-
+  RCP<Thyra::VectorBase<Scalar> > x_;
+  RCP<Thyra::VectorBase<Scalar> > x_dot_;
 
 };
 
@@ -164,14 +173,14 @@ SingleResidualModelEvaluator<Scalar>::SingleResidualModelEvaluator()
 
 template<class Scalar>
 void SingleResidualModelEvaluator<Scalar>::initializeSingleResidualModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const Scalar &coeff_x_dot,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
   const Scalar &coeff_x,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_base,
+  const RCP<const Thyra::VectorBase<Scalar> > &x_base,
   const Scalar &t_base,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
+  const RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
   )
 {
   this->Thyra::ModelEvaluatorDelegatorBase<Scalar>::initialize(daeModel);
@@ -234,7 +243,7 @@ Scalar SingleResidualModelEvaluator<Scalar>::get_coeff_x_dot() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+RCP<const Thyra::VectorBase<Scalar> >
 SingleResidualModelEvaluator<Scalar>::get_x_dot_base() const
 {
   return x_dot_base_;
@@ -249,7 +258,7 @@ Scalar SingleResidualModelEvaluator<Scalar>::get_coeff_x() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+RCP<const Thyra::VectorBase<Scalar> >
 SingleResidualModelEvaluator<Scalar>::get_x_base() const
 {
   return x_base_;
@@ -280,17 +289,22 @@ SingleResidualModelEvaluator<Scalar>::createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs;
+  inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
   return inArgs;
 }
 
 
+// Private functions overridden from ModelEvaluatorDefaultBase
+
+
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-SingleResidualModelEvaluator<Scalar>::createOutArgs() const
+SingleResidualModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs;
+  outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W);
   return outArgs;
@@ -298,7 +312,7 @@ SingleResidualModelEvaluator<Scalar>::createOutArgs() const
 
 
 template<class Scalar>
-void SingleResidualModelEvaluator<Scalar>::evalModel(
+void SingleResidualModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs_bar,
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
@@ -308,7 +322,7 @@ void SingleResidualModelEvaluator<Scalar>::evalModel(
   using Teuchos::as;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+  const RCP<const Thyra::ModelEvaluator<Scalar> >
     daeModel = this->getUnderlyingModel();
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
@@ -370,7 +384,7 @@ void SingleResidualModelEvaluator<Scalar>::evalModel(
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW))
     *out << "\nEvaluating the underlying DAE model at (x_bar_dot,x_bar,t) ...\n";
 
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > W;
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W;
 
   MEB::InArgs<Scalar> daeInArgs = daeModel->createInArgs();
   daeInArgs.setArgs(basePoint_);

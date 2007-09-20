@@ -1,3 +1,4 @@
+    Enable Delayed Solver Construction : bool = 0
     Linear Solver Type : string = Amesos
     Preconditioner Type : string = Ifpack
     Linear Solver Types -> 
@@ -109,7 +110,7 @@
             Orthogonalization : string = DGKS
             Orthogonalization Constant : double = -1
             Output Frequency : int = -1
-            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb61260,node=0xb6f8b0,count=4}
+            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb76360,node=0xb855a0,count=4}
             Show Maximum Residual Norm Only : bool = 0
             Timer Label : string = Belos
             Verbosity : int = 0
@@ -126,7 +127,7 @@
             Orthogonalization : string = DGKS
             Orthogonalization Constant : double = -1
             Output Frequency : int = -1
-            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb61260,node=0xb6f670,count=4}
+            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb76360,node=0xb85360,count=4}
             Show Maximum Residual Norm Only : bool = 0
             Timer Label : string = Belos
             Verbosity : int = 0
@@ -143,7 +144,7 @@
             Orthogonalization : string = DGKS
             Orthogonalization Constant : double = -1
             Output Frequency : int = -1
-            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb61260,node=0xb6f790,count=4}
+            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb76360,node=0xb85480,count=4}
             Show Maximum Residual Norm Only : bool = 0
             Timer Label : string = Belos
             Verbosity : int = 0
@@ -205,8 +206,8 @@
           max levels : int = 10
           prec type : string = MGV
           smoother: Aztec as solver : bool = 0
-          smoother: Aztec options : int* = 0xb87a90
-          smoother: Aztec params : double* = 0xb88350
+          smoother: Aztec options : RCP<vector<int>> = RCP<vector<int>>{ptr=0xb9c4d0,node=0xb9d140,count=2}
+          smoother: Aztec params : RCP<vector<double>> = RCP<vector<double>>{ptr=0xb9d360,node=0xb9cb10,count=2}
           smoother: Hiptmair efficient symmetric : bool = 1
           smoother: damping factor : double = 1
           smoother: pre or post : string = both

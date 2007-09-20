@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(stratimikos, version 1.0 in Trilinos 7.0, rabartl@sandia.gov)
+AC_INIT(stratimikos, Development Version, rabartl@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running stratimikos Configure Script"

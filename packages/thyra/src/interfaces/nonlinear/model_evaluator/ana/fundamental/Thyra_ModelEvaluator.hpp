@@ -359,7 +359,7 @@ namespace Thyra {
  * derivative and this information is returned from
  * <tt>this->createOutArgs().supports(OUT_ARG_blah,...)</tt> as a
  * <tt>ModelEvaluatorBase::DerivativeSupport</tt> object, where <tt>blah</tt>
- * is either <tt>DfDp</tt>, <tt>DgDx</tt>, or <tt>DgDp</tt>.  The
+ * is either <tt>DfDp</tt>, <tt>DgDx_dot</tt>,  <tt>DgDx</tt>, or <tt>DgDp</tt>.  The
  * <tt>LinearOpBase</tt> form of a derivative is supported if
  * <tt>this->createOutArgs().supports(OUT_ARG_blah,...).supports(DERIV_LINEAR_OP)==true</tt>.
  * The forward <tt>MultiVectorBase</tt> form of the derivative is supported if
@@ -398,8 +398,26 @@ namespace Thyra {
  *
  *     The <tt>LinearOpWithSolveBase</tt> form of this derivative is supported
  *     if <tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>.  The
- *     <tt>LinearOpBase</tt>-only form of this derivative is supported if
- *     <tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
+ *     <tt>LinearOpBase</tt>-only form (i.e. no solve operation is given) of
+ *     this derivative is supported if
+ *     <tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>.  The
+ *     <tt>W_op</tt> form of <tt>W</tt> is to be preferred when no linear solve
+ *     with <tt>W</tt> will ever be needed.  A valid implementation may
+ *     support none, both, or either of these forms <tt>LOWSB</tt> and/or
+ *     <tt>LOB</tt> of <tt>W</tt>.
+ *
+ *     Also note that an underlying model may only support a single copy of
+ *     <tt>W</tt> or <tt>W_op</tt> at one time.  This is required to
+ *     accommodate some types of underlying applications that are less flexible
+ *     in how they maintain their memory and how they deal with their objects.
+ *     Therefore, to accommodate these types of less ideal application
+ *     implementations, if a client tries to create and maintain more than one
+ *     <tt>W</tt> and/or <tt>W_op</tt> object at one time, then
+ *     <tt>create_W()</tt> and <tt>create_W_op()</tt> may return <tt>null</tt>
+ *     (or may throw an undetermined exception).  However, every "good"
+ *     implementation of this interface should support the creation and
+ *     maintenance of as many <tt>W</tt> and/or <tt>W_op</tt> objects at one
+ *     time as will fit into memory.
  *
  *     <li><b>State variable Taylor coefficients</b>
  *
@@ -440,6 +458,17 @@ namespace Thyra {
  *     <ul>
  *     
  *     <li><b>State variable derivatives</b>
+ 
+       \verbatim
+       DgDx_dot(j) = D(g(j))/D(x_dot)
+       \endverbatim
+ 
+ *     for <tt>j=0...Ng-1</tt>.
+ *
+ *     These are derivative objects that represent the derivative of the
+ *     axillary function <tt>g(j)</tt> with respect to the state variables
+ *     derivative <tt>x_dot</tt>.  This derivative is manipulated as a
+ *     <tt>ModelEvaluatorBase::Derivative</tt> object.
  
        \verbatim
        DgDx(j) = D(g(j))/D(x)
@@ -550,14 +579,33 @@ namespace Thyra {
  *
  * \section Thyra_ME_dev_notes_sec Notes to subclass developers
  *
- * Subclass developers should consider deriving from either
- * <tt>StateFuncModelEvaluatorBase</tt> or
- * <tt>ModelEvaluatorDelegatorBase</tt>.  The base class
- * <tt>StateFuncModelEvaluatorBase</tt> makes it easy to create models
- * that start with the state function evaluation <tt>x -> f(x)</tt>.  The
- * <tt>ModelEvaluatorDelegatorBase</tt> base class makes it easy to
- * develop and maintain different types of decorator subcalsses.
+ * Nearly every subclass should directly or indirectly derive from the node
+ * subclass <tt>ModelEvaluatorDefaultBase</tt> since provides checking for
+ * correct specification of a model evaluator subclass and provides default
+ * implementations for various features.
  *
+ * Subclass developers should consider deriving from one (but not more than
+ * one) of the following subclasses rather than directly deriving from
+ * <tt>ModelEvaluatorDefaultBase</tt>:
+ *
+ * <ul>
+ *
+ * <li><tt>StateFuncModelEvaluatorBase</tt> makes it easy to create models that
+ * start with the state function evaluation <tt>x -> f(x)</tt>.
+ *
+ * <li><tt>ResponseOnlyModelEvaluatorBase</tt> makes it easy to create models
+ * that start with the non-state response evaluation <tt>p -> g(p)</tt>.
+ *
+ * <li><tt>ModelEvaluatorDelegatorBase</tt> makes it easy to develop and
+ * maintain different types of decorator subclasses.
+ *
+ * </ul>
+ *
+ * When deriving from any of the above intermediate base classes, the subclass
+ * can override any of virtual functions in any way that it would like.
+ * Therefore these subclasses just make the job of creating concrete
+ * subclasses easier without removing any of the flexibility of creating a
+ * subclass.
  *
  * ToDo: Finish Documentation!
  */
@@ -590,10 +638,10 @@ public:
   //@{
 
   /** \brief Return the vector space for the state variables <tt>x</tt> . */
-  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_x_space() const = 0;
 
   /** \brief Return the vector space for the state function <tt>f(...)</tt>. */
-  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
   /** \brief Return the vector space for the auxiliary parameters
    * <tt>p(l)</tt>.
@@ -607,7 +655,7 @@ public:
    * <li> <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
 
   /** \brief Get the names of the parameters associated with parameter
    * subvector l if available.
@@ -622,7 +670,7 @@ public:
    * The default implementation return returnVal==Teuchos::null which means
    * by default, parameters have no names associated with them.
    */
-  virtual Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const = 0;
+  virtual RCP<const Teuchos::Array<std::string> > get_p_names(int l) const = 0;
 
   /** \brief Return the vector space for the auxiliary response functions
    * <tt>g(j)</tt>.
@@ -636,7 +684,7 @@ public:
    * <li> <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
 
   //@}
 
@@ -705,8 +753,13 @@ public:
    * <b>Preconditions:</b><ul>
    * <li><tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>
    * </ul>
+   *
+   * Note that a model is only required to support a single <tt>W</tt>
+   * object if the precondition below is satisfied and if the client asks for
+   * more than one <tt>W</tt> object, the response should be to return
+   * <tt>null</tt> from this function.
    */
-  virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const = 0;
+  virtual RCP<LinearOpWithSolveBase<Scalar> > create_W() const = 0;
 
   /** \brief If supported, create a <tt>LinearOpBase</tt> object for
    * <tt>W</tt> to be evaluated.
@@ -714,8 +767,13 @@ public:
    * <b>Preconditions:</b><ul>
    * <li><tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
    * </ul>
+   *
+   * Note that a model is only required to support a single <tt>W_op</tt>
+   * object if the precondition below is satisfied and if the client asks for
+   * more than one <tt>W_op</tt> object, the response should be to return
+   * <tt>null</tt> from this function.
    */
-  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_W_op() const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(f)/D(p(l))</tt>.
@@ -727,9 +785,19 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const = 0;
 
-  // ToDo: Add functions for creating D(g(j))/D(x_dot) if needed!
+  /** \brief If supported, create a linear operator derivative object for
+   * <tt>D(g(j))/D(x_dot)</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * <li><tt>outArgs.supports_DgDx_dot(j).supports(DERIV_LINEAR_OP)==true</tt>,
+   *     where <tt>outArgs = this->createOutArgs()</tt>
+   * </ul>
+   */
+  virtual RCP<LinearOpBase<Scalar> > create_DgDx_dot_op(int j) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(g(j))/D(x)</tt>.
@@ -741,7 +809,7 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(g(j))/D(p(l))</tt>.
@@ -755,7 +823,7 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
   
   //@}
 
@@ -791,27 +859,24 @@ public:
   /** \brief Compute all of the requested functions/derivatives at the given
    * point.
    *
-   * \param  inArgs
-   *           [in] Gives the values of the input variables and parameters
-   *           that are supported by the model.  This object must have been
-   *           initially created by <tt>this->createInArgs()</tt> before being
-   *           set up by the client.  All supported variables/parameters that
-   *           are not set by the client
-   *           (i.e. <tt>inArgs.get_blah(...)==null</tt>) are assumed to be at
-   *           the nominal value.  If a particular input variable/parameter is
-   *           not set and does not have a nominal value
-   *           (i.e. <tt>this->getNominalValues().get_blah(...)==null</tt>,
-   *           then the evaluation is undefined and an exception should be
-   *           thrown by a good implementation.  The one exception this rule
-   *           is support for <tt>x_dot</tt>.  If <tt>x_dot</tt> is supported
-   *           but not specified in <tt>inArgs</tt>, then it is implicitly
-   *           assumed to be zero.
-   * \param  outArgs
-   *           [out] Gives the objects for the supported functions and
-   *           derivatives that are to be computed at the given point.  This
-   *           object must have been created by <tt>this->createOutArgs()</tt>
-   *           before being set up by the client.  Only functions and
-   *           derivatives that are set will be computed.
+   * \param inArgs [in] Gives the values of the input variables and parameters
+   * that are supported by the model.  This object must have been initially
+   * created by <tt>this->createInArgs()</tt> before being set up by the
+   * client.  All supported variables/parameters that are not set by the
+   * client (i.e. <tt>inArgs.get_blah(...)==null</tt>) are assumed to be at
+   * the nominal value.  If a particular input variable/parameter is not set
+   * and does not have a nominal value
+   * (i.e. <tt>this->getNominalValues().get_blah(...)==null</tt>, then the
+   * evaluation is undefined and an exception should be thrown by a good
+   * implementation.  The one exception this rule is support for
+   * <tt>x_dot</tt>.  If <tt>x_dot</tt> is supported but not specified in
+   * <tt>inArgs</tt>, then it is implicitly assumed to be zero.
+   *
+   * \param outArgs [out] Gives the objects for the supported functions and
+   * derivatives that are to be computed at the given point.  This object must
+   * have been created by <tt>this->createOutArgs()</tt> before being set up
+   * by the client.  Only functions and derivatives that are set will be
+   * computed.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->createInArgs().isCompatible(inArgs)==true</tt>
@@ -825,8 +890,8 @@ public:
    *
    * This function is the real meat of the <tt>%ModelEvaluator</tt> interface.
    * A whole set of supported functions and/or their various supported
-   * derivatives are computed in one shot at a given point (i.e. set of values
-   * for input variables and parameters).  This allows a model to be
+   * derivatives are computed all in one shot at a given point (i.e. set of
+   * values for input variables and parameters).  This allows a model to be
    * stateless in the sense that, in general, a model's behavior is assumed to
    * be unaffected by evaluations at previous points.  This greatly simplifies
    * software maintenance and makes data dependences explicit.
@@ -834,8 +899,8 @@ public:
    * TODO: Define behavior for state-full models!
    */
   virtual void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>       &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>     &outArgs
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const = 0;
 
   //@}
@@ -850,8 +915,8 @@ public:
    * be passed back as well?
    */
   virtual void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-    ,const bool                                   wasSolved
+    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+    const bool wasSolved
     ) = 0;
 
   //@}

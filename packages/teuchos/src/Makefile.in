@@ -118,9 +118,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
-	$(srcdir)/Teuchos_ErrorPolling.cpp \
-	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
-	$(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_ErrorPolling.cpp $(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp $(srcdir)/Teuchos_MPISession.cpp \
@@ -128,6 +126,8 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
+	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_RCP.cpp $(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
@@ -138,6 +138,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_TableFormat.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp $(srcdir)/Teuchos_TimeMonitor.cpp \
+	$(srcdir)/Teuchos_TypeNameTraits.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
@@ -167,14 +168,15 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 am__objects_1 = Teuchos_BLAS.$(OBJEXT) Teuchos_CTimeMonitor.$(OBJEXT) \
 	Teuchos_CommandLineProcessor.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
-	Teuchos_ErrorPolling.$(OBJEXT) \
-	Teuchos_FloatingPointTrap.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
+	Teuchos_ErrorPolling.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
 	Teuchos_GlobalMPISession.$(OBJEXT) \
 	Teuchos_LabeledObject.$(OBJEXT) Teuchos_MPIComm.$(OBJEXT) \
 	Teuchos_MPISession.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
 	Teuchos_ParameterEntry.$(OBJEXT) \
 	Teuchos_ParameterList.$(OBJEXT) \
 	Teuchos_ParameterListAcceptor.$(OBJEXT) \
+	Teuchos_ParameterListAcceptorDefaultBase.$(OBJEXT) \
+	Teuchos_ParameterListNonAcceptor.$(OBJEXT) \
 	Teuchos_PerformanceMonitorUtils.$(OBJEXT) \
 	Teuchos_RCP.$(OBJEXT) Teuchos_Range1D.$(OBJEXT) \
 	Teuchos_ScalarTraits.$(OBJEXT) \
@@ -182,8 +184,8 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) Teuchos_CTimeMonitor.$(OBJEXT) \
 	Teuchos_StringToIntMap.$(OBJEXT) Teuchos_TableColumn.$(OBJEXT) \
 	Teuchos_TableEntry.$(OBJEXT) Teuchos_TableFormat.$(OBJEXT) \
 	Teuchos_TestForException.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
-	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT) \
-	Teuchos_VerboseObject.$(OBJEXT) \
+	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_TypeNameTraits.$(OBJEXT) \
+	Teuchos_Utils.$(OBJEXT) Teuchos_VerboseObject.$(OBJEXT) \
 	Teuchos_VerboseObjectParameterListHelpers.$(OBJEXT) \
 	Teuchos_VerbosityLevel.$(OBJEXT) \
 	Teuchos_VerbosityLevelCommandLineProcessorHelpers.$(OBJEXT) \
@@ -248,9 +250,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
-	$(srcdir)/Teuchos_FancyOStream.hpp \
-	$(srcdir)/Teuchos_FloatingPointTrap.hpp \
-	$(srcdir)/Teuchos_Flops.hpp \
+	$(srcdir)/Teuchos_FancyOStream.hpp $(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp $(srcdir)/Teuchos_Handleable.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
@@ -266,7 +266,9 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.hpp \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
+	$(srcdir)/Teuchos_ParameterListNonAcceptor.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
@@ -274,10 +276,10 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
-	$(srcdir)/Teuchos_RCP.hpp $(srcdir)/Teuchos_RCPDecl.hpp \
+	$(srcdir)/Teuchos_RCP.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
-	$(srcdir)/Teuchos_Range1D.hpp \
+	$(srcdir)/Teuchos_RCPDecl.hpp $(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \
 	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
@@ -508,7 +510,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
-	$(srcdir)/Teuchos_FloatingPointTrap.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
@@ -527,7 +528,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.hpp \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
+	$(srcdir)/Teuchos_ParameterListNonAcceptor.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
@@ -536,9 +539,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
-	$(srcdir)/Teuchos_RCPDecl.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
+	$(srcdir)/Teuchos_RCPDecl.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \
@@ -589,7 +592,6 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
-	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
@@ -599,6 +601,8 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
+	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_RCP.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
@@ -611,6 +615,7 @@ CORE = \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
+	$(srcdir)/Teuchos_TypeNameTraits.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
@@ -895,7 +900,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ExpatHandlerAdapter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_FileInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_FileInputStream.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_FloatingPointTrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Flops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_GlobalMPISession.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_HashUtils.Po@am__quote@
@@ -908,6 +912,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterEntry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterList.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListAcceptor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListNonAcceptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_PerformanceMonitorUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RCP.Po@am__quote@
@@ -925,6 +931,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TimeMonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TreeBuildingXMLHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TypeNameTraits.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerboseObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerboseObjectParameterListHelpers.Po@am__quote@
@@ -1039,20 +1046,6 @@ Teuchos_ErrorPolling.obj: $(srcdir)/Teuchos_ErrorPolling.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ErrorPolling.cpp' object='Teuchos_ErrorPolling.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ErrorPolling.obj `if test -f '$(srcdir)/Teuchos_ErrorPolling.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ErrorPolling.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ErrorPolling.cpp'; fi`
-
-Teuchos_FloatingPointTrap.o: $(srcdir)/Teuchos_FloatingPointTrap.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_FloatingPointTrap.o -MD -MP -MF $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo -c -o Teuchos_FloatingPointTrap.o `test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_FloatingPointTrap.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo $(DEPDIR)/Teuchos_FloatingPointTrap.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_FloatingPointTrap.cpp' object='Teuchos_FloatingPointTrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_FloatingPointTrap.o `test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_FloatingPointTrap.cpp
-
-Teuchos_FloatingPointTrap.obj: $(srcdir)/Teuchos_FloatingPointTrap.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_FloatingPointTrap.obj -MD -MP -MF $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo -c -o Teuchos_FloatingPointTrap.obj `if test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_FloatingPointTrap.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo $(DEPDIR)/Teuchos_FloatingPointTrap.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_FloatingPointTrap.cpp' object='Teuchos_FloatingPointTrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_FloatingPointTrap.obj `if test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_FloatingPointTrap.cpp'; fi`
 
 Teuchos_Flops.o: $(srcdir)/Teuchos_Flops.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Flops.o -MD -MP -MF $(DEPDIR)/Teuchos_Flops.Tpo -c -o Teuchos_Flops.o `test -f '$(srcdir)/Teuchos_Flops.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Flops.cpp
@@ -1179,6 +1172,34 @@ Teuchos_ParameterListAcceptor.obj: $(srcdir)/Teuchos_ParameterListAcceptor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptor.cpp' object='Teuchos_ParameterListAcceptor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptor.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; fi`
+
+Teuchos_ParameterListAcceptorDefaultBase.o: $(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListAcceptorDefaultBase.o -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Tpo -c -o Teuchos_ParameterListAcceptorDefaultBase.o `test -f '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Tpo $(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp' object='Teuchos_ParameterListAcceptorDefaultBase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptorDefaultBase.o `test -f '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp
+
+Teuchos_ParameterListAcceptorDefaultBase.obj: $(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListAcceptorDefaultBase.obj -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Tpo -c -o Teuchos_ParameterListAcceptorDefaultBase.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Tpo $(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp' object='Teuchos_ParameterListAcceptorDefaultBase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptorDefaultBase.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; fi`
+
+Teuchos_ParameterListNonAcceptor.o: $(srcdir)/Teuchos_ParameterListNonAcceptor.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListNonAcceptor.o -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Tpo -c -o Teuchos_ParameterListNonAcceptor.o `test -f '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Tpo $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp' object='Teuchos_ParameterListNonAcceptor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListNonAcceptor.o `test -f '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp
+
+Teuchos_ParameterListNonAcceptor.obj: $(srcdir)/Teuchos_ParameterListNonAcceptor.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListNonAcceptor.obj -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Tpo -c -o Teuchos_ParameterListNonAcceptor.obj `if test -f '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Tpo $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp' object='Teuchos_ParameterListNonAcceptor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListNonAcceptor.obj `if test -f '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp'; fi`
 
 Teuchos_PerformanceMonitorUtils.o: $(srcdir)/Teuchos_PerformanceMonitorUtils.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_PerformanceMonitorUtils.o -MD -MP -MF $(DEPDIR)/Teuchos_PerformanceMonitorUtils.Tpo -c -o Teuchos_PerformanceMonitorUtils.o `test -f '$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp
@@ -1347,6 +1368,20 @@ Teuchos_TimeMonitor.obj: $(srcdir)/Teuchos_TimeMonitor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_TimeMonitor.cpp' object='Teuchos_TimeMonitor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TimeMonitor.obj `if test -f '$(srcdir)/Teuchos_TimeMonitor.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_TimeMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_TimeMonitor.cpp'; fi`
+
+Teuchos_TypeNameTraits.o: $(srcdir)/Teuchos_TypeNameTraits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_TypeNameTraits.o -MD -MP -MF $(DEPDIR)/Teuchos_TypeNameTraits.Tpo -c -o Teuchos_TypeNameTraits.o `test -f '$(srcdir)/Teuchos_TypeNameTraits.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_TypeNameTraits.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_TypeNameTraits.Tpo $(DEPDIR)/Teuchos_TypeNameTraits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_TypeNameTraits.cpp' object='Teuchos_TypeNameTraits.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TypeNameTraits.o `test -f '$(srcdir)/Teuchos_TypeNameTraits.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_TypeNameTraits.cpp
+
+Teuchos_TypeNameTraits.obj: $(srcdir)/Teuchos_TypeNameTraits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_TypeNameTraits.obj -MD -MP -MF $(DEPDIR)/Teuchos_TypeNameTraits.Tpo -c -o Teuchos_TypeNameTraits.obj `if test -f '$(srcdir)/Teuchos_TypeNameTraits.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_TypeNameTraits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_TypeNameTraits.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_TypeNameTraits.Tpo $(DEPDIR)/Teuchos_TypeNameTraits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_TypeNameTraits.cpp' object='Teuchos_TypeNameTraits.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_TypeNameTraits.obj `if test -f '$(srcdir)/Teuchos_TypeNameTraits.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_TypeNameTraits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_TypeNameTraits.cpp'; fi`
 
 Teuchos_Utils.o: $(srcdir)/Teuchos_Utils.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Utils.o -MD -MP -MF $(DEPDIR)/Teuchos_Utils.Tpo -c -o Teuchos_Utils.o `test -f '$(srcdir)/Teuchos_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Utils.cpp

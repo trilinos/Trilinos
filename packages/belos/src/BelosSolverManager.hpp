@@ -72,6 +72,8 @@ class SolverManager : virtual public Teuchos::Describable {
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
   virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const = 0;
+
+  virtual bool isLOADetected() const = 0;
  
   //@}
 

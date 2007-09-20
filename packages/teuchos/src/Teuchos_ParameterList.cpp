@@ -65,17 +65,18 @@ struct ListPlusValidList {
 namespace Teuchos {
 
 ParameterList::ParameterList()
-  :name_("ANONYMOUS")
+  :name_("ANONYMOUS"), disableRecursiveValidation_(false)
 {}
 
 ParameterList::ParameterList(const std::string &name)
-  :name_(name)
+  :name_(name), disableRecursiveValidation_(false)
 {}
 
-ParameterList::ParameterList(const ParameterList& source) 
+ParameterList::ParameterList(const ParameterList& source)
 {
   name_ = source.name_;
   params_ = source.params_;
+  disableRecursiveValidation_ = source.disableRecursiveValidation_;
 }
 
 ParameterList& ParameterList::operator=(const ParameterList& source) 
@@ -84,6 +85,7 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
     return *this;
   name_ = source.name_;
   params_ = source.params_;
+  disableRecursiveValidation_ = source.disableRecursiveValidation_;
   return *this;
 }
 
@@ -125,6 +127,12 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
     }
   }
   this->updateSubListNames();
+  return *this;
+}
+
+ParameterList& ParameterList::disableRecursiveValidation()
+{
+  disableRecursiveValidation_ = true;
   return *this;
 }
 
@@ -456,12 +464,14 @@ void ParameterList::validateParameters(
     ++sl_itr
     )
   {
-    sl_itr->list->validateParameters(
-      *sl_itr->validList
-      ,depth-1
-      ,validateUsed
-      ,validateDefaults
-      );
+    if (!sl_itr->validList->disableRecursiveValidation_) {
+      sl_itr->list->validateParameters(
+        *sl_itr->validList
+        ,depth-1
+        ,validateUsed
+        ,validateDefaults
+        );
+    }
   }
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
   *out << "\n*** Existing ParameterList::validateParameters(...) for "
@@ -578,7 +588,9 @@ void ParameterList::validateParametersAndSetDefaults(
     ++sl_itr
     )
   {
-    sl_itr->list->validateParametersAndSetDefaults(*sl_itr->validList,depth-1);
+    if (!sl_itr->validList->disableRecursiveValidation_) {
+      sl_itr->list->validateParametersAndSetDefaults(*sl_itr->validList,depth-1);
+    }
   }
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
   *out << "\n*** Existing ParameterList::validateParametersAndSetDefaults(...) "

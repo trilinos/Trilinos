@@ -75,7 +75,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
-	$(srcdir)/Teuchos_FloatingPointTrap.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
@@ -94,7 +93,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.hpp \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
+	$(srcdir)/Teuchos_ParameterListNonAcceptor.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
@@ -103,9 +104,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
-	$(srcdir)/Teuchos_RCPDecl.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
+	$(srcdir)/Teuchos_RCPDecl.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \
@@ -156,7 +157,6 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
-	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
@@ -166,6 +166,8 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
+	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_RCP.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
@@ -178,6 +180,7 @@ CORE = \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
+	$(srcdir)/Teuchos_TypeNameTraits.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \

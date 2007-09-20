@@ -149,7 +149,19 @@ public:
   virtual OSTab getOSTab(const int tabs = 1, const std::string &linePrefix = "") const;
 
   //@}
+
+protected:
   
+  /** \brief Function that is called whenever the verbosity state
+   * is updated.
+   *
+   * Subclasses can override this function to be informed whenever the
+   * verbosity state of <tt>*this</tt> object gets updated.
+   *
+   * The default implementation simply does nothing.
+   */
+  virtual void informUpdatedVerbosityState() const;
+
 private:
 
   mutable RCP<FancyOStream> thisOStream_;
@@ -351,6 +363,7 @@ const VerboseObject<ObjectType>&
 VerboseObject<ObjectType>::setVerbLevel(const EVerbosityLevel verbLevel) const
 {
   thisVerbLevel_ = verbLevel;
+  informUpdatedVerbosityState();
   return *this;
 }
 
@@ -362,6 +375,7 @@ VerboseObject<ObjectType>::setOverridingVerbLevel(
   ) const
 {
   thisOverridingVerbLevel_ = verbLevel;
+  informUpdatedVerbosityState();
   return *this;
 }
 

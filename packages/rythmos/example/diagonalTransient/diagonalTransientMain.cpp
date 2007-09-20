@@ -33,6 +33,7 @@
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_SimpleIntegrator.hpp"
+#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
@@ -49,7 +50,6 @@
 
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
-#  include "mpi.h"
 #else
 #  include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
@@ -307,10 +307,10 @@ int main(int argc, char *argv[])
         integratorPL = sublist(paramList,RythmosIntegrator_name);
       integratorPL->set( "Take Variable Steps", as<bool>(numTimeSteps < 0) );
       integratorPL->set( "Fixed dt", as<double>((finalTime - state_ic.get_t())/numTimeSteps) );
-
       RCP<Rythmos::IntegratorBase<Scalar> >
-        simpleIntegrator = Rythmos::simpleIntegrator<Scalar>(integratorPL);
-
+        simpleIntegrator = Rythmos::controlledSimpleIntegrator<Scalar>(
+          Rythmos::simpleIntegrationControlStrategy<Scalar>(integratorPL)
+          );
       integrator = simpleIntegrator;
     }
 
@@ -558,312 +558,14 @@ int main(int argc, char *argv[])
     }
     
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success);
 
-    if(success)
-      *out << "\nEnd Result: TEST PASSED" << endl;
-    else
-      *out << "\nEnd Result: TEST FAILED" << endl;
+  if(success)
+    *out << "\nEnd Result: TEST PASSED" << endl;
+  else
+    *out << "\nEnd Result: TEST FAILED" << endl;
   
   return ( success ? 0 : 1 );
 
 } // end main() [Doxygen looks for this!]
 
-
-
-
-
-
-
-// 2007/06/08: rabartl: This is code that I played with and I don't want to
-// delete just yet.  I just wante to check this in so that I have it.
-
-
-/*    
-
-    
-    //
-    // Time step through the problem taking constant time steps, testing the
-    // solution as you go ...
-    //
-    
-    double t0 = stateModel->getNominalValues().get_t();
-    double dt = (finalTime-t0)/numTimeSteps;
-    double time = t0;
-    
-    stepper->setVerbLevel(verbLevel);
-
-    for ( int i = 1 ; i <= numTimeSteps ; ++i ) {
-
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) )
-        *out << "\ntime step = " << i << ", time = " << time << ":\n";
-
-      Teuchos::OSTab tab(out);
-
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) )
-        *out << "\nTaking step ...\n";
-
-      double dt_taken = stepper->takeStep(dt,Rythmos::FIXED_STEP);
-
-      TEST_FOR_EXCEPTION(
-        dt_taken != dt, std::logic_error,
-        "Error, stepper took step of dt = " << dt_taken 
-        << " when asked to take step of dt = " << dt << "\n"
-        );
-
-      time += dt_taken;
-
-      Rythmos::StepStatus<Scalar>
-        stepStatus = stepper->getStepStatus();
-
-      RCP<const Thyra::VectorBase<Scalar> >
-        solution = stepStatus.solution,
-        solutionDot = stepStatus.solutionDot;
-
-      *out << "\nsolution = \n" << describe(*solution,verbLevel);
-      *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
-
-      // Check the error in the state solution
-
-      RCP<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
-
-      exact_x = create_Vector(
-        epetraStateModel->getExactSolution(time),
-        stateModel->get_x_space()
-        );
-     
-      if (doFwdSensSolve )
-        solved_x = productVectorBase(solution)->getVectorBlock(0).assert_not_null();
-      else
-        solved_x = get_x(*stepper,time);
-
-      result = Thyra::testRelNormDiffErr(
-        "exact_x", *exact_x, "solved_x", *solved_x,
-        "maxStateError", maxStateError, "warningTol", 1.0, // Don't warn
-        &*out, verbLevel
-        );
-      if (!result) success = false;
-
-      // Check the error in the sensitivities
-     
-      if (doFwdSensSolve ) {
-
-        RCP<const Thyra::VectorBase<Scalar> > exact_dxdp, solved_dxdp;
-
-        exact_dxdp =
-          multiVectorProductVector(
-            rcp_dynamic_cast<const DMVPVS>(
-              stateAndSensStepper->getFwdSensModel()->get_x_space()
-              ),
-            create_MultiVector(
-              epetraStateModel->getExactSensSolution(time),
-              stateModel->get_x_space()
-              )
-            );
-        
-        solved_dxdp = productVectorBase(solution)->getVectorBlock(1).assert_not_null();
-
-        result = Thyra::testRelNormDiffErr(
-          "exact_dxdp", *exact_dxdp, "solved_dxdp", *solved_dxdp,
-          "maxStateError", maxStateError, "warningTol", 1.0, // Don't warn
-          &*out, verbLevel
-          );
-        if (!result) success = false;
-
-        if (testExactSensitivity) {
-          
-          *out << "\nApproximating the exact sensitivity using directional finite differences ...\n";
-
-          MEB::InArgs<Scalar>
-            fdBasePoint = stateModel->createInArgs();
-
-          fdBasePoint.set_t(time);
-          fdBasePoint.set_x(exact_x); // Will not get used but is gotten by evalModel(...)
-          fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
-
-          RCP<Thyra::MultiVectorBase<Scalar> >
-            exact_dxdp_fd = createMembers(stateModel->get_x_space(),exact_dxdp->domain()->dim());
-
-          typedef Thyra::DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives SelectedDerivatives; 
-
-          MEB::OutArgs<Scalar> fdOutArgs =
-            fdCalc.createOutArgs(
-              *stateModel,
-              SelectedDerivatives().supports(MEB::OUT_ARG_DgDp,0,0)
-              );
-          fdOutArgs.set_DgDp(0,0,exact_dxdp_fd);
-          
-          fdCalc.calcDerivatives(
-            *stateModel, fdBasePoint,
-            stateModel->createOutArgs(), // Don't bother with function value
-            fdOutArgs
-            );
-
-          *out
-            << "\nFinite difference analytical DxDp = "
-            << describe(*exact_dxdp_fd,verbLevel);
-
-        }
-
-        if (test_DfDp) {
-          
-          *out << "\nApproximating DfDp using directional finite differences ...\n";
-
-          MEB::InArgs<Scalar>
-            fdBasePoint = stateModel->createInArgs();
-
-          fdBasePoint.set_t(time);
-          fdBasePoint.set_x(exact_x);
-          fdBasePoint.set_x_dot(productVectorBase(solutionDot)->getVectorBlock(0).assert_not_null());
-          fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
-
-          RCP<Thyra::MultiVectorBase<Scalar> >
-            DfDp_fd = createMembers(stateModel->get_f_space(),stateModel->get_p_space(0)->dim());
-          
-          typedef Thyra::DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives SelectedDerivatives; 
-
-          MEB::OutArgs<Scalar> fdOutArgs =
-            fdCalc.createOutArgs(
-              *stateModel,
-              SelectedDerivatives().supports(MEB::OUT_ARG_DfDp,0)
-              );
-          fdOutArgs.set_DfDp(0,DfDp_fd);
-          
-          fdCalc.calcDerivatives(
-            *stateModel, fdBasePoint,
-            stateModel->createOutArgs(), // Don't bother with function value
-            fdOutArgs
-            );
-
-          *out
-            << "\nFinite difference DfDp = "
-            << describe(*DfDp_fd,verbLevel);
-          
-        }
-
-      }
-     
-    }
-
-    //
-    // Report solution at final time
-    //
-    
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
-      *out << "\nFinal time = " << time << "\n";
-    
-    Teuchos::OSTab tab(out);
-    
-    RCP<const Thyra::VectorBase<Scalar> >
-      solution = get_x(*stepper,time);
-    
-    *out << "\nsolution = \n" << describe(*solution,verbLevel);
-    
-    // Check the error in the state solution at the final time
-    
-    RCP<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
-    
-    exact_x = create_Vector(
-      epetraStateModel->getExactSolution(time),
-      stateModel->get_x_space()
-      );
-    
-    if (doFwdSensSolve )
-      solved_x = productVectorBase(solution)->getVectorBlock(0);
-    else
-      solved_x = solution;
-    
-    result = Thyra::testRelNormDiffErr(
-      "exact_x", *exact_x, "solved_x", *solved_x,
-      "maxStateError", maxStateError, "warningTol", 1.0, // Don't warn
-      &*out, verbLevel
-      );
-    if (!result) success = false;
-
-    Teuchos::OSTab tab2(out,-1); // Remove above tab
-
-    //
-    // Test DxDp(p,t) using finite differences of x(p,t)
-    //
-
-    if (test_DxDp) {
-
-      const MEB::InArgs<Scalar>
-        state_ic = stateModel->getNominalValues();
-      
-      RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
-        stateIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
-          stateStepper, state_ic
-          );
-      stateIntegratorAsModel->numTimeSteps(numTimeSteps);
-
-      stateIntegratorAsModel->setVerbLevel(verbLevel);
-
-      *out << "\nEvaluating x(p,finalTime) using stateIntegratorAsModel ... \n";
-
-      {
-        Teuchos::OSTab tab(out);
-
-        RCP<Thyra::VectorBase<Scalar> >
-          x_p_t = createMember(stateIntegratorAsModel->get_g_space(0));
-        eval_g(
-          *stateIntegratorAsModel,
-          0, *state_ic.get_p(0),
-          finalTime,
-          0, &*x_p_t
-          );
-        *out
-          << "\nx(p,finalTime) evaluated using stateIntegratorAsModel:\n"
-          << describe(*x_p_t,verbLevel);
-      }
-
-
-      *out << "\nApproximating DxDp(p,t) using directional finite differences of integrator for x(p,t) ...\n";
-
-      {
-
-        Teuchos::OSTab tab(out);
-
-        
-        MEB::InArgs<Scalar>
-          fdBasePoint = stateIntegratorAsModel->createInArgs();
-        
-        fdBasePoint.set_t(finalTime);
-        fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
-        
-        RCP<Thyra::MultiVectorBase<Scalar> >
-          DxDp_fd = createMembers(
-            stateIntegratorAsModel->get_g_space(0),
-            stateIntegratorAsModel->get_p_space(0)->dim()
-            );
-        
-        typedef Thyra::DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives
-          SelectedDerivatives;
-        
-        MEB::OutArgs<Scalar> fdOutArgs =
-          fdCalc.createOutArgs(
-            *stateIntegratorAsModel,
-            SelectedDerivatives().supports(MEB::OUT_ARG_DgDp,0,0)
-            );
-        fdOutArgs.set_DgDp(0,0,DxDp_fd);
-        
-        // Selence the model evaluators that are called.  The fdCal object
-        // will show all of the inputs and outputs for each call.
-        stateStepper->setVerbLevel(Teuchos::VERB_NONE);
-        stateIntegratorAsModel->setVerbLevel(Teuchos::VERB_NONE);
-
-        fdCalc.calcDerivatives(
-          *stateIntegratorAsModel, fdBasePoint,
-          stateIntegratorAsModel->createOutArgs(), // Don't bother with function value
-          fdOutArgs
-          );
-        
-        *out
-          << "\nFinite difference DxDp(p,t): "
-          << describe(*DxDp_fd,verbLevel);
-        
-      }
-
-    }
-
-*/

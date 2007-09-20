@@ -54,15 +54,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+  RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -71,10 +71,10 @@ public:
 
   /** \brief . */
   void setModel(
-    const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
+    const RCP<const ModelEvaluator<Scalar> > &model
     );
   /** \brief . */
-  Teuchos::RCP<const ModelEvaluator<Scalar> > getModel() const;
+  RCP<const ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   SolveStatus<Scalar> solve(
     VectorBase<Scalar> *x,
@@ -82,17 +82,17 @@ public:
     VectorBase<Scalar> *delta
     );
   /** \brief . */
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  RCP<LinearOpWithSolveBase<Scalar> > get_nonconst_W(const bool forceUpToDate);
   /** \brief . */
-  Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > get_W() const;
+  RCP<const LinearOpWithSolveBase<Scalar> > get_W() const;
 
   //@}
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList> paramList_;
-  Teuchos::RCP<const ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > J_;
+  RCP<Teuchos::ParameterList> paramList_;
+  RCP<const ModelEvaluator<Scalar> > model_;
+  RCP<LinearOpWithSolveBase<Scalar> > J_;
 
 };
 
@@ -106,7 +106,7 @@ private:
 
 template<class Scalar>
 void LinearNonlinearSolver<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& paramList
   )
 {
   using Teuchos::get;
@@ -122,7 +122,7 @@ void LinearNonlinearSolver<Scalar>::setParameterList(
 
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 LinearNonlinearSolver<Scalar>::getParameterList()
 {
   return paramList_;
@@ -130,17 +130,17 @@ LinearNonlinearSolver<Scalar>::getParameterList()
 
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 LinearNonlinearSolver<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
+  RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 LinearNonlinearSolver<Scalar>::getParameterList() const
 {
   return paramList_;
@@ -148,13 +148,13 @@ LinearNonlinearSolver<Scalar>::getParameterList() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 LinearNonlinearSolver<Scalar>::getValidParameters() const
 {
   using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  static RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList>
+    RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
     // ToDo: Set up some parameters when needed!
     Teuchos::setupVerboseObjectSublist(&*pl);
@@ -169,7 +169,7 @@ LinearNonlinearSolver<Scalar>::getValidParameters() const
 
 template <class Scalar>
 void LinearNonlinearSolver<Scalar>::setModel(
-  const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
+  const RCP<const ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT(model.get()==NULL);
@@ -179,7 +179,7 @@ void LinearNonlinearSolver<Scalar>::setModel(
 
 
 template <class Scalar>
-Teuchos::RCP<const ModelEvaluator<Scalar> >
+RCP<const ModelEvaluator<Scalar> >
 LinearNonlinearSolver<Scalar>::getModel() const
 {
   return model_;
@@ -199,7 +199,6 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
   using Teuchos::describe;
   using Teuchos::as;
   using Teuchos::rcp;
-  using Teuchos::RCP;
   using Teuchos::OSTab;
   using Teuchos::getFancyOStream;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -217,7 +216,7 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
     0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
 #endif
   
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool showTrace = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW));
   const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
@@ -235,14 +234,14 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
 
   // Compute the Jacobian and the residual at the input point!
   if(!J_.get()) J_ = model_->create_W();
-  Teuchos::RCP<VectorBase<Scalar> >
+  RCP<VectorBase<Scalar> >
     f = createMember(model_->get_f_space());
   if(out.get() && showTrace)
     *out << "\nEvaluating the model f and W ...\n";
   eval_f_W( *model_, *x,  &*f, &*J_ );
 
   // Solve the system: J*dx = -f
-  Teuchos::RCP<VectorBase<Scalar> >
+  RCP<VectorBase<Scalar> >
     dx = createMember(model_->get_x_space());
   if(out.get() && showTrace)
     *out << "\nSolving the system J*dx = -f ...\n";
@@ -276,15 +275,18 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
 
 
 template <class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
-LinearNonlinearSolver<Scalar>::get_nonconst_W()
+RCP<LinearOpWithSolveBase<Scalar> >
+LinearNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
 {
+  if (forceUpToDate) {
+    TEST_FOR_EXCEPT(forceUpToDate);
+  }
   return J_;
 }
 
 
 template <class Scalar>
-Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
+RCP<const LinearOpWithSolveBase<Scalar> >
 LinearNonlinearSolver<Scalar>::get_W() const
 {
   return J_;

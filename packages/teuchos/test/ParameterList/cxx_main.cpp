@@ -27,7 +27,6 @@
 // @HEADER
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_getConst.hpp"

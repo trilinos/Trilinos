@@ -37,7 +37,7 @@
 namespace Rythmos {
 
 
-/** \brief Base class for single-residual model evaluators.
+/** \brief Base class mix-in interface for single-residual model evaluators.
  *
  * ToDo: Finish documentation!
  */

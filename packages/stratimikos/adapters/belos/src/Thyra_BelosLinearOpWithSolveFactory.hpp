@@ -1,6 +1,4 @@
 
-#ifndef SUN_CXX
-
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
@@ -61,8 +59,8 @@ bool BelosLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
-  const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  &precFactory
-  ,const std::string                                              &precFactoryName
+  const Teuchos::RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
+  const std::string &precFactoryName
   )
 {
   TEST_FOR_EXCEPT(!precFactory.get());
@@ -204,26 +202,15 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
 // Overridden from ParameterListAcceptor
 
 template<class Scalar>
-void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  )
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),1);
   paramList_ = paramList;
-  //
-  if(precFactory_.get()) {
-    // Only reset the PF's PL if the sublist exists or the PF does ot already
-    // have a PL.  We don't want to overwrite an externally set PL for the PF
-    // if we don't have a nested sublist defined here!
-    const bool nestedPFSublistExists = paramList_->isSublist(precFactoryName_);
-    const bool alreadyHasSublist = !is_null(precFactory_->getParameterList());
-    if( nestedPFSublistExists || !alreadyHasSublist ) {
-      precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
-    }
-  }
-  //
   solverType_ = Teuchos::getIntegralValue<ESolverType>(*paramList_,SolverType_name);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
-  // ToDo: Replace above with Teuchos::StringToIntMap ...
 }
 
 template<class Scalar>
@@ -342,13 +329,6 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
   thisValidParamList_ = Teuchos::rcp(
     new Teuchos::ParameterList(*generateAndGetValidParameters())
     );
-  if(precFactory_.get()) {
-    Teuchos::RCP<const Teuchos::ParameterList>
-      precFactoryValidParamList = precFactory_->getValidParameters();
-    if(precFactoryValidParamList.get()) {
-      thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
-    }
-  }
   Teuchos::setupVerboseObjectSublist(&*thisValidParamList_);
 }
 
@@ -599,5 +579,3 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 } // namespace Thyra
 
 #endif // THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
-
-#endif // SUN_CXX

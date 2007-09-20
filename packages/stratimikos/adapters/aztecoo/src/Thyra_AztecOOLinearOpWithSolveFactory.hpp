@@ -62,17 +62,6 @@ namespace Thyra {
  * <li>Supports forward and adjoint solves.
  * </ul>
  *
- * <b>Warning:</b> One must be very careful what options are set using the
- * parameter lists passed in using <tt>setFwdAztecSolveParameters()</tt> and
- * <tt>setAdjAztecSolveParameters()</tt> as some of these options will cause
- * great problems and may even result in <tt>exit()</tt> being called to
- * terminate your program!  In the future, a new parameter sublist will be
- * defined that will define a safer way to control the underlying aztec
- * solvers.
- *
- * Click on the above "examples" link at the top to see how this class is
- * used.
- *
  * \ingroup AztecOO_Thyra_adapters_grp
  */
 class AztecOOLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {

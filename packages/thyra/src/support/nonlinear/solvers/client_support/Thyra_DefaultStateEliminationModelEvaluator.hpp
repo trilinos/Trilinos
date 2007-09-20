@@ -74,6 +74,14 @@ public:
 
   //@}
 
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
+
+  //@}
+
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
@@ -92,28 +100,25 @@ public:
   /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
-  /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
   /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
 
   //@}
 
-  /** \name Public functions overridden from Teuchos::Describable. */
-  //@{
-
-  /** \brief . */
-  std::string description() const;
-
-  //@}
 
 private:
 
@@ -177,7 +182,31 @@ void DefaultStateEliminationModelEvaluator<Scalar>::uninitialize(
   x_guess_solu_ = Teuchos::null;
 }
 
-// Overridden from ModelEvaulator.
+// Public functions overridden from Teuchos::Describable
+
+
+template<class Scalar>
+std::string DefaultStateEliminationModelEvaluator<Scalar>::description() const
+{
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  std::ostringstream oss;
+  oss << "Thyra::DefaultStateEliminationModelEvaluator{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << ",stateSolver=";
+  if(stateSolver_.get())
+    oss << "\'"<<stateSolver_->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
+// Public functions overridden from ModelEvaulator
 
 template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
@@ -246,19 +275,6 @@ DefaultStateEliminationModelEvaluator<Scalar>::create_W_op() const
   return Teuchos::null;
 }
 
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-DefaultStateEliminationModelEvaluator<Scalar>::create_DfDp_op(int l) const
-{
-  return Teuchos::null;
-}
-
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-DefaultStateEliminationModelEvaluator<Scalar>::create_DgDx_op(int j) const
-{
-  return Teuchos::null;
-}
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
@@ -276,9 +292,13 @@ DefaultStateEliminationModelEvaluator<Scalar>::createInArgs() const
   return inArgs;
 }
 
+
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-DefaultStateEliminationModelEvaluator<Scalar>::createOutArgs() const
+DefaultStateEliminationModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   typedef ModelEvaluatorBase MEB;
   const Teuchos::RCP<const ModelEvaluator<Scalar> >
@@ -295,9 +315,9 @@ DefaultStateEliminationModelEvaluator<Scalar>::createOutArgs() const
 }
 
 template<class Scalar>
-void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
+void DefaultStateEliminationModelEvaluator<Scalar>::evalModelImpl(
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
   typedef ModelEvaluatorBase MEB;
@@ -440,29 +460,8 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
   
 }
 
-// Public functions overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultStateEliminationModelEvaluator<Scalar>::description() const
-{
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  std::ostringstream oss;
-  oss << "Thyra::DefaultStateEliminationModelEvaluator{";
-  oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << ",stateSolver=";
-  if(stateSolver_.get())
-    oss << "\'"<<stateSolver_->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
-}
 
 } // namespace Thyra
+
 
 #endif // THYRA_DEFAULT_STATE_ELIMINATION_MODEL_EVALUATOR_HPP

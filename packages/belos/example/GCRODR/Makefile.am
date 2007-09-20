@@ -27,6 +27,7 @@ endif
 noinst_PROGRAMS = $(BELOS_GCRODR_NOPREC_EX) $(BELOS_GCRODR_IFPACK_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/sherman5.hb sherman5.hb; fi
 	cp  $(srcdir)/../BlockGmres/orsirr1.hb orsirr1.hb
 	cp  $(srcdir)/../BlockGmres/fidap036.hb fidap036.hb
 
@@ -58,3 +59,5 @@ GCRODRPrecEpetraExFile_LDADD = $(EXPORT_LIBS)
 # Dummy for new export makefiles
 LIBS = 
 
+EXTRA_DIST = \
+        $(srcdir)/sherman5.hb

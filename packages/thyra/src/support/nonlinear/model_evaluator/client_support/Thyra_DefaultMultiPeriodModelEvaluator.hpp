@@ -30,7 +30,7 @@
 #define THYRA_DEFAULT_MULTI_PERIOD_MODEL_EVALUATOR_HPP
 
 
-#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp" // Interface
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp" // Implementation
@@ -92,19 +92,29 @@ namespace Thyra {
                  [ DfDp[N=1][l] ]
 
 
+                  [ g_wieght[0] * DgDx_dot[0]     ]
+                  [ g_wieght[1] * DgDx_dot[1]     ]
+   DgDx_dot_bar = [ ...                           ]
+                  [ g_wieght[N-1] * DgDx_dot[N-1] ]
+
+
               [ g_wieght[0] * DgDx[0]     ]
               [ g_wieght[1] * DgDx[1]     ]
    DgDx_bar = [ ...                       ]
               [ g_wieght[N-1] * DgDx[N-1] ]
 
+
    DgDp_bar = sum( g_weights[i]*DgDp[i][g_index], i = 0,...,N-1 )
+
 
  \endverbatim
  
  * This class could be made much more general but for now ???
  */
 template<class Scalar>
-class DefaultMultiPeriodModelEvaluator : virtual public ModelEvaluator<Scalar> {
+class DefaultMultiPeriodModelEvaluator
+  : virtual public ModelEvaluatorDefaultBase<Scalar>
+{
 public:
 
   /** \name Constructors/Intializers/Accessors */
@@ -116,66 +126,64 @@ public:
   /** \brief Calls <tt>intialize(...)</tt>. */
   DefaultMultiPeriodModelEvaluator(
     const int N,
-    const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
-    const Teuchos::Array<int> &z_indexes,
-    const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
+    const Array<RCP<ModelEvaluator<Scalar> > > &periodModels,
+    const Array<int> &z_indexes,
+    const Array<Array<RCP<const VectorBase<Scalar> > > > &z,
     const int g_index,
-    const Teuchos::Array<Scalar> g_weights,
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
-    const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
+    const Array<Scalar> g_weights,
+    const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
+    const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
+    const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
     );
 
   /** \brief Initialize.
    *
-   * \param  N
-   *           [in] The number of periods.
-   * \param  periodModels
-   *           [in] Array (length <tt>N</tt>) of the period models.  For now,
-   *           each of the period models at <tt>periodModels[i]</tt> must have
-   *           an identical structure for every input and output.  The reason
-   *           that different models are passed in is so that different
-   *           behaviors of the output functions and different nominal values
-   *           for each period's <tt>x</tt> and bounds can be specified.  The
-   *           nominal values from <tt>periodModels[0]</tt> will be used to
-   *           set the nominal values for the non-peroid parameters.
-   * \param  z_indexes
-   *           [in] Array of sorted zero-based indexes of the model's parameter
-   *           subvector that represents <tt>z[i]</tt>.  Note, this array
-   *           must be sorted from smallest to largets and can not have
-   *           any duplicate entires!
-   * \param  z
-   *           [in] Array (length <tt>N</tt>) of the period defining auxiliary
-   *           paramter subvectors.  Each entry <tt>z[i]</tt> is an array of
-   *           subvectors where <tt>z[i][k]</tt> is the subvector
-   *           <tt>p(z_indexes[k])</tt> in the underlying perild model.
-   *           Therefore, the array <tt>z[i]</tt> must be ordered according to
-   *           <tt>z_indexes</tt>.  Note that <tt>z[i][k]</tt> is allowed to
-   *           be <tt>null</tt> in which case the underlying default value
-   *           for this parameter will be used.
-   * \param  g_index
-   *           [in] The index of the response function that will be used for the
-   *           period objective function.
-   * \param  g_weights
-   *           [in] Array (length <tt>N</tt>) of the g_weights for the auxiliary
-   *           response functions in the summation for <tt>g_bar(...)</tt>
-   *           shown above.
-   * \param  x_bar_space
-   *           [in] The product vector space that represents the space for
-   *           <tt>x_bar</tt> as defined above.  If
-   *           <tt>x_bar_space.get()==NULL</tt> then a default version of this
-   *           product space will be created internally.
-   * \param  f_bar_space
-   *           [in] The product vector space that represents the space for
-   *           <tt>f_bar</tt> as defined above.  If
-   *           <tt>f_bar_space.get()==NULL</tt> then a default version of this
-   *           product space will be created internally.
-   * \param  W_bar_factory
-   *           [in] Factory object that is used to create the block LOWS
-   *           object that will be used to represent the block diagonal object
-   *           <tt>W_bar</tt>.  If <tt>is_null(W_bar_factory)==true</tt> on
-   *           input then a <tt>DefaultBlockedTriangularLinearOpWithSolve</tt>
-   *           object will be create internally.
+   * \param N [in] The number of periods.
+   *
+   * \param periodModels [in] Array (length <tt>N</tt>) of the period models.
+   * For now, each of the period models at <tt>periodModels[i]</tt> must have
+   * an identical structure for every input and output.  The reason that
+   * different models are passed in is so that different behaviors of the
+   * output functions and different nominal values for each period's
+   * <tt>x</tt> and bounds can be specified.  The nominal values from
+   * <tt>periodModels[0]</tt> will be used to set the nominal values for the
+   * non-peroid parameters.
+   *
+   * \param z_indexes [in] Array of sorted zero-based indexes of the model's
+   * parameter subvector that represents <tt>z[i]</tt>.  Note, this array must
+   * be sorted from smallest to largets and can not have any duplicate
+   * entires!
+   *
+   * \param z [in] Array (length <tt>N</tt>) of the period defining auxiliary
+   * paramter subvectors.  Each entry <tt>z[i]</tt> is an array of subvectors
+   * where <tt>z[i][k]</tt> is the subvector <tt>p(z_indexes[k])</tt> in the
+   * underlying perild model.  Therefore, the array <tt>z[i]</tt> must be
+   * ordered according to <tt>z_indexes</tt>.  Note that <tt>z[i][k]</tt> is
+   * allowed to be <tt>null</tt> in which case the underlying default value
+   * for this parameter will be used.
+   *
+   * \param g_index [in] The index of the response function that will be used
+   * for the period objective function.
+   *
+   * \param g_weights [in] Array (length <tt>N</tt>) of the g_weights for the
+   * auxiliary response functions in the summation for <tt>g_bar(...)</tt>
+   * shown above.
+   *
+   * \param x_bar_space [in] The product vector space that represents the
+   * space for <tt>x_bar</tt> as defined above.  If
+   * <tt>x_bar_space.get()==NULL</tt> then a default version of this product
+   * space will be created internally.
+   *
+   * \param f_bar_space [in] The product vector space that represents the
+   * space for <tt>f_bar</tt> as defined above.  If
+   * <tt>f_bar_space.get()==NULL</tt> then a default version of this product
+   * space will be created internally.
+   *
+   * \param W_bar_factory [in] Factory object that is used to create the block
+   * LOWS object that will be used to represent the block diagonal object
+   * <tt>W_bar</tt>.  If <tt>is_null(W_bar_factory)==true</tt> on input then a
+   * <tt>DefaultBlockedTriangularLinearOpWithSolve</tt> object will be create
+   * internally.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>N > 0</tt>
@@ -188,14 +196,14 @@ public:
    */
   void initialize(
     const int N,
-    const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
-    const Teuchos::Array<int> &z_indexes,
-    const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
+    const Array<RCP<ModelEvaluator<Scalar> > > &periodModels,
+    const Array<int> &z_indexes,
+    const Array<Array<RCP<const VectorBase<Scalar> > > > &z,
     const int g_index,
-    const Teuchos::Array<Scalar> g_weights,
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
-    const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
+    const Array<Scalar> g_weights,
+    const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
+    const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
+    const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
     );
 
   /** \brief Reset z.
@@ -209,7 +217,7 @@ public:
    * 
    */
   void reset_z(
-    const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z
+    const Array<Array<RCP<const VectorBase<Scalar> > > > &z
     );
   
   //@}
@@ -222,15 +230,15 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief. */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  RCP<const Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -238,24 +246,11 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
+  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \breif . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+  RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
   /** \brief Ignores the final point. */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -266,25 +261,49 @@ public:
 
 private:
 
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DfDp_op_impl(int l) const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DgDx_dot_op_impl(int j) const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DgDx_op_impl(int j) const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
+  /** \brief . */
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
+
+  //@}
+
+private:
+
   // //////////////////////////
   // Private types
 
-  typedef Teuchos::Array<Scalar> g_weights_t;
-  typedef Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > z_t;
+  typedef Array<Scalar> g_weights_t;
+  typedef Array<Array<RCP<const VectorBase<Scalar> > > > z_t;
 
   // /////////////////////////
   // Private data members
 
-  Teuchos::RCP<ModelEvaluator<Scalar> > periodModel_;
-  Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > periodModels_;
-  Teuchos::Array<int> z_indexes_;
-  Teuchos::Array<int> period_l_map_;
+  RCP<ModelEvaluator<Scalar> > periodModel_;
+  Array<RCP<ModelEvaluator<Scalar> > > periodModels_;
+  Array<int> z_indexes_;
+  Array<int> period_l_map_;
   z_t z_; // size == N
   int g_index_;
   g_weights_t g_weights_; // size == N
-  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > x_bar_space_;
-  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > f_bar_space_;
-  Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > W_bar_factory_;
+  RCP<const ProductVectorSpaceBase<Scalar> > x_bar_space_;
+  RCP<const ProductVectorSpaceBase<Scalar> > f_bar_space_;
+  RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > W_bar_factory_;
   int Np_;
   int Ng_;
   ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
@@ -294,14 +313,14 @@ private:
   // /////////////////////////
   // Private member functions
 
-  void set_z_indexes_and_create_period_l_map( const Teuchos::Array<int> &z_indexes );
+  void set_z_indexes_and_create_period_l_map( const Array<int> &z_indexes );
 
   void wrapNominalValuesAndBounds();
 
   static
-  Teuchos::RCP<ProductVectorBase<Scalar> >
+  RCP<ProductVectorBase<Scalar> >
   createProductVector(
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
+    const RCP<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
     );
 
   // Return the index of a "free" parameter in the period model given its
@@ -335,14 +354,14 @@ DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator()
 template<class Scalar>
 DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator(
   const int N,
-  const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
-  const Teuchos::Array<int> &z_indexes,
-  const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
+  const Array<RCP<ModelEvaluator<Scalar> > > &periodModels,
+  const Array<int> &z_indexes,
+  const Array<Array<RCP<const VectorBase<Scalar> > > > &z,
   const int g_index,
-  const Teuchos::Array<Scalar> g_weights,
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
-  const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
+  const Array<Scalar> g_weights,
+  const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
+  const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
+  const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
   )
   :g_index_(-1), Np_(-1), Ng_(-1)
 {
@@ -356,19 +375,17 @@ DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator(
 template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
   const int N,
-  const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
-  const Teuchos::Array<int> &z_indexes,
-  const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
+  const Array<RCP<ModelEvaluator<Scalar> > > &periodModels,
+  const Array<int> &z_indexes,
+  const Array<Array<RCP<const VectorBase<Scalar> > > > &z,
   const int g_index,
-  const Teuchos::Array<Scalar> g_weights,
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
-  const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
+  const Array<Scalar> g_weights,
+  const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
+  const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
+  const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
   )
 {
 
-  using Teuchos::RCP;
-  using Teuchos::Array;
   using Teuchos::implicit_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
@@ -444,12 +461,10 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::reset_z(
-  const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z
+  const Array<Array<RCP<const VectorBase<Scalar> > > > &z
   )
 {
 
-  using Teuchos::RCP;
-  using Teuchos::Array;
   using Teuchos::implicit_cast;
   
   const int N = z_.size();
@@ -488,7 +503,7 @@ int DefaultMultiPeriodModelEvaluator<Scalar>::Ng() const
 
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_x_space() const
 {
   return x_bar_space_;
@@ -496,7 +511,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_f_space() const
 {
   return f_bar_space_;
@@ -504,7 +519,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_f_space() const
 
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_p_space(int l) const
 {
   return  periodModel_->get_p_space(period_l(l));
@@ -512,7 +527,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_p_space(int l) const
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Array<std::string> >
+RCP<const Array<std::string> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_p_names(int l) const
 {
   return  periodModel_->get_p_names(period_l(l));
@@ -520,7 +535,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_p_names(int l) const
 
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_g_space(int j) const
 {
   TEST_FOR_EXCEPT(j!=0);
@@ -553,7 +568,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::getUpperBounds() const
 
 
 template<class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
+RCP<LinearOpWithSolveBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_W() const
 {
   return W_bar_factory_->create();
@@ -561,38 +576,11 @@ DefaultMultiPeriodModelEvaluator<Scalar>::create_W() const
 
 
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_W_op() const
 {
   TEST_FOR_EXCEPT("This class does not support W as just a linear operator yet.");
   return Teuchos::null; // Should never be called!
-}
-
-
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-DefaultMultiPeriodModelEvaluator<Scalar>::create_DfDp_op(int l) const
-{
-  TEST_FOR_EXCEPT("This class does not support DfDp(l) as a linear operator yet.");
-  return Teuchos::null;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_op(int j) const
-{
-  TEST_FOR_EXCEPT("This class does not support DgDx(j) as a linear operator yet.");
-  return Teuchos::null;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDp_op( int j, int l ) const
-{
-  TEST_FOR_EXCEPT("This class does not support DgDp(j,l) as a linear operator yet.");
-  return Teuchos::null;
 }
 
 
@@ -611,8 +599,62 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createInArgs() const
 
 
 template<class Scalar>
+void DefaultMultiPeriodModelEvaluator<Scalar>::reportFinalPoint(
+  const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
+  ,const bool                                   wasSolved
+  )
+{
+  // We are just going to ignore the final point here.  It is not clear how to
+  // report a "final" point back to the underlying *periodModel_ object since
+  // we have so many different "points" that we could return (i.e. one for
+  // each period).  I guess we could report back the final parameter values
+  // (other than the z parameter) but there are multiple states x[i] and
+  // period parameters z[i] that we can report back.
+}
+
+
+// Public functions overridden from ModelEvaulatorDefaultBase
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::create_DfDp_op_impl(int l) const
+{
+  TEST_FOR_EXCEPT("This class does not support DfDp(l) as a linear operator yet.");
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_dot_op_impl(int j) const
+{
+  TEST_FOR_EXCEPT("This class does not support DgDx_dot(j) as a linear operator yet.");
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_op_impl(int j) const
+{
+  TEST_FOR_EXCEPT("This class does not support DgDx(j) as a linear operator yet.");
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDp_op_impl(int j, int l) const
+{
+  TEST_FOR_EXCEPT("This class does not support DgDp(j,l) as a linear operator yet.");
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgs() const
+DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgsImpl() const
 {
 
   typedef ModelEvaluatorBase MEB;
@@ -645,6 +687,14 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgs() const
   }
 
   const MEB::DerivativeSupport
+    period_DgDx_dot_support = periodOutArgs.supports(MEB::OUT_ARG_DgDx_dot,g_index_);
+  if (!period_DgDx_dot_support.none()) {
+    outArgs.setSupports( MEB::OUT_ARG_DgDx_dot, 0, period_DgDx_dot_support );
+    outArgs.set_DgDx_dot_properties(
+      0, periodOutArgs.get_DgDx_dot_properties(g_index_) );
+  }
+
+  const MEB::DerivativeSupport
     period_DgDx_support = periodOutArgs.supports(MEB::OUT_ARG_DgDx,g_index_);
   if (!period_DgDx_support.none()) {
     outArgs.setSupports( MEB::OUT_ARG_DgDx, 0, period_DgDx_support );
@@ -669,13 +719,12 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgs() const
 
 
 template<class Scalar>
-void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>       &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>     &outArgs
+void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
 
-  using Teuchos::Array;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
@@ -748,6 +797,27 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
 
   RCP<VectorBase<Scalar> >
     g_bar = outArgs.get_g(0);
+
+  MEB::Derivative<Scalar> DgDx_dot_bar;
+  RCP<ProductMultiVectorBase<Scalar> > DgDx_dot_bar_mv;
+  if (!outArgs.supports(MEB::OUT_ARG_DgDx_dot,0).none()) {
+    DgDx_dot_bar = outArgs.get_DgDx_dot(0);
+    DgDx_dot_bar_mv = rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(
+      DgDx_dot_bar.getMultiVector(), true );
+    TEST_FOR_EXCEPTION(
+      (
+        !DgDx_dot_bar.isEmpty()
+        &&
+        (
+          is_null(DgDx_dot_bar_mv)
+          ||
+          DgDx_dot_bar.getMultiVectorOrientation() != MEB::DERIV_TRANS_MV_BY_ROW
+          )
+        ),
+      std::logic_error,
+      "Error, we currently can only handle DgDx_dot as an row-based multi-vector!"
+      );
+  }
 
   MEB::Derivative<Scalar> DgDx_bar;
   RCP<ProductMultiVectorBase<Scalar> > DgDx_bar_mv;
@@ -871,6 +941,16 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
       }
     }
     
+    if ( !is_null(DgDx_dot_bar_mv) ) {
+      periodOutArgs.set_DgDx_dot(
+        g_index_,
+        MEB::Derivative<Scalar>(
+          DgDx_dot_bar_mv->getNonconstMultiVectorBlock(i),
+          MEB::DERIV_TRANS_MV_BY_ROW
+          )
+        );
+    }
+    
     if ( !is_null(DgDx_bar_mv) ) {
       periodOutArgs.set_DgDx(
         g_index_,
@@ -908,6 +988,11 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
       }
     }
     
+    // Scale DgDx_dot_bar_mv[i]
+    if ( !is_null(DgDx_dot_bar_mv) ) {
+      scale( g_weights_[i], &*DgDx_dot_bar_mv->getNonconstMultiVectorBlock(i) );
+    }
+    
     // Scale DgDx_bar_mv[i]
     if ( !is_null(DgDx_bar_mv) ) {
       scale( g_weights_[i], &*DgDx_bar_mv->getNonconstMultiVectorBlock(i) );
@@ -931,27 +1016,12 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
 }
 
 
-template<class Scalar>
-void DefaultMultiPeriodModelEvaluator<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-  ,const bool                                   wasSolved
-  )
-{
-  // We are just going to ignore the final point here.  It is not clear how to
-  // report a "final" point back to the underlying *periodModel_ object since
-  // we have so many different "points" that we could return (i.e. one for
-  // each period).  I guess we could report back the final parameter values
-  // (other than the z parameter) but there are multiple states x[i] and
-  // period parameters z[i] that we can report back.
-}
-
-
 // private
 
 
 template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::set_z_indexes_and_create_period_l_map(
-  const Teuchos::Array<int> &z_indexes
+  const Array<int> &z_indexes
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -960,7 +1030,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::set_z_indexes_and_create_period_l
   z_indexes_ = z_indexes;
   period_l_map_.resize(0);
   const int numTotalParams = Np_ + z_indexes_.size();
-  Teuchos::Array<int>::const_iterator
+  Array<int>::const_iterator
     z_indexes_itr = z_indexes_.begin(),
     z_indexes_end = z_indexes_.end();
   int last_z_index = -1;
@@ -998,7 +1068,6 @@ template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 {
 
-  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef ModelEvaluatorBase MEB;
 
@@ -1016,7 +1085,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
     if( !is_null(periodNominalValues.get_x()) ) {
       // If the first peroid model has nominal values for x, then all of them
       // must also!
-      Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
+      RCP<Thyra::ProductVectorBase<Scalar> >
         x_bar_init = createProductVector(x_bar_space_);
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
@@ -1031,7 +1100,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
     if( !is_null(periodLowerBounds.get_x()) ) {
       // If the first peroid model has lower bounds for for x, then all of
       // them must also!
-      Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
+      RCP<Thyra::ProductVectorBase<Scalar> >
         x_bar_l = createProductVector(x_bar_space_);
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
@@ -1046,7 +1115,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
     if( !is_null(periodUpperBounds.get_x()) ) {
       // If the first peroid model has upper bounds for for x, then all of
       // them must also!
-      Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
+      RCP<Thyra::ProductVectorBase<Scalar> >
         x_bar_u = createProductVector(x_bar_space_);
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
@@ -1073,9 +1142,9 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 
 
 template<class Scalar>
-Teuchos::RCP<ProductVectorBase<Scalar> >
+RCP<ProductVectorBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::createProductVector(
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
+  const RCP<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
   )
 {
   return Teuchos::rcp_dynamic_cast<ProductVectorBase<Scalar> >(

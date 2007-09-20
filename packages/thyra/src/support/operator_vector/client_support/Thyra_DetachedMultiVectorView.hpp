@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_AssertOp.hpp"
 
 #ifndef THYRA_EXPLICIT_MULTI_VECTOR_VIEW_HPP
 #define THYRA_EXPLICIT_MULTI_VECTOR_VIEW_HPP
@@ -50,22 +51,22 @@ public:
   /** \brief . */
   const RTOpPack::ConstSubMultiVectorView<Scalar>& smv() const { return smv_; }
   /** \brief . */
-  Teuchos_Index   globalOffset() const { return smv_.globalOffset(); }
+  Teuchos_Index globalOffset() const { return smv_.globalOffset(); }
   /** \brief . */
-  Teuchos_Index   subDim()       const { return smv_.subDim();  }
+  Teuchos_Index subDim() const { return smv_.subDim(); }
   /** \brief . */
-  Teuchos_Index   colOffset()    const { return smv_.colOffset(); }
+  Teuchos_Index colOffset() const { return smv_.colOffset(); }
   /** \brief . */
-  Teuchos_Index   numSubCols()   const { return smv_.numSubCols();  }
+  Teuchos_Index numSubCols() const { return smv_.numSubCols(); }
   /** \brief . */
-  const Scalar*     values()       const { return smv_.values();  }
+  const Scalar* values() const { return smv_.values(); }
   /** \brief . */
-  Teuchos_Index   leadingDim()   const { return smv_.leadingDim();  }
+  Teuchos_Index leadingDim() const { return smv_.leadingDim(); }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j<numSubCols())</tt>
   const Scalar& operator()(Teuchos_Index i,Teuchos_Index j) const { return smv_(i,j); }
 private:
-  const MultiVectorBase<Scalar>          &mv_;
-  RTOpPack::ConstSubMultiVectorView<Scalar>  smv_;
+  const MultiVectorBase<Scalar> &mv_;
+  RTOpPack::ConstSubMultiVectorView<Scalar> smv_;
   // Not defined and not to be called
   ConstDetachedMultiVectorView();
   ConstDetachedMultiVectorView(const ConstDetachedMultiVectorView<Scalar>&);
@@ -89,27 +90,58 @@ public:
   /** \brief . */
   const RTOpPack::SubMultiVectorView<Scalar>& smv() const { return smv_; }
   /** \brief . */
-  Teuchos_Index   globalOffset() const { return smv_.globalOffset(); }
+  Teuchos_Index globalOffset() const { return smv_.globalOffset(); }
   /** \brief . */
-  Teuchos_Index   subDim()       const { return smv_.subDim();  }
+  Teuchos_Index subDim() const { return smv_.subDim(); }
   /** \brief . */
-  Teuchos_Index   colOffset()    const { return smv_.colOffset(); }
+  Teuchos_Index colOffset() const { return smv_.colOffset(); }
   /** \brief . */
-  Teuchos_Index   numSubCols()   const { return smv_.numSubCols();  }
+  Teuchos_Index numSubCols() const { return smv_.numSubCols(); }
   /** \brief . */
-  Scalar*           values()       const { return smv_.values();  }
+  Scalar* values() const { return smv_.values(); }
   /** \brief . */
-  Teuchos_Index   leadingDim()   const { return smv_.leadingDim();  }
+  Teuchos_Index leadingDim() const { return smv_.leadingDim(); }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j<numSubCols())</tt>
   Scalar& operator()(Teuchos_Index i,Teuchos_Index j) { return smv_(i,j); }
 private:
-  MultiVectorBase<Scalar>                   &mv_;
-  RTOpPack::SubMultiVectorView<Scalar>  smv_;
+  MultiVectorBase<Scalar> &mv_;
+  RTOpPack::SubMultiVectorView<Scalar> smv_;
   // Not defined and not to be called
   DetachedMultiVectorView();
   DetachedMultiVectorView(const DetachedMultiVectorView<Scalar>&);
   DetachedMultiVectorView<Scalar>& operator==(const DetachedMultiVectorView<Scalar>&);
 };
+
+/** \brief Do an explicit multi-vector adjoint.
+ *
+ * \relates DetachedMultiVectorView
+ */
+template<class Scalar>
+void doExplicitMultiVectorAdjoint(
+  const MultiVectorBase<Scalar>& mvIn, MultiVectorBase<Scalar>* mvTransOut
+  )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(0==mvTransOut);
+  THYRA_ASSERT_VEC_SPACES("doExplicitMultiVectorAdjoint(...)",
+    *mvIn.domain(), *mvTransOut->range()
+    );
+  THYRA_ASSERT_VEC_SPACES("doExplicitMultiVectorAdjoint(...)",
+    *mvIn.range(), *mvTransOut->domain()
+    );
+#endif
+  ConstDetachedMultiVectorView<Scalar> dMvIn(mvIn);
+  DetachedMultiVectorView<Scalar> dMvTransOut(*mvTransOut);
+  const int m = dMvIn.subDim();
+  const int n = dMvIn.numSubCols();
+  for ( int j = 0; j < n; ++j ) {
+    for ( int i = 0; i < m; ++i ) {
+      dMvTransOut(j,i) = ST::conjugate(dMvIn(i,j));
+    }
+  }
+}
+
 
 } // namespace Thyra
 

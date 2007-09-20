@@ -29,11 +29,15 @@
 #ifndef THYRA_EPETRA_THYRA_WRAPPERS_HPP
 #define THYRA_EPETRA_THYRA_WRAPPERS_HPP
 
+
 #include "Thyra_EpetraTypes.hpp"
+
 
 namespace Teuchos { template<class Ordinal> class Comm; }
 
+
 namespace Thyra {
+
 
 /** \defgroup Thyra_Epetra_Thyra_Wrappers_grp  Collection of functions for wrapping and unwrapping Epetra objects
 
@@ -45,6 +49,7 @@ views of %Thyra objects.
 
 */
 
+
 /** \brief Given an <tt>Epetra_Comm</tt> object, return an equivalent
  * <tt>Teuchos::Comm</tt> object.
  *
@@ -53,10 +58,10 @@ views of %Thyra objects.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const Teuchos::Comm<Index> >
-create_Comm( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
+RCP<const Teuchos::Comm<Index> >
+create_Comm( const RCP<const Epetra_Comm> &epetraComm );
 
-/** \brief Concrete an <tt>VectorSpaceBase</tt> object given an
+/** \brief Create an <tt>VectorSpaceBase</tt> object given an
  * <tt>Epetra_Map</tt> object.
  *
  * \param  epetra_map  [in] The Epetra map defining the partitioning of elements
@@ -89,13 +94,14 @@ create_Comm( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const VectorSpaceBase<double> >
+RCP<const VectorSpaceBase<double> >
 create_VectorSpace(
-  const Teuchos::RCP<const Epetra_Map> &epetra_map
+  const RCP<const Epetra_Map> &epetra_map
   );
 
-/** \brief Concrete a <tt>VectorSpaceBase</tt> object that creates locally replicated
- * vector objects.
+
+/** \brief Create a <tt>VectorSpaceBase</tt> object that creates locally
+ * replicated vector objects.
  *
  * \param  parentSpace
  *           [in] The vector space that will be used to create the smaller
@@ -108,14 +114,15 @@ create_VectorSpace(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const VectorSpaceBase<double> >
+RCP<const VectorSpaceBase<double> >
 create_LocallyReplicatedVectorSpace(
-  const Teuchos::RCP<const VectorSpaceBase<double> > &parentSpace,
+  const RCP<const VectorSpaceBase<double> > &parentSpace,
   const int dim
   );
 
+
 /** \brief Create a non-<tt>const</tt> <tt>VectorBase</tt> object from a
- * <tt>const> <tt>Epetra_Vector</tt> object.
+ * non-<tt>const</tt> <tt>Epetra_Vector</tt> object.
  *
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
  * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
@@ -138,11 +145,12 @@ create_LocallyReplicatedVectorSpace(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<VectorBase<double> >
+RCP<VectorBase<double> >
 create_Vector(
-  const Teuchos::RCP<Epetra_Vector> &epetra_v,
-  const Teuchos::RCP<const VectorSpaceBase<double> > &space
+  const RCP<Epetra_Vector> &epetra_v,
+  const RCP<const VectorSpaceBase<double> > &space
   );
+
 
 /** \brief Create an <tt>const</tt> <tt>VectorBase</tt> wrapper object for
  * a <tt>const</tt> <tt>Epetra_Vector</tt> object.
@@ -166,14 +174,15 @@ create_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const VectorBase<double> >
+RCP<const VectorBase<double> >
 create_Vector(
-  const Teuchos::RCP<const Epetra_Vector> &epetra_v,
-  const Teuchos::RCP<const VectorSpaceBase<double> > &space
+  const RCP<const Epetra_Vector> &epetra_v,
+  const RCP<const VectorSpaceBase<double> > &space
   );
 
+
 /** \brief Create a non-<tt>const</tt> <tt>MultiVectorBase</tt> object from a
- * <tt>const> <tt>Epetra_MultiVector</tt> object.
+ * non-<tt>const</tt> <tt>Epetra_MultiVector</tt> object.
  *
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
  * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
@@ -195,12 +204,13 @@ create_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<MultiVectorBase<double> >
+RCP<MultiVectorBase<double> >
 create_MultiVector(
-  const Teuchos::RCP<Epetra_MultiVector> &epetra_mv,
-  const Teuchos::RCP<const VectorSpaceBase<double> > &range,
-  const Teuchos::RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
+  const RCP<Epetra_MultiVector> &epetra_mv,
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
+
 
 /** \brief Create an <tt>const</tt> <tt>MultiVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_MultiVector</tt> object.
@@ -222,12 +232,13 @@ create_MultiVector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const MultiVectorBase<double> >
+RCP<const MultiVectorBase<double> >
 create_MultiVector(
-  const Teuchos::RCP<const Epetra_MultiVector> &epetra_mv,
-  const Teuchos::RCP<const VectorSpaceBase<double> > &range,
-  const Teuchos::RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
+  const RCP<const Epetra_MultiVector> &epetra_mv,
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
+
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a
  * non-<tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -237,7 +248,7 @@ create_MultiVector(
  * <li> <tt>map</tt> must be compatible with <tt>*v.space()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RCP<Epetra_Vector></tt> object is already
+ * If a <tt>RCP<Epetra_Vector></tt> object is already
  * attached to the node of the smart pointer for <tt>mv</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*v</tt> is
  * created and returned.  In the latter case the smart pointer <tt>v</tt> is
@@ -251,21 +262,22 @@ create_MultiVector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<Epetra_Vector>
+RCP<Epetra_Vector>
 get_Epetra_Vector(
   const Epetra_Map &map,
-  const Teuchos::RCP<VectorBase<double> > &v
+  const RCP<VectorBase<double> > &v
   );
+
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_Vector</tt> view from a
  * <tt>const</tt> <tt>VectorBase</tt> object if possible.
  *
  * Preconditions:<ul>
  * <li> <tt>v.get()!=NULL</tt>
- * <li> <tt>map</tt> must be compatible with <tt>*v.space()</tt>
+ * <li> <tt>map</tt> must be compatible with <tt>*v->space()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RCP<Epetra_Vector></tt> object is already
+ * If a <tt>RCP<Epetra_Vector></tt> object is already
  * attached to the node of the smart pointer for <tt>mv</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*v</tt> is
  * created and returned.  In the latter case the smart pointer <tt>v</tt> is
@@ -276,21 +288,22 @@ get_Epetra_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const Epetra_Vector>
+RCP<const Epetra_Vector>
 get_Epetra_Vector(
   const Epetra_Map &map,
-  const Teuchos::RCP<const VectorBase<double> > &v
+  const RCP<const VectorBase<double> > &v
   );
+
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * non-<tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
  *
  * <b>Preconditions:</b><ul>
  * <li> <tt>mv.get()!=NULL</tt>
- * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
+ * <li> <tt>map</tt> must be compatible with <tt>*mv->range()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RCP<Epetra_MultiVector></tt> object is already
+ * If a <tt>RCP<Epetra_MultiVector></tt> object is already
  * attached to the node of the smart pointer for <tt>mv</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*mv</tt> is
  * created and returned.  In the latter case the smart pointer <tt>mv</tt> is
@@ -305,11 +318,12 @@ get_Epetra_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<Epetra_MultiVector>
+RCP<Epetra_MultiVector>
 get_Epetra_MultiVector(
   const Epetra_Map &map,
-  const Teuchos::RCP<MultiVectorBase<double> > &mv
+  const RCP<MultiVectorBase<double> > &mv
   );
+
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * <tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
@@ -319,7 +333,7 @@ get_Epetra_MultiVector(
  * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RCP<const Epetra_MultiVector></tt> object is
+ * If a <tt>RCP<const Epetra_MultiVector></tt> object is
  * already attached to the node of the smart pointer for <tt>mv</tt> then this
  * is returned directly.  If not, then a view of the data in <tt>*mv</tt> is
  * created and returned.  In the latter case the smart pointer <tt>mv</tt> is
@@ -330,12 +344,70 @@ get_Epetra_MultiVector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RCP<const Epetra_MultiVector>
+RCP<const Epetra_MultiVector>
 get_Epetra_MultiVector(
   const Epetra_Map &map, 
-  const Teuchos::RCP<const MultiVectorBase<double> > &mv
+  const RCP<const MultiVectorBase<double> > &mv
   );
 
+
+/** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
+ * non-<tt>const</tt> <tt>MultiVectorBase</tt> object if possible where the
+ * client must maintain the memory of the input multivector.
+ *
+ * <b>Preconditions:</b><ul>
+ * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
+ * </ul>
+ *
+ * This function trys to dynamic cast some some known interfaces classes where
+ * data can be directly accessed and no RCP magic needs to be used.  This
+ * results in improved performance in time-critical use cases (like when
+ * called for <tt>EpetraLinearOp</tt> in the inner loop of a Krylov solver).
+ *
+ * If this function can not dynamic cast to the direct data access interfaces
+ * it punts and calls the more general (but more expensive)
+ * <tt>get_Epetra_MultiVector()</tt> function.
+ *
+ * Note: the <tt>mv</tt> object is not guaranteed to be modified until
+ * the last smart pointer to the returned <tt>Epetra_MultiVector</tt>
+ * object is destroyed.
+ *
+ * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ */
+Teuchos::RCP<Epetra_MultiVector>
+get_Epetra_MultiVector(
+  const Epetra_Map &map,
+  MultiVectorBase<double> &mv
+  );
+
+
+/** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
+ * <tt>const</tt> <tt>MultiVectorBase</tt> object if possible where the client
+ * must maintain the memory of the input multivector.
+ *
+ * <b>Preconditions:</b><ul>
+ * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
+ * </ul>
+ *
+ * This function trys to dynamic cast some some known interfaces classes where
+ * data can be directly accessed and no RCP magic needs to be used.  This
+ * results in improved performance in time-critical use cases (like when
+ * called for <tt>EpetraLinearOp</tt> in the inner loop of a Krylov solver).
+ *
+ * If this function can not dynamic cast to the direct data access interfaces
+ * it punts and calls the more general (but more expensive)
+ * <tt>get_Epetra_MultiVector()</tt> function.
+ *
+ * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ */
+Teuchos::RCP<const Epetra_MultiVector>
+get_Epetra_MultiVector(
+  const Epetra_Map &map,
+  const MultiVectorBase<double> &mv
+  );
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_EPETRA_THYRA_WRAPPERS_HPP

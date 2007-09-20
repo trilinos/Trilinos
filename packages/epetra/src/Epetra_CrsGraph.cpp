@@ -999,7 +999,9 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap,
   // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=DomainMap and quit
   if (DomainMap.Comm().NumProc()==1) { 
     
-    assert(NumRemoteColGIDs==0); // Sanity test: When one processor,there can be no remoteGIDs
+    if (NumRemoteColGIDs!=0) {
+      throw ReportError("Some column IDs are not in DomainMap.  If matrix is rectangular, you must pass in DomainMap to FillComplete",-1); // Sanity test: When one processor,there can be no remoteGIDs
+    }
     if (NumLocalColGIDs==numDomainElements) {
       CrsGraphData_->ColMap_ = DomainMap;
       CrsGraphData_->HaveColMap_ = true;

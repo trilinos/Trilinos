@@ -146,13 +146,22 @@ int main( int argc, char* argv[] ) {
     // Read options from the command-line
     //
 
-    int     local_dim         = 4;
+
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
-    clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
-    clp.setOption( "dump-all", "no-dump", &dumpAll, "Determines if quantities are dumped or not." );
+
+    int local_dim = 4;
     clp.setOption( "local-dim", &local_dim, "Number of vector elements per process." );
+
+    double eps_scale = 200.0;
+    clp.setOption( "eps-scale", &eps_scale, "Constant (greater than 1) to scale eps by in error tests." );
+
+    clp.setOption( "verbose", "quiet", &verbose,
+      "Determines if any output is printed or not." );
+
+    clp.setOption( "dump-all", "no-dump", &dumpAll, "Determines if quantities are dumped or not." );
+
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -160,11 +169,11 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !Thyra::run_std_ops_tests<float>(local_dim,float(100.0*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
-    if( !Thyra::run_std_ops_tests<double>(local_dim,double(100.0*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<float>(local_dim,float(eps_scale*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<double>(local_dim,double(eps_scale*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !Thyra::run_std_ops_tests<std::complex<float> >(local_dim,float(100.0*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
-    if( !Thyra::run_std_ops_tests<std::complex<double> >(local_dim,double(100.0*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<std::complex<float> >(local_dim,float(eps_scale*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<std::complex<double> >(local_dim,double(eps_scale*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
     //if( !Thyra::run_std_ops_tests<mpf_class>(local_dim,mpf_class(max_rel_err),dumpAll,verbose?&*out:NULL) ) success = false;

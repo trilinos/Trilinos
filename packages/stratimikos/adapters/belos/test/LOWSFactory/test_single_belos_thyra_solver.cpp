@@ -29,6 +29,7 @@ bool Thyra::test_single_belos_thyra_solver(
   ,const bool                             showAllTests
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *belosLOWSFPL
+  ,Teuchos::ParameterList                 *precPL
   ,Teuchos::FancyOStream                  *out_arg
   )
 {
@@ -89,10 +90,11 @@ bool Thyra::test_single_belos_thyra_solver(
       if(out.get()) {
         *out << "\nSetting an Ifpack preconditioner factory ...\n";
       }
-      lowsFactory->setPreconditionerFactory(
-        Teuchos::rcp(new IfpackPreconditionerFactory())
-        ,"Ifpack"
-        );
+      RCP<PreconditionerFactoryBase<double> >
+        precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
+      if (precPL)
+        precFactory->setParameterList(rcp(precPL,false));
+      lowsFactory->setPreconditionerFactory(precFactory,"Ifpack");
 #else
       TEST_FOR_EXCEPT(usePreconditioner);
 #endif

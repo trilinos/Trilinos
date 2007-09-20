@@ -145,7 +145,7 @@ public:
 
   /** \brief Set the name of <tt>*this</tt> list.
    */
-  void setName( const std::string &name );
+  ParameterList& setName( const std::string &name );
   
   /** Replace the current parameter list with \c source.
    * \note This also replaces the name returned by <tt>this->name()</tt>
@@ -171,6 +171,15 @@ public:
    * same names as those in <tt>source</tt> will not be overwritten.
    */
   ParameterList& setParametersNotAlreadySet(const ParameterList& source);
+
+  /** Disallow recusive validation when this sublist is used in a valid
+   * parameter list.
+   *
+   * This function should be called when setting a sublist in a valid
+   * parameter list which is broken off to be passed to another object.
+   * The other object should validate its own list.
+   */
+  ParameterList& disableRecursiveValidation();
   
   /*! \brief Sets different types of parameters. The type depends on the second entry.  
     
@@ -181,7 +190,7 @@ public:
     </ul>
   */
   template<typename T>
-  void set(
+  ParameterList& set(
     std::string const& name, T const& value, std::string const& docString = ""
     ,RCP<const ParameterEntryValidator> const& validator = null
     );
@@ -189,7 +198,7 @@ public:
   /*! \brief Template specialization for the case when a user sets the parameter with a character
     std::string in parenthesis.
   */
-  void set(
+  ParameterList& set(
     std::string const& name, char value[], std::string const& docString = ""
     ,RCP<const ParameterEntryValidator> const& validator = null
     );
@@ -197,14 +206,14 @@ public:
   /*! \brief Template specialization for the case when a user sets the parameter with a character
     std::string in parenthesis.
   */
-  void set(
+  ParameterList& set(
     std::string const& name, const char value[], std::string const& docString = ""
     ,RCP<const ParameterEntryValidator> const& validator = null
     );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a ParameterList.
    */
-  void set(
+  ParameterList& set(
     std::string const& name, ParameterList const& value, std::string const& docString = ""
     );
 
@@ -212,7 +221,7 @@ public:
    * \note This is required to preserve the isDefault value when reading back
    * from XML. KL 7 August 2004 
    */
-  void setEntry(const std::string& name, const ParameterEntry& entry);
+  ParameterList& setEntry(const std::string& name, const ParameterEntry& entry);
 
   //@}
   
@@ -305,17 +314,18 @@ public:
   //! @name Parameter removal functions
   //@{
  
-  /** \brief Remove a parameter (does not depend on the type).  
+  /** \brief Remove a parameter (does not depend on the type of the
+   * parameter).
    *
-   * \param  name
-   *           [in] The name of the parameter to remove
-   * \param  throwIfNotExists
-   *           [in] If <tt>true</tt> then if the parameter with
-   *           the name <tt>name</tt> an std::exception will be thrown!
+   * \param name [in] The name of the parameter to remove
    *
-   * Returns <tt>true</tt> of the parameter was removed, and <tt>false</tt> if
-   * the parameter was not removed (return value possible only if
-   * <tt>throwIfExists==false</tt>).
+   * \param throwIfNotExists [in] If <tt>true</tt> then if the parameter with
+   * the name <tt>name</tt> does not exist then a std::exception will be
+   * thrown!
+   *
+   * \returns Returns <tt>true</tt> if the parameter was removed, and
+   * <tt>false</tt> if the parameter was not removed (<tt>false</tt> return
+   * value possible only if <tt>throwIfExists==false</tt>).
    */
   bool remove(
     std::string const& name, bool throwIfNotExists = true
@@ -351,29 +361,38 @@ public:
   const std::string& name() const;
 
   /*! \brief Query the existence of a parameter.  \return "true" if a
-    parameter with this \c name exists, else "false".
+      parameter with this \c name exists, else "false".  Warning, this
+      function should almost never be used!  Instead, consider using
+      getEntryPtr() instead.
   */
   bool isParameter(const std::string& name) const;
   
   /*! \brief Query the existence of a parameter and whether it is a parameter
-    list.  \return "true" if a parameter with this \c name exists and is
-    itself a parameter list, else "false".
+      list.  \return "true" if a parameter with this \c name exists and is
+      itself a parameter list, else "false".  Warning, this function should
+      almost never be used!  Instead, consider using getEntryPtr() instead.
   */
   bool isSublist(const std::string& name) const;
   
   /*! \brief Query the existence and type of a parameter.  \return "true" is a
     parameter with this \c name exists and is of type \c T, else "false".
     \note The syntax for calling this method is: <tt> list.template
-    isType<int>( "Iters" ) </tt>
+    isType<int>( "Iters" ) </tt>.  Warning, this function should almost never
+    be used!  Instead, consider using getEntryPtr() instead.
   */
   template<typename T>
   bool isType(const std::string& name) const;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS  
   /*! \brief Query the existence and type of a parameter.
-    \return "true" is a parameter with this \c name exists and is of type \c T, else "false".
-    \note <b>It is not recommended that this method be used directly!</b>  
-    Please use either the helper function <b>isParameterType</b> or non-nominal <b>isType</b> method. 
+   *
+   * \return "true" is a parameter with this \c name exists and is of type \c
+   * T, else "false".
+   *
+   * \note <b>It is not recommended that this method be used directly!</b>
+   *
+   * Please use either the helper function <b>isParameterType</b> or
+   * non-nominal <b>isType</b> method.
   */
   template<typename T>
   bool isType(const std::string& name, T* ptr) const;
@@ -386,7 +405,7 @@ public:
 
   /*! \brief Printing method for parameter lists which takes an print options
    *  object.*/
-  std::ostream& print(std::ostream& os, const PrintOptions &printOptions ) const;
+  std::ostream& print(std::ostream& os, const PrintOptions &printOptions) const;
 
   /*! \brief Printing method for parameter lists.  Indenting is used to indicate
     parameter list hierarchies. */
@@ -420,33 +439,46 @@ public:
   //! @name Validation Functions 
   //@{
 
-  /** \brief Validate the parameters is this list given valid selections in
+  /** \brief Validate the parameters in this list given valid selections in
    * the input list.
    *
-   * \param  validParamList
-   *              [in] This is the list that the parameters and sublist in <tt>*this</tt>
-   *              are compared against.
-   * \param  depth
-   *              [in] Determines the number of levels of depth that the validation will
-   *              recurse into.  A value of <tt>dpeth=0</tt> means that only the top level
-   *              parameters and sublists will be checked.  Default: <tt>depth = large number</tt>.
-   * \param  validateUsed
-   *              [in] Determines if parameters that have been used are checked
-   *              against those in <tt>validParamList</tt>.  Default:
-   *              <tt>validateDefaults = VALIDATE_DEFAULTS_ENABLED</tt>.
-   * \param  validateDefaults
-   *              [in] Determines if parameters set at their default values using <tt>get(name,defaultVal)</tt>
-   *              are checked against those in <tt>validParamList</tt>.  Default:
-   *              <tt>validateDefaults = VALIDATE_DEFAULTS_ENABLED</tt>.
+   * \param validParamList [in] This is the list that the parameters and
+   * sublist in <tt>*this</tt> are compared against.
+   *
+   * \param depth [in] Determines the number of levels of depth that the
+   * validation will recurse into.  A value of <tt>dpeth=0</tt> means that
+   * only the top level parameters and sublists will be checked.  Default:
+   * <tt>depth = large number</tt>.
+   *
+   * \param validateUsed [in] Determines if parameters that have been used are
+   * checked against those in <tt>validParamList</tt>.  Default:
+   * <tt>validateDefaults = VALIDATE_DEFAULTS_ENABLED</tt>.
+   *
+   * \param validateDefaults [in] Determines if parameters set at their
+   * default values using <tt>get(name,defaultVal)</tt> are checked against
+   * those in <tt>validParamList</tt>.  Default: <tt>validateDefaults =
+   * VALIDATE_DEFAULTS_ENABLED</tt>.
    *
    * If a parameter in <tt>*this</tt> is not found in <tt>validParamList</tt>
-   * then an std::exception of type <tt>Exceptions::InvalidParameterName</tt> will
-   * be thrown which will contain an excellent error message returned by
-   * <tt>excpt.what()</tt>.  If the parameter exists but has the wrong type,
-   * then an std::exception type <tt>Exceptions::InvalidParameterType</tt> will be
-   * thrown.  If the parameter exists and has the right type, but the value is
-   * not valid then an std::exception type
-   * <tt>Exceptions::InvalidParameterValue</tt> will be thrown.
+   * then an <tt>std::exception</tt> of type
+   * <tt>Exceptions::InvalidParameterName</tt> will be thrown which will
+   * contain an excellent error message returned by <tt>excpt.what()</tt>.  If
+   * the parameter exists but has the wrong type, then an std::exception type
+   * <tt>Exceptions::InvalidParameterType</tt> will be thrown.  If the
+   * parameter exists and has the right type, but the value is not valid then
+   * an std::exception type <tt>Exceptions::InvalidParameterValue</tt> will be
+   * thrown.
+   *
+   * Recursive validation stops when:<ul>
+   *
+   * <li>The maxinum <tt>depth</tt> is reached
+   *
+   * <li>A sublist note in <tt>validParamList</tt> has been marked with the
+   * <tt>disableRecursiveValidation()</tt> function, or
+   *
+   * <li>There are not more parameters or sublists left in <tt>*this</tt>
+   *
+   * </ul>
    *
    * A breath-first search is performed to validate all of the parameters in
    * one sublist before moving into nested subslist.
@@ -458,16 +490,16 @@ public:
     EValidateDefaults const validateDefaults = VALIDATE_DEFAULTS_ENABLED
     ) const;
 
-  /** \brief Validate the parameters is this list given valid selections in
+  /** \brief Validate the parameters in this list given valid selections in
    * the input list and set defaults for those not set.
    *
-   * \param  validParamList
-   *              [in] This is the list that the parameters and sublist in <tt>*this</tt>
-   *              are compared against.
-   * \param  depth
-   *              [in] Determines the number of levels of depth that the validation will
-   *              recurse into.  A value of <tt>dpeth=0</tt> means that only the top level
-   *              parameters and sublists will be checked.  Default: <tt>depth = large number</tt>.
+   * \param validParamList [in] This is the list that the parameters and
+   * sublist in <tt>*this</tt> are compared against.
+   *
+   * \param depth [in] Determines the number of levels of depth that the
+   * validation will recurse into.  A value of <tt>dpeth=0</tt> means that
+   * only the top level parameters and sublists will be checked.  Default:
+   * <tt>depth = large number</tt>.
    *
    * If a parameter in <tt>*this</tt> is not found in <tt>validParamList</tt>
    * then an std::exception of type <tt>Exceptions::InvalidParameterName</tt> will
@@ -480,6 +512,17 @@ public:
    * parameter in <tt>validParamList</tt> does not exist in <tt>*this</tt>,
    * then it will be set at its default value as determined by
    * <tt>validParamList</tt>.
+   *
+   * Recursive validation stops when:<ul>
+   *
+   * <li>The maxinum <tt>depth</tt> is reached
+   *
+   * <li>A sublist note in <tt>validParamList</tt> has been marked with the
+   * <tt>disableRecursiveValidation()</tt> function, or
+   *
+   * <li>There are not more parameters or sublists left in <tt>*this</tt>
+   *
+   * </ul>
    *
    * A breath-first search is performed to validate all of the parameters in
    * one sublist before moving into nested subslist.
@@ -513,6 +556,9 @@ private: // Data members
   std::string name_;
   //! Parameter list
   Map params_;
+  //! Validate into list or not
+  bool disableRecursiveValidation_;
+
 };
 
 
@@ -580,16 +626,17 @@ bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 // Inline and Template Function Definitions
 
 inline
-void ParameterList::setName( const std::string &name )
+ParameterList& ParameterList::setName( const std::string &name )
 {
   name_ = name;
+  return *this;
 }
 
 // Set functions
 
 template<typename T>
 inline
-void ParameterList::set(
+ParameterList& ParameterList::set(
   std::string const& name, T const& value, std::string const& docString
   ,RCP<const ParameterEntryValidator> const& validator
   )
@@ -600,31 +647,38 @@ void ParameterList::set(
   // entry.validator() instead of validator since validator might be null!
   if(entry.validator().get())
     entry.validator()->validate(entry,name,this->name());
+  return *this;
 }
 
 inline
-void ParameterList::set(
+ParameterList& ParameterList::set(
   std::string const& name, char value[], std::string const& docString
   ,RCP<const ParameterEntryValidator> const& validator
   ) 
-{ set( name, std::string(value), docString, validator ); }
+{ return set( name, std::string(value), docString, validator ); }
 
 inline
-void ParameterList::set(
+ParameterList& ParameterList::set(
   const std::string& name, const char value[], const std::string &docString
   ,RCP<const ParameterEntryValidator> const& validator
   ) 
-{ set( name, std::string(value), docString, validator ); }
+{ return set( name, std::string(value), docString, validator ); }
 
 inline
-void ParameterList::set(
+ParameterList& ParameterList::set(
   std::string const& name, ParameterList const& value, std::string const& docString
   )
-{ sublist(name) = value; }
+{
+  sublist(name) = value;
+  return *this;
+}
 
 inline
-void ParameterList::setEntry(std::string const& name, ParameterEntry const& entry)
-{params_[name] = entry;}
+ParameterList& ParameterList::setEntry(std::string const& name, ParameterEntry const& entry)
+{
+  params_[name] = entry;
+  return *this;
+}
 
 // Get functions
 
@@ -873,13 +927,12 @@ bool isParameterType( const ParameterList& l, const std::string& name )
   
 /** \brief Set a std::string parameter representation of an array.
  *
- * \param  paramName
- *           [in] The name of the parameter containing the std::string
- *           representation of the array.
- * \param  array
- *           [in] The array that will be set as a std::string parameter.
- * \param  paramList
- *           [in/out] The parameter list that the array will be set on.
+ * \param paramName [in] The name of the parameter containing the std::string
+ * representation of the array.
+ *
+ * \param array [in] The array that will be set as a std::string parameter.
+ *
+ * \param paramList [in/out] The parameter list that the array will be set on.
  *
  * \relates ParameterList
  */
@@ -897,24 +950,23 @@ void setStringParameterFromArray(
 /** \brief Get an Array object (with entries of type <tt>T</tt>) from a
  * parameter holding a std::string representation of the array.
  *
- * \param  paramList
- *           [in] The parameter list to extract the parameter array from.
- * \param  paramName
- *           [in] The name of the parameter containing the std::string
- *           representation of the array.
- * \param  arrayDim
- *           [in] If <tt>arrayDim >= 0</tt>, then the read in array
- *           must be equal to this dimension, or an std::exception will
- *           be thrown.  If <tt>arrayDim < 0</tt>, then an array
- *           of any dimension will be returned.  The default is <tt>-1</tt>
- *           and therefore no array length validation will be performed.
- * \param  mustExist
- *           [in] If <tt>mustExist==true</tt>, then the parameter
- *           <tt>paramName</tt> must exist and must contain a valid array, or
- *           an std::exception is thrown.  If <tt>mustExist==false</tt>, and if
- *           the parameter <tt>paramName</tt> does not exist or contains an
- *           empty array std::string value, then an empty array object will be
- *           returned.
+ * \param paramList [in] The parameter list to extract the parameter array
+ * from.
+ *
+ * \param paramName [in] The name of the parameter containing the std::string
+ * representation of the array.
+ *
+ * \param arrayDim [in] If <tt>arrayDim >= 0</tt>, then the read in array must
+ * be equal to this dimension, or an std::exception will be thrown.  If
+ * <tt>arrayDim < 0</tt>, then an array of any dimension will be returned.
+ * The default is <tt>-1</tt> and therefore no array length validation will be
+ * performed.
+ *
+ * \param mustExist [in] If <tt>mustExist==true</tt>, then the parameter
+ * <tt>paramName</tt> must exist and must contain a valid array, or an
+ * std::exception is thrown.  If <tt>mustExist==false</tt>, and if the
+ * parameter <tt>paramName</tt> does not exist or contains an empty array
+ * std::string value, then an empty array object will be returned.
  *
  * \returns an array object if an std::exception is not thrown.  If
  * <tt>mustExist==false</tt> and the parameter does not exist, then an empty
@@ -1019,6 +1071,20 @@ RCP<ParameterList> sublist(
 {
   RCP<ParameterList>
     sublist = Teuchos::rcp(&paramList->sublist(name,mustAlreadyExist),false);
+  set_extra_data(paramList,"masterParamList",&sublist);
+  return sublist;
+}
+
+/*! \relates ParameterList
+  \brief Return a RCP to a sublist in another RCP-ed parameter list.
+*/
+inline
+RCP<const ParameterList> sublist(
+  const RCP<const ParameterList> &paramList, const std::string& name
+  )
+{
+  RCP<const ParameterList>
+    sublist = Teuchos::rcp(&paramList->sublist(name),false);
   set_extra_data(paramList,"masterParamList",&sublist);
   return sublist;
 }

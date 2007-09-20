@@ -565,25 +565,25 @@ all-local: $(DIAGONAL_EXE_LINKS)
 	@echo ""
 
 diagonalTransient_amesos.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_amesos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_aztecoo.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_aztecoo_ifpack.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_aztecoo_ml.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_belos.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_belos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_belos_ifpack.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_belos_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_belos_ml.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_belos_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

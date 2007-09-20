@@ -29,11 +29,14 @@
 #ifndef THYRA_DEFAULT_NOMINAL_BOUNDS_OVERRIDE_MODEL_EVALUATOR_HPP
 #define THYRA_DEFAULT_NOMINAL_BOUNDS_OVERRIDE_MODEL_EVALUATOR_HPP
 
+
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Teuchos_Time.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief This class wraps any ModelEvaluator object and allows the client to
  * overide the state contained in the nominal values and the upper and lower
@@ -44,19 +47,18 @@ namespace Thyra {
  \code
  
    template<class Scalar>
-   Teuchos::RCP<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
+   RCP<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
    override(
-     const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
+     const RCP<ModelEvaluator<Scalar> >   &thyraModel
      ...
      )
    {
 
-     using Teuchos::RCP;
      using Teuchos::rcp;
      typedef Thyra::ModelEvaluatorBase MEB;
 
      // Get the defaults
-     Teuchos::RCP<MEB::InArgs<Scalar> >
+     RCP<MEB::InArgs<Scalar> >
        nominalValues = clone(thyraModel->getNominalValues()),
        lowerBounds = clone(thyraModel->getLowerBounds()),
        upperBounds = clone(thyraModel->getUpperBounds());
@@ -98,18 +100,24 @@ public:
 
   /** \brief . */
   DefaultNominalBoundsOverrideModelEvaluator(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
-    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
-    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
+    const RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &nominalValues,
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &lowerBounds = Teuchos::null,
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &upperBounds = Teuchos::null
     );
 
   /** \brief Initalize.
    *
-   * \param  thyraModel     [in] Model being wrapped.
-   * \param  nominalValues  [in] Completely overrides thyraModel->getNominalValues()
-   * \param  lowerBounds    [in] If non-null, completely overrides thyraModel->getLowerBounds()
-   * \param  upperBounds    [in] If non-null, completely overrides thyraModel->getUpperBounds()
+   * \param thyraModel [in] Model being wrapped.
+   *
+   * \param nominalValues [in] Completely overrides
+   * thyraModel->getNominalValues()
+   *
+   * \param lowerBounds [in] If non-null, completely overrides
+   * thyraModel->getLowerBounds()
+   *
+   * \param upperBounds [in] If non-null, completely overrides
+   * thyraModel->getUpperBounds()
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>thyraModel.get()!=NULL</tt>
@@ -123,28 +131,36 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
-    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
-    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
+    const RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &nominalValues,
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &lowerBounds = Teuchos::null,
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &upperBounds = Teuchos::null
     );
   
   /** \brief Set only nominal values. */
   void setNominalValues(
-    const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
     );
   
   /** \brief Set only lower bounds. */
   void setLowerBounds(
-    const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
     );
   
   /** \brief Set only upper bounds. */
   void setUpperBounds(
-    const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+    const RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
     );
   
   // ToDo: Add functions to reset lower and upper bounds when needed!
+
+  //@}
+
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
 
   //@}
 
@@ -157,56 +173,61 @@ public:
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
-    ) const;
-
-  //@}
-
-  /** \name Public functions overridden from Teuchos::Describable. */
-  //@{
-
-  /** \brief . */
-  std::string description() const;
 
   //@}
 
 private:
 
-  Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  nominalValues_;
-  Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  lowerBounds_;
-  Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  upperBounds_;
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase */
+  //@{
+
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
+
+  //@}
+
+private:
+
+  RCP<const ModelEvaluatorBase::InArgs<Scalar> >  nominalValues_;
+  RCP<const ModelEvaluatorBase::InArgs<Scalar> >  lowerBounds_;
+  RCP<const ModelEvaluatorBase::InArgs<Scalar> >  upperBounds_;
   
 };
+
 
 // /////////////////////////////////
 // Implementations
 
+
 // Constructors/initializers/accessors/utilities
+
 
 template<class Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::DefaultNominalBoundsOverrideModelEvaluator()
 {}
 
+
 template<class Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::DefaultNominalBoundsOverrideModelEvaluator(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
-  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
-  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  const RCP<ModelEvaluator<Scalar> > &thyraModel,
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &nominalValues,
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &lowerBounds,
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &upperBounds
   )
 {
   initialize(thyraModel,nominalValues,lowerBounds,upperBounds);
 }
 
+
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::initialize(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
-  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
-  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  const RCP<ModelEvaluator<Scalar> > &thyraModel,
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &nominalValues,
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &lowerBounds,
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> > &upperBounds
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -215,31 +236,56 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::initialize(
   upperBounds_ = upperBounds;
 }
 
+
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setNominalValues(
-  const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
   )
 {
   nominalValues_ = nominalValues;
 }
 
+
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setLowerBounds(
-  const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
   )
 {
   lowerBounds_ = lowerBounds;
 }
 
+
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setUpperBounds(
-  const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  const RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
   )
 {
   upperBounds_ = upperBounds;
 }
 
+
+// Public functions overridden from Teuchos::Describable
+
+
+template<class Scalar>
+std::string DefaultNominalBoundsOverrideModelEvaluator<Scalar>::description() const
+{
+  const RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  std::ostringstream oss;
+  oss << "Thyra::DefaultNominalBoundsOverrideModelEvaluator{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
+
 // Overridden from ModelEvaulator.
+
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
@@ -250,6 +296,7 @@ DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getNominalValues() const
   return this->getUnderlyingModel()->getNominalValues();
 }
 
+
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getLowerBounds() const
@@ -258,6 +305,7 @@ DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getLowerBounds() const
     return *lowerBounds_;
   return this->getUnderlyingModel()->getLowerBounds();
 }
+
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
@@ -268,10 +316,14 @@ DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getUpperBounds() const
   return this->getUnderlyingModel()->getUpperBounds();
 }
 
+
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
 template<class Scalar>
-void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
+void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModelImpl(
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
 
@@ -306,24 +358,8 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
   
 }
 
-// Public functions overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultNominalBoundsOverrideModelEvaluator<Scalar>::description() const
-{
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  std::ostringstream oss;
-  oss << "Thyra::DefaultNominalBoundsOverrideModelEvaluator{";
-  oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
-}
 
 } // namespace Thyra
+
 
 #endif // THYRA_DEFAULT_NOMINAL_BOUNDS_OVERRIDE_MODEL_EVALUATOR_HPP

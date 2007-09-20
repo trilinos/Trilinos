@@ -62,8 +62,8 @@ public:
 
   /** \brief . */
   void initialize(
-    const Teuchos::RCP<StepperBase<Scalar> > &stepper,
-    const Teuchos::RCP<IntegratorBase<Scalar> > &integrator,
+    const RCP<StepperBase<Scalar> > &stepper,
+    const RCP<IntegratorBase<Scalar> > &integrator,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
 
@@ -77,17 +77,25 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+  RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+  RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_g_space(int j) const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
-  void evalModel(
+  void evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs
     ) const;
@@ -99,14 +107,14 @@ private:
   // //////////////////////
   // Private types
 
-  typedef Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > SpaceArray_t;
+  typedef Array<RCP<const Thyra::VectorSpaceBase<Scalar> > > SpaceArray_t;
   
 
   // //////////////////////
   // Private data members
 
-  Teuchos::RCP<StepperBase<Scalar> > stepper_;
-  Teuchos::RCP<IntegratorBase<Scalar> > integrator_;
+  RCP<StepperBase<Scalar> > stepper_;
+  RCP<IntegratorBase<Scalar> > integrator_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> initialCondition_;
 
   int Np_;
@@ -122,14 +130,14 @@ private:
 
 /** \brief Nonmember constructor. */
 template<class Scalar>
-Teuchos::RCP<StepperAsModelEvaluator<Scalar> >
+RCP<StepperAsModelEvaluator<Scalar> >
 stepperAsModelEvaluator(
-  const Teuchos::RCP<StepperBase<Scalar> > &stepper,
-  const Teuchos::RCP<IntegratorBase<Scalar> > &integrator,
+  const RCP<StepperBase<Scalar> > &stepper,
+  const RCP<IntegratorBase<Scalar> > &integrator,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
   )
 {
-  using Teuchos::RCP; using Teuchos::rcp;
+  using Teuchos::rcp;
   RCP<StepperAsModelEvaluator<Scalar> >
     stepperAsModelEvaluator = rcp(new StepperAsModelEvaluator<Scalar>());
   stepperAsModelEvaluator->initialize(stepper,integrator,initialCondition);
@@ -152,8 +160,8 @@ StepperAsModelEvaluator<Scalar>::StepperAsModelEvaluator()
 
 template<class Scalar>
 void StepperAsModelEvaluator<Scalar>::initialize(
-  const Teuchos::RCP<StepperBase<Scalar> > &stepper,
-  const Teuchos::RCP<IntegratorBase<Scalar> > &integrator,
+  const RCP<StepperBase<Scalar> > &stepper,
+  const RCP<IntegratorBase<Scalar> > &integrator,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
   )
 {
@@ -168,7 +176,7 @@ void StepperAsModelEvaluator<Scalar>::initialize(
   initialCondition_ = initialCondition;
   currentInitialCondition_ = initialCondition;
 
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+  const RCP<const Thyra::ModelEvaluator<Scalar> >
     stepperModel = stepper_->getModel();
 
   Np_ = stepperModel->Np();
@@ -202,7 +210,7 @@ int StepperAsModelEvaluator<Scalar>::Ng() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+RCP<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_p_space(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -213,7 +221,7 @@ StepperAsModelEvaluator<Scalar>::get_p_space(int l) const
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+RCP<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_g_space(int j) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -229,25 +237,30 @@ StepperAsModelEvaluator<Scalar>::createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs;
+  inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(Np_);
   inArgs.setSupports(MEB::IN_ARG_t);
   return inArgs;
 }
 
 
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-StepperAsModelEvaluator<Scalar>::createOutArgs() const
+StepperAsModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs;
+  outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(Np_,Ng_);
   return outArgs;
 }
 
 
 template<class Scalar>
-void StepperAsModelEvaluator<Scalar>::evalModel(
+void StepperAsModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs
   ) const
@@ -293,90 +306,6 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
   stepper_->setInitialCondition(currentInitialCondition_);
   integrator_->setStepper(stepper_,finalTime);
 
-/*
-
-  Scalar t0 = currentInitialCondition_.get_t();
-  Scalar time = t0;
-
-  if (numTimeSteps() > 0) {
-
-    // Take fixed time steps
-
-    Scalar dt = (finalTime-t0)/numTimeSteps();
-    
-    for ( int i = 1 ; i <= numTimeSteps() ; ++i ) {
-      
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
-        *out << "\ntime step = " << i << ", time = " << time << ":\n";
-      
-      Scalar dt_taken = stepper_->takeStep(dt,Rythmos::FIXED_STEP);
-      
-      TEST_FOR_EXCEPTION(
-        dt_taken != dt, std::logic_error,
-        "Error, stepper took step of dt = " << dt_taken 
-        << " when asked to take step of dt = " << dt << "\n"
-        );
-      
-      time += dt_taken;
-      
-      StepStatus<Scalar>
-        stepStatus = stepper_->getStepStatus();
-      
-      RCP<const Thyra::VectorBase<Scalar> >
-        solution = stepStatus.solution,
-        solutionDot = stepStatus.solutionDot;
-      
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-        *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
-        *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
-      }
-      
-    }
-
-  }
-  else {
-
-    // Take variable time steps
-
-    for ( int i = 1 ; time < finalTime ; ++i ) {
-      
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
-        *out << "\ntime step = " << i << ", time = " << time << ":\n";
-
-      Scalar max_dt = finalTime - time;
-      
-      Scalar dt_taken = stepper_->takeStep(max_dt,Rythmos::VARIABLE_STEP);
-      
-      TEST_FOR_EXCEPTION(
-        dt_taken < ST::zero(), std::logic_error,
-        "Error, stepper took negative step of dt = " << dt_taken << "!\n"
-        );
-      TEST_FOR_EXCEPTION(
-        dt_taken > max_dt, std::logic_error,
-        "Error, stepper took step of dt = " << dt_taken
-        << " > max_dt = " << max_dt << "!\n"
-        );
-      
-      time += dt_taken;
-      
-      StepStatus<Scalar>
-        stepStatus = stepper_->getStepStatus();
-      
-      RCP<const Thyra::VectorBase<Scalar> >
-        solution = stepStatus.solution,
-        solutionDot = stepStatus.solutionDot;
-      
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-        *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
-        *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
-      }
-      
-    }
-
-  }
-
-*/
-
   // Compute the desired response
 
   if (!is_null(g_out)) {
@@ -385,7 +314,7 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
     Array<Scalar> time_vec = Teuchos::tuple<Scalar>(finalTime);
     Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec, xdot_vec;
     integrator_->getFwdPoints( time_vec, &x_vec, &xdot_vec, 0 );
-
+    
     Thyra::V_V( &*g_out, *x_vec[0] );
 
   }

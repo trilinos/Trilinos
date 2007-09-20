@@ -33,9 +33,12 @@
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Teuchos_Time.hpp"
 
+
 //#define THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_DUMP_ALL
 
+
 namespace Thyra {
+
 
 /** \brief This class wraps any ModelEvaluator object and allows the client to
  * capture the final point that is returned by a client.
@@ -71,27 +74,35 @@ public:
 
   //@}
 
-  /** \name Public functions overridden from ModelEvaulator. */
-  //@{
-
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
-    ) const;
-  /** \brief . */
-  void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-    ,const bool                                   wasSolved
-    );
-
-  //@}
-
   /** \name Public functions overridden from Teuchos::Describable. */
   //@{
 
   /** \brief . */
   std::string description() const;
+
+  //@}
+
+  /** \name Public functions overridden from ModelEvaulator. */
+  //@{
+
+  /** \brief . */
+  void reportFinalPoint(
+    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+    const bool wasSolved
+    );
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase */
+  //@{
+
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
 
   //@}
 
@@ -102,15 +113,19 @@ private:
   
 };
 
+
 // /////////////////////////////////
 // Implementations
 
+
 // Constructors/initializers/accessors/utilities
+
 
 template<class Scalar>
 DefaultFinalPointCaptureModelEvaluator<Scalar>::DefaultFinalPointCaptureModelEvaluator()
   :finalPointWasSolved_(false)
 {}
+
 
 template<class Scalar>
 DefaultFinalPointCaptureModelEvaluator<Scalar>::DefaultFinalPointCaptureModelEvaluator(
@@ -122,6 +137,7 @@ DefaultFinalPointCaptureModelEvaluator<Scalar>::DefaultFinalPointCaptureModelEva
   finalPoint_.setArgs(thyraModel->getNominalValues());
   finalPointWasSolved_ = false;
 }
+
 
 template<class Scalar>
 const ModelEvaluatorBase::InArgs<Scalar>&
@@ -135,49 +151,16 @@ DefaultFinalPointCaptureModelEvaluator<Scalar>::getFinalPoint() const
   return finalPoint_;
 }
 
+
 template<class Scalar>
 bool DefaultFinalPointCaptureModelEvaluator<Scalar>::finalPointWasSolved() const
 {
   return finalPointWasSolved_;
 }
 
-// Overridden from ModelEvaulator.
-
-template<class Scalar>
-void DefaultFinalPointCaptureModelEvaluator<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
-  ) const
-{
-
-  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
-    "Thyra::DefaultFinalPointCaptureModelEvaluator",inArgs,outArgs
-    );
-
-  thyraModel->evalModel(inArgs,outArgs);
-
-  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
-
-}
-
-template<class Scalar>
-void DefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-  ,const bool                                   wasSolved
-  )
-{
-  finalPoint_.setArgs(finalPoint);
-  finalPointWasSolved_ = wasSolved;
-  if(!this->isUnderlyingModelConst())
-    this->getNonconstUnderlyingModel()->reportFinalPoint(finalPoint,wasSolved);
-#ifdef THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_DUMP_ALL
-  *Teuchos::VerboseObjectBase::getDefaultOStream()
-    << "\nDefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(...):"
-    << " finalPoint =\n" << Teuchos::describe(finalPoint_,Teuchos::VERB_EXTREME);
-#endif  
-}
 
 // Public functions overridden from Teuchos::Describable
+
 
 template<class Scalar>
 std::string DefaultFinalPointCaptureModelEvaluator<Scalar>::description() const
@@ -195,6 +178,50 @@ std::string DefaultFinalPointCaptureModelEvaluator<Scalar>::description() const
   return oss.str();
 }
 
+
+// Overridden from ModelEvaulator.
+
+
+template<class Scalar>
+void DefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(
+  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+  const bool wasSolved
+  )
+{
+  finalPoint_.setArgs(finalPoint);
+  finalPointWasSolved_ = wasSolved;
+  if(!this->isUnderlyingModelConst())
+    this->getNonconstUnderlyingModel()->reportFinalPoint(finalPoint,wasSolved);
+#ifdef THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_DUMP_ALL
+  *Teuchos::VerboseObjectBase::getDefaultOStream()
+    << "\nDefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(...):"
+    << " finalPoint =\n" << Teuchos::describe(finalPoint_,Teuchos::VERB_EXTREME);
+#endif  
+}
+
+
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
+template<class Scalar>
+void DefaultFinalPointCaptureModelEvaluator<Scalar>::evalModelImpl(
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  ) const
+{
+
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::DefaultFinalPointCaptureModelEvaluator",inArgs,outArgs
+    );
+
+  thyraModel->evalModel(inArgs,outArgs);
+
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
+
+}
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_HPP

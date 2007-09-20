@@ -32,6 +32,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Teuchos {
 
@@ -50,9 +51,9 @@ class basic_FancyOStream_buf : public std::basic_streambuf<CharT,Traits>
 public:
   
   /** \brief . */
-  typedef CharT                             char_type;
+  typedef CharT char_type;
   /** \brief . */
-  typedef Traits  					                traits_type;
+  typedef Traits 					 traits_type;
   /** \brief . */
   typedef typename traits_type::int_type 		int_type;
   /** \brief . */
@@ -62,24 +63,24 @@ public:
 
   /** \brief . */
   basic_FancyOStream_buf(
-    const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
-    ,const std::basic_string<char_type,traits_type>                &tabIndentStr
-    ,const int                                                     startingTab
-    ,const bool                                                    showLinePrefix
-    ,const int                                                     maxLenLinePrefix
-    ,const bool                                                    showTabCount
-    ,const bool                                                    showProcRank
+    const RCP<std::basic_ostream<char_type,traits_type> > &oStream
+    ,const std::basic_string<char_type,traits_type> &tabIndentStr
+    ,const int startingTab
+    ,const bool showLinePrefix
+    ,const int maxLenLinePrefix
+    ,const bool showTabCount
+    ,const bool showProcRank
     );
 
   /** \brief . */
   void initialize(
-    const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
-    ,const std::basic_string<char_type,traits_type>                &tabIndentStr
-    ,const int                                                     startingTab
-    ,const bool                                                    showLinePrefix
-    ,const int                                                     maxLenLinePrefix
-    ,const bool                                                    showTabCount
-    ,const bool                                                    showProcRank
+    const RCP<std::basic_ostream<char_type,traits_type> > &oStream
+    ,const std::basic_string<char_type,traits_type> &tabIndentStr
+    ,const int startingTab
+    ,const bool showLinePrefix
+    ,const int maxLenLinePrefix
+    ,const bool showTabCount
+    ,const bool showProcRank
     );
 
   /** \brief . */
@@ -140,7 +141,9 @@ public:
   void popTab();
 
   /** \brief . */
-  void pushLinePrefix(const std::basic_string<char_type,traits_type> &linePrefix);
+  void pushLinePrefix(
+    const std::basic_string<char_type,traits_type> &linePrefix
+    );
 
   /** \brief . */
   void popLinePrefix();
@@ -153,9 +156,9 @@ public:
 
   /** \brief . */
   void popDisableTabbing();
-  
+ 
 protected:
-  
+ 
   //! @name Protected overridden functions from std::basic_streambuf 
   //@{
 
@@ -172,14 +175,14 @@ protected:
       std::cerr << "\ncalled imbue()\n";
       std::basic_streambuf<CharT,Traits>::imbue(l);
     }
-  
+ 
   basic_streambuf<char_type,Traits>* 
   setbuf(char_type* s, streamsize n)
     {
       std::cerr << "\ncalled setbuf()\n";
       return std::basic_streambuf<CharT,Traits>::setbuf(s,n);
     }
-      
+ 
   pos_type 
   seekoff(off_type a, ios_base::seekdir b,ios_base::openmode c)
     {
@@ -193,28 +196,28 @@ protected:
       std::cerr << "\ncalled seekpos()\n";
       return std::basic_streambuf<CharT,Traits>::seekpos(a,b);
     }
-  
+ 
   int 
   sync()
     {
       std::cerr << "\ncalled sync()\n";
       return std::basic_streambuf<CharT,Traits>::sync();
     }
-  
+ 
   streamsize 
   showmanyc()
     {
       std::cerr << "\ncalled showmanyc()\n";
       return std::basic_streambuf<CharT,Traits>::showmanyc();
     }
-  
+ 
   streamsize 
   xsgetn(char_type* s, streamsize n)
     {
       std::cerr << "\ncalled xsgetn()\n";
       return std::basic_streambuf<CharT,Traits>::xsgetn(s,n);
     }
-  
+ 
   int_type 
   underflow()
     {
@@ -245,33 +248,33 @@ private:
   // ////////////////////////
   // Private types
 
-  typedef std::basic_string<char_type,traits_type>   string_t;
-  typedef std::deque<int>                            tabIndentStack_t;
-  typedef std::deque<string_t>                       linePrefixStack_t;
+  typedef std::basic_string<char_type,traits_type> string_t;
+  typedef std::deque<int> tabIndentStack_t;
+  typedef std::deque<string_t> linePrefixStack_t;
 
   // ////////////////////////
   // Private data members
 
-  RCP<std::basic_ostream<char_type,traits_type> >  oStreamSet_;
-  RCP<std::basic_ostream<char_type,traits_type> >  oStream_;
-  std::basic_string<char_type,traits_type>                 tabIndentStr_;
-  bool                                                     showLinePrefix_;
-  int                                                      maxLenLinePrefix_;
-  bool                                                     showTabCount_;
-  bool                                                     showProcRank_;
-  int                                                      rootRank_;
-  int                                                      procRank_;
-  int                                                      numProcs_;
-  int                                                      rankPrintWidth_;
+  RCP<std::basic_ostream<char_type,traits_type> > oStreamSet_;
+  RCP<std::basic_ostream<char_type,traits_type> > oStream_;
+  std::basic_string<char_type,traits_type> tabIndentStr_;
+  bool showLinePrefix_;
+  int maxLenLinePrefix_;
+  bool showTabCount_;
+  bool showProcRank_;
+  int rootRank_;
+  int procRank_;
+  int numProcs_;
+  int rankPrintWidth_;
 
-  RCP<std::ostringstream>                          lineOut_;
-  
-  int                      tabIndent_;
-  tabIndentStack_t         tabIndentStack_;
-  linePrefixStack_t        linePrefixStack_;
-  int                      enableTabbingStack_;
-  
-  bool                     wroteNewline_;
+  RCP<std::ostringstream> lineOut_;
+ 
+  int tabIndent_;
+  tabIndentStack_t tabIndentStack_;
+  linePrefixStack_t linePrefixStack_;
+  int enableTabbingStack_;
+ 
+  bool wroteNewline_;
 
   // ////////////////////////
   // Private member functions
@@ -285,7 +288,9 @@ private:
   // Not defined and not to be called
   basic_FancyOStream_buf();
   basic_FancyOStream_buf(const basic_FancyOStream_buf<CharT,Traits>&);
-  basic_FancyOStream_buf<CharT,Traits> operator=(const basic_FancyOStream_buf<CharT,Traits>&);
+  basic_FancyOStream_buf<CharT,Traits> operator=(
+    const basic_FancyOStream_buf<CharT,Traits>&
+    );
 
 };
 
@@ -299,7 +304,7 @@ private:
  * <tt>basic_OSTab</tt> objects.
  *
  * In addition to indenting output, this stream object can also print various
- * types of information at the beginning of each line.  The type of information
+ * types of information at the beginning of each line. The type of information
  * supported is:
  * <ul>
  * <li> Processor rank: Set using <tt>setShowProcRank()</tt>.
@@ -319,15 +324,15 @@ public:
   //@{
 
   /** \brief . */
-  typedef CharT 					                  char_type;
+  typedef CharT char_type;
   /** \brief . */
-  typedef Traits 					                  traits_type;
+  typedef Traits traits_type;
   /** \brief . */
-  typedef typename traits_type::int_type 		int_type;
+  typedef typename traits_type::int_type int_type;
   /** \brief . */
-  typedef typename traits_type::pos_type 		pos_type;
+  typedef typename traits_type::pos_type pos_type;
   /** \brief . */
-  typedef typename traits_type::off_type 		off_type;
+  typedef typename traits_type::off_type off_type;
   /** \brief . */
 
   /** \brief . */
@@ -344,30 +349,32 @@ public:
   explicit
   basic_FancyOStream(
     const RCP< std::basic_ostream<char_type,traits_type> > &oStream
-    ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "  "
-    ,const int                                                     startingTab       = 0
-    ,const bool                                                    showLinePrefix    = false
-    ,const int                                                     maxLenLinePrefix  = 10
-    ,const bool                                                    showTabCount      = false
-    ,const bool                                                    showProcRank      = false
+    ,const std::basic_string<char_type,traits_type> &tabIndentStr = " "
+    ,const int startingTab = 0
+    ,const bool showLinePrefix = false
+    ,const int maxLenLinePrefix = 10
+    ,const bool showTabCount = false
+    ,const bool showProcRank = false
     );
 
   /** \brief . */
   void initialize(
     const RCP< std::basic_ostream<char_type,traits_type> > &oStream
-    ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "  "
-    ,const int                                                     startingTab       = 0
-    ,const bool                                                    showLinePrefix    = false
-    ,const int                                                     maxLenLinePrefix  = 10
-    ,const bool                                                    showTabCount      = false
-    ,const bool                                                    showProcRank      = false
+    ,const std::basic_string<char_type,traits_type> &tabIndentStr = " "
+    ,const int startingTab = 0
+    ,const bool showLinePrefix = false
+    ,const int maxLenLinePrefix = 10
+    ,const bool showTabCount = false
+    ,const bool showProcRank = false
     );
 
   /** \brief. */
   RCP<std::basic_ostream<char_type,traits_type> > getOStream();
 
   /** \brief . */
-  basic_FancyOStream& setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr);
+  basic_FancyOStream& setTabIndentStr(
+    const std::basic_string<char_type,traits_type> &tabIndentStr
+    );
 
   /** \brief. */
   const std::basic_string<char_type,traits_type>& getTabIndentStr() const;
@@ -429,7 +436,7 @@ public:
   void popDisableTabbing();
 
   //@}
-  
+ 
 private:
 
   streambuf_t	streambuf_;
@@ -468,7 +475,7 @@ fancyOStream(
 /** \brief Get a FancyOStream from an std::ostream object.
  *
  * If the object already is a FancyOStream, then nothing has to be done.
- * Otherwise, a temp FancyOStream is created for this purpose.  If
+ * Otherwise, a temp FancyOStream is created for this purpose. If
  * <tt>out.get()==NULL</tt> then <tt>return.get()==NULL</tt> on return also!
  *
  * \relates basic_FancyOStream
@@ -506,9 +513,9 @@ public:
   static const int DISABLE_TABBING = -99999; // This magic number should be just fine!
   /** \brief. */
   basic_OSTab(
-    const RCP<basic_FancyOStream<CharT,Traits> >   &fancyOStream
-    ,const int                                             tabs = 1
-    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    const RCP<basic_FancyOStream<CharT,Traits> > &fancyOStream
+    ,const int tabs = 1
+    ,const std::basic_string<CharT,Traits> linePrefix = ""
     )
     :fancyOStream_(fancyOStream)
     ,tabs_(tabs)
@@ -518,9 +525,9 @@ public:
     }
   /** \brief. */
   basic_OSTab(
-    const RCP<std::basic_ostream<CharT,Traits> >   &oStream
-    ,const int                                             tabs = 1
-    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    const RCP<std::basic_ostream<CharT,Traits> > &oStream
+    ,const int tabs = 1
+    ,const std::basic_string<CharT,Traits> linePrefix = ""
     )
     :fancyOStream_(getFancyOStream(oStream))
     ,tabs_(tabs)
@@ -530,9 +537,9 @@ public:
     }
   /** \brief Warning: Only call this constructor for stack-based object. */
   basic_OSTab(
-    basic_FancyOStream<CharT,Traits>                       &fancyOStream
-    ,const int                                             tabs = 1
-    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    basic_FancyOStream<CharT,Traits> &fancyOStream
+    ,const int tabs = 1
+    ,const std::basic_string<CharT,Traits> linePrefix = ""
     )
     :fancyOStream_(rcp(&fancyOStream,false))
     ,tabs_(tabs)
@@ -542,9 +549,9 @@ public:
     }
   /** \brief Warning: Only call this constructor for stack-based object. */
   basic_OSTab(
-    std::basic_ostream<CharT,Traits>                       &oStream
-    ,const int                                             tabs = 1
-    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    std::basic_ostream<CharT,Traits> &oStream
+    ,const int tabs = 1
+    ,const std::basic_string<CharT,Traits> linePrefix = ""
     )
     :fancyOStream_(getFancyOStream(rcp(&oStream,false)))
     ,tabs_(tabs)
@@ -598,12 +605,12 @@ public:
     {
       return fancyOStream_.get();
     }
-  
+ 
 private:
-  
-  RCP<basic_FancyOStream<CharT,Traits> >  fancyOStream_;
-  int                                             tabs_;
-  std::basic_string<CharT,Traits>                 linePrefix_;
+ 
+  RCP<basic_FancyOStream<CharT,Traits> > fancyOStream_;
+  int tabs_;
+  std::basic_string<CharT,Traits> linePrefix_;
 
   void updateState()
     {
@@ -615,7 +622,7 @@ private:
         if(linePrefix_.length()) fancyOStream_->pushLinePrefix(linePrefix_);
       }
     }
-  
+ 
 };
 
 /** \brief Create a tab for an RCP-wrapped <tt>basic_FancyOStream</tt> object
@@ -637,8 +644,8 @@ template <typename CharT, typename Traits>
 RCP<basic_FancyOStream<CharT,Traits> >
 tab(
   const RCP<basic_FancyOStream<CharT,Traits> > &out
-  ,const int                                           tabs = 1
-  ,const std::basic_string<CharT,Traits>               linePrefix = ""
+  ,const int tabs = 1
+  ,const std::basic_string<CharT,Traits> linePrefix = ""
   )
 {
   if(out.get()==NULL)
@@ -656,8 +663,8 @@ tab(
 }
 
 
-/** \brief Create a tab for an RCP-wrapped <tt>std:: std::ostream</tt> object to
- * cause the indentation of all output automatically!.
+/** \brief Create a tab for an RCP-wrapped <tt>std:: std::ostream</tt> object
+ * to cause the indentation of all output automatically!.
  *
  * This function returns an RCP object to a <tt>basic_FancyOStream</tt> object
  * that has its tab indented by one.  If the input <tt>*out</tt> object is
@@ -675,8 +682,8 @@ template <typename CharT, typename Traits>
 RCP<basic_FancyOStream<CharT,Traits> >
 tab(
   const RCP<std::basic_ostream<CharT,Traits> > &out
-  ,const int                                           tabs = 1
-  ,const std::basic_string<CharT,Traits>               linePrefix = ""
+  ,const int tabs = 1
+  ,const std::basic_string<CharT,Traits> linePrefix = ""
   )
 {
   return tab(getFancyOStream(out),tabs,linePrefix);
@@ -709,27 +716,28 @@ typedef basic_OSTab<char> OSTab;
 
 template<typename CharT, typename Traits>
 basic_FancyOStream_buf<CharT,Traits>::basic_FancyOStream_buf(
-  const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
-  ,const std::basic_string<char_type,traits_type>                &tabIndentStr
-  ,const int                                                     startingTab
-  ,const bool                                                    showLinePrefix
-  ,const int                                                     maxLenLinePrefix
-  ,const bool                                                    showTabCount
-  ,const bool                                                    showProcRank
+  const RCP<std::basic_ostream<char_type,traits_type> > &oStream
+  ,const std::basic_string<char_type,traits_type> &tabIndentStr
+  ,const int startingTab
+  ,const bool showLinePrefix
+  ,const int maxLenLinePrefix
+  ,const bool showTabCount
+  ,const bool showProcRank
   )
 {
-  this->initialize(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank);
+  this->initialize(oStream,tabIndentStr,startingTab,showLinePrefix,
+    maxLenLinePrefix,showTabCount,showProcRank);
 }
 
 template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::initialize(
-  const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
-  ,const std::basic_string<char_type,traits_type>                &tabIndentStr
-  ,const int                                                     startingTab
-  ,const bool                                                    showLinePrefix
-  ,const int                                                     maxLenLinePrefix
-  ,const bool                                                    showTabCount
-  ,const bool                                                    showProcRank
+  const RCP<std::basic_ostream<char_type,traits_type> > &oStream
+  ,const std::basic_string<char_type,traits_type> &tabIndentStr
+  ,const int startingTab
+  ,const bool showLinePrefix
+  ,const int maxLenLinePrefix
+  ,const bool showTabCount
+  ,const bool showProcRank
   )
 {
   oStreamSet_ = oStream;
@@ -744,8 +752,8 @@ void basic_FancyOStream_buf<CharT,Traits>::initialize(
   numProcs_ = GlobalMPISession::getNProc();
   rankPrintWidth_ = int(std::log10(float(numProcs_)))+1;
   tabIndent_ = startingTab;
-  tabIndentStack_.resize(0);
-  linePrefixStack_.resize(0);
+  tabIndentStack_.clear();
+  linePrefixStack_.clear();
   wroteNewline_ = true;
   enableTabbingStack_ = 0;
 }
@@ -758,7 +766,9 @@ basic_FancyOStream_buf<CharT,Traits>::getOStream()
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr)
+void basic_FancyOStream_buf<CharT,Traits>::setTabIndentStr(
+  const std::basic_string<char_type,traits_type> &tabIndentStr
+  )
 {
   tabIndentStr_ = tabIndentStr;
 }
@@ -820,7 +830,9 @@ bool basic_FancyOStream_buf<CharT,Traits>::getShowProcRank() const
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::setProcRankAndSize( const int procRank, const int numProcs )
+void basic_FancyOStream_buf<CharT,Traits>::setProcRankAndSize(
+  const int procRank, const int numProcs
+  )
 {
   procRank_ = procRank;
   numProcs_ = numProcs;
@@ -839,7 +851,9 @@ int basic_FancyOStream_buf<CharT,Traits>::getNumProcs() const
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::setOutputToRootOnly( const int rootRank  )
+void basic_FancyOStream_buf<CharT,Traits>::setOutputToRootOnly(
+  const int rootRank
+  )
 {
   rootRank_ = rootRank;
   if(rootRank >= 0) {
@@ -892,9 +906,10 @@ void basic_FancyOStream_buf<CharT,Traits>::popTab()
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::pushLinePrefix(const std::basic_string<char_type,traits_type> &linePrefix)
+void basic_FancyOStream_buf<CharT,Traits>::pushLinePrefix(
+  const std::basic_string<char_type,traits_type> &linePrefix
+  )
 {
-  TEST_FOR_EXCEPT(static_cast<int>(linePrefix.length()) > maxLenLinePrefix_);
   linePrefixStack_.push_back(linePrefix);
 }
 
@@ -926,7 +941,9 @@ void basic_FancyOStream_buf<CharT,Traits>::popDisableTabbing()
 // protected
 
 template<typename CharT, typename Traits>
-std::streamsize basic_FancyOStream_buf<CharT,Traits>::xsputn(const char_type* s, std::streamsize n)
+std::streamsize basic_FancyOStream_buf<CharT,Traits>::xsputn(
+  const char_type* s, std::streamsize n
+  )
 {
 #ifdef TEUCHOS_FANCY_OSTREAM_SHOW_ALL_CALLS
   std::cerr << "\ncalled xsputn()\n";
@@ -961,7 +978,9 @@ std::ostream& basic_FancyOStream_buf<CharT,Traits>::out()
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std::streamsize n )
+void basic_FancyOStream_buf<CharT,Traits>::writeChars(
+  const char_type s[], std::streamsize n
+  )
 {
   if(n == 0) return;
   std::streamsize p = 0, first_p = 0;
@@ -1015,13 +1034,13 @@ void basic_FancyOStream_buf<CharT,Traits>::writeFrontMatter()
   if(showLinePrefix_) {
     if(didOutput)
       out << ", ";
-    out << std::left << std::setw(maxLenLinePrefix_);
-    if(linePrefixStack_.size()) {
-      out << this->getTopLinePrefix();
-    }
-    else {
-      out << "";
-    }
+    std::string currLinePrefix = "";
+    if ( linePrefixStack_.size() )
+      currLinePrefix = this->getTopLinePrefix();
+    const int localMaxLenLinePrefix =
+      TEUCHOS_MAX( as<int>(currLinePrefix.length()), maxLenLinePrefix_ );
+    out << std::left << std::setw(localMaxLenLinePrefix);
+    out << currLinePrefix;
     didOutput = true;
   }
   if(showTabCount_) {
@@ -1049,14 +1068,16 @@ void basic_FancyOStream_buf<CharT,Traits>::writeFrontMatter()
 template<typename CharT, typename Traits>
 basic_FancyOStream<CharT,Traits>::basic_FancyOStream(
   const RCP< std::basic_ostream<char_type,traits_type> > &oStream
-  ,const std::basic_string<char_type,traits_type>                &tabIndentStr
-  ,const int                                                     startingTab
-  ,const bool                                                    showLinePrefix
-  ,const int                                                     maxLenLinePrefix
-  ,const bool                                                    showTabCount
-  ,const bool                                                    showProcRank
- )
-  : ostream_t(NULL), streambuf_(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank)
+  ,const std::basic_string<char_type,traits_type> &tabIndentStr
+  ,const int startingTab
+  ,const bool showLinePrefix
+  ,const int maxLenLinePrefix
+  ,const bool showTabCount
+  ,const bool showProcRank
+  )
+  :ostream_t(NULL),
+   streambuf_(oStream,tabIndentStr,startingTab,showLinePrefix,
+     maxLenLinePrefix,showTabCount,showProcRank)
 {
   this->init(&streambuf_);
 }
@@ -1064,15 +1085,16 @@ basic_FancyOStream<CharT,Traits>::basic_FancyOStream(
 template<typename CharT, typename Traits>
 void basic_FancyOStream<CharT,Traits>::initialize(
   const RCP< std::basic_ostream<char_type,traits_type> > &oStream
-  ,const std::basic_string<char_type,traits_type>                &tabIndentStr
-  ,const int                                                     startingTab
-  ,const bool                                                    showLinePrefix
-  ,const int                                                     maxLenLinePrefix
-  ,const bool                                                    showTabCount
-  ,const bool                                                    showProcRank
+  ,const std::basic_string<char_type,traits_type> &tabIndentStr
+  ,const int startingTab
+  ,const bool showLinePrefix
+  ,const int maxLenLinePrefix
+  ,const bool showTabCount
+  ,const bool showProcRank
   )
 {
-  streambuf_.initialize(oStream,tabIndentStr,startingTab,showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank);
+  streambuf_.initialize(oStream,tabIndentStr,startingTab,
+    showLinePrefix,maxLenLinePrefix,showTabCount,showProcRank);
   this->init(&streambuf_);
 }
 
@@ -1085,7 +1107,9 @@ basic_FancyOStream<CharT,Traits>::getOStream()
 
 template<typename CharT, typename Traits>
 basic_FancyOStream<CharT,Traits>&
-basic_FancyOStream<CharT,Traits>::setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr)
+basic_FancyOStream<CharT,Traits>::setTabIndentStr(
+  const std::basic_string<char_type,traits_type> &tabIndentStr
+  )
 {
   streambuf_.setTabIndentStr(tabIndentStr);
   return *this;
@@ -1100,7 +1124,9 @@ basic_FancyOStream<CharT,Traits>::getTabIndentStr() const
 
 template<typename CharT, typename Traits>
 basic_FancyOStream<CharT,Traits>&
-basic_FancyOStream<CharT,Traits>::setShowAllFrontMatter(const bool showAllFrontMatter)
+basic_FancyOStream<CharT,Traits>::setShowAllFrontMatter(
+  const bool showAllFrontMatter
+  )
 {
   streambuf_.setShowLinePrefix(showAllFrontMatter);
   streambuf_.setShowTabCount(showAllFrontMatter);
@@ -1118,7 +1144,7 @@ basic_FancyOStream<CharT,Traits>::setShowLinePrefix(const bool showLinePrefix)
 
 template<typename CharT, typename Traits>
 basic_FancyOStream<CharT,Traits>&
- basic_FancyOStream<CharT,Traits>::setMaxLenLinePrefix(const int maxLenLinePrefix)
+basic_FancyOStream<CharT,Traits>::setMaxLenLinePrefix(const int maxLenLinePrefix)
 {
   streambuf_.setMaxLenLinePrefix(maxLenLinePrefix);
   return *this;
@@ -1193,7 +1219,9 @@ void basic_FancyOStream<CharT,Traits>::popTab()
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream<CharT,Traits>::pushLinePrefix(const std::basic_string<char_type,traits_type> &linePrefix)
+void basic_FancyOStream<CharT,Traits>::pushLinePrefix(
+  const std::basic_string<char_type,traits_type> &linePrefix
+  )
 {
   streambuf_.pushLinePrefix(linePrefix);
 }

@@ -150,6 +150,9 @@ namespace Rythmos {
     //! Destructor
     ~ExplicitTaylorPolynomialStepper();
 
+    //! Return the space for <tt>x</tt> and <tt>x_dot</tt>
+    RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+
     //! Set model
     void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
@@ -186,22 +189,21 @@ namespace Rythmos {
 
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
-    bool setPoints(
+    void addPoints(
       const Array<Scalar>& time_vec
       ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
       ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const Array<ScalarMag> & accuracy_vec 
       );
     
     /// Get values from buffer
-    bool getPoints(
+    void getPoints(
       const Array<Scalar>& time_vec
       ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
       ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,Array<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
-    bool setRange(
+    void setRange(
       const TimeRange<Scalar>& range,
       const InterpolationBufferBase<Scalar> & IB
       );
@@ -210,10 +212,10 @@ namespace Rythmos {
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(Array<Scalar>* time_vec) const;
+    void getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(Array<Scalar>& time_vec);
+    void removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -411,7 +413,7 @@ namespace Rythmos {
       f_poly_ = 
 	Teuchos::rcp(new Teuchos::Polynomial<
 		     Thyra::VectorBase<Scalar> >(0, *f_vector_, degree_));
-    if (flag == VARIABLE_STEP) {
+    if (flag == STEP_TYPE_VARIABLE) {
       // If t_ > t_final_, we're done
       if (t_ > t_final_) {
         dt_ = Teuchos::ScalarTraits<Scalar>::zero();
@@ -612,33 +614,23 @@ namespace Rythmos {
 
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::setPoints(
+  void ExplicitTaylorPolynomialStepper<Scalar>::addPoints(
     const Array<Scalar>& time_vec
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const Array<ScalarMag> & accuracy_vec 
     )
   {
-    return(false);
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for the ExplicitTaylorPolynomialStepper.\n");
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::getPoints(
+  void ExplicitTaylorPolynomialStepper<Scalar>::getPoints(
     const Array<Scalar>& time_vec
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,Array<ScalarMag>* accuracy_vec) const
   {
-    return(false);
-  }
-
-  template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::setRange(
-    const TimeRange<Scalar>& range,
-    const InterpolationBufferBase<Scalar>& IB
-    )
-  {
-    return(false);
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getPoints is not implemented for the ExplicitTaylorPolynomialStepper.\n");
   }
 
   template<class Scalar>
@@ -648,15 +640,15 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_list) const
+  void ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_list) const
   {
-    return(false);
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getNodes is not implemented for the ExplicitTaylorPolynomialStepper.\n");
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
+  void ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
   {
-    return(false);
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for the ExplicitTaylorPolynomialStepper.\n");
   }
 
 
@@ -712,6 +704,12 @@ namespace Rythmos {
       }
     }
     return rho;
+  }
+
+  template<class Scalar>
+  RCP<const Thyra::VectorSpaceBase<Scalar> > ExplicitTaylorPolynomialStepper<Scalar>::get_x_space() const
+  {
+    return(x_vector_->space());
   }
 
 } // namespace Rythmos

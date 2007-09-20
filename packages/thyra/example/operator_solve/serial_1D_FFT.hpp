@@ -66,9 +66,9 @@ void serial_1D_FFT( RealScalar data[], unsigned long nn, int isign )
   while (n > mmax) { // Outer loop executed log2(nn) times.
     istep=mmax << 1;
     theta=isign*(6.28318530717959/mmax); // Initialize the trigonometric recurrence.
-    wtemp=sin(0.5*theta);
+    wtemp=std::sin(0.5*theta);
     wpr = -2.0*wtemp*wtemp;
-    wpi=sin(theta);
+    wpi=std::sin(theta);
     wr=1.0;
     wi=0.0;
     for (m=1;m<mmax;m+=2) {

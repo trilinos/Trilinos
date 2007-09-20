@@ -29,9 +29,11 @@
 #ifndef THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
 #define THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
 
-#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorDefaultBase.hpp"
+
 
 namespace Thyra {
+
 
 /** \brief This base class defines default function implementations
  * appropritate for a set of nonlinear state functions of the form
@@ -39,42 +41,32 @@ namespace Thyra {
  *
  * The minimum that a subclass must to is to define implementations for
  * <tt>get_x_space()</tt>, <tt>get_f_space()</tt>, <tt>createInArgs()</tt>,
- * <tt>createOutArgs</tt>, and <tt>evalModel()</tt>.
+ * <tt>createOutArgsImpl</tt>, and <tt>evalModelImpl()</tt>.
  */
 template<class Scalar>
-class StateFuncModelEvaluatorBase : virtual public ModelEvaluator<Scalar> {
+class StateFuncModelEvaluatorBase : virtual public ModelEvaluatorDefaultBase<Scalar> {
 public:
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
-  /** \brief Returns 0 . */
-  int Np() const;
-  /** \brief Returns 0 . */
-  int Ng() const;
   /** \brief Throws exception. */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
-  /** \brief Returns Teuchos::null. */
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
-  /** \brief Returns Teuchos::null. */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief Throws exception. */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief Throws exception. */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
-  /** \brief Throws exception. */
-  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
-  /** \brief Does nothing and ignores input. */
+  RCP<LinearOpBase<Scalar> > create_W_op() const;
+  /** \brief Ignores input and does nothing. */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
     const bool wasSolved
@@ -84,21 +76,16 @@ public:
   
 };
 
+
 // /////////////////////////////////
 // Implementations
 
+
 // Public functions overridden from ModelEvaulator
 
-template<class Scalar>
-int StateFuncModelEvaluatorBase<Scalar>::Np() const
-{ return 0; }
 
 template<class Scalar>
-int StateFuncModelEvaluatorBase<Scalar>::Ng() const
-{ return 0; }
-
-template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
 {
   TEST_FOR_EXCEPTION(
@@ -106,11 +93,12 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
     );
-  return Teuchos::null;
+  return Teuchos::null; // Should never be called!
 }
 
+
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Array<std::string> >
+RCP<const Teuchos::Array<std::string> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
 {
   TEST_FOR_EXCEPTION(
@@ -118,11 +106,12 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_names(l): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
     );
-  return Teuchos::null;
+  return Teuchos::null; // Should never be called!
 }
 
+
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
 {
   TEST_FOR_EXCEPTION(
@@ -131,26 +120,30 @@ StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
     " Error, this function was not overridden in \'"
     <<this->description()<<"\'!"
     );
-  return Teuchos::null;
+  return Teuchos::null; // Should never be called!
 }
+
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 StateFuncModelEvaluatorBase<Scalar>::getNominalValues() const
 { return this->createInArgs(); }
 
+
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 StateFuncModelEvaluatorBase<Scalar>::getLowerBounds() const
 { return this->createInArgs(); }
+
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 StateFuncModelEvaluatorBase<Scalar>::getUpperBounds() const
 { return this->createInArgs(); }
 
+
 template<class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
+RCP<LinearOpWithSolveBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -162,73 +155,32 @@ StateFuncModelEvaluatorBase<Scalar>::create_W() const
   return Teuchos::null; // Should never be called!
 }
 
+
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<LinearOpBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
 {
   TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
-    " this function create_W() must be overridden by the subclass "
+    " this function create_W_op() must be overridden by the subclass "
     <<this->description()<<" to return a non-null object!"
     );
   return Teuchos::null; // Should never be called!
 }
 
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
-{
-  typedef ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
-  TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DfDp,l).supports(MEB::DERIV_LINEAR_OP), std::logic_error
-    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DfDp("<<l<<") (as determined from its OutArgs object created by createOutArgs())"
-    " but this function create_DfDp_op(...) has not been overriden to create such an object!"
-    );
-  return Teuchos::null;
-}
-
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
-{
-  typedef ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
-  TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DgDx,j).supports(MEB::DERIV_LINEAR_OP), std::logic_error
-    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DgDx("<<j<<") (as determined from its OutArgs object created by createOutArgs())"
-    " but this function create_DgDx_op(...) has not been overriden to create such an object!"
-    );
-  return Teuchos::null;
-}
-
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_DgDp_op( int j, int l ) const
-{
-  typedef ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
-  TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DgDp,j,l).supports(MEB::DERIV_LINEAR_OP), std::logic_error
-    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DgDp("<<j<<","<<l<<") (as determined from its OutArgs object created by createOutArgs())"
-    " but this function create_DgDp_op(...) has not been overriden to create such an object!"
-    );
-  return Teuchos::null;
-}
 
 template<class Scalar>
 void StateFuncModelEvaluatorBase<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-  ,const bool                                   wasSolved
+  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+  const bool wasSolved
   )
 {
   // This final point is just ignored by default!
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP

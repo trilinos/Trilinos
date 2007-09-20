@@ -608,26 +608,26 @@ all-local: $(1DFEM_EXE_LINKS)
 	@echo "rythmos/example/epetra/1Dfem/1DfemTransient built successfully."
 	@echo ""
 
-1DfemTransient_amesos.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_amesos.exe
+1DfemTransient_amesos.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_aztecoo.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo.exe
+1DfemTransient_aztecoo.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_aztecoo_ifpack.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ifpack.exe
+1DfemTransient_aztecoo_ifpack.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_aztecoo_ml.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ml.exe
+1DfemTransient_aztecoo_ml.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_belos.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_belos.exe
+1DfemTransient_belos.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_belos_ifpack.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ifpack.exe
+1DfemTransient_belos_ifpack.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_belos_ml.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ml.exe
+1DfemTransient_belos_ml.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

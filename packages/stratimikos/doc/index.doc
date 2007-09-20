@@ -4,7 +4,7 @@ The package Stratimikos contains a unified set of Thyra-based wrappers to
 linear solver and preconditioner capabilities in Trilinos.  The name
 Stratimikos was created from the Greek words "stratigiki" and "grammikos"
 which which mean "strategy" and "linear in English.  The word "stratimikos"
-itself has not real meaning itself.  The Stratimikos package is also a place
+itself has no real meaning itself.  The Stratimikos package is also a place
 where unified testing of linear solvers and preconditioners can be performed.
 
 \section stratimikos_software_sec Stratimikos software
@@ -12,24 +12,50 @@ where unified testing of linear solvers and preconditioners can be performed.
 <ul>
 
 <li><tt>Thyra::DefaultRealLinearSolverBuilder</tt>: A utility class that
-provides uniform access to linear solver capability in Amesos, AztecOO, Belos,
-Ifpack, and ML for Epetra-based linear operators.
+provides uniform access to linear solver capabilities in Trilinos where the
+underlying operator can be viewed as either an <tt>Epetra_CrsMatrix</tt>
+object or as an <tt>Epetra_RowMatrix</tt> object.  This class builds linear
+solvers using the Thyra linear solver and preconditioner factory adapters
+given below.
 
 </ul>
 
-\section stratimikos_adapters_sec Thyra adapters
+\section stratimikos_lows_adapters_sec Linear solver adapters
+
+These adapters provide concrete subclasses implementing the abstract
+interfaces <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and
+<tt>Thyra::LinearOpWithSolveBase</tt>.  It is these implementations that are
+used in the implementation of <tt>Thyra::DefaultRealLinearSolverBuilder</tt>
+but they can also be used on their own.
 
 <ul>
 
-<li><tt>Thyra::AmesosLinearOpWithSolveFactory</tt>
+<li><tt>Thyra::AmesosLinearOpWithSolveFactory</tt> : Amesos/Thyra adatpers.
+Must be enabled with <tt>--enable-amesos</tt>.
 
-<li><tt>Thyra::AztecOOLinearOpWithSolveFactory</tt>
+<li><tt>Thyra::AztecOOLinearOpWithSolveFactory</tt> : AztecOO/Thyra adatpers.
+Must be enabled with <tt>--enable-aztecoo</tt>.
 
-<li><tt>Thyra::BelosLinearOpWithSolveFactory</tt>
+<li><tt>Thyra::BelosLinearOpWithSolveFactory</tt> : Belos/Thyra adatpers.
+Must be enabled with <tt>--enable-belos</tt>.
 
-<li><tt>Thyra::IfpackPreconditionerFactory</tt>
+</ul>
 
-<li><tt>Thyra::MLPreconditionerFactory</tt>
+\section stratimikos_pf_adapters_sec Preconditioner adapters
+
+These adapters provide concrete subclasses implementing the abstract interface
+<tt>Thyra::PreconditionerFactoryBase</tt>.  It is these implementations that
+are used in the implementation of
+<tt>Thyra::DefaultRealLinearSolverBuilder</tt> but can also be used on their
+own.
+
+<ul>
+
+<li><tt>Thyra::IfpackPreconditionerFactory</tt> : Ifpack/Thyra adatpers.
+Must be enabled with <tt>--enable-ifpack</tt>.
+
+<li><tt>Thyra::MLPreconditionerFactory</tt> : ML/Thyra adatpers.
+Must be enabled with <tt>--enable-ifpack</tt>.
 
 </ul>
 

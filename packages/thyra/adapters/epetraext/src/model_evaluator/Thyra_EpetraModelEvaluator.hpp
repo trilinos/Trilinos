@@ -29,7 +29,7 @@
 #ifndef THYRA_EPETRA_MODEL_EVALUATOR_HPP
 #define THYRA_EPETRA_MODEL_EVALUATOR_HPP
 
-#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "EpetraExt_ModelEvaluator.h"
@@ -65,11 +65,11 @@ namespace Thyra {
  
  \verbatim
 
-    f(...) = S_f * f_hat(...)
+    f(...) = S_f * f_orig(...)
 
  \endverbatim
 
- * where <tt>f_hat(...)</tt> is the original state function as computed by the
+ * where <tt>f_orig(...)</tt> is the original state function as computed by the
  * underlying <tt>EpetraExt::ModelEvaluator</tt> object and <tt>f(...)</tt> is
  * the state function as computed by <tt>evalModel()</tt>.
  *
@@ -80,11 +80,11 @@ namespace Thyra {
  
  \verbatim
 
-    x = S_x * x_hat
+    x = S_x * x_orig
 
  \endverbatim
 
- * where <tt>x_hat</tt> is the original unscaled state variable vector as
+ * where <tt>x_orig</tt> is the original unscaled state variable vector as
  * defined by the underlying <tt>EpetraExt::ModelEvaluator</tt> object and
  * <tt>x</tt> is the scaled state varaible vector as returned from
  * <tt>getNominalValues()</tt> and as accepted by <tt>evalModel()</tt>.  Note
@@ -93,7 +93,7 @@ namespace Thyra {
  
  \verbatim
 
-    x_hat = inv(S_x) * x
+    x_orig = inv(S_x) * x
 
  \endverbatim
 
@@ -104,7 +104,7 @@ namespace Thyra {
  
  \verbatim
 
-    f(x,...) = S_f * f_hat( inv(S_x)*x...)
+    f(x,...) = S_f * f_orig( inv(S_x)*x...)
 
  \endverbatim
 
@@ -112,7 +112,7 @@ namespace Thyra {
  
  \verbatim
 
-    W = d(f)/d(x) = S_f * d(f_hat)/d(x_hat) * inv(S_x)
+    W = d(f)/d(x) = S_f * d(f_orig)/d(x_orig) * inv(S_x)
 
  \endverbatim
 
@@ -124,17 +124,19 @@ namespace Thyra {
  
  \verbatim
 
-    f = S_f * f_hat
+    f = S_f * f_orig
 
-    W = S_f * W_hat * inv(S_x)
+    W = S_f * W_orig * inv(S_x)
 
-    DfDp(l) = S_f * DfDp_hat(l)
+    DfDp(l) = S_f * DfDp_orig(l)
 
-    g(j) = g_hat(j)
+    g(j) = g_orig(j)
 
-    DgDx(j) = DgDx_hat(j) * inv(S_x)
+    DgDx_dot(j) = DgDx_dot_orig(j) * inv(S_x)
+
+    DgDx(j) = DgDx_orig(j) * inv(S_x)
     
-    DgDp(j,l) = DgDp_hat(j,l)
+    DgDp(j,l) = DgDp_orig(j,l)
 
  \endverbatim
 
@@ -147,7 +149,7 @@ namespace Thyra {
  
  \verbatim
 
-  u^T * f(...) = u^T * (S_f * f_hat(...)) = u_f^T * f_hat(...)
+  u^T * f(...) = u^T * (S_f * f_orig(...)) = u_f^T * f_orig(...)
 
  \endverbatim
 
@@ -156,7 +158,7 @@ namespace Thyra {
  * ToDo: Finish documentation!
  */
 class EpetraModelEvaluator
-  : public ModelEvaluator<double>,
+  : public ModelEvaluatorDefaultBase<double>,
     virtual public Teuchos::ParameterListAcceptor
 {
 public:
@@ -169,18 +171,18 @@ public:
 
   /** \brief . */
   EpetraModelEvaluator(
-    const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
-    const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
+    const RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+    const RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
-    const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
+    const RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+    const RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
     );
 
   /** \brief . */
-  Teuchos::RCP<const EpetraExt::ModelEvaluator> getEpetraModel() const;
+  RCP<const EpetraExt::ModelEvaluator> getEpetraModel() const;
 
   /** \brief Set the nominal values.
    *
@@ -197,26 +199,34 @@ public:
    * ToDo: Move this into an external strategy class object!
    */
   void setStateVariableScalingVec(
-    const Teuchos::RCP<const Epetra_Vector> &stateVariableScalingVec
+    const RCP<const Epetra_Vector> &stateVariableScalingVec
     );
   
-  /** \brief Get the state variable scaling vector <tt>s_x</tt> (see above). */
-  Teuchos::RCP<const Epetra_Vector>
+  /** \brief Get the state variable scaling vector <tt>s_x</tt> (see
+   * above). */
+  RCP<const Epetra_Vector>
+  getStateVariableInvScalingVec() const;
+  
+  /** \brief Get the inverse state variable scaling vector <tt>inv_s_x</tt>
+   * (see above). */
+  RCP<const Epetra_Vector>
   getStateVariableScalingVec() const;
   
-  /** \brief Set the state function scaling vector <tt>s_f</tt> (see above). */
+  /** \brief Set the state function scaling vector <tt>s_f</tt> (see
+   * above). */
   void setStateFunctionScalingVec(
-    const Teuchos::RCP<const Epetra_Vector> &stateFunctionScalingVec
+    const RCP<const Epetra_Vector> &stateFunctionScalingVec
     );
   
-  /** \brief Get the state function scaling vector <tt>s_f</tt> (see above). */
-  Teuchos::RCP<const Epetra_Vector>
+  /** \brief Get the state function scaling vector <tt>s_f</tt> (see
+   * above). */
+  RCP<const Epetra_Vector>
   getStateFunctionScalingVec() const;
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RCP<const EpetraExt::ModelEvaluator> *epetraModel = NULL,
-    Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > *W_factory = NULL
+    RCP<const EpetraExt::ModelEvaluator> *epetraModel = NULL,
+    RCP<LinearOpWithSolveFactoryBase<double> > *W_factory = NULL
     );
   
   /** \brief . */
@@ -224,72 +234,6 @@ public:
 
   /** \brief . */
   bool finalPointWasSolved() const;
-
-  //@}
-
-  /** @name Overridden from ParameterListAcceptor */
-  //@{
-
-  /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
-  /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
-  /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-
-  //@}
-
-  /** \name Public functions overridden from ModelEvaulator. */
-  //@{
-
-  /** \brief . */
-  int Np() const;
-  /** \brief . */
-  int Ng() const;
-  /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<double> > get_x_space() const;
-  /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<double> > get_f_space() const;
-  /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<double> > get_p_space(int l) const;
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<double> > get_g_space(int j) const;
-  /** \brief . */
-  ModelEvaluatorBase::InArgs<double> getNominalValues() const;
-  /** \brief . */
-  ModelEvaluatorBase::InArgs<double> getLowerBounds() const;
-  /** \brief . */
-  ModelEvaluatorBase::InArgs<double> getUpperBounds() const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpWithSolveBase<double> > create_W() const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<double> > create_W_op() const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<double> > create_DfDp_op(int l) const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<double> > create_DgDx_op(int j) const;
-  /** \brief . */
-  Teuchos::RCP<LinearOpBase<double> > create_DgDp_op( int j, int l ) const;
-  /** \brief . */
-  ModelEvaluatorBase::InArgs<double> createInArgs() const;
-  /** \brief . */
-  ModelEvaluatorBase::OutArgs<double> createOutArgs() const;
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<double>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<double>  &outArgs
-    ) const;
-  /** \brief . */
-  void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<double>      &finalPoint
-    ,const bool                                   wasSolved
-    );
 
   //@}
 
@@ -301,44 +245,120 @@ public:
 
   //@}
 
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  RCP<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  RCP<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  RCP<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  //@}
+
+  /** \name Public functions overridden from ModelEvaulator. */
+  //@{
+
+  /** \brief . */
+  int Np() const;
+  /** \brief . */
+  int Ng() const;
+  /** \brief . */
+  RCP<const VectorSpaceBase<double> > get_x_space() const;
+  /** \brief . */
+  RCP<const VectorSpaceBase<double> > get_f_space() const;
+  /** \brief . */
+  RCP<const VectorSpaceBase<double> > get_p_space(int l) const;
+  /** \brief . */
+  RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief . */
+  RCP<const VectorSpaceBase<double> > get_g_space(int j) const;
+  /** \brief . */
+  ModelEvaluatorBase::InArgs<double> getNominalValues() const;
+  /** \brief . */
+  ModelEvaluatorBase::InArgs<double> getLowerBounds() const;
+  /** \brief . */
+  ModelEvaluatorBase::InArgs<double> getUpperBounds() const;
+  /** \brief . */
+  RCP<LinearOpWithSolveBase<double> > create_W() const;
+  /** \brief . */
+  RCP<LinearOpBase<double> > create_W_op() const;
+  /** \brief . */
+  ModelEvaluatorBase::InArgs<double> createInArgs() const;
+  /** \brief . */
+  void reportFinalPoint(
+    const ModelEvaluatorBase::InArgs<double>      &finalPoint
+    ,const bool                                   wasSolved
+    );
+
+  //@}
+
   // Made public to simplify implementation but this is harmless to be public.
   // Clients should not deal with this type.
   enum EStateFunctionScaling { STATE_FUNC_SCALING_NONE, STATE_FUNC_SCALING_ROW_SUM };
 
 private:
 
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
+  /** \brief . */
+  RCP<LinearOpBase<double> > create_DfDp_op_impl(int l) const;
+  /** \brief . */
+  RCP<LinearOpBase<double> > create_DgDx_dot_op_impl(int j) const;
+  /** \brief . */
+  RCP<LinearOpBase<double> > create_DgDx_op_impl(int j) const;
+  /** \brief . */
+  RCP<LinearOpBase<double> > create_DgDp_op_impl(int j, int l) const;
+  /** \brief . */
+  ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const;
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<double> &inArgs,
+    const ModelEvaluatorBase::OutArgs<double> &outArgs
+    ) const;
+
+  //@}
+
+private:
+
   // ////////////////////
   // Private types
 
-  typedef Teuchos::Array<Teuchos::RCP<const Epetra_Map> > p_map_t;
-  typedef Teuchos::Array<Teuchos::RCP<const Epetra_Map> > g_map_t;
+  typedef Teuchos::Array<RCP<const Epetra_Map> > p_map_t;
+  typedef Teuchos::Array<RCP<const Epetra_Map> > g_map_t;
   typedef std::vector<bool> p_map_is_local_t;
   typedef std::vector<bool> g_map_is_local_t;
 
-  typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<double> > >
+  typedef Teuchos::Array<RCP<const VectorSpaceBase<double> > >
   p_space_t;
-  typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<double> > >
+  typedef Teuchos::Array<RCP<const VectorSpaceBase<double> > >
   g_space_t;
 
   // /////////////////////
   // Private data members
 
-  Teuchos::RCP<const EpetraExt::ModelEvaluator> epetraModel_;
+  RCP<const EpetraExt::ModelEvaluator> epetraModel_;
 
-  Teuchos::RCP<Teuchos::ParameterList> paramList_;
+  RCP<Teuchos::ParameterList> paramList_;
 
-  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > W_factory_;
+  RCP<LinearOpWithSolveFactoryBase<double> > W_factory_;
 
-  Teuchos::RCP<const Epetra_Map> x_map_;
+  RCP<const Epetra_Map> x_map_;
   p_map_t p_map_;
   g_map_t g_map_;
   p_map_is_local_t p_map_is_local_;
   p_map_is_local_t g_map_is_local_;
-  Teuchos::RCP<const Epetra_Map> f_map_;
+  RCP<const Epetra_Map> f_map_;
 
-  Teuchos::RCP<const VectorSpaceBase<double> > x_space_;
+  RCP<const VectorSpaceBase<double> > x_space_;
   p_space_t p_space_;
-  Teuchos::RCP<const VectorSpaceBase<double> > f_space_;
+  RCP<const VectorSpaceBase<double> > f_space_;
   g_space_t g_space_;
 
   mutable ModelEvaluatorBase::InArgs<double> nominalValues_;
@@ -349,15 +369,19 @@ private:
   ModelEvaluatorBase::InArgs<double> finalPoint_;
 
   EStateFunctionScaling stateFunctionScaling_;
-  mutable Teuchos::RCP<const Epetra_Vector> stateFunctionScalingVec_;
+  mutable RCP<const Epetra_Vector> stateFunctionScalingVec_;
 
-  Teuchos::RCP<const Epetra_Vector> stateVariableScalingVec_; // S_x
-  mutable Teuchos::RCP<const Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
+  RCP<const Epetra_Vector> stateVariableScalingVec_; // S_x
+  mutable RCP<const Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
   mutable EpetraExt::ModelEvaluator::InArgs epetraInArgsScaling_;
   mutable EpetraExt::ModelEvaluator::OutArgs epetraOutArgsScaling_;
   
-  mutable Teuchos::RCP<Epetra_Vector> x_unscaled_;
-  mutable Teuchos::RCP<Epetra_Vector> x_dot_unscaled_;
+  mutable RCP<Epetra_Vector> x_unscaled_;
+  mutable RCP<Epetra_Vector> x_dot_unscaled_;
+
+  mutable ModelEvaluatorBase::InArgs<double> prototypeInArgs_;
+  mutable ModelEvaluatorBase::OutArgs<double> prototypeOutArgs_;
+  mutable bool currentInArgsOutArgs_;
 
   bool finalPointWasSolved_;
 
@@ -389,23 +413,21 @@ private:
     RCP<const LinearOpBase<double> > *fwdW,
     RCP<EpetraLinearOp> *efwdW,
     // The actual Epetra object passed to the underylying EpetraExt::ModelEvaluator
-    RCP<Epetra_Operator> *eW,
-    // Flag for if we created at least one temp DgDp(j,l) object
-    bool *created_temp_DgDp
+    RCP<Epetra_Operator> *eW
     ) const;
 
   /** \brief . */
   void preEvalScalingSetup(
     EpetraExt::ModelEvaluator::InArgs *epetraInArgs,
     EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs,
-    const Teuchos::RCP<Teuchos::FancyOStream> &out,
+    const RCP<Teuchos::FancyOStream> &out,
     const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
   /** \brief . */
   void postEvalScalingSetup(
     const EpetraExt::ModelEvaluator::OutArgs &epetraUnscaledOutArgs,
-    const Teuchos::RCP<Teuchos::FancyOStream> &out,
+    const RCP<Teuchos::FancyOStream> &out,
     const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
@@ -417,7 +439,6 @@ private:
     RCP<const LinearOpBase<double> > &fwdW,
     RCP<EpetraLinearOp> &efwdW,
     RCP<Epetra_Operator> &eW,
-    const bool created_temp_DgDp,
     const ModelEvaluatorBase::OutArgs<double> &outArgs // Output!
     ) const;
   // 2007/08/03: rabartl: Above, I pass many of the RCP objects by non-const
@@ -426,6 +447,9 @@ private:
 
   /** \brief . */
   void updateNominalValuesAndBounds() const;
+
+  /** \brief . */
+  void updateInArgsOutArgs() const;
   
 };
 
@@ -438,10 +462,10 @@ private:
 /** \brief .
  * \relates EpetraModelEvaluator
  */
-Teuchos::RCP<EpetraModelEvaluator>
+RCP<EpetraModelEvaluator>
 epetraModelEvaluator(
-  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   );
 
 
@@ -479,8 +503,8 @@ convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport )
 EpetraExt::ModelEvaluator::Derivative
 convert(
   const ModelEvaluatorBase::Derivative<double> &derivative,
-  const Teuchos::RCP<const Epetra_Map> &fnc_map,
-  const Teuchos::RCP<const Epetra_Map> &var_map
+  const RCP<const Epetra_Map> &fnc_map,
+  const RCP<const Epetra_Map> &var_map
   );
 
 

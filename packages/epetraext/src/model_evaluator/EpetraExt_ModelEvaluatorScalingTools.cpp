@@ -54,6 +54,24 @@ namespace {
 const std::string fwdScalingVecName = "fwdScalingVec";
 
 
+// Assert that the input scaling vectors have been set up correctly
+void assertModelVarScalings(
+  const EpetraExt::ModelEvaluator::InArgs &varScalings
+  )
+{
+  typedef EpetraExt::ModelEvaluator EME;
+  TEST_FOR_EXCEPTION(
+    (varScalings.supports(EME::IN_ARG_x) && varScalings.supports(EME::IN_ARG_x_dot))
+    && (varScalings.get_x() != varScalings.get_x_dot()),
+    std::logic_error,
+    "Error, if scaling for x is given and x_dot is supported, then\n"
+    "the scaling for x_dot must also be set and must be the same scaling\n"
+    "as is used for x!"
+    );
+}
+  
+
+
 // Scale a single vector using a templated policy object to take care of what
 // vector gets used.
 template<class InArgsVectorGetterSetter>
@@ -69,7 +87,7 @@ void scaleModelVar(
 
   using Teuchos::null;
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_const_cast;
   typedef EpetraExt::ModelEvaluator EME;
 
@@ -78,21 +96,21 @@ void scaleModelVar(
   TEST_FOR_EXCEPT(!scaledVars);
 #endif
 
-  RefCountPtr<const Epetra_Vector>
+  RCP<const Epetra_Vector>
     orig_vec = vecGetterSetter.getVector(origVars);
   if ( !is_null(orig_vec) ) {
-    RefCountPtr<const Epetra_Vector>
+    RCP<const Epetra_Vector>
       inv_s_vec = vecGetterSetter.getVector(varScalings);
     if ( !is_null(inv_s_vec) ) {
-      RefCountPtr<Epetra_Vector>
+      RCP<Epetra_Vector>
         scaled_vec = rcp_const_cast<Epetra_Vector>(
           vecGetterSetter.getVector(*scaledVars) );
       if ( is_null(scaled_vec) )
         scaled_vec = rcp(new Epetra_Vector(orig_vec->Map()));
       // See if there is a "hidden" forward scaling vector to use
-      RefCountPtr<const Epetra_Vector>
+      RCP<const Epetra_Vector>
         *fwd_s_vec
-        = Teuchos::get_optional_extra_data<RefCountPtr<const Epetra_Vector> >(
+        = Teuchos::get_optional_extra_data<RCP<const Epetra_Vector> >(
           inv_s_vec, fwdScalingVecName );
       if ( fwd_s_vec ) {
         // Use the "hidden" forward scaling vector and multiply
@@ -134,7 +152,7 @@ void scaleModelBound(
 
   using Teuchos::null;
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_const_cast;
   typedef EpetraExt::ModelEvaluator EME;
 
@@ -143,10 +161,10 @@ void scaleModelBound(
   TEST_FOR_EXCEPT(!scaledUpperBounds);
 #endif
 
-  RefCountPtr<const Epetra_Vector>
+  RCP<const Epetra_Vector>
     orig_lower_vec = vecGetterSetter.getVector(origLowerBounds);
   if ( !is_null(orig_lower_vec) ) {
-    RefCountPtr<const Epetra_Vector>
+    RCP<const Epetra_Vector>
       inv_s_vec = vecGetterSetter.getVector(varScalings);
     if ( !is_null(inv_s_vec) ) {
       TEST_FOR_EXCEPT("Can't handle scaling bounds yet!");
@@ -159,10 +177,10 @@ void scaleModelBound(
     vecGetterSetter.setVector( null, scaledLowerBounds );
   }
 
-  RefCountPtr<const Epetra_Vector>
+  RCP<const Epetra_Vector>
     orig_upper_vec = vecGetterSetter.getVector(origUpperBounds);
   if ( !is_null(orig_upper_vec) ) {
-    RefCountPtr<const Epetra_Vector>
+    RCP<const Epetra_Vector>
       inv_s_vec = vecGetterSetter.getVector(varScalings);
     if ( !is_null(inv_s_vec) ) {
       TEST_FOR_EXCEPT("Can't handle scaling bounds yet!");
@@ -193,8 +211,9 @@ void unscaleModelVar(
 
   using Teuchos::null;
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_const_cast;
+  using Teuchos::includesVerbLevel;
   typedef EpetraExt::ModelEvaluator EME;
 
 
@@ -202,19 +221,24 @@ void unscaleModelVar(
   TEST_FOR_EXCEPT(!origVars);
 #endif
 
-  RefCountPtr<const Epetra_Vector>
+  RCP<const Epetra_Vector>
     scaled_vec = vecGetterSetter.getVector(scaledVars);
   if ( !is_null(scaled_vec) ) {
-    RefCountPtr<const Epetra_Vector>
+    RCP<const Epetra_Vector>
       inv_s_vec = vecGetterSetter.getVector(varScalings);
     if ( !is_null(inv_s_vec) ) {
-      RefCountPtr<Epetra_Vector>
+      RCP<Epetra_Vector>
         orig_vec = rcp_const_cast<Epetra_Vector>(
           vecGetterSetter.getVector(*origVars) );
       if ( is_null(orig_vec) )
         orig_vec = rcp(new Epetra_Vector(scaled_vec->Map()));
       EpetraExt::unscaleModelVarsGivenInverseScaling(
         *scaled_vec, *inv_s_vec,  &*orig_vec );
+      if (out && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH)) {
+        *out << "\nUnscaled vector "<<vecGetterSetter.getName()<<":\n";
+        Teuchos::OSTab tab(*out);
+        orig_vec->Print(*out);
+      }
       vecGetterSetter.setVector( orig_vec, origVars );
     }
     else {
@@ -241,10 +265,10 @@ void scaleModelFunc(
   )
 {
   TEST_FOR_EXCEPT(0==scaledFuncs);
-  Teuchos::RefCountPtr<Epetra_Vector>
+  Teuchos::RCP<Epetra_Vector>
     func = vecGetterSetter.getVector(origFuncs);
   if (!is_null(func) ) {
-    Teuchos::RefCountPtr<const Epetra_Vector>
+    Teuchos::RCP<const Epetra_Vector>
       funcScaling = vecGetterSetter.getVector(funcScalings);
     if (!is_null(funcScaling) ) {
       EpetraExt::scaleModelFuncGivenForwardScaling( *funcScaling, &*func );
@@ -339,6 +363,7 @@ void EpetraExt::scaleModelVars(
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!scaledVars);
+  assertModelVarScalings(varScalings);
 #endif
 
   if (origVars.supports(EME::IN_ARG_x)) {
@@ -419,6 +444,7 @@ void EpetraExt::scaleModelBounds(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!scaledLowerBounds);
   TEST_FOR_EXCEPT(!scaledUpperBounds);
+  assertModelVarScalings(varScalings);
 #endif
 
   if (origLowerBounds.supports(EME::IN_ARG_x)) {
@@ -457,19 +483,37 @@ void EpetraExt::unscaleModelVars(
   )
 {
 
+  using Teuchos::RCP;
+  using Teuchos::includesVerbLevel;
   typedef ModelEvaluator EME;
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!origVars);
+  assertModelVarScalings(varScalings);
 #endif
 
-  if (scaledVars.supports(EME::IN_ARG_x)) {
-    unscaleModelVar( InArgsGetterSetter_x(), scaledVars, varScalings, origVars,
+  // Print scaling vectors
+
+  if (out && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH)) {
+    RCP<const Epetra_Vector> inv_s_x;
+    if ( scaledVars.supports(EME::IN_ARG_x) &&
+      !is_null(inv_s_x=varScalings.get_x()) )
+    {
+      *out << "\nState inverse scaling vector inv_s_x:\n";
+      Teuchos::OSTab tab(*out);
+      inv_s_x->Print(*out);
+    }
+  }
+
+  // Scal the input varaibles
+  
+  if (scaledVars.supports(EME::IN_ARG_x_dot)) {
+    unscaleModelVar( InArgsGetterSetter_x_dot(), scaledVars, varScalings, origVars,
       out, verbLevel );
   }
 
-  if (scaledVars.supports(EME::IN_ARG_x_dot)) {
-    unscaleModelVar( InArgsGetterSetter_x_dot(), scaledVars, varScalings, origVars,
+  if (scaledVars.supports(EME::IN_ARG_x)) {
+    unscaleModelVar( InArgsGetterSetter_x(), scaledVars, varScalings, origVars,
       out, verbLevel );
   }
 
@@ -479,20 +523,20 @@ void EpetraExt::unscaleModelVars(
       out, verbLevel );
   }
 
-  if (scaledVars.supports(EME::IN_ARG_x_poly)) {
-    TEST_FOR_EXCEPTION(
-      !is_null(varScalings.get_x()), std::logic_error,
-      "Error, can't hanlde unscaling of x_poly yet!"
-      );
-    origVars->set_x_poly(scaledVars.get_x_poly());
-  }
-
   if (scaledVars.supports(EME::IN_ARG_x_dot_poly)) {
     TEST_FOR_EXCEPTION(
       !is_null(varScalings.get_x()), std::logic_error,
       "Error, can't hanlde unscaling of x_dot_poly yet!"
       );
     origVars->set_x_dot_poly(scaledVars.get_x_dot_poly());
+  }
+
+  if (scaledVars.supports(EME::IN_ARG_x_poly)) {
+    TEST_FOR_EXCEPTION(
+      !is_null(varScalings.get_x()), std::logic_error,
+      "Error, can't hanlde unscaling of x_poly yet!"
+      );
+    origVars->set_x_poly(scaledVars.get_x_poly());
   }
 
   if (scaledVars.supports(EME::IN_ARG_t)) {
@@ -533,7 +577,7 @@ void EpetraExt::scaleModelFuncs(
   )
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   typedef ModelEvaluator EME;
 
   TEST_FOR_EXCEPT(0==allFuncsWhereScaled);
@@ -569,7 +613,7 @@ void EpetraExt::scaleModelFuncs(
   }
 
   // W
-  RefCountPtr<Epetra_Operator> W;
+  RCP<Epetra_Operator> W;
   if ( origFuncs.supports(EME::OUT_ARG_W) && !is_null(W=origFuncs.get_W()) ) {
     bool didScaling = false;
     scaleModelFuncFirstDerivOp(
@@ -604,8 +648,27 @@ void EpetraExt::scaleModelFuncs(
 
   }
 
-  // DgDx(j) and DgDp(j,l)
+  // DgDx_dot(j), DgDx(j), and DgDp(j,l)
   for ( int j = 0; j < Ng; ++j ) {
+
+    EME::Derivative orig_DgDx_dot_j;
+    if (
+      !origFuncs.supports(EME::OUT_ARG_DgDx_dot,j).none()
+      && !(orig_DgDx_dot_j=origFuncs.get_DgDx_dot(j)).isEmpty()
+      )
+    {
+      EME::Derivative scaled_DgDx_dot_j;
+      bool didScaling = false;
+      scaleModelFuncFirstDeriv(
+        orig_DgDx_dot_j, varScalings.get_x().get(), funcScalings.get_g(j).get(),
+        &scaled_DgDx_dot_j, &didScaling
+        );
+      if(didScaling)
+        scaledFuncs->set_DgDx_dot(j,scaled_DgDx_dot_j);
+      else
+        *allFuncsWhereScaled = false;
+    }
+
     EME::Derivative orig_DgDx_j;
     if (
       !origFuncs.supports(EME::OUT_ARG_DgDx,j).none()
@@ -648,12 +711,12 @@ void EpetraExt::scaleModelFuncs(
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraExt::createInverseModelScalingVector(
-  Teuchos::RefCountPtr<const Epetra_Vector> const& scalingVector
+  Teuchos::RCP<const Epetra_Vector> const& scalingVector
   )
 {
-  Teuchos::RefCountPtr<Epetra_Vector>
+  Teuchos::RCP<Epetra_Vector>
     invScalingVector = Teuchos::rcp(new Epetra_Vector(scalingVector->Map()));
   invScalingVector->Reciprocal(*scalingVector);
   // Embedd the forward scaling vector.  This is done in order to achieve the
@@ -749,12 +812,12 @@ void EpetraExt::scaleModelFuncFirstDeriv(
   bool *didScaling
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   typedef ModelEvaluator EME;
   TEST_FOR_EXCEPT(0==scaledFuncDeriv);
   TEST_FOR_EXCEPT(0==didScaling);
   *didScaling = false;
-  const RefCountPtr<Epetra_MultiVector>
+  const RCP<Epetra_MultiVector>
     funcDerivMv = origFuncDeriv.getMultiVector();
   const EME::EDerivativeMultiVectorOrientation
     funcDerivMv_orientation = origFuncDeriv.getMultiVectorOrientation();
@@ -786,7 +849,7 @@ void EpetraExt::scaleModelFuncFirstDeriv(
     *didScaling = true;
   }
   else {
-    RefCountPtr<Epetra_Operator>
+    RCP<Epetra_Operator>
       funcDerivOp = origFuncDeriv.getLinearOp();
     TEST_FOR_EXCEPT(is_null(funcDerivOp));
     scaleModelFuncFirstDerivOp( invVarScaling, fwdFuncScaling,

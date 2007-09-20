@@ -295,7 +295,7 @@ All of the code in the %Thyra and related packages almost exclusively use the
 <tt>Teuchos::RCP</tt> to handle dynamically allocated memory with
 object-oriented programming.  %Thyra also rigorously uses the idioms described
 in <a
-href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">this
+href="http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf">this
 report</a> for passing object to and from functions that involve
 <tt>Teuchos::RCP</tt> .
 
@@ -452,7 +452,7 @@ compiled for thyra.
 <ul>
 
 <li><b><a
-href="http://software.sandia.gov/trilinos/RefCountPtrBeginnersGuideSAND.pdf">
+href="http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf">
 Teuchos::RCP Beginner's Guide : An Introduction to the
 Trilinos Smart Reference-Counted Pointer Class for (Almost) Automatic
 Dynamic Memory Management in C++ </a></b>

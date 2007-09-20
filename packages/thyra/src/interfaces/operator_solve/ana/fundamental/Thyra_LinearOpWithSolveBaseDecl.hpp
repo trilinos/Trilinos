@@ -514,6 +514,7 @@ public:
 
 };
 
+
 /** \brief Determine if a <tt>LinearOpWithSolveBase<Scalar></tt> object
  * supports a particular type of solve or not..
  *
@@ -534,6 +535,7 @@ bool solveSupports(
     A_trans == TRANS ? NONCONJ_ELE : CONJ_ELE
     );
 }
+
 
 /** \brief Determine if a <tt>LinearOpWithSolveBase<Scalar></tt> object
  * supports a particular type of solve measure or not.
@@ -559,6 +561,32 @@ bool solveSupportsSolveMeasureType(
     );
 }
 
+
+/** \brief Solve a set of linear systems with different convergence criteria
+ * targeted to different blocks.
+ *
+ * \relates_LinearOpWithSolveBase
+ */
+template<class Scalar>
+void solve(
+  const LinearOpWithSolveBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &B,
+  MultiVectorBase<Scalar> *X,
+  const int numBlocks,
+  const BlockSolveCriteria<Scalar> blockSolveCriteria[],
+  SolveStatus<Scalar> blockSolveStatus[]
+  )
+{
+  if (real_trans(M_trans) == NOTRANS)
+    M.solve(
+      transToConj(M_trans),B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
+  else
+    M.solveTranspose(
+      transToConj(M_trans),B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
+}
+
+
 /** \brief Solve a set of forward linear systems with a single set of
  * tolerances and a single scalar type.
  *
@@ -578,32 +606,13 @@ solve(
   ,const ETransp                        A_trans
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
-  ,const SolveCriteria<Scalar>          *solveCriteria
-#ifndef SUN_CXX
-                                                        = NULL
-#endif
+  ,const SolveCriteria<Scalar>          *solveCriteria = NULL
   )
 {
   if(real_trans(A_trans)==NOTRANS)
     return solve(A,transToConj(A_trans),B,X,solveCriteria);
   return solveTranspose(A,transToConj(A_trans),B,X,solveCriteria);
 }
-
-#ifdef SUN_CXX
-
-template<class Scalar>
-SolveStatus<Scalar>
-solve(
-  const LinearOpWithSolveBase<Scalar>   &A
-  ,const ETransp                        A_trans
-  ,const MultiVectorBase<Scalar>        &B
-  ,MultiVectorBase<Scalar>              *X
-  )
-{
-  return solve(A,A_trans,B,X,NULL);
-}
-
-#endif // SUN_CXX
 
 /** \brief Solve a set of forward linear systems with a single set of
  * tolerances.
@@ -620,10 +629,7 @@ solve(
   ,const MultiVectorBase<RangeScalar>                     &B
   ,MultiVectorBase<DomainScalar>                          *X
   ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          *solveCriteria
-#ifndef SUN_CXX
-                                                                          = NULL
-#endif
+                                                          *solveCriteria  = NULL
   )
 {
   typedef SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>       SC;
@@ -641,21 +647,6 @@ solve(
   return blockSolveStatus[0];
 }
 
-#ifdef SUN_CXX
-
-template<class RangeScalar, class DomainScalar>
-SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-solve(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
-  ,const EConj                                            conj
-  ,const MultiVectorBase<RangeScalar>                     &B
-  ,MultiVectorBase<DomainScalar>                          *X
-  )
-{
-  return solve(A,conj,B,X,NULL);
-}
-
-#endif // SUN_CXX
 
 /** \brief Solve a set of transpose linear systems with a single set of
  * tolerances.
@@ -672,10 +663,7 @@ solveTranspose(
   ,const MultiVectorBase<DomainScalar>                    &B
   ,MultiVectorBase<RangeScalar>                           *X
   ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          *solveCriteria
-#ifndef SUN_CXX
-                                                                          = NULL
-#endif
+                                                          *solveCriteria  = NULL
   )
 {
   typedef SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>       SC;
@@ -693,21 +681,6 @@ solveTranspose(
   return blockSolveStatus[0];
 }
 
-#ifdef SUN_CXX
-
-template <class RangeScalar, class DomainScalar>
-SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-solveTranspose(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
-  ,const EConj                                            conj
-  ,const MultiVectorBase<DomainScalar>                    &B
-  ,MultiVectorBase<RangeScalar>                           *X
-  )
-{
-  return solveTranspose(A,conj,B,X,NULL);
-}
-
-#endif // SUN_CXX
 
 /** \brief Solve a set of forward linear systems with two or more sets of
  * tolerances.
@@ -724,49 +697,14 @@ void solve(
   ,MultiVectorBase<DomainScalar>                          *X
   ,const int                                              numBlocks
   ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          blockSolveCriteria[]
-#ifndef SUN_CXX
-                                                                                = NULL
-#endif
+                                                          blockSolveCriteria[] = NULL
   ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          blockSolveStatus[]
-#ifndef SUN_CXX
-                                                                                = NULL
-#endif
+                                                          blockSolveStatus[] = NULL
   )
 {
   A.solve(conj,B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
 
-#ifdef SUN_CXX
-
-template<class RangeScalar, class DomainScalar>
-void solve(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
-  ,const EConj                                            conj
-  ,const MultiVectorBase<RangeScalar>                     &B
-  ,MultiVectorBase<DomainScalar>                          *X
-  ,const int                                              numBlocks
-  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          blockSolveCriteria[]
-  )
-{
-  solve(A,conj,B,X,numBlcoks,blockSolveCriteria,NULL);
-}
-
-template<class RangeScalar, class DomainScalar>
-void solve(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
-  ,const EConj                                            conj
-  ,const MultiVectorBase<RangeScalar>                     &B
-  ,MultiVectorBase<DomainScalar>                          *X
-  ,const int                                              numBlocks
-  )
-{
-  solve(A,conj,B,X,numBlcoks,NULL,NULL);
-}
-
-#endif // SUN_CXX
 
 /** \brief Solve a set of transpose linear systems with two or more sets of
  * tolerances.
@@ -783,49 +721,13 @@ void solveTranspose(
   ,MultiVectorBase<RangeScalar>                           *X
   ,const int                                              numBlocks
   ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          blockSolveCriteria[]
-#ifndef SUN_CXX
-                                                                                = NULL
-#endif
+                                                          blockSolveCriteria[] = NULL
   ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          blockSolveStatus[]
-#ifndef SUN_CXX
-                                                                                = NULL
-#endif
+                                                          blockSolveStatus[] = NULL
   )
 {
   A.solveTranspose(conj,B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
-
-#ifdef SUN_CXX
-
-template <class RangeScalar, class DomainScalar>
-void solveTranspose(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
-  ,const EConj                                            conj
-  ,const MultiVectorBase<DomainScalar>                    &B
-  ,MultiVectorBase<RangeScalar>                           *X
-  ,const int                                              numBlocks
-  ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
-                                                          blockSolveCriteria[]
-  )
-{
-  solveTranspose(A,conj,B,X,numBlocks,blockSolveCriteria,NULL);
-}
-
-template <class RangeScalar, class DomainScalar>
-void solveTranspose(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &A
-  ,const EConj                                            conj
-  ,const MultiVectorBase<DomainScalar>                    &B
-  ,MultiVectorBase<RangeScalar>                           *X
-  ,const int                                              numBlocks
-  )
-{
-  solveTranspose(A,conj,B,X,numBlocks,NULL,NULL);
-}
-
-#endif // SUN_CXX
 
 //@}
 

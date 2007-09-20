@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(rythmos, 1.0, tscoffe@sandia.gov)
+AC_INIT(rythmos, Development Version, tscoffe@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"

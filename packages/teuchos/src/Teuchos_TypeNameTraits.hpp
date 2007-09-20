@@ -36,7 +36,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-#ifdef HAVE_GCC_ABI_DEMANGLE
+#if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
 #  include <cxxabi.h>
 #endif
 
@@ -49,61 +49,44 @@
 #include "gmpxx.h"
 #endif
 
+
 namespace  Teuchos {
 
-/** \brief Template function for returning the demangled name of an object. */
+
+/** \brief Demangle a C++ name if valid.
+ *
+ * The name must have come from <tt>typeid(...).name()</tt> in order to be
+ * valid name to pass to this function.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
+std::string demangleName( const std::string &mangledName );
+
+
+/** \brief Template function for returning the demangled name of an object.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
 template<typename T>
 std::string typeName( const T &t )
 {
-#ifdef HAVE_GCC_ABI_DEMANGLE
-  const std::string
-    mangledName = typeid(t).name();
-  int status;
-  char
-    *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
-
-  if (status != 0 || _demangledName==NULL) {
-    if (_demangledName != NULL) free(_demangledName);
-    std::string msg("<demangle-failed>");
-    return(msg);
-  }
-
-  const std::string demangledName(_demangledName);
-  free(_demangledName); // We have to free this!
-  return demangledName;
-#else
-  return typeid(t).name();
-#endif
+  return demangleName(typeid(t).name());
 }
 
 /** \brief Default traits class that just returns
  * <tt>typeid(T).name()</tt>.
+ *
+ * \ingroup teuchos_language_support_grp
  */
 template<typename T>
 class TypeNameTraits {
 public:
-  static std::string name() {
-#ifdef HAVE_GCC_ABI_DEMANGLE
-    const std::string
-      mangledName = typeid(T).name();
-    int status;
-    char
-      *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
-
-    if (status != 0 || _demangledName==NULL) {
-      if (_demangledName != NULL) free(_demangledName);
-      std::string msg("<demangle-failed>");
-      return(msg);
+  static std::string name()
+    {
+      return demangleName(typeid(T).name());
     }
-
-    const std::string demangledName(_demangledName);
-    free(_demangledName); // We have to free this!
-    return demangledName;
-#else
-    return typeid(T).name();
-#endif
-  }
 };
+
 
 #define TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(TYPE) \
 template<> \
@@ -120,11 +103,13 @@ TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(long int);
 TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(float);
 TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(double);
 
+
 template<typename T>
 class TypeNameTraits<T*> {
 public:
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
 };
+
 
 template<>
 class TypeNameTraits<std::string> {
@@ -132,13 +117,16 @@ public:
   static std::string name() { return "string"; }
 };
 
+
 template<typename T>
 class TypeNameTraits<std::vector<T> > {
 public:
   static std::string name() { return "vector<"+TypeNameTraits<T>::name()+">"; }
 };
 
+
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+
 
 template<typename T>
 class TypeNameTraits<std::complex<T> > {
@@ -146,8 +134,11 @@ public:
   static std::string name() { return "complex<"+TypeNameTraits<T>::name()+">"; }
 };
 
+
 #endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
  
+
 } // namespace Teuchos
+
 
 #endif // _TEUCHOS_TYPE_NAME_TRAITS_HPP_

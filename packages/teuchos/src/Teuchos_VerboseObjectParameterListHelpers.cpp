@@ -83,7 +83,7 @@ void Teuchos::setupVerboseObjectSublist( ParameterList* paramList )
   TEST_FOR_EXCEPT(0==paramList);
   paramList->sublist(VerboseObject_name).setParameters(
     *getValidVerboseObjectSublist()
-    );
+    ).disableRecursiveValidation();
 }
 
 

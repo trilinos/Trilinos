@@ -79,11 +79,13 @@ int main(int argc, char *argv[]) {
   bool leftprec = true;      // left preconditioning or right.
   int frequency = -1;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
-  int maxrestarts = 15;      // maximum number of restarts allowed 
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
+  int maxsubspace = 250;     // maximum number of blocks the solver can use for the subspace
+  int recycle = 50;          // maximum size of recycle space
+  int maxrestarts = 15;      // maximum number of restarts allowed 
   std::string filename("orsirr1.hb");
-  MT tol = 1.0e-5;           // relative residual tolerance
+  std::string ortho("IMGS");
+  MT tol = 1.0e-10;          // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -95,7 +97,9 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
+  cmdp.setOption("recycle",&recycle,"Number of vectors in recycle space.");
+  cmdp.setOption("max-cycles",&maxrestarts,"Maximum number of cycles allowed for GCRO-DR solver.");
+  cmdp.setOption("ortho-type",&ortho,"Orthogonalization type. Must be one of DGKS, ICGS, IMGS.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -168,17 +172,20 @@ int main(int argc, char *argv[]) {
   RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
 
   //
-  // *****Create parameter list for the block GMRES solver manager*****
+  // ********Other information used by block solver***********
+  // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->GlobalLength();
   if (maxiters == -1)
     maxiters = NumGlobalElements - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
-  belosList.set( "Num Blocks", maxsubspace );               // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Blocks", maxsubspace );            // Maximum number of blocks in Krylov factorization
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Num Recycled Blocks", recycle );       // Number of vectors in recycle space
+  belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
   if (numrhs > 1) {
     belosList.set( "Show Maximum Residual Norm Only", true );  // Show only the maximum residual norm
   }

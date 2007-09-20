@@ -31,7 +31,12 @@
 
 #include "Rythmos_IntegratorBase.hpp"
 #include "Rythmos_InterpolationBufferBase.hpp"
+#include "Rythmos_InterpolationBufferAppender.hpp"
+#include "Rythmos_BreakPointInformerBase.hpp"
+#include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_InterpolationBufferHelpers.hpp"
+
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_as.hpp"
 
@@ -41,8 +46,6 @@ namespace Rythmos {
 
 /** \brief Concrete subclass of <tt>InterpolationBufferBase</tt> implemented in terms of
  * a <tt>StepperBase</tt> object and a trailing <tt>InterpolationBufferBase</tt> object.
- *
- * This class is really the beginnings of a 
  */
 template<class Scalar> 
 class IntegratorDefault : virtual public IntegratorBase<Scalar>
@@ -69,20 +72,67 @@ public:
     );
   
   /** \brief . */
-  void setInterpolationBuffer(
+  void setTrailingInterpolationBuffer(
     const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
     );
 
   /** \brief . */
-  void setStepper(
-    const Teuchos::RCP<StepperBase<Scalar> > &stepper,
-    const Scalar &finalTime
+  bool acceptsTrailingInterpolationBuffer() const;
+
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+
+  /** \brief . */
+  Teuchos::RCP<const InterpolationBufferBase<Scalar> > getInterpolationBuffer();
+
+  /** \brief . */
+  Teuchos::RCP<InterpolationBufferBase<Scalar> > unSetInterpolationBuffer();
+
+  /** \brief . */
+  void setInterpolationBufferAppender(
+    const Teuchos::RCP<InterpolationBufferAppenderBase<Scalar> > &interpolationBufferAppender
     );
 
+  /** \brief . */
+  Teuchos::RCP<const InterpolationBufferAppenderBase<Scalar> > getInterpolationBufferAppender();
+
+  /** \brief . */
+  Teuchos::RCP<InterpolationBufferAppenderBase<Scalar> > unSetInterpolationBufferAppender();
+
+  /** \brief . */
+  void setStepper(
+    const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+    const Scalar &finalTime,
+    const bool landOnFinalTime
+    );
+
+  /** \brief . */
+  Teuchos::RCP<const Rythmos::StepperBase<Scalar> > getStepper() const;
+
+  /** \brief . */
+  Teuchos::RCP<StepperBase<Scalar> > unSetStepper();
+  
+  /** \brief.  */
+  void setBreakPointInformer(Teuchos::RCP<BreakPointInformerBase<Scalar> >& breakPointInformer);
+
+  /** \brief.  */
+  Teuchos::RCP<const BreakPointInformerBase<Scalar> > getBreakPointInformer();
+
+  /** \brief.  */
+  Teuchos::RCP<BreakPointInformerBase<Scalar> > unSetBreakPointInformer();
+  
+  /** \brief. */
+  void setObserver(Teuchos::RCP<IntegrationObserverBase<Scalar> >& observer);
+
+  /** \brief. */
+  Teuchos::RCP<const IntegrationObserverBase<Scalar> > getObserver();
+
+  /** \brief. */
+  Teuchos::RCP<IntegrationObserverBase<Scalar> > unSetObserver();
+  
   //@}
   
-  /** \brief . */
-  bool getFwdPoints(
+  void getFwdPoints(
     const Array<Scalar>& time_vec,
     Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
     Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
@@ -97,15 +147,14 @@ public:
   //@{
     
   /** \brief . */
-  bool setPoints(
+  void addPoints(
     const Array<Scalar>& time_vec,
     const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-    const Array<ScalarMag> & accuracy_vec 
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     );
 
   /** \brief . */
-  bool getPoints(
+  void getPoints(
     const Array<Scalar>& time_vec,
     Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
     Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
@@ -113,24 +162,18 @@ public:
     ) const;
 
   /** \brief . */
-  bool setRange(
-    const TimeRange<Scalar>& range,
-    const InterpolationBufferBase<Scalar>& interpBuffer
-    );
-
-  /** \brief . */
   TimeRange<Scalar> getTimeRange() const;
 
   /** \brief . */
-  bool getNodes(Array<Scalar>* time_vec) const;
-
-  /** \brief . */
-  virtual bool removeNodes(Array<Scalar>& time_vec);
+  void getNodes(Array<Scalar>* time_vec) const;
 
   /** \brief . */
   int getOrder() const;
 
   //@}
+
+  /** \brief . */
+  virtual void removeNodes(Array<Scalar>& time_vec);
 
   /** \name Overridden from Teuchos::Describable */
   //@{
@@ -162,20 +205,43 @@ public:
 
 private:
 
+
   // Interpolation Buffer used to store past results
   Teuchos::RCP<InterpolationBufferBase<Scalar> > trailingInterpBuffer_;
+
+  // Interpolation Buffer Appender strategy object for transfering data from
+  // the stepper to the traling interpolation buffer
+  Teuchos::RCP<InterpolationBufferAppenderBase<Scalar> > interpolationBufferAppender_;
 
   // Stepper used to fill interpolation buffer.
   Teuchos::RCP<StepperBase<Scalar> > stepper_;
 
+  // Stepper Observer 
+  Teuchos::RCP<IntegrationObserverBase<Scalar> > observer_;
+
   // ParameterList to control behavior
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
+
+  // BreakPoint informer strategy object
+  // If this is null, then it has no effect
+  Teuchos::RCP<BreakPointInformerBase<Scalar> > breakPointInformer_;
 
   // Take variable steps or not
   bool takeVariableSteps_;
 
   // The fixed step size to take
   Scalar fixed_dt_;
+
+  // The final time to integrate to
+  Scalar finalTime_;
+
+  // Flag for whether the integrator is initialized or not.
+  bool isInitialized_;
+
+  // Private member functions:
+
+  /** \brief . */
+  void initialize_();
 
 };
 
@@ -189,7 +255,7 @@ private:
 
 template<class Scalar>
 IntegratorDefault<Scalar>::IntegratorDefault()
-  : takeVariableSteps_(true), fixed_dt_(-1.0)
+  : takeVariableSteps_(true), fixed_dt_(-1.0), isInitialized_(false)
 {}
 
 
@@ -199,123 +265,288 @@ IntegratorDefault<Scalar>::IntegratorDefault(
   const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer,
   const Teuchos::RCP<Teuchos::ParameterList> &paramList 
   )
-  : takeVariableSteps_(true), fixed_dt_(-1.0)
+  : takeVariableSteps_(true), fixed_dt_(-1.0), isInitialized_(false)
 {
   using Teuchos::as;
   if (!is_null(paramList))
     setParameterList(paramList);
   const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  out->precision(20);
-  out->setMaxLenLinePrefix(40);
-  //out->pushLinePrefix("IntegratorDefault");
-  //out->setShowLinePrefix(true);
-  //out->setTabIndentStr("    ");
-  Teuchos::OSTab ostab(out,1,"IBAS::constructor");
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::constructor");
   *out << "Initializing IntegratorDefault" << std::endl;
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
     *out << "Calling setStepper..." << std::endl;
   }
-  setStepper(stepper,0.0);
+  setStepper(stepper,0.0,BREAK_POINT_TYPE_HARD);
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
     *out << "Calling setInterpolationBuffer..." << std::endl;
   }
-  setInterpolationBuffer(trailingInterpBuffer);
+  setTrailingInterpolationBuffer(trailingInterpBuffer);
+  initialize_();
 }
 
+template<class Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > IntegratorDefault<Scalar>::get_x_space() const
+{
+  if (!isInitialized_) { 
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > space;
+    return(space);
+  }
+  return(stepper_->get_x_space());
+}
 
 template<class Scalar>
-void IntegratorDefault<Scalar>::setInterpolationBuffer(
+void IntegratorDefault<Scalar>::initialize_()
+{
+  TEST_FOR_EXCEPTION(
+      stepper_ == Teuchos::null, std::logic_error,
+      "Error, Attempting to intialize integrator without setting a stepper!\n"
+      );
+  TEST_FOR_EXCEPTION(
+      trailingInterpBuffer_ == Teuchos::null, std::logic_error,
+      "Error, Attempting to intialize integrator without setting an interpolation buffer!\n"
+      );
+  if (paramList_ == Teuchos::null) {
+    Teuchos::RCP<Teuchos::ParameterList> params;
+    setParameterList(params);
+  }
+  if (interpolationBufferAppender_ == Teuchos::null) {
+    Teuchos::RCP<InterpolationBufferAppenderDefault<Scalar> > 
+      defaultInterpolationBufferAppender = Teuchos::rcp(new InterpolationBufferAppenderDefault<Scalar>);
+    interpolationBufferAppender_ = defaultInterpolationBufferAppender;
+  }
+  isInitialized_ = true;
+}
+
+template<class Scalar>
+void IntegratorDefault<Scalar>::setTrailingInterpolationBuffer(
   const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
   )
 {
+#ifdef TEUCHOS_DEBUG
+  // Check preconditions:
+  TEST_FOR_EXCEPTION(trailingInterpBuffer == Teuchos::null,std::logic_error,"Error, trailingInterpBuffer == Teuchos::null!\n");
+  if (stepper_ != Teuchos::null) {
+    TEST_FOR_EXCEPTION(
+        trailingInterpBuffer->getTimeRange().upper() != stepper_->getTimeRange().lower(),
+        std::logic_error,
+        "Error, specified interpolation buffer's upper time range = " <<
+          trailingInterpBuffer->getTimeRange().upper() << 
+          " does not match internal stepper's lower time range = " <<
+          stepper_->getTimeRange().lower() << "!\n"
+        );
+  }
+#endif // TEUCHOS_DEBUG
   using Teuchos::as;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  // 10/9/06 tscoffe: What should we do if this is called after
-  // initialization?  Basically, you're swapping out the history for a new
-  // one.  This could be the result of upgrading or downgrading the accuracy
-  // of the buffer, or something I haven't thought of yet.  Since
-  // trailingInterpBuffer_'s node_vec is checked each time getPoints is
-  // called, this should be fine.  And the time values in
-  // trailingInterpBuffer_ need not be synchronized with stepper_.  Note also:
-  // this functionality is important for checkpointing.
   trailingInterpBuffer_ = trailingInterpBuffer;
-  Teuchos::OSTab ostab(out,1,"IBAS::setInterpolationBuffer");
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::setInterpolationBuffer");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "trailingInterpBuffer_ = " << trailingInterpBuffer_->description() << std::endl;
   }
+  if (stepper_ != Teuchos::null) {
+    initialize_();
+  }
 }
 
+template<class Scalar>
+bool IntegratorDefault<Scalar>::acceptsTrailingInterpolationBuffer() const
+{
+  return(true);
+}
 
 template<class Scalar>
 void IntegratorDefault<Scalar>::setStepper(
   const Teuchos::RCP<StepperBase<Scalar> > &stepper,
-  const Scalar &finalTime
+  const Scalar &finalTime,
+  const bool landOnFinalTime // Not using this yet!
   )
+{
+#ifdef TEUCHOS_DEBUG
+  // Check preconditions:
+  TEST_FOR_EXCEPTION(stepper == Teuchos::null, std::logic_error, "Error, steppeer == Teuchos::null!\n");
+  if (trailingInterpBuffer_ != Teuchos::null) {
+    TEST_FOR_EXCEPTION(
+        trailingInterpBuffer_->getTimeRange().upper() != stepper->getTimeRange().lower(),
+        std::logic_error,
+        "Error, specified stepper's lower time range = " <<
+          stepper->getTimeRange().lower() <<
+          " does not match internal trailing interpolation buffer's upper time range = " <<
+          trailingInterpBuffer_->getTimeRange().upper() << "!\n"
+        );
+  }
+#endif // TEUCHOS_DEBUG
+  using Teuchos::as;
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  stepper_ = stepper;
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::setStepper");
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "stepper_ = " << stepper_->description() << std::endl;
+  }
+  if (trailingInterpBuffer_ != Teuchos::null) {
+    initialize_();
+  }
+}
+
+template<class Scalar>
+Teuchos::RCP<StepperBase<Scalar> > IntegratorDefault<Scalar>::unSetStepper()
+{
+  Teuchos::RCP<StepperBase<Scalar> > stepper_old = stepper_;
+  stepper_ = Teuchos::null;
+  isInitialized_ = false;
+  return(stepper_old);
+}
+
+template<class Scalar>
+void IntegratorDefault<Scalar>::setBreakPointInformer(
+    Teuchos::RCP<BreakPointInformerBase<Scalar> >& breakPointInformer
+    )
+{
+  breakPointInformer_ = breakPointInformer;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const BreakPointInformerBase<Scalar> > IntegratorDefault<Scalar>::getBreakPointInformer()
+{
+  return(breakPointInformer_);
+}
+
+
+template<class Scalar>
+Teuchos::RCP<BreakPointInformerBase<Scalar> > IntegratorDefault<Scalar>::unSetBreakPointInformer()
+{
+  Teuchos::RCP<BreakPointInformerBase<Scalar> > breakPointInformer_old = breakPointInformer_;
+  breakPointInformer_ = Teuchos::null;
+  return(breakPointInformer_old);
+}
+
+template<class Scalar>
+Teuchos::RCP<const Rythmos::StepperBase<Scalar> > IntegratorDefault<Scalar>::getStepper() const
+{
+  return(stepper_);
+}
+
+template<class Scalar>
+Teuchos::RCP<const InterpolationBufferBase<Scalar> > IntegratorDefault<Scalar>::getInterpolationBuffer()
+{
+  return(trailingInterpBuffer_);
+}
+
+template<class Scalar>
+Teuchos::RCP<InterpolationBufferBase<Scalar> > IntegratorDefault<Scalar>::unSetInterpolationBuffer()
+{
+  Teuchos::RCP<InterpolationBufferBase<Scalar> > interpolationBuffer_old = trailingInterpBuffer_;
+  trailingInterpBuffer_ = Teuchos::null;
+  isInitialized_ = false;
+  return(interpolationBuffer_old);
+}
+
+template<class Scalar>
+void IntegratorDefault<Scalar>::setInterpolationBufferAppender(
+    const Teuchos::RCP<InterpolationBufferAppenderBase<Scalar> > &interpolationBufferAppender
+    )
 {
   using Teuchos::as;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  // 10/9/06 tscoffe: What should we do if this is called after
-  // initialization?  Basically, you're swapping out the stepper for a new
-  // one.  Since we're copying the data into trailingInterpBuffer_ after each
-  // stepper_->takeStep() call, this should be fine, and it will essentially
-  // result in changing the stepper_ mid-stream.  If the new stepper_ has a
-  // time value before the end of the data in trailingInterpBuffer_, then you
-  // will not get new stepper_ data until you ask for time values after the
-  // end of trailingInterpBuffer_'s data.  And then the stepper_ will walk
-  // forward inserting new (potentially inconsistent) data into
-  // trailingInterpBuffer_ until it can give you the time values you asked
-  // for.  Then trailingInterpBuffer_ will potentially have old and new data
-  // in it.  On the other hand, if you swap out the stepper_ and the time
-  // value is synchronized with the old stepper_, then you will essentially
-  // change the integrator mid-stream and everything should proceed without
-  // problems.  Note also: this functionality is important for checkpointing.
-  stepper_ = stepper;
-  Teuchos::OSTab ostab(out,1,"IBAS::setStepper");
+  interpolationBufferAppender_ = interpolationBufferAppender;
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::setiInterpolationBufferAppender");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "stepper_ = " << stepper_->description() << std::endl;
+    *out << "interpolationBufferAppender_ = " << interpolationBufferAppender_->description() << std::endl;
   }
 }
 
+template<class Scalar>
+Teuchos::RCP<const InterpolationBufferAppenderBase<Scalar> > IntegratorDefault<Scalar>::getInterpolationBufferAppender()
+{
+  return(interpolationBufferAppender_);
+}
+
+template<class Scalar>
+Teuchos::RCP<InterpolationBufferAppenderBase<Scalar> > IntegratorDefault<Scalar>::unSetInterpolationBufferAppender()
+{
+  Teuchos::RCP<InterpolationBufferAppenderBase<Scalar> > interpolationBufferAppender_old = interpolationBufferAppender_;
+  interpolationBufferAppender_ = Teuchos::null;
+  isInitialized_ = false;
+  return(interpolationBufferAppender_old);
+}
+
+template<class Scalar>
+void IntegratorDefault<Scalar>::setObserver(Teuchos::RCP<IntegrationObserverBase<Scalar> >& observer)
+{
+  observer_ = observer;
+}
+
+template<class Scalar>
+Teuchos::RCP<const IntegrationObserverBase<Scalar> > IntegratorDefault<Scalar>::getObserver()
+{
+  return(observer_);
+}
+
+template<class Scalar>
+Teuchos::RCP<IntegrationObserverBase<Scalar> > IntegratorDefault<Scalar>::unSetObserver()
+{
+  Teuchos::RCP<IntegrationObserverBase<Scalar> > observer_old = observer_;
+  observer_ = Teuchos::null;
+  return(observer_old);
+}
+  
 
 // Overridden from InterpolationBufferBase
 
 
 template<class Scalar>
-bool IntegratorDefault<Scalar>::setPoints(
+void IntegratorDefault<Scalar>::addPoints(
   const Array<Scalar>& time_vec
   ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
   ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-  ,const Array<ScalarMag> & accuracy_vec 
   ) 
 {
-  return(trailingInterpBuffer_->setPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
+  TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "Error, addPoints is not defined for IntegratorDefault.\n"
+      );
 }
 
 
 template<class Scalar>
-bool IntegratorDefault<Scalar>::getPoints(
+void IntegratorDefault<Scalar>::getPoints(
   const Array<Scalar>& time_vec,
   Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec_in,
   Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec_in,
   Array<ScalarMag>* accuracy_vec_in
   ) const
 {
+  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attemping to call getPoints (const) before initialization.\n");
+#ifdef TEUCHOS_DEBUG
+  // check preconditions:
+  for (int i=0; i<Teuchos::as<int>(time_vec.size()) ; ++i) {
+    TEST_FOR_EXCEPTION(
+        ~(trailingInterpBuffer_->getTimeRange().isInRange(time_vec[i]) || stepper_->getTimeRange().isInRange(time_vec[i])),
+        std::logic_error,
+        "Error, time_vec[" << i << "] is not in TimeRange of trailing interpolation buffer = [" <<
+          trailingInterpBuffer_->getTimeRange().lower() << "," <<
+          trailingInterpBuffer_->getTimeRange().upper() << "] nor in TimeRange of stepper = [" << 
+          stepper_->getTimeRange().lower() << "," << stepper_->getTimeRange().upper() << "]!\n"
+        );
+  }
+#endif // TEUCHOS_DEBUG
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"IBAS::getPoints");
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::getPoints");
 
   // Dump the input
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
-    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
+    for (int i=0 ; i<Teuchos::as<int>(time_vec.size()) ; ++i) {
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     }
     if (x_vec_in == NULL) {
@@ -326,7 +557,7 @@ bool IntegratorDefault<Scalar>::getPoints(
     }
     else {
       *out << "x_vec_in = " << std::endl;
-      for (unsigned int i=0 ; i<x_vec_in->size() ; ++i) {
+      for (int i=0 ; i<Teuchos::as<int>(x_vec_in->size()) ; ++i) {
         *out << "x_vec[" << i << "] = " << std::endl;
         (*x_vec_in)[i]->describe(*out,Teuchos::VERB_EXTREME);
       }
@@ -339,7 +570,7 @@ bool IntegratorDefault<Scalar>::getPoints(
     }
     else {
       *out << "xdot_vec = " << std::endl;
-      for (unsigned int i=0 ; i<xdot_vec_in->size() ; ++i) {
+      for (int i=0 ; i<Teuchos::as<int>(xdot_vec_in->size()) ; ++i) {
         if ((*xdot_vec_in)[i] == Teuchos::null) {
           *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
         } else {
@@ -356,379 +587,111 @@ bool IntegratorDefault<Scalar>::getPoints(
     }
     else {
       *out << "accuracy_vec = " << std::endl;
-      for (unsigned int i=0 ; i<accuracy_vec_in->size() ; ++i) {
+      for (int i=0 ; i<Teuchos::as<int>(accuracy_vec_in->size()) ; ++i) {
         *out << "accuracy_vec[" << i << "] = " << (*accuracy_vec_in)[i] << std::endl;
       }
     }
   }
 
-  // See if all of the time points are in the trailing interpolation buffer
-  // and return them if they are
+  Array<Scalar> time_vec_local = time_vec;
 
-  bool status = trailingInterpBuffer_->getPoints(
-    time_vec,x_vec_in,xdot_vec_in,accuracy_vec_in );
-  if (status) {
-    return(status); 
-  }
-  status = true;
+  // First we get points from the stepper_.
+  Array<Scalar> stepper_time_vec;
+  Array<RCP<const Thyra::VectorBase<Scalar> > > stepper_x_vec, stepper_xdot_vec;
+  Array<ScalarMag> stepper_accuracy_vec;
 
-  // All of the time points where not in the trailing interpolation buffer so
-  // we have to get some from perhaps the stepper too.
+  selectPointsInTimeRange<Scalar>(&stepper_time_vec,time_vec_local,stepper_->getTimeRange());
+  removePointsInTimeRange<Scalar>(&time_vec_local,stepper_->getTimeRange());
+  stepper_->getPoints(
+      stepper_time_vec, 
+      &stepper_x_vec, 
+      &stepper_xdot_vec, 
+      &stepper_accuracy_vec
+      );
+  typename DataStore<Scalar>::DataStoreVector_t stepper_dsv;
+  vectorToDataStoreVector(
+      stepper_time_vec, 
+      stepper_x_vec, 
+      stepper_xdot_vec, 
+      stepper_accuracy_vec, 
+      &stepper_dsv
+      );
+  
+  // Next we get points from the trailingInterpBuffer_
+  Array<Scalar> IB_time_vec;
+  Array<RCP<const Thyra::VectorBase<Scalar> > > IB_x_vec, IB_xdot_vec;
+  Array<ScalarMag> IB_accuracy_vec;
 
-  x_vec_in->clear();
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "trailingInterpBuffer_->getPoints unsuccessful" << std::endl;
-  }
+  selectPointsInTimeRange<Scalar>(&IB_time_vec,time_vec_local,trailingInterpBuffer_->getTimeRange());
+  removePointsInTimeRange<Scalar>(&time_vec_local,trailingInterpBuffer_->getTimeRange());
+  trailingInterpBuffer_->getPoints(
+      IB_time_vec, 
+      &IB_x_vec, 
+      &IB_xdot_vec, 
+      &IB_accuracy_vec
+      );
+  typename DataStore<Scalar>::DataStoreVector_t IB_dsv;
+  vectorToDataStoreVector(
+      IB_time_vec, 
+      IB_x_vec, 
+      IB_xdot_vec, 
+      IB_accuracy_vec, 
+      &IB_dsv
+      );
 
-  TEST_FOR_EXCEPT(0 == x_vec_in);
-  TEST_FOR_EXCEPT(0 == xdot_vec_in);
-  TEST_FOR_EXCEPT(0 == accuracy_vec_in);
-  // 2007/06/08: rabartl: ToDo: This code should be updated to allow any and
-  // all of these pointers to be null in which case the will be ignored.
+  TEST_FOR_EXCEPTION(
+      time_vec_local.size() != 0, std::logic_error,
+      "Error, there are " << time_vec_local.size() << 
+      " points in time_vec that were not found in either the stepper_ or the trailingInterpBuffer_!\n"
+      );
 
-  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_in;
-  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_in;
-  Array<ScalarMag> &accuracy_vec = *accuracy_vec_in;
-
-  // Sort time_vec
-  Array<Scalar> local_time_vec = time_vec;
-  std::sort(local_time_vec.begin(),local_time_vec.end());
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "sorted local time_vec:" << std::endl;
-    for (unsigned int i=0 ; i<local_time_vec.size() ; ++i) {
-      *out << "local_time_vec[" << i << "] = " << local_time_vec[i] << std::endl;
-    }
-  }
-
-  // Get nodes out of trailingInterpBuffer_:
-
-  Array<Scalar> node_vec; 
-  status = trailingInterpBuffer_->getNodes(&node_vec); 
-  if (!status) {
-    return(status);
-  }
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    if (node_vec.size() == 0) {
-      *out << "trailingInterpBuffer_->getNodes: node_vec = empty vector" << std::endl;
-    }
-    else {
-      *out << "trailingInterpBuffer_->getNodes:" << std::endl;
-      for (unsigned int i=0 ; i<node_vec.size() ; ++i) {
-        *out << "node_vec[" << i << "] = " << node_vec[i] << std::endl;
-      }
-    }
-  }
-  if (node_vec.size() == 0) {
-    // Initialization case for an empty InterpolationBuffer
-    Array<Scalar> stepper_vec;
-    status = stepper_->getNodes(&stepper_vec);
-    if (!status) {
-      return(status);
-    }
-    if (stepper_vec.size() < 2) {
-      // Stepper and trailingInterpBuffer_ are basically empty
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "Initializing empty Stepper and InterpolationBuffer" << std::endl;
-      }
-      Scalar step_taken;
-      if (takeVariableSteps_) {
-        step_taken = stepper_->takeStep(ST::zero(),VARIABLE_STEP);
-      } 
-      else {
-        step_taken = stepper_->takeStep(fixed_dt_,FIXED_STEP);
-      }
-      // Pass information from stepper_ to trailingInterpBuffer_:
-      status = stepper_->getNodes(&stepper_vec);
-      if (!status) {
-        return(status);
-      }
-      Scalar stepper_begin = stepper_vec.front();
-      Scalar stepper_end = stepper_vec.back();
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "stepper_begin = " << stepper_begin << std::endl;
-        *out << "stepper_end = " << stepper_end << std::endl;
-      }
-      status = trailingInterpBuffer_->setRange(timeRange(stepper_begin,stepper_end),*stepper_);
-      if (!status) {
-        return(status);
-      }
-      status = trailingInterpBuffer_->getNodes(&node_vec);
-      if (!status) {
-        return(status);
-      }
-    }
-    else {
-      // Just the trailingInterpBuffer_ is empty
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "Initializing empty InterpolationBuffer" << std::endl;
-      }
-      Array<Scalar> stepper_vec;
-      status = stepper_->getNodes(&stepper_vec);
-      if (!status) {
-        return(status);
-      }
-      Scalar stepper_begin = stepper_vec.front();
-      Scalar stepper_end = stepper_vec.back();
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "stepper_begin = " << stepper_begin << std::endl;
-        *out << "stepper_end = " << stepper_end << std::endl;
-      }
-      status = trailingInterpBuffer_->setRange(timeRange(stepper_begin,stepper_end),*stepper_);
-      if (!status) {
-        return(status);
-      }
-      status = trailingInterpBuffer_->getNodes(&node_vec);
-      if (!status) {
-        return(status);
-      }
-    }
-  }
-  Scalar node_begin = node_vec.front();
-  Scalar node_end = node_vec.back();
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "node_begin = " << node_begin << std::endl;
-    *out << "node_end = " << node_end << std::endl;
+  int IB_N = IB_dsv.size();
+  for (int i=0 ; i < IB_N ; ++i) {
+    stepper_dsv.push_back(IB_dsv[i]);
   }
 
-  // Check for valid input of local_time_vec:  (check initialization conditions)
-  if ((*(local_time_vec.end()) < node_vec[0]) || (*(local_time_vec.begin()) < node_vec[0])) {
-    return(false);
-  }
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "Requested times are valid." << std::endl;
-  }
+  std::sort(stepper_dsv.begin(),stepper_dsv.end());
 
-  // Get time out of stepper_:
-  Array<Scalar> stepper_vec;
-  status = stepper_->getNodes(&stepper_vec);
-  if (!status) {
-    return(status);
-  }
-  if (stepper_vec.size() < 2) {
-    // Initialization case for an empty Stepper
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Initializing empty Stepper" << std::endl;
-    }
-    Scalar stepper_begin = *(stepper_vec.begin()); // There must be an IC in the stepper_.
-    Scalar step_taken;
-    if (takeVariableSteps_) {
-      step_taken = stepper_->takeStep(ST::zero(),VARIABLE_STEP);
-    }
-    else {
-      step_taken = stepper_->takeStep(fixed_dt_,FIXED_STEP);
-    }
-    status = stepper_->getNodes(&stepper_vec);
-    if (!status) {
-      return(status);
-    }
-    // Pass information from stepper_ to trailingInterpBuffer_:
-    status = trailingInterpBuffer_->setRange(timeRange(stepper_begin,stepper_begin+step_taken),*stepper_);
-    if (!status) { 
-      return(status);
-    }
-    status = trailingInterpBuffer_->getNodes(&node_vec); 
-    if (!status) { 
-      return(status);
-    }
-    node_begin = node_vec[0];
-    node_end = node_vec[node_vec.size()-1];
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "node_begin = " << node_begin << std::endl;
-      *out << "node_end = " << node_end << std::endl;
-    }
-  }
-  Scalar stepper_begin = stepper_vec[0];
-  Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "stepper_begin = " << stepper_begin << std::endl;
-    *out << "stepper_end = " << stepper_end << std::endl;
-  }
-  int num = local_time_vec.size();
-  for (int i=0; i<num ; ++i) {
-    if ( ( node_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= node_end ) ) {
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "Requested local_time_vec[" << i << "] = " << 
-          local_time_vec[i] << " available in trailingInterpBuffer_[" << 
-          node_begin << "," << node_end << "]" << std::endl;
-      }
-      Array<Scalar> tmp_time_vec; 
-      tmp_time_vec.clear();
-      tmp_time_vec.push_back(local_time_vec[i]);
-      Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
-      Array<ScalarMag> tmp_accuracy_vec;
-      status = trailingInterpBuffer_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
-      x_vec.push_back(tmp_x_vec[0]);
-      xdot_vec.push_back(tmp_xdot_vec[0]);
-      accuracy_vec.push_back(tmp_accuracy_vec[0]);
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "trailingInterpBuffer_->getPoints returned:" << std::endl;
-        *out << "tmp_x_vec = " << std::endl;
-        tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
-        if (tmp_xdot_vec[0] == Teuchos::null) {
-          *out << "tmp_xdot_vec = Teuchos::null" << std::endl;
-        } else {
-          *out << "tmp_xdot_vec = " << std::endl;
-          tmp_xdot_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
-        }
-        *out << "tmp_accuracy_vec = " << accuracy_vec[0] << std::endl;
-      }
-      if (!status) { 
-        return(status);
-      }
-    }
-    else if ( ( stepper_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= stepper_end ) ) {
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "Requested local_time_vec[" << i << "] = " << 
-          local_time_vec[i] << " available in stepper_[" << 
-          stepper_begin << "," << stepper_end << "]" << std::endl;
-      }
-      Array<Scalar> tmp_time_vec; 
-      tmp_time_vec.push_back(local_time_vec[i]);
-      Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
-      Array<ScalarMag> tmp_accuracy_vec;
-      status = stepper_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
-      x_vec.push_back(tmp_x_vec[0]);
-      xdot_vec.push_back(tmp_xdot_vec[0]);
-      accuracy_vec.push_back(tmp_accuracy_vec[0]);
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "stepper_->getPoints returned:" << std::endl;
-        *out << "tmp_x_vec = " << std::endl;
-        tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
-        if (tmp_xdot_vec[0] == Teuchos::null) {
-          *out << "tmp_xdot_vec = Teuchos::null" << std::endl;
-        } else {
-          *out << "tmp_xdot_vec = " << std::endl;
-          tmp_xdot_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
-        }
-        *out << "tmp_accuracy_vec = " << tmp_accuracy_vec[0] << std::endl;
-      }
-      if (!status) { 
-        return(status);
-      }
-    }
-    else {
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "Requested local_time_vec[" << i << "] = " <<
-          local_time_vec[i] << " not available in trailingInterpBuffer_ or stepper_" << std::endl;
-        *out << "Integrating forward with stepper_" << std::endl;
-      }
-      int num_local_steps_taken = 0;
-      while (stepper_end < local_time_vec[i]) {
-        // integrate forward with stepper_ 
-        Scalar step_taken;
-        if (takeVariableSteps_) {
-          step_taken = stepper_->takeStep(ST::zero(),VARIABLE_STEP);
-        }
-        else {
-          step_taken = stepper_->takeStep(fixed_dt_,FIXED_STEP);
-        }
-        num_local_steps_taken++;
-        if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) ) {
-          *out << "Took step of size " << step_taken << " with stepper_" << std::endl;
-        }
-        // Pass information from stepper_ to trailingInterpBuffer_:
-        status = trailingInterpBuffer_->setRange(timeRange(stepper_end+step_taken,stepper_end+step_taken),*stepper_);
-        if (!status) { 
-          return(status);
-        }
-        // Check to see if we're past the current requested local_time_vec[i] point:
-        if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-          *out << "Checking to see if we're past the current requested time" << std::endl;
-          *out << "local_time_vec[" << i << "] = " << local_time_vec[i] 
-               << " <= " << stepper_end+step_taken << " stepper_end+step_taken" << std::endl;
-        }
-        if (local_time_vec[i] <= stepper_end+step_taken) {
-          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-            *out << "We've integrated past local_time_vec[" << i << "] = " 
-                 << local_time_vec[i] << "!" << std::endl;
-          }
-          Array<Scalar> tmp_time_vec;
-          tmp_time_vec.push_back(local_time_vec[i]);
-          Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
-          Array<ScalarMag> tmp_accuracy_vec;
-          status = stepper_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
-          x_vec.push_back(tmp_x_vec[0]);
-          xdot_vec.push_back(tmp_xdot_vec[0]);
-          accuracy_vec.push_back(tmp_accuracy_vec[0]);
-          if (!status) { 
-            return(status);
-          }
-        }
-        // Update end-points:
-        node_end += step_taken;
-        stepper_begin = stepper_end;
-        stepper_end += step_taken;
-      }
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
-        *out << "Took " << num_local_steps_taken << " steps with " << stepper_->description() << std::endl;
-      }
-    }
-  }
-  return(status);
+  Array<Scalar> time_vec_out;
+  dataStoreVectorToVector(
+      stepper_dsv,
+      &time_vec_out,
+      x_vec_in,
+      xdot_vec_in,
+      accuracy_vec_in
+      );
+
+  TEST_FOR_EXCEPTION(
+     time_vec.size() != time_vec_out.size(),
+     std::logic_error,
+     "Error, number of output points = " << 
+       time_vec_out.size()  << " != " << 
+       time_vec.size() << " = number of time point requested!\n"
+     ); 
 }
-
-// 2007/06/08: rabartl: ToDo: The above function getPoints(...) is way to long
-// and too complicated.  I have not looked at it carefully enough but there
-// must be some opportunities to resuse some intermediate code and to make
-// this look cleaner.  In my opinion, this is how this routine should be
-// written:
-//
-// 1) Sort the time points (or require the user to sort the time points and
-// then check for this).
-//
-// 2) If any time points fall before the storage given in
-// trailingInterpBuffer, then thrown an exception.
-//
-// 3) Any points that fall in the time range of the trailingInterpBuffer are
-// first gotten.
-//
-// 4) An time points that fall in the current range of the stepper are gotten
-//
-// 5) Any points that fall before the current storage of the stepper are
-// gotten, from lowest to largest, as the stepper is advanced.
-//
-// Given the above algorithm, we can satisfy any time_vec request when the
-// stepper is just starting out.
-
-
-template<class Scalar>
-bool IntegratorDefault<Scalar>::setRange(
-  const TimeRange<Scalar>& range,
-  const InterpolationBufferBase<Scalar> & interpBuffer
-  )
-{
-  using Teuchos::as;
-  const Scalar time_lower = range.lower();
-  const Scalar time_upper = range.upper();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"IBAS::setRange");
-  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "time_lower = " << time_lower << std::endl;
-    *out << "time_upper = " << time_upper << std::endl;
-    *out << "interpBuffer_ = " << interpBuffer.description() << std::endl;
-  }
-  return(trailingInterpBuffer_->setRange(timeRange(time_lower,time_upper),interpBuffer));
-}
-
 
 template<class Scalar>
 TimeRange<Scalar> IntegratorDefault<Scalar>::getTimeRange() const
 {
-  TEST_FOR_EXCEPT("ToDo: Implement this!");
-  return invalidTimeRange<Scalar>(); // ToDo: Fill in this range, I know you have one!
+  if (!isInitialized_) {
+    TimeRange<Scalar> range; // return invalid time range
+    return(range);
+  }
+  TimeRange<Scalar> timerange(trailingInterpBuffer_->getTimeRange().lower(),stepper_->getTimeRange().upper());
+  return(timerange);
 }
 
 
 template<class Scalar>
-bool IntegratorDefault<Scalar>::getNodes(
+void IntegratorDefault<Scalar>::getNodes(
   Array<Scalar>* time_vec
   ) const
 {
+  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call getNodes before initialized!\n");
   using Teuchos::as;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"IBAS::getNodes");
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::getNodes");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
   }
@@ -737,10 +700,11 @@ bool IntegratorDefault<Scalar>::getNodes(
 
 
 template<class Scalar>
-bool IntegratorDefault<Scalar>::removeNodes(
+void IntegratorDefault<Scalar>::removeNodes(
   Array<Scalar>& time_vec
   ) 
 {
+  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call removeNodes before initialized!\n");
   return(trailingInterpBuffer_->removeNodes(time_vec));
 }
 
@@ -748,6 +712,7 @@ bool IntegratorDefault<Scalar>::removeNodes(
 template<class Scalar>
 int IntegratorDefault<Scalar>::getOrder() const
 {
+  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call getOrder before initialized!\n");
   return(trailingInterpBuffer_->getOrder());
 }
 
@@ -782,18 +747,31 @@ void IntegratorDefault<Scalar>::describe(
 
   if (printSomething) {
     out << "trailing interpolation buffer = ";
-    if (!is_null(trailingInterpBuffer_))
+    if (!is_null(trailingInterpBuffer_)) {
       out << describe(*trailingInterpBuffer_,verbLevel);
-    else
+    } else {
       out << "NULL\n";
+    }
     out << "stepper = ";
-    if (!is_null(stepper_))
+    if (!is_null(stepper_)) {
       out << describe(*stepper_,verbLevel);
-    else
+    } else {
       out << "NULL\n";
+    }
+    out << "interpolationBufferAppender = ";
+    if (!is_null(interpolationBufferAppender_)) {
+      out << describe(*interpolationBufferAppender_,verbLevel);
+    } else {
+      out << "NULL\n";
+    }
   }
+  out << "paramList = ";
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM)) {
-    out << "paramList_ = " << paramList_->print(out);
+    if (!is_null(paramList_)) {
+      out << paramList_->print(out);
+    } else {
+      out << "NULL\n";
+    }
   }
   
 }
@@ -815,7 +793,7 @@ void IntegratorDefault<Scalar>::setParameterList(
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"IBAS::setParameterList");
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::setParameterList");
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "paramList = " << paramList->print(*out) << std::endl;
@@ -825,7 +803,8 @@ void IntegratorDefault<Scalar>::setParameterList(
   paramList_ = paramList;
 
   takeVariableSteps_ = get<bool>(*paramList_,"Take Variable Steps");
-  fixed_dt_ = get<double>(*paramList_,"fixed_dt");
+  fixed_dt_ = get<Scalar>(*paramList_,"fixed_dt");
+  finalTime_ = get<Scalar>(*paramList_,"Final Time");
 
   TEST_FOR_EXCEPTION(
     !takeVariableSteps_ && fixed_dt_ <= ST::zero(),
@@ -879,28 +858,148 @@ IntegratorDefault<Scalar>::getValidParameters() const
       "fixed_dt", Scalar(-1.0),
       "If fixed steps are being taken, then this is the step size."
       );
+    pl->set(
+      "Final Time", Scalar(0.0),
+      "This specifies the final time to which the integrator will integrate.\n"
+      );
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
   return (validPL);
 }
 
+/* 08/13/07 tscoffe:  To simplify getPoints and allow the time points to be
+ * unsorted & to come from current values and forward values, I can write a
+ * helper function to do all of this.
+ */
 template <class Scalar>
-bool IntegratorDefault<Scalar>::getFwdPoints(
+void IntegratorDefault<Scalar>::getFwdPoints(
     const Array<Scalar>& time_vec,
     Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
     Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     Array<ScalarMag>* accuracy_vec
     )
 {
-  return(false);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (!isInitialized_) {
+    initialize_();
+  }
+#ifdef TEUCHOS_DEBUG
+  // Check preconditions:
+  for (int i=0 ; i<Teuchos::as<int>(time_vec.size()) ; ++i) { 
+    TEST_FOR_EXCEPTION(
+        isInRange_oc(this->getFwdTimeRange(),time_vec[i]),
+        std::logic_error,
+        "Error, time_vec[" << i << "] = " << time_vec[i] << 
+          " is not in this->getFwdTimeRange:  (" << 
+          this->getFwdTimeRange().lower() << "," <<
+          this->getFwdTimeRange().upper() << "]!\n"
+        );
+  }
+  // Check that time_vec is sorted:
+  assertTimePointsAreSorted(time_vec);
+#endif // TEUCHOS_DEBUG
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"IntegratorDefault::getFwdPoints");
+
+  Array<Scalar> time_vec_local = time_vec;
+  Array<Scalar> temp_time_vec;
+  
+  // First we use this->getPoints to recover points in the trailingInterpBuffer_ and the stepper_.
+  selectPointsInTimeRange<Scalar>(&temp_time_vec,time_vec_local,this->getTimeRange());
+  removePointsInTimeRange<Scalar>(&time_vec_local,this->getTimeRange());
+  this->getPoints(
+      temp_time_vec, 
+      x_vec, 
+      xdot_vec, 
+      accuracy_vec
+      );
+   
+  // Then we integrate forward for new points
+  
+  // Assumptions:
+  // stepper_ has initial condition and is ready to take steps.
+  // trailingInterpBuffer_ is initialized and is ready for points to be imported to it from stepper_.
+  //
+  // 08/13/07 tscoffe:  Question:  We're getting RCPs from the Stepper here and
+  // stuffing them into the trailing interpolation buffer, what if the stepper
+  // decides to re-use the vector sitting bethind the RCP?  It will corrupt the
+  // data in the trailing interpolation buffer.  Oof.
+  // This is okay for ImplicitBDFStepper, but we need to define this behavior
+  // at the StepperBase level.  TODO
+
+  RCP<Array<RCP<const Thyra::VectorBase<Scalar> > > > local_x_vec, local_xdot_vec;
+  RCP<Array<ScalarMag> > local_accuracy_vec;
+
+  if (x_vec == 0) { 
+    local_x_vec = Teuchos::null; 
+  } else {
+    local_x_vec = rcp(new Array<RCP<const Thyra::VectorBase<Scalar> > >());
+  }
+  if (xdot_vec == 0) { 
+    local_xdot_vec = Teuchos::null; 
+  } else {
+    local_xdot_vec = rcp(new Array<RCP<const Thyra::VectorBase<Scalar> > >());
+  }
+  if (accuracy_vec == 0) { 
+    local_accuracy_vec = Teuchos::null; 
+  } else {
+    local_accuracy_vec = rcp(new Array<ScalarMag>());
+  }
+
+  for (int i=0 ; i<Teuchos::as<int>(time_vec_local.size()) ; ++i) {
+    // 08/13/07 tscoffe:  we're going to grab points one at a time from the stepper.
+
+    while (!(stepper_->getTimeRange().isInRange(time_vec_local[i]))) {
+      if (takeVariableSteps_) {
+        Scalar step_taken = stepper_->takeStep(ST::zero(),STEP_TYPE_VARIABLE);
+        if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+          *out << "step_taken = " << step_taken << std::endl;
+        }
+      } 
+      else {
+        Scalar step_taken = stepper_->takeStep(fixed_dt_,STEP_TYPE_FIXED);
+        if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+          *out << "step_taken = " << step_taken << std::endl;
+        }
+      }
+      interpolationBufferAppender_->import(&*trailingInterpBuffer_,*stepper_,stepper_->getTimeRange());
+      // After we've stepped forward & transfered the data into the trailing interpolation buffer, call the observer.
+      if (observer_ != Teuchos::null)
+      {
+        TEST_FOR_EXCEPT(true); // ToDo: Call the new interface!
+        //observer_->notify(*stepper_);
+      } 
+    }
+    Array<Scalar> temp_time_vec;
+    temp_time_vec.push_back(time_vec_local[i]);
+
+    stepper_->getPoints(temp_time_vec,&*local_x_vec,&*local_xdot_vec,&*local_accuracy_vec);
+
+    if (x_vec) {
+      x_vec->push_back((*local_x_vec)[0]);
+    }
+    if (xdot_vec) {
+      xdot_vec->push_back((*local_xdot_vec)[0]);
+    }
+    if (accuracy_vec) {
+      accuracy_vec->push_back((*local_accuracy_vec)[0]);
+    }
+  }
+
 }
 
 template <class Scalar>
 TimeRange<Scalar> IntegratorDefault<Scalar>::getFwdTimeRange() const
 {
-  TEST_FOR_EXCEPT("ToDo: Implement this!");
-  return invalidTimeRange<Scalar>(); // ToDo: Fill in this range, I know you have one!
+  if (!isInitialized_) {
+    TimeRange<Scalar> range; // invalid time range.
+    return(range);
+  }
+  TimeRange<Scalar> timerange(trailingInterpBuffer_->getTimeRange().lower(),finalTime_);
+  return(timerange);
 }
 
 } // namespace Rythmos

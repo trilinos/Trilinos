@@ -241,20 +241,21 @@ private:
   // //////////////////////////////////////
   // Private types
 
-  typedef Teuchos::RCP<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  lowsf_fcty_t;
-  typedef Teuchos::RCP<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     pf_fcty_t;
+  typedef Teuchos::RCP<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > > lowsf_fcty_t;
+  typedef Teuchos::RCP<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > > pf_fcty_t;
 
   // //////////////////////////////////////
   // Private data members
   
-  Teuchos::RCP<Teuchos::ParameterList>                 paramList_;
-  mutable Teuchos::RCP<const Teuchos::ParameterList>   validParamList_;
-  Teuchos::Array<std::string>                                  validLowsfNames_;
-  Teuchos::Array<lowsf_fcty_t>                                 lowsfArray_;
-  std::string                                                  defaultLOWSF_;
-  Teuchos::Array<std::string>                                  validPfNames_; // Contains "None" as the 0th entry!
-  Teuchos::Array<pf_fcty_t>                                    pfArray_;
-  std::string                                                  defaultPF_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParamList_;
+  Teuchos::Array<std::string> validLowsfNames_;
+  Teuchos::Array<lowsf_fcty_t> lowsfArray_;
+  std::string defaultLOWSF_;
+  Teuchos::Array<std::string> validPfNames_; // Contains "None" as the 0th entry!
+  Teuchos::Array<pf_fcty_t> pfArray_;
+  std::string defaultPF_;
+  bool enableDelayedSolverConstruction_;
 
   // //////////////////////////////////////
   // Private member functions

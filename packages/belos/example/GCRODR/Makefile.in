@@ -252,6 +252,9 @@ GCRODREpetraExFile_CXXFLAGS = -I$(top_srcdir)/src
 GCRODRPrecEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 GCRODREpetraExFile_LDADD = $(EXPORT_LIBS)
 GCRODRPrecEpetraExFile_LDADD = $(EXPORT_LIBS)
+EXTRA_DIST = \
+        $(srcdir)/sherman5.hb
+
 all: all-am
 
 .SUFFIXES:
@@ -524,6 +527,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/sherman5.hb sherman5.hb; fi
 	cp  $(srcdir)/../BlockGmres/orsirr1.hb orsirr1.hb
 	cp  $(srcdir)/../BlockGmres/fidap036.hb fidap036.hb
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -29,12 +29,15 @@
 #ifndef THYRA_DEFAULT_MODEL_EVALUATOR_DELEGETOR_BASE_HPP
 #define THYRA_DEFAULT_MODEL_EVALUATOR_DELEGETOR_BASE_HPP
 
-#include "Thyra_ModelEvaluator.hpp"
+
+#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief This is a base class that delegetes almost all function to a
  * wrapped model evaluator object.
@@ -61,7 +64,9 @@ namespace Thyra {
  * <tt>getConstUnderlyingModel()</tt>, and <tt>getUnderlyingModel()</tt>.
  */
 template<class Scalar>
-class ModelEvaluatorDelegatorBase : virtual public ModelEvaluator<Scalar> {
+class ModelEvaluatorDelegatorBase
+  : virtual public ModelEvaluatorDefaultBase<Scalar>
+{
 public:
 
   /** \name Constructors/initializers */
@@ -82,12 +87,12 @@ public:
 
   /** \brief Initialize given a non-const model evaluator. */
   void initialize(
-    const RCP<ModelEvaluator<Scalar> >   &model
+    const RCP<ModelEvaluator<Scalar> > &model
     );
 
   /** \brief Initialize given a const model evaluator. */
   void initialize(
-    const RCP<const ModelEvaluator<Scalar> >   &model
+    const RCP<const ModelEvaluator<Scalar> > &model
     );
 
   /** \brief Uninitialize. */
@@ -113,10 +118,6 @@ public:
   //@{
 
   /** \brief . */
-  int Np() const;
-  /** \brief . */
-  int Ng() const;
-  /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
@@ -137,15 +138,7 @@ public:
   /** \brief . */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
-  /** \brief . */
-  RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
-  /** \brief . */
-  RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
-  /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -155,6 +148,9 @@ public:
   //@}
 
 protected:
+
+  /** \name Producted utility functions to be called by subclasses */
+  //@{
 
   /** \brief Set a valid parameter for reading the local verbosity level. */
   void setLocalVerbosityLevelValidatedParameter(
@@ -166,7 +162,27 @@ protected:
     ParameterList &paramList 
     ) const;
 
+  //@}
+
 private:
+
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase */
+  //@{
+
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DfDp_op_impl(int l) const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DgDx_dot_op_impl(int j) const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DgDx_op_impl(int j) const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_DgDp_op_impl( int j, int l ) const;
+  /** \brief . */
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+
+  //@}
+
+private: // Data members
 
   Teuchos::ConstNonconstObjectContainer<ModelEvaluator<Scalar> > model_;
 
@@ -279,10 +295,12 @@ ModelEvaluatorDelegatorBase<Scalar>::LocalVerbosityLevel_default_
 
 // Constructors/initializers
 
+
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase()
 {}
 
+
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
   const RCP<ModelEvaluator<Scalar> >   &model
@@ -290,6 +308,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
 {
   this->initialize(model);
 }
+
 
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
@@ -299,6 +318,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
   this->initialize(model);
 }
 
+
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::initialize(
   const RCP<ModelEvaluator<Scalar> >   &model
@@ -307,6 +327,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::initialize(
   model_.initialize(model);
 }
 
+
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::initialize(
   const RCP<const ModelEvaluator<Scalar> >   &model
@@ -314,6 +335,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::initialize(
 {
   model_.initialize(model);
 }
+
 
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::uninitialize()
@@ -321,13 +343,16 @@ void ModelEvaluatorDelegatorBase<Scalar>::uninitialize()
   model_.uninitialize();
 }
 
+
 // Virtual functions that can overriden
+
 
 template<class Scalar>
 bool ModelEvaluatorDelegatorBase<Scalar>::isUnderlyingModelConst() const
 {
   return model_.isConst();
 }
+
 
 template<class Scalar>
 RCP<ModelEvaluator<Scalar> >
@@ -336,6 +361,7 @@ ModelEvaluatorDelegatorBase<Scalar>::getNonconstUnderlyingModel()
   return model_.getNonconstObj();
 }
 
+
 template<class Scalar>
 RCP<const ModelEvaluator<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::getUnderlyingModel() const
@@ -343,19 +369,9 @@ ModelEvaluatorDelegatorBase<Scalar>::getUnderlyingModel() const
   return model_.getConstObj();
 }
 
+
 // Overridden from ModelEvaulator.
 
-template<class Scalar>
-int ModelEvaluatorDelegatorBase<Scalar>::Np() const
-{
-  return getUnderlyingModel()->Np();
-}
-
-template<class Scalar>
-int ModelEvaluatorDelegatorBase<Scalar>::Ng() const
-{
-  return getUnderlyingModel()->Ng();
-}
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
@@ -364,12 +380,14 @@ ModelEvaluatorDelegatorBase<Scalar>::get_x_space() const
   return getUnderlyingModel()->get_x_space();
 }
 
+
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_f_space() const
 {
   return getUnderlyingModel()->get_f_space();
 }
+
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
@@ -378,12 +396,14 @@ ModelEvaluatorDelegatorBase<Scalar>::get_p_space(int l) const
   return getUnderlyingModel()->get_p_space(l);
 }
 
+
 template<class Scalar>
 RCP<const Teuchos::Array<std::string> >
 ModelEvaluatorDelegatorBase<Scalar>::get_p_names(int l) const
 {
   return getUnderlyingModel()->get_p_names(l);
 }
+
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
@@ -392,12 +412,14 @@ ModelEvaluatorDelegatorBase<Scalar>::get_g_space(int j) const
   return getUnderlyingModel()->get_g_space(j);
 }
 
+
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::getNominalValues() const
 {
   return getUnderlyingModel()->getNominalValues();
 }
+
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
@@ -406,12 +428,14 @@ ModelEvaluatorDelegatorBase<Scalar>::getLowerBounds() const
   return getUnderlyingModel()->getLowerBounds();
 }
 
+
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::getUpperBounds() const
 {
   return getUnderlyingModel()->getUpperBounds();
 }
+
 
 template<class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
@@ -420,6 +444,7 @@ ModelEvaluatorDelegatorBase<Scalar>::create_W() const
   return getUnderlyingModel()->create_W();
 }
 
+
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W_op() const
@@ -427,26 +452,6 @@ ModelEvaluatorDelegatorBase<Scalar>::create_W_op() const
   return getUnderlyingModel()->create_W_op();
 }
 
-template<class Scalar>
-RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDelegatorBase<Scalar>::create_DfDp_op(int l) const
-{
-  return getUnderlyingModel()->create_DfDp_op(l);
-}
-
-template<class Scalar>
-RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDelegatorBase<Scalar>::create_DgDx_op(int j) const
-{
-  return getUnderlyingModel()->create_DgDx_op(j);
-}
-
-template<class Scalar>
-RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDelegatorBase<Scalar>::create_DgDp_op( int j, int l ) const
-{
-  return getUnderlyingModel()->create_DgDp_op(j,l);
-}
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
@@ -457,14 +462,6 @@ ModelEvaluatorDelegatorBase<Scalar>::createInArgs() const
   return inArgs;
 }
 
-template<class Scalar>
-ModelEvaluatorBase::OutArgs<Scalar>
-ModelEvaluatorDelegatorBase<Scalar>::createOutArgs() const
-{
-  ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs = getUnderlyingModel()->createOutArgs();
-  outArgs.setModelEvalDescription(this->description());
-  return outArgs;
-}
 
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::reportFinalPoint(
@@ -477,6 +474,9 @@ void ModelEvaluatorDelegatorBase<Scalar>::reportFinalPoint(
 
 
 // protected
+
+
+// Producted utility functions to be called by subclasses
 
 
 template<class Scalar>
@@ -509,6 +509,61 @@ ModelEvaluatorDelegatorBase<Scalar>::readLocalVerbosityLevelValidatedParameter(
 {
   return LocalVerbosityLevel_validator_->getIntegralValue(
     paramList, LocalVerbosityLevel_name_, LocalVerbosityLevel_default_ );
+}
+
+
+// private
+
+
+// Producted functions overridden from ModelEvaluatorDefaultBase
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::create_DfDp_op_impl(int l) const
+{
+  return getUnderlyingModel()->create_DfDp_op(l);
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::create_DgDx_dot_op_impl(
+  int j
+  ) const
+{
+  return getUnderlyingModel()->create_DgDx_dot_op(j);
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::create_DgDx_op_impl(
+  int j
+  ) const
+{
+  return getUnderlyingModel()->create_DgDx_op(j);
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::create_DgDp_op_impl(
+  int j, int l
+  ) const
+{
+  return getUnderlyingModel()->create_DgDp_op(j,l);
+}
+
+
+template<class Scalar>
+ModelEvaluatorBase::OutArgs<Scalar>
+ModelEvaluatorDelegatorBase<Scalar>::createOutArgsImpl() const
+{
+  ModelEvaluatorBase::OutArgsSetup<Scalar>
+    outArgs = getUnderlyingModel()->createOutArgs();
+  outArgs.setModelEvalDescription(this->description());
+  return outArgs;
 }
 
 

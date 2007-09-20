@@ -353,6 +353,7 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
+		test/GCRODR/Makefile
 		test/MVOPTester/Makefile
 		])
 

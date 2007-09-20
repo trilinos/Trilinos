@@ -1,11 +1,10 @@
 
-#ifndef SUN_CXX
-
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 
 #include "Thyra_BelosLinearOpWithSolveDecl.hpp"
-#include "Teuchos_Time.hpp"
+#include "Thyra_LinearOpWithSolveHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace Thyra {
 
@@ -149,14 +148,18 @@ template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::range() const
 {
-  return lp_->getOperator()->range();
+  if (!is_null(lp_))
+    return lp_->getOperator()->range();
+  return Teuchos::null;
 }
 
 template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::domain() const
 {
-  return lp_->getOperator()->domain();
+  if (!is_null(lp_))
+    return lp_->getOperator()->domain();
+  return Teuchos::null;
 }
 
 template<class Scalar>
@@ -269,7 +272,9 @@ bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_tra
     return (
       solveMeasureType.useDefault()
       ||
-      (solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) && true)
+      solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
+      ||
+      solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_INIT_RESIDUAL)
       );
   }
   // TRANS
@@ -286,6 +291,9 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
+
+  TEUCHOS_FUNC_TIME_MONITOR("BelosLOWS");
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
@@ -317,9 +325,9 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   bool ret = lp_->setProblem(Teuchos::rcp(X,false),Teuchos::rcp(&B,false));
   TEST_FOR_EXCEPTION(
-		     ret == false, CatastrophicSolveFailure
-		     ,"Error, the Belos::LinearProblem could not be set for the current solve!"
-		     );
+    ret == false, CatastrophicSolveFailure
+    ,"Error, the Belos::LinearProblem could not be set for the current solve!"
+    );
   //
   // Set the solution criteria
   //
@@ -329,16 +337,23 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   if(numBlocks==1) {
     solveMeasureType = blockSolveCriteria[0].solveCriteria.solveMeasureType;
     const ScalarMag requestedTol = blockSolveCriteria[0].solveCriteria.requestedTol;
-    TEST_FOR_EXCEPT( !( solveMeasureType.useDefault() || solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) );
+    assertSupportsSolveMeasureType(*this,M_trans,solveMeasureType);
     if( solveMeasureType.useDefault() ) {
-	tmpPL->set("Convergence Tolerance", defaultTol_);
+      tmpPL->set("Convergence Tolerance", defaultTol_);
     }
     else if( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) {
       if( requestedTol != SolveCriteria<Scalar>::unspecifiedTolerance() )
-	tmpPL->set("Convergence Tolerance", requestedTol);
+        tmpPL->set("Convergence Tolerance", requestedTol);
       else
-	tmpPL->set("Convergence Tolerance", defaultTol_);
+        tmpPL->set("Convergence Tolerance", defaultTol_);
       tmpPL->set("Explicit Residual Scaling", "Norm of RHS");
+    }
+    else if( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_INIT_RESIDUAL) ) {
+      if( requestedTol != SolveCriteria<Scalar>::unspecifiedTolerance() )
+        tmpPL->set("Convergence Tolerance", requestedTol);
+      else
+        tmpPL->set("Convergence Tolerance", defaultTol_);
+      tmpPL->set("Explicit Residual Scaling", "Norm of Initial Residual");
     }
     else {
       TEST_FOR_EXCEPT(true); // Should never get there.
@@ -418,7 +433,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
     << "The Belos solver of type \""<<iterativeSolver_->description()<<"\" returned a solve status of \""
     << toString(solveStatus) << 
     /* "\" in " << iterations << " iterations and achieved an approximate max tolerance of "
-    << belosAchievedTol << 
+       << belosAchievedTol << 
     */
     " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
@@ -438,5 +453,3 @@ void BelosLinearOpWithSolve<Scalar>::solve(
 }	// end namespace Thyra
 
 #endif // THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
-
-#endif // SUN_CXX

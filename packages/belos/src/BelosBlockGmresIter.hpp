@@ -295,6 +295,10 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // Arnoldi factorization and the upper triangular matrix that is the Hessenberg matrix reduced via
   // QR factorization separate.
   bool keepHessenberg_;
+
+  // initHessenberg_ specifies that the iteration should reinitialize the Hessenberg matrix by zeroing
+  // out all entries before an iteration is started.
+  bool initHessenberg_;
  
   // Current subspace dimension, and number of iterations performed.
   int curDim_, iter_;
@@ -333,11 +337,15 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     initialized_(false),
     stateStorageInitialized_(false),
     keepHessenberg_(false),
+    initHessenberg_(false),
     curDim_(0),
     iter_(0)
   {
     // Find out whether we are saving the Hessenberg matrix.
     keepHessenberg_ = params.get("Keep Hessenberg", false);
+
+    // Find out whether we are initializing the Hessenberg matrix.
+    initHessenberg_ = params.get("Initialize Hessenberg", false);
 
     // Get the maximum number of blocks allowed for this Krylov subspace
     TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
@@ -427,17 +435,31 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	}
 	
 	// Generate R_ only if it doesn't exist, otherwise resize it.
-	if (R_ == Teuchos::null)
-	  R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );	
-	else
-	  R_->shapeUninitialized( newsd, newsd-blockSize_ );
+	if (R_ == Teuchos::null) {
+	  R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+        }
+        if (initHessenberg_) {
+          R_->shape( newsd, newsd-blockSize_ );
+        }
+        else {
+          if (R_->numRows() < newsd || R_->numCols() < newsd-blockSize_) {
+	    R_->shapeUninitialized( newsd, newsd-blockSize_ );
+	  }
+        }
 	
 	// Generate H_ only if it doesn't exist, and we are keeping the upper Hessenberg matrix.
 	if (keepHessenberg_) {
-	  if (H_ == Teuchos::null) 
-	    H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
-	  else
-	    H_->shapeUninitialized( newsd, newsd-blockSize_ );
+	  if (H_ == Teuchos::null) {
+	    H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+          }
+          if (initHessenberg_) {
+            H_->shape( newsd, newsd-blockSize_ );
+          }
+          else {
+            if (H_->numRows() < newsd || H_->numCols() < newsd-blockSize_) {
+	      H_->shapeUninitialized( newsd, newsd-blockSize_ );
+	    }
+          }
 	}
 	else {
 	  // Point H_ and R_ at the same object.
@@ -445,10 +467,12 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	}
 	
 	// Generate z_ only if it doesn't exist, otherwise resize it.
-	if (z_ == Teuchos::null)
-	  z_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,blockSize_) );
-	else
+	if (z_ == Teuchos::null) {
+	  z_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+        }
+        if (z_-> numRows() < newsd || z_->numCols() < blockSize_) {
 	  z_->shapeUninitialized( newsd, blockSize_ );
+	}
 	
 	// State storage has now been initialized.
 	stateStorageInitialized_ = true;
@@ -672,6 +696,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
 	subH2 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			      ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
+      subH2->putScalar();  // Initialize subdiagonal to zero
       int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subH2,AVprev);
 
       // Copy over the coefficients if we are saving the upper Hessenberg matrix,

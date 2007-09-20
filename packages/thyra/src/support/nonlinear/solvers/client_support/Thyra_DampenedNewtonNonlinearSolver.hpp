@@ -71,10 +71,13 @@ public:
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
   /** \brief The default solution tolerance. */
-   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol );
 
   /** \brief The default maximum number of iterations. */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, defaultMaxNewtonIterations );
+
+  /** \brief The default maximum number of iterations. */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, useDampenedLineSearch  );
   
   /** \brief Set the armijo constant for the line search */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, armijoConstant );
@@ -84,29 +87,30 @@ public:
 
   /** \brief . */
   DampenedNewtonNonlinearSolver(
-    const ScalarMag           defaultTol                   = 1e-2
-    ,const int                defaultMaxNewtonIterations   = 1000
-    ,const Scalar             armijoConstant               = 1e-4
-    ,const int                maxLineSearchIterations      = 20
+    const ScalarMag defaultTol = 1e-2
+    ,const int defaultMaxNewtonIterations = 1000
+    ,const bool useDampenedLineSearch = true
+    ,const Scalar armijoConstant = 1e-4
+    ,const int maxLineSearchIterations = 20
     );
 
   /** \brief . */
-  static Teuchos::RCP<const Teuchos::ParameterList>
+  static RCP<const Teuchos::ParameterList>
   getValidSolveCriteriaExtraParameters();
 
   /** @name Overridden from ParameterListAcceptor */
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+  RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -115,24 +119,24 @@ public:
 
   /** \brief . */
   void setModel(
-    const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
+    const RCP<const ModelEvaluator<Scalar> > &model
     );
   /** \brief . */
-  Teuchos::RCP<const ModelEvaluator<Scalar> > getModel() const;
+  RCP<const ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   SolveStatus<Scalar> solve(
-    VectorBase<Scalar>              *x
-    ,const SolveCriteria<Scalar>    *solveCriteria
-    ,VectorBase<Scalar>             *delta = NULL
+    VectorBase<Scalar> *x
+    ,const SolveCriteria<Scalar> *solveCriteria
+    ,VectorBase<Scalar> *delta = NULL
     );
   /** \brief . */
-  Teuchos::RCP<const VectorBase<Scalar> > get_current_x() const;
+  RCP<const VectorBase<Scalar> > get_current_x() const;
   /** \brief . */
   bool is_W_current() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  RCP<LinearOpWithSolveBase<Scalar> > get_nonconst_W(const bool forceUpToDate);
   /** \brief . */
-  Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > get_W() const;
+  RCP<const LinearOpWithSolveBase<Scalar> > get_W() const;
   /** \brief . */
   void set_W_is_current(bool W_is_current);
 
@@ -140,11 +144,11 @@ public:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList> paramList_;
-  Teuchos::RCP<const ModelEvaluator<Scalar> >    model_;
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> >   J_;
-  Teuchos::RCP<VectorBase<Scalar> >              current_x_;
-  bool                                                   J_is_current_;
+  RCP<Teuchos::ParameterList> paramList_;
+  RCP<const ModelEvaluator<Scalar> > model_;
+  RCP<LinearOpWithSolveBase<Scalar> > J_;
+  RCP<VectorBase<Scalar> > current_x_;
+  bool J_is_current_;
 
 };
 
@@ -153,25 +157,27 @@ private:
 
 template <class Scalar>
 DampenedNewtonNonlinearSolver<Scalar>::DampenedNewtonNonlinearSolver(
-  const ScalarMag           defaultTol
-  ,const int                defaultMaxNewtonIterations
-  ,const Scalar             armijoConstant
-  ,const int                maxLineSearchIterations
+  const ScalarMag defaultTol
+  ,const int defaultMaxNewtonIterations
+  ,const bool useDampenedLineSearch
+  ,const Scalar armijoConstant
+  ,const int maxLineSearchIterations
   )
   :defaultTol_(defaultTol)
   ,defaultMaxNewtonIterations_(defaultMaxNewtonIterations)
+  ,useDampenedLineSearch_(useDampenedLineSearch)
   ,armijoConstant_(armijoConstant)
   ,maxLineSearchIterations_(maxLineSearchIterations)
   ,J_is_current_(false)
 {}
 
 template <class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
 {
-  static Teuchos::RCP<const Teuchos::ParameterList> validSolveCriteriaExtraParameters;
+  static RCP<const Teuchos::ParameterList> validSolveCriteriaExtraParameters;
   if(!validSolveCriteriaExtraParameters.get()) {
-    Teuchos::RCP<Teuchos::ParameterList>
+    RCP<Teuchos::ParameterList>
       paramList = Teuchos::rcp(new Teuchos::ParameterList);
     paramList->set("Max Iters",int(1000));
     validSolveCriteriaExtraParameters = paramList;
@@ -183,7 +189,7 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
 
 template<class Scalar>
 void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& paramList
   )
 {
   using Teuchos::get;
@@ -198,38 +204,38 @@ void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
 }
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
+  RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getValidParameters() const
 {
   using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  static RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList>
+    RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
-  TEST_FOR_EXCEPT("ToDo: Implement!");
+    TEST_FOR_EXCEPT("ToDo: Implement!");
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -240,7 +246,7 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidParameters() const
 
 template <class Scalar>
 void DampenedNewtonNonlinearSolver<Scalar>::setModel(
-  const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
+  const RCP<const ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT(model.get()==NULL);
@@ -251,7 +257,7 @@ void DampenedNewtonNonlinearSolver<Scalar>::setModel(
 }
 
 template <class Scalar>
-Teuchos::RCP<const ModelEvaluator<Scalar> >
+RCP<const ModelEvaluator<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::getModel() const
 {
   return model_;
@@ -260,13 +266,15 @@ DampenedNewtonNonlinearSolver<Scalar>::getModel() const
 template <class Scalar>
 SolveStatus<Scalar>
 DampenedNewtonNonlinearSolver<Scalar>::solve(
-  VectorBase<Scalar>                    *x_inout
-  ,const SolveCriteria<Scalar>          *solveCriteria
-  ,VectorBase<Scalar>                   *delta
+  VectorBase<Scalar> *x_inout
+  ,const SolveCriteria<Scalar> *solveCriteria
+  ,VectorBase<Scalar> *delta
   ) 
 {
+
   using std::endl;
   using Teuchos::as;
+
   // Validate input
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(0==x_inout);
@@ -274,24 +282,30 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     "DampenedNewtonNonlinearSolver<Scalar>::solve(...)",
     *x_inout->space(), *model_->get_x_space() );
 #endif
+
   // Get the output stream and verbosity level
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool showNewtonIters = (verbLevel==Teuchos::VERB_LOW);
   const bool showLineSearchIters = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
   const bool showNewtonDetails = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH));
   const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
-  if(out.get() && showNewtonIters) *out
-    << "\nBeginning dampended Newton solve of model = " << model_->description() << "\n\n";
+  if(out.get() && showNewtonIters) {
+    *out << "\nBeginning dampended Newton solve of model = " << model_->description() << "\n\n";
+    if (!useDampenedLineSearch())
+      *out << "\nDoing undampened newton ...\n\n";
+  }
+
   // Initialize storage for algorithm
-  if(!J_.get())                                        J_    = model_->create_W();
-  Teuchos::RCP<VectorBase<Scalar> >            f     = createMember(model_->get_f_space());
-  Teuchos::RCP<VectorBase<Scalar> >            x     = Teuchos::rcp(x_inout,false);
-  Teuchos::RCP<VectorBase<Scalar> >            dx    = createMember(model_->get_x_space());
-  Teuchos::RCP<VectorBase<Scalar> >            x_new = createMember(model_->get_x_space());
-  Teuchos::RCP<VectorBase<Scalar> >            ee    = createMember(model_->get_x_space());
+  if(!J_.get()) J_ = model_->create_W();
+  RCP<VectorBase<Scalar> > f = createMember(model_->get_f_space());
+  RCP<VectorBase<Scalar> > x = Teuchos::rcp(x_inout,false);
+  RCP<VectorBase<Scalar> > dx = createMember(model_->get_x_space());
+  RCP<VectorBase<Scalar> > x_new = createMember(model_->get_x_space());
+  RCP<VectorBase<Scalar> > ee = createMember(model_->get_x_space());
   V_S(&*ee,ST::zero());
+
   // Get convergence criteria
   ScalarMag tol = this->defaultTol();
   int maxIters = this->defaultMaxNewtonIterations();
@@ -306,8 +320,10 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       maxIters = solveCriteria->extraParameters->get("Max Iters",int(maxIters));
     }
   }
+
   if(out.get() && showNewtonDetails)
     *out << "\nCompute the initial starting point ...\n";
+
   eval_f_W( *model_, *x, &*f, &*J_ );
   if(out.get() && dumpAll) {
     *out << "\nInitial starting point:\n";
@@ -315,12 +331,16 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     *out << "\nf =\n" << *f;
     *out << "\nJ =\n" << *J_;
   }
+
   // Peform the Newton iterations
   int newtonIter, num_residual_evals = 1;
   SolveStatus<Scalar> solveStatus;
   solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
+
   for( newtonIter = 1; newtonIter <= maxIters; ++newtonIter ) {
+
     if(out.get() && showNewtonDetails) *out << "\n*** newtonIter = " << newtonIter << endl;
+
     // Check convergence
     if(out.get() && showNewtonDetails) *out << "\nChecking for convergence ... : ";
     const Scalar phi = scalarProd(*f,*f), sqrt_phi = ST::squareroot(phi); // merit function: phi(f) = <f,f>
@@ -332,7 +352,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       << "newton_iter="<<newtonIter<<": Check convergence: ||f|| = "
       << sqrt_phi << ( isConverged ? " <= " : " > " ) << "tol = " << tol << ( isConverged ? ", Converged!!!" : "" ) << endl;
     if(isConverged) {
-      if(x_inout != x.get()) assign( x_inout, *x );  // Assign the solution if we have to
+      if(x_inout != x.get()) assign( x_inout, *x ); // Assign the solution if we have to
       if(out.get() && showNewtonDetails) {
         *out << "\nWe have converged :-)\n"
              << "\n||x||inf = " << norm_inf(*x) << endl;
@@ -346,21 +366,24 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       break;
     }
     if(out.get() && showNewtonDetails) *out << "\nWe have to keep going :-(\n";
+
     // Compute the Jacobian if we have not already
     if(newtonIter > 1) {
       if(out.get() && showNewtonDetails) *out << "\nComputing the Jacobian J_ at current point ...\n";
       eval_f_W<Scalar>( *model_, *x, NULL, &*J_ );
       if(out.get() && dumpAll) *out << "\nJ =\n" << *J_;
     }
+
     // Compute the newton step: dx = -inv(J)*f
     if(out.get() && showNewtonDetails) *out << "\nComputing the Newton step: dx = - inv(J)*f ...\n";
     if(out.get() && showNewtonIters) *out << "newton_iter="<<newtonIter<<": Computing Newton step ...\n";
-    assign( &*dx, ST::zero() );       // Initial guess for the linear solve
+    assign( &*dx, ST::zero() ); // Initial guess for the linear solve
     Thyra::solve(*J_,NOTRANS,*f,&*dx); // Solve: J*dx = f
     Vt_S( &*dx, Scalar(-ST::one()) ); // dx *= -1.0
-    Vp_V( &*ee, *dx);                 // ee += dx
+    Vp_V( &*ee, *dx); // ee += dx
     if(out.get() && showNewtonDetails) *out << "\n||dx||inf = " << norm_inf(*dx) << endl;
     if(out.get() && dumpAll) *out << "\ndy =\n" << *dx;
+
     // Perform backtracking armijo line search
     if(out.get() && showNewtonDetails) *out << "\nStarting backtracking line search iterations ...\n";
     if(out.get() && showNewtonIters) *out << "newton_iter="<<newtonIter<<": Starting backtracking line search ...\n";
@@ -393,29 +416,37 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       if(out.get() && (showLineSearchIters || (showNewtonIters && acceptPoint))) *out
         << "newton_iter="<<newtonIter<<", ls_iter="<<lineSearchIter<<" : "
         << "phi(alpha="<<alpha<<") = "<<phi_new<<(acceptPoint ? " <=" : " >")<<" armijo_cord = " << phi_frac << endl;
-      if( acceptPoint ) {
+      if (out.get() && showNewtonDetails && !useDampenedLineSearch())
+        *out << "\nUndamped newton, always accpeting the point!\n";
+      if( acceptPoint || !useDampenedLineSearch() ) {
         if(out.get() && showNewtonDetails) *out << "\nAccepting the current step with step length alpha = " << alpha << "!\n";
         break;
       }
       if(out.get() && showNewtonDetails) *out << "\nBacktracking (alpha = 0.5*alpha) ...\n";
       alpha *= 0.5;
     }
+
     // Check for line search failure
     if( lineSearchIter > maxLineSearchIterations() ) {
       std::ostringstream oss;
       oss
         << "lineSearchIter = " << lineSearchIter << " > maxLineSearchIterations = " << maxLineSearchIterations()
-        << ": Linear search failure!  Algorithm terminated!";
+        << ": Linear search failure! Algorithm terminated!";
       solveStatus.message = oss.str();
       if(out.get() && (showNewtonIters || showNewtonDetails)) *out << endl << oss.str() << endl;
       goto exit;
     }
+
     // Take the Newton step
-    std::swap<Teuchos::RCP<VectorBase<Scalar> > >( x_new, x ); // Now x is current point!
+    std::swap<RCP<VectorBase<Scalar> > >( x_new, x ); // Now x is current point!
+
   }
+
 exit:
+
   if(out.get() && showNewtonIters) *out
     << "\n[Final] newton_iters="<<newtonIter<<", num_residual_evals="<<num_residual_evals<<"\n";
+
   if(newtonIter > maxIters) {
     std::ostringstream oss;
     oss
@@ -424,17 +455,21 @@ exit:
     solveStatus.message = oss.str();
     if( out.get() && (showNewtonIters || showNewtonDetails)) *out << endl << oss.str() << endl;
   }
+
   if(x_inout != x.get()) assign( x_inout, *x ); // Assign the final point
   if(delta != NULL) assign( delta, *ee );
   current_x_ = x_inout->clone_v(); // Remember the final point
   J_is_current_ = newtonIter==1; // J is only current with x if initial point was converged!
+
   if(out.get() && showNewtonDetails) *out
     << "\n*** Ending dampended Newton solve." << endl; 
+
   return solveStatus;
+
 }
 
 template <class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::get_current_x() const
 {
   return current_x_;
@@ -447,14 +482,17 @@ bool DampenedNewtonNonlinearSolver<Scalar>::is_W_current() const
 }
 
 template <class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
-DampenedNewtonNonlinearSolver<Scalar>::get_nonconst_W()
+RCP<LinearOpWithSolveBase<Scalar> >
+DampenedNewtonNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
 {
+  if (forceUpToDate) {
+    TEST_FOR_EXCEPT(forceUpToDate);
+  }
   return J_;
 }
 
 template <class Scalar>
-Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
+RCP<const LinearOpWithSolveBase<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::get_W() const
 {
   return J_;

@@ -119,6 +119,20 @@ public:
 
   //@}
 
+  /** @name Overridden from Teuchos::Describable */
+  //@{
+                                                
+  /** \brief . */
+  std::string description() const;
+
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
+
+  //@}
+
   /** \name Overridden from ProductMultiVectorBase */
   //@{
 

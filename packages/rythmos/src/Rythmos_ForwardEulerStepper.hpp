@@ -43,6 +43,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 {
   public:
 
+    typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     
     /** \brief . */
@@ -55,6 +56,9 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getModel() const;
+
+    /** \brief . */
+    RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
     
     /** \brief . */
     ~ForwardEulerStepper();
@@ -78,15 +82,14 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
-    bool setPoints(
+    void addPoints(
       const Array<Scalar>& time_vec
       ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
       ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const Array<ScalarMag>& accuracy_vec
       );
     
     /// Get values from buffer
-    bool getPoints(
+    void getPoints(
       const Array<Scalar>& time_vec
       ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
       ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -94,7 +97,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
       ) const;
 
     /// Fill data in from another interpolation buffer
-    bool setRange(
+    void setRange(
       const TimeRange<Scalar>& range,
       const InterpolationBufferBase<Scalar> & IB
       );
@@ -103,10 +106,10 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(Array<Scalar>* time_vec) const;
+    void getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(Array<Scalar>& time_vec);
+    void removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -130,28 +133,33 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     Scalar dt_;
 
     Teuchos::RCP<Teuchos::ParameterList> parameterList_;
+    bool isInitialized_;
+
+    // Private member functions:
+    void initialize_();
 
 };
 
 template<class Scalar>
 ForwardEulerStepper<Scalar>::ForwardEulerStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
+  : isInitialized_(false)
 {
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  out->precision(15);
-  out->setMaxLenLinePrefix(30);
-  //out->pushLinePrefix("Rythmos::ForwardEulerStepper");
-  //out->setShowLinePrefix(true);
-  //out->setTabIndentStr("    ");
+  this->setModel(model);
+  initialize_();
+}
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  model_ = model;
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::initialize_()
+{
   t_ = ST::zero();
   solution_vector_ = model_->getNominalValues().get_x()->clone_v();
   residual_vector_ = Thyra::createMember(model_->get_f_space());
+  isInitialized_ = true;
 }
 
 template<class Scalar>
 ForwardEulerStepper<Scalar>::ForwardEulerStepper()
+  : isInitialized_(false)
 {
 }
 
@@ -161,9 +169,16 @@ ForwardEulerStepper<Scalar>::~ForwardEulerStepper()
 }
 
 template<class Scalar>
+RCP<const Thyra::VectorSpaceBase<Scalar> > ForwardEulerStepper<Scalar>::get_x_space() const
+{
+  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call get_x_space before initialization!\n");
+  return(solution_vector_->space());
+}
+
+template<class Scalar>
 Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
-  if (flag == VARIABLE_STEP) { 
+  if (flag == STEP_TYPE_VARIABLE) { 
     // print something out about this method not supporting automatic variable step-size
     typedef Teuchos::ScalarTraits<Scalar> ST;
     return(-ST::one());
@@ -240,32 +255,23 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::setPoints(
+void ForwardEulerStepper<Scalar>::addPoints(
     const Array<Scalar>& time_vec
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
     ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const Array<ScalarMag> & accuracy_vec 
     )
 {
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ForwardEulerStepper.\n");
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::getPoints(
+void ForwardEulerStepper<Scalar>::getPoints(
     const Array<Scalar>& time_vec
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,Array<ScalarMag>* accuracy_vec) const
 {
-  return(false);
-}
-
-template<class Scalar>
-bool ForwardEulerStepper<Scalar>::setRange(
-  const TimeRange<Scalar>& range,
-  const InterpolationBufferBase<Scalar>& IB)
-{
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getPoints is not implemented for ForwardEulerStepper.\n");
 }
 
 template<class Scalar>
@@ -275,15 +281,15 @@ TimeRange<Scalar> ForwardEulerStepper<Scalar>::getTimeRange() const
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
+void ForwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getNodes is not implemented for ForwardEulerStepper.\n");
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
+void ForwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-  return(false);
+  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ForwardEulerStepper.\n");
 }
 
 template<class Scalar>

@@ -29,11 +29,14 @@
 #ifndef THYRA_DEFAULT_MODEL_EVALUATOR_WITH_SOLVE_FACTORY_HPP
 #define THYRA_DEFAULT_MODEL_EVALUATOR_WITH_SOLVE_FACTORY_HPP
 
+
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Teuchos_Time.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief This class wraps any ModelEvaluator object and uses a compatible
  * LinearOpWithSolveFactory object to create a LinearOpWithSolveBase version
@@ -42,7 +45,9 @@ namespace Thyra {
  * ToDo: Finish documentation!
  */
 template<class Scalar>
-class DefaultModelEvaluatorWithSolveFactory : virtual public ModelEvaluatorDelegatorBase<Scalar> {
+class DefaultModelEvaluatorWithSolveFactory
+  : virtual public ModelEvaluatorDelegatorBase<Scalar>
+{
 public:
 
   /** \name Constructors/initializers/accessors/utilities. */
@@ -53,36 +58,21 @@ public:
 
   /** \brief . */
   DefaultModelEvaluatorWithSolveFactory(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
-    ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+    const RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_factory
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
-    ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+    const RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_factory
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RCP<ModelEvaluator<Scalar> >                 *thyraModel = NULL
-    ,Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory   = NULL
+    RCP<ModelEvaluator<Scalar> > *thyraModel = NULL,
+    RCP<LinearOpWithSolveFactoryBase<Scalar> > *W_factory = NULL
     );
-
-  //@}
-
-  /** \name Public functions overridden from ModelEvaulator. */
-  //@{
-
-  /** \brief . */
-  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
-  /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
-    ) const;
 
   //@}
 
@@ -94,44 +84,73 @@ public:
 
   //@}
 
+  /** \name Public functions overridden from ModelEvaulator. */
+  //@{
+
+  /** \brief . */
+  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
+
+  //@}
+
 private:
 
-  Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >   W_factory_;
-  
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
+  /** \brief . */
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
+
+  //@}
+
+private:
+
+  RCP<LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
+ 
 };
+
 
 // /////////////////////////////////
 // Implementations
 
+
 // Constructors/initializers/accessors/utilities
+
 
 template<class Scalar>
 DefaultModelEvaluatorWithSolveFactory<Scalar>::DefaultModelEvaluatorWithSolveFactory()
 {}
 
+
 template<class Scalar>
 DefaultModelEvaluatorWithSolveFactory<Scalar>::DefaultModelEvaluatorWithSolveFactory(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
-  ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+  const RCP<ModelEvaluator<Scalar> > &thyraModel,
+  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_factory
   )
 {
   initialize(thyraModel,W_factory);
 }
 
+
 template<class Scalar>
 void DefaultModelEvaluatorWithSolveFactory<Scalar>::initialize(
-  const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
-  ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+  const RCP<ModelEvaluator<Scalar> > &thyraModel,
+  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_factory
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
   W_factory_ = W_factory;
 }
 
+
 template<class Scalar>
 void DefaultModelEvaluatorWithSolveFactory<Scalar>::uninitialize(
-  Teuchos::RCP<ModelEvaluator<Scalar> >                 *thyraModel
-  ,Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory
+  RCP<ModelEvaluator<Scalar> > *thyraModel,
+  RCP<LinearOpWithSolveFactoryBase<Scalar> > *W_factory
   )
 {
   if(thyraModel) *thyraModel = this->getUnderlyingModel();
@@ -140,10 +159,37 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::uninitialize(
   W_factory_ = Teuchos::null;
 }
 
-// Overridden from ModelEvaulator.
+
+// Public functions overridden from Teuchos::Describable
+
 
 template<class Scalar>
-Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
+std::string DefaultModelEvaluatorWithSolveFactory<Scalar>::description() const
+{
+  const RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  std::ostringstream oss;
+  oss << "Thyra::DefaultModelEvaluatorWithSolveFactory{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << ",W_factory=";
+  if(W_factory_.get())
+    oss << "\'"<<W_factory_->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
+
+// Overridden from ModelEvaulator.
+
+
+template<class Scalar>
+RCP<LinearOpWithSolveBase<Scalar> >
 DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -156,26 +202,32 @@ DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
   return W_factory_->createOp();
 }
 
+
+// Private functions overridden from ModelEvaulatorDefaultBase.
+
+
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-DefaultModelEvaluatorWithSolveFactory<Scalar>::createOutArgs() const
+DefaultModelEvaluatorWithSolveFactory<Scalar>::createOutArgsImpl() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >
+  const RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(wrappedOutArgs.Np(),wrappedOutArgs.Ng());
   outArgs.setSupports(wrappedOutArgs);
-  outArgs.setSupports(MEB::OUT_ARG_W,wrappedOutArgs.supports(MEB::OUT_ARG_W_op)&&W_factory_.get()!=NULL);
+  outArgs.setSupports(MEB::OUT_ARG_W,
+    wrappedOutArgs.supports(MEB::OUT_ARG_W_op)&&W_factory_.get()!=NULL);
   return outArgs;
 }
 
+
 template<class Scalar>
-void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
+void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
   typedef ModelEvaluatorBase MEB;
@@ -190,9 +242,10 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
 
   Teuchos::Time timer("");
 
-  typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<Scalar> > VOTSLOWSF;
+  typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<Scalar> >
+    VOTSLOWSF;
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
-  
+ 
   // InArgs
 
   MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
@@ -204,11 +257,11 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
 
   wrappedOutArgs.setArgs(outArgs,true);
-  
+ 
   RCP<LinearOpWithSolveBase<Scalar> > W;
-  RCP<LinearOpBase<Scalar> >          W_op;
-  RCP<const LinearOpBase<Scalar> >    fwdW;
-  RCP<LinearOpBase<Scalar> >          nonconst_fwdW;
+  RCP<LinearOpBase<Scalar> > W_op;
+  RCP<const LinearOpBase<Scalar> > fwdW;
+  RCP<LinearOpBase<Scalar> > nonconst_fwdW;
   if( outArgs.supports(MEB::OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
     Thyra::uninitializeOp<Scalar>(*W_factory_,&*W,&fwdW);
     if(fwdW.get()) {
@@ -228,64 +281,46 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   }
 
   // Do the evaluation
-  
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEvaluating the output functions on model \'" << thyraModel->description() << "\'  ...\n";
+ 
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    *out << "\nEvaluating the output functions on model \'"
+         << thyraModel->description() << "\' ...\n";
   timer.start(true);
-  
+ 
   thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
-  
+ 
   timer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to evaluate underlying model = "<<timer.totalElapsedTime()<<" sec\n";
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o() << "\nTime to evaluate underlying model = "
+                   << timer.totalElapsedTime()<<" sec\n";
 
   // Postprocess arguments
-  
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+ 
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
     *out << "\nPost processing the output objects ...\n";
   timer.start(true);
-  
+ 
   if( W.get() ) {
     Thyra::initializeOp<Scalar>(*W_factory_,fwdW,&*W);
     W->setVerbLevel(this->getVerbLevel());
     W->setOStream(this->getOStream());
   }
-  
+ 
   if( W_op.get() ) {
     TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
   }
 
   timer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))
+    OSTab(out).o() << "\nTime to process output objects = "
+                   << timer.totalElapsedTime()<<" sec\n";
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
-  
+ 
 }
 
-// Public functions overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultModelEvaluatorWithSolveFactory<Scalar>::description() const
-{
-  const Teuchos::RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  std::ostringstream oss;
-  oss << "Thyra::DefaultModelEvaluatorWithSolveFactory{";
-  oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << ",W_factory=";
-  if(W_factory_.get())
-    oss << "\'"<<W_factory_->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
-}
 
 } // namespace Thyra
+
 
 #endif // THYRA_DEFAULT_MODEL_EVALUATOR_WITH_SOLVE_FACTORY_HPP

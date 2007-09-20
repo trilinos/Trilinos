@@ -111,7 +111,8 @@ public:
   /** \brief . */
   bool is_W_current() const;
   /** \brief . */
-  RCP<Thyra::LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+  get_nonconst_W(const bool forceUpToDate);
   /** \brief . */
   RCP<const Thyra::LinearOpWithSolveBase<Scalar> > get_W() const;
   /** \brief . */
@@ -370,6 +371,10 @@ TimeStepNonlinearSolver<Scalar>::solve(
   Thyra::VectorBase<Scalar> *delta
   )
 {
+  
+#ifdef ENABLE_RYTHMOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:TimeStepNonlinearSolver::solve");
+#endif
 
   using std::endl;
   using Teuchos::incrVerbLevel;
@@ -394,16 +399,19 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  const bool showNewtonDetails = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
-  const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
+  const bool showNewtonDetails =
+    (!is_null(out) && (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM)));
+  const bool dumpAll =
+    (!is_null(out) && (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME))); 
   TEUCHOS_OSTAB;
   VOTSME stateModel_outputTempState(model_,out,incrVerbLevel(verbLevel,-1));
-  if(out.get() && showNewtonDetails)
+
+  if (showNewtonDetails)
     *out
       << "\nEntering TimeStepNonlinearSolver::solve(...) ...\n"
       << "\nmodel = " << Teuchos::describe(*model_,verbLevel);
 
-  if(out.get() && dumpAll) {
+  if(dumpAll) {
     *out << "\nInitial guess:\n";
     *out << "\nx = " << *x;
   }
@@ -417,6 +425,8 @@ TimeStepNonlinearSolver<Scalar>::solve(
   if (delta != NULL)
     Thyra::V_S(delta,ST::zero()); // delta stores the cumulative update to x over the whole Newton solve.
   Thyra::assign(&*x_curr,*x);
+  J_is_current_ = false;
+  current_x_ = Teuchos::null;
 
   // Initialize convergence criteria
   ScalarMag R = SMT::one();
@@ -433,12 +443,12 @@ TimeStepNonlinearSolver<Scalar>::solve(
   ScalarMag nrm_dx_last;
   int iter = 1;
   for( ; iter <= maxIters; ++iter ) {
-    if(out.get() && showNewtonDetails)
+    if (showNewtonDetails)
       *out << "\n*** newtonIter = " << iter << endl;
-    if(out.get() && showNewtonDetails)
+    if (showNewtonDetails)
       *out << "\nEvaluating the model f and W ...\n";
     eval_f_W( *model_, *x_curr, &*f, &*J_ );
-    if(out.get() && showNewtonDetails)
+    if (showNewtonDetails)
       *out << "\nSolving the system J*dx = -f ...\n";
     Thyra::V_S(&*dx,ST::zero()); // Initial guess is needed!
     Thyra::SolveCriteria<Scalar>
@@ -451,14 +461,14 @@ TimeStepNonlinearSolver<Scalar>::solve(
     VOTSLOWSB J_outputTempState(J_,out,incrVerbLevel(verbLevel,-1));
     Thyra::SolveStatus<Scalar> linearSolveStatus
       = Thyra::solve( *J_, Thyra::NOTRANS, *f, &*dx, &linearSolveCriteria );
-    if(out.get() && showNewtonDetails)
+    if (showNewtonDetails)
       *out << "\nLinear solve status:\n" << linearSolveStatus;
     Thyra::Vt_S(&*dx,Scalar(-ST::one()));
-    if(out.get() && dumpAll)
+    if (dumpAll)
       *out << "\ndx = " << Teuchos::describe(*dx,verbLevel);
     if (delta != NULL) {
       Thyra::Vp_V(delta,*dx);
-      if(out.get() && dumpAll)
+      if (dumpAll)
         *out << "\ndelta = " << Teuchos::describe(*delta,verbLevel);
     }
     // Check the linear solve
@@ -471,18 +481,18 @@ TimeStepNonlinearSolver<Scalar>::solve(
           "Error, the linear solver did not converge!"
           );
       }
-      if(out.get() && showNewtonDetails)
+      if (showNewtonDetails)
         *out << "\nWarning, linear solve did not converge!  Continuing anyway :-)\n";
     }
     // Update the solution: x_curr = x_curr + dx
     Vp_V( &*x_curr, *dx );
-    if(out.get() && dumpAll)
+    if (dumpAll)
       *out << "\nUpdated solution x = " << Teuchos::describe(*x_curr,verbLevel);
     // Convergence test
     nrm_dx = Thyra::norm(*dx);
     if ( R*nrm_dx <= nonlinearSafetyFactor_*tol )
       converged = true;
-    if(out.get() && showNewtonDetails)
+    if (showNewtonDetails)
       *out
         << "\nConvergence test:\n"
         << "  R*||dx|| = " << R << "*" << nrm_dx
@@ -492,14 +502,14 @@ TimeStepNonlinearSolver<Scalar>::solve(
         << " : " << ( converged ? "converged!" : " unconverged" )
         << endl;
     if(converged)
-      break;
-    // Update convergence criteria
+      break; // We have converged!!!
+    // Update convergence criteria for the next iteration ...
     if(iter > 1) {
       const Scalar
         MinR = RMinFraction_*R,
         nrm_dx_ratio = nrm_dx/nrm_dx_last;
       R = std::max(MinR,nrm_dx_ratio);
-      if(out.get() && showNewtonDetails)
+      if (showNewtonDetails)
       *out
         << "\nUpdated R\n"
         << "  = max(RMinFraction*R,||dx||/||dx_last||)\n"
@@ -515,7 +525,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
   // Set the solution
   Thyra::assign(x,*x_curr);
   
-  if(out.get() && dumpAll)
+  if (dumpAll)
     *out << "\nFinal solution x = " << Teuchos::describe(*x,verbLevel);
 
   // Check the status
@@ -556,9 +566,13 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   // Update the solution state for external clients
   current_x_ = x->clone_v();
-  J_is_current_ = true;
+  J_is_current_ = false;
+  // 2007/09/04: rabartl: Note, above the Jacobian J is always going to be out
+  // of date since this algorithm computes x_curr = x_curr + dx for at least
+  // one solve for dx = -inv(J)*f.  Therefore, J is never at the updated
+  // x_curr, only the old x_curr!
 
-  if(out.get() && showNewtonDetails)
+  if (showNewtonDetails)
     *out << "\nLeaving TimeStepNonlinearSolver::solve(...) ...\n";
 
   return solveStatus;
@@ -610,8 +624,17 @@ bool TimeStepNonlinearSolver<Scalar>::is_W_current() const
 
 template <class Scalar>
 RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-TimeStepNonlinearSolver<Scalar>::get_nonconst_W()
+TimeStepNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
 {
+  if (is_null(J_))
+    return Teuchos::null;
+  if (forceUpToDate) {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPT(is_null(current_x_));
+#endif
+    Thyra::eval_f_W<Scalar>( *model_, *current_x_, 0, &*J_ );
+    J_is_current_ = true;
+  }
   return J_;
 }
 

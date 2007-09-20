@@ -79,25 +79,25 @@ endif
 endif
 
 diagonalTransient_amesos.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_amesos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_aztecoo.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_aztecoo_ifpack.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_aztecoo_ml.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_belos.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_belos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_belos_ifpack.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_belos_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 diagonalTransient_belos_ml.exe: diagonalTransient.exe
-	ln -s ./diagonalTransient.exe diagonalTransient_belos_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 DIAGONAL_EXE_LINKS = \
   $(LINK_DIAGONAL_AMESOS) \

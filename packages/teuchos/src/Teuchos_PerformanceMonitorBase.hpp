@@ -44,99 +44,103 @@
 namespace Teuchos
 {
  
-  /** 
-   * \brief Provides common capabilities for collecting and reporting
-   * performance data across processors. PerformanceMonitorBase is templated
-   * on a counter type (which might be a timer or a flop counter). The
-   * common capability of the counter type is a counter for the number of
-   * calls. Derived counter types can supply additional features. 
-   *
-   * A PerformanceMonitorBase will increment its call counter upon
-   * every ctor call. Derived types might do more upon construction or
-   * destruction; for example, a timer will start upon construction
-   * and stop upon destruction.
-   *
-   * The class keeps a static list of all counters created using
-   * the getNewCounter() method during the course of a run. Counts
-   * from this list can then be printed out at the end of the run. 
-   *
-   * The minimum requirements on the counter for use in the PerformanceMonitorBase
-   * are the following methods:
-   * \code
-   * // add one to number of calls 
-   * void incrementNumCalls() 
-   * // return the number of calls
-   * int numCalls() const 
-   * // indicate whether the counter is already running
-   * bool isRunning() const 
-   * \endcode
-   */
-  template <class T> 
-  class PerformanceMonitorBase
-  {
-  public:
-    /** Construct with a counter. */
-    PerformanceMonitorBase(T& counter, bool reset=false)
-      : counter_(counter), isRecursiveCall_(counter_.isRunning())
+/** \brief Provides common capabilities for collecting and reporting
+ * performance data across processors.
+ *
+ * PerformanceMonitorBase is templated on a counter type (which might be a
+ * timer or a flop counter). The common capability of the counter type is a
+ * counter for the number of calls. Derived counter types can supply
+ * additional features.
+ *
+ * A PerformanceMonitorBase will increment its call counter upon
+ * every ctor call. Derived types might do more upon construction or
+ * destruction; for example, a timer will start upon construction
+ * and stop upon destruction.
+ *
+ * The class keeps a static list of all counters created using
+ * the getNewCounter() method during the course of a run. Counts
+ * from this list can then be printed out at the end of the run. 
+ *
+ * The minimum requirements on the counter for use in the PerformanceMonitorBase
+ * are the following methods:
+ * \code
+ * // add one to number of calls 
+ * void incrementNumCalls() 
+ * // return the number of calls
+ * int numCalls() const 
+ * // indicate whether the counter is already running
+ * bool isRunning() const 
+ * \endcode
+ */
+template <class T> 
+class PerformanceMonitorBase
+{
+public:
+
+  /** \brief Construct with a counter. */
+  PerformanceMonitorBase(T& counter, bool reset=false)
+    : counter_(counter), isRecursiveCall_(counter_.isRunning())
     {
       counter_.incrementNumCalls();
     }
 
-    /** The dtor for the base class does nothing. */
-    virtual ~PerformanceMonitorBase() {}
+  /** \brief The dtor for the base class does nothing. */
+  virtual ~PerformanceMonitorBase() {}
     
-    /** 
-     * Create a new counter with the specified name and append it to a
-     * global list of counters of this type. New counters should
-     * usually be created in this way rather than through a direct
-     * ctor call so that they can be appended to the list.
-     */
-    static RCP<T> getNewCounter(const std::string& name)
+  /** \brief Create a new counter with the specified name and append it to a
+   * global list of counters of this type.
+   *
+   * New counters should usually be created in this way rather than through a
+   * direct ctor call so that they can be appended to the list.
+   */
+  static RCP<T> getNewCounter(const std::string& name)
     {
       RCP<T> rtn = rcp(new T(name), true);
       counters().append(rtn);
       return rtn;
     }
 
-    /** 
-     * Get the format that will be used to print a summary of results.
-     */
-    static TableFormat& format()
+  /** \brief Get the format that will be used to print a summary of
+   * results.
+   */
+  static TableFormat& format()
     {
       static RCP<TableFormat> rtn=rcp(new TableFormat()); 
       return *rtn; 
     }
 
-  protected:
+protected:
     
-    /** Access to the counter */
-    const T& counter() const {return counter_;}
+  /** \brief Access to the counter. */
+  const T& counter() const { return counter_; }
     
-    /** Access to the counter */
-    T& counter() {return counter_;}
+  /** \brief Access to the counter. */
+  T& counter() { return counter_; }
 
-    /** Indicate whether the current call is recursive. This can 
-     * matter in cases such as timing where we don't want to 
-     * start and stop timers multiple times within a single call
-     * stack. */
-    bool isRecursiveCall() const {return isRecursiveCall_;}
+  /** \brief Indicate whether the current call is recursive.
+   *
+   * This can matter in cases such as timing where we don't want to start and
+   * stop timers multiple times within a single call stack.
+   */
+  bool isRecursiveCall() const { return isRecursiveCall_; }
       
-    /* Use the "Meyers Trick" to create static data safely */
-    static Array<RCP<T> >& counters() 
-    {static Array<RCP<T> > rtn; return rtn;}
+  /** \brief Use the "Meyers Trick" to create static data safely. */
+  static Array<RCP<T> >& counters() 
+    {
+      static Array<RCP<T> > rtn;
+      return rtn;
+    }
     
-  private:
+private:
     
-    T& counter_;
+  T& counter_;
+    
+  bool isRecursiveCall_;
+    
+};
 
-    
-    bool isRecursiveCall_;
-      
-    
-  };
+  
+} // namespace Teuchos
 
-  
-  
-  
-}
+
 #endif

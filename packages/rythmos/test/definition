@@ -24,12 +24,12 @@
 }
 
 # Scalar ImplicitBDF with forcing term
-
+# note:  beofulf = cs.csbsju.edu 
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
-    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --echo-command-line;
+    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --max-restep-error=0 --echo-command-line;
     COMM = SERIAL, MPI(1);
-    X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov; 
+    X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov rancilio.sandia.gov cs.csbsju.edu; 
 }
 
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,RythmosAmesos1Loose) {
@@ -205,6 +205,7 @@
     COMM = SERIAL,MPI(1);
 }
 
+
 # Vector 1DfemTransient with ImplicitBDF
 (FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
@@ -212,12 +213,14 @@
     COMM = SERIAL, MPI(1);
 }
 
+
 # Vector 1DfemTransient with ImplicitBDF with AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_aztecoo.exe;
     ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
     COMM = SERIAL,MPI(1);
 }
+
 
 # Vector 1DfemTransient with ImplicitBDF with Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
@@ -648,7 +651,7 @@
             <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
           </ParameterList>
         </ParameterList>" \
-      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_EXTREME \
       --echo-command-line \
       --fwd-sens-solve \
       --max-state-error=1e-6 \

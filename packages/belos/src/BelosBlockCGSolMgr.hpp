@@ -45,7 +45,7 @@
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosIMGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutput.hpp"
 #include "BelosOutputManager.hpp"
@@ -170,7 +170,11 @@ namespace Belos {
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
       return tuple(timerSolve_);
     }
-    
+
+    /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
+     */
+    bool isLOADetected() const { return false; }
+ 
     //@}
     
     //! @name Set methods
@@ -226,7 +230,7 @@ namespace Belos {
     // Status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
     // Orthogonalization manager.
@@ -479,7 +483,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
   
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
@@ -628,22 +632,24 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
   int numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
 
-  std::vector<int> currIdx;
+  std::vector<int> currIdx, currIdx2;
   //  If an adaptive block size is allowed then only the linear systems that need to be solved are solved.
   //  Otherwise, the index set is generated that informs the linear problem that some linear systems are augmented.
   if ( adaptiveBlockSize_ ) {
     blockSize_ = numCurrRHS;
     currIdx.resize( numCurrRHS  );
+    currIdx2.resize( numCurrRHS  );
     for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; }
+      { currIdx[i] = startPtr+i; currIdx2[i]=i; }
     
   }
   else {
     currIdx.resize( blockSize_ );
+    currIdx2.resize( blockSize_ );
     for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; }
+      { currIdx[i] = startPtr+i; currIdx2[i]=i; }
     for (int i=numCurrRHS; i<blockSize_; ++i) 
-      { currIdx[i] = -1; }
+      { currIdx[i] = -1; currIdx2[i] = i; }
   }
 
   // Inform the linear problem of the current linear system to solve.
@@ -688,7 +694,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Get the current residual for this block of linear systems.
-      Teuchos::RCP<MV> R_0 = problem_->getCurrResVec();
+      Teuchos::RCP<MV> R_0 = MVT::CloneView( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Set the new state and initialize the solver.
       CGIterationState<ScalarType,MV> newstate;
@@ -710,7 +716,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	    // We have convergence of at least one linear system.
 
 	    // Figure out which linear systems converged.
-	    std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+	    std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
 
 	    // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
@@ -722,6 +728,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
 	    // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
 	    int have = 0;
+            std::vector<int> unconvIdx(currRHSIdx.size());
 	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
 	      bool found = false;
 	      for (unsigned int j=0; j<convIdx.size(); ++j) {
@@ -731,18 +738,23 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 		}
 	      }
 	      if (!found) {
-		currRHSIdx[have] = currRHSIdx[i];
-		have++;
+                currIdx2[have] = currIdx2[i];
+		currRHSIdx[have++] = currRHSIdx[i];
 	      }
+              else {
+              } 
 	    }
 	    currRHSIdx.resize(have);
+	    currIdx2.resize(have);
 
 	    // Set the remaining indices after deflation.
 	    problem_->setLSIndex( currRHSIdx );
 
 	    // Get the current residual std::vector.
-	    Teuchos::RCP<MV> R_0 = problem_->getCurrResVec();
-	    
+	    std::vector<MagnitudeType> norms;
+            Teuchos::RCP<MV> R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
+	    for (int i=0; i<have; ++i) { currIdx2[i] = i; }
+
 	    // Set the new blocksize for the solver.
 	    block_cg_iter->setBlockSize( have );
 
@@ -794,15 +806,17 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	if ( adaptiveBlockSize_ ) {
           blockSize_ = numCurrRHS;
 	  currIdx.resize( numCurrRHS  );
+	  currIdx2.resize( numCurrRHS  );
 	  for (int i=0; i<numCurrRHS; ++i) 
-	    { currIdx[i] = startPtr+i; }	  
+	    { currIdx[i] = startPtr+i; currIdx2[i] = i; }	  
 	}
 	else {
 	  currIdx.resize( blockSize_ );
+	  currIdx2.resize( blockSize_ );
 	  for (int i=0; i<numCurrRHS; ++i) 
-	    { currIdx[i] = startPtr+i; }
+	    { currIdx[i] = startPtr+i; currIdx2[i] = i; }
 	  for (int i=numCurrRHS; i<blockSize_; ++i) 
-	    { currIdx[i] = -1; }
+	    { currIdx[i] = -1; currIdx2[i] = i; }
 	}
 	// Set the next indices.
 	problem_->setLSIndex( currIdx );

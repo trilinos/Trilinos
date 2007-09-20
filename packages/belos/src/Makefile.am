@@ -50,6 +50,8 @@ CORE_H = \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
 	$(srcdir)/BelosStatusTestOutput.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
+	$(srcdir)/BelosStatusTestGenResNorm.hpp \
+	$(srcdir)/BelosStatusTestImpResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
 
 CORE = \

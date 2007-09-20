@@ -159,7 +159,7 @@ namespace Belos {
 
     //! Compute the new solution to the linear system given the /c update.
     /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
-      This keeps the linear problem from having to recompute the residual std::vector everytime it's asked for if
+      This keeps the linear problem from having to recompute the residual vector everytime it's asked for if
       the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
       updating the linear problem.
     */
@@ -199,30 +199,21 @@ namespace Belos {
     //! Get a pointer to the right-hand side B.
     RCP<const MV> getRHS() const { return(B_); }
     
-    //! Get a pointer to the initial residual std::vector.
+    //! Get a pointer to the initial residual vector.
     /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
     RCP<const MV> getInitResVec() const { return(R0_); }
     
-    //! Get a pointer to the preconditioned initial residual std::vector.
+    //! Get a pointer to the preconditioned initial residual vector.
     /*! \note This is the unpreconditioned residual.
      */
-    RCP<const MV> getActualInitResVec() const { return(R0_); }
-    
-    //! Get a pointer to the current residual std::vector.
-    /*! This method is called by the solver of any method that is interested in the current linear system
-      being solved for.
-      <ol>
-      <li> If the solution has been updated by the solver, then this std::vector is current ( see SolutionUpdated() ).
-      </ol>
-    */
-    RCP<MV> getCurrResVec() { return curR_; }
+    RCP<const MV> getInitPrecResVec() const { return(PR0_); }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
       being solved for.  
       <ol>
-      <li> If the solution has been updated by the solver, then this std::vector is current ( see SolutionUpdated() ).
+      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */
@@ -232,7 +223,7 @@ namespace Belos {
     /*! This method is called by the solver of any method that is interested in the current linear system
       being solved for.  
       <ol>
-      <li> If the solution has been updated by the solver, then this std::vector is current ( see SolutionUpdated() ).
+      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
@@ -330,16 +321,16 @@ namespace Belos {
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
     /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
       The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
-      \note This residual will be a preconditioned residual if the system has a left preconditioner.
+      \note This residual will not be preconditioned if the system has a left preconditioner.
     */
     void computeCurrResVec( MV* R , const MV* X = 0, const MV* B = 0 ) const;
 
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
     /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
       The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
-      \note This residual will not be preconditioned if the system has a left preconditioner.
+      \note This residual will be preconditioned if the system has a left preconditioner.
     */
-    void computeActualResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
+    void computeCurrPrecResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
     
     //@}
     
@@ -360,12 +351,12 @@ namespace Belos {
     //! Current right-hand side of the linear system.
     RCP<MV> curB_;
     
-    //! Current residual of the linear system.
-    RCP<MV> curR_;
-    
     //! Initial residual of the linear system.
     RCP<MV> R0_;
-    
+   
+    //! Preconditioned initial residual of the linear system.
+    RCP<MV> PR0_;
+ 
     //! Left preconditioning operator of linear system
     RCP<const OP> LP_;  
     
@@ -448,8 +439,8 @@ namespace Belos {
     curX_(Problem.curX_),
     B_(Problem.B_),
     curB_(Problem.curB_),
-    curR_(Problem.curR_),
     R0_(Problem.R0_),
+    PR0_(Problem.PR0_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
     timerOp_(Problem.timerOp_),
@@ -481,20 +472,27 @@ namespace Belos {
     // ( first clean up old linear system )
     curB_ = null;
     curX_ = null;
-    curR_ = null;
    
     // Create indices for the new linear system.
-    int validIdx = 0;
+    int validIdx = 0, ivalidIdx = 0;
     blocksize_ = rhsIndex_.size();
     std::vector<int> vldIndex( blocksize_ );
     std::vector<int> newIndex( blocksize_ );
+    std::vector<int> iIndex( blocksize_ );
     for (int i=0; i<blocksize_; ++i) {
       if (rhsIndex_[i] > -1) {
         vldIndex[validIdx] = rhsIndex_[i];
         newIndex[validIdx] = i;
         validIdx++;
       }
+      else {
+        iIndex[ivalidIdx] = i;
+        ivalidIdx++;
+      }
     }
+    vldIndex.resize(validIdx);
+    newIndex.resize(validIdx);   
+    iIndex.resize(ivalidIdx);
     num2Solve_ = validIdx;
 
     // Create the new linear system using index
@@ -508,25 +506,21 @@ namespace Belos {
       MVT::MvInit(*curX_);
       curB_ = MVT::Clone( *B_, blocksize_ );
       MVT::MvRandom(*curB_);
-      curR_ = MVT::Clone( *X_, blocksize_);
       //
+      // Now put in the part of B into curB 
       RCP<const MV> tptr = MVT::CloneView( *B_, vldIndex );
       MVT::SetBlock( *tptr, newIndex, *curB_ );
       //
-      RCP<MV> tptr2 = MVT::CloneView( *X_, vldIndex );
-      MVT::SetBlock( *tptr2, newIndex, *curX_ );
+      // Now put in the part of X into curX
+      tptr = MVT::CloneView( *X_, vldIndex );
+      MVT::SetBlock( *tptr, newIndex, *curX_ );
+      //
+      solutionUpdated_ = false;
     }
     else {
       curX_ = MVT::CloneView( *X_, rhsIndex_ );
       curB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
-      curR_ = MVT::Clone( *X_, blocksize_ );
     }
-    //
-    // Compute the current residual.
-    // 
-    OPT::Apply( *A_, *curX_, *curR_ );
-    MVT::MvAddMv( 1.0, *curB_, -1.0, *curR_, *curR_ );
-    solutionUpdated_ = false;
     //
     // Increment the number of linear systems that have been loaded into this object.
     //
@@ -564,15 +558,14 @@ namespace Belos {
     //
     curX_ = null;
     curB_ = null;
-    curR_ = null;
     rhsIndex_.resize(0);
   }
   
 
   template <class ScalarType, class MV, class OP>
   RCP<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RCP<MV>& update, 
-								   bool updateLP,
-								   ScalarType scale )
+							   bool updateLP,
+							   ScalarType scale )
   { 
     RCP<MV> newSoln;
     if (update != null) {
@@ -581,7 +574,10 @@ namespace Belos {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
 	  RCP<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	  OPT::Apply( *RP_, *update, *TrueUpdate ); 
+	  {
+	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	    OPT::Apply( *RP_, *update, *TrueUpdate ); 
+	  }
 	  MVT::MvAddMv( 1.0, *curX_, scale, *TrueUpdate, *curX_ ); 
 	} 
 	else {
@@ -596,7 +592,10 @@ namespace Belos {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
 	  RCP<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	  OPT::Apply( *RP_, *update, *trueUpdate ); 
+	  {
+	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	    OPT::Apply( *RP_, *update, *trueUpdate ); 
+	  }
 	  MVT::MvAddMv( 1.0, *curX_, scale, *trueUpdate, *newSoln ); 
 	} 
 	else {
@@ -614,6 +613,16 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   bool LinearProblem<ScalarType,MV,OP>::setProblem( const RCP<MV> &newX, const RCP<const MV> &newB )
   {
+    // Create timers if the haven't been created yet.
+    if (timerOp_ == Teuchos::null) {
+      std::string opLabel = label_ + ": Operation Op*x";
+      timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
+    }
+    if (timerPrec_ == Teuchos::null) {
+      std::string precLabel = label_ + ": Operation Prec*x";
+      timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
+    }
+
     // Set the linear system using the arguments newX and newB
     if (newX != null)
       X_ = newX;
@@ -624,7 +633,6 @@ namespace Belos {
     rhsIndex_.resize(0);
     curX_ = null;
     curB_ = null;
-    curR_ = null;
 
     // Check the validity of the linear problem object.
     // If no operator A exists, then throw an std::exception.
@@ -636,26 +644,28 @@ namespace Belos {
     // Initialize the state booleans
     solutionUpdated_ = false;
     
-    // Compute the initial residual std::vector.
+    // Compute the initial residuals.
     if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
       R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
     }
-    OPT::Apply( *A_, *X_, *R0_ );
-    MVT::MvAddMv( 1.0, *B_, -1.0, *R0_, *R0_ );
+    computeCurrResVec( &*R0_, &*X_, &*B_ );
 
-    // Create timers if the haven't been created yet.
-    if (timerOp_ == Teuchos::null) {
-      std::string opLabel = label_ + ": Operation Op*x";
-      timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
-    }
-    if (timerPrec_ == Teuchos::null) {
-      std::string precLabel = label_ + ": Operation Prec*x";
-      timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
-    }
+    if (LP_!=null) {
+      if (PR0_==null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *X_ )) {
+        PR0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+      }
+      {
+        Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+        OPT::Apply( *LP_, *R0_, *PR0_ );
+      }
+    } 
+    else {
+      PR0_ = R0_;
+    }    
 
     // The problem has been set and is ready for use.
     isSet_ = true;
-
+    
     // Return isSet.
     return isSet_;
   }
@@ -724,6 +734,7 @@ namespace Belos {
         }
         {
           Teuchos::TimeMonitor OpTimer(*timerOp_);
+
 	  OPT::Apply( *LP_, *ytemp, y );
         }
       }
@@ -780,7 +791,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::computeCurrResVec( MV* R, const MV* X, const MV* B ) const {
+  void LinearProblem<ScalarType,MV,OP>::computeCurrPrecResVec( MV* R, const MV* X, const MV* B ) const {
 
     if (R) {
       if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
@@ -788,13 +799,22 @@ namespace Belos {
 	  if (LP_!=null)
 	    {
 	      RCP<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
-	      OPT::Apply( *A_, *X, *R_temp );
+              {
+                Teuchos::TimeMonitor OpTimer(*timerOp_);
+	        OPT::Apply( *A_, *X, *R_temp );
+              }
 	      MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
-	      OPT::Apply( *LP_, *R_temp, *R );
+              {
+                Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	        OPT::Apply( *LP_, *R_temp, *R );
+              }
 	    }
 	  else 
 	    {
-	      OPT::Apply( *A_, *X, *R );
+              {
+                Teuchos::TimeMonitor OpTimer(*timerOp_);
+	        OPT::Apply( *A_, *X, *R );
+              }
 	      MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
 	    }
 	}
@@ -814,27 +834,39 @@ namespace Belos {
 	if (LP_!=null)
 	  {
 	    RCP<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
-	    OPT::Apply( *A_, *localX, *R_temp );
+            {
+              Teuchos::TimeMonitor OpTimer(*timerOp_);
+	      OPT::Apply( *A_, *localX, *R_temp );
+            }
 	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
-	    OPT::Apply( *LP_, *R_temp, *R );
+            {
+              Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	      OPT::Apply( *LP_, *R_temp, *R );
+            }
 	  }
 	else 
 	  {
-	    OPT::Apply( *A_, *localX, *R );
+            {
+              Teuchos::TimeMonitor OpTimer(*timerOp_);
+  	      OPT::Apply( *A_, *localX, *R );
+            }
 	    MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
 	  }
       }    
-    }
+    } 
   }
   
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::computeActualResVec( MV* R, const MV* X, const MV* B ) const {
+  void LinearProblem<ScalarType,MV,OP>::computeCurrResVec( MV* R, const MV* X, const MV* B ) const {
 
     if (R) {
       if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
 	{
-	  OPT::Apply( *A_, *X, *R );
+          {
+            Teuchos::TimeMonitor OpTimer(*timerOp_);
+	    OPT::Apply( *A_, *X, *R );
+          }
 	  MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
 	}
       else { 
@@ -849,8 +881,11 @@ namespace Belos {
 	  localX = rcp( X, false );
 	else
 	  localX = curX_;
-	
-	OPT::Apply( *A_, *localX, *R );
+	  
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+	  OPT::Apply( *A_, *localX, *R );
+        }
 	MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
       }    
     }

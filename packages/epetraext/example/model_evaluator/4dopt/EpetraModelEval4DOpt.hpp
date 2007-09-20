@@ -31,16 +31,19 @@ public:
 
   /** \brief . */
   EpetraModelEval4DOpt(
-		const double         xt0         = 1.0
-		,const double        xt1         = 1.0
-		,const double        pt0         = 2.0
-		,const double        pt1         = 0.0
-		,const double        d           = 10.0
-		,const double        x00         = 1.0
-		,const double        x01         = 1.0
-		,const double        p00         = 2.0
-		,const double        p01         = 0.0
+		const double xt0 = 1.0
+		,const double xt1 = 1.0
+		,const double pt0 = 2.0
+		,const double pt1 = 0.0
+		,const double d = 10.0
+		,const double x00 = 1.0
+		,const double x01 = 1.0
+		,const double p00 = 2.0
+		,const double p01 = 0.0
     );
+
+  /** \brief . */
+  void setSupportDerivs( bool supportDerivs );
 
   /** \brief . */
   void set_p_bounds( double pL0, double pL1, double pU0, double pU1 );
@@ -87,18 +90,19 @@ private:
   // /////////////////////////////////////
   // Private member data
 
-	double    xt0_;
-	double    xt1_;
-	double    pt0_;
-	double    pt1_;
-  double    d_;
+	double xt0_;
+	double xt1_;
+	double pt0_;
+	double pt1_;
+  double d_;
 
-	bool      isInitialized_;
+	bool isInitialized_;
+  bool supportDerivs_;
 
-  Teuchos::RefCountPtr<const Epetra_Comm>  epetra_comm_;
-	Teuchos::RefCountPtr<const Epetra_Map>   map_x_;
-	Teuchos::RefCountPtr<const Epetra_Map>   map_p_;
-	Teuchos::RefCountPtr<const Epetra_Map>   map_g_;
+  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm_;
+	Teuchos::RefCountPtr<const Epetra_Map> map_x_;
+	Teuchos::RefCountPtr<const Epetra_Map> map_p_;
+	Teuchos::RefCountPtr<const Epetra_Map> map_g_;
 
 	Teuchos::RefCountPtr<Epetra_Vector> xL_;
 	Teuchos::RefCountPtr<Epetra_Vector> xU_;
@@ -109,7 +113,10 @@ private:
 	Teuchos::RefCountPtr<Epetra_Vector> x0_;
 	Teuchos::RefCountPtr<Epetra_Vector> p0_;
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph>  W_graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> W_graph_;
+
+  // Note defined and not to be called
+  EpetraModelEval4DOpt();
 
 };
 

@@ -26,7 +26,8 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
   ,const double        p00
   ,const double        p01
   )
-  :xt0_(xt0),xt1_(xt1),pt0_(pt0),pt1_(pt1),d_(d)
+  :xt0_(xt0),xt1_(xt1),pt0_(pt0),pt1_(pt1),d_(d),
+   isInitialized_(false),supportDerivs_(true)
 {
   using Teuchos::rcp;
 
@@ -62,6 +63,13 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
   isInitialized_ = true;
 
 }
+
+
+void EpetraModelEval4DOpt::setSupportDerivs( bool supportDerivs )
+{
+  supportDerivs_ = supportDerivs;
+}
+
 
 void EpetraModelEval4DOpt::set_p_bounds(
   double pL0, double pL1, double pU0, double pU1
@@ -181,34 +189,39 @@ EpetraModelEval4DOpt::createOutArgs() const
       ,true // supportsAdjoint
       )
     );
-  outArgs.setSupports(OUT_ARG_DfDp,0,DERIV_MV_BY_COL);
-  outArgs.set_DfDp_properties(
-    0,DerivativeProperties(
-      DERIV_LINEARITY_CONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
-  outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
-  outArgs.set_DgDx_properties(
-    0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
-  outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
-  outArgs.set_DgDp_properties(
-    0,0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
+  if (supportDerivs_) {
+    outArgs.setSupports(OUT_ARG_DfDp,0,DERIV_MV_BY_COL);
+    outArgs.set_DfDp_properties(
+      0,DerivativeProperties(
+        DERIV_LINEARITY_CONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+    outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.set_DgDx_properties(
+      0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+    outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.set_DgDp_properties(
+      0,0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+  }
   return outArgs;
 }
 
-void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
+
+void EpetraModelEval4DOpt::evalModel(
+  const InArgs& inArgs, const OutArgs& outArgs
+  ) const
 {
   using Teuchos::dyn_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -224,9 +237,9 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
   Epetra_Vector       *f_out = outArgs.get_f().get();
   Epetra_Vector       *g_out = outArgs.get_g(0).get();
   Epetra_Operator     *W_out = outArgs.get_W().get();
-  Epetra_MultiVector  *DfDp_out = get_DfDp_mv(0,outArgs).get();
-  Epetra_MultiVector  *DgDx_trans_out = get_DgDx_mv(0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
-  Epetra_MultiVector  *DgDp_trans_out = get_DgDp_mv(0,0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+  Epetra_MultiVector  *DfDp_out = supportDerivs_ ? get_DfDp_mv(0,outArgs).get() : 0;
+  Epetra_MultiVector  *DgDx_trans_out = supportDerivs_ ? get_DgDx_mv(0,outArgs,DERIV_TRANS_MV_BY_ROW).get() : 0;
+  Epetra_MultiVector  *DgDp_trans_out = supportDerivs_ ? get_DgDp_mv(0,0,outArgs,DERIV_TRANS_MV_BY_ROW).get() : 0;
   //
   // Compute the functions
   //

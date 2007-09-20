@@ -43,7 +43,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
-#include "Teuchos_Time.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #ifdef RTOp_USE_MPI
 #  include "Epetra_MpiComm.h"
@@ -907,7 +907,7 @@ int main( int argc, char* argv[] )
     // RAB: 2004/01/05: Note, the above relative performance is likely
     // to be the worst of all of the others since RTOp operators are
     // applied seperately column by column but the relative
-    // performance should go to ab*out 1.0 when local_dim is
+    // performance should go to about 1.0 when local_dim is
     // sufficiently large!  However, because
     // Epetra_MultiVector::Thyra::Assign(...) is implemented using double
     // pointer indexing, the RTOp implementation used with the Thyra
@@ -918,6 +918,8 @@ int main( int argc, char* argv[] )
     if(verbose)
       *out
         << "\n*** (C.2) Comparing Thyra::SpmdMultiVectorBase::apply() verses raw Epetra_MultiVector::Multiply()\n";
+
+    Teuchos::TimeMonitor::zeroOutTimers();
 
     const double flop_adjust_factor_2 = 2.0;
     const int num_time_loops_2 = int( max_flop_rate / ( flop_adjust_factor_2* local_dim * num_mv_cols * num_mv_cols ) ) + 1;
@@ -965,6 +967,8 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\n*** (C.3) Comparing Thyra::EpetraLinearOp::apply() verses raw Epetra_Operator::apply()\n";
 
+    Teuchos::TimeMonitor::zeroOutTimers();
+
     const double flop_adjust_factor_3 = 10.0; // lots of indirect addressing
     const int num_time_loops_3 = int( max_flop_rate / ( flop_adjust_factor_3 * local_dim * num_mv_cols ) ) + 1;
 
@@ -975,28 +979,42 @@ int main( int argc, char* argv[] )
       const RCP<Epetra_MultiVector>       eeY  = get_Epetra_MultiVector(*epetra_map,eY);
       
       if(verbose)
-        *out << "\nPerforming eeY = 2*eOp*eeV1 (using raw Epetra_Operator::apply(...)) " << num_time_loops_3 << " times ...\n";
-      epetra_op->SetUseTranspose(false);
+        *out << "\nPerforming eeY = eOp*eeV1 (using raw Epetra_Operator::apply(...)) " << num_time_loops_3 << " times ...\n";
+
+      Teuchos::TimeMonitor::zeroOutTimers();
+
       timer.start(true);
+      epetra_op->SetUseTranspose(false);
       for(int k = 0; k < num_time_loops_3; ++k ) {
         epetra_op->Apply( *eeV1, *eeY );
-        eeY->Scale(2.0);
+        //eeY->Scale(2.0);
       }
       timer.stop();
+
       raw_epetra_time = timer.totalElapsedTime();
       if(verbose) *out << "  total time = " << raw_epetra_time << " sec\n";
+
+      if(verbose)
+        Teuchos::TimeMonitor::summarize(*out << "\n");
       
     }
     
     if(verbose)
-      *out << "\nPerforming eY = 2*Op*eV1 (using Thyra::EpetraLinearOp::apply(...)) " << num_time_loops_3 << " times ...\n";
+      *out << "\nPerforming eY = Op*eV1 (using Thyra::EpetraLinearOp::apply(...)) " << num_time_loops_3 << " times ...\n";
+
+    Teuchos::TimeMonitor::zeroOutTimers();
+
     timer.start(true);
     for(int k = 0; k < num_time_loops_3; ++k ) {
-      apply( *Op, NOTRANS, *eV1, &*eY, 2.0 );
+      apply( *Op, NOTRANS, *eV1, &*eY );
     }
     timer.stop();
+
     thyra_wrapped_time = timer.totalElapsedTime();
     if(verbose) *out << "  total time = " << thyra_wrapped_time << " sec\n";
+
+    if(verbose)
+      Teuchos::TimeMonitor::summarize(*out << "\n");
     
     print_performance_stats( num_time_loops_3, raw_epetra_time, thyra_wrapped_time, verbose, *out );
 

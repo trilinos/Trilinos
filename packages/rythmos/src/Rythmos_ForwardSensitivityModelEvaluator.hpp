@@ -36,10 +36,12 @@
 #include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp" // Interface
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp" // Implementation
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Rythmos {
@@ -47,8 +49,8 @@ namespace Rythmos {
 
 /** \brief Forward sensitivity transient <tt>ModelEvaluator</tt> subclass.
  *
- * This class provides a very general implemenation of a forward sensitivity
- * model evaluator for a DAE.
+ * This class provides a very general implemenation of a linear forward
+ * sensitivity model evaluator for a DAE.
  *
  * \section Rythmos_ForwardSensitivityModelEvaluator_intro_sec Introduction
  *
@@ -293,8 +295,7 @@ namespace Rythmos {
  */
 template<class Scalar>
 class ForwardSensitivityModelEvaluator
-  : virtual public Thyra::ModelEvaluator<Scalar>, // Public interface
-    virtual protected Thyra::StateFuncModelEvaluatorBase<Scalar> // Protected implementation
+  : virtual public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
@@ -402,10 +403,18 @@ public:
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
-  void evalModel(
+  void evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
@@ -626,9 +635,12 @@ ForwardSensitivityModelEvaluator<Scalar>::createInArgs() const
 }
 
 
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-ForwardSensitivityModelEvaluator<Scalar>::createOutArgs() const
+ForwardSensitivityModelEvaluator<Scalar>::createOutArgsImpl() const
 {
 
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -651,7 +663,7 @@ ForwardSensitivityModelEvaluator<Scalar>::createOutArgs() const
 
 
 template<class Scalar>
-void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
+void ForwardSensitivityModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
@@ -669,8 +681,13 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
   // Update the derivative matrices if they are not already updated for the
   // given time!.
   //
-
-  computeDerivativeMatrices(inArgs);
+  
+  {
+#ifdef ENABLE_RYTHMOS_TIMERS
+    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityModelEvaluator::evalModel: computeMatrices");
+#endif
+    computeDerivativeMatrices(inArgs);
+  }
 
   //
   // InArgs
@@ -715,6 +732,11 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
   //
 
   if(!is_null(F_sens)) {
+
+#ifdef ENABLE_RYTHMOS_TIMERS
+    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityModelEvaluator::evalModel: computeSens");
+#endif
+
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
     Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
       S_diff = createMembers( stateModel_->get_x_space(), np_ );
@@ -734,7 +756,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
     // F_sens += d(f)/d(p)
     Vp_V( &*F_sens, *DfDp_ );
   }
-
+  
   if(!is_null(W_sens)) {
     TEST_FOR_EXCEPTION(
       alpha != coeff_x_dot_, std::logic_error,
@@ -745,6 +767,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
       "Error, beta="<<beta<<" != coeff_x="<<coeff_x_
       <<" with difference = "<<(beta-coeff_x_)<<"!" );
     W_sens->initialize( W_tilde_, s_bar_space_, f_sens_space_ );
+    
   }
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
@@ -791,10 +814,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
     t_base = stateBasePoint_.get_t(),
     t = point.get_t();
 
-  TEST_FOR_EXCEPTION(
-    t != t_base, std::logic_error,
-    "Error, t="<<t<<" is not equal to t_base="<<t_base<<" and we dont' handle this yet!"
-    );
+  TEUCHOS_ASSERT_EQUALITY( t , t_base );
 
   if (is_null(W_tilde_)) {
     TEST_FOR_EXCEPT("ToDo: compute W_tilde from scratch!");

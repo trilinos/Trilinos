@@ -1,3 +1,11 @@
+    Enable Delayed Solver Construction : bool = 0
+      # When this option is set to true, the linear solver factory will be wrapped
+      # in a delayed evaluation Decorator factory object.  This results in a delay
+      # in the creation of a linear solver (and the associated preconditioner) until
+      # the first solve is actually performed.  This helps in cases where it is not
+      # known a-priori if a linear solve will be needed on a given linear operator and
+      # therefore can significantly improve performance for some types of algorithms
+      # such as NOX and LOCA.
     Linear Solver Type : string = Amesos
       # Determines the type of linear solver that will be used.
       # The parameters for each solver type are specified in the sublist "Linear Solver Types"
@@ -353,7 +361,7 @@
             Output Frequency : int = -1
               # How often convergence information should be outputted
               # to the output stream.
-            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb61260,node=0xb6f8b0,count=4}
+            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb76360,node=0xb855a0,count=4}
               # A reference-counted pointer to the output stream where all
               # solver output is sent.
             Show Maximum Residual Norm Only : bool = 0
@@ -398,7 +406,7 @@
             Output Frequency : int = -1
               # How often convergence information should be outputted
               # to the output stream.
-            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb61260,node=0xb6f670,count=4}
+            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb76360,node=0xb85360,count=4}
               # A reference-counted pointer to the output stream where all
               # solver output is sent.
             Show Maximum Residual Norm Only : bool = 0
@@ -442,7 +450,7 @@
             Output Frequency : int = -1
               # How often convergence information should be outputted
               # to the output stream.
-            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb61260,node=0xb6f790,count=4}
+            Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb76360,node=0xb85480,count=4}
               # A reference-counted pointer to the output stream where all
               # solver output is sent.
             Show Maximum Residual Norm Only : bool = 0
@@ -608,8 +616,8 @@
           max levels : int = 10
           prec type : string = MGV
           smoother: Aztec as solver : bool = 0
-          smoother: Aztec options : int* = 0xb87a90
-          smoother: Aztec params : double* = 0xb88350
+          smoother: Aztec options : RCP<vector<int>> = RCP<vector<int>>{ptr=0xb9c4d0,node=0xb9d140,count=2}
+          smoother: Aztec params : RCP<vector<double>> = RCP<vector<double>>{ptr=0xb9d360,node=0xb9cb10,count=2}
           smoother: Hiptmair efficient symmetric : bool = 1
           smoother: damping factor : double = 1
           smoother: pre or post : string = both

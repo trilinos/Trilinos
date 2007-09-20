@@ -78,6 +78,7 @@
 
 #ifdef HAVE_TEUCHOS_DEBUG
 #  define TEUCHOS_DEBUG
+#  define HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 #endif
 
 #ifdef __cplusplus

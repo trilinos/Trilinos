@@ -54,6 +54,15 @@ void Epetra_SetCacheBypassRange( void * address, int length, bool bypassCache);
 bool Epetra_CrsMatrixTraceDumpMultiply = false;
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
 
+#ifdef HAVE_EPETRA_TEUCHOS
+// Define this macro to see some timers for some of these functions
+# define EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+#endif
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+#  include "Teuchos_TimeMonitor.hpp"
+#endif
+
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
@@ -1155,6 +1164,11 @@ int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& targ
 int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
 			    const Epetra_Vector& x, Epetra_Vector& y) const
 {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Solve(Upper,Trans,UnitDiag,x,y)");
+#endif
+
   //
   // This function finds y such that Ly = x or Uy = x or the transpose cases.
   //
@@ -1190,6 +1204,11 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
 
 //=============================================================================
 int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Solve(Upper,Trans,UnitDiag,X,Y)");
+#endif
+
   //
   // This function find Y such that LY = X or UY = X or the transpose cases.
   //
@@ -2304,6 +2323,11 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
 }
 //=============================================================================
 int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Multiply(TransA,x,y)");
+#endif
+
   //
   // This function forms the product y = A * x or y = A' * x
   //
@@ -2378,6 +2402,10 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
 
 //=============================================================================
 int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Multiply(TransA,X,Y)");
+#endif
 
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
@@ -3225,6 +3253,11 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 }
 //=============================================================================
 int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Multiply1(TransA,x,y)");
+#endif
+
   //
   // This function forms the product y = A * x or y = A' * x
   //
@@ -3339,6 +3372,11 @@ int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 }
 //=============================================================================
 int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Multiply1(TransA,X,Y)");
+#endif
+
   //
   // This function forms the product Y = A * Y or Y = A' * X
   //
@@ -3472,6 +3510,11 @@ int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_MultiVector& X, Epetra
 int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal,
 			    const Epetra_Vector& x, Epetra_Vector& y) const
 {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Solve1(Upper,Trans,UnitDiag,x,y)");
+#endif
+
   //
   // This function finds y such that Ly = x or Uy = x or the transpose cases.
   //
@@ -3599,6 +3642,11 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal,
 
 //=============================================================================
 int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Solve(Upper,Trans,UnitDiag,X,Y)");
+#endif
+
   //
   // This function find Y such that LY = X or UY = X or the transpose cases.
   //

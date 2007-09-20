@@ -79,26 +79,26 @@ LINK_DIAGONAL_BELOS_ML=basicExample_belos_ml.exe
 endif
 endif
 
-basicExample_amesos.exe:
-	ln -s ./basicExample.exe basicExample_amesos.exe
+basicExample_amesos.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_aztecoo.exe:
-	ln -s ./basicExample.exe basicExample_aztecoo.exe
+basicExample_aztecoo.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_aztecoo_ifpack.exe:
-	ln -s ./basicExample.exe basicExample_aztecoo_ifpack.exe
+basicExample_aztecoo_ifpack.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_aztecoo_ml.exe:
-	ln -s ./basicExample.exe basicExample_aztecoo_ml.exe
+basicExample_aztecoo_ml.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_belos.exe:
-	ln -s ./basicExample.exe basicExample_belos.exe
+basicExample_belos.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_belos_ifpack.exe:
-	ln -s ./basicExample.exe basicExample_belos_ifpack.exe
+basicExample_belos_ifpack.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_belos_ml.exe:
-	ln -s ./basicExample.exe basicExample_belos_ml.exe
+basicExample_belos_ml.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 BASIC_EXE_LINKS = \
   $(LINK_DIAGONAL_AMESOS) \

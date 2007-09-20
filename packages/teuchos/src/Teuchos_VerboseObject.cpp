@@ -84,6 +84,7 @@ void VerboseObjectBase::initializeVerboseObjectBase(
   )
 {
   thisOStream_ = oStream;
+  informUpdatedVerbosityState();
 }
 
 
@@ -91,6 +92,7 @@ const VerboseObjectBase&
 VerboseObjectBase::setOStream(const RCP<FancyOStream> &oStream) const
 {
   thisOStream_ = oStream;
+  informUpdatedVerbosityState();
   return *this;
 }
 
@@ -101,6 +103,7 @@ VerboseObjectBase::setOverridingOStream(
   ) const
 {
   thisOverridingOStream_ = oStream;
+  informUpdatedVerbosityState();
   return *this;
 }
 
@@ -109,6 +112,7 @@ VerboseObjectBase&
 VerboseObjectBase::setLinePrefix(const std::string &linePrefix)
 {
   thisLinePrefix_ = linePrefix;
+  informUpdatedVerbosityState();
   return *this;
 }
 
@@ -152,6 +156,13 @@ OSTab VerboseObjectBase::getOSTab(
     ? linePrefix : this->getLinePrefix()
     );
 }
+
+
+// protected
+
+
+void VerboseObjectBase::informUpdatedVerbosityState() const
+{}
 
 
 } // namespace Teuchos

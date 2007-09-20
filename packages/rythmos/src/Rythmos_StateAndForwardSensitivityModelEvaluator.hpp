@@ -50,7 +50,6 @@ namespace Rythmos {
  * This class provides an implemenation of a combined state and forward
  * sensitivity model evaluator for a DAE.
  *
- *
  * The form of the parameterized state equation is:
 
  \verbatim
@@ -183,8 +182,7 @@ namespace Rythmos {
  */
 template<class Scalar>
 class StateAndForwardSensitivityModelEvaluator
-  : virtual public Thyra::ModelEvaluator<Scalar>, // Public interface
-    virtual protected Thyra::StateFuncModelEvaluatorBase<Scalar> // Protected implementation
+  : virtual public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
@@ -239,10 +237,18 @@ public:
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
-  void evalModel(
+  void evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
@@ -409,9 +415,12 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::createInArgs() const
 }
 
 
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
 template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-StateAndForwardSensitivityModelEvaluator<Scalar>::createOutArgs() const
+StateAndForwardSensitivityModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar>
@@ -429,7 +438,7 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::createOutArgs() const
 
 
 template<class Scalar>
-void StateAndForwardSensitivityModelEvaluator<Scalar>::evalModel(
+void StateAndForwardSensitivityModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const

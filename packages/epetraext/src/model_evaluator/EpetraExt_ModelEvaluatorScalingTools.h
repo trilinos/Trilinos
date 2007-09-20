@@ -31,6 +31,7 @@
 
 
 #include "EpetraExt_ModelEvaluator.h"
+#include "Teuchos_Utils.hpp"
 
 
 namespace EpetraExt {
@@ -123,6 +124,8 @@ namespace EpetraExt {
     DfDp(l) = S_f * DfDp_hat(l), for l=0...Np-1
 
     g(j) = g_hat(j), for j=0...Ng-1
+
+    DgDx_dot(j) = DgDx_dot_hat(j) * inv(S_x), for j=0...Ng-1
 
     DgDx(j) = DgDx_hat(j) * inv(S_x), for j=0...Ng-1
     
@@ -537,33 +540,11 @@ void scaleModelFuncFirstDeriv(
   );
 
 
-/** \brief Class that gets and sets x in an InArgs object. */
-class InArgsGetterSetter_x {
-public:
-
-  Teuchos::RefCountPtr<const Epetra_Vector>
-  getVector( const ModelEvaluator::InArgs &inArgs ) const
-  {
-    return inArgs.get_x();
-  }
-
-  void setVector(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &x,
-    ModelEvaluator::InArgs *inArgs
-    ) const
-  {
-#ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(!inArgs);
-#endif
-    inArgs->set_x(x);
-  }
-
-};
-
-
 /** \brief Class that gets and sets x_dot in an InArgs object. */
 class InArgsGetterSetter_x_dot {
 public:
+
+  std::string getName() const { return "x_dot"; }
 
   Teuchos::RefCountPtr<const Epetra_Vector>
   getVector( const ModelEvaluator::InArgs &inArgs ) const
@@ -585,11 +566,40 @@ public:
 };
 
 
+/** \brief Class that gets and sets x in an InArgs object. */
+class InArgsGetterSetter_x {
+public:
+
+  std::string getName() const { return "x"; }
+
+  Teuchos::RefCountPtr<const Epetra_Vector>
+  getVector( const ModelEvaluator::InArgs &inArgs ) const
+  {
+    return inArgs.get_x();
+  }
+
+  void setVector(
+    const Teuchos::RefCountPtr<const Epetra_Vector> &x,
+    ModelEvaluator::InArgs *inArgs
+    ) const
+  {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPT(!inArgs);
+#endif
+    inArgs->set_x(x);
+  }
+
+};
+
+
 /** \brief Class that gets and sets p(l) in an InArgs object. */
 class InArgsGetterSetter_p {
 public:
 
   InArgsGetterSetter_p( int l ) : l_(l) {}
+
+  std::string getName() const
+  { return "p["+Teuchos::Utils::toString(l_)+"]"; }
 
   Teuchos::RefCountPtr<const Epetra_Vector>
   getVector( const ModelEvaluator::InArgs &inArgs ) const

@@ -249,6 +249,14 @@ public:
 
   //@}
 
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
+
+  //@}
+
   /** @name Overridden from ParameterListAcceptor */
   //@{
 
@@ -279,17 +287,6 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
-  /** \brief . */
-  RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
-  /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
-  /** \brief . */
-  void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
-  /** \brief . */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
     const bool wasSolved
@@ -297,11 +294,18 @@ public:
 
   //@}
 
-  /** \name Public functions overridden from Teuchos::Describable. */
+private:
+
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
   /** \brief . */
-  std::string description() const;
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  /** \brief . */
+  void evalModelImpl(
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    ) const;
 
   //@}
 
@@ -540,6 +544,27 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::uninitialize(
 }
 
 
+// Public functions overridden from Teuchos::Describable
+
+
+template<class Scalar>
+std::string
+DefaultLumpedParameterModelEvaluator<Scalar>::description() const
+{
+  const RCP<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  std::ostringstream oss;
+  oss << "Thyra::DefaultLumpedParameterModelEvaluator{";
+  oss << "thyraModel=";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
+
 // Overridden from Teuchos::ParameterListAcceptor
 
 
@@ -713,26 +738,43 @@ DefaultLumpedParameterModelEvaluator<Scalar>::getUpperBounds() const
 
 
 template<class Scalar>
-RCP<LinearOpBase<Scalar> >
-DefaultLumpedParameterModelEvaluator<Scalar>::create_DfDp_op(int l) const
+void DefaultLumpedParameterModelEvaluator<Scalar>::reportFinalPoint(
+  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+  const bool wasSolved
+  )
 {
-  TEST_FOR_EXCEPT("Error, we do not yet support the LinearOpBase form of DfDp yet!");
-  return Teuchos::null;
+
+  typedef ModelEvaluatorBase MEB;
+
+  // Make sure that everything has been initialized
+  updateNominalValuesAndBounds();
+
+  const RCP<ModelEvaluator<Scalar> >
+    thyraModel = this->getNonconstUnderlyingModel();
+
+  // By default, copy all input arguments since they will all be the same
+  // except for the given reduced p.  We will then replace the reduced p with
+  // p_orig below.
+  MEB::InArgs<Scalar> wrappedFinalPoint = thyraModel->createInArgs();
+  wrappedFinalPoint.setArgs(finalPoint);
+
+  // Replace p with p_orig.
+  RCP<const VectorBase<Scalar> > p;
+  if (!is_null(p=finalPoint.get_p(p_idx_))) {
+    wrappedFinalPoint.set_p(p_idx_,map_from_p_to_p_orig(*p));
+  }
+
+  thyraModel->reportFinalPoint(wrappedFinalPoint,wasSolved);
+
 }
 
 
-template<class Scalar>
-RCP<LinearOpBase<Scalar> >
-DefaultLumpedParameterModelEvaluator<Scalar>::create_DgDp_op( int j, int l ) const
-{
-  TEST_FOR_EXCEPT("Error, we do not yet support the LinearOpBase form of DgDp yet!");
-  return Teuchos::null;
-}
+// Private functions overridden from ModelEvaulatorDefaultBase
 
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-DefaultLumpedParameterModelEvaluator<Scalar>::createOutArgs() const
+DefaultLumpedParameterModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   ModelEvaluatorBase::OutArgsSetup<Scalar>
     outArgs = this->getUnderlyingModel()->createOutArgs();
@@ -745,7 +787,7 @@ DefaultLumpedParameterModelEvaluator<Scalar>::createOutArgs() const
 
 
 template<class Scalar>
-void DefaultLumpedParameterModelEvaluator<Scalar>::evalModel(
+void DefaultLumpedParameterModelEvaluator<Scalar>::evalModelImpl(
   const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
@@ -829,59 +871,6 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::evalModel(
   
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
-}
-
-
-template<class Scalar>
-void DefaultLumpedParameterModelEvaluator<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-  const bool wasSolved
-  )
-{
-
-  typedef ModelEvaluatorBase MEB;
-
-  // Make sure that everything has been initialized
-  updateNominalValuesAndBounds();
-
-  const RCP<ModelEvaluator<Scalar> >
-    thyraModel = this->getNonconstUnderlyingModel();
-
-  // By default, copy all input arguments since they will all be the same
-  // except for the given reduced p.  We will then replace the reduced p with
-  // p_orig below.
-  MEB::InArgs<Scalar> wrappedFinalPoint = thyraModel->createInArgs();
-  wrappedFinalPoint.setArgs(finalPoint);
-
-  // Replace p with p_orig.
-  RCP<const VectorBase<Scalar> > p;
-  if (!is_null(p=finalPoint.get_p(p_idx_))) {
-    wrappedFinalPoint.set_p(p_idx_,map_from_p_to_p_orig(*p));
-  }
-
-  thyraModel->reportFinalPoint(wrappedFinalPoint,wasSolved);
-
-}
-
-
-// Public functions overridden from Teuchos::Describable
-
-
-template<class Scalar>
-std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::description() const
-{
-  const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-  std::ostringstream oss;
-  oss << "Thyra::DefaultLumpedParameterModelEvaluator{";
-  oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
 }
 
 

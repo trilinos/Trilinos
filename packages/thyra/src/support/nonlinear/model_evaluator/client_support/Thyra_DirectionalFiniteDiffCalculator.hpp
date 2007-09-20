@@ -11,6 +11,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Thyra {
 
@@ -83,8 +84,8 @@ public:
  */
 template<class Scalar>
 class DirectionalFiniteDiffCalculator
-  : public Teuchos::VerboseObject<DirectionalFiniteDiffCalculator<Scalar> >
-  , public Teuchos::ParameterListAcceptor
+  : public Teuchos::VerboseObject<DirectionalFiniteDiffCalculator<Scalar> >,
+    public Teuchos::ParameterListAcceptor
 {
 public:
   
@@ -145,15 +146,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  RCP<ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  RCP<ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+  RCP<const ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  RCP<const ParameterList> getValidParameters() const;
 
   //@}
 
@@ -205,18 +206,18 @@ public:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>  paramList_;
+  RCP<ParameterList>  paramList_;
 
   // //////////////////////////////
   // Private static data members
 
   static const std::string FDMethod_name;
-  static const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >
+  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >
   fdMethodValidator;
   static const std::string FDMethod_default;
 
   static const std::string FDStepSelectType_name;
-  static const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >
+  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >
   fdStepSelectTypeValidator;
   static const std::string FDStepSelectType_default;
 
@@ -225,48 +226,75 @@ private:
 
 };
 
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DirectionalFiniteDiffCalculator
+ */
+template<class Scalar>
+RCP<DirectionalFiniteDiffCalculator<Scalar> >
+directionalFiniteDiffCalculator(
+  const RCP<ParameterList> &paramList
+  )
+{
+  RCP<DirectionalFiniteDiffCalculator<Scalar> >
+    fdCalc = Teuchos::rcp(new DirectionalFiniteDiffCalculator<Scalar>());
+  fdCalc->setParameterList(paramList);
+  return fdCalc;
+}
+
+
 } // namespace Thyra
+
 
 // //////////////////////////////
 // Implementations
 
+
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
+
 
 namespace Thyra {
 
+
 namespace DirectionalFiniteDiffCalculatorTypes {
 
-// Undocumented utility class for setting new derivative objects on an OutArgs
-// object!  Warning, users should not attempt to play these tricks on their
-// own!
+
+//
+// Undocumented utility class for setting support for new derivative objects
+// on an OutArgs object!  Warning, users should not attempt to play these
+// tricks on their own!
 //
 // Note that because of the design of the OutArgs and OutArgsSetup classes,
 // you can only change the list of supported arguments in a subclass of
-// ModelEvaluatorBase since OutArgsSetup is a protected type.
+// ModelEvaluatorBase since OutArgsSetup is a protected type.  This fact that
+// the only way to do this is convoluted is a feature!
+//
 template<class Scalar>
 class OutArgsCreator : public StateFuncModelEvaluatorBase<Scalar>
 {
 public:
   // Public functions overridden from ModelEvaulator.
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const
+  RCP<const VectorSpaceBase<Scalar> > get_x_space() const
     { TEST_FOR_EXCEPT(true); return Teuchos::null; }
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const
+  RCP<const VectorSpaceBase<Scalar> > get_f_space() const
     { TEST_FOR_EXCEPT(true); return Teuchos::null; }
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
     { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const
     { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::OutArgs<Scalar>(); }
   void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const
     { TEST_FOR_EXCEPT(true); }
   // Static function that does the magic!
   static ModelEvaluatorBase::OutArgs<Scalar> createOutArgs(
     const ModelEvaluator<Scalar> &model,
-    const SelectedDerivatives   &fdDerivatives
+    const SelectedDerivatives &fdDerivatives
     )
     {
+      
       typedef ModelEvaluatorBase MEB;
 
       const MEB::OutArgs<Scalar> wrappedOutArgs = model.createOutArgs();
@@ -295,9 +323,12 @@ public:
         )
       {
         const int l = *itr;
+        assert_p_space(model,l);
         outArgs.setSupports(MEB::OUT_ARG_DfDp,l,MEB::DERIV_MV_BY_COL);
       }
 
+      // Add support for finite difference DgDp(j,l) if asked
+      
       const SelectedDerivatives::supports_DgDp_t
         &supports_DgDp = fdDerivatives.supports_DgDp_;
       for(
@@ -309,38 +340,42 @@ public:
       {
         const int j = itr->first;
         const int l = itr->second;
-        const bool g_space_j_is_in_core = model.get_g_space(j)->hasInCoreView();
-        const bool p_space_l_is_in_core = model.get_p_space(l)->hasInCoreView();
-        MEB::DerivativeSupport derivSupport;
-        if (g_space_j_is_in_core)
-          derivSupport.plus(MEB::DERIV_TRANS_MV_BY_ROW);
-        if (p_space_l_is_in_core)
-          derivSupport.plus(MEB::DERIV_MV_BY_COL);
-#ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPTION(
-          derivSupport.none(), std::logic_error,
-          "Error, for the model " << model.description()
-          << ", at lease one of the spaces g_space("<<j<<")"
-          " or p_space("<<l<<") must be in-core so that they can"
-          " act as the domain space for the multi-vector derivative!"
-          );
-#endif
-        outArgs.setSupports(MEB::OUT_ARG_DgDp,j,l,derivSupport);
+        assert_p_space(model,l);
+        outArgs.setSupports(MEB::OUT_ARG_DgDp,j,l,MEB::DERIV_MV_BY_COL);
       }
 
       return outArgs;
 
     }
+
+private:
+
+  static void assert_p_space( const ModelEvaluator<Scalar> &model, const int l )
+    {
+#ifdef TEUCHOS_DEBUG
+      const bool p_space_l_is_in_core = model.get_p_space(l)->hasInCoreView();
+      TEST_FOR_EXCEPTION(
+        !p_space_l_is_in_core, std::logic_error,
+        "Error, for the model " << model.description()
+        << ", the space p_space("<<l<<") must be in-core so that they can"
+        " act as the domain space for the multi-vector derivative!"
+        );
+#endif
+    }
+
 };
+
 
 } // namespace DirectionalFiniteDiffCalculatorTypes
 
+
 // Private static data members
+
 
 template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDMethod_name = "FD Method";
 template<class Scalar>
-const Teuchos::RCP<
+const RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType
   >
@@ -389,7 +424,7 @@ const double DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_default = -1.
 template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_name = "FD Step Select Type";
 template<class Scalar>
-const Teuchos::RCP<
+const RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType
     >
@@ -434,7 +469,7 @@ DirectionalFiniteDiffCalculator<Scalar>::DirectionalFiniteDiffCalculator(
 
 template<class Scalar>
 void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(paramList.get()==0);
@@ -446,38 +481,39 @@ void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
     *paramList_,FDStepSelectType_name,FDStepSelectType_default);
   fd_step_size_ = paramList_->get(
     FDStepLength_name,FDStepLength_default);
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
+  RCP<ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getValidParameters() const
 {
-  static Teuchos::RCP<Teuchos::ParameterList> pl;
+  static RCP<ParameterList> pl;
   if(pl.get()==NULL) {
-    pl = Teuchos::rcp(new Teuchos::ParameterList());
+    pl = Teuchos::parameterList();
     pl->set(
       FDMethod_name,FDMethod_default
       ,"The method used to compute the finite differences."
@@ -493,6 +529,7 @@ DirectionalFiniteDiffCalculator<Scalar>::getValidParameters() const
       ,"The length of the finite difference step to take.\n"
       "A value of < 0.0 means that the step length will be determined automatically."
       );
+    Teuchos::setupVerboseObjectSublist(&*pl);
   }
   return pl;
 }
@@ -533,9 +570,9 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
   typedef VectorBase<Scalar> V;
-  typedef Teuchos::RCP<VectorBase<Scalar> > VectorPtr;
+  typedef RCP<VectorBase<Scalar> > VectorPtr;
   
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool trace = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
   Teuchos::OSTab tab(out);
@@ -690,7 +727,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
 
   //if(out.get()&&trace) *out<<"\nStep size to fit in bounds: uh="<<uh"\n";
 
-  int p_saved;
+  int p_saved = -1;
   if(out.get())
     p_saved = out->precision();
 
@@ -1013,10 +1050,10 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
     );
 
   typedef ModelEvaluatorBase MEB;
-  typedef Teuchos::RCP<VectorBase<Scalar> > VectorPtr;
-  typedef Teuchos::RCP<MultiVectorBase<Scalar> > MultiVectorPtr;
+  typedef RCP<VectorBase<Scalar> > VectorPtr;
+  typedef RCP<MultiVectorBase<Scalar> > MultiVectorPtr;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool trace = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
   Teuchos::OSTab tab(out);
@@ -1094,7 +1131,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
         if(out.get() && trace)
           *out << "\nComputing derivatives for single variable p("<<l<<")("<<i<<") ...\n";
         Teuchos::OSTab tab(out);
-        if(DfDp_l.get()) var.set_f(DfDp_l->col(i)); // Compute in place!
+        if(DfDp_l.get()) var.set_f(DfDp_l->col(i)); // Compute DfDp(l)(i) in place!
         for(int j = 0; j < Ng; ++j) {
           MultiVectorPtr DgDp_j_l;
           if( (DgDp_j_l=DgDp_l[j].getMultiVector()).get() ) {
@@ -1109,20 +1146,8 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
         if (DfDp_l.get()) var.set_f(Teuchos::null);
         for (int j = 0; j < Ng; ++j) {
           MultiVectorPtr DgDp_j_l;
-          if ( (DgDp_j_l=DgDp_l[j].getMultiVector()).get() ) {
-            ConstDetachedVectorView<Scalar> _var_g_j(var_g[j]); //d(g(j))/d(p(l)(i))
-            if (DgDp_l[j].getOrientation()==MEB::DERIV_TRANS_MV_BY_ROW) {
-              DetachedMultiVectorView<Scalar> dv_DgDp_trans_j_l_i(*DgDp_j_l,Range1D(i,i),Range1D());
-              const int ng = _var_g_j.subDim();
-              for( int k = 0; k < ng; ++k )
-                dv_DgDp_trans_j_l_i(0,k) = _var_g_j(k);
-            }
-            else {
-              DetachedMultiVectorView<Scalar> dv_DgDp_j_l_i(*DgDp_j_l,Range1D(),Range1D(i,i));
-              const int ng = _var_g_j.subDim();
-              for( int k = 0; k < ng; ++k )
-                dv_DgDp_j_l_i(k,0) = _var_g_j(k);
-            }
+          if ( !is_null(DgDp_j_l=DgDp_l[j].getMultiVector()) ) {
+            assign( &*DgDp_j_l->col(i), *var_g[j] );
           }
         }
       }

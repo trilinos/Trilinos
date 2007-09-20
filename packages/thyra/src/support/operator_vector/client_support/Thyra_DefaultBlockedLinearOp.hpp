@@ -131,7 +131,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
         !domainBlocks_[j].get(), std::logic_error
         ,"DefaultBlockedLinearOp<Scalar>::endBlockFill():"
         " Error, no linear operator block for the j="
-	<<j<<" block column was added"
+        <<j<<" block column was added"
         " and we can not complete the block fill!"
         );
     }
@@ -495,16 +495,18 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
         );
     if(rangeBlock.get()) {
       THYRA_ASSERT_VEC_SPACES_NAMES(
-        "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block)"
-        ,*rangeBlock,("(*productRange->getBlock("+toString(i)+"))")
-        ,*block.range(),("(*block["+toString(i)+","+toString(j)+"].range())")
+        "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block):\n\n"
+        "Adding block: " + block.description(),
+        *rangeBlock,("(*productRange->getBlock("+toString(i)+"))"),
+        *block.range(),("(*block["+toString(i)+","+toString(j)+"].range())")
         );
     }
     if(domainBlock.get()) {
       THYRA_ASSERT_VEC_SPACES_NAMES(
-        "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block)"
-        ,*domainBlock,("(*productDomain->getBlock("+toString(j)+"))")
-        ,*block.domain(),("(*block["+toString(i)+","+toString(j)+"].domain())")
+        "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block):\n\n"
+        "Adding block: " + block.description(),
+        *domainBlock,("(*productDomain->getBlock("+toString(j)+"))"),
+        *block.domain(),("(*block["+toString(i)+","+toString(j)+"].domain())")
         );
     }
 #endif // TEUCHOS_DEBUG

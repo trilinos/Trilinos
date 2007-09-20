@@ -29,10 +29,4 @@
 #ifndef RYTHMOS_VERSION_H
 #define RYTHMOS_VERSION_H
 
-#include "Rythmos_ConfigDefs.h"
-
-	std::string Rythmos_Version() { 
-		return("Rythmos Version 0.1 - 05/02/2005"); 
-	};
-
 #endif /* RYTHMOS_VERSION_H */

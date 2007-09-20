@@ -219,11 +219,11 @@ int main(int argc, char *argv[])
       _nonlinearSolver->setParameterList(nonlinearSolverPL);
       nonlinearSolver = _nonlinearSolver;
       Teuchos::RCP<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
-      BDFparams->set( "stopTime", finalTime );
-      BDFparams->set( "maxOrder", maxOrder );
-      BDFparams->set( "relErrTol", reltol );
-      BDFparams->set( "absErrTol", abstol );
-      BDFparams->set( "outputLevel", outputLevel );
+      Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL = Teuchos::sublist(BDFparams, RythmosStepControlSettings_name);
+      BDFStepControlPL->set( "stopTime", finalTime );
+      BDFStepControlPL->set( "maxOrder", maxOrder );
+      BDFStepControlPL->set( "relErrTol", reltol );
+      BDFStepControlPL->set( "absErrTol", abstol );
       stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
       step_method = STEP_METHOD_VARIABLE;
       method = "Implicit BDF";
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
       // Integrate forward with fixed step sizes:
       for (int i=1 ; i<=N ; ++i)
       {
-        double dt_taken = stepper.takeStep(dt,Rythmos::FIXED_STEP);
+        double dt_taken = stepper.takeStep(dt,Rythmos::STEP_TYPE_FIXED);
         numSteps++;
         if (dt_taken != dt)
         {
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     {
       while (time < finalTime)
       {
-        double dt_taken = stepper.takeStep(0.0,Rythmos::VARIABLE_STEP);
+        double dt_taken = stepper.takeStep(0.0,Rythmos::STEP_TYPE_VARIABLE);
         numSteps++;
         if (outputLevel >= 3)
         {

@@ -31,6 +31,9 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 
+// Define this to see selected timers
+//#define EPETRA_THYRA_TEUCHOS_TIMERS
+
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;

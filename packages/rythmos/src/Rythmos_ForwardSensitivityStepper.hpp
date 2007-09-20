@@ -35,8 +35,11 @@
 #include "Rythmos_StateAndForwardSensitivityModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_SingleResidualModelEvaluatorBase.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
 #include "Thyra_AssertOp.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
@@ -61,11 +64,12 @@ namespace Rythmos {
 
  \endverbatim
 
- * As shown above, the parameters are assumed to be steady state and can enter
- * through the intial condition and/or through the DAE equation itself.
+ * As shown above, the parameters <tt>p</tt> are assumed to be steady state
+ * parameters and can enter through the intial condition and/or through the
+ * DAE equation itself.
  *
  * The forward sensitivity equations that are solved along with the state
- * equation, as written in multi-vector form, are:
+ * equation, written in multi-vector form, are:
 
  \verbatim
 
@@ -104,7 +108,7 @@ namespace Rythmos {
  * and <tt>f_bar(...)</tt> is the obvious concatenated state and sensitivity
  * system.  See the class <tt>StateAndForwardSensitivityModelEvaluator</tt>
  * for a description of how to get at the components of <tt>x</tt>,
- * <tt>s_bar</tt>, and <tt>S</tt>.
+ * <tt>s_bar</tt>, and <tt>S</tt> given <tt>x_bar</tt>.
  *
  * The <tt>InterpolationBufferBase</tt> interface implemented by this class is
  * defined with respect to the full composite solution vector <tt>x_bar</tt>
@@ -118,11 +122,9 @@ namespace Rythmos {
  * state and the sensitivities at any point in the range of the current
  * timestep.
  *
- * Note this class does not implement the generic model supporting functions
- * <tt>setModel()</tt> or <tt>getModel()</tt>.  The general assumption of the
- * <tt>StepperBase</tt> interface is that the space for <tt>x</tt> in the
- * model will be the same as used in the interpolation buffer.  That is not
- * true in this case!
+ * Note that this class does not implement the function <tt>setModel()</tt>
+ * since any arbitrary combined state + sensitivity model can not be
+ * supported.
  *
  * \section Rythmos_ForwardSensitivityStepper_details_sec Implementation Details
  *
@@ -195,7 +197,8 @@ namespace Rythmos {
  */
 template<class Scalar> 
 class ForwardSensitivityStepper
-  : virtual public StepperBase<Scalar>
+  : virtual public StepperBase<Scalar>,
+    virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
 public:
 
@@ -231,7 +234,7 @@ public:
    *           solve for the state timestep equation.  This is needed to
    *           extract the Jacobian matrix that is used in the sensitivity model.
    *           If the stepper is not an implicit stepper and does not use
-   *           an implicit time step solver, then this argument can be left
+   *           an implicit time step solver, then this argument should be left
    *           null.
    * \param  sensStepper
    *           [in,persisting] The stepper object that will be used to advance
@@ -261,31 +264,34 @@ public:
    *           this hook is exposed to clients.
    */
   void initialize(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-    const Teuchos::RCP<StepperBase<Scalar> > &stateStepper,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-    const Teuchos::RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
+    const RCP<StepperBase<Scalar> > &stateStepper,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+    const RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
     );
 
   /** \brief Return the state model that was passed into
    * <tt>initialize()</tt>.
    */
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+  RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
 
   /** \brief Return the forward sensitivity model evaluator object that got
    * created internally when <tt>initialize()</tt> was called.
    */
-  Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> >
+  RCP<const ForwardSensitivityModelEvaluator<Scalar> >
   getFwdSensModel() const;
 
   /** \brief Return the state and forward sensitivity model evaluator object
    * that got created internally when <tt>initialize()</tt> was called.
+   *
+   * This is also the same model returned by the function <tt>getModel()</tt>,
+   * except through it's concrete subclass type.
    */
-  Teuchos::RCP<const StateAndForwardSensitivityModelEvaluator<Scalar> >
+  RCP<const StateAndForwardSensitivityModelEvaluator<Scalar> >
   getStateAndFwdSensModel() const;
 
   //@}
@@ -294,15 +300,9 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
-  /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -314,16 +314,16 @@ public:
 
   /** \brief Throws exception. */
   void setModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &model
     );
 
-  /** \brief Returns the state + forward sensitivity model.
+  /** \brief Returns <tt>getStateAndFwdSensModel()</tt>.
    *
    * Warning, currently the returned model does not implement evalModel(...) 
    * or define a W object.  It is just used for getting the spaces and for
    * creating an InArgs object for setting the initial condition.
    */
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+  RCP<const Thyra::ModelEvaluator<Scalar> >
   getModel() const;
 
   // RAB: ToDo: 2007/05/15: I need to talk with Todd about potentially
@@ -368,39 +368,32 @@ public:
    * casting is required to get at the <tt>ProductVectorSapceBase</tt> and
    * <tt>ProductVectorBase</tt> intefaces.
    */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+  RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_x_space() const;
 
   /** \brief . */
-  bool setPoints(
+  void addPoints(
     const Array<Scalar>& time_vec,
     const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-    const Array<ScalarMag> & accuracy_vec
-    );
-
-  /** \brief . */
-  bool setRange(
-    const TimeRange<Scalar>& range,
-    const InterpolationBufferBase<Scalar>& IB
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     );
 
   /** \brief . */
   TimeRange<Scalar> getTimeRange() const;
 
   /** \brief . */
-  bool getPoints(
+  void getPoints(
     const Array<Scalar>& time_vec,
-    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     Array<ScalarMag>* accuracy_vec
     ) const;
 
   /** \brief . */
-  bool getNodes(Array<Scalar>* time_vec) const;
+  void getNodes(Array<Scalar>* time_vec) const;
 
   /** \brief . */
-  bool removeNodes(Array<Scalar>& time_vec);
+  void removeNodes(Array<Scalar>& time_vec);
 
   /** \brief . */
   int getOrder() const;
@@ -412,21 +405,21 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  bool forceUpToDateW_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
-  Teuchos::RCP<StepperBase<Scalar> > stateStepper_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
-  Teuchos::RCP<StepperBase<Scalar> > sensStepper_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > sensTimeStepSolver_;
+  RCP<StepperBase<Scalar> > stateStepper_;
+  RCP<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
+  RCP<StepperBase<Scalar> > sensStepper_;
+  RCP<Thyra::NonlinearSolverBase<Scalar> > sensTimeStepSolver_;
 
   bool isSingleResidualStepper_;
-  Teuchos::RCP<ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
-  Teuchos::RCP<StateAndForwardSensitivityModelEvaluator<Scalar> > stateAndSensModel_;
+  RCP<ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
+  RCP<StateAndForwardSensitivityModelEvaluator<Scalar> > stateAndSensModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_t_;
 
-  Scalar t_;
-  Scalar t_old_;
-  Scalar dt_;
+  static const std::string forceUpToDateW_name_;
+  static const bool forceUpToDateW_default_;
 
 };
 
@@ -437,22 +430,36 @@ private:
  */
 template<class Scalar> 
 inline
-Teuchos::RCP<ForwardSensitivityStepper<Scalar> >
+RCP<ForwardSensitivityStepper<Scalar> >
 forwardSensitivityStepper(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const Teuchos::RCP<StepperBase<Scalar> > &stateStepper,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-  const Teuchos::RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
+  const RCP<StepperBase<Scalar> > &stateStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+  const RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
   )
 {
-  Teuchos::RCP<ForwardSensitivityStepper<Scalar> >
+  RCP<ForwardSensitivityStepper<Scalar> >
     fwdSensStepper = Teuchos::rcp(new ForwardSensitivityStepper<Scalar>());
   fwdSensStepper->initialize(
     stateModel, p_index, stateBasePoint, stateStepper, stateTimeStepSolver );
   return fwdSensStepper;
+}
+
+
+/** \brief Return the index of the parameter subvector in the underlying state
+ * model.
+ *
+ * \relates ForwardSensitivityStepper
+ */
+template<class Scalar>
+int getParameterIndex(
+  const ForwardSensitivityStepper<Scalar> &fwdSensStepper
+  )
+{
+  return fwdSensStepper.getFwdSensModel()->get_p_index();
 }
 
 
@@ -461,30 +468,41 @@ forwardSensitivityStepper(
 //
 
 
+// Static members
+
+
+template<class Scalar> 
+const std::string ForwardSensitivityStepper<Scalar>::forceUpToDateW_name_
+= "Force Up-To-Date Jacobian";
+
+template<class Scalar> 
+const bool ForwardSensitivityStepper<Scalar>::forceUpToDateW_default_
+= true;
+
 // Constructors, Intializers, Misc.
 
 
 template<class Scalar> 
 ForwardSensitivityStepper<Scalar>::ForwardSensitivityStepper()
-  :isSingleResidualStepper_(false), t_(0.0), t_old_(0.0), dt_(-1.0)
+  :forceUpToDateW_(false),
+   isSingleResidualStepper_(false)
 {}
 
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::initialize(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const Teuchos::RCP<StepperBase<Scalar> > &stateStepper,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-  const Teuchos::RCP<StepperBase<Scalar> > &sensStepper,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
+  const RCP<StepperBase<Scalar> > &stateStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+  const RCP<StepperBase<Scalar> > &sensStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
   )
   
 {
 
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::RCP;
   using Teuchos::tuple;
 
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -502,7 +520,7 @@ void ForwardSensitivityStepper<Scalar>::initialize(
   // Create the sensModel which will do some more validation
   //
   
-  Teuchos::RCP<ForwardSensitivityModelEvaluator<Scalar> >
+  RCP<ForwardSensitivityModelEvaluator<Scalar> >
     sensModel = Teuchos::rcp(new ForwardSensitivityModelEvaluator<Scalar>);
   sensModel->initializeStructure(stateModel,p_index);
   
@@ -527,7 +545,7 @@ void ForwardSensitivityStepper<Scalar>::initialize(
     sensStepper_ = sensStepper;
   }
   else {
-    sensStepper_ = stateStepper_->cloneStepper();
+    sensStepper_ = stateStepper_->cloneStepperAlgorithm();
     TEST_FOR_EXCEPTION(
       is_null(sensStepper_), std::logic_error,
       "Error, if the client does not pass in a stepper for the senitivity\n"
@@ -562,12 +580,6 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 
   stateBasePoint_t_ = stateModel_->createInArgs();
 
-  //
-  // Setup the initial condition
-  //
-
-  t_ = stateBasePoint_t_.get_t();
-
   // 2007/05/18: rabartl: ToDo: Move the above initialization code to give
   // setInitializeCondition(...) a chance to set the initial condition.
   
@@ -575,7 +587,7 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 
   
 template<class Scalar> 
-Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getStateModel() const
 {
   return stateModel_;
@@ -583,7 +595,7 @@ ForwardSensitivityStepper<Scalar>::getStateModel() const
 
   
 template<class Scalar> 
-Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> >
+RCP<const ForwardSensitivityModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getFwdSensModel() const
 {
   return sensModel_;
@@ -591,7 +603,7 @@ ForwardSensitivityStepper<Scalar>::getFwdSensModel() const
 
   
 template<class Scalar> 
-Teuchos::RCP<const StateAndForwardSensitivityModelEvaluator<Scalar> >
+RCP<const StateAndForwardSensitivityModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getStateAndFwdSensModel() const
 {
   return stateAndSensModel_;
@@ -603,42 +615,35 @@ ForwardSensitivityStepper<Scalar>::getStateAndFwdSensModel() const
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT("Do not accept a parameter list yet!");
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParameters(*getValidParameters());
+  this->setMyParamList(paramList);
+  forceUpToDateW_ = paramList->get(forceUpToDateW_name_,forceUpToDateW_default_);
+  Teuchos::readVerboseObjectSublist(&*paramList,this);
 }
 
 
 template<class Scalar> 
-Teuchos::RCP<Teuchos::ParameterList>
-ForwardSensitivityStepper<Scalar>::getParameterList()
-{
-  return Teuchos::null;
-}
-
-
-template<class Scalar> 
-Teuchos::RCP<Teuchos::ParameterList>
-ForwardSensitivityStepper<Scalar>::unsetParameterList()
-{
-  return Teuchos::null;
-}
-
-
-template<class Scalar> 
-Teuchos::RCP<const Teuchos::ParameterList>
-ForwardSensitivityStepper<Scalar>::getParameterList() const
-{
-  return Teuchos::null;
-}
-
-
-template<class Scalar> 
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 ForwardSensitivityStepper<Scalar>::getValidParameters() const
 {
-  return Teuchos::null;
+  static RCP<const ParameterList> validPL;
+  if (is_null(validPL) ) {
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->set( forceUpToDateW_name_, forceUpToDateW_default_,
+      "If set to true, then the Jacobian matrix W used in the\n"
+      "state timestep equation will be forced to be up to date\n"
+      "with the final value for x for the nonlinear solve.  If\n"
+      "you are willing to live with slightly less accurate sensitivities\n"
+      "then set this to false."
+      );
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return validPL;
 }
 
 
@@ -652,7 +657,7 @@ bool ForwardSensitivityStepper<Scalar>::acceptsModel() const
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT("Error, this stepper subclass does not accept a model"
@@ -661,7 +666,7 @@ void ForwardSensitivityStepper<Scalar>::setModel(
 
 
 template<class Scalar> 
-Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getModel() const
 {
   return stateAndSensModel_;
@@ -674,7 +679,6 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
   )
 {
   
-  using Teuchos::RCP;
   typedef Thyra::ModelEvaluatorBase MEB;
 
   // Get the product vectors for x_bar = [ x; s_bar ] and x_bar_dot
@@ -734,119 +738,148 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   )
 {
 
+#ifdef ENABLE_RYTHMOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep");
+#endif
+
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSIBB;
+  typedef Thyra::ModelEvaluatorBase MEB;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  const bool lowTrace =
+    ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) );
+  const bool mediumTrace =
+    ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) );
   Teuchos::OSTab tab(out);
 
-  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+  if (lowTrace) {
     *out
       << "\nEntering " << Teuchos::TypeNameTraits<ForwardSensitivityStepper<Scalar> >::name()
       << "::takeStep("<<dt<<","<<toString(stepType)<<") ...\n"; 
   }
 
   //
-  // Compute the state timestep
+  // A) Compute the state timestep
   //
 
-  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+  if (lowTrace) {
     *out
       << "\nTaking state step using stepper : "
       << stateStepper_->description() << "\n";
   }
 
-  VOTSIBB stateStepper_outputTempState(stateStepper_,out,verbLevel);
-  
-  const Scalar state_dt = stateStepper_->takeStep(dt,stepType);
+  Scalar state_dt = -1.0;
+  {
+#ifdef ENABLE_RYTHMOS_TIMERS
+    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: stateStep");
+#endif
+    VOTSIBB stateStepper_outputTempState(stateStepper_,out,verbLevel);
+    state_dt = stateStepper_->takeStep(dt,stepType);
+  }
 
   if (state_dt < Scalar(-ST::one())) {
-    // The state stepper has failed so return a failed timestep!
-    return dt_;
+    if (lowTrace)
+      *out << "\nThe state stepper has failed so return a failed timestep!\n";
+    return state_dt;
   }
-
-  //
-  // Setup the sensitivity model for this timestep
-  //
-
+  
   const StepStatus<Scalar> stateStepStatus = stateStepper_->getStepStatus();
+  if (mediumTrace)
+    *out << "\nState step status:\n" << stateStepStatus;
 
-  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) ) {
-    *out
-      << "\nState step status:\n" << stateStepStatus;
-  }
-  
-  TEST_FOR_EXCEPTION(
-    stateStepStatus.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
-    "Error, the status should be converged since a positive step size was returned!"
-    );
+  //
+  // B) Setup the sensitivity model for this timestep
+  //
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-    x = stateStepStatus.solution;
-  
-  TEST_FOR_EXCEPTION(
-    is_null(x), std::logic_error,
-    "Error, the state solution can not be null!"
-    );
+  {
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-    x_dot = stateStepStatus.solutionDot;
-  
-  TEST_FOR_EXCEPTION(
-    is_null(x_dot), std::logic_error,
-    "Error, the state solution derivative can not be null!"
-    );
-  
-  stateBasePoint_t_ = stateBasePoint_;
-  stateBasePoint_t_.set_x_dot( x_dot );
-  stateBasePoint_t_.set_x( x );
-  stateBasePoint_t_.set_t( t_ + state_dt );
-
-  Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> >
-    W_tilde = stateTimeStepSolver_->get_W();
-  
-  TEST_FOR_EXCEPTION(
-    !stateTimeStepSolver_->is_W_current() || is_null(W_tilde),
-    std::logic_error,
-    "Error, the W from the state time step must be current and must be non-null!"
-    );
-  
-  Teuchos::RCP<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
-    singleResidualModel
-    = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
-      stateTimeStepSolver_->getModel(), true
+#ifdef ENABLE_RYTHMOS_TIMERS
+    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: updateSensModel");
+#endif
+    
+    TEST_FOR_EXCEPTION(
+      stateStepStatus.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
+      "Error, the status should be converged since a positive step size was returned!"
       );
-  
-  const Scalar
-    coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
-    coeff_x = singleResidualModel->get_coeff_x();
+    
+    const Scalar curr_t = stateStepStatus.time;
+    
+    // Get both x and x_dot since these are needed compute other derivative
+    // objects at these points.
 
-  sensModel_->initializeState(
-    stateBasePoint_t_, W_tilde, coeff_x_dot, coeff_x );
+    RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
+    get_x_and_x_dot(*stateStepper_,curr_t,&x,&x_dot);
+    
+    stateBasePoint_t_ = stateBasePoint_;
+    stateBasePoint_t_.set_x_dot( x_dot );
+    stateBasePoint_t_.set_x( x );
+    stateBasePoint_t_.set_t( curr_t );
+
+    // Grab the SingleResidualModel that was used to compute the state timestep.
+    // From this, we can get the constants that where used to compute W!
+    RCP<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
+      singleResidualModel
+      = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
+        stateTimeStepSolver_->getModel(), true
+        );
+    const Scalar
+      coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
+      coeff_x = singleResidualModel->get_coeff_x();
+    
+    // Get W (and force and update if not up to date already)
+
+    if (mediumTrace && forceUpToDateW_)
+      *out << "\nForcing an update of W at the converged state timestep ...\n";
+    
+    RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+      W_tilde = stateTimeStepSolver_->get_nonconst_W(forceUpToDateW_);
+    
+    TEST_FOR_EXCEPTION(
+      is_null(W_tilde), std::logic_error,
+      "Error, the W from the state time step be non-null!"
+      );
+    
+    sensModel_->initializeState( stateBasePoint_t_, W_tilde, coeff_x_dot, coeff_x );
+
+  }
+  // 2007/09/04: rabartl: ToDo: Move the above code that initializes the
+  // senstivity stepper from the state stepper as a strategy object that can
+  // be redefined.  This will allow me to make this class 100% general for all
+  // time stepper methods ... Including explicit steppers!
 
   //
-  // Compute the sensitivity timestep for the exact same timestep as was used
-  // for the state solve.
+  // C) Compute the sensitivity timestep for the exact same timestep as was
+  // used for the state solve.
   //
 
-  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+  if (lowTrace) {
     *out
       << "\nTaking sensitivity step using stepper : "
       << sensStepper_->description() << "\n";
   }
 
-  // Copy the step control data to make sure that the sensStepper takes the
-  // same type of step that the statStepper took.  This is needed to ensure
-  // that the W matrix is the same for one.
-  sensStepper_->setStepControlData(*stateStepper_);
+  Scalar sens_dt = -1.0;
+  {
 
-  VOTSIBB sensStepper_outputTempState(sensStepper_,out,verbLevel);
+#ifdef ENABLE_RYTHMOS_TIMERS
+    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: sensStep");
+#endif
+    
+    // Copy the step control data to make sure that the sensStepper takes the
+    // same type of step that the statStepper took.  This is needed to ensure
+    // that the W matrix is the same for one.
+    sensStepper_->setStepControlData(*stateStepper_);
+    
+    VOTSIBB sensStepper_outputTempState(sensStepper_,out,verbLevel);
+    
+    sens_dt = sensStepper_->takeStep(state_dt,STEP_TYPE_FIXED);
+    
+  }
 
-  const Scalar sens_dt = sensStepper_->takeStep(state_dt,FIXED_STEP);
-
-  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) ) {
+  if (mediumTrace) {
     const StepStatus<Scalar> sensStepStatus = sensStepper_->getStepStatus();
     *out
       << "\nSensitivity step status:\n" << sensStepStatus;
@@ -860,29 +893,21 @@ ForwardSensitivityStepper<Scalar>::takeStep(
     "the status before this function was called!"
     );
 
-  // 2007/05/18: rabartl: ToDo: If stepType == VARIABLE_STEP and the state
+  // 2007/05/18: rabartl: ToDo: If stepType == STEP_TYPE_VARIABLE and the state
   // timestep sucessed but the sensitivity timestep failed, then we need to
   // really throw an excpetion because there is nothing that we can really do
   // here!
 
-  //
-  // Update the timestep
-  //
+  // 2007/05/18: rabartl: ToDo: Replace the above std::logic_error type with
+  // a Rythmos::CatastrophicFailure or just use Thyra::CatastrophicFailure!
 
-  t_old_ = t_;
-  t_ += state_dt;
-  dt_ = state_dt;
-
-  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+  if (lowTrace) {
     *out
       << "\nLeaving " << Teuchos::TypeNameTraits<ForwardSensitivityStepper<Scalar> >::name()
       << "::takeStep("<<dt<<","<<toString(stepType)<<") ...\n"; 
   }
 
-  return dt_;
-
-  // 2007/05/18: rabartl: ToDo: Replace the above std::logic_error type with
-  // a Rythmos::CatastrophicFailure or just use Thyra::CatastrophicFailure!
+  return state_dt;
 
 }
 
@@ -906,13 +931,14 @@ ForwardSensitivityStepper<Scalar>::getStepStatus() const
   stepStatus.order = sensStepStatus.order;
   stepStatus.time = sensStepStatus.time;
   stepStatus.stepLETValue = sensStepStatus.stepLETValue;
-  stepStatus.solution = stateAndSensModel_->create_x_bar_vec(
-    stateStepStatus.solution, sensStepStatus.solution
-    );
-  stepStatus.solutionDot = stateAndSensModel_->create_x_bar_vec(
-    stateStepStatus.solutionDot, sensStepStatus.solutionDot
-    );
-  stepStatus.residual = Teuchos::null;
+  if (!is_null(stateStepStatus.solution) && !is_null(sensStepStatus.solution))
+    stepStatus.solution = stateAndSensModel_->create_x_bar_vec(
+      stateStepStatus.solution, sensStepStatus.solution
+      );
+  if (!is_null(stateStepStatus.solutionDot) && !is_null(sensStepStatus.solutionDot))
+    stepStatus.solutionDot = stateAndSensModel_->create_x_bar_vec(
+      stateStepStatus.solutionDot, sensStepStatus.solutionDot
+      );
   stepStatus.extraParameters = sensStepStatus.extraParameters;
 
   return stepStatus;
@@ -924,7 +950,7 @@ ForwardSensitivityStepper<Scalar>::getStepStatus() const
 
 
 template<class Scalar> 
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityStepper<Scalar>::get_x_space() const
 {
   return stateAndSensModel_->get_x_space();
@@ -932,25 +958,13 @@ ForwardSensitivityStepper<Scalar>::get_x_space() const
 
 
 template<class Scalar> 
-bool ForwardSensitivityStepper<Scalar>::setPoints(
+void ForwardSensitivityStepper<Scalar>::addPoints(
   const Array<Scalar>& time_vec,
   const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-  const Array<ScalarMag> & accuracy_vec
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   )
 {
-  TEST_FOR_EXCEPT("Not implemented setPoints(...) yet but we could if we wanted!");
-  return false;
-}
-
-
-template<class Scalar> 
-bool ForwardSensitivityStepper<Scalar>::setRange(
-  const TimeRange<Scalar>& range,
-  const InterpolationBufferBase<Scalar>& IB
-  )
-{
-  return false;
+  TEST_FOR_EXCEPT("Not implemented addPoints(...) yet but we could if we wanted!");
 }
 
 
@@ -963,16 +977,15 @@ ForwardSensitivityStepper<Scalar>::getTimeRange() const
 
 
 template<class Scalar> 
-bool ForwardSensitivityStepper<Scalar>::getPoints(
+void ForwardSensitivityStepper<Scalar>::getPoints(
   const Array<Scalar>& time_vec,
-  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_vec,
-  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_dot_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* x_bar_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* x_bar_dot_vec,
   Array<ScalarMag>* accuracy_vec
   ) const
 {
 
   using Teuchos::as;
-  using Teuchos::RCP;
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( as<int>(time_vec.size()) == 0 );
@@ -980,40 +993,32 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
 
   const int numTimePoints = time_vec.size();
 
-  bool result = false;
-
   if (x_bar_vec)
     x_bar_vec->clear();
 
   if (x_bar_dot_vec)
     x_bar_dot_vec->clear();
   
-  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
+  Array<RCP<const Thyra::VectorBase<Scalar> > >
     x_vec, x_dot_vec;
 
-  result = stateStepper_->getPoints(
+  stateStepper_->getPoints(
     time_vec,
     x_bar_vec ? &x_vec: 0,
     x_bar_dot_vec ? &x_dot_vec: 0,
     0 // Ignoring accuracy from state for now!
     );
   
-  if (!result)
-    return false;
-
-  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
+  Array<RCP<const Thyra::VectorBase<Scalar> > >
     s_bar_vec, s_bar_dot_vec;
 
-  result = sensStepper_->getPoints(
+  sensStepper_->getPoints(
     time_vec,
     x_bar_vec ? &s_bar_vec: 0,
     x_bar_dot_vec ? &s_bar_dot_vec: 0,
     accuracy_vec
     );
   
-  if (!result)
-    return false;
-
   if ( x_bar_vec ) {
     for ( int i = 0; i < numTimePoints; ++i ) {
       x_bar_vec->push_back(
@@ -1030,28 +1035,24 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
     }
   }
 
-  return true;
-  
 }
 
 
 template<class Scalar>
-bool ForwardSensitivityStepper<Scalar>::getNodes(
+void ForwardSensitivityStepper<Scalar>::getNodes(
   Array<Scalar>* time_vec
   ) const
 {
   TEST_FOR_EXCEPT("Not implemented yet but we can!");
-  return false;
 }
 
 
 template<class Scalar> 
-bool ForwardSensitivityStepper<Scalar>::removeNodes(
+void ForwardSensitivityStepper<Scalar>::removeNodes(
   Array<Scalar>& time_vec
   )
 {
   TEST_FOR_EXCEPT("Not implemented yet but we can!");
-  return false;
 }
 
 

@@ -105,26 +105,26 @@ LINK_DIAGONAL_BELOS_ML=1DfemTransient_belos_ml.exe
 endif
 endif
 
-1DfemTransient_amesos.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_amesos.exe
+1DfemTransient_amesos.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_aztecoo.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo.exe
+1DfemTransient_aztecoo.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_aztecoo_ifpack.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ifpack.exe
+1DfemTransient_aztecoo_ifpack.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_aztecoo_ml.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ml.exe
+1DfemTransient_aztecoo_ml.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_belos.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_belos.exe
+1DfemTransient_belos.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_belos_ifpack.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ifpack.exe
+1DfemTransient_belos_ifpack.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-1DfemTransient_belos_ml.exe:
-	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ml.exe
+1DfemTransient_belos_ml.exe: 1DfemTransient.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 1DFEM_EXE_LINKS = \
   $(LINK_DIAGONAL_AMESOS) \

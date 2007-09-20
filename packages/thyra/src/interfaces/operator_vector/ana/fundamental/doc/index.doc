@@ -37,7 +37,7 @@ and \ref Thyra_Op_Vec_Exceptions_grp "basic exception classes".
 
 <!-- The details behind the design of these interfaces are described in detail
 in <a
-href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">this
+href="http://trilinos.sandia.gov/packages/tsfcore/TSFCoreSAND.pdf">this
 report</a> and in the documentation for each individual C++ class. -->
 
 One important paper describing the RTOp approach, which provides the foundation

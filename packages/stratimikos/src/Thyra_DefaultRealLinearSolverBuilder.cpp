@@ -30,6 +30,7 @@
 
 
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Thyra_DelayedLinearOpWithSolveFactory.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -61,6 +62,8 @@ const std::string LinearSolverTypes_name   = "Linear Solver Types";
 const std::string PreconditionerType_name    = "Preconditioner Type";
 const std::string PreconditionerTypes_name   = "Preconditioner Types";
 const std::string None_name = "None";
+const std::string EnableDelayedSolverConstruction_name = "Enable Delayed Solver Construction";
+const bool EnableDelayedSolverConstruction_default = false;
 
 
 Teuchos::RCP<const Teuchos::StringToIntegralParameterEntryValidator<int> >
@@ -94,6 +97,7 @@ DefaultRealLinearSolverBuilder::DefaultRealLinearSolverBuilder(
   ,paramsXmlFileNameOption_(paramsXmlFileNameOption)
   ,extraParamsXmlStringOption_(extraParamsXmlStringOption)
   ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption)
+  ,enableDelayedSolverConstruction_(EnableDelayedSolverConstruction_default)
 {
   this->initializeDefaults();
 }
@@ -213,6 +217,8 @@ void DefaultRealLinearSolverBuilder::setParameterList(
   // and sublusts are handed off to different LOWSFB and PFB objects.
   paramList->validateParameters(*this->getValidParameters(),1);
   paramList_ = paramList;
+  enableDelayedSolverConstruction_ = paramList_->get(
+    EnableDelayedSolverConstruction_name, EnableDelayedSolverConstruction_default );
 }
 
 
@@ -303,6 +309,18 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
         pf = pfArray_[i]->create();
       precTypesSL.sublist(pfname).setParameters(*pf->getValidParameters());
     }
+    // 
+    validParamList->set(
+      EnableDelayedSolverConstruction_name, EnableDelayedSolverConstruction_default,
+      "When this option is set to true, the linear solver factory will be wrapped\n"
+      "in a delayed evaluation Decorator factory object.  This results in a delay\n"
+      "in the creation of a linear solver (and the associated preconditioner) until\n"
+      "the first solve is actually performed.  This helps in cases where it is not\n"
+      "known a-priori if a linear solve will be needed on a given linear operator and\n"
+      "therefore can significantly improve performance for some types of algorithms\n"
+      "such as NOX and LOCA."
+      );
+    //
     validParamList_ = validParamList;
   }
   return validParamList_;
@@ -350,6 +368,11 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   // override some preconditioner factory parameters).
   lowsf->setParameterList(sublist(sublist(paramList_,LinearSolverTypes_name),lsname));
   //
+  if (enableDelayedSolverConstruction_) {
+    return Teuchos::rcp(
+      new DelayedLinearOpWithSolveFactory<double>(lowsf)
+      );
+  }
   return lowsf;
 }
 

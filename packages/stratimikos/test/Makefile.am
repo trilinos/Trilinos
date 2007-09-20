@@ -70,7 +70,7 @@ LINK_TESTDRIVER_AMESOS=test_single_stratimikos_solver_driver_amesos.exe
 endif
 
 test_single_stratimikos_solver_driver_amesos.exe: test_single_stratimikos_solver_driver.exe
-	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_amesos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Links for aztecoo executables
 
@@ -84,10 +84,10 @@ endif
 endif
 
 test_single_stratimikos_solver_driver_aztecoo_ifpack.exe: test_single_stratimikos_solver_driver.exe
-	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 test_single_stratimikos_solver_driver_aztecoo_ml.exe: test_single_stratimikos_solver_driver.exe
-	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Links for belos executables
 
@@ -101,10 +101,10 @@ endif
 endif
 
 test_single_stratimikos_solver_driver_belos_ifpack.exe: test_single_stratimikos_solver_driver.exe
-	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 test_single_stratimikos_solver_driver_belos_ml.exe: test_single_stratimikos_solver_driver.exe
-	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Main links
 

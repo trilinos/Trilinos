@@ -564,26 +564,26 @@ all-local: $(BASIC_EXE_LINKS)
 	@echo "rythmos/example/basicExample built successfully."
 	@echo ""
 
-basicExample_amesos.exe:
-	ln -s ./basicExample.exe basicExample_amesos.exe
+basicExample_amesos.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_aztecoo.exe:
-	ln -s ./basicExample.exe basicExample_aztecoo.exe
+basicExample_aztecoo.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_aztecoo_ifpack.exe:
-	ln -s ./basicExample.exe basicExample_aztecoo_ifpack.exe
+basicExample_aztecoo_ifpack.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_aztecoo_ml.exe:
-	ln -s ./basicExample.exe basicExample_aztecoo_ml.exe
+basicExample_aztecoo_ml.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_belos.exe:
-	ln -s ./basicExample.exe basicExample_belos.exe
+basicExample_belos.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_belos_ifpack.exe:
-	ln -s ./basicExample.exe basicExample_belos_ifpack.exe
+basicExample_belos_ifpack.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-basicExample_belos_ml.exe:
-	ln -s ./basicExample.exe basicExample_belos_ml.exe
+basicExample_belos_ml.exe: basicExample.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

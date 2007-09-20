@@ -171,6 +171,7 @@
     ARGS =  --no-use-preconditioner --show-all-tests --num-rhs=8 --block-size=8 --gmres-krylov-length=300 --max-fwd-error=1e-13 \
             --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../adapters/belos/test/LOWSFactory/nos1.mtx;
     COMM = SERIAL;
+    X-HOST = s858352.srn.sandia.gov;
 }
 
 (FRAMEWORK,INSTALL,StratimikosBelos) {
@@ -185,4 +186,5 @@
     ARGS =  --show-all-tests --num-rhs=8 --block-size=8 --gmres-krylov-length=300 --max-fwd-error=1e-13 --max-resid=1e-13 \
             --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../adapters/belos/test/LOWSFactory/nos1.mtx;
     COMM = SERIAL;
+    X-HOST = s858352.srn.sandia.gov;
 }

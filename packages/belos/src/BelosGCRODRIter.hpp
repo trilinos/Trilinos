@@ -525,14 +525,15 @@ namespace Belos {
 	
 	// Generate H_ only if it doesn't exist, otherwise resize it.
 	if (H_ == Teuchos::null)
-	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );		else
-	  H_->shapeUninitialized( newsd, newsd-1 );
+	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );		
+        else
+	  H_->shape( newsd, newsd-1 );
 	
 	// Generate R_ only if it doesn't exist, otherwise resize it.
 	if (R_ == Teuchos::null)
 	  R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );
 	else
-	  R_->shapeUninitialized( newsd, newsd-1 );
+	  R_->shape( newsd, newsd-1 );
 
 	if (z_ == Teuchos::null)
 	  z_ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(newsd) );

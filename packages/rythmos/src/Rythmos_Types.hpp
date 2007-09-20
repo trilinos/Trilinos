@@ -38,6 +38,15 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#ifndef TEUCHOS_DISABLE_ALL_TIMERS
+// Define this to see selected timers
+#define ENABLE_RYTHMOS_TIMERS
+#endif
+
+#ifdef ENABLE_RYTHMOS_TIMERS
+#include "Teuchos_TimeMonitor.hpp"
+#endif
+
 
 namespace Rythmos {
 
@@ -59,6 +68,19 @@ using Teuchos::ScalarTraits;
 using Teuchos::typeName;
 /** \brief . */
 using Teuchos::TypeNameTraits;
+
+
+namespace Exceptions {
+
+
+/** brief Base for all Rythmos exceptions that are not just simple usage
+ * errors (i.e. failing preconditions).
+ */
+class ExceptionBase : public std::runtime_error
+{public: ExceptionBase(const std::string& what_arg) : std::runtime_error(what_arg) {}};
+
+
+} // namespace Exceptions
 
 
 } // namespace Rythmos

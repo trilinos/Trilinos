@@ -112,6 +112,11 @@ void norms_2( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<S
 template<class Scalar>
 void norms_inf( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] );
 
+/** \brief Column-wise multi-vector infinity norm. */
+template<class Scalar>
+Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+norms_inf( const MultiVectorBase<Scalar>& V );
+
 /** \brief Multi-vector dot product.
  *
  * @param  V1   [in]
@@ -296,6 +301,16 @@ inline
 void Thyra::norms_inf( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
 {
   reductions(V,RTOpPack::ROpNormInf<Scalar>(),norms);
+}
+
+template<class Scalar>
+Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+Thyra::norms_inf( const MultiVectorBase<Scalar>& V )
+{
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  Array<ScalarMag> norms(V.domain()->dim());
+  Thyra::norms_inf(V,&norms[0]);
+  return norms;
 }
 
 #endif // THYRA_MULTI_VECTOR_STD_OPS_DECL_HPP

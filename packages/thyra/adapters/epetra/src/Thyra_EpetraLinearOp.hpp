@@ -80,12 +80,12 @@ public:
 
   /// Calls <tt>initialize()</tt>.
   EpetraLinearOp(
-    const Teuchos::RCP<Epetra_Operator> &op,
+    const RCP<Epetra_Operator> &op,
     ETransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
     EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-    const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
-    const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
+    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
+    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
     );
 
   /** \brief Initialize
@@ -129,12 +129,12 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<Epetra_Operator> &op,
+    const RCP<Epetra_Operator> &op,
     ETransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
     EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-    const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
-    const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
+    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
+    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
     );
   
   /** \brief Set to uninitialized and optionally return the current state.
@@ -145,12 +145,12 @@ public:
    * </ul>
    */
   void uninitialize(
-    Teuchos::RCP<Epetra_Operator> *op= NULL,
+    RCP<Epetra_Operator> *op= NULL,
     ETransp *opTrans = NULL,
     EApplyEpetraOpAs *applyAs = NULL,
     EAdjointEpetraOp *adjointSupport = NULL,
-    Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > *spmdRange = NULL,
-    Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > *spmdDomain = NULL
+    RCP< const SpmdVectorSpaceBase<Scalar> > *spmdRange = NULL,
+    RCP< const SpmdVectorSpaceBase<Scalar> > *spmdDomain = NULL
     );
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the range.
@@ -160,7 +160,7 @@ public:
    * <li> [<tt>this->range().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > spmdRange() const;
+  RCP< const SpmdVectorSpaceBase<Scalar> > spmdRange() const;
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the domain.
    *
@@ -169,13 +169,13 @@ public:
    * <li> [<tt>this->domain().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > spmdDomain() const;
+  RCP< const SpmdVectorSpaceBase<Scalar> > spmdDomain() const;
 
   /** \brief . */
-  Teuchos::RCP<Epetra_Operator> epetra_op();
+  RCP<Epetra_Operator> epetra_op();
 
   /** \brief . */
-  Teuchos::RCP<const Epetra_Operator> epetra_op() const;
+  RCP<const Epetra_Operator> epetra_op() const;
 
   //@}
 
@@ -184,14 +184,14 @@ public:
 
   /** \brief . */
   void getEpetraOpView(
-    Teuchos::RCP<Epetra_Operator> *epetraOp,
+    RCP<Epetra_Operator> *epetraOp,
     ETransp *epetraOpTransp,
     EApplyEpetraOpAs *epetraOpApplyAs,
     EAdjointEpetraOp *epetraOpAdjointSupport
     );
   /** \brief . */
   void getEpetraOpView(
-    Teuchos::RCP<const Epetra_Operator> *epetraOp,
+    RCP<const Epetra_Operator> *epetraOp,
     ETransp *epetraOpTransp,
     EApplyEpetraOpAs *epetraOpApplyAs,
     EAdjointEpetraOp *epetraOpAdjointSupport
@@ -211,9 +211,9 @@ public:
   //@{
 
   /// Returns <tt>this->spmdRange()</tt>
-  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
   /// Returns <tt>this->spmdDomain()</tt>
-  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
+  RCP< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief . */
   void euclideanApply(
     const ETransp M_trans,
@@ -229,7 +229,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
+  RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -240,7 +240,7 @@ public:
   std::string description() const;
   /** \brief . */
   void describe(
- Teuchos::FancyOStream &out,
+    FancyOStream &out,
     const Teuchos::EVerbosityLevel verbLevel
     ) const;
   
@@ -261,9 +261,9 @@ protected:
    * vector space objects, and allocation is delegated to a virtual
    * allocator function.
    */
-  virtual Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > 
+  virtual RCP< const SpmdVectorSpaceBase<Scalar> > 
   allocateDomain(
-    const Teuchos::RCP<Epetra_Operator> &op, 
+    const RCP<Epetra_Operator> &op, 
     ETransp op_trans 
     ) const; 
   
@@ -277,9 +277,9 @@ protected:
    * vector space objects, and allocation is delegated to a virtual
    * allocator function.
    */
-  virtual Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >
+  virtual RCP< const SpmdVectorSpaceBase<Scalar> >
   allocateRange( 
-    const Teuchos::RCP<Epetra_Operator> &op, 
+    const RCP<Epetra_Operator> &op, 
     ETransp op_trans 
     ) const; 
 
@@ -290,14 +290,14 @@ private:
   // ////////////////////////////////////
   // Private data members
 
-  Teuchos::RCP<Epetra_Operator> op_;
+  RCP<Epetra_Operator> op_;
   ETransp opTrans_;
   EApplyEpetraOpAs applyAs_;
   EAdjointEpetraOp adjointSupport_;
-  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > range_;
-  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > domain_;
-  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > sp_range_;
-  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > sp_domain_;
+  RCP< const SpmdVectorSpaceBase<Scalar> > range_;
+  RCP< const SpmdVectorSpaceBase<Scalar> > domain_;
+  RCP< const ScalarProdVectorSpaceBase<Scalar> > sp_range_;
+  RCP< const ScalarProdVectorSpaceBase<Scalar> > sp_domain_;
 
   // ////////////////////////////////////
   // Private member functions
@@ -314,14 +314,14 @@ private:
  * \relates EpetraLinearOp
  */
 inline
-Teuchos::RCP<EpetraLinearOp>
+RCP<EpetraLinearOp>
 nonconstEpetraLinearOp(
-  const Teuchos::RCP<Epetra_Operator> &op,
+  const RCP<Epetra_Operator> &op,
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
   )
 {
   return Teuchos::rcp(
@@ -338,14 +338,14 @@ nonconstEpetraLinearOp(
  * \relates EpetraLinearOp
  */
 inline
-Teuchos::RCP<const EpetraLinearOp>
+RCP<const EpetraLinearOp>
 epetraLinearOp(
-  const Teuchos::RCP<const Epetra_Operator> &op,
+  const RCP<const Epetra_Operator> &op,
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
   )
 {
   return Teuchos::rcp(
@@ -363,18 +363,18 @@ epetraLinearOp(
  * \relates EpetraLinearOp
  */
 inline
-Teuchos::RCP<EpetraLinearOp>
+RCP<EpetraLinearOp>
 nonconstEpetraLinearOp(
-  const Teuchos::RCP<Epetra_Operator> &op,
+  const RCP<Epetra_Operator> &op,
   const std::string &label,
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
   )
 {
-  Teuchos::RCP<EpetraLinearOp>
+  RCP<EpetraLinearOp>
     thyra_op = Teuchos::rcp(
       new EpetraLinearOp(
         op,opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
@@ -391,18 +391,18 @@ nonconstEpetraLinearOp(
  * \relates EpetraLinearOp
  */
 inline
-Teuchos::RCP<const EpetraLinearOp>
+RCP<const EpetraLinearOp>
 epetraLinearOp(
-  const Teuchos::RCP<const Epetra_Operator> &op,
+  const RCP<const Epetra_Operator> &op,
   const std::string &label,
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const Teuchos::RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
   )
 {
-  Teuchos::RCP<EpetraLinearOp>
+  RCP<EpetraLinearOp>
     thyra_op = Teuchos::rcp(
       new EpetraLinearOp(
         Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!

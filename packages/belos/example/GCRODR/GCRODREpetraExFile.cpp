@@ -4,7 +4,7 @@
 //                 Belos: Block Linear Solvers Package
 //                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// Under terms of Contract DE-AC04-94AL8 5000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
 // This library is free software; you can redistribute it and/or modify
@@ -78,10 +78,12 @@ int main(int argc, char *argv[]) {
   int frequency = -1;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
+  int maxsubspace = 250;      // maximum number of blocks the solver can use for the subspace
+  int recycle = 50;      // maximum number of blocks the solver can use for the subspace
   int maxrestarts = 15;      // number of restarts allowed 
   std::string filename("orsirr1.hb");
-  MT tol = 1.0e-5;           // relative residual tolerance
+  std::string ortho("IMGS");
+  MT tol = 1.0e-10;           // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -91,8 +93,10 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
-  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
+  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of vectors in search space (including recycle space).");
+  cmdp.setOption("recycle",&recycle,"Number of vectors in recycle space.");
+  cmdp.setOption("max-cycles",&maxrestarts,"Maximum number of cycles allowed for GCRO-DR solver.");
+  cmdp.setOption("ortho-type",&ortho,"Orthogonalization type. Must be one of DGKS, ICGS, IMGS.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -135,6 +139,8 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Num Recycled Blocks", recycle );       // Number of vectors in recycle space
+  belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
 
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {

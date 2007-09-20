@@ -39,8 +39,16 @@
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
+
+// Define this macro to see some timers for some of these functions
+#define ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#  include "Teuchos_TimeMonitor.hpp"
+#endif
 
 //==============================================================================
 Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
@@ -95,6 +103,10 @@ int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
 //==========================================================================
 int Ifpack_ILU::ComputeSetup() 
 {
+
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::ComputeSetup");
+#endif
 
   L_ = rcp(new Epetra_CrsMatrix(Copy, Graph().L_Graph()));
   U_ = rcp(new Epetra_CrsMatrix(Copy, Graph().U_Graph()));
@@ -215,6 +227,11 @@ int Ifpack_ILU::ComputeSetup()
 //==========================================================================
 int Ifpack_ILU::Initialize() 
 {
+
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Initialize");
+#endif
+
   Time_.ResetStartTime();
   IsInitialized_ = false;
 
@@ -278,6 +295,10 @@ int Ifpack_ILU::Initialize()
 //==========================================================================
 int Ifpack_ILU::Compute() 
 {
+
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Compute");
+#endif
 
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
@@ -434,6 +455,10 @@ int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X,
                       Epetra_MultiVector& Y) const 
 {
 
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::ApplyInverse - Solve");
+#endif
+
   // in this function the overlap is always zero
   bool Upper = true;
   bool Lower = false;
@@ -464,6 +489,11 @@ int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X,
 int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X, 
 				Epetra_MultiVector& Y) const 
 {
+
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Multiply");
+#endif
+
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
 
@@ -500,6 +530,10 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
                              Epetra_MultiVector& Y) const
 {
 
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::ApplyInverse");
+#endif
+
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
 
@@ -534,6 +568,11 @@ double Ifpack_ILU::Condest(const Ifpack_CondestType CT,
                            const int MaxIters, const double Tol,
                               Epetra_RowMatrix* Matrix)
 {
+
+#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Condest");
+#endif
+
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 

@@ -24,6 +24,7 @@ bool test_single_belos_thyra_solver(
   ,const bool                             showAllTests
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *belosLOWSFPL
+  ,Teuchos::ParameterList                 *precPL
   ,Teuchos::FancyOStream                  *out
   );
 

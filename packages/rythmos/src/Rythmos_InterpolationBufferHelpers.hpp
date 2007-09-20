@@ -39,6 +39,8 @@ namespace Rythmos {
 
 
 /** \brief Assert that a time point vector is sorted.
+ *
+ * \relates InterpolationBufferBase
  */
 template<class Scalar>
 void assertTimePointsAreSorted(const Array<Scalar>& time_vec);
@@ -47,19 +49,19 @@ void assertTimePointsAreSorted(const Array<Scalar>& time_vec);
 /** \brief Assert that none of the time points fall before the current
  * time range for an interpolation buffer object.
  *
- * \param  interpBuffer
- *           [in] The interpolation buffer defining the time range.  The
- *           reason that we accept the interpolation buffer and not
- *           just the time range is so we can create a better error
- *           message.
- * \param  time_vec
- *           [in] The array of time points
- * \param  startingTimePointIndex
- *           [in] The time index in <tt>time_vec</tt> to begin
- *           asserting time points.  The default is 0.
+ * \param interpBuffer [in] The interpolation buffer defining the time range.
+ * The reason that we accept the interpolation buffer and not just the time
+ * range is so we can create a better error message.
+ *
+ * \param time_vec [in] The array of time points
+ *
+ * \param startingTimePointIndex [in] The time index in <tt>time_vec</tt> to
+ * begin asserting time points.  The default is 0.
  *
  * This function with throw an exception if any of the time points
  * are found to be before the current time range.
+ *
+ * \relates InterpolationBufferBase
  */
 template<class Scalar>
 void assertNoTimePointsBeforeCurrentTimeRange(
@@ -67,35 +69,80 @@ void assertNoTimePointsBeforeCurrentTimeRange(
   const Array<Scalar>& time_vec,
   const int &startingTimePointIndex = 0
   );
+
   
+/** \brief Assert that none of the time points fall inside the current
+ * time range for an interpolation buffer object.
+ *
+ * \param interpBuffer [in] The interpolation buffer defining the time range.
+ * The reason that we accept the interpolation buffer and not just the time
+ * range is so we can create a better error message.
+ *
+ * \param time_vec [in] The array of time points
+ *
+ * This function with throw an exception if any of the time points
+ * are found to be inside the current time range.
+ *
+ * \relates InterpolationBufferBase
+ */
+template<class Scalar>
+void assertNoTimePointsInsideCurrentTimeRange(
+  const InterpolationBufferBase<Scalar> &interpBuffer,
+  const Array<Scalar>& time_vec
+  );
+
+
+/** \brief Select points from an Array that sit in a TimeRange
+ *
+ * \relates InterpolationBufferBase
+ */
+template<class TimeType>
+void selectPointsInTimeRange(
+  Array<TimeType>* points_out, 
+  const Array<TimeType>& points_in,
+  const TimeRange<TimeType>& range 
+  );
+
+
+/** \brief Remove points from an Array that sit in a TimeRange
+ *
+ * \relates InterpolationBufferBase
+ */
+template<class TimeType>
+void removePointsInTimeRange(
+  Array<TimeType>* points_in, 
+  const TimeRange<TimeType>& range 
+  );
 
 
 /** \brief Get time points in the current range of an interpolation buffer
  * object.
  *
- * \param  interpBuffer
- *           [in] The interpolation buffer object that will be used to
- *           get state values at different time points
- * \param  time_vec
- *           [in] The whole time vector, including time points that
- *           fall outside of the current time range in <tt>interpBuffer</tt>.
- * \param  x_vec
- *           [in/out] This argument is optional and it is allowed for <tt>x_vec==0</tt>.
- *           However, if <tt>x_vec!=0</tt>, then on input <tt>x_vec->size()==time_vec.size()</tt>
- *           must be true.  On output, <tt>*x_vec</tt> will be filled with the state
- *           vectors for the current time points given in <tt>time_vec</tt>.
- * \param  xdot_vec
- *           [in/out] This argument is optional and it is allowed for <tt>xdot_vec==0</tt>.
- *           However, if <tt>xdot_vec!=0</tt>, then on input <tt>xdot_vec->size()==time_vec.size()</tt>
- *           must be true.  On output, <tt>*xdot_vec</tt> will be filled with the state derivative
- *           vectors for the current time points given in <tt>time_vec</tt>.
- * \param  nextTimePointIndex
- *           [in/out] On input, <tt>*nextTimePointIndex</tt> gives first time
- *           point <tt>time_vec[*nextTimePointIndex]</tt> to extract state
- *           values for.  On output, <tt>*nextTimePointIndex</tt> will be
- *           incremented such that there are no more time points left (i.e.
- *           <tt>nextTimePointIndex==time_vec.size()</tt> or such that
- *           <tt>time_vec[*nextTimePointIndex] > interpBuffer.getTimeRange().upper()</tt>
+ * \param interpBuffer [in] The interpolation buffer object that will be used
+ * to get state values at different time points
+ *
+ * \param time_vec [in] The whole time vector, including time points that fall
+ * outside of the current time range in <tt>interpBuffer</tt>.
+ *
+ * \param x_vec [in/out] This argument is optional and it is allowed for
+ * <tt>x_vec==0</tt>.  However, if <tt>x_vec!=0</tt>, then on input
+ * <tt>x_vec->size()==time_vec.size()</tt> must be true.  On output,
+ * <tt>*x_vec</tt> will be filled with the state vectors for the current time
+ * points given in <tt>time_vec</tt>.
+ *
+ * \param xdot_vec [in/out] This argument is optional and it is allowed for
+ * <tt>xdot_vec==0</tt>.  However, if <tt>xdot_vec!=0</tt>, then on input
+ * <tt>xdot_vec->size()==time_vec.size()</tt> must be true.  On output,
+ * <tt>*xdot_vec</tt> will be filled with the state derivative vectors for the
+ * current time points given in <tt>time_vec</tt>.
+ *
+ * \param nextTimePointIndex [in/out] On input, <tt>*nextTimePointIndex</tt>
+ * gives first time point <tt>time_vec[*nextTimePointIndex]</tt> to extract
+ * state values for.  On output, <tt>*nextTimePointIndex</tt> will be
+ * incremented such that there are no more time points left (i.e.
+ * <tt>nextTimePointIndex==time_vec.size()</tt> or such that
+ * <tt>time_vec[*nextTimePointIndex] >
+ * interpBuffer.getTimeRange().upper()</tt>
  *
  * <b>Preconditions:</b><ul>
  * <tt> <tt>nextTimePointIndex!=0</tt>
@@ -169,6 +216,68 @@ void Rythmos::assertNoTimePointsBeforeCurrentTimeRange(
 
 
 template<class Scalar>
+void Rythmos::assertNoTimePointsInsideCurrentTimeRange(
+  const InterpolationBufferBase<Scalar>& interpBuffer,
+  const Array<Scalar>& time_vec
+  )
+{
+  typedef ScalarTraits<Scalar> ST;
+  const int numTimePoints = time_vec.size();
+  const TimeRange<Scalar> currentTimeRange = interpBuffer.getTimeRange();
+  if (currentTimeRange.length() >= ST::zero()) {
+    for ( int i = 0; i < numTimePoints; ++i ) {
+      TEST_FOR_EXCEPTION(
+        currentTimeRange.isInRange(time_vec[i]), std::out_of_range,
+        "Error, time_vec["<<i<<"] = " << time_vec[i] << " is in TimeRange of " 
+        << interpBuffer.description() << "!"
+        );
+    }
+  }
+}
+
+
+template<class TimeType>
+void Rythmos::selectPointsInTimeRange(
+    Array<TimeType>* points_out, 
+    const Array<TimeType>& points_in,
+    const TimeRange<TimeType>& range 
+    )
+{
+  points_out->clear();
+  int Nt = Teuchos::as<int>(points_in.size());
+  for (int i=0; i < Nt ; ++i) {
+    if (range.isInRange(points_in[i])) {
+      points_out->push_back(points_in[i]);
+    }
+  }
+}
+
+
+template<class TimeType>
+void Rythmos::removePointsInTimeRange(
+    Array<TimeType>* points_in, 
+    const TimeRange<TimeType>& range 
+    )
+{
+  Array<TimeType> values_to_remove;
+  for (int i=0 ; i<Teuchos::as<int>(points_in->size()) ; ++i) {
+    if (range.isInRange((*points_in)[i])) {
+      values_to_remove.push_back((*points_in)[i]);
+    }
+  }
+  typename Array<TimeType>::iterator point_it;
+  for (int i=0 ; i< Teuchos::as<int>(values_to_remove.size()) ; ++i) {
+    point_it = std::find(points_in->begin(),points_in->end(),values_to_remove[i]);
+    TEST_FOR_EXCEPTION(
+        point_it == points_in->end(), std::logic_error,
+        "Error, point to remove = " << values_to_remove[i] << " not found with std:find!\n"
+        );
+    points_in->erase(point_it);
+  }
+}
+
+
+template<class Scalar>
 bool Rythmos::getCurrentPoints(
   const InterpolationBufferBase<Scalar> &interpBuffer,
   const Array<Scalar>& time_vec,
@@ -229,14 +338,12 @@ bool Rythmos::getCurrentPoints(
 
       // Get the state(s) for current time points from the stepper and put
       // them into temp arrays
-      Array<RCP<const Thyra::VectorBase<Scalar> > >
-        current_x_vec( x_vec ? numCurrentTimePoints : 0 );
-      Array<RCP<const Thyra::VectorBase<Scalar> > >
-        current_xdot_vec( xdot_vec ? numCurrentTimePoints : 0 );
+      Array<RCP<const Thyra::VectorBase<Scalar> > > current_x_vec;
+      Array<RCP<const Thyra::VectorBase<Scalar> > > current_xdot_vec;
       interpBuffer.getPoints(
         current_time_vec,
-        current_x_vec.size() ? &current_x_vec : 0,
-        current_xdot_vec.size() ? &current_xdot_vec : 0,
+        x_vec ? &current_x_vec : 0,
+        xdot_vec ? &current_xdot_vec : 0,
         0 // accuracy_vec
         );
 

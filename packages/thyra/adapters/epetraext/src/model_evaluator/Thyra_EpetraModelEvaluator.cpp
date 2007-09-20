@@ -60,9 +60,10 @@ get_Epetra_RowMatrix(
   const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs
   )
 {
-  const Teuchos::RCP<Epetra_Operator>
+  using Teuchos::RCP;
+  const RCP<Epetra_Operator>
     eW = epetraOutArgs.get_W();
-  const Teuchos::RCP<Epetra_RowMatrix>
+  const RCP<Epetra_RowMatrix>
     ermW = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(eW,false);
   TEST_FOR_EXCEPTION(
     is_null(ermW), std::logic_error,
@@ -78,6 +79,25 @@ get_Epetra_RowMatrix(
 }
 
 
+Teuchos::RCP<Epetra_Operator>
+create_and_assert_W( 
+  const EpetraExt::ModelEvaluator &epetraModel
+  )
+{
+  using Teuchos::RCP;
+  RCP<Epetra_Operator>
+    eW = epetraModel.create_W();
+  TEST_FOR_EXCEPTION(
+    is_null(eW), std::logic_error,
+    "Error, the call to create_W() returned null on the "
+    "EpetraExt::ModelEvaluator object "
+    "\"" << epetraModel.description() << "\".  This may mean that "
+    "the underlying model does not support more than one copy of "
+    "W at one time!" );
+  return eW;
+}
+
+
 } // namespace
 
 
@@ -89,26 +109,26 @@ namespace Thyra {
 
 EpetraModelEvaluator::EpetraModelEvaluator()
   :nominalValuesAndBoundsAreUpdated_(false), stateFunctionScaling_(STATE_FUNC_SCALING_NONE),
-   finalPointWasSolved_(false)
+   currentInArgsOutArgs_(false), finalPointWasSolved_(false)
 {}
 
 
 EpetraModelEvaluator::EpetraModelEvaluator(
-  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
   :nominalValuesAndBoundsAreUpdated_(false), stateFunctionScaling_(STATE_FUNC_SCALING_NONE),
-   finalPointWasSolved_(false)
+   currentInArgsOutArgs_(false), finalPointWasSolved_(false)
 {
   initialize(epetraModel,W_factory);
 }
 
+
 void EpetraModelEvaluator::initialize(
-  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
 {
-  using Teuchos::RCP;
   using Teuchos::implicit_cast;
   typedef ModelEvaluatorBase MEB;
   //
@@ -151,10 +171,12 @@ void EpetraModelEvaluator::initialize(
   nominalValuesAndBoundsAreUpdated_ = false;
   finalPointWasSolved_ = false;
   stateFunctionScalingVec_ = Teuchos::null; // Must set new scaling!
+  //
+  currentInArgsOutArgs_ = false;
 }
 
 
-Teuchos::RCP<const EpetraExt::ModelEvaluator>
+RCP<const EpetraExt::ModelEvaluator>
 EpetraModelEvaluator::getEpetraModel() const
 {
   return epetraModel_;
@@ -171,7 +193,7 @@ void EpetraModelEvaluator::setNominalValues(
 
 
 void EpetraModelEvaluator::setStateVariableScalingVec(
-  const Teuchos::RCP<const Epetra_Vector> &stateVariableScalingVec
+  const RCP<const Epetra_Vector> &stateVariableScalingVec
   )
 {
   typedef ModelEvaluatorBase MEB;
@@ -184,22 +206,30 @@ void EpetraModelEvaluator::setStateVariableScalingVec(
 }
 
 
-Teuchos::RCP<const Epetra_Vector>
+RCP<const Epetra_Vector>
 EpetraModelEvaluator::getStateVariableScalingVec() const
 {
   return stateVariableScalingVec_;
 }
 
 
+RCP<const Epetra_Vector>
+EpetraModelEvaluator::getStateVariableInvScalingVec() const
+{
+  updateNominalValuesAndBounds();
+  return invStateVariableScalingVec_;
+}
+
+
 void EpetraModelEvaluator::setStateFunctionScalingVec(
-  const Teuchos::RCP<const Epetra_Vector> &stateFunctionScalingVec
+  const RCP<const Epetra_Vector> &stateFunctionScalingVec
   )
 {
   stateFunctionScalingVec_ = stateFunctionScalingVec;
 }
 
 
-Teuchos::RCP<const Epetra_Vector>
+RCP<const Epetra_Vector>
 EpetraModelEvaluator::getStateFunctionScalingVec() const
 {
   return stateFunctionScalingVec_;
@@ -207,8 +237,8 @@ EpetraModelEvaluator::getStateFunctionScalingVec() const
 
 
 void EpetraModelEvaluator::uninitialize(
-  Teuchos::RCP<const EpetraExt::ModelEvaluator> *epetraModel,
-  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > *W_factory
+  RCP<const EpetraExt::ModelEvaluator> *epetraModel,
+  RCP<LinearOpWithSolveFactoryBase<double> > *W_factory
   )
 {
   if(epetraModel) *epetraModel = epetraModel_;
@@ -218,6 +248,7 @@ void EpetraModelEvaluator::uninitialize(
   stateFunctionScalingVec_ = Teuchos::null;
   stateVariableScalingVec_ = Teuchos::null;
   invStateVariableScalingVec_ = Teuchos::null;
+  currentInArgsOutArgs_ = false;
 }
 
 
@@ -234,11 +265,33 @@ bool EpetraModelEvaluator::finalPointWasSolved() const
 }
 
 
+// Public functions overridden from Teuchos::Describable
+
+
+std::string EpetraModelEvaluator::description() const
+{
+  std::ostringstream oss;
+  oss << "Thyra::EpetraModelEvaluator{";
+  oss << "epetraModel=";
+  if(epetraModel_.get())
+    oss << "\'"<<epetraModel_->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << ",W_factory=";
+  if(W_factory_.get())
+    oss << "\'"<<W_factory_->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << "}";
+  return oss.str();
+}
+
+
 // Overridden from Teuchos::ParameterListAcceptor
 
 
 void EpetraModelEvaluator::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(is_null(paramList));
@@ -257,38 +310,38 @@ void EpetraModelEvaluator::setParameterList(
 }
 
 
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 EpetraModelEvaluator::getParameterList()
 {
   return paramList_;
 }
 
 
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 EpetraModelEvaluator::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
+  RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 EpetraModelEvaluator::getParameterList() const
 {
   return paramList_;
 }
 
 
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 EpetraModelEvaluator::getValidParameters() const
 {
   using Teuchos::rcp;
   using Teuchos::StringToIntegralParameterEntryValidator;
   using Teuchos::tuple;
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  static RCP<const Teuchos::ParameterList> validPL;
   if(is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList>
+    RCP<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList());
     stateFunctionScalingValidator = rcp(
       new StringToIntegralParameterEntryValidator<EStateFunctionScaling>(
@@ -340,21 +393,21 @@ int EpetraModelEvaluator::Ng() const
 }
 
 
-Teuchos::RCP<const VectorSpaceBase<double> >
+RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_x_space() const
 {
   return x_space_;
 }
 
 
-Teuchos::RCP<const VectorSpaceBase<double> >
+RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_f_space() const
 {
   return f_space_;
 }
 
 
-Teuchos::RCP<const VectorSpaceBase<double> >
+RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_p_space(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -364,7 +417,7 @@ EpetraModelEvaluator::get_p_space(int l) const
 }
 
 
-Teuchos::RCP<const Teuchos::Array<std::string> >
+RCP<const Teuchos::Array<std::string> >
 EpetraModelEvaluator::get_p_names(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -374,7 +427,7 @@ EpetraModelEvaluator::get_p_names(int l) const
 }
 
 
-Teuchos::RCP<const VectorSpaceBase<double> >
+RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_g_space(int j) const
 {
   TEST_FOR_EXCEPT( ! ( 0 <= j && j < this->Ng() ) );
@@ -406,7 +459,7 @@ EpetraModelEvaluator::getUpperBounds() const
 }
 
 
-Teuchos::RCP<LinearOpWithSolveBase<double> >
+RCP<LinearOpWithSolveBase<double> >
 EpetraModelEvaluator::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -421,112 +474,77 @@ EpetraModelEvaluator::create_W() const
 }
 
 
-Teuchos::RCP<LinearOpBase<double> >
+RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_W_op() const
 {
   return Teuchos::rcp(new Thyra::EpetraLinearOp());
 }
 
 
-Teuchos::RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DfDp_op(int l) const
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
-}
-
-
-Teuchos::RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DgDx_op(int j) const
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
-}
-
-
-Teuchos::RCP<LinearOpBase<double> >
-EpetraModelEvaluator::create_DgDp_op( int j, int l ) const
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
-}
-
-
 ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::createInArgs() const
 {
-  const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
-  InArgsSetup<double> inArgs;
-  typedef EpetraExt::ModelEvaluator EME;
-  EME::InArgs epetraInArgs = epetraModel.createInArgs();
-  inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(epetraInArgs.Np());
-  inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
-  inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
-  inArgs.setSupports(IN_ARG_x_dot_poly,
-         epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
-  inArgs.setSupports(IN_ARG_x_poly,epetraInArgs.supports(EME::IN_ARG_x_poly));
-  inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
-  inArgs.setSupports(IN_ARG_alpha,epetraInArgs.supports(EME::IN_ARG_alpha));
-  inArgs.setSupports(IN_ARG_beta,epetraInArgs.supports(EME::IN_ARG_beta));
-  return inArgs;
+  if (!currentInArgsOutArgs_)
+    updateInArgsOutArgs();
+  return prototypeInArgs_;
 }
 
 
-ModelEvaluatorBase::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
+void EpetraModelEvaluator::reportFinalPoint(
+  const ModelEvaluatorBase::InArgs<double> &finalPoint,
+  const bool wasSolved
+  )
 {
-  const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
-  OutArgsSetup<double> outArgs;
-  typedef EpetraExt::ModelEvaluator EME;
-  EME::InArgs  epetraInArgs  = epetraModel.createInArgs();
-  EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
-  const int Np = epetraOutArgs.Np(), Ng = epetraOutArgs.Ng();
-  outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(Np,Ng);
-  outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
-  outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W)&&W_factory_.get()!=NULL);
-  outArgs.setSupports(OUT_ARG_W_op,epetraOutArgs.supports(EME::OUT_ARG_W));
-  outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
-  for(int l=0; l<Np; ++l) {
-    outArgs.setSupports(OUT_ARG_DfDp,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
-    if(!outArgs.supports(OUT_ARG_DfDp,l).none())
-      outArgs.set_DfDp_properties(l,convert(epetraOutArgs.get_DfDp_properties(l)));
-  }
-  for(int j=0; j<Ng; ++j) {
-    outArgs.setSupports(OUT_ARG_DgDx,j,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx,j)));
-    if(!outArgs.supports(OUT_ARG_DgDx,j).none())
-      outArgs.set_DgDx_properties(j,convert(epetraOutArgs.get_DgDx_properties(j)));
-  }
-  for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
-    const EME::DerivativeSupport
-      epetra_DgDp_j_l_support = epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
-    DerivativeSupport
-      DgDp_j_l_support = convert(epetra_DgDp_j_l_support);
-    if(
-      ( g_map_is_local_[j] && p_map_is_local_[l] )
-      &&
-      (
-        epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL)
-        ||
-        epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW)
-        )
-      )
-    {
-      // Both maps are local and any of the multi-vector forms are supported
-      // then we can support both forms with a transpose copy.
-      DgDp_j_l_support.plus(DERIV_MV_BY_COL);
-      DgDp_j_l_support.plus(DERIV_TRANS_MV_BY_ROW);
-      
-    }
-    outArgs.setSupports(OUT_ARG_DgDp,j,l,DgDp_j_l_support);
-    if(!outArgs.supports(OUT_ARG_DgDp,j,l).none())
-      outArgs.set_DgDp_properties(j,l,convert(epetraOutArgs.get_DgDp_properties(j,l)));
-  }
-  outArgs.setSupports(OUT_ARG_f_poly,epetraOutArgs.supports(EME::OUT_ARG_f_poly));
-  return outArgs;
+  finalPoint_ = this->createInArgs();
+  finalPoint_.setArgs(finalPoint);
+  finalPointWasSolved_ = wasSolved;
 }
 
 
-void EpetraModelEvaluator::evalModel(
+// Private functions overridden from ModelEvaulatorDefaultBase
+
+
+RCP<LinearOpBase<double> >
+EpetraModelEvaluator::create_DfDp_op_impl(int l) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+
+RCP<LinearOpBase<double> >
+EpetraModelEvaluator::create_DgDx_dot_op_impl(int j) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+
+RCP<LinearOpBase<double> >
+EpetraModelEvaluator::create_DgDx_op_impl(int j) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+
+RCP<LinearOpBase<double> >
+EpetraModelEvaluator::create_DgDp_op_impl( int j, int l ) const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
+}
+
+
+ModelEvaluatorBase::OutArgs<double>
+EpetraModelEvaluator::createOutArgsImpl() const
+{
+  if (!currentInArgsOutArgs_)
+    updateInArgsOutArgs();
+  return prototypeOutArgs_;
+}
+
+
+void EpetraModelEvaluator::evalModelImpl(
   const ModelEvaluatorBase::InArgs<double>& inArgs_in,
   const ModelEvaluatorBase::OutArgs<double>& outArgs
   ) const
@@ -623,15 +641,13 @@ void EpetraModelEvaluator::evalModel(
   RCP<const LinearOpBase<double> > fwdW;
   RCP<EpetraLinearOp> efwdW;
   RCP<Epetra_Operator> eW;
-  bool created_temp_DgDp;
   
   // Convert from Thyra to Epetra OutArgs and grap some of the intermediate
   // objects accessed along the way that are needed later.
   convertOutArgsFromThyraToEpetra(
     outArgs,
     &epetraUnscaledOutArgs,
-    &W, &W_op, &fwdW, &efwdW, &eW,
-    &created_temp_DgDp
+    &W, &W_op, &fwdW, &efwdW, &eW
     );
 
   //
@@ -725,7 +741,7 @@ void EpetraModelEvaluator::evalModel(
   timer.start(true);
 
   finishConvertingOutArgsFromEpetraToThyra(
-    epetraOutArgs, W, W_op, fwdW, efwdW, eW, created_temp_DgDp,
+    epetraOutArgs, W, W_op, fwdW, efwdW, eW,
     outArgs
     );
 
@@ -741,39 +757,6 @@ void EpetraModelEvaluator::evalModel(
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
-}
-
-
-void EpetraModelEvaluator::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<double>      &finalPoint
-  ,const bool                                   wasSolved
-  )
-{
-  finalPoint_ = this->createInArgs();
-  finalPoint_.setArgs(finalPoint);
-  finalPointWasSolved_ = wasSolved;
-}
-
-
-// Public functions overridden from Teuchos::Describable
-
-
-std::string EpetraModelEvaluator::description() const
-{
-  std::ostringstream oss;
-  oss << "Thyra::EpetraModelEvaluator{";
-  oss << "epetraModel=";
-  if(epetraModel_.get())
-    oss << "\'"<<epetraModel_->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << ",W_factory=";
-  if(W_factory_.get())
-    oss << "\'"<<W_factory_->description()<<"\'";
-  else
-    oss << "NULL";
-  oss << "}";
-  return oss.str();
 }
 
 
@@ -817,7 +800,9 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
   ) const
 {
 
-  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::Polynomial;
 
   TEST_FOR_EXCEPT(0==epetraInArgs);
 
@@ -839,33 +824,33 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     if(p_l.get()) epetraInArgs->set_p(l,get_Epetra_Vector(*p_map_[l],p_l));
   }
 
-  RCP<const Teuchos::Polynomial< VectorBase<double> > > x_dot_poly;
-  Teuchos::RCP<Epetra_Vector> epetra_ptr;
+  RCP<const Polynomial< VectorBase<double> > > x_dot_poly;
+  RCP<Epetra_Vector> epetra_ptr;
   if(
     inArgs.supports(IN_ARG_x_dot_poly)
     && (x_dot_poly = inArgs.get_x_dot_poly()).get()
     )
   {
-    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_x_dot_poly = 
-      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_dot_poly->degree()));
+    RCP<Polynomial<Epetra_Vector> > epetra_x_dot_poly = 
+      rcp(new Polynomial<Epetra_Vector>(x_dot_poly->degree()));
     for (unsigned int i=0; i<=x_dot_poly->degree(); i++) {
-      epetra_ptr = Teuchos::rcp_const_cast<Epetra_Vector>(
+      epetra_ptr = rcp_const_cast<Epetra_Vector>(
         get_Epetra_Vector(*x_map_, x_dot_poly->getCoefficient(i)) );
       epetra_x_dot_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraInArgs->set_x_dot_poly(epetra_x_dot_poly);
   }
   
-  RCP<const Teuchos::Polynomial< VectorBase<double> > > x_poly;
+  RCP<const Polynomial< VectorBase<double> > > x_poly;
   if(
     inArgs.supports(IN_ARG_x_poly)
     && (x_poly = inArgs.get_x_poly()).get()
     )
   {
-    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_x_poly = 
-      Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_poly->degree()));
+    RCP<Polynomial<Epetra_Vector> > epetra_x_poly = 
+      rcp(new Polynomial<Epetra_Vector>(x_poly->degree()));
     for (unsigned int i=0; i<=x_poly->degree(); i++) {
-      epetra_ptr = Teuchos::rcp_const_cast<Epetra_Vector>(
+      epetra_ptr = rcp_const_cast<Epetra_Vector>(
         get_Epetra_Vector(*x_map_, x_poly->getCoefficient(i)) );
       epetra_x_poly->setCoefficientPtr(i,epetra_ptr);
     }
@@ -891,19 +876,16 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   RCP<LinearOpBase<double> > *W_op_out,
   RCP<const LinearOpBase<double> > *fwdW_out,
   RCP<EpetraLinearOp> *efwdW_out,
-  RCP<Epetra_Operator> *eW_out,
-  bool *created_temp_DgDp_out
+  RCP<Epetra_Operator> *eW_out
   ) const
 {
 
-
-  using Thyra::get_Epetra_Vector;
-  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
   using Teuchos::implicit_cast;
+  using Thyra::get_Epetra_Vector;
   typedef EpetraExt::ModelEvaluator EME;
 
   // Assert input
@@ -914,7 +896,6 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   TEUCHOS_ASSERT(fwdW_out);
   TEUCHOS_ASSERT(efwdW_out);
   TEUCHOS_ASSERT(eW_out);
-  TEUCHOS_ASSERT(created_temp_DgDp_out);
 #endif
 
   // Create easy to use references
@@ -924,7 +905,6 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   RCP<const LinearOpBase<double> > &fwdW = *fwdW_out;
   RCP<EpetraLinearOp> &efwdW = *efwdW_out;
   RCP<Epetra_Operator> &eW = *eW_out;
-  bool &created_temp_DgDp = *created_temp_DgDp_out;
 
   // f
   { 
@@ -935,7 +915,7 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     
   // g
   {
-    Teuchos::RCP<VectorBase<double> > g_j;
+    RCP<VectorBase<double> > g_j;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
       g_j = outArgs.get_g(j);
       if(g_j.get()) epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
@@ -963,8 +943,9 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     }
     if(efwdW.get()) {
       eW = efwdW->epetra_op();
-      if(!eW.get())
-        eW = epetraModel_->create_W();
+      if(!eW.get()) {
+        eW = create_and_assert_W(*epetraModel_);
+      }
       epetraUnscaledOutArgs.set_W(eW);
     }
     // NOTE: Above, if both W and W_op are set and have been through at least
@@ -996,6 +977,18 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     }
   }
 
+  // DgDx_dot
+  {
+    Derivative<double> DgDx_dot_j;
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      if( !outArgs.supports(OUT_ARG_DgDx_dot,j).none()
+        && !(DgDx_dot_j = outArgs.get_DgDx_dot(j)).isEmpty() )
+      {
+        epetraUnscaledOutArgs.set_DgDx_dot(j,convert(DgDx_dot_j,g_map_[j],x_map_));
+      }
+    }
+  }
+
   // DgDx
   {
     Derivative<double> DgDx_j;
@@ -1014,80 +1007,14 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     Derivative<double> DgDp_j_l;
     for (int j = 0;  j < outArgs.Ng(); ++j ) {
       for (int l = 0;  l < outArgs.Np(); ++l ) {
-        if (
-          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
-          &&
-          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
-          )
+        if (!(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
+          && !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty() )
         {
-          const EME::DerivativeSupport
-            epetra_DgDp_j_l_support = epetraUnscaledOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
-          if (
-            !is_null(DgDp_j_l.getDerivativeMultiVector().getMultiVector())
-            &&
-            (
-              ( 
-                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_MV_BY_COL
-                &&
-                !epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL)
-                )
-              ||
-              ( 
-                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_TRANS_MV_BY_ROW
-                &&
-                !epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW)
-                )
-              )
-            )
-          {
-            // If you get here, then an explicit transpose must be allowed or
-            // the supported objects above would not be set the way that they
-            // are set.  Therefore, we will just go with the temp transpose
-            // and do the explicit copy later after the evaluation.
-            created_temp_DgDp = true;
-            RCP<Epetra_MultiVector> temp_epetra_DgDp_j_l;
-            EME::EDerivativeMultiVectorOrientation temp_epetra_DgDp_j_l_orientation;
-            if( epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL) )
-            {
-              temp_epetra_DgDp_j_l = rcp(
-                new Epetra_MultiVector(
-                  *g_map_[j], p_map_[l]->NumGlobalElements(), false
-                  )
-                );
-              temp_epetra_DgDp_j_l_orientation = EME::DERIV_MV_BY_COL;
-            }
-            else if( epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW) )
-            {
-              temp_epetra_DgDp_j_l = rcp(
-                new Epetra_MultiVector(
-                  *p_map_[l], g_map_[j]->NumGlobalElements(), false
-                  )
-                );
-              temp_epetra_DgDp_j_l_orientation = EME::DERIV_TRANS_MV_BY_ROW;
-            }
-            else {
-              TEST_FOR_EXCEPT("Should not get here!");
-            }
-            epetraUnscaledOutArgs.set_DgDp(
-              j,l,
-              EME::Derivative(
-                EME::DerivativeMultiVector(
-                  temp_epetra_DgDp_j_l,
-                  temp_epetra_DgDp_j_l_orientation
-                  )
-                )
-              );
-          }
-          else {
-            // Just assume that we can compute the object in place
-            epetraUnscaledOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
-          }
+          epetraUnscaledOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
         }
       }
     }
   }
-  // 2007/08/03: rabartl: ToDo: Move the above deeply nested code into its own
-  // helper function(s).
 
   // f_poly
   RCP<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
@@ -1110,7 +1037,7 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
 void EpetraModelEvaluator::preEvalScalingSetup(
   EpetraExt::ModelEvaluator::InArgs *epetraInArgs_inout,
   EpetraExt::ModelEvaluator::OutArgs *epetraUnscaledOutArgs_inout,
-  const Teuchos::RCP<Teuchos::FancyOStream> &out,
+  const RCP<Teuchos::FancyOStream> &out,
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
@@ -1156,7 +1083,7 @@ void EpetraModelEvaluator::preEvalScalingSetup(
       *out
         << "\nCreating a temporary Epetra W to compute scale factors"
         << " for f(...) ...\n";
-    epetraUnscaledOutArgs.set_W(epetraModel_->create_W());
+    epetraUnscaledOutArgs.set_W(create_and_assert_W(*epetraModel_));
     if( epetraInArgs.supports(EME::IN_ARG_beta) )
       epetraInArgs.set_beta(1.0);
     if( epetraInArgs.supports(EME::IN_ARG_alpha) )
@@ -1168,7 +1095,7 @@ void EpetraModelEvaluator::preEvalScalingSetup(
 
 void EpetraModelEvaluator::postEvalScalingSetup(
   const EpetraExt::ModelEvaluator::OutArgs &epetraUnscaledOutArgs,
-  const Teuchos::RCP<Teuchos::FancyOStream> &out,
+  const RCP<Teuchos::FancyOStream> &out,
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
@@ -1240,7 +1167,6 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
   RCP<const LinearOpBase<double> > &fwdW,
   RCP<EpetraLinearOp> &efwdW,
   RCP<Epetra_Operator> &eW,
-  const bool created_temp_DgDp,
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
@@ -1265,60 +1191,6 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
       rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->initialize(eW);
     }
   }
-
-  if ( created_temp_DgDp ) {
-    DerivativeSupport DgDp_j_l_support;
-    Derivative<double> DgDp_j_l;
-    for (int j = 0;  j < outArgs.Ng(); ++j ) {
-      for (int l = 0;  l < outArgs.Np(); ++l ) {
-        if (
-          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
-          &&
-          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
-          )
-        {
-          RCP<MultiVectorBase<double> >
-            DgDp_mv_j_l = DgDp_j_l.getDerivativeMultiVector().getMultiVector();
-          EDerivativeMultiVectorOrientation
-            DgDp_mv_j_l_orientation
-            = DgDp_j_l.getDerivativeMultiVector().getOrientation();
-          EME::Derivative
-            e_DgDp_j_l
-            = epetraOutArgs.get_DgDp(j,l); // Can't be empty if we are here!
-          EME::EDerivativeMultiVectorOrientation
-            e_DgDp_mv_j_l_orientation
-            = e_DgDp_j_l.getDerivativeMultiVector().getOrientation();
-          if (
-            !is_null(DgDp_mv_j_l)
-            &&
-            DgDp_mv_j_l_orientation != convert(e_DgDp_mv_j_l_orientation)
-            )
-          {
-            // We must do an explicit multi-vector transpose copy here!
-            RCP<const Epetra_MultiVector>
-              e_DgDp_mv_j_l = e_DgDp_j_l.getMultiVector();
-            DetachedMultiVectorView<double>
-              d_DgDp_mv_j_l(*DgDp_mv_j_l);
-            const int m = d_DgDp_mv_j_l.subDim();
-            const int n = d_DgDp_mv_j_l.numSubCols();
-            TEST_FOR_EXCEPT( m != e_DgDp_mv_j_l->NumVectors() );
-            TEST_FOR_EXCEPT( n != e_DgDp_mv_j_l->Map().NumMyElements() );
-            for( int i = 0; i < m; ++i ) {
-              for( int k = 0; k < n; ++k ) {
-                d_DgDp_mv_j_l(i,k) = (*e_DgDp_mv_j_l)[i][k];
-                // Note: Above [i][k] returns the entry for the ith column and
-                // the kth row for the Epetra_MultiVector object!  This looks
-                // very backward but that is how Epetra_MultiVector is
-                // defined!
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  // 2007/08/03: rabartl: ToDo: Copy the above code to its own helper
-  // function(s) to clean this up!
 
 }
 
@@ -1351,6 +1223,9 @@ void EpetraModelEvaluator::updateNominalValuesAndBounds() const
     if( !is_null(stateVariableScalingVec_) ) {
       invStateVariableScalingVec_
         = EpetraExt::createInverseModelScalingVector(stateVariableScalingVec_);
+      if( epetraOrigNominalValues.supports(EME::IN_ARG_x_dot) ) {
+        epetraInArgsScaling_.set_x_dot(invStateVariableScalingVec_);
+      }
       if( epetraOrigNominalValues.supports(EME::IN_ARG_x) ) {
         epetraInArgsScaling_.set_x(invStateVariableScalingVec_);
       }
@@ -1393,6 +1268,89 @@ void EpetraModelEvaluator::updateNominalValuesAndBounds() const
 }
 
 
+void EpetraModelEvaluator::updateInArgsOutArgs() const
+{
+
+  typedef EpetraExt::ModelEvaluator EME;
+
+  const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
+  EME::InArgs  epetraInArgs  = epetraModel.createInArgs();
+  EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
+  const int Np = epetraOutArgs.Np();
+  const int Ng = epetraOutArgs.Ng();
+
+  //
+  // InArgs
+  //
+
+  InArgsSetup<double> inArgs;
+  inArgs.setModelEvalDescription(this->description());
+  inArgs.set_Np(epetraInArgs.Np());
+  inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
+  inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
+  inArgs.setSupports(IN_ARG_x_dot_poly,
+    epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
+  inArgs.setSupports(IN_ARG_x_poly,epetraInArgs.supports(EME::IN_ARG_x_poly));
+  inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
+  inArgs.setSupports(IN_ARG_alpha,epetraInArgs.supports(EME::IN_ARG_alpha));
+  inArgs.setSupports(IN_ARG_beta,epetraInArgs.supports(EME::IN_ARG_beta));
+  prototypeInArgs_ = inArgs;
+
+  //
+  // OutArgs
+  //
+
+  OutArgsSetup<double> outArgs;
+  outArgs.setModelEvalDescription(this->description());
+  outArgs.set_Np_Ng(Np,Ng);
+  // f
+  outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
+  // W
+  outArgs.setSupports(
+    OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W)&&!is_null(W_factory_));
+  outArgs.setSupports(OUT_ARG_W_op,epetraOutArgs.supports(EME::OUT_ARG_W));
+  outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
+  // DfDp
+  for(int l=0; l<Np; ++l) {
+    outArgs.setSupports(OUT_ARG_DfDp,l,
+      convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
+    if(!outArgs.supports(OUT_ARG_DfDp,l).none())
+      outArgs.set_DfDp_properties(l,
+        convert(epetraOutArgs.get_DfDp_properties(l)));
+  }
+  // DgDx_dot and DgDx
+  for(int j=0; j<Ng; ++j) {
+    outArgs.setSupports(OUT_ARG_DgDx_dot,j,
+      convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx_dot,j)));
+    if(!outArgs.supports(OUT_ARG_DgDx_dot,j).none())
+      outArgs.set_DgDx_dot_properties(j,
+        convert(epetraOutArgs.get_DgDx_dot_properties(j)));
+    outArgs.setSupports(OUT_ARG_DgDx,j,
+      convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx,j)));
+    if(!outArgs.supports(OUT_ARG_DgDx,j).none())
+      outArgs.set_DgDx_properties(j,
+        convert(epetraOutArgs.get_DgDx_properties(j)));
+  }
+  // DgDp
+  for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
+    const EME::DerivativeSupport epetra_DgDp_j_l_support =
+      epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
+    outArgs.setSupports(OUT_ARG_DgDp,j,l,
+      convert(epetra_DgDp_j_l_support));
+    if(!outArgs.supports(OUT_ARG_DgDp,j,l).none())
+      outArgs.set_DgDp_properties(j,l,
+        convert(epetraOutArgs.get_DgDp_properties(j,l)));
+  }
+  outArgs.setSupports(OUT_ARG_f_poly,
+    epetraOutArgs.supports(EME::OUT_ARG_f_poly));
+  prototypeOutArgs_ = outArgs;
+
+  // We are current!
+  currentInArgsOutArgs_ = true;
+
+}
+
+
 } // namespace Thyra
 
 
@@ -1403,8 +1361,8 @@ void EpetraModelEvaluator::updateNominalValuesAndBounds() const
 
 Teuchos::RCP<Thyra::EpetraModelEvaluator>
 Thyra::epetraModelEvaluator(
-  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
 {
   return Teuchos::rcp(new EpetraModelEvaluator(epetraModel,W_factory));
@@ -1412,7 +1370,9 @@ Thyra::epetraModelEvaluator(
 
 
 Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation
-Thyra::convert( const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation &mvOrientation )
+Thyra::convert(
+  const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation &mvOrientation
+  )
 {
   switch(mvOrientation) {
     case EpetraExt::ModelEvaluator::DERIV_MV_BY_COL :
@@ -1427,7 +1387,9 @@ Thyra::convert( const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientati
 
 
 EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation
-Thyra::convert( const ModelEvaluatorBase::EDerivativeMultiVectorOrientation &mvOrientation )
+Thyra::convert(
+  const ModelEvaluatorBase::EDerivativeMultiVectorOrientation &mvOrientation
+  )
 {
   switch(mvOrientation) {
     case ModelEvaluatorBase::DERIV_MV_BY_COL :
@@ -1442,7 +1404,9 @@ Thyra::convert( const ModelEvaluatorBase::EDerivativeMultiVectorOrientation &mvO
 
 
 Thyra::ModelEvaluatorBase::DerivativeProperties
-Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties )
+Thyra::convert(
+  const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties
+  )
 {
   ModelEvaluatorBase::EDerivativeLinearity linearity;
   switch(derivativeProperties.linearity) {
@@ -1472,12 +1436,15 @@ Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativ
     default:
       TEST_FOR_EXCEPT(true);
   }
-  return ModelEvaluatorBase::DerivativeProperties(linearity,rank,derivativeProperties.supportsAdjoint);
+  return ModelEvaluatorBase::DerivativeProperties(
+    linearity,rank,derivativeProperties.supportsAdjoint);
 }
 
 
 Thyra::ModelEvaluatorBase::DerivativeSupport
-Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport )
+Thyra::convert(
+  const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport
+  )
 {
   ModelEvaluatorBase::DerivativeSupport ds;
   if(derivativeSupport.supports(EpetraExt::ModelEvaluator::DERIV_LINEAR_OP))
@@ -1492,9 +1459,9 @@ Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSu
 
 EpetraExt::ModelEvaluator::Derivative
 Thyra::convert(
-  const ModelEvaluatorBase::Derivative<double>        &derivative
-  ,const Teuchos::RCP<const Epetra_Map>       &fnc_map
-  ,const Teuchos::RCP<const Epetra_Map>       &var_map
+  const ModelEvaluatorBase::Derivative<double> &derivative,
+  const RCP<const Epetra_Map> &fnc_map,
+  const RCP<const Epetra_Map> &var_map
   )
 {
   typedef ModelEvaluatorBase MEB;

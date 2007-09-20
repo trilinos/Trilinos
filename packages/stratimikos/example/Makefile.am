@@ -86,10 +86,10 @@ LINK_MIXEDORDER_AMESOS=MixedOrderPhysicsBasedPreconditioner_amesos.exe
 endif
 
 simple_stratimikos_example_amesos.exe: simple_stratimikos_example.exe
-	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_amesos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 MixedOrderPhysicsBasedPreconditioner_amesos.exe: MixedOrderPhysicsBasedPreconditioner.exe
-	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_amesos.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Links for aztecoo executables
 
@@ -105,16 +105,16 @@ endif
 endif
 
 simple_stratimikos_example_aztecoo_ifpack.exe: simple_stratimikos_example.exe
-	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_aztecoo_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe: MixedOrderPhysicsBasedPreconditioner.exe
-	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 simple_stratimikos_example_aztecoo_ml.exe: simple_stratimikos_example.exe
-	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_aztecoo_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe: MixedOrderPhysicsBasedPreconditioner.exe
-	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Links for belos executables
 
@@ -130,16 +130,16 @@ endif
 endif
 
 simple_stratimikos_example_belos_ifpack.exe: simple_stratimikos_example.exe
-	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_belos_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe: MixedOrderPhysicsBasedPreconditioner.exe
-	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 simple_stratimikos_example_belos_ml.exe: simple_stratimikos_example.exe
-	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_belos_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 MixedOrderPhysicsBasedPreconditioner_belos_ml.exe: MixedOrderPhysicsBasedPreconditioner.exe
-	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_belos_ml.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 # Main links
 

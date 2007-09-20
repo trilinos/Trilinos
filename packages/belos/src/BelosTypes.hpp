@@ -70,6 +70,19 @@ namespace Belos {
 		    InfNorm        /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each std::vector. */
   };
   
+  /*!
+   \enum Belos::ScaleType 
+   \brief Enumerated list for describing the type of scaling used on the residual.
+  */
+  enum ScaleType {NormOfRHS,     /*!< Use the norm of the right-hand-side. */
+                  NormOfInitRes, /*!< Use the initial residual vector. */
+                  NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector. */
+                  None,          /*!< Use unscaled residual. */
+                  UserProvided   /*!< User provides an explicit value that the norm of
+                                   the residual will be divided by. */
+  };
+ 
+
   /*!	
     \enum Belos::ReturnType
     When the solve() method of any Belos::SolverManager is called a variable of type
