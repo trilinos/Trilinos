@@ -196,9 +196,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      if (rowNzCount == 0) true_bdry[i] = 'T';
 #endif
    }
-   if ( zerodiag_cnt > 0 ) 
+   if ( zerodiag_cnt > 0 && ML_Get_PrintLevel() > 9) 
    {
-     printf("Aggregation Coarsening : %d zero diag\n", zerodiag_cnt);
+     printf("Aggregation Coarsening (pid %d) : %d zero diag\n",
+             mypid,zerodiag_cnt);
    }
    if ( epsilon == 0.0 && diagonal != NULL ) {
      ML_free(diagonal);
