@@ -2545,9 +2545,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
   int value = -777; /* pagina 777 di televideo */
   std::string CoarsenScheme = List_.get("aggregation: type","Uncoupled");
 
-  if (CoarsenScheme == "Uncoupled-MIS")
-      ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
-  else if (CoarsenScheme == "VBMETIS")   // Not advertised in manual
+  if (CoarsenScheme == "VBMETIS")   // Not advertised in manual
   {
      ML_Aggregate_Set_CoarsenScheme_VBMETIS(agg_);
      int  nblocks   = List_.get("aggregation: nblocks",0);
@@ -2569,24 +2567,26 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
    
        sprintf(parameter, "aggregation: type (level %d)",
            LevelID_[level]);
-       CoarsenScheme = List_.get(parameter,CoarsenScheme);
+       std::string MyCoarsenScheme = List_.get(parameter,CoarsenScheme);
 
-       if (CoarsenScheme == "METIS")
+       if (MyCoarsenScheme == "METIS")
          ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
-       else if (CoarsenScheme == "ParMETIS") 
+       else if (MyCoarsenScheme == "ParMETIS") 
          ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(level,NumLevels_,agg_);
-       else if (CoarsenScheme == "Zoltan")
+       else if (MyCoarsenScheme == "Zoltan")
          ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan(level,NumLevels_,agg_);
-       else if (CoarsenScheme == "MIS")
+       else if (MyCoarsenScheme == "MIS")
          ML_Aggregate_Set_CoarsenSchemeLevel_MIS(level,NumLevels_,agg_);
-       else if (CoarsenScheme == "Uncoupled") 
+       else if (MyCoarsenScheme == "Uncoupled") 
          ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled(level,NumLevels_,agg_);
-       else if (CoarsenScheme == "Coupled") 
+       else if (MyCoarsenScheme == "Uncoupled-MIS")
+         ML_Aggregate_Set_CoarsenSchemeLevel_UncoupledMIS(level,NumLevels_,agg_);
+       else if (MyCoarsenScheme == "Coupled") 
          ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
-       else if (CoarsenScheme == "user") 
+       else if (MyCoarsenScheme == "user") 
          ML_Aggregate_Set_CoarsenSchemeLevel_User(level,NumLevels_,agg_);
 #ifdef MARZIO
-       else if (CoarsenScheme == "greedy") {
+       else if (MyCoarsenScheme == "greedy") {
          // MS // this is delicate as it burns the "user" aggregation,
          // MS // should we fix it? 
          // MS // 05-Dec-04
@@ -2598,7 +2598,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
        else {
          if( Comm().MyPID() == 0 ) {
            std::cout << ErrorMsg_ << "specified options ("
-                << CoarsenScheme << ") not valid. Should be:" << std::endl;
+                << MyCoarsenScheme << ") not valid. Should be:" << std::endl;
            std::cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled> / <user>" << std::endl;
          }
          exit( EXIT_FAILURE );

@@ -447,7 +447,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    gNfine = gNfine / Amat->num_PDEs;
    if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
-     if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0))
+     if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0)
+                             && (numSmSweeps>0) )
      {
         if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
         {

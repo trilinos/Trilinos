@@ -234,6 +234,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int, ML_Aggregate *ag,
 					 int choice );
 int ML_Aggregate_Set_CoarsenSchemeLevel_Coupled( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_UncoupledMIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_MIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int, ML_Aggregate *ag  );
