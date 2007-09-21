@@ -545,31 +545,18 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
-   int     *rowptr,  row, itemp;
    register double *val;
-   struct ML_CSR_MSRdata *input_matrix;
+   struct ML_CSR_MSRdata *in_mat;
 
-   row            = *requested_rows;
-   input_matrix = (struct ML_CSR_MSRdata *) data;
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
+   in_mat = (struct ML_CSR_MSRdata *) data;
+   j = in_mat->rowptr[*requested_rows];
+   *row_lengths = in_mat->rowptr[*requested_rows+1] - j;
+   if (*row_lengths > allocated_space) return(0);
 
-
-   if (*row_lengths > allocated_space) {
-    ML_avoid_unused_param( (void *) &N_requested_rows);
-    return(0);
-  }
-
-   /*IKopthere*/
-   /*The two below loops should be able to be merged*/
-
-   bindx  = &(input_matrix->columns[itemp]);
+   bindx  = in_mat->columns + j;
+   val    = in_mat->values + j;
    for (j = 0 ; j < *row_lengths; j++) {
       *columns++ = *bindx++;
-   }
-   val    = &(input_matrix->values[itemp]);
-   for (j = 0 ; j < *row_lengths; j++) {
       *values++  = *val++;
    }
    return(1);
@@ -580,30 +567,18 @@ int CSR_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
-   int     *rowptr,  row, itemp;
    register double *val;
-   struct ML_CSR_MSRdata *input_matrix;
-   ML_Operator *mat_in;
+   struct ML_CSR_MSRdata *in_mat;
 
-   row            = *requested_rows;
-   mat_in = (ML_Operator *) data;
-   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
+   in_mat = (struct ML_CSR_MSRdata *) data->data;
+   j = in_mat->rowptr[*requested_rows];
+   *row_lengths = in_mat->rowptr[*requested_rows+1] - j;
+   if (*row_lengths > allocated_space) return(0);
 
-
-   if (*row_lengths > allocated_space) {
-    ML_avoid_unused_param( (void *) &N_requested_rows);
-    return(0);
-  }
-
-   bindx  = &(input_matrix->columns[itemp]);
+   bindx  = in_mat->columns + j;
+   val    = in_mat->values + j;
    for (j = 0 ; j < *row_lengths; j++) {
       *columns++ = *bindx++;
-   }
-   val    = &(input_matrix->values[itemp]);
-   for (j = 0 ; j < *row_lengths; j++) {
       *values++  = *val++;
    }
    return(1);
@@ -613,28 +588,16 @@ int CSR_get_one_row(ML_Operator *data, int N_requested_rows, int requested_rows[
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
-   int     *rowptr,  row, itemp;
-   struct ML_CSR_MSRdata *input_matrix;
-   ML_Operator *mat_in;
+   struct ML_CSR_MSRdata *in_mat;
 
-   row            = *requested_rows;
-   mat_in = (ML_Operator *) data;
-   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
+   in_mat = (struct ML_CSR_MSRdata *) data->data;
+   j = in_mat->rowptr[*requested_rows];
+   *row_lengths = in_mat->rowptr[*requested_rows+1] - j;
+   if (*row_lengths > allocated_space) return(0);
 
-
-   if (*row_lengths > allocated_space) {
-    ML_avoid_unused_param( (void *) &N_requested_rows);
-    return(0);
-  }
-
-   bindx  = &(input_matrix->columns[itemp]);
+   bindx  = in_mat->columns + j;
    for (j = 0 ; j < *row_lengths; j++) {
       *columns++ = *bindx++;
-   }
-   for (j = 0 ; j < *row_lengths; j++) {
       *values++  = 1.0;
    }
    return(1);
@@ -645,31 +608,18 @@ int sCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
-   int     *rowptr,  row, itemp;
    register float *val;
-   struct ML_CSR_MSRdata *input_matrix;
-   ML_Operator *mat_in;
+   struct ML_CSR_MSRdata *inmat;
 
-   mat_in = (ML_Operator *) data;
-   row            = *requested_rows;
-   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
+   inmat = (struct ML_CSR_MSRdata *) data->data;
+   j = inmat->rowptr[*requested_rows];
+   *row_lengths = inmat->rowptr[*requested_rows+1] - j;
+   if (*row_lengths > allocated_space) return(0);
 
-
-   if (*row_lengths > allocated_space) {
-    ML_avoid_unused_param( (void *) &N_requested_rows);
-    return(0);
-  }
-
-   bindx  = &(input_matrix->columns[itemp]);
+   bindx  = inmat->columns + j;
+   val    = ((float *) inmat->values) + j;
    for (j = 0 ; j < *row_lengths; j++) {
       *columns++ = *bindx++;
-   }
-   val    = (float *) input_matrix->values;
-   val    = &(val[itemp]);
-   for (j = 0 ; j < *row_lengths; j++) {
       *values++  = (double) *val++;
    }
    return(1);
