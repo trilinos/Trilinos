@@ -201,6 +201,7 @@ namespace ML_Epetra
     int num_cycles;
     int MaxLevels;
     bool verbose_;
+    bool very_verbose_;
     bool print_hierarchy;
     
     
