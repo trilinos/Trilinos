@@ -194,7 +194,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);
   setDoubleParameter("subsmoother: edge alpha",20.0,"alpha for edge Chebyshev polynomial in Hiptmair",PL,dblParam); 
   setDoubleParameter("subsmoother: node alpha",20.0,"alpha for node Chebyshev polynomial in Hiptmair",PL,dblParam); 
-
+  setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
+  
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL,intParam);
   setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL,intParam);
