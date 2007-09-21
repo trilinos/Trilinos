@@ -2563,7 +2563,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
        ML_Aggregate_Set_NodesPerAggr(ml_,agg_,i,nodesperagg);
   }
   else {
-     for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
+     for( int level=0 ; level<NumLevels_-1 ; ++level ) {
    
        sprintf(parameter, "aggregation: type (level %d)",
            LevelID_[level]);
@@ -2621,8 +2621,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
        }
        */
 
-       if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ||
-           CoarsenScheme == "Zoltan" ) {
+       if( MyCoarsenScheme == "METIS" || MyCoarsenScheme == "ParMETIS" ||
+           MyCoarsenScheme == "Zoltan" ) {
  
          bool isSet = false;
 
