@@ -246,7 +246,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
 #ifdef ML_TIMING_DETAILED
    int  nprocs = 0;
    int  mypid = 999;
-   int  proc_active;
+   int  proc_active=0;
    int  i;
    double t1;
    ML_Comm *comm;
@@ -1832,8 +1832,8 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   int    *Amat_MsrBindx = NULL;
   double *Amat_CrsVal = NULL;
   int    *Amat_CrsBindx = NULL, *Amat_CrsRowptr = NULL;
-  int     blocksizeminusone, *colptr;
-  double *xptr, dtemp, *valptr;
+  int     blocksizeminusone, *colptr = NULL;
+  double *xptr, dtemp, *valptr = NULL;
 
   smooth_ptr = (ML_Smoother *) sm;
 
