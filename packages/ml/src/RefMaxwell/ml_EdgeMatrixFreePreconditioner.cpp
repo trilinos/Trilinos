@@ -1,5 +1,5 @@
 #include "ml_config.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra.h"
@@ -66,7 +66,7 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 
 // ================================================ ====== ==== ==== == = 
 ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0),verbose_(false),print_hierarchy(false)
+  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0),verbose_(false),very_verbose_(false),print_hierarchy(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
@@ -100,9 +100,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
-  if (OutputLevel == -47) OutputLevel = List_.get("output", 1);
-  if(OutputLevel > 5) verbose_=true;
-  else verbose_=false;  
+  if(OutputLevel == -47) OutputLevel = List_.get("output", 1);
+  if(OutputLevel>=11) very_verbose_=verbose_=true;
+  if(OutputLevel > 5) {very_verbose_=false;verbose_=true;}
+  else very_verbose_=verbose_=false;  
   int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
   MaxLevels = List_.get("max levels",10); 
   print_hierarchy= List_.get("print hierarchy",false);  
@@ -545,9 +546,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 #ifndef NO_OUTPUT
     MVOUT2(X,"xinit11",iteration);
 #endif   
-    if(verbose_) re0=cms_compute_residual(Operator_,B,X);
+    if(very_verbose_) re0=cms_compute_residual(Operator_,B,X);
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
-    if(verbose_) re1=cms_compute_residual(Operator_,B,X);
+    if(very_verbose_) re1=cms_compute_residual(Operator_,B,X);
 
 #ifndef NO_OUTPUT    
     MVOUT2(X,"sm11-1",iteration);
@@ -570,7 +571,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 #ifndef NO_OUTPUT      
       MVOUT2(e_node,"en11",iteration);
 #endif      
-      if(verbose_) rn1=cms_compute_residual(CoarseMatrix,r_node,e_node);      
+      if(very_verbose_) rn1=cms_compute_residual(CoarseMatrix,r_node,e_node);      
       
       /* Xfer back to fine grid (e_e = P * e_n) */
       ML_CHK_ERR(Prolongator_->Multiply(false,e_node,e_edge));
@@ -582,15 +583,15 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 #ifndef NO_OUTPUT      
       MVOUT2(X,"xup11",iteration);
 #endif      
-      if(verbose_) re2=cms_compute_residual(Operator_,B,X);
+      if(very_verbose_) re2=cms_compute_residual(Operator_,B,X);
     }/*end if*/
     
     /* Post-Smoothing*/
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 
-    if(verbose_) re3=cms_compute_residual(Operator_,B,X);
+    if(very_verbose_) re3=cms_compute_residual(Operator_,B,X);
     
-    if(verbose_ && !Comm_->MyPID())
+    if(very_verbose_ && !Comm_->MyPID())
       printf("11 Resid Reduction: %6.4e / %6.4e / %6.4e / %6.4e\n",re1/re0,re2/re1,re3/re2,re3/re0);
 
   }/*end for*/
