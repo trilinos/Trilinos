@@ -1,11 +1,11 @@
 /*!
- * \file ml_EdgeMatrixFreePreconditoner.h
+ * \file ml_EdgeMatrixFreePreconditioner.h
  *
  * \class EdgeMatrixFreePreconditioner
  *
  * \brief Matrix-Free preconditioning class for edge Maxwell Problems. 
  *
- * \date Last update do Doxygen: 8-Feb-07
+ * \date Last update to Doxygen: 8-Feb-07
  *
  */
 
@@ -34,11 +34,13 @@ class Ifpack_Chebyshev;
 namespace ML_Epetra
 {
 
+  /*! Matrix-Free preconditioning class for edge Maxwell Problems. 
+  */
   class EdgeMatrixFreePreconditioner: public virtual ML_Preconditioner
   {
   public:
-    //@{ 
-    //! Constructor
+    //@{ \name Constructor
+    //! Constructs an EdgeMatrixFreePreconditioner.
     EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal,
                                  const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,
                                  const Epetra_CrsMatrix &TMT_Matrix,
@@ -53,7 +55,7 @@ namespace ML_Epetra
     //@}
 
     
-    //@{ \name Atribute access functions
+    //@{ \name Attribute access functions
 
     //! Computes the multilevel hierarchy.
     /*! Computes the multilevel hierarchy. This function retrives the user's defines parameters (as
