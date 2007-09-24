@@ -35,6 +35,7 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include "zoltan.h"
+#include "dr_param_file.h"
 
 /*#define DEBUG 1*/
 

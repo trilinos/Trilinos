@@ -33,6 +33,7 @@
 
 extern int setup_zoltan(ZOLTAN_STRUCT, int, PROB_INFO_PTR, MESH_INFO_PTR,
                                 PARIO_INFO_PTR); 
+extern void setup_fixed_obj(MESH_INFO_PTR, int); 
 
 extern int run_zoltan(ZOLTAN_STRUCT, int, PROB_INFO_PTR, MESH_INFO_PTR,
                       PARIO_INFO_PTR); 

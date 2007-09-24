@@ -20,9 +20,7 @@ extern "C" {
 #include "zoltan_comm.h"
 
 
-
 #define PLAN_TAG 32010      /* tag for comm plan */ 
-
 
 
 /*
@@ -35,7 +33,8 @@ extern "C" {
 #define _DEBUG1
 #endif
 
-
+#define BITSET(data, elem)       ((data)[(elem) >> 5] |=( 1 << ((elem) & 31)))
+#define BITCHECK(data, elem)     ((data)[(elem) >> 5] & (1 << ((elem) & 31)))
     
 /* UVC:
    Following quicksort routines are modified from
@@ -126,43 +125,6 @@ static unsigned int hashValue(HGraph *hg, int n, int *ar)
     return l;
 }
 
-/*
-  identical operator:
-  a[i]  b[i]     res[i]
-  -1    -1       -1  : -1 means no edge in that proc; identical to everything :)
-  -1    y        -1==a[y] ? y : 0   --> UVC note that this is same as x < y
-  x     -1       -1==b[x] ? x : 0   --> UVC note that this is same as y < x
-  0     y        0   : 0 means not identical to anyone in this proc; hence not identical anyone in all
-  x     0        0   
-  x     x        x   : they are identical to same net
-  x <   y       x==a[y] ? y : 0
-  x >   y       y==b[x] ? x : 0
-*/
-
-static int *idenOperandBuf=NULL;
-
-static void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
-{
-    int *a=(int *)va, *b=(int *)vb; 
-    int i, *x=a, *y=b;
-
-    memcpy(idenOperandBuf, b, sizeof(int)*(*len));
-    b = idenOperandBuf;
-    --a; --b; /* net ids in the a and b are base-1 numbers */
-    for (i=0; i < *len; ++i, ++x, ++y) {
-        if (*x == -1 && *y == -1)
-            ; /* no op *y = *y */
-        else if (*x==0 || *y == 0)
-            *y = 0;
-        else if (*x==*y)
-            ; /* no op */
-        else if (*x < *y)
-            *y = (*x==a[*y]) ? *y : 0;
-        else /* *x > *y */ 
-            *y = (*y==b[*x]) ? *x : 0;
-    }
-}
-
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
    match are clustered to a single vertex. Currently, we allow more
@@ -194,12 +156,17 @@ int Zoltan_PHG_Coarsening
   int   ierr=ZOLTAN_OK, i, j, count, size, me=hgc->myProc_x, idx, ni, header;
   int   *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
   int   *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL, *ids=NULL, *iden;
+  int   *emptynets=NULL, emptynetsize, *idennets=NULL, *allemptynets=NULL, *allidennets=NULL,
+#ifdef _DEBUG1
+      emptynetcnt, 
+#endif
+      *idennetdest=NULL, rootRank;
   int   *extmatchsendcnt=NULL, extmatchrecvcnt=0, *extmatchrecvcounts=NULL;
   float *c_ewgt=NULL;
   char  *buffer=NULL, *rbuffer=NULL;
   unsigned int           *hash=NULL, *lhash=NULL;
   struct Zoltan_Comm_Obj *plan=NULL;
-  MPI_Op                 idenOp;
+
 
   static int timer_merge=-1, timer_shuffle=-1, timer_remove=-1, timer_theend=-1;
   int time_details = (hgp->use_timers > 3);
@@ -286,7 +253,7 @@ int Zoltan_PHG_Coarsening
   if (hg->nVtx > 0 && !(vmark = (int*) ZOLTAN_CALLOC(MAX(hg->nEdge, hg->nVtx),  sizeof(int))))
       MEMORY_ERROR;
 
-  size = MAX(count, hg->nEdge);
+  size = MAX(hgc->nProc_x, MAX(count, hg->nEdge));
   if (size && (
       !(listproc  = (int*) ZOLTAN_MALLOC (size * sizeof(int)))
    || !(msg_size  = (int*) ZOLTAN_MALLOC (size * sizeof(int)))))
@@ -659,59 +626,70 @@ int Zoltan_PHG_Coarsening
   t_iden = -t_cur;
 #endif
 
-  
+  emptynetsize = (size >> 5)+1;
+  emptynets = (int*) ZOLTAN_CALLOC(emptynetsize, sizeof(int));
+  idennets = (int *) ZOLTAN_MALLOC(size*sizeof(int));
   iden = listproc; /* just better variable name */
-  for (j=0; j<size; ++j){
-      iden[j] = (hlsize[j]) ? 0 : -1; /* if no local pins iden is -1 */
-  }
-#ifdef _DEBUG1  
-  count = idx = me = 0;
-  for (j=0; j<size; ++j){
-      if (iden[j]==-1)
-          ++me;
-  }
+#ifdef _DEBUG1
+  emptynetcnt=0;
 #endif
+  for (j=0; j<size; ++j) {
+      if (hlsize[j])
+          iden[j] = 0;
+      else {
+          iden[j] = -1;
+          BITSET(emptynets, j);
+#ifdef _DEBUG1          
+          ++emptynetcnt;
+#endif
+      }
+  }
+
+  count = idx = 0;
   for (j=0; j<size; ++j) {
       int n1=ids[j];
       if (!iden[n1]) {
           int last=1+n1, minv=last;
-              
+
           for (i = j+1; i<size && lhash[n1] == lhash[ids[i]] && hsize[n1]==hsize[ids[i]]; ++i) {
               int n2=ids[i];
               
-#ifdef _DEBUG1
-              ++idx;
-#endif
               if (!iden[n2] && hlsize[n1]==hlsize[n2]
                   && !memcmp(&ahvertex[ahindex[n1]], &ahvertex[ahindex[n2]],
                              sizeof(int)*hlsize[n1])) {
                   iden[n2] = last; /* n2 is potentially identical to n1 */
                   last = 1+n2;
                   minv = (last<minv) ? last : minv;
-#ifdef _DEBUG1
                   ++count;
-#endif
               }                  
           }
           /* iden[last] is a link list (in array) now make the
              all identical nets to point the same net with the smallest id;
              it will be needed in identicalOperator; we'll zero(clear) the
              original net (net with the smallest id) after this loop */
+          if (last!=1+n1) {  /* some nets are identical to n1 */
+              idennets[idx++] = -minv; /* we need to first write minv */
+              if (minv!=1+n1)     /* then we write n1 if it is not minv itself */
+                  idennets[idx++] = 1+n1;
+          }
           while (last!=1+n1) {
               int prev=iden[last-1];
+
+              if (last!=minv)
+                  idennets[idx++] = last;
               iden[last-1] = minv;
               last = prev;
           }
           iden[n1] = minv;
       }
   }
-
+  
   for (i=0; i<size; ++i){
       if (iden[i]==1+i) /* original net; clear iden */
           iden[i] = 0;
   }
-  ZOLTAN_FREE(&ids); 
 
+  
 #ifdef _DEBUG1
   MPI_Barrier(hgc->Communicator);
   t_cur = MPI_Wtime();
@@ -721,20 +699,92 @@ int Zoltan_PHG_Coarsening
 #ifndef _DEBUG2
   if (!hgc->myProc)
 #endif
-  uprintf(hgc, "#Loc.Iden= %7d   (Computed= %d)   #Comp.PerNet= %.2lf     ElapT= %.3lf\n", count+me, count, (double) idx / (double) size, MPI_Wtime()-t_all);
-  count += me;
+  uprintf(hgc, "#Loc.Iden= %7d   (Computed= %d)   #Comp.PerNet= %.2lf     ElapT= %.3lf\n", count+emptynetcnt, count, (double) idx / (double) size, MPI_Wtime()-t_all);
 #endif
-  
 
-  ip = (int *) lhash; 
-  if (size) {
-      MPI_Op_create(identicalOperator, 1, &idenOp);
-      if (!(idenOperandBuf = (int *) ZOLTAN_MALLOC(size * sizeof(int))))
-          MEMORY_ERROR;
-      MPI_Allreduce(iden, ip, size, MPI_INT, idenOp, hgc->row_comm);
-      MPI_Op_free(&idenOp);
-      ZOLTAN_FREE(&idenOperandBuf);
+
+  /* a simple message size opt; proc with largest message is root; so it won't sent it */
+  Zoltan_PHG_Find_Root(idx+emptynetsize, hgc->myProc_x, hgc->row_comm, 
+                       &i, &rootRank); 
+  
+  /* communicate empty-nets to row-root */
+  if (hgc->myProc_x == rootRank) 
+      allemptynets = (int *) ZOLTAN_MALLOC(emptynetsize*hgc->nProc_x*sizeof(int));
+  MPI_Gather(emptynets, emptynetsize, MPI_INT, allemptynets, emptynetsize, MPI_INT, rootRank, hgc->row_comm);
+
+  /* communicate identical nets to row-root */
+  MPI_Gather(&idx, 1, MPI_INT, msg_size, 1, MPI_INT, rootRank, hgc->row_comm);
+  if (hgc->myProc_x == rootRank) {
+      int recsize = 0;
+      for (i = 0; i < hgc->nProc_x; i++) 
+          recsize += msg_size[i];
+
+      allidennets = (int *) ZOLTAN_MALLOC(recsize*sizeof(int));
+      idennetdest = (int *) ZOLTAN_MALLOC(hgc->nProc_x*sizeof(int));
+      
+      idennetdest[0] = 0;
+      for (i = 1; i < hgc->nProc_x; i++)
+          idennetdest[i] = idennetdest[i-1] + msg_size[i-1];
+  }  
+  MPI_Gatherv (idennets, idx, MPI_INT, allidennets, msg_size, idennetdest, MPI_INT, rootRank, hgc->row_comm);
+
+  
+  ip = (int *) lhash;
+  if (hgc->myProc_x == rootRank) {
+      for (j=0; j<hgc->nProc_x; ++j) {
+          if (j!=rootRank) {
+              int *enets=allemptynets+j*emptynetsize;
+              int *inets=allidennets+idennetdest[j], rootnet=-1;
+              int *x, *y, *a, *b;
+
+              for (i=0; i<size; ++i) {
+                  ip[i] = BITCHECK(enets, i) ? -1 : 0;
+              }
+
+              for (i=0; i<msg_size[j]; ++i) {
+                  if (inets[i] < 0) 
+                      rootnet = -inets[i];
+                  else 
+                      ip[inets[i]-1] = rootnet;
+              }
+
+              /* merge received identical net info with the local one */
+              /*
+                identical operator:
+                a[i]  b[i]     res[i]
+                -1    -1       -1  : -1 means no edge in that proc; identical to everything :)
+                -1    y        -1==a[y] ? y : 0   --> UVC note that this is same as x < y
+                x     -1       -1==b[x] ? x : 0   --> UVC note that this is same as y < x
+                0     y        0   : 0 means not identical to anyone in this proc; hence not identical anyone in all
+                x     0        0   
+                x     x        x   : they are identical to same net
+                x <   y       x==a[y] ? y : 0
+                x >   y       y==b[x] ? x : 0
+              */
+              
+              x = ip;   y = iden;
+              memcpy(ids, iden, size*sizeof(int));
+              a = ip-1; b=ids-1; /* net ids in the a and b are base-1 numbers */
+              for (i=0; i < size; ++i, ++x, ++y) {
+                  if (*x == -1 && *y == -1)
+                      ; /* no op *y = *y */
+                  else if (*x==0 || *y == 0)
+                      *y = 0;
+                  else if (*x==*y)
+                      ; /* no op */
+                  else if (*x < *y)
+                      *y = (*x==a[*y]) ? *y : 0;
+                  else /* *x > *y */ 
+                      *y = (*y==b[*x]) ? *x : 0;
+              }
+          }
+      }
+      ip = iden;
   }
+  ZOLTAN_FREE(&ids); 
+  MPI_Bcast(ip, size, MPI_INT, rootRank, hgc->row_comm);
+
+  Zoltan_Multifree(__FILE__, __LINE__, 5, &idennets, &emptynets, &allemptynets, &allidennets, &idennetdest);
 #ifdef _DEBUG1  
   MPI_Barrier(hgc->Communicator);
   t_cur = MPI_Wtime();
@@ -748,8 +798,8 @@ int Zoltan_PHG_Coarsening
   c_hg->nEdge = 0;
   for (i=0; i<size; ++i) {
 #ifdef _DEBUG1
-      if (ip[i]==-1 && hlsize[i])
-          errexit("ip[%d]==-1 but hlsize[%d] = %d", i, i, hlsize[i]);
+      if (ip[i]==-1 && (hlsize[i]>0 || hsize[i]>0))
+          errexit("ip[%d]==-1 but hlsize[%d] = %d hsize[%d]=%d", i, i, hlsize[i], i, hsize[i]);
 #endif
       if (ip[i]>0) { /* identical net */
           int n1=ip[i]-1; /* i is identical to n1 */
@@ -781,7 +831,7 @@ int Zoltan_PHG_Coarsening
 
   t_cur = MPI_Wtime()-t_all;
 #ifdef _DEBUG2
-  uprintf(hgc, "#GlobIden= %7d    SuccessRate= %.1lf%%    ElapT= %.3lf HashOpT=%.3lf (%.1lf%%)\n", idx, 100.0 * idx / (double) count, t_cur, t_userredop, 100.0*t_userredop/t_cur);
+  uprintf(hgc, "#GlobIden= %7d    SuccessRate= %.1lf%%    ElapT= %.3lf HashOpT=%.3lf (%.1lf%%)\n", idx, 100.0 * idx / (double) (count+emptynetcnt), t_cur, t_userredop, 100.0*t_userredop/t_cur);
 #endif
   MPI_Allreduce(&idx, &totiden, 1, MPI_INT, MPI_SUM, hgc->col_comm);
   MPI_Allreduce(&me, &totsize1, 1, MPI_INT, MPI_SUM, hgc->col_comm);
@@ -866,10 +916,11 @@ int Zoltan_PHG_Coarsening
 #ifdef _DEBUG1
   t_mirror -= MPI_Wtime();
 #endif
-  Zoltan_Multifree (__FILE__, __LINE__, 14,
+  Zoltan_Multifree (__FILE__, __LINE__, 19,
                     &listgno, &listlno, &listproc, &msg_size,
                     &buffer, &rbuffer, &ahindex, &ahvertex, &vmark,
-                    &hlsize, &hsize, &lhash, &hash, &c_ewgt 
+                    &hlsize, &hsize, &lhash, &hash, &c_ewgt,
+                    &idennets, &emptynets, &allemptynets, &allidennets, &idennetdest
                     );
 #ifdef _DEBUG1
 

@@ -41,8 +41,10 @@ using namespace std;
 #include "ch_init_dist_const.h"
 
 #include "zoltan_cpp.h"
+#include "dr_param_fileCPP.h"
 
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR, Zoltan &);
+static int Num_Global_Parts;
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -78,9 +80,13 @@ ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
 ZOLTAN_PARTITION_FN get_partition;
 
 ZOLTAN_HG_SIZE_CS_FN get_hg_size_compressed_pin_storage;
-ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN get_hg_size_edge_weights;
+ZOLTAN_HG_SIZE_EDGE_WTS_FN get_hg_size_edge_weights;
 ZOLTAN_HG_CS_FN get_hg_compressed_pin_storage;
-ZOLTAN_HG_EDGE_WEIGHTS_FN get_hg_edge_weights;
+ZOLTAN_HG_EDGE_WTS_FN get_hg_edge_weights;
+
+ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
+ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
+
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -100,6 +106,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   /* Allocate space for arrays. */
   int nprocs = 0;
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  Num_Global_Parts = nprocs;
   
   float *psize = new float [nprocs];
   int *partid = new int [2*nprocs];
@@ -110,8 +117,11 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     if (prob->params[i].Index>=0)
       ierr = zz.Set_Param_Vec(prob->params[i].Name, prob->params[i].Val,
              prob->params[i].Index);
-    else
+    else {
       ierr = zz.Set_Param(prob->params[i].Name, prob->params[i].Val);
+      if (strcasecmp(prob->params[i].Name, "NUM_GLOBAL_PARTITIONS") == 0)
+        Num_Global_Parts = atoi(prob->params[i].Val);
+    }
     if (ierr == ZOLTAN_FATAL) {
       sprintf(errmsg,
               "fatal: error in Zoltan_Set_Param when setting parameter %s\n",
@@ -129,6 +139,27 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     delete [] psize;
     delete [] partid;
     return 0;
+  }
+
+  /* if there is a paramfile specified, read it
+     note: contents of this file may override the parameters set above */
+  if (strcmp(prob->zoltanParams_file, "")) {
+    zoltanParams_read_file(zz, prob->zoltanParams_file, MPI_COMM_WORLD);
+  }
+
+  if (Test.Fixed_Objects) {
+    /* Register fixed object callback functions */
+    if (zz.Set_Num_Fixed_Obj_Fn(get_num_fixed_obj,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (zz.Set_Fixed_Obj_List_Fn(get_fixed_obj_list,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
 
   if (Test.Local_Partitions == 1) {
@@ -312,7 +343,6 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
         "fatal:  error returned from Zoltan_Set_Edge_List_Multi_Fn()\n");
       return 0;
     }
-#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
     /* Used in ParMETIS to reduce data movement */
     if (zz.Set_Obj_Size_Multi_Fn(migrate_elem_size_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
@@ -320,7 +350,6 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
         "fatal:  error returned from Zoltan_Set_Obj_Size_Multi_Fn()\n");
       return 0;
     }
-#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   }
   else {
     if (zz.Set_Num_Edges_Fn(get_num_edges, (void *) mesh) == ZOLTAN_FATAL) {
@@ -333,14 +362,12 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
         "fatal:  error returned from Zoltan_Set_Edge_List_Fn()\n");
       return 0;
     }
-#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
     /* Used in ParMETIS to reduce data movement */
     if (zz.Set_Obj_Size_Fn(migrate_elem_size, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
         "fatal:  error returned from Zoltan_Set_Obj_Size_Fn()\n");
       return 0;
     }
-#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   }
 
 
@@ -475,7 +502,10 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       beforeName.append(".before");
       zz.Generate_Files(beforeName, 1, 1, 1, 0);
     }
-  
+
+    if (Test.Fixed_Objects)
+      setup_fixed_obj(mesh, Num_Global_Parts);
+
     /*
      * Call Zoltan
      */
@@ -555,6 +585,33 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       cout << "DRIVER:  Total migration time = " << maxtime << endl;
+
+    if (Test.Fixed_Objects) {
+      int errcnt, gerrcnt, i;
+      ELEM_INFO *current_elem;
+      for (errcnt=0, i = 0; i < mesh->num_elems; i++) {
+        if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
+        current_elem = &(mesh->elements[i]);
+        if (current_elem->fixed_part != -1 &&
+            current_elem->fixed_part != current_elem->my_part) {
+          errcnt++;
+          printf("%d:  Object %d fixed to %d but assigned to %d\n",
+                 Proc, current_elem->globalID, current_elem->fixed_part,
+                 current_elem->my_part);
+        }
+      }
+      MPI_Allreduce(&errcnt, &gerrcnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      if (gerrcnt) {
+        zz.LB_Free_Part(&import_gids, &import_lids,
+                            &import_procs, &import_to_part);
+        zz.LB_Free_Part(&export_gids, &export_lids,
+                            &export_procs, &export_to_part);
+        Gen_Error(0, "Fatal:  Fixed objects' assignments incorrect.");
+        return 0;
+      }
+      else if (Proc == 0)
+        printf("%d:  All fixed objects are correct.\n", Proc);
+    }
 
     /*
      * Test copy function
@@ -1566,6 +1623,76 @@ End:
   STOP_CALLBACK_TIMER;
   return; 
 }
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_num_fixed_obj(void *data, int *ierr)
+{
+MESH_INFO_PTR mesh;
+int i, cnt;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+  mesh = (MESH_INFO_PTR) data;
+
+  for (cnt=0, i = 0; i < mesh->num_elems; i++){
+    if (mesh->blank && mesh->blank[i]) continue;
+    if (mesh->elements[i].fixed_part != -1)
+      cnt++;
+  }
+
+  *ierr = ZOLTAN_OK; /* set error code */
+
+  STOP_CALLBACK_TIMER;
+
+  return(cnt);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_fixed_obj_list(void *data, int num_fixed_obj,
+  int num_gid_entries, ZOLTAN_ID_PTR fixed_gids, int *fixed_part, int *ierr)
+{
+MESH_INFO_PTR mesh;
+int i, cnt;
+int ngid = num_gid_entries-1;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    printf("Bad data field in get_fixed_obj_list\n");
+    return;
+  }
+  mesh = (MESH_INFO_PTR) data;
+
+  cnt = 0;
+  for (i = 0; i < mesh->num_elems; i++){
+    if (mesh->blank && mesh->blank[i]) continue;
+    if (mesh->elements[i].fixed_part != -1) {
+      fixed_gids[cnt*num_gid_entries+ngid] =
+                 (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
+      fixed_part[cnt] = mesh->elements[i].fixed_part;
+      cnt++;
+    }
+  }
+
+  if (cnt == num_fixed_obj)
+    *ierr = ZOLTAN_OK; /* set error code */
+  else {
+    printf("Count mismatch in get_fixed_obj_list %d %d \n", cnt, num_fixed_obj);
+    *ierr = ZOLTAN_FATAL;
+  }
+
+  STOP_CALLBACK_TIMER;
+}
+
 
 
 /*****************************************************************************/

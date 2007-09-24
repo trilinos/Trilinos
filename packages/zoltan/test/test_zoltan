@@ -183,8 +183,8 @@ if (! $?run ) then
     case sgi64:
       set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
       breaksw
-    case mac_simpi:
-      set run = "/Users/kddevin/code/siMPI/Obj_mac_simpi/mpirun -np"
+    case mac32_siMPI:
+      set run = "/Users/kddevin/code/siMPI/Obj_mac32/mpirun -np"
       breaksw
     case bandito:
       set run = "/opt/mpich-intel/bin/mpirun -np"
@@ -217,11 +217,17 @@ if (! $?run ) then
     case g++:
     case linux:
     case linux64:
+    case linux64pure:
     case mac:
     case mac32:
+    case mac64:
     case purecov:
     case pure:
       set run = "mpirun -np"
+      breaksw
+    case linux64lam:
+    case linux64lampure:
+      set run = "/opt/lam/bin/mpirun -np"
       breaksw
     case qed:
       set run = "mpiexec -comm mpich-p4 -n "
@@ -252,9 +258,9 @@ if (! ${?suffix}) then
 endif
 
 # Fortran?
-if ( $yes_fortran ) then
-   set out_tag = fout
-endif
+#if ( $yes_fortran ) then
+#   set out_tag = fout
+#endif
 
 # Old interface?
 if ( $old_interface) then
@@ -417,6 +423,11 @@ if ( $yes_fortran ) then
       endif
     endif
   endif
+  if (! $no_hg) then
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods phg )
+    endif
+  endif
 else
 # Using C or C++
 
@@ -452,9 +463,7 @@ else
       set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
       set ch_methods = ( $ch_methods rcb-comparable-ts rcb-norm2-ts rcb-norm3-ts)
       set ch_methods = ( $ch_methods rcb-1D rcb-2D)
-      set ch_methods = ( $ch_methods graph graph-parmetis graph-parmetis-partition)
-      set ch_methods = ( $ch_methods graph-parmetis-refine graph-parmetis-repartition)
-      set ch_methods = ( $ch_methods graph-partition graph-refine graph-repartition)
+
     endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
     if (! $old_interface) then
@@ -561,13 +570,15 @@ else
           adaptive-partlocal1-v$pmversion \
           adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
           adaptive-partlocal5-v$pmversion )
-          if (! $yes_serial) then
-            # These tests do not run correctly in serial, due to assumption
-            # in ParMETIS that at least two processors are used.
-            set ch_methods = ( $ch_methods \
-              adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-              adaptive-partlocal2-v$pmversion )
-          endif
+        if (! $yes_serial) then
+          # These tests do not run correctly in serial, due to assumption
+          # in ParMETIS that at least two processors are used.
+          set ch_methods = ( $ch_methods \
+            adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+            adaptive-partlocal2-v$pmversion )
+        endif
+        set ch_methods = ( $ch_methods graph-parmetis graph-parmetis-partition)
+        set ch_methods = ( $ch_methods graph-parmetis-refine graph-parmetis-repartition)
         set nem_methods = ( $nem_methods \
           partkway-partless-v$pmversion partkway-partmore-v$pmversion \
           partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
@@ -590,7 +601,9 @@ else
   endif
   if (! $no_hg) then
     if (! $old_interface) then
-      set ch_methods = ( $ch_methods phg )
+      set ch_methods = ( $ch_methods phg phg-oneproc )
+      set ch_methods = ( $ch_methods graph graph-partition \
+                                     graph-refine graph-repartition)
     endif
   endif
   if (! $no_hier) then

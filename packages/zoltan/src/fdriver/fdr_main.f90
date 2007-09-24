@@ -412,7 +412,7 @@ type(ELEM_INFO), pointer :: elements(:)
   call dr_sort_index(Mesh%num_elems, global_ids, index)
 
 !  /* generate the parallel filename for this processor */
-  ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".fout"
+  ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".out"
   call gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc)
 
   open(unit=fp,file=par_out_fname,action="write")

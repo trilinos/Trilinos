@@ -299,7 +299,7 @@ MATRIX_INC	= matrix_partition.h
 
 # source code and defines for zdrive and zCPPdrive
 DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
-		  dr_util.c dr_elem.c \
+		  dr_util.c dr_elem.c dr_setfixed.c \
 		  dr_output.c dr_chaco_io.c dr_random_io.c \
                   dr_elem_util.c dr_eval.c dr_gnuplot.c \
 		  dr_hg_io.c dr_hg_readfile.c dr_mm_readfile.c dr_mmio.c
@@ -308,14 +308,16 @@ DR_C_SRC	= dr_main.c dr_exoII_io.c dr_loadbal.c \
 		  dr_migrate.c dr_maps.c dr_dd.c dr_param_file.c
 
 DR_CPP_SRC	= dr_mainCPP.cpp dr_exoII_ioCPP.cpp dr_loadbalCPP.cpp \
-		  dr_migrateCPP.cpp dr_mapsCPP.cpp dr_ddCPP.cpp
+		  dr_migrateCPP.cpp dr_mapsCPP.cpp dr_ddCPP.cpp \
+		  dr_param_fileCPP.cpp
 
 DR_BOTH_INC	= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
 		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h \
                   zoltan_hg_readfile_const.h dr_mmio.h dr_dd.h
 
-DR_CPP_INC	= zoltan_cpp.h zoltan_comm_cpp.h zoltan_dd_cpp.h
+DR_CPP_INC	= zoltan_cpp.h zoltan_comm_cpp.h zoltan_dd_cpp.h \
+		  dr_param_fileCPP.h
 
 CH_CSRC		= ch_dist_graph.c ch_input_assign.c ch_input_geom.c \
 		  ch_input_graph.c ch_input_read.c ch_init_dist.c

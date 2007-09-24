@@ -122,6 +122,7 @@ public :: &
    Zoltan_Copy_To, &
    Zoltan_Destroy, &
    Zoltan_Get_Struct_Addr, &
+   Zoltan_Align, &
    Zoltan_Memory_Stats, &
    Zoltan_Set_Fn, &
    Zoltan_Set_Param, &
@@ -366,6 +367,18 @@ implicit none
 integer(Zoltan_INT), dimension(*) INTENT_IN zz
 integer(Zoltan_INT) INTENT_IN nbytes
 end subroutine Zfw_Destroy
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_align"
+function Zfw_Align(size)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Align
+integer(Zoltan_INT) :: size
+end function Zfw_Align
 end interface
 
 interface
@@ -1137,6 +1150,10 @@ interface Zoltan_Get_Struct_Addr
    module procedure Zf90_Get_Struct_Addr
 end interface
 
+interface Zoltan_Align
+   module procedure Zf90_Align
+end interface
+
 interface Zoltan_Memory_Stats
    module procedure Zf90_Memory_Stats
 end interface
@@ -1507,6 +1524,13 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 end subroutine Zf90_Get_Struct_Addr
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Align(size)
+integer(Zoltan_INT) :: Zf90_Align
+integer(Zoltan_INT) :: size
+Zf90_Align = Zfw_Align(size)
+end function Zf90_Align
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Zf90_Memory_Stats()

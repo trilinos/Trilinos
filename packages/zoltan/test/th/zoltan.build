@@ -1,14 +1,24 @@
 #!/bin/csh -f
 
-# inherit from cron_script
+# inherit PATH from cron_script
 # setenv PATH /Net/local/gnu/bin:/bin:/usr/ucb:/usr/ccs/bin:/Net/local/bin:/usr/local/bin:$PATH
 
-# todo: set appropriate revision
+# todo: set appropriate repository revision?
 
 #
 # inherited from run_fast -- added to config.fast
 # $CVSCMD Zoltan
 
+# magic variables/names/numbers:
+#   expects Zoltan directory, pre-checked out
+#   if tag contains "smoke" it is a smoke test.
+#   if tag contains "big" it is a big test (e.g. xyce) in Zoltan_Tests.  Zoltan_Tests is
+#     expected to be in the zoltan user's home directory.
+#   if $zdrive == zfdrive, do some stuff
+#   if first argument $arch == --codecheck, do some different stuff
+
+
+echo "Zoltan.build:  Starting..."
 # fix issue with python in /usr/local
 setenv LD_LIBRARY_PATH /usr/local/lib
 
@@ -27,11 +37,15 @@ set arch="$1"
 set tname="$2"
 set zdrive="$3"
 set testdirs="$4"
+set bigtestdir="$5"	# optional
 
 set tag='nightly'
 echo "$tname" | grep 'smoke' > /dev/null && set tag='smoke'
+echo "$tname" | grep 'big' > /dev/null && set bigtest
 
 
+echo "Zoltan.build:  Configuration file..."
+# configure output
 cat << _DONE_ >& $dir/test/config.out
 Config:
     ZOLTAN_ARCH=$arch
@@ -40,39 +54,44 @@ Config:
     zdrive=$zdrive
     testdirs=$testdirs
 _DONE_
-
+echo "Zoltan.build:  Configuration file done."
 # check other args here
 if ("$arch" == "--codecheck") then
   $driver --o=$dir/test --I=$fastdir --name="$tname" check --config=test/th/codechecks.cfg
 
 else
 
-
+  # zoltan's configure and build are in one step, so FAST configure just prints variables
+  echo "Zoltan.build:  Configuration ..."
   $driver --o=$dir/test --I=$fastdir --name="$tname" configure --logfile=$dir/test/config.out
+  echo "Zoltan.build:  Configuration done."
 
   if ("$zdrive" == "zfdrive") then
     # Special setup required for building zfdrive -- the F90 driver.
     # Have to use appropriate zoltan_user_data.f90.
-    # For now, just build the F90 driver zfdrive.  zfdrive requires the input
-    # file to be called "zdrive.inp"; the current framework passes the input
-    # file as a command-line argument.
     /bin/cp -p fdriver/zoltan_user_data.f90 fort/zoltan_user_data.f90 
-    gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
+  endif
 
-    $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
+  echo "Zoltan.build:  gmake ..."
+  gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
+  echo "Zoltan.build:  gmake done."
 
-  else 
-    # For all other drivers (zdrive, zCPPdrive), build AND test.
-    gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out
+  echo "Zoltan.build:  build ..."
+  $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
+  echo "Zoltan.build:  build done."
 
-    $driver --o=$dir/test --I=$fastdir --name="$tname" build --logfile=$dir/test/build.out
-
+  echo "Zoltan.build:  mktests ..."
+  if (! $?bigtest) then
     # create the test data, xml files, factor files
     ( cd test ; csh -f mktests >& $dir/mktest.out )
-
-    # Test
-    $driver --o=$dir/test --I=$fastdir --name="$tname" test --testdirs="$testdirs" --tag=$tag
-
+  else if ($bigtestdir != "") then
+    ( cd $bigtestdir ; csh -f mktests >& $dir/mktest.out )
   endif
+  echo "Zoltan.build:  mktests done."
+
+  # Test
+  echo "Zoltan.build:  test ..."
+  $driver --o=$dir/test --I=$fastdir --name="$tname" test --testdirs="$testdirs" --tag=$tag
+  echo "Zoltan.build:  test done."
 
 endif

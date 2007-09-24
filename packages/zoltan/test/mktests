@@ -62,24 +62,24 @@ foreach d (*)
 
   foreach a ($arch)
     set zdrive=`(cd ../Obj_$a; /bin/ls -1 | grep 'drive$' | head -1)`
-    if (! -e $d/$d-$a-nightly.study.xml && -e $d/$tname) then
+    if (! -e $d/$a-$d-nightly.study.xml && -e $d/$tname) then
       set last="$d"
-      echo -n " $d-$a-nightly.study.xml"
-      sed -e "s/EXPNAME/$d-$a-nightly/g" \
+      echo -n " $a-$d-nightly.study.xml"
+      sed -e "s/EXPNAME/$a-$d-nightly/g" \
 	  -e "s/TAG/nightly/g" \
 	  -e "s/NPROC/$np/g" \
 	  -e "s/ZDRIVE/$zdrive/g" \
-	  -e "s/ARCH/$a/g" < test.study.xml > $d/$d-$a-nightly.study.xml
+	  -e "s/ARCH/$a/g" < test.study.xml > $d/$a-$d-nightly.study.xml
     endif
-    if (! -e $d/$d-$a-smoke.study.xml && -e $d/$tname.smoke) then
+    if (! -e $d/$a-$d-smoke.study.xml && -e $d/$tname.smoke) then
       set last="$d"
-      echo -n " $d-$a-smoke.study.xml"
-      sed -e "s/EXPNAME/$d-$a-smoke/g" \
+      echo -n " $a-$d-smoke.study.xml"
+      sed -e "s/EXPNAME/$a-$d-smoke/g" \
 	  -e "s/TAG/smoke/g" \
 	  -e "s/NPROC/$np/g" \
 	  -e "s/ZDRIVE/$zdrive/g" \
 	  -e "s/$tname/$tname.smoke/g" \
-	  -e "s/ARCH/$a/g" < test.study.xml > $d/$d-$a-smoke.study.xml
+	  -e "s/ARCH/$a/g" < test.study.xml > $d/$a-$d-smoke.study.xml
     endif
   end
 

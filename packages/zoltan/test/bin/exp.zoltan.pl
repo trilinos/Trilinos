@@ -119,11 +119,21 @@ sub parseoutfile {
   # INFD is a pipe to running command
   # LOGFD is the logfile, to dump output into
 
+# example output
+#| 0/ 4|: ( 0, 0)/[ 2, 2] ->STATS Runs 10  bal  CURRENT 1.099466  MAX 1.099466  MIN 1.099466  AVG 1.099466
+#| 0/ 4|: ( 0, 0)/[ 2, 2] ->STATS Runs 10  cutl CURRENT 28482.000000  MAX 29833.000000  MIN 26321.000000  AVG 28602.500000
+#| 0/ 4|: ( 0, 0)/[ 2, 2] ->STATS Runs 10  cutn CURRENT 25237.000000  MAX 26335.000000  MIN 23499.000000  AVG 25365.500000
+#| 0/ 4|: ( 0, 0)/[ 2, 2] ->STATS Runs 10  moveVol CURRENT 17839440.000000  MAX 17943520.000000  MIN 17619200.000000  AVG 17723204.000000
+#| 0/ 4|: ( 0, 0)/[ 2, 2] ->STATS Runs 10  repart CURRENT 20687640.000000  MAX 20888820.000000  MIN 20283204.000000  AVG 20583454.000000
+
+
   $iters = 0;
 
-  ($bal{MAX},$bal{MIN},$bal{AVG}) = ("ERROR","ERROR","ERROR");
-  ($cutl{MAX},$cutl{MIN},$cutl{AVG}) = ("ERROR","ERROR","ERROR");
-  ($cutn{MAX},$cutn{MIN},$cutn{AVG}) = ("ERROR","ERROR","ERROR");
+  ($bal{MAX},$bal{MIN},$bal{AVG})		= ("ERROR","ERROR","ERROR");
+  ($cutl{MAX},$cutl{MIN},$cutl{AVG})		= ("ERROR","ERROR","ERROR");
+  ($cutn{MAX},$cutn{MIN},$cutn{AVG})		= ("ERROR","ERROR","ERROR");
+  ($movevol{MAX},$movevol{MIN},$movevol{AVG})	= ("ERROR","ERROR","ERROR");
+  ($repart{MAX},$repart{MIN},$repart{AVG})	= ("ERROR","ERROR","ERROR");
   $timeavg = -1;
 
   my $infd = @_[0];
@@ -140,6 +150,10 @@ sub parseoutfile {
 	%cutl = (split ' ', $1);
       } elsif (/ cutn (.*)/) {
 	%cutn = (split ' ', $1);
+      } elsif (/ moveVol (.*)/) {
+	%movevol = (split ' ', $1);
+      } elsif (/ repart (.*)/) {
+	%repart = (split ' ', $1);
       }
     } elsif (/^FILE .*Average:  ([\d.e+]+) seconds per Iteration/) {
       $timeavg = $1 + 0;
@@ -168,6 +182,12 @@ sub printvars {
   print FD "CutnMax	numeric/double	$cutn{MAX}\n";
   print FD "CutnMin	numeric/double	$cutn{MIN}\n";
   print FD "CutnAvg	numeric/double	$cutn{AVG}\n";
+  print FD "MVolMax	numeric/double	$movevol{MAX}\n";
+  print FD "MVolMin	numeric/double	$movevol{MIN}\n";
+  print FD "MVolAvg	numeric/double	$movevol{AVG}\n";
+  print FD "RepartMax	numeric/double	$repart{MAX}\n";
+  print FD "RepartMin	numeric/double	$repart{MIN}\n";
+  print FD "RepartAvg	numeric/double	$repart{AVG}\n";
   print FD "SolverTime	numeric/double	$timeavg\n";
   print FD "Iterations	numeric/integer	$iters\n";
   print FD $ckok;
@@ -216,7 +236,8 @@ if (! $np) {
 }
 
 $cmdline = "$mpi $np $zdrive $zinp";
-print "CMDLINE: $cmdline\n" if ($args{_exact_debug});
+#print "CMDLINE: $cmdline\n" if ($args{_exact_debug});
+print "CMDLINE: $cmdline\n";
 
 open ZIN, $zinp or die "couldn't open $zinp";
 my $temprs = $/;
@@ -262,8 +283,10 @@ unless ($ztext =~ /text output *= *0+\b/) {
 }
 
 # Launch the test, finally, dumping output to LOGFILE
+# Before running, copy $zinp to zdrive.inp in case we're running zfdrive 
+# (which doesn't take command-line arguments).
 
-open ZOLTAN, "$cmdline |" or die "Can't run $cmdline";
+open ZOLTAN, "/bin/cp -f $zinp zdrive.inp; $cmdline |" or die "Can't run $cmdline";
 parseoutfile(ZOLTAN, LOGFILE);
 close ZOLTAN;
 

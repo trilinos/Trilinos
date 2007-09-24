@@ -98,7 +98,7 @@ int Zoltan_RB_find_median(
   int     indexlo=0, indexhi=0;      /* indices of dot closest to median */
   int     breakflag;                 /* for breaking out of median iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
-  int     rank;                      /* rank in partition (Tflops_Special) */
+  int     rank=0;                    /* rank in partition (Tflops_Special) */
 
   /* MPI data types and user functions */
 
@@ -187,7 +187,7 @@ int Zoltan_RB_find_median(
                                              Input argument Tflops_Special 
                                              should be 0 for
                                              serial partitioning. */
-  while (1) {
+    while (1) {
 
     /* choose bisector value */
     /* use old value on 1st iteration if old cut dimension is the same */
@@ -430,7 +430,7 @@ int Zoltan_RB_find_median(
       }
       numlist = k;
 
-  }
+    }
   }
   else { /* if one processor set all dots to 0 (Tflops_Special) */
     for (i = 0; i < numlist; i++)

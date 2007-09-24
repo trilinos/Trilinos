@@ -595,8 +595,15 @@ integer(Zoltan_INT) :: lid
 !   * Compute size of one element's data.
 !   */
 
-  size = 8 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
+! This is the correct size of the fdriver data.
+! size = 8 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
+! However, we'd like the answers to match those of the C driver.
+! So we'll initialize size to sizeof(ELEM_INFO) in C driver.
+! This is hardcoded, so we'll have to change it if/when we change the C driver.
+! The Zoltan_Align calls also are added to match the C driver.
+  size = 152
   num_nodes =  mesh_data%eb_nnodes(current_elem%elem_blk)
+  size = Zoltan_Align(size)
  
 !  /* Add space for connect table. */
   if (Mesh%num_dims > 0) then
@@ -608,12 +615,15 @@ integer(Zoltan_INT) :: lid
 
 !  /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) then
+    size = Zoltan_Align(size)
     size = size + current_elem%adj_len * SIZE_OF_FLOAT
   endif
 
 !  /* Add space for coordinate info */
+  size = Zoltan_Align(size)
   size = size + num_nodes * Mesh%num_dims * SIZE_OF_FLOAT
   
+print *, elem_gid(gid), 'SIZE', size
   migrate_elem_size = size
 end function migrate_elem_size
 

@@ -519,10 +519,7 @@ static int refine_fm2 (ZZ *zz,
 #endif
 #endif
     PHGComm *hgc=hg->comm;
-    struct {
-        int nPins; 
-        int rank;
-    } root;
+    int rootRank;
     
     static int timer_refine=-1;      /* Timers; declared static to accumulate */
     static int timer_pins=-1;       /* times over multiple runs.  */
@@ -583,10 +580,11 @@ static int refine_fm2 (ZZ *zz,
     /* find the index of the proc in column group with 
        the most #nonzeros; it will be our root
        proc for computing moves since it has better 
-       knowedge about global hypergraph */
+       knowedge about global hypergraph.
+       We ignore returned #pins (i) in root */
     Zoltan_PHG_Find_Root(hg->nPins, hgc->myProc_y, hgc->col_comm, 
-                         &root.nPins, &root.rank);
-
+                         &i, &rootRank);
+    
     /* Calculate the weights in each partition and total, then maxima */
     weights[0] = weights[1] = 0.0;
     lweights[0] = lweights[1] = 0.0;
@@ -665,7 +663,7 @@ static int refine_fm2 (ZZ *zz,
         lpins[1] = &(lpins[0][hg->nEdge]);
     }
 
-    if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
+    if (hgc->myProc_y==rootRank) { /* only root needs mark, adj, gain and heaps*/
         if (hg->nVtx &&
             (!(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx, sizeof(int)))
              || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
@@ -695,10 +693,10 @@ static int refine_fm2 (ZZ *zz,
         deg = (int *) gain; /* null for non-root but that is fine */
         for (i = 0; i < hg->nVtx; ++i)
             ldeg[i] = hg->vindex[i+1] - hg->vindex[i];
-        MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, root.rank,
+        MPI_Reduce(ldeg, deg, hg->nVtx, MPI_INT, MPI_SUM, rootRank,
                    hg->comm->col_comm);
 
-        if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
+        if (hgc->myProc_y==rootRank) { /* root marks isolated vertices */
             for (i=0; i<hg->nVtx; ++i)
                 if (!hgp->UseFixedVtx || hg->fixed_part[i]<0) {
                     if (!deg[i]) {
@@ -761,7 +759,7 @@ static int refine_fm2 (ZZ *zz,
             errexit("%s: Initial cutsize=%.2lf Verify: total=%.2lf\n", uMe(hgc), cutsize,
                     best_cutsize);
         }
-        if (hgc->myProc_y==root.rank)
+        if (hgc->myProc_y==rootRank)
             for (i = 0; i< hg->nVtx; ++i)
                 if (mark[i])
                     errexit("mark[%d]=%d", i, mark[i]);
@@ -787,7 +785,7 @@ static int refine_fm2 (ZZ *zz,
         }
         /* now sum up all gains on only root proc */
         if (hg->nVtx)
-            MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, root.rank, 
+            MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, rootRank, 
                        hgc->col_comm);
         if (detail_timing)         
             ZOLTAN_TIMER_STOP(zz->ZTime, timer_gain, hgc->Communicator);                    
@@ -798,7 +796,7 @@ static int refine_fm2 (ZZ *zz,
             printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
         }
 
-        if (hgc->myProc_y==root.rank) {
+        if (hgc->myProc_y==rootRank) {
             /* those are the lucky ones; each proc in column-group
                could have compute the same moves concurrently; but for this
                version we'll do it in the root procs and broadcast */
@@ -931,9 +929,9 @@ static int refine_fm2 (ZZ *zz,
             ZOLTAN_TIMER_START(zz->ZTime, timer_nonroot, hgc->Communicator);            
         
         /* now root bcast moves to column procs */
-        MPI_Bcast(&best_cutsizeat, 1, MPI_INT, root.rank, hgc->col_comm);
-        MPI_Bcast(moves, best_cutsizeat, MPI_INT, root.rank, hgc->col_comm);
-        if (hgc->myProc_y!=root.rank) { /* now non-root does move simulation */
+        MPI_Bcast(&best_cutsizeat, 1, MPI_INT, rootRank, hgc->col_comm);
+        MPI_Bcast(moves, best_cutsizeat, MPI_INT, rootRank, hgc->col_comm);
+        if (hgc->myProc_y!=rootRank) { /* now non-root does move simulation */
             for (i=0; i<best_cutsizeat; ++i) {
                 int v = moves[i];
                 if (v>=0)
@@ -964,11 +962,11 @@ static int refine_fm2 (ZZ *zz,
 #if 0
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);        
         best_imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
-        if (hgc->myProc_y==root.rank)             
+        if (hgc->myProc_y==rootRank)             
             uprintf(hgc, "BEFORE ISOLATED VERTEX HANDLING WE *THINK* GLOBAL IMBALANCE is %.3lf\n", best_imbal);
 #endif
         
-        if (hgc->myProc_y==root.rank) {
+        if (hgc->myProc_y==rootRank) {
             best_limbal = (ltargetw0==0.0) ? 0.0
                 : fabs(lweights[0]-ltargetw0)/ltargetw0;
             
@@ -989,8 +987,8 @@ static int refine_fm2 (ZZ *zz,
 #endif
         }
 
-        MPI_Bcast(lwadjust, 2, MPI_DOUBLE, root.rank, hgc->col_comm);
-        if (hgc->myProc_y!=root.rank) {
+        MPI_Bcast(lwadjust, 2, MPI_DOUBLE, rootRank, hgc->col_comm);
+        if (hgc->myProc_y!=rootRank) {
             lweights[0] += lwadjust[0];
             lweights[1] += lwadjust[1];
         }
@@ -1001,7 +999,7 @@ static int refine_fm2 (ZZ *zz,
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
 #if 0       
         best_imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
-        if (hgc->myProc_y==root.rank)             
+        if (hgc->myProc_y==rootRank)             
             uprintf(hgc, "NEW GLOBAL IMBALANCE is %.3lf\n", best_imbal);
 #endif
         
@@ -1038,25 +1036,25 @@ static int refine_fm2 (ZZ *zz,
     if (detail_timing)         
         ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);            
     /* now root sneds the final part no's of isolated vertices; if any */
-    MPI_Bcast(&isocnt, 1, MPI_INT, root.rank, hgc->col_comm);
+    MPI_Bcast(&isocnt, 1, MPI_INT, rootRank, hgc->col_comm);
     if (isocnt<hg->nVtx) {
         deg = (int *) lgain; /* we'll use for part no's of isolated vertices */
-        if (hgc->myProc_y==root.rank) 
+        if (hgc->myProc_y==rootRank) 
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
                 int u = moves[i];
                 deg[i] = part[u] = -part[u]-1; 
             }
             
-        MPI_Bcast(&moves[isocnt], hg->nVtx-isocnt, MPI_INT, root.rank, hgc->col_comm);
-        MPI_Bcast(&deg[isocnt], hg->nVtx-isocnt, MPI_INT, root.rank, hgc->col_comm);
-        if (hgc->myProc_y!=root.rank) 
+        MPI_Bcast(&moves[isocnt], hg->nVtx-isocnt, MPI_INT, rootRank, hgc->col_comm);
+        MPI_Bcast(&deg[isocnt], hg->nVtx-isocnt, MPI_INT, rootRank, hgc->col_comm);
+        if (hgc->myProc_y!=rootRank) 
             for (i=isocnt; i < hg->nVtx; ++i)  /* go over isolated vertices */
                 part[moves[i]] = deg[i];
     }
     if (detail_timing)         
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);            
 #endif
-    if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/        
+    if (hgc->myProc_y==rootRank) { /* only root needs mark, adj, gain and heaps*/        
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
         Zoltan_Heap_Free(&heap[0]);
         Zoltan_Heap_Free(&heap[1]);        

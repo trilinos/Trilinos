@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
   Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
   Test.Gen_Files = 0;
+  Test.Fixed_Objects = 0;
   Test.Null_Lists = NONE;
 
   Output.Text = 1;

@@ -37,6 +37,7 @@ extern "C" {
 #define Zfw_Copy                       zfw_copy
 #define Zfw_Copy_To                    zfw_copy_to
 #define Zfw_Destroy                    zfw_destroy       
+#define Zfw_Align                      zfw_align       
 #define Zfw_Memory_Stats               zfw_memory_stats       
 #define Zfw_Set_Fn0f                   zfw_set_fn0f
 #define Zfw_Set_Fn1f                   zfw_set_fn1f
@@ -95,6 +96,7 @@ extern "C" {
 #define Zfw_Copy                       ZFW_COPY
 #define Zfw_Copy_To                    ZFW_COPY_TO
 #define Zfw_Destroy                    ZFW_DESTROY       
+#define Zfw_Align                      ZFW_ALIGN
 #define Zfw_Memory_Stats               ZFW_MEMORY_STATS  
 #define Zfw_Set_Fn0f                   ZFW_SET_FN0F
 #define Zfw_Set_Fn1f                   ZFW_SET_FN1F
@@ -152,6 +154,7 @@ extern "C" {
 #define Zfw_Copy                       zfw_copy_
 #define Zfw_Copy_To                    zfw_copy_to_
 #define Zfw_Destroy                    zfw_destroy_
+#define Zfw_Align                      zfw_align_
 #define Zfw_Memory_Stats               zfw_memory_stats_
 #define Zfw_Set_Fn0f                   zfw_set_fn0f_
 #define Zfw_Set_Fn1f                   zfw_set_fn1f_
@@ -210,6 +213,7 @@ extern "C" {
 #define Zfw_Copy                       zfw_copy__
 #define Zfw_Copy_To                    zfw_copy_to__
 #define Zfw_Destroy                    zfw_destroy__
+#define Zfw_Align                      zfw_align__
 #define Zfw_Memory_Stats               zfw_memory_stats__
 #define Zfw_Set_Fn0f                   zfw_set_fn0f__
 #define Zfw_Set_Fn1f                   zfw_set_fn1f__
@@ -1079,6 +1083,12 @@ void Zfw_Destroy(int *addr_lb, int *nbytes)
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Destroy(&lb);
+}
+
+/*****************************************************************************/
+int Zfw_Align(int *size)
+{
+   return Zoltan_Align(*size);
 }
 
 /*****************************************************************************/
