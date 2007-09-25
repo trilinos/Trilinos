@@ -96,11 +96,10 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
-	dfad_dfad_example$(EXEEXT) sfad_example$(EXEEXT) \
-	dmfad_example$(EXEEXT) trad_example$(EXEEXT) \
-	trad_dfad_example$(EXEEXT) taylor_example$(EXEEXT) \
-	dfad_taylor_example$(EXEEXT) dfad_sfc_example$(EXEEXT) \
-	trad_sfc_example$(EXEEXT)
+	$(am__EXEEXT_1) sfad_example$(EXEEXT) dmfad_example$(EXEEXT) \
+	trad_example$(EXEEXT) trad_dfad_example$(EXEEXT) \
+	taylor_example$(EXEEXT) dfad_taylor_example$(EXEEXT) \
+	dfad_sfc_example$(EXEEXT) trad_sfc_example$(EXEEXT)
 DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = example
@@ -127,6 +126,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_NESTED_FAD_TRUE@am__EXEEXT_1 = dfad_dfad_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_ad_example_OBJECTS = ad_example-ad_example.$(OBJEXT)
 ad_example_OBJECTS = $(am_ad_example_OBJECTS)
@@ -324,6 +324,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@BUILD_NESTED_FAD_FALSE@FADFAD_EXAMPLES = 
+@BUILD_NESTED_FAD_TRUE@FADFAD_EXAMPLES = dfad_dfad_example
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = \
 	-I$(top_srcdir)/src \

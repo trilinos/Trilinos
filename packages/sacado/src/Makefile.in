@@ -195,7 +195,7 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 am__objects_1 = libsacado_a-Sacado_radops.$(OBJEXT) \
 	libsacado_a-Sacado_radops2.$(OBJEXT) uninit.$(OBJEXT) \
 	RAD_Const_Warn.$(OBJEXT)
-@ENABLE_SACADO_TEUCHOS_TRUE@am__objects_2 = libsacado_a-Sacado_ScalarParameterLibrary.$(OBJEXT)
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@am__objects_2 = libsacado_a-Sacado_ScalarParameterLibrary.$(OBJEXT)
 am__objects_3 = libsacado_a-Sacado_ScalarFlopCounter.$(OBJEXT)
 am__objects_4 = $(am__objects_1) $(am__objects_2) $(am__objects_3)
 am__objects_5 =
@@ -516,19 +516,19 @@ SACADO_UTIL_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateIterator.hpp
 
-@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER_H = \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER_H = \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp
 
-@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER = \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER = \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
 
 SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \

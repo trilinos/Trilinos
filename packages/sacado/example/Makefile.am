@@ -33,10 +33,20 @@ EXEEXT = .exe
 
 all-local:
 
+if BUILD_NESTED_FAD
+
+FADFAD_EXAMPLES = dfad_dfad_example
+
+else
+
+FADFAD_EXAMPLES = 
+
+endif
+
 noinst_PROGRAMS = \
 	ad_example \
 	dfad_example \
-	dfad_dfad_example \
+	$(FADFAD_EXAMPLES) \
 	sfad_example \
 	dmfad_example \
 	trad_example \

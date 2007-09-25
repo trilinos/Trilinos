@@ -39,7 +39,7 @@
 
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
-AC_INIT([sacado], [1.0d], [sacado-developers@software.sandia.gov])
+AC_INIT([sacado], [9.0-dev], [sacado-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -165,6 +165,48 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   sacado, teuchos, SACADO_TEUCHOS, ENABLE_SACADO_TEUCHOS, yes
   ,[Build in Teuchos support in Sacado.]
   ,[Build in Teuchos support in Sacado.  Can be overridden with --disable-sacado-teuchos.])
+
+# Check for --[en|dis]able-sacado-paramlib
+case "${target_os}" in
+  solaris*)
+    sacado_paramlib_default=no
+    ;;
+  *)
+    sacado_paramlib_default=yes
+esac
+AC_ARG_ENABLE([sacado-paramlib], 
+              [AC_HELP_STRING([--enable-sacado-paramlib], 
+                              [Enable building Sacado parameter library (default is yes except on Sun platform)])],
+              [ac_cv_use_sacado_paramlib=$enableval], 
+              [ac_cv_use_sacado_paramlib=$sacado_paramlib_default])
+AC_MSG_CHECKING(whether to enable the sacado parameter library)
+if test "X$ac_cv_use_sacado_paramlib" != "Xno"; then
+  AC_MSG_RESULT(yes)  
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(BUILD_PARAMLIB, test "X$ac_cv_use_sacado_paramlib" != "Xno")
+
+# Check for --[en|dis]able-sacado-nestedfad
+case "${target_os}" in
+  solaris*)
+    sacado_nested_fad_default=no
+    ;;
+  *)
+    sacado_nested_fad_default=yes
+esac
+AC_ARG_ENABLE([sacado-nestedfad], 
+              [AC_HELP_STRING([--enable-sacado-nestedfad], 
+                              [Enable nested Fad inside of Fad types (default is yes except on Sun platform)])],
+              [ac_cv_use_sacado_nested_fad=$enableval], 
+              [ac_cv_use_sacado_nested_fad=$sacado_nested_fad_default])
+AC_MSG_CHECKING(whether to enable nested fad types)
+if test "X$ac_cv_use_sacado_nested_fad" != "Xno"; then
+  AC_MSG_RESULT(yes)  
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(BUILD_NESTED_FAD, test "X$ac_cv_use_sacado_nested_fad" != "Xno")
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

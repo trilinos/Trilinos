@@ -119,6 +119,8 @@ SACADO_TEMPLATE_H = \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp
 
+if BUILD_PARAMLIB
+
 SACADO_PARAMETER_H = \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
@@ -132,6 +134,9 @@ SACADO_PARAMETER_H = \
 
 SACADO_PARAMETER = \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
+
+endif
+
 endif
 
 SACADO_MPL_H = \
