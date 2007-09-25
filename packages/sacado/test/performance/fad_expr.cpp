@@ -113,26 +113,32 @@ int main(int argc, char* argv[]) {
     std::cout << "Times (sec) for nderiv = " << nderiv 
 	      << " nloop =  " << nloop << ":  " << std::endl;
 
-    t = do_time< FAD::Fad<double> >(nderiv, nloop);
-    std::cout << "Fad:       " << std::setw(w) << t << std::endl;
-
     t = do_time< FAD::TFad<10,double> >(nderiv, nloop);
     std::cout << "TFad:      " << std::setw(w) << t << std::endl;
-    
-    t = do_time< Sacado::Fad::DFad<double> >(nderiv, nloop);
-    std::cout << "DFad:      " << std::setw(w) << t << std::endl;
 
-    t = do_time< Sacado::ELRFad::DFad<double> >(nderiv, nloop);
-    std::cout << "ELRDFad:   " << std::setw(w) << t << std::endl;
-
-    t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
-    std::cout << "DMFad:     " << std::setw(w) << t << std::endl; 
+    t = do_time< FAD::Fad<double> >(nderiv, nloop);
+    std::cout << "Fad:       " << std::setw(w) << t << std::endl;
 
     t = do_time< Sacado::Fad::SFad<double,10> >(nderiv, nloop);
     std::cout << "SFad:      " << std::setw(w) << t << std::endl;
 
     t = do_time< Sacado::Fad::SLFad<double,10> >(nderiv, nloop);
     std::cout << "SLFad:     " << std::setw(w) << t << std::endl;
+    
+    t = do_time< Sacado::Fad::DFad<double> >(nderiv, nloop);
+    std::cout << "DFad:      " << std::setw(w) << t << std::endl;
+
+    t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
+    std::cout << "DMFad:     " << std::setw(w) << t << std::endl; 
+
+    t = do_time< Sacado::ELRFad::SFad<double,10> >(nderiv, nloop);
+    std::cout << "ELRSFad:   " << std::setw(w) << t << std::endl;
+
+    t = do_time< Sacado::ELRFad::SLFad<double,10> >(nderiv, nloop);
+    std::cout << "ELRSLFad:  " << std::setw(w) << t << std::endl;
+
+    t = do_time< Sacado::ELRFad::DFad<double> >(nderiv, nloop);
+    std::cout << "ELRDFad:   " << std::setw(w) << t << std::endl;
     
     t = do_time< Sacado::CacheFad::DFad<double> >(nderiv, nloop);
     std::cout << "CacheFad:  " << std::setw(w) << t << std::endl;

@@ -62,6 +62,8 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/ELRDFadUnitTests.cpp \
 	$(srcdir)/SFadUnitTests.hpp \
 	$(srcdir)/SFadUnitTests.cpp \
+	$(srcdir)/ELRSFadUnitTests.hpp \
+	$(srcdir)/ELRSFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
 	$(srcdir)/TestSuite.cpp
 

@@ -30,7 +30,7 @@
 // @HEADER
 
 #ifndef SACADO_MPL_RANGE_C_HPP
-#define SACADO_MPL_RANCE_C_HPP
+#define SACADO_MPL_RANGE_C_HPP
 
 #include "Sacado_mpl_none.hpp"
 #include "Sacado_mpl_size.hpp"
