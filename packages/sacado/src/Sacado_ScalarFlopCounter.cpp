@@ -188,6 +188,10 @@ Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::Flo
     default:
       assert(0);
   }
+  
+  // This code is un-reachable, but some compilers will issue a warning
+  // without it
+  return SUMMARY_ASSIGN;
 }
 
 std::ostream& 
