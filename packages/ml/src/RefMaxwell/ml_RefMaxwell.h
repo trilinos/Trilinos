@@ -252,6 +252,9 @@ namespace ML_Epetra
     //! Verbosity flag
     bool verbose_;
 
+    //! Extreme Verbosity flag
+    bool very_verbose_;    
+
     //! Print hierarchy flag
     bool print_hierarchy;
     //@}
