@@ -327,7 +327,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 
   ParameterList NewList;
   List_ = NewList;
-  ML_Epetra::SetDefaults("SA",List_,(int *)0, (double *)0);
+  SetDefaults("SA",List_,(int *)0, (double *)0);
     
   ML_CHK_ERRV(Initialize());
 
@@ -721,20 +721,21 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   // check for an XML input file and validate again if necessary
   std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
-  if ( ReadXML(XMLFileName) && List_.get("ML validate parameter list",true) )
-  {
-    int depth=List_.get("ML validate depth",0);
-    if (!ValidateMLPParameters(List_,depth))
-    {
-      if (Comm_->MyPID() == 0)
-        std::cout<< "ERROR: The file " << XMLFileName
-                 << " contains an incorrect parameter!"<<std::endl;
-#     ifdef HAVE_MPI
-      MPI_Finalize();
-#     endif
-      exit(EXIT_FAILURE);
+  if (List_.get("read XML", false)) {
+    ReadXML(XMLFileName,List_,Comm());
+    if (List_.get("ML validate parameter list",true)) {
+      int depth=List_.get("ML validate depth",0);
+      if (!ValidateMLPParameters(List_,depth)) {
+        if (Comm_->MyPID() == 0)
+          std::cout<< "ERROR: The file " << XMLFileName
+                   << " contains an incorrect parameter!"<<std::endl;
+#       ifdef HAVE_MPI
+        MPI_Finalize();
+#       endif
+        exit(EXIT_FAILURE);
+      }
     }
-  }
+  } //if (List_.get("read XML", false))
 
   if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
   int ProcID;

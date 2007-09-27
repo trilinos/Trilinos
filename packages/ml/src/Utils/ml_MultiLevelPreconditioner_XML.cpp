@@ -90,11 +90,9 @@ static void AddSubList(Teuchos::ParameterList& List, Teuchos::ParameterList& Lis
 }
 
 // ============================================================================ 
-int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
+int ML_Epetra::ReadXML(const string &FileName, ParameterList &List,
+            const Epetra_Comm &Comm)
 {
-  // loophole to avoid reading file if not desired
-  if (!List_.get("read XML", false)) return(0);
-
   int i = 0, j;
   FILE* ML_capture_flag;
   ML_capture_flag = fopen((char*)FileName.c_str(),"r");
@@ -104,14 +102,14 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
     fclose(ML_capture_flag);
   }
 
-  Comm().SumAll(&i, &j, 1);
+  Comm.SumAll(&i, &j, 1);
 
   int OutputLevel=0;
-  if  (List_.isParameter("ML output")) OutputLevel = List_.get("ML output", 0);
-  else if (List_.isParameter("output")) OutputLevel = List_.get("output", 0);
+  if  (List.isParameter("ML output")) OutputLevel = List.get("ML output", 0);
+  else if (List.isParameter("output")) OutputLevel = List.get("output", 0);
 
   if (j == 0) {
-    if (OutputLevel && Comm().MyPID() == 0)
+    if (OutputLevel && Comm.MyPID() == 0)
       cout << "***" << endl
            << "*** Unable to open XML input file '" << FileName << "'" << endl
            << "***" << endl;
@@ -135,20 +133,20 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
   {
     ao = 0;
     Teuchos::ParameterList NewList;
-    List_ = NewList;
+    List = NewList;
   }
   else
     ao = 1;
 
   string xxx = ListToAdd.get("SetDefaults", "not-set");
   if (xxx != "not-set")
-    SetDefaults(xxx, ListToAdd);
+    ML_Epetra::SetDefaults(xxx, ListToAdd);
 
-  AddSubList(List_, ListToAdd);
+  AddSubList(List, ListToAdd);
 
-  if  (List_.isParameter("ML output")) OutputLevel = List_.get("ML output", 0);
-  else if (List_.isParameter("output")) OutputLevel = List_.get("output", 0);
-  if ( (5 < OutputLevel) && (Comm().MyPID() == 0) ) {
+  if  (List.isParameter("ML output")) OutputLevel = List.get("ML output", 0);
+  else if (List.isParameter("output")) OutputLevel = List.get("output", 0);
+  if ( (5 < OutputLevel) && (Comm.MyPID() == 0) ) {
     cout << "***" << endl;
     cout << "***" << " Reading XML file `" << FileName << "'..." << endl;
     if (ao == 0)

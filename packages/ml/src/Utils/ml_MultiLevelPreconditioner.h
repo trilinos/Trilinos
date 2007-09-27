@@ -176,6 +176,10 @@ namespace ML_Epetra
                        Teuchos::RCP<std::vector<double> > &params,
                        bool Overwrite=true);
 
+  //! Reads in parameter list options from file.
+  int ReadXML(const string &FileName, Teuchos::ParameterList &List,
+                   const Epetra_Comm &Comm);
+
 /*!
  
    \brief MultiLevelPreconditioner: a class to define black-box multilevel preconditioners using aggregation methods.
@@ -580,9 +584,6 @@ public:
   //! Visualizes the effect of the ML cycle on a random std::vector.
   int VisualizeCycle(int NumCycles = 1);
 
-  //! Reads a parameter list from an XML file.
-  int ReadXML(const std::string& FileName);
-  
   /*! Creates label for this object (printed out by AztecOO).  This does not
       allocate/reallocate any memory.
   */
