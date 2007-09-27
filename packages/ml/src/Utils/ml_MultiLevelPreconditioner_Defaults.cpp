@@ -8,37 +8,9 @@
  */
 
 #include "ml_common.h"
-#include "ml_common.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
-
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Time.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#ifdef ML_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-//#include <cstring>
-#include "ml_amesos_wrap.h"
-#include "ml_ifpack_wrap.h"
-#include "ml_agg_METIS.h"
-#include "ml_epetra_utils.h"
-
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_agg_ParMETIS.h"
-
 #include "ml_epetra.h"
-#include "ml_anasazi.h"
+#include "ml_MultiLevelPreconditioner.h"  // to define ML_Epetra namespace
 #include "Teuchos_RefCountPtr.hpp"
 
 using namespace Teuchos;
@@ -103,26 +75,27 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
 
 // ============================================================================
 /*! Set default values for classical smoothed aggregation.
-  - \c "default values" \c = \c "SA"
+<br>
+    This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("SA",...) should be used.
    - General
+        - \c "default values" \c = \c "SA"
         - \c "max levels" \c = \c 10
         - \c "prec type" \c = \c "MGV"
         - \c "increasing or decreasing" \c = \c "increasing"
    - Grid Transfer
         - \c "aggregation: type" \c = \c "Uncoupled-MIS"
-        - \c "aggregation: damping factor" \c = \f$ 1.333\f$
+        - \c "aggregation: damping factor" \c = <tt>1.333</tt>
         - \c "eigen-analysis: type" \c = \c "cg"
         - \c "eigen-analysis: iterations" \c = \c 10
    - Smoothing
         - \c "smoother: sweeps" \c = \c 2
-        - \c "smoother: damping factor" \c = \f$ 1.0\f$
+        - \c "smoother: damping factor" \c = <tt>1.0</tt>
         - \c "smoother: pre or post" \c = \c "both"
         - \c "smoother: type" \c = \c "symmetric Gauss-Seidel"
    - Coarse Solution
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("SA",...) should be used.
  */
 int ML_Epetra::SetDefaultsSA(ParameterList & inList, 
                  Teuchos::RCP<std::vector<int> > &options,
@@ -158,30 +131,31 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
 } //ML_Epetra::SetDefaultsSA()
 
 // ============================================================================
-/*! Sets the following default values for "DD":
-  - "default values" = DD"
+/*! Sets the following default values for "DD".
+<br>
+    Note: This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD",...) should be used.
    - General
-        - \c "max levels" = 2
-        - \c "prec type" = MGV"
-        - \c "increasing or decreasing" = increasing"
+        - \c "default values" \c = \c "DD"
+        - \c "max levels" \c = \c 2
+        - \c "prec type" \c = \c "MGV"
+        - \c "increasing or decreasing" \c = \c "increasing"
    - Grid Transfer
-        - \c "aggregation: type" = METIS"
-        - \c "aggregation: local aggregates" = 1
-        - \c "aggregation: damping factor" = \f$ 1.333\f$
+        - \c "aggregation: type" \c = \c "METIS"
+        - \c "aggregation: local aggregates" \c = \c 1
+        - \c "aggregation: damping factor" \c = <tt>1.333</tt>
         - \c "eigen-analysis: type" \c = \c "power-method"
         - \c "eigen-analysis: iterations" \c = \c 20
    - Smoothing
-        - \c "smoother: sweeps" = 1
-        - \c "smoother: pre or post" = both"
-        - \c "smoother: type" = Aztec". 
-        - \c "smoother: Aztec options" = options
-        - \c "smoother: Aztec params" = params
-        - \c "smoother: Aztec as solver" = false
+        - \c "smoother: sweeps" \c = \c 1
+        - \c "smoother: pre or post" \c = \c "both"
+        - \c "smoother: type" \c = \c Aztec". 
+        - \c "smoother: Aztec options" \c = \c options
+        - \c "smoother: Aztec params" \c = \c params
+        - \c "smoother: Aztec as solver" \c = \c false
    - Coarse Solution
-        - \c "coarse: type" = Amesos-KLU"
-        - \c "coarse: max size" = 128
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("DD",...) should be used.
+        - \c "coarse: type" \c = \c "Amesos-KLU"
+        - \c "coarse: max size" \c = \c 128
  */
 int ML_Epetra::SetDefaultsDD(ParameterList & inList, 
                  Teuchos::RCP<std::vector<int> > &options,
@@ -225,31 +199,32 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
 } //ML_Epetra::SetDefaultsDD()
 
 // ============================================================================
-/*! Sets the following default values for "DD-ML"
- - \c "default values" = "DD-ML"
+/*! Sets the following default values for "DD-ML".
+<br>
+    This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD-ML",...) should be used.
    - General
-        - \c "max levels" = 3
-        - \c "prec type" = "MGV"
-        - \c "increasing or decreasing" = "increasing"
+        - \c "default values" \c = \c "DD-ML"
+        - \c "max levels" \c = \c 3
+        - \c "prec type" \c = \c "MGV"
+        - \c "increasing or decreasing" \c = \c "increasing"
    - Grid Transfer
-        - \c "aggregation: type" = "METIS"
-        - \c "aggregation: nodes per aggregate" = 512
-        - \c "aggregation: next-level aggregates per process" = 128
-        - \c "aggregation: damping factor" = 1.333
+        - \c "aggregation: type" \c = \c "METIS"
+        - \c "aggregation: nodes per aggregate" \c = \c 512
+        - \c "aggregation: next-level aggregates per process" \c = \c 128
+        - \c "aggregation: damping factor" \c = <tt>1.333</tt>
         - \c "eigen-analysis: type" \c = \c "power-method"
         - \c "eigen-analysis: iterations" \c = \c 20
    - Smoothing
-        - \c "smoother: sweeps" = 1
-        - \c "smoother: pre or post" = "both"
-        - \c "smoother: type" = "Aztec".  
-        - \c "smoother: Aztec options" = options
-        - \c "smoother: Aztec params" = params
-               - \c "smoother: Aztec as solver" = false
+        - \c "smoother: sweeps" \c = \c 1
+        - \c "smoother: pre or post" \c = \c "both"
+        - \c "smoother: type" \c = \c "Aztec"
+        - \c "smoother: Aztec options" \c = \c options
+        - \c "smoother: Aztec params" \c = \c params
+               - \c "smoother: Aztec as solver" \c = \c false
    - Coarse Solution
-        - \c "coarse: type" = "Amesos-KLU"
-        - \c "coarse: max size" = 128
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("DD-ML",...) should be used.
+        - \c "coarse: type" \c = \c "Amesos-KLU"
+        - \c "coarse: max size" \c = \c 128
  */
 int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList, 
                  Teuchos::RCP<std::vector<int> > &options,
@@ -296,32 +271,33 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
 
 // ============================================================================
 /*! Set values for Maxwell:
- * - \c "default values" \c = \c "maxwell"
+<br>
+    Note: This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("maxwell",...) should be used.
    - General
+        - \c "default values" \c = \c "maxwell"
         - \c "max levels" \c = \c 10
         - \c "prec type" \c = \c "MGV"
         - \c "increasing or decreasing" \c = \c "decreasing"
    - Grid Transfer
         - \c "aggregation: type" \c = \c "Uncoupled-MIS"
-        - \c "aggregation: damping factor" \c =   1.333
+        - \c "aggregation: damping factor" \c = <tt>1.333</tt>
         - \c "eigen-analysis: type" \c = \c "cg"
         - \c "eigen-analysis: iterations" \c = \c 10
-        - \c "aggregation: edge prolongator drop threshold" \c = 0.0
+        - \c "aggregation: edge prolongator drop threshold" \c = <tt>0.0</tt>
    - Smoothing
        - \c "smoother: sweeps" \c = \c 1
-       - \c "smoother: damping factor" \c =  1.0
+       - \c "smoother: damping factor" \c =  <tt>1.0</tt>
        - \c "smoother: pre or post" \c = \c "both"
        - \c "smoother: type" \c = \c "Hiptmair"
        - \c "smoother: Hiptmair efficient symmetric" \c = \c true
        - \c "subsmoother: type" \c = \c "Chebyshev"
-       - \c "subsmoother: Chebyshev alpha" \c = \c 20.0
+       - \c "subsmoother: Chebyshev alpha" \c = \c <tt>20.0</tt>
        - \c "subsmoother: node sweeps" \c = \c 4
        - \c "subsmoother: edge sweeps" \c = \c 4
    - Coarse Solution
        - \c "coarse: type" \c = \c "Amesos-KLU"
        - \c "coarse: max size" \c = \c 128
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("maxwell",...) should be used.
  */
 int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList, 
                  Teuchos::RCP<std::vector<int> > &options,
@@ -367,8 +343,11 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
 
 // ============================================================================
 /*! Set default values for smoothed aggregation for nonsymmetric problems:
-  - \c "default values" \c = \c "NSSA"
+<br>
+    Note: This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("NSSA",...) should be used.
    - General
+        - \c "default values" \c = \c "NSSA"
         - \c "max levels" \c = \c 10
         - \c "prec type" \c = \c "MGW"
         - \c "increasing or decreasing" \c = \c "increasing"
@@ -379,14 +358,12 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
         - \c "eigen-analysis: iterations" \c = \c 20
    - Smoothing
         - \c "smoother: sweeps" \c = \c 4
-        - \c "smoother: damping factor" \c = 0.67
+        - \c "smoother: damping factor" \c = <tt>0.67</tt>
         - \c "smoother: pre or post" \c = \c "post"
         - \c "smoother: type" \c = \c "symmetric Gauss-Seidel"
    - Coarse Solution
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 256
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("NSSA",...) should be used.
  */
 int ML_Epetra::SetDefaultsNSSA(ParameterList & inList, 
                  Teuchos::RCP<std::vector<int> > &options,
@@ -424,29 +401,30 @@ int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
 
 // ============================================================================
 /*! Same as SetDefaultsDD(), but used exact LU decompositions on subdomains.
-  - "default values" = DD-LU"
+<br>
+    Note: This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD-LU",...) should be used.
    - General
-        - \c "max levels" = 2
-        - \c "prec type" = MGV"
-        - \c "increasing or decreasing" = increasing"
+        - "default values" \c = \c "DD-LU"
+        - \c "max levels" \c = \c 2
+        - \c "prec type" \c = \c "MGV"
+        - \c "increasing or decreasing" \c = \c "increasing"
    - Grid Transfer
-        - \c "aggregation: type" = METIS"
-        - \c "aggregation: local aggregates" = 1
-        - \c "aggregation: damping factor" = \f$ 1.333\f$
+        - \c "aggregation: type" \c = \c "METIS"
+        - \c "aggregation: local aggregates" \c = \c 1
+        - \c "aggregation: damping factor" \c = <tt>1.333</tt>
         - \c "eigen-analysis: type" \c = \c "power-method"
         - \c "eigen-analysis: iterations" \c = \c 20
    - Smoothing
-        - \c "smoother: sweeps" = 1
-        - \c "smoother: pre or post" = both"
-        - \c "smoother: type" = Aztec". 
-        - \c "smoother: Aztec options" = options
-        - \c "smoother: Aztec params" = params
-        - \c "smoother: Aztec as solver" = false
+        - \c "smoother: sweeps" \c = \c 1
+        - \c "smoother: pre or post" \c = \c "both"
+        - \c "smoother: type" \c = \c "Aztec" 
+        - \c "smoother: Aztec options" \c = \c options
+        - \c "smoother: Aztec params" \c = \c params
+        - \c "smoother: Aztec as solver" \c = \c false
    - Coarse Solution
-        - \c "coarse: type" = Amesos-KLU"
-        - \c "coarse: max size" = 128
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("DD-LU",...) should be used.
+        - \c "coarse: type" \c = \c "Amesos-KLU"
+        - \c "coarse: max size" \c = \c 128
  */
 int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList, 
                  Teuchos::RCP<std::vector<int> > &options,
@@ -494,30 +472,31 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
 
 // ============================================================================
 /*! Same as SetDefaultsDD_3Levels but with LU factorizations subdomains.
- - \c "default values" = "DD-ML-LU"
+<br>
+    Note: This method should <b>not</b> be called directly.  Instead,
+    ML_Epetra::SetDefaults("DD-ML-LU",...) should be used.
    - General
-        - \c "max levels" = 3
-        - \c "prec type" = "MGV"
-        - \c "increasing or decreasing" = "increasing"
+        - \c "default values" \c = \c "DD-ML-LU"
+        - \c "max levels" \c = \c 3
+        - \c "prec type" \c = \c "MGV"
+        - \c "increasing or decreasing" \c = \c "increasing"
    - Grid Transfer
-        - \c "aggregation: type" = "METIS"
-        - \c "aggregation: nodes per aggregate" = 512
-        - \c "aggregation: next-level aggregates per process" = 128
-        - \c "aggregation: damping factor" = 1.333
+        - \c "aggregation: type" \c = \c "METIS"
+        - \c "aggregation: nodes per aggregate" \c = \c 512
+        - \c "aggregation: next-level aggregates per process" \c = \c 128
+        - \c "aggregation: damping factor" \c = <tt>1.333</tt>
         - \c "eigen-analysis: type" \c = \c "power-method"
         - \c "eigen-analysis: iterations" \c = \c 20
    - Smoothing
-        - \c "smoother: sweeps" = 1
-        - \c "smoother: pre or post" = "both"
-        - \c "smoother: type" = "Aztec".  
-        - \c "smoother: Aztec options" = options
-        - \c "smoother: Aztec params" = params
-               - \c "smoother: Aztec as solver" = false
+        - \c "smoother: sweeps" \c = \c 1
+        - \c "smoother: pre or post" \c = \c "both"
+        - \c "smoother: type" \c = \c "Aztec"
+        - \c "smoother: Aztec options" \c = \c options
+        - \c "smoother: Aztec params" \c = \c params
+               - \c "smoother: Aztec as solver" \c = \c false
    - Coarse Solution
-        - \c "coarse: type" = "Amesos-KLU"
-        - \c "coarse: max size" = 128
-    Note: This method should not be called directly.  Instead,
-    ML_Epetra::SetDefaults("DD-ML-LU",...) should be used.
+        - \c "coarse: type" \c = \c "Amesos-KLU"
+        - \c "coarse: max size" \c = \c 128
  */
 int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList, 
 			     Teuchos::RCP<std::vector<int> > &options,
