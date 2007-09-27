@@ -1052,9 +1052,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    } else {
      coarsen_scheme = ag->coarsen_scheme_level[ag->cur_level];
    }
-   if (mypid == 0)
-      printf("ML_Aggregate_Coarsen (level %d) scheme = %d\n", ag->cur_level,
-             coarsen_scheme);
    /*ms*/
    if (coarsen_scheme == ML_AGGR_HYBRIDUM) {
      if ( ndofs < 250 ) ndofs = 0; else ndofs = 1;
