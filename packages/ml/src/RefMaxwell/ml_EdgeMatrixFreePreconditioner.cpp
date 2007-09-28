@@ -323,10 +323,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
     ML_CHK_ERR(-2);
   }/*end if*/
-  else if(verbose_) printf("[%d] EMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
+  else if(very_verbose_) printf("[%d] EMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
 
   
-  if(verbose_) printf("[%d] Num Aggregates = %d\n",Comm_->MyPID(),NumAggregates);
+  if(very_verbose_) printf("[%d] Num Aggregates = %d\n",Comm_->MyPID(),NumAggregates);
   if(P==0) {fprintf(stderr,"ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
   
 #ifndef NO_OUTPUT
@@ -410,7 +410,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   /* Post-wrapping to convert to ML indexing */
 #ifdef HAVE_ML_EPETRAEXT
-  Prolongator_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Prolongator_,ProlongatorColMapTrans_,"Prolongator",verbose_));
+  Prolongator_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Prolongator_,ProlongatorColMapTrans_,"Prolongator",(verbose_&&!Comm_->MyPID())));
 #endif
   
   /* Cleanup */

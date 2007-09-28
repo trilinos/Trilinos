@@ -197,7 +197,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Sanity Check: We have at least some Dirichlet nodes */
   int HasInterior = numBCnodes != Nn;
-  if(verbose_) {
+  if(very_verbose_) {
     printf("[%d] HasInterior = %d %d/%d\n",Comm_->MyPID(),HasInterior,Nn-numBCnodes,Nn);
     if(!Comm_->MyPID()) printf("Edge Matrix: Unknowns = %d Nonzeros = %d\n",SM_Matrix_->NumGlobalRows(),SM_Matrix_->NumGlobalNonzeros());
   }
@@ -273,14 +273,14 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
 #ifdef HAVE_ML_EPETRAEXT
   /* Fix the solver maps for ML / Epetra compatibility */
-  SM_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*SM_Matrix_,SM_Matrix_Trans_,"SM",verbose_));
-  D0_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",verbose_));
-  D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",verbose_));
-  Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",verbose_));
-  M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",verbose_));
-  M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",verbose_));
-  TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",verbose_));
-  TMT_Agg_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Agg_Matrix_,TMT_Agg_Matrix_Trans_,"TMTA",verbose_));
+  SM_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*SM_Matrix_,SM_Matrix_Trans_,"SM",(verbose_&&!Comm_->MyPID())));
+  D0_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",(verbose_&&!Comm_->MyPID())));
+  D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",(verbose_&&!Comm_->MyPID())));
+  Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
+  M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
+  M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));
+  TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID())));
+  TMT_Agg_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Agg_Matrix_,TMT_Agg_Matrix_Trans_,"TMTA",(verbose_&&!Comm_->MyPID())));
 #endif
 
 #ifdef ML_TIMING
