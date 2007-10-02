@@ -504,6 +504,115 @@ Marzio Sala, D-INFK/ETHZ.
 
 C++ includes: MLAPI_InverseOperator.h ";
 
+%feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator()
+
+Empty constructor. ";
+
+%feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator(const Operator &Op, const
+string Type)
+
+Constructor for a given Operator and type, and default parameters. ";
+
+%feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator(const Operator &Op, const
+string Type, Teuchos::ParameterList &List)
+
+Constructor for a given Operator, type and parameters. ";
+
+%feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator(const InverseOperator &RHS)
+
+Copy constructor. ";
+
+%feature("docstring")  MLAPI::InverseOperator::~InverseOperator "MLAPI::InverseOperator::~InverseOperator()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::InverseOperator::Reshape "void
+MLAPI::InverseOperator::Reshape()
+
+Resets this object. ";
+
+%feature("docstring")  MLAPI::InverseOperator::Reshape "void
+MLAPI::InverseOperator::Reshape(const Operator &Op, const string Type)
+
+Reshapes the object with default values. ";
+
+%feature("docstring")  MLAPI::InverseOperator::Reshape "void
+MLAPI::InverseOperator::Reshape(const Operator &Op, const string Type,
+Teuchos::ParameterList &List)
+
+Reshapes the object by setting the Operator and the specified type. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetOperatorRangeSpace "const Space MLAPI::InverseOperator::GetOperatorRangeSpace() const
+
+Returns a reference to the range space of this object. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetOperatorDomainSpace
+"const Space MLAPI::InverseOperator::GetOperatorDomainSpace() const
+
+Returns a reference to the domain space of this object. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetRangeSpace "const
+Space MLAPI::InverseOperator::GetRangeSpace() const
+
+Returns a reference to the range space of this object. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetDomainSpace "const
+Space MLAPI::InverseOperator::GetDomainSpace() const
+
+Returns a reference to the domain space of this object. ";
+
+%feature("docstring")  MLAPI::InverseOperator::RCPRowMatrix "const
+Teuchos::RefCountPtr<Epetra_RowMatrix>
+MLAPI::InverseOperator::RCPRowMatrix() const
+
+Returns pointer of the internally stored ML_Epetra::RowMatrix object.
+";
+
+%feature("docstring")  MLAPI::InverseOperator::RowMatrix "Epetra_RowMatrix* MLAPI::InverseOperator::RowMatrix() const
+
+Returns pointer of the internally stored ML_Epetra::RowMatrix object.
+";
+
+%feature("docstring")  MLAPI::InverseOperator::GetOperator "const
+Operator& MLAPI::InverseOperator::GetOperator() const
+
+Returns a reference to the Operator of which this object defines the
+inverse. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetRCPData "Teuchos::RefCountPtr<Ifpack_Preconditioner>&
+MLAPI::InverseOperator::GetRCPData()
+
+Returns a pointer to the internally stored IFPACK preconditioner. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetRCPMLPrec "Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>&
+MLAPI::InverseOperator::GetRCPMLPrec()
+
+Returns a pointer to the internally stored IFPACK preconditioner. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetRCPData "const
+Teuchos::RefCountPtr<Ifpack_Preconditioner>&
+MLAPI::InverseOperator::GetRCPData() const
+
+Returns a pointer to the internally stored IFPACK preconditioner. ";
+
+%feature("docstring")  MLAPI::InverseOperator::GetRCPMLPrec "const
+Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>&
+MLAPI::InverseOperator::GetRCPMLPrec() const
+
+Returns a pointer to the internally stored ML preconditioner. ";
+
+%feature("docstring")  MLAPI::InverseOperator::Apply "int
+MLAPI::InverseOperator::Apply(const MultiVector &x, MultiVector &y)
+const
+
+Applies this object to vector lhs, returns values in rhs. ";
+
+%feature("docstring")  MLAPI::InverseOperator::Print "ostream&
+MLAPI::InverseOperator::Print(std::ostream &os, const bool
+verbose=true) const
+
+Prints out basic information about this object. ";
+
 
 // File: classMLAPI_1_1LinearCombinationAdd.xml
 %feature("docstring") MLAPI::LinearCombinationAdd "";
@@ -566,6 +675,30 @@ For an example of usage, see ml_blackboard_cpp
 Marzio Sala, SNL 9214
 
 C++ includes: MLAPI_MATLABStream.h ";
+
+%feature("docstring")  MLAPI::MATLABStream::MATLABStream "MLAPI::MATLABStream::MATLABStream(const string &FileName, bool
+UseSparse=true)
+
+Opens the specified file for writing. ";
+
+%feature("docstring")  MLAPI::MATLABStream::~MATLABStream "MLAPI::MATLABStream::~MATLABStream()
+
+Finally closes the output file. ";
+
+%feature("docstring")  MLAPI::MATLABStream::GetUseSparse "bool
+MLAPI::MATLABStream::GetUseSparse() const
+
+Returns true if the stream uses sparse MATLAB format. ";
+
+%feature("docstring")  MLAPI::MATLABStream::SetUseSparse "void
+MLAPI::MATLABStream::SetUseSparse(const bool UseSparse)
+
+Toggles the use of sparse MATLAB formats. ";
+
+%feature("docstring")  MLAPI::MATLABStream::GetFileName "string
+MLAPI::MATLABStream::GetFileName() const
+
+Returns the name of the output file. ";
 
 
 // File: classMLAPI_1_1ML__Operator__Box.xml
@@ -646,6 +779,189 @@ Marzio Sala, Ray Tuminaro, Jonathan Hu, Michael Gee, Marian Brezina.
 
 C++ includes: MLAPI_MultiLevelAdaptiveSA.h ";
 
+%feature("docstring")
+MLAPI::MultiLevelAdaptiveSA::MultiLevelAdaptiveSA "MLAPI::MultiLevelAdaptiveSA::MultiLevelAdaptiveSA(const Operator
+FineMatrix, Teuchos::ParameterList &List, const int NumPDEEqns, const
+int MaxLevels=20)
+
+Constructs the hierarchy for given Operator and parameters. ";
+
+%feature("docstring")
+MLAPI::MultiLevelAdaptiveSA::~MultiLevelAdaptiveSA "virtual
+MLAPI::MultiLevelAdaptiveSA::~MultiLevelAdaptiveSA()
+
+Destructor. ";
+
+%feature("docstring")
+MLAPI::MultiLevelAdaptiveSA::GetOperatorDomainSpace "const Space
+MLAPI::MultiLevelAdaptiveSA::GetOperatorDomainSpace() const
+
+Returns a copy of the internally stored domain space. ";
+
+%feature("docstring")
+MLAPI::MultiLevelAdaptiveSA::GetOperatorRangeSpace "const Space
+MLAPI::MultiLevelAdaptiveSA::GetOperatorRangeSpace() const
+
+Returns a copy of the internally stored range space. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetDomainSpace "const Space MLAPI::MultiLevelAdaptiveSA::GetDomainSpace() const
+
+Returns a copy of the internally stored domain space. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetRangeSpace "const Space MLAPI::MultiLevelAdaptiveSA::GetRangeSpace() const
+
+Returns a copy of the internally stored range space. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::R "Operator&
+MLAPI::MultiLevelAdaptiveSA::R(const int i)
+
+Returns a reference to the restriction operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::R "const
+Operator& MLAPI::MultiLevelAdaptiveSA::R(const int i) const
+
+Returns a reference to the restriction operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::A "Operator&
+MLAPI::MultiLevelAdaptiveSA::A(const int i)
+
+Returns a reference to the operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::A "const
+Operator& MLAPI::MultiLevelAdaptiveSA::A(const int i) const
+
+Returns a reference to the operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::P "Operator&
+MLAPI::MultiLevelAdaptiveSA::P(const int i)
+
+Returns a reference to the prolongator operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::P "const
+Operator& MLAPI::MultiLevelAdaptiveSA::P(const int i) const
+
+Returns a reference to the prolongator operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::S "InverseOperator& MLAPI::MultiLevelAdaptiveSA::S(const int i)
+
+Returns a reference to the inverse operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::S "const
+InverseOperator& MLAPI::MultiLevelAdaptiveSA::S(const int i) const
+
+Returns a reference to the inverse operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetMaxLevels "int
+MLAPI::MultiLevelAdaptiveSA::GetMaxLevels() const
+
+Returns the actual number of levels. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::SetMaxLevels "void MLAPI::MultiLevelAdaptiveSA::SetMaxLevels(const int MaxLevels)
+
+Returns the actual number of levels. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetNullSpace "const MultiVector MLAPI::MultiLevelAdaptiveSA::GetNullSpace() const
+
+Gets a reference to the internally stored null space. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::SetNullSpace "void MLAPI::MultiLevelAdaptiveSA::SetNullSpace(MultiVector &NullSpace)
+
+Sets the null space multi-vector to NullSpace. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::IsComputed "bool
+MLAPI::MultiLevelAdaptiveSA::IsComputed() const
+
+Returns true if the hierarchy has been successfully computed. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::SetList "void
+MLAPI::MultiLevelAdaptiveSA::SetList(Teuchos::ParameterList &List)
+
+Sets the internally stored list to List. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetSmootherType "string MLAPI::MultiLevelAdaptiveSA::GetSmootherType()
+
+Returns the smoother solver type. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetCoarseType "string MLAPI::MultiLevelAdaptiveSA::GetCoarseType()
+
+Returns the coarse solver type. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::SetInputNumPDEEqns
+"void MLAPI::MultiLevelAdaptiveSA::SetInputNumPDEEqns(const int n)
+
+Returns the number of PDE equations on the finest level. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetInputNumPDEEqns
+"int MLAPI::MultiLevelAdaptiveSA::GetInputNumPDEEqns()
+
+Returns the number of PDE equations on the current level. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetNumPDEEqns "int MLAPI::MultiLevelAdaptiveSA::GetNumPDEEqns()
+
+Sets the number of PDE equations on the current level. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::SetNumPDEEqns "void MLAPI::MultiLevelAdaptiveSA::SetNumPDEEqns(const int NumPDEEqns)
+";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetMaxCoarseSize "int MLAPI::MultiLevelAdaptiveSA::GetMaxCoarseSize()
+
+Returns the maximum allowed coarse size. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetMaxReduction "double MLAPI::MultiLevelAdaptiveSA::GetMaxReduction()
+
+Returns the maximum allowed reduction. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetNumItersCoarse
+"int MLAPI::MultiLevelAdaptiveSA::GetNumItersCoarse()
+
+Returns the maximum number of applications on the coarser levels. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetNumItersFine "int MLAPI::MultiLevelAdaptiveSA::GetNumItersFine()
+
+Returns the maximum number of applications on the finest level. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetComplexity "double MLAPI::MultiLevelAdaptiveSA::GetComplexity()
+
+Returns the multigrid preconditioner operator complexity. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::Compute "void
+MLAPI::MultiLevelAdaptiveSA::Compute()
+
+Creates an hierarchy using the provided or default null space. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::AdaptCompute "void MLAPI::MultiLevelAdaptiveSA::AdaptCompute(const bool
+UseDefaultOrSpecified, int AdditionalCandidates)
+
+Setup the adaptive multilevel hierarchy. ";
+
+%feature("docstring")
+MLAPI::MultiLevelAdaptiveSA::SetupInitialNullSpace "void
+MLAPI::MultiLevelAdaptiveSA::SetupInitialNullSpace()
+
+Computes the first component of the null space. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::IncrementNullSpace
+"bool MLAPI::MultiLevelAdaptiveSA::IncrementNullSpace()
+
+Increments the null space dimension by one. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::Apply "int
+MLAPI::MultiLevelAdaptiveSA::Apply(const MultiVector &b_f, MultiVector
+&x_f) const
+
+Applies the preconditioner to b_f, returns the result in x_f. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::SolveMultiLevelSA
+"int MLAPI::MultiLevelAdaptiveSA::SolveMultiLevelSA(const MultiVector
+&b_f, MultiVector &x_f, int level) const
+
+Recursively called core of the multi level preconditioner. ";
+
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::Print "std::ostream& MLAPI::MultiLevelAdaptiveSA::Print(std::ostream &os,
+const bool verbose=true) const
+
+Prints basic information about this preconditioner. ";
+
 
 // File: classMultiLevelPreconditioner.xml
 %feature("docstring") MultiLevelPreconditioner "
@@ -664,6 +980,88 @@ Marzio Sala, SNL 9214
 
 C++ includes: MLAPI_MultiLevelSA.h ";
 
+%feature("docstring")  MLAPI::MultiLevelSA::MultiLevelSA "MLAPI::MultiLevelSA::MultiLevelSA(const Operator FineMatrix,
+Teuchos::ParameterList &List, const bool ConstructNow=true)
+
+Constructs the hierarchy for given Operator and parameters. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::~MultiLevelSA "virtual
+MLAPI::MultiLevelSA::~MultiLevelSA()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::GetOperatorDomainSpace "const Space MLAPI::MultiLevelSA::GetOperatorDomainSpace() const
+
+Returns a copy of the internally stored domain space. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::GetOperatorRangeSpace "const Space MLAPI::MultiLevelSA::GetOperatorRangeSpace() const
+
+Returns a copy of the internally stored range space. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::GetDomainSpace "const
+Space MLAPI::MultiLevelSA::GetDomainSpace() const
+
+Returns a copy of the internally stored domain space. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::GetRangeSpace "const
+Space MLAPI::MultiLevelSA::GetRangeSpace() const
+
+Returns a copy of the internally stored range space. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::R "const Operator&
+MLAPI::MultiLevelSA::R(const int i) const
+
+Returns a reference to the restriction operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::A "const Operator&
+MLAPI::MultiLevelSA::A(const int i) const
+
+Returns a reference to the operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::P "const Operator&
+MLAPI::MultiLevelSA::P(const int i) const
+
+Returns a reference to the prolongator operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::S "const InverseOperator&
+MLAPI::MultiLevelSA::S(const int i) const
+
+Returns a reference to the inverse operator of level i. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::GetMaxLevels "int
+MLAPI::MultiLevelSA::GetMaxLevels() const
+
+Returns the actual number of levels. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::IsComputed "bool
+MLAPI::MultiLevelSA::IsComputed() const
+
+Returns true if the hierarchy has been successfully computed, false
+otherwise. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::Compute "void
+MLAPI::MultiLevelSA::Compute()
+
+Computes the hierarchy. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::Apply "int
+MLAPI::MultiLevelSA::Apply(const MultiVector &b_f, MultiVector &x_f)
+const
+
+Applies the preconditioner to b_f, returns the result in x_f. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::SolveMultiLevelSA "int
+MLAPI::MultiLevelSA::SolveMultiLevelSA(const MultiVector &b_f,
+MultiVector &x_f, int level) const
+
+Recursively called core of the multi level preconditioner. ";
+
+%feature("docstring")  MLAPI::MultiLevelSA::Print "std::ostream&
+MLAPI::MultiLevelSA::Print(std::ostream &os, const bool verbose=true)
+const
+
+Prints basic information about this preconditioner. ";
+
 
 // File: classMLAPI_1_1MultiVector.xml
 %feature("docstring") MLAPI::MultiVector "
@@ -673,6 +1071,190 @@ Basic class for distributed double-precision vectors.
 Marzio Sala, SNL 9214.
 
 C++ includes: MLAPI_MultiVector.h ";
+
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector()
+
+Default constructor. ";
+
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const Space &VectorSpace, const int
+NumVectors=1, bool SetToZero=true)
+
+Constructor for a given Space. ";
+
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const Space &VectorSpace, double
+**Values, const int NumVectors=1)
+
+Constructor with a given Space, and user-provided array of values. ";
+
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const Space &VectorSpace,
+Teuchos::RefCountPtr< DoubleVector > RCPValues)
+
+Constructor with a given Space, and user-provided RefCountPtr. ";
+
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const Space &VectorSpace, vector<
+Teuchos::RefCountPtr< DoubleVector > > RCPValues)
+
+Constructor with a given Space, and user-provided array of values. ";
+
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const MultiVector &rhs)
+
+Copy constructor. ";
+
+%feature("docstring")  MLAPI::MultiVector::~MultiVector "MLAPI::MultiVector::~MultiVector()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::MultiVector::Reshape "void
+MLAPI::MultiVector::Reshape()
+
+Resets this object. ";
+
+%feature("docstring")  MLAPI::MultiVector::Reshape "void
+MLAPI::MultiVector::Reshape(const Space &S, const int NumVectors=1,
+const bool SetToZero=true)
+
+Sets the space of this vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::Append "void
+MLAPI::MultiVector::Append(const int NumVectors=1, const bool
+SetToZero=true)
+
+Appends a new vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::Append "void
+MLAPI::MultiVector::Append(MultiVector rhs)
+
+Appends a new vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::Delete "void
+MLAPI::MultiVector::Delete(const int v)
+
+Deletes the last vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::GetVectorSpace "const
+Space& MLAPI::MultiVector::GetVectorSpace() const
+
+Returns the Space on which this vector is defined. ";
+
+%feature("docstring")  MLAPI::MultiVector::GetVectorSpace "Space&
+MLAPI::MultiVector::GetVectorSpace()
+
+Returns the Space on which this vector is defined (non-const). ";
+
+%feature("docstring")  MLAPI::MultiVector::GetNumVectors "int
+MLAPI::MultiVector::GetNumVectors() const
+
+Returns the number of vectors. ";
+
+%feature("docstring")  MLAPI::MultiVector::GetMyLength "int
+MLAPI::MultiVector::GetMyLength() const
+
+Returns the local length of each vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::GetGlobalLength "int
+MLAPI::MultiVector::GetGlobalLength() const
+
+Returns the global length of each vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::GetValues "double*
+MLAPI::MultiVector::GetValues(const int v)
+
+Returns a pointer to the double array (non-const version). ";
+
+%feature("docstring")  MLAPI::MultiVector::GetValues "const double*
+MLAPI::MultiVector::GetValues(const int v) const
+
+Returns a pointer to the double array (const version). ";
+
+%feature("docstring")  MLAPI::MultiVector::GetRCPValues "Teuchos::RefCountPtr<DoubleVector>&
+MLAPI::MultiVector::GetRCPValues(const int v)
+
+Returns a pointer to the double array (non-const version). ";
+
+%feature("docstring")  MLAPI::MultiVector::GetRCPValues "const
+Teuchos::RefCountPtr<DoubleVector>&
+MLAPI::MultiVector::GetRCPValues(const int v) const
+
+Returns a pointer to the double array (const version). ";
+
+%feature("docstring")  MLAPI::MultiVector::SetRCPValues "void
+MLAPI::MultiVector::SetRCPValues(const Teuchos::RefCountPtr<
+DoubleVector > &RCPValues, const int v)
+
+Sets the RefCountPtr<Values_>. ";
+
+%feature("docstring")  MLAPI::MultiVector::Update "void
+MLAPI::MultiVector::Update(const double alpha, int v=-1)
+
+Sets this(v) = rhs. ";
+
+%feature("docstring")  MLAPI::MultiVector::Update "void
+MLAPI::MultiVector::Update(const MultiVector &rhs)
+
+Sets this = rhs. ";
+
+%feature("docstring")  MLAPI::MultiVector::Update "void
+MLAPI::MultiVector::Update(double alpha, const MultiVector &rhs)
+
+Sets this = alpha * rhs. ";
+
+%feature("docstring")  MLAPI::MultiVector::Update "void
+MLAPI::MultiVector::Update(double alpha, const MultiVector &x, double
+beta, const MultiVector &y)
+
+Sets this = alpha * x + beta * y. ";
+
+%feature("docstring")  MLAPI::MultiVector::Update "void
+MLAPI::MultiVector::Update(double alpha, const MultiVector &rhs,
+double beta)
+
+Sets this = alpha * rhs + beta * this. ";
+
+%feature("docstring")  MLAPI::MultiVector::DotProduct "double
+MLAPI::MultiVector::DotProduct(const MultiVector &rhs, int v=-1) const
+
+Computes the dot product between this vector and rhs. ";
+
+%feature("docstring")  MLAPI::MultiVector::Norm2 "double
+MLAPI::MultiVector::Norm2(int v=-1) const
+
+Computes the 2-norm of this vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::NormInf "double
+MLAPI::MultiVector::NormInf(int v=-1) const
+
+Computes the infinite norm of this vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::NormOne "double
+MLAPI::MultiVector::NormOne(int v=-1) const
+
+Computes the one norm of this vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::Reciprocal "void
+MLAPI::MultiVector::Reciprocal(int v=-1)
+
+Replaces each element of the vector with its reciprocal. ";
+
+%feature("docstring")  MLAPI::MultiVector::Scale "void
+MLAPI::MultiVector::Scale(const double Factor, int v=-1)
+
+Scales each element by the specified factor. ";
+
+%feature("docstring")  MLAPI::MultiVector::Random "void
+MLAPI::MultiVector::Random(int v=-1)
+
+Populates the vector with random elements. ";
+
+%feature("docstring")  MLAPI::MultiVector::Sort "void
+MLAPI::MultiVector::Sort(int v=-1, const bool IsIncreasing=false)
+
+Sorts the component of the vector. ";
+
+%feature("docstring")  MLAPI::MultiVector::Print "virtual
+std::ostream& MLAPI::MultiVector::Print(std::ostream &os, const bool
+verbose=true) const
+
+Prints basic information about this object on ostream. ";
 
 %feature("docstring")  MLAPI::MultiVector::IsAlias "bool
 MLAPI::MultiVector::IsAlias(const MultiVector &rhs) const ";
@@ -735,6 +1317,158 @@ Marzio Sala, SNL 9214
 
 C++ includes: MLAPI_Operator.h ";
 
+%feature("docstring")  MLAPI::Operator::Operator "MLAPI::Operator::Operator()
+
+Default constructor. ";
+
+%feature("docstring")  MLAPI::Operator::Operator "MLAPI::Operator::Operator(const Space &DomainSpace, const Space
+&RangeSpace, ML_Operator *Op, bool Ownership=true,
+Teuchos::RefCountPtr< ML_Operator_Box > AuxOp=Teuchos::null)
+
+Constructor with given already computed ML_Operator pointer. ";
+
+%feature("docstring")  MLAPI::Operator::Operator "MLAPI::Operator::Operator(const Space &DomainSpace, const Space
+&RangeSpace, Epetra_RowMatrix *Matrix, bool Ownership=true,
+Teuchos::RefCountPtr< ML_Operator_Box > AuxOp=Teuchos::null)
+
+Constructor with given already FillComplete()'d object. ";
+
+%feature("docstring")  MLAPI::Operator::Operator "MLAPI::Operator::Operator(const Operator &RHS)
+
+Copy constructor. ";
+
+%feature("docstring")  MLAPI::Operator::~Operator "MLAPI::Operator::~Operator()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::Operator::Reshape "void
+MLAPI::Operator::Reshape()
+
+Resets this object. ";
+
+%feature("docstring")  MLAPI::Operator::Reshape "void
+MLAPI::Operator::Reshape(const Space &DomainSpace, const Space
+&RangeSpace, ML_Operator *Op, bool Ownership=true,
+Teuchos::RefCountPtr< ML_Operator_Box > AuxOp=Teuchos::null)
+
+Reshape with given already computed ML_Operator pointer. ";
+
+%feature("docstring")  MLAPI::Operator::Reshape "void
+MLAPI::Operator::Reshape(const Space &DomainSpace, const Space
+&RangeSpace, Epetra_RowMatrix *Matrix, bool Ownership=true,
+Teuchos::RefCountPtr< ML_Operator_Box > AuxOp=Teuchos::null)
+
+Reshape with given already FillComplete()'d object. ";
+
+%feature("docstring")  MLAPI::Operator::GetOperatorDomainSpace "const
+Space MLAPI::Operator::GetOperatorDomainSpace() const
+
+Returns a reference to the internally stored domain space. ";
+
+%feature("docstring")  MLAPI::Operator::GetOperatorRangeSpace "const
+Space MLAPI::Operator::GetOperatorRangeSpace() const
+
+Returns a reference to the internally stored range space. ";
+
+%feature("docstring")  MLAPI::Operator::GetDomainSpace "const Space
+MLAPI::Operator::GetDomainSpace() const
+
+Returns a reference to the internally stored domain space. ";
+
+%feature("docstring")  MLAPI::Operator::GetRangeSpace "const Space
+MLAPI::Operator::GetRangeSpace() const
+
+Returns a reference to the internally stored range space. ";
+
+%feature("docstring")  MLAPI::Operator::GetColumnSpace "const Space
+MLAPI::Operator::GetColumnSpace() const
+
+Returns a reference to the internally stored column space. ";
+
+%feature("docstring")  MLAPI::Operator::GetNumGlobalRows "int
+MLAPI::Operator::GetNumGlobalRows() const
+
+Returns the number of global rows. ";
+
+%feature("docstring")  MLAPI::Operator::GetNumMyRows "int
+MLAPI::Operator::GetNumMyRows() const
+
+Returns the number of local rows. ";
+
+%feature("docstring")  MLAPI::Operator::GetNumGlobalCols "int
+MLAPI::Operator::GetNumGlobalCols() const
+
+Returns the number of global columns. ";
+
+%feature("docstring")  MLAPI::Operator::GetNumMyCols "int
+MLAPI::Operator::GetNumMyCols() const
+
+Returns the number of local columns. ";
+
+%feature("docstring")  MLAPI::Operator::GetNumGlobalNonzeros "int
+MLAPI::Operator::GetNumGlobalNonzeros() const
+
+Returns the global number of nonzeros. ";
+
+%feature("docstring")  MLAPI::Operator::GetNumMyNonzeros "int
+MLAPI::Operator::GetNumMyNonzeros() const
+
+Returns the local number of nonzeros. ";
+
+%feature("docstring")  MLAPI::Operator::GetRowMatrix "const
+Epetra_RowMatrix* MLAPI::Operator::GetRowMatrix() const
+
+Returns the RefCountPtr of OperatorBox_. ";
+
+%feature("docstring")  MLAPI::Operator::GetML_Operator "ML_Operator*
+MLAPI::Operator::GetML_Operator() const
+
+Returns the RefCountPtr of OperatorBox_. ";
+
+%feature("docstring")  MLAPI::Operator::GetRCPOperatorBox "const
+Teuchos::RefCountPtr<ML_Operator_Box>&
+MLAPI::Operator::GetRCPOperatorBox() const
+
+Returns the RefCountPtr of OperatorBox_. ";
+
+%feature("docstring")  MLAPI::Operator::GetRCPAuxOperatorBox "const
+Teuchos::RefCountPtr<ML_Operator_Box>&
+MLAPI::Operator::GetRCPAuxOperatorBox() const
+
+Returns the RefCountPtr of AuxOperatorBox_. ";
+
+%feature("docstring")  MLAPI::Operator::GetRCPRowMatrix "const
+Teuchos::RefCountPtr<Epetra_RowMatrix>&
+MLAPI::Operator::GetRCPRowMatrix() const
+
+Returns the RefCountPtr of RowMatrix_. ";
+
+%feature("docstring")  MLAPI::Operator::GetGRID "int
+MLAPI::Operator::GetGRID(const int LRID) const
+
+Returns the global ID of local row ID LRID. ";
+
+%feature("docstring")  MLAPI::Operator::GetGCID "int
+MLAPI::Operator::GetGCID(const int LCID) const
+
+Returns the global ID of local column ID LCID. ";
+
+%feature("docstring")  MLAPI::Operator::Apply "int
+MLAPI::Operator::Apply(const MultiVector &X, MultiVector &Y) const
+
+Applies this operator to LHS, returns the result in RHS. ";
+
+%feature("docstring")  MLAPI::Operator::Print "ostream&
+MLAPI::Operator::Print(std::ostream &os, const bool verbose=true)
+const
+
+Prints basic information about this object. ";
+
+%feature("docstring")  MLAPI::Operator::BuildColumnSpace "void
+MLAPI::Operator::BuildColumnSpace()
+
+Build the column space, by computing the GID of all local columns. ";
+
 
 // File: classMLAPI_1_1Residual.xml
 %feature("docstring") MLAPI::Residual "";
@@ -773,6 +1507,109 @@ Specifies the number and distribution among processes of elements.
 Marzio Sala, SNL 9214
 
 C++ includes: MLAPI_Space.h ";
+
+%feature("docstring")  MLAPI::Space::Space "MLAPI::Space::Space()
+
+Default constructor, defines an empty space. ";
+
+%feature("docstring")  MLAPI::Space::Space "MLAPI::Space::Space(const
+int NumGlobalElements, const int NumMyElements=-1)
+
+Constructor with specified number of global and local elements.
+
+Constructs a space with linear distribution.
+
+Parameters:
+-----------
+
+NumGlobalElements:  - (In) number of global elements.
+
+NumMyElements:  - (In) number of local elements. If different from -1,
+then eithere NumGlobalElements == -1, or the sum across of processors
+of NumMyElements equals NumGlobalElements ";
+
+%feature("docstring")  MLAPI::Space::Space "MLAPI::Space::Space(const
+Epetra_Map &Map)
+
+Constructor with specified Epetra_Map. ";
+
+%feature("docstring")  MLAPI::Space::Space "MLAPI::Space::Space(const
+int NumGlobalElements, const int NumMyElements, const int
+*MyGlobalElements)
+
+Constructor for non-linear distributions.
+
+Parameters:
+-----------
+
+NumGlobalElements:  - (In) number of global elements. Set to -1 to
+compute it automatically.
+
+NumMyElements:  - (In) number of local elements. Cannot be set to -1.
+
+MyGlobalElements:  - (In) contains the global ID of each local node.
+
+Global ID always starts from 0. ";
+
+%feature("docstring")  MLAPI::Space::Space "MLAPI::Space::Space(const
+Space &RHS)
+
+Copy constructor. ";
+
+%feature("docstring")  MLAPI::Space::~Space "MLAPI::Space::~Space()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::Space::Reshape "void
+MLAPI::Space::Reshape()
+
+Resets this object. ";
+
+%feature("docstring")  MLAPI::Space::Reshape "void
+MLAPI::Space::Reshape(const int NumGlobalElements, const int
+NumMyElements=-1)
+
+Resets the dimension of the space by specifying the local number of
+elements. ";
+
+%feature("docstring")  MLAPI::Space::Reshape "void
+MLAPI::Space::Reshape(const int NumGlobalElements, const int
+NumMyElements, const int *MyGlobalElements)
+
+Reset the dimension of the space by specifying the local number of
+elements and their global numbering (starting from 0). ";
+
+%feature("docstring")  MLAPI::Space::GetNumMyElements "int
+MLAPI::Space::GetNumMyElements() const
+
+Returns the local number of elements on the calling process. ";
+
+%feature("docstring")  MLAPI::Space::GetNumGlobalElements "int
+MLAPI::Space::GetNumGlobalElements() const
+
+Returns the global number of elements. ";
+
+%feature("docstring")  MLAPI::Space::GetOffset "int
+MLAPI::Space::GetOffset() const
+
+Returns the global ID of the first element on the calling process (for
+linear distributions only). ";
+
+%feature("docstring")  MLAPI::Space::IsLinear "bool
+MLAPI::Space::IsLinear() const
+
+Returns true if the decomposition among processors is linear. ";
+
+%feature("docstring")  MLAPI::Space::GetRCPMyGlobalElements "const
+Teuchos::RefCountPtr<Epetra_IntSerialDenseVector>
+MLAPI::Space::GetRCPMyGlobalElements() const
+
+Returns a pointer to the list of global nodes. ";
+
+%feature("docstring")  MLAPI::Space::Print "std::ostream&
+MLAPI::Space::Print(std::ostream &os, const bool verbose=true) const
+
+Prints on ostream basic information about this object. ";
 
 
 // File: structMLAPI_1_1StackEntry.xml

@@ -362,6 +362,29 @@ the Broyden matrix, e.g. a block diagonal matrix.
 
 C++ includes: NOX_Epetra_BroydenOperator.H ";
 
+/*  "Is" functions  */
+
+/* Checks to see if various objects have been computed. Returns true
+if the corresponding \"compute\" function has been called since the
+last update to the solution vector (via instantiation or computeX).
+
+*/
+
+%feature("docstring")  NOX::Epetra::BroydenOperator::isStep "bool
+BroydenOperator::isStep() const ";
+
+%feature("docstring")  NOX::Epetra::BroydenOperator::isYield "bool
+BroydenOperator::isYield() const ";
+
+%feature("docstring")  NOX::Epetra::BroydenOperator::isBroyden "bool
+BroydenOperator::isBroyden() const ";
+
+/*  IsValid flags  */
+
+/* True if objects are current with respect to the currect stepVec.
+
+*/
+
 %feature("docstring")  NOX::Epetra::BroydenOperator::BroydenOperator "BroydenOperator::BroydenOperator(Teuchos::ParameterList &nlParams,
 const Teuchos::RCP< NOX::Utils > &utils, Epetra_Vector &solnVec, const
 Teuchos::RCP< Epetra_CrsMatrix > &broydMat0, bool verbose=false)
@@ -719,6 +742,80 @@ searches that failed and used a recovery step.
 inner iterations $ k $ performed by this object.
 
 C++ includes: NOX_LineSearch_Utils_Counters.H ";
+
+/*  Increment Methods  */
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::incrementNumLineSearches "void
+NOX::LineSearch::Utils::Counters::incrementNumLineSearches(int n=1)
+
+Increment the counter for the total number of line search calls by n.
+";
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::incrementNumNonTrivialLineSearches "void
+NOX::LineSearch::Utils::Counters::incrementNumNonTrivialLineSearches(int
+n=1)
+
+Increment the counter for the total number of non-trivial line search
+calls by n. ";
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::incrementNumFailedLineSearches "void
+NOX::LineSearch::Utils::Counters::incrementNumFailedLineSearches(int
+n=1)
+
+Increment the counter for the total number of failed line search calls
+by n. ";
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::incrementNumIterations "void
+NOX::LineSearch::Utils::Counters::incrementNumIterations(int n=1)
+
+Increment the counter for the total number of line search inner
+iterations by n. ";
+
+/*  Accessor Methods  */
+
+/* Returns the current counter value
+
+*/
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::getNumLineSearches "int
+NOX::LineSearch::Utils::Counters::getNumLineSearches() const
+
+Return the counter for the total number of line search calls. ";
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::getNumNonTrivialLineSearches "int
+NOX::LineSearch::Utils::Counters::getNumNonTrivialLineSearches() const
+
+Return the counter for the total number of non-trivial line search
+calls. ";
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::getNumFailedLineSearches "int
+NOX::LineSearch::Utils::Counters::getNumFailedLineSearches() const
+
+Return the counter for the total number of failed line search calls.
+";
+
+%feature("docstring")
+NOX::LineSearch::Utils::Counters::getNumIterations "int
+NOX::LineSearch::Utils::Counters::getNumIterations() const
+
+Return the counter for the total number of line search inner
+iterations. ";
+
+/*  Common Line Search Data Members  */
+
+/* All line searches in general should report the following
+information. We save a pointer to the parameter list associated with
+the line search and set an output sublist with each of the following
+parameters.
+
+*/
 
 %feature("docstring")  NOX::LineSearch::Utils::Counters::Counters "NOX::LineSearch::Utils::Counters::Counters()
 
@@ -2453,6 +2550,116 @@ be treated for the operator=() and clone() functions.
 
 C++ includes: NOX_Multiphysics_Group.H ";
 
+%feature("docstring")  NOX::Multiphysics::Group::setX "void
+NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector &y)
+
+Set the solution vector x to y.
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Multiphysics::Group::computeX "void
+NOX::Multiphysics::Group::computeX(const NOX::Abstract::Group &grp,
+const NOX::Abstract::Vector &d, double step)
+
+Compute x = grp.x + step * d.
+
+Let $x$ denote this group's solution vector. Let $\\\\hat x$ denote
+the result of grp.getX(). Then set \\\\[ x = \\\\hat x +
+\\\\mbox{step} \\\\; d. \\\\]
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Multiphysics::Group::computeF "NOX::Abstract::Group::ReturnType NOX::Multiphysics::Group::computeF()
+
+Compute and store F(x).
+
+It's generally useful to also compute and store the 2-norm of F(x) at
+this point for later access by the getNormF() function.
+
+NOX::Abstract::Group::Failed - If the computation fails in any way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+/*  "Is" functions.  */
+
+/* Checks to see if various objects have been computed. Returns true
+if the corresponding \"compute\" function has been called since the
+last change to the solution vector.
+
+*/
+
+%feature("docstring")  NOX::Multiphysics::Group::isF "bool
+NOX::Multiphysics::Group::isF() const
+
+Return true if F is valid. ";
+
+/*  "Get" functions.  */
+
+/* Note that these function do not check whether or not the vectors
+are valid. Must use the \"Is\" functions for that purpose.
+
+*/
+
+%feature("docstring")  NOX::Multiphysics::Group::getX "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getX() const
+
+Return solution vector. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getF "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getF() const
+
+Return F(x). ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getNormF "double
+NOX::Multiphysics::Group::getNormF() const
+
+Return 2-norm of F(x).
+
+In other words, \\\\[ \\\\sqrt{\\\\sum_{i=1}^n F_i^2} \\\\] ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getGradient "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getGradient() const
+
+Return gradient. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::getNewton "const
+NOX::Abstract::Vector & NOX::Multiphysics::Group::getNewton() const
+
+Return Newton direction. ";
+
+%feature("docstring")  NOX::Multiphysics::Group::clone "Teuchos::RCP<
+NOX::Abstract::Group > NOX::Multiphysics::Group::clone(NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a new Group of the same derived type as this one by cloning
+this one, and return a ref count pointer to the new group.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (only the memory is allocated, the values are
+not copied into the vectors and Jacobian). Returns NULL if clone is
+not supported.
+
+Any shared data should have its ownership transfered to this group
+from the source for a NOX::DeepCopy. ";
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
 %feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Teuchos::RCP< vector<
 Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const Teuchos::RCP<
 NOX::StatusTest::Generic > &t, const Teuchos::RCP<
@@ -2494,6 +2701,392 @@ be treated for the operator=() and clone() functions.
 
 C++ includes: NOX_Abstract_Group.H ";
 
+%feature("docstring")  NOX::Abstract::Group::setX "virtual void
+NOX::Abstract::Group::setX(const NOX::Abstract::Vector &y)=0
+
+Set the solution vector x to y.
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Group::computeX "virtual void
+NOX::Abstract::Group::computeX(const NOX::Abstract::Group &grp, const
+NOX::Abstract::Vector &d, double step)=0
+
+Compute x = grp.x + step * d.
+
+Let $x$ denote this group's solution vector. Let $\\\\hat x$ denote
+the result of grp.getX(). Then set \\\\[ x = \\\\hat x +
+\\\\mbox{step} \\\\; d. \\\\]
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Group::computeF "virtual
+NOX::Abstract::Group::ReturnType NOX::Abstract::Group::computeF()=0
+
+Compute and store F(x).
+
+It's generally useful to also compute and store the 2-norm of F(x) at
+this point for later access by the getNormF() function.
+
+NOX::Abstract::Group::Failed - If the computation fails in any way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Abstract::Group::computeJacobian "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::computeJacobian()
+
+Compute and store Jacobian.
+
+Recall that \\\\[ F(x) = \\\\left[ \\\\begin{array}{c} F_1(x) \\\\\\\\
+F_2(x) \\\\\\\\ \\\\vdots \\\\\\\\ F_n(x) \\\\\\\\ \\\\end{array}
+\\\\right]. \\\\]
+
+The Jacobian is denoted by $J$ and defined by \\\\[ J_{ij} =
+\\\\frac{\\\\partial F_i}{\\\\partial x_j} (x). \\\\]
+
+If this is a shared object, this group should taken ownership of the
+Jacobian before it computes it.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Abstract::Group::computeGradient "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::computeGradient()
+
+Compute and store gradient.
+
+We can pose the nonlinear equation problem $F(x) = 0$ as an
+optimization problem as follows: \\\\[ \\\\min f(x) \\\\equiv
+\\\\frac{1}{2} \\\\|F(x)\\\\|_2^2. \\\\]
+
+In that case, the gradient (of $f$) is defined as \\\\[ g \\\\equiv
+J^T F. \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
+been computed
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Abstract::Group::computeNewton "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::computeNewton(Teuchos::ParameterList &params)
+
+Compute the Newton direction, using parameters for the linear solve.
+
+The Newton direction is the solution, s, of \\\\[ J s = -F. \\\\]
+
+The parameters are from the \"Linear %Solver\" sublist of the
+\"Direction\" sublist that is passed to solver during construction.
+
+The \"Tolerance\" parameter may be added/modified in the sublist of
+\"Linear Solver\" parameters that is passed into this function. The
+solution should be such that \\\\[ \\\\frac{\\\\| J s - (-F)
+\\\\|_2}{\\\\max \\\\{ 1, \\\\|F\\\\|_2\\\\} } < \\\\mbox{Tolerance}
+\\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
+been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+/*  Jacobian operations.  */
+
+/* Operations using the Jacobian matrix.
+
+*/
+
+%feature("docstring")  NOX::Abstract::Group::applyJacobian "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobian(const NOX::Abstract::Vector
+&input, NOX::Abstract::Vector &result) const
+
+Applies Jacobian to the given input vector and puts the answer in the
+result.
+
+Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If the Jacobian $J$ has not been
+computed
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Abstract::Group::applyJacobianTranspose "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianTranspose(const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies Jacobian-Transpose to the given input vector and puts the
+answer in the result.
+
+Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Abstract::Group::applyJacobianInverse "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianInverse(Teuchos::ParameterList
+&params, const NOX::Abstract::Vector &input, NOX::Abstract::Vector
+&result) const
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameter \"Tolerance\" may be added/modified in the list of
+parameters - this is the ideal solution tolerance for an iterative
+linear solve. ";
+
+%feature("docstring")  NOX::Abstract::Group::applyRightPreconditioning
+"NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
+Teuchos::ParameterList &params, const NOX::Abstract::Vector &input,
+NOX::Abstract::Vector &result) const
+
+Apply right preconditiong to the given input vector.
+
+Let $M$ be a right preconditioner for the Jacobian $J$; in other
+words, $M$ is a matrix such that \\\\[ JM \\\\approx I. \\\\]
+
+Compute \\\\[ u = M^{-1} v, \\\\] where $u$ is the input vector and
+$v$ is the result vector.
+
+If useTranspose is true, then the transpose of the preconditioner is
+applied: \\\\[ u = {M^{-1}}^T v, \\\\] The transpose preconditioner is
+currently only required for Tensor methods.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| M v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameters are from the \"Linear %Solver\" sublist of the
+\"Direction\" sublist that is passed to solver during construction. ";
+
+/*  Block Jacobian operations.  */
+
+/* Operations using the Jacobian matrix.
+
+*/
+
+%feature("docstring")  NOX::Abstract::Group::applyJacobianMultiVector
+"NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianMultiVector(const
+NOX::Abstract::MultiVector &input, NOX::Abstract::MultiVector &result)
+const
+
+applyJacobian for multiple right-hand sides
+
+The default implementation here calls applyJacobian() for each right
+hand side serially but should be overloaded if a block method is
+available. ";
+
+%feature("docstring")
+NOX::Abstract::Group::applyJacobianTransposeMultiVector "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianTransposeMultiVector(const
+NOX::Abstract::MultiVector &input, NOX::Abstract::MultiVector &result)
+const
+
+applyJacobianTranspose for multiple right-hand sides
+
+The default implementation here calls applyJacobianTranspose() for
+each right hand side serially but should be overloaded if a block
+method is available. ";
+
+%feature("docstring")
+NOX::Abstract::Group::applyJacobianInverseMultiVector "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianInverseMultiVector(Teuchos::ParameterList
+&params, const NOX::Abstract::MultiVector &input,
+NOX::Abstract::MultiVector &result) const
+
+applyJacobianInverse for multiple right-hand sides
+
+The default implementation here calls applyJacobianInverse() for each
+right hand side serially but should be overloaded if a block solver is
+available. ";
+
+%feature("docstring")
+NOX::Abstract::Group::applyRightPreconditioningMultiVector "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyRightPreconditioningMultiVector(bool
+useTranspose, Teuchos::ParameterList &params, const
+NOX::Abstract::MultiVector &input, NOX::Abstract::MultiVector &result)
+const
+
+applyRightPreconditioning for multiple right-hand sides
+
+The default implementation here calls applyRightPreconditioning() for
+each right hand side serially but should be overloaded if a block
+method is available. ";
+
+/*  "Is" functions.  */
+
+/* Checks to see if various objects have been computed. Returns true
+if the corresponding \"compute\" function has been called since the
+last change to the solution vector.
+
+*/
+
+%feature("docstring")  NOX::Abstract::Group::isF "virtual bool
+NOX::Abstract::Group::isF() const =0
+
+Return true if F is valid. ";
+
+%feature("docstring")  NOX::Abstract::Group::isJacobian "bool
+NOX::Abstract::Group::isJacobian() const
+
+Return true if the Jacobian is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Abstract::Group::isGradient "bool
+NOX::Abstract::Group::isGradient() const
+
+Return true if the gradient is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Abstract::Group::isNewton "bool
+NOX::Abstract::Group::isNewton() const
+
+Return true if the Newton direction is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+/*  "Get" functions.  */
+
+/* Note that these function do not check whether or not the vectors
+are valid. Must use the \"Is\" functions for that purpose.
+
+*/
+
+%feature("docstring")  NOX::Abstract::Group::getX "virtual const
+NOX::Abstract::Vector& NOX::Abstract::Group::getX() const =0
+
+Return solution vector. ";
+
+%feature("docstring")  NOX::Abstract::Group::getF "virtual const
+NOX::Abstract::Vector& NOX::Abstract::Group::getF() const =0
+
+Return F(x). ";
+
+%feature("docstring")  NOX::Abstract::Group::getNormF "virtual double
+NOX::Abstract::Group::getNormF() const =0
+
+Return 2-norm of F(x).
+
+In other words, \\\\[ \\\\sqrt{\\\\sum_{i=1}^n F_i^2} \\\\] ";
+
+%feature("docstring")  NOX::Abstract::Group::getGradient "virtual
+const NOX::Abstract::Vector& NOX::Abstract::Group::getGradient() const
+=0
+
+Return gradient. ";
+
+%feature("docstring")  NOX::Abstract::Group::getNewton "virtual const
+NOX::Abstract::Vector& NOX::Abstract::Group::getNewton() const =0
+
+Return Newton direction. ";
+
+%feature("docstring")
+NOX::Abstract::Group::getNormLastLinearSolveResidual "NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::getNormLastLinearSolveResidual(double &residual)
+const
+
+Return the norm of the last linear solve residual as the result of
+either a call to computeNewton() or applyJacobianInverse().
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If no linear solve has been
+calculated
+
+NOX::Abstract::Group::Failed - Any other type of failure
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Abstract::Group::clone "virtual
+Teuchos::RCP<NOX::Abstract::Group>
+NOX::Abstract::Group::clone(NOX::CopyType type=NOX::DeepCopy) const =0
+
+Create a new Group of the same derived type as this one by cloning
+this one, and return a ref count pointer to the new group.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (only the memory is allocated, the values are
+not copied into the vectors and Jacobian). Returns NULL if clone is
+not supported.
+
+Any shared data should have its ownership transfered to this group
+from the source for a NOX::DeepCopy. ";
+
 %feature("docstring")  NOX::Abstract::Group::Group "NOX::Abstract::Group::Group()
 
 Constructor.
@@ -2517,6 +3110,388 @@ through the Trilinos/Epetra package with AztecOO for the linear
 solver.
 
 C++ includes: NOX_Epetra_Group.H ";
+
+/*  "Compute" functions.  */
+
+%feature("docstring")  NOX::Epetra::Group::setX "void
+Group::setX(const NOX::Epetra::Vector &y) ";
+
+%feature("docstring")  NOX::Epetra::Group::setX "void
+Group::setX(const NOX::Abstract::Vector &y)
+
+Set the solution vector x to y.
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Group::computeX "void
+Group::computeX(const Group &grp, const NOX::Epetra::Vector &d, double
+step) ";
+
+%feature("docstring")  NOX::Epetra::Group::computeX "void
+Group::computeX(const NOX::Abstract::Group &grp, const
+NOX::Abstract::Vector &d, double step)
+
+Compute x = grp.x + step * d.
+
+Let $x$ denote this group's solution vector. Let $\\\\hat x$ denote
+the result of grp.getX(). Then set \\\\[ x = \\\\hat x +
+\\\\mbox{step} \\\\; d. \\\\]
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Group::computeF "Abstract::Group::ReturnType Group::computeF()
+
+Compute and store F(x).
+
+It's generally useful to also compute and store the 2-norm of F(x) at
+this point for later access by the getNormF() function.
+
+NOX::Abstract::Group::Failed - If the computation fails in any way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::computeJacobian "Abstract::Group::ReturnType Group::computeJacobian()
+
+Compute and store Jacobian.
+
+Recall that \\\\[ F(x) = \\\\left[ \\\\begin{array}{c} F_1(x) \\\\\\\\
+F_2(x) \\\\\\\\ \\\\vdots \\\\\\\\ F_n(x) \\\\\\\\ \\\\end{array}
+\\\\right]. \\\\]
+
+The Jacobian is denoted by $J$ and defined by \\\\[ J_{ij} =
+\\\\frac{\\\\partial F_i}{\\\\partial x_j} (x). \\\\]
+
+If this is a shared object, this group should taken ownership of the
+Jacobian before it computes it.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::computeGradient "Abstract::Group::ReturnType Group::computeGradient()
+
+Compute and store gradient.
+
+We can pose the nonlinear equation problem $F(x) = 0$ as an
+optimization problem as follows: \\\\[ \\\\min f(x) \\\\equiv
+\\\\frac{1}{2} \\\\|F(x)\\\\|_2^2. \\\\]
+
+In that case, the gradient (of $f$) is defined as \\\\[ g \\\\equiv
+J^T F. \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
+been computed
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::computeNewton "Abstract::Group::ReturnType
+Group::computeNewton(Teuchos::ParameterList &params)
+
+Compute the Newton direction, using parameters for the linear solve.
+
+The Newton direction is the solution, s, of \\\\[ J s = -F. \\\\]
+
+The parameters are from the \"Linear %Solver\" sublist of the
+\"Direction\" sublist that is passed to solver during construction.
+
+The \"Tolerance\" parameter may be added/modified in the sublist of
+\"Linear Solver\" parameters that is passed into this function. The
+solution should be such that \\\\[ \\\\frac{\\\\| J s - (-F)
+\\\\|_2}{\\\\max \\\\{ 1, \\\\|F\\\\|_2\\\\} } < \\\\mbox{Tolerance}
+\\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
+been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+/*  Jacobian operations.  */
+
+/* Operations using the Jacobian matrix. These may not be defined in
+matrix-free scenarios.
+
+*/
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobian "Abstract::Group::ReturnType Group::applyJacobian(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobian "Abstract::Group::ReturnType Group::applyJacobian(const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies Jacobian to the given input vector and puts the answer in the
+result.
+
+Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If the Jacobian $J$ has not been
+computed
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianTranspose "Abstract::Group::ReturnType Group::applyJacobianTranspose(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianTranspose "Abstract::Group::ReturnType Group::applyJacobianTranspose(const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies Jacobian-Transpose to the given input vector and puts the
+answer in the result.
+
+Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianInverse "Abstract::Group::ReturnType
+Group::applyJacobianInverse(Teuchos::ParameterList &params, const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameter \"Tolerance\" may be added/modified in the list of
+parameters - this is the ideal solution tolerance for an iterative
+linear solve.
+
+The parameter \"Reuse Preconditioner\" is a boolean that tells the
+group to turn off control of preconditioner recalculation. This is a
+dangerous flag but can really speed the computations if the user knows
+what they are doing. Toggling this flag is left to the user (ideally
+it should be done through a status test). Defaults to false. ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianInverse "Abstract::Group::ReturnType
+Group::applyJacobianInverse(Teuchos::ParameterList &params, const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameter \"Tolerance\" may be added/modified in the list of
+parameters - this is the ideal solution tolerance for an iterative
+linear solve. ";
+
+%feature("docstring")  NOX::Epetra::Group::applyRightPreconditioning "Abstract::Group::ReturnType Group::applyRightPreconditioning(bool
+useTranspose, Teuchos::ParameterList &params, const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
+
+%feature("docstring")  NOX::Epetra::Group::applyRightPreconditioning "Abstract::Group::ReturnType Group::applyRightPreconditioning(bool
+useTranspose, Teuchos::ParameterList &params, const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Apply right preconditiong to the given input vector.
+
+Let $M$ be a right preconditioner for the Jacobian $J$; in other
+words, $M$ is a matrix such that \\\\[ JM \\\\approx I. \\\\]
+
+Compute \\\\[ u = M^{-1} v, \\\\] where $u$ is the input vector and
+$v$ is the result vector.
+
+If useTranspose is true, then the transpose of the preconditioner is
+applied: \\\\[ u = {M^{-1}}^T v, \\\\] The transpose preconditioner is
+currently only required for Tensor methods.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| M v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameters are from the \"Linear %Solver\" sublist of the
+\"Direction\" sublist that is passed to solver during construction. ";
+
+/*  "Is" functions  */
+
+/* Checks to see if various objects have been computed. Returns true
+if the corresponding \"compute\" function has been called since the
+last update to the solution vector (via instantiation or computeX).
+
+*/
+
+%feature("docstring")  NOX::Epetra::Group::isF "bool Group::isF()
+const
+
+Return true if F is valid. ";
+
+%feature("docstring")  NOX::Epetra::Group::isJacobian "bool
+Group::isJacobian() const
+
+Return true if the Jacobian is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Epetra::Group::isGradient "bool
+Group::isGradient() const
+
+Return true if the gradient is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Epetra::Group::isNewton "bool
+Group::isNewton() const
+
+Return true if the Newton direction is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Epetra::Group::isNormNewtonSolveResidual "bool Group::isNormNewtonSolveResidual() const
+
+Returns true if the value of the Norm of the linear model for a full
+Newton step ||Js + f|| is valid with respect to the current solution
+vector. ";
+
+%feature("docstring")  NOX::Epetra::Group::isPreconditioner "bool
+Group::isPreconditioner() const
+
+Returns true if an explicitly constructed preconditioner exists (i.e.
+one that is computed and saved for further use in multiple calls to
+applyRightPreconditioner). ";
+
+%feature("docstring")  NOX::Epetra::Group::isConditionNumber "bool
+Group::isConditionNumber() const
+
+Returns true if the condition number has been computed. ";
+
+/*  "Get" functions  */
+
+/* Note that these function do not check whether or not the vectors
+are valid. Must use the \"Is\" functions for that purpose.
+
+*/
+
+%feature("docstring")  NOX::Epetra::Group::getX "const
+Abstract::Vector & Group::getX() const
+
+Return solution vector. ";
+
+%feature("docstring")  NOX::Epetra::Group::getF "const
+Abstract::Vector & Group::getF() const
+
+Return F(x). ";
+
+%feature("docstring")  NOX::Epetra::Group::getNormF "double
+Group::getNormF() const
+
+Return 2-norm of F(x).
+
+In other words, \\\\[ \\\\sqrt{\\\\sum_{i=1}^n F_i^2} \\\\] ";
+
+%feature("docstring")  NOX::Epetra::Group::getGradient "const
+Abstract::Vector & Group::getGradient() const
+
+Return gradient. ";
+
+%feature("docstring")  NOX::Epetra::Group::getNewton "const
+Abstract::Vector & Group::getNewton() const
+
+Return Newton direction. ";
+
+%feature("docstring")
+NOX::Epetra::Group::getNormLastLinearSolveResidual "Abstract::Group::ReturnType
+NOX::Epetra::Group::getNormLastLinearSolveResidual(double &residual)
+const
+
+Returns the 2-norm of the residual of the linear model used in the
+Newton solve computation, ||Js+f||. This does not account for line
+search adjustments to the step length! ";
+
+/*  Vectors  */
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
+/*  Shared Operators  */
 
 %feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
 Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
@@ -4592,6 +5567,122 @@ of NOX::Abstract::MultiVector's.
 
 C++ includes: NOX_MultiVector.H ";
 
+%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
+NOX::MultiVector &source, const vector< int > &index) ";
+
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::MultiVector &source) ";
+
+%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double gamma=0.0)
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
+double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::Abstract::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
+
+Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
+is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
+const
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::MultiVector::subCopy "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const vector<
+int > &index) const
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::MultiVector::subView "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::subView(const vector<
+int > &index) const
+
+Creates a new multi-vector with index.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::MultiVector::norm "void
+NOX::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const
+
+Norm. ";
+
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
+NOX::Abstract::MultiVector::DenseMatrix &b) const ";
+
 %feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
 numVecs=1, NOX::CopyType type=NOX::DeepCopy)
 
@@ -4635,6 +5726,114 @@ Abstract interface for multi-vectors used by NOX.
 
 C++ includes: NOX_Abstract_MultiVector.H ";
 
+%feature("docstring")  NOX::Abstract::MultiVector::init "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::init(double
+gamma)=0
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::random "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::random(bool
+useSeed=false, int seed=1)=0
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::setBlock "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)=0
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::augment "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)=0
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::scale "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::scale(double
+gamma)=0
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector&
+NOX::Abstract::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Abstract::MultiVector &a, const DenseMatrix &b,
+double gamma=0.0)=0
+
+Compute x = (alpha * a * op(b)) + (gamma * x) where a is a
+multivector, b is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::clone(NOX::CopyType type=NOX::DeepCopy)
+const =0
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::clone(int numvecs) const =0
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::subCopy "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::subCopy(const vector< int > &index) const
+=0
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::subView "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::subView(const vector< int > &index) const
+=0
+
+Creates a new multi-vector with ndex.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::norm "virtual void
+NOX::Abstract::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const =0
+
+Norm. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::multiply "virtual
+void NOX::Abstract::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, DenseMatrix &b) const =0
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
 %feature("docstring")  NOX::Abstract::MultiVector::MultiVector "NOX::Abstract::MultiVector::MultiVector()
 
 Default constructor. Does nothing. ";
@@ -4664,6 +5863,137 @@ Print the vector. This is meant for debugging purposes only. ";
 Implementation of NOX::Abstract::MultiVector for Epetra multi-vectors.
 
 C++ includes: NOX_Epetra_MultiVector.H ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
+"Epetra_MultiVector &
+NOX::Epetra::MultiVector::getEpetraMultiVector()
+
+Get reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
+"const Epetra_MultiVector &
+NOX::Epetra::MultiVector::getEpetraMultiVector() const
+
+Get const reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::init "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::init(double
+value)
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::random "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
+NOX::Epetra::MultiVector &source, const vector< int > &index) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
+NOX::Epetra::MultiVector &source) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::scale "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::scale(double
+gamma)
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Epetra::MultiVector &a, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Epetra::MultiVector &a, double beta, const
+NOX::Epetra::MultiVector &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
+NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Abstract::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
+
+Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
+is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
+NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Epetra::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(CopyType
+type=DeepCopy) const
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(int
+numvecs) const
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::subCopy "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Epetra::MultiVector::subCopy(const vector< int > &index) const
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::subView "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Epetra::MultiVector::subView(const vector< int > &index) const
+
+Creates a new multi-vector with ndex.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::norm "void
+NOX::Epetra::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const
+
+Norm. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
+NOX::Epetra::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Teuchos::RCP<
 Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
@@ -5160,6 +6490,24 @@ Otherwise, we use an absolute tolerance defined by \\\\[ \\\\beta =
 
 C++ includes: NOX_StatusTest_NormF.H ";
 
+%feature("docstring")  NOX::StatusTest::NormF::getNormF "double
+NOX::StatusTest::NormF::getNormF() const
+
+Returns the value of the F-norm computed in the last call to
+checkStatus. ";
+
+%feature("docstring")  NOX::StatusTest::NormF::getTrueTolerance "double NOX::StatusTest::NormF::getTrueTolerance() const
+
+Returns the true tolerance. ";
+
+%feature("docstring")  NOX::StatusTest::NormF::getSpecifiedTolerance "double NOX::StatusTest::NormF::getSpecifiedTolerance() const
+
+Returns the specified tolerance set in the constructor. ";
+
+%feature("docstring")  NOX::StatusTest::NormF::getInitialTolerance "double NOX::StatusTest::NormF::getInitialTolerance() const
+
+Returns the initial tolerance. ";
+
 %feature("docstring")  NOX::StatusTest::NormF::NormF "NOX::StatusTest::NormF::NormF(double tolerance,
 NOX::Abstract::Vector::NormType ntype, ScaleType stype=Scaled, const
 NOX::Utils *u=NULL)
@@ -5270,6 +6618,15 @@ Finally, $\\\\beta$ is set to the tolerance in the constructor, i.e.,
 \\\\[ \\\\beta = \\\\mbox{tolerance} \\\\]
 
 C++ includes: NOX_StatusTest_NormUpdate.H ";
+
+%feature("docstring")  NOX::StatusTest::NormUpdate::getNormUpdate "double NOX::StatusTest::NormUpdate::getNormUpdate() const
+
+Returns the value of the Update-norm computed in the last call to
+checkStatus. ";
+
+%feature("docstring")  NOX::StatusTest::NormUpdate::getTolerance "double NOX::StatusTest::NormUpdate::getTolerance() const
+
+Returns the true tolerance. ";
 
 %feature("docstring")  NOX::StatusTest::NormUpdate::NormUpdate "NormUpdate::NormUpdate(double tolerance,
 NOX::Abstract::Vector::NormType ntype, ScaleType stype=Scaled)
@@ -5391,6 +6748,40 @@ Scientific Computing (CASC), Lawrence Livermore National Lab, May
 1999.
 
 C++ includes: NOX_StatusTest_NormWRMS.H ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getNormWRMS "double
+NormWRMS::getNormWRMS() const
+
+Returns the value of WRMS norm. ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getTolerance "double NormWRMS::getTolerance() const
+
+Returns the requested tolerance set in the constructor. ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getRTOL "double
+NormWRMS::getRTOL() const
+
+Returns the realative tolerance set in the constructor. ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getATOL "double
+NormWRMS::getATOL() const
+
+Returns the absolute tolerance set in the constructor. If ATOL is a
+vector, this will return a value of -1.0. ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getBDFMultiplier "double NormWRMS::getBDFMultiplier() const
+
+Returns the value of the BDFMultiplier set in the constructor. ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getAlpha "double
+NormWRMS::getAlpha() const
+
+Returns the value of 'alpha' set in the constructor. ";
+
+%feature("docstring")  NOX::StatusTest::NormWRMS::getBeta "double
+NormWRMS::getBeta() const
+
+Returns the value of 'beta' set in the constructor. ";
 
 %feature("docstring")  NOX::StatusTest::NormWRMS::NormWRMS "NormWRMS::NormWRMS(double rtol, double atol, double BDFMultiplier=1.0,
 double tolerance=1.0, double alpha=1.0, double beta=0.5)
@@ -7211,6 +8602,197 @@ Implementation of NOX::Abstract::Vector for Epetra vectors.
 
 C++ includes: NOX_Epetra_Vector.H ";
 
+%feature("docstring")  NOX::Epetra::Vector::getEpetraVector "Epetra_Vector & NOX::Epetra::Vector::getEpetraVector()
+
+Get reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::Vector::getEpetraVector "const
+Epetra_Vector & NOX::Epetra::Vector::getEpetraVector() const
+
+Get const reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::Vector::init "NOX::Abstract::Vector & NOX::Epetra::Vector::init(double gamma)
+
+Initialize every element of this vector with gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\] Reference to
+this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::random "NOX::Abstract::Vector & NOX::Epetra::Vector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this vector with a random value.
+
+If useSeed is true, uses the value of seed to seed the random number
+generator before filling the entries of this vector. So, if two calls
+are made where useSeed is true and seed is the same, then the vectors
+returned should be the same.
+
+Default implementation throw an error. Only referenced by LOCA
+methods.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::abs "NOX::Abstract::Vector & NOX::Epetra::Vector::abs(const
+NOX::Epetra::Vector &y) ";
+
+%feature("docstring")  NOX::Epetra::Vector::abs "NOX::Abstract::Vector & NOX::Epetra::Vector::abs(const
+NOX::Abstract::Vector &y)
+
+Put element-wise absolute values of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i = | y_i |
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::reciprocal "NOX::Abstract::Vector & NOX::Epetra::Vector::reciprocal(const
+NOX::Epetra::Vector &y) ";
+
+%feature("docstring")  NOX::Epetra::Vector::reciprocal "NOX::Abstract::Vector & NOX::Epetra::Vector::reciprocal(const
+NOX::Abstract::Vector &y)
+
+Put element-wise reciprocal of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\frac{1}{y_i} \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::scale "NOX::Abstract::Vector & NOX::Epetra::Vector::scale(double gamma)
+
+Scale each element of this vector by gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma x_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::scale "NOX::Abstract::Vector & NOX::Epetra::Vector::scale(const
+NOX::Epetra::Vector &a) ";
+
+%feature("docstring")  NOX::Epetra::Vector::scale "NOX::Abstract::Vector & NOX::Epetra::Vector::scale(const
+NOX::Abstract::Vector &a)
+
+Scale this vector element-by-element by the vector a.
+
+Here x represents this vector, and we update it as \\\\[ x_i = x_i
+\\\\cdot a_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::update "NOX::Abstract::Vector & NOX::Epetra::Vector::update(double alpha,
+const NOX::Epetra::Vector &a, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::Vector::update "NOX::Abstract::Vector & NOX::Epetra::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double gamma=0.0)
+
+Compute x = (alpha * a) + (gamma * x) where x is this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\gamma \\\\; x_i \\\\quad \\\\mbox{for }
+i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::update "NOX::Abstract::Vector & NOX::Epetra::Vector::update(double alpha,
+const NOX::Epetra::Vector &a, double beta, const NOX::Epetra::Vector
+&b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::Vector::update "NOX::Abstract::Vector & NOX::Epetra::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double beta, const
+NOX::Abstract::Vector &b, double gamma=0.0)
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this
+vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\beta \\\\; b_i + \\\\gamma \\\\; x_i
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Vector::clone "Teuchos::RCP<
+NOX::Abstract::Vector > NOX::Epetra::Vector::clone(CopyType
+type=DeepCopy) const
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (the memory is allocated for the objects, but
+the current values are not copied into the vector). Note that there is
+no assumption that a vector created by ShapeCopy is initialized to
+zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Epetra::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Epetra::Vector::createMultiVector(const NOX::Abstract::Vector
+*const *vecs, int numVecs, NOX::CopyType type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs+1 columns out of an array of
+Vectors. The vector stored under this will be the first column with
+the remaining numVecs columns given by vecs.
+
+The implementation here creates a NOX::Epetra::MultiVector with either
+Shape or Deep copies of the supplied vectors. ";
+
+%feature("docstring")  NOX::Epetra::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs columns.
+
+The implementation here creates a NOX::Epetra::MultiVector with either
+Shape or Deep copies of the supplied vector. ";
+
+%feature("docstring")  NOX::Epetra::Vector::norm "double
+NOX::Epetra::Vector::norm(NOX::Abstract::Vector::NormType
+type=TwoNorm) const
+
+Norm.
+
+Here x represents this vector, and we compute its norm as follows: for
+each NOX::Abstract::Vector::NormType:  NOX::Abstract::Vector::TwoNorm
+\\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\sum_{i=1}^{n} x_i^2} \\\\]
+
+NOX::Abstract::Vector::OneNorm \\\\[ \\\\|x\\\\| = \\\\sum_{i=1}^{n}
+|x_i| \\\\]
+
+NOX::Abstract::Vector::MaxNorm \\\\[ \\\\|x\\\\| = \\\\max_{i} |x_i|
+\\\\]
+
+$\\\\|x\\\\|$ ";
+
+%feature("docstring")  NOX::Epetra::Vector::norm "double
+NOX::Epetra::Vector::norm(const NOX::Epetra::Vector &weights) const ";
+
+%feature("docstring")  NOX::Epetra::Vector::norm "double
+NOX::Epetra::Vector::norm(const NOX::Abstract::Vector &weights) const
+
+Weighted 2-Norm.
+
+Here x represents this vector, and we compute its weighted norm as
+follows: \\\\[ \\\\|x\\\\|_w = \\\\sqrt{\\\\sum_{i=1}^{n} w_i \\\\;
+x_i^2} \\\\]  $ \\\\|x\\\\|_w $ ";
+
+%feature("docstring")  NOX::Epetra::Vector::innerProduct "double
+NOX::Epetra::Vector::innerProduct(const NOX::Epetra::Vector &y) const
+";
+
+%feature("docstring")  NOX::Epetra::Vector::innerProduct "double
+NOX::Epetra::Vector::innerProduct(const NOX::Abstract::Vector &y)
+const
+
+Inner product with y.
+
+Here x represents this vector, and we compute its inner product with y
+as follows: \\\\[ \\\\langle x,y \\\\rangle = \\\\sum_{i=1}^n x_i y_i
+\\\\]  $\\\\langle x,y \\\\rangle$ ";
+
 %feature("docstring")  NOX::Epetra::Vector::Vector "NOX::Epetra::Vector::Vector(const Teuchos::RCP< Epetra_Vector >
 &source, NOX::Epetra::Vector::MemoryType
 memoryType=NOX::Epetra::Vector::CreateCopy, NOX::CopyType
@@ -7281,6 +8863,174 @@ class or use one of the implementations provided by us.
 Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 
 C++ includes: NOX_Abstract_Vector.H ";
+
+%feature("docstring")  NOX::Abstract::Vector::init "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::init(double gamma)=0
+
+Initialize every element of this vector with gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\] Reference to
+this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::random "NOX::Abstract::Vector & NOX::Abstract::Vector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this vector with a random value.
+
+If useSeed is true, uses the value of seed to seed the random number
+generator before filling the entries of this vector. So, if two calls
+are made where useSeed is true and seed is the same, then the vectors
+returned should be the same.
+
+Default implementation throw an error. Only referenced by LOCA
+methods.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::abs "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::abs(const
+NOX::Abstract::Vector &y)=0
+
+Put element-wise absolute values of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i = | y_i |
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::reciprocal "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::reciprocal(const
+NOX::Abstract::Vector &y)=0
+
+Put element-wise reciprocal of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\frac{1}{y_i} \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::scale "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::scale(double gamma)=0
+
+Scale each element of this vector by gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma x_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::scale "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::scale(const
+NOX::Abstract::Vector &a)=0
+
+Scale this vector element-by-element by the vector a.
+
+Here x represents this vector, and we update it as \\\\[ x_i = x_i
+\\\\cdot a_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::update "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (gamma * x) where x is this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\gamma \\\\; x_i \\\\quad \\\\mbox{for }
+i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::update "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double beta, const
+NOX::Abstract::Vector &b, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this
+vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\beta \\\\; b_i + \\\\gamma \\\\; x_i
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::clone "virtual
+Teuchos::RCP<NOX::Abstract::Vector>
+NOX::Abstract::Vector::clone(NOX::CopyType type=NOX::DeepCopy) const
+=0
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (the memory is allocated for the objects, but
+the current values are not copied into the vector). Note that there is
+no assumption that a vector created by ShapeCopy is initialized to
+zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Abstract::Vector::createMultiVector(const NOX::Abstract::Vector
+*const *vecs, int numVecs, NOX::CopyType type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs+1 columns out of an array of
+Vectors. The vector stored under this will be the first column with
+the remaining numVecs columns given by vecs.
+
+The default implementation creates a generic NOX::MultiVector with
+either Shape or Deep copies of the supplied vectors. ";
+
+%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs columns.
+
+The default implementation creates a generic NOX::MultiVector with
+either Shape or Deep copies of the supplied vector. ";
+
+%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
+NOX::Abstract::Vector::norm(NOX::Abstract::Vector::NormType
+type=NOX::Abstract::Vector::TwoNorm) const =0
+
+Norm.
+
+Here x represents this vector, and we compute its norm as follows: for
+each NOX::Abstract::Vector::NormType:  NOX::Abstract::Vector::TwoNorm
+\\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\sum_{i=1}^{n} x_i^2} \\\\]
+
+NOX::Abstract::Vector::OneNorm \\\\[ \\\\|x\\\\| = \\\\sum_{i=1}^{n}
+|x_i| \\\\]
+
+NOX::Abstract::Vector::MaxNorm \\\\[ \\\\|x\\\\| = \\\\max_{i} |x_i|
+\\\\]
+
+$\\\\|x\\\\|$ ";
+
+%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
+NOX::Abstract::Vector::norm(const NOX::Abstract::Vector &weights)
+const =0
+
+Weighted 2-Norm.
+
+Here x represents this vector, and we compute its weighted norm as
+follows: \\\\[ \\\\|x\\\\|_w = \\\\sqrt{\\\\sum_{i=1}^{n} w_i \\\\;
+x_i^2} \\\\]  $ \\\\|x\\\\|_w $ ";
+
+%feature("docstring")  NOX::Abstract::Vector::innerProduct "virtual
+double NOX::Abstract::Vector::innerProduct(const NOX::Abstract::Vector
+&y) const =0
+
+Inner product with y.
+
+Here x represents this vector, and we compute its inner product with y
+as follows: \\\\[ \\\\langle x,y \\\\rangle = \\\\sum_{i=1}^n x_i y_i
+\\\\]  $\\\\langle x,y \\\\rangle$ ";
 
 %feature("docstring")  NOX::Abstract::Vector::Vector "NOX::Abstract::Vector::Vector()
 

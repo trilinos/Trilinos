@@ -68,9 +68,220 @@ Marzio Sala, SNL 9214
 
 C++ includes: Trilinos_Util_CommandLineParser.h ";
 
+%feature("docstring")
+Trilinos_Util::CommandLineParser::CommandLineParser "Trilinos_Util::CommandLineParser::CommandLineParser(int argc, char
+*argv[])
+
+Trilinos_Util_ShellOptions constructor using the options given at the
+shell line. ";
+
+%feature("docstring")
+Trilinos_Util::CommandLineParser::GetProgramName "string
+Trilinos_Util::CommandLineParser::GetProgramName(void)
+
+Returns the name of the program as a C++ string. ";
+
+%feature("docstring")
+Trilinos_Util::CommandLineParser::GetIntShellVariable "int
+Trilinos_Util::CommandLineParser::GetIntShellVariable(const char *str)
+
+Returns the value of the environmenta variable str as an integer.
+
+This methods returns the value of the environmental variable str. If
+the variable does not exists, returns 0. ";
+
+%feature("docstring")
+Trilinos_Util::CommandLineParser::GetDoubleShellVariable "double
+Trilinos_Util::CommandLineParser::GetDoubleShellVariable(const char
+*str)
+
+Returns the value of the environmenta variable str as an double.
+
+This methods returns the value of the environmenta variable str. If
+the variable does not exists, returns 0.0. ";
+
+%feature("docstring")
+Trilinos_Util::CommandLineParser::GetStringShellVariable "string
+Trilinos_Util::CommandLineParser::GetStringShellVariable(const char
+*str)
+
+Returns the value of the environmenta variable str as a C++ string.
+
+This methods returns the value of the environmenta variable str. If
+the variable does not exists, returns \"\". ";
+
 
 // File: classTrilinos__Util_1_1CrsMatrixGallery.xml
 %feature("docstring") Trilinos_Util::CrsMatrixGallery "";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
+const Epetra_Comm &comm)
+
+Triutils_Gallery Constructor.
+
+Creates a Triutils_Gallery instance.
+
+The first parameter is the name of the matrix. We refer to the
+Trilinos Tutorial for a detailed description of available matrices.
+
+The matrix name can be empty (\"\"), and set later using, for example,
+Set(\"matrix_name\",\"laplace_2d\");  An example of program using this
+class is reported below.
+
+Class CommandLineParser can be used as well. In this case, one may
+decide to use the following:
+
+Parameters:
+-----------
+
+In:  comm - Epetra communicator ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
+const Epetra_Map &map)
+
+Creates an Triutils_Gallery object using a given map.
+
+Create a Triutils_Gallery object using an Epetra_Map. Problem size
+must match the elements in map.
+
+Parameters:
+-----------
+
+In:  name - definition of the problem to be created.
+
+In:  map - Epetra_Map ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::~CrsMatrixGallery "Trilinos_Util::CrsMatrixGallery::~CrsMatrixGallery()
+
+Triutils_Gallery destructor. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
+Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const int
+value)
+
+Sets a gallery options using an interger value. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
+Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const
+string value)
+
+Sets a gallery options using a C++ string . ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
+Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const
+double value)
+
+Sets a gallery options using an double value. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
+Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const
+Epetra_Vector &value)
+
+Sets a gallery options using an Epetra_Vector.
+
+Sets a gallery options using an Epetra_Vector. The Epetra_Vector is
+copied into internal structures, and freed by the destructor. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
+Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser
+&CLP)
+
+Sets gallery options using values passed from the shell. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::GetMatrix "Epetra_CrsMatrix * Trilinos_Util::CrsMatrixGallery::GetMatrix()
+
+Returns a pointer to the CrsMatrix. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::GetMatrixRef "Epetra_CrsMatrix & Trilinos_Util::CrsMatrixGallery::GetMatrixRef() ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::GetExactSolution "Epetra_MultiVector
+* Trilinos_Util::CrsMatrixGallery::GetExactSolution()
+
+Returns a pointer to the exact solution.
+
+Returns a pointer to the exact solution.
+
+Some choices are available to define the exact solution, using
+Set(\"exact solution\", value). value can be: constant: the exact
+solution vector is made up of 1's.
+
+random: a random solution vector
+
+linear: value at node i is defined as alpha*i. The double value alpha
+can be set via Set(\"alpha\",DoubleVal). ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::GetStartingSolution "Epetra_MultiVector *
+Trilinos_Util::CrsMatrixGallery::GetStartingSolution()
+
+Returns a pointer to the starting solution (typically, for HB
+problems).
+
+Returns a pointer to the starting solution. This is typically used
+while reading a HB problem. However, the user can set a starting
+solution using Set(\"starting solution\", \"value\"). Value can be
+zero
+
+random ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::GetRHS "Epetra_MultiVector * Trilinos_Util::CrsMatrixGallery::GetRHS()
+
+Returns a pointer to the rhs corresponding to the selected exact
+solution. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::GetMap "const
+Epetra_Map * Trilinos_Util::CrsMatrixGallery::GetMap()
+
+Returns a pointer the internally stored Map. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::GetMapRef "const Epetra_Map & Trilinos_Util::CrsMatrixGallery::GetMapRef() ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::GetLinearProblem "Epetra_LinearProblem *
+Trilinos_Util::CrsMatrixGallery::GetLinearProblem()
+
+Returns a pointer to Epetra_LinearProblem. ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::ComputeResidual "void
+Trilinos_Util::CrsMatrixGallery::ComputeResidual(double *residual)
+
+Computes the 2-norm of the residual. ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolutions
+"void
+Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolutions(double
+*residual)
+
+Computes the 2-norm of the difference between the starting solution
+and the exact solution. ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors "void
+Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors(ostream &os)
+
+Print out matrix and vectors. ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors "void
+Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors() ";
+
+%feature("docstring")
+Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates "void
+Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double *&x,
+double *&y, double *&z)
+
+Get pointers to double vectors containing coordinates of points. ";
+
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::WriteMatrix "int Trilinos_Util::CrsMatrixGallery::WriteMatrix(const string
+&FileName, const bool UseSparse=true)
+
+Print matrix on file in MATLAB format. ";
 
 
 // File: classTrilinos__Util_1_1InputFileReader.xml
@@ -106,6 +317,78 @@ FileName[]) ";
 
 // File: classTrilinos__Util__Map.xml
 %feature("docstring") Trilinos_Util_Map "";
+
+%feature("docstring")  Trilinos_Util_Map::Get "int
+Trilinos_Util_Map::Get(const string input, const int def_value)
+
+Gets the value of the specified option as an integer. If not found,
+returns the specified default value. ";
+
+%feature("docstring")  Trilinos_Util_Map::Get "double
+Trilinos_Util_Map::Get(const string input, const double def_value)
+
+Gets the value of the specified option as a double. If not found,
+returns the specified default value. ";
+
+%feature("docstring")  Trilinos_Util_Map::Get "string
+Trilinos_Util_Map::Get(const string input, const string def_value)
+
+Gets the value of the specified option as a string. If not found,
+returns the specified default value. ";
+
+%feature("docstring")  Trilinos_Util_Map::Set "bool
+Trilinos_Util_Map::Set(const string input, const char *value)
+
+Modify the value of a database entry.
+
+This method modifies the value of a database entry. If the entry does
+not exist in the database, return false. Otherwise, returns true. ";
+
+%feature("docstring")  Trilinos_Util_Map::Set "bool
+Trilinos_Util_Map::Set(const string input, const string value) ";
+
+%feature("docstring")  Trilinos_Util_Map::Set "bool
+Trilinos_Util_Map::Set(const string input, const int value) ";
+
+%feature("docstring")  Trilinos_Util_Map::Set "bool
+Trilinos_Util_Map::Set(const string input, const double value) ";
+
+%feature("docstring")  Trilinos_Util_Map::Add "bool
+Trilinos_Util_Map::Add(const string input, const string value)
+
+Add an entry to the databse.
+
+This method add an entry to the databse. First, it checks that this
+entry does not exist. If it exists, the method returns false.
+Otherwise, it adds the entry and returns true. ";
+
+%feature("docstring")  Trilinos_Util_Map::SetLabel "bool
+Trilinos_Util_Map::SetLabel(string Label) ";
+
+%feature("docstring")  Trilinos_Util_Map::GetLabel "string
+Trilinos_Util_Map::GetLabel(string Label) ";
+
+%feature("docstring")  Trilinos_Util_Map::Has "bool
+Trilinos_Util_Map::Has(const string input)
+
+Check wheter an option is in the database or not.
+
+This method checks whether option input is in the databse or not. It
+returns true if it is, false otherwise. ";
+
+%feature("docstring")  Trilinos_Util_Map::ShowAll "void
+Trilinos_Util_Map::ShowAll() const
+
+Show all the databse entries. ";
+
+%feature("docstring")  Trilinos_Util_Map::ShowReallyAll "void
+Trilinos_Util_Map::ShowReallyAll() const
+
+Show all the databse entries, including entries beginning with \"_\".
+";
+
+%feature("docstring")  Trilinos_Util_Map::Reset "void
+Trilinos_Util_Map::Reset(void) ";
 
 %feature("docstring")  Trilinos_Util_Map::Trilinos_Util_Map "Trilinos_Util_Map::Trilinos_Util_Map() ";
 

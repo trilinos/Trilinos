@@ -52,6 +52,261 @@ Marzio Sala, SNL 9214
 
 C++ includes: Galeri_AbstractGrid.h ";
 
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::~AbstractGrid "virtual
+Galeri::FiniteElements::AbstractGrid::~AbstractGrid()
+
+Destructor. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumDimensions "virtual int
+Galeri::FiniteElements::AbstractGrid::NumDimensions() const =0
+
+Returns the number of dimensions of the grid. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumVerticesPerElement "virtual
+int Galeri::FiniteElements::AbstractGrid::NumVerticesPerElement()
+const =0
+
+Returns the number of vertices contained in each element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumFacesPerElement "virtual int
+Galeri::FiniteElements::AbstractGrid::NumFacesPerElement() const =0
+
+Returns the number of faces contained in each element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumVerticesPerFace "virtual int
+Galeri::FiniteElements::AbstractGrid::NumVerticesPerFace() const =0
+
+Returns the number of vertices contained in each face. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ElementType "virtual string
+Galeri::FiniteElements::AbstractGrid::ElementType() const =0
+
+Returns a string containing the element type.
+
+Returns a string containing the type of element. This string is used
+in the quadrature class. Currently supported options are:
+\"GALERI_TRIANGLE\"
+
+\"GALERI_QUAD\"
+
+\"GALERI_HEX\"
+
+\"GALERI_TET\" ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumNeighborsPerElement "virtual
+int Galeri::FiniteElements::AbstractGrid::NumNeighborsPerElement()
+const =0
+
+Returns the number of neighboring elements. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumMyElements "virtual int
+Galeri::FiniteElements::AbstractGrid::NumMyElements() const =0
+
+Returns the number of finite elements on the calling process. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumGlobalElements "virtual int
+Galeri::FiniteElements::AbstractGrid::NumGlobalElements() const =0
+
+Returns the global number of finite elements. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumMyVertices "virtual int
+Galeri::FiniteElements::AbstractGrid::NumMyVertices() const =0
+
+Returns the number of vertices on the calling process. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumGlobalVertices "virtual int
+Galeri::FiniteElements::AbstractGrid::NumGlobalVertices() const =0
+
+Returns the global number of vertices. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumMyBoundaryFaces "virtual int
+Galeri::FiniteElements::AbstractGrid::NumMyBoundaryFaces() const =0
+
+Returns the number of boundary faces on the calling process. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::NumGlobalBoundaryFaces "virtual
+int Galeri::FiniteElements::AbstractGrid::NumGlobalBoundaryFaces()
+const =0
+
+Returns the global number of boundary faces. ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractGrid::MyVolume
+"virtual double Galeri::FiniteElements::AbstractGrid::MyVolume()
+const =0
+
+Returns the volume of all local elements. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::GlobalVolume "virtual double
+Galeri::FiniteElements::AbstractGrid::GlobalVolume() const =0
+
+Returns the global volume of the grid. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::VertexCoord "virtual void
+Galeri::FiniteElements::AbstractGrid::VertexCoord(const int
+LocalVertex, double *coord) const =0
+
+Returns the coordinates of local vertex LocalVertex in vector coord.
+
+Parameters:
+-----------
+
+LocalVertex:  - (In) Local ID of the vertex for whic coordinates are
+required. Must be contained in the interval [0, NumMyVertices())
+
+coord:  - (Out) double array of size 3. In output, contains the x-, y-
+and z-coordinate of the specified vertex.
+
+Parameter coord must be allocated of size 3 for both 2D and 3D
+problems. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::VertexCoord "virtual void
+Galeri::FiniteElements::AbstractGrid::VertexCoord(const int Length,
+const int *IDs, double *x, double *y, double *z) const =0
+
+Returns the coordinates of specified local vertices.
+
+Parameters:
+-----------
+
+Length:  - (In) Length of array IDs.
+
+IDs:  - (In) Contains the list of vertices of which coordinates are
+required.
+
+x:  - (Out) double array of size Length. In output, contains the
+x-coordinates of the specified vertices.
+
+y:  - (Out) double array of size Length. In output, contains the
+y-coordinates of the specified vertices.
+
+z:  - (Out) double array of size Length. In output, contains the
+z-coordinates of the specified vertices.
+
+The z array must be allocated for both 2D and 3D problems. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ElementVertices "virtual void
+Galeri::FiniteElements::AbstractGrid::ElementVertices(const int
+LocalElement, int *elements) const =0
+
+Returns the local vertex IDs of the specified local finite element.
+
+Parameters:
+-----------
+
+LocalElement:  - (In) ID of the required local element.
+
+elements:  - (Out) array of length NumElementVertices(), in output
+will contain the local ID of the vertices of the specified element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ElementNeighbors "virtual void
+Galeri::FiniteElements::AbstractGrid::ElementNeighbors(const int
+LocalElement, int *elements) const =0
+
+Returns the local IDs of neighboring elements. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::FaceVertices "virtual void
+Galeri::FiniteElements::AbstractGrid::FaceVertices(const int
+LocalFace, int &tag, int *IDs) const =0
+
+Returns the local vertex IDs of vertices contained in the specified
+boundary face. ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractGrid::FacePatch
+"virtual int Galeri::FiniteElements::AbstractGrid::FacePatch(const
+int LocalFace) const =0
+
+Returns the patch ID of the specified face.
+
+Returns an integer ID that identifies the given boundary face as
+belonging to a given part of the domain. It can be used by the user to
+specify the value and the type of the boundary condition. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ElementMinLength "virtual
+double Galeri::FiniteElements::AbstractGrid::ElementMinLength(const
+int LocalElement) const =0
+
+Returns the volume of the specified local finite element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ElementMaxLength "virtual
+double Galeri::FiniteElements::AbstractGrid::ElementMaxLength(const
+int LocalElement) const =0
+
+Returns the volume of the specified local finite element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ElementVolume "virtual double
+Galeri::FiniteElements::AbstractGrid::ElementVolume(const int
+LocalElement) const =0
+
+Returns the volume of the specified local finite element.
+
+Returns the area (in 2D) or the volume (in 3D) of the specified local
+element ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractGrid::FaceArea
+"virtual double Galeri::FiniteElements::AbstractGrid::FaceArea(const
+int LocalFace) const =0
+
+Returns the area of the specified local face.
+
+Returns the length (in 2D) or the area (in 3D) of the specified
+boundary face ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractGrid::VertexMap
+"virtual const Epetra_Map&
+Galeri::FiniteElements::AbstractGrid::VertexMap() const =0
+
+Returns a reference to the map representing the vertex distribution.
+";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractGrid::RowMap "virtual const Epetra_Map&
+Galeri::FiniteElements::AbstractGrid::RowMap() const =0
+
+Returns a reference to the map representing the distribution of rows.
+";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ExportToVertexMap "virtual void
+Galeri::FiniteElements::AbstractGrid::ExportToVertexMap(const
+Epetra_DistObject &RowObject, Epetra_DistObject &VertexObject) const
+=0
+
+Exports distributed object from RowMap() to VertexMap(). ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractGrid::ExportToRowMap "virtual void
+Galeri::FiniteElements::AbstractGrid::ExportToRowMap(const
+Epetra_DistObject &RowObject, Epetra_DistObject &VertexObject) const
+=0
+
+Exports distributed object from VertexMap() to RowMap(). ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractGrid::Comm "virtual const Epetra_Comm&
+Galeri::FiniteElements::AbstractGrid::Comm() const =0
+
+Returns a reference to the communicator object. ";
+
 
 // File: classGaleri_1_1FiniteElements_1_1AbstractProblem.xml
 %feature("docstring") Galeri::FiniteElements::AbstractProblem "
@@ -158,6 +413,128 @@ Marzio Sala, SNL 9214.
 
 C++ includes: Galeri_AbstractQuadrature.h ";
 
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::~AbstractQuadrature "virtual
+Galeri::FiniteElements::AbstractQuadrature::~AbstractQuadrature()
+
+Destructor. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::NumQuadrNodes "virtual
+int Galeri::FiniteElements::AbstractQuadrature::NumQuadrNodes() const
+=0
+
+Returns the number of quadrature node per element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::NumPhiFunctions "virtual
+int Galeri::FiniteElements::AbstractQuadrature::NumPhiFunctions()
+const =0
+
+Returns the number of basis function on the reference element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::NumPsiFunctions "virtual
+int Galeri::FiniteElements::AbstractQuadrature::NumPsiFunctions()
+const =0
+
+Returns the number of test function on the reference element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::ComputeJacobian "virtual
+void Galeri::FiniteElements::AbstractQuadrature::ComputeJacobian(const
+int QuadrNode, const double *x, const double *y, const double *z)
+const =0
+
+Computes the Jacobian at the specified quadrature node. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::ComputeQuadrNodes "virtual void
+Galeri::FiniteElements::AbstractQuadrature::ComputeQuadrNodes(const
+int QuadrNode, const double *x, const double *y, const double *z,
+double &xq, double &yq, double &zq) const =0
+
+Maps the quadrature nodes from the reference element to the actual
+one. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::ComputeDerivatives "virtual void
+Galeri::FiniteElements::AbstractQuadrature::ComputeDerivatives(const
+int QuadrNode) const =0
+
+Computes the derivatives at the specified quadrature node. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::QuadrWeight "virtual
+double Galeri::FiniteElements::AbstractQuadrature::QuadrWeight(const
+int QuadrNode) const =0
+
+Computes the weight at the specified quadrature node. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::DetJacobian "virtual
+double Galeri::FiniteElements::AbstractQuadrature::DetJacobian(const
+int QuadrNode) const =0
+
+Computes the determinant of the Jacobian matrix at the quadrature
+node. ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractQuadrature::Phi
+"virtual double Galeri::FiniteElements::AbstractQuadrature::Phi(const
+int i) const =0
+
+Returns the value of the i-th basis function on the reference element.
+";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::PhiX "virtual double
+Galeri::FiniteElements::AbstractQuadrature::PhiX(const int i) const =0
+
+Returns the value of the x-derivative i-th basis function on the
+reference element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::PhiY "virtual double
+Galeri::FiniteElements::AbstractQuadrature::PhiY(const int i) const =0
+
+Returns the value of the y-derivative i-th basis function on the
+reference element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::PhiZ "virtual double
+Galeri::FiniteElements::AbstractQuadrature::PhiZ(const int i) const =0
+
+Returns the value of the z-derivative i-th basis function on the
+reference element. ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractQuadrature::Psi
+"virtual double Galeri::FiniteElements::AbstractQuadrature::Psi(const
+int i) const =0
+
+Returns the value of the i-th test function on the reference element.
+";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::PsiX "virtual double
+Galeri::FiniteElements::AbstractQuadrature::PsiX(const int i) const =0
+
+Returns the value of the z-derivative i-th test function on the
+reference element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::PsiY "virtual double
+Galeri::FiniteElements::AbstractQuadrature::PsiY(const int i) const =0
+
+Returns the value of the y-derivative i-th test function on the
+reference element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractQuadrature::PsiZ "virtual double
+Galeri::FiniteElements::AbstractQuadrature::PsiZ(const int i) const =0
+
+Returns the value of the z-derivative i-th test function on the
+reference element. ";
+
 
 // File: classGaleri_1_1FiniteElements_1_1AbstractVariational.xml
 %feature("docstring") Galeri::FiniteElements::AbstractVariational "
@@ -177,6 +554,79 @@ providing the coordinates of the local vertices.
 Marzio Sala, SNL 9214.
 
 C++ includes: Galeri_AbstractVariational.h ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::~AbstractVariational "virtual
+Galeri::FiniteElements::AbstractVariational::~AbstractVariational()
+
+Destructor. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::LHS "virtual double
+Galeri::FiniteElements::AbstractVariational::LHS(const double Phi,
+const double Psi, const double PhiX, const double PsiX, const double
+PhiY, const double PsiY, const double PhiZ, const double PsiZ, const
+double x, const double y, const double z) const =0
+
+Evaluates the bilinear form (without integral) at point (x,y,z). ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::RHS "virtual double
+Galeri::FiniteElements::AbstractVariational::RHS(const double Psi,
+const double PsiX, const double PsiY, const double PsiZ, const double
+x, const double y, const double z) const =0
+
+Returns the value of the right-hand side (without integral) at point
+(x, y, z). ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractVariational::BC
+"virtual int Galeri::FiniteElements::AbstractVariational::BC(const
+int PatchID) const =0
+
+Returns an integer identifying the boundary condition assigned to the
+specified patch. ";
+
+%feature("docstring")  Galeri::FiniteElements::AbstractVariational::BC
+"virtual double Galeri::FiniteElements::AbstractVariational::BC(const
+double x, const double y, const double z, const int PatchID) const =0
+
+Returns the value of the boundary condition at point (x, y, z). ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::IntegrateOverElement "virtual int
+Galeri::FiniteElements::AbstractVariational::IntegrateOverElement(const
+AbstractVariational &Variational, const double *x, const double *y,
+const double *z, const double *data, double *ElementMatrix, double
+*ElementRHS) const =0
+
+Integrates the bilinear form and the right-hand side over the element.
+";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::ElementNorm "virtual int
+Galeri::FiniteElements::AbstractVariational::ElementNorm(const double
+*LocalSol, const double *x, const double *y, const double *z, double
+*Norm) const =0
+
+Computes the norm of the computed solution over the element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::ElementNorm "virtual int
+Galeri::FiniteElements::AbstractVariational::ElementNorm(int(*ExactSolution)(double,
+double, double, double *), const double *x, const double *y, const
+double *z, double *Norm) const =0
+
+Computed the norm of the exact solution over the element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::AbstractVariational::ElementNorm "virtual int
+Galeri::FiniteElements::AbstractVariational::ElementNorm(const double
+*LocalSol, int(*ExactSolution)(double, double, double, double *),
+const double *x, const double *y, const double *z, double *Norm) const
+=0
+
+Computed the norm of the computed and exact solution over the element.
+";
 
 
 // File: classGaleri_1_1Exception.xml
@@ -2258,6 +2708,197 @@ Returns the number of test function on the reference element. ";
 
 // File: classGaleri_1_1FiniteElements_1_1TRIANGLEGrid.xml
 %feature("docstring") Galeri::FiniteElements::TRIANGLEGrid "";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::TRIANGLEGrid "Galeri::FiniteElements::TRIANGLEGrid::TRIANGLEGrid(const Epetra_Comm
+&Comm, const int NumPoints, const double *x, const double *y, const
+double MaxArea) ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::~TRIANGLEGrid "Galeri::FiniteElements::TRIANGLEGrid::~TRIANGLEGrid() ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumDimensions "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumDimensions() const ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumVerticesPerElement "virtual
+int Galeri::FiniteElements::TRIANGLEGrid::NumVerticesPerElement()
+const
+
+Returns the number of vertices contained in each element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumFacesPerElement "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumFacesPerElement() const
+
+Returns the number of faces contained in each element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumVerticesPerFace "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumVerticesPerFace() const
+
+Returns the number of vertices contained in each face. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ElementType "virtual string
+Galeri::FiniteElements::TRIANGLEGrid::ElementType() const
+
+Returns a string containing the element type. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumNeighborsPerElement "virtual
+int Galeri::FiniteElements::TRIANGLEGrid::NumNeighborsPerElement()
+const ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumMyElements "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumMyElements() const
+
+Returns the number of finite elements on the calling process. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumGlobalElements "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumGlobalElements() const
+
+Returns the global number of finite elements. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumMyVertices "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumMyVertices() const
+
+Returns the number of vertices on the calling process. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumGlobalVertices "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumGlobalVertices() const
+
+Returns the global number of vertices. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumMyBoundaryFaces "virtual int
+Galeri::FiniteElements::TRIANGLEGrid::NumMyBoundaryFaces() const
+
+Returns the number of boundary faces on the calling process. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::NumGlobalBoundaryFaces "virtual
+int Galeri::FiniteElements::TRIANGLEGrid::NumGlobalBoundaryFaces()
+const
+
+Returns the global number of boundary faces. ";
+
+%feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::MyVolume
+"virtual double Galeri::FiniteElements::TRIANGLEGrid::MyVolume()
+const
+
+Returns the volume of all local elements. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::GlobalVolume "virtual double
+Galeri::FiniteElements::TRIANGLEGrid::GlobalVolume() const
+
+Returns the global volume of the grid. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::VertexCoord "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::VertexCoord(const int
+LocalVertex, double *coord) const
+
+Returns the coordinates of local vertex LocalVertex in vector coord.
+";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::VertexCoord "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::VertexCoord(const int Length,
+const int *IDs, double *x, double *y, double *z) const
+
+Returns the coordinates of specified local vertices. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ElementVertices "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::ElementVertices(const int
+LocalElement, int *elements) const
+
+Returns the local vertex IDs of the specified local finite element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::FaceVertices "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::FaceVertices(const int
+LocalFace, int &tag, int *IDs) const
+
+Returns the local vertex IDs of vertices contained in the specified
+boundary face. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ElementNeighbors "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::ElementNeighbors(const int
+LocalElement, int *elements) const ";
+
+%feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::FacePatch
+"virtual int Galeri::FiniteElements::TRIANGLEGrid::FacePatch(const
+int LocalFace) const
+
+Returns the patch ID of the specified face. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ElementMinLength "virtual
+double Galeri::FiniteElements::TRIANGLEGrid::ElementMinLength(const
+int LocalElement) const
+
+Returns the volume of the specified local finite element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ElementMaxLength "virtual
+double Galeri::FiniteElements::TRIANGLEGrid::ElementMaxLength(const
+int LocalElement) const
+
+Returns the volume of the specified local finite element. ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ElementVolume "virtual double
+Galeri::FiniteElements::TRIANGLEGrid::ElementVolume(const int
+LocalElement) const
+
+Returns the volume of the specified local finite element. ";
+
+%feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::FaceArea
+"virtual double Galeri::FiniteElements::TRIANGLEGrid::FaceArea(const
+int LocalFace) const
+
+Returns the area of the specified local face. ";
+
+%feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::VertexMap
+"virtual const Epetra_Map&
+Galeri::FiniteElements::TRIANGLEGrid::VertexMap() const
+
+Returns a reference to the map representing the vertex distribution.
+";
+
+%feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::RowMap "virtual const Epetra_Map&
+Galeri::FiniteElements::TRIANGLEGrid::RowMap() const
+
+Returns a reference to the map representing the distribution of rows.
+";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ExportToVertexMap "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::ExportToVertexMap(const
+Epetra_DistObject &RowObject, Epetra_DistObject &VertexObject) const
+
+Exports distributed object from RowMap() to VertexMap(). ";
+
+%feature("docstring")
+Galeri::FiniteElements::TRIANGLEGrid::ExportToRowMap "virtual void
+Galeri::FiniteElements::TRIANGLEGrid::ExportToRowMap(const
+Epetra_DistObject &RowObject, Epetra_DistObject &VertexObject) const
+
+Exports distributed object from VertexMap() to RowMap(). ";
+
+%feature("docstring")  Galeri::FiniteElements::TRIANGLEGrid::Comm "virtual const Epetra_Comm&
+Galeri::FiniteElements::TRIANGLEGrid::Comm() const
+
+Returns a reference to the communicator object. ";
 
 
 // File: classGaleri_1_1FiniteElements_1_1TriangleQuadrature.xml

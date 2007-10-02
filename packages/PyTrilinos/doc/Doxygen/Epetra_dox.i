@@ -18,6 +18,82 @@ object.
 
 C++ includes: Epetra_BasicDirectory.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_BasicDirectory::Epetra_BasicDirectory "Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap
+&Map)
+
+Epetra_BasicDirectory constructor. ";
+
+%feature("docstring")  Epetra_BasicDirectory::Epetra_BasicDirectory "Epetra_BasicDirectory::Epetra_BasicDirectory(const
+Epetra_BasicDirectory &Directory)
+
+Epetra_BasicDirectory copy constructor. ";
+
+%feature("docstring")  Epetra_BasicDirectory::~Epetra_BasicDirectory "Epetra_BasicDirectory::~Epetra_BasicDirectory(void)
+
+Epetra_BasicDirectory destructor. ";
+
+/*  Query method  */
+
+%feature("docstring")  Epetra_BasicDirectory::GetDirectoryEntries "int Epetra_BasicDirectory::GetDirectoryEntries(const Epetra_BlockMap
+&Map, const int NumEntries, const int *GlobalEntries, int *Procs, int
+*LocalEntries, int *EntrySizes, bool high_rank_sharing_procs=false)
+const
+
+GetDirectoryEntries : Returns proc and local id info for non-local map
+entries.
+
+Given a list of Global Entry IDs, this function returns the list of
+processor IDs and local IDs on the owning processor that correspond to
+the list of entries. If LocalEntries is 0, then local IDs are not
+returned. If EntrySizes is nonzero, it will contain a list of
+corresponding element sizes for the requested global entries.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of Global IDs being passed in.
+
+In:  GlobalEntries - List of Global IDs being passed in.
+
+InOut:  Procs - User allocated array of length at least NumEntries. On
+return contains list of processors owning the Global IDs in question.
+If any of the GIDs is shared by more than one processor, then the
+lowest- numbered processor is listed in this array, unless the
+optional argument 'high_rank_sharing_procs' is given as true.
+
+InOut:  LocalEntries - User allocated array of length at least
+NumEntries. On return contains the local ID of the global on the
+owning processor. If LocalEntries is zero, no local ID information is
+returned.
+
+InOut:  EntrySizes - User allocated array of length at least
+NumEntries. On return contains the size of the object associated with
+this global ID. If LocalEntries is zero, no size information is
+returned.
+
+In:  high_rank_sharing_procs Optional argument, defaults to true. If
+any GIDs appear on multiple processors (referred to as \"sharing
+procs\"), this specifies whether the lowest-rank proc or the highest-
+rank proc is chosen as the \"owner\".
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicDirectory::GIDsAllUniquelyOwned "bool Epetra_BasicDirectory::GIDsAllUniquelyOwned() const
+
+GIDsAllUniquelyOwned: returns true if all GIDs appear on just one
+processor.
+
+If any GIDs are owned by multiple processors, returns false. ";
+
+/*  I/O Methods  */
+
+%feature("docstring")  Epetra_BasicDirectory::Print "void
+Epetra_BasicDirectory::Print(ostream &os) const
+
+Print method. ";
+
 
 // File: classEpetra__BasicRowMatrix.xml
 %feature("docstring") Epetra_BasicRowMatrix "
@@ -96,6 +172,496 @@ be found by looking at Epetra_JadMatrix.
 
 C++ includes: Epetra_BasicRowMatrix.h ";
 
+/*  Constructor/Destructor  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm &Comm)
+
+Epetra_BasicRowMatrix constuctor. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix()
+
+Epetra_BasicRowMatrix Destructor. ";
+
+/*  Setup functions  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::SetMaps "void
+Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
+Epetra_Map &ColMap)
+
+Set maps (Version 1); call this function or the next, but not both. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::SetMaps "void
+Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
+Epetra_Map &ColMap, const Epetra_Map &DomainMap, const Epetra_Map
+&RangeMap)
+
+Set maps (Version 2); call this function or the previous, but not
+both. ";
+
+/*  User-required implementation methods  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::ExtractMyRowCopy "virtual int Epetra_BasicRowMatrix::ExtractMyRowCopy(int MyRow, int
+Length, int &NumEntries, double *Values, int *Indices) const =0
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  (In) - Local row to extract.
+
+Length:  (In) - Length of Values and Indices.
+
+NumEntries:  (Out) - Number of nonzero entries extracted.
+
+Values:  (Out) - Extracted values for this row.
+
+Indices:  (Out) - Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful, set to -1 if MyRow not
+valid, -2 if Length is too short (NumEntries will have required
+length). ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::ExtractMyEntryView "virtual int Epetra_BasicRowMatrix::ExtractMyEntryView(int CurEntry,
+double *&Value, int &RowIndex, int &ColIndex)=0
+
+Returns a reference to the ith entry in the matrix, along with its row
+and column index.
+
+Parameters:
+-----------
+
+CurEntry:  (In) - Index of local entry (from 0 to NumMyNonzeros()-1)
+to extract.
+
+Value:  (Out) - Extracted reference to current values.
+
+RowIndex:  (Out) - Row index for current entry.
+
+ColIndex:  (Out) - Column index for current entry.
+
+Integer error code, set to 0 if successful, set to -1 if CurEntry not
+valid. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::ExtractMyEntryView "virtual int Epetra_BasicRowMatrix::ExtractMyEntryView(int CurEntry,
+double const *&Value, int &RowIndex, int &ColIndex) const =0
+
+Returns a const reference to the ith entry in the matrix, along with
+its row and column index.
+
+Parameters:
+-----------
+
+CurEntry:  (In) - Index of local entry (from 0 to NumMyNonzeros()-1)
+to extract.
+
+Value:  (Out) - Extracted reference to current values.
+
+RowIndex:  (Out) - Row index for current entry.
+
+ColIndex:  (Out) - Column index for current entry.
+
+Integer error code, set to 0 if successful, set to -1 if CurEntry not
+valid. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumMyRowEntries "virtual int Epetra_BasicRowMatrix::NumMyRowEntries(int MyRow, int
+&NumEntries) const =0
+
+Return the current number of values stored for the specified local
+row.
+
+Similar to NumMyEntries() except NumEntries is returned as an argument
+and error checking is done on the input value MyRow.
+
+Parameters:
+-----------
+
+MyRow:  (In) - Local row.
+
+NumEntries:  (Out) - Number of nonzero values.
+
+Integer error code, set to 0 if successful, set to -1 if MyRow not
+valid. ";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::Multiply "int
+Epetra_BasicRowMatrix::Multiply(bool TransA, const Epetra_MultiVector
+&X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_BasicRowMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+TransA:  (In) - If true, multiply by the transpose of matrix,
+otherwise just use matrix.
+
+X:  (Out) - An Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  (Out) - An Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::Solve "virtual int
+Epetra_BasicRowMatrix::Solve(bool Upper, bool Trans, bool
+UnitDiagonal, const Epetra_MultiVector &X, Epetra_MultiVector &Y)
+const
+
+Returns the result of a Epetra_BasicRowMatrix solve with a
+Epetra_MultiVector X in Y (not implemented).
+
+Parameters:
+-----------
+
+Upper:  (In) - If true, solve Ux = y, otherwise solve Lx = y.
+
+Trans:  (In) - If true, solve transpose problem.
+
+UnitDiagonal:  (In) - If true, assume diagonal is unit (whether it's
+stored or not).
+
+X:  (In) - An Epetra_MultiVector of dimension NumVectors to solve for.
+
+Y:  (Out) - An Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::ExtractDiagonalCopy "int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector
+&Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Diagonal:  (Out) - Extracted main diagonal.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::InvRowSums "int
+Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the rows of the
+Epetra_BasicRowMatrix, results returned in x.
+
+The vector x will return such that x[i] will contain the inverse of
+sum of the absolute values of the this matrix will be scaled such that
+A(i,j) = x(i)*A(i,j) where i denotes the global row number of A and j
+denotes the global column number of A. Using the resulting vector from
+this function as input to LeftScale() will make the infinity norm of
+the resulting matrix exactly 1.
+
+Parameters:
+-----------
+
+x:  (Out) - An Epetra_Vector containing the row sums of the this
+matrix.
+
+WARNING:  It is assumed that the distribution of x is the same as the
+rows of this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::LeftScale "int
+Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector &x)
+
+Scales the Epetra_BasicRowMatrix on the left with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i
+denotes the row number of A and j denotes the column number of A.
+
+Parameters:
+-----------
+
+x:  (In) - An Epetra_Vector to solve for.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::InvColSums "int
+Epetra_BasicRowMatrix::InvColSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the columns of the
+Epetra_BasicRowMatrix, results returned in x.
+
+The vector x will return such that x[j] will contain the inverse of
+sum of the absolute values of the this matrix will be sca such that
+A(i,j) = x(j)*A(i,j) where i denotes the global row number of A and j
+denotes the global column number of A. Using the resulting vector from
+this function as input to RighttScale() will make the one norm of the
+resulting matrix exactly 1.
+
+Parameters:
+-----------
+
+x:  (Out) - An Epetra_Vector containing the column sums of the this
+matrix.
+
+WARNING:  It is assumed that the distribution of x is the same as the
+rows of this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::RightScale "int
+Epetra_BasicRowMatrix::RightScale(const Epetra_Vector &x)
+
+Scales the Epetra_BasicRowMatrix on the right with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i
+denotes the global row number of A and j denotes the global column
+number of A.
+
+Parameters:
+-----------
+
+x:  (In) - The Epetra_Vector used for scaling this.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Matrix Properties Query Methods  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::Filled "virtual bool
+Epetra_BasicRowMatrix::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false, presently always returns true. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::LowerTriangular "bool
+Epetra_BasicRowMatrix::LowerTriangular() const
+
+If matrix is lower triangular, this query returns true, otherwise it
+returns false. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::UpperTriangular "virtual bool Epetra_BasicRowMatrix::UpperTriangular() const
+
+If matrix is upper triangular, this query returns true, otherwise it
+returns false. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::NormInf "virtual double
+Epetra_BasicRowMatrix::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NormOne "virtual double
+Epetra_BasicRowMatrix::NormOne() const
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalNonzeros "virtual int Epetra_BasicRowMatrix::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalRows "virtual
+int Epetra_BasicRowMatrix::NumGlobalRows() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalCols "virtual
+int Epetra_BasicRowMatrix::NumGlobalCols() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalDiagonals "virtual int Epetra_BasicRowMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumMyNonzeros "virtual
+int Epetra_BasicRowMatrix::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumMyRows "virtual int
+Epetra_BasicRowMatrix::NumMyRows() const
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumMyCols "virtual int
+Epetra_BasicRowMatrix::NumMyCols() const
+
+Returns the number of matrix columns owned by the calling processor.
+";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumMyDiagonals "virtual
+int Epetra_BasicRowMatrix::NumMyDiagonals() const
+
+Returns the number of local nonzero diagonal entries. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::MaxNumEntries "virtual
+int Epetra_BasicRowMatrix::MaxNumEntries() const
+
+Returns the maximum number of nonzero entries across all rows on this
+processor. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::OperatorDomainMap "virtual const Epetra_Map& Epetra_BasicRowMatrix::OperatorDomainMap()
+const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::OperatorRangeMap "virtual const Epetra_Map& Epetra_BasicRowMatrix::OperatorRangeMap()
+const
+
+Returns the Epetra_Map object associated with the range of this
+operator (same as domain). ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::Map "virtual const
+Epetra_BlockMap& Epetra_BasicRowMatrix::Map() const
+
+Implement the Epetra_SrcDistObjec::Map() function. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::RowMatrixRowMap "virtual const Epetra_Map& Epetra_BasicRowMatrix::RowMatrixRowMap()
+const
+
+Returns the Row Map object needed for implementing Epetra_RowMatrix.
+";
+
+%feature("docstring")  Epetra_BasicRowMatrix::RowMatrixColMap "virtual const Epetra_Map& Epetra_BasicRowMatrix::RowMatrixColMap()
+const
+
+Returns the Column Map object needed for implementing
+Epetra_RowMatrix. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::RowMatrixImporter "virtual const Epetra_Import*
+Epetra_BasicRowMatrix::RowMatrixImporter() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::Comm "virtual const
+Epetra_Comm& Epetra_BasicRowMatrix::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+/*  I/O Methods  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::Print "void
+Epetra_BasicRowMatrix::Print(ostream &os) const
+
+Print method. ";
+
+/*  Additional methods required to support the Epetra_RowMatrix
+interface  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::SetUseTranspose "virtual int Epetra_BasicRowMatrix::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+UseTranspose:  (In) - If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::Label "virtual const
+char* Epetra_BasicRowMatrix::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::Apply "virtual int
+Epetra_BasicRowMatrix::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_RowMatrix applied to a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+X:  (In) - A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  (Out) - A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::ApplyInverse "virtual
+int Epetra_BasicRowMatrix::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_RowMatrix inverse applied to an
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+X:  (In) - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Y:  (Out) - A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code = -1.
+
+WARNING:  This method is NOT supported. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::HasNormInf "bool
+Epetra_BasicRowMatrix::HasNormInf() const
+
+Returns true because this class can compute an Inf-norm. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::UseTranspose "virtual
+bool Epetra_BasicRowMatrix::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+/*  Additional accessor methods  */
+
+%feature("docstring")  Epetra_BasicRowMatrix::Importer "virtual const
+Epetra_Import* Epetra_BasicRowMatrix::Importer() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations, returns zero if none.
+
+If RowMatrixColMap!=OperatorDomainMap, then this method returns a
+pointer to an Epetra_Import object that imports objects from an
+OperatorDomainMap layout to a RowMatrixColMap layout. This operation
+is needed for sparse matrix- vector multiplication, y = Ax, to gather
+x elements for local multiplication operations.
+
+If RowMatrixColMap==OperatorDomainMap, then the pointer will be
+returned as 0.
+
+Raw pointer to importer. This importer will be valid as long as the
+Epetra_RowMatrix object is valid. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::Exporter "virtual const
+Epetra_Export* Epetra_BasicRowMatrix::Exporter() const
+
+Returns the Epetra_Export object that contains the export operations
+for distributed operations, returns zero if none.
+
+If RowMatrixRowMap!=OperatorRangeMap, then this method returns a
+pointer to an Epetra_Export object that exports objects from an
+RowMatrixRowMap layout to a OperatorRangeMap layout. This operation is
+needed for sparse matrix- vector multiplication, y = Ax, to scatter-
+add y elements generated during local multiplication operations.
+
+If RowMatrixRowMap==OperatorRangeMap, then the pointer will be
+returned as 0. For a typical Epetra_RowMatrix object, this pointer
+will be zero since it is often the case that
+RowMatrixRowMap==OperatorRangeMap.
+
+Raw pointer to exporter. This exporter will be valid as long as the
+Epetra_RowMatrix object is valid. ";
+
+/*  Post-construction modifications  */
+
 
 // File: classEpetra__BLAS.xml
 %feature("docstring") Epetra_BLAS "
@@ -120,6 +686,171 @@ standard BLAS are only specified for serial execution (or shared
 memory parallel).
 
 C++ includes: Epetra_BLAS.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_BLAS::Epetra_BLAS "Epetra_BLAS::Epetra_BLAS(void)
+
+Epetra_BLAS Constructor.
+
+Builds an instance of a serial BLAS object. ";
+
+%feature("docstring")  Epetra_BLAS::Epetra_BLAS "Epetra_BLAS::Epetra_BLAS(const Epetra_BLAS &BLAS)
+
+Epetra_BLAS Copy Constructor.
+
+Makes an exact copy of an existing Epetra_BLAS instance. ";
+
+%feature("docstring")  Epetra_BLAS::~Epetra_BLAS "Epetra_BLAS::~Epetra_BLAS(void)
+
+Epetra_BLAS Destructor. ";
+
+/*  Level 1 BLAS  */
+
+%feature("docstring")  Epetra_BLAS::ASUM "float
+Epetra_BLAS::ASUM(const int N, const float *X, const int INCX=1) const
+
+Epetra_BLAS one norm function (SASUM). ";
+
+%feature("docstring")  Epetra_BLAS::ASUM "double
+Epetra_BLAS::ASUM(const int N, const double *X, const int INCX=1)
+const
+
+Epetra_BLAS one norm function (DASUM). ";
+
+%feature("docstring")  Epetra_BLAS::DOT "float Epetra_BLAS::DOT(const
+int N, const float *X, const float *Y, const int INCX=1, const int
+INCY=1) const
+
+Epetra_BLAS dot product function (SDOT). ";
+
+%feature("docstring")  Epetra_BLAS::DOT "double
+Epetra_BLAS::DOT(const int N, const double *X, const double *Y, const
+int INCX=1, const int INCY=1) const
+
+Epetra_BLAS dot product function (DDOT). ";
+
+%feature("docstring")  Epetra_BLAS::NRM2 "float
+Epetra_BLAS::NRM2(const int N, const float *X, const int INCX=1) const
+
+Epetra_BLAS norm function (SNRM2). ";
+
+%feature("docstring")  Epetra_BLAS::NRM2 "double
+Epetra_BLAS::NRM2(const int N, const double *X, const int INCX=1)
+const
+
+Epetra_BLAS norm function (DNRM2). ";
+
+%feature("docstring")  Epetra_BLAS::SCAL "void
+Epetra_BLAS::SCAL(const int N, const float ALPHA, float *X, const int
+INCX=1) const
+
+Epetra_BLAS vector scale function (SSCAL). ";
+
+%feature("docstring")  Epetra_BLAS::SCAL "void
+Epetra_BLAS::SCAL(const int N, const double ALPHA, double *X, const
+int INCX=1) const
+
+Epetra_BLAS vector scale function (DSCAL). ";
+
+%feature("docstring")  Epetra_BLAS::COPY "void
+Epetra_BLAS::COPY(const int N, const float *X, float *Y, const int
+INCX=1, const int INCY=1) const
+
+Epetra_BLAS vector copy function (SCOPY). ";
+
+%feature("docstring")  Epetra_BLAS::COPY "void
+Epetra_BLAS::COPY(const int N, const double *X, double *Y, const int
+INCX=1, const int INCY=1) const
+
+Epetra_BLAS vector scale function (DCOPY). ";
+
+%feature("docstring")  Epetra_BLAS::IAMAX "int
+Epetra_BLAS::IAMAX(const int N, const float *X, const int INCX=1)
+const
+
+Epetra_BLAS arg maximum of absolute value function (ISAMAX). ";
+
+%feature("docstring")  Epetra_BLAS::IAMAX "int
+Epetra_BLAS::IAMAX(const int N, const double *X, const int INCX=1)
+const
+
+Epetra_BLAS arg maximum of absolute value function (IDAMAX). ";
+
+%feature("docstring")  Epetra_BLAS::AXPY "void
+Epetra_BLAS::AXPY(const int N, const float ALPHA, const float *X,
+float *Y, const int INCX=1, const int INCY=1) const
+
+Epetra_BLAS vector update function (SAXPY). ";
+
+%feature("docstring")  Epetra_BLAS::AXPY "void
+Epetra_BLAS::AXPY(const int N, const double ALPHA, const double *X,
+double *Y, const int INCX=1, const int INCY=1) const
+
+Epetra_BLAS vector update function (DAXPY). ";
+
+/*  Level 2 BLAS  */
+
+%feature("docstring")  Epetra_BLAS::GEMV "void
+Epetra_BLAS::GEMV(const char TRANS, const int M, const int N, const
+float ALPHA, const float *A, const int LDA, const float *X, const
+float BETA, float *Y, const int INCX=1, const int INCY=1) const
+
+Epetra_BLAS matrix-vector multiply function (SGEMV). ";
+
+%feature("docstring")  Epetra_BLAS::GEMV "void
+Epetra_BLAS::GEMV(const char TRANS, const int M, const int N, const
+double ALPHA, const double *A, const int LDA, const double *X, const
+double BETA, double *Y, const int INCX=1, const int INCY=1) const
+
+Epetra_BLAS matrix-vector multiply function (DGEMV). ";
+
+/*  Level 3 BLAS  */
+
+%feature("docstring")  Epetra_BLAS::GEMM "void
+Epetra_BLAS::GEMM(const char TRANSA, const char TRANSB, const int M,
+const int N, const int K, const float ALPHA, const float *A, const int
+LDA, const float *B, const int LDB, const float BETA, float *C, const
+int LDC) const
+
+Epetra_BLAS matrix-matrix multiply function (SGEMM). ";
+
+%feature("docstring")  Epetra_BLAS::GEMM "void
+Epetra_BLAS::GEMM(const char TRANSA, const char TRANSB, const int M,
+const int N, const int K, const double ALPHA, const double *A, const
+int LDA, const double *B, const int LDB, const double BETA, double *C,
+const int LDC) const
+
+Epetra_BLAS matrix-matrix multiply function (DGEMM). ";
+
+%feature("docstring")  Epetra_BLAS::SYMM "void
+Epetra_BLAS::SYMM(const char SIDE, const char UPLO, const int M, const
+int N, const float ALPHA, const float *A, const int LDA, const float
+*B, const int LDB, const float BETA, float *C, const int LDC) const
+
+Epetra_BLAS symmetric matrix-matrix multiply function (SSYMM). ";
+
+%feature("docstring")  Epetra_BLAS::SYMM "void
+Epetra_BLAS::SYMM(const char SIDE, const char UPLO, const int M, const
+int N, const double ALPHA, const double *A, const int LDA, const
+double *B, const int LDB, const double BETA, double *C, const int LDC)
+const
+
+Epetra_BLAS matrix-matrix multiply function (DSYMM). ";
+
+%feature("docstring")  Epetra_BLAS::TRMM "void
+Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA,
+const char DIAG, const int M, const int N, const float ALPHA, const
+float *A, const int LDA, float *B, const int LDB) const
+
+Epetra_BLAS triangular matrix-matrix multiply function (STRMM). ";
+
+%feature("docstring")  Epetra_BLAS::TRMM "void
+Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA,
+const char DIAG, const int M, const int N, const double ALPHA, const
+double *A, const int LDA, double *B, const int LDB) const
+
+Epetra_BLAS triangular matrix-matrix multiply function (DTRMM). ";
 
 
 // File: classEpetra__BlockMap.xml
@@ -287,6 +1018,455 @@ Epetra_LocalBlockMap.  }
 
 C++ includes: Epetra_BlockMap.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
+ElementSize, int IndexBase, const Epetra_Comm &Comm)
+
+Epetra_BlockMap constructor for a Epetra-defined uniform linear
+distribution of constant size elements.
+
+Creates a map that distributes NumGlobalElements elements evenly
+across all processors in the Epetra_Comm communicator. If
+NumGlobalElements does not divide exactly into the number of
+processors, the first processors in the communicator get one extra
+element until the remainder is gone.
+
+The elements are defined to have a constant fixed size specified by
+ElementSize.
+
+Parameters:
+-----------
+
+In:  NumGlobalElements - Number of elements to distribute.
+
+In:  ElementSize - Number of points or vector entries per element.
+
+In:  IndexBase - Minimum index value used for arrays that use this
+map. Typically 0 for C/C++ and 1 for Fortran.
+
+In:  Comm - Epetra_Comm communicator containing information on the
+number of processors.
+
+Pointer to a Epetra_BlockMap object. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
+NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+&Comm)
+
+Epetra_BlockMap constructor for a user-defined linear distribution of
+constant size elements.
+
+Creates a map that puts NumMyElements on the calling processor. If
+NumGlobalElements=-1, the number of global elements will be the
+computed sum of NumMyElements across all processors in the Epetra_Comm
+communicator.
+
+The elements are defined to have a constant fixed size specified by
+ElementSize.
+
+Parameters:
+-----------
+
+In:  NumGlobalElements - Number of elements to distribute. Must be
+either -1 or equal to the computed sum of NumMyElements across all
+processors in the Epetra_Comm communicator.
+
+In:  NumMyElements - Number of elements owned by the calling
+processor.
+
+In:  ElementSize - Number of points or vector entries per element.
+
+In:  IndexBase - Minimum index value used for arrays that use this
+map. Typically 0 for C/C++ and 1 for Fortran.
+
+In:  Comm - Epetra_Comm communicator containing information on the
+number of processors.
+
+Pointer to a Epetra_BlockMap object. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
+NumMyElements, const int *MyGlobalElements, int ElementSize, int
+IndexBase, const Epetra_Comm &Comm)
+
+Epetra_BlockMap constructor for a user-defined arbitrary distribution
+of constant size elements.
+
+Creates a map that puts NumMyElements on the calling processor. The
+indices of the elements are determined from the list MyGlobalElements.
+If NumGlobalElements=-1, the number of global elements will be the
+computed sum of NumMyElements across all processors in the Epetra_Comm
+communicator.
+
+The elements are defined to have a constant fixed size specified by
+ElementSize.
+
+Parameters:
+-----------
+
+In:  NumGlobalElements - Number of elements to distribute. Must be
+either -1 or equal to the computed sum of NumMyElements across all
+processors in the Epetra_Comm communicator.
+
+In:  NumMyElements - Number of elements owned by the calling
+processor.
+
+In:  MyGlobalElements - Integer array of length NumMyElements. The ith
+entry contains the global index value of the ith element on this
+processor. Index values are not required to be contiguous on a
+processor, or to be within the range of 0 to NumGlobalElements. As
+long as the index values are consistently defined and used, any set of
+NumGlobalElements distinct integer values is acceptable.
+
+In:  ElementSize - Number of points or vector entries per element.
+
+In:  IndexBase - Minimum index value used for arrays that use this
+map. Typically 0 for C/C++ and 1 for Fortran.
+
+In:  Comm - Epetra_Comm communicator containing information on the
+number of processors.
+
+Pointer to a Epetra_BlockMap object. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
+NumMyElements, const int *MyGlobalElements, const int
+*ElementSizeList, int IndexBase, const Epetra_Comm &Comm)
+
+Epetra_BlockMap constructor for a user-defined arbitrary distribution
+of variable size elements.
+
+Creates a map that puts NumMyElements on the calling processor. If
+NumGlobalElements=-1, the number of global elements will be the
+computed sum of NumMyElements across all processors in the Epetra_Comm
+communicator.
+
+The elements are defined to have a variable size defined by
+ElementSizeList.
+
+Parameters:
+-----------
+
+In:  NumGlobalElements - Number of elements to distribute. Must be
+either -1 or equal to the computed sum of NumMyElements across all
+processors in the Epetra_Comm communicator.
+
+In:  NumMyElements - Number of elements owned by the calling
+processor.
+
+In:  MyGlobalElements - Integer array of length NumMyElements. The ith
+entry contains the global index value of the ith element on this
+processor. Index values are not required to be contiguous on a
+processor, or to be within the range of 0 to NumGlobalElements. As
+long as the index values are consistently defined and used, any set of
+NumGlobalElements distinct integer values is acceptable.
+
+In:  ElementSizeList - A list of the element sizes for elements owned
+by the calling processor. The ith entry contains the element size of
+the ith element on this processor.
+
+In:  IndexBase - Minimum index value used for arrays that use this
+map. Typically 0 for C/C++ and 1 for Fortran.
+
+In:  Comm - Epetra_Comm communicator containing information on the
+number of processors.
+
+Pointer to a Epetra_BlockMap object. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap &map)
+
+Epetra_BlockMap copy constructor. ";
+
+%feature("docstring")  Epetra_BlockMap::~Epetra_BlockMap "Epetra_BlockMap::~Epetra_BlockMap(void)
+
+Epetra_BlockMap destructor. ";
+
+/*  Local/Global ID accessor methods  */
+
+%feature("docstring")  Epetra_BlockMap::RemoteIDList "int
+Epetra_BlockMap::RemoteIDList(int NumIDs, const int *GIDList, int
+*PIDList, int *LIDList) const
+
+Returns the processor IDs and corresponding local index value for a
+given list of global indices.
+
+For each element (GID) of a given list of global element numbers
+(stored in GIDList) of length NumIDs, this function returns (in
+PIDList) the with processor that owns the GID for this map and returns
+the local index (in LIDList) of the GID on that processor. ";
+
+%feature("docstring")  Epetra_BlockMap::RemoteIDList "int
+Epetra_BlockMap::RemoteIDList(int NumIDs, const int *GIDList, int
+*PIDList, int *LIDList, int *SizeList) const
+
+Returns the processor IDs, corresponding local index value, and
+element size for a given list of global indices.
+
+For each element (GID) of a given a list of global element numbers
+(stored in GIDList) of length NumIDs, this function returns (in
+PIDList) the with processor that owns the GID for this map and returns
+the local index (in LIDList) of the GID on that processor. Finally it
+returns the element sizes in SizeList. ";
+
+%feature("docstring")  Epetra_BlockMap::LID "int
+Epetra_BlockMap::LID(int GID) const
+
+Returns local ID of global ID, return -1 if not found on this
+processor. ";
+
+%feature("docstring")  Epetra_BlockMap::GID "int
+Epetra_BlockMap::GID(int LID) const
+
+Returns global ID of local ID, return IndexBase-1 if not found on this
+processor. ";
+
+%feature("docstring")  Epetra_BlockMap::FindLocalElementID "int
+Epetra_BlockMap::FindLocalElementID(int PointID, int &ElementID, int
+&ElementOffset) const
+
+Returns the LID of the element that contains the given local PointID,
+and the Offset of the point in that element. ";
+
+%feature("docstring")  Epetra_BlockMap::MyGID "bool
+Epetra_BlockMap::MyGID(int GID) const
+
+Returns true if the GID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_BlockMap::MyLID "bool
+Epetra_BlockMap::MyLID(int LID) const
+
+Returns true if the LID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_BlockMap::MinAllGID "int
+Epetra_BlockMap::MinAllGID() const
+
+Returns the minimum global ID across the entire map. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxAllGID "int
+Epetra_BlockMap::MaxAllGID() const
+
+Returns the maximum global ID across the entire map. ";
+
+%feature("docstring")  Epetra_BlockMap::MinMyGID "int
+Epetra_BlockMap::MinMyGID() const
+
+Returns the maximum global ID owned by this processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxMyGID "int
+Epetra_BlockMap::MaxMyGID() const
+
+Returns the maximum global ID owned by this processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MinLID "int
+Epetra_BlockMap::MinLID() const
+
+The minimum local index value on the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxLID "int
+Epetra_BlockMap::MaxLID() const
+
+The maximum local index value on the calling processor. ";
+
+/*  Size and dimension accessor functions  */
+
+%feature("docstring")  Epetra_BlockMap::NumGlobalElements "int
+Epetra_BlockMap::NumGlobalElements() const
+
+Number of elements across all processors. ";
+
+%feature("docstring")  Epetra_BlockMap::NumMyElements "int
+Epetra_BlockMap::NumMyElements() const
+
+Number of elements on the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "int
+Epetra_BlockMap::MyGlobalElements(int *MyGlobalElementList) const
+
+Puts list of global elements on this processor into the user-provided
+array. ";
+
+%feature("docstring")  Epetra_BlockMap::ElementSize "int
+Epetra_BlockMap::ElementSize() const
+
+Returns the size of elements in the map; only valid if map has
+constant element size. ";
+
+%feature("docstring")  Epetra_BlockMap::ElementSize "int
+Epetra_BlockMap::ElementSize(int LID) const
+
+Size of element for specified LID. ";
+
+%feature("docstring")  Epetra_BlockMap::FirstPointInElement "int
+Epetra_BlockMap::FirstPointInElement(int LID) const
+
+Returns the requested entry in the FirstPointInElementList; see
+FirstPointInElementList() for details.
+
+This function provides similar functionality to
+FirstPointInElementList(), but for simple maps may avoid the explicit
+construction of the FirstPointInElementList array. Returns -1 if LID
+is out-of-range. ";
+
+%feature("docstring")  Epetra_BlockMap::IndexBase "int
+Epetra_BlockMap::IndexBase() const
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_BlockMap::NumGlobalPoints "int
+Epetra_BlockMap::NumGlobalPoints() const
+
+Number of global points for this map; equals the sum of all element
+sizes across all processors. ";
+
+%feature("docstring")  Epetra_BlockMap::NumMyPoints "int
+Epetra_BlockMap::NumMyPoints() const
+
+Number of local points for this map; equals the sum of all element
+sizes on the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MinMyElementSize "int
+Epetra_BlockMap::MinMyElementSize() const
+
+Minimum element size on the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxMyElementSize "int
+Epetra_BlockMap::MaxMyElementSize() const
+
+Maximum element size on the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MinElementSize "int
+Epetra_BlockMap::MinElementSize() const
+
+Minimum element size across all processors. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxElementSize "int
+Epetra_BlockMap::MaxElementSize() const
+
+Maximum element size across all processors. ";
+
+/*  Miscellaneous boolean tests  */
+
+%feature("docstring")  Epetra_BlockMap::UniqueGIDs "bool
+Epetra_BlockMap::UniqueGIDs() const
+
+Returns true if map GIDs are 1-to-1.
+
+Certain operations involving Epetra_BlockMap and Epetra_Map objects
+are well-defined only if the map GIDs are uniquely present in the map.
+In other words, if a GID occurs in the map, it occurs only once on a
+single processor and nowhere else. This boolean test returns true if
+this property is true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_BlockMap::ConstantElementSize "bool
+Epetra_BlockMap::ConstantElementSize() const
+
+Returns true if map has constant element size. ";
+
+%feature("docstring")  Epetra_BlockMap::SameAs "bool
+Epetra_BlockMap::SameAs(const Epetra_BlockMap &Map) const
+
+Returns true if this and Map are identical maps. ";
+
+%feature("docstring")  Epetra_BlockMap::PointSameAs "bool
+Epetra_BlockMap::PointSameAs(const Epetra_BlockMap &Map) const
+
+Returns true if this and Map have identical point-wise structure.
+
+If both maps have the same number of global points and the same point
+distribution across processors then this method returns true. ";
+
+%feature("docstring")  Epetra_BlockMap::LinearMap "bool
+Epetra_BlockMap::LinearMap() const
+
+Returns true if the global ID space is contiguously divided (but not
+necessarily uniformly) across all processors. ";
+
+%feature("docstring")  Epetra_BlockMap::DistributedGlobal "bool
+Epetra_BlockMap::DistributedGlobal() const
+
+Returns true if map is defined across more than one processor. ";
+
+/*  Array accessor functions  */
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "int *
+Epetra_BlockMap::MyGlobalElements() const
+
+Pointer to internal array containing list of global IDs assigned to
+the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::FirstPointInElementList "int
+* Epetra_BlockMap::FirstPointInElementList() const
+
+Pointer to internal array containing a mapping between the local
+elements and the first local point number in each element.
+
+This array is a scan sum of the ElementSizeList such that the ith
+entry in FirstPointInElementList is the sum of the first i-1 entries
+of ElementSizeList(). ";
+
+%feature("docstring")  Epetra_BlockMap::ElementSizeList "int *
+Epetra_BlockMap::ElementSizeList() const
+
+List of the element sizes corresponding to the array
+MyGlobalElements(). ";
+
+%feature("docstring")  Epetra_BlockMap::PointToElementList "int *
+Epetra_BlockMap::PointToElementList() const
+
+For each local point, indicates the local element ID that the point
+belongs to. ";
+
+%feature("docstring")  Epetra_BlockMap::ElementSizeList "int
+Epetra_BlockMap::ElementSizeList(int *ElementSizeList) const
+
+Same as ElementSizeList() except it fills the user array that is
+passed in. ";
+
+%feature("docstring")  Epetra_BlockMap::FirstPointInElementList "int
+Epetra_BlockMap::FirstPointInElementList(int *FirstPointInElementList)
+const
+
+Same as FirstPointInElementList() except it fills the user array that
+is passed in. ";
+
+%feature("docstring")  Epetra_BlockMap::PointToElementList "int
+Epetra_BlockMap::PointToElementList(int *PointToElementList) const
+
+Same as PointToElementList() except it fills the user array that is
+passed in. ";
+
+/*  Miscellaneous  */
+
+%feature("docstring")  Epetra_BlockMap::Print "void
+Epetra_BlockMap::Print(ostream &os) const
+
+Print object to an output stream. ";
+
+%feature("docstring")  Epetra_BlockMap::Comm "const Epetra_Comm&
+Epetra_BlockMap::Comm() const
+
+Access function for Epetra_Comm communicator. ";
+
+%feature("docstring")  Epetra_BlockMap::IsOneToOne "bool
+Epetra_BlockMap::IsOneToOne() const ";
+
+/*  Expert Users and Developers Only  */
+
+%feature("docstring")  Epetra_BlockMap::ReferenceCount "int
+Epetra_BlockMap::ReferenceCount() const
+
+Returns the reference count of BlockMapData.
+
+(Intended for testing purposes.) ";
+
+%feature("docstring")  Epetra_BlockMap::DataPtr "const
+Epetra_BlockMapData* Epetra_BlockMap::DataPtr() const
+
+Returns a pointer to the BlockMapData instance this BlockMap uses.
+
+(Intended for developer use only for testing purposes.) ";
+
 
 // File: classEpetra__BlockMapData.xml
 %feature("docstring") Epetra_BlockMapData "
@@ -299,6 +1479,8 @@ multiple Epetra_BlockMap instances. It derives from Epetra_Data, and
 inherits reference-counting from it.
 
 C++ includes: Epetra_BlockMapData.h ";
+
+/*  Constructor/Destructor Methods  */
 
 
 // File: classEpetra__Comm.xml
@@ -326,6 +1508,452 @@ for generating an Epetra_Distributor and Epetra_Directory object.
 
 C++ includes: Epetra_Comm.h ";
 
+/*  Constructor / Destructor  */
+
+%feature("docstring")  Epetra_Comm::Clone "virtual Epetra_Comm*
+Epetra_Comm::Clone() const =0
+
+Epetra_Comm clone constructor.
+
+The clone function will return a new heap-allocated Comm instance. It
+is the responsibility of the caller to ensure that this new instance
+is properly destroyed. ";
+
+%feature("docstring")  Epetra_Comm::~Epetra_Comm "virtual
+Epetra_Comm::~Epetra_Comm()
+
+Epetra_Comm Destructor. ";
+
+/*  Barrier Methods  */
+
+%feature("docstring")  Epetra_Comm::Barrier "virtual void
+Epetra_Comm::Barrier() const =0
+
+Epetra_Comm Barrier function.
+
+Each processor must wait at the point the barrier is called until all
+processors have arrived. ";
+
+/*  Broadcast Methods  */
+
+%feature("docstring")  Epetra_Comm::Broadcast "virtual int
+Epetra_Comm::Broadcast(double *MyVals, int Count, int Root) const =0
+
+Epetra_Comm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_Comm::Broadcast "virtual int
+Epetra_Comm::Broadcast(int *MyVals, int Count, int Root) const =0
+
+Epetra_Comm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_Comm::Broadcast "virtual int
+Epetra_Comm::Broadcast(long *MyVals, int Count, int Root) const =0
+
+Epetra_Comm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+/*  Gather Methods  */
+
+%feature("docstring")  Epetra_Comm::GatherAll "virtual int
+Epetra_Comm::GatherAll(double *MyVals, double *AllVals, int Count)
+const =0
+
+Epetra_Comm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must be of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_Comm::GatherAll "virtual int
+Epetra_Comm::GatherAll(int *MyVals, int *AllVals, int Count) const =0
+
+Epetra_Comm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must be of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_Comm::GatherAll "virtual int
+Epetra_Comm::GatherAll(long *MyVals, long *AllVals, int Count) const
+=0
+
+Epetra_Comm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must be of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+/*  Sum Methods  */
+
+%feature("docstring")  Epetra_Comm::SumAll "virtual int
+Epetra_Comm::SumAll(double *PartialSums, double *GlobalSums, int
+Count) const =0
+
+Epetra_Comm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::SumAll "virtual int
+Epetra_Comm::SumAll(int *PartialSums, int *GlobalSums, int Count)
+const =0
+
+Epetra_Comm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::SumAll "virtual int
+Epetra_Comm::SumAll(long *PartialSums, long *GlobalSums, int Count)
+const =0
+
+Epetra_Comm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Max/Min Methods  */
+
+%feature("docstring")  Epetra_Comm::MaxAll "virtual int
+Epetra_Comm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
+Count) const =0
+
+Epetra_Comm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::MaxAll "virtual int
+Epetra_Comm::MaxAll(int *PartialMaxs, int *GlobalMaxs, int Count)
+const =0
+
+Epetra_Comm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::MaxAll "virtual int
+Epetra_Comm::MaxAll(long *PartialMaxs, long *GlobalMaxs, int Count)
+const =0
+
+Epetra_Comm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::MinAll "virtual int
+Epetra_Comm::MinAll(double *PartialMins, double *GlobalMins, int
+Count) const =0
+
+Epetra_Comm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::MinAll "virtual int
+Epetra_Comm::MinAll(int *PartialMins, int *GlobalMins, int Count)
+const =0
+
+Epetra_Comm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::MinAll "virtual int
+Epetra_Comm::MinAll(long *PartialMins, long *GlobalMins, int Count)
+const =0
+
+Epetra_Comm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Parallel Prefix Methods  */
+
+%feature("docstring")  Epetra_Comm::ScanSum "virtual int
+Epetra_Comm::ScanSum(double *MyVals, double *ScanSums, int Count)
+const =0
+
+Epetra_Comm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::ScanSum "virtual int
+Epetra_Comm::ScanSum(int *MyVals, int *ScanSums, int Count) const =0
+
+Epetra_Comm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::ScanSum "virtual int
+Epetra_Comm::ScanSum(long *MyVals, long *ScanSums, int Count) const =0
+
+Epetra_Comm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Attribute Accessor Methods  */
+
+%feature("docstring")  Epetra_Comm::MyPID "virtual int
+Epetra_Comm::MyPID() const =0
+
+Return my process ID.
+
+In MPI mode returns the rank of the calling process. In serial mode
+returns 0. ";
+
+%feature("docstring")  Epetra_Comm::NumProc "virtual int
+Epetra_Comm::NumProc() const =0
+
+Returns total number of processes.
+
+In MPI mode returns the size of the MPI communicator. In serial mode
+returns 1. ";
+
+/*  Gather/Scatter and Directory Constructors  */
+
+%feature("docstring")  Epetra_Comm::CreateDistributor "virtual
+Epetra_Distributor* Epetra_Comm::CreateDistributor() const =0
+
+Create a distributor object. ";
+
+%feature("docstring")  Epetra_Comm::CreateDirectory "virtual
+Epetra_Directory* Epetra_Comm::CreateDirectory(const Epetra_BlockMap
+&Map) const =0
+
+Create a directory object for the given Epetra_BlockMap. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_Comm::PrintInfo "virtual void
+Epetra_Comm::PrintInfo(ostream &os) const =0
+
+Print object to an output stream. ";
+
 
 // File: classEpetra__CompObject.xml
 %feature("docstring") Epetra_CompObject "
@@ -338,6 +1966,79 @@ objects. It provides the basic mechanisms and interface specifications
 for floating point operations using Epetra_Flops objects.
 
 C++ includes: Epetra_CompObject.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_CompObject::Epetra_CompObject "Epetra_CompObject::Epetra_CompObject()
+
+Basic Epetra_CompObject constuctor. ";
+
+%feature("docstring")  Epetra_CompObject::Epetra_CompObject "Epetra_CompObject::Epetra_CompObject(const Epetra_CompObject &Source)
+
+Epetra_CompObject copy constructor. ";
+
+%feature("docstring")  Epetra_CompObject::~Epetra_CompObject "Epetra_CompObject::~Epetra_CompObject()
+
+Epetra_CompObject destructor. ";
+
+/*  Set/Get counter method  */
+
+%feature("docstring")  Epetra_CompObject::SetFlopCounter "void
+Epetra_CompObject::SetFlopCounter(const Epetra_Flops &FlopCounter)
+
+Set the internal Epetra_Flops() pointer. ";
+
+%feature("docstring")  Epetra_CompObject::SetFlopCounter "void
+Epetra_CompObject::SetFlopCounter(const Epetra_CompObject &CompObject)
+
+Set the internal Epetra_Flops() pointer to the flop counter of another
+Epetra_CompObject. ";
+
+%feature("docstring")  Epetra_CompObject::UnsetFlopCounter "void
+Epetra_CompObject::UnsetFlopCounter()
+
+Set the internal Epetra_Flops() pointer to 0 (no flops counted). ";
+
+%feature("docstring")  Epetra_CompObject::GetFlopCounter "Epetra_Flops* Epetra_CompObject::GetFlopCounter() const
+
+Get the pointer to the Epetra_Flops() object associated with this
+object, returns 0 if none. ";
+
+/*  Set flop count methods  */
+
+%feature("docstring")  Epetra_CompObject::ResetFlops "void
+Epetra_CompObject::ResetFlops() const
+
+Resets the number of floating point operations to zero for this multi-
+vector. ";
+
+%feature("docstring")  Epetra_CompObject::Flops "double
+Epetra_CompObject::Flops() const
+
+Returns the number of floating point operations with this multi-
+vector. ";
+
+/*  Update flop count methods  */
+
+%feature("docstring")  Epetra_CompObject::UpdateFlops "void
+Epetra_CompObject::UpdateFlops(int Flops) const
+
+Increment Flop count for this object. ";
+
+%feature("docstring")  Epetra_CompObject::UpdateFlops "void
+Epetra_CompObject::UpdateFlops(long int Flops) const
+
+Increment Flop count for this object. ";
+
+%feature("docstring")  Epetra_CompObject::UpdateFlops "void
+Epetra_CompObject::UpdateFlops(double Flops) const
+
+Increment Flop count for this object. ";
+
+%feature("docstring")  Epetra_CompObject::UpdateFlops "void
+Epetra_CompObject::UpdateFlops(float Flops) const
+
+Increment Flop count for this object. ";
 
 
 // File: classEpetra__CrsGraph.xml
@@ -560,6 +2261,873 @@ restore the graph to a consistent state.
 
 C++ includes: Epetra_CrsGraph.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_CrsGraph::Epetra_CrsGraph "Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const int *NumIndicesPerRow, bool
+StaticProfile=false)
+
+Epetra_CrsGraph constuctor with variable number of indices per row.
+
+Creates a Epetra_CrsGraph object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap)
+listing the rows that this processor will contribute to.In
+
+NumIndicesPerRow:  - (In) An integer array of length NumMyRows such
+that NumIndicesPerRow[i] indicates the (approximate if
+StaticProfile=false) number of entries in the ith row.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsGraph::Epetra_CrsGraph "Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, int NumIndicesPerRow, bool
+StaticProfile=false)
+
+Epetra_CrsGraph constuctor with fixed number of indices per row.
+
+Creates a Epetra_CrsGraph object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap)
+listing the rows that this processor will contribute to.
+
+NumIndicesPerRow:  - (In) An integer that indicates the (approximate
+if StaticProfile=false) number of entries in the each row. Note that
+it is possible to use 0 for this value and let fill occur during the
+insertion phase.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsGraph::Epetra_CrsGraph "Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, const int
+*NumIndicesPerRow, bool StaticProfile=false)
+
+Epetra_CrsGraph constuctor with variable number of indices per row.
+
+Creates a Epetra_CrsGraph object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap)
+listing the rows that this processor will contribute to.
+
+ColMap:  - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap)
+listing the columns that this processor will contribute to.
+
+NumIndicesPerRow:  - (In) An integer array of length NumMyRows such
+that NumIndicesPerRow[i] indicates the (approximate if
+StaticProfile=false) number of entries in the ith row.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsGraph::Epetra_CrsGraph "Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
+NumIndicesPerRow, bool StaticProfile=false)
+
+Epetra_CrsGraph constuctor with fixed number of indices per row.
+
+Creates a Epetra_CrsGraph object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) A Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap)
+listing the rows that this processor will contribute to.
+
+ColMap:  - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap)
+listing the columns that this processor will contribute to.
+
+In:  NumIndicesPerRow - An integer that indicates the (approximate if
+StaticProfile=false) number of entries in the each row. Note that it
+is possible to use 0 for this value and let fill occur during the
+insertion phase.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsGraph::Epetra_CrsGraph "Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph &Graph)
+
+Copy constructor.
+
+This will create a Level 1 deep copy. This Graph will share ownership
+of the CrsGraphData object with the right hand side Graph. ";
+
+%feature("docstring")  Epetra_CrsGraph::~Epetra_CrsGraph "Epetra_CrsGraph::~Epetra_CrsGraph()
+
+Epetra_CrsGraph Destructor. ";
+
+/*  Insertion/Removal methods  */
+
+%feature("docstring")  Epetra_CrsGraph::InsertGlobalIndices "int
+Epetra_CrsGraph::InsertGlobalIndices(int GlobalRow, int NumIndices,
+int *Indices)
+
+Enter a list of elements in a specified global row of the graph.
+
+Parameters:
+-----------
+
+Row:  - (In) Global row number of indices.
+
+NumIndices:  - (In) Number of Indices.
+
+Indices:  - (In) Global column indices to insert.
+
+Integer error code, set to 0 if successful. If the insertion requires
+that additional memory be allocated for the row, a positive error code
+of 1 is returned. If the graph is a 'View' mode graph, then a positive
+warning code of 2 will be returned if the specified row already
+exists. Returns 1 if underlying graph data is shared by multiple graph
+instances.
+
+IndicesAreGlobal()==true, StorageOptimized()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveGlobalIndices "int
+Epetra_CrsGraph::RemoveGlobalIndices(int GlobalRow, int NumIndices,
+int *Indices)
+
+Remove a list of elements from a specified global row of the graph.
+
+Parameters:
+-----------
+
+Row:  - (In) Global row number of indices.
+
+NumIndices:  - (In) Number of Indices.
+
+Indices:  - (In) Global column indices to remove.
+
+Integer error code, set to 0 if successful. Returns 1 if data is
+shared.
+
+IndicesAreGlobal()==true, StorageOptimized()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveGlobalIndices "int
+Epetra_CrsGraph::RemoveGlobalIndices(int Row)
+
+Remove all indices from a specified global row of the graph.
+
+Parameters:
+-----------
+
+Row:  - (In) Global row number of indices.
+
+Integer error code, set to 0 if successful. Returns 1 if data is
+shared.
+
+IndicesAreGlobal()==true, StorageOptimized()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::InsertMyIndices "int
+Epetra_CrsGraph::InsertMyIndices(int LocalRow, int NumIndices, int
+*Indices)
+
+Enter a list of elements in a specified local row of the graph.
+
+Parameters:
+-----------
+
+Row:  - (In) Local row number of indices.
+
+NumIndices:  - (In) Number of Indices.
+
+Indices:  - (In) Local column indices to insert.
+
+Integer error code, set to 0 if successful. If the insertion requires
+that additional memory be allocated for the row, a positive error code
+of 1 is returned. If one or more of the indices is ignored (due to not
+being contained in the column-map), then a positive warning code of 2
+is returned. If the graph is a 'View' mode graph, then a positive
+warning code of 3 will be returned if the specified row already
+exists. Returns 1 if underlying graph data is shared by multiple graph
+instances.
+
+IndicesAreLocal()==true, StorageOptimized()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveMyIndices "int
+Epetra_CrsGraph::RemoveMyIndices(int LocalRow, int NumIndices, int
+*Indices)
+
+Remove a list of elements from a specified local row of the graph.
+
+Parameters:
+-----------
+
+Row:  - (In) Local row number of indices.
+
+NumIndices:  - (In) Number of Indices.
+
+Indices:  - (In) Local column indices to remove.
+
+Integer error code, set to 0 if successful. Returns 1 if data is
+shared.
+
+IndicesAreLocal()==true, StorageOptimized()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveMyIndices "int
+Epetra_CrsGraph::RemoveMyIndices(int Row)
+
+Remove all indices from a specified local row of the graph.
+
+Parameters:
+-----------
+
+Row:  - (In) Local row number of indices.
+
+Integer error code, set to 0 if successful. Returns 1 if data is
+shared.
+
+IndicesAreLocal()==true, StorageOptimized()==false ";
+
+/*  Transformation methods  */
+
+%feature("docstring")  Epetra_CrsGraph::FillComplete "int
+Epetra_CrsGraph::FillComplete()
+
+Tranform to local index space. Perform other operations to allow
+optimal matrix operations.
+
+This overloading of the FillComplete method assumes that the domain-
+map and range-map both equal the row-map, and simply calls
+FillComplete( RowMap(), RowMap()). Integer error code, set to 0 if
+successful. Returns 1 if data is shared (i.e., if the underlying
+graph-data object has a reference- count greater than 1).
+
+IndicesAreLocal()==true, Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::FillComplete "int
+Epetra_CrsGraph::FillComplete(const Epetra_BlockMap &DomainMap, const
+Epetra_BlockMap &RangeMap)
+
+Transform to local index space using specified Domain/Range maps.
+Perform other operations to allow optimal matrix operations.
+
+Performs this sequence of operations: Transform indices to local index
+space
+
+Sort column-indices within each row
+
+Compress out any redundant indices within rows
+
+Compute global data such as num-nonzeros, maximum row-lengths, etc.
+
+Integer error code, set to 0 if successful. Returns 1 if data is
+shared (i.e., if the underlying graph-data object has a reference-
+count greater than 1).
+
+IndicesAreLocal()==true, Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::OptimizeStorage "int
+Epetra_CrsGraph::OptimizeStorage()
+
+Make consecutive row index sections contiguous, minimize internal
+storage used for constructing graph.
+
+After construction and during initialization (when indices are being
+added via InsertGlobalIndices() etc.), the column- indices for each
+row are held in a separate piece of allocated memory. This method
+moves the column-indices for all rows into one large contiguous array
+and eliminates internal storage that is not needed after graph
+construction. Calling this method can have a significant impact on
+memory costs and machine performance.
+
+If this object was constructed in View mode then this method can't
+make non-contiguous indices contiguous and will return a warning code
+of 1 if the viewed data isn't already contiguous. Integer error code,
+set to 0 if successful.
+
+Filled()==true.
+
+If CV=View when the graph was constructed, then this method will be
+effective  if the indices of the graph were already contiguous. In
+this case, the indices are left untouched and internal storage for the
+graph is minimized.
+
+StorageOptimized()==true, if successful ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_CrsGraph::ExtractGlobalRowCopy "int
+Epetra_CrsGraph::ExtractGlobalRowCopy(int GlobalRow, int LenOfIndices,
+int &NumIndices, int *Indices) const
+
+Extract a list of elements in a specified global row of the graph. Put
+into storage allocated by calling routine.
+
+Parameters:
+-----------
+
+Row:  - (In) Global row number to get indices.
+
+LenOfIndices:  - (In) Length of Indices array.
+
+NumIndices:  - (Out) Number of Indices.
+
+Indices:  - (Out) Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_CrsGraph::ExtractMyRowCopy "int
+Epetra_CrsGraph::ExtractMyRowCopy(int LocalRow, int LenOfIndices, int
+&NumIndices, int *Indices) const
+
+Extract a list of elements in a specified local row of the graph. Put
+into storage allocated by calling routine.
+
+Parameters:
+-----------
+
+Row:  - (In) Local row number to get indices.
+
+LenOfIndices:  - (In) Length of Indices array.
+
+NumIndices:  - (Out) Number of Indices.
+
+Indices:  - (Out) Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful.
+
+IndicesAreLocal()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::ExtractGlobalRowView "int
+Epetra_CrsGraph::ExtractGlobalRowView(int GlobalRow, int &NumIndices,
+int *&Indices) const
+
+Get a view of the elements in a specified global row of the graph.
+
+This function requires that the graph not be completed (
+FillComplete() was not called).
+
+Parameters:
+-----------
+
+Row:  - (In) Local row number to get indices.
+
+NumIndices:  - (Out) Number of Indices.
+
+Indices:  - (Out) Column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Returns -1 if invalid row.
+Returns -2 if graph is completed.
+
+IndicesAreLocal()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::ExtractMyRowView "int
+Epetra_CrsGraph::ExtractMyRowView(int LocalRow, int &NumIndices, int
+*&Indices) const
+
+Get a view of the elements in a specified local row of the graph.
+
+This function requires that the graph be completed FillComplete() was
+called).
+
+Parameters:
+-----------
+
+Row:  - (In) Local row number to get indices.
+
+NumIndices:  - (Out) Number of Indices.
+
+Indices:  - (Out) Column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Returns -1 if invalid row.
+Returns -2 if graph is not completed.
+
+IndicesAreLocal()==true ";
+
+/*  Graph Properties Query Methods  */
+
+%feature("docstring")  Epetra_CrsGraph::Filled "bool
+Epetra_CrsGraph::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::StorageOptimized "bool
+Epetra_CrsGraph::StorageOptimized() const
+
+If OptimizeStorage() has been called, this query returns true,
+otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::IndicesAreGlobal "bool
+Epetra_CrsGraph::IndicesAreGlobal() const
+
+If column indices are in global range, this query returns true,
+otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::IndicesAreLocal "bool
+Epetra_CrsGraph::IndicesAreLocal() const
+
+If column indices are in local range, this query returns true,
+otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::LowerTriangular "bool
+Epetra_CrsGraph::LowerTriangular() const
+
+If graph is lower triangular in local index space, this query returns
+true, otherwise it returns false.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::UpperTriangular "bool
+Epetra_CrsGraph::UpperTriangular() const
+
+If graph is upper triangular in local index space, this query returns
+true, otherwise it returns false.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NoDiagonal "bool
+Epetra_CrsGraph::NoDiagonal() const
+
+If graph has no diagonal entries in global index space, this query
+returns true, otherwise it returns false.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::MyGlobalRow "bool
+Epetra_CrsGraph::MyGlobalRow(int GID) const
+
+Returns true of GID is owned by the calling processor, otherwise it
+returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::HaveColMap "bool
+Epetra_CrsGraph::HaveColMap() const
+
+Returns true if we have a well-defined ColMap, and returns false
+otherwise.
+
+We have a well-defined ColMap if a) a ColMap was passed in at
+construction, or b) the MakeColMap function has been called. (Calling
+either of the FillComplete functions will result in MakeColMap being
+called.) ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_CrsGraph::NumMyRows "int
+Epetra_CrsGraph::NumMyRows() const
+
+Returns the number of matrix rows on this processor. ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalRows "int
+Epetra_CrsGraph::NumGlobalRows() const
+
+Returns the number of matrix rows in global matrix. ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyCols "int
+Epetra_CrsGraph::NumMyCols() const
+
+Returns the number of entries in the set of column-indices that appear
+on this processor.
+
+The set of column-indices that appear on this processor is the union
+of column-indices that appear in all local rows. The size of this set
+isn't available until FillComplete() has been called.  Filled()==true
+";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalCols "int
+Epetra_CrsGraph::NumGlobalCols() const
+
+Returns the number of matrix columns in global matrix.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalNonzeros "int
+Epetra_CrsGraph::NumGlobalNonzeros() const
+
+Returns the number of indices in the global graph.
+
+Note that if the graph's maps are defined such that some nonzeros
+appear on more than one processor, then those nonzeros will be counted
+more than once. If the user wishes to assemble a graph from
+overlapping data, they can use Epetra_FECrsGraph.  Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalDiagonals "int
+Epetra_CrsGraph::NumGlobalDiagonals() const
+
+Returns the number of diagonal entries in the global graph, based on
+global row/column index comparisons.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyDiagonals "int
+Epetra_CrsGraph::NumMyDiagonals() const
+
+Returns the number of diagonal entries in the local graph, based on
+global row/column index comparisons.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyBlockRows "int
+Epetra_CrsGraph::NumMyBlockRows() const
+
+Returns the number of block matrix rows on this processor. ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalBlockRows "int
+Epetra_CrsGraph::NumGlobalBlockRows() const
+
+Returns the number of Block matrix rows in global matrix. ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyBlockCols "int
+Epetra_CrsGraph::NumMyBlockCols() const
+
+Returns the number of Block matrix columns on this processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalBlockCols "int
+Epetra_CrsGraph::NumGlobalBlockCols() const
+
+Returns the number of Block matrix columns in global matrix.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyBlockDiagonals "int
+Epetra_CrsGraph::NumMyBlockDiagonals() const
+
+Returns the number of Block diagonal entries in the local graph, based
+on global row/column index comparisons.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalBlockDiagonals "int
+Epetra_CrsGraph::NumGlobalBlockDiagonals() const
+
+Returns the number of Block diagonal entries in the global graph,
+based on global row/column index comparisons.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalEntries "int
+Epetra_CrsGraph::NumGlobalEntries() const
+
+Returns the number of entries in the global graph.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyEntries "int
+Epetra_CrsGraph::NumMyEntries() const
+
+Returns the number of entries on this processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::MaxRowDim "int
+Epetra_CrsGraph::MaxRowDim() const
+
+Returns the max row dimension of block entries on the processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::GlobalMaxRowDim "int
+Epetra_CrsGraph::GlobalMaxRowDim() const
+
+Returns the max row dimension of block entries across all processors.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::MaxColDim "int
+Epetra_CrsGraph::MaxColDim() const
+
+Returns the max column dimension of block entries on the processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::GlobalMaxColDim "int
+Epetra_CrsGraph::GlobalMaxColDim() const
+
+Returns the max column dimension of block entries across all
+processors.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyNonzeros "int
+Epetra_CrsGraph::NumMyNonzeros() const
+
+Returns the number of indices in the local graph.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalIndices "int
+Epetra_CrsGraph::NumGlobalIndices(int Row) const
+
+Returns the current number of nonzero entries in specified global row
+on this processor. ";
+
+%feature("docstring")  Epetra_CrsGraph::NumAllocatedGlobalIndices "int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const
+
+Returns the allocated number of nonzero entries in specified global
+row on this processor. ";
+
+%feature("docstring")  Epetra_CrsGraph::MaxNumIndices "int
+Epetra_CrsGraph::MaxNumIndices() const
+
+Returns the maximum number of nonzero entries across all rows on this
+processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::GlobalMaxNumIndices "int
+Epetra_CrsGraph::GlobalMaxNumIndices() const
+
+Returns the maximun number of nonzero entries across all rows across
+all processors.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::MaxNumNonzeros "int
+Epetra_CrsGraph::MaxNumNonzeros() const
+
+Returns the maximum number of nonzero points across all rows on this
+processor.
+
+For each entry in the graph, let i = the GRID of the entry and j = the
+CGID of the entry. Then the entry size is the product of the rowmap
+elementsize of i and the colmap elementsize of i. Let ki = sum of all
+entry sizes for the entries in the ith row. For example, if the ith
+block row had 5 block entries and the element size of each entry was
+4-by-4, ki would be 80. Then this function returns the max over all ki
+for all row on this processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::GlobalMaxNumNonzeros "int
+Epetra_CrsGraph::GlobalMaxNumNonzeros() const
+
+Returns the maximun number of nonzero points across all rows across
+all processors.
+
+This function returns the max over all processor of MaxNumNonzeros().
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumMyIndices "int
+Epetra_CrsGraph::NumMyIndices(int Row) const
+
+Returns the current number of nonzero entries in specified local row
+on this processor. ";
+
+%feature("docstring")  Epetra_CrsGraph::NumAllocatedMyIndices "int
+Epetra_CrsGraph::NumAllocatedMyIndices(int Row) const
+
+Returns the allocated number of nonzero entries in specified local row
+on this processor. ";
+
+%feature("docstring")  Epetra_CrsGraph::IndexBase "int
+Epetra_CrsGraph::IndexBase() const
+
+Returns the index base for row and column indices for this graph. ";
+
+%feature("docstring")  Epetra_CrsGraph::RowMap "const
+Epetra_BlockMap& Epetra_CrsGraph::RowMap() const
+
+Returns the RowMap associated with this graph. ";
+
+%feature("docstring")  Epetra_CrsGraph::ReplaceRowMap "int
+Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap &newmap)
+
+Replaces the current RowMap with the user-specified map object, but
+only if currentmap->PointSameAs(newmap) is true. This is a collective
+function. Returns 0 if map is replaced, -1 if not.
+
+RowMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsGraph::ReplaceColMap "int
+Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap &newmap)
+
+Replaces the current ColMap with the user-specified map object, but
+only if currentmap->PointSameAs(newmap) is true. This is a collective
+function. Returns 0 if map is replaced, -1 if not.
+
+ColMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsGraph::ColMap "const
+Epetra_BlockMap& Epetra_CrsGraph::ColMap() const
+
+Returns the Column Map associated with this graph.
+
+HaveColMap()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::DomainMap "const
+Epetra_BlockMap& Epetra_CrsGraph::DomainMap() const
+
+Returns the DomainMap associated with this graph.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::RangeMap "const
+Epetra_BlockMap& Epetra_CrsGraph::RangeMap() const
+
+Returns the RangeMap associated with this graph.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::Importer "const
+Epetra_Import* Epetra_CrsGraph::Importer() const
+
+Returns the Importer associated with this graph. ";
+
+%feature("docstring")  Epetra_CrsGraph::Exporter "const
+Epetra_Export* Epetra_CrsGraph::Exporter() const
+
+Returns the Exporter associated with this graph. ";
+
+%feature("docstring")  Epetra_CrsGraph::Comm "const Epetra_Comm&
+Epetra_CrsGraph::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+graph. ";
+
+/*  Local/Global ID methods  */
+
+%feature("docstring")  Epetra_CrsGraph::LRID "int
+Epetra_CrsGraph::LRID(int GRID) const
+
+Returns the local row index for given global row index, returns -1 if
+no local row for this global row. ";
+
+%feature("docstring")  Epetra_CrsGraph::GRID "int
+Epetra_CrsGraph::GRID(int LRID) const
+
+Returns the global row index for give local row index, returns
+IndexBase-1 if we don't have this local row. ";
+
+%feature("docstring")  Epetra_CrsGraph::LCID "int
+Epetra_CrsGraph::LCID(int GCID) const
+
+Returns the local column index for given global column index, returns
+-1 if no local column for this global column.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsGraph::GCID "int
+Epetra_CrsGraph::GCID(int LCID) const
+
+Returns the global column index for give local column index, returns
+IndexBase-1 if we don't have this local column.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsGraph::MyGRID "bool
+Epetra_CrsGraph::MyGRID(int GRID) const
+
+Returns true if the GRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::MyLRID "bool
+Epetra_CrsGraph::MyLRID(int LRID) const
+
+Returns true if the LRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::MyGCID "bool
+Epetra_CrsGraph::MyGCID(int GCID) const
+
+Returns true if the GCID passed in belongs to the calling processor in
+this map, otherwise returns false.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsGraph::MyLCID "bool
+Epetra_CrsGraph::MyLCID(int LCID) const
+
+Returns true if the LRID passed in belongs to the calling processor in
+this map, otherwise returns false.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+/*  Inlined Operator Methods  */
+
+/*  I/O Methods  */
+
+%feature("docstring")  Epetra_CrsGraph::Print "void
+Epetra_CrsGraph::Print(ostream &os) const
+
+Print method. ";
+
+%feature("docstring")  Epetra_CrsGraph::PrintGraphData "void
+Epetra_CrsGraph::PrintGraphData(ostream &os) const ";
+
+%feature("docstring")  Epetra_CrsGraph::PrintGraphData "void
+Epetra_CrsGraph::PrintGraphData(ostream &os, int level) const ";
+
+/*  Deprecated methods:  These methods still work, but will be removed
+in a future version  */
+
+%feature("docstring")  Epetra_CrsGraph::ImportMap "const
+Epetra_BlockMap& Epetra_CrsGraph::ImportMap() const
+
+Use ColMap() instead. ";
+
+%feature("docstring")  Epetra_CrsGraph::TransformToLocal "int
+Epetra_CrsGraph::TransformToLocal()
+
+Use FillComplete() instead. ";
+
+%feature("docstring")  Epetra_CrsGraph::TransformToLocal "int
+Epetra_CrsGraph::TransformToLocal(const Epetra_BlockMap *DomainMap,
+const Epetra_BlockMap *RangeMap)
+
+Use FillComplete(const Epetra_BlockMap& DomainMap, const
+Epetra_BlockMap& RangeMap) instead. ";
+
+/*  Expert Users and Developers Only  */
+
+%feature("docstring")  Epetra_CrsGraph::ReferenceCount "int
+Epetra_CrsGraph::ReferenceCount() const
+
+Returns the reference count of CrsGraphData.
+
+(Intended for testing purposes.) ";
+
+%feature("docstring")  Epetra_CrsGraph::DataPtr "const
+Epetra_CrsGraphData* Epetra_CrsGraph::DataPtr() const
+
+Returns a pointer to the CrsGraphData instance this CrsGraph uses.
+
+(Intended for developer use only for testing purposes.) ";
+
 
 // File: classEpetra__CrsGraphData.xml
 %feature("docstring") Epetra_CrsGraphData "
@@ -572,6 +3140,11 @@ multiple Epetra_CrsGraph instances. It derives from Epetra_Data, and
 inherits reference-counting from it.
 
 C++ includes: Epetra_CrsGraphData.h ";
+
+/*  Constructor/Destructor Methods  */
+
+/*  Helper methods called in CrsGraph. Mainly memory allocations and
+deallocations.  */
 
 
 // File: classEpetra__CrsMatrix.xml
@@ -713,6 +3286,1429 @@ constructor.
 
 C++ includes: Epetra_CrsMatrix.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const
+Epetra_Map &RowMap, const int *NumEntriesPerRow, bool
+StaticProfile=false)
+
+Epetra_CrsMatrix constructor with variable number of indices per row.
+
+Creates a Epetra_CrsMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_Map defining the numbering and distribution
+of matrix rows.
+
+NumEntriesPerRow:  - (In) An integer array of length NumRows such that
+NumEntriesPerRow[i] indicates the (approximate if StaticProfile=false)
+number of entries in the ith row.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const
+Epetra_Map &RowMap, int NumEntriesPerRow, bool StaticProfile=false)
+
+Epetra_CrsMatrix constructor with fixed number of indices per row.
+
+Creates a Epetra_CrsMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_Map defining the numbering and distribution
+of matrix rows.
+
+NumEntriesPerRow:  - (In) An integer that indicates the (approximate)
+number of entries in the each row. Note that it is possible to use 0
+for this value and let fill occur during the insertion phase.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const
+Epetra_Map &RowMap, const Epetra_Map &ColMap, const int
+*NumEntriesPerRow, bool StaticProfile=false)
+
+Epetra_CrsMatrix constructor with variable number of indices per row.
+
+Creates a Epetra_CrsMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_Map defining the numbering and distribution
+of matrix rows.
+
+ColMap:  - (In) An Epetra_Map defining the set of column-indices that
+appear in each processor's locally owned matrix rows.
+
+NumEntriesPerRow:  - (In) An integer array of length NumRows such that
+NumEntriesPerRow[i] indicates the (approximate if StaticProfile=false)
+number of entries in the ith row.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const
+Epetra_Map &RowMap, const Epetra_Map &ColMap, int NumEntriesPerRow,
+bool StaticProfile=false)
+
+Epetra_CrsMatrix constuctor with fixed number of indices per row.
+
+Creates a Epetra_CrsMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+
+RowMap:  - (In) An Epetra_Map defining the numbering and distribution
+of matrix rows.
+
+ColMap:  - (In) An Epetra_Map defining the set of column-indices that
+appear in each processor's locally owned matrix rows.
+
+NumEntriesPerRow:  - (In) An integer that indicates the (approximate
+if StaticProfile=false) number of entries in the each row. Note that
+it is possible to use 0 for this value and let fill occur during the
+insertion phase.
+
+StaticProfile:  - (In) Optional argument that indicates whether or not
+NumIndicesPerRow should be interpreted as an exact count of nonzeros,
+or should be used as an approximation. By default this value is false,
+allowing the profile to be determined dynamically. If the user sets it
+to true, then the memory allocation for the Epetra_CrsGraph object
+will be done in one large block, saving on memory fragmentation and
+generally improving the performance of matrix multiplication and solve
+kernels. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const
+Epetra_CrsGraph &Graph)
+
+Construct a matrix using an existing Epetra_CrsGraph object.
+
+Allows the nonzero structure from another matrix, or a structure that
+was constructed independently, to be used for this matrix.
+
+Parameters:
+-----------
+
+CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
+
+Graph:  - (In) A Epetra_CrsGraph object, constructed directly or
+extracted from another Epetra matrix object. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix &Matrix)
+
+Copy constructor. ";
+
+%feature("docstring")  Epetra_CrsMatrix::~Epetra_CrsMatrix "Epetra_CrsMatrix::~Epetra_CrsMatrix()
+
+Epetra_CrsMatrix Destructor. ";
+
+/*  Insertion/Replace/SumInto methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::PutScalar "int
+Epetra_CrsMatrix::PutScalar(double ScalarConstant)
+
+Initialize all values in the matrix with constant value.
+
+Parameters:
+-----------
+
+ScalarConstant:  - (In) Value to use.
+
+Integer error code, set to 0 if successful.
+
+None.
+
+All values in this set to ScalarConstant. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Scale "int
+Epetra_CrsMatrix::Scale(double ScalarConstant)
+
+Multiply all values in the matrix by a constant value (in place: A <-
+ScalarConstant * A).
+
+Parameters:
+-----------
+
+ScalarConstant:  - (In) Value to use.
+
+Integer error code, set to 0 if successful.
+
+None.
+
+All values of this have been multiplied by ScalarConstant. ";
+
+%feature("docstring")  Epetra_CrsMatrix::InsertGlobalValues "int
+Epetra_CrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+Insert a list of elements in a given global row of the matrix.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Row number (in global coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, a positive warning code will be
+returned.
+
+IndicesAreLocal()==false && IndicesAreContiguous()==false ";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceGlobalValues "int
+Epetra_CrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+Replace specified existing values with this list of entries for a
+given global row of the matrix.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Row number (in global coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if a value is
+not already present for the specified location in the matrix, the
+input value will be ignored and a positive warning code will be
+returned.
+
+IndicesAreLocal()==false && IndicesAreContiguous()==false ";
+
+%feature("docstring")  Epetra_CrsMatrix::SumIntoGlobalValues "int
+Epetra_CrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+Add this list of entries to existing values for a given global row of
+the matrix.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Row number (in global coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if a value is
+not already present for the specified location in the matrix, the
+input value will be ignored and a positive warning code will be
+returned.
+
+IndicesAreLocal()==false && IndicesAreContiguous()==false ";
+
+%feature("docstring")  Epetra_CrsMatrix::InsertMyValues "int
+Epetra_CrsMatrix::InsertMyValues(int MyRow, int NumEntries, double
+*Values, int *Indices)
+
+Insert a list of elements in a given local row of the matrix.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Row number (in local coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, a positive warning code will be
+returned.
+
+IndicesAreGlobal()==false && ( IndicesAreContiguous()==false ||
+CV_==View)
+
+The given local row of the matrix has been updated as described above.
+";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceMyValues "int
+Epetra_CrsMatrix::ReplaceMyValues(int MyRow, int NumEntries, double
+*Values, int *Indices)
+
+Replace current values with this list of entries for a given local row
+of the matrix.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Row number (in local coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if a value is
+not already present for the specified location in the matrix, the
+input value will be ignored and a positive warning code will be
+returned.
+
+IndicesAreLocal()==true
+
+MyRow contains the given list of Values at the given Indices. ";
+
+%feature("docstring")  Epetra_CrsMatrix::SumIntoMyValues "int
+Epetra_CrsMatrix::SumIntoMyValues(int MyRow, int NumEntries, double
+*Values, int *Indices)
+
+Add this list of entries to existing values for a given local row of
+the matrix.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Row number (in local coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, a positive warning code will be
+returned.
+
+IndicesAreLocal()==true
+
+The given Values at the given Indices have been summed into the
+entries of MyRow. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceDiagonalValues "int
+Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector &Diagonal)
+
+Replaces diagonal values of the matrix with those in the user-provided
+vector.
+
+This routine is meant to allow replacement of { existing} diagonal
+values. If a diagonal value does not exist for a given row, the
+corresponding value in the input Epetra_Vector will be ignored and the
+return code will be set to 1.
+
+The Epetra_Map associated with the input Epetra_Vector must be
+compatible with the RowMap of the matrix.
+
+Parameters:
+-----------
+
+Diagonal:  - (In) New values to be placed in the main diagonal.
+
+Integer error code, set to 0 if successful, set to 1 on the calling
+processor if one or more diagonal entries not present in matrix.
+
+Filled()==true
+
+Diagonal values have been replaced with the values of Diagonal. ";
+
+/*  Transformation methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::FillComplete "int
+Epetra_CrsMatrix::FillComplete(bool OptimizeDataStorage=true)
+
+Signal that data entry is complete. Perform transformations to local
+index space. ";
+
+%feature("docstring")  Epetra_CrsMatrix::FillComplete "int
+Epetra_CrsMatrix::FillComplete(const Epetra_Map &DomainMap, const
+Epetra_Map &RangeMap, bool OptimizeDataStorage=true)
+
+Signal that data entry is complete. Perform transformations to local
+index space. ";
+
+%feature("docstring")  Epetra_CrsMatrix::OptimizeStorage "int
+Epetra_CrsMatrix::OptimizeStorage()
+
+Make consecutive row index sections contiguous, minimize internal
+storage used for constructing graph.
+
+After construction and during initialization (when values are being
+added), the matrix coefficients for each row are managed as separate
+segments of memory. This method moves the values for all rows into one
+large contiguous array and eliminates internal storage that is not
+needed after matrix construction. Calling this method can have a
+significant impact on memory costs and machine performance.
+
+If this object was constructed in View mode then this method can't
+make non-contiguous values contiguous and will return a warning code
+of 1 if the viewed data isn't already contiguous.
+
+A call to this method will also call the OptimizeStorage method for
+the associated Epetra_CrsGraph object. If the storage for this graph
+has already been optimized this additional call will have no effect.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true.
+
+If CV=View when the graph was constructed, then this method will be
+effective  if the indices of the graph were already contiguous. In
+this case, the indices are left untouched and internal storage for the
+graph is minimized.
+
+StorageOptimized()==true, if successful.
+
+Graph(). StorageOptimized()==true, if successful. ";
+
+%feature("docstring")  Epetra_CrsMatrix::MakeDataContiguous "int
+Epetra_CrsMatrix::MakeDataContiguous()
+
+Eliminates memory that is used for construction. Make consecutive row
+index sections contiguous. ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowCopy "int
+Epetra_CrsMatrix::ExtractGlobalRowCopy(int GlobalRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified global row in user-provided arrays.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Global row to extract.
+
+ILength:  - (In) Length of Values and Indices.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful, non-zero if global row is
+not owned by calling process or if the number of entries in this row
+exceed the Length parameter. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractMyRowCopy "int
+Epetra_CrsMatrix::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to extract.
+
+Length:  - (In) Length of Values and Indices.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted local column indices for the corresponding
+values.
+
+Integer error code, set to 0 if successful.
+
+IndicesAreLocal()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowCopy "int
+Epetra_CrsMatrix::ExtractGlobalRowCopy(int GlobalRow, int Length, int
+&NumEntries, double *Values) const
+
+Returns a copy of the specified global row values in user-provided
+array.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Global row to extract.
+
+Length:  - (In) Length of Values.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractMyRowCopy "int
+Epetra_CrsMatrix::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values) const
+
+Returns a copy of the specified local row values in user-provided
+array.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to extract.
+
+Length:  - (In) Length of Values.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractDiagonalCopy "int
+Epetra_CrsMatrix::ExtractDiagonalCopy(Epetra_Vector &Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Diagonal:  - (Out) Extracted main diagonal.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowView "int
+Epetra_CrsMatrix::ExtractGlobalRowView(int GlobalRow, int &NumEntries,
+double *&Values, int *&Indices) const
+
+Returns a view of the specified global row values via pointers to
+internal data.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Global row to view.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful. Returns -1 of row not on
+this processor. Returns -2 if matrix is not in global form (if
+FillComplete() has already been called).
+
+IndicesAreGlobal()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractMyRowView "int
+Epetra_CrsMatrix::ExtractMyRowView(int MyRow, int &NumEntries, double
+*&Values, int *&Indices) const
+
+Returns a view of the specified local row values via pointers to
+internal data.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to view.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted local column indices for the corresponding
+values.
+
+Integer error code, set to 0 if successful. Returns -1 of row not on
+this processor. Returns -2 if matrix is not in local form (if
+FillComplete() has not been called).
+
+IndicesAreLocal()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowView "int
+Epetra_CrsMatrix::ExtractGlobalRowView(int GlobalRow, int &NumEntries,
+double *&Values) const
+
+Returns a view of the specified global row values via pointers to
+internal data.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Global row to extract.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractMyRowView "int
+Epetra_CrsMatrix::ExtractMyRowView(int MyRow, int &NumEntries, double
+*&Values) const
+
+Returns a view of the specified local row values via pointers to
+internal data.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to extract.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::Multiply "int
+Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y) const
+
+Returns the result of a Epetra_CrsMatrix multiplied by a Epetra_Vector
+x in y.
+
+Parameters:
+-----------
+
+TransA:  - (In) If true, multiply by the transpose of matrix,
+otherwise just use matrix.
+
+x:  - (In) An Epetra_Vector to multiply by.
+
+y:  - (Out) An Epetra_Vector containing result.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Multiply1 "int
+Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y) const ";
+
+%feature("docstring")  Epetra_CrsMatrix::Multiply "int
+Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_CrsMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+TransA:  - (In) If true, multiply by the transpose of matrix,
+otherwise just use matrix.
+
+X:  - (In) An Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  - (Out) An Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Multiply1 "int
+Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Epetra_CrsMatrix::Solve "int
+Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_Vector &x, Epetra_Vector &y) const
+
+Returns the result of a local solve using the Epetra_CrsMatrix on a
+Epetra_Vector x in y.
+
+This method solves a triangular system of equations asynchronously on
+each processor.
+
+Parameters:
+-----------
+
+Upper:  - (In) If true, solve Uy = x, otherwise solve Ly = x.
+
+Trans:  - (In) If true, solve transpose problem.
+
+UnitDiagonal:  - (In) If true, assume diagonal is unit (whether it's
+stored or not).
+
+x:  - (In) An Epetra_Vector to solve for.
+
+y:  - (Out) An Epetra_Vector containing result.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Solve "int
+Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns the result of a local solve using the Epetra_CrsMatrix a
+Epetra_MultiVector X in Y.
+
+This method solves a triangular system of equations asynchronously on
+each processor.
+
+Parameters:
+-----------
+
+Upper:  - (In) If true, solve Uy = x, otherwise solve Ly = x.
+
+Trans:  - (In) If true, solve transpose problem.
+
+UnitDiagonal:  - (In) If true, assume diagonal is unit (whether it's
+stored or not).
+
+X:  - (In) An Epetra_MultiVector of dimension NumVectors to solve for.
+
+Y:  - (Out) An Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::InvRowSums "int
+Epetra_CrsMatrix::InvRowSums(Epetra_Vector &x) const
+
+Computes the inverse of the sum of absolute values of the rows of the
+Epetra_CrsMatrix, results returned in x.
+
+The vector x will return such that x[i] will contain the inverse of
+the sum of the absolute values of the entries in the ith row of the
+this matrix. Using the resulting vector from this function as input to
+LeftScale() will make the infinity norm of the resulting matrix
+exactly 1. WARNING:  The NormInf() method will not properly calculate
+the infinity norm for a matrix that has entries that are replicated on
+multiple processors. In this case, if the rows are fully replicated,
+NormInf() will return a value equal to the maximum number of
+processors that any individual row of the matrix is replicated on.
+
+Parameters:
+-----------
+
+x:  - (Out) An Epetra_Vector containing the row sums of the this
+matrix.
+
+WARNING:  When rows are fully replicated on multiple processors, it is
+assumed that the distribution of x is the same as the rows (
+RowMap())of this. When multiple processors contain partial sums for
+individual entries, the distribution of x is assumed to be the same as
+the RangeMap() of this. When each row of this is uniquely owned, the
+distribution of x can be that of the RowMap() or the RangeMap().
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::InvRowMaxs "int
+Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector &x) const
+
+Computes the max of absolute values of the rows of the
+Epetra_CrsMatrix, results returned in x.
+
+The vector x will return such that x[i] will contain the inverse of
+max of the absolute values of the entries in the ith row of the this
+matrix. WARNING:  This method will not work when multiple processors
+contain partial sums for individual entries.
+
+Parameters:
+-----------
+
+x:  - (Out) An Epetra_Vector containing the row maxs of the this
+matrix.
+
+WARNING:  When rows are fully replicated on multiple processors, it is
+assumed that the distribution of x is the same as the rows (
+RowMap())of this. When each row of this is uniquely owned, the
+distribution of x can be that of the RowMap() or the RangeMap().
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::LeftScale "int
+Epetra_CrsMatrix::LeftScale(const Epetra_Vector &x)
+
+Scales the Epetra_CrsMatrix on the left with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i
+denotes the row number of A and j denotes the column number of A.
+
+Parameters:
+-----------
+
+x:  - (In) An Epetra_Vector to scale with.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+The matrix will be scaled as described above. ";
+
+%feature("docstring")  Epetra_CrsMatrix::InvColSums "int
+Epetra_CrsMatrix::InvColSums(Epetra_Vector &x) const
+
+Computes the inverse of the sum of absolute values of the columns of
+the Epetra_CrsMatrix, results returned in x.
+
+The vector x will return such that x[j] will contain the inverse of
+the sum of the absolute values of the entries in the jth column of the
+this matrix. Using the resulting vector from this function as input to
+RightScale() will make the one norm of the resulting matrix exactly 1.
+WARNING:  The NormOne() method will not properly calculate the one
+norm for a matrix that has entries that are replicated on multiple
+processors. In this case, if the columns are fully replicated,
+NormOne() will return a value equal to the maximum number of
+processors that any individual column of the matrix is repliated on.
+
+Parameters:
+-----------
+
+x:  - (Out) An Epetra_Vector containing the column sums of the this
+matrix.
+
+WARNING:  When columns are fully replicated on multiple processors, it
+is assumed that the distribution of x is the same as the columns (
+ColMap()) of this. When multiple processors contain partial sums for
+entries, the distribution of x is assumed to be the same as the
+DomainMap() of this. When each column of this is uniquely owned, the
+distribution of x can be that of the ColMap() or the DomainMap().
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::InvColMaxs "int
+Epetra_CrsMatrix::InvColMaxs(Epetra_Vector &x) const
+
+Computes the max of absolute values of the columns of the
+Epetra_CrsMatrix, results returned in x.
+
+The vector x will return such that x[j] will contain the inverse of
+max of the absolute values of the entries in the jth row of the this
+matrix. WARNING:  This method will not work when multiple processors
+contain partial sums for individual entries.
+
+Parameters:
+-----------
+
+x:  - (Out) An Epetra_Vector containing the column maxs of the this
+matrix.
+
+WARNING:  When columns are fully replicated on multiple processors, it
+is assumed that the distribution of x is the same as the columns (
+ColMap()) of this. When each column of this is uniquely owned, the
+distribution of x can be that of the ColMap() or the DomainMap().
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::RightScale "int
+Epetra_CrsMatrix::RightScale(const Epetra_Vector &x)
+
+Scales the Epetra_CrsMatrix on the right with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i
+denotes the global row number of A and j denotes the global column
+number of A.
+
+Parameters:
+-----------
+
+x:  - (In) The Epetra_Vector used for scaling this.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+The matrix will be scaled as described above. ";
+
+/*  Matrix Properties Query Methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::Filled "bool
+Epetra_CrsMatrix::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::StorageOptimized "bool
+Epetra_CrsMatrix::StorageOptimized() const
+
+If OptimizeStorage() has been called, this query returns true,
+otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::IndicesAreGlobal "bool
+Epetra_CrsMatrix::IndicesAreGlobal() const
+
+If matrix indices has not been transformed to local, this query
+returns true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::IndicesAreLocal "bool
+Epetra_CrsMatrix::IndicesAreLocal() const
+
+If matrix indices has been transformed to local, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::IndicesAreContiguous "bool
+Epetra_CrsMatrix::IndicesAreContiguous() const
+
+If matrix indices are packed into single array (done in
+OptimizeStorage()) return true, otherwise false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::LowerTriangular "bool
+Epetra_CrsMatrix::LowerTriangular() const
+
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::UpperTriangular "bool
+Epetra_CrsMatrix::UpperTriangular() const
+
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NoDiagonal "bool
+Epetra_CrsMatrix::NoDiagonal() const
+
+If matrix has no diagonal entries in global index space, this query
+returns true, otherwise it returns false. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_CrsMatrix::NormInf "double
+Epetra_CrsMatrix::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NormOne "double
+Epetra_CrsMatrix::NormOne() const
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NormFrobenius "double
+Epetra_CrsMatrix::NormFrobenius() const
+
+Returns the frobenius norm of the global matrix. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalNonzeros "int
+Epetra_CrsMatrix::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalRows "int
+Epetra_CrsMatrix::NumGlobalRows() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalCols "int
+Epetra_CrsMatrix::NumGlobalCols() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalDiagonals "int
+Epetra_CrsMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumMyNonzeros "int
+Epetra_CrsMatrix::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumMyRows "int
+Epetra_CrsMatrix::NumMyRows() const
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumMyCols "int
+Epetra_CrsMatrix::NumMyCols() const
+
+Returns the number of entries in the set of column-indices that appear
+on this processor.
+
+The set of column-indices that appear on this processor is the union
+of column-indices that appear in all local rows. The size of this set
+isn't available until FillComplete() has been called.  Filled()==true
+";
+
+%feature("docstring")  Epetra_CrsMatrix::NumMyDiagonals "int
+Epetra_CrsMatrix::NumMyDiagonals() const
+
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalEntries "int
+Epetra_CrsMatrix::NumGlobalEntries(int Row) const
+
+Returns the current number of nonzero entries in specified global row
+on this processor. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumAllocatedGlobalEntries "int Epetra_CrsMatrix::NumAllocatedGlobalEntries(int Row) const
+
+Returns the allocated number of nonzero entries in specified global
+row on this processor. ";
+
+%feature("docstring")  Epetra_CrsMatrix::MaxNumEntries "int
+Epetra_CrsMatrix::MaxNumEntries() const
+
+Returns the maximum number of nonzero entries across all rows on this
+processor.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::GlobalMaxNumEntries "int
+Epetra_CrsMatrix::GlobalMaxNumEntries() const
+
+Returns the maximum number of nonzero entries across all rows on all
+processors.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumMyEntries "int
+Epetra_CrsMatrix::NumMyEntries(int Row) const
+
+Returns the current number of nonzero entries in specified local row
+on this processor. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumAllocatedMyEntries "int
+Epetra_CrsMatrix::NumAllocatedMyEntries(int Row) const
+
+Returns the allocated number of nonzero entries in specified local row
+on this processor. ";
+
+%feature("docstring")  Epetra_CrsMatrix::IndexBase "int
+Epetra_CrsMatrix::IndexBase() const
+
+Returns the index base for row and column indices for this graph. ";
+
+%feature("docstring")  Epetra_CrsMatrix::StaticGraph "bool
+Epetra_CrsMatrix::StaticGraph()
+
+Returns true if the graph associated with this matrix was pre-
+constructed and therefore not changeable. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Graph "const
+Epetra_CrsGraph& Epetra_CrsMatrix::Graph() const
+
+Returns a reference to the Epetra_CrsGraph object associated with this
+matrix. ";
+
+%feature("docstring")  Epetra_CrsMatrix::RowMap "const Epetra_Map&
+Epetra_CrsMatrix::RowMap() const
+
+Returns the Epetra_Map object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceRowMap "int
+Epetra_CrsMatrix::ReplaceRowMap(const Epetra_BlockMap &newmap)
+
+Replaces the current RowMap with the user-specified map object.
+
+Replaces the current RowMap with the user-specified map object, but
+only if currentmap->PointSameAs(newmap) is true. This is a collective
+function. Returns 0 if map is replaced, -1 if not.
+
+RowMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::HaveColMap "bool
+Epetra_CrsMatrix::HaveColMap() const
+
+Returns true if we have a well-defined ColMap, and returns false
+otherwise.
+
+We have a well-defined ColMap if a) a ColMap was passed in at
+construction, or b) the MakeColMap function has been called. (Calling
+either of the FillComplete functions will result in MakeColMap being
+called.) ";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceColMap "int
+Epetra_CrsMatrix::ReplaceColMap(const Epetra_BlockMap &newmap)
+
+Replaces the current ColMap with the user-specified map object.
+
+Replaces the current ColMap with the user-specified map object, but
+only if currentmap->PointSameAs(newmap) is true. This is a collective
+function. Returns 0 if map is replaced, -1 if not.
+
+ColMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::ColMap "const Epetra_Map&
+Epetra_CrsMatrix::ColMap() const
+
+Returns the Epetra_Map object that describes the set of column-indices
+that appear in each processor's locally owned matrix rows.
+
+Note that if the matrix was constructed with only a row-map, then
+until FillComplete() is called, this method returns a column-map that
+is a copy of the row-map. That 'initial' column-map is replaced with a
+computed column- map (that contains the set of column-indices
+appearing in each processor's local portion of the matrix) when
+FillComplete() is called.
+
+HaveColMap()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::DomainMap "const Epetra_Map&
+Epetra_CrsMatrix::DomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+matrix operator.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::RangeMap "const Epetra_Map&
+Epetra_CrsMatrix::RangeMap() const
+
+Returns the Epetra_Map object associated with the range of this matrix
+operator.
+
+Filled()==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::Importer "const
+Epetra_Import* Epetra_CrsMatrix::Importer() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Exporter "const
+Epetra_Export* Epetra_CrsMatrix::Exporter() const
+
+Returns the Epetra_Export object that contains the export operations
+for distributed operations. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Comm "const Epetra_Comm&
+Epetra_CrsMatrix::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+/*  Local/Global ID methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::LRID "int
+Epetra_CrsMatrix::LRID(int GRID) const
+
+Returns the local row index for given global row index, returns -1 if
+no local row for this global row. ";
+
+%feature("docstring")  Epetra_CrsMatrix::GRID "int
+Epetra_CrsMatrix::GRID(int LRID) const
+
+Returns the global row index for give local row index, returns
+IndexBase-1 if we don't have this local row. ";
+
+%feature("docstring")  Epetra_CrsMatrix::LCID "int
+Epetra_CrsMatrix::LCID(int GCID) const
+
+Returns the local column index for given global column index, returns
+-1 if no local column for this global column.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsMatrix::GCID "int
+Epetra_CrsMatrix::GCID(int LCID) const
+
+Returns the global column index for give local column index, returns
+IndexBase-1 if we don't have this local column.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyGRID "bool
+Epetra_CrsMatrix::MyGRID(int GRID) const
+
+Returns true if the GRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyLRID "bool
+Epetra_CrsMatrix::MyLRID(int LRID) const
+
+Returns true if the LRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyGCID "bool
+Epetra_CrsMatrix::MyGCID(int GCID) const
+
+Returns true if the GCID passed in belongs to the calling processor in
+this map, otherwise returns false.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyLCID "bool
+Epetra_CrsMatrix::MyLCID(int LCID) const
+
+Returns true if the LRID passed in belongs to the calling processor in
+this map, otherwise returns false.
+
+HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyGlobalRow "bool
+Epetra_CrsMatrix::MyGlobalRow(int GID) const
+
+Returns true of GID is owned by the calling processor, otherwise it
+returns false. ";
+
+/*  I/O Methods  */
+
+%feature("docstring")  Epetra_CrsMatrix::Print "void
+Epetra_CrsMatrix::Print(ostream &os) const
+
+Print method. ";
+
+/*  Additional methods required to support the Epetra_Operator
+interface  */
+
+%feature("docstring")  Epetra_CrsMatrix::Label "const char*
+Epetra_CrsMatrix::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_CrsMatrix::SetUseTranspose "int
+Epetra_CrsMatrix::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+UseTranspose:  - (In) If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Apply "int
+Epetra_CrsMatrix::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+X:  - (In) An Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  -(Out) An Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ApplyInverse "int
+Epetra_CrsMatrix::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+X:  - (In) An Epetra_MultiVector of dimension NumVectors to solve for.
+
+Y:  - (Out) An Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::HasNormInf "bool
+Epetra_CrsMatrix::HasNormInf() const
+
+Returns true because this class can compute an Inf-norm. ";
+
+%feature("docstring")  Epetra_CrsMatrix::UseTranspose "bool
+Epetra_CrsMatrix::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_CrsMatrix::OperatorDomainMap "const
+Epetra_Map& Epetra_CrsMatrix::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+matrix operator. ";
+
+%feature("docstring")  Epetra_CrsMatrix::OperatorRangeMap "const
+Epetra_Map& Epetra_CrsMatrix::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this matrix
+operator. ";
+
+/*  Additional methods required to implement Epetra_RowMatrix
+interface  */
+
+%feature("docstring")  Epetra_CrsMatrix::NumMyRowEntries "int
+Epetra_CrsMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const
+
+Return the current number of values stored for the specified local
+row.
+
+Similar to NumMyEntries() except NumEntries is returned as an argument
+and error checking is done on the input value MyRow.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row.
+
+NumEntries:  - (Out) Number of nonzero values.
+
+Integer error code, set to 0 if successful.
+
+None.
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_CrsMatrix::RowMatrixRowMap "const
+Epetra_Map& Epetra_CrsMatrix::RowMatrixRowMap() const
+
+Returns the Epetra_Map object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Epetra_CrsMatrix::RowMatrixColMap "const
+Epetra_Map& Epetra_CrsMatrix::RowMatrixColMap() const
+
+Returns the Epetra_Map object associated with columns of this matrix.
+";
+
+%feature("docstring")  Epetra_CrsMatrix::RowMatrixImporter "const
+Epetra_Import* Epetra_CrsMatrix::RowMatrixImporter() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
+/*  Inlined Operator Methods  */
+
+/*  Expert-only methods:  These methods are intended for experts only
+and have some risk of changing in the future, since they rely on
+underlying data structure assumptions  */
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractCrsDataPointers "int
+Epetra_CrsMatrix::ExtractCrsDataPointers(int *&IndexOffset, int
+*&Indices, double *&Values) const
+
+Returns internal data pointers associated with Crs matrix format.
+
+Returns data pointers to facilitate optimized code within external
+packages.
+
+Parameters:
+-----------
+
+IndexOffset:  - (Out) Extracted array of indices into Values[] and
+Indices[]. Local row k is stored in
+Values[IndexOffset[k]:IndexOffset[k+1]-1] and
+Indices[IndexOffset[k]:IndexOffset[k+1]-1].
+
+Values:  - (Out) Extracted values for all local rows.
+
+Indices:  - (Out) Extracted local column indices for the corresponding
+values.
+
+Integer error code, set to 0 if successful. Returns -1 if FillComplete
+has not been performed or Storage has not been Optimized.
+
+WARNING:  This method is intended for expert only, its use may require
+user code modifications in future versions of Epetra. ";
+
+/*  Deprecated methods:  These methods still work, but will be removed
+in a future version  */
+
+%feature("docstring")  Epetra_CrsMatrix::ImportMap "const Epetra_Map&
+Epetra_CrsMatrix::ImportMap() const
+
+Use ColMap() instead. ";
+
+%feature("docstring")  Epetra_CrsMatrix::TransformToLocal "int
+Epetra_CrsMatrix::TransformToLocal()
+
+Use FillComplete() instead. ";
+
+%feature("docstring")  Epetra_CrsMatrix::TransformToLocal "int
+Epetra_CrsMatrix::TransformToLocal(const Epetra_Map *DomainMap, const
+Epetra_Map *RangeMap)
+
+Use FillComplete(const Epetra_Map& DomainMap, const Epetra_Map&
+RangeMap) instead. ";
+
 
 // File: classEpetra__CrsSingletonFilter.xml
 %feature("docstring") Epetra_CrsSingletonFilter "
@@ -807,6 +4803,173 @@ UpdateReducedProblem() is called.
 
 C++ includes: Epetra_CrsSingletonFilter.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")
+Epetra_CrsSingletonFilter::Epetra_CrsSingletonFilter "Epetra_CrsSingletonFilter::Epetra_CrsSingletonFilter()
+
+Epetra_CrsSingletonFilter default constructor. ";
+
+%feature("docstring")
+Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter "Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter()
+
+Epetra_CrsSingletonFilter Destructor. ";
+
+/*  Analyze methods  */
+
+%feature("docstring")  Epetra_CrsSingletonFilter::Analyze "int
+Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix *FullMatrix)
+
+Analyze the input matrix, removing row/column pairs that have
+singletons.
+
+Analyzes the user's input matrix to determine rows and columns that
+should be explicitly eliminated to create the reduced system. Look for
+rows and columns that have single entries. These rows/columns can
+easily be removed from the problem. The results of calling this method
+are two MapColoring objects accessible via RowMapColors() and
+ColMapColors() accessor methods. All rows/columns that would be
+eliminated in the reduced system have a color of 1 in the
+corresponding RowMapColors/ColMapColors object. All kept rows/cols
+have a color of 0. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::SingletonsDetected "bool Epetra_CrsSingletonFilter::SingletonsDetected() const
+
+Returns true if singletons were detected in this matrix (must be
+called after Analyze() to be effective). ";
+
+/*  Reduce methods  */
+
+%feature("docstring")
+Epetra_CrsSingletonFilter::ConstructReducedProblem "int
+Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem
+*Problem)
+
+Return a reduced linear problem based on results of Analyze().
+
+Creates a new Epetra_LinearProblem object based on the results of the
+Analyze phase. A pointer to the reduced problem is obtained via a call
+to ReducedProblem().
+
+Error code, set to 0 if no error. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::UpdateReducedProblem
+"int
+Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem
+*Problem)
+
+Update a reduced linear problem using new values.
+
+Updates an existing Epetra_LinearProblem object using new matrix, LHS
+and RHS values. The matrix structure must be identical to the matrix
+that was used to construct the original reduced problem.
+
+Error code, set to 0 if no error. ";
+
+/*  Methods to construct Full System Solution  */
+
+%feature("docstring")  Epetra_CrsSingletonFilter::ComputeFullSolution
+"int Epetra_CrsSingletonFilter::ComputeFullSolution()
+
+Compute a solution for the full problem using the solution of the
+reduced problem, put in LHS of FullProblem().
+
+After solving the reduced linear system, this method can be called to
+compute the solution to the original problem, assuming the solution
+for the reduced system is valid. The solution of the unreduced,
+original problem will be in the LHS of the original
+Epetra_LinearProblem. ";
+
+/*  Filter Statistics  */
+
+%feature("docstring")  Epetra_CrsSingletonFilter::NumRowSingletons "int Epetra_CrsSingletonFilter::NumRowSingletons() const
+
+Return number of rows that contain a single entry, returns -1 if
+Analysis not performed yet. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::NumColSingletons "int Epetra_CrsSingletonFilter::NumColSingletons() const
+
+Return number of columns that contain a single entry that are not
+associated with singleton row, returns -1 if Analysis not performed
+yet. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::NumSingletons "int
+Epetra_CrsSingletonFilter::NumSingletons() const
+
+Return total number of singletons detected, returns -1 if Analysis not
+performed yet.
+
+Return total number of singletons detected across all processors. This
+method will not return a valid result until after the Analyze() method
+is called. The dimension of the reduced system can be computed by
+subtracting this number from dimension of full system. WARNING:  This
+method returns -1 if Analyze() method has not been called. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::RatioOfDimensions "double Epetra_CrsSingletonFilter::RatioOfDimensions() const
+
+Returns ratio of reduced system to full system dimensions, returns
+-1.0 if reduced problem not constructed. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::RatioOfNonzeros "double Epetra_CrsSingletonFilter::RatioOfNonzeros() const
+
+Returns ratio of reduced system to full system nonzero count, returns
+-1.0 if reduced problem not constructed. ";
+
+/*  Attribute Access Methods  */
+
+%feature("docstring")  Epetra_CrsSingletonFilter::FullProblem "Epetra_LinearProblem* Epetra_CrsSingletonFilter::FullProblem() const
+
+Returns pointer to the original unreduced Epetra_LinearProblem. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::ReducedProblem "Epetra_LinearProblem* Epetra_CrsSingletonFilter::ReducedProblem()
+const
+
+Returns pointer to the derived reduced Epetra_LinearProblem. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::FullMatrix "Epetra_RowMatrix* Epetra_CrsSingletonFilter::FullMatrix() const
+
+Returns pointer to Epetra_CrsMatrix from full problem. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::ReducedMatrix "Epetra_CrsMatrix* Epetra_CrsSingletonFilter::ReducedMatrix() const
+
+Returns pointer to Epetra_CrsMatrix from full problem. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::RowMapColors "Epetra_MapColoring* Epetra_CrsSingletonFilter::RowMapColors() const
+
+Returns pointer to Epetra_MapColoring object: color 0 rows are part of
+reduced system. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::ColMapColors "Epetra_MapColoring* Epetra_CrsSingletonFilter::ColMapColors() const
+
+Returns pointer to Epetra_MapColoring object: color 0 columns are part
+of reduced system. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::ReducedMatrixRowMap
+"Epetra_Map* Epetra_CrsSingletonFilter::ReducedMatrixRowMap() const
+
+Returns pointer to Epetra_Map describing the reduced system row
+distribution. ";
+
+%feature("docstring")  Epetra_CrsSingletonFilter::ReducedMatrixColMap
+"Epetra_Map* Epetra_CrsSingletonFilter::ReducedMatrixColMap() const
+
+Returns pointer to Epetra_Map describing the reduced system column
+distribution. ";
+
+%feature("docstring")
+Epetra_CrsSingletonFilter::ReducedMatrixDomainMap "Epetra_Map*
+Epetra_CrsSingletonFilter::ReducedMatrixDomainMap() const
+
+Returns pointer to Epetra_Map describing the domain map for the
+reduced system. ";
+
+%feature("docstring")
+Epetra_CrsSingletonFilter::ReducedMatrixRangeMap "Epetra_Map*
+Epetra_CrsSingletonFilter::ReducedMatrixRangeMap() const
+
+Returns pointer to Epetra_Map describing the range map for the reduced
+system. ";
+
 
 // File: classEpetra__Data.xml
 %feature("docstring") Epetra_Data "
@@ -836,6 +4999,10 @@ copy construction or assignment, or that it will perform as expected.
 
 C++ includes: Epetra_Data.h ";
 
+/*  Constructor/Destructor Methods  */
+
+/*  Reference-Counting Methods  */
+
 
 // File: classEpetra__Directory.xml
 %feature("docstring") Epetra_Directory "
@@ -849,6 +5016,64 @@ by a call to the Epetra_Comm CreateDirectory method. The Directory is
 needed to allow referencing of non-local elements.
 
 C++ includes: Epetra_Directory.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_Directory::~Epetra_Directory "virtual
+Epetra_Directory::~Epetra_Directory()
+
+Epetra_Directory destructor. ";
+
+/*  Query method  */
+
+%feature("docstring")  Epetra_Directory::GetDirectoryEntries "virtual
+int Epetra_Directory::GetDirectoryEntries(const Epetra_BlockMap &Map,
+const int NumEntries, const int *GlobalEntries, int *Procs, int
+*LocalEntries, int *EntrySizes, bool high_rank_sharing_procs=false)
+const =0
+
+GetDirectoryEntries : Returns proc and local id info for non-local map
+entries.
+
+Given a list of Global Entry IDs, this function returns the list of
+processor IDs and local IDs on the owning processor that correspond to
+the list of entries. If LocalEntries is 0, then local IDs are not
+returned. If EntrySizes is nonzero, it will contain a list of
+corresponding element sizes for the requested global entries.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of Global IDs being passed in.
+
+In:  GlobalEntries - List of Global IDs being passed in.
+
+InOut:  Procs - User allocated array of length at least NumEntries. On
+return contains list of processors owning the Global IDs in question.
+
+InOut:  LocalEntries - User allocated array of length at least
+NumEntries. On return contains the local ID of the global on the
+owning processor. If LocalEntries is zero, no local ID information is
+returned.
+
+InOut:  EntrySizes - User allocated array of length at least
+NumEntries. On return contains the size of the object associated with
+this global ID. If LocalEntries is zero, no size information is
+returned.
+
+In:  high_rank_sharing_procs Optional argument, defaults to true. If
+any GIDs appear on multiple processors (referred to as \"sharing
+procs\"), this specifies whether the lowest-rank proc or the highest-
+rank proc is chosen as the \"owner\".
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_Directory::GIDsAllUniquelyOwned "virtual bool Epetra_Directory::GIDsAllUniquelyOwned() const =0
+
+GIDsAllUniquelyOwned: returns true if all GIDs appear on just one
+processor.
+
+If any GIDs are owned by multiple processors, returns false. ";
 
 
 // File: classEpetra__DistObject.xml
@@ -879,6 +5104,170 @@ types of situation.
 
 C++ includes: Epetra_DistObject.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_DistObject::Epetra_DistObject "Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap &Map)
+
+Basic Epetra_DistObject constuctor.
+
+Creates a Epetra_DistObject object.
+
+Parameters:
+-----------
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+WARNING:  Note that, because Epetra_LocalMap derives from Epetra_Map
+and Epetra_Map derives from Epetra_BlockMap, this constructor works
+for all three types of Epetra map classes.
+
+Pointer to a Epetra_DistObject. ";
+
+%feature("docstring")  Epetra_DistObject::Epetra_DistObject "Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap &Map, const
+char *const Label)
+
+Creates a Epetra_DistObject object.
+
+Parameters:
+-----------
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+WARNING:  Note that, because Epetra_LocalMap derives from Epetra_Map
+and Epetra_Map derives from Epetra_BlockMap, this constructor works
+for all three types of Epetra map classes.
+
+Parameters:
+-----------
+
+In:  Label - An identifier for this object. By default, set to the
+name of the object class.
+
+Pointer to a Epetra_DistObject. ";
+
+%feature("docstring")  Epetra_DistObject::Epetra_DistObject "Epetra_DistObject::Epetra_DistObject(const Epetra_DistObject &Source)
+
+Epetra_DistObject copy constructor. ";
+
+%feature("docstring")  Epetra_DistObject::~Epetra_DistObject "Epetra_DistObject::~Epetra_DistObject()
+
+Epetra_DistObject destructor. ";
+
+/*  Import/Export Methods  */
+
+%feature("docstring")  Epetra_DistObject::Import "int
+Epetra_DistObject::Import(const Epetra_SrcDistObject &A, const
+Epetra_Import &Importer, Epetra_CombineMode CombineMode, const
+Epetra_OffsetIndex *Indexor=0)
+
+Imports an Epetra_DistObject using the Epetra_Import object.
+
+Parameters:
+-----------
+
+In:  Source - Distributed object that will be imported into the
+\"\\\\e this\" object.
+
+In:  Importer - A Epetra_Import object specifying the communication
+required.
+
+In:  CombineMode - A Epetra_CombineMode enumerated type specifying how
+results should be combined on the receiving processor.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_DistObject::Import "int
+Epetra_DistObject::Import(const Epetra_SrcDistObject &A, const
+Epetra_Export &Exporter, Epetra_CombineMode CombineMode, const
+Epetra_OffsetIndex *Indexor=0)
+
+Imports an Epetra_DistObject using the Epetra_Export object.
+
+Parameters:
+-----------
+
+In:  Source - Distributed object that will be imported into the
+\"\\\\e this\" object.
+
+In:  Exporter - A Epetra_Export object specifying the communication
+required.
+
+In:  CombineMode - A Epetra_CombineMode enumerated type specifying how
+results should be combined on the receiving processor.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_DistObject::Export "int
+Epetra_DistObject::Export(const Epetra_SrcDistObject &A, const
+Epetra_Import &Importer, Epetra_CombineMode CombineMode, const
+Epetra_OffsetIndex *Indexor=0)
+
+Exports an Epetra_DistObject using the Epetra_Import object.
+
+Parameters:
+-----------
+
+In:  Source - Distributed object that will be exported to the \"\\\\e
+this\" object.
+
+In:  Importer - A Epetra_Import object specifying the communication
+required.
+
+In:  CombineMode - A Epetra_CombineMode enumerated type specifying how
+results should be combined on the receiving processor.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_DistObject::Export "int
+Epetra_DistObject::Export(const Epetra_SrcDistObject &A, const
+Epetra_Export &Exporter, Epetra_CombineMode CombineMode, const
+Epetra_OffsetIndex *Indexor=0)
+
+Exports an Epetra_DistObject using the Epetra_Export object.
+
+Parameters:
+-----------
+
+In:  Source - Distributed object that will be exported to the \"\\\\e
+this\" multivector.
+
+In:  Exporter - A Epetra_Export object specifying the communication
+required.
+
+In:  CombineMode - A Epetra_CombineMode enumerated type specifying how
+results should be combined on the receiving processor.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Attribute accessor methods  */
+
+%feature("docstring")  Epetra_DistObject::Map "const Epetra_BlockMap&
+Epetra_DistObject::Map() const
+
+Returns the address of the Epetra_BlockMap for this multi-vector. ";
+
+%feature("docstring")  Epetra_DistObject::Comm "const Epetra_Comm&
+Epetra_DistObject::Comm() const
+
+Returns the address of the Epetra_Comm for this multi-vector. ";
+
+%feature("docstring")  Epetra_DistObject::DistributedGlobal "bool
+Epetra_DistObject::DistributedGlobal() const
+
+Returns true if this multi-vector is distributed global, i.e., not
+local replicated. ";
+
+/*  Miscellaneous  */
+
+%feature("docstring")  Epetra_DistObject::Print "void
+Epetra_DistObject::Print(ostream &os) const
+
+Print method. ";
+
+/*  Internal utilities  */
+
+/*  Virtual methods to be implemented by derived class  */
+
 
 // File: classEpetra__Distributor.xml
 %feature("docstring") Epetra_Distributor "
@@ -899,6 +5288,144 @@ required for normal manipulation of linear algebra objects..
 
 C++ includes: Epetra_Distributor.h ";
 
+/*  Constructor and Destructor  */
+
+%feature("docstring")  Epetra_Distributor::Clone "virtual
+Epetra_Distributor* Epetra_Distributor::Clone()=0
+
+Epetra_Distributor clone constructor. ";
+
+%feature("docstring")  Epetra_Distributor::~Epetra_Distributor "virtual Epetra_Distributor::~Epetra_Distributor()
+
+Epetra_Distributor Destructor. ";
+
+/*  Gather/Scatter Constructors  */
+
+%feature("docstring")  Epetra_Distributor::CreateFromSends "virtual
+int Epetra_Distributor::CreateFromSends(const int &NumExportIDs, const
+int *ExportPIDs, bool Deterministic, int &NumRemoteIDs)=0
+
+Create Distributor object using list of process IDs to which we
+export.
+
+Take a list of Process IDs and construct a plan for efficiently
+scattering to these processes. Return the number of IDs being sent to
+me.
+
+Parameters:
+-----------
+
+NumExportIDs:  In Number of IDs that need to be sent from this
+processor.
+
+ExportPIDs:  In List of processors that will get the exported IDs.
+
+Deterministic:  In No op.
+
+NumRemoteIDs:  Out Number of IDs this processor will be receiving. ";
+
+%feature("docstring")  Epetra_Distributor::CreateFromRecvs "virtual
+int Epetra_Distributor::CreateFromRecvs(const int &NumRemoteIDs, const
+int *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
+&NumExportIDs, int *&ExportGIDs, int *&ExportPIDs)=0
+
+Create Distributor object using list of Remote global IDs and
+corresponding PIDs.
+
+Take a list of global IDs and construct a plan for efficiently
+scattering to these processes. Return the number and list of IDs being
+sent by me.
+
+Parameters:
+-----------
+
+NumRemoteIDs:  In Number of IDs this processor will be receiving.
+
+RemoteGIDs:  In List of IDs that this processor wants.
+
+RemotePIDs:  In List of processors that will send the remote IDs.
+
+Deterministic:  In No op.
+
+NumExportIDs:  Out Number of IDs that need to be sent from this
+processor.
+
+ExportPIDs:  Out List of processors that will get the exported IDs. ";
+
+/*  Execute Gather/Scatter Operations (Constant size objects)  */
+
+%feature("docstring")  Epetra_Distributor::Do "virtual int
+Epetra_Distributor::Do(char *export_objs, int obj_size, int
+&len_import_objs, char *&import_objs)=0
+
+Execute plan on buffer of export objects in a single step. ";
+
+%feature("docstring")  Epetra_Distributor::DoReverse "virtual int
+Epetra_Distributor::DoReverse(char *export_objs, int obj_size, int
+&len_import_objs, char *&import_objs)=0
+
+Execute reverse of plan on buffer of export objects in a single step.
+";
+
+%feature("docstring")  Epetra_Distributor::DoPosts "virtual int
+Epetra_Distributor::DoPosts(char *export_objs, int obj_size, int
+&len_import_objs, char *&import_objs)=0
+
+Post buffer of export objects (can do other local work before
+executing Waits). ";
+
+%feature("docstring")  Epetra_Distributor::DoWaits "virtual int
+Epetra_Distributor::DoWaits()=0
+
+Wait on a set of posts. ";
+
+%feature("docstring")  Epetra_Distributor::DoReversePosts "virtual
+int Epetra_Distributor::DoReversePosts(char *export_objs, int
+obj_size, int &len_import_objs, char *&import_objs)=0
+
+Do reverse post of buffer of export objects (can do other local work
+before executing Waits). ";
+
+%feature("docstring")  Epetra_Distributor::DoReverseWaits "virtual
+int Epetra_Distributor::DoReverseWaits()=0
+
+Wait on a reverse set of posts. ";
+
+/*  Execute Gather/Scatter Operations (Non-constant size objects)  */
+
+%feature("docstring")  Epetra_Distributor::Do "virtual int
+Epetra_Distributor::Do(char *export_objs, int obj_size, int *&sizes,
+int &len_import_objs, char *&import_objs)=0
+
+Execute plan on buffer of export objects in a single step (object size
+may vary). ";
+
+%feature("docstring")  Epetra_Distributor::DoReverse "virtual int
+Epetra_Distributor::DoReverse(char *export_objs, int obj_size, int
+*&sizes, int &len_import_objs, char *&import_objs)=0
+
+Execute reverse of plan on buffer of export objects in a single step
+(object size may vary). ";
+
+%feature("docstring")  Epetra_Distributor::DoPosts "virtual int
+Epetra_Distributor::DoPosts(char *export_objs, int obj_size, int
+*&sizes, int &len_import_objs, char *&import_objs)=0
+
+Post buffer of export objects (can do other local work before
+executing Waits). ";
+
+%feature("docstring")  Epetra_Distributor::DoReversePosts "virtual
+int Epetra_Distributor::DoReversePosts(char *export_objs, int
+obj_size, int *&sizes, int &len_import_objs, char *&import_objs)=0
+
+Do reverse post of buffer of export objects (can do other local work
+before executing Waits). ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_Distributor::Print "virtual void
+Epetra_Distributor::Print(ostream &os) const =0 ";
+
 
 // File: classEpetra__Export.xml
 %feature("docstring") Epetra_Export "
@@ -917,6 +5444,13 @@ are owned by the calling processor. The second map specifies the
 global IDs of elements that we want to export to later.
 
 C++ includes: Epetra_Export.h ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_Export::Print "void
+Epetra_Export::Print(ostream &os) const
+
+Print object to an output stream Print method ";
 
 %feature("docstring")  Epetra_Export::Epetra_Export "Epetra_Export::Epetra_Export(const Epetra_BlockMap &SourceMap, const
 Epetra_BlockMap &TargetMap)
@@ -1891,6 +6425,195 @@ Epetra_VbrMatrix functionality is also available.
 
 C++ includes: Epetra_FEVbrMatrix.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, int *NumBlockEntriesPerRow, bool
+ignoreNonLocalEntries=false)
+
+Epetra_FEVbrMatrix constuctor with variable number of indices per row.
+
+Creates a Epetra_FEVbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - A Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  NumBlockEntriesPerRow - An integer array of length NumRows such
+that NumBlockEntriesPerRow[i] indicates the (approximate) number of
+Block entries in the ith row. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, int NumBlockEntriesPerRow, bool
+ignoreNonLocalEntries=false)
+
+Epetra_FEVbrMatrix constuctor with fixed number of indices per row.
+
+Creates a Epetra_FEVbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - An Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  NumBlockEntriesPerRow - An integer that indicates the
+(approximate) number of Block entries in the each Block row. Note that
+it is possible to use 0 for this value and let fill occur during the
+insertion phase. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
+*NumBlockEntriesPerRow, bool ignoreNonLocalEntries=false)
+
+Epetra_FEVbrMatrix constuctor with variable number of indices per row.
+
+Creates a Epetra_FEVbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - A Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  ColMap - A Epetra_BlockMap listing the block columns to be
+contained on this processor.
+
+In:  NumBlockEntriesPerRow - An integer array of length NumRows such
+that NumBlockEntriesPerRow[i] indicates the (approximate) number of
+Block entries in the ith row. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
+NumBlockEntriesPerRow, bool ignoreNonLocalEntries=false)
+
+Epetra_FEVbrMatrix constuctor with fixed number of indices per row.
+
+Creates a Epetra_FEVbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - An Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  ColMap - An Epetra_BlockMap listing the block columns to be
+contained on this processor.
+
+In:  NumBlockEntriesPerRow - An integer that indicates the
+(approximate) number of Block entries in the each Block row. Note that
+it is possible to use 0 for this value and let fill occur during the
+insertion phase. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
+Epetra_CrsGraph &Graph, bool ignoreNonLocalEntries=false)
+
+Constructor with pre-constructed Graph. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(const Epetra_FEVbrMatrix &src)
+
+Copy Constructor. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix()
+
+Epetra_VbrMatrix Destructor. ";
+
+/*  Insertion/Replace/SumInto methods  */
+
+%feature("docstring")  Epetra_FEVbrMatrix::PutScalar "int
+Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
+
+Initialize all values in graph of the matrix with constant value.
+
+Parameters:
+-----------
+
+In:  ScalarConstant - Value to use.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginInsertGlobalValues "int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate insertion of a list of elements in a given global row of the
+matrix, values are inserted via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  BlockRow - Block Row number (in global coordinates) to put
+elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginReplaceGlobalValues "int Epetra_FEVbrMatrix::BeginReplaceGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate replacement of current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginSumIntoGlobalValues "int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate summing into current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::SubmitBlockEntry "int
+Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values, int LDA, int
+NumRows, int NumCols)
+
+Submit a block entry to the indicated block row and column specified
+in the Begin routine. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::EndSubmitEntries "int
+Epetra_FEVbrMatrix::EndSubmitEntries()
+
+Completes processing of all data passed in for the current block row.
+
+This function completes the processing of all block entries submitted
+via SubmitBlockEntry(). It also checks to make sure that
+SubmitBlockEntry was called the correct number of times as specified
+by the Begin routine that initiated the entry process. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::GlobalAssemble "int
+Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete=true) ";
+
 
 // File: classEpetra__FEVector.xml
 %feature("docstring") Epetra_FEVector "
@@ -2086,6 +6809,13 @@ elements that we want to import later. The second map specifies the
 global IDs that are owned by the calling processor.
 
 C++ includes: Epetra_Import.h ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_Import::Print "void
+Epetra_Import::Print(ostream &os) const
+
+Print object to an output stream Print method ";
 
 %feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_BlockMap &TargetMap, const
 Epetra_BlockMap &SourceMap)
@@ -2368,6 +7098,205 @@ Norms.
 
 C++ includes: Epetra_IntSerialDenseMatrix.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")
+Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix "Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix()
+
+Default constructor; defines a zero size object.
+
+Epetra_IntSerialDenseMatrix objects defined by the default constructor
+should be sized with the Shape() or Reshape functions. Values should
+be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix "Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(int NumRows,
+int NumCols)
+
+Shaped constructor; defines a variable-sized object.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Epetra_SerialDenseMatrix objects defined by the shaped constructor are
+already shaped to the dimensions given as a parameters. All values are
+initialized to 0. Calling this constructor is equivalent to using the
+default constructor, and then calling the Shape function on it. Values
+should be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix "Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(Epetra_DataAccess
+CV, int *A, int LDA, int NumRows, int NumCols)
+
+Set object values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  A - Pointer to an array of integer numbers. The first vector
+starts at A. The second vector starts at A+LDA, the third at A+2*LDA,
+and so on.
+
+In:  LDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+See Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix "Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(const
+Epetra_IntSerialDenseMatrix &Source)
+
+Epetra_IntSerialDenseMatrix copy constructor.
+
+This matrix will take on the data access mode of the Source matrix. ";
+
+%feature("docstring")
+Epetra_IntSerialDenseMatrix::~Epetra_IntSerialDenseMatrix "Epetra_IntSerialDenseMatrix::~Epetra_IntSerialDenseMatrix()
+
+Epetra_IntSerialDenseMatrix destructor. ";
+
+/*  Shaping/sizing Methods  */
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::Shape "int
+Epetra_IntSerialDenseMatrix::Shape(int NumRows, int NumCols)
+
+Set dimensions of a Epetra_IntSerialDenseMatrix object; init values to
+zero.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Allows user to define the dimensions of a Epetra_IntSerialDenseMatrix
+at any point. This function can be called at any point after
+construction. Any values that were previously in this object are
+destroyed and the resized matrix starts off with all zero values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::Reshape "int
+Epetra_IntSerialDenseMatrix::Reshape(int NumRows, int NumCols)
+
+Reshape a Epetra_IntSerialDenseMatrix object.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Allows user to define the dimensions of a Epetra_IntSerialDenseMatrix
+at any point. This function can be called at any point after
+construction. Any values that were previously in this object are
+copied into the new shape. If the new shape is smaller than the
+original, the upper left portion of the original matrix (the principal
+submatrix) is copied to the new matrix.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Data Accessor methods  */
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::OneNorm "int
+Epetra_IntSerialDenseMatrix::OneNorm()
+
+Computes the 1-Norm of the this matrix.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::InfNorm "int
+Epetra_IntSerialDenseMatrix::InfNorm()
+
+Computes the Infinity-Norm of the this matrix. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::Random "int
+Epetra_IntSerialDenseMatrix::Random()
+
+Set matrix values to random numbers.
+
+IntSerialDenseMatrix uses the random number generator provided by
+Epetra_Util. The matrix values will be set to random values on the
+interval (0, 2^31 - 1).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::M "int
+Epetra_IntSerialDenseMatrix::M() const
+
+Returns row dimension of system. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::N "int
+Epetra_IntSerialDenseMatrix::N() const
+
+Returns column dimension of system. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::A "const int*
+Epetra_IntSerialDenseMatrix::A() const
+
+Returns const pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::A "int*
+Epetra_IntSerialDenseMatrix::A()
+
+Returns pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::LDA "int
+Epetra_IntSerialDenseMatrix::LDA() const
+
+Returns the leading dimension of the this matrix. ";
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::CV "Epetra_DataAccess Epetra_IntSerialDenseMatrix::CV() const
+
+Returns the data access mode of the this matrix. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::Print "void
+Epetra_IntSerialDenseMatrix::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
+/*  Expert-only unsupported methods  */
+
+%feature("docstring")  Epetra_IntSerialDenseMatrix::MakeViewOf "int
+Epetra_IntSerialDenseMatrix::MakeViewOf(const
+Epetra_IntSerialDenseMatrix &Source)
+
+Reset an existing IntSerialDenseMatrix to point to another Matrix.
+
+Allows an existing IntSerialDenseMatrix to become a View of another
+matrix's data, regardless of the DataAccess mode of the Source matrix.
+It is assumed that the Source matrix is an independent matrix, and no
+checking is done to verify this.
+
+This is used by Epetra_CrsGraph in the OptimizeStorage method. It is
+used so that an existing (Copy) matrix can be converted to a View.
+This frees up memory that CrsGraph no longer needs.
+
+Parameters:
+-----------
+
+Source:  The IntSerialDenseMatrix this will become a view of.
+
+Integer error code, set to 0 if successful, and set to -1 if a type
+mismatch occured.
+
+WARNING:  This method is extremely dangerous and should only be used
+by experts. ";
+
 
 // File: classEpetra__IntSerialDenseVector.xml
 %feature("docstring") Epetra_IntSerialDenseVector "
@@ -2412,6 +7341,40 @@ WARNING:  Use of these access functions cam be extremely dangerous
 from a data hiding perspective.
 
 C++ includes: Epetra_IntSerialDenseVector.h ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_IntSerialDenseVector::Print "void
+Epetra_IntSerialDenseVector::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
+/*  Expert-only unsupported methods  */
+
+%feature("docstring")  Epetra_IntSerialDenseVector::MakeViewOf "int
+Epetra_IntSerialDenseVector::MakeViewOf(const
+Epetra_IntSerialDenseVector &Source)
+
+Reset an existing IntSerialDenseVector to point to another Vector.
+
+Allows an existing IntSerialDenseVector to become a View of another
+vector's data, regardless of the DataAccess mode of the Source vector.
+It is assumed that the Source vector is an independent vector, and no
+checking is done to verify this.
+
+This is used by Epetra_CrsGraph in the OptimizeStorage method. It is
+used so that an existing (Copy) vector can be converted to a View.
+This frees up memory that CrsGraph no longer needs.
+
+Parameters:
+-----------
+
+Source:  The IntSerialDenseVector this will become a view of.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  This method is extremely dangerous and should only be used
+by experts. ";
 
 %feature("docstring")
 Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector "Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector()
@@ -2604,6 +7567,136 @@ required for all Epetra_IntVector constructors.
 
 C++ includes: Epetra_IntVector.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_IntVector::Epetra_IntVector "Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap &Map, bool
+zeroOut=true)
+
+Basic Epetra_IntVector constuctor.
+
+Creates a Epetra_IntVector object and, by default, fills with zero
+values.
+
+Parameters:
+-----------
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+WARNING:  Note that, because Epetra_LocalMap derives from Epetra_Map
+and Epetra_Map derives from Epetra_BlockMap, this constructor works
+for all three types of Epetra map classes.
+
+Parameters:
+-----------
+
+In:  zeroOut - If true then the allocated memory will be zeroed out
+initialy. If false then this memory will not be touched which can be
+significantly faster.
+
+Pointer to a Epetra_IntVector. ";
+
+%feature("docstring")  Epetra_IntVector::Epetra_IntVector "Epetra_IntVector::Epetra_IntVector(const Epetra_IntVector &Source)
+
+Epetra_IntVector copy constructor. ";
+
+%feature("docstring")  Epetra_IntVector::Epetra_IntVector "Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, int *V)
+
+Set vector values from user array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  V - Pointer to an array of integer numbers..
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_IntVector::~Epetra_IntVector "Epetra_IntVector::~Epetra_IntVector()
+
+Epetra_IntVector destructor. ";
+
+/*  Post-construction modification methods  */
+
+%feature("docstring")  Epetra_IntVector::PutValue "int
+Epetra_IntVector::PutValue(int Value)
+
+Set all elements of the vector to Value. ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_IntVector::ExtractCopy "int
+Epetra_IntVector::ExtractCopy(int *V) const
+
+Put vector values into user-provided array.
+
+Parameters:
+-----------
+
+Out:  V - Pointer to memory space that will contain the vector values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_IntVector::ExtractView "int
+Epetra_IntVector::ExtractView(int **V) const
+
+Set user-provided address of V.
+
+Parameters:
+-----------
+
+Out:  V - Address of a pointer to that will be set to point to the
+values of the vector.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Mathematical methods  */
+
+%feature("docstring")  Epetra_IntVector::MaxValue "int
+Epetra_IntVector::MaxValue()
+
+Find maximum value.
+
+Maximum value across all processors. ";
+
+%feature("docstring")  Epetra_IntVector::MinValue "int
+Epetra_IntVector::MinValue()
+
+Find minimum value.
+
+Minimum value across all processors. ";
+
+/*  Overloaded operators  */
+
+/*  Attribute access functions  */
+
+%feature("docstring")  Epetra_IntVector::Values "int*
+Epetra_IntVector::Values() const
+
+Returns a pointer to an array containing the values of this vector. ";
+
+%feature("docstring")  Epetra_IntVector::MyLength "int
+Epetra_IntVector::MyLength() const
+
+Returns the local vector length on the calling processor of vectors in
+the multi-vector. ";
+
+%feature("docstring")  Epetra_IntVector::GlobalLength "int
+Epetra_IntVector::GlobalLength() const
+
+Returns the global vector length of vectors in the multi-vector. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_IntVector::Print "void
+Epetra_IntVector::Print(ostream &os) const
+
+Print method. ";
+
 
 // File: classEpetra__InvOperator.xml
 %feature("docstring") Epetra_InvOperator "
@@ -2619,6 +7712,129 @@ implemented in the original Epetra_Operator object.
 
 C++ includes: Epetra_InvOperator.h ";
 
+/*  Constructor  */
+
+%feature("docstring")  Epetra_InvOperator::Epetra_InvOperator "Epetra_InvOperator::Epetra_InvOperator(Epetra_Operator *operatorIn)
+
+Uses an Epetra_Operator instance to implement the Epetra_Operator
+interface.
+
+Facilitates the use of an Epetra_Operator instance as an inverse
+operator.
+
+Parameters:
+-----------
+
+In:  - A fully-constructed Epetra_Operator object. ";
+
+%feature("docstring")  Epetra_InvOperator::~Epetra_InvOperator "Epetra_InvOperator::~Epetra_InvOperator()
+
+Destructor. ";
+
+/*  Atribute set methods  */
+
+%feature("docstring")  Epetra_InvOperator::SetUseTranspose "int
+Epetra_InvOperator::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose - If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+WARNING:  - This method has no effect and returns -1 as error code. ";
+
+/*  Mathematical functions  */
+
+%feature("docstring")  Epetra_InvOperator::Apply "int
+Epetra_InvOperator::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_InvOperator applied to a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+WARNING:  - This method has no effect and returns -1 as error code. ";
+
+%feature("docstring")  Epetra_InvOperator::ApplyInverse "int
+Epetra_InvOperator::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_InvOperator inverse applied to an
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_InvOperator::NormInf "double
+Epetra_InvOperator::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_InvOperator::Label "const char*
+Epetra_InvOperator::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_InvOperator::Operator "Epetra_Operator*
+Epetra_InvOperator::Operator() const
+
+Returns a pointer to the Epetra_Operator operator object that was used
+to create this Epetra_InvOperator object. ";
+
+%feature("docstring")  Epetra_InvOperator::UseTranspose "bool
+Epetra_InvOperator::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_InvOperator::HasNormInf "bool
+Epetra_InvOperator::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Epetra_InvOperator::Comm "const Epetra_Comm&
+Epetra_InvOperator::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Epetra_InvOperator::OperatorDomainMap "const
+Epetra_Map& Epetra_InvOperator::OperatorDomainMap() const
+
+Returns the Epetra_BlockMap object associated with the domain of this
+matrix operator. ";
+
+%feature("docstring")  Epetra_InvOperator::OperatorRangeMap "const
+Epetra_Map& Epetra_InvOperator::OperatorRangeMap() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
 
 // File: classEpetra__JadMatrix.xml
 %feature("docstring") Epetra_JadMatrix "
@@ -2633,6 +7849,162 @@ with values from another Epetra_RowMatrix that has the identical
 structure.
 
 C++ includes: Epetra_JadMatrix.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_JadMatrix::Epetra_JadMatrix "Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix &Matrix)
+
+Epetra_JadMatrix constuctor. ";
+
+%feature("docstring")  Epetra_JadMatrix::~Epetra_JadMatrix "Epetra_JadMatrix::~Epetra_JadMatrix()
+
+Epetra_JadMatrix Destructor. ";
+
+/*  Post-construction modifications  */
+
+%feature("docstring")  Epetra_JadMatrix::UpdateValues "int
+Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix &Matrix, bool
+CheckStructure=false)
+
+Update values using a matrix with identical structure. ";
+
+/*  Methods required for implementing Epetra_BasicRowMatrix  */
+
+%feature("docstring")  Epetra_JadMatrix::ExtractMyRowCopy "int
+Epetra_JadMatrix::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  (In) - Local row to extract.
+
+Length:  (In) - Length of Values and Indices.
+
+NumEntries:  (Out) - Number of nonzero entries extracted.
+
+Values:  (Out) - Extracted values for this row.
+
+Indices:  (Out) - Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful, set to -1 if MyRow not
+valid, -2 if Length is too short (NumEntries will have required
+length). ";
+
+%feature("docstring")  Epetra_JadMatrix::ExtractMyEntryView "int
+Epetra_JadMatrix::ExtractMyEntryView(int CurEntry, double *&Value, int
+&RowIndex, int &ColIndex)
+
+Returns a reference to the ith entry in the matrix, along with its row
+and column index.
+
+Parameters:
+-----------
+
+CurEntry:  (In) - Local entry to extract.
+
+Value:  (Out) - Extracted reference to current values.
+
+RowIndex:  (Out) - Row index for current entry.
+
+ColIndex:  (Out) - Column index for current entry.
+
+Integer error code, set to 0 if successful, set to -1 if CurEntry not
+valid. ";
+
+%feature("docstring")  Epetra_JadMatrix::ExtractMyEntryView "int
+Epetra_JadMatrix::ExtractMyEntryView(int CurEntry, double const
+*&Value, int &RowIndex, int &ColIndex) const
+
+Returns a const reference to the ith entry in the matrix, along with
+its row and column index.
+
+Parameters:
+-----------
+
+CurEntry:  (In) - Local entry to extract.
+
+Value:  (Out) - Extracted reference to current values.
+
+RowIndex:  (Out) - Row index for current entry.
+
+ColIndex:  (Out) - Column index for current entry.
+
+Integer error code, set to 0 if successful, set to -1 if CurEntry not
+valid. ";
+
+%feature("docstring")  Epetra_JadMatrix::NumMyRowEntries "int
+Epetra_JadMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const
+
+Return the current number of values stored for the specified local
+row.
+
+Similar to NumMyEntries() except NumEntries is returned as an argument
+and error checking is done on the input value MyRow.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row.
+
+NumEntries:  - (Out) Number of nonzero values.
+
+Integer error code, set to 0 if successful, set to -1 if MyRow not
+valid.
+
+None.
+
+Unchanged. ";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_JadMatrix::Multiply "int
+Epetra_JadMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_JadMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  TransA -If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_JadMatrix::Solve "int
+Epetra_JadMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_JadMatrix solve with a
+Epetra_MultiVector X in Y (not implemented).
+
+Parameters:
+-----------
+
+In:  Upper -If true, solve Ux = y, otherwise solve Lx = y.
+
+In:  Trans -If true, solve transpose problem.
+
+In:  UnitDiagonal -If true, assume diagonal is unit (whether it's
+stored or not).
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
 
 
 // File: classEpetra__LAPACK.xml
@@ -2658,6 +8030,733 @@ memory parallel).
 
 C++ includes: Epetra_LAPACK.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_LAPACK::Epetra_LAPACK "Epetra_LAPACK::Epetra_LAPACK(void)
+
+Epetra_LAPACK Constructor.
+
+Builds an instance of a serial LAPACK object. ";
+
+%feature("docstring")  Epetra_LAPACK::Epetra_LAPACK "Epetra_LAPACK::Epetra_LAPACK(const Epetra_LAPACK &LAPACK)
+
+Epetra_LAPACK Copy Constructor.
+
+Makes an exact copy of an existing Epetra_LAPACK instance. ";
+
+%feature("docstring")  Epetra_LAPACK::~Epetra_LAPACK "Epetra_LAPACK::~Epetra_LAPACK(void)
+
+Epetra_LAPACK Destructor. ";
+
+/*  Symmetric Positive Definite linear system routines  */
+
+%feature("docstring")  Epetra_LAPACK::POTRF "void
+Epetra_LAPACK::POTRF(const char UPLO, const int N, float *A, const int
+LDA, int *INFO) const
+
+Epetra_LAPACK factorization for positive definite matrix (SPOTRF). ";
+
+%feature("docstring")  Epetra_LAPACK::POTRF "void
+Epetra_LAPACK::POTRF(const char UPLO, const int N, double *A, const
+int LDA, int *INFO) const
+
+Epetra_LAPACK factorization for positive definite matrix (DPOTRF). ";
+
+%feature("docstring")  Epetra_LAPACK::POTRS "void
+Epetra_LAPACK::POTRS(const char UPLO, const int N, const int NRHS,
+const float *A, const int LDA, float *X, const int LDX, int *INFO)
+const
+
+Epetra_LAPACK solve (after factorization) for positive definite matrix
+(SPOTRS). ";
+
+%feature("docstring")  Epetra_LAPACK::POTRS "void
+Epetra_LAPACK::POTRS(const char UPLO, const int N, const int NRHS,
+const double *A, const int LDA, double *X, const int LDX, int *INFO)
+const
+
+Epetra_LAPACK solve (after factorization) for positive definite matrix
+(DPOTRS). ";
+
+%feature("docstring")  Epetra_LAPACK::POTRI "void
+Epetra_LAPACK::POTRI(const char UPLO, const int N, float *A, const int
+LDA, int *INFO) const
+
+Epetra_LAPACK inversion for positive definite matrix (SPOTRI). ";
+
+%feature("docstring")  Epetra_LAPACK::POTRI "void
+Epetra_LAPACK::POTRI(const char UPLO, const int N, double *A, const
+int LDA, int *INFO) const
+
+Epetra_LAPACK inversion for positive definite matrix (DPOTRI). ";
+
+%feature("docstring")  Epetra_LAPACK::POCON "void
+Epetra_LAPACK::POCON(const char UPLO, const int N, const float *A,
+const int LDA, const float ANORM, float *RCOND, float *WORK, int
+*IWORK, int *INFO) const
+
+Epetra_LAPACK condition number estimator for positive definite matrix
+(SPOCON). ";
+
+%feature("docstring")  Epetra_LAPACK::POCON "void
+Epetra_LAPACK::POCON(const char UPLO, const int N, const double *A,
+const int LDA, const double ANORM, double *RCOND, double *WORK, int
+*IWORK, int *INFO) const
+
+Epetra_LAPACK condition number estimator for positive definite matrix
+(DPOCON). ";
+
+%feature("docstring")  Epetra_LAPACK::POSV "void
+Epetra_LAPACK::POSV(const char UPLO, const int N, const int NRHS,
+float *A, const int LDA, float *X, const int LDX, int *INFO) const
+
+Epetra_LAPACK factor and solve for positive definite matrix (SPOSV).
+";
+
+%feature("docstring")  Epetra_LAPACK::POSV "void
+Epetra_LAPACK::POSV(const char UPLO, const int N, const int NRHS,
+double *A, const int LDA, double *X, const int LDX, int *INFO) const
+
+Epetra_LAPACK factor and solve for positive definite matrix (DPOSV).
+";
+
+%feature("docstring")  Epetra_LAPACK::POEQU "void
+Epetra_LAPACK::POEQU(const int N, const float *A, const int LDA, float
+*S, float *SCOND, float *AMAX, int *INFO) const
+
+Epetra_LAPACK equilibration for positive definite matrix (SPOEQU). ";
+
+%feature("docstring")  Epetra_LAPACK::POEQU "void
+Epetra_LAPACK::POEQU(const int N, const double *A, const int LDA,
+double *S, double *SCOND, double *AMAX, int *INFO) const
+
+Epetra_LAPACK equilibration for positive definite matrix (DPOEQU). ";
+
+%feature("docstring")  Epetra_LAPACK::PORFS "void
+Epetra_LAPACK::PORFS(const char UPLO, const int N, const int NRHS,
+const float *A, const int LDA, const float *AF, const int LDAF, const
+float *B, const int LDB, float *X, const int LDX, float *FERR, float
+*BERR, float *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK solve driver for positive definite matrix (SPOSVX). ";
+
+%feature("docstring")  Epetra_LAPACK::PORFS "void
+Epetra_LAPACK::PORFS(const char UPLO, const int N, const int NRHS,
+const double *A, const int LDA, const double *AF, const int LDAF,
+const double *B, const int LDB, double *X, const int LDX, double
+*FERR, double *BERR, double *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK solve driver for positive definite matrix (DPOSVX). ";
+
+%feature("docstring")  Epetra_LAPACK::POSVX "void
+Epetra_LAPACK::POSVX(const char FACT, const char UPLO, const int N,
+const int NRHS, float *A, const int LDA, float *AF, const int LDAF,
+const char EQUED, float *S, float *B, const int LDB, float *X, const
+int LDX, float *RCOND, float *FERR, float *BERR, float *WORK, int
+*IWORK, int *INFO) const
+
+Epetra_LAPACK solve driver for positive definite matrix (SPOSVX). ";
+
+%feature("docstring")  Epetra_LAPACK::POSVX "void
+Epetra_LAPACK::POSVX(const char FACT, const char UPLO, const int N,
+const int NRHS, double *A, const int LDA, double *AF, const int LDAF,
+const char EQUED, double *S, double *B, const int LDB, double *X,
+const int LDX, double *RCOND, double *FERR, double *BERR, double
+*WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK solve driver for positive definite matrix (DPOSVX). ";
+
+/*  General linear system routines  */
+
+%feature("docstring")  Epetra_LAPACK::GELS "void
+Epetra_LAPACK::GELS(const char TRANS, const int M, const int N, const
+int NRHS, double *A, const int LDA, double *B, const int LDB, double
+*WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK simple driver to solve least-squares systems. ";
+
+%feature("docstring")  Epetra_LAPACK::GETRF "void
+Epetra_LAPACK::GETRF(const int M, const int N, float *A, const int
+LDA, int *IPIV, int *INFO) const
+
+Epetra_LAPACK factorization for general matrix (SGETRF). ";
+
+%feature("docstring")  Epetra_LAPACK::GETRF "void
+Epetra_LAPACK::GETRF(const int M, const int N, double *A, const int
+LDA, int *IPIV, int *INFO) const
+
+Epetra_LAPACK factorization for general matrix (DGETRF). ";
+
+%feature("docstring")  Epetra_LAPACK::GEQRF "void
+Epetra_LAPACK::GEQRF(const int M, const int N, float *A, const int
+LDA, float *TAU, float *WORK, const int lwork, int *INFO) const
+
+Epetra_LAPACK QR factorization for general matrix (SGEQRF). ";
+
+%feature("docstring")  Epetra_LAPACK::GEQRF "void
+Epetra_LAPACK::GEQRF(const int M, const int N, double *A, const int
+LDA, double *TAU, double *WORK, const int lwork, int *INFO) const
+
+Epetra_LAPACK factorization for general matrix (DGEQRF). ";
+
+%feature("docstring")  Epetra_LAPACK::GETRS "void
+Epetra_LAPACK::GETRS(const char TRANS, const int N, const int NRHS,
+const float *A, const int LDA, const int *IPIV, float *X, const int
+LDX, int *INFO) const
+
+Epetra_LAPACK solve (after factorization) for general matrix (SGETRS).
+";
+
+%feature("docstring")  Epetra_LAPACK::GETRS "void
+Epetra_LAPACK::GETRS(const char TRANS, const int N, const int NRHS,
+const double *A, const int LDA, const int *IPIV, double *X, const int
+LDX, int *INFO) const
+
+Epetra_LAPACK solve (after factorization) for general matrix (DGETRS).
+";
+
+%feature("docstring")  Epetra_LAPACK::GETRI "void
+Epetra_LAPACK::GETRI(const int N, float *A, const int LDA, int *IPIV,
+float *WORK, const int *LWORK, int *INFO) const
+
+Epetra_LAPACK inversion for general matrix (SGETRI). ";
+
+%feature("docstring")  Epetra_LAPACK::GETRI "void
+Epetra_LAPACK::GETRI(const int N, double *A, const int LDA, int *IPIV,
+double *WORK, const int *LWORK, int *INFO) const
+
+Epetra_LAPACK inversion for general matrix (DGETRI). ";
+
+%feature("docstring")  Epetra_LAPACK::GECON "void
+Epetra_LAPACK::GECON(const char NORM, const int N, const float *A,
+const int LDA, const float ANORM, float *RCOND, float *WORK, int
+*IWORK, int *INFO) const
+
+Epetra_LAPACK condition number estimator for general matrix (SGECON).
+";
+
+%feature("docstring")  Epetra_LAPACK::GECON "void
+Epetra_LAPACK::GECON(const char NORM, const int N, const double *A,
+const int LDA, const double ANORM, double *RCOND, double *WORK, int
+*IWORK, int *INFO) const
+
+Epetra_LAPACK condition number estimator for general matrix (DGECON).
+";
+
+%feature("docstring")  Epetra_LAPACK::GESV "void
+Epetra_LAPACK::GESV(const int N, const int NRHS, float *A, const int
+LDA, int *IPIV, float *X, const int LDX, int *INFO) const
+
+Epetra_LAPACK factor and solve for general matrix (SGESV). ";
+
+%feature("docstring")  Epetra_LAPACK::GESV "void
+Epetra_LAPACK::GESV(const int N, const int NRHS, double *A, const int
+LDA, int *IPIV, double *X, const int LDX, int *INFO) const
+
+Epetra_LAPACK factor and solve for general matrix (DGESV). ";
+
+%feature("docstring")  Epetra_LAPACK::GEEQU "void
+Epetra_LAPACK::GEEQU(const int M, const int N, const float *A, const
+int LDA, float *R, float *C, float *ROWCND, float *COLCND, float
+*AMAX, int *INFO) const
+
+Epetra_LAPACK equilibration for general matrix (SGEEQU). ";
+
+%feature("docstring")  Epetra_LAPACK::GEEQU "void
+Epetra_LAPACK::GEEQU(const int M, const int N, const double *A, const
+int LDA, double *R, double *C, double *ROWCND, double *COLCND, double
+*AMAX, int *INFO) const
+
+Epetra_LAPACK equilibration for general matrix (DGEEQU). ";
+
+%feature("docstring")  Epetra_LAPACK::GERFS "void
+Epetra_LAPACK::GERFS(const char TRANS, const int N, const int NRHS,
+const float *A, const int LDA, const float *AF, const int LDAF, const
+int *IPIV, const float *B, const int LDB, float *X, const int LDX,
+float *FERR, float *BERR, float *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK Refine solution (GERFS). ";
+
+%feature("docstring")  Epetra_LAPACK::GERFS "void
+Epetra_LAPACK::GERFS(const char TRANS, const int N, const int NRHS,
+const double *A, const int LDA, const double *AF, const int LDAF,
+const int *IPIV, const double *B, const int LDB, double *X, const int
+LDX, double *FERR, double *BERR, double *WORK, int *IWORK, int *INFO)
+const
+
+Epetra_LAPACK Refine solution (GERFS). ";
+
+%feature("docstring")  Epetra_LAPACK::GESVX "void
+Epetra_LAPACK::GESVX(const char FACT, const char TRANS, const int N,
+const int NRHS, float *A, const int LDA, float *AF, const int LDAF,
+int *IPIV, const char EQUED, float *R, float *C, float *B, const int
+LDB, float *X, const int LDX, float *RCOND, float *FERR, float *BERR,
+float *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK solve driver for general matrix (SGESVX). ";
+
+%feature("docstring")  Epetra_LAPACK::GESVX "void
+Epetra_LAPACK::GESVX(const char FACT, const char TRANS, const int N,
+const int NRHS, double *A, const int LDA, double *AF, const int LDAF,
+int *IPIV, const char EQUED, double *R, double *C, double *B, const
+int LDB, double *X, const int LDX, double *RCOND, double *FERR, double
+*BERR, double *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK solve driver for general matrix (DGESVX). ";
+
+%feature("docstring")  Epetra_LAPACK::GEHRD "void
+Epetra_LAPACK::GEHRD(const int N, const int ILO, const int IHI, float
+*A, const int LDA, float *TAU, float *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for reduction to Hessenberg form (SGEHRD). ";
+
+%feature("docstring")  Epetra_LAPACK::GEHRD "void
+Epetra_LAPACK::GEHRD(const int N, const int ILO, const int IHI, double
+*A, const int LDA, double *TAU, double *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for reduction to Hessenberg form (DGEHRD). ";
+
+/*  Hessenberg routines  */
+
+%feature("docstring")  Epetra_LAPACK::HSEQR "void
+Epetra_LAPACK::HSEQR(const char JOB, const char COMPZ, const int N,
+const int ILO, const int IHI, float *H, const int LDH, float *WR,
+float *WI, float *Z, const int LDZ, float *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for computing the eigenvalues of a real upper
+Hessenberg matrix (SHSEQR). ";
+
+%feature("docstring")  Epetra_LAPACK::HSEQR "void
+Epetra_LAPACK::HSEQR(const char JOB, const char COMPZ, const int N,
+const int ILO, const int IHI, double *H, const int LDH, double *WR,
+double *WI, double *Z, const int LDZ, double *WORK, const int LWORK,
+int *INFO) const
+
+Epetra_LAPACK wrapper for computing the eigenvalues of a real upper
+Hessenberg matrix (DHSEQR). ";
+
+/*  Orthogonal matrix routines  */
+
+%feature("docstring")  Epetra_LAPACK::ORGQR "void
+Epetra_LAPACK::ORGQR(const int M, const int N, const int K, float *A,
+const int LDA, float *TAU, float *WORK, const int LWORK, int *INFO)
+const
+
+Epetra_LAPACK wrapper for generating a m x n real matrix Q with
+orthonormal columns, defined as the product of k elementary
+reflectors. (SORGQR). ";
+
+%feature("docstring")  Epetra_LAPACK::ORGQR "void
+Epetra_LAPACK::ORGQR(const int M, const int N, const int K, double *A,
+const int LDA, double *TAU, double *WORK, const int LWORK, int *INFO)
+const
+
+Epetra_LAPACK wrapper for generating a m x n real matrix Q with
+orthonormal columns, defined as the product of k elementary
+reflectors. (DORGQR). ";
+
+%feature("docstring")  Epetra_LAPACK::ORGHR "void
+Epetra_LAPACK::ORGHR(const int N, const int ILO, const int IHI, float
+*A, const int LDA, float *TAU, float *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for generating a real orthogonal matrix Q
+defined by elementary reflectors. (SORGHR). ";
+
+%feature("docstring")  Epetra_LAPACK::ORGHR "void
+Epetra_LAPACK::ORGHR(const int N, const int ILO, const int IHI, double
+*A, const int LDA, double *TAU, double *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for generating a real orthogonal matrix Q
+defined by elementary reflectors. (DORGHR). ";
+
+%feature("docstring")  Epetra_LAPACK::ORMHR "void
+Epetra_LAPACK::ORMHR(const char SIDE, const char TRANS, const int M,
+const int N, const int ILO, const int IHI, const float *A, const int
+LDA, const float *TAU, float *C, const int LDC, float *WORK, const int
+LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper for applying an orthogonal matrix in-place
+(SORMHR). ";
+
+%feature("docstring")  Epetra_LAPACK::ORMHR "void
+Epetra_LAPACK::ORMHR(const char SIDE, const char TRANS, const int M,
+const int N, const int ILO, const int IHI, const double *A, const int
+LDA, const double *TAU, double *C, const int LDC, double *WORK, const
+int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper for applying an orthogonal matrix in-place
+(DORMHR). ";
+
+%feature("docstring")  Epetra_LAPACK::LARFT "void
+Epetra_LAPACK::LARFT(const char DIRECT, const char STOREV, const int
+N, const int K, double *V, const int LDV, double *TAU, double *T,
+const int LDT) const
+
+Epetra_LAPACK for forming the triangular factor of a product of
+elementary Householder reflectors (SLARFT). ";
+
+%feature("docstring")  Epetra_LAPACK::LARFT "void
+Epetra_LAPACK::LARFT(const char DIRECT, const char STOREV, const int
+N, const int K, float *V, const int LDV, float *TAU, float *T, const
+int LDT) const
+
+Epetra_LAPACK for forming the triangular factor of a product of
+elementary Householder reflectors (DLARFT). ";
+
+/*  Triangular matrix routines  */
+
+%feature("docstring")  Epetra_LAPACK::TREVC "void
+Epetra_LAPACK::TREVC(const char SIDE, const char HOWMNY, int *SELECT,
+const int N, const float *T, const int LDT, float *VL, const int LDVL,
+float *VR, const int LDVR, const int MM, int *M, float *WORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for computing eigenvectors of a quasi-
+triangular/triagnular matrix (STREVC).
+
+WARNING:  HOWMNY = 'S\" is not supported. ";
+
+%feature("docstring")  Epetra_LAPACK::TREVC "void
+Epetra_LAPACK::TREVC(const char SIDE, const char HOWMNY, int *SELECT,
+const int N, const double *T, const int LDT, double *VL, const int
+LDVL, double *VR, const int LDVR, const int MM, int *M, double *WORK,
+int *INFO) const
+
+Epetra_LAPACK wrapper for computing eigenvectors of a quasi-
+triangular/triagnular matrix (DTREVC).
+
+WARNING:  HOWMNY = 'S\" is not supported. ";
+
+%feature("docstring")  Epetra_LAPACK::TREXC "void
+Epetra_LAPACK::TREXC(const char COMPQ, const int N, float *T, const
+int LDT, float *Q, const int LDQ, int IFST, int ILST, float *WORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for reordering the real-Schur/Schur
+factorization of a matrix (STREXC). ";
+
+%feature("docstring")  Epetra_LAPACK::TREXC "void
+Epetra_LAPACK::TREXC(const char COMPQ, const int N, double *T, const
+int LDT, double *Q, const int LDQ, int IFST, int ILST, double *WORK,
+int *INFO) const
+
+Epetra_LAPACK wrapper for reordering the real-Schur/Schur
+factorization of a matrix (DTREXC). ";
+
+/*  Singular Value Decomposition matrix routines  */
+
+%feature("docstring")  Epetra_LAPACK::GESVD "void
+Epetra_LAPACK::GESVD(const char JOBU, const char JOBVT, const int M,
+const int N, float *A, const int LDA, float *S, float *U, const int
+LDU, float *VT, const int LDVT, float *WORK, const int *LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for computing the singular value decomposition
+(SGESVD). ";
+
+%feature("docstring")  Epetra_LAPACK::GESVD "void
+Epetra_LAPACK::GESVD(const char JOBU, const char JOBVT, const int M,
+const int N, double *A, const int LDA, double *S, double *U, const int
+LDU, double *VT, const int LDVT, double *WORK, const int *LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper for computing the singular value decomposition
+(DGESVD). ";
+
+%feature("docstring")  Epetra_LAPACK::GGSVD "void
+Epetra_LAPACK::GGSVD(const char JOBU, const char JOBV, const char
+JOBQ, const int M, const int N, const int P, int *K, int *L, double
+*A, const int LDA, double *B, const int LDB, double *ALPHA, double
+*BETA, double *U, const int LDU, double *V, const int LDV, double *Q,
+const int LDQ, double *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute the generalized singular value
+decomposition (GSVD) of an M-by-N real matrix A and P-by-N real matrix
+B. ";
+
+%feature("docstring")  Epetra_LAPACK::GGSVD "void
+Epetra_LAPACK::GGSVD(const char JOBU, const char JOBV, const char
+JOBQ, const int M, const int N, const int P, int *K, int *L, float *A,
+const int LDA, float *B, const int LDB, float *ALPHA, float *BETA,
+float *U, const int LDU, float *V, const int LDV, float *Q, const int
+LDQ, float *WORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute the generalized singular value
+decomposition (GSVD) of an M-by-N real matrix A and P-by-N real matrix
+B. ";
+
+/*  Eigenvalue/Eigenvector routines  */
+
+%feature("docstring")  Epetra_LAPACK::GEEV "void
+Epetra_LAPACK::GEEV(const char JOBVL, const char JOBVR, const int N,
+double *A, const int LDA, double *WR, double *WI, double *VL, const
+int LDVL, double *VR, const int LDVR, double *WORK, const int LWORK,
+int *INFO) const
+
+Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric
+matrix A, the eigenvalues and, optionally, the left and/or right
+eigenvectors. ";
+
+%feature("docstring")  Epetra_LAPACK::GEEV "void
+Epetra_LAPACK::GEEV(const char JOBVL, const char JOBVR, const int N,
+float *A, const int LDA, float *WR, float *WI, float *VL, const int
+LDVL, float *VR, const int LDVR, float *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric
+matrix A, the eigenvalues and, optionally, the left and/or right
+eigenvectors. ";
+
+%feature("docstring")  Epetra_LAPACK::SPEV "void
+Epetra_LAPACK::SPEV(const char JOBZ, const char UPLO, const int N,
+double *AP, double *W, double *Z, int LDZ, double *WORK, int *INFO)
+const
+
+Epetra_LAPACK wrapper to compute all the eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A in packed storage. ";
+
+%feature("docstring")  Epetra_LAPACK::SPEV "void
+Epetra_LAPACK::SPEV(const char JOBZ, const char UPLO, const int N,
+float *AP, float *W, float *Z, int LDZ, float *WORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all the eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A in packed storage. ";
+
+%feature("docstring")  Epetra_LAPACK::SPGV "void
+Epetra_LAPACK::SPGV(const int ITYPE, const char JOBZ, const char UPLO,
+const int N, double *AP, double *BP, double *W, double *Z, const int
+LDZ, double *WORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all the eigenvalues and, optionally,
+the eigenvectors of a real generalized symmetric-definite
+eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or
+B*A*x=(lambda)*x. ";
+
+%feature("docstring")  Epetra_LAPACK::SPGV "void
+Epetra_LAPACK::SPGV(const int ITYPE, const char JOBZ, const char UPLO,
+const int N, float *AP, float *BP, float *W, float *Z, const int LDZ,
+float *WORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all the eigenvalues and, optionally,
+the eigenvectors of a real generalized symmetric-definite
+eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or
+B*A*x=(lambda)*x. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEV "void
+Epetra_LAPACK::SYEV(const char JOBZ, const char UPLO, const int N,
+double *A, const int LDA, double *W, double *WORK, const int LWORK,
+int *INFO) const
+
+Epetra_LAPACK wrapper to compute all eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEV "void
+Epetra_LAPACK::SYEV(const char JOBZ, const char UPLO, const int N,
+float *A, const int LDA, float *W, float *WORK, const int LWORK, int
+*INFO) const
+
+Epetra_LAPACK wrapper to compute all eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEVD "void
+Epetra_LAPACK::SYEVD(const char JOBZ, const char UPLO, const int N,
+double *A, const int LDA, double *W, double *WORK, const int LWORK,
+int *IWORK, const int LIWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEVD "void
+Epetra_LAPACK::SYEVD(const char JOBZ, const char UPLO, const int N,
+float *A, const int LDA, float *W, float *WORK, const int LWORK, int
+*IWORK, const int LIWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEVX "void
+Epetra_LAPACK::SYEVX(const char JOBZ, const char RANGE, const char
+UPLO, const int N, double *A, const int LDA, const double *VL, const
+double *VU, const int *IL, const int *IU, const double ABSTOL, int *M,
+double *W, double *Z, const int LDZ, double *WORK, const int LWORK,
+int *IWORK, int *IFAIL, int *INFO) const
+
+Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEVX "void
+Epetra_LAPACK::SYEVX(const char JOBZ, const char RANGE, const char
+UPLO, const int N, float *A, const int LDA, const float *VL, const
+float *VU, const int *IL, const int *IU, const float ABSTOL, int *M,
+float *W, float *Z, const int LDZ, float *WORK, const int LWORK, int
+*IWORK, int *IFAIL, int *INFO) const
+
+Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix A. ";
+
+%feature("docstring")  Epetra_LAPACK::SYGV "void
+Epetra_LAPACK::SYGV(const int ITYPE, const char JOBZ, const char UPLO,
+const int N, double *A, const int LDA, double *B, const int LDB,
+double *W, double *WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all the eigenvalues, and optionally,
+the eigenvectors of a real generalized symmetric-definite
+eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or
+B*A*x=(lambda)*x. ";
+
+%feature("docstring")  Epetra_LAPACK::SYGV "void
+Epetra_LAPACK::SYGV(const int ITYPE, const char JOBZ, const char UPLO,
+const int N, float *A, const int LDA, float *B, const int LDB, float
+*W, float *WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute all the eigenvalues, and optionally,
+the eigenvectors of a real generalized symmetric-definite
+eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or
+B*A*x=(lambda)*x. ";
+
+%feature("docstring")  Epetra_LAPACK::SYGVX "void
+Epetra_LAPACK::SYGVX(const int ITYPE, const char JOBZ, const char
+RANGE, const char UPLO, const int N, double *A, const int LDA, double
+*B, const int LDB, const double *VL, const double *VU, const int *IL,
+const int *IU, const double ABSTOL, int *M, double *W, double *Z,
+const int LDZ, double *WORK, const int LWORK, int *IWORK, int *IFAIL,
+int *INFO) const
+
+Epetra_LAPACK wrapper to compute selected eigenvalues, and optionally,
+eigenvectors of a real generalized symmetric-definite eigenproblem, of
+the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or B*A*x=(lambda)*x. ";
+
+%feature("docstring")  Epetra_LAPACK::SYGVX "void
+Epetra_LAPACK::SYGVX(const int ITYPE, const char JOBZ, const char
+RANGE, const char UPLO, const int N, float *A, const int LDA, float
+*B, const int LDB, const float *VL, const float *VU, const int *IL,
+const int *IU, const float ABSTOL, int *M, float *W, float *Z, const
+int LDZ, float *WORK, const int LWORK, int *IWORK, int *IFAIL, int
+*INFO) const
+
+Epetra_LAPACK wrapper to compute selected eigenvalues, and optionally,
+eigenvectors of a real generalized symmetric-definite eigenproblem, of
+the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or B*A*x=(lambda)*x. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEVR "void
+Epetra_LAPACK::SYEVR(const char JOBZ, const char RANGE, const char
+UPLO, const int N, double *A, const int LDA, const double *VL, const
+double *VU, const int *IL, const int *IU, const double ABSTOL, int *M,
+double *W, double *Z, const int LDZ, int *ISUPPZ, double *WORK, const
+int LWORK, int *IWORK, const int LIWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix T. ";
+
+%feature("docstring")  Epetra_LAPACK::SYEVR "void
+Epetra_LAPACK::SYEVR(const char JOBZ, const char RANGE, const char
+UPLO, const int N, float *A, const int LDA, const float *VL, const
+float *VU, const int *IL, const int *IU, const float ABSTOL, int *M,
+float *W, float *Z, const int LDZ, int *ISUPPZ, float *WORK, const int
+LWORK, int *IWORK, const int LIWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally,
+eigenvectors of a real symmetric matrix T. ";
+
+%feature("docstring")  Epetra_LAPACK::GEEVX "void
+Epetra_LAPACK::GEEVX(const char BALANC, const char JOBVL, const char
+JOBVR, const char SENSE, const int N, double *A, const int LDA, double
+*WR, double *WI, double *VL, const int LDVL, double *VR, const int
+LDVR, int *ILO, int *IHI, double *SCALE, double *ABNRM, double
+*RCONDE, double *RCONDV, double *WORK, const int LWORK, int *IWORK,
+int *INFO) const
+
+Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric
+matrix A, the eigenvalues and, optionally, the left and/or right
+eigenvectors. ";
+
+%feature("docstring")  Epetra_LAPACK::GEEVX "void
+Epetra_LAPACK::GEEVX(const char BALANC, const char JOBVL, const char
+JOBVR, const char SENSE, const int N, float *A, const int LDA, float
+*WR, float *WI, float *VL, const int LDVL, float *VR, const int LDVR,
+int *ILO, int *IHI, float *SCALE, float *ABNRM, float *RCONDE, float
+*RCONDV, float *WORK, const int LWORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric
+matrix A, the eigenvalues and, optionally, the left and/or right
+eigenvectors. ";
+
+%feature("docstring")  Epetra_LAPACK::GESDD "void
+Epetra_LAPACK::GESDD(const char JOBZ, const int M, const int N, double
+*A, const int LDA, double *S, double *U, const int LDU, double *VT,
+const int LDVT, double *WORK, const int LWORK, int *IWORK, int *INFO)
+const
+
+Epetra_LAPACK wrapper to compute the singular value decomposition
+(SVD) of a real M-by-N matrix A, optionally computing the left and
+right singular vectors. ";
+
+%feature("docstring")  Epetra_LAPACK::GESDD "void
+Epetra_LAPACK::GESDD(const char JOBZ, const int M, const int N, float
+*A, const int LDA, float *S, float *U, const int LDU, float *VT, const
+int LDVT, float *WORK, const int LWORK, int *IWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to. ";
+
+%feature("docstring")  Epetra_LAPACK::GGEV "void
+Epetra_LAPACK::GGEV(const char JOBVL, const char JOBVR, const int N,
+double *A, const int LDA, double *B, const int LDB, double *ALPHAR,
+double *ALPHAI, double *BETA, double *VL, const int LDVL, double *VR,
+const int LDVR, double *WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute for a pair of N-by-N real
+nonsymmetric matrices (A,B) the generalized eigenvalues, and
+optionally, the left and/or right generalized eigenvectors. ";
+
+%feature("docstring")  Epetra_LAPACK::GGEV "void
+Epetra_LAPACK::GGEV(const char JOBVL, const char JOBVR, const int N,
+float *A, const int LDA, float *B, const int LDB, float *ALPHAR, float
+*ALPHAI, float *BETA, float *VL, const int LDVL, float *VR, const int
+LDVR, float *WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to compute for a pair of N-by-N real
+nonsymmetric matrices (A,B) the generalized eigenvalues, and
+optionally, the left and/or right generalized eigenvectors. ";
+
+/*  Linear Least Squares  */
+
+%feature("docstring")  Epetra_LAPACK::GGLSE "void
+Epetra_LAPACK::GGLSE(const int M, const int N, const int P, double *A,
+const int LDA, double *B, const int LDB, double *C, double *D, double
+*X, double *WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to solve the linear equality-constrained least
+squares (LSE) problem. ";
+
+%feature("docstring")  Epetra_LAPACK::GGLSE "void
+Epetra_LAPACK::GGLSE(const int M, const int N, const int P, float *A,
+const int LDA, float *B, const int LDB, float *C, float *D, float *X,
+float *WORK, const int LWORK, int *INFO) const
+
+Epetra_LAPACK wrapper to solve the linear equality-constrained least
+squares (LSE) problem. ";
+
+/*  Machine characteristics routines  */
+
+%feature("docstring")  Epetra_LAPACK::LAMCH "void
+Epetra_LAPACK::LAMCH(const char CMACH, float &T) const
+
+Epetra_LAPACK wrapper for DLAMCH routine. On out, T holds machine
+double precision floating point characteristics. This information is
+returned by the Lapack routine. ";
+
+%feature("docstring")  Epetra_LAPACK::LAMCH "void
+Epetra_LAPACK::LAMCH(const char CMACH, double &T) const
+
+Epetra_LAPACK wrapper for SLAMCH routine. On out, T holds machine
+single precision floating point characteristics. This information is
+returned by the Lapack routine. ";
+
 
 // File: classEpetra__LinearProblem.xml
 %feature("docstring") Epetra_LinearProblem "
@@ -2670,6 +8769,170 @@ Currently it accepts a Epetra matrix, initial guess and RHS and
 returns the solution. the elapsed time for each calling processor.
 
 C++ includes: Epetra_LinearProblem.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_LinearProblem::Epetra_LinearProblem "Epetra_LinearProblem::Epetra_LinearProblem(void)
+
+Epetra_LinearProblem Default Constructor.
+
+Creates an empty Epetra_LinearProblem instance. The operator A, left-
+hand-side X and right-hand-side B must be set use the SetOperator(),
+SetLHS() and SetRHS() methods respectively. ";
+
+%feature("docstring")  Epetra_LinearProblem::Epetra_LinearProblem "Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix *A,
+Epetra_MultiVector *X, Epetra_MultiVector *B)
+
+Epetra_LinearProblem Constructor to pass in an operator as a matrix.
+
+Creates a Epetra_LinearProblem instance where the operator is passed
+in as a matrix. ";
+
+%feature("docstring")  Epetra_LinearProblem::Epetra_LinearProblem "Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator *A,
+Epetra_MultiVector *X, Epetra_MultiVector *B)
+
+Epetra_LinearProblem Constructor to pass in a basic Epetra_Operator.
+
+Creates a Epetra_LinearProblem instance for the case where an operator
+is not necessarily a matrix. ";
+
+%feature("docstring")  Epetra_LinearProblem::Epetra_LinearProblem "Epetra_LinearProblem::Epetra_LinearProblem(const Epetra_LinearProblem
+&Problem)
+
+Epetra_LinearProblem Copy Constructor.
+
+Makes copy of an existing Epetra_LinearProblem instance. ";
+
+%feature("docstring")  Epetra_LinearProblem::~Epetra_LinearProblem "Epetra_LinearProblem::~Epetra_LinearProblem(void)
+
+Epetra_LinearProblem Destructor.
+
+Completely deletes a Epetra_LinearProblem object. ";
+
+/*  Integrity check method  */
+
+%feature("docstring")  Epetra_LinearProblem::CheckInput "int
+Epetra_LinearProblem::CheckInput() const
+
+Check input parameters for existence and size consistency.
+
+Returns 0 if all input parameters are valid. Returns +1 if operator is
+not a matrix. This is not necessarily an error, but no scaling can be
+done if the user passes in an Epetra_Operator that is not an
+Epetra_Matrix ";
+
+/*  Set methods  */
+
+%feature("docstring")  Epetra_LinearProblem::AssertSymmetric "void
+Epetra_LinearProblem::AssertSymmetric() ";
+
+%feature("docstring")  Epetra_LinearProblem::SetPDL "void
+Epetra_LinearProblem::SetPDL(ProblemDifficultyLevel PDL)
+
+Set problem difficulty level.
+
+Sets Aztec options and parameters based on a definition of easy
+moderate or hard problem. Relieves the user from explicitly setting a
+large number of individual parameter values. This function can be used
+in conjunction with the SetOptions() and SetParams() functions. ";
+
+%feature("docstring")  Epetra_LinearProblem::SetOperator "void
+Epetra_LinearProblem::SetOperator(Epetra_RowMatrix *A)
+
+Set Operator A of linear problem AX = B using an Epetra_RowMatrix.
+
+Sets a pointer to a Epetra_RowMatrix. No copy of the operator is made.
+";
+
+%feature("docstring")  Epetra_LinearProblem::SetOperator "void
+Epetra_LinearProblem::SetOperator(Epetra_Operator *A)
+
+Set Operator A of linear problem AX = B using an Epetra_Operator.
+
+Sets a pointer to a Epetra_Operator. No copy of the operator is made.
+";
+
+%feature("docstring")  Epetra_LinearProblem::SetLHS "void
+Epetra_LinearProblem::SetLHS(Epetra_MultiVector *X)
+
+Set left-hand-side X of linear problem AX = B.
+
+Sets a pointer to a Epetra_MultiVector. No copy of the object is made.
+";
+
+%feature("docstring")  Epetra_LinearProblem::SetRHS "void
+Epetra_LinearProblem::SetRHS(Epetra_MultiVector *B)
+
+Set right-hand-side B of linear problem AX = B.
+
+Sets a pointer to a Epetra_MultiVector. No copy of the object is made.
+";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_LinearProblem::LeftScale "int
+Epetra_LinearProblem::LeftScale(const Epetra_Vector &D)
+
+Perform left scaling of a linear problem.
+
+Applies the scaling vector D to the left side of the matrix A() and to
+the right hand side B(). Note that the operator must be an
+Epetra_RowMatrix, not just an Epetra_Operator (the base class of
+Epetra_RowMatrix).
+
+Parameters:
+-----------
+
+In:  D - Vector containing scaling values. D[i] will be applied to the
+ith row of A() and B().
+
+Integer error code, set to 0 if successful. Return -1 if operator is
+not a matrix. ";
+
+%feature("docstring")  Epetra_LinearProblem::RightScale "int
+Epetra_LinearProblem::RightScale(const Epetra_Vector &D)
+
+Perform right scaling of a linear problem.
+
+Applies the scaling vector D to the right side of the matrix A().
+Apply the inverse of D to the initial guess. Note that the operator
+must be an Epetra_RowMatrix, not just an Epetra_Operator (the base
+class of Epetra_RowMatrix).
+
+Parameters:
+-----------
+
+In:  D - Vector containing scaling values. D[i] will be applied to the
+ith row of A(). 1/D[i] will be applied to the ith row of B().
+
+Integer error code, set to 0 if successful. Return -1 if operator is
+not a matrix. ";
+
+/*  Accessor methods  */
+
+%feature("docstring")  Epetra_LinearProblem::GetOperator "Epetra_Operator* Epetra_LinearProblem::GetOperator() const
+
+Get a pointer to the operator A. ";
+
+%feature("docstring")  Epetra_LinearProblem::GetMatrix "Epetra_RowMatrix* Epetra_LinearProblem::GetMatrix() const
+
+Get a pointer to the matrix A. ";
+
+%feature("docstring")  Epetra_LinearProblem::GetLHS "Epetra_MultiVector* Epetra_LinearProblem::GetLHS() const
+
+Get a pointer to the left-hand-side X. ";
+
+%feature("docstring")  Epetra_LinearProblem::GetRHS "Epetra_MultiVector* Epetra_LinearProblem::GetRHS() const
+
+Get a pointer to the right-hand-side B. ";
+
+%feature("docstring")  Epetra_LinearProblem::GetPDL "ProblemDifficultyLevel Epetra_LinearProblem::GetPDL() const
+
+Get problem difficulty level. ";
+
+%feature("docstring")  Epetra_LinearProblem::IsOperatorSymmetric "bool Epetra_LinearProblem::IsOperatorSymmetric() const
+
+Get operator symmetry bool. ";
 
 
 // File: classEpetra__LinearProblemRedistor.xml
@@ -2690,6 +8953,237 @@ by specifying the number of processors to use and stating whether or
 not the problem should be completely replicated on all processors.
 
 C++ includes: Epetra_LinearProblemRedistor.h ";
+
+/*  Constructors/destructors  */
+
+%feature("docstring")
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor "Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem
+*OrigProblem, const Epetra_Map &RedistMap)
+
+Epetra_LinearProblemRedistor constructor using pre-defined layout.
+
+Parameters:
+-----------
+
+Problem:  (In) An existing Epetra_LinearProblem object. The
+Epetra_RowMatrix, the LHS and RHS pointers do not need to be defined
+before this constructor is called.
+
+RedistMap:  (In) An Epetra_Map describing the target layout of the
+redistribution.
+
+Pointer to a Epetra_LinearProblemRedistor object. ";
+
+%feature("docstring")
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor "Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem
+*OrigProblem, int NumProc, bool Replicate)
+
+Epetra_LinearProblemRedistor constructor specifying number of
+processor and replication bool.
+
+Parameters:
+-----------
+
+Problem:  (In) An existing Epetra_LinearProblem object. The
+Epetra_RowMatrix, the LHS and RHS pointers do not need to be defined
+before this constructor is called.
+
+NumProc:  (In) Number of processors to use when redistributing the
+problem. Must be between 1 and the number of processor on the parallel
+machine.
+
+Replicate:  (In) A bool that indicates if the linear problem should be
+fully replicated on all processors. If true, then a complete copy of
+the linear problem will be made on each processor. If false, then the
+problem will be roughly evenly spread across the total number of
+processors.
+
+Pointer to a Epetra_LinearProblemRedistor object. ";
+
+%feature("docstring")
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor "Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(const
+Epetra_LinearProblemRedistor &Source)
+
+Epetra_LinearProblemRedistor copy constructor. ";
+
+%feature("docstring")
+Epetra_LinearProblemRedistor::~Epetra_LinearProblemRedistor "Epetra_LinearProblemRedistor::~Epetra_LinearProblemRedistor()
+
+Epetra_LinearProblemRedistor destructor. ";
+
+/*  Forward transformation methods  */
+
+%feature("docstring")
+Epetra_LinearProblemRedistor::CreateRedistProblem "int
+Epetra_LinearProblemRedistor::CreateRedistProblem(const bool
+ConstructTranspose, const bool MakeDataContiguous,
+Epetra_LinearProblem *&RedistProblem)
+
+Generate a new Epetra_LinearProblem as a redistribution of the one
+passed into the constructor.
+
+Constructs a new Epetra_LinearProblem that is a copy of the one passed
+in to the constructor. The new problem will have redistributed copies
+of the RowMatrix, LHS and RHS from the original problem. If any of
+these three objects are 0 pointers, then the corresponding pointer
+will be zero in the redistributed object.
+
+The redistributed matrix will constructed as an Epetra_CrsMatrix. The
+LHS and RHS will be Epetra_MultiVector objects.
+
+Two bools can be set when calling this method. The first,
+ConstructTranspose, will cause the Redistribute method to construct
+the transpose of the original row matrix. The second,
+MakeDataContiguous, forces the memory layout of the output matrix, RHS
+and LHS to be stored so that it is compatible with Fortran. In
+particular, the Epetra_CrsMatrix is stored so that value from row to
+row are contiguous, as are the indices. This is compatible with the
+Harwell-Boeing compressed row and compressed column format. The RHS
+and LHS are created so that there is a constant stride between the
+columns of the multivector. This is compatible with Fortran 2D array
+storage.
+
+Parameters:
+-----------
+
+ConstructTranspose:  (In) Causes the output matrix to be transposed.
+This feature can be used to support solvers that need the matrix to be
+stored in column format. This option has no impact on the LHS and RHS
+of the output problem.
+
+MakeDataContiguous:  (In) Causes the output matrix, LHS and RHS to be
+stored in a form compatible with Fortran-style solvers. The output
+matrix will be compatible with the Harwell-Boeing compressed column
+format. The RHS and LHS will be stored such that the last value in
+column j of the multivector is stored next to the first value in
+column j+1.
+
+RedistProblem:  (Out) The redistributed Epetra_LinearProblem. The
+RowMatrix, LHS and RHS that are generated as part of this problem will
+be destroyed when the Epetra_LinearProblemRedistor object is
+destroyed.
+
+Integer error code, 0 if no errors, positive value if one or more of
+the LHS or RHS pointers were 0. Negative if some other fatal error
+occured. ";
+
+%feature("docstring")
+Epetra_LinearProblemRedistor::UpdateRedistProblemValues "int
+Epetra_LinearProblemRedistor::UpdateRedistProblemValues(Epetra_LinearProblem
+*ProblemWithNewValues)
+
+Update the values of an already-redistributed problem.
+
+Updates the values of an already-redistributed problem. This method
+allows updating the redistributed problem without allocating new
+storage. All three objects in the RedistProblem will be updated,
+namely the Matrix, LHS and RHS. If the LHS or RHS are 0 pointers, they
+will be ignored.
+
+Parameters:
+-----------
+
+ProblemWithNewValues:  (In) The values from ProblemWithNewValues will
+be copied into the RedistProblem. The ProblemWithNewValues object must
+be identical in structure to the Epetra_LinearProblem object used to
+create this instance of Epetra_LinearProblemRedistor.
+
+Integer error code, 0 if no errors, positive value if one or more of
+the input LHS or RHS pointers were 0. Negative if some other fatal
+error occured. ";
+
+%feature("docstring")  Epetra_LinearProblemRedistor::UpdateRedistRHS "int Epetra_LinearProblemRedistor::UpdateRedistRHS(Epetra_MultiVector
+*RHSWithNewValues)
+
+Update the values of an already-redistributed RHS.
+
+Updates the values of an already-redistributed RHS. This method allows
+updating the redistributed RHS without allocating new storage. This
+method updates only the RHS, and no other part of the
+RedistLinearProblem.
+
+Parameters:
+-----------
+
+RHSWithNewValues:  (In) The values from RHSWithNewValues will be
+copied into the RHS of the RedistProblem. The RHSWithNewValues object
+must be identical in structure to the Epetra_MultiVector object used
+to create this instance of Epetra_LinearProblemRedistor.
+
+Integer error code, 0 if no errors. ";
+
+/*  Reverse transformation methods  */
+
+%feature("docstring")  Epetra_LinearProblemRedistor::UpdateOriginalLHS
+"int
+Epetra_LinearProblemRedistor::UpdateOriginalLHS(Epetra_MultiVector
+*LHS)
+
+Update LHS of original Linear Problem object.
+
+Copies the values from the LHS of the RedistProblem Object into the
+LHS passed in to the method. If the RedistProblem is replicated, the
+LHS will be computed as an average from all processor.
+
+Parameters:
+-----------
+
+LHS:  (Out) On exit, the values in LHS will contain the values from
+the current RedistLinearProblem LHS. If the GIDs of the RedistMap are
+not one-to-one, e.g., if the map is replicated, the output values for
+each GID will be an average of all values at that GID. If the
+RedistProblem is being solved redundantly in any fashion, this
+approach to computing the values of LHS should produce a valid answer
+no matter how the RedistProblem LHS is distributed.
+
+Error code, returns 0 if no error. ";
+
+/*  Attribute accessor methods  */
+
+%feature("docstring")  Epetra_LinearProblemRedistor::RedistMap "const
+Epetra_Map& Epetra_LinearProblemRedistor::RedistMap() const
+
+Returns const reference to the Epetra_Map that describes the layout of
+the RedistLinearProblem.
+
+The RedistMap object can be used to construct other Epetra_DistObject
+objects whose maps are compatible with the redistributed linear
+problem map. WARNING:  This method must not be called until after
+CreateRedistProblem() is called. ";
+
+%feature("docstring")  Epetra_LinearProblemRedistor::RedistExporter "const Epetra_Export& Epetra_LinearProblemRedistor::RedistExporter()
+const
+
+Returns const reference to the Epetra_Export object used to
+redistribute the original linear problem.
+
+The RedistExporter object can be used to redistribute other
+Epetra_DistObject objects whose maps are compatible with the original
+linear problem map, or a reverse distribution for objects compatible
+with the RedistMap(). WARNING:  This method must not be called until
+after CreateRedistProblem() is called. ";
+
+/*  Utility methods  */
+
+%feature("docstring")  Epetra_LinearProblemRedistor::ExtractHbData "int Epetra_LinearProblemRedistor::ExtractHbData(int &M, int &N, int
+&nz, int *&ptr, int *&ind, double *&val, int &Nrhs, double *&rhs, int
+&ldrhs, double *&lhs, int &ldlhs) const
+
+Extract the redistributed problem data in a form usable for other
+codes that require Harwell-Boeing format.
+
+This method extract data from the linear problem for use with other
+packages, such as SuperLU, that require the matrix, rhs and lhs in
+Harwell-Boeing format. Note that the arrays returned by this method
+are owned by the Epetra_LinearProblemRedistor class, and they will be
+deleted when the owning class is destroyed. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_LinearProblemRedistor::Print "virtual
+void Epetra_LinearProblemRedistor::Print(ostream &os) const
+
+Print method. ";
 
 
 // File: classEpetra__LocalMap.xml
@@ -3015,6 +9509,153 @@ object.
 
 C++ includes: Epetra_MapColoring.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_MapColoring::Epetra_MapColoring "Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &Map,
+const int DefaultColor=0)
+
+Epetra_MapColoring basic constructor.
+
+Parameters:
+-----------
+
+In:  Map - An Epetra_Map or Epetra_BlockMap (Note: Epetra_BlockMap is
+a base class of Epetra_Map, so either can be passed in to this
+constructor.
+
+In:  DefaultColor - The integer value to use as the default color for
+this map. This constructor will initially define the color of all map
+elements to the default color.
+
+Pointer to a Epetra_MapColoring object. ";
+
+%feature("docstring")  Epetra_MapColoring::Epetra_MapColoring "Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &Map, int
+*ElementColors, const int DefaultColor=0)
+
+Epetra_MapColoring constructor.
+
+Parameters:
+-----------
+
+In:  Map - An Epetra_Map or Epetra_BlockMap (Note: Epetra_BlockMap is
+a base class of Epetra_Map, so either can be passed in to this
+constructor.
+
+In:  ElementColors - Array of dimension Map.NumMyElements() containing
+the list of colors that should be assigned the map elements on this
+processor. If this argument is set to 0 (zero), all elements will
+initially be assigned color 0 (zero). Element colors can be modified
+by using methods described below.
+
+In:  DefaultColor - The color that will be assigned by default when no
+other value is specified. This value has no meaning for this
+constructor, but is used by certain methods now and in the future.
+
+Pointer to a Epetra_MapColoring object. ";
+
+%feature("docstring")  Epetra_MapColoring::Epetra_MapColoring "Epetra_MapColoring::Epetra_MapColoring(const Epetra_MapColoring
+&Source)
+
+Epetra_MapColoring copy constructor. ";
+
+%feature("docstring")  Epetra_MapColoring::~Epetra_MapColoring "Epetra_MapColoring::~Epetra_MapColoring()
+
+Epetra_MapColoring destructor. ";
+
+/*  Set Color methods  */
+
+/*  Local/Global color accessor methods  */
+
+/*  Color Information Access Methods  */
+
+%feature("docstring")  Epetra_MapColoring::NumColors "int
+Epetra_MapColoring::NumColors() const
+
+Returns number of colors on the calling processor. ";
+
+%feature("docstring")  Epetra_MapColoring::MaxNumColors "int
+Epetra_MapColoring::MaxNumColors() const
+
+Returns maximum over all processors of the number of colors. ";
+
+%feature("docstring")  Epetra_MapColoring::ListOfColors "int*
+Epetra_MapColoring::ListOfColors() const
+
+Array of length NumColors() containing List of color values used in
+this coloring.
+
+Color values can be arbitrary integer values. As a result, a user of a
+previously constructed MapColoring object may need to know exactly
+which color values are present. This array contains that information
+as a sorted list of integer values. ";
+
+%feature("docstring")  Epetra_MapColoring::DefaultColor "int
+Epetra_MapColoring::DefaultColor() const
+
+Returns default color. ";
+
+%feature("docstring")  Epetra_MapColoring::NumElementsWithColor "int
+Epetra_MapColoring::NumElementsWithColor(int Color) const
+
+Returns number of map elements on calling processor having specified
+Color. ";
+
+%feature("docstring")  Epetra_MapColoring::ColorLIDList "int *
+Epetra_MapColoring::ColorLIDList(int Color) const
+
+Returns pointer to array of Map LIDs associated with the specified
+color.
+
+Returns a pointer to a list of Map LIDs associated with the specified
+color. This is a purely local list with no information about other
+processors. If there are no LIDs associated with the specified color,
+the pointer is set to zero. ";
+
+%feature("docstring")  Epetra_MapColoring::ElementColors "int*
+Epetra_MapColoring::ElementColors() const
+
+Returns pointer to array of the colors associated with the LIDs on the
+calling processor.
+
+Returns a pointer to the list of colors associated with the elements
+on this processor such that ElementColor[LID] is the color assigned to
+that LID. ";
+
+/*  Epetra_Map and Epetra_BlockMap generators  */
+
+%feature("docstring")  Epetra_MapColoring::GenerateMap "Epetra_Map *
+Epetra_MapColoring::GenerateMap(int Color) const
+
+Generates an Epetra_Map of the GIDs associated with the specified
+color.
+
+This method will create an Epetra_Map such that on each processor the
+GIDs associated with the specified color will be part of the map on
+that processor. Note that this method always generates an Epetra_Map,
+not an Epetra_BlockMap, even if the map associated with this map
+coloring is a block map. Once the map is generated, the user is
+responsible for deleting it. ";
+
+%feature("docstring")  Epetra_MapColoring::GenerateBlockMap "Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color)
+const
+
+Generates an Epetra_BlockMap of the GIDs associated with the specified
+color.
+
+This method will create an Epetra_BlockMap such that on each processor
+the GIDs associated with the specified color will be part of the map
+on that processor. Note that this method will generate an
+Epetra_BlockMap such that each element as the same element size as the
+corresponding element of map associated with the map coloring. Once
+the map is generated, the user is responsible for deleting it. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_MapColoring::Print "void
+Epetra_MapColoring::Print(ostream &os) const
+
+Print method. ";
+
 
 // File: structEpetra__MapColoring_1_1ListItem.xml
 
@@ -3030,6 +9671,503 @@ Epetra classes to run on a parallel computer using MPI.
 
 C++ includes: Epetra_MpiComm.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")  Epetra_MpiComm::Epetra_MpiComm "Epetra_MpiComm::Epetra_MpiComm(MPI_Comm comm)
+
+Epetra_MpiComm MPI Constructor.
+
+Creates a Epetra_MpiComm instance for use with MPI. If no specialized
+MPI communicator is needed, this constuctor can be called with the
+argument MPI_COMM_WORLD. ";
+
+%feature("docstring")  Epetra_MpiComm::Epetra_MpiComm "Epetra_MpiComm::Epetra_MpiComm(const Epetra_MpiComm &Comm)
+
+Epetra_MpiComm Copy Constructor.
+
+Makes an exact copy of an existing Epetra_MpiComm instance. ";
+
+%feature("docstring")  Epetra_MpiComm::Clone "Epetra_Comm*
+Epetra_MpiComm::Clone() const
+
+Clone method. ";
+
+%feature("docstring")  Epetra_MpiComm::~Epetra_MpiComm "Epetra_MpiComm::~Epetra_MpiComm()
+
+Epetra_MpiComm Destructor.
+
+Completely deletes a Epetra_MpiComm object. WARNING:  Note: All
+objects that depend on a Epetra_MpiComm instance should be destroyed
+prior to calling this function. ";
+
+/*  Barrier Methods  */
+
+%feature("docstring")  Epetra_MpiComm::Barrier "void
+Epetra_MpiComm::Barrier() const
+
+Epetra_MpiComm Barrier function.
+
+Causes each processor in the communicator to wait until all processors
+have arrived. ";
+
+/*  Broadcast Methods  */
+
+%feature("docstring")  Epetra_MpiComm::Broadcast "int
+Epetra_MpiComm::Broadcast(double *MyVals, int Count, int Root) const
+
+Epetra_MpiComm Broadcast function.
+
+Takes list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_MpiComm::Broadcast "int
+Epetra_MpiComm::Broadcast(int *MyVals, int Count, int Root) const
+
+Epetra_MpiComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_MpiComm::Broadcast "int
+Epetra_MpiComm::Broadcast(long *MyVals, int Count, int Root) const
+
+Epetra_MpiComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+/*  Gather Methods  */
+
+%feature("docstring")  Epetra_MpiComm::GatherAll "int
+Epetra_MpiComm::GatherAll(double *MyVals, double *AllVals, int Count)
+const
+
+Epetra_MpiComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_MpiComm::GatherAll "int
+Epetra_MpiComm::GatherAll(int *MyVals, int *AllVals, int Count) const
+
+Epetra_MpiComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_MpiComm::GatherAll "int
+Epetra_MpiComm::GatherAll(long *MyVals, long *AllVals, int Count)
+const
+
+Epetra_MpiComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+/*  Sum Methods  */
+
+%feature("docstring")  Epetra_MpiComm::SumAll "int
+Epetra_MpiComm::SumAll(double *PartialSums, double *GlobalSums, int
+Count) const
+
+Epetra_MpiComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::SumAll "int
+Epetra_MpiComm::SumAll(int *PartialSums, int *GlobalSums, int Count)
+const
+
+Epetra_MpiComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::SumAll "int
+Epetra_MpiComm::SumAll(long *PartialSums, long *GlobalSums, int Count)
+const
+
+Epetra_MpiComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Max/Min Methods  */
+
+%feature("docstring")  Epetra_MpiComm::MaxAll "int
+Epetra_MpiComm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
+Count) const
+
+Epetra_MpiComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::MaxAll "int
+Epetra_MpiComm::MaxAll(int *PartialMaxs, int *GlobalMaxs, int Count)
+const
+
+Epetra_MpiComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::MaxAll "int
+Epetra_MpiComm::MaxAll(long *PartialMaxs, long *GlobalMaxs, int Count)
+const
+
+Epetra_MpiComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::MinAll "int
+Epetra_MpiComm::MinAll(double *PartialMins, double *GlobalMins, int
+Count) const
+
+Epetra_MpiComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::MinAll "int
+Epetra_MpiComm::MinAll(int *PartialMins, int *GlobalMins, int Count)
+const
+
+Epetra_MpiComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::MinAll "int
+Epetra_MpiComm::MinAll(long *PartialMins, long *GlobalMins, int Count)
+const
+
+Epetra_MpiComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Parallel Prefix Methods  */
+
+%feature("docstring")  Epetra_MpiComm::ScanSum "int
+Epetra_MpiComm::ScanSum(double *MyVals, double *ScanSums, int Count)
+const
+
+Epetra_MpiComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::ScanSum "int
+Epetra_MpiComm::ScanSum(int *MyVals, int *ScanSums, int Count) const
+
+Epetra_MpiComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::ScanSum "int
+Epetra_MpiComm::ScanSum(long *MyVals, long *ScanSums, int Count) const
+
+Epetra_MpiComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Attribute Accessor Methods  */
+
+%feature("docstring")  Epetra_MpiComm::Comm "MPI_Comm
+Epetra_MpiComm::Comm() const
+
+Extract MPI Communicator from a Epetra_MpiComm object. ";
+
+%feature("docstring")  Epetra_MpiComm::MyPID "int
+Epetra_MpiComm::MyPID() const
+
+Return my process ID.
+
+In MPI mode returns the rank of the calling process. In serial mode
+returns 0. ";
+
+%feature("docstring")  Epetra_MpiComm::NumProc "int
+Epetra_MpiComm::NumProc() const
+
+Returns total number of processes.
+
+In MPI mode returns the size of the MPI communicator. In serial mode
+returns 1. ";
+
+/*  Gather/Scatter and Directory Constructors  */
+
+%feature("docstring")  Epetra_MpiComm::CreateDistributor "Epetra_Distributor * Epetra_MpiComm::CreateDistributor() const
+
+Create a distributor object. ";
+
+%feature("docstring")  Epetra_MpiComm::CreateDirectory "Epetra_Directory * Epetra_MpiComm::CreateDirectory(const
+Epetra_BlockMap &Map) const
+
+Create a directory object for the given Epetra_BlockMap. ";
+
+/*  MPI-specific Methods  */
+
+%feature("docstring")  Epetra_MpiComm::GetMpiTag "int
+Epetra_MpiComm::GetMpiTag() const
+
+Acquire an MPI tag from the Epetra range of 24050-24099, increment
+tag. ";
+
+%feature("docstring")  Epetra_MpiComm::GetMpiComm "MPI_Comm
+Epetra_MpiComm::GetMpiComm() const
+
+Get the MPI Communicator (identical to Comm() method; used when we
+know we are MPI. ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_MpiComm::Print "void
+Epetra_MpiComm::Print(ostream &os) const
+
+Print method that implements Epetra_Object virtual Print method. ";
+
+%feature("docstring")  Epetra_MpiComm::PrintInfo "void
+Epetra_MpiComm::PrintInfo(ostream &os) const
+
+Print method that implements Epetra_Comm virtual PrintInfo method. ";
+
+/*  Expert Users and Developers Only  */
+
+%feature("docstring")  Epetra_MpiComm::ReferenceCount "int
+Epetra_MpiComm::ReferenceCount() const
+
+Returns the reference count of MpiCommData.
+
+(Intended for testing purposes.) ";
+
+%feature("docstring")  Epetra_MpiComm::DataPtr "const
+Epetra_MpiCommData* Epetra_MpiComm::DataPtr() const
+
+Returns a pointer to the MpiCommData instance this MpiComm uses.
+
+(Intended for developer use only for testing purposes.) ";
+
 
 // File: classEpetra__MpiCommData.xml
 %feature("docstring") Epetra_MpiCommData "
@@ -3042,6 +10180,8 @@ Epetra_MpiComm instances. It derives from Epetra_Data, and inherits
 reference-counting from it.
 
 C++ includes: Epetra_MpiCommData.h ";
+
+/*  Constructor/Destructor Methods  */
 
 
 // File: classEpetra__MpiDistributor.xml
@@ -3057,6 +10197,155 @@ operations on a parallel computer. An Epetra_MpiDistributor object is
 actually produced by calling a method in the Epetra_MpiComm class.
 
 C++ includes: Epetra_MpiDistributor.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_MpiDistributor::Epetra_MpiDistributor "Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm
+&Comm)
+
+Epetra_Comm Default Constructor. ";
+
+%feature("docstring")  Epetra_MpiDistributor::Epetra_MpiDistributor "Epetra_MpiDistributor::Epetra_MpiDistributor(const
+Epetra_MpiDistributor &Distributor)
+
+Epetra_Comm Copy Constructor. ";
+
+%feature("docstring")  Epetra_MpiDistributor::Clone "Epetra_Distributor* Epetra_MpiDistributor::Clone()
+
+Clone method. ";
+
+%feature("docstring")  Epetra_MpiDistributor::~Epetra_MpiDistributor "Epetra_MpiDistributor::~Epetra_MpiDistributor()
+
+Epetra_Comm Destructor. ";
+
+/*  Gather/Scatter Constructors  */
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromSends "int
+Epetra_MpiDistributor::CreateFromSends(const int &NumExportIDs, const
+int *ExportPIDs, bool Deterministic, int &NumRemoteIDs)
+
+Create Distributor object using list of process IDs to which we
+export.
+
+Take a list of Process IDs and construct a plan for efficiently
+scattering to these processes. Return the number of IDs being sent to
+me.
+
+Parameters:
+-----------
+
+NumExportIDs:  In Number of IDs that need to be sent from this
+processor.
+
+ExportPIDs:  In List of processors that will get the exported IDs.
+
+Deterministic:  In No Op.
+
+NumRemoteIDs:  Out Number of IDs this processor will be receiving. ";
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromRecvs "int
+Epetra_MpiDistributor::CreateFromRecvs(const int &NumRemoteIDs, const
+int *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
+&NumExportIDs, int *&ExportGIDs, int *&ExportPIDs)
+
+Create Distributor object using list of Remote global IDs and
+corresponding PIDs.
+
+Take a list of global IDs and construct a plan for efficiently
+scattering to these processes. Return the number and list of IDs being
+sent by me.
+
+Parameters:
+-----------
+
+NumRemoteIDs:  In Number of IDs this processor will be receiving.
+
+RemoteGIDs:  In List of IDs that this processor wants.
+
+RemotePIDs:  In List of processors that will send the remote IDs.
+
+Deterministic:  In No Op.
+
+NumExportIDs:  Out Number of IDs that need to be sent from this
+processor.
+
+ExportGIDs:  Out List of processors that will get the exported IDs.
+
+ExportPIDs:  Out List of processors that will get the exported IDs. ";
+
+/*  Execute Gather/Scatter Operations  */
+
+%feature("docstring")  Epetra_MpiDistributor::Do "int
+Epetra_MpiDistributor::Do(char *export_objs, int obj_size, int
+&len_import_objs, char *&import_objs)
+
+Execute plan on buffer of export objects in a single step. ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoReverse "int
+Epetra_MpiDistributor::DoReverse(char *export_objs, int obj_size, int
+&len_import_objs, char *&import_objs)
+
+Execute reverse of plan on buffer of export objects in a single step.
+";
+
+%feature("docstring")  Epetra_MpiDistributor::DoPosts "int
+Epetra_MpiDistributor::DoPosts(char *export_objs, int obj_size, int
+&len_import_objs, char *&import_objs)
+
+Post buffer of export objects (can do other local work before
+executing Waits). ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoWaits "int
+Epetra_MpiDistributor::DoWaits()
+
+Wait on a set of posts. ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoReversePosts "int
+Epetra_MpiDistributor::DoReversePosts(char *export_objs, int obj_size,
+int &len_import_objs, char *&import_objs)
+
+Do reverse post of buffer of export objects (can do other local work
+before executing Waits). ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoReverseWaits "int
+Epetra_MpiDistributor::DoReverseWaits()
+
+Wait on a reverse set of posts. ";
+
+/*  Execute Gather/Scatter Operations (Non-constant size objects)  */
+
+%feature("docstring")  Epetra_MpiDistributor::Do "int
+Epetra_MpiDistributor::Do(char *export_objs, int obj_size, int
+*&sizes, int &len_import_objs, char *&import_objs)
+
+Execute plan on buffer of export objects in a single step (object size
+may vary). ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoReverse "int
+Epetra_MpiDistributor::DoReverse(char *export_objs, int obj_size, int
+*&sizes, int &len_import_objs, char *&import_objs)
+
+Execute reverse of plan on buffer of export objects in a single step
+(object size may vary). ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoPosts "int
+Epetra_MpiDistributor::DoPosts(char *export_objs, int obj_size, int
+*&sizes, int &len_import_objs, char *&import_objs)
+
+Post buffer of export objects (can do other local work before
+executing Waits). ";
+
+%feature("docstring")  Epetra_MpiDistributor::DoReversePosts "int
+Epetra_MpiDistributor::DoReversePosts(char *export_objs, int obj_size,
+int *&sizes, int &len_import_objs, char *&import_objs)
+
+Do reverse post of buffer of export objects (can do other local work
+before executing Waits). ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_MpiDistributor::Print "void
+Epetra_MpiDistributor::Print(ostream &os) const ";
 
 
 // File: classEpetra__MpiSmpComm.xml
@@ -3074,6 +10363,560 @@ processes.
 
 C++ includes: Epetra_MpiSmpComm.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::Epetra_MpiSmpComm "Epetra_MpiSmpComm::Epetra_MpiSmpComm(MPI_Comm comm)
+
+Epetra_MpiSmpComm MPI Constructor.
+
+Creates a Epetra_MpiSmpComm instance for use with MPI. If no
+specialized MPI communicator is needed, this constuctor can be called
+with the argument MPI_COMM_WORLD. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::Epetra_MpiSmpComm "Epetra_MpiSmpComm::Epetra_MpiSmpComm(const Epetra_MpiSmpComm &Comm)
+
+Epetra_MpiSmpComm Copy Constructor.
+
+Makes an exact copy of an existing Epetra_MpiSmpComm instance. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::Clone "Epetra_Comm*
+Epetra_MpiSmpComm::Clone() const
+
+Clone method. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::~Epetra_MpiSmpComm "Epetra_MpiSmpComm::~Epetra_MpiSmpComm()
+
+Epetra_MpiSmpComm Destructor.
+
+Completely deletes a Epetra_MpiSmpComm object. WARNING:  Note: All
+objects that depend on a Epetra_MpiSmpComm instance should be
+destroyed prior to calling this function. ";
+
+/*  Barrier Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::Barrier "void
+Epetra_MpiSmpComm::Barrier() const
+
+Epetra_MpiSmpComm Barrier function.
+
+Causes each processor in the communicator to wait until all processors
+have arrived. ";
+
+/*  Broadcast Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::Broadcast "int
+Epetra_MpiSmpComm::Broadcast(double *MyVals, int Count, int Root)
+const
+
+Epetra_MpiSmpComm Broadcast function.
+
+Takes list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::Broadcast "int
+Epetra_MpiSmpComm::Broadcast(int *MyVals, int Count, int Root) const
+
+Epetra_MpiSmpComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::Broadcast "int
+Epetra_MpiSmpComm::Broadcast(long *MyVals, int Count, int Root) const
+
+Epetra_MpiSmpComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+/*  Gather Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::GatherAll "int
+Epetra_MpiSmpComm::GatherAll(double *MyVals, double *AllVals, int
+Count) const
+
+Epetra_MpiSmpComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::GatherAll "int
+Epetra_MpiSmpComm::GatherAll(int *MyVals, int *AllVals, int Count)
+const
+
+Epetra_MpiSmpComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::GatherAll "int
+Epetra_MpiSmpComm::GatherAll(long *MyVals, long *AllVals, int Count)
+const
+
+Epetra_MpiSmpComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+/*  Sum Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::SumAll "int
+Epetra_MpiSmpComm::SumAll(double *PartialSums, double *GlobalSums, int
+Count) const
+
+Epetra_MpiSmpComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::SumAll "int
+Epetra_MpiSmpComm::SumAll(int *PartialSums, int *GlobalSums, int
+Count) const
+
+Epetra_MpiSmpComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::SumAll "int
+Epetra_MpiSmpComm::SumAll(long *PartialSums, long *GlobalSums, int
+Count) const
+
+Epetra_MpiSmpComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Max/Min Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::MaxAll "int
+Epetra_MpiSmpComm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
+Count) const
+
+Epetra_MpiSmpComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MaxAll "int
+Epetra_MpiSmpComm::MaxAll(int *PartialMaxs, int *GlobalMaxs, int
+Count) const
+
+Epetra_MpiSmpComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MaxAll "int
+Epetra_MpiSmpComm::MaxAll(long *PartialMaxs, long *GlobalMaxs, int
+Count) const
+
+Epetra_MpiSmpComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MinAll "int
+Epetra_MpiSmpComm::MinAll(double *PartialMins, double *GlobalMins, int
+Count) const
+
+Epetra_MpiSmpComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MinAll "int
+Epetra_MpiSmpComm::MinAll(int *PartialMins, int *GlobalMins, int
+Count) const
+
+Epetra_MpiSmpComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MinAll "int
+Epetra_MpiSmpComm::MinAll(long *PartialMins, long *GlobalMins, int
+Count) const
+
+Epetra_MpiSmpComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Parallel Prefix Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::ScanSum "int
+Epetra_MpiSmpComm::ScanSum(double *MyVals, double *ScanSums, int
+Count) const
+
+Epetra_MpiSmpComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::ScanSum "int
+Epetra_MpiSmpComm::ScanSum(int *MyVals, int *ScanSums, int Count)
+const
+
+Epetra_MpiSmpComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::ScanSum "int
+Epetra_MpiSmpComm::ScanSum(long *MyVals, long *ScanSums, int Count)
+const
+
+Epetra_MpiSmpComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Attribute Accessor Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::Comm "MPI_Comm
+Epetra_MpiSmpComm::Comm() const
+
+Extract MPI Communicator from a Epetra_MpiSmpComm object. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MyPID "int
+Epetra_MpiSmpComm::MyPID() const
+
+Return my process ID.
+
+In MPI mode returns the rank of the calling process. In serial mode
+returns 0. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::NumProc "int
+Epetra_MpiSmpComm::NumProc() const
+
+Returns total number of processes.
+
+In MPI mode returns the size of the MPI communicator. In serial mode
+returns 1. ";
+
+/*  Gather/Scatter and Directory Constructors  */
+
+%feature("docstring")  Epetra_MpiSmpComm::CreateDistributor "Epetra_Distributor * Epetra_MpiSmpComm::CreateDistributor() const
+
+Create a distributor object. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::CreateDirectory "Epetra_Directory* Epetra_MpiSmpComm::CreateDirectory(const
+Epetra_BlockMap &Map) const
+
+Create a directory object for the given Epetra_BlockMap. ";
+
+/*  MPI-specific Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::GetMpiTag "int
+Epetra_MpiSmpComm::GetMpiTag() const
+
+Acquire an MPI tag from the Epetra range of 24050-24099, increment
+tag. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::GetMpiComm "MPI_Comm
+Epetra_MpiSmpComm::GetMpiComm() const
+
+Acquire an MPI tag from the Epetra range of 24050-24099, increment
+tag. ";
+
+/*  Experimental SMP cluster methods (not rigorously implemented)  */
+
+%feature("docstring")  Epetra_MpiSmpComm::NodeBarrier "void
+Epetra_MpiSmpComm::NodeBarrier() const
+
+Epetra_MpiSmpComm Node Barrier function.
+
+A no-op for a serial communicator. For MPI, it causes each process on
+a given node in the communicator to wait until all processes on that
+node have arrived.
+
+This function can be used to select a subset of MPI processes that are
+associated with a group of threaded processes and synchronize only
+with this subset. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MyThreadID "int
+Epetra_MpiSmpComm::MyThreadID() const
+
+Return my thread ID.
+
+If SetMyThreadID was called to set a thread value, this function
+returns the thread ID of the calling process. Otherwise returns 0. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::MyNodeID "int
+Epetra_MpiSmpComm::MyNodeID() const
+
+Return my node ID.
+
+If SetMyNodeD was called to set a node value, this function returns
+the thread ID of the calling process. Otherwise returns the same value
+as MyPID(). ";
+
+%feature("docstring")  Epetra_MpiSmpComm::SetNumThreads "int
+Epetra_MpiSmpComm::SetNumThreads(int NumThreads)
+
+Set number of threads on this node.
+
+Sets the number of threads on the node that owns the calling process.
+By default the number of threads is 1. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::NumThreads "int
+Epetra_MpiSmpComm::NumThreads() const
+
+Get number of threads on this node.
+
+Sets the number of threads on the node that owns the calling process.
+By default the number of threads is 1. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::SetMyThreadID "int
+Epetra_MpiSmpComm::SetMyThreadID(int ThreadID)
+
+Set my thread ID.
+
+Sets the thread ID for the calling process. Can be used to facilitate
+threaded programming across an MPI application by allowing multiple
+MPI processes to be considered threads of a virtual shared memory
+process. Threads and nodes should be used together. By default the
+thread ID is zero. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::SetMyNodeID "int
+Epetra_MpiSmpComm::SetMyNodeID(int NodeID)
+
+Set my node ID.
+
+Sets the node ID for the calling process. Can be used to facilitate
+threaded programming across an MPI application by associating several
+MPI processes with a single node. By default, each MPI process is
+associated with a single node with the same ID. ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_MpiSmpComm::Print "void
+Epetra_MpiSmpComm::Print(ostream &os) const
+
+Print method that implements Epetra_Object virtual Print method. ";
+
+%feature("docstring")  Epetra_MpiSmpComm::PrintInfo "void
+Epetra_MpiSmpComm::PrintInfo(ostream &os) const
+
+Print method that implements Epetra_Comm virtual PrintInfo method. ";
+
 
 // File: classEpetra__MpiSmpCommData.xml
 %feature("docstring") Epetra_MpiSmpCommData "
@@ -3087,6 +10930,8 @@ multiple Epetra_MpiSmpComm instances. It derives from Epetra_Data, and
 inherits reference-counting from it.
 
 C++ includes: Epetra_MpiSmpCommData.h ";
+
+/*  Constructor/Destructor Methods  */
 
 
 // File: classEpetra__MultiVector.xml
@@ -3229,6 +11074,894 @@ required for all Epetra_MultiVector constructors.
 
 C++ includes: Epetra_MultiVector.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap &Map, int
+NumVectors, bool zeroOut=true)
+
+Basic Epetra_MultiVector constuctor.
+
+Creates a Epetra_MultiVector object and, by default, fills with zero
+values.
+
+Parameters:
+-----------
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+WARNING:  Note that, because Epetra_LocalMap derives from Epetra_Map
+and Epetra_Map derives from Epetra_BlockMap, this constructor works
+for all three types of Epetra map classes.
+
+Parameters:
+-----------
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+In:  zeroOut - If true then the allocated memory will be zeroed out
+initialy. If false then this memory will not be touched which can be
+significantly faster.
+
+Pointer to a Epetra_MultiVector. ";
+
+%feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(const Epetra_MultiVector
+&Source)
+
+Epetra_MultiVector copy constructor. ";
+
+%feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double *A, int MyLDA, int NumVectors)
+
+Set multi-vector values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  A - Pointer to an array of double precision numbers. The first
+vector starts at A. The second vector starts at A+MyLDA, the third at
+A+2*MyLDA, and so on.
+
+In:  MyLDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+WARNING:  This value refers to the stride on the calling processor.
+Thus it is a local quantity, not a global quantity.
+
+Parameters:
+-----------
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double **ArrayOfPointers, int NumVectors)
+
+Set multi-vector values from array of pointers.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  ArrayOfPointers - An array of pointers such that
+ArrayOfPointers[i] points to the memory location containing ith vector
+to be copied.
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const
+Epetra_MultiVector &Source, int *Indices, int NumVectors)
+
+Set multi-vector values from list of vectors in an existing
+Epetra_MultiVector.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Source - An existing fully constructed Epetra_MultiVector.
+
+In:  Indices - Integer list of the vectors to copy.
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const
+Epetra_MultiVector &Source, int StartIndex, int NumVectors)
+
+Set multi-vector values from range of vectors in an existing
+Epetra_MultiVector.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Source - An existing fully constructed Epetra_MultiVector.
+
+In:  StartIndex - First of the vectors to copy.
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::~Epetra_MultiVector "Epetra_MultiVector::~Epetra_MultiVector()
+
+Epetra_MultiVector destructor. ";
+
+/*  Post-construction modification routines  */
+
+%feature("docstring")  Epetra_MultiVector::ReplaceGlobalValue "int
+Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex,
+double ScalarValue)
+
+Replace current value at the specified (GlobalRow, VectorIndex)
+location with ScalarValue.
+
+Replaces the existing value for a single entry in the multivector. The
+specified global row must correspond to a GID owned by the map of the
+multivector on the calling processor. In other words, this method does
+not perform cross-processor communication.
+
+If the map associated with this multivector is an Epetra_BlockMap,
+only the first point entry associated with the global row will be
+modified. To modify a different point entry, use the other version of
+this method
+
+Parameters:
+-----------
+
+In:  GlobalRow - Row of Multivector to modify in global index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if GlobalRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(). ";
+
+%feature("docstring")  Epetra_MultiVector::ReplaceGlobalValue "int
+Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int
+BlockRowOffset, int VectorIndex, double ScalarValue)
+
+Replace current value at the specified (GlobalBlockRow,
+BlockRowOffset, VectorIndex) location with ScalarValue.
+
+Replaces the existing value for a single entry in the multivector. The
+specified global block row and block row offset must correspond to a
+GID owned by the map of the multivector on the calling processor. In
+other words, this method does not perform cross-processor
+communication.
+
+Parameters:
+-----------
+
+In:  GlobalBlockRow - BlockRow of Multivector to modify in global
+index space.
+
+In:  BlockRowOffset - Offset into BlockRow of Multivector to modify in
+global index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if GlobalRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(), set to -2 if BlockRowOffset is out-of-range. ";
+
+%feature("docstring")  Epetra_MultiVector::SumIntoGlobalValue "int
+Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex,
+double ScalarValue)
+
+Adds ScalarValue to existing value at the specified (GlobalRow,
+VectorIndex) location.
+
+Sums the given value into the existing value for a single entry in the
+multivector. The specified global row must correspond to a GID owned
+by the map of the multivector on the calling processor. In other
+words, this method does not perform cross-processor communication.
+
+If the map associated with this multivector is an Epetra_BlockMap,
+only the first point entry associated with the global row will be
+modified. To modify a different point entry, use the other version of
+this method
+
+Parameters:
+-----------
+
+In:  GlobalRow - Row of Multivector to modify in global index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if GlobalRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(). ";
+
+%feature("docstring")  Epetra_MultiVector::SumIntoGlobalValue "int
+Epetra_MultiVector::SumIntoGlobalValue(int GlobalBlockRow, int
+BlockRowOffset, int VectorIndex, double ScalarValue)
+
+Adds ScalarValue to existing value at the specified (GlobalBlockRow,
+BlockRowOffset, VectorIndex) location.
+
+Sums the given value into the existing value for a single entry in the
+multivector. The specified global block row and block row offset must
+correspond to a GID owned by the map of the multivector on the calling
+processor. In other words, this method does not perform cross-
+processor communication.
+
+Parameters:
+-----------
+
+In:  GlobalBlockRow - BlockRow of Multivector to modify in global
+index space.
+
+In:  BlockRowOffset - Offset into BlockRow of Multivector to modify in
+global index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if GlobalRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(), set to -2 if BlockRowOffset is out-of-range. ";
+
+%feature("docstring")  Epetra_MultiVector::ReplaceMyValue "int
+Epetra_MultiVector::ReplaceMyValue(int MyRow, int VectorIndex, double
+ScalarValue)
+
+Replace current value at the specified (MyRow, VectorIndex) location
+with ScalarValue.
+
+Replaces the existing value for a single entry in the multivector. The
+specified local row must correspond to a GID owned by the map of the
+multivector on the calling processor. In other words, this method does
+not perform cross-processor communication.
+
+This method is intended for use with vectors based on an Epetra_Map.
+If used on a vector based on a non-trivial Epetra_BlockMap, this will
+update only block row 0, i.e.
+
+Epetra_MultiVector::ReplaceMyValue ( MyRow, VectorIndex, ScalarValue )
+is equivalent to: Epetra_MultiVector::ReplaceMyValue ( 0, MyRow,
+VectorIndex, ScalarValue )
+
+Parameters:
+-----------
+
+In:  MyRow - Row of Multivector to modify in local index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if MyRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(). ";
+
+%feature("docstring")  Epetra_MultiVector::ReplaceMyValue "int
+Epetra_MultiVector::ReplaceMyValue(int MyBlockRow, int BlockRowOffset,
+int VectorIndex, double ScalarValue)
+
+Replace current value at the specified (MyBlockRow, BlockRowOffset,
+VectorIndex) location with ScalarValue.
+
+Replaces the existing value for a single entry in the multivector. The
+specified local block row and block row offset must correspond to a
+GID owned by the map of the multivector on the calling processor. In
+other words, this method does not perform cross-processor
+communication.
+
+Parameters:
+-----------
+
+In:  MyBlockRow - BlockRow of Multivector to modify in local index
+space.
+
+In:  BlockRowOffset - Offset into BlockRow of Multivector to modify in
+local index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if MyRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(), set to -2 if BlockRowOffset is out-of-range. ";
+
+%feature("docstring")  Epetra_MultiVector::SumIntoMyValue "int
+Epetra_MultiVector::SumIntoMyValue(int MyRow, int VectorIndex, double
+ScalarValue)
+
+Adds ScalarValue to existing value at the specified (MyRow,
+VectorIndex) location.
+
+Sums the given value into the existing value for a single entry in the
+multivector. The specified local row must correspond to a GID owned by
+the map of the multivector on the calling processor. In other words,
+this method does not perform cross-processor communication.
+
+If the map associated with this multivector is an Epetra_BlockMap,
+only the first point entry associated with the local row will be
+modified. To modify a different point entry, use the other version of
+this method
+
+Parameters:
+-----------
+
+In:  MyRow - Row of Multivector to modify in local index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if MyRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(). ";
+
+%feature("docstring")  Epetra_MultiVector::SumIntoMyValue "int
+Epetra_MultiVector::SumIntoMyValue(int MyBlockRow, int BlockRowOffset,
+int VectorIndex, double ScalarValue)
+
+Adds ScalarValue to existing value at the specified (MyBlockRow,
+BlockRowOffset, VectorIndex) location.
+
+Sums the given value into the existing value for a single entry in the
+multivector. The specified local block row and block row offset must
+correspond to a GID owned by the map of the multivector on the calling
+processor. In other words, this method does not perform cross-
+processor communication.
+
+Parameters:
+-----------
+
+In:  MyBlockRow - BlockRow of Multivector to modify in local index
+space.
+
+In:  BlockRowOffset - Offset into BlockRow of Multivector to modify in
+local index space.
+
+In:  VectorIndex - Vector within MultiVector that should to modify.
+
+In:  ScalarValue - Value to add to existing value.
+
+Integer error code, set to 0 if successful, set to 1 if MyRow not
+associated with calling processor set to -1 if VectorIndex >=
+NumVectors(), set to -2 if BlockRowOffset is out-of-range. ";
+
+%feature("docstring")  Epetra_MultiVector::PutScalar "int
+Epetra_MultiVector::PutScalar(double ScalarConstant)
+
+Initialize all values in a multi-vector with constant value.
+
+Parameters:
+-----------
+
+In:  ScalarConstant - Value to use.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Random "int
+Epetra_MultiVector::Random()
+
+Set multi-vector values to random numbers.
+
+MultiVector uses the random number generator provided by Epetra_Util.
+The multi-vector values will be set to random values on the interval
+(-1.0, 1.0).
+
+Integer error code, set to 0 if successful. ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_MultiVector::ExtractCopy "int
+Epetra_MultiVector::ExtractCopy(double *A, int MyLDA) const
+
+Put multi-vector values into user-provided two-dimensional array.
+
+Parameters:
+-----------
+
+Out:  A - Pointer to memory space that will contain the multi-vector
+values. The first vector will be copied to the memory pointed to by A.
+The second vector starts at A+MyLDA, the third at A+2*MyLDA, and so
+on.
+
+In:  MyLDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+WARNING:  This value refers to the stride on the calling processor.
+Thus it is a local quantity, not a global quantity.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::ExtractCopy "int
+Epetra_MultiVector::ExtractCopy(double **ArrayOfPointers) const
+
+Put multi-vector values into user-provided array of pointers.
+
+Parameters:
+-----------
+
+Out:  ArrayOfPointers - An array of pointers to memory space that will
+contain the multi-vector values, such that ArrayOfPointers[i] points
+to the memory location where the ith vector to be copied.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::ExtractView "int
+Epetra_MultiVector::ExtractView(double **A, int *MyLDA) const
+
+Set user-provided addresses of A and MyLDA.
+
+Parameters:
+-----------
+
+A:  (Out) - Address of a pointer to that will be set to point to the
+values of the multi-vector. The first vector will be at the memory
+pointed to by A. The second vector starts at A+MyLDA, the third at
+A+2*MyLDA, and so on.
+
+MyLDA:  (Out) - Address of the \"Leading Dimension\", or stride
+between vectors in memory.
+
+WARNING:  This value refers to the stride on the calling processor.
+Thus it is a local quantity, not a global quantity.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_MultiVector::ExtractView "int
+Epetra_MultiVector::ExtractView(double ***ArrayOfPointers) const
+
+Set user-provided addresses of ArrayOfPointers.
+
+Parameters:
+-----------
+
+ArrayOfPointers:  (Out) - Address of array of pointers to memory space
+that will set to the multi-vector array of pointers, such that
+ArrayOfPointers[i] points to the memory location where the ith vector
+is located.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+/*  Mathematical methods  */
+
+%feature("docstring")  Epetra_MultiVector::Dot "int
+Epetra_MultiVector::Dot(const Epetra_MultiVector &A, double *Result)
+const
+
+Computes dot product of each corresponding pair of vectors.
+
+Parameters:
+-----------
+
+In:  A - Multi-vector to be used with the \"\\\\e this\" multivector.
+
+Out:  Result - Result[i] will contain the ith dot product result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Abs "int
+Epetra_MultiVector::Abs(const Epetra_MultiVector &A)
+
+Puts element-wise absolute values of input Multi-vector in target.
+
+Parameters:
+-----------
+
+In:  A - Input Multi-vector.
+
+Out:   this will contain the absolute values of the entries of A.
+
+Integer error code, set to 0 if successful.  Note: It is possible to
+use the same argument for A and this. ";
+
+%feature("docstring")  Epetra_MultiVector::Reciprocal "int
+Epetra_MultiVector::Reciprocal(const Epetra_MultiVector &A)
+
+Puts element-wise reciprocal values of input Multi-vector in target.
+
+Parameters:
+-----------
+
+In:  A - Input Multi-vector.
+
+Out:   this will contain the element-wise reciprocal values of the
+entries of A.
+
+Integer error code, set to 0 if successful. Returns 2 if some entry is
+too small, but not zero. Returns 1 if some entry is zero.  Note: It is
+possible to use the same argument for A and this. Also, if a given
+value of A is smaller than Epetra_DoubleMin (defined in
+Epetra_Epetra.h), but nonzero, then the return code is 2. If an entry
+is zero, the return code is 1. However, in all cases the reciprocal
+value is still used, even if a NaN is the result. ";
+
+%feature("docstring")  Epetra_MultiVector::Scale "int
+Epetra_MultiVector::Scale(double ScalarValue)
+
+Scale the current values of a multi-vector, this = ScalarValue* this.
+
+Parameters:
+-----------
+
+In:  ScalarValue - Scale value.
+
+Out:   This - Multi-vector with scaled values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Scale "int
+Epetra_MultiVector::Scale(double ScalarA, const Epetra_MultiVector &A)
+
+Replace multi-vector values with scaled values of A, this = ScalarA*A.
+
+Parameters:
+-----------
+
+In:  ScalarA - Scale value.
+
+In:  A - Multi-vector to copy.
+
+Out:   This - Multi-vector with values overwritten by scaled values of
+A.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Update "int
+Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector
+&A, double ScalarThis)
+
+Update multi-vector values with scaled values of A, this = ScalarThis*
+this + ScalarA*A.
+
+Parameters:
+-----------
+
+In:  ScalarA - Scale value for A.
+
+In:  A - Multi-vector to add.
+
+In:  ScalarThis - Scale value for this.
+
+Out:   This - Multi-vector with updatede values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Update "int
+Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector
+&A, double ScalarB, const Epetra_MultiVector &B, double ScalarThis)
+
+Update multi-vector with scaled values of A and B, this = ScalarThis*
+this + ScalarA*A + ScalarB*B.
+
+Parameters:
+-----------
+
+In:  ScalarA - Scale value for A.
+
+In:  A - Multi-vector to add.
+
+In:  ScalarB - Scale value for B.
+
+In:  B - Multi-vector to add.
+
+In:  ScalarThis - Scale value for this.
+
+Out:   This - Multi-vector with updatede values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Norm1 "int
+Epetra_MultiVector::Norm1(double *Result) const
+
+Compute 1-norm of each vector in multi-vector.
+
+Parameters:
+-----------
+
+Out:  Result - Result[i] contains 1-norm of ith vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Norm2 "int
+Epetra_MultiVector::Norm2(double *Result) const
+
+Compute 2-norm of each vector in multi-vector.
+
+Parameters:
+-----------
+
+Out:  Result - Result[i] contains 2-norm of ith vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::NormInf "int
+Epetra_MultiVector::NormInf(double *Result) const
+
+Compute Inf-norm of each vector in multi-vector.
+
+Parameters:
+-----------
+
+Out:  Result - Result[i] contains Inf-norm of ith vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::NormWeighted "int
+Epetra_MultiVector::NormWeighted(const Epetra_MultiVector &Weights,
+double *Result) const
+
+Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+
+Parameters:
+-----------
+
+In:  Weights - Multi-vector of weights. If Weights contains a single
+vector, that vector will be used as the weights for all vectors of
+this. Otherwise, Weights should have the same number of vectors as
+this.
+
+Out:  Result - Result[i] contains the weighted 2-norm of ith vector.
+Specifically if we denote the ith vector in the multivector by $x$,
+and the ith weight vector by $w$ and let j represent the jth entry of
+each vector, on return Result[i] will contain the following result:
+\\\\[\\\\sqrt{(1/n)\\\\sum_{j=1}^n(x_j/w_j)^2}\\\\], where $n$ is the
+global length of the vectors.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::MinValue "int
+Epetra_MultiVector::MinValue(double *Result) const
+
+Compute minimum value of each vector in multi-vector.
+
+Note that the vector contents must be already initialized for this
+function to compute a well-defined result. The length of the vector
+need not be greater than zero on all processors. If length is greater
+than zero on any processor then a valid result will be computed.
+
+Parameters:
+-----------
+
+Out:  Result - Result[i] contains minimum value of ith vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::MaxValue "int
+Epetra_MultiVector::MaxValue(double *Result) const
+
+Compute maximum value of each vector in multi-vector.
+
+Note that the vector contents must be already initialized for this
+function to compute a well-defined result. The length of the vector
+need not be greater than zero on all processors. If length is greater
+than zero on any processor then a valid result will be computed.
+
+Parameters:
+-----------
+
+Out:  Result - Result[i] contains maximum value of ith vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::MeanValue "int
+Epetra_MultiVector::MeanValue(double *Result) const
+
+Compute mean (average) value of each vector in multi-vector.
+
+Parameters:
+-----------
+
+Out:  Result - Result[i] contains mean value of ith vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Multiply "int
+Epetra_MultiVector::Multiply(char TransA, char TransB, double
+ScalarAB, const Epetra_MultiVector &A, const Epetra_MultiVector &B,
+double ScalarThis)
+
+Matrix-Matrix multiplication, this = ScalarThis* this + ScalarAB*A*B.
+
+This function performs a variety of matrix-matrix multiply operations,
+interpreting the Epetra_MultiVectors ( this-aka C , A and B) as 2D
+matrices. Variations are due to the fact that A, B and C can be local
+replicated or global distributed Epetra_MultiVectors and that we may
+or may not operate with the transpose of A and B. Possible cases are:
+Total of 32 case (2^5).     Num     OPERATIONS case  Notes     1)
+C(local) = A^X(local) * B^X(local)  4 (X=Transpose or Not, No comm
+needed)      2) C(local) = A^T(distr) * B (distr)  1   (2D dot
+product, replicate C)     3) C(distr) = A (distr) * B^X(local)  2
+(2D vector update, no comm needed)      Note that the following
+operations are not meaningful for      1D distributions:      1)
+C(local) = A^T(distr) * B^T(distr)  1     2) C(local) = A  (distr) *
+B^X(distr)  2     3) C(distr) = A^X(local) * B^X(local)  4     4)
+C(distr) = A^X(local) * B^X(distr)  4     5) C(distr) = A^T(distr) *
+B^X(local)  2     6) C(local) = A^X(distr) * B^X(local)  4     7)
+C(distr) = A^X(distr) * B^X(local)  4     8) C(local) = A^X(local) *
+B^X(distr)  4
+
+Parameters:
+-----------
+
+In:  TransA - Operate with the transpose of A if = 'T', else no
+transpose if = 'N'.
+
+In:  TransB - Operate with the transpose of B if = 'T', else no
+transpose if = 'N'.
+
+In:  ScalarAB - Scalar to multiply with A*B.
+
+In:  A - Multi-vector.
+
+In:  B - Multi-vector.
+
+In:  ScalarThis - Scalar to multiply with this.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  {Each multi-vector A, B and this is checked if it has
+constant stride using the ConstantStride() query function. If it does
+not have constant stride, a temporary copy is made and used for the
+computation. This activity is transparent to the user, except that
+there is memory and computation overhead. All temporary space is
+deleted prior to exit.} ";
+
+%feature("docstring")  Epetra_MultiVector::Multiply "int
+Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector
+&A, const Epetra_MultiVector &B, double ScalarThis)
+
+Multiply a Epetra_MultiVector with another, element-by-element.
+
+This function supports diagonal matrix multiply. A is usually a single
+vector while B and this may have one or more columns. Note that B and
+this must have the same shape. A can be one vector or have the same
+shape as B. The actual computation is this = ScalarThis * this +
+ScalarAB * B @ A where @ denotes element-wise multiplication. ";
+
+%feature("docstring")  Epetra_MultiVector::ReciprocalMultiply "int
+Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const
+Epetra_MultiVector &A, const Epetra_MultiVector &B, double ScalarThis)
+
+Multiply a Epetra_MultiVector by the reciprocal of another, element-
+by-element.
+
+This function supports diagonal matrix scaling. A is usually a single
+vector while B and this may have one or more columns. Note that B and
+this must have the same shape. A can be one vector or have the same
+shape as B. The actual computation is this = ScalarThis * this +
+ScalarAB * B @ A where @ denotes element-wise division. ";
+
+/*  Random number utilities  */
+
+%feature("docstring")  Epetra_MultiVector::SetSeed "int
+Epetra_MultiVector::SetSeed(unsigned int Seed)
+
+Set seed for Random function.
+
+Parameters:
+-----------
+
+In:  Seed - Should be an integer on the interval (0, 2^31-1).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_MultiVector::Seed "unsigned int
+Epetra_MultiVector::Seed()
+
+Get seed from Random function.
+
+Current random number seed. ";
+
+/*  Overloaded operators  */
+
+/*  Attribute access functions  */
+
+%feature("docstring")  Epetra_MultiVector::NumVectors "int
+Epetra_MultiVector::NumVectors() const
+
+Returns the number of vectors in the multi-vector. ";
+
+%feature("docstring")  Epetra_MultiVector::MyLength "int
+Epetra_MultiVector::MyLength() const
+
+Returns the local vector length on the calling processor of vectors in
+the multi-vector. ";
+
+%feature("docstring")  Epetra_MultiVector::GlobalLength "int
+Epetra_MultiVector::GlobalLength() const
+
+Returns the global vector length of vectors in the multi-vector. ";
+
+%feature("docstring")  Epetra_MultiVector::Stride "int
+Epetra_MultiVector::Stride() const
+
+Returns the stride between vectors in the multi-vector (only
+meaningful if ConstantStride() is true). ";
+
+%feature("docstring")  Epetra_MultiVector::ConstantStride "bool
+Epetra_MultiVector::ConstantStride() const
+
+Returns true if this multi-vector has constant stride between vectors.
+";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_MultiVector::Print "void
+Epetra_MultiVector::Print(ostream &os) const
+
+Print method. ";
+
+/*  Expert-only unsupported methods  */
+
+%feature("docstring")  Epetra_MultiVector::ResetView "int
+Epetra_MultiVector::ResetView(double **ArrayOfPointers)
+
+Reset the view of an existing multivector to point to new user data.
+
+Allows the (very) light-weight replacement of multivector values for
+an existing multivector that was constructed using an
+Epetra_DataAccess mode of View. No checking is performed to see if the
+array of values passed in contains valid data. It is assumed that the
+user has verified the integrity of data before calling this method.
+This method is useful for situations where a multivector is needed for
+use with an Epetra operator or matrix and the user is not passing in a
+multivector, or the multivector is being passed in with another map
+that is not exactly compatible with the operator, but has the correct
+number of entries.
+
+This method is used by AztecOO and Ifpack in the matvec, and solve
+methods to improve performance and reduce repeated calls to
+constructors and destructors.
+
+Parameters:
+-----------
+
+ArrayOfPointers:  Contains the array of pointers containing the
+multivector data.
+
+Integer error code, set to 0 if successful, -1 if the multivector was
+not created as a View.
+
+WARNING:  This method is extremely dangerous and should only be used
+by experts. ";
+
+%feature("docstring")  Epetra_MultiVector::Values "double*
+Epetra_MultiVector::Values() const
+
+Get pointer to MultiVector values. ";
+
+%feature("docstring")  Epetra_MultiVector::Pointers "double**
+Epetra_MultiVector::Pointers() const
+
+Get pointer to individual vector pointers. ";
+
 %feature("docstring")  Epetra_MultiVector::ReplaceMap "int
 Epetra_MultiVector::ReplaceMap(const Epetra_BlockMap &map)
 
@@ -3250,6 +11983,90 @@ definitions, enum types.
 
 C++ includes: Epetra_Object.h ";
 
+/*  Constructors/destructor  */
+
+%feature("docstring")  Epetra_Object::Epetra_Object "Epetra_Object::Epetra_Object(int TracebackModeIn=-1, bool
+set_label=true)
+
+Epetra_Object Constructor.
+
+Epetra_Object is the primary base class in Epetra. All Epetra class
+are derived from it, directly or indirectly. This class is seldom used
+explictly. ";
+
+%feature("docstring")  Epetra_Object::Epetra_Object "Epetra_Object::Epetra_Object(const char *const Label, int
+TracebackModeIn=-1)
+
+Epetra_Object Constructor.
+
+Creates a Epetra_Object with the given label. ";
+
+%feature("docstring")  Epetra_Object::Epetra_Object "Epetra_Object::Epetra_Object(const Epetra_Object &Object)
+
+Epetra_Object Copy Constructor.
+
+Makes an exact copy of an existing Epetra_Object instance. ";
+
+%feature("docstring")  Epetra_Object::~Epetra_Object "Epetra_Object::~Epetra_Object()
+
+Epetra_Object Destructor.
+
+Completely deletes a Epetra_Object object. ";
+
+/*  Attribute set/get methods  */
+
+%feature("docstring")  Epetra_Object::SetLabel "void
+Epetra_Object::SetLabel(const char *const Label)
+
+Epetra_Object Label definition using char *.
+
+Defines the label used to describe the this object. ";
+
+%feature("docstring")  Epetra_Object::Label "const char *
+Epetra_Object::Label() const
+
+Epetra_Object Label access funtion.
+
+Returns the string used to define this object. ";
+
+%feature("docstring")  Epetra_Object::SetTracebackMode "void
+Epetra_Object::SetTracebackMode(int TracebackModeValue)
+
+Set the value of the Epetra_Object error traceback report mode.
+
+Sets the integer error traceback behavior. TracebackMode controls
+whether or not traceback information is printed when run time integer
+errors are detected:
+
+<= 0 - No information report
+
+= 1 - Fatal (negative) values are reported
+
+>= 2 - All values (except zero) reported.
+
+Default is set to 1. ";
+
+%feature("docstring")  Epetra_Object::GetTracebackMode "int
+Epetra_Object::GetTracebackMode()
+
+Get the value of the Epetra_Object error report mode. ";
+
+%feature("docstring")  Epetra_Object::GetTracebackStream "std::ostream & Epetra_Object::GetTracebackStream()
+
+Get the output stream for error reporting. ";
+
+/*  Miscellaneous  */
+
+%feature("docstring")  Epetra_Object::Print "void
+Epetra_Object::Print(ostream &os) const
+
+Print object to an output stream Print method ";
+
+%feature("docstring")  Epetra_Object::ReportError "int
+Epetra_Object::ReportError(const string Message, int ErrorCode) const
+
+Error reporting method. ";
+
 
 // File: classEpetra__OffsetIndex.xml
 %feature("docstring") Epetra_OffsetIndex "
@@ -3262,6 +12079,13 @@ access to data for Import/Export operations on Epetra_CrsGraph based
 objects such as Epetra_CrsMatrix.
 
 C++ includes: Epetra_OffsetIndex.h ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_OffsetIndex::Print "void
+Epetra_OffsetIndex::Print(ostream &os) const
+
+Print object to an output stream Print method ";
 
 %feature("docstring")  Epetra_OffsetIndex::Epetra_OffsetIndex "Epetra_OffsetIndex::Epetra_OffsetIndex(const Epetra_CrsGraph
 &SourceGraph, const Epetra_CrsGraph &TargetGraph, Epetra_Import
@@ -3315,6 +12139,115 @@ Epetra_VbrMatrix classes and the Ifpack_CrsRiluk preconditioner class.
 
 C++ includes: Epetra_Operator.h ";
 
+/*  Destructor  */
+
+%feature("docstring")  Epetra_Operator::~Epetra_Operator "virtual
+Epetra_Operator::~Epetra_Operator()
+
+Destructor. ";
+
+/*  Atribute set methods  */
+
+%feature("docstring")  Epetra_Operator::SetUseTranspose "virtual int
+Epetra_Operator::SetUseTranspose(bool UseTranspose)=0
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+/*  Mathematical functions  */
+
+%feature("docstring")  Epetra_Operator::Apply "virtual int
+Epetra_Operator::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
+&Y) const =0
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_Operator::ApplyInverse "virtual int
+Epetra_Operator::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const =0
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  In order to work with AztecOO, any implementation of this
+method must support the case where X and Y are the same object. ";
+
+%feature("docstring")  Epetra_Operator::NormInf "virtual double
+Epetra_Operator::NormInf() const =0
+
+Returns the infinity norm of the global matrix. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_Operator::Label "virtual const char*
+Epetra_Operator::Label() const =0
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_Operator::UseTranspose "virtual bool
+Epetra_Operator::UseTranspose() const =0
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_Operator::HasNormInf "virtual bool
+Epetra_Operator::HasNormInf() const =0
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Epetra_Operator::Comm "virtual const
+Epetra_Comm& Epetra_Operator::Comm() const =0
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Epetra_Operator::OperatorDomainMap "virtual
+const Epetra_Map& Epetra_Operator::OperatorDomainMap() const =0
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Epetra_Operator::OperatorRangeMap "virtual
+const Epetra_Map& Epetra_Operator::OperatorRangeMap() const =0
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
 
 // File: classEpetra__RowMatrix.xml
 %feature("docstring") Epetra_RowMatrix "
@@ -3330,6 +12263,289 @@ Epetra_VbrMatrix classes.
 
 C++ includes: Epetra_RowMatrix.h ";
 
+/*  Destructor  */
+
+%feature("docstring")  Epetra_RowMatrix::~Epetra_RowMatrix "virtual
+Epetra_RowMatrix::~Epetra_RowMatrix()
+
+Destructor. ";
+
+/*  Matrix data extraction routines  */
+
+%feature("docstring")  Epetra_RowMatrix::NumMyRowEntries "virtual int
+Epetra_RowMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const =0
+
+Returns the number of nonzero entries in MyRow.
+
+Parameters:
+-----------
+
+In:  MyRow - Local row.
+
+Out:  NumEntries - Number of nonzero values present.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::MaxNumEntries "virtual int
+Epetra_RowMatrix::MaxNumEntries() const =0
+
+Returns the maximum of NumMyRowEntries() over all rows. ";
+
+%feature("docstring")  Epetra_RowMatrix::ExtractMyRowCopy "virtual
+int Epetra_RowMatrix::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values, int *Indices) const =0
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+In:  MyRow - Local row to extract.
+
+In:  Length - Length of Values and Indices.
+
+Out:  NumEntries - Number of nonzero entries extracted.
+
+Out:  Values - Extracted values for this row.
+
+Out:  Indices - Extracted global column indices for the corresponding
+values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::ExtractDiagonalCopy "virtual
+int Epetra_RowMatrix::ExtractDiagonalCopy(Epetra_Vector &Diagonal)
+const =0
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Out:  Diagonal - Extracted main diagonal.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Mathematical functions  */
+
+%feature("docstring")  Epetra_RowMatrix::Multiply "virtual int
+Epetra_RowMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const =0
+
+Returns the result of a Epetra_RowMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  TransA -If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::Solve "virtual int
+Epetra_RowMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const =0
+
+Returns result of a local-only solve using a triangular
+Epetra_RowMatrix with Epetra_MultiVectors X and Y.
+
+This method will perform a triangular solve independently on each
+processor of the parallel machine. No communication is performed.
+
+Parameters:
+-----------
+
+In:  Upper -If true, solve Ux = y, otherwise solve Lx = y.
+
+In:  Trans -If true, solve transpose problem.
+
+In:  UnitDiagonal -If true, assume diagonal is unit (whether it's
+stored or not).
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::InvRowSums "virtual int
+Epetra_RowMatrix::InvRowSums(Epetra_Vector &x) const =0
+
+Computes the sum of absolute values of the rows of the
+Epetra_RowMatrix, results returned in x.
+
+The vector x will return such that x[i] will contain the inverse of
+sum of the absolute values of the this matrix will be scaled such that
+A(i,j) = x(i)*A(i,j) where i denotes the global row number of A and j
+denotes the global column number of A. Using the resulting vector from
+this function as input to LeftScale() will make the infinity norm of
+the resulting matrix exactly 1.
+
+Parameters:
+-----------
+
+Out:  x -A Epetra_Vector containing the row sums of the this matrix.
+
+WARNING:  It is assumed that the distribution of x is the same as the
+rows of this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::LeftScale "virtual int
+Epetra_RowMatrix::LeftScale(const Epetra_Vector &x)=0
+
+Scales the Epetra_RowMatrix on the left with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i
+denotes the row number of A and j denotes the column number of A.
+
+Parameters:
+-----------
+
+In:  x -A Epetra_Vector to solve for.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::InvColSums "virtual int
+Epetra_RowMatrix::InvColSums(Epetra_Vector &x) const =0
+
+Computes the sum of absolute values of the columns of the
+Epetra_RowMatrix, results returned in x.
+
+The vector x will return such that x[j] will contain the inverse of
+sum of the absolute values of the this matrix will be sca such that
+A(i,j) = x(j)*A(i,j) where i denotes the global row number of A and j
+denotes the global column number of A. Using the resulting vector from
+this function as input to RighttScale() will make the one norm of the
+resulting matrix exactly 1.
+
+Parameters:
+-----------
+
+Out:  x -A Epetra_Vector containing the column sums of the this
+matrix.
+
+WARNING:  It is assumed that the distribution of x is the same as the
+rows of this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_RowMatrix::RightScale "virtual int
+Epetra_RowMatrix::RightScale(const Epetra_Vector &x)=0
+
+Scales the Epetra_RowMatrix on the right with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i
+denotes the global row number of A and j denotes the global column
+number of A.
+
+Parameters:
+-----------
+
+In:  x -The Epetra_Vector used for scaling this.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_RowMatrix::Filled "virtual bool
+Epetra_RowMatrix::Filled() const =0
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+%feature("docstring")  Epetra_RowMatrix::NormInf "virtual double
+Epetra_RowMatrix::NormInf() const =0
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Epetra_RowMatrix::NormOne "virtual double
+Epetra_RowMatrix::NormOne() const =0
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumGlobalNonzeros "virtual
+int Epetra_RowMatrix::NumGlobalNonzeros() const =0
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumGlobalRows "virtual int
+Epetra_RowMatrix::NumGlobalRows() const =0
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumGlobalCols "virtual int
+Epetra_RowMatrix::NumGlobalCols() const =0
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumGlobalDiagonals "virtual
+int Epetra_RowMatrix::NumGlobalDiagonals() const =0
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumMyNonzeros "virtual int
+Epetra_RowMatrix::NumMyNonzeros() const =0
+
+Returns the number of nonzero entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumMyRows "virtual int
+Epetra_RowMatrix::NumMyRows() const =0
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumMyCols "virtual int
+Epetra_RowMatrix::NumMyCols() const =0
+
+Returns the number of matrix columns owned by the calling processor.
+";
+
+%feature("docstring")  Epetra_RowMatrix::NumMyDiagonals "virtual int
+Epetra_RowMatrix::NumMyDiagonals() const =0
+
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Epetra_RowMatrix::LowerTriangular "virtual
+bool Epetra_RowMatrix::LowerTriangular() const =0
+
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_RowMatrix::UpperTriangular "virtual
+bool Epetra_RowMatrix::UpperTriangular() const =0
+
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_RowMatrix::RowMatrixRowMap "virtual
+const Epetra_Map& Epetra_RowMatrix::RowMatrixRowMap() const =0
+
+Returns the Epetra_Map object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Epetra_RowMatrix::RowMatrixColMap "virtual
+const Epetra_Map& Epetra_RowMatrix::RowMatrixColMap() const =0
+
+Returns the Epetra_Map object associated with the columns of this
+matrix. ";
+
+%feature("docstring")  Epetra_RowMatrix::RowMatrixImporter "virtual
+const Epetra_Import* Epetra_RowMatrix::RowMatrixImporter() const =0
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
 
 // File: classEpetra__RowMatrixTransposer.xml
 %feature("docstring") Epetra_RowMatrixTransposer "
@@ -3343,6 +12559,118 @@ across a parallel distributed memory machine.
 
 C++ includes: Epetra_RowMatrixTransposer.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")
+Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer "Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix
+*OrigMatrix)
+
+Primary Epetra_RowMatrixTransposer constructor.
+
+Parameters:
+-----------
+
+Matrix:  (In) An existing Epetra_RowMatrix object. The
+Epetra_RowMatrix, the LHS and RHS pointers do not need to be defined
+before this constructor is called.
+
+Pointer to a Epetra_RowMatrixTransposer object. ";
+
+%feature("docstring")
+Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer "Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(const
+Epetra_RowMatrixTransposer &Source)
+
+Epetra_RowMatrixTransposer copy constructor. ";
+
+%feature("docstring")
+Epetra_RowMatrixTransposer::~Epetra_RowMatrixTransposer "Epetra_RowMatrixTransposer::~Epetra_RowMatrixTransposer()
+
+Epetra_RowMatrixTransposer destructor. ";
+
+/*  Forward transformation methods  */
+
+%feature("docstring")  Epetra_RowMatrixTransposer::CreateTranspose "int Epetra_RowMatrixTransposer::CreateTranspose(const bool
+MakeDataContiguous, Epetra_CrsMatrix *&TransposeMatrix, Epetra_Map
+*TransposeRowMap=0)
+
+Generate a new Epetra_CrsMatrix as the transpose of an
+Epetra_RowMatrix passed into the constructor.
+
+Constructs a new Epetra_CrsMatrix that is a copy of the
+Epetra_RowMatrix passed in to the constructor.
+
+Parameters:
+-----------
+
+MakeDataContiguous:  (In) Causes the output matrix, LHS and RHS to be
+stored in a form compatible with Fortran-style solvers. The output
+matrix will be compatible with the Harwell-Boeing compressed column
+format. The RHS and LHS will be stored such that the last value in
+column j of the multivector is stored next to the first value in
+column j+1.
+
+TransposeRowMap:  (Optional/In) If this argument is defined, the
+transpose matrix will be distributed using this map as the row map for
+the transpose. If it is set to zero, the transpose matrix will use the
+OrigMatrix->RowMatrixDomainMap as the row map.
+
+Integer error code, 0 if no errors. Negative if some fatal error
+occured. ";
+
+%feature("docstring")
+Epetra_RowMatrixTransposer::UpdateTransposeValues "int
+Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix
+*MatrixWithNewValues)
+
+Update the values of an already-redistributed problem.
+
+Updates the values of an already-redistributed problem. This method
+allows updating the redistributed problem without allocating new
+storage.
+
+Parameters:
+-----------
+
+MatrixWithNewValues:  (In) The values from MatrixWithNewValues will be
+copied into the TransposeMatrix. The MatrixWithNewValues object must
+be identical in structure to the original matrix object used to create
+this instance of Epetra_RowMatrixTransposer.
+
+Integer error code, 0 if no errors. Negative if some fatal error
+occured. ";
+
+/*  Reverse transformation methods  */
+
+%feature("docstring")
+Epetra_RowMatrixTransposer::UpdateOriginalMatrixValues "int
+Epetra_RowMatrixTransposer::UpdateOriginalMatrixValues()
+
+Update values of original matrix (Not implemented and not sure if we
+will implement this). ";
+
+/*  Attribute accessor methods  */
+
+%feature("docstring")  Epetra_RowMatrixTransposer::TransposeRowMap "const Epetra_Map& Epetra_RowMatrixTransposer::TransposeRowMap() const
+
+Returns const reference to the Epetra_Map object describing the row
+distribution of the transpose matrix.
+
+The RedistExporter object can be used to redistribute other
+Epetra_DistObject objects whose maps are compatible with the original
+linear problem map, or with the RedistMap(). WARNING:  Must not be
+called before CreateTranspose()is called. ";
+
+%feature("docstring")  Epetra_RowMatrixTransposer::TransposeExporter "const Epetra_Export& Epetra_RowMatrixTransposer::TransposeExporter()
+const
+
+Returns const reference to the Epetra_Export object used to
+redistribute the original matrix.
+
+The TransposeExporter object can be used to redistribute other
+Epetra_DistObject objects whose maps are compatible with the original
+matrix. WARNING:  Must not be called before CreateTranspose() is
+called. ";
+
 
 // File: classEpetra__SerialComm.xml
 %feature("docstring") Epetra_SerialComm "
@@ -3354,6 +12682,462 @@ providing the general information and services needed for other Epetra
 classes to run on a serial computer.
 
 C++ includes: Epetra_SerialComm.h ";
+
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")  Epetra_SerialComm::Epetra_SerialComm "Epetra_SerialComm::Epetra_SerialComm()
+
+Epetra_SerialComm Serial Constructor.
+
+Builds an instance of a serial communicator. Even if the application
+is running in parallel via MPI, this communicator will execute in
+serial. The access functions return the number of processors to be 1
+and the processor ID to be 0. ";
+
+%feature("docstring")  Epetra_SerialComm::Epetra_SerialComm "Epetra_SerialComm::Epetra_SerialComm(const Epetra_SerialComm &Comm)
+
+Epetra_SerialComm Copy Constructor.
+
+Makes an exact copy of an existing Epetra_SerialComm instance. ";
+
+%feature("docstring")  Epetra_SerialComm::Clone "Epetra_Comm*
+Epetra_SerialComm::Clone() const
+
+Clone method. ";
+
+%feature("docstring")  Epetra_SerialComm::~Epetra_SerialComm "Epetra_SerialComm::~Epetra_SerialComm()
+
+Epetra_SerialComm Destructor.
+
+Completely deletes a Epetra_SerialComm object. WARNING:  Note: All
+objects that depend on a Epetra_SerialComm instance should be
+destroyed prior to calling this function. ";
+
+/*  Barrier Methods  */
+
+%feature("docstring")  Epetra_SerialComm::Barrier "void
+Epetra_SerialComm::Barrier() const
+
+Epetra_SerialComm Barrier function.
+
+A no-op for a serial communicator. ";
+
+/*  Broadcast Methods  */
+
+%feature("docstring")  Epetra_SerialComm::Broadcast "int
+Epetra_SerialComm::Broadcast(double *MyVals, int Count, int Root)
+const
+
+Epetra_SerialComm Broadcast function.
+
+A no-op for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of MyVals.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of MyVals. ";
+
+%feature("docstring")  Epetra_SerialComm::Broadcast "int
+Epetra_SerialComm::Broadcast(int *MyVals, int Count, int Root) const
+
+Epetra_SerialComm Broadcast function.
+
+A no-op for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of MyVals.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of MyVals. ";
+
+%feature("docstring")  Epetra_SerialComm::Broadcast "int
+Epetra_SerialComm::Broadcast(long *MyVals, int Count, int Root) const
+
+Epetra_SerialComm Broadcast function.
+
+A no-op for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of MyVals.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of MyVals. ";
+
+/*  Gather Methods  */
+
+%feature("docstring")  Epetra_SerialComm::GatherAll "int
+Epetra_SerialComm::GatherAll(double *MyVals, double *AllVals, int
+Count) const
+
+Epetra_SerialComm All Gather function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_SerialComm::GatherAll "int
+Epetra_SerialComm::GatherAll(int *MyVals, int *AllVals, int Count)
+const
+
+Epetra_SerialComm All Gather function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+%feature("docstring")  Epetra_SerialComm::GatherAll "int
+Epetra_SerialComm::GatherAll(long *MyVals, long *AllVals, int Count)
+const
+
+Epetra_SerialComm All Gather function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
+/*  Sum Methods  */
+
+%feature("docstring")  Epetra_SerialComm::SumAll "int
+Epetra_SerialComm::SumAll(double *PartialSums, double *GlobalSums, int
+Count) const
+
+Epetra_SerialComm Global Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::SumAll "int
+Epetra_SerialComm::SumAll(int *PartialSums, int *GlobalSums, int
+Count) const
+
+Epetra_SerialComm Global Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::SumAll "int
+Epetra_SerialComm::SumAll(long *PartialSums, long *GlobalSums, int
+Count) const
+
+Epetra_SerialComm Global Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Max/Min Methods  */
+
+%feature("docstring")  Epetra_SerialComm::MaxAll "int
+Epetra_SerialComm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
+Count) const
+
+Epetra_SerialComm Global Max function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally, using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::MaxAll "int
+Epetra_SerialComm::MaxAll(int *PartialMaxs, int *GlobalMaxs, int
+Count) const
+
+Epetra_SerialComm Global Max function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::MaxAll "int
+Epetra_SerialComm::MaxAll(long *PartialMaxs, long *GlobalMaxs, int
+Count) const
+
+Epetra_SerialComm Global Max function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::MinAll "int
+Epetra_SerialComm::MinAll(double *PartialMins, double *GlobalMins, int
+Count) const
+
+Epetra_SerialComm Global Min function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::MinAll "int
+Epetra_SerialComm::MinAll(int *PartialMins, int *GlobalMins, int
+Count) const
+
+Epetra_SerialComm Global Min function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::MinAll "int
+Epetra_SerialComm::MinAll(long *PartialMins, long *GlobalMins, int
+Count) const
+
+Epetra_SerialComm Global Min function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Parallel Prefix Methods  */
+
+%feature("docstring")  Epetra_SerialComm::ScanSum "int
+Epetra_SerialComm::ScanSum(double *MyVals, double *ScanSums, int
+Count) const
+
+Epetra_SerialComm Scan Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::ScanSum "int
+Epetra_SerialComm::ScanSum(int *MyVals, int *ScanSums, int Count)
+const
+
+Epetra_SerialComm Scan Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::ScanSum "int
+Epetra_SerialComm::ScanSum(long *MyVals, long *ScanSums, int Count)
+const
+
+Epetra_SerialComm Scan Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+/*  Attribute Accessor Methods  */
+
+%feature("docstring")  Epetra_SerialComm::MyPID "int
+Epetra_SerialComm::MyPID() const
+
+Return my process ID.
+
+In MPI mode returns the rank of the calling process. In serial mode
+returns 0. ";
+
+%feature("docstring")  Epetra_SerialComm::NumProc "int
+Epetra_SerialComm::NumProc() const
+
+Returns total number of processes (always returns 1 for SerialComm).
+";
+
+/*  Gather/Scatter and Directory Constructors  */
+
+%feature("docstring")  Epetra_SerialComm::CreateDistributor "Epetra_Distributor * Epetra_SerialComm::CreateDistributor() const
+
+Create a distributor object. ";
+
+%feature("docstring")  Epetra_SerialComm::CreateDirectory "Epetra_Directory * Epetra_SerialComm::CreateDirectory(const
+Epetra_BlockMap &Map) const
+
+Create a directory object for the given Epetra_BlockMap. ";
+
+/*  Print object to an output stream  */
+
+%feature("docstring")  Epetra_SerialComm::Print "void
+Epetra_SerialComm::Print(ostream &os) const
+
+Print method that implements Epetra_Object virtual Print method. ";
+
+%feature("docstring")  Epetra_SerialComm::PrintInfo "void
+Epetra_SerialComm::PrintInfo(ostream &os) const
+
+Print method that implements Epetra_Comm virtual PrintInfo method. ";
+
+/*  Expert Users and Developers Only  */
+
+%feature("docstring")  Epetra_SerialComm::ReferenceCount "int
+Epetra_SerialComm::ReferenceCount() const
+
+Returns the reference count of SerialCommData.
+
+(Intended for testing purposes.) ";
+
+%feature("docstring")  Epetra_SerialComm::DataPtr "const
+Epetra_SerialCommData* Epetra_SerialComm::DataPtr() const
+
+Returns a pointer to the SerialCommData instance this SerialComm uses.
+
+(Intended for developer use only for testing purposes.) ";
 
 
 // File: classEpetra__SerialCommData.xml
@@ -3367,6 +13151,8 @@ multiple Epetra_SerialComm instances. It derives from Epetra_Data, and
 inherits reference-counting from it.
 
 C++ includes: Epetra_SerialCommData.h ";
+
+/*  Constructor/Destructor Methods  */
 
 
 // File: classEpetra__SerialDenseMatrix.xml
@@ -3423,6 +13209,350 @@ base class.
 
 C++ includes: Epetra_SerialDenseMatrix.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(bool
+set_object_label=true)
+
+Default constructor; defines a zero size object.
+
+Epetra_SerialDenseMatrix objects defined by the default constructor
+should be sized with the Shape() or Reshape functions. Values should
+be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int
+NumCols, bool set_object_label=true)
+
+Shaped constructor; defines a variable-sized object.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Epetra_SerialDenseMatrix objects defined by the shaped constructor are
+already shaped to the dimensions given as a parameters. All values are
+initialized to 0. Calling this constructor is equivalent to using the
+default constructor, and then calling the Shape function on it. Values
+should be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess
+CV, double *A, int LDA, int NumRows, int NumCols, bool
+set_object_label=true)
+
+Set object values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  A - Pointer to an array of double precision numbers. The first
+vector starts at A. The second vector starts at A+LDA, the third at
+A+2*LDA, and so on.
+
+In:  LDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+See Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(const
+Epetra_SerialDenseMatrix &Source)
+
+Epetra_SerialDenseMatrix copy constructor. ";
+
+%feature("docstring")
+Epetra_SerialDenseMatrix::~Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::~Epetra_SerialDenseMatrix()
+
+Epetra_SerialDenseMatrix destructor. ";
+
+/*  Shaping/sizing Methods  */
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Shape "int
+Epetra_SerialDenseMatrix::Shape(int NumRows, int NumCols)
+
+Set dimensions of a Epetra_SerialDenseMatrix object; init values to
+zero.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Allows user to define the dimensions of a Epetra_SerialDenseMatrix at
+any point. This function can be called at any point after
+construction. Any values that were previously in this object are
+destroyed and the resized matrix starts off with all zero values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Reshape "int
+Epetra_SerialDenseMatrix::Reshape(int NumRows, int NumCols)
+
+Reshape a Epetra_SerialDenseMatrix object.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Allows user to define the dimensions of a Epetra_SerialDenseMatrix at
+any point. This function can be called at any point after
+construction. Any values that were previously in this object are
+copied into the new shape. If the new shape is smaller than the
+original, the upper left portion of the original matrix (the principal
+submatrix) is copied to the new matrix.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Mathematical methods  */
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Multiply "int
+Epetra_SerialDenseMatrix::Multiply(char TransA, char TransB, double
+ScalarAB, const Epetra_SerialDenseMatrix &A, const
+Epetra_SerialDenseMatrix &B, double ScalarThis)
+
+Matrix-Matrix multiplication, this = ScalarThis* this + ScalarAB*A*B.
+
+This function performs a variety of matrix-matrix multiply operations.
+
+Parameters:
+-----------
+
+In:  TransA - Operate with the transpose of A if = 'T', else no
+transpose if = 'N'.
+
+In:  TransB - Operate with the transpose of B if = 'T', else no
+transpose if = 'N'.
+
+In:  ScalarAB - Scalar to multiply with A*B.
+
+In:  A - Dense Matrix.
+
+In:  B - Dense Matrix.
+
+In:  ScalarThis - Scalar to multiply with this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Multiply "int
+Epetra_SerialDenseMatrix::Multiply(bool transA, const
+Epetra_SerialDenseMatrix &x, Epetra_SerialDenseMatrix &y)
+
+Matrix-Vector multiplication, y = A*x, where 'this' == A. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Multiply "int
+Epetra_SerialDenseMatrix::Multiply(char SideA, double ScalarAB, const
+Epetra_SerialSymDenseMatrix &A, const Epetra_SerialDenseMatrix &B,
+double ScalarThis)
+
+Matrix-Matrix multiplication with a symmetric matrix A.
+
+If SideA = 'L', compute this = ScalarThis* this + ScalarAB*A*B. If
+SideA = 'R', compute this = ScalarThis* this + ScalarAB*B*A.
+
+This function performs a variety of matrix-matrix multiply operations.
+
+Parameters:
+-----------
+
+In:  SideA - Specifies order of A relative to B.
+
+In:  ScalarAB - Scalar to multiply with A*B.
+
+In:  A - Symmetric Dense Matrix, either upper or lower triangle will
+be used depending on value of A.Upper().
+
+In:  B - Dense Matrix.
+
+In:  ScalarThis - Scalar to multiply with this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Scale "int
+Epetra_SerialDenseMatrix::Scale(double ScalarA)
+
+Inplace scalar-matrix product A = a A.
+
+Scale a matrix, entry-by-entry using the value ScalarA.
+
+Parameters:
+-----------
+
+ScalarA:  (In) Scalar to multiply with A.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::NormOne "double
+Epetra_SerialDenseMatrix::NormOne() const
+
+Computes the 1-Norm of the this matrix.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::NormInf "double
+Epetra_SerialDenseMatrix::NormInf() const
+
+Computes the Infinity-Norm of the this matrix. ";
+
+/*  Data Accessor methods  */
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Random "int
+Epetra_SerialDenseMatrix::Random()
+
+Set matrix values to random numbers.
+
+SerialDenseMatrix uses the random number generator provided by
+Epetra_Util. The matrix values will be set to random values on the
+interval (-1.0, 1.0).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::M "int
+Epetra_SerialDenseMatrix::M() const
+
+Returns row dimension of system. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::N "int
+Epetra_SerialDenseMatrix::N() const
+
+Returns column dimension of system. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::A "double*
+Epetra_SerialDenseMatrix::A() const
+
+Returns pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::A "double*
+Epetra_SerialDenseMatrix::A()
+
+Returns pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::LDA "int
+Epetra_SerialDenseMatrix::LDA() const
+
+Returns the leading dimension of the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::CV "Epetra_DataAccess Epetra_SerialDenseMatrix::CV() const
+
+Returns the data access mode of the this matrix. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Print "void
+Epetra_SerialDenseMatrix::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
+/*  Deprecated methods (will be removed in later versions of this
+class)  */
+
+%feature("docstring")  Epetra_SerialDenseMatrix::OneNorm "virtual
+double Epetra_SerialDenseMatrix::OneNorm() const
+
+Computes the 1-Norm of the this matrix (identical to NormOne()
+method).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::InfNorm "virtual
+double Epetra_SerialDenseMatrix::InfNorm() const
+
+Computes the Infinity-Norm of the this matrix (identical to NormInf()
+method). ";
+
+/*  Additional methods to support Epetra_SerialDenseOperator interface
+*/
+
+%feature("docstring")  Epetra_SerialDenseMatrix::SetUseTranspose "virtual int Epetra_SerialDenseMatrix::SetUseTranspose(bool
+UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Apply "int
+Epetra_SerialDenseMatrix::Apply(const Epetra_SerialDenseMatrix &X,
+Epetra_SerialDenseMatrix &Y)
+
+Returns the result of a Epetra_SerialDenseOperator applied to a
+Epetra_SerialDenseMatrix X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_SerialDenseMatrix to multiply with operator.
+
+Out:  Y -A Epetra_SerialDenseMatrix containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::ApplyInverse "virtual int Epetra_SerialDenseMatrix::ApplyInverse(const
+Epetra_SerialDenseMatrix &X, Epetra_SerialDenseMatrix &Y)
+
+Returns the result of a Epetra_SerialDenseOperator inverse applied to
+an Epetra_SerialDenseMatrix X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_SerialDenseMatrix to solve for.
+
+Out:  Y -A Epetra_SerialDenseMatrix containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::Label "virtual const
+char* Epetra_SerialDenseMatrix::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::UseTranspose "virtual bool Epetra_SerialDenseMatrix::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::HasNormInf "virtual
+bool Epetra_SerialDenseMatrix::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::RowDim "virtual int
+Epetra_SerialDenseMatrix::RowDim() const
+
+Returns the row dimension of operator. ";
+
+%feature("docstring")  Epetra_SerialDenseMatrix::ColDim "virtual int
+Epetra_SerialDenseMatrix::ColDim() const
+
+Returns the column dimension of operator. ";
+
 
 // File: classEpetra__SerialDenseOperator.xml
 %feature("docstring") Epetra_SerialDenseOperator "
@@ -3437,6 +13567,99 @@ Epetra_SerialDenseMatrix, Epetra_SerialDenseSolver and
 Epetra_SerialDenseSVD classes.
 
 C++ includes: Epetra_SerialDenseOperator.h ";
+
+/*  Destructor  */
+
+%feature("docstring")
+Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator "virtual
+Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator()
+
+Destructor. ";
+
+/*  Atribute set methods  */
+
+%feature("docstring")  Epetra_SerialDenseOperator::SetUseTranspose "virtual int Epetra_SerialDenseOperator::SetUseTranspose(bool
+UseTranspose)=0
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+/*  Mathematical functions  */
+
+%feature("docstring")  Epetra_SerialDenseOperator::Apply "virtual int
+Epetra_SerialDenseOperator::Apply(const Epetra_SerialDenseMatrix &X,
+Epetra_SerialDenseMatrix &Y)=0
+
+Returns the result of a Epetra_SerialDenseOperator applied to a
+Epetra_SerialDenseMatrix X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_SerialDenseMatrix to multiply with operator.
+
+Out:  Y -A Epetra_SerialDenseMatrix containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseOperator::ApplyInverse "virtual int Epetra_SerialDenseOperator::ApplyInverse(const
+Epetra_SerialDenseMatrix &X, Epetra_SerialDenseMatrix &Y)=0
+
+Returns the result of a Epetra_SerialDenseOperator inverse applied to
+an Epetra_SerialDenseMatrix X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_SerialDenseMatrix to solve for.
+
+Out:  Y -A Epetra_SerialDenseMatrix containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseOperator::NormInf "virtual
+double Epetra_SerialDenseOperator::NormInf() const =0
+
+Returns the infinity norm of the global matrix. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_SerialDenseOperator::Label "virtual
+const char* Epetra_SerialDenseOperator::Label() const =0
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_SerialDenseOperator::UseTranspose "virtual bool Epetra_SerialDenseOperator::UseTranspose() const =0
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_SerialDenseOperator::HasNormInf "virtual bool Epetra_SerialDenseOperator::HasNormInf() const =0
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Epetra_SerialDenseOperator::RowDim "virtual
+int Epetra_SerialDenseOperator::RowDim() const =0
+
+Returns the row dimension of operator. ";
+
+%feature("docstring")  Epetra_SerialDenseOperator::ColDim "virtual
+int Epetra_SerialDenseOperator::ColDim() const =0
+
+Returns the column dimension of operator. ";
 
 
 // File: classEpetra__SerialDenseSolver.xml
@@ -3539,6 +13762,358 @@ test directories.
 
 C++ includes: Epetra_SerialDenseSolver.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")
+Epetra_SerialDenseSolver::Epetra_SerialDenseSolver "Epetra_SerialDenseSolver::Epetra_SerialDenseSolver()
+
+Default constructor; matrix should be set using SetMatrix(), LHS and
+RHS set with SetVectors(). ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::~Epetra_SerialDenseSolver "Epetra_SerialDenseSolver::~Epetra_SerialDenseSolver()
+
+Epetra_SerialDenseSolver destructor. ";
+
+/*  Set Methods  */
+
+%feature("docstring")  Epetra_SerialDenseSolver::SetMatrix "int
+Epetra_SerialDenseSolver::SetMatrix(Epetra_SerialDenseMatrix &A)
+
+Sets the pointers for coefficient matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::SetVectors "int
+Epetra_SerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix &X,
+Epetra_SerialDenseMatrix &B)
+
+Sets the pointers for left and right hand side vector(s).
+
+Row dimension of X must match column dimension of matrix A, row
+dimension of B must match row dimension of A. X and B must have the
+same dimensions. ";
+
+/*  Strategy modifying Methods  */
+
+%feature("docstring")
+Epetra_SerialDenseSolver::FactorWithEquilibration "void
+Epetra_SerialDenseSolver::FactorWithEquilibration(bool Flag)
+
+Causes equilibration to be called just before the matrix factorization
+as part of the call to Factor.
+
+This function must be called before the factorization is performed. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::SolveWithTranspose "void Epetra_SerialDenseSolver::SolveWithTranspose(bool Flag)
+
+If Flag is true, causes all subsequent function calls to work with the
+transpose of this matrix, otherwise not. ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::SolveToRefinedSolution "void
+Epetra_SerialDenseSolver::SolveToRefinedSolution(bool Flag)
+
+Causes all solves to compute solution to best ability using iterative
+refinement. ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::EstimateSolutionErrors "void
+Epetra_SerialDenseSolver::EstimateSolutionErrors(bool Flag)
+
+Causes all solves to estimate the forward and backward solution error.
+
+Error estimates will be in the arrays FERR and BERR, resp, after the
+solve step is complete. These arrays are accessible via the FERR() and
+BERR() access functions. ";
+
+/*  Factor/Solve/Invert Methods  */
+
+%feature("docstring")  Epetra_SerialDenseSolver::Factor "int
+Epetra_SerialDenseSolver::Factor(void)
+
+Computes the in-place LU factorization of the matrix using the LAPACK
+routine DGETRF.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::Solve "int
+Epetra_SerialDenseSolver::Solve(void)
+
+Computes the solution X to AX = B for the this matrix and the B
+provided to SetVectors()..
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::Invert "int
+Epetra_SerialDenseSolver::Invert(void)
+
+Inverts the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::ComputeEquilibrateScaling "int
+Epetra_SerialDenseSolver::ComputeEquilibrateScaling(void)
+
+Computes the scaling vector S(i) = 1/sqrt(A(i,i)) of the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::EquilibrateMatrix "int Epetra_SerialDenseSolver::EquilibrateMatrix(void)
+
+Equilibrates the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::EquilibrateRHS "int
+Epetra_SerialDenseSolver::EquilibrateRHS(void)
+
+Equilibrates the current RHS.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::ApplyRefinement "int
+Epetra_SerialDenseSolver::ApplyRefinement(void)
+
+Apply Iterative Refinement.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::UnequilibrateLHS "int Epetra_SerialDenseSolver::UnequilibrateLHS(void)
+
+Unscales the solution vectors if equilibration was used to solve the
+system.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::ReciprocalConditionEstimate "int
+Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double &Value)
+
+Returns the reciprocal of the 1-norm condition number of the this
+matrix.
+
+Parameters:
+-----------
+
+Value:  Out On return contains the reciprocal of the 1-norm condition
+number of the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+/*  Query methods  */
+
+%feature("docstring")  Epetra_SerialDenseSolver::Transpose "bool
+Epetra_SerialDenseSolver::Transpose()
+
+Returns true if transpose of this matrix has and will be used. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::Factored "bool
+Epetra_SerialDenseSolver::Factored()
+
+Returns true if matrix is factored (factor available via AF() and
+LDAF()). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::A_Equilibrated "bool
+Epetra_SerialDenseSolver::A_Equilibrated()
+
+Returns true if factor is equilibrated (factor available via AF() and
+LDAF()). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::B_Equilibrated "bool
+Epetra_SerialDenseSolver::B_Equilibrated()
+
+Returns true if RHS is equilibrated (RHS available via B() and LDB()).
+";
+
+%feature("docstring")  Epetra_SerialDenseSolver::ShouldEquilibrate "virtual bool Epetra_SerialDenseSolver::ShouldEquilibrate()
+
+Returns true if the LAPACK general rules for equilibration suggest you
+should equilibrate the system. ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::SolutionErrorsEstimated "bool
+Epetra_SerialDenseSolver::SolutionErrorsEstimated()
+
+Returns true if forward and backward error estimated have been
+computed (available via FERR() and BERR()). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::Inverted "bool
+Epetra_SerialDenseSolver::Inverted()
+
+Returns true if matrix inverse has been computed (inverse available
+via AF() and LDAF()). ";
+
+%feature("docstring")
+Epetra_SerialDenseSolver::ReciprocalConditionEstimated "bool
+Epetra_SerialDenseSolver::ReciprocalConditionEstimated()
+
+Returns true if the condition number of the this matrix has been
+computed (value available via ReciprocalConditionEstimate()). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::Solved "bool
+Epetra_SerialDenseSolver::Solved()
+
+Returns true if the current set of vectors has been solved. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::SolutionRefined "bool Epetra_SerialDenseSolver::SolutionRefined()
+
+Returns true if the current set of vectors has been refined. ";
+
+/*  Data Accessor methods  */
+
+%feature("docstring")  Epetra_SerialDenseSolver::Matrix "Epetra_SerialDenseMatrix* Epetra_SerialDenseSolver::Matrix() const
+
+Returns pointer to current matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::FactoredMatrix "Epetra_SerialDenseMatrix* Epetra_SerialDenseSolver::FactoredMatrix()
+const
+
+Returns pointer to factored matrix (assuming factorization has been
+performed). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::LHS "Epetra_SerialDenseMatrix* Epetra_SerialDenseSolver::LHS() const
+
+Returns pointer to current LHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::RHS "Epetra_SerialDenseMatrix* Epetra_SerialDenseSolver::RHS() const
+
+Returns pointer to current RHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::M "int
+Epetra_SerialDenseSolver::M() const
+
+Returns row dimension of system. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::N "int
+Epetra_SerialDenseSolver::N() const
+
+Returns column dimension of system. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::A "double*
+Epetra_SerialDenseSolver::A() const
+
+Returns pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::LDA "int
+Epetra_SerialDenseSolver::LDA() const
+
+Returns the leading dimension of the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::B "double*
+Epetra_SerialDenseSolver::B() const
+
+Returns pointer to current RHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::LDB "int
+Epetra_SerialDenseSolver::LDB() const
+
+Returns the leading dimension of the RHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::NRHS "int
+Epetra_SerialDenseSolver::NRHS() const
+
+Returns the number of current right hand sides and solution vectors.
+";
+
+%feature("docstring")  Epetra_SerialDenseSolver::X "double*
+Epetra_SerialDenseSolver::X() const
+
+Returns pointer to current solution. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::LDX "int
+Epetra_SerialDenseSolver::LDX() const
+
+Returns the leading dimension of the solution. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::AF "double*
+Epetra_SerialDenseSolver::AF() const
+
+Returns pointer to the factored matrix (may be the same as A() if
+factorization done in place). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::LDAF "int
+Epetra_SerialDenseSolver::LDAF() const
+
+Returns the leading dimension of the factored matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::IPIV "int*
+Epetra_SerialDenseSolver::IPIV() const
+
+Returns pointer to pivot vector (if factorization has been computed),
+zero otherwise. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::ANORM "double
+Epetra_SerialDenseSolver::ANORM() const
+
+Returns the 1-Norm of the this matrix (returns -1 if not yet
+computed). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::RCOND "double
+Epetra_SerialDenseSolver::RCOND() const
+
+Returns the reciprocal of the condition number of the this matrix
+(returns -1 if not yet computed). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::ROWCND "double
+Epetra_SerialDenseSolver::ROWCND() const
+
+Ratio of smallest to largest row scale factors for the this matrix
+(returns -1 if not yet computed).
+
+If ROWCND() is >= 0.1 and AMAX() is not close to overflow or
+underflow, then equilibration is not needed. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::COLCND "double
+Epetra_SerialDenseSolver::COLCND() const
+
+Ratio of smallest to largest column scale factors for the this matrix
+(returns -1 if not yet computed).
+
+If COLCND() is >= 0.1 then equilibration is not needed. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::AMAX "double
+Epetra_SerialDenseSolver::AMAX() const
+
+Returns the absolute value of the largest entry of the this matrix
+(returns -1 if not yet computed). ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::FERR "double*
+Epetra_SerialDenseSolver::FERR() const
+
+Returns a pointer to the forward error estimates computed by LAPACK.
+";
+
+%feature("docstring")  Epetra_SerialDenseSolver::BERR "double*
+Epetra_SerialDenseSolver::BERR() const
+
+Returns a pointer to the backward error estimates computed by LAPACK.
+";
+
+%feature("docstring")  Epetra_SerialDenseSolver::R "double*
+Epetra_SerialDenseSolver::R() const
+
+Returns a pointer to the row scaling vector used for equilibration. ";
+
+%feature("docstring")  Epetra_SerialDenseSolver::C "double*
+Epetra_SerialDenseSolver::C() const
+
+Returns a pointer to the column scale vector used for equilibration.
+";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_SerialDenseSolver::Print "void
+Epetra_SerialDenseSolver::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
 
 // File: classEpetra__SerialDenseSVD.xml
 %feature("docstring") Epetra_SerialDenseSVD "
@@ -3613,6 +14188,266 @@ directories.
 
 C++ includes: Epetra_SerialDenseSVD.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::Epetra_SerialDenseSVD "Epetra_SerialDenseSVD::Epetra_SerialDenseSVD()
+
+Default constructor; matrix should be set using SetMatrix(), LHS and
+RHS set with SetVectors(). ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::~Epetra_SerialDenseSVD "Epetra_SerialDenseSVD::~Epetra_SerialDenseSVD()
+
+Epetra_SerialDenseSVD destructor. ";
+
+/*  Set Methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::SetMatrix "int
+Epetra_SerialDenseSVD::SetMatrix(Epetra_SerialDenseMatrix &A)
+
+Sets the pointers for coefficient matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::SetVectors "int
+Epetra_SerialDenseSVD::SetVectors(Epetra_SerialDenseMatrix &X,
+Epetra_SerialDenseMatrix &B)
+
+Sets the pointers for left and right hand side vector(s).
+
+Row dimension of X must match column dimension of matrix A, row
+dimension of B must match row dimension of A. X and B must have the
+same dimensions. ";
+
+/*  Strategy modifying Methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::SolveWithTranspose "void Epetra_SerialDenseSVD::SolveWithTranspose(bool Flag)
+
+If Flag is true, causes all subsequent function calls to work with the
+transpose of this matrix, otherwise not.
+
+This function must be called before the factorization is performed. ";
+
+/*  Factor/Solve/Invert Methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::Factor "int
+Epetra_SerialDenseSVD::Factor(void) ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Solve "int
+Epetra_SerialDenseSVD::Solve(void)
+
+Computes the solution X to AX = B for the this matrix and the B
+provided to SetVectors()..
+
+Inverse of Matrix must be formed Integer error code, set to 0 if
+successful. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Invert "int
+Epetra_SerialDenseSVD::Invert(double rthresh=0.0, double athresh=0.0)
+
+Inverts the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+/*  Query methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::Transpose "bool
+Epetra_SerialDenseSVD::Transpose()
+
+Returns true if transpose of this matrix has and will be used. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Factored "bool
+Epetra_SerialDenseSVD::Factored()
+
+Returns true if matrix is factored (factor available via AF() and
+LDAF()). ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Inverted "bool
+Epetra_SerialDenseSVD::Inverted()
+
+Returns true if matrix inverse has been computed (inverse available
+via AF() and LDAF()). ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Solved "bool
+Epetra_SerialDenseSVD::Solved()
+
+Returns true if the current set of vectors has been solved. ";
+
+/*  Data Accessor methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::Matrix "Epetra_SerialDenseMatrix* Epetra_SerialDenseSVD::Matrix() const
+
+Returns pointer to current matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::InvertedMatrix "Epetra_SerialDenseMatrix* Epetra_SerialDenseSVD::InvertedMatrix()
+const
+
+Returns pointer to inverted matrix (assuming inverse has been
+performed). ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::LHS "Epetra_SerialDenseMatrix* Epetra_SerialDenseSVD::LHS() const
+
+Returns pointer to current LHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::RHS "Epetra_SerialDenseMatrix* Epetra_SerialDenseSVD::RHS() const
+
+Returns pointer to current RHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::M "int
+Epetra_SerialDenseSVD::M() const
+
+Returns row dimension of system. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::N "int
+Epetra_SerialDenseSVD::N() const
+
+Returns column dimension of system. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::A "double*
+Epetra_SerialDenseSVD::A() const
+
+Returns pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::LDA "int
+Epetra_SerialDenseSVD::LDA() const
+
+Returns the leading dimension of the this matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::B "double*
+Epetra_SerialDenseSVD::B() const
+
+Returns pointer to current RHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::LDB "int
+Epetra_SerialDenseSVD::LDB() const
+
+Returns the leading dimension of the RHS. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::NRHS "int
+Epetra_SerialDenseSVD::NRHS() const
+
+Returns the number of current right hand sides and solution vectors.
+";
+
+%feature("docstring")  Epetra_SerialDenseSVD::X "double*
+Epetra_SerialDenseSVD::X() const
+
+Returns pointer to current solution. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::LDX "int
+Epetra_SerialDenseSVD::LDX() const
+
+Returns the leading dimension of the solution. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::S "double*
+Epetra_SerialDenseSVD::S() const ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::AI "double*
+Epetra_SerialDenseSVD::AI() const
+
+Returns pointer to the inverted matrix (may be the same as A() if
+factorization done in place). ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::LDAI "int
+Epetra_SerialDenseSVD::LDAI() const
+
+Returns the leading dimension of the inverted matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::ANORM "double
+Epetra_SerialDenseSVD::ANORM() const
+
+Returns the 1-Norm of the this matrix (returns -1 if not yet
+computed). ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::Print "void
+Epetra_SerialDenseSVD::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
+/*  Additional methods for support of Epetra_SerialDenseOperator
+interface  */
+
+%feature("docstring")  Epetra_SerialDenseSVD::SetUseTranspose "virtual int Epetra_SerialDenseSVD::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Apply "virtual int
+Epetra_SerialDenseSVD::Apply(const Epetra_SerialDenseMatrix &X,
+Epetra_SerialDenseMatrix &Y)
+
+Returns the result of a Epetra_SerialDenseOperator applied to a
+Epetra_SerialDenseMatrix X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_SerialDenseMatrix to multiply with operator.
+
+Out:  Y -A Epetra_SerialDenseMatrix containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::ApplyInverse "virtual
+int Epetra_SerialDenseSVD::ApplyInverse(const Epetra_SerialDenseMatrix
+&X, Epetra_SerialDenseMatrix &Y)
+
+Returns the result of a Epetra_SerialDenseOperator inverse applied to
+an Epetra_SerialDenseMatrix X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_SerialDenseMatrix to solve for.
+
+Out:  Y -A Epetra_SerialDenseMatrix containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::NormInf "virtual double
+Epetra_SerialDenseSVD::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::Label "virtual const
+char* Epetra_SerialDenseSVD::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::UseTranspose "virtual
+bool Epetra_SerialDenseSVD::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::HasNormInf "virtual
+bool Epetra_SerialDenseSVD::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::RowDim "virtual int
+Epetra_SerialDenseSVD::RowDim() const
+
+Returns the row dimension of operator. ";
+
+%feature("docstring")  Epetra_SerialDenseSVD::ColDim "virtual int
+Epetra_SerialDenseSVD::ColDim() const
+
+Returns the column dimension of operator. ";
+
 %feature("docstring")  Epetra_SerialDenseSVD::AllocateWORK "void
 Epetra_SerialDenseSVD::AllocateWORK() ";
 
@@ -3682,6 +14517,175 @@ performance numbers.
 
 C++ includes: Epetra_SerialDenseVector.h ";
 
+/*  Constructors/destructors  */
+
+%feature("docstring")
+Epetra_SerialDenseVector::Epetra_SerialDenseVector "Epetra_SerialDenseVector::Epetra_SerialDenseVector()
+
+Default constructor; defines a zero size object.
+
+Epetra_SerialDenseVector objects defined by the default constructor
+should be sized with the Size() or Resize functions. Values should be
+defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_SerialDenseVector::Epetra_SerialDenseVector "Epetra_SerialDenseVector::Epetra_SerialDenseVector(int Length)
+
+Sized constructor; defines a variable-sized object.
+
+Parameters:
+-----------
+
+In:  Length - Length of vector.
+
+Epetra_SerialDenseVector objects defined by the sized constructor are
+already sized to the dimension given as a parameter. All values are
+initialized to 0. Calling this constructor is equivalent to using the
+default constructor, and then calling the Size function on it. Values
+should be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_SerialDenseVector::Epetra_SerialDenseVector "Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess
+CV, double *Values, int Length)
+
+Set object values from one-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Values - Pointer to an array of double precision numbers
+containing the values.
+
+In:  Length - Length of vector.
+
+See Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_SerialDenseVector::Epetra_SerialDenseVector "Epetra_SerialDenseVector::Epetra_SerialDenseVector(const
+Epetra_SerialDenseVector &Source)
+
+Epetra_SerialDenseVector copy constructor. ";
+
+%feature("docstring")
+Epetra_SerialDenseVector::~Epetra_SerialDenseVector "Epetra_SerialDenseVector::~Epetra_SerialDenseVector()
+
+Epetra_SerialDenseVector destructor. ";
+
+/*  Post-construction modification routines  */
+
+%feature("docstring")  Epetra_SerialDenseVector::Size "int
+Epetra_SerialDenseVector::Size(int Length)
+
+Set length of a Epetra_SerialDenseVector object; init values to zero.
+
+Parameters:
+-----------
+
+In:  Length - Length of vector object.
+
+Allows user to define the dimension of a Epetra_SerialDenseVector.
+This function can be called at any point after construction. Any
+values that were previously in this object are destroyed and the
+resized vector starts off with all zero values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::Resize "int
+Epetra_SerialDenseVector::Resize(int Length)
+
+Resize a Epetra_SerialDenseVector object.
+
+Parameters:
+-----------
+
+In:  Length - Length of vector object.
+
+Allows user to define the dimension of a Epetra_SerialDenseVector.
+This function can be called at any point after construction. Any
+values that were previously in this object are copied into the new
+size. If the new shape is smaller than the original, the first Length
+values are copied to the new vector.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Element access methods  */
+
+/*  Mathematical methods  */
+
+%feature("docstring")  Epetra_SerialDenseVector::Random "int
+Epetra_SerialDenseVector::Random()
+
+Set vector values to random numbers.
+
+SerialDenseVector uses the random number generator provided by
+Epetra_Util. The vector values will be set to random values on the
+interval (-1.0, 1.0).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::Dot "double
+Epetra_SerialDenseVector::Dot(const Epetra_SerialDenseVector &x) const
+
+Compute 1-norm of each vector in multi-vector.
+
+Parameters:
+-----------
+
+x:  (In) Input vector x.
+
+Dot-product of the this vector and x. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::Norm1 "double
+Epetra_SerialDenseVector::Norm1() const
+
+Compute 1-norm of each vector in multi-vector.
+
+1-norm of the vector. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::Norm2 "double
+Epetra_SerialDenseVector::Norm2() const
+
+Compute 2-norm of each vector in multi-vector.
+
+Parameters:
+-----------
+
+Out:
+
+2-norm of the vector. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::NormInf "double
+Epetra_SerialDenseVector::NormInf() const
+
+Compute Inf-norm of each vector in multi-vector.
+
+Infinity-norm of the vector. ";
+
+/*  Attribute access methods  */
+
+%feature("docstring")  Epetra_SerialDenseVector::Length "int
+Epetra_SerialDenseVector::Length() const
+
+Returns length of vector. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::Values "double*
+Epetra_SerialDenseVector::Values() const
+
+Returns pointer to the values in vector. ";
+
+%feature("docstring")  Epetra_SerialDenseVector::CV "Epetra_DataAccess Epetra_SerialDenseVector::CV() const
+
+Returns the data access mode of the this vector. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_SerialDenseVector::Print "void
+Epetra_SerialDenseVector::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
 
 // File: classEpetra__SerialDistributor.xml
 %feature("docstring") Epetra_SerialDistributor "
@@ -3696,6 +14700,29 @@ object is actually produced by calling a method in the
 Epetra_SerialComm class.
 
 C++ includes: Epetra_SerialDistributor.h ";
+
+/*  Constructor/Destructor  */
+
+%feature("docstring")
+Epetra_SerialDistributor::Epetra_SerialDistributor "Epetra_SerialDistributor::Epetra_SerialDistributor(const
+Epetra_SerialComm &Comm)
+
+Constructor. ";
+
+%feature("docstring")
+Epetra_SerialDistributor::Epetra_SerialDistributor "Epetra_SerialDistributor::Epetra_SerialDistributor(const
+Epetra_SerialDistributor &Plan)
+
+Epetra_SerialDistributor Copy Constructor. ";
+
+%feature("docstring")  Epetra_SerialDistributor::Clone "Epetra_Distributor* Epetra_SerialDistributor::Clone()
+
+Clone method. ";
+
+%feature("docstring")
+Epetra_SerialDistributor::~Epetra_SerialDistributor "Epetra_SerialDistributor::~Epetra_SerialDistributor()
+
+Epetra_Comm Destructor. ";
 
 %feature("docstring")  Epetra_SerialDistributor::CreateFromSends "int
 Epetra_SerialDistributor::CreateFromSends(const int &NumExportIDs,
@@ -3936,6 +14963,150 @@ test directories.
 
 C++ includes: Epetra_SerialSpdDenseSolver.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")
+Epetra_SerialSpdDenseSolver::Epetra_SerialSpdDenseSolver "Epetra_SerialSpdDenseSolver::Epetra_SerialSpdDenseSolver()
+
+Default constructor; matrix should be set using SetMatrix(), LHS and
+RHS set with SetVectors(). ";
+
+%feature("docstring")
+Epetra_SerialSpdDenseSolver::~Epetra_SerialSpdDenseSolver "Epetra_SerialSpdDenseSolver::~Epetra_SerialSpdDenseSolver()
+
+Epetra_SerialDenseSolver destructor. ";
+
+/*  Set Methods  */
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::SetMatrix "int
+Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix &A)
+
+Sets the pointers for coefficient matrix; special version for
+symmetric matrices. ";
+
+/*  Factor/Solve/Invert Methods  */
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::Factor "int
+Epetra_SerialSpdDenseSolver::Factor(void)
+
+Computes the in-place Cholesky factorization of the matrix using the
+LAPACK routine DPOTRF.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::Solve "int
+Epetra_SerialSpdDenseSolver::Solve(void)
+
+Computes the solution X to AX = B for the this matrix and the B
+provided to SetVectors()..
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::Invert "int
+Epetra_SerialSpdDenseSolver::Invert(void)
+
+Inverts the this matrix.
+
+Note: This function works a little differently that DPOTRI in that it
+fills the entire matrix with the inverse, independent of the UPLO
+specification.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")
+Epetra_SerialSpdDenseSolver::ComputeEquilibrateScaling "int
+Epetra_SerialSpdDenseSolver::ComputeEquilibrateScaling(void)
+
+Computes the scaling vector S(i) = 1/sqrt(A(i,i) of the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::EquilibrateMatrix
+"int Epetra_SerialSpdDenseSolver::EquilibrateMatrix(void)
+
+Equilibrates the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::EquilibrateRHS "int Epetra_SerialSpdDenseSolver::EquilibrateRHS(void)
+
+Equilibrates the current RHS.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::ApplyRefinement "int Epetra_SerialSpdDenseSolver::ApplyRefinement(void)
+
+Apply Iterative Refinement.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::UnequilibrateLHS "int Epetra_SerialSpdDenseSolver::UnequilibrateLHS(void)
+
+Unscales the solution vectors if equilibration was used to solve the
+system.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+%feature("docstring")
+Epetra_SerialSpdDenseSolver::ReciprocalConditionEstimate "int
+Epetra_SerialSpdDenseSolver::ReciprocalConditionEstimate(double
+&Value)
+
+Returns the reciprocal of the 1-norm condition number of the this
+matrix.
+
+Parameters:
+-----------
+
+Value:  Out On return contains the reciprocal of the 1-norm condition
+number of the this matrix.
+
+Integer error code, set to 0 if successful. Otherwise returns the
+LAPACK error code INFO. ";
+
+/*  Query methods  */
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::ShouldEquilibrate
+"bool Epetra_SerialSpdDenseSolver::ShouldEquilibrate()
+
+Returns true if the LAPACK general rules for equilibration suggest you
+should equilibrate the system. ";
+
+/*  Data Accessor methods  */
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::SymMatrix "Epetra_SerialSymDenseMatrix* Epetra_SerialSpdDenseSolver::SymMatrix()
+const
+
+Returns pointer to current matrix. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::SymFactoredMatrix
+"Epetra_SerialSymDenseMatrix*
+Epetra_SerialSpdDenseSolver::SymFactoredMatrix() const
+
+Returns pointer to factored matrix (assuming factorization has been
+performed). ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::SCOND "double
+Epetra_SerialSpdDenseSolver::SCOND()
+
+Ratio of smallest to largest equilibration scale factors for the this
+matrix (returns -1 if not yet computed).
+
+If SCOND() is >= 0.1 and AMAX() is not close to overflow or underflow,
+then equilibration is not needed. ";
+
+%feature("docstring")  Epetra_SerialSpdDenseSolver::AMAX "double
+Epetra_SerialSpdDenseSolver::AMAX()
+
+Returns the absolute value of the largest entry of the this matrix
+(returns -1 if not yet computed). ";
+
 
 // File: classEpetra__SerialSymDenseMatrix.xml
 %feature("docstring") Epetra_SerialSymDenseMatrix "
@@ -4013,6 +15184,163 @@ Epetra_CompObject base class.
 
 C++ includes: Epetra_SerialSymDenseMatrix.h ";
 
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")
+Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix "Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(void)
+
+Default constructor; defines a zero size object.
+
+Epetra_SerialSymDenseMatrix objects defined by the default constructor
+should be sized with the Shape() or Reshape() functions. Values should
+be defined by using the [] or ()operators.
+
+Note: By default the active part of the matrix is assumed to be in the
+lower triangle. To set the upper part as active, call SetUpper(). See
+Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix "Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(Epetra_DataAccess
+CV, double *A, int LDA, int NumRowsCols)
+
+Set object values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  A - Pointer to an array of double precision numbers. The first
+vector starts at A. The second vector starts at A+LDA, the third at
+A+2*LDA, and so on.
+
+In:  LDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+In:  NumRowsCols - Number of rows and columns in object.
+
+Note: By default the active part of the matrix is assumed to be in the
+lower triangle. To set the upper part as active, call SetUpper(). See
+Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix "Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(const
+Epetra_SerialSymDenseMatrix &Source)
+
+Epetra_SerialSymDenseMatrix copy constructor. ";
+
+%feature("docstring")
+Epetra_SerialSymDenseMatrix::~Epetra_SerialSymDenseMatrix "Epetra_SerialSymDenseMatrix::~Epetra_SerialSymDenseMatrix()
+
+Epetra_SerialSymDenseMatrix destructor. ";
+
+/*  Set Methods  */
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::Shape "int
+Epetra_SerialSymDenseMatrix::Shape(int NumRowsCols)
+
+Set dimensions of a Epetra_SerialSymDenseMatrix object; init values to
+zero.
+
+Parameters:
+-----------
+
+In:  NumRowsCols - Number of rows and columns in object.
+
+Allows user to define the dimensions of a Epetra_DenseMatrix at any
+point. This function can be called at any point after construction.
+Any values that were previously in this object are destroyed and the
+resized matrix starts off with all zero values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::Reshape "int
+Epetra_SerialSymDenseMatrix::Reshape(int NumRowsCols)
+
+Reshape a Epetra_SerialSymDenseMatrix object.
+
+Parameters:
+-----------
+
+In:  NumRowsCols - Number of rows and columns in object.
+
+Allows user to define the dimensions of a Epetra_SerialSymDenseMatrix
+at any point. This function can be called at any point after
+construction. Any values that were previously in this object are
+copied into the new shape. If the new shape is smaller than the
+original, the upper left portion of the original matrix (the principal
+submatrix) is copied to the new matrix.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::SetLower "void
+Epetra_SerialSymDenseMatrix::SetLower()
+
+Specify that the lower triangle of the this matrix should be used. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::SetUpper "void
+Epetra_SerialSymDenseMatrix::SetUpper()
+
+Specify that the upper triangle of the this matrix should be used. ";
+
+/*  Query methods  */
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::Upper "bool
+Epetra_SerialSymDenseMatrix::Upper() const
+
+Returns true if upper triangle of this matrix has and will be used. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::UPLO "char
+Epetra_SerialSymDenseMatrix::UPLO() const
+
+Returns character value of UPLO used by LAPACK routines. ";
+
+/*  Mathematical Methods  */
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::Scale "int
+Epetra_SerialSymDenseMatrix::Scale(double ScalarA)
+
+Inplace scalar-matrix product A = a A.
+
+Scale a matrix, entry-by-entry using the value ScalarA. This method is
+sensitive to the UPLO() parameter.
+
+Parameters:
+-----------
+
+ScalarA:  (In) Scalar to multiply with A.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::NormOne "double
+Epetra_SerialSymDenseMatrix::NormOne() const
+
+Computes the 1-Norm of the this matrix.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::NormInf "double
+Epetra_SerialSymDenseMatrix::NormInf() const
+
+Computes the Infinity-Norm of the this matrix. ";
+
+/*  Deprecated methods (will be removed in later versions of this
+class)  */
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::OneNorm "double
+Epetra_SerialSymDenseMatrix::OneNorm() const
+
+Computes the 1-Norm of the this matrix (identical to NormOne()
+method).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_SerialSymDenseMatrix::InfNorm "double
+Epetra_SerialSymDenseMatrix::InfNorm() const
+
+Computes the Infinity-Norm of the this matrix (identical to NormInf()
+method). ";
+
 %feature("docstring")  Epetra_SerialSymDenseMatrix::CopyUPLOMat "void
 Epetra_SerialSymDenseMatrix::CopyUPLOMat(bool Upper, double *A, int
 LDA, int NumRows) ";
@@ -4034,6 +15362,19 @@ an Epetra_CrsMatrix, or an Epetra_CrsGraph (where the RowMatrix values
 will be ignored).
 
 C++ includes: Epetra_SrcDistObject.h ";
+
+/*  Destructor  */
+
+%feature("docstring")  Epetra_SrcDistObject::~Epetra_SrcDistObject "virtual Epetra_SrcDistObject::~Epetra_SrcDistObject()
+
+Epetra_SrcDistObject destructor. ";
+
+/*  Attribute accessor methods  */
+
+%feature("docstring")  Epetra_SrcDistObject::Map "virtual const
+Epetra_BlockMap& Epetra_SrcDistObject::Map() const =0
+
+Returns a reference to the Epetra_BlockMap for this object. ";
 
 
 // File: classEpetra__Time.xml
@@ -4131,6 +15472,37 @@ standard utilities are only specified for serial execution (or shared
 memory parallel).
 
 C++ includes: Epetra_Util.h ";
+
+/*  Random number utilities  */
+
+%feature("docstring")  Epetra_Util::RandomInt "unsigned int
+Epetra_Util::RandomInt()
+
+Returns a random integer on the interval (0, 2^31-1). ";
+
+%feature("docstring")  Epetra_Util::RandomDouble "double
+Epetra_Util::RandomDouble()
+
+Returns a random double on the interval (-1.0,1.0). ";
+
+%feature("docstring")  Epetra_Util::Seed "unsigned int
+Epetra_Util::Seed() const
+
+Get seed from Random function.
+
+Current random number seed. ";
+
+%feature("docstring")  Epetra_Util::SetSeed "int
+Epetra_Util::SetSeed(unsigned int Seed)
+
+Set seed for Random function.
+
+Parameters:
+-----------
+
+In:  Seed - An integer on the interval [1, 2^31-2]
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Epetra_Util::Epetra_Util "Epetra_Util::Epetra_Util()
 
@@ -4284,6 +15656,1387 @@ point counter.
 
 C++ includes: Epetra_VbrMatrix.h ";
 
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, int *NumBlockEntriesPerRow)
+
+Epetra_VbrMatrix constuctor with variable number of indices per row.
+
+Creates a Epetra_VbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - A Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  NumBlockEntriesPerRow - An integer array of length NumRows such
+that NumBlockEntriesPerRow[i] indicates the (approximate) number of
+Block entries in the ith row. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, int NumBlockEntriesPerRow)
+
+Epetra_VbrMatrix constuctor with fixed number of indices per row.
+
+Creates a Epetra_VbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - An Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  NumBlockEntriesPerRow - An integer that indicates the
+(approximate) number of Block entries in the each Block row. Note that
+it is possible to use 0 for this value and let fill occur during the
+insertion phase. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
+*NumBlockEntriesPerRow)
+
+Epetra_VbrMatrix constuctor with variable number of indices per row.
+
+Creates a Epetra_VbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - A Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  ColMap - A Epetra_BlockMap.
+
+In:  NumBlockEntriesPerRow - An integer array of length NumRows such
+that NumBlockEntriesPerRow[i] indicates the (approximate) number of
+Block entries in the ith row. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const
+Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
+NumBlockEntriesPerRow)
+
+Epetra_VbrMatrix constuctor with fixed number of indices per row.
+
+Creates a Epetra_VbrMatrix object and allocates storage.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  RowMap - A Epetra_BlockMap listing the block rows that this
+processor will contribute to.
+
+In:  ColMap - An Epetra_BlockMap listing the block columns that this
+processor will contribute to.
+
+In:  NumBlockEntriesPerRow - An integer that indicates the
+(approximate) number of Block entries in the each Block row. Note that
+it is possible to use 0 for this value and let fill occur during the
+insertion phase. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const
+Epetra_CrsGraph &Graph)
+
+Construct a matrix using an existing Epetra_CrsGraph object.
+
+Allows the nonzero structure from another matrix, or a structure that
+was constructed independently, to be used for this matrix.
+
+Parameters:
+-----------
+
+In:  CV - A Epetra_DataAccess enumerated type set to Copy or View.
+
+In:  Graph - A Epetra_CrsGraph object, extracted from another Epetra
+matrix object or constructed directly from using the Epetra_CrsGraph
+constructors. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix &Matrix)
+
+Copy constructor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::~Epetra_VbrMatrix "Epetra_VbrMatrix::~Epetra_VbrMatrix()
+
+Epetra_VbrMatrix Destructor. ";
+
+/*  Insertion/Replace/SumInto methods  */
+
+%feature("docstring")  Epetra_VbrMatrix::PutScalar "int
+Epetra_VbrMatrix::PutScalar(double ScalarConstant)
+
+Initialize all values in graph of the matrix with constant value.
+
+Parameters:
+-----------
+
+In:  ScalarConstant - Value to use.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Scale "int
+Epetra_VbrMatrix::Scale(double ScalarConstant)
+
+Multiply all values in the matrix by a constant value (in place: A <-
+ScalarConstant * A).
+
+Parameters:
+-----------
+
+In:  ScalarConstant - Value to use.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginInsertGlobalValues "int
+Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate insertion of a list of elements in a given global row of the
+matrix, values are inserted via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  BlockRow - Block Row number (in global coordinates) to put
+elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginInsertMyValues "int
+Epetra_VbrMatrix::BeginInsertMyValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate insertion of a list of elements in a given local row of the
+matrix, values are inserted via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  BlockRow - Block Row number (in local coordinates) to put
+elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginReplaceGlobalValues "int Epetra_VbrMatrix::BeginReplaceGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate replacement of current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginReplaceMyValues "int
+Epetra_VbrMatrix::BeginReplaceMyValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate replacement of current values with this list of entries for a
+given local row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in local coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginSumIntoGlobalValues "int Epetra_VbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate summing into current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginSumIntoMyValues "int
+Epetra_VbrMatrix::BeginSumIntoMyValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate summing into current values with this list of entries for a
+given local row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in local coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::SubmitBlockEntry "int
+Epetra_VbrMatrix::SubmitBlockEntry(double *Values, int LDA, int
+NumRows, int NumCols)
+
+Submit a block entry to the indicated block row and column specified
+in the Begin routine. ";
+
+%feature("docstring")  Epetra_VbrMatrix::SubmitBlockEntry "int
+Epetra_VbrMatrix::SubmitBlockEntry(Epetra_SerialDenseMatrix &Mat)
+
+Submit a block entry to the indicated block row and column specified
+in the Begin routine. ";
+
+%feature("docstring")  Epetra_VbrMatrix::EndSubmitEntries "int
+Epetra_VbrMatrix::EndSubmitEntries()
+
+Completes processing of all data passed in for the current block row.
+
+This function completes the processing of all block entries submitted
+via SubmitBlockEntry(). It also checks to make sure that
+SubmitBlockEntry was called the correct number of times as specified
+by the Begin routine that initiated the entry process. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ReplaceDiagonalValues "int
+Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector &Diagonal)
+
+Replaces diagonal values of the with those in the user-provided
+vector.
+
+This routine is meant to allow replacement of { existing} diagonal
+values. If a diagonal value does not exist for a given row, the
+corresponding value in the input Epetra_Vector will be ignored and the
+return code will be set to 1.
+
+The Epetra_Map associated with the input Epetra_Vector must be
+compatible with the RowMap of the matrix.
+
+Parameters:
+-----------
+
+Diagonal:  (In) - New values to be placed in the main diagonal.
+
+Integer error code, set to 0 if successful, 1 of one or more diagonal
+entries not present in matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::FillComplete "int
+Epetra_VbrMatrix::FillComplete()
+
+Signal that data entry is complete, perform transformations to local
+index space. ";
+
+%feature("docstring")  Epetra_VbrMatrix::FillComplete "int
+Epetra_VbrMatrix::FillComplete(const Epetra_BlockMap &DomainMap, const
+Epetra_BlockMap &RangeMap)
+
+Signal that data entry is complete, perform transformations to local
+index space. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Filled "bool
+Epetra_VbrMatrix::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractGlobalBlockRowPointers
+"int Epetra_VbrMatrix::ExtractGlobalBlockRowPointers(int BlockRow,
+int MaxNumBlockEntries, int &RowDim, int &NumBlockEntries, int
+*BlockIndices, Epetra_SerialDenseMatrix **&Values) const
+
+Copy the block indices into user-provided array, set pointers for rest
+of data for specified global block row.
+
+This function provides the lightest weight approach to accessing a
+global block row when the matrix may be be stored in local or global
+index space. In other words, this function will always work because
+the block indices are returned in user-provided space. All other array
+arguments are independent of whether or not indices are local or
+global. Other than the BlockIndices array, all other array argument
+are returned as pointers to internal data.
+
+Parameters:
+-----------
+
+In:  BlockRow - Global block row to extract.
+
+In:  MaxNumBlockEntries - Length of user-provided BlockIndices array.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries actually extracted.
+
+Out:  BlockIndices - Extracted global column indices for the
+corresponding block entries.
+
+Out:  Values - Pointer to list of pointers to block entries. Note that
+the actual values are not copied.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractMyBlockRowPointers "int Epetra_VbrMatrix::ExtractMyBlockRowPointers(int BlockRow, int
+MaxNumBlockEntries, int &RowDim, int &NumBlockEntries, int
+*BlockIndices, Epetra_SerialDenseMatrix **&Values) const
+
+Copy the block indices into user-provided array, set pointers for rest
+of data for specified local block row.
+
+This function provides the lightest weight approach to accessing a
+local block row when the matrix may be be stored in local or global
+index space. In other words, this function will always work because
+the block indices are returned in user-provided space. All other array
+arguments are independent of whether or not indices are local or
+global. Other than the BlockIndices array, all other array argument
+are returned as pointers to internal data.
+
+Parameters:
+-----------
+
+In:  BlockRow - Local block row to extract.
+
+In:  MaxNumBlockEntries - Length of user-provided BlockIndices array.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries actually extracted.
+
+Out:  BlockIndices - Extracted local column indices for the
+corresponding block entries.
+
+Out:  Values - Pointer to list of pointers to block entries. Note that
+the actual values are not copied.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")
+Epetra_VbrMatrix::BeginExtractGlobalBlockRowCopy "int
+Epetra_VbrMatrix::BeginExtractGlobalBlockRowCopy(int BlockRow, int
+MaxNumBlockEntries, int &RowDim, int &NumBlockEntries, int
+*BlockIndices, int *ColDims) const
+
+Initiates a copy of the specified global row in user-provided arrays.
+
+Parameters:
+-----------
+
+In:  BlockRow - Global block row to extract.
+
+In:  MaxNumBlockEntries - Length of user-provided BlockIndices,
+ColDims, and LDAs arrays.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries actually extracted.
+
+Out:  BlockIndices - Extracted global column indices for the
+corresponding block entries.
+
+Out:  ColDim - List of column dimensions for each corresponding block
+entry that will be extracted.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginExtractMyBlockRowCopy "int Epetra_VbrMatrix::BeginExtractMyBlockRowCopy(int BlockRow, int
+MaxNumBlockEntries, int &RowDim, int &NumBlockEntries, int
+*BlockIndices, int *ColDims) const
+
+Initiates a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+In:  BlockRow - Local block row to extract.
+
+In:  MaxNumBlockEntries - Length of user-provided BlockIndices,
+ColDims, and LDAs arrays.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries actually extracted.
+
+Out:  BlockIndices - Extracted local column indices for the
+corresponding block entries.
+
+Out:  ColDim - List of column dimensions for each corresponding block
+entry that will be extracted.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractEntryCopy "int
+Epetra_VbrMatrix::ExtractEntryCopy(int SizeOfValues, double *Values,
+int LDA, bool SumInto) const
+
+Extract a copy of an entry from the block row specified by one of the
+BeginExtract routines.
+
+Once BeginExtractGlobalBlockRowCopy() or BeginExtractMyBlockRowCopy()
+is called, you can extract the block entries of specified block row
+one-entry-at-a-time. The entries will be extracted in an order
+corresponding to the BlockIndices list that was returned by the
+BeginExtract routine.
+
+Parameters:
+-----------
+
+In:  SizeOfValues - Amount of memory associated with Values. This must
+be at least as big as LDA*NumCol, where NumCol is the column dimension
+of the block entry being copied
+
+InOut:  Values - Starting location where the block entry will be
+copied.
+
+In:  LDA - Specifies the stride that will be used when copying columns
+into Values.
+
+In:  SumInto - If set to true, the block entry values will be summed
+into existing values. ";
+
+%feature("docstring")
+Epetra_VbrMatrix::BeginExtractGlobalBlockRowView "int
+Epetra_VbrMatrix::BeginExtractGlobalBlockRowView(int BlockRow, int
+&RowDim, int &NumBlockEntries, int *&BlockIndices) const
+
+Initiates a view of the specified global row, only works if matrix
+indices are in global mode.
+
+Parameters:
+-----------
+
+In:  BlockRow - Global block row to view.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries to be viewed.
+
+Out:  BlockIndices - Pointer to global column indices for the
+corresponding block entries.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginExtractMyBlockRowView "int Epetra_VbrMatrix::BeginExtractMyBlockRowView(int BlockRow, int
+&RowDim, int &NumBlockEntries, int *&BlockIndices) const
+
+Initiates a view of the specified local row, only works if matrix
+indices are in local mode.
+
+Parameters:
+-----------
+
+In:  BlockRow - Local block row to view.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries to be viewed.
+
+Out:  BlockIndices - Pointer to local column indices for the
+corresponding block entries.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractEntryView "int
+Epetra_VbrMatrix::ExtractEntryView(Epetra_SerialDenseMatrix *&entry)
+const
+
+Returns a pointer to the current block entry.
+
+After a call to BeginExtractGlobal() or
+BlockRowViewBeginExtractMyBlockRowView(), ExtractEntryView() can be
+called up to NumBlockEntries times to get each block entry in the
+specified block row.
+
+Parameters:
+-----------
+
+InOut:  entry - A pointer that will be set to the current block entry.
+";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractGlobalBlockRowView "int Epetra_VbrMatrix::ExtractGlobalBlockRowView(int BlockRow, int
+&RowDim, int &NumBlockEntries, int *&BlockIndices,
+Epetra_SerialDenseMatrix **&Values) const
+
+Initiates a view of the specified global row, only works if matrix
+indices are in global mode.
+
+Parameters:
+-----------
+
+In:  BlockRow - Global block row to view.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries to be viewed.
+
+Out:  BlockIndices - Pointer to global column indices for the
+corresponding block entries.
+
+Out:  Values - Pointer to an array of pointers to the block entries in
+the specified block row.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractMyBlockRowView "int
+Epetra_VbrMatrix::ExtractMyBlockRowView(int BlockRow, int &RowDim, int
+&NumBlockEntries, int *&BlockIndices, Epetra_SerialDenseMatrix
+**&Values) const
+
+Initiates a view of the specified local row, only works if matrix
+indices are in local mode.
+
+Parameters:
+-----------
+
+In:  BlockRow - Local block row to view.
+
+Out:  RowDim - Number of equations in the requested block row.
+
+Out:  NumBlockEntries - Number of nonzero entries to be viewed.
+
+Out:  BlockIndices - Pointer to local column indices for the
+corresponding block entries.
+
+Out:  Values - Pointer to an array of pointers to the block entries in
+the specified block row.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractDiagonalCopy "int
+Epetra_VbrMatrix::ExtractDiagonalCopy(Epetra_Vector &Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Out:  Diagonal - Extracted main diagonal.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginExtractBlockDiagonalCopy
+"int Epetra_VbrMatrix::BeginExtractBlockDiagonalCopy(int
+MaxNumBlockDiagonalEntries, int &NumBlockDiagonalEntries, int
+*RowColDims) const
+
+Initiates a copy of the block diagonal entries to user-provided
+arrays.
+
+Parameters:
+-----------
+
+In:  MaxNumBlockDiagonalEntries - Length of user-provided RowColDims
+array.
+
+Out:  NumBlockDiagonalEntries - Number of block diagonal entries that
+can actually be extracted.
+
+Out:  RowColDim - List of row and column dimension for corresponding
+block diagonal entries.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractBlockDiagonalEntryCopy
+"int Epetra_VbrMatrix::ExtractBlockDiagonalEntryCopy(int
+SizeOfValues, double *Values, int LDA, bool SumInto) const
+
+Extract a copy of a block diagonal entry from the matrix.
+
+Once BeginExtractBlockDiagonalCopy() is called, you can extract the
+block diagonal entries one-entry- at-a-time. The entries will be
+extracted in ascending order.
+
+Parameters:
+-----------
+
+In:  SizeOfValues - Amount of memory associated with Values. This must
+be at least as big as LDA*NumCol, where NumCol is the column dimension
+of the block entry being copied
+
+InOut:  Values - Starting location where the block entry will be
+copied.
+
+In:  LDA - Specifies the stride that will be used when copying columns
+into Values.
+
+In:  SumInto - If set to true, the block entry values will be summed
+into existing values. ";
+
+%feature("docstring")  Epetra_VbrMatrix::BeginExtractBlockDiagonalView
+"int Epetra_VbrMatrix::BeginExtractBlockDiagonalView(int
+&NumBlockDiagonalEntries, int *&RowColDims) const
+
+Initiates a view of the block diagonal entries.
+
+Parameters:
+-----------
+
+Out:  NumBlockDiagonalEntries - Number of block diagonal entries that
+can be viewed.
+
+Out:  RowColDim - Pointer to list of row and column dimension for
+corresponding block diagonal entries.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractBlockDiagonalEntryView
+"int Epetra_VbrMatrix::ExtractBlockDiagonalEntryView(double *&Values,
+int &LDA) const
+
+Extract a view of a block diagonal entry from the matrix.
+
+Once BeginExtractBlockDiagonalView() is called, you can extract a view
+of the block diagonal entries one- entry-at-a-time. The views will be
+extracted in ascending order.
+
+Parameters:
+-----------
+
+Out:  Values - Pointer to internal copy of block entry.
+
+Out:  LDA - Column stride of Values. ";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_VbrMatrix::Multiply1 "int
+Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y) const
+
+Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_Vector
+x in y.
+
+Parameters:
+-----------
+
+In:  TransA - If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+In:  x - A Epetra_Vector to multiply by.
+
+Out:  y - A Epetra_Vector containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Multiply "int
+Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_VbrMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  TransA -If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Solve "int
+Epetra_VbrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_Vector &x, Epetra_Vector &y) const
+
+Returns the result of a solve using the Epetra_VbrMatrix on a
+Epetra_Vector x in y.
+
+Parameters:
+-----------
+
+In:  Upper -If true, solve Ux = y, otherwise solve Lx = y.
+
+In:  Trans -If true, solve transpose problem.
+
+In:  UnitDiagonal -If true, assume diagonal is unit (whether it's
+stored or not).
+
+In:  x -A Epetra_Vector to solve for.
+
+Out:  y -A Epetra_Vector containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Solve "int
+Epetra_VbrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_VbrMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  Upper -If true, solve Ux = y, otherwise solve Lx = y.
+
+In:  Trans -If true, solve transpose problem.
+
+In:  UnitDiagonal -If true, assume diagonal is unit (whether it's
+stored or not).
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::InvRowSums "int
+Epetra_VbrMatrix::InvRowSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the rows of the
+Epetra_VbrMatrix, results returned in x.
+
+The vector x will return such that x[i] will contain the inverse of
+sum of the absolute values of the this matrix will be scaled such that
+A(i,j) = x(i)*A(i,j) where i denotes the global row number of A and j
+denotes the global column number of A. Using the resulting vector from
+this function as input to LeftScale() will make the infinity norm of
+the resulting matrix exactly 1.
+
+Parameters:
+-----------
+
+Out:  x -A Epetra_Vector containing the row sums of the this matrix.
+
+WARNING:  It is assumed that the distribution of x is the same as the
+rows of this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::LeftScale "int
+Epetra_VbrMatrix::LeftScale(const Epetra_Vector &x)
+
+Scales the Epetra_VbrMatrix on the left with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i
+denotes the row number of A and j denotes the column number of A.
+
+Parameters:
+-----------
+
+In:  x -A Epetra_Vector to solve for.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::InvColSums "int
+Epetra_VbrMatrix::InvColSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the columns of the
+Epetra_VbrMatrix, results returned in x.
+
+The vector x will return such that x[j] will contain the inverse of
+sum of the absolute values of the this matrix will be sca such that
+A(i,j) = x(j)*A(i,j) where i denotes the global row number of A and j
+denotes the global column number of A. Using the resulting vector from
+this function as input to RighttScale() will make the one norm of the
+resulting matrix exactly 1.
+
+Parameters:
+-----------
+
+Out:  x -A Epetra_Vector containing the column sums of the this
+matrix.
+
+WARNING:  It is assumed that the distribution of x is the same as the
+rows of this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::RightScale "int
+Epetra_VbrMatrix::RightScale(const Epetra_Vector &x)
+
+Scales the Epetra_VbrMatrix on the right with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i
+denotes the global row number of A and j denotes the global column
+number of A.
+
+Parameters:
+-----------
+
+In:  x -The Epetra_Vector used for scaling this.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Matrix Properties Query Methods  */
+
+%feature("docstring")  Epetra_VbrMatrix::OptimizeStorage "int
+Epetra_VbrMatrix::OptimizeStorage()
+
+Eliminates memory that is used for construction. Make consecutive row
+index sections contiguous. ";
+
+%feature("docstring")  Epetra_VbrMatrix::StorageOptimized "bool
+Epetra_VbrMatrix::StorageOptimized() const
+
+If OptimizeStorage() has been called, this query returns true,
+otherwise it returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::IndicesAreGlobal "bool
+Epetra_VbrMatrix::IndicesAreGlobal() const
+
+If matrix indices has not been transformed to local, this query
+returns true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::IndicesAreLocal "bool
+Epetra_VbrMatrix::IndicesAreLocal() const
+
+If matrix indices has been transformed to local, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::IndicesAreContiguous "bool
+Epetra_VbrMatrix::IndicesAreContiguous() const
+
+If matrix indices are packed into single array (done in
+OptimizeStorage()) return true, otherwise false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::LowerTriangular "bool
+Epetra_VbrMatrix::LowerTriangular() const
+
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::UpperTriangular "bool
+Epetra_VbrMatrix::UpperTriangular() const
+
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NoDiagonal "bool
+Epetra_VbrMatrix::NoDiagonal() const
+
+If matrix has no diagonal entries based on global row/column index
+comparisons, this query returns true, otherwise it returns false. ";
+
+/*  Atribute access functions  */
+
+%feature("docstring")  Epetra_VbrMatrix::NormInf "double
+Epetra_VbrMatrix::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NormOne "double
+Epetra_VbrMatrix::NormOne() const
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NormFrobenius "double
+Epetra_VbrMatrix::NormFrobenius() const
+
+Returns the frobenius norm of the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MaxRowDim "int
+Epetra_VbrMatrix::MaxRowDim() const
+
+Returns the maximum row dimension of all block entries on this
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MaxColDim "int
+Epetra_VbrMatrix::MaxColDim() const
+
+Returns the maximum column dimension of all block entries on this
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GlobalMaxRowDim "int
+Epetra_VbrMatrix::GlobalMaxRowDim() const
+
+Returns the maximum row dimension of all block entries across all
+processors. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GlobalMaxColDim "int
+Epetra_VbrMatrix::GlobalMaxColDim() const
+
+Returns the maximum column dimension of all block entries across all
+processors. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyRows "int
+Epetra_VbrMatrix::NumMyRows() const
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyCols "int
+Epetra_VbrMatrix::NumMyCols() const
+
+Returns the number of matrix columns owned by the calling processor.
+";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyNonzeros "int
+Epetra_VbrMatrix::NumMyNonzeros() const
+
+Returns the number of nonzero entriesowned by the calling processor .
+";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalRows "int
+Epetra_VbrMatrix::NumGlobalRows() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalCols "int
+Epetra_VbrMatrix::NumGlobalCols() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalNonzeros "int
+Epetra_VbrMatrix::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyBlockRows "int
+Epetra_VbrMatrix::NumMyBlockRows() const
+
+Returns the number of Block matrix rows owned by the calling
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyBlockCols "int
+Epetra_VbrMatrix::NumMyBlockCols() const
+
+Returns the number of Block matrix columns owned by the calling
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyBlockEntries "int
+Epetra_VbrMatrix::NumMyBlockEntries() const
+
+Returns the number of nonzero block entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyBlockDiagonals "int
+Epetra_VbrMatrix::NumMyBlockDiagonals() const
+
+Returns the number of local nonzero block diagonal entries, based on
+global row/column index comparisons. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyDiagonals "int
+Epetra_VbrMatrix::NumMyDiagonals() const
+
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockRows "int
+Epetra_VbrMatrix::NumGlobalBlockRows() const
+
+Returns the number of global Block matrix rows. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockCols "int
+Epetra_VbrMatrix::NumGlobalBlockCols() const
+
+Returns the number of global Block matrix columns. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockEntries "int
+Epetra_VbrMatrix::NumGlobalBlockEntries() const
+
+Returns the number of nonzero block entries in the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockDiagonals "int
+Epetra_VbrMatrix::NumGlobalBlockDiagonals() const
+
+Returns the number of global nonzero block diagonal entries, based on
+global row/column index comparisions. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalDiagonals "int
+Epetra_VbrMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisions. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockEntries "int
+Epetra_VbrMatrix::NumGlobalBlockEntries(int Row) const
+
+Returns the current number of nonzero Block entries in specified
+global row on this processor. ";
+
+%feature("docstring")
+Epetra_VbrMatrix::NumAllocatedGlobalBlockEntries "int
+Epetra_VbrMatrix::NumAllocatedGlobalBlockEntries(int Row) const
+
+Returns the allocated number of nonzero Block entries in specified
+global row on this processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MaxNumBlockEntries "int
+Epetra_VbrMatrix::MaxNumBlockEntries() const
+
+Returns the maximum number of nonzero entries across all rows on this
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GlobalMaxNumBlockEntries "int Epetra_VbrMatrix::GlobalMaxNumBlockEntries() const
+
+Returns the maximum number of nonzero entries across all rows on this
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyBlockEntries "int
+Epetra_VbrMatrix::NumMyBlockEntries(int Row) const
+
+Returns the current number of nonzero Block entries in specified local
+row on this processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumAllocatedMyBlockEntries "int Epetra_VbrMatrix::NumAllocatedMyBlockEntries(int Row) const
+
+Returns the allocated number of nonzero Block entries in specified
+local row on this processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MaxNumNonzeros "int
+Epetra_VbrMatrix::MaxNumNonzeros() const
+
+Returns the maximum number of nonzero entries across all block rows on
+this processor.
+
+Let ki = the number of nonzero values in the ith block row of the
+VbrMatrix object. For example, if the ith block row had 5 block
+entries and the size of each entry was 4-by-4, ki would be 80. Then
+this function return the max over all ki for all row on this
+processor. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GlobalMaxNumNonzeros "int
+Epetra_VbrMatrix::GlobalMaxNumNonzeros() const
+
+Returns the maximum number of nonzero entries across all block rows on
+all processors.
+
+This function returns the max over all processor of MaxNumNonzeros().
+";
+
+%feature("docstring")  Epetra_VbrMatrix::IndexBase "int
+Epetra_VbrMatrix::IndexBase() const
+
+Returns the index base for row and column indices for this graph. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Graph "const
+Epetra_CrsGraph& Epetra_VbrMatrix::Graph() const
+
+Returns a pointer to the Epetra_CrsGraph object associated with this
+matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Importer "const
+Epetra_Import* Epetra_VbrMatrix::Importer() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Exporter "const
+Epetra_Export* Epetra_VbrMatrix::Exporter() const
+
+Returns the Epetra_Export object that contains the export operations
+for distributed operations. ";
+
+%feature("docstring")  Epetra_VbrMatrix::DomainMap "const
+Epetra_BlockMap& Epetra_VbrMatrix::DomainMap() const
+
+Returns the Epetra_BlockMap object associated with the domain of this
+matrix operator. ";
+
+%feature("docstring")  Epetra_VbrMatrix::RangeMap "const
+Epetra_BlockMap& Epetra_VbrMatrix::RangeMap() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
+%feature("docstring")  Epetra_VbrMatrix::RowMap "const
+Epetra_BlockMap& Epetra_VbrMatrix::RowMap() const
+
+Returns the RowMap object as an Epetra_BlockMap (the Epetra_Map base
+class) needed for implementing Epetra_RowMatrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ColMap "const
+Epetra_BlockMap& Epetra_VbrMatrix::ColMap() const
+
+Returns the ColMap as an Epetra_BlockMap (the Epetra_Map base class)
+needed for implementing Epetra_RowMatrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Comm "const Epetra_Comm&
+Epetra_VbrMatrix::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+/*  Local/Global ID methods  */
+
+%feature("docstring")  Epetra_VbrMatrix::LRID "int
+Epetra_VbrMatrix::LRID(int GRID) const
+
+Returns the local row index for given global row index, returns -1 if
+no local row for this global row. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GRID "int
+Epetra_VbrMatrix::GRID(int LRID) const
+
+Returns the global row index for give local row index, returns
+IndexBase-1 if we don't have this local row. ";
+
+%feature("docstring")  Epetra_VbrMatrix::LCID "int
+Epetra_VbrMatrix::LCID(int GCID) const
+
+Returns the local column index for given global column index, returns
+-1 if no local column for this global column. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GCID "int
+Epetra_VbrMatrix::GCID(int LCID) const
+
+Returns the global column index for give local column index, returns
+IndexBase-1 if we don't have this local column. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyGRID "bool
+Epetra_VbrMatrix::MyGRID(int GRID) const
+
+Returns true if the GRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyLRID "bool
+Epetra_VbrMatrix::MyLRID(int LRID) const
+
+Returns true if the LRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyGCID "bool
+Epetra_VbrMatrix::MyGCID(int GCID) const
+
+Returns true if the GCID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyLCID "bool
+Epetra_VbrMatrix::MyLCID(int LCID) const
+
+Returns true if the LRID passed in belongs to the calling processor in
+this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyGlobalBlockRow "bool
+Epetra_VbrMatrix::MyGlobalBlockRow(int GID) const
+
+Returns true of GID is owned by the calling processor, otherwise it
+returns false. ";
+
+/*  I/O Methods  */
+
+%feature("docstring")  Epetra_VbrMatrix::Print "void
+Epetra_VbrMatrix::Print(ostream &os) const
+
+Print method. ";
+
+/*  Additional methods required to support the Epetra_Operator
+interface  */
+
+%feature("docstring")  Epetra_VbrMatrix::Label "const char*
+Epetra_VbrMatrix::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Epetra_VbrMatrix::SetUseTranspose "int
+Epetra_VbrMatrix::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Epetra_VbrMatrix::Apply "int
+Epetra_VbrMatrix::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ApplyInverse "int
+Epetra_VbrMatrix::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_VbrMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::HasNormInf "bool
+Epetra_VbrMatrix::HasNormInf() const
+
+Returns true because this class can compute an Inf-norm. ";
+
+%feature("docstring")  Epetra_VbrMatrix::UseTranspose "bool
+Epetra_VbrMatrix::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Epetra_VbrMatrix::OperatorDomainMap "const
+Epetra_Map& Epetra_VbrMatrix::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+matrix operator. ";
+
+%feature("docstring")  Epetra_VbrMatrix::OperatorRangeMap "const
+Epetra_Map& Epetra_VbrMatrix::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this matrix
+operator. ";
+
+/*  Additional methods required to implement RowMatrix interface  */
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractGlobalRowCopy "int
+Epetra_VbrMatrix::ExtractGlobalRowCopy(int GlobalRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified global row in user-provided arrays.
+
+Parameters:
+-----------
+
+In:  GlobalRow - Global row to extract.
+
+In:  Length - Length of Values and Indices.
+
+Out:  NumEntries - Number of nonzero entries extracted.
+
+Out:  Values - Extracted values for this row.
+
+Out:  Indices - Extracted global column indices for the corresponding
+values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::ExtractMyRowCopy "int
+Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+In:  MyRow - Local row to extract.
+
+In:  Length - Length of Values and Indices.
+
+Out:  NumEntries - Number of nonzero entries extracted.
+
+Out:  Values - Extracted values for this row.
+
+Out:  Indices - Extracted local column indices for the corresponding
+values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumMyRowEntries "int
+Epetra_VbrMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const
+
+Return the current number of values stored for the specified local
+row.
+
+Parameters:
+-----------
+
+In:  MyRow - Local row.
+
+Out:  NumEntries - Number of nonzero values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MaxNumEntries "int
+Epetra_VbrMatrix::MaxNumEntries() const
+
+Returns the maximum of NumMyRowEntries() over all rows. ";
+
+%feature("docstring")  Epetra_VbrMatrix::RowMatrixRowMap "const
+Epetra_Map& Epetra_VbrMatrix::RowMatrixRowMap() const
+
+Returns the EpetraMap object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Epetra_VbrMatrix::RowMatrixColMap "const
+Epetra_Map& Epetra_VbrMatrix::RowMatrixColMap() const
+
+Returns the Epetra_Map object associated with columns of this matrix.
+";
+
+%feature("docstring")  Epetra_VbrMatrix::RowMatrixImporter "const
+Epetra_Import* Epetra_VbrMatrix::RowMatrixImporter() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
+/*  Deprecated methods:  These methods still work, but will be removed
+in a future version  */
+
+%feature("docstring")  Epetra_VbrMatrix::BlockImportMap "const
+Epetra_BlockMap& Epetra_VbrMatrix::BlockImportMap() const
+
+Use BlockColMap() instead. ";
+
+%feature("docstring")  Epetra_VbrMatrix::TransformToLocal "int
+Epetra_VbrMatrix::TransformToLocal()
+
+Use FillComplete() instead. ";
+
+%feature("docstring")  Epetra_VbrMatrix::TransformToLocal "int
+Epetra_VbrMatrix::TransformToLocal(const Epetra_BlockMap *DomainMap,
+const Epetra_BlockMap *RangeMap)
+
+Use FillComplete(const Epetra_BlockMap& DomainMap, const
+Epetra_BlockMap& RangeMap) instead. ";
+
 
 // File: classEpetra__VbrRowMatrix.xml
 %feature("docstring") Epetra_VbrRowMatrix "
@@ -4305,6 +17058,192 @@ Epetra_VbrMatrix object, and will retain it throughout the life of the
 Epetra_VbrRowMatrix object.
 
 C++ includes: Epetra_VbrRowMatrix.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_VbrRowMatrix::Epetra_VbrRowMatrix "Epetra_VbrRowMatrix::Epetra_VbrRowMatrix(Epetra_VbrMatrix *Matrix)
+
+Epetra_VbrRowMatrix constuctor. ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::~Epetra_VbrRowMatrix "virtual Epetra_VbrRowMatrix::~Epetra_VbrRowMatrix()
+
+Epetra_VbrRowMatrix Destructor. ";
+
+/*  Post-construction modifications  */
+
+%feature("docstring")  Epetra_VbrRowMatrix::UpdateMatrix "int
+Epetra_VbrRowMatrix::UpdateMatrix(Epetra_VbrMatrix *Matrix)
+
+Update the matrix to which this object points. ";
+
+/*  Methods required for implementing Epetra_BasicRowMatrix  */
+
+%feature("docstring")  Epetra_VbrRowMatrix::ExtractMyRowCopy "int
+Epetra_VbrRowMatrix::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  (In) - Local row to extract.
+
+Length:  (In) - Length of Values and Indices.
+
+NumEntries:  (Out) - Number of nonzero entries extracted.
+
+Values:  (Out) - Extracted values for this row.
+
+Indices:  (Out) - Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful, set to -1 if MyRow not
+valid, -2 if Length is too short (NumEntries will have required
+length). ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::ExtractMyEntryView "int
+Epetra_VbrRowMatrix::ExtractMyEntryView(int CurEntry, double *&Value,
+int &RowIndex, int &ColIndex)
+
+Returns a reference to the ith entry in the matrix, along with its row
+and column index.
+
+Parameters:
+-----------
+
+CurEntry:  (In) - Local entry to extract.
+
+Value:  (Out) - Extracted reference to current values.
+
+RowIndex:  (Out) - Row index for current entry.
+
+ColIndex:  (Out) - Column index for current entry.
+
+Integer error code, set to 0 if successful, set to -1 if CurEntry not
+valid. ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::ExtractMyEntryView "int
+Epetra_VbrRowMatrix::ExtractMyEntryView(int CurEntry, double const
+*&Value, int &RowIndex, int &ColIndex) const
+
+Returns a const reference to the ith entry in the matrix, along with
+its row and column index.
+
+Parameters:
+-----------
+
+CurEntry:  (In) - Local entry to extract.
+
+Value:  (Out) - Extracted reference to current values.
+
+RowIndex:  (Out) - Row index for current entry.
+
+ColIndex:  (Out) - Column index for current entry.
+
+Integer error code, set to 0 if successful, set to -1 if CurEntry not
+valid. ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::NumMyRowEntries "int
+Epetra_VbrRowMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const
+
+Return the current number of values stored for the specified local
+row.
+
+Similar to NumMyEntries() except NumEntries is returned as an argument
+and error checking is done on the input value MyRow.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row.
+
+NumEntries:  - (Out) Number of nonzero values.
+
+Integer error code, set to 0 if successful, set to -1 if MyRow not
+valid.
+
+None.
+
+Unchanged. ";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_VbrRowMatrix::RightScale "int
+Epetra_VbrRowMatrix::RightScale(const Epetra_Vector &x)
+
+Scales the Epetra_VbrMatrix on the right with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i
+denotes the global row number of A and j denotes the global column
+number of A.
+
+Parameters:
+-----------
+
+In:  x -The Epetra_Vector used for scaling this.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::LeftScale "int
+Epetra_VbrRowMatrix::LeftScale(const Epetra_Vector &x)
+
+Scales the Epetra_VbrMatrix on the left with a Epetra_Vector x.
+
+The this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i
+denotes the row number of A and j denotes the column number of A.
+
+Parameters:
+-----------
+
+In:  x -A Epetra_Vector to solve for.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::Multiply "int
+Epetra_VbrRowMatrix::Multiply(bool TransA, const Epetra_MultiVector
+&X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_VbrRowMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  TransA -If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_VbrRowMatrix::Solve "int
+Epetra_VbrRowMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_VbrRowMatrix solve with a
+Epetra_MultiVector X in Y (not implemented).
+
+Parameters:
+-----------
+
+In:  Upper -If true, solve Ux = y, otherwise solve Lx = y.
+
+In:  Trans -If true, solve transpose problem.
+
+In:  UnitDiagonal -If true, assume diagonal is unit (whether it's
+stored or not).
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
 
 
 // File: classEpetra__Vector.xml
@@ -4402,6 +17341,358 @@ WARNING:  A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is
 required for all Epetra_Vector constructors.
 
 C++ includes: Epetra_Vector.h ";
+
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_Vector::Epetra_Vector "Epetra_Vector::Epetra_Vector(const Epetra_BlockMap &Map, bool
+zeroOut=true)
+
+Basic Epetra_Vector constuctor.
+
+Creates a Epetra_Vector object and fills with zero values.
+
+Parameters:
+-----------
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  zeroOut - If true then the allocated memory will be zeroed out
+initialy. If false then this memory will not be touched which can be
+significantly faster.
+
+WARNING:  Note that, because Epetra_LocalMap derives from Epetra_Map
+and Epetra_Map derives from Epetra_BlockMap, this constructor works
+for all three types of Epetra map classes.
+
+Pointer to a Epetra_Vector. ";
+
+%feature("docstring")  Epetra_Vector::Epetra_Vector "Epetra_Vector::Epetra_Vector(const Epetra_Vector &Source)
+
+Epetra_Vector copy constructor. ";
+
+%feature("docstring")  Epetra_Vector::Epetra_Vector "Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double *V)
+
+Set vector values from user array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  V - Pointer to an array of double precision numbers..
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_Vector::Epetra_Vector "Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const
+Epetra_MultiVector &Source, int Index)
+
+Set vector values from a vector in an existing Epetra_MultiVector.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  Source - An existing fully constructed Epetra_MultiVector.
+
+In:  Index - Index of vector to access.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_Vector::~Epetra_Vector "Epetra_Vector::~Epetra_Vector()
+
+Epetra_Vector destructor. ";
+
+/*  Post-construction modification routines  */
+
+%feature("docstring")  Epetra_Vector::ReplaceGlobalValues "int
+Epetra_Vector::ReplaceGlobalValues(int NumEntries, double *Values, int
+*Indices)
+
+Replace values in a vector with a given indexed list of values,
+indices are in global index space.
+
+Replace the Indices[i] entry in the this object with Values[i], for
+i=0; i<NumEntries. The indices are in global index space.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in global index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::ReplaceMyValues "int
+Epetra_Vector::ReplaceMyValues(int NumEntries, double *Values, int
+*Indices)
+
+Replace values in a vector with a given indexed list of values,
+indices are in local index space.
+
+Replace the Indices[i] entry in the this object with Values[i], for
+i=0; i<NumEntries. The indices are in local index space.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in local index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::SumIntoGlobalValues "int
+Epetra_Vector::SumIntoGlobalValues(int NumEntries, double *Values, int
+*Indices)
+
+Sum values into a vector with a given indexed list of values, indices
+are in global index space.
+
+Sum Values[i] into the Indices[i] entry in the this object, for i=0;
+i<NumEntries. The indices are in global index space.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in global index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::SumIntoMyValues "int
+Epetra_Vector::SumIntoMyValues(int NumEntries, double *Values, int
+*Indices)
+
+Sum values into a vector with a given indexed list of values, indices
+are in local index space.
+
+Sum Values[i] into the Indices[i] entry in the this object, for i=0;
+i<NumEntries. The indices are in local index space.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in local index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::ReplaceGlobalValues "int
+Epetra_Vector::ReplaceGlobalValues(int NumEntries, int BlockOffset,
+double *Values, int *Indices)
+
+Replace values in a vector with a given indexed list of values at the
+specified BlockOffset, indices are in global index space.
+
+Replace the Indices[i] entry in the this object with Values[i], for
+i=0; i<NumEntries. The indices are in global index space. This method
+is intended for vector that are defined using block maps. In this
+situation, an index value is associated with one or more vector
+entries, depending on the element size of the given index. The
+BlockOffset argument indicates which vector entry to modify as an
+offset from the first vector entry associated with the given index.
+The offset is used for each entry in the input list.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  BlockOffset - Offset from the first vector entry associated with
+each of the given indices.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in global index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::ReplaceMyValues "int
+Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, double
+*Values, int *Indices)
+
+Replace values in a vector with a given indexed list of values at the
+specified BlockOffset, indices are in local index space.
+
+Replace the (Indices[i], BlockOffset) entry in the this object with
+Values[i], for i=0; i<NumEntries. The indices are in local index
+space. This method is intended for vector that are defined using block
+maps. In this situation, an index value is associated with one or more
+vector entries, depending on the element size of the given index. The
+BlockOffset argument indicates which vector entry to modify as an
+offset from the first vector entry associated with the given index.
+The offset is used for each entry in the input list.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  BlockOffset - Offset from the first vector entry associated with
+each of the given indices.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in local index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::SumIntoGlobalValues "int
+Epetra_Vector::SumIntoGlobalValues(int NumEntries, int BlockOffset,
+double *Values, int *Indices)
+
+Sum values into a vector with a given indexed list of values at the
+specified BlockOffset, indices are in global index space.
+
+Sum Values[i] into the Indices[i] entry in the this object, for i=0;
+i<NumEntries. The indices are in global index space. This method is
+intended for vector that are defined using block maps. In this
+situation, an index value is associated with one or more vector
+entries, depending on the element size of the given index. The
+BlockOffset argument indicates which vector entry to modify as an
+offset from the first vector entry associated with the given index.
+The offset is used for each entry in the input list.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  BlockOffset - Offset from the first vector entry associated with
+each of the given indices.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in global index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+%feature("docstring")  Epetra_Vector::SumIntoMyValues "int
+Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, double
+*Values, int *Indices)
+
+Sum values into a vector with a given indexed list of values at the
+specified BlockOffset, indices are in local index space.
+
+Sum Values[i] into the Indices[i] entry in the this object, for i=0;
+i<NumEntries. The indices are in local index space. This method is
+intended for vector that are defined using block maps. In this
+situation, an index value is associated with one or more vector
+entries, depending on the element size of the given index. The
+BlockOffset argument indicates which vector entry to modify as an
+offset from the first vector entry associated with the given index.
+The offset is used for each entry in the input list.
+
+Parameters:
+-----------
+
+In:  NumEntries - Number of vector entries to modify.
+
+In:  BlockOffset - Offset from the first vector entry associated with
+each of the given indices.
+
+In:  Values - Values which will replace existing values in vector, of
+length NumEntries.
+
+In:  Indices - Indices in local index space corresponding to Values.
+
+Integer error code, set to 0 if successful, set to 1 if one or more
+indices are not associated with calling processor. ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_Vector::ExtractCopy "int
+Epetra_Vector::ExtractCopy(double *V) const
+
+Put vector values into user-provided array.
+
+Parameters:
+-----------
+
+Out:  V - Pointer to memory space that will contain the vector values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_Vector::ExtractView "int
+Epetra_Vector::ExtractView(double **V) const
+
+Set user-provided address of V.
+
+Parameters:
+-----------
+
+Out:  V - Address of a pointer to that will be set to point to the
+values of the vector.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Overloaded operators  */
+
+/*  Expert-only unsupported methods  */
+
+%feature("docstring")  Epetra_Vector::ResetView "int
+Epetra_Vector::ResetView(double *Values)
+
+Reset the view of an existing vector to point to new user data.
+
+Allows the (very) light-weight replacement of multivector values for
+an existing vector that was constructed using an Epetra_DataAccess
+mode of View. No checking is performed to see if the values passed in
+contain valid data. It is assumed that the user has verified the
+integrity of data before calling this method. This method is useful
+for situations where a vector is needed for use with an Epetra
+operator or matrix and the user is not passing in a multivector, or
+the multivector is being passed in with another map that is not
+exactly compatible with the operator, but has the correct number of
+entries.
+
+This method is used by AztecOO and Ifpack in the matvec and solve
+methods to improve performance and reduce repeated calls to
+constructors and destructors.
+
+Parameters:
+-----------
+
+Values:  Vector data.
+
+Integer error code, set to 0 if successful, -1 if the multivector was
+not created as a View.
+
+WARNING:  This method is extremely dangerous and should only be used
+by experts. ";
 
 
 // File: Epetra__BasicDirectory_8cpp.xml

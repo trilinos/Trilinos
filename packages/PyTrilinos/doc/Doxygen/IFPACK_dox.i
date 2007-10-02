@@ -166,6 +166,213 @@ Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_AdditiveSchwarz.h ";
 
+%feature("docstring")  Ifpack_AdditiveSchwarz::Ifpack_AdditiveSchwarz
+"Ifpack_AdditiveSchwarz< T >::Ifpack_AdditiveSchwarz(Epetra_RowMatrix
+*Matrix, int OverlapLevel=0)
+
+Ifpack_AdditiveSchwarz constructor with given Epetra_RowMatrix.
+
+Creates an Ifpack_AdditiveSchwarz preconditioner with overlap. To use
+minimal-overlap, OverlappingMatrix is omitted (as defaulted to 0).
+
+Parameters:
+-----------
+
+Matrix:  - (In) Pointer to matrix to be preconditioned
+
+OverlappingMatrix:  - (In) Pointer to the matrix extended with the
+desired level of overlap. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::~Ifpack_AdditiveSchwarz
+"virtual Ifpack_AdditiveSchwarz< T >::~Ifpack_AdditiveSchwarz()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::SetUseTranspose "int
+Ifpack_AdditiveSchwarz< T >::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied (not
+implemented).
+
+This flag allows the transpose of the given operator to be used
+implicitly.
+
+Parameters:
+-----------
+
+UseTranspose:  - (In) If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Apply "int
+Ifpack_AdditiveSchwarz< T >::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the matrix to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  -(Out) A Epetra_MultiVector of dimension NumVectors containing the
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::ApplyInverse "int
+Ifpack_AdditiveSchwarz< T >::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Y:  -(Out) A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  In order to work with AztecOO, any implementation of this
+method must support the case where X and Y are the same object. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::NormInf "double
+Ifpack_AdditiveSchwarz< T >::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Label "const char *
+Ifpack_AdditiveSchwarz< T >::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::UseTranspose "bool
+Ifpack_AdditiveSchwarz< T >::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::HasNormInf "bool
+Ifpack_AdditiveSchwarz< T >::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Comm "const
+Epetra_Comm & Ifpack_AdditiveSchwarz< T >::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::OperatorDomainMap "const Epetra_Map & Ifpack_AdditiveSchwarz< T >::OperatorDomainMap()
+const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::OperatorRangeMap "const Epetra_Map & Ifpack_AdditiveSchwarz< T >::OperatorRangeMap()
+const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Initialize "int
+Ifpack_AdditiveSchwarz< T >::Initialize()
+
+Initialized the preconditioner. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Compute "int
+Ifpack_AdditiveSchwarz< T >::Compute()
+
+Computes the preconditioner. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Condest "double
+Ifpack_AdditiveSchwarz< T >::Condest(const Ifpack_CondestType
+CT=Ifpack_Cheap, const int MaxIters=1550, const double Tol=1e-9,
+Epetra_RowMatrix *Matrix=0)
+
+Computes the estimated condition number and returns its value. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Condest "virtual
+double Ifpack_AdditiveSchwarz< T >::Condest() const
+
+Returns the estimated condition number, or -1.0 if not computed. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Matrix "virtual const
+Epetra_RowMatrix& Ifpack_AdditiveSchwarz< T >::Matrix() const
+
+Returns a refernence to the internally stored matrix. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::IsOverlapping "virtual
+bool Ifpack_AdditiveSchwarz< T >::IsOverlapping() const
+
+Returns true is an overlapping matrix is present. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Print "std::ostream &
+Ifpack_AdditiveSchwarz< T >::Print(std::ostream &) const
+
+Prints major information about this preconditioner. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::Inverse "virtual const
+T* Ifpack_AdditiveSchwarz< T >::Inverse() const ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::NumInitialize "virtual
+int Ifpack_AdditiveSchwarz< T >::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::NumCompute "virtual
+int Ifpack_AdditiveSchwarz< T >::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::NumApplyInverse "virtual int Ifpack_AdditiveSchwarz< T >::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::InitializeTime "virtual double Ifpack_AdditiveSchwarz< T >::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::ComputeTime "virtual
+double Ifpack_AdditiveSchwarz< T >::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::ApplyInverseTime "virtual double Ifpack_AdditiveSchwarz< T >::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::InitializeFlops "virtual double Ifpack_AdditiveSchwarz< T >::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::ComputeFlops "virtual
+double Ifpack_AdditiveSchwarz< T >::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::ApplyInverseFlops "virtual double Ifpack_AdditiveSchwarz< T >::ApplyInverseFlops() const
+
+Returns the number of flops in the application of the preconditioner.
+";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::OverlapLevel "virtual
+int Ifpack_AdditiveSchwarz< T >::OverlapLevel() const
+
+Returns the level of overlap. ";
+
+%feature("docstring")  Ifpack_AdditiveSchwarz::List "virtual const
+Teuchos::ParameterList& Ifpack_AdditiveSchwarz< T >::List() const
+
+Returns a reference to the internally stored list. ";
+
 %feature("docstring")  Ifpack_AdditiveSchwarz::IsInitialized "virtual
 bool Ifpack_AdditiveSchwarz< T >::IsInitialized() const
 
@@ -321,6 +528,218 @@ Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_Amesos.h ";
 
+%feature("docstring")  Ifpack_Amesos::Ifpack_Amesos "Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix *Matrix)
+
+Constructor. ";
+
+%feature("docstring")  Ifpack_Amesos::Ifpack_Amesos "Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos &rhs)
+
+Copy constructor. ";
+
+%feature("docstring")  Ifpack_Amesos::~Ifpack_Amesos "virtual
+Ifpack_Amesos::~Ifpack_Amesos()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_Amesos::SetUseTranspose "int
+Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied (not
+implemented).
+
+This flag allows the transpose of the given operator to be used
+implicitly.
+
+Parameters:
+-----------
+
+UseTranspose:  - (In) If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Ifpack_Amesos::Apply "int
+Ifpack_Amesos::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
+&Y) const
+
+Applies the matrix to an Epetra_MultiVector.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectors containing
+the result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_Amesos::ApplyInverse "int
+Ifpack_Amesos::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  In order to work with AztecOO, any implementation of this
+method must support the case where X and Y are the same object. ";
+
+%feature("docstring")  Ifpack_Amesos::NormInf "double
+Ifpack_Amesos::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented). ";
+
+%feature("docstring")  Ifpack_Amesos::Label "const char *
+Ifpack_Amesos::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_Amesos::UseTranspose "bool
+Ifpack_Amesos::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_Amesos::HasNormInf "bool
+Ifpack_Amesos::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Amesos::Comm "const Epetra_Comm &
+Ifpack_Amesos::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_Amesos::OperatorDomainMap "const
+Epetra_Map & Ifpack_Amesos::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_Amesos::OperatorRangeMap "const
+Epetra_Map & Ifpack_Amesos::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_Amesos::IsInitialized "virtual bool
+Ifpack_Amesos::IsInitialized() const
+
+Returns true is the preconditioner has been successfully initialized.
+";
+
+%feature("docstring")  Ifpack_Amesos::Initialize "int
+Ifpack_Amesos::Initialize()
+
+Initializes the preconditioners.
+
+0 if successful, 1 if problems occurred. ";
+
+%feature("docstring")  Ifpack_Amesos::IsComputed "virtual bool
+Ifpack_Amesos::IsComputed() const
+
+Returns true if the preconditioner has been successfully computed. ";
+
+%feature("docstring")  Ifpack_Amesos::Compute "int
+Ifpack_Amesos::Compute()
+
+Computes the preconditioners.
+
+0 if successful, 1 if problems occurred. ";
+
+%feature("docstring")  Ifpack_Amesos::SetParameters "int
+Ifpack_Amesos::SetParameters(Teuchos::ParameterList &List)
+
+Sets all the parameters for the preconditioner.
+
+Parameters currently supported:  \"amesos: solver type\" : Specifies
+the solver type for Amesos. Default: Amesos_Klu.
+
+The input list will be copied, then passed to the Amesos object
+through Amesos::SetParameters(). ";
+
+%feature("docstring")  Ifpack_Amesos::Matrix "virtual const
+Epetra_RowMatrix& Ifpack_Amesos::Matrix() const
+
+Returns a const reference to the internally stored matrix. ";
+
+%feature("docstring")  Ifpack_Amesos::Condest "double
+Ifpack_Amesos::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+
+Returns the estimated condition number, computes it if necessary. ";
+
+%feature("docstring")  Ifpack_Amesos::Condest "virtual double
+Ifpack_Amesos::Condest() const
+
+Returns the estimated condition number, never computes it. ";
+
+%feature("docstring")  Ifpack_Amesos::NumInitialize "virtual int
+Ifpack_Amesos::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_Amesos::NumCompute "virtual int
+Ifpack_Amesos::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_Amesos::NumApplyInverse "virtual int
+Ifpack_Amesos::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Amesos::InitializeTime "virtual double
+Ifpack_Amesos::InitializeTime() const
+
+Returns the total time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_Amesos::ComputeTime "virtual double
+Ifpack_Amesos::ComputeTime() const
+
+Returns the total time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_Amesos::ApplyInverseTime "virtual
+double Ifpack_Amesos::ApplyInverseTime() const
+
+Returns the total time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Amesos::InitializeFlops "virtual double
+Ifpack_Amesos::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_Amesos::ComputeFlops "virtual double
+Ifpack_Amesos::ComputeFlops() const
+
+Returns the total number of flops to computate the preconditioner. ";
+
+%feature("docstring")  Ifpack_Amesos::ApplyInverseFlops "virtual
+double Ifpack_Amesos::ApplyInverseFlops() const
+
+Returns the total number of flops to apply the preconditioner. ";
+
+%feature("docstring")  Ifpack_Amesos::List "virtual const
+Teuchos::ParameterList& Ifpack_Amesos::List() const ";
+
+%feature("docstring")  Ifpack_Amesos::Print "std::ostream &
+Ifpack_Amesos::Print(std::ostream &os) const
+
+Prints on ostream basic information about this object. ";
+
 
 // File: classIfpack__BlockRelaxation.xml
 %feature("docstring") Ifpack_BlockRelaxation "
@@ -372,6 +791,96 @@ refer to page Ifpack_PointRelaxation .
 Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_BlockRelaxation.h ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::Ifpack_BlockRelaxation
+"Ifpack_BlockRelaxation< T >::Ifpack_BlockRelaxation(const
+Epetra_RowMatrix *Matrix)
+
+Ifpack_BlockRelaxation constructor with given Epetra_RowMatrix.
+
+Creates an Ifpack_Preconditioner preconditioner.
+
+Parameters:
+-----------
+
+In:  Matrix - Pointer to matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::~Ifpack_BlockRelaxation
+"Ifpack_BlockRelaxation< T >::~Ifpack_BlockRelaxation() ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::Apply "int
+Ifpack_BlockRelaxation< T >::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the matrix to an Epetra_MultiVector.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing the
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::ApplyInverse "int
+Ifpack_BlockRelaxation< T >::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the block Jacobi preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::NormInf "virtual
+double Ifpack_BlockRelaxation< T >::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented). ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::SetUseTranspose "virtual int Ifpack_BlockRelaxation< T >::SetUseTranspose(bool
+UseTranspose) ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::Label "const char *
+Ifpack_BlockRelaxation< T >::Label() const ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::UseTranspose "virtual
+bool Ifpack_BlockRelaxation< T >::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::HasNormInf "virtual
+bool Ifpack_BlockRelaxation< T >::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::Comm "const
+Epetra_Comm & Ifpack_BlockRelaxation< T >::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::OperatorDomainMap "const Epetra_Map & Ifpack_BlockRelaxation< T >::OperatorDomainMap()
+const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_BlockRelaxation::OperatorRangeMap "const Epetra_Map & Ifpack_BlockRelaxation< T >::OperatorRangeMap()
+const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
 
 %feature("docstring")  Ifpack_BlockRelaxation::NumLocalBlocks "int
 Ifpack_BlockRelaxation< T >::NumLocalBlocks() const
@@ -517,6 +1026,216 @@ initial guess.
 Ulrich Hetmaniuk. SNL 1414.
 
 C++ includes: Ifpack_Chebyshev.h ";
+
+%feature("docstring")  Ifpack_Chebyshev::Ifpack_Chebyshev "Ifpack_Chebyshev::Ifpack_Chebyshev(const Epetra_Operator *Matrix)
+
+Ifpack_Chebyshev constructor with given
+Epetra_Operator/Epetra_RowMatrix.
+
+Creates an instance of Ifpack_Chebyshev class.
+
+Parameters:
+-----------
+
+Matrix:  - (In) Pointer to the operator to precondition. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Ifpack_Chebyshev "Ifpack_Chebyshev::Ifpack_Chebyshev(const Epetra_RowMatrix *Matrix)
+
+Ifpack_Chebyshev constructor with given
+Epetra_Operator/Epetra_RowMatrix.
+
+Creates an instance of Ifpack_Chebyshev class.
+
+Parameters:
+-----------
+
+Matrix:  - (In) Pointer to the matrix to precondition. ";
+
+%feature("docstring")  Ifpack_Chebyshev::~Ifpack_Chebyshev "virtual
+Ifpack_Chebyshev::~Ifpack_Chebyshev()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Apply "int
+Ifpack_Chebyshev::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the matrix to an Epetra_MultiVector.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectors containing
+the result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_Chebyshev::ApplyInverse "int
+Ifpack_Chebyshev::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Y:  - (InOut) A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  This routine is NOT AztecOO complaint. ";
+
+%feature("docstring")  Ifpack_Chebyshev::NormInf "virtual double
+Ifpack_Chebyshev::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented). ";
+
+%feature("docstring")  Ifpack_Chebyshev::Label "virtual const char*
+Ifpack_Chebyshev::Label() const ";
+
+%feature("docstring")  Ifpack_Chebyshev::UseTranspose "virtual bool
+Ifpack_Chebyshev::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_Chebyshev::HasNormInf "virtual bool
+Ifpack_Chebyshev::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Comm "const Epetra_Comm &
+Ifpack_Chebyshev::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_Chebyshev::OperatorDomainMap "const
+Epetra_Map & Ifpack_Chebyshev::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_Chebyshev::OperatorRangeMap "const
+Epetra_Map & Ifpack_Chebyshev::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Initialize "int
+Ifpack_Chebyshev::Initialize()
+
+Computes all it is necessary to initialize the preconditioner. ";
+
+%feature("docstring")  Ifpack_Chebyshev::IsInitialized "virtual bool
+Ifpack_Chebyshev::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Chebyshev::IsComputed "virtual bool
+Ifpack_Chebyshev::IsComputed() const
+
+Returns true if the preconditioner has been successfully computed. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Compute "int
+Ifpack_Chebyshev::Compute()
+
+Computes the preconditioners. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Matrix "virtual const
+Epetra_RowMatrix& Ifpack_Chebyshev::Matrix() const
+
+Returns a pointer to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Condest "double
+Ifpack_Chebyshev::Condest(const Ifpack_CondestType CT=Ifpack_Cheap,
+const int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix=0)
+
+Computes the condition number estimates and returns the value. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Condest "virtual double
+Ifpack_Chebyshev::Condest() const
+
+Returns the condition number estimate, or -1.0 if not computed. ";
+
+%feature("docstring")  Ifpack_Chebyshev::SetParameters "int
+Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList &List)
+
+Sets all the parameters for the preconditioner. ";
+
+%feature("docstring")  Ifpack_Chebyshev::Print "ostream &
+Ifpack_Chebyshev::Print(ostream &os) const
+
+Prints object to an output stream. ";
+
+%feature("docstring")  Ifpack_Chebyshev::NumInitialize "virtual int
+Ifpack_Chebyshev::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_Chebyshev::NumCompute "virtual int
+Ifpack_Chebyshev::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_Chebyshev::NumApplyInverse "virtual int
+Ifpack_Chebyshev::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Chebyshev::InitializeTime "virtual
+double Ifpack_Chebyshev::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_Chebyshev::ComputeTime "virtual double
+Ifpack_Chebyshev::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_Chebyshev::ApplyInverseTime "virtual
+double Ifpack_Chebyshev::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Chebyshev::InitializeFlops "virtual
+double Ifpack_Chebyshev::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_Chebyshev::ComputeFlops "virtual double
+Ifpack_Chebyshev::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_Chebyshev::ApplyInverseFlops "virtual
+double Ifpack_Chebyshev::ApplyInverseFlops() const
+
+Returns the number of flops for the application of the preconditioner.
+";
+
+%feature("docstring")  Ifpack_Chebyshev::PowerMethod "int
+Ifpack_Chebyshev::PowerMethod(const Epetra_Operator &Operator, const
+Epetra_Vector &InvPointDiagonal, const int MaximumIterations, double
+&LambdaMax)
+
+Simple power method to compute lambda_max. ";
+
+%feature("docstring")  Ifpack_Chebyshev::CG "int
+Ifpack_Chebyshev::CG(const Epetra_Operator &Operator, const
+Epetra_Vector &InvPointDiagonal, const int MaximumIterations, double
+&lambda_min, double &lambda_max)
+
+Uses AztecOO's CG to estimate lambda_min and lambda_max. ";
 
 %feature("docstring")  Ifpack_Chebyshev::SetUseTranspose "virtual int
 Ifpack_Chebyshev::SetUseTranspose(bool UseTranspose)
@@ -830,6 +1549,110 @@ WARNING:  A Epetra_Map is required for the Ifpack_CrsIct constructor.
 
 C++ includes: Ifpack_CrsIct.h ";
 
+%feature("docstring")  Ifpack_CrsIct::Label "const char*
+Ifpack_CrsIct::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_CrsIct::SetUseTranspose "int
+Ifpack_CrsIct::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_CrsIct::Apply "int
+Ifpack_CrsIct::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
+&Y) const
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Note that this implementation of Apply does NOT perform a forward back
+solve with the LDU factorization. Instead it applies these operators
+via multiplication with U, D and L respectively. The ApplyInverse()
+method performs a solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_CrsIct::ApplyInverse "int
+Ifpack_CrsIct::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_CrsIct::NormInf "double
+Ifpack_CrsIct::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_CrsIct::HasNormInf "bool
+Ifpack_CrsIct::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_CrsIct::UseTranspose "bool
+Ifpack_CrsIct::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_CrsIct::OperatorDomainMap "const
+Epetra_Map& Ifpack_CrsIct::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_CrsIct::OperatorRangeMap "const
+Epetra_Map& Ifpack_CrsIct::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_CrsIct::Comm "const Epetra_Comm&
+Ifpack_CrsIct::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
 %feature("docstring")  Ifpack_CrsIct::Ifpack_CrsIct "Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix &A, double
 Droptol=1.0E-4, int Lfil=20)
 
@@ -1016,6 +1839,76 @@ Ifpack_CrsIlut: ILUT preconditioner of a given Epetra_RowMatrix.
 
 C++ includes: Ifpack_CrsIlut.h ";
 
+%feature("docstring")  Ifpack_CrsIlut::Ifpack_CrsIlut "Ifpack_CrsIlut::Ifpack_CrsIlut(const Ifpack_OverlapGraph
+*OverlapGraph, double DropTol=1.0E-4, double FillTol=1.0)
+
+Constructor using Ifpack_OverlapGraph.
+
+Creates an object from the overlap graph.
+
+Parameters:
+-----------
+
+OverlapGraph:  (In) - Graph describing the graph that should be used
+for the factors.
+
+DropTol:  (In/Default) - Drop tolerance used by ILUT algorithm.
+
+FillTol:  (In/Default) - Fill tolerance used by ILUT algorithm. ";
+
+%feature("docstring")  Ifpack_CrsIlut::Ifpack_CrsIlut "Ifpack_CrsIlut::Ifpack_CrsIlut(const Epetra_RowMatrix *UserMatrix,
+double DropTol=1.0E-4, double FillTol=1.0)
+
+Constructor using Epetra_RowMatrix.
+
+Creates an Ifpack_Graph object from the user graph implicitly defined
+by the Epetra_RowMatrix interface.
+
+Parameters:
+-----------
+
+RowMatrix:  (In) - An object that has implemented the Epetra_RowMatrix
+interface.
+
+DropTol:  (In/Default) - Drop tolerance used by ILUT algorithm.
+
+FillTol:  (In/Default) - Fill tolerance used by ILUT algorithm. ";
+
+%feature("docstring")  Ifpack_CrsIlut::Ifpack_CrsIlut "Ifpack_CrsIlut::Ifpack_CrsIlut(const Ifpack_CrsIlut &Source)
+
+Copy constructor. ";
+
+%feature("docstring")  Ifpack_CrsIlut::~Ifpack_CrsIlut "virtual
+Ifpack_CrsIlut::~Ifpack_CrsIlut()
+
+Ifpack_CrsIlut Destructor. ";
+
+%feature("docstring")  Ifpack_CrsIlut::SetDropTol "int
+Ifpack_CrsIlut::SetDropTol(double DropTol)
+
+Set Drop tolerance value as defined by the ILUT algorithm. ";
+
+%feature("docstring")  Ifpack_CrsIlut::SetFillTol "int
+Ifpack_CrsIlut::SetFillTol(double FillTol)
+
+Set fill tolerance value as defined by the ILUT algorithm. ";
+
+%feature("docstring")  Ifpack_CrsIlut::SetParameters "int
+Ifpack_CrsIlut::SetParameters(const Teuchos::ParameterList
+&parameterlist, bool cerr_warning_if_unused=false)
+
+Set parameters using a Teuchos::ParameterList object. ";
+
+%feature("docstring")  Ifpack_CrsIlut::DropTol "double
+Ifpack_CrsIlut::DropTol() const
+
+Set Drop tolerance value as defined by the ILUT algorithm. ";
+
+%feature("docstring")  Ifpack_CrsIlut::FillTol "double
+Ifpack_CrsIlut::FillTol() const
+
+Set fill tolerance value as defined by the ILUT algorithm. ";
+
 
 // File: classIfpack__CrsRick.xml
 %feature("docstring") Ifpack_CrsRick "
@@ -1183,6 +2076,104 @@ numbers. The ResetFlops() function resets the floating point counter.
 WARNING:  A Epetra_Map is required for the Ifpack_CrsRick constructor.
 
 C++ includes: Ifpack_CrsRick.h ";
+
+%feature("docstring")  Ifpack_CrsRick::Label "char*
+Ifpack_CrsRick::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_CrsRick::SetUseTranspose "int
+Ifpack_CrsRick::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_CrsRick::Apply "int
+Ifpack_CrsRick::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
+&Y) const
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Note that this implementation of Apply does NOT perform a forward back
+solve with the LDU factorization. Instead it applies these operators
+via multiplication with U, D and L respectively. The ApplyInverse()
+method performs a solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_CrsRick::ApplyInverse "int
+Ifpack_CrsRick::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_CrsRick::NormInf "double
+Ifpack_CrsRick::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_CrsRick::HasNormInf "bool
+Ifpack_CrsRick::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_CrsRick::UseTranspose "bool
+Ifpack_CrsRick::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_CrsRick::OperatorDomainMap "const
+Epetra_Map& Ifpack_CrsRick::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_CrsRick::OperatorRangeMap "const
+Epetra_Map& Ifpack_CrsRick::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
 
 %feature("docstring")  Ifpack_CrsRick::Ifpack_CrsRick "Ifpack_CrsRick::Ifpack_CrsRick(const Epetra_CrsMatrix &A, const
 Ifpack_IlukGraph &Graph)
@@ -1595,6 +2586,110 @@ constructor.
 
 C++ includes: Ifpack_CrsRiluk.h ";
 
+%feature("docstring")  Ifpack_CrsRiluk::Label "const char*
+Ifpack_CrsRiluk::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::SetUseTranspose "int
+Ifpack_CrsRiluk::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::Apply "int
+Ifpack_CrsRiluk::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
+&Y) const
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Note that this implementation of Apply does NOT perform a forward back
+solve with the LDU factorization. Instead it applies these operators
+via multiplication with U, D and L respectively. The ApplyInverse()
+method performs a solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::ApplyInverse "int
+Ifpack_CrsRiluk::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::NormInf "double
+Ifpack_CrsRiluk::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::HasNormInf "bool
+Ifpack_CrsRiluk::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::UseTranspose "bool
+Ifpack_CrsRiluk::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::OperatorDomainMap "const
+Epetra_Map& Ifpack_CrsRiluk::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::OperatorRangeMap "const
+Epetra_Map& Ifpack_CrsRiluk::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_CrsRiluk::Comm "const Epetra_Comm&
+Ifpack_CrsRiluk::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
 %feature("docstring")  Ifpack_CrsRiluk::Ifpack_CrsRiluk "Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph &Graph)
 
 Ifpack_CrsRiluk constuctor with variable number of indices per row.
@@ -1880,6 +2975,139 @@ non-factored matrix.
 Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_DenseContainer.h ";
+
+%feature("docstring")  Ifpack_DenseContainer::Ifpack_DenseContainer "Ifpack_DenseContainer::Ifpack_DenseContainer(const int NumRows, const
+int NumVectors=1)
+
+Default constructor. ";
+
+%feature("docstring")  Ifpack_DenseContainer::Ifpack_DenseContainer "Ifpack_DenseContainer::Ifpack_DenseContainer(const
+Ifpack_DenseContainer &rhs)
+
+Copy constructor. ";
+
+%feature("docstring")  Ifpack_DenseContainer::~Ifpack_DenseContainer "virtual Ifpack_DenseContainer::~Ifpack_DenseContainer()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_DenseContainer::NumRows "int
+Ifpack_DenseContainer::NumRows() const
+
+Returns the number of rows of the matrix and LHS/RHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::NumVectors "virtual int
+Ifpack_DenseContainer::NumVectors() const
+
+Returns the number of vectors in LHS/RHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::SetNumVectors "virtual
+int Ifpack_DenseContainer::SetNumVectors(const int NumVectors)
+
+Sets the number of vectors for LHS/RHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::LHS "double &
+Ifpack_DenseContainer::LHS(const int i, const int Vector=0)
+
+Returns the i-th component of the vector Vector of LHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::RHS "double &
+Ifpack_DenseContainer::RHS(const int i, const int Vector=0)
+
+Returns the i-th component of the vector Vector of RHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::ID "int &
+Ifpack_DenseContainer::ID(const int i)
+
+Returns the ID associated to local row i.
+
+The set of (local) rows assigned to this container is defined by
+calling ID(i) = j, where i (from 0 to NumRows()) indicates the
+container-row, and j indicates the local row in the calling process.
+
+This is usually used to recorder the local row ID (on calling process)
+of the i-th row in the container. ";
+
+%feature("docstring")  Ifpack_DenseContainer::SetMatrixElement "int
+Ifpack_DenseContainer::SetMatrixElement(const int row, const int col,
+const double value)
+
+Set the matrix element (row,col) to value. ";
+
+%feature("docstring")  Ifpack_DenseContainer::SetParameters "virtual
+int Ifpack_DenseContainer::SetParameters(Teuchos::ParameterList &List)
+
+Sets all necessary parameters. ";
+
+%feature("docstring")  Ifpack_DenseContainer::IsInitialized "virtual
+bool Ifpack_DenseContainer::IsInitialized() const
+
+Returns true is the container has been successfully initialized. ";
+
+%feature("docstring")  Ifpack_DenseContainer::IsComputed "virtual
+bool Ifpack_DenseContainer::IsComputed() const
+
+Returns true is the container has been successfully computed. ";
+
+%feature("docstring")  Ifpack_DenseContainer::Label "virtual const
+char* Ifpack_DenseContainer::Label() const
+
+Returns the label of this container. ";
+
+%feature("docstring")  Ifpack_DenseContainer::SetKeepNonFactoredMatrix
+"virtual int Ifpack_DenseContainer::SetKeepNonFactoredMatrix(const
+bool flag)
+
+If flag is true, keeps a copy of the non-factored matrix. ";
+
+%feature("docstring")  Ifpack_DenseContainer::KeepNonFactoredMatrix "virtual bool Ifpack_DenseContainer::KeepNonFactoredMatrix() const
+
+Returns KeepNonFactoredMatrix_. ";
+
+%feature("docstring")  Ifpack_DenseContainer::LHS "virtual const
+Epetra_SerialDenseMatrix& Ifpack_DenseContainer::LHS() const
+
+Returns the dense vector containing the LHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::RHS "virtual const
+Epetra_SerialDenseMatrix& Ifpack_DenseContainer::RHS() const
+
+Returns the dense vector containing the RHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::Matrix "virtual const
+Epetra_SerialDenseMatrix& Ifpack_DenseContainer::Matrix() const
+
+Returns the dense matrix or its factors. ";
+
+%feature("docstring")  Ifpack_DenseContainer::NonFactoredMatrix "virtual const Epetra_SerialDenseMatrix&
+Ifpack_DenseContainer::NonFactoredMatrix() const
+
+Returns the non-factored dense matrix (only if stored). ";
+
+%feature("docstring")  Ifpack_DenseContainer::ID "virtual const
+Epetra_IntSerialDenseVector& Ifpack_DenseContainer::ID() const
+
+Returns the integer dense vector of IDs. ";
+
+%feature("docstring")  Ifpack_DenseContainer::Initialize "int
+Ifpack_DenseContainer::Initialize()
+
+Initialize the container. ";
+
+%feature("docstring")  Ifpack_DenseContainer::Compute "int
+Ifpack_DenseContainer::Compute(const Epetra_RowMatrix &Matrix)
+
+Finalizes the linear system matrix and prepares for the application of
+the inverse. ";
+
+%feature("docstring")  Ifpack_DenseContainer::Apply "int
+Ifpack_DenseContainer::Apply()
+
+Apply the matrix to RHS, results are stored in LHS. ";
+
+%feature("docstring")  Ifpack_DenseContainer::ApplyInverse "int
+Ifpack_DenseContainer::ApplyInverse()
+
+Apply the inverse of the matrix to RHS, results are stored in LHS. ";
 
 %feature("docstring")  Ifpack_DenseContainer::InitializeFlops "virtual double Ifpack_DenseContainer::InitializeFlops() const
 
@@ -2691,6 +3919,57 @@ in ifp_diag_pert .
 
 C++ includes: Ifpack_IC.h ";
 
+%feature("docstring")  Ifpack_IC::SetUseTranspose "int
+Ifpack_IC::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_IC::NormInf "double
+Ifpack_IC::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_IC::HasNormInf "bool
+Ifpack_IC::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_IC::UseTranspose "bool
+Ifpack_IC::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_IC::OperatorDomainMap "const
+Epetra_Map& Ifpack_IC::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_IC::OperatorRangeMap "const Epetra_Map&
+Ifpack_IC::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_IC::Comm "const Epetra_Comm&
+Ifpack_IC::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
 %feature("docstring")  Ifpack_IC::Ifpack_IC "Ifpack_IC::Ifpack_IC(Epetra_RowMatrix *A)
 
 Ifpack_IC constuctor with variable number of indices per row.
@@ -2943,6 +4222,57 @@ in ifp_diag_pert .
 
 C++ includes: Ifpack_ICT.h ";
 
+%feature("docstring")  Ifpack_ICT::SetUseTranspose "int
+Ifpack_ICT::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_ICT::NormInf "double
+Ifpack_ICT::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_ICT::HasNormInf "bool
+Ifpack_ICT::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_ICT::UseTranspose "bool
+Ifpack_ICT::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_ICT::OperatorDomainMap "const
+Epetra_Map& Ifpack_ICT::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_ICT::OperatorRangeMap "const
+Epetra_Map& Ifpack_ICT::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_ICT::Comm "const Epetra_Comm&
+Ifpack_ICT::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
 %feature("docstring")  Ifpack_ICT::Ifpack_ICT "Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix *A)
 
 Ifpack_ICT constuctor with variable number of indices per row.
@@ -3179,6 +4509,255 @@ Heidi Thornquist, Org. 1437
 
 C++ includes: Ifpack_IKLU.h ";
 
+%feature("docstring")  Ifpack_IKLU::Ifpack_IKLU "Ifpack_IKLU::Ifpack_IKLU(const Epetra_RowMatrix *A)
+
+Ifpack_IKLU constuctor with variable number of indices per row. ";
+
+%feature("docstring")  Ifpack_IKLU::~Ifpack_IKLU "Ifpack_IKLU::~Ifpack_IKLU()
+
+Ifpack_IKLU Destructor. ";
+
+%feature("docstring")  Ifpack_IKLU::SetParameters "int
+Ifpack_IKLU::SetParameters(Teuchos::ParameterList &parameterlis)
+
+Set parameters using a Teuchos::ParameterList object. ";
+
+%feature("docstring")  Ifpack_IKLU::Initialize "int
+Ifpack_IKLU::Initialize()
+
+Initialize L and U with values from user matrix A.
+
+Copies values from the user's matrix into the nonzero pattern of L and
+U.
+
+Parameters:
+-----------
+
+In:  A - User matrix to be factored.
+
+WARNING:  The graph of A must be identical to the graph passed in to
+Ifpack_IlukGraph constructor. ";
+
+%feature("docstring")  Ifpack_IKLU::IsInitialized "bool
+Ifpack_IKLU::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized.
+";
+
+%feature("docstring")  Ifpack_IKLU::Compute "int
+Ifpack_IKLU::Compute()
+
+Compute IC factor U using the specified graph, diagonal perturbation
+thresholds and relaxation parameters.
+
+This function computes the RILU(k) factors L and U using the current:
+Ifpack_IlukGraph specifying the structure of L and U.
+
+Value for the RILU(k) relaxation parameter.
+
+Value for the a priori diagonal threshold values.  InitValues() must
+be called before the factorization can proceed. ";
+
+%feature("docstring")  Ifpack_IKLU::IsComputed "bool
+Ifpack_IKLU::IsComputed() const
+
+If factor is completed, this query returns true, otherwise it returns
+false. ";
+
+%feature("docstring")  Ifpack_IKLU::ApplyInverse "int
+Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Ifpack_IKLU forward/back solve on a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_IKLU::Apply "int
+Ifpack_IKLU::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y)
+const ";
+
+%feature("docstring")  Ifpack_IKLU::Condest "double
+Ifpack_IKLU::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+
+Computed the estimated condition number and returns the value. ";
+
+%feature("docstring")  Ifpack_IKLU::Condest "double
+Ifpack_IKLU::Condest() const
+
+Returns the computed estimated condition number, or -1.0 if no
+computed. ";
+
+%feature("docstring")  Ifpack_IKLU::SetUseTranspose "int
+Ifpack_IKLU::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+UseTranspose:  - (In) If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_IKLU::NormInf "double
+Ifpack_IKLU::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_IKLU::HasNormInf "bool
+Ifpack_IKLU::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_IKLU::UseTranspose "bool
+Ifpack_IKLU::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_IKLU::OperatorDomainMap "const
+Epetra_Map& Ifpack_IKLU::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_IKLU::OperatorRangeMap "const
+Epetra_Map& Ifpack_IKLU::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_IKLU::Comm "const Epetra_Comm&
+Ifpack_IKLU::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
+%feature("docstring")  Ifpack_IKLU::Matrix "const Epetra_RowMatrix&
+Ifpack_IKLU::Matrix() const
+
+Returns a reference to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_IKLU::L "const Epetra_CrsMatrix&
+Ifpack_IKLU::L() const
+
+Returns a reference to the L factor. ";
+
+%feature("docstring")  Ifpack_IKLU::U "const Epetra_CrsMatrix&
+Ifpack_IKLU::U() const
+
+Returns a reference to the U factor. ";
+
+%feature("docstring")  Ifpack_IKLU::Label "const char*
+Ifpack_IKLU::Label() const
+
+Returns the label of this object. ";
+
+%feature("docstring")  Ifpack_IKLU::SetLabel "int
+Ifpack_IKLU::SetLabel(const char *Label)
+
+Sets the label for this object. ";
+
+%feature("docstring")  Ifpack_IKLU::Print "std::ostream &
+Ifpack_IKLU::Print(std::ostream &os) const
+
+Prints basic information on iostream. This function is used by
+operator<<. ";
+
+%feature("docstring")  Ifpack_IKLU::NumInitialize "virtual int
+Ifpack_IKLU::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_IKLU::NumCompute "virtual int
+Ifpack_IKLU::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_IKLU::NumApplyInverse "virtual int
+Ifpack_IKLU::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_IKLU::InitializeTime "virtual double
+Ifpack_IKLU::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_IKLU::ComputeTime "virtual double
+Ifpack_IKLU::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_IKLU::ApplyInverseTime "virtual double
+Ifpack_IKLU::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_IKLU::InitializeFlops "virtual double
+Ifpack_IKLU::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_IKLU::ComputeFlops "virtual double
+Ifpack_IKLU::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_IKLU::ApplyInverseFlops "virtual double
+Ifpack_IKLU::ApplyInverseFlops() const
+
+Returns the number of flops in the application of the preconditioner.
+";
+
+%feature("docstring")  Ifpack_IKLU::LevelOfFill "double
+Ifpack_IKLU::LevelOfFill() const ";
+
+%feature("docstring")  Ifpack_IKLU::RelaxValue "double
+Ifpack_IKLU::RelaxValue() const
+
+Set relative threshold value. ";
+
+%feature("docstring")  Ifpack_IKLU::AbsoluteThreshold "double
+Ifpack_IKLU::AbsoluteThreshold() const
+
+Get absolute threshold value. ";
+
+%feature("docstring")  Ifpack_IKLU::RelativeThreshold "double
+Ifpack_IKLU::RelativeThreshold() const
+
+Get relative threshold value. ";
+
+%feature("docstring")  Ifpack_IKLU::DropTolerance "double
+Ifpack_IKLU::DropTolerance() const
+
+Gets the dropping tolerance. ";
+
+%feature("docstring")  Ifpack_IKLU::NumGlobalNonzeros "int
+Ifpack_IKLU::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global graph. ";
+
+%feature("docstring")  Ifpack_IKLU::NumMyNonzeros "int
+Ifpack_IKLU::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the local graph. ";
+
 
 // File: classIfpack__ILU.xml
 %feature("docstring") Ifpack_ILU "
@@ -3198,6 +4777,228 @@ ifp_params .
 Mike Heroux, Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_ILU.h ";
+
+%feature("docstring")  Ifpack_ILU::Ifpack_ILU "Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix *A)
+
+Constructor. ";
+
+%feature("docstring")  Ifpack_ILU::~Ifpack_ILU "Ifpack_ILU::~Ifpack_ILU()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_ILU::Initialize "int
+Ifpack_ILU::Initialize()
+
+Initialize the preconditioner, does not touch matrix values. ";
+
+%feature("docstring")  Ifpack_ILU::IsInitialized "bool
+Ifpack_ILU::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized.
+";
+
+%feature("docstring")  Ifpack_ILU::Compute "int Ifpack_ILU::Compute()
+
+Compute ILU factors L and U using the specified graph, diagonal
+perturbation thresholds and relaxation parameters.
+
+This function computes the ILU(k) factors L and U using the current:
+Ifpack_IlukGraph specifying the structure of L and U.
+
+Value for the ILU(k) relaxation parameter.
+
+Value for the a priori diagonal threshold values.  InitValues() must
+be called before the factorization can proceed. ";
+
+%feature("docstring")  Ifpack_ILU::IsComputed "bool
+Ifpack_ILU::IsComputed() const
+
+If factor is completed, this query returns true, otherwise it returns
+false. ";
+
+%feature("docstring")  Ifpack_ILU::SetParameters "int
+Ifpack_ILU::SetParameters(Teuchos::ParameterList &parameterlist)
+
+Set parameters using a Teuchos::ParameterList object. ";
+
+%feature("docstring")  Ifpack_ILU::SetUseTranspose "int
+Ifpack_ILU::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+UseTranspose:  - (In) If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_ILU::Apply "int Ifpack_ILU::Apply(const
+Epetra_MultiVector &X, Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Ifpack_ILU::Multiply "int
+Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Ifpack_ILU::ApplyInverse "int
+Ifpack_ILU::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y - (Out) A Epetra_MultiVector of dimension NumVectors
+containing result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_ILU::Condest "double
+Ifpack_ILU::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+
+Computes the estimated condition number and returns the value. ";
+
+%feature("docstring")  Ifpack_ILU::Condest "double
+Ifpack_ILU::Condest() const
+
+Returns the computed estimated condition number, or -1.0 if not
+computed. ";
+
+%feature("docstring")  Ifpack_ILU::L "const Epetra_CrsMatrix&
+Ifpack_ILU::L() const
+
+Returns the address of the L factor associated with this factored
+matrix. ";
+
+%feature("docstring")  Ifpack_ILU::D "const Epetra_Vector&
+Ifpack_ILU::D() const
+
+Returns the address of the D factor associated with this factored
+matrix. ";
+
+%feature("docstring")  Ifpack_ILU::U "const Epetra_CrsMatrix&
+Ifpack_ILU::U() const
+
+Returns the address of the L factor associated with this factored
+matrix. ";
+
+%feature("docstring")  Ifpack_ILU::Label "const char*
+Ifpack_ILU::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_ILU::SetLabel "int
+Ifpack_ILU::SetLabel(const char *Label)
+
+Sets label for this object. ";
+
+%feature("docstring")  Ifpack_ILU::NormInf "double
+Ifpack_ILU::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_ILU::HasNormInf "bool
+Ifpack_ILU::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_ILU::UseTranspose "bool
+Ifpack_ILU::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_ILU::OperatorDomainMap "const
+Epetra_Map& Ifpack_ILU::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_ILU::OperatorRangeMap "const
+Epetra_Map& Ifpack_ILU::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_ILU::Comm "const Epetra_Comm&
+Ifpack_ILU::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
+%feature("docstring")  Ifpack_ILU::Matrix "const Epetra_RowMatrix&
+Ifpack_ILU::Matrix() const
+
+Returns a reference to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_ILU::Print "virtual ostream&
+Ifpack_ILU::Print(ostream &os) const
+
+Prints on stream basic information about this object. ";
+
+%feature("docstring")  Ifpack_ILU::NumInitialize "virtual int
+Ifpack_ILU::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_ILU::NumCompute "virtual int
+Ifpack_ILU::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_ILU::NumApplyInverse "virtual int
+Ifpack_ILU::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_ILU::InitializeTime "virtual double
+Ifpack_ILU::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_ILU::ComputeTime "virtual double
+Ifpack_ILU::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_ILU::ApplyInverseTime "virtual double
+Ifpack_ILU::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_ILU::InitializeFlops "virtual double
+Ifpack_ILU::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_ILU::ComputeFlops "virtual double
+Ifpack_ILU::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_ILU::ApplyInverseFlops "virtual double
+Ifpack_ILU::ApplyInverseFlops() const
+
+Returns the number of flops in the application of the preconditioner.
+";
 
 
 // File: classIfpack__IlukGraph.xml
@@ -3424,6 +5225,255 @@ Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_ILUT.h ";
 
+%feature("docstring")  Ifpack_ILUT::Ifpack_ILUT "Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix *A)
+
+Ifpack_ILUT constuctor with variable number of indices per row. ";
+
+%feature("docstring")  Ifpack_ILUT::~Ifpack_ILUT "Ifpack_ILUT::~Ifpack_ILUT()
+
+Ifpack_ILUT Destructor. ";
+
+%feature("docstring")  Ifpack_ILUT::SetParameters "int
+Ifpack_ILUT::SetParameters(Teuchos::ParameterList &parameterlis)
+
+Set parameters using a Teuchos::ParameterList object. ";
+
+%feature("docstring")  Ifpack_ILUT::Initialize "int
+Ifpack_ILUT::Initialize()
+
+Initialize L and U with values from user matrix A.
+
+Copies values from the user's matrix into the nonzero pattern of L and
+U.
+
+Parameters:
+-----------
+
+In:  A - User matrix to be factored.
+
+WARNING:  The graph of A must be identical to the graph passed in to
+Ifpack_IlukGraph constructor. ";
+
+%feature("docstring")  Ifpack_ILUT::IsInitialized "bool
+Ifpack_ILUT::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized.
+";
+
+%feature("docstring")  Ifpack_ILUT::Compute "int
+Ifpack_ILUT::Compute()
+
+Compute IC factor U using the specified graph, diagonal perturbation
+thresholds and relaxation parameters.
+
+This function computes the RILU(k) factors L and U using the current:
+Ifpack_IlukGraph specifying the structure of L and U.
+
+Value for the RILU(k) relaxation parameter.
+
+Value for the a priori diagonal threshold values.  InitValues() must
+be called before the factorization can proceed. ";
+
+%feature("docstring")  Ifpack_ILUT::IsComputed "bool
+Ifpack_ILUT::IsComputed() const
+
+If factor is completed, this query returns true, otherwise it returns
+false. ";
+
+%feature("docstring")  Ifpack_ILUT::ApplyInverse "int
+Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Ifpack_ILUT forward/back solve on a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_ILUT::Apply "int
+Ifpack_ILUT::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y)
+const ";
+
+%feature("docstring")  Ifpack_ILUT::Condest "double
+Ifpack_ILUT::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+
+Computed the estimated condition number and returns the value. ";
+
+%feature("docstring")  Ifpack_ILUT::Condest "double
+Ifpack_ILUT::Condest() const
+
+Returns the computed estimated condition number, or -1.0 if no
+computed. ";
+
+%feature("docstring")  Ifpack_ILUT::SetUseTranspose "int
+Ifpack_ILUT::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+UseTranspose:  - (In) If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_ILUT::NormInf "double
+Ifpack_ILUT::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_ILUT::HasNormInf "bool
+Ifpack_ILUT::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_ILUT::UseTranspose "bool
+Ifpack_ILUT::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_ILUT::OperatorDomainMap "const
+Epetra_Map& Ifpack_ILUT::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_ILUT::OperatorRangeMap "const
+Epetra_Map& Ifpack_ILUT::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_ILUT::Comm "const Epetra_Comm&
+Ifpack_ILUT::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
+
+%feature("docstring")  Ifpack_ILUT::Matrix "const Epetra_RowMatrix&
+Ifpack_ILUT::Matrix() const
+
+Returns a reference to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_ILUT::L "const Epetra_CrsMatrix&
+Ifpack_ILUT::L() const
+
+Returns a reference to the L factor. ";
+
+%feature("docstring")  Ifpack_ILUT::U "const Epetra_CrsMatrix&
+Ifpack_ILUT::U() const
+
+Returns a reference to the U factor. ";
+
+%feature("docstring")  Ifpack_ILUT::Label "const char*
+Ifpack_ILUT::Label() const
+
+Returns the label of this object. ";
+
+%feature("docstring")  Ifpack_ILUT::SetLabel "int
+Ifpack_ILUT::SetLabel(const char *Label)
+
+Sets the label for this object. ";
+
+%feature("docstring")  Ifpack_ILUT::Print "std::ostream &
+Ifpack_ILUT::Print(std::ostream &os) const
+
+Prints basic information on iostream. This function is used by
+operator<<. ";
+
+%feature("docstring")  Ifpack_ILUT::NumInitialize "virtual int
+Ifpack_ILUT::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_ILUT::NumCompute "virtual int
+Ifpack_ILUT::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_ILUT::NumApplyInverse "virtual int
+Ifpack_ILUT::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_ILUT::InitializeTime "virtual double
+Ifpack_ILUT::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_ILUT::ComputeTime "virtual double
+Ifpack_ILUT::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_ILUT::ApplyInverseTime "virtual double
+Ifpack_ILUT::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_ILUT::InitializeFlops "virtual double
+Ifpack_ILUT::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_ILUT::ComputeFlops "virtual double
+Ifpack_ILUT::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_ILUT::ApplyInverseFlops "virtual double
+Ifpack_ILUT::ApplyInverseFlops() const
+
+Returns the number of flops in the application of the preconditioner.
+";
+
+%feature("docstring")  Ifpack_ILUT::LevelOfFill "double
+Ifpack_ILUT::LevelOfFill() const ";
+
+%feature("docstring")  Ifpack_ILUT::RelaxValue "double
+Ifpack_ILUT::RelaxValue() const
+
+Set relative threshold value. ";
+
+%feature("docstring")  Ifpack_ILUT::AbsoluteThreshold "double
+Ifpack_ILUT::AbsoluteThreshold() const
+
+Get absolute threshold value. ";
+
+%feature("docstring")  Ifpack_ILUT::RelativeThreshold "double
+Ifpack_ILUT::RelativeThreshold() const
+
+Get relative threshold value. ";
+
+%feature("docstring")  Ifpack_ILUT::DropTolerance "double
+Ifpack_ILUT::DropTolerance() const
+
+Gets the dropping tolerance. ";
+
+%feature("docstring")  Ifpack_ILUT::NumGlobalNonzeros "int
+Ifpack_ILUT::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global graph. ";
+
+%feature("docstring")  Ifpack_ILUT::NumMyNonzeros "int
+Ifpack_ILUT::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the local graph. ";
+
 
 // File: classIfpack__LinearPartitioner.xml
 %feature("docstring") Ifpack_LinearPartitioner "
@@ -3488,6 +5538,219 @@ phase in a safe way, without non- required data exchange.
 Marzio Sala, SNL 9214
 
 C++ includes: Ifpack_LocalFilter.h ";
+
+%feature("docstring")  Ifpack_LocalFilter::Ifpack_LocalFilter "Ifpack_LocalFilter::Ifpack_LocalFilter(const Teuchos::RefCountPtr<
+const Epetra_RowMatrix > &Matrix)
+
+Constructor. ";
+
+%feature("docstring")  Ifpack_LocalFilter::~Ifpack_LocalFilter "virtual Ifpack_LocalFilter::~Ifpack_LocalFilter()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumMyRowEntries "virtual
+int Ifpack_LocalFilter::NumMyRowEntries(int MyRow, int &NumEntries)
+const
+
+Returns the number of nonzero entries in MyRow.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row.
+
+NumEntries:  - (Out) Number of nonzero values present.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_LocalFilter::MaxNumEntries "virtual int
+Ifpack_LocalFilter::MaxNumEntries() const
+
+Returns the maximum of NumMyRowEntries() over all rows. ";
+
+%feature("docstring")  Ifpack_LocalFilter::ExtractMyRowCopy "int
+Ifpack_LocalFilter::ExtractMyRowCopy(int MyRow, int Length, int
+&NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to extract.
+
+Length:  - (In) Length of Values and Indices.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_LocalFilter::ExtractDiagonalCopy "int
+Ifpack_LocalFilter::ExtractDiagonalCopy(Epetra_Vector &Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Diagonal:  - (Out) Extracted main diagonal.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_LocalFilter::Multiply "virtual int
+Ifpack_LocalFilter::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_RowMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+TransA:  -(In) If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  -(Out) A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_LocalFilter::Solve "virtual int
+Ifpack_LocalFilter::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns result of a local-only solve using a triangular
+Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).
+";
+
+%feature("docstring")  Ifpack_LocalFilter::Apply "int
+Ifpack_LocalFilter::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Ifpack_LocalFilter::ApplyInverse "int
+Ifpack_LocalFilter::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Ifpack_LocalFilter::InvRowSums "virtual int
+Ifpack_LocalFilter::InvRowSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the rows of the
+Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_LocalFilter::LeftScale "virtual int
+Ifpack_LocalFilter::LeftScale(const Epetra_Vector &x)
+
+Scales the Epetra_RowMatrix on the left with a Epetra_Vector x (NOT
+IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_LocalFilter::InvColSums "virtual int
+Ifpack_LocalFilter::InvColSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the columns of the
+Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_LocalFilter::RightScale "virtual int
+Ifpack_LocalFilter::RightScale(const Epetra_Vector &x)
+
+Scales the Epetra_RowMatrix on the right with a Epetra_Vector x (NOT
+IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_LocalFilter::Filled "virtual bool
+Ifpack_LocalFilter::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NormInf "virtual double
+Ifpack_LocalFilter::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NormOne "virtual double
+Ifpack_LocalFilter::NormOne() const
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalNonzeros "virtual
+int Ifpack_LocalFilter::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalRows "virtual int
+Ifpack_LocalFilter::NumGlobalRows() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalCols "virtual int
+Ifpack_LocalFilter::NumGlobalCols() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalDiagonals "virtual int Ifpack_LocalFilter::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumMyNonzeros "virtual int
+Ifpack_LocalFilter::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumMyRows "virtual int
+Ifpack_LocalFilter::NumMyRows() const
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumMyCols "virtual int
+Ifpack_LocalFilter::NumMyCols() const
+
+Returns the number of matrix columns owned by the calling processor.
+";
+
+%feature("docstring")  Ifpack_LocalFilter::NumMyDiagonals "virtual
+int Ifpack_LocalFilter::NumMyDiagonals() const
+
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Ifpack_LocalFilter::LowerTriangular "virtual
+bool Ifpack_LocalFilter::LowerTriangular() const
+
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Ifpack_LocalFilter::UpperTriangular "virtual
+bool Ifpack_LocalFilter::UpperTriangular() const
+
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Ifpack_LocalFilter::RowMatrixRowMap "virtual
+const Epetra_Map& Ifpack_LocalFilter::RowMatrixRowMap() const
+
+Returns the Epetra_Map object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Ifpack_LocalFilter::RowMatrixColMap "virtual
+const Epetra_Map& Ifpack_LocalFilter::RowMatrixColMap() const
+
+Returns the Epetra_Map object associated with the columns of this
+matrix. ";
+
+%feature("docstring")  Ifpack_LocalFilter::RowMatrixImporter "virtual
+const Epetra_Import* Ifpack_LocalFilter::RowMatrixImporter() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
 
 %feature("docstring")  Ifpack_LocalFilter::SetOwnership "int
 Ifpack_LocalFilter::SetOwnership(bool ownership)
@@ -3662,6 +5925,89 @@ overlap factorization classes.
 
 C++ includes: Ifpack_OverlapFactorObject.h ";
 
+%feature("docstring")
+Ifpack_OverlapFactorObject::Ifpack_OverlapFactorObject "Ifpack_OverlapFactorObject::Ifpack_OverlapFactorObject(const
+Ifpack_OverlapGraph *OverlapGraph)
+
+Constructor using Ifpack_OverlapGraph.
+
+Creates an object from the overlap graph.
+
+Parameters:
+-----------
+
+In:  OverlapGraph - Graph describing the graph that should be used for
+the factors. ";
+
+%feature("docstring")
+Ifpack_OverlapFactorObject::Ifpack_OverlapFactorObject "Ifpack_OverlapFactorObject::Ifpack_OverlapFactorObject(const
+Epetra_RowMatrix *UserMatrix)
+
+Constructor using Epetra_RowMatrix.
+
+Creates an Ifpack_Graph object from the user graph implicitly defined
+by the Epetra_RowMatrix interface.
+
+Parameters:
+-----------
+
+In:  RowMatrix - An object that has implemented the Epetra_RowMatrix
+interface. ";
+
+%feature("docstring")
+Ifpack_OverlapFactorObject::Ifpack_OverlapFactorObject "Ifpack_OverlapFactorObject::Ifpack_OverlapFactorObject(const
+Ifpack_OverlapFactorObject &Source)
+
+Copy constructor. ";
+
+%feature("docstring")
+Ifpack_OverlapFactorObject::~Ifpack_OverlapFactorObject "virtual
+Ifpack_OverlapFactorObject::~Ifpack_OverlapFactorObject()
+
+Ifpack_OverlapFactorObject Destructor. ";
+
+%feature("docstring")  Ifpack_OverlapFactorObject::InitValues "virtual int Ifpack_OverlapFactorObject::InitValues(const
+Epetra_RowMatrix *UserMatrix)
+
+Initialize values from user matrix A, can be called repeatedly as
+matrix values change.
+
+Processes matrix values, primarily handling overlap if any has been
+requested. This method then calls ProcessOverlapMatrix(), a virtual
+method that must be implemented by any class that derives from this
+class.
+
+Parameters:
+-----------
+
+In:  UserMatrix - User matrix to be processed. ";
+
+%feature("docstring")  Ifpack_OverlapFactorObject::Factor "virtual
+int Ifpack_OverlapFactorObject::Factor()
+
+Compute factors.
+
+This function computes factors using the method DerivedFactor() that
+is implemented by the derived class. InitValues() must be called
+before the factorization can proceed. ";
+
+%feature("docstring")  Ifpack_OverlapFactorObject::Allocated "bool
+Ifpack_OverlapFactorObject::Allocated() const
+
+If storage has been allocated, this query returns true, otherwise it
+returns false. ";
+
+%feature("docstring")  Ifpack_OverlapFactorObject::ValuesInitialized "bool Ifpack_OverlapFactorObject::ValuesInitialized() const
+
+If values have been initialized, this query returns true, otherwise it
+returns false. ";
+
+%feature("docstring")  Ifpack_OverlapFactorObject::Factored "bool
+Ifpack_OverlapFactorObject::Factored() const
+
+If factor is completed, this query returns true, otherwise it returns
+false. ";
+
 
 // File: classIfpack__OverlapGraph.xml
 %feature("docstring") Ifpack_OverlapGraph "
@@ -3670,6 +6016,76 @@ Ifpack_OverlapGraph: Constructs a graph for use with Ifpack
 preconditioners.
 
 C++ includes: Ifpack_OverlapGraph.h ";
+
+%feature("docstring")  Ifpack_OverlapGraph::Ifpack_OverlapGraph "Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<
+const Epetra_CrsGraph > &UserMatrixGraph, int OverlapLevel)
+
+Constructor using Epetra_CrsGraph.
+
+Creates an Ifpack_OverlapGraph object from the user graph.
+
+Parameters:
+-----------
+
+In:  UserMatrixGraph - Graph from user matrix. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::Ifpack_OverlapGraph "Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<
+const Epetra_RowMatrix > &UserMatrix, int OverlapLevel)
+
+Constructor using Epetra_RowMatrix.
+
+Creates an Ifpack_OverlapGraph object from the user graph implicitly
+defined by the Epetra_RowMatrix interface.
+
+Parameters:
+-----------
+
+In:  RowMatrix - An object that has implemented the Epetra_RowMatrix
+interface. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::Ifpack_OverlapGraph "Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Ifpack_OverlapGraph
+&Source)
+
+Copy constructor. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::~Ifpack_OverlapGraph "virtual Ifpack_OverlapGraph::~Ifpack_OverlapGraph()
+
+Ifpack_CrsIlut Destructor. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::SetParameters "int
+Ifpack_OverlapGraph::SetParameters(const Teuchos::ParameterList
+&parameterlist, bool cerr_warning_if_unused=false)
+
+Set parameters using a Teuchos::ParameterList object. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::OverlapGraph "const
+Epetra_CrsGraph& Ifpack_OverlapGraph::OverlapGraph() const
+
+Returns the overlap graph object. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::OverlapRowMap "const
+Epetra_BlockMap& Ifpack_OverlapGraph::OverlapRowMap() const
+
+Returns the RowMap associated with the overlap graph. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::OverlapImporter "const
+Epetra_Import& Ifpack_OverlapGraph::OverlapImporter() const
+
+Returns the overlap graph object. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::OverlapLevel "int
+Ifpack_OverlapGraph::OverlapLevel() const
+
+Returns the level of overlap used to create this graph.
+
+The graph created by this class uses a recursive definition 0f
+overlap. Level one overlap is created by copying all off-processor
+rows that are reached to be at least one column of the rows that are
+on processor. Level two overlap is the same process used on the level
+one graph. ";
+
+%feature("docstring")  Ifpack_OverlapGraph::Print "void
+Ifpack_OverlapGraph::Print(ostream &os) const ";
 
 
 // File: classIfpack__OverlappingPartitioner.xml
@@ -3762,6 +6178,212 @@ operator<<. ";
 // File: classIfpack__OverlappingRowMatrix.xml
 %feature("docstring") Ifpack_OverlappingRowMatrix "";
 
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::Ifpack_OverlappingRowMatrix "Ifpack_OverlappingRowMatrix::Ifpack_OverlappingRowMatrix(const
+Teuchos::RefCountPtr< const Epetra_RowMatrix > &Matrix, int
+OverlapLevel) ";
+
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix "Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix() ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumMyRowEntries "int Ifpack_OverlappingRowMatrix::NumMyRowEntries(int MyRow, int
+&NumEntries) const
+
+Returns the number of nonzero entries in MyRow.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row.
+
+NumEntries:  - (Out) Number of nonzero values present.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::MaxNumEntries "virtual int Ifpack_OverlappingRowMatrix::MaxNumEntries() const
+
+Returns the maximum of NumMyRowEntries() over all rows. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::ExtractMyRowCopy "int Ifpack_OverlappingRowMatrix::ExtractMyRowCopy(int MyRow, int
+Length, int &NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to extract.
+
+Length:  - (In) Length of Values and Indices.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::ExtractDiagonalCopy "int
+Ifpack_OverlappingRowMatrix::ExtractDiagonalCopy(Epetra_Vector
+&Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Diagonal:  - (Out) Extracted main diagonal.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::Multiply "int
+Ifpack_OverlappingRowMatrix::Multiply(bool TransA, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_RowMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+TransA:  -(In) If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  -(Out) A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::Solve "virtual
+int Ifpack_OverlappingRowMatrix::Solve(bool Upper, bool Trans, bool
+UnitDiagonal, const Epetra_MultiVector &X, Epetra_MultiVector &Y)
+const
+
+Returns result of a local-only solve using a triangular
+Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).
+";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::Apply "int
+Ifpack_OverlappingRowMatrix::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::ApplyInverse "int
+Ifpack_OverlappingRowMatrix::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::InvRowSums "virtual int Ifpack_OverlappingRowMatrix::InvRowSums(Epetra_Vector &x)
+const
+
+Computes the sum of absolute values of the rows of the
+Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::LeftScale "virtual int Ifpack_OverlappingRowMatrix::LeftScale(const Epetra_Vector
+&x)
+
+Scales the Epetra_RowMatrix on the left with a Epetra_Vector x (NOT
+IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::InvColSums "virtual int Ifpack_OverlappingRowMatrix::InvColSums(Epetra_Vector &x)
+const
+
+Computes the sum of absolute values of the columns of the
+Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::RightScale "virtual int Ifpack_OverlappingRowMatrix::RightScale(const
+Epetra_Vector &x)
+
+Scales the Epetra_RowMatrix on the right with a Epetra_Vector x (NOT
+IMPLEMENTED). ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::Filled "virtual
+bool Ifpack_OverlappingRowMatrix::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NormInf "virtual
+double Ifpack_OverlappingRowMatrix::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NormOne "virtual
+double Ifpack_OverlappingRowMatrix::NormOne() const
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalNonzeros
+"virtual int Ifpack_OverlappingRowMatrix::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalRows "virtual int Ifpack_OverlappingRowMatrix::NumGlobalRows() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalCols "virtual int Ifpack_OverlappingRowMatrix::NumGlobalCols() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalDiagonals
+"virtual int Ifpack_OverlappingRowMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumMyNonzeros "virtual int Ifpack_OverlappingRowMatrix::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumMyRows "virtual int Ifpack_OverlappingRowMatrix::NumMyRows() const
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumMyCols "virtual int Ifpack_OverlappingRowMatrix::NumMyCols() const
+
+Returns the number of matrix columns owned by the calling processor.
+";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumMyDiagonals "virtual int Ifpack_OverlappingRowMatrix::NumMyDiagonals() const
+
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::LowerTriangular "virtual bool Ifpack_OverlappingRowMatrix::LowerTriangular() const
+
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::UpperTriangular "virtual bool Ifpack_OverlappingRowMatrix::UpperTriangular() const
+
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::RowMatrixRowMap "virtual const Epetra_Map&
+Ifpack_OverlappingRowMatrix::RowMatrixRowMap() const
+
+Returns the Epetra_Map object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::RowMatrixColMap "virtual const Epetra_Map&
+Ifpack_OverlappingRowMatrix::RowMatrixColMap() const
+
+Returns the Epetra_Map object associated with the columns of this
+matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::RowMatrixImporter
+"virtual const Epetra_Import*
+Ifpack_OverlappingRowMatrix::RowMatrixImporter() const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
+
 %feature("docstring")  Ifpack_OverlappingRowMatrix::SetOwnership "int
 Ifpack_OverlappingRowMatrix::SetOwnership(bool ownership)
 
@@ -3827,6 +6449,238 @@ Ifpack_OverlapSolveObject: Provides Overlapped Forward/back solve
 services for Ifpack.
 
 C++ includes: Ifpack_OverlapSolveObject.h ";
+
+%feature("docstring")
+Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject "Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject(char *Label,
+const Epetra_Comm &Comm)
+
+Constructor. ";
+
+%feature("docstring")
+Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject "Ifpack_OverlapSolveObject::Ifpack_OverlapSolveObject(const
+Ifpack_OverlapSolveObject &Source)
+
+Copy constructor. ";
+
+%feature("docstring")
+Ifpack_OverlapSolveObject::~Ifpack_OverlapSolveObject "Ifpack_OverlapSolveObject::~Ifpack_OverlapSolveObject()
+
+Ifpack_OverlapSolveObject Destructor. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::SetOverlapMode "void Ifpack_OverlapSolveObject::SetOverlapMode(Epetra_CombineMode
+OverlapMode)
+
+Generate Ifpack_OverlapGraph object using current settings. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::SetLowerOperator "int Ifpack_OverlapSolveObject::SetLowerOperator(Epetra_CrsMatrix *L,
+bool UseLTrans)
+
+Define the operator to be used for the lower triangle. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::SetDiagonal "int
+Ifpack_OverlapSolveObject::SetDiagonal(Epetra_Vector *D, bool UseDInv)
+
+Define the vector to be used for the diagonal. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::SetUpperOperator "int Ifpack_OverlapSolveObject::SetUpperOperator(Epetra_CrsMatrix *U,
+bool UseUTrans)
+
+Define the operator to be used for the upper triangle. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::Solve "int
+Ifpack_OverlapSolveObject::Solve(bool Trans, const Epetra_MultiVector
+&X, Epetra_MultiVector &Y) const
+
+Returns the result of a Ifpack_CrsIlut forward/back solve on a
+Epetra_MultiVector X in Y (works for Epetra_Vectors also).
+
+Parameters:
+-----------
+
+In:  Trans -If true, solve transpose problem.
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::Multiply "int
+Ifpack_OverlapSolveObject::Multiply(bool Trans, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns the result of multiplying U, D and L in that order on an
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+In:  Trans -If true, multiply by L^T, D and U^T in that order.
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::Condest "int
+Ifpack_OverlapSolveObject::Condest(bool Trans, double
+&ConditionNumberEstimate) const
+
+Returns the maximum over all the condition number estimate for each
+local ILU set of factors.
+
+This functions computes a local condition number estimate on each
+processor and return the maximum over all processor of the estimate.
+
+Parameters:
+-----------
+
+In:  Trans -If true, solve transpose problem.
+
+Out:  ConditionNumberEstimate - The maximum across all processors of
+the infinity-norm estimate of the condition number of the inverse of
+LDU. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::OverlapMode "Epetra_CombineMode Ifpack_OverlapSolveObject::OverlapMode() const
+
+Returns the overlap mode used to combine terms that are redundantly
+computed.
+
+Since rows of the graph, and any related matrices are multiply owned,
+some values in the subdomain solves will be computed on multiple
+processors. The overlap mode is used to determine how the redundant
+values that come in from other processors will be handled. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::NumGlobalNonzeros "int Ifpack_OverlapSolveObject::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global graph. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::NumMyNonzeros "int
+Ifpack_OverlapSolveObject::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the local graph. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::L "const
+Epetra_CrsMatrix& Ifpack_OverlapSolveObject::L() const
+
+Returns the address of the L factor associated with this factored
+matrix. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::D "const
+Epetra_Vector& Ifpack_OverlapSolveObject::D() const
+
+Returns the address of the D factor associated with this factored
+matrix. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::U "const
+Epetra_CrsMatrix& Ifpack_OverlapSolveObject::U() const
+
+Returns the address of the L factor associated with this factored
+matrix. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::Label "char*
+Ifpack_OverlapSolveObject::Label() const
+
+Returns a character string describing the operator. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::SetUseTranspose "int Ifpack_OverlapSolveObject::SetUseTranspose(bool UseTranspose)
+
+If set true, transpose of this operator will be applied.
+
+This flag allows the transpose of the given operator to be used
+implicitly. Setting this flag affects only the Apply() and
+ApplyInverse() methods. If the implementation of this interface does
+not support transpose use, this method should return a value of -1.
+
+Parameters:
+-----------
+
+In:  UseTranspose -If true, multiply by the transpose of operator,
+otherwise just use operator.
+
+Always returns 0. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::Apply "int
+Ifpack_OverlapSolveObject::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator applied to a
+Epetra_MultiVector X in Y.
+
+Note that this implementation of Apply does NOT perform a forward back
+solve with the LDU factorization. Instead it applies these operators
+via multiplication with U, D and L respectively. The ApplyInverse()
+method performs a solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
+matrix.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::ApplyInverse "int
+Ifpack_OverlapSolveObject::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_Operator inverse applied to an
+Epetra_MultiVector X in Y.
+
+In this implementation, we use several existing attributes to
+determine how virtual method ApplyInverse() should call the concrete
+method Solve(). We pass in the UpperTriangular(), the
+Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
+notable warning is that if a matrix has no diagonal values we assume
+that there is an implicit unit diagonal that should be accounted for
+when doing a triangular solve.
+
+Parameters:
+-----------
+
+In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
+
+Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::NormInf "double
+Ifpack_OverlapSolveObject::NormInf() const
+
+Returns 0.0 because this class cannot compute Inf-norm. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::HasNormInf "bool
+Ifpack_OverlapSolveObject::HasNormInf() const
+
+Returns false because this class cannot compute an Inf-norm. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::UseTranspose "bool
+Ifpack_OverlapSolveObject::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::OperatorDomainMap "const Epetra_Map& Ifpack_OverlapSolveObject::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::OperatorRangeMap "const Epetra_Map& Ifpack_OverlapSolveObject::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_OverlapSolveObject::Comm "const
+Epetra_Comm& Ifpack_OverlapSolveObject::Comm() const
+
+Returns the Epetra_BlockMap object associated with the range of this
+matrix operator. ";
 
 
 // File: classIfpack__Partitioner.xml
@@ -3995,6 +6849,184 @@ refer to page Ifpack_PointRelaxation .
 Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_PointRelaxation.h ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Ifpack_PointRelaxation
+"Ifpack_PointRelaxation::Ifpack_PointRelaxation(const
+Epetra_RowMatrix *Matrix)
+
+Ifpack_PointRelaxation constructor with given Epetra_RowMatrix.
+
+Creates an instance of Ifpack_PointRelaxation class.
+
+Parameters:
+-----------
+
+Matrix:  - (In) Pointer to matrix to precondition. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::~Ifpack_PointRelaxation
+"virtual Ifpack_PointRelaxation::~Ifpack_PointRelaxation()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Apply "int
+Ifpack_PointRelaxation::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the matrix to an Epetra_MultiVector.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectors containing
+the result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::ApplyInverse "int
+Ifpack_PointRelaxation::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Y:  - (InOut) A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  This routine is NOT AztecOO complaint. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::NormInf "virtual
+double Ifpack_PointRelaxation::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Label "virtual const
+char* Ifpack_PointRelaxation::Label() const ";
+
+%feature("docstring")  Ifpack_PointRelaxation::UseTranspose "virtual
+bool Ifpack_PointRelaxation::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::HasNormInf "virtual
+bool Ifpack_PointRelaxation::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Comm "const
+Epetra_Comm & Ifpack_PointRelaxation::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::OperatorDomainMap "const Epetra_Map & Ifpack_PointRelaxation::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::OperatorRangeMap "const Epetra_Map & Ifpack_PointRelaxation::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Initialize "int
+Ifpack_PointRelaxation::Initialize()
+
+Computes all it is necessary to initialize the preconditioner. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::IsInitialized "virtual
+bool Ifpack_PointRelaxation::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::IsComputed "virtual
+bool Ifpack_PointRelaxation::IsComputed() const
+
+Returns true if the preconditioner has been successfully computed. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Compute "int
+Ifpack_PointRelaxation::Compute()
+
+Computes the preconditioners. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Matrix "virtual const
+Epetra_RowMatrix& Ifpack_PointRelaxation::Matrix() const
+
+Returns a pointer to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Condest "double
+Ifpack_PointRelaxation::Condest(const Ifpack_CondestType
+CT=Ifpack_Cheap, const int MaxIters=1550, const double Tol=1e-9,
+Epetra_RowMatrix *Matrix=0)
+
+Computes the condition number estimates and returns the value. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Condest "virtual
+double Ifpack_PointRelaxation::Condest() const
+
+Returns the condition number estimate, or -1.0 if not computed. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::SetParameters "int
+Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList &List)
+
+Sets all the parameters for the preconditioner. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::Print "ostream &
+Ifpack_PointRelaxation::Print(ostream &os) const
+
+Prints object to an output stream. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::NumInitialize "virtual
+int Ifpack_PointRelaxation::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::NumCompute "virtual
+int Ifpack_PointRelaxation::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::NumApplyInverse "virtual int Ifpack_PointRelaxation::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::InitializeTime "virtual double Ifpack_PointRelaxation::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::ComputeTime "virtual
+double Ifpack_PointRelaxation::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::ApplyInverseTime "virtual double Ifpack_PointRelaxation::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_PointRelaxation::InitializeFlops "virtual double Ifpack_PointRelaxation::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::ComputeFlops "virtual
+double Ifpack_PointRelaxation::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_PointRelaxation::ApplyInverseFlops "virtual double Ifpack_PointRelaxation::ApplyInverseFlops() const
+
+Returns the number of flops for the application of the preconditioner.
+";
 
 %feature("docstring")  Ifpack_PointRelaxation::SetUseTranspose "virtual int Ifpack_PointRelaxation::SetUseTranspose(bool UseTranspose)
 
@@ -4795,6 +7827,146 @@ Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_SparseContainer.h ";
 
+%feature("docstring")  Ifpack_SparseContainer::Ifpack_SparseContainer
+"Ifpack_SparseContainer< T >::Ifpack_SparseContainer(const int
+NumRows, const int NumVectors=1)
+
+Constructor. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Ifpack_SparseContainer
+"Ifpack_SparseContainer< T >::Ifpack_SparseContainer(const
+Ifpack_SparseContainer< T > &rhs)
+
+Copy constructor. ";
+
+%feature("docstring")  Ifpack_SparseContainer::~Ifpack_SparseContainer
+"Ifpack_SparseContainer< T >::~Ifpack_SparseContainer()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_SparseContainer::NumRows "int
+Ifpack_SparseContainer< T >::NumRows() const
+
+Returns the number of rows of the matrix and LHS/RHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::NumVectors "virtual
+int Ifpack_SparseContainer< T >::NumVectors() const
+
+Returns the number of vectors in LHS/RHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::SetNumVectors "virtual
+int Ifpack_SparseContainer< T >::SetNumVectors(const int NumVectors)
+
+Sets the number of vectors for LHS/RHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::LHS "double &
+Ifpack_SparseContainer< T >::LHS(const int i, const int Vector=0)
+
+Returns the i-th component of the vector Vector of LHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::RHS "double &
+Ifpack_SparseContainer< T >::RHS(const int i, const int Vector=0)
+
+Returns the i-th component of the vector Vector of RHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::ID "int &
+Ifpack_SparseContainer< T >::ID(const int i)
+
+Returns the ID associated to local row i.
+
+The set of (local) rows assigned to this container is defined by
+calling ID(i) = j, where i (from 0 to NumRows()) indicates the
+container-row, and j indicates the local row in the calling process.
+
+This is usually used to recorder the local row ID (on calling process)
+of the i-th row in the container. ";
+
+%feature("docstring")  Ifpack_SparseContainer::SetMatrixElement "int
+Ifpack_SparseContainer< T >::SetMatrixElement(const int row, const int
+col, const double value)
+
+Set the matrix element (row,col) to value. ";
+
+%feature("docstring")  Ifpack_SparseContainer::IsInitialized "virtual
+bool Ifpack_SparseContainer< T >::IsInitialized() const
+
+Returns true is the container has been successfully initialized. ";
+
+%feature("docstring")  Ifpack_SparseContainer::IsComputed "virtual
+bool Ifpack_SparseContainer< T >::IsComputed() const
+
+Returns true is the container has been successfully computed. ";
+
+%feature("docstring")  Ifpack_SparseContainer::SetParameters "int
+Ifpack_SparseContainer< T >::SetParameters(Teuchos::ParameterList
+&List)
+
+Sets all necessary parameters. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Label "virtual const
+char* Ifpack_SparseContainer< T >::Label() const
+
+Returns the label of this container. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Map "const Epetra_Map*
+Ifpack_SparseContainer< T >::Map() const
+
+Returns a pointer to the internally stored map. ";
+
+%feature("docstring")  Ifpack_SparseContainer::LHS "const
+Epetra_MultiVector* Ifpack_SparseContainer< T >::LHS() const
+
+Returns a pointer to the internally stored solution multi-vector. ";
+
+%feature("docstring")  Ifpack_SparseContainer::RHS "const
+Epetra_MultiVector* Ifpack_SparseContainer< T >::RHS() const
+
+Returns a pointer to the internally stored rhs multi-vector. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Matrix "const
+Epetra_CrsMatrix* Ifpack_SparseContainer< T >::Matrix() const
+
+Returns a pointer to the internally stored matrix. ";
+
+%feature("docstring")  Ifpack_SparseContainer::ID "const
+Epetra_IntSerialDenseVector* Ifpack_SparseContainer< T >::ID() const
+
+Returns a pointer to the internally stored ID's. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Inverse "const T*
+Ifpack_SparseContainer< T >::Inverse() const
+
+Returns a pointer to the internally stored inverse operator. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Initialize "int
+Ifpack_SparseContainer< T >::Initialize()
+
+Initializes the container, by completing all the operations based on
+matrix structure.
+
+After a call to Initialize(), no new matrix entries can be added. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Compute "int
+Ifpack_SparseContainer< T >::Compute(const Epetra_RowMatrix &Matrix)
+
+Finalizes the linear system matrix and prepares for the application of
+the inverse. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Apply "int
+Ifpack_SparseContainer< T >::Apply()
+
+Apply the matrix to RHS, result is stored in LHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::ApplyInverse "int
+Ifpack_SparseContainer< T >::ApplyInverse()
+
+Apply the inverse of the matrix to RHS, result is stored in LHS. ";
+
+%feature("docstring")  Ifpack_SparseContainer::Destroy "int
+Ifpack_SparseContainer< T >::Destroy()
+
+Destroys all data. ";
+
 %feature("docstring")  Ifpack_SparseContainer::InitializeFlops "virtual double Ifpack_SparseContainer< T >::InitializeFlops() const
 
 Returns the flops in Compute(). ";
@@ -5591,6 +8763,27 @@ Ifpack_PrintSparsity(const Epetra_RowMatrix &A, const char
 
 
 // File: Ifpack__Utils_8h.xml
+/*  Largely inspired from Yousef Saad's SPARSKIT plot function.  */
+
+/* Plots the sparsity pattern of an Epetra_RowMatrix into a PS file.
+
+Parameters:
+-----------
+
+A:  (In) - Epetra_RowMatrix whose sparsity pattern will be plotted.
+
+FileName:  (In) - char string containing the filename. If 0, then the
+matrix label is used as file name, after appending .ps.
+
+NumPDEEqns:  (In) - number of PDE equations. The function will plot
+the block structure of the matrix if NumPDEEqns > 1
+
+*/
+
+%feature("docstring")  Ifpack_PrintSparsity "int
+Ifpack_PrintSparsity(const Epetra_RowMatrix &A, const char
+*FileName=0, const int NumPDEEqns=1) ";
+
 %feature("docstring")  Ifpack_PrintLine "void Ifpack_PrintLine()
 
 Prints a line of `=' on cout. ";

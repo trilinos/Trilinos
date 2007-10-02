@@ -43,7 +43,10 @@ $(DEPDIR)/%_dox.Pi:
 # Clean the directory
 .PHONY: clean
 clean:
-	$(RM) *_dox.i
 	$(RM) -r $(PACKAGES)
 	$(RM) $(DEPDIR)/*.Pi
-	$(RM) $(GENXMLFILES)
+
+# Clobber the directory, including generated *_dox.i files
+.PHONY: clobber
+clobber: clean
+	$(RM) *_dox.i

@@ -126,6 +126,220 @@ will cause a potentially catastrophic error.
 
 C++ includes: Amesos_BaseSolver.h ";
 
+%feature("docstring")  Amesos_BaseSolver::~Amesos_BaseSolver "virtual
+Amesos_BaseSolver::~Amesos_BaseSolver()
+
+Destructor. ";
+
+%feature("docstring")  Amesos_BaseSolver::SymbolicFactorization "virtual int Amesos_BaseSolver::SymbolicFactorization()=0
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_BaseSolver::NumericFactorization "virtual int Amesos_BaseSolver::NumericFactorization()=0
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_BaseSolver::Solve "virtual int
+Amesos_BaseSolver::Solve()=0
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_BaseSolver::SetUseTranspose "virtual
+int Amesos_BaseSolver::SetUseTranspose(bool UseTranspose)=0
+
+If set true, X will be set to the solution of AT X = B (not A X = B).
+
+If the implementation of this interface does not support transpose
+use, this method should return a value of -1.
+
+<br >Preconditions:  SetUseTranspose() should be called prior to the
+call to SymbolicFactorization() If NumericFactorization() or Solve()
+is called after SetUseTranspose() without an intervening call to
+SymbolicFactorization() the result is implementation dependent.
+
+<br >Postconditions: The next factorization and solve will be
+performed with the new value of UseTranspose.
+
+Parameters:
+-----------
+
+UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
+B.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Amesos_BaseSolver::UseTranspose "virtual bool
+Amesos_BaseSolver::UseTranspose() const =0
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_BaseSolver::SetParameters "virtual int
+Amesos_BaseSolver::SetParameters(Teuchos::ParameterList
+&ParameterList)=0
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_BaseSolver::GetProblem "virtual const
+Epetra_LinearProblem* Amesos_BaseSolver::GetProblem() const =0
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_BaseSolver::MatrixShapeOK "virtual bool
+Amesos_BaseSolver::MatrixShapeOK() const =0
+
+Returns true if the solver can handle this matrix shape.
+
+Returns true if the matrix shape is one that the underlying sparse
+direct solver can handle. Classes that work only on square matrices
+should return false for rectangular matrices. Classes that work only
+on symmetric matrices whould return false for non-symmetric matrices.
+";
+
+%feature("docstring")  Amesos_BaseSolver::Comm "virtual const
+Epetra_Comm& Amesos_BaseSolver::Comm() const =0
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_BaseSolver::NumSymbolicFact "virtual
+int Amesos_BaseSolver::NumSymbolicFact() const =0
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_BaseSolver::NumNumericFact "virtual int
+Amesos_BaseSolver::NumNumericFact() const =0
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_BaseSolver::NumSolve "virtual int
+Amesos_BaseSolver::NumSolve() const =0
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_BaseSolver::PrintStatus "virtual void
+Amesos_BaseSolver::PrintStatus() const =0
+
+Prints status information about the current solver. ";
+
+%feature("docstring")  Amesos_BaseSolver::PrintTiming "virtual void
+Amesos_BaseSolver::PrintTiming() const =0
+
+Prints timing information about the current solver. ";
+
+%feature("docstring")  Amesos_BaseSolver::setParameterList "void
+Amesos_BaseSolver::setParameterList(Teuchos::RCP<
+Teuchos::ParameterList > const &paramList)
+
+Redefined from Teuchos::ParameterListAcceptor. ";
+
+%feature("docstring")  Amesos_BaseSolver::getParameterList "Teuchos::RCP<Teuchos::ParameterList>
+Amesos_BaseSolver::getParameterList()
+
+This is an empty stub. ";
+
+%feature("docstring")  Amesos_BaseSolver::unsetParameterList "Teuchos::RCP<Teuchos::ParameterList>
+Amesos_BaseSolver::unsetParameterList()
+
+This is an empty stub. ";
+
+%feature("docstring")  Amesos_BaseSolver::GetTiming "virtual void
+Amesos_BaseSolver::GetTiming(Teuchos::ParameterList
+&TimingParameterList) const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
 
 // File: classAmesos__Btf.xml
 %feature("docstring") Amesos_Btf "
@@ -147,6 +361,138 @@ Uses an Amesos solver on each of the diagonal blocks
 Uses Trilinos operations to handle the off-diagonal blocks.
 
 C++ includes: Amesos_BTF.h ";
+
+%feature("docstring")  Amesos_Btf::Amesos_Btf "Amesos_Btf::Amesos_Btf(const Epetra_LinearProblem &LinearProblem)
+
+Amesos_Btf Constructor.
+
+Creates an Amesos_Btf instance, using an Epetra_LinearProblem, passing
+in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Btf::~Amesos_Btf "Amesos_Btf::~Amesos_Btf(void)
+
+Amesos_Btf Destructor.
+
+Completely deletes an Amesos_Btf object. ";
+
+%feature("docstring")  Amesos_Btf::SymbolicFactorization "int
+Amesos_Btf::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+Compute an ordering which reduces the matrix to block upper triangular
+form.
+
+Determine a task partitioning (static load balancing)
+
+Redistribute the data based on the owner computes rule
+
+Instantiates an Amesos solver for each of the diagonal blocks
+
+Calls SymbolicFactorization() on each of the diagonal blocks
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Btf::NumericFactorization "int
+Amesos_Btf::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+Calls NumericFactorization() on each of the diagonal blocks
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Btf::Solve "int Amesos_Btf::Solve()
+
+Solves A X = B (or AT X = B).
+
+Foreach block i:    For each block j      Compute x_i -= A_{i,j} x_j
+Call Solve(x_i,b_i)     Broadcast x_i
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Btf::GetProblem "const
+Epetra_LinearProblem* Amesos_Btf::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_Btf::MatrixShapeOK "bool
+Amesos_Btf::MatrixShapeOK() const
+
+Returns true if BTF can handle this matrix shape.
+
+Returns true if the matrix shape is one that BTF can handle. BTF only
+works with square matrices. ";
+
+%feature("docstring")  Amesos_Btf::SetUseTranspose "int
+Amesos_Btf::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose(true) causes Solve() To compute A^T X = B.
+
+If SetUseTranspose() is set to true,
+
+AT X = B is computed
+
+else
+
+A X = B is computed ";
+
+%feature("docstring")  Amesos_Btf::UseTranspose "bool
+Amesos_Btf::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Btf::Comm "const Epetra_Comm&
+Amesos_Btf::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+%feature("docstring")  Amesos_Btf::SetParameters "int
+Amesos_Btf::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subsequent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Btf::NumSymbolicFact "int
+Amesos_Btf::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Btf::NumNumericFact "int
+Amesos_Btf::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Btf::NumSolve "int
+Amesos_Btf::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Btf::PrintTiming "void
+Amesos_Btf::PrintTiming()
+
+Print timing information. ";
+
+%feature("docstring")  Amesos_Btf::PrintStatus "void
+Amesos_Btf::PrintStatus()
+
+Print information about the factorization and solution phases. ";
 
 
 // File: classAmesos__Component.xml
@@ -211,6 +557,85 @@ Preconditions:  An ordering  Postconditions: Constructor requirements
 Every Amesos_SolverName class should accept an Epetra_LinearProblem
 
 C++ includes: Amesos_Component.h ";
+
+%feature("docstring")  Amesos_Component::~Amesos_Component "virtual
+Amesos_Component::~Amesos_Component()
+
+Destructor. ";
+
+%feature("docstring")  Amesos_Component::PartialFactorization "virtual int Amesos_Component::PartialFactorization()=0
+
+Performs partial factorization on the matrix A.
+
+Partial Factorization perfom
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Component::Lsolve "virtual int
+Amesos_Component::Lsolve()=0
+
+Solves L X = B (or LT x = B).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Component::Usolve "virtual int
+Amesos_Component::Usolve()=0
+
+Solves L X = B (or LT x = B).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Component::SetRowPermutation "virtual
+int Amesos_Component::SetRowPermutation(int *RowPermutation)=0
+
+SetRowPermutation. ";
+
+%feature("docstring")  Amesos_Component::SetColumnPermutation "virtual int Amesos_Component::SetColumnPermutation(int
+*ColumnPermutation)=0
+
+SetColumnPermutation. ";
+
+%feature("docstring")  Amesos_Component::SetSubMatrixSize "virtual
+int Amesos_Component::SetSubMatrixSize(int SubMatrixSize)=0
+
+SetSubMatrixSize. ";
+
+%feature("docstring")  Amesos_Component::GetRowPermutation "virtual
+int Amesos_Component::GetRowPermutation(int **RowPermutation)=0
+
+GetRowPermutation.
+
+RowPermutation reflects any row permutations performed by
+PartialFactorization(). Note: It is not yet clear whether this row
+permutation includes the RowPermuation upon input or whether it
+returns only the row permuations performed by the most recent call to
+PartialFactorization(). In other words, in the absence of pivoting,
+RowPermutation might be identical to that given by SetRowPermutation()
+or it might be the identity permutation. ";
+
+%feature("docstring")  Amesos_Component::GetColumnPermutation "virtual int Amesos_Component::GetColumnPermutation(int
+**ColumnPermutation)=0
+
+GetColumnPermutation.
+
+ColumnPermutation reflects any row permutations performed by
+PartialFactorization(). Note: It is not yet clear whether this row
+permutation includes the ColumnPermuation upon input or whether it
+returns only the row permuations performed by the most recent call to
+PartialFactorization(). In other words, in the absence of pivoting,
+ColumnPermutation might be identical to that given by
+SetColumnPermutation() or it might be the identity permutation. ";
+
+%feature("docstring")  Amesos_Component::GetSubMatrixSize "virtual
+int Amesos_Component::GetSubMatrixSize(int *SubMatrixSize)=0
+
+GetSubMatrixSize. ";
+
+%feature("docstring")  Amesos_Component::GetSchurComplement "virtual
+int Amesos_Component::GetSchurComplement(Epetra_CrsMatrix
+*SchurComplement)=0
+
+GetSchurComplement. ";
 
 
 // File: classAmesos__ComponentBaseSolver.xml
@@ -277,6 +702,123 @@ Every Amesos_SolverName class should accept an Epetra_LinearProblem
 
 C++ includes: Amesos_ComponentBaseSolver.h ";
 
+%feature("docstring")
+Amesos_ComponentBaseSolver::~Amesos_ComponentBaseSolver "virtual
+Amesos_ComponentBaseSolver::~Amesos_ComponentBaseSolver()
+
+Destructor. ";
+
+%feature("docstring")
+Amesos_ComponentBaseSolver::PartialFactorization "virtual int
+Amesos_ComponentBaseSolver::PartialFactorization()=0
+
+Performs partial factorization on the matrix A.
+
+Partial Factorization perfom
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::Lsolve "virtual
+int Amesos_ComponentBaseSolver::Lsolve()=0
+
+Solves L X = B (or LT x = B).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::LsolveStart "*
+virtual int Amesos_ComponentBaseSolver::LsolveStart()=0
+
+Solves the triangular part of L X1 = B (or LT x = B).
+
+Integer error code, set to 0 if successful, -1 if unimplimented. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::LsolvePart "virtual int Amesos_ComponentBaseSolver::LsolvePart(int begin, int
+end)=0
+
+Computes L[begin..end,:] X1.
+
+Integer error code, set to 0 if successful, -1 if unimplimented. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::Usolve "virtual
+int Amesos_ComponentBaseSolver::Usolve()=0
+
+Solves U X = B (or UT x = B).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::UsolveStart "*
+virtual int Amesos_ComponentBaseSolver::UsolveStart()=0
+
+Solves the triangular part of U X1 = B (or LT x = B).
+
+Integer error code, set to 0 if successful, -1 if unimplimented. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::UsolvePart "virtual int Amesos_ComponentBaseSolver::UsolvePart(int begin, int
+end)=0
+
+Computes U[:,begin..end] X1.
+
+Integer error code, set to 0 if successful, -1 if unimplimented. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::SetRowPermutation "virtual int Amesos_ComponentBaseSolver::SetRowPermutation(int
+*RowPermutation)=0
+
+SetRowPermutation.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")
+Amesos_ComponentBaseSolver::SetColumnPermutation "virtual int
+Amesos_ComponentBaseSolver::SetColumnPermutation(int
+*ColumnPermutation)=0
+
+SetColumnPermutation. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::SetSubMatrixSize "virtual int Amesos_ComponentBaseSolver::SetSubMatrixSize(int
+SubMatrixSize)=0
+
+SetSubMatrixSize. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::GetRowPermutation "virtual int Amesos_ComponentBaseSolver::GetRowPermutation(int
+**RowPermutation)=0
+
+GetRowPermutation.
+
+RowPermutation reflects any row permutations performed by
+PartialFactorization(). Note: It is not yet clear whether this row
+permutation includes the RowPermuation upon input or whether it
+returns only the row permuations performed by the most recent call to
+PartialFactorization(). In other words, in the absence of pivoting,
+RowPermutation might be identical to that given by SetRowPermutation()
+or it might be the identity permutation. ";
+
+%feature("docstring")
+Amesos_ComponentBaseSolver::GetColumnPermutation "virtual int
+Amesos_ComponentBaseSolver::GetColumnPermutation(int
+**ColumnPermutation)=0
+
+GetColumnPermutation.
+
+ColumnPermutation reflects any row permutations performed by
+PartialFactorization(). Note: It is not yet clear whether this row
+permutation includes the ColumnPermuation upon input or whether it
+returns only the row permuations performed by the most recent call to
+PartialFactorization(). In other words, in the absence of pivoting,
+ColumnPermutation might be identical to that given by
+SetColumnPermutation() or it might be the identity permutation. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::GetSubMatrixSize "virtual int Amesos_ComponentBaseSolver::GetSubMatrixSize(int
+*SubMatrixSize)=0
+
+GetSubMatrixSize. ";
+
+%feature("docstring")  Amesos_ComponentBaseSolver::GetSchurComplement
+"virtual int
+Amesos_ComponentBaseSolver::GetSchurComplement(Epetra_CrsMatrix
+*SchurComplement)=0
+
+GetSchurComplement. ";
+
 
 // File: classAmesos__Control.xml
 %feature("docstring") Amesos_Control "
@@ -311,6 +853,213 @@ Epetra_RowMatrix and X and B are Epetra_MultiVector objects.
 
 C++ includes: Amesos_Dscpack.h ";
 
+%feature("docstring")  Amesos_Dscpack::Amesos_Dscpack "Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Dscpack Constructor.
+
+Creates an Amesos_Dscpack instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Dscpack::~Amesos_Dscpack "Amesos_Dscpack::~Amesos_Dscpack(void)
+
+Amesos_Dscpack Destructor.
+
+Completely deletes an Amesos_Dscpack object. ";
+
+%feature("docstring")  Amesos_Dscpack::SymbolicFactorization "int
+Amesos_Dscpack::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Dscpack::NumericFactorization "int
+Amesos_Dscpack::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Dscpack::Solve "int
+Amesos_Dscpack::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Dscpack::GetProblem "const
+Epetra_LinearProblem* Amesos_Dscpack::GetProblem() const
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_Dscpack::MatrixShapeOK "bool
+Amesos_Dscpack::MatrixShapeOK() const
+
+Returns true if DSCPACK can handle this matrix shape.
+
+Returns true if the matrix shape is one that DSCPACK can handle.
+DSCPACK only works with symetric matrices. ";
+
+%feature("docstring")  Amesos_Dscpack::SetUseTranspose "int
+Amesos_Dscpack::SetUseTranspose(bool UseTranspose)
+
+If set true, X will be set to the solution of AT X = B (not A X = B).
+
+If the implementation of this interface does not support transpose
+use, this method should return a value of -1.
+
+<br >Preconditions:  SetUseTranspose() should be called prior to the
+call to SymbolicFactorization() If NumericFactorization() or Solve()
+is called after SetUseTranspose() without an intervening call to
+SymbolicFactorization() the result is implementation dependent.
+
+<br >Postconditions: The next factorization and solve will be
+performed with the new value of UseTranspose.
+
+Parameters:
+-----------
+
+UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
+B.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Amesos_Dscpack::UseTranspose "bool
+Amesos_Dscpack::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Dscpack::Comm "const Epetra_Comm&
+Amesos_Dscpack::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Dscpack::SetParameters "int
+Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Dscpack::NumSymbolicFact "int
+Amesos_Dscpack::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Dscpack::NumNumericFact "int
+Amesos_Dscpack::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Dscpack::NumSolve "int
+Amesos_Dscpack::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Dscpack::PrintTiming "void
+Amesos_Dscpack::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Dscpack::PrintStatus "void
+Amesos_Dscpack::PrintStatus() const
+
+Prints information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Dscpack::GetTiming "void
+Amesos_Dscpack::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
 
 // File: classAmesos__Dscpack__Pimpl.xml
 %feature("docstring") Amesos_Dscpack_Pimpl "";
@@ -322,6 +1071,186 @@ C++ includes: Amesos_Dscpack.h ";
 Interface to KLU internal solver.
 
 C++ includes: Amesos_Umfpack.h ";
+
+%feature("docstring")  Amesos_Klu::Amesos_Klu "Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &LinearProblem)
+
+Amesos_Klu Constructor.
+
+Creates an Amesos_Klu instance, using an Epetra_LinearProblem, passing
+in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Klu::~Amesos_Klu "Amesos_Klu::~Amesos_Klu(void)
+
+Amesos_Klu Destructor. ";
+
+%feature("docstring")  Amesos_Klu::SymbolicFactorization "int
+Amesos_Klu::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Klu::NumericFactorization "int
+Amesos_Klu::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Klu::Solve "int Amesos_Klu::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Klu::GetProblem "const
+Epetra_LinearProblem* Amesos_Klu::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_Klu::MatrixShapeOK "bool
+Amesos_Klu::MatrixShapeOK() const
+
+Returns true if KLU can handle this matrix shape.
+
+Returns true if the matrix shape is one that KLU can handle. KLU only
+works with square matrices. ";
+
+%feature("docstring")  Amesos_Klu::SetUseTranspose "int
+Amesos_Klu::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose(true) is more efficient in Amesos_Klu.
+
+If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
+
+%feature("docstring")  Amesos_Klu::UseTranspose "bool
+Amesos_Klu::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Klu::Comm "const Epetra_Comm&
+Amesos_Klu::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Klu::SetParameters "int
+Amesos_Klu::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Klu::NumSymbolicFact "int
+Amesos_Klu::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Klu::NumNumericFact "int
+Amesos_Klu::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Klu::NumSolve "int
+Amesos_Klu::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Klu::PrintTiming "void
+Amesos_Klu::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Klu::PrintStatus "void
+Amesos_Klu::PrintStatus() const
+
+Prints information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Klu::GetTiming "void
+Amesos_Klu::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information and places in parameter list. ";
 
 
 // File: classAmesos__Klu__Pimpl.xml
@@ -344,6 +1273,234 @@ DGETRF().
 Marzio Sala, 9214.
 
 C++ includes: Amesos_Lapack.h ";
+
+%feature("docstring")  Amesos_Lapack::Amesos_Lapack "Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Lapack Constructor.
+
+Creates an Amesos_Lapack instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Lapack::~Amesos_Lapack "Amesos_Lapack::~Amesos_Lapack(void)
+
+Amesos_Lapack Destructor.
+
+Completely deletes an Amesos_Lapack object. ";
+
+%feature("docstring")  Amesos_Lapack::SymbolicFactorization "int
+Amesos_Lapack::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Lapack::NumericFactorization "int
+Amesos_Lapack::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Lapack::Solve "int
+Amesos_Lapack::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Lapack::GetProblem "const
+Epetra_LinearProblem* Amesos_Lapack::GetProblem() const
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_Lapack::MatrixShapeOK "bool
+Amesos_Lapack::MatrixShapeOK() const
+
+Returns true if the solver can handle this matrix shape.
+
+Returns true if the matrix shape is one that the underlying sparse
+direct solver can handle. Classes that work only on square matrices
+should return false for rectangular matrices. Classes that work only
+on symmetric matrices whould return false for non-symmetric matrices.
+";
+
+%feature("docstring")  Amesos_Lapack::SetUseTranspose "int
+Amesos_Lapack::SetUseTranspose(bool UseTranspose)
+
+If set true, X will be set to the solution of AT X = B (not A X = B).
+
+If the implementation of this interface does not support transpose
+use, this method should return a value of -1.
+
+<br >Preconditions:  SetUseTranspose() should be called prior to the
+call to SymbolicFactorization() If NumericFactorization() or Solve()
+is called after SetUseTranspose() without an intervening call to
+SymbolicFactorization() the result is implementation dependent.
+
+<br >Postconditions: The next factorization and solve will be
+performed with the new value of UseTranspose.
+
+Parameters:
+-----------
+
+UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
+B.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Amesos_Lapack::UseTranspose "bool
+Amesos_Lapack::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Lapack::Comm "const Epetra_Comm&
+Amesos_Lapack::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Lapack::setParameterList "void
+Amesos_Lapack::setParameterList(Teuchos::RCP< Teuchos::ParameterList >
+const &paramList)
+
+Use this parameter list to read values from.
+
+Redefined from Teuchos::ParameterListAcceptor ";
+
+%feature("docstring")  Amesos_Lapack::unsetParameterList "Teuchos::RCP< Teuchos::ParameterList >
+Amesos_Lapack::unsetParameterList()
+
+This is an empty stub. ";
+
+%feature("docstring")  Amesos_Lapack::SetParameters "int
+Amesos_Lapack::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Deprecated - Sets parameters. ";
+
+%feature("docstring")  Amesos_Lapack::GEEV "int
+Amesos_Lapack::GEEV(Epetra_Vector &Er, Epetra_Vector &Ei)
+
+Computes the eigenvalues of the linear system matrix using DGEEV.
+
+Parameters:
+-----------
+
+Er:  - (Out) On processor zero only, it will contain the real
+component of the eigenvalues.
+
+Ei:  - (Out) On processor zero only, it will contain the imaginary
+component of the eigenvalues.
+
+Er and Ei must have been allocated so that the local length on
+processor 0 equals the global size of the matrix. ";
+
+%feature("docstring")  Amesos_Lapack::NumSymbolicFact "int
+Amesos_Lapack::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Lapack::NumNumericFact "int
+Amesos_Lapack::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Lapack::NumSolve "int
+Amesos_Lapack::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Lapack::PrintTiming "void
+Amesos_Lapack::PrintTiming() const
+
+Print timing information. ";
+
+%feature("docstring")  Amesos_Lapack::PrintStatus "void
+Amesos_Lapack::PrintStatus() const
+
+Print information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Lapack::GetTiming "void
+Amesos_Lapack::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
 
 
 // File: classAmesos__MC64.xml
@@ -378,6 +1535,188 @@ Amesos_Merikos uses a series of partial LU factorizations, performed
 in parallel, to piece together the full LU decomposition.
 
 C++ includes: Amesos_Merikos.h ";
+
+%feature("docstring")  Amesos_Merikos::Amesos_Merikos "Amesos_Merikos::Amesos_Merikos(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Merikos Constructor.
+
+Creates an Amesos_Merikos instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object. ";
+
+%feature("docstring")  Amesos_Merikos::~Amesos_Merikos "Amesos_Merikos::~Amesos_Merikos(void)
+
+Amesos_Merikos Destructor.
+
+Completely deletes an Amesos_Merikos object. ";
+
+%feature("docstring")  Amesos_Merikos::RedistributeA "int
+Amesos_Merikos::RedistributeA()
+
+Performs SymbolicFactorization on the matrix A.
+
+SymbolicFactorization() takes no action in Amesos_Merikos().
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::ConvertToScalapack "int
+Amesos_Merikos::ConvertToScalapack() ";
+
+%feature("docstring")  Amesos_Merikos::PerformNumericFactorization "int Amesos_Merikos::PerformNumericFactorization() ";
+
+%feature("docstring")  Amesos_Merikos::SymbolicFactorization "int
+Amesos_Merikos::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::NumericFactorization "int
+Amesos_Merikos::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+Static pivoting (i.e. scale and permute the matrix to produce a zero-
+free diagonal and to minimize the need for pivoting later).
+Partition the matrix      Redistribute the matrix to match the
+partitioning     Foreach subblock of the matrix do: Note:  this will
+happen in parallel       Create an instance of an Amesos solver object
+(must           support the Amesos_Component interface)       Call
+PartialFactorization        Add the Schur Complement into the trailing
+block of the matrix.     Endfor Create an Amesos instance for the
+trailing block of the matrix. Call SymbolicFactorization on the
+trailing block      Call NumericFactorization on the trailing block
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::LSolve "int
+Amesos_Merikos::LSolve()
+
+Solves L X = B.
+
+| L11   0   0  |  X1      B1      | L21 L22   0  |  X2   =  B2 | L31
+L32 L33  |  X3   =  B3
+
+Foreach subblock of the matrix do:       Note:  this will happen in
+parallel       Lsolve()          i.e. L11.Solve(X1, B1) and
+L22.Solve(X2, B2)        Update the elements of B corresponding to the
+seperator,         i.e. B3 = B3 - L31 X1 - L32 X2      Endfor Perform
+a solve on the trailing matrix:       i.e. L33.LSolve(X3,B3)
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::USolve "int
+Amesos_Merikos::USolve()
+
+Solves U X = B.
+
+| U11 U12 U13  |  X1      B1      |   0 U22 U23  |  X2   =  B2 |   0
+0 U33  |  X3   =  B3
+
+Perform a solve on the trailing matrix:       i.e. U33.USolve(X3,B3)
+Foreach subblock of the matrix do:       Note: this will happen in
+parallel       Update the elements of B corresponding to this block
+i.e. B2 = B2 - U23 X3 ; B1 = B1 - U13 X3        Usolve()          i.e.
+U11.Solve(X1, B1) and U22.Solve(X2, B2)      Endfor
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::Solve "int
+Amesos_Merikos::Solve()
+
+Solves A X = B.
+
+| L11     U12     U13  |  X1      B1      | L21     L22     U23 |  X2
+=  B2      | L31     L32         A33  |  X3   =  B3
+
+Foreach subblock of the matrix do:       Note:  this will happen in
+parallel       Lsolve()          i.e. L11.Solve(X1, B1) and
+L22.Solve(X2, B2)        Update the elements of B corresponding to the
+seperator,         i.e. B3 = B3 - L31 X1 - L32 X2      Endfor Perform
+a solve on the trailing matrix:       i.e. A33.Solve(X3,B3)
+
+B = X ;     Foreach subblock of the matrix do:       Note:  this will
+happen in parallel       Update the elements of B corresponding to
+this block         i.e. B2 = B2 - U23 X3 ; B1 = B1 - U13 X3 Usolve()
+i.e. U11.Solve(X1, B1) and U22.Solve(X2, B2) Endfor
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::GetProblem "const
+Epetra_LinearProblem* Amesos_Merikos::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_Merikos::MatrixShapeOK "bool
+Amesos_Merikos::MatrixShapeOK() const
+
+Returns true if MERIKOS can handle this matrix shape.
+
+Returns true if the matrix shape is one that MERIKOS can handle.
+MERIKOS only works with square matrices. ";
+
+%feature("docstring")  Amesos_Merikos::SetUseTranspose "int
+Amesos_Merikos::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose() controls whether to compute AX=B or ATX = B. ";
+
+%feature("docstring")  Amesos_Merikos::UseTranspose "bool
+Amesos_Merikos::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Merikos::Comm "const Epetra_Comm&
+Amesos_Merikos::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+%feature("docstring")  Amesos_Merikos::SetParameters "int
+Amesos_Merikos::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Merikos::NumSymbolicFact "int
+Amesos_Merikos::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Merikos::NumNumericFact "int
+Amesos_Merikos::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Merikos::NumSolve "int
+Amesos_Merikos::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Merikos::PrintTiming "void
+Amesos_Merikos::PrintTiming()
+
+Print timing information. ";
+
+%feature("docstring")  Amesos_Merikos::PrintStatus "void
+Amesos_Merikos::PrintStatus()
+
+Print information about the factorization and solution phases. ";
 
 
 // File: classAmesos__Mumps.xml
@@ -438,6 +1777,291 @@ Marzio Sala, ETHZ.
 
 C++ includes: Amesos_Mumps.h ";
 
+%feature("docstring")  Amesos_Mumps::Amesos_Mumps "Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &LinearProblem)
+
+Amesos_Mumps Constructor.
+
+Creates an Amesos_Mumps instance, using an Epetra_LinearProblem, ";
+
+%feature("docstring")  Amesos_Mumps::~Amesos_Mumps "Amesos_Mumps::~Amesos_Mumps(void)
+
+Amesos_Mumps Destructor.
+
+Deletes an Amesos_Mumps object. ";
+
+%feature("docstring")  Amesos_Mumps::SymbolicFactorization "int
+Amesos_Mumps::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Mumps::NumericFactorization "int
+Amesos_Mumps::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Mumps::Solve "int Amesos_Mumps::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Mumps::Destroy "void
+Amesos_Mumps::Destroy()
+
+Destroys all data associated with  this object. ";
+
+%feature("docstring")  Amesos_Mumps::SetUseTranspose "int
+Amesos_Mumps::SetUseTranspose(bool UseTranspose)
+
+If set true, X will be set to the solution of AT X = B (not A X = B).
+
+If the implementation of this interface does not support transpose
+use, this method should return a value of -1.
+
+<br >Preconditions:  SetUseTranspose() should be called prior to the
+call to SymbolicFactorization() If NumericFactorization() or Solve()
+is called after SetUseTranspose() without an intervening call to
+SymbolicFactorization() the result is implementation dependent.
+
+<br >Postconditions: The next factorization and solve will be
+performed with the new value of UseTranspose.
+
+Parameters:
+-----------
+
+UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
+B.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Amesos_Mumps::UseTranspose "bool
+Amesos_Mumps::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Mumps::SetParameters "int
+Amesos_Mumps::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Mumps::NumSymbolicFact "int
+Amesos_Mumps::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Mumps::NumNumericFact "int
+Amesos_Mumps::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Mumps::NumSolve "int
+Amesos_Mumps::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Mumps::PrintTiming "void
+Amesos_Mumps::PrintTiming() const
+
+Prints timing information.
+
+In the destruction phase, prints out detailed information about the
+various phases: symbolic and numeric factorization, solution,
+gather/scatter for vectors and matrices. ";
+
+%feature("docstring")  Amesos_Mumps::PrintStatus "void
+Amesos_Mumps::PrintStatus() const
+
+Prints information about the factorization and solution phases.
+
+In the destruction phase, prints out some information furnished by
+MUMPS, like the amount of required memory, the MFLOPS. ";
+
+%feature("docstring")  Amesos_Mumps::GetTiming "void
+Amesos_Mumps::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
+%feature("docstring")  Amesos_Mumps::SetPrecscaling "int
+Amesos_Mumps::SetPrecscaling(double *ColSca, double *RowSca)
+
+Set prescaling.
+
+Use double precision vectors of size N (global dimension of the
+matrix) as scaling for columns and rows. ColSca and RowSca must be
+defined on the host only, and allocated by the user, if the user sets
+ICNTL(8) = -1.
+
+Both input vectors are float with --enable-amesos-smumps, double
+otherwise. ";
+
+%feature("docstring")  Amesos_Mumps::SetRowScaling "int
+Amesos_Mumps::SetRowScaling(double *RowSca)
+
+Set row scaling.
+
+Use double precision vectors of size N (global dimension of the
+matrix) for row scaling.
+
+Parameters:
+-----------
+
+RowSca:  (In) - float pointer with --enable-amesos-smumps, double
+pointer otherwise. ";
+
+%feature("docstring")  Amesos_Mumps::SetColScaling "int
+Amesos_Mumps::SetColScaling(double *ColSca)
+
+Set column scaling.
+
+Use double precision vectors of size N (global dimension of the
+matrix) for column scaling.
+
+Parameters:
+-----------
+
+ColSca:  (In) - float pointer with --enable-amesos-smumps, double
+pointer otherwise. ";
+
+%feature("docstring")  Amesos_Mumps::SetOrdering "int
+Amesos_Mumps::SetOrdering(int *PermIn)
+
+Sets ordering.
+
+Use integer vectors of size N (global dimension of the matrix) as
+given ordering. PermIn must be defined on the host only, and allocated
+by the user, if the user sets ICNTL(7) = 1. ";
+
+%feature("docstring")  Amesos_Mumps::GetRINFO "double *
+Amesos_Mumps::GetRINFO()
+
+Gets the pointer to the RINFO array (defined on all processes).
+
+Gets the pointer to the internally stored RINFO array, of type float
+if option --enable-amesos-smumps is enabled, double otherwise. ";
+
+%feature("docstring")  Amesos_Mumps::GetINFO "int *
+Amesos_Mumps::GetINFO()
+
+Gets the pointer to the INFO array (defined on all processes).
+
+Gets the pointer to the internally stored INFO array, of type int. ";
+
+%feature("docstring")  Amesos_Mumps::GetRINFOG "double *
+Amesos_Mumps::GetRINFOG()
+
+Gets the pointer to the RINFOG array (defined on host only).
+
+Gets the pointer to the internally stored RINFOG array (defined on the
+host process only), of type float if option --enable-amesos-smumps is
+enabled, double otherwise. ";
+
+%feature("docstring")  Amesos_Mumps::GetINFOG "int *
+Amesos_Mumps::GetINFOG()
+
+Get the pointer to the INFOG array (defined on host only).
+
+Gets the pointer to the internally stored INFOG (defined on the host
+process only) array, of type int. ";
+
+%feature("docstring")  Amesos_Mumps::SetICNTL "void
+Amesos_Mumps::SetICNTL(int pos, int value)
+
+Set ICNTL[pos] to value. pos is expressed in FORTRAN style (starting
+from 1). ";
+
+%feature("docstring")  Amesos_Mumps::SetCNTL "void
+Amesos_Mumps::SetCNTL(int pos, double value)
+
+Set CNTL[pos] to value. pos is expressed in FORTRAN style (starting
+from 1). ";
+
 %feature("docstring")  Amesos_Mumps::MatrixShapeOK "bool
 Amesos_Mumps::MatrixShapeOK() const
 
@@ -488,6 +2112,189 @@ solver.
 
 C++ includes: Amesos_Paraklete.h ";
 
+%feature("docstring")  Amesos_Paraklete::Amesos_Paraklete "Amesos_Paraklete::Amesos_Paraklete(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Paraklete Constructor.
+
+Creates an Amesos_Paraklete instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Paraklete::~Amesos_Paraklete "Amesos_Paraklete::~Amesos_Paraklete(void)
+
+Amesos_Paraklete Destructor. ";
+
+%feature("docstring")  Amesos_Paraklete::SymbolicFactorization "int
+Amesos_Paraklete::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Paraklete::NumericFactorization "int
+Amesos_Paraklete::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Paraklete::Solve "int
+Amesos_Paraklete::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Paraklete::GetProblem "const
+Epetra_LinearProblem* Amesos_Paraklete::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_Paraklete::MatrixShapeOK "bool
+Amesos_Paraklete::MatrixShapeOK() const
+
+Returns true if PARAKLETE can handle this matrix shape.
+
+Returns true if the matrix shape is one that PARAKLETE can handle.
+PARAKLETE only works with square matrices. ";
+
+%feature("docstring")  Amesos_Paraklete::SetUseTranspose "int
+Amesos_Paraklete::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose().
+
+If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
+
+%feature("docstring")  Amesos_Paraklete::UseTranspose "bool
+Amesos_Paraklete::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Paraklete::Comm "const Epetra_Comm&
+Amesos_Paraklete::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Paraklete::SetParameters "int
+Amesos_Paraklete::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Paraklete::NumSymbolicFact "int
+Amesos_Paraklete::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Paraklete::NumNumericFact "int
+Amesos_Paraklete::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Paraklete::NumSolve "int
+Amesos_Paraklete::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Paraklete::PrintTiming "void
+Amesos_Paraklete::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Paraklete::PrintStatus "void
+Amesos_Paraklete::PrintStatus() const
+
+Prints information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Paraklete::GetTiming "void
+Amesos_Paraklete::GetTiming(Teuchos::ParameterList
+&TimingParameterList) const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
 
 // File: classAmesos__Paraklete__Pimpl.xml
 %feature("docstring") Amesos_Paraklete_Pimpl "";
@@ -501,6 +2308,101 @@ Amesos_Pardiso: Interface to the PARDISO package.
 Marzio Sala, SNL 9214
 
 C++ includes: Amesos_Pardiso.h ";
+
+%feature("docstring")  Amesos_Pardiso::Amesos_Pardiso "Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem
+&LinearProblem)
+
+Constructor. ";
+
+%feature("docstring")  Amesos_Pardiso::~Amesos_Pardiso "Amesos_Pardiso::~Amesos_Pardiso()
+
+Destructor. ";
+
+%feature("docstring")  Amesos_Pardiso::SymbolicFactorization "int
+Amesos_Pardiso::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A. ";
+
+%feature("docstring")  Amesos_Pardiso::NumericFactorization "int
+Amesos_Pardiso::NumericFactorization()
+
+Performs NumericFactorization on the matrix A. ";
+
+%feature("docstring")  Amesos_Pardiso::Solve "int
+Amesos_Pardiso::Solve()
+
+Solves A X = B (or AT X = B). ";
+
+%feature("docstring")  Amesos_Pardiso::GetProblem "const
+Epetra_LinearProblem* Amesos_Pardiso::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_Pardiso::MatrixShapeOK "bool
+Amesos_Pardiso::MatrixShapeOK() const
+
+Returns true if PARDISO can handle this matrix shape.
+
+Returns true if the matrix shape is one that PARDISO can handle.
+PARDISO only works with square matrices. ";
+
+%feature("docstring")  Amesos_Pardiso::SetUseTranspose "int
+Amesos_Pardiso::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose().
+
+If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
+
+%feature("docstring")  Amesos_Pardiso::UseTranspose "bool
+Amesos_Pardiso::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Pardiso::Comm "const Epetra_Comm&
+Amesos_Pardiso::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+%feature("docstring")  Amesos_Pardiso::SetParameters "int
+Amesos_Pardiso::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Set parameters from the input parameters list, returns 0 if
+successful. ";
+
+%feature("docstring")  Amesos_Pardiso::NumSymbolicFact "int
+Amesos_Pardiso::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Pardiso::NumNumericFact "int
+Amesos_Pardiso::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Pardiso::NumSolve "int
+Amesos_Pardiso::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Pardiso::PrintTiming "void
+Amesos_Pardiso::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Pardiso::PrintStatus "void
+Amesos_Pardiso::PrintStatus() const
+
+Prints information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Pardiso::GetTiming "void
+Amesos_Pardiso::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
 
 
 // File: classAmesos__Reordering.xml
@@ -623,6 +2525,175 @@ routines to take advantages of such matrices.
 
 C++ includes: Amesos_Scalapack.h ";
 
+%feature("docstring")  Amesos_Scalapack::Amesos_Scalapack "Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Scalapack Constructor.
+
+Creates an Amesos_Scalapack instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Scalapack::~Amesos_Scalapack "Amesos_Scalapack::~Amesos_Scalapack(void)
+
+Amesos_Scalapack Destructor.
+
+Completely deletes an Amesos_Scalapack object. ";
+
+%feature("docstring")  Amesos_Scalapack::SymbolicFactorization "int
+Amesos_Scalapack::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+There is no symbolic factorization phase in ScaLAPACK, as it operates
+only on dense matrices. Hence,
+Amesos_Scalapack::SymbolicFactorization() takes no action.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Scalapack::NumericFactorization "int
+Amesos_Scalapack::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6) NOT
+IMPLEMENTED
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). Irrelevant for Amesos_Scalapack.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization(). Irrelevant for Amesos_Scalapack.
+
+postconditions: nprow_, npcol_, DescA_
+
+DenseA will be factored
+
+Ipiv_ contains the pivots
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Scalapack::Solve "int
+Amesos_Scalapack::Solve()
+
+Solves A X = B (or AT X = B).
+
+preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6) NOT
+IMPLEMENTED
+
+X and B must have the same shape (NOT CHECKED)
+
+X and B must have fewer than nb right hand sides. EPETRA_CHK_ERR(-2)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+postconditions: X will be set such that A X = B (or AT X = B), within
+the limits of the accuracy of the the Scalapack solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Scalapack::GetProblem "const
+Epetra_LinearProblem* Amesos_Scalapack::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_Scalapack::MatrixShapeOK "bool
+Amesos_Scalapack::MatrixShapeOK() const
+
+Returns true if SCALAPACK can handle this matrix shape.
+
+Returns true if the matrix shape is one that SCALAPACK can handle.
+SCALAPACK only works with square matrices. ";
+
+%feature("docstring")  Amesos_Scalapack::SetUseTranspose "int
+Amesos_Scalapack::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose(true) is more efficient in Amesos_Scalapack.
+
+If SetUseTranspose() is set to true,
+
+AT X = B is computed
+
+else
+
+A X = B is computed ";
+
+%feature("docstring")  Amesos_Scalapack::UseTranspose "bool
+Amesos_Scalapack::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Scalapack::Comm "const Epetra_Comm&
+Amesos_Scalapack::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+%feature("docstring")  Amesos_Scalapack::SetParameters "int
+Amesos_Scalapack::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subsequent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Scalapack::NumSymbolicFact "int
+Amesos_Scalapack::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Scalapack::NumNumericFact "int
+Amesos_Scalapack::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Scalapack::NumSolve "int
+Amesos_Scalapack::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Scalapack::PrintTiming "void
+Amesos_Scalapack::PrintTiming() const
+
+Print timing information. ";
+
+%feature("docstring")  Amesos_Scalapack::PrintStatus "void
+Amesos_Scalapack::PrintStatus() const
+
+Print information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Scalapack::GetTiming "void
+Amesos_Scalapack::GetTiming(Teuchos::ParameterList
+&TimingParameterList) const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
 
 // File: classAmesos__Scaling.xml
 %feature("docstring") Amesos_Scaling "
@@ -693,6 +2764,214 @@ Epetra_MultiVector's.
 
 C++ includes: Amesos_Superlu.h ";
 
+%feature("docstring")  Amesos_Superlu::Amesos_Superlu "Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Superlu Constructor.
+
+Creates an Amesos_Superlu instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Superlu::~Amesos_Superlu "Amesos_Superlu::~Amesos_Superlu()
+
+Amesos_Superlu Destructor. ";
+
+%feature("docstring")  Amesos_Superlu::SymbolicFactorization "int
+Amesos_Superlu::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superlu::NumericFactorization "int
+Amesos_Superlu::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superlu::Solve "int
+Amesos_Superlu::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superlu::GetProblem "const
+Epetra_LinearProblem* Amesos_Superlu::GetProblem() const
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_Superlu::MatrixShapeOK "bool
+Amesos_Superlu::MatrixShapeOK() const
+
+Returns true if the solver can handle this matrix shape.
+
+Returns true if the matrix shape is one that the underlying sparse
+direct solver can handle. Classes that work only on square matrices
+should return false for rectangular matrices. Classes that work only
+on symmetric matrices whould return false for non-symmetric matrices.
+";
+
+%feature("docstring")  Amesos_Superlu::SetUseTranspose "int
+Amesos_Superlu::SetUseTranspose(bool UseTranspose)
+
+If set true, X will be set to the solution of AT X = B (not A X = B).
+
+If the implementation of this interface does not support transpose
+use, this method should return a value of -1.
+
+<br >Preconditions:  SetUseTranspose() should be called prior to the
+call to SymbolicFactorization() If NumericFactorization() or Solve()
+is called after SetUseTranspose() without an intervening call to
+SymbolicFactorization() the result is implementation dependent.
+
+<br >Postconditions: The next factorization and solve will be
+performed with the new value of UseTranspose.
+
+Parameters:
+-----------
+
+UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
+B.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Amesos_Superlu::UseTranspose "bool
+Amesos_Superlu::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Superlu::Comm "const Epetra_Comm&
+Amesos_Superlu::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Superlu::SetParameters "int
+Amesos_Superlu::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superlu::NumSymbolicFact "int
+Amesos_Superlu::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Superlu::NumNumericFact "int
+Amesos_Superlu::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Superlu::NumSolve "int
+Amesos_Superlu::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Superlu::PrintTiming "void
+Amesos_Superlu::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Superlu::PrintStatus "void
+Amesos_Superlu::PrintStatus() const
+
+Prints status information. ";
+
+%feature("docstring")  Amesos_Superlu::GetTiming "void
+Amesos_Superlu::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
 
 // File: classAmesos__Superlu__Pimpl.xml
 %feature("docstring") Amesos_Superlu_Pimpl "";
@@ -708,6 +2987,138 @@ using Epetra objects and the Superludist solver library, where A is an
 Epetra_RowMatrix and X and B are Epetra_MultiVector objects.
 
 C++ includes: Amesos_Superludist.h ";
+
+%feature("docstring")  Amesos_Superludist::Amesos_Superludist "Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Superludist Constructor.
+
+Creates an Amesos_Superludist instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Superludist::~Amesos_Superludist "Amesos_Superludist::~Amesos_Superludist(void)
+
+Amesos_Superludist Destructor.
+
+Completely deletes an Amesos_Superludist object. ";
+
+%feature("docstring")  Amesos_Superludist::SymbolicFactorization "int
+Amesos_Superludist::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superludist::NumericFactorization "int
+Amesos_Superludist::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superludist::Solve "int
+Amesos_Superludist::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Superludist::SetUseTranspose "int
+Amesos_Superludist::SetUseTranspose(bool UseTranspose)
+
+Amesos_Superludist does not support transpose at this time.
+
+returns 0 if UseTranspose is set to false, else 1 (failure) ";
+
+%feature("docstring")  Amesos_Superludist::GetProblem "const
+Epetra_LinearProblem* Amesos_Superludist::GetProblem() const
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_Superludist::MatrixShapeOK "bool
+Amesos_Superludist::MatrixShapeOK() const
+
+Returns true if SUPERLUDIST can handle this matrix shape.
+
+Returns true if the matrix shape is one that SUPERLUDIST can handle.
+SUPERLUDIST only works with square matrices. ";
+
+%feature("docstring")  Amesos_Superludist::UseTranspose "bool
+Amesos_Superludist::UseTranspose() const
+
+Always returns true. ";
 
 %feature("docstring")  Amesos_Superludist::SetParameters "int
 Amesos_Superludist::SetParameters(Teuchos::ParameterList
@@ -779,6 +3190,188 @@ Interface to TAUCS.
 
 C++ includes: Amesos_Taucs.h ";
 
+%feature("docstring")  Amesos_Taucs::Amesos_Taucs "Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &LinearProblem)
+
+Default constructor. ";
+
+%feature("docstring")  Amesos_Taucs::~Amesos_Taucs "Amesos_Taucs::~Amesos_Taucs(void)
+
+Default destructor. ";
+
+%feature("docstring")  Amesos_Taucs::SymbolicFactorization "int
+Amesos_Taucs::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Taucs::NumericFactorization "int
+Amesos_Taucs::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Taucs::Solve "int Amesos_Taucs::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Taucs::GetProblem "const
+Epetra_LinearProblem* Amesos_Taucs::GetProblem() const
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_Taucs::MatrixShapeOK "bool
+Amesos_Taucs::MatrixShapeOK() const
+
+Returns true if the solver can handle this matrix shape.
+
+Returns true if the matrix shape is one that the underlying sparse
+direct solver can handle. Classes that work only on square matrices
+should return false for rectangular matrices. Classes that work only
+on symmetric matrices whould return false for non-symmetric matrices.
+";
+
+%feature("docstring")  Amesos_Taucs::SetUseTranspose "int
+Amesos_Taucs::SetUseTranspose(bool UseTranspose)
+
+Amesos_Taucs supports only symmetric matrices, hence transpose is
+irrelevant, but harmless. ";
+
+%feature("docstring")  Amesos_Taucs::UseTranspose "bool
+Amesos_Taucs::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Taucs::Comm "const Epetra_Comm&
+Amesos_Taucs::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Taucs::SetParameters "int
+Amesos_Taucs::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Taucs::NumSymbolicFact "int
+Amesos_Taucs::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Taucs::NumNumericFact "int
+Amesos_Taucs::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Taucs::NumSolve "int
+Amesos_Taucs::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Taucs::PrintTiming "void
+Amesos_Taucs::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Taucs::PrintStatus "void
+Amesos_Taucs::PrintStatus() const
+
+Prints status information. ";
+
+%feature("docstring")  Amesos_Taucs::GetTiming "void
+Amesos_Taucs::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
 
 // File: classAmesos__Taucs__Pimpl.xml
 %feature("docstring") Amesos_Taucs_Pimpl "";
@@ -799,6 +3392,216 @@ Epetra_CrsMatrix or Epetra_VrbMatrix object.
 Marzio Sala, SNL 9214
 
 C++ includes: Amesos_TestRowMatrix.h ";
+
+%feature("docstring")  Amesos_TestRowMatrix::Amesos_TestRowMatrix "Amesos_TestRowMatrix::Amesos_TestRowMatrix(Epetra_RowMatrix *Matrix)
+
+Constructor. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::~Amesos_TestRowMatrix "virtual Amesos_TestRowMatrix::~Amesos_TestRowMatrix()
+
+Destructor. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumMyRowEntries "virtual
+int Amesos_TestRowMatrix::NumMyRowEntries(int MyRow, int &NumEntries)
+const
+
+Returns the number of nonzero entries in MyRow.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row.
+
+NumEntries:  - (Out) Number of nonzero values present.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::MaxNumEntries "virtual
+int Amesos_TestRowMatrix::MaxNumEntries() const
+
+Returns the maximum of NumMyRowEntries() over all rows. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::ExtractMyRowCopy "virtual int Amesos_TestRowMatrix::ExtractMyRowCopy(int MyRow, int
+Length, int &NumEntries, double *Values, int *Indices) const
+
+Returns a copy of the specified local row in user-provided arrays.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Local row to extract.
+
+Length:  - (In) Length of Values and Indices.
+
+NumEntries:  - (Out) Number of nonzero entries extracted.
+
+Values:  - (Out) Extracted values for this row.
+
+Indices:  - (Out) Extracted global column indices for the
+corresponding values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::ExtractDiagonalCopy "virtual int Amesos_TestRowMatrix::ExtractDiagonalCopy(Epetra_Vector
+&Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Diagonal:  - (Out) Extracted main diagonal.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::Multiply "virtual int
+Amesos_TestRowMatrix::Multiply(bool TransA, const Epetra_MultiVector
+&X, Epetra_MultiVector &Y) const
+
+Returns the result of a Epetra_RowMatrix multiplied by a
+Epetra_MultiVector X in Y.
+
+Parameters:
+-----------
+
+TransA:  -(In) If true, multiply by the transpose of matrix, otherwise
+just use matrix.
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  -(Out) A Epetra_MultiVector of dimension NumVectorscontaining
+result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::Solve "virtual int
+Amesos_TestRowMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Returns result of a local-only solve using a triangular
+Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).
+";
+
+%feature("docstring")  Amesos_TestRowMatrix::Apply "virtual int
+Amesos_TestRowMatrix::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Amesos_TestRowMatrix::ApplyInverse "virtual
+int Amesos_TestRowMatrix::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const ";
+
+%feature("docstring")  Amesos_TestRowMatrix::InvRowSums "virtual int
+Amesos_TestRowMatrix::InvRowSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the rows of the
+Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED). ";
+
+%feature("docstring")  Amesos_TestRowMatrix::LeftScale "virtual int
+Amesos_TestRowMatrix::LeftScale(const Epetra_Vector &x)
+
+Scales the Epetra_RowMatrix on the left with a Epetra_Vector x (NOT
+IMPLEMENTED). ";
+
+%feature("docstring")  Amesos_TestRowMatrix::InvColSums "virtual int
+Amesos_TestRowMatrix::InvColSums(Epetra_Vector &x) const
+
+Computes the sum of absolute values of the columns of the
+Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED). ";
+
+%feature("docstring")  Amesos_TestRowMatrix::RightScale "virtual int
+Amesos_TestRowMatrix::RightScale(const Epetra_Vector &x)
+
+Scales the Epetra_RowMatrix on the right with a Epetra_Vector x (NOT
+IMPLEMENTED). ";
+
+%feature("docstring")  Amesos_TestRowMatrix::Filled "virtual bool
+Amesos_TestRowMatrix::Filled() const
+
+If FillComplete() has been called, this query returns true, otherwise
+it returns false. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NormInf "virtual double
+Amesos_TestRowMatrix::NormInf() const
+
+Returns the infinity norm of the global matrix. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NormOne "virtual double
+Amesos_TestRowMatrix::NormOne() const
+
+Returns the one norm of the global matrix. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalNonzeros "virtual int Amesos_TestRowMatrix::NumGlobalNonzeros() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalRows "virtual
+int Amesos_TestRowMatrix::NumGlobalRows() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalCols "virtual
+int Amesos_TestRowMatrix::NumGlobalCols() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalDiagonals "virtual int Amesos_TestRowMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumMyNonzeros "virtual
+int Amesos_TestRowMatrix::NumMyNonzeros() const
+
+Returns the number of nonzero entries in the calling processor's
+portion of the matrix. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumMyRows "virtual int
+Amesos_TestRowMatrix::NumMyRows() const
+
+Returns the number of matrix rows owned by the calling processor. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumMyCols "virtual int
+Amesos_TestRowMatrix::NumMyCols() const
+
+Returns the number of matrix columns owned by the calling processor.
+";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumMyDiagonals "virtual
+int Amesos_TestRowMatrix::NumMyDiagonals() const
+
+Returns the number of local nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::LowerTriangular "virtual
+bool Amesos_TestRowMatrix::LowerTriangular() const
+
+If matrix is lower triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::UpperTriangular "virtual
+bool Amesos_TestRowMatrix::UpperTriangular() const
+
+If matrix is upper triangular in local index space, this query returns
+true, otherwise it returns false. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::RowMatrixRowMap "virtual
+const Epetra_Map& Amesos_TestRowMatrix::RowMatrixRowMap() const
+
+Returns the Epetra_Map object associated with the rows of this matrix.
+";
+
+%feature("docstring")  Amesos_TestRowMatrix::RowMatrixColMap "virtual
+const Epetra_Map& Amesos_TestRowMatrix::RowMatrixColMap() const
+
+Returns the Epetra_Map object associated with the columns of this
+matrix. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::RowMatrixImporter "virtual const Epetra_Import* Amesos_TestRowMatrix::RowMatrixImporter()
+const
+
+Returns the Epetra_Import object that contains the import operations
+for distributed operations. ";
 
 %feature("docstring")  Amesos_TestRowMatrix::SetUseTranspose "int
 Amesos_TestRowMatrix::SetUseTranspose(bool UseTranspose)
@@ -922,6 +3725,218 @@ Epetra objects and the UMFPACK solver library, where A is an
 Epetra_RowMatrix and X and B are Epetra_MultiVector objects.
 
 C++ includes: Amesos_Umfpack.h ";
+
+%feature("docstring")  Amesos_Umfpack::Amesos_Umfpack "Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem
+&LinearProblem)
+
+Amesos_Umfpack Constructor.
+
+Creates an Amesos_Umfpack instance, using an Epetra_LinearProblem,
+passing in an already- defined Epetra_LinearProblem object.
+
+Note: The operator in LinearProblem must be an Epetra_RowMatrix. ";
+
+%feature("docstring")  Amesos_Umfpack::~Amesos_Umfpack "Amesos_Umfpack::~Amesos_Umfpack(void)
+
+Amesos_Umfpack Destructor.
+
+Completely deletes an Amesos_Umfpack object. ";
+
+%feature("docstring")  Amesos_Umfpack::SymbolicFactorization "int
+Amesos_Umfpack::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A.
+
+In addition to performing symbolic factorization on the matrix A, the
+call to SymbolicFactorization() implies that no change will be made to
+the non-zero structure of the underlying matrix without a subsequent
+call to SymbolicFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+<br >Postconditions: Symbolic Factorization will be performed (or
+marked to be performed) allowing NumericFactorization() and Solve() to
+be called.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Umfpack::NumericFactorization "int
+Amesos_Umfpack::NumericFactorization()
+
+Performs NumericFactorization on the matrix A.
+
+In addition to performing numeric factorization on the matrix A, the
+call to NumericFactorization() implies that no change will be made to
+the underlying matrix without a subsequent call to
+NumericFactorization().
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization(). (return -2 if the number of non-
+zeros changes) Other changes can have arbitrary consequences.
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should be indexed from 0 to n-1, unless the parameter
+\"Reindex\" was set to \"true\" prior to the call to
+SymbolicFactorization(). (return -3 - if caught)
+
+The paremeter \"Reindex\" should not be set to \"true\" except on
+CrsMatrices. (return -4)
+
+The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
+was built with EpetraExt, i.e. with --enable-epetraext on the
+configure line. (return -4)
+
+Internal errors retur -5.
+
+<br >Postconditions: Numeric Factorization will be performed (or
+marked to be performed) allowing Solve() to be performed correctly
+despite a potential change in in the matrix values (though not in the
+non-zero structure).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Umfpack::Solve "int
+Amesos_Umfpack::Solve()
+
+Solves A X = B (or AT x = B).
+
+<br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
+
+MatrixShapeOk( GetProblem().GetOperator()) == true (return -6)
+
+GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for
+return values)
+
+The non-zero structure of the matrix should not have changed since the
+last call to SymbolicFactorization().
+
+The distribution of the matrix should not have changed since the last
+call to SymbolicFactorization()
+
+The matrix should not have changed since the last call to
+NumericFactorization().
+
+<br >Postconditions: X will be set such that A X = B (or AT X = B),
+within the limits of the accuracy of the underlying solver.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Umfpack::GetProblem "const
+Epetra_LinearProblem* Amesos_Umfpack::GetProblem() const
+
+Returns the Epetra_LinearProblem.
+
+Warning! Do not call return->SetOperator(...) to attempt to change the
+Epetra_Operator object (even if the new matrix has the same
+structure). This new operator matrix will be ignored! ";
+
+%feature("docstring")  Amesos_Umfpack::MatrixShapeOK "bool
+Amesos_Umfpack::MatrixShapeOK() const
+
+Returns true if UMFPACK can handle this matrix shape.
+
+Returns true if the matrix shape is one that UMFPACK can handle.
+UMFPACK only works with square matrices. ";
+
+%feature("docstring")  Amesos_Umfpack::SetUseTranspose "int
+Amesos_Umfpack::SetUseTranspose(bool UseTranspose)
+
+If set true, X will be set to the solution of AT X = B (not A X = B).
+
+If the implementation of this interface does not support transpose
+use, this method should return a value of -1.
+
+<br >Preconditions:  SetUseTranspose() should be called prior to the
+call to SymbolicFactorization() If NumericFactorization() or Solve()
+is called after SetUseTranspose() without an intervening call to
+SymbolicFactorization() the result is implementation dependent.
+
+<br >Postconditions: The next factorization and solve will be
+performed with the new value of UseTranspose.
+
+Parameters:
+-----------
+
+UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
+B.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+%feature("docstring")  Amesos_Umfpack::UseTranspose "bool
+Amesos_Umfpack::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_Umfpack::Comm "const Epetra_Comm&
+Amesos_Umfpack::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Amesos_Umfpack::GetRcond "double
+Amesos_Umfpack::GetRcond() const
+
+Returns an estimate of the reciprocal of the condition number. ";
+
+%feature("docstring")  Amesos_Umfpack::SetParameters "int
+Amesos_Umfpack::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Updates internal variables.
+
+<br >Preconditions: None.
+
+<br >Postconditions: Internal variables controlling the factorization
+and solve will be updated and take effect on all subseuent calls to
+NumericFactorization() and Solve().
+
+All parameters whose value are to differ from the default values must
+be included in ParameterList. Parameters not specified in
+ParameterList revert to their default values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Amesos_Umfpack::NumSymbolicFact "int
+Amesos_Umfpack::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_Umfpack::NumNumericFact "int
+Amesos_Umfpack::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_Umfpack::NumSolve "int
+Amesos_Umfpack::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_Umfpack::PrintTiming "void
+Amesos_Umfpack::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_Umfpack::PrintStatus "void
+Amesos_Umfpack::PrintStatus() const
+
+Prints information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_Umfpack::GetTiming "void
+Amesos_Umfpack::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
 
 
 // File: classAmesos__Utils.xml
