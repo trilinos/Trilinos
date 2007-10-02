@@ -177,7 +177,14 @@ struct ScalarTraits<char>
   static inline char conjugate(char x) { return x; }
   static inline char real(char x) { return x; }
   static inline char imag(char x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
   //static inline char random() { return (-1 + 2*rand()); } // RAB: This version should be used to be consistent with others
   static inline char random() { return std::rand(); } // RAB: This version should be used for an unsigned char, not char
   static inline std::string name() { return "char"; }
@@ -199,7 +206,14 @@ struct ScalarTraits<int>
   static inline int conjugate(int x) { return x; }
   static inline int real(int x) { return x; }
   static inline int imag(int x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
   //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
   static inline int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
   static inline std::string name() { return "int"; }
@@ -314,7 +328,14 @@ struct ScalarTraits<float>
     float z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
     return false;
   }
-  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
   static inline float random() { float rnd = (float) std::rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); }
   static inline std::string name() { return "float"; }
   static inline float squareroot(float x)
@@ -439,7 +460,14 @@ struct ScalarTraits<double>
     double z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
     return false;
   }
-  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
   static inline double random() { double rnd = (double) std::rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); }
   static inline std::string name() { return "double"; }
   static inline double squareroot(double x)
