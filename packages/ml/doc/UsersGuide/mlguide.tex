@@ -1033,6 +1033,22 @@ is specified with the option {\tt aggregation: nodes per
 graph. Requires {\tt --with-ml\_parmetis2x} or {\tt --with-ml\_parmetis3x}. Aggregates can span
 arbitrary number of processes. Global number of aggregates can be
 specified with the option {\tt aggregation: global number}. \\
+\verb!VBMETIS! & As \verb!METIS!, but capable of handling matrices with a non 
+constant nodal block size.
+The appearing maximum number of degrees of freedom per nodal block is specified
+in {\tt PDE equations}. Additional information on the layout of variable nodal blocks 
+is required and specified using the arguments 
+{\tt aggregation: nblocks}, 
+{\tt aggregation: length blocks}, 
+{\tt aggregation: blocks}, and 
+{\tt aggregation: block\_pde}.
+Also, a user specified null space has to be provided using
+{\tt null space: vectors}.
+The number of nodes in each aggregate
+is specified with the option {\tt aggregation: nodes per
+  aggregate}. 
+  Requires \ML\ to be configured with {\tt
+  --with-ml\_metis}. \\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Available coarsening schemes.}
@@ -1419,6 +1435,36 @@ schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
   $\star$}{[{\tt int}] Defines the maximum number of next-level matrix rows
   per process (only for {\tt ParMETIS} aggregation
 scheme). Default: 128.}
+
+\choicebox{\tt aggregation: nblocks
+  }{[{\tt int}] Defines the number of processor nodal
+  blocks in the matrix (only for {\tt VBMETIS} aggregation
+scheme). Nodal blocks must not span processors. Default: 0.}
+
+\choicebox{\tt aggregation: length blocks
+  }{[{\tt int}] Length of vectors specified with
+  {\tt aggregation: blocks} and {\tt aggregation: block\_pde}
+   (only for {\tt VBMETIS} aggregation
+scheme). Usually, this correponds to the processor local number of
+scalar rows of the problem. Default: 0.}
+
+\choicebox{\tt aggregation: blocks
+  }{[{\tt int}] Vector of length {\tt aggregation: length blocks}.
+  Contains processor global block numbering starting from {\tt 0}.
+  {\tt blocks[i]} is the nodal block the scalar equation {\tt i} of
+  the matrix belongs to, where {\tt i} is a processor local scalar row
+  index of the matrix
+   (only for {\tt VBMETIS} aggregation
+scheme). The user is responsible for freeing the vector. Default: NULL.}
+
+\choicebox{\tt aggregation: block\_pde
+  }{[{\tt int}] Vector of length {\tt aggregation: length blocks}.
+  {\tt block\_pde[i]} is the number of the pde equation inside one
+  nodal block, where numbering starts from {\tt 0}.
+  Note that a user specified null space matching the supplied pde
+  distribution in this vector should be supplied in {\tt null space: vectors}
+   (only for {\tt VBMETIS} aggregation
+scheme). The user is responsible for freeing the vector. Default: NULL.}
 
 \choicebox{\tt aggregation: use tentative restriction}{[{\tt bool}] 
   If {\tt true}, then the final restriction operator at level $\ell$
