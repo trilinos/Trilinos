@@ -2254,11 +2254,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      } /* if (ag->nullspace_vect != NULL) */
     } /* if (ag !=NULL) */
 
-    if (ag !=NULL) {
-      if ( (ag->nullspace_dim != 1) && haveCoordinates)
-        pr_error("Repartitioning of coordinates does not work with null space greater than one.\n");
-    }
-
     if (xcoord != NULL) {
       new_xcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
                                         (perm->outvec_leng +1));
