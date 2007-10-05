@@ -140,8 +140,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int NodeSubSmIts = 1, EdgeSubSmIts = 1;
   double EdgeSubSmLOF=0., NodeSubSmLOF=0.;
   int EdgeSubSmOverlap=0, NodeSubSmOverlap=0;
-  double EdgeSubSmOmega=0., NodeSubSmOmega=0.,
-         EdgeSubSmAlpha=0., NodeSubSmAlpha=0.;
+  double EdgeSubSmOmega=0., NodeSubSmOmega=0.;
   double EdgeSubSmRelThreshold=0., NodeSubSmRelThreshold=0.;
   double EdgeSubSmAbsThreshold=0., NodeSubSmAbsThreshold=0.;
 
@@ -179,8 +178,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     NodeSubSmRelThreshold =List_.get("subsmoother: node relative threshold",1.);
     EdgeSubSmAbsThreshold =List_.get("subsmoother: edge absolute threshold",0.);
     NodeSubSmAbsThreshold =List_.get("subsmoother: node absolute threshold",0.);
-    EdgeSubSmAlpha   = List_.get("subsmoother: edge alpha",20.);
-    NodeSubSmAlpha   = List_.get("subsmoother: node alpha",20.);
   }
 
   // ===================== //
@@ -217,8 +214,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     sprintf(msg,"Smoother (level %d) : ", LevelID_[level]);
 
     { // minor information about matrix size on each level
-      int local[2];
-      int global[2];
+      double local[2];
+      double global[2];
       local[0] = ml_->Amat[LevelID_[level]].invec_leng;
       local[1] = ml_->Amat[LevelID_[level]].N_nonzeros;
       Comm().SumAll(local,global,2);
@@ -226,10 +223,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // defined operators are only local, while for Epetra
       // are global.
       if (level == 0)
+        // TODO (JJH) This assumption could be wrong if the fine level
+        // TODO operator is really an ML_Operator.
         global[1] = local[1];
-      if (verbose_)
+      if (verbose_) {
+        int i = cout.precision(0);
+        cout.setf(std::ios::fixed);
         cout << msg << "# global rows = " << global[0] 
              << ", # estim. global nnz = " << global[1] << endl;
+        cout.precision(i);
+        cout.unsetf(std::ios::fixed);
+      }
       // FIXME? above `est' is estimated, because there is something
       // wrong with the way nonzeros are stored in operators.
     }
@@ -812,25 +816,18 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           // Chebyshev subsmoother
           // --------------------------------------
           double *coarsening_rate=0;
-          int Nfine=0,Ncoarse=0;
           ML  *mlptr=0;
           if (ne == EDGE) {
             edge_smoother=(void *) ML_Gen_Smoother_Cheby;
             edge_args_ = ML_Smoother_Arglist_Create(2);
             argList = edge_args_;
             coarsening_rate = &edge_coarsening_rate;
-            Nfine = Tmat_array[thisLevel]->outvec_leng;
-            if (thisLevel != ml_->ML_coarsest_level)
-              Ncoarse = Tmat_array[nextLevel]->outvec_leng;
             mlptr = ml_;
           } else if (ne == NODE) { 
             nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
             nodal_args_ = ML_Smoother_Arglist_Create(2);
             argList = nodal_args_;
             coarsening_rate = &node_coarsening_rate;
-            Nfine = Tmat_array[thisLevel]->invec_leng;
-            if (thisLevel != ml_->ML_coarsest_level)
-              Ncoarse = Tmat_array[nextLevel]->invec_leng;
             mlptr = ml_nodes_;
           }
           // This is for backward compatibility 

@@ -1060,6 +1060,8 @@ agg_->keep_P_tentative = 1;
       ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
       int minperproc = List_.get("repartition: min per proc", 512);
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
+      ML_Repartition_Set_PutOnSingleProc(ml_,
+                    List_.get("repartition: put on single proc", 5000));
 
       if (Repartitioner == "Zoltan") {
         ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
@@ -1621,8 +1623,8 @@ agg_->keep_P_tentative = 1;
 
     for (int i = 0 ; i < NumLevels_ ; ++i) 
     {
-      int local[2];
-      int global[2];
+      double local[2];
+      double global[2];
       local[0] = ml_->Amat[LevelID_[i]].invec_leng;
       local[1] = ml_->Amat[LevelID_[i]].N_nonzeros;
       Comm().SumAll(local,global,2);
@@ -1754,6 +1756,8 @@ agg_->keep_P_tentative = 1;
   ConstructionTime_ += Time.ElapsedTime();
   OutputList_.set("time: construction", ConstructionTime_);
   ++NumConstructions_;
+
+  VisualizeAggregates();
  } 
  catch(...)
  {

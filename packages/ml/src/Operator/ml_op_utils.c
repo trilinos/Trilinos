@@ -1965,8 +1965,8 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
                                   int perfAndCommStats)
 {
   double t1;
-  int i,j,k,NumActiveProc, proc_active;
-  int Nglobrows,Nglobcols;
+  double j, Nglobrows, Nglobcols;
+  int i,k,NumActiveProc, proc_active;
   ML_Comm *comm = mat->comm;
   int mypid = mat->comm->ML_mypid;
   int maxrows,maxproc,minrows,minproc;
@@ -2001,9 +2001,9 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   NumActiveProc = ML_gsum_int(proc_active, comm);
 
   i = mat->invec_leng; 
-  Nglobcols = ML_gsum_int(i, comm);
+  Nglobcols = ML_gsum_double((double)i, comm);
   i = mat->outvec_leng; 
-  Nglobrows = ML_gsum_int(i, comm);
+  Nglobrows = ML_gsum_double((double)i, comm);
 
   for (i=0; i<75; i++) eqLine[i] = '=';
   eqLine[75] = '\0';
@@ -2016,7 +2016,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
       i = mat->getrow->pre_comm->N_neighbors;
     else i = 0;
     i = ML_Comm_GsumInt(comm, i);
-    j = ML_Comm_GsumInt(comm, mat->N_nonzeros);
+    j = ML_Comm_GsumInt(comm, (double) mat->N_nonzeros);
     maxnzs = ML_gmax_int(mat->N_nonzeros, comm);
     maxproc = ML_gmax_int( (maxnzs == mat->N_nonzeros ? mypid:0), comm);
     if (proc_active) k=mat->N_nonzeros;
@@ -2027,7 +2027,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
     t1 = t1/((double) NumActiveProc);
     if (mypid == 0) {
        printf("= %s =\n",eqLine);
-       printf("%s: %d rows, %d cols, %d global nonzeros\n",
+       printf("%s: %1.0f rows, %1.0f cols, %1.0f global nonzeros\n",
               mat->label,Nglobrows,Nglobcols, j);
        printf("%s: num PDES = %d, lambda_max = %2.3e, lambda_min = %2.3e\n",
               mat->label, mat->num_PDEs, mat->lambda_max, mat->lambda_min);

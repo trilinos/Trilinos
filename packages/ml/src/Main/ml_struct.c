@@ -69,6 +69,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->tolerance       = 1.e-8;
    (*ml_ptr)->max_iterations  = 1000;
    (*ml_ptr)->MinPerProc_repartition = -1;
+   (*ml_ptr)->PutOnSingleProc_repartition = -1;
    (*ml_ptr)->LargestMinMaxRatio_repartition = -1.;
    (*ml_ptr)->use_repartitioning = 0;
 
@@ -6777,6 +6778,11 @@ void ML_Repartition_Set_LargestMinMaxRatio(ML* ml, double ratio)
 double ML_Repartition_Get_LargestMinMaxRatio(ML* ml)
 {
   return ml->LargestMinMaxRatio_repartition;
+}
+
+void ML_Repartition_Set_PutOnSingleProc(ML* ml, int i)
+{
+  ml->PutOnSingleProc_repartition = i;
 }
 
 void ML_Repartition_Set_MinPerProc(ML* ml, int minperproc)

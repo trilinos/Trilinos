@@ -2040,7 +2040,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   if (remote_offsets != NULL) ML_free(remote_offsets);
 
   return 0;
-}
+} /*ML_repartition_matrix()*/
 
 /* ************************************************************************* */
 /* Use A instead of AT in restriction                                        */
@@ -2122,7 +2122,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   ML_Operator **permvec=NULL;
   int status, offset1, offset2, j, flag = 0;
   double *new_null;
-  int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
+  int ml_gmin, ml_gmax, Nprocs_ToUse;
+  double ml_gsum;
   double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL;
   double *new_xcoord, *new_ycoord, *new_zcoord;
   int UseImplicitTranspose;
@@ -2134,30 +2135,25 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   StartTimer(&t0);
 
-  if (ML_Repartition_Status(ml) == ML_FALSE) {
-    StopTimer(&t0,&delta);
-    if (ML_Get_PrintLevel() > 9)
-      ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+  if (ML_Repartition_Status(ml) == ML_FALSE)
     return NULL;
-  }
 
   Amatrix = &(ml->Amat[coarse]);
   Rmat = &(ml->Rmat[fine]);
   Pmat = &(ml->Pmat[coarse]);
 
   if ((ml->MinPerProc_repartition == -1) && 
-      (ml->LargestMinMaxRatio_repartition == -1.)) {
-    StopTimer(&t0,&delta);
-    if (ML_Get_PrintLevel() > 9)
-      ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+      (ml->LargestMinMaxRatio_repartition == -1.) &&
+      (ml->PutOnSingleProc_repartition == -1.))
     return NULL;
-  }
 
+  /*FIXME (JJH) for a rectangular matrix, invec_leng != outvec_leng .... */
   ml_gmax = ML_gmax_int(Amatrix->invec_leng,ml->comm);
   ml_gmin = Amatrix->invec_leng;
   if (ml_gmin == 0) ml_gmin = ml_gmax; /* don't count */
                                       /* empty processors */
-  ml_gmin = ML_gmin_int(ml_gmin,ml->comm);
+  ml_gmin = ML_gmin_double(ml_gmin,ml->comm);
+  ml_gsum = ML_gsum_double((double)Amatrix->invec_leng,ml->comm);
  
   if ( (ml->MinPerProc_repartition != -1) &&
        (ml_gmin < ml->MinPerProc_repartition))
@@ -2167,22 +2163,31 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
           ml->LargestMinMaxRatio_repartition))
     flag = 1;
 
+
   Nprocs_ToUse = ml->comm->ML_nprocs;
   if ( (flag == 1) && (ml->MinPerProc_repartition != -1))
   {
     /* compute how many processors to use in the repartitioning */
-    ml_gsum = ML_gsum_int(Amatrix->invec_leng,ml->comm);
-    Nprocs_ToUse = ml_gsum/ml->MinPerProc_repartition;
-    if (Nprocs_ToUse > ml->comm->ML_nprocs)
-      Nprocs_ToUse = ml->comm->ML_nprocs;
-    if (Nprocs_ToUse < 1) Nprocs_ToUse = 1;
+    double ttt = ml_gsum/ml->MinPerProc_repartition;
+    if (ttt > ml->comm->ML_nprocs)
+      ttt = ml->comm->ML_nprocs;
+    if (ttt < 1) ttt = 1;
+    Nprocs_ToUse = (int) ttt;
   }
 
-  if (flag == 0) {
-    StopTimer(&t0,&delta);
-    if (ML_Get_PrintLevel() > 9)
-      ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+  if (ml_gsum < ml->PutOnSingleProc_repartition) {
+    flag = 1;
+    Nprocs_ToUse = 1;
+  }
+
+  if (flag == 0)
     return NULL;
+
+  if (ML_Get_PrintLevel() > 0 && !ml->comm->ML_mypid) {
+    printf("Repartitioning (level %d): min rows per proc = %d\n",coarse,ml->MinPerProc_repartition);
+    printf("Repartitioning (level %d): largest max/min ratio = %2.3e\n",coarse,ml->LargestMinMaxRatio_repartition);
+    printf("Repartitioning (level %d): max #rows (global) that fits on one proc = %d\n",coarse,ml->PutOnSingleProc_repartition);
+    printf("Repartitioning (level %d): #proc to use in repartitioning = %d\n",coarse,Nprocs_ToUse);
   }
 
   grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[coarse].Grid;
@@ -2350,4 +2355,4 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     return NULL;
   else
     return permvec;
-}
+} /*ML_repartition_Acoarse()*/

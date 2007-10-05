@@ -74,13 +74,6 @@ VisualizeAggregates()
     ML_CHK_ERR(Visualize(true, false, false, false, -1, -1, -1));
 
   }
-  else
-  {
-    cout << PrintMsg_ << "You need to specify `viz: enable' = true" << endl;
-    cout << PrintMsg_ << "in the parameter list before building the ML" << endl;
-    cout << PrintMsg_ << "preconditioner in order to visualize" << endl;
-    ML_CHK_ERR(-1);
-  }
   return(0);
 }
 

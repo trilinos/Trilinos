@@ -142,6 +142,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setStringToIntegralParameter<int>("repartition: partitioner","Zoltan","Repartitioning method",tuple<std::string>("Zoltan","ParMETIS"),PL);
   setDoubleParameter("repartition: max min ratio",1.3,"Specifies desired maximum imbalance ratio",PL,dblParam);
   setIntParameter("repartition: min per proc",512,"Specifies minimum # rows / processor",PL,intParam);
+  setIntParameter("repartition: put on single proc",5000,"Specifies max global problem to be put on one processor",PL,intParam);
   setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal heirarchy (Maxwell)",PL,dblParam);
   setIntParameter("repartition: node min per proc",170,"Specifies minimum number of nodes per proc (Maxwell)",PL,intParam);
   setIntParameter("repartition: Zoltan dimensions",0,"Dimension of problem",PL,intParam);

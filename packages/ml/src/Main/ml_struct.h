@@ -85,6 +85,7 @@ struct ML_Struct {
    int            output_level;
    int            res_output_freq;
    int            MinPerProc_repartition;
+   int            PutOnSingleProc_repartition;
    double         LargestMinMaxRatio_repartition; 
    int            use_repartitioning; /* turn repartitioning [off]/on */
    ML_Partitioner partitioner; /*which partitioner to use: zoltan,parmetis,jostle */
@@ -373,6 +374,7 @@ extern int ML_Smoother_Reinit(ML *ml);
 extern void ML_Repartition_Set_LargestMinMaxRatio(ML*, double);
 extern double  ML_Repartition_Get_LargestMinMaxRatio(ML* ml);
 extern void ML_Repartition_Set_MinPerProc(ML*, int);
+extern void ML_Repartition_Set_PutOnSingleProc(ML*, int);
 extern int  ML_Repartition_Get_MinPerProc(ML* ml);
 extern void ML_Repartition_Set_Partitioner(ML*, ML_Partitioner);
 extern ML_Partitioner ML_Repartition_Get_Partitioner(ML* ml);
