@@ -2152,7 +2152,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   ml_gmin = Amatrix->invec_leng;
   if (ml_gmin == 0) ml_gmin = ml_gmax; /* don't count */
                                       /* empty processors */
-  ml_gmin = ML_gmin_double(ml_gmin,ml->comm);
+  ml_gmin = ML_gmin_int(ml_gmin,ml->comm);
   ml_gsum = ML_gsum_double((double)Amatrix->invec_leng,ml->comm);
  
   if ( (ml->MinPerProc_repartition != -1) &&

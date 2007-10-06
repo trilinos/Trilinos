@@ -49,6 +49,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
       MatrixFree                         \
       Scalability                        \
       RefMaxwell                         \
-      Miscellaneous
+      Miscellaneous                      \
+      Zoltan
 
 EXTRA_DIST = definition

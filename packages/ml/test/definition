@@ -40,7 +40,7 @@
 	   RefMaxwell,
          # Scalability,
          # VerySimple,
-         # Zoltan,
+           Zoltan,
            SelfSmoother;
     COMM = SERIAL, MPI(1-4);
 }

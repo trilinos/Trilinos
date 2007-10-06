@@ -28,11 +28,6 @@
 
 #include "ml_config.h"
 
-// To be modified to support Galeri and no longer Triutils
-// I am not sure when this test was executed and passed... MS
-#ifdef FIXME
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_ZOLTAN)
-
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -40,27 +35,24 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
-
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_VbrMatrices.h"
+#include "Galeri_Utils.h"
 
 using namespace Teuchos;
-using namespace Trilinos_Util;
+using namespace Galeri;
 using namespace ML_Epetra;
 
-// *) define VIZ to visualize the aggregates (does not work for
-//    all the aggregation schemes)
 //
 // \author Marzio Sala, SNL 9214
 //
-// \date last updated on 26-Mar-05
 
 int main(int argc, char *argv[])
 {
@@ -72,32 +64,54 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  int NumNodes = 65536;
+  int nx;
+  if (argc > 1)
+    nx = (int) strtol(argv[1],NULL,10);
+  else
+    nx = 256;
+  int ny = nx * Comm.NumProc(); // each subdomain is a square
+
+  ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", 1);
+  GaleriList.set("my", Comm.NumProc());
+
+  int NumNodes = nx*ny;
   int NumPDEEqns = 2;
 
-  VbrMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumNodes);
-  Gallery.Set("output",0);
+  Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
+  Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Epetra_VbrMatrix* A = CreateVbrMatrix(CrsA, NumPDEEqns);
 
-  // retrive pointers for linear system matrix and linear problem
-  Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEEqns);
-  Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
-
-  // Construct a solver object for this problem
-  AztecOO solver(*Problem);
-
-  double* x_coord = 0;
-  double* y_coord = 0;
-  double* z_coord = 0; // the problem is 2D, here z_coord will be NULL
+  Epetra_Vector LHS(A->DomainMap()); LHS.PutScalar(0);
+  Epetra_Vector RHS(A->DomainMap()); RHS.Random();
+  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  AztecOO solver(Problem);
+  double *x_coord = 0, *y_coord = 0, *z_coord = 0;
   
-  Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
+  Epetra_MultiVector *coords = CreateCartesianCoordinates("2D", &(CrsA->Map()),
+                                                          GaleriList);
+
+  double **ttt;
+  if (!coords->ExtractView(&ttt)) {
+    x_coord = ttt[0];
+    y_coord = ttt[1];
+  } else {
+    printf("Error extracting coordinate vectors\n");
+#   ifdef HAVE_MPI
+    MPI_Finalize() ;
+#   endif
+    exit(EXIT_FAILURE);
+  }
 
   ParameterList MLList;
-  MLList.set("ML output",8);
-
+  SetDefaults("SA",MLList);
+  MLList.set("ML output",10);
   MLList.set("max levels",10);
   MLList.set("increasing or decreasing","increasing");
-  MLList.set("smoother: type", "symmetric Gauss-Seidel");
+  MLList.set("smoother: type", "Chebyshev");
+  MLList.set("smoother: sweeps", 3);
 
   // *) if a low number, it will use all the available processes
   // *) if a big number, it will use only processor 0 on the next level
@@ -106,6 +120,7 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type (level 0)", "Zoltan");
   MLList.set("aggregation: type (level 1)", "Uncoupled");
   MLList.set("aggregation: type (level 2)", "Zoltan");
+  MLList.set("aggregation: smoothing sweeps", 2);
 
   MLList.set("x-coordinates", x_coord);
   MLList.set("y-coordinates", y_coord);
@@ -121,87 +136,46 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: global aggregates (level 2)", 
              NumNodes / (ratio * ratio * ratio));
 
-#ifdef VIZ
-  MLList.set("viz: enable", true);
-  MLList.set("viz: x-coordinates", x_coord);
-  MLList.set("viz: y-coordinates", y_coord);
-#endif
-
-  // create the preconditioner object and compute hierarchy
-  // See comments in "ml_example_epetra_preconditioner.cpp"
-
   MultiLevelPreconditioner* MLPrec = 
     new MultiLevelPreconditioner(*A, MLList, true);
 
-#ifdef VIZ  
-  MLPrec->VisualizeAggregates();
-#endif
-
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  solver.SetAztecOption(AZ_output, 32);
-  solver.Iterate(500, 1e-12);
-
-  delete MLPrec;
+  solver.SetAztecOption(AZ_output, 1);
+  solver.Iterate(100, 1e-12);
   
   // compute the real residual
-
-  double residual, diff;
-  Gallery.ComputeResidualVbr(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutionsVbr(&diff);
+  Epetra_Vector Residual(A->DomainMap());
+  //1.0 * RHS + 0.0 * RHS - 1.0 * (A * LHS)
+  A->Apply(LHS,Residual);
+  Residual.Update(1.0, RHS, 0.0, RHS, -1.0);
+  double rn;
+  Residual.Norm2(&rn);
   
-  if (Comm.MyPID() == 0 ) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
-  }
+  if (Comm.MyPID() == 0 )
+    std::cout << "||b-Ax||_2 = " << rn << endl;
 
-  // delete memory for coordinates
-  if (x_coord) delete[] x_coord;
-  if (y_coord) delete[] y_coord;
-  if (z_coord) delete[] z_coord;
-  
-  if (Comm.MyPID() && residual > 1e-5) {
-    cout << "TEST FAILED!!!!" << endl;
+  if (Comm.MyPID() == 0 && rn > 1e-5) {
+    std::cout << "TEST FAILED!!!!" << endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize() ;
+#   endif
     exit(EXIT_FAILURE);
   }
+
+  delete MLPrec;
+  delete coords;
+  delete Map;
+  delete CrsA;
+  delete A;
+
+  if (Comm.MyPID() == 0)
+    std::cout << "TEST PASSED" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
-  if (Comm.MyPID() == 0)
-    cout << "TEST PASSED" << endl;
-
   exit(EXIT_SUCCESS);
   
 }
-
-#else
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-  /* still need to deal with MPI, some architecture don't like */
-  /* an exit(0) without MPI_Finalize() */
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
-
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils --with-ml_zoltan");
-  
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
-  return(EXIT_SUCCESS);
-}
-
-#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_ZOLTAN) */
-
-#endif

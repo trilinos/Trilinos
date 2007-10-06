@@ -744,6 +744,8 @@ ML_BENCHMARKING_TRUE
 ML_BENCHMARKING_FALSE
 ML_USING_NOX_TRUE
 ML_USING_NOX_FALSE
+ML_USING_ZOLTAN_TRUE
+ML_USING_ZOLTAN_FALSE
 ML_USING_EPETRA_TRUE
 ML_USING_EPETRA_FALSE
 ML_USING_AMESOS_TRUE
@@ -8894,6 +8896,14 @@ echo "$as_me: error: Zoltan support in ML requires enabling MPI." >&2;}
    { (exit 1); exit 1; }; }
    fi
 fi
+ if test "X$ac_cv_use_ml_zoltan" = "Xyes"; then
+  ML_USING_ZOLTAN_TRUE=
+  ML_USING_ZOLTAN_FALSE='#'
+else
+  ML_USING_ZOLTAN_TRUE='#'
+  ML_USING_ZOLTAN_FALSE=
+fi
+
 #
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
@@ -13649,7 +13659,7 @@ fi
 #                test/scripts/daily/mpi/Makefile
 #                test/scripts/daily/serial/Makefile
 #		])
-ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/XML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile test/Miscellaneous/Makefile test/RefMaxwell/Makefile test/Scalability/Makefile matlab/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/XML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile test/Miscellaneous/Makefile test/RefMaxwell/Makefile test/Scalability/Makefile test/Zoltan/Makefile matlab/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -13836,6 +13846,13 @@ if test -z "${ML_USING_NOX_TRUE}" && test -z "${ML_USING_NOX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_NOX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ML_USING_NOX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ML_USING_ZOLTAN_TRUE}" && test -z "${ML_USING_ZOLTAN_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_ZOLTAN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ML_USING_ZOLTAN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14523,6 +14540,7 @@ do
     "test/Miscellaneous/Makefile") CONFIG_FILES="$CONFIG_FILES test/Miscellaneous/Makefile" ;;
     "test/RefMaxwell/Makefile") CONFIG_FILES="$CONFIG_FILES test/RefMaxwell/Makefile" ;;
     "test/Scalability/Makefile") CONFIG_FILES="$CONFIG_FILES test/Scalability/Makefile" ;;
+    "test/Zoltan/Makefile") CONFIG_FILES="$CONFIG_FILES test/Zoltan/Makefile" ;;
     "matlab/Makefile") CONFIG_FILES="$CONFIG_FILES matlab/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -14756,6 +14774,8 @@ ML_BENCHMARKING_TRUE!$ML_BENCHMARKING_TRUE$ac_delim
 ML_BENCHMARKING_FALSE!$ML_BENCHMARKING_FALSE$ac_delim
 ML_USING_NOX_TRUE!$ML_USING_NOX_TRUE$ac_delim
 ML_USING_NOX_FALSE!$ML_USING_NOX_FALSE$ac_delim
+ML_USING_ZOLTAN_TRUE!$ML_USING_ZOLTAN_TRUE$ac_delim
+ML_USING_ZOLTAN_FALSE!$ML_USING_ZOLTAN_FALSE$ac_delim
 ML_USING_EPETRA_TRUE!$ML_USING_EPETRA_TRUE$ac_delim
 ML_USING_EPETRA_FALSE!$ML_USING_EPETRA_FALSE$ac_delim
 ML_USING_AMESOS_TRUE!$ML_USING_AMESOS_TRUE$ac_delim
@@ -14803,7 +14823,7 @@ ac_aux_dir!$ac_aux_dir$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 77; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 79; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

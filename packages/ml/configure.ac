@@ -447,6 +447,7 @@ if test "X${HAVE_PKG_MPI}" != "Xyes"; then
      AC_MSG_ERROR([[Zoltan support in ML requires enabling MPI.]])
    fi
 fi
+AM_CONDITIONAL(ML_USING_ZOLTAN, test "X$ac_cv_use_ml_zoltan" = "Xyes")
 #
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
@@ -719,6 +720,7 @@ AC_CONFIG_FILES([
         test/Miscellaneous/Makefile
         test/RefMaxwell/Makefile
         test/Scalability/Makefile
+		test/Zoltan/Makefile
         matlab/Makefile
                 ])
 
