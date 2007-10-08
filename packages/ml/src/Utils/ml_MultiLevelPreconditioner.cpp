@@ -873,6 +873,14 @@ agg_->keep_agg_information = 1;
 agg_->keep_P_tentative = 1;
 #endif
 
+/* Repect Materials Options - cms*/
+  bool respect_materials = List_.get("aggregation: respect materials",false);
+  int * material_type = List_.get("aggregation: material type",(int*)0);
+  if(respect_materials && material_type) {
+    agg_->respect_materials=respect_materials;
+    agg_->material_type=material_type;
+  }
+
 
   if( SolvingMaxwell_ == false ) {
 
@@ -1684,7 +1692,6 @@ agg_->keep_P_tentative = 1;
   // One may decide to print out the entire hierarchy (to be analyzed in    //
   // MATLAB, for instance).                                                 //
   // ====================================================================== //
-
   bool PrintHierarchy = List_.get("print hierarchy", false);
   if ( PrintHierarchy == true ) Print();
 
@@ -1928,65 +1935,59 @@ Print(const char *whichHierarchy)
   // MATLAB, for instance).                                                 //
   // ====================================================================== //
 
-  if( Comm().NumProc() > 1) {
-    if( Comm().MyPID() == 0 ) {
-      std::cerr << std::endl;
-      std::cerr << ErrorMsg_ << "The multigrid hierarchy can be printed only"
-                        << "for serial runs." << std::endl;
-      std::cerr << std::endl;
-    }
+  if(Comm().MyPID()==0){
+    std::cout << std::endl;
+    std::cout << PrintMsg_ << "You are printing the entire hierarchy," << std::endl
+              << PrintMsg_ << "from finest level (" << LevelID_[0] 
+              << ") to coarsest (" << LevelID_[NumLevels_-1] << ")." << std::endl
+              << PrintMsg_ << "MATLAB can be used to load the matrices, using spconvert()" << std::endl;
+    std::cout << std::endl;
+  }
+    
+  ML* mlptr;
+  char auxSuffix[100];
+  if ( (strcmp(whichHierarchy,"main") != 0) && SolvingMaxwell_) {
+    mlptr = ml_nodes_;
+    strncpy(auxSuffix,whichHierarchy,80);
+  }
+  else {
+    mlptr = ml_;
+    auxSuffix[0] = '\0';
+  }
+
+  char name[80];
+  // Amat (one for each level)
+  for( int i=0 ; i<NumLevels_ ; ++i ) {
+    sprintf(name,"Amat_%d%s", LevelID_[i],auxSuffix);
+    ML_Operator_Print_UsingGlobalOrdering(mlptr->Amat+LevelID_[i], name,
+                                          NULL,NULL);
   }
   
-  if( Comm().NumProc() == 1 ) {
-      std::cout << std::endl;
-      std::cout << PrintMsg_ << "You are printing the entire hierarchy," << std::endl
-       << PrintMsg_ << "from finest level (" << LevelID_[0] 
-                    << ") to coarsest (" << LevelID_[NumLevels_-1] << ")." << std::endl
-       << PrintMsg_ << "MATLAB can be used to load the matrices, using spconvert()" << std::endl;
-      std::cout << std::endl;
-
-    ML* mlptr;
-    char auxSuffix[100];
-    if ( (strcmp(whichHierarchy,"main") != 0) && SolvingMaxwell_) {
-      mlptr = ml_nodes_;
-      strncpy(auxSuffix,whichHierarchy,80);
-    }
-    else {
-      mlptr = ml_;
-      auxSuffix[0] = '\0';
-    }
-
-    char name[80];
-    // Amat (one for each level)
-    for( int i=0 ; i<NumLevels_ ; ++i ) {
-      sprintf(name,"Amat_%d%s", LevelID_[i],auxSuffix);
-      ML_Operator_Print_UsingGlobalOrdering(mlptr->Amat+LevelID_[i], name,
-                                            NULL,NULL);
-    }
-
-    // Pmat (one for each level, except last)
-    for( int i=1 ; i<NumLevels_ ; ++i ) {
-      sprintf(name,"Pmat_%d%s", LevelID_[i],auxSuffix);
-      ML_Operator_Print_UsingGlobalOrdering(mlptr->Pmat+LevelID_[i], name,
-                                            NULL,NULL);
-    }
-
-    // Rmat (one for each level, except first)
+  // Pmat (one for each level, except last)
+  for( int i=1 ; i<NumLevels_ ; ++i ) {
+    sprintf(name,"Pmat_%d%s", LevelID_[i],auxSuffix);
+    ML_Operator_Print_UsingGlobalOrdering(mlptr->Pmat+LevelID_[i], name,
+                                          NULL,NULL);
+  }
+  
+  if( Comm().NumProc() > 1) {
+    // Rmat (one for each level, except first)    
     for( int i=0 ; i<NumLevels_-1 ; ++i ) {
       sprintf(name,"Rmat_%d%s", LevelID_[i],auxSuffix);
       //FIXME
       ML_Operator_Print(&(mlptr->Rmat[LevelID_[i]]), name);
     }
-
-    // Tmat (one for each level)
-    if (SolvingMaxwell_)
-      for( int i=0 ; i<NumLevels_ ; ++i ) {
-        sprintf(name,"Tmat_%d", LevelID_[i]);
-        ML_Operator_Print_UsingGlobalOrdering(Tmat_array[LevelID_[i]], name,
-                                              NULL,NULL);
-      }
-
   }
+  
+  // Tmat (one for each level)
+  if (SolvingMaxwell_)
+    for( int i=0 ; i<NumLevels_ ; ++i ) {
+      sprintf(name,"Tmat_%d", LevelID_[i]);
+      ML_Operator_Print_UsingGlobalOrdering(Tmat_array[LevelID_[i]], name,
+                                            NULL,NULL);
+    }
+  
+  
 } //Print() method
 
 // ============================================================================
