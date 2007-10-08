@@ -32,8 +32,8 @@
 
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
-#include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp" // Interface
-#include "Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp" // Implementation
+#include "Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp" // Default implementation
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_AbstractFactory.hpp" // Interface
@@ -64,7 +64,7 @@ namespace Thyra {
 
    x_bar = [ x[0]; x[1]; ...; x[N-1]]
 
-   {p_l}\p_period = { p_0, p_1; ..., p_(z_index-1), p_(z_index+1), ..., p_Np }
+   {p_l}\p_period = { p_(0), p_(1), ..., p_(z_index-1), p_(z_index+1), ..., p_(Np-1) }
 
    f_bar(...) = [ f(x[0],{p_l},z[0]); f(x[1],{p_l},z[1]); ..., f(x[N-1],{p_l},z[N-1]) ]
 
@@ -74,7 +74,7 @@ namespace Thyra {
 
  * Above, the notation <tt>{p_l}\p_period</tt> is meant to represent the set
  * of all parameter subvectors in each of the constituent models minus the
- * parameter used to define period data.
+ * parameter subvector used to define period data.
  *
  * This gives the first derivative objects:
 
@@ -133,7 +133,7 @@ public:
     const Array<Scalar> g_weights,
     const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
     const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
-    const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory = Teuchos::null
     );
 
   /** \brief Initialize.
@@ -182,8 +182,8 @@ public:
    * \param W_bar_factory [in] Factory object that is used to create the block
    * LOWS object that will be used to represent the block diagonal object
    * <tt>W_bar</tt>.  If <tt>is_null(W_bar_factory)==true</tt> on input then a
-   * <tt>DefaultBlockedTriangularLinearOpWithSolve</tt> object will be create
-   * internally.
+   * <tt>DefaultBlockedTriangularLinearOpWithSolveFactory</tt> object will be
+   * created and used internally.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>N > 0</tt>
@@ -203,13 +203,12 @@ public:
     const Array<Scalar> g_weights,
     const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
     const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
-    const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory = Teuchos::null
     );
 
   /** \brief Reset z.
    *
-   * \param  z
-   *           [in] See <tt>initialize()</tt>.
+   * \param  z [in] See <tt>initialize()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li>See <tt>initialize()</tt>
@@ -245,10 +244,10 @@ public:
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
-  /** \brief . */
-  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \breif . */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
+  /** \breif . */
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief Ignores the final point. */
@@ -303,7 +302,7 @@ private:
   g_weights_t g_weights_; // size == N
   RCP<const ProductVectorSpaceBase<Scalar> > x_bar_space_;
   RCP<const ProductVectorSpaceBase<Scalar> > f_bar_space_;
-  RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > W_bar_factory_;
+  RCP<LinearOpWithSolveFactoryBase<Scalar> > W_bar_factory_;
   int Np_;
   int Ng_;
   ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
@@ -361,7 +360,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator(
   const Array<Scalar> g_weights,
   const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
   const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
-  const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
+  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory
   )
   :g_index_(-1), Np_(-1), Ng_(-1)
 {
@@ -382,7 +381,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
   const Array<Scalar> g_weights,
   const RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
   const RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
-  const RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
+  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory
   )
 {
 
@@ -448,9 +447,9 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
       W_bar_factory_ = W_bar_factory;
     }
     else {
-      typedef PhysicallyBlockedLinearOpWithSolveBase<Scalar> PBLOWSB;
-      typedef DefaultBlockedTriangularLinearOpWithSolve<Scalar> DBTLOWS;
-      W_bar_factory_ = Teuchos::abstractFactoryStd<PBLOWSB,DBTLOWS>();
+      W_bar_factory_ =
+        defaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(
+          periodModel_->get_W_factory() );
     }
   }
 
@@ -568,19 +567,18 @@ DefaultMultiPeriodModelEvaluator<Scalar>::getUpperBounds() const
 
 
 template<class Scalar>
-RCP<LinearOpWithSolveBase<Scalar> >
-DefaultMultiPeriodModelEvaluator<Scalar>::create_W() const
+RCP<LinearOpBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::create_W_op() const
 {
-  return W_bar_factory_->create();
+  return defaultBlockedLinearOp<Scalar>();
 }
 
 
 template<class Scalar>
-RCP<LinearOpBase<Scalar> >
-DefaultMultiPeriodModelEvaluator<Scalar>::create_W_op() const
+RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::get_W_factory() const
 {
-  TEST_FOR_EXCEPT("This class does not support W as just a linear operator yet.");
-  return Teuchos::null; // Should never be called!
+  return W_bar_factory_;
 }
 
 
@@ -666,15 +664,20 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgsImpl() const
 
   outArgs.set_Np_Ng(Np_,Ng_);
 
+  // f
   if (periodOutArgs.supports(MEB::OUT_ARG_f) ) {
     outArgs.setSupports(MEB::OUT_ARG_f);
   }
 
-  if (periodOutArgs.supports(MEB::OUT_ARG_W) ) {
-    outArgs.setSupports(MEB::OUT_ARG_W);
+  // W_op
+  if (periodOutArgs.supports(MEB::OUT_ARG_W_op) ) {
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
     outArgs.set_W_properties(periodOutArgs.get_W_properties());
   }
+  // Note: We will not directly support the LOWSB form W as we will let the
+  // default base class handle this given our W_factory!
 
+  // DfDp(l)
   for ( int l = 0; l < Np_; ++l ) {
     const int period_l = this->period_l(l);
     const MEB::DerivativeSupport period_DfDp_l_support
@@ -686,6 +689,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgsImpl() const
     }
   }
 
+  // DgDx_dot
   const MEB::DerivativeSupport
     period_DgDx_dot_support = periodOutArgs.supports(MEB::OUT_ARG_DgDx_dot,g_index_);
   if (!period_DgDx_dot_support.none()) {
@@ -694,6 +698,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgsImpl() const
       0, periodOutArgs.get_DgDx_dot_properties(g_index_) );
   }
 
+  // DgDx
   const MEB::DerivativeSupport
     period_DgDx_support = periodOutArgs.supports(MEB::OUT_ARG_DgDx,g_index_);
   if (!period_DgDx_support.none()) {
@@ -702,6 +707,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::createOutArgsImpl() const
       0, periodOutArgs.get_DgDx_properties(g_index_) );
   }
 
+  // DgDp(l)
   for ( int l = 0; l < Np_; ++l ) {
     const int period_l = this->period_l(l);
     const MEB::DerivativeSupport period_DgDp_l_support
@@ -740,10 +746,9 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
   //const int Ng = this->Ng_;
 
   //
-  // Setup InArgs
+  // A) Setup InArgs
   //
 
-  // Get product vector x_bar if it is supported
   RCP<const ProductVectorBase<Scalar> > x_bar;
   if (inArgs.supports(MEB::IN_ARG_x)) {
     x_bar = rcp_dynamic_cast<const ProductVectorBase<Scalar> >(
@@ -754,9 +759,10 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
       );
   }
 
-  // OutArgs
+  //
+  // B) Setup OutArgs
+  //
   
-  // Get product vector f_bar if it is supported and was set
   RCP<ProductVectorBase<Scalar> > f_bar;
   if (outArgs.supports(MEB::OUT_ARG_f)) {
     f_bar = rcp_dynamic_cast<ProductVectorBase<Scalar> >(
@@ -788,10 +794,10 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
     }
   }
 
-  RCP<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > W_bar;
-  if (outArgs.supports(MEB::OUT_ARG_W)) {
-    W_bar = rcp_dynamic_cast<PhysicallyBlockedLinearOpWithSolveBase<Scalar> >(
-      outArgs.get_W(), true
+  RCP<PhysicallyBlockedLinearOpBase<Scalar> > W_op_bar;
+  if (outArgs.supports(MEB::OUT_ARG_W_op)) {
+    W_op_bar = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<Scalar> >(
+      outArgs.get_W_op(), true
       );
   }
 
@@ -857,7 +863,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
   }
 
   //
-  // Evaluate the model
+  // C) Evaluate the model
   //
 
   MEB::InArgs<Scalar>
@@ -882,10 +888,10 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
   if (!is_null(g_bar) )
     assign( &*g_bar, ST::zero() );
 
-  // Determine if this is the first time this W_bar has been computed
-  const bool reinit_W_bar = ( !is_null(W_bar) ? is_null(W_bar->productRange()) : false );
-  if ( !is_null(W_bar) && reinit_W_bar ) {
-    W_bar->beginBlockFill(f_bar_space_,x_bar_space_);
+  // Determine if this is the first time this W_op_bar has been computed
+  const bool reinit_W_op_bar = ( !is_null(W_op_bar) ? is_null(W_op_bar->productRange()) : false );
+  if ( !is_null(W_op_bar) && reinit_W_op_bar ) {
+    W_op_bar->beginBlockFill(f_bar_space_,x_bar_space_);
   }
 
   // Set up storage for peroid DgDp[l] objects that will be summed into global
@@ -903,7 +909,9 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
     }
   }
   
-  // Loop over periods and assemble the model
+  //
+  // C.1) Loop over periods and assemble the model
+  //
 
   for ( int i = 0; i < N; ++i ) {
 
@@ -920,12 +928,12 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
     if (!is_null(f_bar))
       periodOutArgs.set_f(f_bar->getNonconstVectorBlock(i)); // Updated in place!
 
-    if ( !is_null(W_bar) ) {
-      if ( reinit_W_bar ) {
-        periodOutArgs.set_W(periodModel_->create_W());
+    if ( !is_null(W_op_bar) ) {
+      if ( reinit_W_op_bar ) {
+        periodOutArgs.set_W_op(periodModel_->create_W_op());
       }
       else {
-        periodOutArgs.set_W(W_bar->getNonconstLOWSBlock(i,i));
+        periodOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i));
       }
     }
 
@@ -967,9 +975,9 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
 
     // Process output arguments that need processed
 
-    // Set block of W_bar if first time through
-    if ( !is_null(W_bar) && reinit_W_bar ) {
-      W_bar->setNonconstLOWSBlock(i,i,periodOutArgs.get_W());
+    // Set block of W_op_bar if first time through
+    if ( !is_null(W_op_bar) && reinit_W_op_bar ) {
+      W_op_bar->setNonconstBlock(i,i,periodOutArgs.get_W_op());
     }
 
     // Sum into global g_bar
@@ -1000,13 +1008,19 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
 
   }
 
-  // Finalize W_bar if first time through
-  if ( !is_null(W_bar) && reinit_W_bar ) {
-    W_bar->endBlockFill();
+  //
+  // D) Final post-processing
+  //
+
+  // Finalize W_op_bar if first time through
+
+  if ( !is_null(W_op_bar) && reinit_W_op_bar ) {
+    W_op_bar->endBlockFill();
   }
 
   // ToDo: We need to do some type of global sum of g_bar and DgDp_bar to
-  // account for other clusters of processes.
+  // account for other clusters of processes.  I might do this with a separate
+  // non-ANA class.
 
   // Once we get here, all of the quantities should be updated and we should
   // be all done!

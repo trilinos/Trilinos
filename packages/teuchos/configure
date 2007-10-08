@@ -1401,7 +1401,7 @@ Optional Features:
                           Enable timers for Teuchos::Comm related software
                           (default is yes, )
   --enable-teuchos-debug  Enable optional extra debugging checkes (default is
-                          yes, )
+                          no, )
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -8402,7 +8402,7 @@ fi
 if test "${enable_teuchos_debug+set}" = set; then
   enableval=$enable_teuchos_debug; ac_cv_use_teuchos_debug=$enableval
 else
-  ac_cv_use_teuchos_debug=yes
+  ac_cv_use_teuchos_debug=no
 fi
 
 

@@ -66,6 +66,8 @@ public:
   RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief Throws exception. */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
+  /** \brief Returns null . */
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief Ignores input and does nothing. */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -167,6 +169,14 @@ StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
     <<this->description()<<" to return a non-null object!"
     );
   return Teuchos::null; // Should never be called!
+}
+
+
+template<class Scalar>
+RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+StateFuncModelEvaluatorBase<Scalar>::get_W_factory() const
+{
+  return Teuchos::null;
 }
 
 

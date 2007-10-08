@@ -26,8 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef THYRA_DEFAULT_BLOCKED_LINEAR_OP_HPP
 #define THYRA_DEFAULT_BLOCKED_LINEAR_OP_HPP
+
 
 #include "Thyra_DefaultBlockedLinearOpDecl.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -35,16 +37,21 @@
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
 
+
 namespace Thyra {
 
+
 // Constructors
+
 
 template<class Scalar>
 DefaultBlockedLinearOp<Scalar>::DefaultBlockedLinearOp()
   :blockFillIsActive_(false)
 {}
 
+
 // Overridden from PhysicallyBlockedLinearOpBase
+
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill()
@@ -52,6 +59,7 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill()
   assertBlockFillIsActive(false);
   resetStorage(0,0);
 }
+
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
@@ -62,9 +70,10 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
   resetStorage(numRowBlocks,numColBlocks);
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productRange
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange
   ,const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
   )
 {
@@ -75,11 +84,13 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
   resetStorage(productRange_->numBlocks(),productDomain_->numBlocks());
 }
 
+
 template<class Scalar>
 bool DefaultBlockedLinearOp<Scalar>::blockFillIsActive() const
 {
   return blockFillIsActive_;
 }
+
 
 template<class Scalar>
 bool DefaultBlockedLinearOp<Scalar>::acceptsBlock(
@@ -91,6 +102,7 @@ bool DefaultBlockedLinearOp<Scalar>::acceptsBlock(
   return true;
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::setNonconstBlock(
   const int i, const int j
@@ -100,6 +112,7 @@ void DefaultBlockedLinearOp<Scalar>::setNonconstBlock(
   setBlockImpl(i,j,block);
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::setBlock(
   const int i, const int j
@@ -108,6 +121,7 @@ void DefaultBlockedLinearOp<Scalar>::setBlock(
 {
   setBlockImpl(i,j,block);
 }
+
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::endBlockFill()
@@ -165,6 +179,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
   blockFillIsActive_ = false;
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::uninitialize()
 {
@@ -179,7 +194,9 @@ void DefaultBlockedLinearOp<Scalar>::uninitialize()
   blockFillIsActive_ = false;
 }
 
+
 // Overridden from BlockedLinearOpBase
+
 
 template<class Scalar>
 Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
@@ -188,12 +205,14 @@ DefaultBlockedLinearOp<Scalar>::productRange() const
   return productRange_;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::productDomain() const
 {
   return productDomain_;
 }
+
 
 template<class Scalar>
 bool DefaultBlockedLinearOp<Scalar>::blockExists(
@@ -204,6 +223,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockExists(
   assertBlockRowCol(i,j);
   return true;
 } 
+
 
 template<class Scalar>
 bool DefaultBlockedLinearOp<Scalar>::blockIsConst(
@@ -218,6 +238,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockIsConst(
   return Ops_[numRowBlocks_*j+i].isConst();
 }
 
+
 template<class Scalar>
 Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
@@ -229,6 +250,7 @@ DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
   assertBlockRowCol(i,j);
   return Ops_[numRowBlocks_*j+i].getNonconstObj();
 } 
+
 
 template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
@@ -242,7 +264,9 @@ DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
   return Ops_[numRowBlocks_*j+i].getConstObj();
 } 
 
+
 // Overridden from LinearOpBase
+
 
 template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
@@ -251,12 +275,14 @@ DefaultBlockedLinearOp<Scalar>::range() const
   return productRange_;
 }
 
+
 template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::domain() const
 {
   return productDomain_;
 }
+
 
 template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
@@ -265,7 +291,9 @@ DefaultBlockedLinearOp<Scalar>::clone() const
   return Teuchos::null; // ToDo: Implement this when needed!
 }
 
+
 // Overridden from Teuchos::Describable
+
 
 template<class Scalar>
 std::string DefaultBlockedLinearOp<Scalar>::description() const
@@ -280,13 +308,14 @@ std::string DefaultBlockedLinearOp<Scalar>::description() const
   return oss.str();
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::describe(
-  Teuchos::FancyOStream                &out_arg
-  ,const Teuchos::EVerbosityLevel      verbLevel
+  Teuchos::FancyOStream &out_arg
+  ,const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
@@ -311,8 +340,8 @@ void DefaultBlockedLinearOp<Scalar>::describe(
         << "}\n";
       OSTab tab(out);
       *out
-        <<  "Constituent LinearOpBase objects for M = [ Op[0,0] ..."
-	<< " ; ... ; ... Op[numRowBlocks-1,numColBlocks-1]:\n";
+        << "Constituent LinearOpBase objects for M = [ Op[0,0] ..."
+        << " ; ... ; ... Op[numRowBlocks-1,numColBlocks-1]:\n";
       tab.incrTab();
       for( int i = 0; i < numRowBlocks_; ++i ) {
         for( int j = 0; j < numColBlocks_; ++j ) {
@@ -332,9 +361,12 @@ void DefaultBlockedLinearOp<Scalar>::describe(
   }
 }
 
+
 // protected
 
+
 // Overridden from SingleScalarLinearOpBase
+
 
 template<class Scalar>
 bool DefaultBlockedLinearOp<Scalar>::opSupported(
@@ -353,26 +385,27 @@ bool DefaultBlockedLinearOp<Scalar>::opSupported(
   return opSupported;
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X_in
-  ,MultiVectorBase<Scalar>          *Y_inout
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+  const ETransp M_trans
+  ,const MultiVectorBase<Scalar> &X_in
+  ,MultiVectorBase<Scalar> *Y_inout
+  ,const Scalar alpha
+  ,const Scalar beta
   ) const
 {
   using Teuchos::RCP;
   using Teuchos::dyn_cast;
-  typedef Teuchos::ScalarTraits<Scalar>                ST;
-  typedef RCP<MultiVectorBase<Scalar> >        MultiVectorPtr;
-  typedef RCP<const MultiVectorBase<Scalar> >  ConstMultiVectorPtr;
-  typedef RCP<const LinearOpBase<Scalar> >     ConstLinearOpPtr;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef RCP<MultiVectorBase<Scalar> > MultiVectorPtr;
+  typedef RCP<const MultiVectorBase<Scalar> > ConstMultiVectorPtr;
+  typedef RCP<const LinearOpBase<Scalar> > ConstLinearOpPtr;
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "DefaultBlockedLinearOp<Scalar>::apply(...)",*this,M_trans,X_in,Y_inout
     );
-#endif // TEUCHOS_DEBUG  
+#endif // TEUCHOS_DEBUG 
   const bool
     struct_transp = (real_trans(M_trans)!=NOTRANS); // Structural transpose?
   const int
@@ -385,7 +418,7 @@ void DefaultBlockedLinearOp<Scalar>::apply(
   //
   // Y[i] = beta+Y[i] + sum(alpha*op(Op)[i,j]*X[j],j=0...opNumColBlocks-1)
   //
-  //   , for i=0...opNumRowBlocks-1
+  // , for i=0...opNumRowBlocks-1
   //
   const ProductMultiVectorBase<Scalar>
     &X = dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in);
@@ -397,7 +430,7 @@ void DefaultBlockedLinearOp<Scalar>::apply(
       ConstLinearOpPtr
         Op_i_j = ( !struct_transp ? getBlock(i,j) : getBlock(j,i) );
       ConstMultiVectorPtr
-        X_j    = X.getMultiVectorBlock(j);
+        X_j = X.getMultiVectorBlock(j);
       if(j==0) {
         if(Op_i_j.get())
           Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,beta);
@@ -412,7 +445,9 @@ void DefaultBlockedLinearOp<Scalar>::apply(
   }
 }
 
+
 // private
+
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::resetStorage(
@@ -430,6 +465,7 @@ void DefaultBlockedLinearOp<Scalar>::resetStorage(
   blockFillIsActive_ = true;
 }
 
+
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::assertBlockFillIsActive(
   bool blockFillIsActive
@@ -439,6 +475,7 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockFillIsActive(
   TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive));
 #endif
 }
+
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::assertBlockRowCol(
@@ -468,6 +505,7 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockRowCol(
   }
 #endif
 }
+
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
@@ -533,6 +571,7 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
   }
 }
 
+
 template<class Scalar>
 template<class LinearOpType>
 void DefaultBlockedLinearOp<Scalar>::setBlockImpl(
@@ -563,15 +602,25 @@ void DefaultBlockedLinearOp<Scalar>::setBlockImpl(
   }
 }
 
+
 } // namespace Thyra
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::DefaultBlockedLinearOp<Scalar> >
+Thyra::defaultBlockedLinearOp()
+{
+  return Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+}
+
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block2x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A11
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A01
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A10
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A11
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -585,11 +634,12 @@ Thyra::block2x2(
   return M;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block2x1(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A10
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A10
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -601,11 +651,12 @@ Thyra::block2x1(
   return M;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block1x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A01
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A01
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -617,13 +668,14 @@ Thyra::block1x2(
   return M;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock2x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A11
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A01
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A10
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A11
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -637,11 +689,12 @@ Thyra::nonconstBlock2x2(
   return M;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock2x1(
-  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A10
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A10
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -653,11 +706,12 @@ Thyra::nonconstBlock2x1(
   return M;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock1x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A01
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A01
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -668,5 +722,6 @@ Thyra::nonconstBlock1x2(
   M->endBlockFill();
   return M;
 }
+
 
 #endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_HPP

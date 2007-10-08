@@ -31,6 +31,7 @@
 
 
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
 
 namespace Thyra {
@@ -134,6 +135,12 @@ private:
  * general derivative is provided, a <tt>LinearOpBase</tt> version is
  * automatically supported.
  *
+ * <li> Provide a default implementation for computing the <tt>LOWSB</tt> form
+ * <tt>W</tt> given the <tt>LOB</tt>-only form <tt>W_op</tt> given a
+ * <tt>LOWSFB</tt> object <tt>W_factory</tt> supplied by the subclass.  If the
+ * subclass wants to take this over, then it should override
+ * <tt>create_W()</tt>.
+ *
  * <li> Assert (in debug mode) that the underlying model has been set up
  * correctly.
  *
@@ -161,6 +168,8 @@ public:
   RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief . */
   RCP<LinearOpBase<Scalar> > create_DgDp_op(int j, int l) const;
+  /** \brief . */
+  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
@@ -254,6 +263,8 @@ private:
   Array<Array<DefaultDerivLinearOpSupport> > DgDp_default_op_support_;
   Array<Array<DefaultDerivMvAdjointSupport> > DgDp_default_mv_support_;
 
+  bool default_W_support_;
+
   ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   // //////////////////////////////
@@ -343,6 +354,16 @@ int ModelEvaluatorDefaultBase<Scalar>::Ng() const
   if (!isInitialized_)
     lazyInitializeDefaultBase();
   return prototypeOutArgs_.Ng();
+}
+
+
+template<class Scalar>
+RCP<LinearOpWithSolveBase<Scalar> >
+ModelEvaluatorDefaultBase<Scalar>::create_W() const
+{
+  if (default_W_support_)
+    return this->get_W_factory()->createOp();
+  return Teuchos::null;
 }
 
 
@@ -599,6 +620,32 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
       }
     }
 
+    // W
+    {
+      RCP<LinearOpWithSolveBase<Scalar> > W;
+      if ( default_W_support_ && !is_null(W=outArgs.get_W()) ) {
+        const RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+          W_factory = this->get_W_factory();
+        // Extract the underlying W_op object (if it exists)
+        RCP<const LinearOpBase<Scalar> > W_op_const;
+        uninitializeOp<Scalar>( *W_factory, &*W, &W_op_const );
+        RCP<LinearOpBase<Scalar> > W_op;
+        if (!is_null(W_op_const)) {
+          // Here we remove the const.  This is perfectly safe since
+          // w.r.t. this class, we put a non-const object in there and we can
+          // expect to change that object after the fact.  That is our
+          // prerogative.
+          W_op = Teuchos::rcp_const_cast<LinearOpBase<Scalar> >(W_op_const);
+        }
+        else {
+          // The W_op object has not been initialized yet so create it.  The
+          // next time through, we should not have to do this!
+          W_op = this->create_W_op();
+        }
+        outArgsImpl.set_W_op(W_op);
+      }
+    }
+    
   }
 
   //
@@ -611,15 +658,26 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
   // D) Post-process the output arguments
   //
 
+  // Do explicit transposes for DgDp(j,l) if needed
   const int numMvAdjointCopies = DgDp_temp_adjoint_copies.size();
   for ( int adj_copy_i = 0; adj_copy_i < numMvAdjointCopies; ++adj_copy_i ) {
     const MultiVectorAdjointPair adjPair =
       DgDp_temp_adjoint_copies[adj_copy_i];
     doExplicitMultiVectorAdjoint( *adjPair.mvImplAdjoint, &*adjPair.mvOuter );
   }
-  // 2007/09/09: rabartl: ToDo: Move the above code into its own private
-  // helper function just to balance the setup function called above.
-
+  
+  // Update W given W_op and W_factory
+  {
+    RCP<LinearOpWithSolveBase<Scalar> > W;
+    if ( default_W_support_ && !is_null(W=outArgs.get_W()) ) {
+      const RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+        W_factory = this->get_W_factory();
+      W_factory->setOStream(this->getOStream());
+      W_factory->setVerbLevel(this->getVerbLevel());
+      initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op(), &*W );
+    }
+  }
+  
 }
 
 
@@ -634,8 +692,9 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
 
   typedef ModelEvaluatorBase MEB;
 
-  // In case we throw half way thorugh
+  // In case we throw half way thorugh, set to uninitialized
   isInitialized_ = false;
+  default_W_support_ = false;
 
   //
   // A) Get the InArgs and OutArgs from the subclass
@@ -752,6 +811,16 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   // 2007/09/09: rabart: ToDo: Move the above code into a private helper
   // function!
   
+  // W (given W_op and W_factory)
+  default_W_support_ = false;
+  if ( outArgsImpl.supports(MEB::OUT_ARG_W_op) && !is_null(this->get_W_factory())
+    && !outArgsImpl.supports(MEB::OUT_ARG_W) )
+  {
+    default_W_support_ = true;
+    outArgs.setSupports(MEB::OUT_ARG_W);
+    outArgs.set_W_properties(outArgsImpl.get_W_properties());
+  }
+  
   //
   // D) All done!
   //
@@ -846,7 +915,7 @@ ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const
 
 template<class Scalar>
 ModelEvaluatorDefaultBase<Scalar>::ModelEvaluatorDefaultBase()
-  :isInitialized_(false)
+  :isInitialized_(false), default_W_support_(false)
 {}
 
 

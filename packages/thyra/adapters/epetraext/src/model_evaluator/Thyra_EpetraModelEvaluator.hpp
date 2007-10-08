@@ -288,6 +288,8 @@ public:
   RCP<LinearOpWithSolveBase<double> > create_W() const;
   /** \brief . */
   RCP<LinearOpBase<double> > create_W_op() const;
+  /** \breif . */
+  RCP<const LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
   /** \brief . */

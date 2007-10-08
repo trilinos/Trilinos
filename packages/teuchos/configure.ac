@@ -573,7 +573,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, comm_timers, [Enable timers for Teuchos::Co
 #
 
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, debug, [Enable optional extra debugging checkes], 
-		TEUCHOS_DEBUG, yes )
+		TEUCHOS_DEBUG, no )
 
 # ------------------------------------------------------------------------
 # Checks for libraries

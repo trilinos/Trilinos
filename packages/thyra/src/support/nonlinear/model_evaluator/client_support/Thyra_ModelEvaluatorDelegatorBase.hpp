@@ -138,6 +138,8 @@ public:
   /** \brief . */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
   void reportFinalPoint(
@@ -450,6 +452,14 @@ RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W_op() const
 {
   return getUnderlyingModel()->create_W_op();
+}
+
+
+template<class Scalar>
+RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::get_W_factory() const
+{
+  return getUnderlyingModel()->get_W_factory();
 }
 
 

@@ -26,12 +26,17 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef THYRA_MODEL_EVALUATOR_HPP
 #define THYRA_MODEL_EVALUATOR_HPP
 
+
 #include "Thyra_ModelEvaluatorBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+
 
 namespace Thyra {
+
 
 /** \brief Pure abstract base interface for evaluating a stateless "model"
  * that can be mapped into a number of different types of problems.
@@ -825,6 +830,33 @@ public:
    */
   virtual RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
   
+  //@}
+
+  /** \name Linear solver factory for W */
+  //@{
+
+  /** \brief If supported, return a <tt>LinearOpWithSolveFactoryBase</tt>
+   * object that can be used to initialize a <tt>LOWSB</tt> object for
+   * <tt>W</tt> given a <tt>LOB</tt> object for <tt>W_op</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->createOutArgs().supports(OUT_ARG_W) ||
+   *     this->createOutArgs().supports(OUT_ARG_W_op)</tt>
+   * </ul>
+   *
+   * By returning this factory object, a model evaluator allows a client to
+   * compute the <tt>LOB</tt>-only version <tt>W_op</tt> and then allow client
+   * to create a linear solver associated through the <tt>LOWSB</tt> interface
+   * at any time.  Note that this allow allows access to the underlying
+   * precondioner factory object
+   * (i.e. <tt>this->get_W_factory()->getPreconditionerFactory()</tt.) if such
+   * a factory object is supported.
+   *
+   * This function will return <tt>retalVal==Teuchos::null</tt> if no such
+   * factory object is supported.
+   */
+  virtual RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const = 0;
+
   //@}
 
   /** \name Computational functions */

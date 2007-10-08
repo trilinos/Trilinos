@@ -68,6 +68,8 @@ public:
   RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief Thorws exception. */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
+  /** \brief Thorws exception. */
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief Does nothing and ignores input. */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -151,7 +153,21 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_W_op() const
   TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
-    " this function create_W() must be overridden by the subclass "
+    " this function create_W_op() must be overridden by the subclass "
+    <<this->description()<<" to return a non-null object!"
+    );
+  return Teuchos::null; // Should never be called!
+}
+
+
+template<class Scalar>
+RCP<const LinearOpWithSolveFactoryBase<Scalar> >
+ResponseOnlyModelEvaluatorBase<Scalar>::get_W_factory() const
+{
+  TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
+    " this function get_W_factory() must be overridden by the subclass "
     <<this->description()<<" to return a non-null object!"
     );
   return Teuchos::null; // Should never be called!

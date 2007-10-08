@@ -31,6 +31,7 @@
 
 
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp"
+#include "Thyra_AssertOp.hpp"
 
 
 namespace Thyra {
@@ -39,13 +40,49 @@ namespace Thyra {
 // public
 
 
-// Constructors
+// Constructors/Initializers/Accessors
 
 
 template<class Scalar>
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::DefaultBlockedTriangularLinearOpWithSolve()
   : blockFillIsActive_(false), numDiagBlocks_(0)
 {}
+
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlocks(
+  const RCP<PhysicallyBlockedLinearOpBase<Scalar> > &blocks
+  )
+{
+  assertAndSetBlockStructure(*blocks);
+  blocks_.initialize(blocks);
+}
+
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlocks(
+  const RCP<const PhysicallyBlockedLinearOpBase<Scalar> > &blocks
+  )
+{
+  assertAndSetBlockStructure(*blocks);
+  blocks_.initialize(blocks);
+}
+
+
+template<class Scalar>
+RCP<PhysicallyBlockedLinearOpBase<Scalar> >
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getNonconstBlocks()
+{
+  return blocks_.getNonconstObj();
+}
+
+
+template<class Scalar>
+RCP<const PhysicallyBlockedLinearOpBase<Scalar> >
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getBlocks()
+{
+  return blocks_.getConstObj();
+}
 
 
 // Overridden from PhysicallyBlockedLinearOpWithSolveBase
@@ -441,13 +478,15 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
     &X = dyn_cast<ProductMultiVectorBase<Scalar> >(*X_inout);
   
   for ( int i = 0; i < numDiagBlocks_; ++ i ) {
-    Thyra::solve( *diagonalBlocks_[i].getConstObj(), M_trans,
-      *B.getMultiVectorBlock(i),
-      &*X.getNonconstMultiVectorBlock(i)
-      );
+    const RCP<const LinearOpWithSolveBase<Scalar> >
+      Op_k = diagonalBlocks_[i].getConstObj();
+    Op_k->setOStream(this->getOStream());
+    Op_k->setVerbLevel(this->getVerbLevel());
+    Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
+      &*X.getNonconstMultiVectorBlock(i) );
     // ToDo: Pass in solve criteria when needed!
   }
-
+  
   // ToDo: We really need to collect the SolveStatus objects across clusters
   // in order to really implement this interface correctly!  If a solve fails
   // on some cluster but not another, then different solve status information
@@ -575,6 +614,26 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlockImpl(
   diagonalBlocks_[i] = block;
 }
 
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructure(
+  const PhysicallyBlockedLinearOpBase<Scalar>& blocks
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  THYRA_ASSERT_VEC_SPACES(
+    "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructure(blocks)",
+    *blocks.range(), *this->range()
+    );
+  THYRA_ASSERT_VEC_SPACES(
+    "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructure(blocks)",
+    *blocks.domain(), *this->domain()
+    );
+  // ToDo: Make sure that all of the blocks are above or below the diagonal
+  // but not both!
+#endif
+  // ToDo: Set if this is an upper or lower triangular block operator.
+}
 
 
 } // namespace Thyra

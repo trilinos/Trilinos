@@ -241,6 +241,8 @@ INTERFACES_OPERATOR_SOLVE_ANA_EXTENDED_H = \
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactoryDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.hpp\

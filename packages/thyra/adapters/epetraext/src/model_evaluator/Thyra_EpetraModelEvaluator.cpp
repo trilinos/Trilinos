@@ -481,6 +481,13 @@ EpetraModelEvaluator::create_W_op() const
 }
 
 
+RCP<const LinearOpWithSolveFactoryBase<double> >
+EpetraModelEvaluator::get_W_factory() const
+{
+  return W_factory_;
+}
+
+
 ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::createInArgs() const
 {
   if (!currentInArgsOutArgs_)

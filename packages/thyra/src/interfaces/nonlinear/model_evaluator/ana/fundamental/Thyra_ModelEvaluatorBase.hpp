@@ -1573,6 +1573,7 @@ template<class Scalar>
 ModelEvaluatorBase::DerivativeProperties
 ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
 {
+  assert_supports(OUT_ARG_f);
   return W_properties_;
 }
 
