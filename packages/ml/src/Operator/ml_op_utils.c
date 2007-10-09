@@ -2016,7 +2016,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
       i = mat->getrow->pre_comm->N_neighbors;
     else i = 0;
     i = ML_Comm_GsumInt(comm, i);
-    j = ML_Comm_GsumInt(comm, (double) mat->N_nonzeros);
+    j = ML_Comm_GsumDouble(comm, (double) mat->N_nonzeros);
     maxnzs = ML_gmax_int(mat->N_nonzeros, comm);
     maxproc = ML_gmax_int( (maxnzs == mat->N_nonzeros ? mypid:0), comm);
     if (proc_active) k=mat->N_nonzeros;
