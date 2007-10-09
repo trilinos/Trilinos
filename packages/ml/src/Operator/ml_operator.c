@@ -110,12 +110,12 @@ char *ML_mylabel = NULL;
 int ML_Operator_Clean( ML_Operator *mat)
 {
 #if defined(ML_TIMING) || defined(ML_FLOPS)
-   double t1;
+   double maxt,mint,avgt;
+   int maxp,minp;
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    double mflops, maxfl,minfl,avgfl;
    int NumActiveProc=0, proc_active=0;
-   int i;
    char tmplabel[80];
 #endif
 
@@ -128,53 +128,36 @@ int ML_Operator_Clean( ML_Operator *mat)
       else proc_active = 0;
       NumActiveProc = ML_gsum_int(proc_active, mat->comm);
    }
-   if ( (mat->label != NULL) && (NumActiveProc>0) )
+   if ( (mat->label != NULL) && (NumActiveProc>0) && ML_Get_PrintLevel()>10)
    {
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Active processors for %s = %d\n",mat->label,NumActiveProc);
-      t1 = ML_gsum_double( (proc_active ? mat->build_time : 0.0), mat->comm);
-      t1 = t1/((double) NumActiveProc);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Build time for %s (average) \t= %e\n",mat->label,t1);
-      t1 = ML_gmax_double( (proc_active ? mat->build_time : 0.0 ), mat->comm);
-      i = ML_gmax_int((t1 == mat->build_time ? mat->comm->ML_mypid:0),mat->comm);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Build time for %s (maximum %d) \t= %e\n",mat->label,i,t1);
-      t1 = - mat->build_time;
-      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
-      t1 = - t1;
-      i = ML_gmax_int((t1 == mat->build_time ? mat->comm->ML_mypid:0),mat->comm);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Build time for %s (minimum %d) \t= %e\n",mat->label,i,t1);
-      t1 = ML_Global_Standard_Deviation(mat->build_time, NumActiveProc,
-                                            proc_active, mat->comm);
-      if ( (mat->comm->ML_mypid == 0) && ML_Get_PrintLevel() > 10 )
-         printf(" Build time for %s (std dev) \t= %e\n",mat->label,t1);
+      if (mat->comm->ML_mypid == 0)
+        printf(" %s: active processors :      %d\n",mat->label,NumActiveProc);
+      maxt = ML_gmax_double( (proc_active ? mat->build_time : 0.0 ), mat->comm);
+      maxp = ML_gmax_int((maxt == mat->build_time ? mat->comm->ML_mypid:0),mat->comm);
+      avgt = ML_gsum_double( (proc_active ? mat->build_time : 0.0), mat->comm);
+      avgt = avgt/((double) NumActiveProc);
+      mint = - mat->build_time;
+      mint = ML_gmax_double( (proc_active ? mint: -1.0e20), mat->comm);
+      mint = - mint;
+      minp = ML_gmax_int((mint == mat->build_time ? mat->comm->ML_mypid:0),mat->comm);
+      if (mat->comm->ML_mypid == 0)
+         printf(" %s: build time             :      %2.3e (%d) %2.3e (%d) %2.3e\n",
+                mat->label,maxt, maxp, mint, minp, avgt);
    }
-   if  (mat->label != NULL && (NumActiveProc > 0) && mat->ntimes > 0) {
+   if  (mat->label != NULL  &&  NumActiveProc>0
+        &&  mat->ntimes>0  &&  ML_Get_PrintLevel()>10 )
+   {
+      avgt = ML_gsum_double( (proc_active ? mat->apply_time : 0.0), mat->comm);
+      avgt = avgt/((double) NumActiveProc);
+      maxt = ML_gmax_double( (proc_active ? mat->apply_time : 0.0 ), mat->comm);
+      maxp =ML_gmax_int((maxt == mat->apply_time ? mat->comm->ML_mypid:0),mat->comm);
+      mint = - mat->apply_time;
+      mint = ML_gmax_double( (proc_active ? mint: -1.0e20), mat->comm);
+      mint = - mint;
+      minp =ML_gmax_int((mint == mat->apply_time ? mat->comm->ML_mypid:0),mat->comm);
       if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Active processors for %s = %d\n",mat->label,NumActiveProc);
-      t1 = ML_gsum_double( (proc_active ? mat->apply_time : 0.0), mat->comm);
-      /*printf("(%s) %d's apply time = %e (active =  %d)\n",mat->label,mat->comm->ML_mypid,mat->apply_time,proc_active);*/
-      t1 = t1/((double) NumActiveProc);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Apply time for %s (average) \t= %e\n",mat->label,t1);
-      t1 = ML_gmax_double( (proc_active ? mat->apply_time : 0.0 ), mat->comm);
-      i =ML_gmax_int((t1 == mat->apply_time ? mat->comm->ML_mypid:0),mat->comm);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Apply time for %s (maximum %d) \t= %e\n",mat->label,i,t1);
-      t1 = - mat->apply_time;
-      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
-      t1 = - t1;
-      i =ML_gmax_int((t1 == mat->apply_time ? mat->comm->ML_mypid:0),mat->comm);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Apply time for %s (minimum %d) \t= %e\n",mat->label,i,t1);
-      t1 = ML_Global_Standard_Deviation(mat->apply_time, NumActiveProc,
-                                            proc_active, mat->comm);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Apply time for %s (std dev) \t= %e\n",mat->label,t1);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Number of Applies for %s \t= %d\n",mat->label,mat->ntimes);
+         printf(" %s: apply time (%7d)   :      %2.3e (%d) %2.3e (%d) %2.3e\n",
+                mat->label,mat->ntimes,maxt, maxp, mint, minp, avgt);
 
    }
 #endif
