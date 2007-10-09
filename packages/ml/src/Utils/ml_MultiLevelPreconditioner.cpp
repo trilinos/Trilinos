@@ -873,15 +873,6 @@ agg_->keep_agg_information = 1;
 agg_->keep_P_tentative = 1;
 #endif
 
-/* Repect Materials Options - cms*/
-  bool respect_materials = List_.get("aggregation: respect materials",false);
-  int * material_type = List_.get("aggregation: material type",(int*)0);
-  if(respect_materials && material_type) {
-    agg_->respect_materials=respect_materials;
-    agg_->material_type=material_type;
-  }
-
-
   if( SolvingMaxwell_ == false ) {
 
     // ====================================================================== //
