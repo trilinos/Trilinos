@@ -115,7 +115,6 @@ extern int    ML_Comm_GmaxInt( ML_Comm *comm, int intdata );
 extern double ML_Comm_GmaxDouble(ML_Comm *comm, double ddata );
 extern int    ML_Comm_GsumInt( ML_Comm *comm, int intdata );
 extern double ML_Comm_GsumDouble(ML_Comm *comm, double ddata );
-extern int    ML_Comm_GsumVecInt(ML_Comm *,int *invec,int *tmpvec,int vleng);
 extern int    ML_Comm_GappendInt(ML_Comm *,int *invec,int *lleng, int tleng);
 extern int    ML_Comm_GappendBigInt(ML_Comm *,ml_big_int *invec,int *lleng, int tleng);
 extern int    ML_Comm_GappendDouble(ML_Comm*,double *dvec,int *lleng,int tleng);

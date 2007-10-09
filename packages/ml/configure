@@ -1537,9 +1537,6 @@ Optional Packages:
                           --with-perl=<perl executable>. Configure will check
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
-  --with-ml_external_mpi_functions
-                          Use mpi-provided global communication functions (not
-                          ml's internal implementation) (default is yes)
   --with-ml_aztec2_1      Enable Aztec 2.1 support (default is no)
   --with-ml-64bit-integer Support for 64-bit integers; required if ML used
                           with MPSalsa. Examples:
@@ -8305,33 +8302,6 @@ fi
 #####################################
 # Following options are ON by default
 #####################################
-
-
-
-# Check whether --with-ml_external_mpi_functions was given.
-if test "${with_ml_external_mpi_functions+set}" = set; then
-  withval=$with_ml_external_mpi_functions; ac_cv_use_ml_external_mpi_functions=$withval
-else
-  ac_cv_use_ml_external_mpi_functions=yes
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use ml_external_mpi_functions" >&5
-echo $ECHO_N "checking whether to use ml_external_mpi_functions... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_ml_external_mpi_functions" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_EXTERNAL_MPI_FUNCTIONS
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
 
 
 # Check whether --enable-ml_newtpe was given.

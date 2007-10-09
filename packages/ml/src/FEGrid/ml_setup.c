@@ -1157,7 +1157,6 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
 
    for ( i = 0; i < nprocs; i++ ) if (proc_flag[i] != 0) proc_flag[i] = 1;
    ML_memory_alloc( (void **) &itmp, nprocs * sizeof(int), "itm" );
-   /*ML_Comm_GsumVecInt(comm, proc_flag, itmp, nprocs );*/
    ML_gsum_vec_int(&proc_flag, &itmp, nprocs, comm );
    k1 = proc_flag[mypid];
    if ( k1 > 0 )
@@ -2171,7 +2170,6 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
       if ( cv_leng[i] > 0 ) proc_flag[i] = 1;
       else                  proc_flag[i] = 0;
    }
-   /*ML_Comm_GsumVecInt( comm, proc_flag, tmp_ia, nprocs );*/
    ML_gsum_vec_int( &proc_flag, &tmp_ia, nprocs, comm );
    m = proc_flag[mypid];
    xsfer_op->com->recv_cnt = m;

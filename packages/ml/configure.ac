@@ -370,9 +370,7 @@ fi
 # Following options are ON by default
 #####################################
 
-TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
-
- TAC_ARG_ENABLE_OPTION(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
+TAC_ARG_ENABLE_OPTION(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 
 #######################################
 # Following options are OFF by default

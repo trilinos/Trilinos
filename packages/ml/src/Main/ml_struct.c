@@ -94,9 +94,6 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
 #ifdef ML_NOTALWAYS_LOWEST
   if (comm->ML_mypid == 0) printf("USing ML_NOTALWAYS_LOWEST\n");
 #endif
-#ifdef ML_USE_INTERNAL_COMM_FUNCTIONS
-  if (comm->ML_mypid == 0) printf("USing ML_USE_INTERNAL_COMM_FUNCTIONS\n");
-#endif
 #ifdef ML_SYNCH
   if (comm->ML_mypid == 0) printf("USing ML_SYNCH\n");
 #endif
@@ -4959,7 +4956,6 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
    ML_memory_alloc( (void**) &itmp, nprocs * sizeof(int), "KLB" );
    for ( i = 0; i < nprocs; i++ ) proc_array[i] = 0;
    proc_array[mypid] = N_internal;
-   /*ML_Comm_GsumVecInt(comm, proc_array, itmp, nprocs);*/
    ML_gsum_vec_int(&proc_array, &itmp, nprocs, comm);
    for ( i = nprocs-1; i >= 1; i-- ) proc_array[i] = proc_array[i-1];
    proc_array[0] = 0;

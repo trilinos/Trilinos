@@ -108,9 +108,6 @@
 /* Define if want to build ml-examples */
 #undef HAVE_ML_EXAMPLES
 
-/* Define if want to build with ml_external_mpi_functions enabled */
-#undef HAVE_ML_EXTERNAL_MPI_FUNCTIONS
-
 /* Define if want to build with ml_flops enabled */
 #undef HAVE_ML_FLOPS
 

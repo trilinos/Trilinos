@@ -94,10 +94,6 @@
 #endif
 #endif
 
-#if defined(HAVE_ML_EXTERNAL_MPI_FUNCTIONS) && defined(HAVE_MPI)
-#define ML_USING_MPI_FUNCTIONS
-#endif
-
 #ifdef HAVE_BLAS
 #define USE_VENDOR_BLAS
 #endif
