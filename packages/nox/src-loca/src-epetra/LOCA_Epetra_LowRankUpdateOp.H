@@ -43,6 +43,7 @@
 #define LOCA_EPETRA_LOWRANKUPDATEOP_H
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #include "Epetra_Operator.h"	// base class
 #include "Epetra_LocalMap.h"    // class data element
@@ -82,7 +83,8 @@ namespace LOCA {
         const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
 	const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec);
+	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec,
+	bool setup_for_solve);
 
       //! Destructor
       virtual ~LowRankUpdateOp();
@@ -174,6 +176,18 @@ namespace LOCA {
 
       //! Temporary matrix
       mutable Teuchos::RCP<Epetra_MultiVector> tmpMat;
+
+      //! Stores J^{-1}*U
+      Teuchos::RCP<Epetra_MultiVector> JinvU;
+
+      //! Stores LU factorization of I + V^T*J^{-1}*U
+      Teuchos::RCP<Epetra_MultiVector> lu;
+
+      //! Stores pivots for LU factorization
+      std::vector<int> ipiv;
+
+      //! Lapack wrappers
+      Teuchos::LAPACK<int,double> lapack;
 
     };
   } // namespace Epetra

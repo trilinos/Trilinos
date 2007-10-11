@@ -54,9 +54,10 @@ LowRankUpdateRowMatrix(
 	const Teuchos::RCP<Epetra_RowMatrix>& jacRowMatrix, 
 	const Teuchos::RCP<Epetra_MultiVector>& U_multiVec, 
 	const Teuchos::RCP<Epetra_MultiVector>& V_multiVec,
+	bool setup_for_solve,
 	bool include_UV_terms) :
   LOCA::Epetra::LowRankUpdateOp(global_data, jacRowMatrix, U_multiVec,
-				V_multiVec),
+				V_multiVec, setup_for_solve),
   J_rowMatrix(jacRowMatrix),
   nonconst_U(U_multiVec),
   nonconst_V(V_multiVec),

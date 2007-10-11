@@ -95,6 +95,9 @@ LOCA::BorderedSolver::EpetraHouseholder::EpetraHouseholder(
   V_trans(),
   Ablock(),
   Bblock(),
+  Ascaled(),
+  Bscaled(),
+  Cscaled(),
   linSys(),
   epetraOp(),
   baseMap(),
@@ -106,11 +109,25 @@ LOCA::BorderedSolver::EpetraHouseholder::EpetraHouseholder(
   isValidForSolve(false),
   isValidForTransposeSolve(false),
   dblas(),
+  scale_rows(true),
+  scale_vals(),
+  precMethod(JACOBIAN),
   includeUV(false),
   use_P_For_Prec(false),
   isComplex(false),
   omega(0.0)
 {
+  scale_rows = solverParams->get("Scale Augmented Rows", true);
+  std::string prec_method = 
+    solverParams->get("Preconditioner Method", "Jacobian");
+  if (prec_method == "Jacobian")
+    precMethod = JACOBIAN;
+  else if (prec_method == "SMW")
+    precMethod = SMW;
+  else
+    globalData->locaErrorCheck->throwError(
+	    "LOCA::BorderedSolver::EpetraHouseholder::EpetraHouseholder()",
+	    "Unknown preconditioner method!  Choices are Jacobian, SMW");
   includeUV = 
     solverParams->get("Include UV In Preconditioner", false);
   use_P_For_Prec = 
@@ -257,6 +274,23 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
 	              string("LOCA::BorderedSolver::JacobianOperator or \n") +
 		      string("LOCA::BorderedSolver::ComplexOperator."));
   }
+
+  Ascaled = Teuchos::null;
+  Bscaled = Teuchos::null;
+  Cscaled = Teuchos::null;
+  
+  if (Ablock != Teuchos::null)
+    Ascaled = Ablock->clone();
+  if (Bblock != Teuchos::null)
+    Bscaled = Bblock->clone();
+  if (C != Teuchos::null) {
+    Cscaled = 
+	  Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
+								C->numRows(),
+								C->numCols()));
+    Cscaled->assign(*C);
+  }
+  
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -271,6 +305,23 @@ LOCA::BorderedSolver::EpetraHouseholder::initForSolve()
   // Only compute QR factorization if A and B are nonzero
   if (!isZeroA && !isZeroB) {
 
+    // Scale rows
+    if (scale_rows) {
+      scale_vals.resize(numConstraints);
+      double sn = std::sqrt( static_cast<double>(Bblock->length()) );
+      for (int i=0; i<numConstraints; i++) {
+	scale_vals[i] = (*Bblock)[i].norm() / sn;
+	double t = 0.0;
+	for (int j=0; j<numConstraints; j++)
+	  t += (*C)(i,j) * (*C)(i,j);
+	scale_vals[i] += std::sqrt(t);
+	scale_vals[i] = 1.0 / scale_vals[i];
+	(*Bscaled)[i].scale(scale_vals[i]);
+	for (int j=0; j<numConstraints; j++)
+	  (*Cscaled)(i,j) *= scale_vals[i];
+      }
+    }
+
     // Allocate vectors and matrices for factorization
     if (house_x.get() == NULL || house_x->numVectors() != numConstraints) {
       house_x = Bblock->clone(NOX::ShapeCopy);
@@ -282,7 +333,7 @@ LOCA::BorderedSolver::EpetraHouseholder::initForSolve()
     }
 
     // Factor constraints
-    qrFact.computeQR(*C, *Bblock, true, house_p, *house_x, T, R);
+    qrFact.computeQR(*Cscaled, *Bscaled, true, house_p, *house_x, T, R);
 
     // Compute U & V in P operator
     res = computeUV(house_p, *house_x, T, *Ablock, *U, *V, false);
@@ -307,6 +358,23 @@ LOCA::BorderedSolver::EpetraHouseholder::initForTransposeSolve()
   // Only compute QR factorization if A and B are nonzero
   if (!isZeroA && !isZeroB) {
 
+    // Scale rows
+    if (scale_rows) {
+      scale_vals.resize(numConstraints);
+      double sn = std::sqrt( static_cast<double>(Ablock->length()) );
+      for (int i=0; i<numConstraints; i++) {
+	scale_vals[i] = (*Ablock)[i].norm() / sn;
+	double t = 0.0;
+	for (int j=0; j<numConstraints; j++)
+	  t += (*C)(j,i) * (*C)(j,i);
+	scale_vals[i] += std::sqrt(t);
+	scale_vals[i] = 1.0 / scale_vals[i];
+	(*Ascaled)[i].scale(scale_vals[i]);
+	for (int j=0; j<numConstraints; j++)
+	  (*Cscaled)(j,i) *= scale_vals[i];
+      }
+    }
+
     // Allocate vectors and matrices for factorization
     if (house_x_trans.get() == NULL || 
 	house_x_trans->numVectors() != numConstraints) {
@@ -319,7 +387,7 @@ LOCA::BorderedSolver::EpetraHouseholder::initForTransposeSolve()
     }
 
     // Factor constraints for transposed system
-    qrFact.computeQR(*C, *Ablock, false, house_p_trans, *house_x_trans, 
+    qrFact.computeQR(*Cscaled, *Ascaled, false, house_p_trans, *house_x_trans, 
 		     T_trans, R_trans);
 
     // Compute U & V in transposed P operator
@@ -426,15 +494,29 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverse(
     return utbe.solve(params, *op, A.get(), *C, F, G, X, Y);
   }
 
+  // Scale G
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Gscaled; 
+  if (G != NULL) {
+    Gscaled = 
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(G->numRows(),
+							       G->numCols()));
+    if (scale_rows)
+      for (int i=0; i<G->numRows(); i++)
+	for (int j=0; j<G->numCols(); j++)
+	  (*Gscaled)(i,j) = scale_vals[i]*(*G)(i,j);
+    else
+      Gscaled->assign(*G);
+  }
+
   NOX::Abstract::Group::ReturnType res;
   if (!isComplex)
-    res = solve(params, F, G, X, Y);
+    res = solve(params, F, Gscaled.get(), X, Y);
   else {
     Teuchos::RCP<NOX::Abstract::MultiVector> blockF;
     if (!isZeroF)
       blockF = createBlockMV(*F);
     Teuchos::RCP<NOX::Abstract::MultiVector> blockX = createBlockMV(X);
-    res = solve(params, blockF.get(), G, *blockX, Y);
+    res = solve(params, blockF.get(), Gscaled.get(), *blockX, Y);
     setBlockMV(*blockX, X);
   }
 
@@ -482,15 +564,29 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
     return ltbe.solveTranspose(params, *op, *A, *C, F, G, X, Y);
   }
 
+  // Scale G
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Gscaled; 
+  if (G != NULL) {
+    Gscaled = 
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(G->numRows(),
+							       G->numCols()));
+    if (scale_rows)
+      for (int i=0; i<G->numRows(); i++)
+	for (int j=0; j<G->numCols(); j++)
+	  (*Gscaled)(i,j) = scale_vals[i]*(*G)(i,j);
+    else
+      Gscaled->assign(*G);
+  }
+
   NOX::Abstract::Group::ReturnType res;
   if (!isComplex)
-    res = solveTranspose(params, F, G, X, Y);
+    res = solveTranspose(params, F, Gscaled.get(), X, Y);
   else {
     Teuchos::RCP<NOX::Abstract::MultiVector> blockF;
     if (!isZeroF)
       blockF = createBlockMV(*F);
     Teuchos::RCP<NOX::Abstract::MultiVector> blockX = createBlockMV(X);
-    res = solveTranspose(params, blockF.get(), G, *blockX, Y);
+    res = solveTranspose(params, blockF.get(), Gscaled.get(), *blockX, Y);
     setBlockMV(*blockX, X);
   }
 
@@ -588,17 +684,19 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
 							       jac_rowmatrix, 
 							       epetra_U, 
 							       epetra_V,
+							       false,
 							       includeUV));
   else
     op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData, 
 							epetraOp, 
 							epetra_U, 
-							epetra_V));
+							epetra_V,
+							false));
   
   // Overwrite J with J + U*V^T if it's a CRS matrix and we aren't
   // using P for the preconditioner
   Teuchos::RCP<Epetra_CrsMatrix> jac_crs;
-  if (includeUV && !use_P_For_Prec) {
+  if (precMethod == JACOBIAN && includeUV && !use_P_For_Prec) {
     jac_crs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(epetraOp);
     if (jac_crs != Teuchos::null) {
       updateJacobianForPreconditioner(*U, *V, *jac_crs);
@@ -606,7 +704,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   }
 
   // Set operator in solver to compute preconditioner
-  if (use_P_For_Prec)
+  if (precMethod == JACOBIAN && use_P_For_Prec)
     linSys->setJacobianOperatorForSolve(op);
   else
     linSys->setJacobianOperatorForSolve(epetraOp);
@@ -616,8 +714,8 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   linSys->createPreconditioner(solution_vec, params, false);
    
   // Now recompute J if we modified it
-  if (includeUV && !use_P_For_Prec && jac_crs != Teuchos::null) {
-    //linSys->computeJacobian(solution_vec);
+  if (precMethod == JACOBIAN && includeUV && !use_P_For_Prec && 
+      jac_crs != Teuchos::null) {
     grp->setX(solution_vec);
     if (isComplex)
       grp->computeComplex(omega);
@@ -626,9 +724,21 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   }
        
   // Set operator for P in solver
-  if (!use_P_For_Prec)
-    linSys->setJacobianOperatorForSolve(op);
-  
+  linSys->setJacobianOperatorForSolve(op);
+
+  // Set preconditioner
+  Teuchos::RCP<Epetra_Operator> prec_op;
+  Teuchos::RCP<Epetra_Operator> epetraPrecOp;
+  if (precMethod == SMW) {
+    epetraPrecOp = linSys->getGeneratedPrecOperator();
+    prec_op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData, 
+							     epetraPrecOp, 
+							     epetra_U, 
+							     epetra_V,
+							     true));
+    linSys->setPrecOperatorForSolve(prec_op);
+  }
+
   // Solve for each RHS
   int m = X.numVectors();
   X.init(0.0);
@@ -653,6 +763,8 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
 
   // Set original operators in linear system
   linSys->setJacobianOperatorForSolve(epetraOp);
+  if (precMethod == SMW)
+    linSys->setPrecOperatorForSolve(epetraPrecOp);
   linSys->destroyPreconditioner();
 
   return finalStatus;
@@ -762,12 +874,14 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
 							  jac_trans_rowmatrix, 
 							  epetra_U, 
 							  epetra_V,
+							  false,
 							  includeUV));
   else
     op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData, 
 							jac_trans, 
 							epetra_U, 
-							epetra_V));
+							epetra_V,
+							false));
   
   // Overwrite J^T with J^T + U*V^T if it's a CRS matrix and we aren't
   // using P for the preconditioner

@@ -83,6 +83,7 @@ namespace LOCA {
        * \param jacRowMatrix [in] Jacobian operator J as a row matrix
        * \param U_multiVec [in] Multivector representing U
        * \param V_multiVec [in] Multivector representing V
+       * \param setup_for_solve [in] Setup data structures for ApplyInverse()
        * \param include_UV_terms [in] Include \f$U V^T\f$ terms in RowMatrix
        *        routines ExtractRowCopy(), ExtactDiagonalCopy(), InvRowSums(),
        *        InvColSums(), NormInf() and NormOne().
@@ -92,6 +93,7 @@ namespace LOCA {
 	const Teuchos::RCP<Epetra_RowMatrix>& jacRowMatrix, 
 	const Teuchos::RCP<Epetra_MultiVector>& U_multiVec, 
 	const Teuchos::RCP<Epetra_MultiVector>& V_multiVec,
+	bool setup_for_solve,
 	bool include_UV_terms);
 
       //! Destructor

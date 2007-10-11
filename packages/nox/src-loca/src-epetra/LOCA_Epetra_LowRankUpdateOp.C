@@ -51,7 +51,8 @@ LOCA::Epetra::LowRankUpdateOp::LowRankUpdateOp(
         const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
 	const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec) :
+	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec,
+	bool setup_for_solve) :
   globalData(global_data),
   label("LOCA::Epetra::LowRankUpdateOp"),
   localMap(V_multiVec->NumVectors(), 0, jacOperator->Comm()),
@@ -59,8 +60,30 @@ LOCA::Epetra::LowRankUpdateOp::LowRankUpdateOp(
   U(U_multiVec),
   V(V_multiVec),
   useTranspose(false),
-  tmpMat()
+  tmpMat(),
+  JinvU(),
+  lu(),
+  ipiv(),
+  lapack()
 {
+  if (setup_for_solve) {
+    int m = U->NumVectors();
+
+    // Compute J^{-1}*U
+    JinvU = Teuchos::rcp(new Epetra_MultiVector(U->Map(), m));
+    J->ApplyInverse(*U, *JinvU);
+
+    // Compute I + V^T * J^{-1} * U
+    lu = Teuchos::rcp(new Epetra_MultiVector(localMap, m));
+    lu->Multiply('T', 'N', 1.0, *V, *JinvU, 0.0);
+    for (int i=0; i<m; i++)
+      (*lu)[i][i] += 1.0;
+
+    // Compute LU factorization of I + V^T * J^{-1} * U
+    ipiv.resize(m);
+    int info;
+    lapack.GETRF(m, m, lu->Values(), m, &ipiv[0], &info);
+  }
 }
 
 LOCA::Epetra::LowRankUpdateOp::~LowRankUpdateOp()
@@ -80,6 +103,7 @@ LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
 {
   // Number of input vectors
   int m = Input.NumVectors();
+  double n = Input.GlobalLength();
 
   // Compute J*Input or J^T*input
   int res = J->Apply(Input, Result);
@@ -101,7 +125,7 @@ LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
   else {
 
     // Compute U^T*Input
-    tmpMat->Multiply('T', 'N', 1.0, *U, Input, 0.0);
+    tmpMat->Multiply('T', 'N', 1.0/n, *U, Input, 0.0);
 
     // Compute J^T*Input + V*(U^T*input)
     Result.Multiply('N', 'N', 1.0, *V, *tmpMat, 1.0);
@@ -112,13 +136,44 @@ LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
 }
 
 int 
-LOCA::Epetra::LowRankUpdateOp::ApplyInverse(const Epetra_MultiVector& cInput, 
-					Epetra_MultiVector& Result) const
+LOCA::Epetra::LowRankUpdateOp::ApplyInverse(const Epetra_MultiVector& Input, 
+					    Epetra_MultiVector& Result) const
 {
-  globalData->locaErrorCheck->throwError(
-	  "LOCA::Epetra::LowRankUpdateOp::ApplyInverse",
-	  "Operator does not support ApplyInverse");
+  // Number of input vectors
+  int k = Input.NumVectors();
+
+  // Size of update
+  int m = U->NumVectors();
+
+  // Compute J^{-1}*Input or J^{-T}*Input
+  int res = J->ApplyInverse(Input, Result);
+
+  // Create temporary matrix to store V^T*input or U^T*input
+  if (tmpMat == Teuchos::null || tmpMat->NumVectors() != k) {
+    tmpMat = Teuchos::rcp(new Epetra_MultiVector(localMap, k, false));
+  }
+
+  if (!useTranspose) {
+    
+    // Compute V^T*Result
+    tmpMat->Multiply('T', 'N', 1.0, *V, Result, 0.0);
+
+    // Backsolve LU factorization against tmpMat
+    int info;
+    lapack.GETRS('N', m, k, lu->Values(), m, &ipiv[0], tmpMat->Values(), m,
+		 &info);
+
+    // Compute Result - JinvU*tmpMat
+    Result.Multiply('N', 'N', -1.0, *JinvU, *tmpMat, 1.0);
+  }
+  else {
+    globalData->locaErrorCheck->throwError(
+		      "LOCA::Epetra::LowRankUpdateOp::ApplyInverse",
+		      "Operator does not support transpose");
     return -1;
+  }
+  
+  return res;
 }
 
 double 

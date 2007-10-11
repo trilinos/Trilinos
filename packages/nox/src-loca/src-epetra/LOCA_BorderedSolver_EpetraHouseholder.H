@@ -227,14 +227,27 @@ namespace LOCA {
      * argument to the constructor.  The parameters this class recognizes 
      * are:
      * <ul>
+     * <li> "Preconditioner Method" -- [string] (default: "Jacobian") - 
+     *      Method for preconditioning the \f$P\f$ operator.  Choices are:
+     *      <ul>
+     *      <li> "Jacobian" (default) -- Use the preconditioner for \f$J\f$
+     *      <li> "SMW" -- Use the Sherman-Morrison-Woodbury formula for the
+     *           inverse of \f$P\f$, replacing the inverse of \f$J\f$ with
+     *           the preconditioner for \f$J\f$.
+     *      </ul>
+     * <li> "Scale Augmented Rows" -- [bool] (default: true) -
+     *      Scale augmented rows to unit 2-norm before computing QR
+     *      factorization.
      * <li> "Include UV In Preconditioner" -- [bool] (default: false) -
      *      Flag indicating whether to use the \f$U\f$ and \f$V\f$ terms
-     *      in the preconditioner for \f$P\f$
+     *      in the preconditioner for \f$P\f$ when using the "Jacobian"
+     *      preconditioner method.
      * <li> "Use P For Preconditioner" -- [bool] (default: false) -
      *      Flag indicating whether to use the representation of \f$P\f$ as
      *      a LOCA::Epetra::LowRankUpdateRowMatrix for computing the 
-     *      preconditioner.  This is valid only for preconditioners that
-     *      accept an Epetra_RowMatrix interface.
+     *      preconditioner when using the "Jacobian" preconditioner method.  
+     *      This is valid only for preconditioners that accept an 
+     *      Epetra_RowMatrix interface.
      * <li> "Transpose Solver Method" -- [string] 
      *      (default: "Transpose Preconditioner") Method for preconditioning
      *      the transpose linear system.  See 
@@ -438,6 +451,12 @@ namespace LOCA {
 
     protected:
 
+      //! Enumerated type indicating preconditioner method
+      enum PRECONDITIONER_METHOD {
+	JACOBIAN,  
+	SMW
+      };
+
       //! Global data object
       Teuchos::RCP<LOCA::GlobalData> globalData;
 
@@ -507,6 +526,15 @@ namespace LOCA {
       //! Pointer to B block as an Epetra multivector
       Teuchos::RCP<const NOX::Abstract::MultiVector> Bblock;
 
+      //! Pointer to scaled A block
+      Teuchos::RCP<NOX::Abstract::MultiVector> Ascaled;
+
+      //! Pointer to scaled B block
+      Teuchos::RCP<NOX::Abstract::MultiVector> Bscaled;
+
+      //! Pointer to scaled C block
+      Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Cscaled;
+
       //! Pointer to linear system
       Teuchos::RCP<NOX::Epetra::LinearSystem> linSys;
 
@@ -545,6 +573,15 @@ namespace LOCA {
 
       //! BLAS Wrappers
       Teuchos::BLAS<int,double> dblas;
+
+      //! Whether we should scale augmented rows to have unit 2-norm
+      bool scale_rows;
+
+      //! Scale values for each row
+      std::vector<double> scale_vals;
+
+      //! Preconditioner method
+      PRECONDITIONER_METHOD precMethod;
 
       //! Flag indicating whether to include U*V^T terms in preconditioner
       bool includeUV;
