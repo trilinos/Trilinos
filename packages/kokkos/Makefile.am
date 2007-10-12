@@ -44,7 +44,8 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = config/token-replace.pl
+EXTRA_DIST = config/token-replace.pl doc/build_docs doc/DoxyfileWeb \
+doc/index.doc
  
 #
 #       I believe that by switching to AUX_DIR(../../config) one 

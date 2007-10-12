@@ -42,7 +42,7 @@ ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
-       config/token-replace.pl
+       config/token-replace.pl doc/build_docs doc/DoxyfileWeb
 
 ## #######################################################################
 ## Tools in the auxillary directory 

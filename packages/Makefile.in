@@ -167,10 +167,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
+EXTRA_DIST = common/Doxyfile common/header.html common/footer.html \
+common/styles.css common/tag_files/keepme.txt
 
-#EXTRA_DIST = bootstrap \
-#	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-#	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
 
 #AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 

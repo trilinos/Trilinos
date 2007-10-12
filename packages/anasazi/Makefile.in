@@ -261,7 +261,8 @@ EXTRA_DIST = bootstrap \
 	config/depcomp config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
-       config/token-replace.pl
+       config/token-replace.pl doc/build_docs doc/Doxyfile doc/index.doc \
+       doc/groups.doc
 
 
 #

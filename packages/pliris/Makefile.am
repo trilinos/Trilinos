@@ -68,7 +68,8 @@ config/tac_arg_enable_export-makefiles.m4 \
 config/tac_arg_with_perl.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub \
-bootstrap 
+bootstrap                               doc/build_docs \
+doc/DoxyfileWeb                         doc/index_my.doc 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
