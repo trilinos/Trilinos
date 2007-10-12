@@ -2095,6 +2095,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   double t0;
   int * perm = NULL;
   char str[80];
+  char *ptrToBdry;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -2122,27 +2123,15 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   /* check row with only main diagonal entry -> boundry nodes */   
   N_nonzeros = 0;
   NrowsMETIS = 0;
-  allocated=400;
-  rowi_col = (int    *)ML_allocate(allocated*sizeof(int   ));
-  rowi_val = (double *)ML_allocate(allocated*sizeof(double));
-  if (rowi_val==NULL)
-  {
-      fprintf(stderr,"not enough space\n");
-      fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
-      fflush(stderr); exit(EXIT_FAILURE);
-  }
-  for (i = 0; i < Nrows; i++) {  
-    ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-  	              &rowi_N, 0);
-    
-    if( rowi_N <= 1 ) {
-      bdry_nodes[i] = 'T';
-      perm[i] = -1;
-    } else {
-      perm[i] = NrowsMETIS++;
-      bdry_nodes[i] = 'F';
-      N_nonzeros += rowi_N;
-    }
+  ptrToBdry = ML_Operator_IdentifyDirichletRows(Amatrix);
+  /* TODO  Note that N_nonzeros could be greater than what was previously
+     calculated in the code that this replaces.  I don't know if this will
+     be a problem.... */ 
+  N_nonzeros = ML_Operator_ComputeNumNzs(Amatrix);
+  for (i=0; i<Nrows; i++) {
+    bdry_nodes[i] = ptrToBdry[i];
+    if (ptrToBdry[i] == 'T') perm[i] = -1;
+    else                     perm[i] = NrowsMETIS++;
   }
   /* N_bdry_nodes: number of boundary blocks */
   N_bdry_nodes = ML_Comm_GsumInt(comm, Nrows-NrowsMETIS);

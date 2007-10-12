@@ -70,6 +70,7 @@ extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel);
 extern void ML_Operator_Profile_SetIterations(int numits);
 extern int ML_Operator_Profile_GetIterations();
 extern int ML_Operator_Get_Nnz(ML_Operator *A);
+extern char* ML_Operator_IdentifyDirichletRows(ML_Operator *A);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

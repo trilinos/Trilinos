@@ -105,7 +105,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_GetrowFunc         *getrow_obj;
    ML_Operator           *Asqrd = NULL, *tmatrix;
    struct ML_CSR_MSRdata *temp;
-   char                  *vtype, *state, *bdry, *unamalg_bdry;
+   char                  *vtype, *state, *bdry, *unamalg_bdry, *ptrToBdry;
    int                   nvertices, *vlist, Asqrd_ntotal, Asqrd_Nneigh;
    int                   *Asqrd_neigh = NULL, max_element, Nghost;
    int                   **Asqrd_sndbuf = NULL, **Asqrd_rcvbuf = NULL;
@@ -358,12 +358,8 @@ int agg_offset, vertex_offset;
 
    bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
    for (i = Nrows ; i < exp_Nrows; i++) bdry[i] = 'F';
-   for (i = 0; i < Nrows; i++) {
-      bdry[i] = 'T';
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-      if (rowi_N > 1) bdry[i] = 'F';
-   }
+   ptrToBdry = ML_Operator_IdentifyDirichletRows(Amatrix);
+   for (i = 0; i<Nrows ; i++) bdry[i] = ptrToBdry[i];
 
    /* communicate the boundary information */
 
@@ -2468,24 +2464,22 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     *number_connections = NULL;
   int best_score, score, best_agg, best_connect, mypid;
   double printflag;
-  int                   allocated = 0, *rowi_col = NULL, rowi_N,total_vertices;
+  int                   allocated = 0, *rowi_col = NULL, rowi_N,total_vertices,
+                        total_bdry, nbdry;
   double                *rowi_val = NULL, factor = 1.;
   char *bdry = NULL;
   int send_count, k, kk, flag, *temp_aggr_index;
   int Nleftover = 0, Nsingle = 0;
+  int nnz;
 
   if (input_bdry == NULL) {
    bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
-   for (i = nvertices ; i < exp_Nrows; i++) input_bdry[i] = 'F';
-   for (i = 0; i < nvertices; i++) {
-      bdry[i] = 'T';
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-      if (rowi_N > 1) bdry[i] = 'F';
-   }
+   for (i = nvertices ; i < exp_Nrows; i++) bdry[i] = 'F';
+   input_bdry = ML_Operator_IdentifyDirichletRows(Amatrix);
+   for (i = 0; i<nvertices ; i++) bdry[i] = input_bdry[i];
+   input_bdry = NULL;
   }
   else bdry = input_bdry;
-
     
    mypid       = comm->ML_mypid;
    printflag   = ml_ag->print_flag;
@@ -2497,15 +2491,18 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /*      NOTE: these aggregates must lie entirely on a processor.      */
    /*            The code/coordination between processors is just too    */
    /*            hard to work out the details.                           */
-
+   nbdry = 0;
    phase_one_aggregated = 0;
    for (i = 0; i < nvertices; i++) {
-     if ((aggr_index[i] != -1) && (bdry[i] == 'F')) {
-        phase_one_aggregated++;
+     if (bdry[i] == 'F') {
+       nbdry++;
+       if (aggr_index[i] != -1)
+         phase_one_aggregated++;
      }
    }
    phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
-   total_vertices       = ML_Comm_GsumInt( comm, nvertices);
+   total_bdry     = ML_Comm_GsumInt( comm, nbdry);
+   total_vertices = ML_Comm_GsumInt( comm, nvertices) - total_bdry;
 
    /* base the number of new aggregates created on the percentage of */
    /* unaggregated nodes.                                            */
@@ -2513,28 +2510,37 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
    factor = pow(factor, ml_ag->phase3_agg_creation);
 
-   for (i = 0; i < nvertices; i++) {
-     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
-       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val, &rowi_N, 0);
+   for (i = 0; i < nvertices; i++)
+   {
+     if ((aggr_index[i] == -1) && (bdry[i] != 'T'))
+     {
+       nnz=0;
+       ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
        aggd_neighbors = 0;
        nonaggd_neighbors = 0;
        for (j = 0; j < rowi_N; j++) {
-	 current_agg = aggr_index[rowi_col[j]];
-	 if (current_agg != -1) aggd_neighbors++;
-	 else if (rowi_col[j] < nvertices) nonaggd_neighbors++;
+         int colj = rowi_col[j];
+         if (bdry[colj] == 'F' && rowi_val[j] != 0.0) {
+           nnz++;
+           if (colj < nvertices && aggr_index[colj] != -1) nonaggd_neighbors++;
+         }
        }
-       if ((rowi_N > 3) && 
-	   (((double) nonaggd_neighbors)/((double) rowi_N) > factor)) {
-	 aggr_index[i] = (*aggr_count)++;
-	 for (j = 0; j < rowi_N; j++) {
-	   if ( (aggr_index[ rowi_col[j]] == -1) && (rowi_col[j] < nvertices))
-	     aggr_index[rowi_col[j]] = aggr_index[i];
-	 }
+       if ((nnz > 3) && 
+          (((double) nonaggd_neighbors)/((double) nnz) > factor))
+       {
+         aggr_index[i] = (*aggr_count)++;
+         for (j = 0; j < rowi_N; j++) {
+           int colj = rowi_col[j];
+           if ((aggr_index[colj]==-1) && (colj<nvertices)
+                && (bdry[colj]=='F') && (rowi_val[j] != 0.0))
+             aggr_index[colj] = aggr_index[i];
+         }
        }
      }
-   }
+   } /*for (i = 0; i < nvertices; i++)*/
 
-
+   /* TODO (JJH) This is where I stopped checking for bugs in boundary
+           handling.*/
    if ( printflag < ML_Get_PrintLevel()) {
 
      total_aggs    = ML_Comm_GsumInt( comm, Nphase1_agg);
@@ -2565,43 +2571,46 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* make a new aggregate.                                             */
 
    for (kk = 0; kk < 2; kk++) {
-   for (i = 0; i < nvertices; i++) {
-     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
-       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-			 &rowi_N, 0);
-       for (j = 0; j < rowi_N; j++) {
-	 current_agg = aggr_index[rowi_col[j]];
+     for (i = 0; i < nvertices; i++) {
+       if ((aggr_index[i] == -1) && (bdry[i] != 'T'))
+       {
+         ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+         for (j = 0; j < rowi_N; j++) {
+           current_agg = aggr_index[rowi_col[j]];
+           /*********** do we neeeeed the extra condition????????? */
+          if ((current_agg >= 0) && /*(current_agg < Nphase1_agg) &&*/
+              (rowi_col[j] < nvertices))
+            number_connections[current_agg] += connect_type[rowi_col[j]];
+         }
+         best_score = -1000000;
+         best_agg = -1; best_connect = -1;
+         for (j = 0; j < rowi_N; j++)
+         {
+           current_agg = aggr_index[rowi_col[j]];
+           if (( current_agg >= 0) &&
+               /* (current_agg < Nphase1_agg) && do we need this???? */
+               (number_connections[current_agg] != 0) )
+           {
+             score = number_connections[current_agg]-agg_incremented[current_agg];
+             if (score > best_score) {
+               best_agg = current_agg; 
+               best_score = score;
+               best_connect = connect_type[rowi_col[j]];
+             }
+             else if ((best_agg == current_agg)
+                      && (connect_type[rowi_col[j]] > best_connect))
+               best_connect = connect_type[rowi_col[j]];
 
-	 /*********** do we neeeeed the extra condition????????? */
-	 if ((current_agg >= 0) && /*(current_agg < Nphase1_agg) &&*/ (rowi_col[j] < nvertices)) {
-	   number_connections[current_agg] += connect_type[rowi_col[j]];
-	 }
-       }
-       best_score = -1000000;
-       best_agg = -1; best_connect = -1;
-       for (j = 0; j < rowi_N; j++) {
-	 current_agg = aggr_index[rowi_col[j]];
- if (( current_agg >= 0) && /* (current_agg < Nphase1_agg) && do we need this???? */
-	     (number_connections[current_agg] != 0) ) {
-	   score = number_connections[current_agg]-agg_incremented[current_agg];
-	   if (score > best_score) {
-	     best_agg = current_agg; 
-	     best_score = score;
-	     best_connect = connect_type[rowi_col[j]];
-	   }
-	   else if ((best_agg == current_agg) && (connect_type[rowi_col[j]] > best_connect))
-	     best_connect = connect_type[rowi_col[j]];
-
-	   number_connections[current_agg] = 0;
-	 }
-       }
-       if (best_score >= 0) { 
-	 aggr_index[i] = best_agg;
-	 agg_incremented[best_agg]++;
-	 connect_type[i] = best_connect - 10;
+             number_connections[current_agg] = 0;
+           }
+         }
+         if (best_score >= 0) { 
+           aggr_index[i] = best_agg;
+           agg_incremented[best_agg]++;
+           connect_type[i] = best_connect - 10;
+         }
        }
      }
-   }
    }
 
    /* only MIS can have aggregates that span processors */

@@ -3032,10 +3032,10 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
 
    if ( finest_level > coarsest_level ) {
       for ( i = coarsest_level; i < finest_level; i++ )
-         ml->Pmat[i].bc = &(ml->BCs[i+1]);
+         ml->Pmat[i].BCs = &(ml->BCs[i+1]);
    } else {
       for ( i = coarsest_level; i > finest_level; i-- )
-         ml->Pmat[i].bc = &(ml->BCs[i-1]);
+         ml->Pmat[i].BCs = &(ml->BCs[i-1]);
    }
    return 0;
 }

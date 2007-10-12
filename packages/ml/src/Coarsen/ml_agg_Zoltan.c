@@ -1576,7 +1576,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    
 
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
-   ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->bc);
+   ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->BCs);
    /* JJH I've observed that (*Pmatrix)->label is sometimes null.
       JJH Not sure if this is a problem. */
    if ((*Pmatrix)->label) ML_Operator_Set_Label(Pmatrix2,(*Pmatrix)->label);

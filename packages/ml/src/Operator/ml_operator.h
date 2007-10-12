@@ -36,6 +36,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #include "ml_gridagx.h"
 #include "ml_mls.h"
 #include "ml_utils.h"
+#include "ml_op_utils.h"
 
 #ifdef WKC
 #include <Epetra_Comm.h>
@@ -115,7 +116,9 @@ ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original);
 /* -------------------------------------------------------------------- */
 
 struct ML_Operator_Struct {
-   int           ML_id; /*this and the getrow are not the pid that lives in comm ML_id is used as the pid for communication in the neighbor list however*/
+   int           ML_id; /*this and the getrow are not the pid that lives in comm
+                           ML_id is used as the pid for communication in the
+                           neighbor list however*/
    ML_Comm       *comm;
    ML_1Level     *to, *from;
    int           invec_leng, outvec_leng;
@@ -126,10 +129,12 @@ struct ML_Operator_Struct {
    ML_DVector    *diagonal;      /** diagonal of matrix.     */
    int           N_nonzeros;
    int           max_nz_per_row;
-   int           blocks; /*only used for VBR matricies to say number of blocks*/
+   int           blocks; /*only used for VBR matrices to say number of blocks*/
    int           from_an_ml_operator;
    ML_Operator   *sub_matrix;
-   ML_BdryPts    *bc;
+   ML_BdryPts    *BCs;
+   char          *DirichletRows; /* simple array of length outvec_leng
+                                    to record Dirichlet rows */
    double        build_time, apply_time;
    double        apply_without_comm_time;
    int           ntimes, nflop;

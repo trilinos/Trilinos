@@ -2762,3 +2762,53 @@ ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
   Amat_subset->N_nonzeros     = count;
 return Amat_subset;
 }
+
+/*
+  Function: ML_Operator_IdentifyDirichletRows()
+  Returns a character array that identifies local Dirichlet rows.  For local
+  row i,
+     A->DirichletRows[i] = 'T' if row i has no nonzero off-diagonals
+     A->DirichletRows[i] = 'F' if row i has at least one nonzero off-diagonal.
+
+  input:   pointer to ML_Operator
+
+  comments:  The memory referenced by the returned pointer is owned
+             by the ML_Operator and should not be deleted.
+
+             The first time through, this function will populate the field
+             A->DirichletRows.  Any subsequent call will return the address
+             contained in this field.
+*/
+
+char* ML_Operator_IdentifyDirichletRows(ML_Operator *A)
+{
+  if (A==NULL) return NULL;
+  if (A->ML_id != ML_ID_OP) {
+    pr_error("ML_Operator_IdentifyDirichletRows: not an ML_Operator.\n");
+  }
+
+  if (A->DirichletRows == NULL) {
+    int    i,j,allocated=50,row_lengths;
+    int    *cols;
+    double *vals;
+
+    A->DirichletRows = (char *) ML_allocate(A->outvec_leng * sizeof(char));
+    cols = (int *) ML_allocate(allocated*sizeof(int));
+    vals = (double *) ML_allocate(allocated*sizeof(double));
+    for (i=0; i<A->outvec_leng; i++) {
+      ML_get_matrix_row(A,1,&i,&allocated,&cols,&vals,&row_lengths,0);
+      A->DirichletRows[i] = 'T';
+      for (j=0; j<row_lengths; j++)
+        if (cols[j] != i  &&  vals[j] != 0.0) {  /*only consider off-diags*/
+          A->DirichletRows[i] = 'F';
+          break;
+        }
+    }
+
+    ML_free(cols);
+    ML_free(vals);
+  } /*if (A->DirichletRows == NULL)*/
+
+  return A->DirichletRows;
+
+} /*ML_Operator_IdentifyDirichletRows()*/

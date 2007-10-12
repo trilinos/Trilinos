@@ -23,6 +23,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_viz_stats.h"
+#include "ml_op_utils.h"
 #ifdef MB_MODIF_QR
 #include "ml_qr_fix.h"
 #endif
@@ -67,9 +68,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int     *amal_mat_indx=NULL, amal_count, **rows_in_aggs = NULL,ibeg;
    int     lwork, *agg_sizes = NULL, row, level, new_cnt, max_agg_size;
 #ifndef MB_REMOVE
-   int     zerodiag_cnt, offset, jnode, *agg_sizes_cum=NULL, index, info;
+   int     offset, jnode, *agg_sizes_cum=NULL, index, info;
 #else
-   int     zerodiag_cnt, offset, jnode, index, info;
+   int     offset, jnode, index, info;
 #endif
 #ifdef MB_MODIF_QR
    int     numDeadNod;
@@ -156,55 +157,14 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    col_ind = (int *)    ML_allocate( maxnnz_per_row * sizeof(int) );
    col_val = (double *) ML_allocate( maxnnz_per_row * sizeof(double) );
-   if ( Nrows > 0 ) diagonal = (double *) ML_allocate(Nrows * sizeof(double));
-   else             diagonal = NULL;
 
    /* ------------------------------------------------------------- */
    /* find out about how much memory to allocate for the matrix     */
    /* ------------------------------------------------------------- */
 
-   true_bdry = (char *) ML_allocate( Nrows * sizeof(char) );
-   for ( i = 0; i < Nrows; i++ )  true_bdry[i] = 'F';
-
-   nz_cnt = zerodiag_cnt = 0;
-   for ( i = 0; i < Nrows; i++ ) 
-   {
-#ifdef FIXBRUNNERBUG
-     int rowNzCount=0;
-#endif
-     diagonal[i] = 0.0;
-     while (getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind, 
-             col_val,&m) == 0 ) 
-     {
-       ML_free(col_ind);
-       ML_free(col_val);
-       maxnnz_per_row = maxnnz_per_row * 2 + 1; 
-       col_ind = (int *)    ML_allocate(maxnnz_per_row*sizeof(int));
-       col_val = (double *) ML_allocate(maxnnz_per_row*sizeof(double));
-     }
-     for ( j = 0; j < m; j++ ) {
-       if ( col_ind[j] == i ) diagonal[i] = col_val[j];
-#ifdef FIXBRUNNERBUG
-       else if (col_val[j] != 0.0) rowNzCount++;
-#endif
-     }
-     nz_cnt += m;
-     if ( diagonal[i] == 0.0 ) {nz_cnt++; zerodiag_cnt++;}
-#ifndef FIXBRUNNERBUG
-     if (m < 2) true_bdry[i] = 'T';
-#else
-     if (rowNzCount == 0) true_bdry[i] = 'T';
-#endif
-   }
-   if ( zerodiag_cnt > 0 && ML_Get_PrintLevel() > 9) 
-   {
-     printf("Aggregation Coarsening (pid %d) : %d zero diag\n",
-             mypid,zerodiag_cnt);
-   }
-   if ( epsilon == 0.0 && diagonal != NULL ) {
-     ML_free(diagonal);
-     diagonal = NULL;
-   }
+   true_bdry = ML_Operator_IdentifyDirichletRows(Amatrix);
+   ML_Operator_Get_Diag(Amatrix,Amatrix->outvec_leng,&diagonal);
+   nz_cnt = ML_Operator_ComputeNumNzs(Amatrix);
 
    /* ------------------------------------------------------------- */
    /* allocate memory for the entire matrix (only the column indices*/
@@ -236,10 +196,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    for ( i = 0; i < Nrows; i++ ) 
    {
+     int itmp = nz_cnt;
      getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
      if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
 
-     /*int itmp = nz_cnt;*/
      for (j = 0; j < m; j++) 
      {
        jnode = col_ind[j];
@@ -254,7 +214,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
              if ( dcompare1 >= epsilon * dcompare2 ) 
                 mat_indx[nz_cnt++] = col_ind[j];
 		 }
-       } 
+       }
 	   else if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
           mat_indx[nz_cnt++] = col_ind[j];
 	 }
@@ -262,16 +222,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      /* JJH 6/28/06
      printf("(%d) nz_cnt - itmp = %d, m = %d\n",i,nz_cnt-itmp,m);
      */
-#ifdef FIXBRUNNERBUG
      if ( nz_cnt-itmp ==0 ) mat_indx[i] = -mat_indx[i];
-#else
-     if ( m <= 1 ) mat_indx[i] = -mat_indx[i];/*JJH checking for Dir. b.c.*/
-                                               /*hmmm ... mat_indx = 0 ?   */
-#endif
    }
    ML_free(col_ind);
    ML_free(col_val);
-   if ( diagonal != NULL ) ML_free(diagonal);
 
    /* ============================================================= */
    /* Construct the matrix that relates to the nodes by combining   */
@@ -386,8 +340,6 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 						  struct ML_CSR_MSRdata));
    csr_data->values  = NULL;
    Cmatrix = ML_Operator_Create(Amatrix->comm);
-   if (ml_ag->num_PDE_eqns > 1)
-     ML_free(true_bdry);
    if ((nvblockflag == 1) && (ml_ag->num_PDE_eqns == 1)) {
      /*JJH Prevents aggregation error in Phase2_3 clean up.*/
      for ( i = 0; i < nz_cnt; i++ ) mat_indx[i] = abs(mat_indx[i]);
@@ -443,8 +395,6 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_Operator_Destroy(&Cmatrix);
    ML_free(csr_data);
    ML_free( bdry_array );
-   if (ml_ag->num_PDE_eqns == 1)
-     ML_free(true_bdry);
 
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */

@@ -81,6 +81,8 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->blocks              = -1;
    mat->max_nz_per_row      = 0;
    mat->sub_matrix          = NULL;
+   mat->BCs                 = NULL;
+   mat->DirichletRows       = NULL;
    mat->from_an_ml_operator = 0;
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
@@ -251,14 +253,15 @@ int ML_Operator_Clean( ML_Operator *mat)
    mat->num_rigid           = 1;
    mat->halfclone           = ML_FALSE;
 
-
-
    /* MS * Added on 18-Mar-05 */
    if (mat->aux_data != NULL) 
    {
      ML_Aux_Data_Destroy(&(mat->aux_data));
      mat->aux_data = NULL;
    }
+
+   if (mat->DirichletRows != NULL)
+     ML_free(mat->DirichletRows);
 
    return 0;
 }
@@ -317,6 +320,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->blocks              = original->blocks;
    mat->max_nz_per_row      = original->max_nz_per_row;
    mat->sub_matrix          = original->sub_matrix;
+   mat->DirichletRows       = original->DirichletRows;
    mat->from_an_ml_operator = original->from_an_ml_operator;
    mat->spectral_radius_scheme = original->spectral_radius_scheme;
    mat->spectral_radius_max_iters = original->spectral_radius_max_iters;
@@ -409,7 +413,7 @@ int ML_Operator_Set_BdryPts(ML_Operator *mat, ML_BdryPts *bc)
       printf("ML_Operator_Set_BdryPts error : wrong object.\n");
       exit(-1);
    }
-   mat->bc = bc;
+   mat->BCs = bc;
    return 0;
 } 
 
@@ -755,6 +759,7 @@ int ML_Operator_ComputeNumNzs(ML_Operator *matrix)
    }
    ML_free(val);
    ML_free(bindx);
+   matrix->N_nonzeros = Nnz;
    return Nnz;
 }
 
@@ -2154,14 +2159,13 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
 int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
 						 ML_Operator *hier)
 {
-  /* ML_1Level *ptr1, *ptr2; */
-
   ML_Operator_Clean(newmat);
   memcpy(newmat,hier, sizeof(struct ML_Operator_Struct));
   hier->label = NULL;
   hier->to    = NULL;
   hier->from  = NULL;
-  hier->bc    = NULL;
+  hier->BCs    = NULL;
+  hier->DirichletRows = NULL;
   hier->data  = NULL;
   hier->data_destroy = NULL;
   hier->matvec = NULL;
@@ -2184,12 +2188,12 @@ int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat,
 int ML_Operator_Move2HierarchyAndDestroy(ML_Operator **newmat, 
 						 ML_Operator *hier)
 {
-  /*  ML_1Level *ptr1, *ptr2; */
-
   (*newmat)->label = hier->label;
-  (*newmat)->bc    = hier->bc;
+  (*newmat)->BCs    = hier->BCs;
+  (*newmat)->DirichletRows = hier->DirichletRows;
   hier->label   = NULL;
-  hier->bc      = NULL;
+  hier->BCs      = NULL;
+  hier->DirichletRows = NULL;
   (*newmat)->from  = hier->from;
   (*newmat)->to    = hier->to;
   ML_Operator_Clean(hier);

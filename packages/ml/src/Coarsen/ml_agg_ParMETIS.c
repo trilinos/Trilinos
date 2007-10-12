@@ -41,6 +41,7 @@
 #include "ml_agg_METIS.h"
 #include "ml_viz_stats.h"
 #include "ml_agg_ParMETIS.h"
+#include "ml_op_utils.h"
 
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -901,9 +902,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_SuperNode          *aggr_head = NULL, *aggr_curr, *supernode;
    struct ML_CSR_MSRdata *csr_data;
    double                *starting_amalg_bdry, *reordered_amalg_bdry;
+   char                  *amalg_bdry;
    int                   Nghost;
-   int                   allocated = 0, *rowi_col = NULL, rowi_N;
-   double                *rowi_val = NULL;
    int Nnonzeros2 = 0;
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
@@ -1030,23 +1030,18 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
    for (i = Nrows ; i < exp_Nrows; i++) starting_amalg_bdry[i] = 0.0;
 
-   Nnonzeros2 = 0, N_bdry_nodes = 0;
-   for (i = 0; i < Nrows; i++) {
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-
-      if (rowi_N > 1) {
-        starting_amalg_bdry[i] = 0.0;
-        Nnonzeros2 += rowi_N;
-      } else {
-	starting_amalg_bdry[i] = 1.0;
-	N_bdry_nodes++;
-      }
+   amalg_bdry = ML_Operator_IdentifyDirichletRows(Amatrix);
+   N_bdry_nodes = 0;
+   for (i=0; i < Nrows ; i++) {
+     if (amalg_bdry[i] == 'F')
+       starting_amalg_bdry[i] = 0.0;
+     else {
+       starting_amalg_bdry[i] = 1.0;
+       N_bdry_nodes++;
+     }
    }
+   Nnonzeros2 = ML_Operator_ComputeNumNzs(Amatrix);
 
-   if( rowi_col != NULL ) ML_free(rowi_col );
-   if( rowi_val != NULL ) ML_free(rowi_val );
-   
    i = ML_Comm_GsumInt(comm, N_bdry_nodes);
    
    if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
@@ -1870,7 +1865,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_2matmult(QQ, Pstart, Pmatrix2, ML_CSR_MATRIX );
    
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
-   ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->bc);
+   ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->BCs);
    if ((*Pmatrix)->label != NULL) {
      str2 = (char *)ML_allocate(80*sizeof(char));
      sprintf(str2,"%s",(*Pmatrix)->label);
