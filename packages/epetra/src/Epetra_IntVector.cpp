@@ -448,7 +448,10 @@ int Epetra_IntVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       else if(CombineMode==Insert)
 	for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
       else if(CombineMode==AbsMax)
-        for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],std::abs(*ptr++)); //
+        for (j=0; j<NumImportIDs; j++) {
+	  To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],std::abs(*ptr));
+	  ptr++;
+	}
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average)
@@ -476,8 +479,10 @@ int Epetra_IntVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     else if(CombineMode==AbsMax) {
       for (j=0; j<NumImportIDs; j++) {
 	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr++) );
+	for (k=0; k<MaxElementSize; k++) {
+	    To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr));
+	    ptr++;
+	}
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
@@ -520,8 +525,10 @@ int Epetra_IntVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	ptr = (int *) Imports + j*SizeOfPacket;
 	jj = ToFirstPointInElementList[ImportLIDs[j]];
 	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr++) );
+	for (k=0; k<ElementSize; k++) {
+	    To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr));
+	    ptr++;
+	}
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
