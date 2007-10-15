@@ -13,13 +13,13 @@ The motivation for this is to allow applications to easily switch from one
 linear-solver library to another. (For example, to switch from Aztec to PETSc.)
 
 FEI has traditionally been built and used outside of Trilinos, with the
-assumption that Trilinos may or may not be available. (In fact, FEI existed
-before Trilinos did.) Now that FEI is a Trilinos package, some FEI objects
-will no longer be needed. Examples include fei::ParameterSet (will be replaced
-by Teuchos::ParameterList) and fei::SharedPtr (will be replaced by
-Teuchos::RefCountPtr). At the current time (September 2007) these fei objects
-are still in place and being used.  They will be phased out and replaced with
-the appropriate Teuchos objects as time permits.
+assumption that Trilinos may or may not be available.  Now that FEI is a
+Trilinos package, some FEI objects will no longer be needed. Examples include
+fei::ParameterSet (will be replaced by Teuchos::ParameterList) and
+fei::SharedPtr (will be replaced by Teuchos::RefCountPtr). At the current
+time (September 2007) these fei objects are still in place and being used.
+They will be phased out and replaced with the appropriate Teuchos objects
+as time permits.
 
 The best starting point for learning how FEI is used, is to read through
 the example programs in example/beam and example/poisson.

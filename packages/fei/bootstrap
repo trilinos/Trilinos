@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Running aclocal..."
+aclocal -I config
+
+echo "Running autoheader..."
+autoheader
+
+echo "Running automake..."
+automake --foreign --add-missing --copy
+
+echo "Running autoconf..."
+autom4te -l autoconf -o configure configure.ac
+
+echo "Finished."

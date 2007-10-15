@@ -350,6 +350,22 @@ July 7 2005: version 2.14.00
   - Additionally, this revision is copied to branch "branches/2.21" in the
     subversion repository.
 
+ Jun 08 2007 minor version 2.21.01
+  - Fix bug in remote-bc-enforcement when slave constraints are present.
+  - Fix memory leak in fei::MatrixGraph_Impl2::initComplete (in
+    createSlaveMatrices, during SSVec::operator=)
+
+ Jun 27 2007 minor version 2.21.02
+  - Fix naming/numbering of output files containing matrices/vectors. It
+    was incorrect for the Fuego application, which uses several linear systems
+    at once, and shares some fei objects among them.
+
+ Oct 5 2007 minor version 2.21.03
+  - Fix a compiler error for GC 4.1.2 on reddish, where a template was being
+    specialized outside the namespace it had been declared in.
+  - Couple other minor tweaks related to building against Trilinos, with some
+    packages being missing or disabled.
+
  ??? ?? ???? version 2.22.00
   - Fix bug in enforcement of remote ess BCs, when slave constraints are
     present. (This bug was encountered by a parallel adaptive aria case.)
@@ -372,4 +388,11 @@ July 7 2005: version 2.14.00
     namespaces, and so the snl_fei namespace is being eliminated. All classes
     will be moved into the fei namespace. This is a big job, may be spread
     over a couple of fei release versions.
+  - Removed the implementation class snl_fei::IdxSet. It was an experimental
+    class which turned out to not be worth the effort.
+  - Moved FEI code distribution into Trilinos. FEI will now be a Trilinos
+    package. This will have several advantages. One dis-advantage is that
+    Trilinos uses a CVS repository, so we will lose code-history from the
+    FEI subversion repository. But the FEI subversion repository will not be
+    immediately deleted, so previous versions can still be retrieved if needed.
 
