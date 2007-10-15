@@ -29,6 +29,20 @@
     COMM = SERIAL, MPI;
 }
 
+(INSTALL) {
+    DIRS = BlockMap,
+          Comm,
+         CrsGraph,
+         CrsMatrix,
+         FECrsMatrix,
+         Map,
+         MultiVector,
+         Object,
+         Vector;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
 (FRAMEWORK, EpetraExamples) {
     DIRS = ../example/my_example;
     COMM = SERIAL, MPI(1-4);

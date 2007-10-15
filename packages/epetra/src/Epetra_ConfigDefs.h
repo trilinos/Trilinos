@@ -36,8 +36,12 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define __cplusplus
 #endif
 
-#define EPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
-#define EPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
+#include <algorithm>
+
+#define EPETRA_MAX(x,y) std::max(x,y) /* max function  */
+#define EPETRA_MIN(x,y) std::min(x,y)/* min function  */
+//#define EPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
+//#define EPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
 #define EPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
 
 const double Epetra_MinDouble = 1.0E-100;
