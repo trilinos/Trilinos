@@ -39,9 +39,9 @@ copyinputfiles_SOURCES = \
 copyinputfiles$(EXEEXT): $(copyinputfiles_SOURCES)
 	@if [ "$(top_builddir)" != "$(top_srcdir)" ] ; then \
 	  echo " "; \
-	  echo "copying 'src-dir'/test/elemDOF_Aztec/* to 'build-dir'/test/elemDOF_Aztec";\
+	  echo "copying 'src-dir'/test/elemDOF_Aztec/*.* to 'build-dir'/test/elemDOF_Aztec";\
 	  echo " "; \
-	  cp $(top_srcdir)/test/elemDOF_Aztec/* $(top_builddir)/test/elemDOF_Aztec; \
+	  cp $(top_srcdir)/test/elemDOF_Aztec/*.* $(top_builddir)/test/elemDOF_Aztec; \
 	fi
 
 run-tests:copyinputfiles$(EXEEXT)
