@@ -1370,8 +1370,7 @@ Optional Features:
                           (default is yes unless the
                           --disable-default-packages option is used)
   --enable-fei            Build fei, a sparse linear-system assembly package
-                          (default is yes unless the
-                          --disable-default-packages option is used)
+                          (default is no)
   --enable-intrepid       Build intrepid, a discretization package (default is
                           no)
   --enable-isorropia      Build isorropia, a repartitioning/rebalancing
@@ -2860,7 +2859,7 @@ if test "${enable_fei+set}" = set; then
   enableval=$enable_fei; ac_cv_use_fei=$enableval
 ac_cv_use_fei_explicit=$enableval
 else
-  ac_cv_use_fei=$ac_cv_use_default_packages
+  ac_cv_use_fei=no
 ac_cv_use_fei_explicit=no
 fi
 

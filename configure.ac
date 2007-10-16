@@ -69,7 +69,7 @@ TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditioner package], IFPACK)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(fei, [Build fei, a sparse linear-system assembly package], FEI, no)
+TAC_ARG_ENABLE_FEATURE(fei, [Build fei, a sparse linear-system assembly package], FEI, no)
 
 TAC_ARG_ENABLE_FEATURE(intrepid, [Build intrepid, a discretization package], INTREPID, no)
 
