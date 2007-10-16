@@ -90,8 +90,9 @@ CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
 	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
 	belos anasazi rbgen pliris ml aristos intrepid moertel \
-	stratimikos meros sacado nox capo rythmos trilinoscouplings \
-	new_package moocho PyTrilinos didasko WebTrilinos external
+	stratimikos meros fei sacado nox capo rythmos \
+	trilinoscouplings new_package moocho PyTrilinos didasko \
+	WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -191,6 +192,7 @@ common/styles.css common/tag_files/keepme.txt
 @BUILD_EPETRA_TRUE@EPETRA_SUBDIR = epetra
 @BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
 @BUILD_EXTERNAL_TRUE@EXTERNAL_SUBDIR = external
+@BUILD_FEI_TRUE@FEI_SUBDIR = fei
 @BUILD_IFPACK_TRUE@IFPACK_SUBDIR = ifpack
 @BUILD_INTREPID_TRUE@INTREPID_SUBDIR = intrepid
 @BUILD_GALERI_TRUE@GALERI_SUBDIR = galeri 
@@ -222,8 +224,8 @@ common/styles.css common/tag_files/keepme.txt
 # higher-level pacakges.
 #
 # Listing the packages from lower level to higher level allows the test
-# harness to perform more efficiently as it disables broken packagess and
-# therefore disable higher-level pacakges.  In general, these packages should
+# harness to perform more efficiently as it disables broken packages and
+# therefore disables higher-level pacakges.  In general, these packages should
 # be listed in the reverse order that the libraries would be listed on the
 # link line.
 #
@@ -253,6 +255,7 @@ PACKAGE_NAMES = \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
+	$(FEI_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(CAPO_SUBDIR)         \

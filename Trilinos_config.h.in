@@ -36,6 +36,9 @@
 /* Define if want to build external */
 #undef HAVE_EXTERNAL
 
+/* Define if want to build fei */
+#undef HAVE_FEI
+
 /* Define if want to build galeri */
 #undef HAVE_GALERI
 

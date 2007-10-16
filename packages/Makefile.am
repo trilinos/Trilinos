@@ -110,6 +110,10 @@ if BUILD_EXTERNAL
 EXTERNAL_SUBDIR = external
 endif
 
+if BUILD_FEI
+FEI_SUBDIR = fei
+endif
+
 if BUILD_IFPACK
 IFPACK_SUBDIR = ifpack
 endif
@@ -219,8 +223,8 @@ endif
 # higher-level pacakges.
 #
 # Listing the packages from lower level to higher level allows the test
-# harness to perform more efficiently as it disables broken packagess and
-# therefore disable higher-level pacakges.  In general, these packages should
+# harness to perform more efficiently as it disables broken packages and
+# therefore disables higher-level pacakges.  In general, these packages should
 # be listed in the reverse order that the libraries would be listed on the
 # link line.
 #
@@ -251,6 +255,7 @@ PACKAGE_NAMES = \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
+	$(FEI_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(CAPO_SUBDIR)         \

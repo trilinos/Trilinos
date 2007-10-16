@@ -69,6 +69,8 @@ TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditioner package], IFPACK)
 
+TAC_ARG_ENABLE_DEFAULT_FEATURE(fei, [Build fei, a sparse linear-system assembly package], FEI, no)
+
 TAC_ARG_ENABLE_FEATURE(intrepid, [Build intrepid, a discretization package], INTREPID, no)
 
 TAC_ARG_ENABLE_FEATURE(isorropia, [Build isorropia, a repartitioning/rebalancing package], ISORROPIA, no)
@@ -241,6 +243,14 @@ else
   BUILD_EPETRA=no
 fi
 AM_CONDITIONAL(BUILD_EPETRA, test "X$BUILD_EPETRA" != "Xno")
+
+if test "X$ac_cv_use_fei" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/fei])
+  BUILD_FEI=yes
+else
+  BUILD_FEI=no
+fi
+AM_CONDITIONAL(BUILD_FEI, test "X$BUILD_FEI" != "Xno")
 
 if test "X$ac_cv_use_pliris" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/pliris])
