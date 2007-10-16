@@ -428,7 +428,7 @@ class FEI_Implementation : public FEI {
        @param elemLoad Element-load vector.
        @param elemFormat Designates the way in which the 'elemStiffness' 
               stiffness-matrix data is laid out. Valid values for this parameter
-              can be found in the file base/fei_defs.h.
+              can be found in the file fei_defs.h.
    */
    int sumInElem(GlobalID elemBlockID,
                  GlobalID elemID,
@@ -449,7 +449,7 @@ class FEI_Implementation : public FEI {
              'initElemBlock'.)
        @param elemFormat Designates the way in which the 'elemStiffness'
               stiffness-matrix data is laid out. Valid values for this parameter
-              can be found in the file base/fei_defs.h.
+              can be found in the file fei_defs.h.
    */
    int sumInElemMatrix(GlobalID elemBlockID,
                        GlobalID elemID,

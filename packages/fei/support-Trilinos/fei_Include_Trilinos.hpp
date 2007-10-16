@@ -9,7 +9,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "support-Trilinos/fei_trilinos_macros.hpp"
+#include "fei_trilinos_macros.hpp"
 
 #ifdef HAVE_EPETRA
 

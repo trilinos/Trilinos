@@ -13,7 +13,7 @@
 /*
  * This header is ONLY to be included from within other FEI headers or sources.
  * The macro FEI_OSTREAM must already be defined. (It is defined in
-   base/fei_iostream.hpp and/or in base/fei_iosfwd.hpp.)
+   fei_iostream.hpp and/or in fei_iosfwd.hpp.)
  */
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec);

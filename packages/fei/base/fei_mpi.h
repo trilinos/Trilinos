@@ -9,7 +9,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "base/fei_macros.hpp"
+#include "fei_macros.hpp"
 
 #ifdef FEI_SER
 /**

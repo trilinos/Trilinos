@@ -264,6 +264,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Factory.hpp \
 	$(top_srcdir)/base/FEI_Implementation.hpp \
 	$(top_srcdir)/base/fei_IndexTable.hpp \
+	$(top_srcdir)/base/fei_iosfwd.hpp \
 	$(top_srcdir)/base/fei_iostream.hpp \
 	$(top_srcdir)/base/fei_hash_map.hpp \
 	$(top_srcdir)/base/fei_hash_set.hpp \
@@ -291,7 +292,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Solver.hpp \
 	$(top_srcdir)/base/fei_SparseRowGraph.hpp \
 	$(top_srcdir)/base/fei_fstream.hpp \
-	$(top_srcdir)/base/fei_iostream.hpp \
 	$(top_srcdir)/base/fei_sstream.hpp \
 	$(top_srcdir)/base/fei_utils.hpp \
 	$(top_srcdir)/base/fei_Vector.hpp \

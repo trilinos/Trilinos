@@ -9,8 +9,8 @@
 #ifndef _fei_fwd_hpp_
 #define _fei_fwd_hpp_
 
-#include <base/fei_macros.hpp>
-#include <base/fei_defs.h>
+#include "fei_macros.hpp"
+#include "fei_defs.h"
 
 //
 //Forward declarations for fei classes.

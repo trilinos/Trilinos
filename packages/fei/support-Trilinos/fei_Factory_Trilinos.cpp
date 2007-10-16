@@ -6,7 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <support-Trilinos/fei_Factory_Trilinos.hpp>
+#include <fei_Factory_Trilinos.hpp>
 
 #include <fei_macros.hpp>
 #include <fei_Exception.hpp>

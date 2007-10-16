@@ -231,6 +231,7 @@ CORE_H = \
 	$(top_srcdir)/support-Trilinos/fei_Solver_Amesos.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Solver_AztecOO.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Trilinos_Helpers.hpp \
+	$(top_srcdir)/support-Trilinos/fei_trilinos_macros.hpp \
 	$(top_srcdir)/support-Trilinos/fei_VectorTraits_Epetra.hpp
 
 CORE = \
