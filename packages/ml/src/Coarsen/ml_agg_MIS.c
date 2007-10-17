@@ -60,6 +60,8 @@ extern int *reordered_glob_nodes, *global_node_inds,
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 #endif
 
+extern void ML_compressOutZeros(int currRow, int *cols, double *vals, int *length);
+
 
 /* ******************************************************************** */
 /* ******************************************************************** */
@@ -2459,7 +2461,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  ML_Comm *comm, char *input_bdry, char *label,
                                   ML_agg_indx_comm *agg_indx_comm)
 {
-  int Nphase1_agg, phase_one_aggregated, i, j, aggd_neighbors, nonaggd_neighbors;
+  int Nphase1_agg, phase_one_aggregated, i, j, nonaggd_neighbors;
   int current_agg, total_aggs, *agg_incremented = NULL, *connect_type = NULL, 
     *number_connections = NULL;
   int best_score, score, best_agg, best_connect, mypid;
@@ -2470,7 +2472,6 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   char *bdry = NULL;
   int send_count, k, kk, flag, *temp_aggr_index;
   int Nleftover = 0, Nsingle = 0;
-  int nnz;
 
   if (input_bdry == NULL) {
    bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
@@ -2494,11 +2495,11 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbdry = 0;
    phase_one_aggregated = 0;
    for (i = 0; i < nvertices; i++) {
-     if (bdry[i] == 'F') {
-       nbdry++;
+     if (bdry[i] != 'T') {
        if (aggr_index[i] != -1)
          phase_one_aggregated++;
      }
+     else nbdry++;
    }
    phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
    total_bdry     = ML_Comm_GsumInt( comm, nbdry);
@@ -2514,33 +2515,27 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    {
      if ((aggr_index[i] == -1) && (bdry[i] != 'T'))
      {
-       nnz=0;
        ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
-       aggd_neighbors = 0;
+       ML_compressOutZeros(i, rowi_col, rowi_val, &rowi_N);
        nonaggd_neighbors = 0;
        for (j = 0; j < rowi_N; j++) {
          int colj = rowi_col[j];
-         if (bdry[colj] == 'F' && rowi_val[j] != 0.0) {
-           nnz++;
-           if (colj < nvertices && aggr_index[colj] != -1) nonaggd_neighbors++;
-         }
+         if (aggr_index[colj] == -1 && colj < nvertices)
+           nonaggd_neighbors++;
        }
-       if ((nnz > 3) && 
-          (((double) nonaggd_neighbors)/((double) nnz) > factor))
+       if ((rowi_N > 3) && 
+          (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
        {
          aggr_index[i] = (*aggr_count)++;
          for (j = 0; j < rowi_N; j++) {
            int colj = rowi_col[j];
-           if ((aggr_index[colj]==-1) && (colj<nvertices)
-                && (bdry[colj]=='F') && (rowi_val[j] != 0.0))
+           if ((aggr_index[colj]==-1) && (colj<nvertices))
              aggr_index[colj] = aggr_index[i];
          }
        }
      }
    } /*for (i = 0; i < nvertices; i++)*/
 
-   /* TODO (JJH) This is where I stopped checking for bugs in boundary
-           handling.*/
    if ( printflag < ML_Get_PrintLevel()) {
 
      total_aggs    = ML_Comm_GsumInt( comm, Nphase1_agg);
@@ -2575,6 +2570,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        if ((aggr_index[i] == -1) && (bdry[i] != 'T'))
        {
          ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+         ML_compressOutZeros(i, rowi_col, rowi_val, &rowi_N);
          for (j = 0; j < rowi_N; j++) {
            current_agg = aggr_index[rowi_col[j]];
            /*********** do we neeeeed the extra condition????????? */
@@ -2661,61 +2657,69 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,0);
 
 
-     for (i = 0; i < nvertices; i++) {
-       if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
-#ifdef CLEAN_DEBUG
-	 printf("%d: Trying to assign %d to someone\n",comm->ML_mypid,i);
+     for (i = 0; i < nvertices; i++)
+     {
+       if ((aggr_index[i] == -1) && (bdry[i] != 'T'))
+       {
+#ifdef   CLEAN_DEBUG
+         printf("%d: Trying to assign %d to someone\n",comm->ML_mypid,i);
 #endif
-	 ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-			   &rowi_N, 0);
-	 flag = 1;
-	 for (j = 0; j < rowi_N; j++) {
-	   current_agg = aggr_index[rowi_col[j]];
+         ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                           &rowi_N, 0);
+         ML_compressOutZeros(i, rowi_col, rowi_val, &rowi_N);
+         flag = 1;
+         for (j = 0; j < rowi_N; j++)
+         {
+           current_agg = aggr_index[rowi_col[j]];
 #ifdef CLEAN_DEBUG
-	   printf("%d: a neighbor %d %d | %d\n",
-		  comm->ML_mypid,rowi_col[j],current_agg,temp_aggr_index[rowi_col[j]]);
-#endif
-
-	   /* This node needs to be a ghost node of the processor that */
-	   /* owns the aggregate!!!!!                                  */
-	   if  ((flag==1)&&(current_agg < -1) && (temp_aggr_index[rowi_col[j]] >= 0)) {
-	     current_agg = -100 - current_agg;
-#ifdef CLEAN_DEBUG
-	     printf("%d: lets go for it %d | proc = %d \n",comm->ML_mypid,i,current_agg); fflush(stdout);
+           printf("%d: a neighbor %d %d | %d\n",
+              comm->ML_mypid,rowi_col[j],current_agg,temp_aggr_index[rowi_col[j]]);
 #endif
 
-	     /* Do I send this node to the processor 'current_agg'  */
-	     send_count = 0;
-	     for ( k = 0; k < agg_indx_comm->N_neighbors; k++ ) {
+           /* This node needs to be a ghost node of the processor that */
+           /* owns the aggregate!!!!!                                  */
+           if  ((flag==1)&&(current_agg < -1) && (temp_aggr_index[rowi_col[j]] >= 0))
+           {
+             current_agg = -100 - current_agg;
 #ifdef CLEAN_DEBUG
-	       printf("%d: my neighbor %d, length %d\n",comm->ML_mypid,
-		      agg_indx_comm->neighbors[k],
-		      agg_indx_comm->send_leng[k]);
+             printf("%d: lets go for it %d | proc = %d \n",comm->ML_mypid,i,current_agg); fflush(stdout);
 #endif
 
-	       if (agg_indx_comm->neighbors[k] == current_agg) {
-		 for (kk = 0; kk < agg_indx_comm->send_leng[k]; kk++) {
+             /* Do I send this node to the processor 'current_agg'  */
+             send_count = 0;
+             for ( k = 0; k < agg_indx_comm->N_neighbors; k++ )
+             {
 #ifdef CLEAN_DEBUG
-	       printf("%d: send %d %d\n",comm->ML_mypid,
-		      agg_indx_comm->send_list[send_count+kk],send_count);
+               printf("%d: my neighbor %d, length %d\n",comm->ML_mypid,
+                      agg_indx_comm->neighbors[k],
+                      agg_indx_comm->send_leng[k]);
 #endif
-		   if (agg_indx_comm->send_list[send_count+kk] == i) {
+
+               if (agg_indx_comm->neighbors[k] == current_agg)
+               {
+                 for (kk = 0; kk < agg_indx_comm->send_leng[k]; kk++)
+                 {
 #ifdef CLEAN_DEBUG
-		     printf("%d: yes this is in %d on %d\n",
-			    comm->ML_mypid,temp_aggr_index[rowi_col[j]],current_agg);
+                   printf("%d: send %d %d\n",comm->ML_mypid,
+                          agg_indx_comm->send_list[send_count+kk],send_count);
 #endif
-		     flag = 0;
-		     aggr_index[i] = aggr_index[rowi_col[j]];
-		     temp_aggr_index[i] = -10 - temp_aggr_index[rowi_col[j]];
-		   }
-		 }
-	       }
-	       send_count += agg_indx_comm->send_leng[k];
-	     }
-	   }
-	 }
-       }
-     }
+                   if (agg_indx_comm->send_list[send_count+kk] == i) {
+#ifdef CLEAN_DEBUG
+                     printf("%d: yes this is in %d on %d\n",
+                            comm->ML_mypid,temp_aggr_index[rowi_col[j]],current_agg);
+#endif
+                     flag = 0;
+                     aggr_index[i] = aggr_index[rowi_col[j]];
+                     temp_aggr_index[i] = -10 - temp_aggr_index[rowi_col[j]];
+                   }
+                 }
+               }
+               send_count += agg_indx_comm->send_leng[k];
+             }
+           }
+         } /*for (j = 0; j < rowi_N; j++) */
+       } /*if ((aggr_index[i] == -1) && (bdry[i] != 'T')) */
+     } /*for (i = 0; i < nvertices; i++) */
 
      /* communicate twice 'aggr_index' and 'temp_aggr_index' to make sure that */
      /* everyone gets everything. I think this is needed because some data     */
@@ -2769,8 +2773,9 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif
        ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
 			 &rowi_N, 0);
+       ML_compressOutZeros(i, rowi_col, rowi_val, &rowi_N);
 	 /* We don't want a singleton. So lets see if there is an unaggregated */
-	 /* neighbor that we can also but with this point.                     */
+	 /* neighbor that we can also put with this point.                     */
 
        flag = 1;
 	 for (j = 0; j < rowi_N; j++) {
@@ -2905,4 +2910,19 @@ int ML_aggr_index_communicate(int N_neighbors, int temp_leng[], int send_leng[],
       }
    }
    return 1;
+}
+
+void ML_compressOutZeros(int currRow, int *cols, double *vals, int *length)
+{
+  int j,nnz=0;
+  for (j = 0; j < *length; j++) {
+    if (cols[j] == currRow  ||  vals[j] != 0) {
+      if (nnz != j) {
+        cols[nnz] = cols[j];
+        vals[nnz] = vals[j];
+      }
+      nnz++;
+    }
+  }
+  *length = nnz;
 }
