@@ -2205,7 +2205,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
     this->_setSupports(MEB::OUT_ARG_DgDp,j,l,ds);
     if(!ds.none()) this->_set_DgDp_properties(j,l,inputOutArgs.get_DgDp_properties(j,l));
   }
-  if(this->supports(OUT_ARG_W))
+  if(this->supports(OUT_ARG_W) || this->supports(OUT_ARG_W_op))
     this->_set_W_properties(inputOutArgs.get_W_properties());
 }
 
