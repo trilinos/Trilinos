@@ -1,0 +1,4 @@
+PROJECT(epetra)
+
+ADD_SUBDIRECTORY(src)
+
