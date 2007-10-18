@@ -75,12 +75,21 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
+#endif
+
+#ifdef ML_SCALING
+   const int ntimers=4;
+   enum {total, probBuild, precBuild, solve};
+   ml_DblLoc timeVec[ntimers], maxTime[ntimers], minTime[ntimers];
+
+  for (int i=0; i<ntimers; i++) timeVec[i].rank = Comm.MyPID();
+  timeVec[total].value = MPI_Wtime();
 #endif
 
   // Creates the linear problem using the Galeri package.
@@ -106,6 +115,9 @@ int main(int argc, char *argv[])
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
 
+#ifdef ML_SCALING
+  timeVec[probBuild].value = MPI_Wtime();
+#endif
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
     
@@ -119,9 +131,15 @@ int main(int argc, char *argv[])
   // As we wish to use AztecOO, we need to construct a solver object 
   // for this problem
   AztecOO solver(Problem);
+#ifdef ML_SCALING
+  timeVec[probBuild].value = MPI_Wtime() - timeVec[probBuild].value;
+#endif
 
   // =========================== begin of ML part ===========================
   
+#ifdef ML_SCALING
+  timeVec[precBuild].value = MPI_Wtime();
+#endif
   // create a parameter list for ML options
   ParameterList MLList;
 
@@ -177,6 +195,9 @@ int main(int argc, char *argv[])
   // verify unused parameters on process 0 (put -1 to print on all
   // processes)
   MLPrec->PrintUnused(0);
+#ifdef ML_SCALING
+  timeVec[precBuild].value = MPI_Wtime() - timeVec[precBuild].value;
+#endif
 
   // ML allows the user to cheaply recompute the preconditioner. You can
   // simply uncomment the following line:
@@ -196,10 +217,16 @@ int main(int argc, char *argv[])
   // and the output, then solve with 500 maximum iterations and 1e-12 
   // of tolerance (see AztecOO's user guide for more details)
   
+#ifdef ML_SCALING
+  timeVec[solve].value = MPI_Wtime();
+#endif
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-12);
+#ifdef ML_SCALING
+  timeVec[solve].value = MPI_Wtime() - timeVec[solve].value;
+#endif
 
   // destroy the preconditioner
   delete MLPrec;
@@ -219,6 +246,40 @@ int main(int argc, char *argv[])
 
   delete A;
   delete Map;
+
+#ifdef ML_SCALING
+  timeVec[total].value = MPI_Wtime() - timeVec[total].value;
+
+  //avg
+  double dupTime[ntimers],avgTime[ntimers];
+  for (int i=0; i<ntimers; i++) dupTime[i] = timeVec[i].value;
+  MPI_Reduce(dupTime,avgTime,ntimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  for (int i=0; i<ntimers; i++) avgTime[i] = avgTime[i]/Comm.NumProc();
+  //min
+  MPI_Reduce(timeVec,minTime,ntimers,MPI_DOUBLE_INT,MPI_MINLOC,0,MPI_COMM_WORLD);
+  //max
+  MPI_Reduce(timeVec,maxTime,ntimers,MPI_DOUBLE_INT,MPI_MAXLOC,0,MPI_COMM_WORLD);
+
+  if (Comm.MyPID() == 0) {
+    printf("timing :  max (pid)  min (pid)  avg\n");
+    printf("Problem build         :   %2.3e (%d)  %2.3e (%d)  %2.3e \n",
+             maxTime[probBuild].value,maxTime[probBuild].rank,
+             minTime[probBuild].value,minTime[probBuild].rank,
+             avgTime[probBuild]);
+    printf("Preconditioner build  :   %2.3e (%d)  %2.3e (%d)  %2.3e \n",
+             maxTime[precBuild].value,maxTime[precBuild].rank,
+             minTime[precBuild].value,minTime[precBuild].rank,
+             avgTime[precBuild]);
+    printf("Solve                 :   %2.3e (%d)  %2.3e (%d)  %2.3e \n",
+             maxTime[solve].value,maxTime[solve].rank,
+             minTime[solve].value,minTime[solve].rank,
+             avgTime[solve]);
+    printf("Total                 :   %2.3e (%d)  %2.3e (%d)  %2.3e \n",
+             maxTime[total].value,maxTime[total].rank,
+             minTime[total].value,minTime[total].rank,
+             avgTime[total]);
+  }
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();
