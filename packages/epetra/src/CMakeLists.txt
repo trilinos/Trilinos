@@ -1,3 +1,5 @@
+ENABLE_LANGUAGE(Fortran)
+
 FIND_PACKAGE(MPI)
 
 SET(BUILD_SHARED_LIBS TRUE)
@@ -165,7 +167,16 @@ SET(SOURCES
 	Epetra_Vector.cpp
 	)
 
+SET(FORTRAN_SOURCES
+    Epetra_dcrsmm.f
+    Epetra_dcrsmv.f
+    Epetra_dcrssm.f
+    Epetra_dcrssv.f
+)
+
+ADD_LIBRARY(epetra_fortran ${FORTRAN_SOURCES})
+
 ADD_LIBRARY(epetra ${HEADERS} ${SOURCES})
 
-TARGET_LINK_LIBRARIES(epetra ${MPI_LIBRARY} ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+TARGET_LINK_LIBRARIES(epetra epetra_fortran ${MPI_LIBRARY} ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
 

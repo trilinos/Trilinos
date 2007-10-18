@@ -1,4 +1,4 @@
-PROJECT(epetra)
+PROJECT(epetra C CXX Fortran)
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(test)
