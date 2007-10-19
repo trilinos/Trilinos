@@ -1127,8 +1127,12 @@ void FEI_Implementation::setDebugOutput(const char* path, const char* name)
 }
 
 //------------------------------------------------------------------------------
-int FEI_Implementation::loadComplete()
+int FEI_Implementation::loadComplete(bool applyBCs,
+                                     bool globalAssemble)
 {
+  (void)applyBCs;
+  (void)globalAssemble;
+
   buildLinearSystem();
 
   return(0);

@@ -664,7 +664,8 @@ class FEI_Implementation : public FEI {
 
    /**indicate that the matrix/vectors can be finalized now. e.g., boundary-
    conditions enforced, etc., etc. */
-   int loadComplete();
+   int loadComplete(bool applyBCs=true,
+                    bool globalAssemble=true);
 
    /** get residual norms */
    int residualNorm(int whichNorm,

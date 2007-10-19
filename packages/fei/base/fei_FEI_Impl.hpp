@@ -259,7 +259,8 @@ namespace fei {
                      const int* IDs,
                      const double* scalars);
 
-   int loadComplete();
+   int loadComplete(bool applyBCs=true,
+                    bool globalAssemble=true);
 
    /** get residual norms */
    int residualNorm(int whichNorm,

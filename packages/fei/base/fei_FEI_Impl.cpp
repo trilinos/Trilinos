@@ -273,6 +273,12 @@ int fei::FEI_Impl::parameters(int numParams,
     }
   }
 
+  std::vector<std::string> stdstrings;
+  fei::utils::char_ptrs_to_strings(numParams, paramStrings, stdstrings);
+  fei::ParameterSet paramset;
+  fei::utils::parse_strings(stdstrings, " ", paramset);
+  factory_[0]->parameters(paramset);
+
   return(0);
 }
 
@@ -1095,7 +1101,8 @@ int fei::FEI_Impl::setRHSScalars(int numScalars,
   return(0);
 }
 
-int fei::FEI_Impl::loadComplete()
+int fei::FEI_Impl::loadComplete(bool applyBCs,
+                                bool globalAssemble)
 {
   if (!newData_) {
     return(0);
@@ -1119,7 +1126,7 @@ int fei::FEI_Impl::loadComplete()
     CHK_ERR( aggregateSystem() );
   }
 
-  CHK_ERR( linSys_->loadComplete() );
+  CHK_ERR( linSys_->loadComplete(applyBCs, globalAssemble) );
 
   if (b_.size() > 1) {
     int rhs_counter = 0;

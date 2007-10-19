@@ -832,7 +832,8 @@ class FEI {
        linear system can now be "finalized". e.g., boundary conditions enforced,
        shared contributions exchanged among processors, etc.
    */
-   virtual int loadComplete() = 0;
+   virtual int loadComplete(bool applyBCs=true,
+                            bool globalAssemble=true) = 0;
 
 // Equation solution services..................................... 
  
