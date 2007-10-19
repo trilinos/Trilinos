@@ -60,7 +60,7 @@ class Epetra_Export;
 </ol>
 
      An alternative is possible if you do not want to provide a non-trivial implementation of the ExtraMyEntryView 
-     methods (See Epetra_VbrRowMatrix for and example):
+     methods (See Epetra_VbrRowMatrix for an example):
 <ol>
 <li> Implement ExtractMyRowCopy and NumMyRowEntries as above.
 <li> Implement ExtractMyEntryView (both versions) returning a -1 integer code with no other executable code.
