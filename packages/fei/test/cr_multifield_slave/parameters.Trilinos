@@ -1,0 +1,8 @@
+FEI_OUTPUT_LEVEL BRIEF_LOGS
+debugOutput .
+AZ_output 1
+AZ_solver AZ_gmres
+AZ_precond AZ_none
+AZ_scaling AZ_none
+AZ_max_iter 100
+AZ_tol 1.e-8

@@ -39,7 +39,7 @@ PETSC_DIR=
 endif
 
 if BUILD_TESTS
-TESTS=test_utils test test/elemDOF_Aztec example
+TESTS=test_utils test example test/elemDOF_Aztec test/cr_multifield_slave
 else
 TESTS=
 endif

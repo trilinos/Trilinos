@@ -44,7 +44,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-@BUILD_TESTS_TRUE@TESTS = test_utils test test/elemDOF_Aztec example
+@BUILD_TESTS_TRUE@TESTS = test_utils test example test/elemDOF_Aztec \
+@BUILD_TESTS_TRUE@	test/cr_multifield_slave
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(include_HEADERS) \
 	$(srcdir)/FEI_config.h.in $(srcdir)/Makefile.am \
@@ -96,7 +97,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = base support-Trilinos support-PETSc test_utils test \
-	test/elemDOF_Aztec example
+	example test/elemDOF_Aztec test/cr_multifield_slave
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
