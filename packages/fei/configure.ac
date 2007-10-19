@@ -430,6 +430,9 @@ AC_CONFIG_FILES([
                 support-Trilinos/Makefile
                 support-PETSc/Makefile
                 test/Makefile
+                test/cr_lagrange_20quad/Makefile
+                test/cr_lagrange_20quad_AZLSC/Makefile
+                test/cr_lagrange_20quad_old/Makefile
                 test/cr_multifield_slave/Makefile
                 test/elemDOF_Aztec/Makefile
                 test/utest_base/Makefile

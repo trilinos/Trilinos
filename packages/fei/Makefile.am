@@ -39,7 +39,12 @@ PETSC_DIR=
 endif
 
 if BUILD_TESTS
-TESTS=test_utils test example test/elemDOF_Aztec test/cr_multifield_slave
+TESTS=test_utils test example \
+	test/elemDOF_Aztec \
+	test/cr_lagrange_20quad \
+	test/cr_lagrange_20quad_AZLSC \
+	test/cr_lagrange_20quad_old \
+	test/cr_multifield_slave
 else
 TESTS=
 endif

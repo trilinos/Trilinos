@@ -1,0 +1,7 @@
+WHICH_FEI new_fei
+SOLVER_LIBRARY Aztec
+PARAM_FILE parameters.Trilinos
+INPUT_FILE lagrange.in
+SOLN_FILE lagrange.soln
+CHECK_FILE lagrange.soln
+NUM_SOLVES 1
