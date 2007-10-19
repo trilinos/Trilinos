@@ -312,8 +312,8 @@ void StepperAsModelEvaluator<Scalar>::evalModelImpl(
 
     // Get x and xdot at the end time
     Array<Scalar> time_vec = Teuchos::tuple<Scalar>(finalTime);
-    Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec, xdot_vec;
-    integrator_->getFwdPoints( time_vec, &x_vec, &xdot_vec, 0 );
+    Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec;
+    integrator_->getFwdPoints( time_vec, &x_vec, 0, 0 );
     
     Thyra::V_V( &*g_out, *x_vec[0] );
 

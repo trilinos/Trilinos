@@ -30,6 +30,7 @@
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
+#include "Rythmos_ImplicitRKStepper.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_SimpleIntegrator.hpp"
@@ -53,6 +54,7 @@
 #else
 #  include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
+
 
 namespace {
 
@@ -158,6 +160,10 @@ int main(int argc, char *argv[])
     clp.setOption( "use-BDF", "use-BE", &useBDF,
       "Use BDF or Backward Euler (BE)" );
 
+    bool useIRK = false;
+    clp.setOption( "use-IRK", "use-other", &useIRK,
+      "Use IRK or something" );
+
     bool doFwdSensSolve = false;
     clp.setOption( "fwd-sens-solve", "state-solve", &doFwdSensSolve,
       "Do the forward sensitivity solve or just the state solve" );
@@ -238,7 +244,7 @@ int main(int argc, char *argv[])
     epetraStateModel->getValidParameters()->print(
       *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
       );
-
+    
     //
     // Create the Thyra-wrapped ModelEvaluator
     //
@@ -265,6 +271,15 @@ int main(int argc, char *argv[])
       stateStepper = rcp(
         new Rythmos::ImplicitBDFStepper<double>(
           stateModel, nonlinearSolver
+          )
+        );
+    }
+    else if (useIRK) {
+      RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+        irk_W_factory = createLinearSolveStrategy(linearSolverBuilder);
+      stateStepper = rcp(
+        new Rythmos::ImplicitRKStepper<double>(
+          stateModel, nonlinearSolver, irk_W_factory
           )
         );
     }

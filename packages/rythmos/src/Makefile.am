@@ -59,6 +59,8 @@ CORE_H = \
   $(srcdir)/Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepperStepControlDecl.hpp\
+  $(srcdir)/Rythmos_ImplicitRKModelEvaluator.hpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper.hpp\
   $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
   $(srcdir)/Rythmos_IntegratorBase.hpp\
@@ -69,6 +71,7 @@ CORE_H = \
   $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
   $(srcdir)/Rythmos_InterpolatorBase.hpp\
   $(srcdir)/Rythmos_LinearInterpolator.hpp\
+  $(srcdir)/Rythmos_RKButcherTableau.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
   $(srcdir)/Rythmos_SimpleIntegrator.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\

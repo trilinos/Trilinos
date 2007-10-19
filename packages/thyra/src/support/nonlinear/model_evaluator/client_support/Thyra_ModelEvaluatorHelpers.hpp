@@ -155,7 +155,8 @@ void assertInArgsEvalObjects(
 template<class Scalar>
 void assertOutArgsEvalObjects(
   const ModelEvaluator<Scalar> &model,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs,
+  const ModelEvaluatorBase::InArgs<Scalar> *inArgs = 0
   );
 
 
@@ -578,7 +579,7 @@ void Thyra::assertInArgsEvalObjects(
   const ModelEvaluatorBase::InArgs<Scalar> &inArgs
   )
 {
-
+  
   typedef ModelEvaluatorBase MEB;
 
   const std::string description = model.description();
@@ -612,10 +613,12 @@ void Thyra::assertInArgsEvalObjects(
 template<class Scalar>
 void Thyra::assertOutArgsEvalObjects(
   const ModelEvaluator<Scalar> &model,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs,
+  const ModelEvaluatorBase::InArgs<Scalar> *inArgs
   )
 {
 
+  typedef ScalarTraits<Scalar> ST;
   typedef Teuchos::Utils TU;
   typedef ModelEvaluatorBase MEB;
 
@@ -648,6 +651,26 @@ void Thyra::assertOutArgsEvalObjects(
         description, *outArgs.get_W_op()->range(), *model.get_f_space() );
       THYRA_ASSERT_VEC_SPACES(
         description, *outArgs.get_W_op()->domain(), *model.get_x_space() );
+    }
+  }
+
+  // alpha and beta (not really in outArgs but can only be validated if W or
+  // W_op is set)
+  if (
+    inArgs
+    &&
+    (
+      ( outArgs.supports(MEB::OUT_ARG_W) && !is_null(outArgs.get_W()) )
+      ||
+      ( outArgs.supports(MEB::OUT_ARG_W_op) && !is_null(outArgs.get_W_op()) )
+      )
+    )
+  {
+    if ( inArgs->supports(MEB::IN_ARG_alpha) && inArgs->supports(MEB::IN_ARG_beta) ) {
+      TEST_FOR_EXCEPT( inArgs->get_alpha() == ST::zero() && inArgs->get_beta() == ST::zero() );
+    }
+    else if ( inArgs->supports(MEB::IN_ARG_beta) ) {
+      TEST_FOR_EXCEPT( inArgs->get_beta() == ST::zero() );
     }
   }
 

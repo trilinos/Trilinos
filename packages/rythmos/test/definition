@@ -663,6 +663,16 @@
 }
 
 
+# Use order-1 IRK which is basically the same as backward Euler
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL10,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS = --use-IRK;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+
 # Explicit Taylor polynomial integration on Van der Pol oscillator
 (FRAMEWORK,INSTALL) {
     TESTS = ExplicitTaylorPolynomialStepper/VanDerPolOscillator/vdp.exe;

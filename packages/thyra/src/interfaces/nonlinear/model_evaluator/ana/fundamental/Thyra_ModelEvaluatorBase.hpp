@@ -1945,6 +1945,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef RCP<const VectorBase<Scalar> > CV_ptr;
+  typedef RCP<const LinearOpBase<Scalar> > CLO_ptr;
   typedef RCP<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
   typedef ModelEvaluatorBase MEB;
   typedef MEB::Derivative<Scalar> Deriv;
@@ -1977,6 +1978,11 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   CLOWS_ptr W;
   if ( this->supports(OUT_ARG_W) && !is_null(W=get_W()) ) {
     *out << "W = " << Teuchos::describe(*W,verbLevel);
+  }
+  
+  CLO_ptr W_op;
+  if ( this->supports(OUT_ARG_W_op) && !is_null(W_op=get_W_op()) ) {
+    *out << "W_op = " << Teuchos::describe(*W_op,verbLevel);
   }
   
   for( int l = 0; l < Np(); ++l ) {

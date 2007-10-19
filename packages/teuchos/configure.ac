@@ -716,6 +716,7 @@ AC_CONFIG_FILES([
 		test/Handle/Makefile
 		test/LAPACK/Makefile
 		test/Makefile
+		test/MemoryManagement/Makefile
 		test/ParameterList/Makefile
 		test/Polling/Makefile
 		test/RefCountPtr/Makefile

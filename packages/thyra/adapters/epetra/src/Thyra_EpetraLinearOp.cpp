@@ -461,7 +461,7 @@ void EpetraLinearOp::describe(
   using Teuchos::OSTab;
   using Teuchos::describe;
   OSTab tab(out);
-  if (includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true) || is_null(op_)) {
+  if ( as<int>(verbLevel) == as<int>(Teuchos::VERB_LOW) || is_null(op_)) {
     out << this->description() << std::endl;
   }
   else if (includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {

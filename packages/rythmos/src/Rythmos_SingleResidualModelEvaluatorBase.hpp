@@ -52,14 +52,14 @@ public:
   
   /** \brief . */
   virtual void initializeSingleResidualModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const Scalar &coeff_x_dot,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
+    const RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
     const Scalar &coeff_x,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_base,
+    const RCP<const Thyra::VectorBase<Scalar> > &x_base,
     const Scalar &t_base,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
+    const RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
     ) = 0;
 
   //@}
@@ -71,14 +71,14 @@ public:
   virtual Scalar get_coeff_x_dot() const = 0;
 
   /** \brief . */
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+  virtual RCP<const Thyra::VectorBase<Scalar> >
   get_x_dot_base() const = 0;
 
   /** \brief . */
   virtual Scalar get_coeff_x() const = 0;
 
   /** \brief . */
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+  virtual RCP<const Thyra::VectorBase<Scalar> >
   get_x_base() const = 0;
 
   /** \brief . */

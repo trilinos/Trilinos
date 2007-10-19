@@ -92,6 +92,8 @@ Teuchos::incrVerbLevel(
 {
   if (inputVerbLevel == VERB_DEFAULT)
     return VERB_DEFAULT;
+  if (inputVerbLevel == VERB_EXTREME)
+    return VERB_EXTREME;
   const int intVerbLevel = as<int>(inputVerbLevel) + numLevels;
   if (intVerbLevel < as<int>(VERB_NONE))
     return VERB_NONE;

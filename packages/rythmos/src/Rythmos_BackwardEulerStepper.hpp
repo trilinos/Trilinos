@@ -211,13 +211,15 @@ private:
 
   bool isInitialized_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_;
   Scalar t_;
+
   Scalar t_old_;
   Scalar dt_;
   int numSteps_;
@@ -468,7 +470,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 
 
 template<class Scalar>
-Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
+Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 {
 
   using Teuchos::as;
@@ -485,16 +487,16 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
       << "\nEntering " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
-      << "::takeStep("<<dt<<","<<toString(flag)<<") ...\n"; 
+      << "::takeStep("<<dt<<","<<toString(stepSizeType)<<") ...\n"; 
   }
 
   if (!isInitialized_) {
-    initialize_(); // This will set x_ if not already set!
+    initialize_();
   }
 
   dt_ = dt;
 
-  if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
+  if ((stepSizeType == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
       *out << "\nThe arguments to takeStep are not valid for BackwardEulerStepper at this time." << std::endl;
     // print something out about this method not supporting automatic variable step-size
@@ -1027,6 +1029,9 @@ void BackwardEulerStepper<Scalar>::initialize_()
 
   if (is_null(x_dot_old_))
     x_dot_old_ = createMember(model_->get_x_space());
+
+  // Note: above, we don't need to actually initialize x_dot or x_dot_old
+  // since these will be initialized after each step
 
   isInitialized_ = true;
 

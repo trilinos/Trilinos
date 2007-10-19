@@ -342,8 +342,7 @@ namespace Thyra {
 template<class Scalar>
 int ModelEvaluatorDefaultBase<Scalar>::Np() const
 {
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
+  lazyInitializeDefaultBase();
   return prototypeOutArgs_.Np();
 }
 
@@ -351,8 +350,7 @@ int ModelEvaluatorDefaultBase<Scalar>::Np() const
 template<class Scalar>
 int ModelEvaluatorDefaultBase<Scalar>::Ng() const
 {
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
+  lazyInitializeDefaultBase();
   return prototypeOutArgs_.Ng();
 }
 
@@ -361,6 +359,7 @@ template<class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::create_W() const
 {
+  lazyInitializeDefaultBase();
   if (default_W_support_)
     return this->get_W_factory()->createOp();
   return Teuchos::null;
@@ -371,11 +370,10 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op(int l) const
 {
+  lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_l(l);
 #endif
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
   const DefaultDerivLinearOpSupport
     defaultLinearOpSupport = DfDp_default_op_support_[l];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -393,11 +391,10 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op(int j) const
 {
+  lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_j(j);
 #endif
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
   const DefaultDerivLinearOpSupport
     defaultLinearOpSupport = DgDx_dot_default_op_support_[j];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -415,11 +412,10 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op(int j) const
 {
+  lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_j(j);
 #endif
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
   const DefaultDerivLinearOpSupport
     defaultLinearOpSupport = DgDx_default_op_support_[j];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -437,12 +433,11 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op(int j, int l) const
 {
+  lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_j(j);
   assert_l(l);
 #endif
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
   const DefaultDerivLinearOpSupport
     defaultLinearOpSupport = DgDp_default_op_support_[j][l];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -460,8 +455,7 @@ template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
 ModelEvaluatorDefaultBase<Scalar>::createOutArgs() const
 {
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
+  lazyInitializeDefaultBase();
   return prototypeOutArgs_;
 }
 
@@ -475,8 +469,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
 
   typedef ModelEvaluatorBase MEB;
 
-  if (!isInitialized_)
-    lazyInitializeDefaultBase();
+  lazyInitializeDefaultBase();
 
   const int Np = outArgs.Np();
   const int Ng = outArgs.Ng();
@@ -487,7 +480,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
 
 #ifdef TEUCHOS_DEBUG
   assertInArgsEvalObjects(*this,inArgs);
-  assertOutArgsEvalObjects(*this,outArgs);
+  assertOutArgsEvalObjects(*this,outArgs,&inArgs);
 #endif  
   
   //

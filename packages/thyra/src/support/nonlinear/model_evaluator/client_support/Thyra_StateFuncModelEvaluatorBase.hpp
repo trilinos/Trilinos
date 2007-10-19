@@ -63,8 +63,6 @@ public:
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief Throws exception. */
-  RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
-  /** \brief Throws exception. */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief Returns null . */
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
@@ -142,20 +140,6 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 StateFuncModelEvaluatorBase<Scalar>::getUpperBounds() const
 { return this->createInArgs(); }
-
-
-template<class Scalar>
-RCP<LinearOpWithSolveBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_W() const
-{
-  TEST_FOR_EXCEPTION(
-    true, std::logic_error
-    ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
-    " this function create_W() must be overridden by the subclass to return"
-    " a non-null object!"
-    );
-  return Teuchos::null; // Should never be called!
-}
 
 
 template<class Scalar>
