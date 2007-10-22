@@ -1,7 +1,5 @@
 ENABLE_LANGUAGE(Fortran)
 
-FIND_PACKAGE(MPI)
-
 SET(BUILD_SHARED_LIBS TRUE)
 
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
@@ -25,11 +23,8 @@ CONFIGURE_FILE(${epetra_SOURCE_DIR}/cmake/Epetra_config.h.in ${CMAKE_CURRENT_BIN
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
-ADD_DEFINITIONS(-DMPICH_IGNORE_CXX_SEEK)
-ADD_DEFINITIONS(-DEPETRA_MPI)
 
 #FILE(GLOB HEADERS *.h)
 #FILE(GLOB SOURCES *.cpp)
@@ -79,11 +74,6 @@ SET(HEADERS
 	Epetra_LocalMap.h
 	Epetra_Map.h
 	Epetra_MapColoring.h
-	Epetra_MpiComm.h
-	Epetra_MpiCommData.h
-	Epetra_MpiDistributor.h
-#	Epetra_MpiSmpComm.h
-#	Epetra_MpiSmpCommData.h
 	Epetra_MultiVector.h
 	Epetra_Object.h
 	Epetra_OffsetIndex.h
@@ -143,11 +133,6 @@ SET(SOURCES
 	Epetra_LocalMap.cpp
 	Epetra_Map.cpp
 	Epetra_MapColoring.cpp
-	Epetra_MpiComm.cpp
-	Epetra_MpiCommData.cpp
-	Epetra_MpiDistributor.cpp
-#	Epetra_MpiSmpComm.cpp
-#	Epetra_MpiSmpCommData.cpp
 	Epetra_MultiVector.cpp
 	Epetra_Object.cpp
 	Epetra_OffsetIndex.cpp
@@ -187,9 +172,32 @@ SET(FORTRAN_SOURCES
     Epetra_dcrssv.f
 )
 
+SET(MPI_HEADERS
+	Epetra_MpiComm.h
+	Epetra_MpiCommData.h
+	Epetra_MpiDistributor.h
+#	Epetra_MpiSmpComm.h
+#	Epetra_MpiSmpCommData.h
+
+)
+
+SET(MPI_SOURCES
+	Epetra_MpiComm.cpp
+	Epetra_MpiCommData.cpp
+	Epetra_MpiDistributor.cpp
+#	Epetra_MpiSmpComm.cpp
+#	Epetra_MpiSmpCommData.cpp
+)
+
 ADD_LIBRARY(epetra_fortran ${FORTRAN_SOURCES})
 
 ADD_LIBRARY(epetra ${HEADERS} ${SOURCES})
 
-TARGET_LINK_LIBRARIES(epetra epetra_fortran ${MPI_LIBRARY} ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+IF(ENABLE_MPI)
+  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+  ADD_LIBRARY(epetra_mpi ${MPI_HEADERS} ${MPI_SOURCES})
+  TARGET_LINK_LIBRARIES(epetra epetra_fortran epetra_mpi ${MPI_LIBRARY} ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+ELSE(ENABLE_MPI)
+  TARGET_LINK_LIBRARIES(epetra epetra_fortran ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+ENDIF(ENABLE_MPI)
 
