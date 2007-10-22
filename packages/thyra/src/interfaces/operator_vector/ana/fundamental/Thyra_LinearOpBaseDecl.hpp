@@ -47,6 +47,7 @@ namespace Thyra {
  * <li>\ref Thyra_LO_adjoint_relation_sec
  * <li>\ref Thyra_LO_aliasing_sec
  * <li>\ref Thyra_LO_optional_adjoints_sec
+ * <li>\ref Thyra_LO_initialization_sec
  * <li>\ref Thyra_LO_testing_sec
  * <li>\ref Thyra_LO_dev_notes_sec
  * </ul>
@@ -77,7 +78,7 @@ namespace Thyra {
  *
  * A linear operator has vector spaces associated with it for the vectors
  * <tt>x</tt> and <tt>y</tt> that lie in the domain and the range spaces of
- * the non-transposed linear operator <tt>y = M*x</tt> and these spaces are
+ * the non-transposed linear operator <tt>y = M*x</tt>.  These spaces are
  * returned by <tt>domain()</tt> and <tt>range()</tt>.
  *
  * \section Thyra_LO_scalar_types_sec Support for different range and domain scalar types
@@ -155,6 +156,36 @@ namespace Thyra {
  * by the client, can be turned on and off, and pass/failure is determined by
  * tolerances that the client can specify.  In addition, this testing class
  * can also check if two linear operators are approximately equal.
+ *
+ * \section Thyra_LO_initialization_sec Initialization states
+ *
+ * A <tt>%LinearOpBase</tt> object has three different states of
+ * initialization.  These three initailziation states, a description of their
+ * definition, and non-member helper functions that return these states are
+ * given below:
+ *
+ * <ul>
+ *
+ * <li><b>Fully Uninitialized</b>:
+ *     State: <tt>(is_null(this->range()) && is_null(this->range()))</tt>,
+ *     Nonmember function: <tt>isFullyUninitialized()</tt>
+ *
+ * <li><b>Partially Initialized</b>:
+ *     State: <tt>(!is_null(this->range()) && !is_null(this->range()))
+ *            && (!this->applySupports(conj) && !this->applyTransposeSupports(conj))</tt>
+ *            for all values of <tt>conj</tt>,
+ *     Nonmember function: <tt>isPartiallyInitialized()</tt>
+ *
+ * <li><b>Fully Initialized</b>:
+ *     State: <tt>(!is_null(this->range()) && !is_null(this->range()))
+ *            && (this->applySupports(conj) || this->applyTransposeSupports(conj))</tt>
+ *            for at least one valid value for <tt>conj</tt>,
+ *     Nonmember function: <tt>isFullyInitialized()</tt>
+ *
+ * </ul>
+ *
+ * These three different states of initialization allow for the simplification
+ * of the implementation of many different types of use cases.
  *
  * \section Thyra_LO_dev_notes_sec Notes for subclass developers
  *
@@ -244,18 +275,21 @@ public:
   /** \brief Apply the forward non-conjugate or conjugate linear operator to a
    * multi-vector : <tt>Y = alpha*M*X + beta*Y</tt>.
    *
-   * @param  conj
-   *                [in] Determines whether the elements are non-conjugate or conjugate.
-   *                The value <tt>NONCONJ_ELE</tt> gives the standard forward operator
-   *                while the value of <tt>CONJ_ELE</tt> gives the forward operator
-   *                with the complex conjugate matrix elements.  For a real-valued
-   *                operators, this argument is ignored and has no effect.
-   * @param  X      [in] The right hand side multi-vector 
-   * @param  Y      [in/out] The target multi-vector being transformed
-   * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
-     *                The default value of <tt>alpha</tt> is </tt>1.0</tt>
-   * @param  beta   [in] The multiplier for the target multi-vector <tt>Y</tt>.
-   *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
+   * \param conj [in] Determines whether the elements are non-conjugate or
+   * conjugate.  The value <tt>NONCONJ_ELE</tt> gives the standard forward
+   * operator while the value of <tt>CONJ_ELE</tt> gives the forward operator
+   * with the complex conjugate matrix elements.  For a real-valued operators,
+   * this argument is ignored and has no effect.
+   *
+   * \param X [in] The right hand side multi-vector
+   *
+   * \param Y [in/out] The target multi-vector being transformed
+   *
+   * \param alpha [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
+   * The default value of <tt>alpha</tt> is </tt>1.0</tt>
+   *
+   * \param beta [in] The multiplier for the target multi-vector <tt>Y</tt>.
+   * The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->applySupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
@@ -306,19 +340,22 @@ public:
   /** \brief Apply the non-conjugate or conjugate transposed linear operator
    * to a multi-vector : <tt>Y = alpha*trans(M)*X + beta*Y</tt>.
    *
-   * @param  conj
-   *                [in] Determines whether the elements are non-conjugate or conjugate.
-   *                The value <tt>NONCONJ_ELE</tt> gives the standard transposed operator
-   *                with non-conjugate transposed matrix elements
-   *                while the value of <tt>CONJ_ELE</tt> gives the standard adjoint operator
-   *                with the complex conjugate transposed matrix elements.  For a real-valued
-   *                operators, this argument is ignored and has no effect.
-   * @param  X      [in] The right hand side multi-vector 
-   * @param  Y      [in/out] The target multi-vector being transformed
-   * @param  alpha  [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
-     *                The default value of <tt>alpha</tt> is </tt>1.0</tt>
-   * @param  beta   [in] The multiplier for the target multi-vector <tt>Y</tt>.
-   *                The default value of <tt>beta</tt> is <tt>0.0</tt>.
+   * \param conj [in] Determines whether the elements are non-conjugate or
+   * conjugate.  The value <tt>NONCONJ_ELE</tt> gives the standard transposed
+   * operator with non-conjugate transposed matrix elements while the value of
+   * <tt>CONJ_ELE</tt> gives the standard adjoint operator with the complex
+   * conjugate transposed matrix elements.  For a real-valued operators, this
+   * argument is ignored and has no effect.
+   *
+   * \param X [in] The right hand side multi-vector
+   *
+   * \param Y [in/out] The target multi-vector being transformed
+   *
+   * \param alpha [in] Scalar multiplying <tt>M</tt>, where <tt>M==*this</tt>.
+   * The default value of <tt>alpha</tt> is </tt>1.0</tt>
+   *
+   * \param beta [in] The multiplier for the target multi-vector <tt>Y</tt>.
+   * The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->applyTransposeSupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
@@ -370,26 +407,158 @@ public:
 
 };	// end class LinearOpBase
 
+
+/** \brief Determines if a linear operator is in the "Fully Uninitialized"
+ * state or not.
+ *
+ * \relates LinearOpBase
+ */
+template<class Scalar>
+bool isFullyUninitialized( const LinearOpBase<Scalar> &M );
+
+
+/** \brief Determines if a linear operator is in the "Partially Initialized"
+ * state or not.
+ *
+ * \relates LinearOpBase
+ */
+template<class Scalar>
+bool isPartiallyInitialized( const LinearOpBase<Scalar> &M );
+
+
+/** \brief Determines if a linear operator is in the "Fully Initialized"
+ * state or not.
+ *
+ * \relates LinearOpBase
+ */
+template<class Scalar>
+bool isFullyInitialized( const LinearOpBase<Scalar> &M );
+
+
 /** \brief Determines if an operation is supported for a single scalar type.
  *
  * \relates LinearOpBase
  */
 template<class Scalar>
-inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
-{
-  if(real_trans(M_trans)==NOTRANS)
-    return M.applySupports(transToConj(M_trans));
-  return M.applyTransposeSupports(transToConj(M_trans));
-}
+inline
+bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans );
 
-/** \brief Call <tt>LinearOpBase::apply()</tt> as a global function call.
+
+/** \brief Call <tt>LinearOpBase::apply()</tt> as a non-member function call.
  *
  * Calls <tt>M.apply(conj,X,Y,alpha,beta)</tt>.
  *
  * \relates LinearOpBase
  */
 template<class RangeScalar, class DomainScalar>
-inline void apply(
+inline
+void apply(
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<DomainScalar> &X,
+  MultiVectorBase<RangeScalar> *Y,
+  const RangeScalar alpha = ScalarTraits<RangeScalar>::one(),
+  const RangeScalar beta = ScalarTraits<RangeScalar>::zero()
+  );
+
+
+/** \brief Call <tt>LinearOpBase::applyTranspose()</tt> as a non-member
+ * function call.
+ *
+ * Calls <tt>M.applyTranspose(conj,X,Y,alpha,beta)</tt>.
+ *
+ * \relates LinearOpBase
+ */
+template<class RangeScalar, class DomainScalar>
+inline
+void applyTranspose(
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<RangeScalar> &X,
+  MultiVectorBase<DomainScalar> *Y,
+  const DomainScalar alpha = ScalarTraits<DomainScalar>::one(),
+  const DomainScalar beta = ScalarTraits<DomainScalar>::zero()
+  );
+
+
+/** \brief Call <tt>LinearOpBase::apply()</tt> or
+ *    <tt>LinearOpBase::applyTranspose()</tt> as a non-member function call
+ *    (for a single scalar type).
+ *
+ * Calls <tt>M.apply(...,X,Y,alpha,beta)</tt> or
+ * <tt>M.applyTranspose(...,X,Y,alpha,beta)</tt>.
+ *
+ * \relates LinearOpBase
+ */
+template<class Scalar>
+void apply(
+  const LinearOpBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  MultiVectorBase<Scalar> *Y,
+  const Scalar alpha = ScalarTraits<Scalar>::one(),
+  const Scalar beta = ScalarTraits<Scalar>::zero()
+  );
+
+
+}	// end namespace Thyra
+
+
+//
+// Implementations
+//
+
+
+template<class Scalar>
+bool Thyra::isFullyUninitialized( const LinearOpBase<Scalar> &M )
+{
+  return ( is_null(M.range()) || is_null(M.domain()) );
+}
+
+
+template<class Scalar>
+bool Thyra::isPartiallyInitialized( const LinearOpBase<Scalar> &M )
+{
+  return
+    (
+      ( !is_null(M.range()) && !is_null(M.domain()) )
+      && 
+      (
+        !opSupported(M,NOTRANS) && !opSupported(M,CONJ)
+        && !opSupported(M,TRANS) && !opSupported(M,CONJTRANS)
+        )
+      );
+}
+
+
+template<class Scalar>
+bool Thyra::isFullyInitialized( const LinearOpBase<Scalar> &M )
+{
+  return
+    (
+      ( !is_null(M.range()) && !is_null(M.domain()) )
+      && 
+      (
+        opSupported(M,NOTRANS) || opSupported(M,CONJ)
+        || opSupported(M,TRANS) || opSupported(M,CONJTRANS)
+        )
+      );
+}
+
+
+template<class Scalar>
+inline
+bool Thyra::opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
+{
+  if(real_trans(M_trans)==NOTRANS)
+    return M.applySupports(transToConj(M_trans));
+  return M.applyTransposeSupports(transToConj(M_trans));
+}
+
+
+template<class RangeScalar, class DomainScalar>
+inline
+void Thyra::apply(
   const LinearOpBase<RangeScalar,DomainScalar> &M,
   const EConj conj,
   const MultiVectorBase<DomainScalar> &X,
@@ -401,15 +570,10 @@ inline void apply(
   M.apply(conj,X,Y,alpha,beta);
 }
 
-/** \brief Call <tt>LinearOpBase::applyTranspose()</tt> as a global function
- * call.
- *
- * Calls <tt>M.applyTranspose(conj,X,Y,alpha,beta)</tt>.
- *
- * \relates LinearOpBase
- */
+
 template<class RangeScalar, class DomainScalar>
-inline void applyTranspose(
+inline
+void Thyra::applyTranspose(
   const LinearOpBase<RangeScalar,DomainScalar> &M,
   const EConj conj,
   const MultiVectorBase<RangeScalar> &X,
@@ -422,17 +586,8 @@ inline void applyTranspose(
 }
 
 
-/** \brief Call <tt>LinearOpBase::apply()</tt> or
- *    <tt>LinearOpBase::applyTranspose()</tt> as a global function call (for a
- *    single scalar type).
- *
- * Calls <tt>M.apply(...,X,Y,alpha,beta)</tt> or
- * <tt>M.applyTranspose(...,X,Y,alpha,beta)</tt>.
- *
- * \relates LinearOpBase
- */
 template<class Scalar>
-inline void apply(
+void Thyra::apply(
   const LinearOpBase<Scalar> &M,
   const ETransp M_trans,
   const MultiVectorBase<Scalar> &X,
@@ -450,6 +605,5 @@ inline void apply(
 }
 
 
-}	// end namespace Thyra
 
 #endif	// THYRA_LINEAR_OP_DECL_HPP

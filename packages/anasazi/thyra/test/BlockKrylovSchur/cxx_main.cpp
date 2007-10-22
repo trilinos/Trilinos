@@ -148,12 +148,12 @@ int main(int argc, char *argv[])
     Thyra::create_MultiVector(ivec, epetra_vs);
 
   // Create Thyra LinearOpBase objects from the Epetra_Operator objects
-  RCP<Thyra::LinearOpBase<double> > thyra_K = 
-    rcp( new Thyra::EpetraLinearOp(K) );
-  RCP<Thyra::LinearOpBase<double> > thyra_M = 
-    rcp( new Thyra::EpetraLinearOp(M) );
-  RCP<Thyra::LinearOpBase<double> > thyra_IOp = 
-    rcp( new Thyra::EpetraLinearOp(InverseOp) );
+  RCP<const Thyra::LinearOpBase<double> > thyra_K = 
+    Thyra::epetraLinearOp(K);
+  RCP<const Thyra::LinearOpBase<double> > thyra_M = 
+    Thyra::epetraLinearOp(M);
+  RCP<const Thyra::LinearOpBase<double> > thyra_IOp = 
+    Thyra::epetraLinearOp(InverseOp);
 
   // Create eigenproblem
   const int nev = 5;

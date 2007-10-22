@@ -66,7 +66,7 @@ bool Thyra::test_single_belos_thyra_solver(
     Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-    Teuchos::RCP<LinearOpBase<double> > A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
+    Teuchos::RCP<const LinearOpBase<double> > A = epetraLinearOp(epetra_A);
 
     if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 

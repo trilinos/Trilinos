@@ -40,9 +40,9 @@
 #endif
 
 bool Thyra::test_single_stratimikos_solver(
-  Teuchos::ParameterList                  *paramList_inout
-  ,const bool                             dumpAll
-  ,Teuchos::FancyOStream                  *out
+  Teuchos::ParameterList *paramList_inout
+  ,const bool dumpAll
+  ,Teuchos::FancyOStream *out
   )
 {
 
@@ -89,11 +89,11 @@ bool Thyra::test_single_stratimikos_solver(
 #else
     Epetra_SerialComm comm;
 #endif
-    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
+    RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-    Teuchos::RCP<LinearOpBase<double> >
-      A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
+    RCP<const LinearOpBase<double> >
+      A = Thyra::epetraLinearOp(epetra_A);
 
     if(out) *out << "\nCreating a Thyra::DefaultRealLinearSolverBuilder object ...\n";
     

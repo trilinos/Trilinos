@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
         ,diagScale,verbose,*out
         );
     // (D.2) Wrap the Epetra_Opertor in a Thyra::EpetraLinearOp object
-    RCP<Thyra::LinearOpBase<double> >
-      A = rcp(new Thyra::EpetraLinearOp(A_epetra));
+    RCP<const Thyra::LinearOpBase<double> >
+      A = Thyra::epetraLinearOp(A_epetra);
     // (D.3) Create RHS vector b and set to a random value
     RCP<const Thyra::VectorSpaceBase<double> >
       b_space = A->range();

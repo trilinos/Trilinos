@@ -61,7 +61,7 @@ public:
   /** \brief . */
   using SingleScalarEuclideanLinearOpBase<double>::euclideanApply;
 
-  /** @name Public types */
+  /** \name Public types */
   //@{
 
   /** \brief . */
@@ -69,7 +69,7 @@ public:
 
   //@}
 
-  /** @name Constructors / initializers / accessors */
+  /** \name Constructors / initializers / accessors */
   //@{
 
   /** \brief Construct to uninitialized.
@@ -78,64 +78,133 @@ public:
    */
   EpetraLinearOp();
 
-  /// Calls <tt>initialize()</tt>.
-  EpetraLinearOp(
-    const RCP<Epetra_Operator> &op,
-    ETransp opTrans = NOTRANS,
-    EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
-    EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
-    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
-    );
-
-  /** \brief Initialize
+  /** \brief Fully initialize.
    *
-   * @param  op       [in] The <tt>Epetra_Operator</tt> this <tt>*this</tt> will wrap.
-   * @param  opTrans  [in] If <tt>opTrans==NOTRANS</tt> then <tt>op</tt> will be viewed as <tt>op</tt>
-   *                  and if <tt>opTrans==TRANS</tt> then <tt>op</tt> will be viewed as its transpose
-   *                  <tt>op'</tt> for the behavior of <tt>apply()</tt>.
-   * @param  applyAs  [in] If <tt>applyAs==APPLY_APPLY</tt> then <tt>op->Apply()</tt> will be used
-   *                  and if <tt>applyAs==APPLY_APPLY_INVERSE</tt> then <tt>op->ApplyInverse()</tt>
-   *                  is used instead.
-   * @param  adjointSupport
-   *                  [in] Determines if it is to be assumed that adjoints are supported on the
-   *                  underlying <tt>Epetra_Operator</tt> object <tt>op</tt>.  If
-   *                  <tt>adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt> then <tt>this->opSupported(TRANS)</tt>
-   *                  will return <tt>true</tt>.  If <tt>adjointSupport==EPETRA_OP_ADJOINT_UNSUPPORTED</tt> then
-   *                  <tt>this->opSupported(TRANS)</tt> will return <tt>false</tt>.
-   * @param  spmdRange
-   *                  [in] Smart pointer to the range space for the <tt>Epetra_Operator</tt>.  The default
-   *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-   *                  a new <tt>SpmdVectorSpace</tt> given range map from <tt>op</tt>.  A client may only bother
-   *                  to specify this space if one wants to override the defintion of the scalar product.
-   * @param  spmdDomain
-   *                  [in] Smart pointer to the domain space for the <tt>Epetra_Operator</tt>.  The default
-   *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-   *                  a new <tt>DefaultSpmdVectorSpace</tt> given map from <tt>op</tt>.  A client may only bother
-   *                  to specify this space if one wants to override the defintion of the scalar product.
+   * \param op [in] The <tt>Epetra_Operator</tt> this <tt>*this</tt> will
+   * wrap.
+   *
+   * \param opTrans [in] If <tt>opTrans==NOTRANS</tt> then <tt>op</tt> will be
+   * viewed as <tt>op</tt> and if <tt>opTrans==TRANS</tt> then <tt>op</tt>
+   * will be viewed as its transpose <tt>op'</tt> for the behavior of
+   * <tt>apply()</tt>.
+   *
+   * \param applyAs [in] If <tt>applyAs==APPLY_APPLY</tt> then
+   * <tt>op->Apply()</tt> will be used and if
+   * <tt>applyAs==APPLY_APPLY_INVERSE</tt> then <tt>op->ApplyInverse()</tt> is
+   * used instead.
+   *
+   * \param adjointSupport [in] Determines if it is to be assumed that
+   * adjoints are supported on the underlying <tt>Epetra_Operator</tt> object
+   * <tt>op</tt>.  If <tt>adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
+   * then <tt>this->opSupported(TRANS)</tt> will return <tt>true</tt>.  If
+   * <tt>adjointSupport==EPETRA_OP_ADJOINT_UNSUPPORTED</tt> then
+   * <tt>this->opSupported(TRANS)</tt> will return <tt>false</tt>.
+   *
+   * \param range [in] Smart pointer to the range space for the
+   * <tt>Epetra_Operator</tt>.  The default value is <tt>Teuchos::null</tt> in
+   * which case <tt>*this</tt> will allocate a new <tt>SpmdVectorSpace</tt>
+   * given range map from <tt>op</tt>.  A client may only bother to specify
+   * this space if one wants to override the defintion of the scalar product.
+   *
+   * \param domain [in] Smart pointer to the domain space for the
+   * <tt>Epetra_Operator</tt>.  The default value is <tt>Teuchos::null</tt> in
+   * which case <tt>*this</tt> will allocate a new
+   * <tt>DefaultSpmdVectorSpace</tt> given map from <tt>op</tt>.  A client may
+   * only bother to specify this space if one wants to override the defintion
+   * of the scalar product.
    *
    * Preconditions:<ul>
-   * <li> <tt>op.get() != NULL</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>!is_null(op)</tt>
    * </ul>
    *
    * Postconditions:<ul>
    * <li> <tt>this->epetra_op().get() == op.get()</tt>
-   * <li> [<tt>spmdRange.get() != NULL</tt>] <tt>this->spmdRange().get() == spmdRange.get()</tt>
-   * <li> [<tt>spmdDomain.get() != NULL</tt>] <tt>this->spmdDomain().get() == spmdDomain.get()</tt>
-   * <li> [<tt>spmdRange.get() == NULL</tt>] <tt>this->spmdRange().get() != NULL</tt>
-   * <li> [<tt>spmdDomain.get() == NULL</tt>] <tt>this->spmdDomain().get() != NULL</tt>
+   * <li> [<tt>range.get() != NULL</tt>] <tt>this->range().get() == range.get()</tt>
+   * <li> [<tt>domain.get() != NULL</tt>] <tt>this->domain().get() == domain.get()</tt>
+   * <li> [<tt>range.get() == NULL</tt>] <tt>this->range().get() != NULL</tt>
+   * <li> [<tt>domain.get() == NULL</tt>] <tt>this->domain().get() != NULL</tt>
    * <li> <tt>this->opSupported(NOTRANS) == true</tt>
    * <li> <tt>this->opSupported(TRNAS) == adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
    * </ul>
+   *
+   * After this function is called, <tt>this</tt> will be fully initialized
+   * and ready to go.
    */
   void initialize(
     const RCP<Epetra_Operator> &op,
     ETransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
     EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
-    const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
+    const RCP<const VectorSpaceBase<Scalar> > &range = Teuchos::null,
+    const RCP<const VectorSpaceBase<Scalar> > &domain = Teuchos::null
     );
+
+  /** \brief Partially initialize.
+   *
+   * \param range [in] Smart pointer to the range space for the
+   * <tt>Epetra_Operator</tt>.
+   *
+   * \param domain [in] Smart pointer to the domain space for the
+   * <tt>Epetra_Operator</tt>.
+   *
+   * \param op [in] The <tt>Epetra_Operator</tt> this <tt>*this</tt> will
+   * wrap.  This object is assumed to not be fully unitialized.
+   *
+   * \param opTrans [in] If <tt>opTrans==NOTRANS</tt> then <tt>op</tt> will be
+   * viewed as <tt>op</tt> and if <tt>opTrans==TRANS</tt> then <tt>op</tt>
+   * will be viewed as its transpose <tt>op'</tt> for the behavior of
+   * <tt>apply()</tt>.
+   *
+   * \param applyAs [in] If <tt>applyAs==APPLY_APPLY</tt> then
+   * <tt>op->Apply()</tt> will be used and if
+   * <tt>applyAs==APPLY_APPLY_INVERSE</tt> then <tt>op->ApplyInverse()</tt> is
+   * used instead.
+   *
+   * \param adjointSupport [in] Determines if it is to be assumed that
+   * adjoints are supported on the underlying <tt>Epetra_Operator</tt> object
+   * <tt>op</tt>.  If <tt>adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
+   * then <tt>this->opSupported(TRANS)</tt> will return <tt>true</tt>.  If
+   * <tt>adjointSupport==EPETRA_OP_ADJOINT_UNSUPPORTED</tt> then
+   * <tt>this->opSupported(TRANS)</tt> will return <tt>false</tt>.
+   *
+   * Preconditions:<ul>
+   * <li> <tt>!is_null(range)</tt>
+   * <li> <tt>!is_null(domain)</tt>
+   * <li> <tt>!is_null(op)</tt>
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li> <tt>this->epetra_op().get() == op.get()</tt>
+   * <li> [<tt>range.get() != NULL</tt>] <tt>this->range().get() == range.get()</tt>
+   * <li> [<tt>domain.get() != NULL</tt>] <tt>this->domain().get() == domain.get()</tt>
+   * <li> [<tt>range.get() == NULL</tt>] <tt>this->range().get() != NULL</tt>
+   * <li> [<tt>domain.get() == NULL</tt>] <tt>this->domain().get() != NULL</tt>
+   * <li> <tt>this->opSupported(NOTRANS) == true</tt>
+   * <li> <tt>this->opSupported(TRNAS) == adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
+   * </ul>
+   *
+   * After this function is called, only the range and domain spaces will be
+   * supported and this must be followed up by a call to
+   * <tt>setFullyInitialized()</tt>.
+   */
+  void partiallyInitialize(
+    const RCP<const VectorSpaceBase<Scalar> > &range,
+    const RCP<const VectorSpaceBase<Scalar> > &domain,
+    const RCP<Epetra_Operator> &op,
+    ETransp opTrans = NOTRANS,
+    EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+    EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED
+    );
+
+  /** \brief Set to fully initialized.
+   *
+   * In debug mode, asserts will be performed to ensure that everything
+   * matches up as it should.
+   *
+   * The functions <tt>initailize()</tt> ore <tt>partiallyInitialize()</tt>
+   * must have been called prior to calling this function.
+   */
+  void setFullyInitialized(bool isFullyInitialized = true);
   
   /** \brief Set to uninitialized and optionally return the current state.
    *
@@ -149,11 +218,12 @@ public:
     ETransp *opTrans = NULL,
     EApplyEpetraOpAs *applyAs = NULL,
     EAdjointEpetraOp *adjointSupport = NULL,
-    RCP< const SpmdVectorSpaceBase<Scalar> > *spmdRange = NULL,
-    RCP< const SpmdVectorSpaceBase<Scalar> > *spmdDomain = NULL
+    RCP<const VectorSpaceBase<Scalar> > *range = NULL,
+    RCP<const VectorSpaceBase<Scalar> > *domain = NULL
     );
 
-  /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the range.
+  /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the
+   * range.
    *
    * Postconditions:<ul>
    * <li> [<tt>this->range().get() != NULL</tt>] <tt>return.get() != NULL</tt>
@@ -162,7 +232,8 @@ public:
    */
   RCP< const SpmdVectorSpaceBase<Scalar> > spmdRange() const;
 
-  /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the domain.
+  /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the
+   * domain.
    *
    * Postconditions:<ul>
    * <li> [<tt>this->domain().get() != NULL</tt>] <tt>return.get() != NULL</tt>
@@ -179,7 +250,7 @@ public:
 
   //@}
 
-  /** @name Overridden from EpetraLinearOpBase */
+  /** \name Overridden from EpetraLinearOpBase */
   //@{
 
   /** \brief . */
@@ -199,7 +270,7 @@ public:
 
   //@}
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** \name Overridden from SingleScalarLinearOpBase */
   //@{
 
   /** \brief . */
@@ -207,12 +278,12 @@ public:
   
   //@}
   
-  /** @name Overridden from EuclideanLinearOpBase */
+  /** \name Overridden from EuclideanLinearOpBase */
   //@{
 
-  /// Returns <tt>this->spmdRange()</tt>
+  /// Returns <tt>this->range()</tt>
   RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
-  /// Returns <tt>this->spmdDomain()</tt>
+  /// Returns <tt>this->domain()</tt>
   RCP< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief . */
   void euclideanApply(
@@ -225,7 +296,7 @@ public:
 
   //@}
   
-  /** @name Overridden from LinearOpBase */
+  /** \name Overridden from LinearOpBase */
   //@{
 
   /** \brief . */
@@ -290,6 +361,7 @@ private:
   // ////////////////////////////////////
   // Private data members
 
+  bool isFullyInitialized_;
   RCP<Epetra_Operator> op_;
   ETransp opTrans_;
   EApplyEpetraOpAs applyAs_;
@@ -319,6 +391,29 @@ RCP<EpetraLinearOp> nonconstEpetraLinearOp()
 }
 
 
+/** \brief Partially initialized EpetraLinearOp
+ *
+ * \relates EpetraLinearOp
+ */
+inline
+RCP<EpetraLinearOp>
+partialNonconstEpetraLinearOp(
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain,
+  const RCP<Epetra_Operator> &op,
+  ETransp opTrans = NOTRANS,
+  EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+  EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED
+  )
+{
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->partiallyInitialize(
+    range, domain,op,opTrans, applyAs, adjointSupport
+    );
+  return thyraEpetraOp;
+}
+
+
 /** \brief Dynamically allocate an const EpetraLinearOp to wrap a const
  * Epetra_Operator object.
  *
@@ -331,15 +426,15 @@ nonconstEpetraLinearOp(
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP< const VectorSpaceBase<double> > &range = Teuchos::null,
+  const RCP< const VectorSpaceBase<double> > &domain = Teuchos::null
   )
 {
-  return Teuchos::rcp(
-    new EpetraLinearOp(
-      op,opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
-      )
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    op,opTrans, applyAs, adjointSupport, range, domain
     );
+  return thyraEpetraOp;
 }
 
 
@@ -355,16 +450,16 @@ epetraLinearOp(
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
+  const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   )
 {
-  return Teuchos::rcp(
-    new EpetraLinearOp(
-      Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
-      opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
-      )
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
+    opTrans, applyAs, adjointSupport, range, domain
     );
+  return thyraEpetraOp;
 }
 
 
@@ -381,18 +476,16 @@ nonconstEpetraLinearOp(
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
+  const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   )
 {
-  RCP<EpetraLinearOp>
-    thyra_op = Teuchos::rcp(
-      new EpetraLinearOp(
-        op,opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
-        )
-      );
-  thyra_op->setObjectLabel(label);
-  return thyra_op;
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    op,opTrans, applyAs, adjointSupport, range, domain
+    );
+  thyraEpetraOp->setObjectLabel(label);
+  return thyraEpetraOp;
 }
 
 
@@ -409,19 +502,17 @@ epetraLinearOp(
   ETransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
-  const RCP< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  const RCP< const SpmdVectorSpaceBase<double> > &range = Teuchos::null,
+  const RCP< const SpmdVectorSpaceBase<double> > &domain = Teuchos::null
   )
 {
-  RCP<EpetraLinearOp>
-    thyra_op = Teuchos::rcp(
-      new EpetraLinearOp(
-        Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
-        opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
-        )
-      );
-  thyra_op->setObjectLabel(label);
-  return thyra_op;
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
+    opTrans, applyAs, adjointSupport, range, domain
+    );
+  thyraEpetraOp->setObjectLabel(label);
+  return thyraEpetraOp;
 }
 
 

@@ -65,11 +65,12 @@ bool Thyra::test_single_aztecoo_thyra_solver(
   )
 {
   using Teuchos::rcp;
+  using Teuchos::RCP;
   using Teuchos::OSTab;
   typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
   bool result, success = true;
 
-  Teuchos::RCP<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(out_arg,false);
 
   try {
@@ -112,16 +113,16 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 #else
     Epetra_SerialComm comm;
 #endif
-    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
+    RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-    Teuchos::RCP<LinearOpBase<double> > A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
+    RCP<const LinearOpBase<double> > A = Thyra::epetraLinearOp(epetra_A);
 
     if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
     if(out.get()) *out << "\nB) Creating a AztecOOLinearOpWithSolveFactory object opFactory ...\n";
 
-    Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
+    RCP<LinearOpWithSolveFactoryBase<double> >
       lowsFactory = Teuchos::rcp(new AztecOOLinearOpWithSolveFactory());
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() initially:\n";
@@ -140,7 +141,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     
     if(out.get()) *out << "\nC) Creating a AztecOOLinearOpWithSolve object nsA from A ...\n";
 
-    Teuchos::RCP<LinearOpWithSolveBase<double> >
+    RCP<LinearOpWithSolveBase<double> >
       nsA = lowsFactory->createOp();
 
     Thyra::initializeOp<double>(*lowsFactory, A, &*nsA );
@@ -242,7 +243,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
 
     
-    Teuchos::RCP<PreconditionerFactoryBase<double> >
+    RCP<PreconditionerFactoryBase<double> >
       precFactory;
 
 #ifdef HAVE_AZTECOO_IFPACK
@@ -264,7 +265,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
         precFactory->getValidParameters()->print(OSTab(out).o(),0,true,false);
       }
 
-      Teuchos::RCP<Teuchos::ParameterList>
+      RCP<Teuchos::ParameterList>
         ifpackPFPL = Teuchos::rcp(new Teuchos::ParameterList("IfpackPreconditionerFactory"));
       ifpackPFPL->set("Prec Type","ILUT");
       ifpackPFPL->set("Overlap",int(1));
@@ -275,7 +276,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
       precFactory->setParameterList(ifpackPFPL);
 
-      Teuchos::RCP<PreconditionerBase<double> >
+      RCP<PreconditionerBase<double> >
         precA = precFactory->createPrec();
       Thyra::initializePrec<double>(*precFactory,A,&*precA);
       
@@ -335,11 +336,11 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(out.get()) *out << "\nO) Create a scaled (by 2.5) copy epetra_A2 of epetra_A, and then reinitialize nsA with epetra_A2 ...\n";
 
-    Teuchos::RCP<Epetra_CrsMatrix>
+    RCP<Epetra_CrsMatrix>
       epetra_A2 = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
     epetra_A2->Scale(2.5);
-    Teuchos::RCP<LinearOpBase<double> >
-      A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
+    RCP<const LinearOpBase<double> >
+      A2 = Thyra::epetraLinearOp(epetra_A2);
     initializeOp<double>(*lowsFactory,A2,&*nsA);
     // Note that it was okay not to uninitialize nsA first here since A, which
     // was used to initialize nsA last, was not changed and therefore the
@@ -355,9 +356,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
       if(out.get()) *out << "\nQ) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
     
-      Teuchos::RCP<const LinearOpBase<double> >
+      RCP<const LinearOpBase<double> >
         A3 = scale<double>(2.5,transpose<double>(A));
-      Teuchos::RCP<LinearOpWithSolveBase<double> >
+      RCP<LinearOpWithSolveBase<double> >
         nsA2 = linearOpWithSolve(*lowsFactory,A3);
     
       if(out.get()) *out << "\nR) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";

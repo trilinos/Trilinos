@@ -477,11 +477,7 @@ EpetraModelEvaluator::create_W() const
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_W_op() const
 {
-  // Here, we can not set the Epetra_Operator object since we can't be sure
-  // that it will be fully set up until after it has been evaluated in
-  // evalModelImpl(...)!  Therefore, all that we can do here is return an
-  // empty EpetraLinearOp to be fully initialized later in evalModelImpl(...).
-  return Thyra::nonconstEpetraLinearOp();
+  return this->create_epetra_W_op();
 }
 
 
@@ -933,7 +929,7 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     }
   }
   
-  // W
+  // W and W_op
   {
 
     if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
@@ -943,7 +939,7 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
           rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
       }
       else {
-        efwdW = Teuchos::rcp(new EpetraLinearOp());
+        efwdW = this->create_epetra_W_op();
         fwdW = efwdW;
       }
     }
@@ -953,10 +949,11 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
           rcp_dynamic_cast<const EpetraLinearOp>(W_op,true));
     }
     if(efwdW.get()) {
+      // By the time we get here, if we have an object in efwdW, then it
+      // should already be embeadded with an underlying Epetra_Operator object
+      // that was allocated by the EpetraExt::ModelEvaluator object.
+      // Therefore, we should just have to grab this object and be on our way.
       eW = efwdW->epetra_op();
-      if(!eW.get()) {
-        eW = create_and_assert_W(*epetraModel_);
-      }
       epetraUnscaledOutArgs.set_W(eW);
     }
     // NOTE: Above, if both W and W_op are set and have been through at least
@@ -1186,7 +1183,8 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
   typedef EpetraExt::ModelEvaluator EME;
 
   if(efwdW.get()) {
-    efwdW->initialize(eW);  // This will directly update W_op if W.get()==NULL!
+    efwdW->setFullyInitialized(true); 
+    // NOTE: Above will directly update W_op also if W.get()==NULL!
   }
   
   if( W.get() ) {
@@ -1199,7 +1197,7 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
       // W_op was already updated above since *efwdW is the same object as *W_op
     }
     else {
-      rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->initialize(eW);
+      rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->setFullyInitialized(true);
     }
   }
 
@@ -1359,6 +1357,16 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   // We are current!
   currentInArgsOutArgs_ = true;
 
+}
+
+
+RCP<EpetraLinearOp>
+EpetraModelEvaluator::create_epetra_W_op() const
+{
+  return Thyra::partialNonconstEpetraLinearOp(
+    this->get_f_space(), this->get_x_space(),
+    create_and_assert_W(*epetraModel_)
+    );
 }
 
 

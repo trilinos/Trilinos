@@ -116,8 +116,8 @@ int main(int argc, char* argv[])
   EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
   
   // Create a Thyra linear operator (A) using the Epetra_CrsMatrix (epetra_A).
-  Teuchos::RCP<Thyra::LinearOpBase<double> > 
-    A = Teuchos::rcp(new Thyra::EpetraLinearOp(epetra_A));
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > 
+    A = Thyra::epetraLinearOp(epetra_A);
 
   // Get the domain space for the Thyra linear operator 
   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain = A->domain();

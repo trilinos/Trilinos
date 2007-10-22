@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
         );
     // Wrap in an Thyra::EpetraLinearOp object
     RCP<Thyra::LinearOpBase<double> >
-      A = rcp(new Thyra::EpetraLinearOp(A_epetra));
+      A = Thyra::nonconstEpetraLinearOp(A_epetra);
     //
     if( verbose && dumpAll ) *out << "\nA =\n" << *A; // This works even in parallel!
     

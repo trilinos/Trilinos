@@ -186,8 +186,8 @@ int main(int argc, char *argv[])
     Thyra::create_MultiVector(rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs);
 
   // then, a LinearOpBase (from the Epetra_CrsMatrix)
-  Teuchos::RCP<Thyra::LinearOpBase<double> > thyra_op = 
-    Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > thyra_op = 
+    Thyra::epetraLinearOp(A);
 
 
   // test the Thyra adapter multivector

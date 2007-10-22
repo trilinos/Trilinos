@@ -407,6 +407,7 @@ int main( int argc, char* argv[] )
     linearOpWithSolveTester.set_all_slack_warning_tol(max_rel_warn);
     linearOpWithSolveTester.dump_all(dumpAll);
 
+
     if(verbose) *out << "\n*** (B.3) Test Vector linear operator interface\n";
 
     if(verbose) *out << "\nChecking *out linear operator interface of ev1 ...\n";
@@ -416,6 +417,7 @@ int main( int argc, char* argv[] )
     if(verbose) *out << "\nChecking *out linear operator interface of nev1 ...\n";
     result = linearOpTester.check(*nev1,verbose?&*out:NULL);
     if(!result) success = false;
+
 
     if(verbose) *out << "\n*** (B.4) Test MultiVector linear operator interface\n";
 
@@ -432,6 +434,7 @@ int main( int argc, char* argv[] )
 
     RCP<Thyra::MultiVectorBase<Scalar> >
       T = createMembers(eV1->domain(),num_mv_cols);
+
 
     if(verbose) *out << "\n*** (B.5) Test MultiVector::apply(...)\n";
 
@@ -467,6 +470,7 @@ int main( int argc, char* argv[] )
     if(!testRelErr("Thyra::norm_1(neV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
     if(verbose && dumpAll) *out << "\nneV1'*neV2 =\n" << *T;
 
+
     if(verbose) *out << "\n*** (B.6) Creating a diagonal Epetra_Operator Op\n";
 
     RCP<Epetra_Operator>  epetra_op;
@@ -492,9 +496,50 @@ int main( int argc, char* argv[] )
     } // end epetra_op
 
     RCP<const Thyra::LinearOpBase<Scalar> >
-      Op = rcp(new Thyra::EpetraLinearOp(epetra_op));
+      Op = Thyra::epetraLinearOp(epetra_op);
 
     if(verbose && dumpAll) *out << "\nOp=\n" << *Op;
+
+
+    if(verbose) *out << "\n*** (B.6b) Going through partial then full initialization of EpetraLinearOp ...\n";
+
+    {
+      if(verbose) *out
+        << "\nChecking isFullyUninitialized(*nonconstEpetraLinearOp())==true : ";
+      RCP<Thyra::EpetraLinearOp>
+        thyraEpetraOp = Thyra::nonconstEpetraLinearOp();
+      result = isFullyUninitialized(*thyraEpetraOp);
+      if(!result) success = false;
+      if(verbose) *out << Thyra::passfail(result) << endl;
+    }
+
+    {
+
+      if(verbose) *out
+        << "\nthyraEpetraOp = partialNonconstEpetraLinearOp(...)\n";
+      RCP<Thyra::EpetraLinearOp> thyraEpetraOp =
+        Thyra::partialNonconstEpetraLinearOp(
+          epetra_vs, epetra_vs, epetra_op
+          );
+
+      if(verbose) *out
+        << "\nChecking isPartiallyInitialized(*thyraEpetraOp)==true : ";
+      result = isPartiallyInitialized(*thyraEpetraOp);
+      if(!result) success = false;
+      if(verbose) *out << Thyra::passfail(result) << endl;
+
+      if(verbose) *out
+        << "\nthyraEpetraOp->setFullyInitialized(true)\n";
+      thyraEpetraOp->setFullyInitialized(true);
+
+      if(verbose) *out
+        << "\nChecking isFullyInitialized(*thyraEpetraOp)==true : ";
+      result = isFullyInitialized(*thyraEpetraOp);
+      if(!result) success = false;
+      if(verbose) *out << Thyra::passfail(result) << endl;
+
+    }
+
 
     if(verbose) *out << "\n*** (B.7) Test EpetraLinearOp linear operator interface\n";
 
@@ -510,6 +555,7 @@ int main( int argc, char* argv[] )
       ney = createMember(non_epetra_vs);
     RCP<Thyra::MultiVectorBase<Scalar> >
       neY = createMembers(non_epetra_vs,num_mv_cols);
+
 
     if(verbose) *out << "\n*** (B.8) Mix and match vector and Multi-vectors with Epetra opeator\n";
 
@@ -579,6 +625,7 @@ int main( int argc, char* argv[] )
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
+
     if(verbose) *out << "\n*** (B.9) Testing Multi-vector views with Epetra operator\n";
 
     const Thyra::Range1D col_rng(0,1);
@@ -645,6 +692,7 @@ int main( int argc, char* argv[] )
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
     if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
+
     if(verbose) *out << "\n*** (B.10) Testing Vector and MultiVector view creation functions\n";
 
     {
@@ -696,6 +744,7 @@ int main( int argc, char* argv[] )
 */
 
     }
+
 
     if(verbose) *out << "\n*** (B.11) Testing Epetra_Vector and Epetra_MultiVector wrappers\n";
 
@@ -812,7 +861,6 @@ int main( int argc, char* argv[] )
 
     }
 
-#ifndef SUN_CXX
 
     if(verbose) *out << "\n*** (B.12) Test DiagonalEpetraLinearOpWithSolveFactory \n";
 
@@ -837,7 +885,6 @@ int main( int argc, char* argv[] )
     
     }
 
-#endif // SUN_CXX
 
     if(verbose)
       *out
@@ -867,6 +914,7 @@ int main( int argc, char* argv[] )
     //
 
     double raw_epetra_time, thyra_wrapped_time;
+
     
     if(verbose) *out << "\n*** (C.1) Comparing the speed of RTOp verses raw Epetra_Vector operations\n";
 
@@ -914,6 +962,7 @@ int main( int argc, char* argv[] )
     // adapters is actually faster in some cases.  However, the extra
     // overhead of RTOp is much worse for very very small (order 10)
     // sizes.
+
 
     if(verbose)
       *out
@@ -964,6 +1013,7 @@ int main( int argc, char* argv[] )
     // as well.  Herefore, except for some small overhead, the raw
     // Epetra and the Thyra wrapped computations should give
     // almost identical times in almost all cases.
+
 
     if(verbose) *out << "\n*** (C.3) Comparing Thyra::EpetraLinearOp::apply() verses raw Epetra_Operator::apply()\n";
 

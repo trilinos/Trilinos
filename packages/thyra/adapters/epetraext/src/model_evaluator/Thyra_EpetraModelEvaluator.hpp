@@ -452,6 +452,9 @@ private:
 
   /** \brief . */
   void updateInArgsOutArgs() const;
+
+  /** \brief . */
+  RCP<EpetraLinearOp> create_epetra_W_op() const;
   
 };
 

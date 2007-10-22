@@ -759,6 +759,10 @@ public:
    * <li><tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>
    * </ul>
    *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>!is_null(returnVal)</tt>
+   * </ul>
+   *
    * Note that a model is only required to support a single <tt>W</tt>
    * object if the precondition below is satisfied and if the client asks for
    * more than one <tt>W</tt> object, the response should be to return
@@ -773,10 +777,22 @@ public:
    * <li><tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
    * </ul>
    *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>!is_null(returnVal)</tt>
+   * <li><tt>isPartiallyInitialized(*returnVal) || isFullyInitialized(*returnVal)</tt>
+   * </ul>
+   *
    * Note that a model is only required to support a single <tt>W_op</tt>
    * object if the precondition below is satisfied and if the client asks for
    * more than one <tt>W_op</tt> object, the response should be to return
    * <tt>null</tt> from this function.
+   *
+   * Also note the above post-condition that requires that a created
+   * <tt>W_op</tt> object also needs to be at least partially initialized.
+   * This means that its range and domain spaces must be fully formed and
+   * accessible.  This greatly simplifies the creation of composite structures
+   * and simplifies the implementation of certain types of implicit
+   * ModelEvaluator subclasses.
    */
   virtual RCP<LinearOpBase<Scalar> > create_W_op() const = 0;
 

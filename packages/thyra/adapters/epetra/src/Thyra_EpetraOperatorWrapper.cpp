@@ -337,7 +337,9 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
 Teuchos::RCP<const Thyra::LinearOpBase<double> > 
 Thyra::makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp)
 {
-  RCP<const LinearOpBase<double> > rtn 
-    = rcp(new EpetraLinearOp(rcp(new EpetraOperatorWrapper(thyraOp))));
+  RCP<const LinearOpBase<double> > rtn =
+    epetraLinearOp(
+      Teuchos::rcp(new EpetraOperatorWrapper(thyraOp))
+      );
   return rtn;
 }

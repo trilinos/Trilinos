@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec = Thyra::createMembers(space,blockSize);
 
   // then, create a Thyra::LinearOpBase from the Epetra_CrsMatrix using the Epetra-Thyra wrappers
-  Teuchos::RCP<Thyra::LinearOpBase<double> > thyra_op = Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > thyra_op = Thyra::epetraLinearOp(A);
 
   // test the Thyra multivector adapter
   ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);

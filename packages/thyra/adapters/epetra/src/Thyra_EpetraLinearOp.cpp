@@ -58,20 +58,11 @@ namespace Thyra {
 
 
 EpetraLinearOp::EpetraLinearOp()
+  :isFullyInitialized_(false),
+   opTrans_(NOTRANS),
+   applyAs_(EPETRA_OP_APPLY_APPLY),
+   adjointSupport_(EPETRA_OP_ADJOINT_UNSUPPORTED)
 {}
-
-
-EpetraLinearOp::EpetraLinearOp(
-  const RCP<Epetra_Operator> &op,
-  ETransp opTrans,
-  EApplyEpetraOpAs applyAs,
-  EAdjointEpetraOp adjointSupport,
-  const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange,
-  const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain
-  )
-{
-  initialize(op,opTrans,applyAs,adjointSupport,spmdRange,spmdDomain);
-}
 
 
 void EpetraLinearOp::initialize(
@@ -79,44 +70,108 @@ void EpetraLinearOp::initialize(
   ETransp opTrans,
   EApplyEpetraOpAs applyAs,
   EAdjointEpetraOp adjointSupport,
-  const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdRange,
-  const RCP< const SpmdVectorSpaceBase<Scalar> > &spmdDomain
+  const RCP< const VectorSpaceBase<Scalar> > &range,
+  const RCP< const VectorSpaceBase<Scalar> > &domain
   )
 {
   
-  typedef EpetraLinearOp::Scalar Scalar;
   using Teuchos::rcp_dynamic_cast;
+  typedef EpetraLinearOp::Scalar Scalar;
+  typedef SpmdVectorSpaceBase<Scalar> SPMDVSB;
+  typedef ScalarProdVectorSpaceBase<Scalar> SPVSB;
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION( op.get()==NULL, std::invalid_argument,
-    "EpetraLinearOp::initialize(...): Error!" );
+  TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
+    "Thyra::EpetraLinearOp::initialize(...): Error!" );
+  // ToDo: Validate spmdRange, spmdDomain against op maps!
 #endif
-  RCP< const SpmdVectorSpaceBase<Scalar> > range, domain;
-  if(spmdRange.get())
-    range = spmdRange;
-  else
-    range = ( applyAs==EPETRA_OP_APPLY_APPLY
-      ? allocateRange(op,opTrans) : allocateDomain(op,opTrans) );
-  if(spmdDomain.get())
-    domain = spmdDomain;
-  else
-    domain = ( applyAs==EPETRA_OP_APPLY_APPLY
-      ? allocateDomain(op,opTrans) : allocateRange(op,opTrans) );
-  RCP<const ScalarProdVectorSpaceBase<Scalar> >
-    sp_range = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(range),
-    sp_domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(domain);
 
+  RCP<const SPMDVSB> spmdRange;
+  if(!is_null(range))
+    spmdRange = rcp_dynamic_cast<const SPMDVSB>(range,true);
+  else
+    spmdRange = ( applyAs==EPETRA_OP_APPLY_APPLY
+      ? allocateRange(op,opTrans) : allocateDomain(op,opTrans) );
+  RCP<const SPMDVSB> spmdDomain;
+  if(!is_null(domain))
+    spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain,true);
+  else
+    spmdDomain = ( applyAs==EPETRA_OP_APPLY_APPLY
+      ? allocateDomain(op,opTrans) : allocateRange(op,opTrans) );
+
+  const RCP<const SPVSB>
+    sp_range = rcp_dynamic_cast<const SPVSB>(spmdRange,true);
+  const RCP<const SPVSB>
+    sp_domain = rcp_dynamic_cast<const SPVSB>(spmdDomain,true);
+  
   // Set data (no exceptions should be thrown now)
+  isFullyInitialized_ = true;
   op_ = op;
   opTrans_ = opTrans;
   applyAs_ = applyAs;
   adjointSupport_ = adjointSupport;
-  range_ = range;
-  domain_ = domain;
+  range_ = spmdRange;
+  domain_ = spmdDomain;
   sp_range_ = sp_range;
   sp_domain_ = sp_domain;
 
+}
+
+
+void EpetraLinearOp::partiallyInitialize(
+  const RCP<const VectorSpaceBase<Scalar> > &range,
+  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const RCP<Epetra_Operator> &op,
+  ETransp opTrans,
+  EApplyEpetraOpAs applyAs,
+  EAdjointEpetraOp adjointSupport
+  )
+{
+  
+  using Teuchos::rcp_dynamic_cast;
+  typedef EpetraLinearOp::Scalar Scalar;
+  typedef SpmdVectorSpaceBase<Scalar> SPMDVSB;
+  typedef ScalarProdVectorSpaceBase<Scalar> SPVSB;
+
+  // Validate input, allocate spaces, validate ...
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION( is_null(range), std::invalid_argument,
+    "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
+  TEST_FOR_EXCEPTION( is_null(domain), std::invalid_argument,
+    "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
+  TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
+    "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
+#endif
+
+  RCP<const SPMDVSB>
+    spmdRange = rcp_dynamic_cast<const SPMDVSB>(range,true);
+  RCP<const SPMDVSB>
+    spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain,true);
+
+  const RCP<const SPVSB>
+    sp_range = rcp_dynamic_cast<const SPVSB>(spmdRange,true);
+  const RCP<const SPVSB>
+    sp_domain = rcp_dynamic_cast<const SPVSB>(spmdDomain,true);
+  
+  // Set data (no exceptions should be thrown now)
+  isFullyInitialized_ = false;
+  op_ = op;
+  opTrans_ = opTrans;
+  applyAs_ = applyAs;
+  adjointSupport_ = adjointSupport;
+  range_ = spmdRange;
+  domain_ = spmdDomain;
+  sp_range_ = sp_range;
+  sp_domain_ = sp_domain;
+  
+}
+
+
+void EpetraLinearOp::setFullyInitialized(bool isFullyInitialized)
+{
+  // ToDo: Validate that everything matches up!
+  isFullyInitialized_ = true;
 }
 
 
@@ -125,8 +180,8 @@ void EpetraLinearOp::uninitialize(
   ETransp *opTrans,
   EApplyEpetraOpAs *applyAs,
   EAdjointEpetraOp *adjointSupport,
-  RCP< const SpmdVectorSpaceBase<Scalar> > *spmdRange,
-  RCP< const SpmdVectorSpaceBase<Scalar> > *spmdDomain
+  RCP<const VectorSpaceBase<Scalar> > *range,
+  RCP<const VectorSpaceBase<Scalar> > *domain
   )
 {
 
@@ -134,9 +189,10 @@ void EpetraLinearOp::uninitialize(
   if(opTrans) *opTrans = opTrans_;
   if(applyAs) *applyAs = applyAs_;
   if(adjointSupport) *adjointSupport = adjointSupport_;
-  if(spmdRange) *spmdRange = range_;
-  if(spmdDomain) *spmdDomain = domain_;
+  if(range) *range = range_;
+  if(domain) *domain = domain_;
 
+  isFullyInitialized_ = false;
   op_ = Teuchos::null;
   opTrans_ = NOTRANS;
   applyAs_ = EPETRA_OP_APPLY_APPLY;
@@ -225,6 +281,8 @@ void EpetraLinearOp::getEpetraOpView(
 
 bool EpetraLinearOp::opSupported(ETransp M_trans) const
 {
+  if (!isFullyInitialized_)
+    return false;
   return ( M_trans == NOTRANS
     ? true : adjointSupport_==EPETRA_OP_ADJOINT_SUPPORTED );
 }
@@ -263,6 +321,7 @@ void EpetraLinearOp::euclideanApply(
   const ETransp real_M_trans = real_trans(M_trans);
 
 #ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(!isFullyInitialized_);
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "EpetraLinearOp::euclideanApply(...)",*this,M_trans,X_in,Y_inout
     );
