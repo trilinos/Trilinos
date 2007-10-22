@@ -664,13 +664,28 @@
 
 
 # Use order-1 IRK which is basically the same as backward Euler
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL10,RythmosAmesos) {
-    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
-    ARGS = --use-IRK;
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL10,RythmosBelos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 0.0\, 0.0 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"medium\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --use-IRK;
     COMM = SERIAL, MPI(1);
     EXIT-STATUS = STRING-COMPARISON;
 }
-
 
 
 # Explicit Taylor polynomial integration on Van der Pol oscillator

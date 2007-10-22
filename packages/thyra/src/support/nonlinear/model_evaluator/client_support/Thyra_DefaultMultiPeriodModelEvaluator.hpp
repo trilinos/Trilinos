@@ -866,6 +866,8 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
   // C) Evaluate the model
   //
 
+  // C.1) Set up storage and do some initializations
+
   MEB::InArgs<Scalar>
     periodInArgs = periodModel_->createInArgs();
   // ToDo: The above will have to change if you allow different structures for
@@ -888,12 +890,15 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
   if (!is_null(g_bar) )
     assign( &*g_bar, ST::zero() );
 
-  // Determine if this is the first time this W_op_bar has been computed
-  const bool reinit_W_op_bar = ( !is_null(W_op_bar) ? is_null(W_op_bar->productRange()) : false );
-  if ( !is_null(W_op_bar) && reinit_W_op_bar ) {
+  // The first time W_op_bar is computed, we must create the block structure
+  // and the blocks.  On later calls, we can just access the blocks already
+  // created and have the daeModel recompute them.  This maximizes the reuse
+  // of storage and pre-processing needed to set up the blocks.
+  const bool first_W_op_bar =
+    ( !is_null(W_op_bar) ? is_null(W_op_bar->productRange()) : false );
+  if ( !is_null(W_op_bar) && first_W_op_bar )
     W_op_bar->beginBlockFill(f_bar_space_,x_bar_space_);
-  }
-
+  
   // Set up storage for peroid DgDp[l] objects that will be summed into global
   // DgDp_bar[l] and zero out DgDp_bar[l] that will be summed into.
   for ( int l = 0; l < Np; ++l ) {
@@ -909,15 +914,13 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
     }
   }
   
-  //
-  // C.1) Loop over periods and assemble the model
-  //
+  // C.2) Loop over periods and assemble the model
 
   for ( int i = 0; i < N; ++i ) {
 
     VOTSME thyraModel_outputTempState(periodModels_[i],out,verbLevel);
 
-    // Set period-speicific InArgs and OutArgs
+    // C.2.a) Set period-speicific InArgs and OutArgs
 
     for ( int k = 0; k < numPeriodZs(); ++k )
       periodInArgs.set_p( z_indexes_[k], z_[i][k] );
@@ -929,7 +932,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
       periodOutArgs.set_f(f_bar->getNonconstVectorBlock(i)); // Updated in place!
 
     if ( !is_null(W_op_bar) ) {
-      if ( reinit_W_op_bar ) {
+      if ( first_W_op_bar ) {
         periodOutArgs.set_W_op(periodModel_->create_W_op());
       }
       else {
@@ -969,14 +972,14 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
         );
     }
 
-    // Evaluate the period model
+    // C.2.b) Evaluate the period model
 
     periodModels_[i]->evalModel( periodInArgs, periodOutArgs );
 
-    // Process output arguments that need processed
+    // C.2.c) Process output arguments that need processed
 
     // Set block of W_op_bar if first time through
-    if ( !is_null(W_op_bar) && reinit_W_op_bar ) {
+    if ( !is_null(W_op_bar) && first_W_op_bar ) {
       W_op_bar->setNonconstBlock(i,i,periodOutArgs.get_W_op());
     }
 
@@ -1014,7 +1017,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
 
   // Finalize W_op_bar if first time through
 
-  if ( !is_null(W_op_bar) && reinit_W_op_bar ) {
+  if ( !is_null(W_op_bar) && first_W_op_bar ) {
     W_op_bar->endBlockFill();
   }
 

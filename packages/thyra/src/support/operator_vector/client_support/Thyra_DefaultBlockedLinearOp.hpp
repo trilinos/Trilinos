@@ -57,6 +57,7 @@ template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill()
 {
   assertBlockFillIsActive(false);
+  uninitialize();
   resetStorage(0,0);
 }
 
@@ -67,6 +68,7 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
   )
 {
   assertBlockFillIsActive(false);
+  uninitialize();
   resetStorage(numRowBlocks,numColBlocks);
 }
 
@@ -78,6 +80,7 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
   )
 {
   assertBlockFillIsActive(false);
+  uninitialize();
   productRange_ = productRange.assert_not_null();
   productDomain_ = productDomain.assert_not_null();
   // Note: the above spaces must be set before calling the next function!
@@ -454,7 +457,6 @@ void DefaultBlockedLinearOp<Scalar>::resetStorage(
   const int numRowBlocks, const int numColBlocks
   )
 {
-  uninitialize();
   numRowBlocks_ = numRowBlocks;
   numColBlocks_ = numColBlocks;
   Ops_.resize(numRowBlocks_*numColBlocks_);
@@ -558,9 +560,9 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
   // Set the incoming range and domain blocks if not already set
   if(!productRange_.get()) {
     if(!rangeBlocks_[i].get())
-      rangeBlocks_[i] = block.range();
+      rangeBlocks_[i] = block.range().assert_not_null();
     if(!domainBlocks_[j].get()) {
-      domainBlocks_[j] = block.domain();
+      domainBlocks_[j] = block.domain().assert_not_null();
     }
   }
   // Update the current number of row and columns blocks if doing a flexible

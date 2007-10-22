@@ -308,6 +308,17 @@ private:
 };	// end class EpetraLinearOp
 
 
+/** \brief Default nonmember constructor.
+ *
+ * \relates EpetraLinearOp
+ */
+inline
+RCP<EpetraLinearOp> nonconstEpetraLinearOp()
+{
+  return Teuchos::rcp(new EpetraLinearOp());
+}
+
+
 /** \brief Dynamically allocate an const EpetraLinearOp to wrap a const
  * Epetra_Operator object.
  *

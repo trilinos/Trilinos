@@ -67,7 +67,7 @@ public:
   ImplicitRKStepper();
   
   /** \brief . */
-  ImplicitRKStepper(
+  void initialize(
     const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
     const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
@@ -201,7 +201,9 @@ private:
   RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
-  RCP<Teuchos::ParameterList> parameterList_;
+  RCP<Teuchos::ParameterList> paramList_;
+
+  int numStages_; // Temp hack to select between first and second order!
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::VectorBase<Scalar> > x_;
@@ -224,6 +226,24 @@ private:
 };
 
 
+/** \brief Nonmember constructor.
+ *
+ * \relates ImplicitRKStepper
+ */
+template<class Scalar>
+RCP<ImplicitRKStepper<Scalar> >
+implicitRKStepper(
+  const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
+  )
+{
+  RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
+  stepper->initialize( model, solver, irk_W_factory );
+  return stepper;
+}
+
+
 // ////////////////////////////
 // Defintions
 
@@ -233,19 +253,17 @@ private:
 
 template<class Scalar>
 ImplicitRKStepper<Scalar>::ImplicitRKStepper()
-  : isInitialized_(false)
-{
-  TEST_FOR_EXCEPT(true);
-}
+  : isInitialized_(false),
+    numStages_(1)
+{}
 
 
 template<class Scalar>
-ImplicitRKStepper<Scalar>::ImplicitRKStepper(
+void ImplicitRKStepper<Scalar>::initialize(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
   )
-  : isInitialized_(false)
 {
 
   // ToDo: Validate input
@@ -558,8 +576,9 @@ void ImplicitRKStepper<Scalar>::setParameterList(
 {
   TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
-  parameterList_ = paramList;
-  Teuchos::readVerboseObjectSublist(&*parameterList_,this);
+  paramList_ = paramList;
+  numStages_ = paramList_->get("Num Stages",numStages_); // Temp hack
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
 
@@ -567,7 +586,7 @@ template <class Scalar>
 RCP<Teuchos::ParameterList>
 ImplicitRKStepper<Scalar>::getParameterList()
 {
-  return(parameterList_);
+  return(paramList_);
 }
 
 
@@ -576,8 +595,8 @@ RCP<Teuchos::ParameterList>
 ImplicitRKStepper<Scalar>::unsetParameterList()
 {
   RCP<Teuchos::ParameterList>
-    temp_param_list = parameterList_;
-  parameterList_ = Teuchos::null;
+    temp_param_list = paramList_;
+  paramList_ = Teuchos::null;
   return(temp_param_list);
 }
 
@@ -590,6 +609,7 @@ ImplicitRKStepper<Scalar>::getValidParameters() const
   static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
     RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->set("Num Stages",1); // Temp hack
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -637,6 +657,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   typedef ScalarTraits<Scalar> ST;
   const Scalar one = ST::one();
+  const Scalar zero = ST::zero();
   using Teuchos::rcp_dynamic_cast;
 
   TEST_FOR_EXCEPT(model_ == Teuchos::null);
@@ -659,18 +680,41 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   // Set up the butcher tableau
 
-  Teuchos::SerialDenseMatrix<int,Scalar> A;
-  A.shape(1,1);
-  A(0,0) = one;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages_,numStages_);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages_);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages_);
 
-  Teuchos::SerialDenseVector<int,Scalar> b;
-  b.resize(1);
-  b(0) = one;
+  // For now just two simple versions!
+  TEUCHOS_ASSERT( numStages_ == 1 || numStages_ == 2 );
 
-  Teuchos::SerialDenseVector<int,Scalar> c;
-  c.resize(1);
-  c(0) = one;
+  if (numStages_ == 1) {
 
+    A(0,0) = one;
+
+    b(0) = one;
+    
+    c(0) = one;
+
+  }
+  else if (numStages_ == 2) {
+
+    const Scalar half = 0.5 * one;
+
+    A(0,0) = half;   A(0,1) = -half;
+    A(1,0) = half;   A(1,1) = half;
+
+    b(0) = half;
+    b(1) = half;
+    
+    c(0) = zero;
+    c(1) = one;
+
+
+  }
+  else {
+    TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+  
   irkButcherTableau_ = RKButcherTableau<Scalar>(A,b,c);
 
   // Set up the IRK mdoel
@@ -685,10 +729,8 @@ void ImplicitRKStepper<Scalar>::initialize_()
     createMember(irkModel_->get_x_space())
     );
 
-  // 2007/10/18: rabartl: ToDo: We need to initialize some other data
-  // structures too but that will come later!
-
   isInitialized_ = true;
+
 }
 
 

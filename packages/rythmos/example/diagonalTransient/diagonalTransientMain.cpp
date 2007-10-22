@@ -275,12 +275,11 @@ int main(int argc, char *argv[])
         );
     }
     else if (useIRK) {
+      // We need a separate LOWSFB object for the IRK stepper
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
         irk_W_factory = createLinearSolveStrategy(linearSolverBuilder);
-      stateStepper = rcp(
-        new Rythmos::ImplicitRKStepper<double>(
-          stateModel, nonlinearSolver, irk_W_factory
-          )
+      stateStepper = Rythmos::implicitRKStepper<double>(
+        stateModel, nonlinearSolver, irk_W_factory
         );
     }
     else {

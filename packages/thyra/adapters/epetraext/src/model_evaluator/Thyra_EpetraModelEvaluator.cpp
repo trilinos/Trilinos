@@ -477,7 +477,11 @@ EpetraModelEvaluator::create_W() const
 RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_W_op() const
 {
-  return Teuchos::rcp(new Thyra::EpetraLinearOp());
+  // Here, we can not set the Epetra_Operator object since we can't be sure
+  // that it will be fully set up until after it has been evaluated in
+  // evalModelImpl(...)!  Therefore, all that we can do here is return an
+  // empty EpetraLinearOp to be fully initialized later in evalModelImpl(...).
+  return Thyra::nonconstEpetraLinearOp();
 }
 
 

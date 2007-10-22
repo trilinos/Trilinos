@@ -177,6 +177,9 @@
 /* Define if want to build teuchos-debug */
 #undef HAVE_TEUCHOS_DEBUG
 
+/* Define if want to build teuchos-demangle */
+#undef HAVE_TEUCHOS_DEMANGLE
+
 /* Define if want to build teuchos-examples */
 #undef HAVE_TEUCHOS_EXAMPLES
 

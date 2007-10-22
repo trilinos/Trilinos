@@ -1402,6 +1402,13 @@ Optional Features:
                           (default is yes, )
   --enable-teuchos-debug  Enable optional extra debugging checkes (default is
                           no, )
+  --enable-teuchos-demangle
+                          Name demangling for types (g++ only). By default,
+                          configure will try to figure out if this is
+                          supported automatically but this does not work on
+                          every platoform. Use --disable-teuchos-demangle to
+                          turn this off and avoid problems (default is
+                          yes, )
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -8415,6 +8422,36 @@ echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_TEUCHOS_DEBUG
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+#
+# --enable-teuchos-demangle
+#
+
+
+# Check whether --enable-teuchos-demangle was given.
+if test "${enable_teuchos_demangle+set}" = set; then
+  enableval=$enable_teuchos_demangle; ac_cv_use_teuchos_demangle=$enableval
+else
+  ac_cv_use_teuchos_demangle=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use teuchos-demangle" >&5
+echo $ECHO_N "checking whether to use teuchos-demangle... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_teuchos_demangle" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_DEMANGLE
 _ACEOF
 
 else

@@ -575,6 +575,14 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, comm_timers, [Enable timers for Teuchos::Co
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, debug, [Enable optional extra debugging checkes], 
 		TEUCHOS_DEBUG, no )
 
+#
+# --enable-teuchos-demangle
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, demangle,
+  [Name demangling for types (g++ only).  By default, configure will try to figure out if this is supported automatically but this does not work on every platoform.  Use --disable-teuchos-demangle to turn this off and avoid problems],
+  TEUCHOS_DEMANGLE, yes )
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
