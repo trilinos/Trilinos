@@ -237,11 +237,16 @@ template<class Scalar>
 RCP<Thyra::LinearOpBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::create_W_op() const
 {
-  // Here, we can not set up the block structure yet since we can't get fully
-  // followed blocks until they have been computed in evalModelImpl(...)!
-  // Therefore, all that we can do here is return an empty block linear
-  // operator to be fully initialized later in evalModelImpl(...).
-  return Thyra::defaultBlockedLinearOp<Scalar>();
+  // Create the block structure for W_op_bar right away!
+  const int numStages = irkButcherTableau_.numStages();
+  RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
+    W_op_bar = Thyra::defaultBlockedLinearOp<Scalar>();
+  W_op_bar->beginBlockFill( f_bar_space_, x_bar_space_ );
+  for ( int i = 0; i < numStages; ++i )
+    for ( int j = 0; j < numStages; ++j )
+      W_op_bar->setNonconstBlock( i, j, daeModel_->create_W_op() );
+  W_op_bar->endBlockFill();
+  return W_op_bar;
 }
 
 
@@ -301,7 +306,7 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Thyra::VectorBase<Scalar> VB;
   typedef Thyra::ProductVectorBase<Scalar> PVB;
-  typedef Thyra::PhysicallyBlockedLinearOpBase<Scalar> PBLWB;
+  typedef Thyra::BlockedLinearOpBase<Scalar> BLWB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
     "Rythmos::ImplicitRKModelEvaluator",inArgs_bar,outArgs_bar,daeModel_
@@ -313,34 +318,22 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
 
   const RCP<const PVB> x_bar = rcp_dynamic_cast<const PVB>(inArgs_bar.get_x(), true);
   const RCP<PVB> f_bar = rcp_dynamic_cast<PVB>(outArgs_bar.get_f(), true);
-  RCP<PBLWB> W_op_bar = rcp_dynamic_cast<PBLWB>(outArgs_bar.get_W_op(), true);
-
-  // The first time W_op_bar is computed, we must create the block structure
-  // and the blocks.  On later calls, we can just access the blocks already
-  // created and have the daeModel recompute them.  This maximizes the reuse
-  // of storage and pre-processing needed to set up the blocks.
-  const bool
-    first_W_op_bar = (!is_null(W_op_bar) && is_null(W_op_bar->range()));
-  if ( !is_null(W_op_bar) && first_W_op_bar )
-    W_op_bar->beginBlockFill(f_bar_space_,x_bar_space_);
+  RCP<BLWB> W_op_bar = rcp_dynamic_cast<BLWB>(outArgs_bar.get_W_op(), true);
 
   //
-  // B) Assemble f_bar and W_op_bar
+  // B) Assemble f_bar and W_op_bar by looping over stages
   //
 
-  // B.1) Set up DAE's InArgs and OutArgs objects
   MEB::InArgs<Scalar> daeInArgs = daeModel_->createInArgs();
   MEB::OutArgs<Scalar> daeOutArgs = daeModel_->createOutArgs();
   const RCP<VB> x_i = createMember(daeModel_->get_x_space());
   daeInArgs.setArgs(basePoint_);
-
-  // B.2) Loop over the stages and assemble the block residual and operator
   
   const int numStages = irkButcherTableau_.numStages();
 
   for ( int i = 0; i < numStages; ++i ) {
 
-    // B.2.a) Setup the DAE's inArgs for this stage function
+    // B.1) Setup the DAE's inArgs for stage f(i) ...
     assembleIRKState( i, irkButcherTableau_.A(), delta_t_, *x_old_, *x_bar, &*x_i );
     daeInArgs.set_x( x_i );
     daeInArgs.set_x_dot( x_bar->getVectorBlock(i) );
@@ -348,50 +341,28 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
     daeInArgs.set_alpha(ST::one());
     daeInArgs.set_beta( delta_t_ * irkButcherTableau_.A()(i,0) );
 
-    // B.2.b) Setup the DAE's outArgs for this stage function
+    // B.2) Setup the DAE's outArgs for stage f(i) ...
     if (!is_null(f_bar))
       daeOutArgs.set_f( f_bar->getNonconstVectorBlock(i) );
-    if (!is_null(W_op_bar)) {
-      if (first_W_op_bar)
-        daeOutArgs.set_W_op(daeModel_->create_W_op());
-      else
-        daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,0));
-    }
+    if (!is_null(W_op_bar))
+      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,0));
 
-    // B.2.c) Compute f_bar(i) and W_op_bar(i,0) ...
+    // B.3) Compute f_bar(i) and/or W_op_bar(i,0) ...
     daeModel_->evalModel( daeInArgs, daeOutArgs );
-    if ( !is_null(W_op_bar) && first_W_op_bar )
-      W_op_bar->setNonconstBlock(i,0,daeOutArgs.get_W_op());
     daeOutArgs.set_f(Teuchos::null);
     daeOutArgs.set_W_op(Teuchos::null);
     
-    // B.2.d) Evaluate the rest of the W_op_bar(i,j=1...numStages-1)
+    // B.4) Evaluate the rest of the W_op_bar(i,j=1...numStages-1) ...
     if (!is_null(W_op_bar)) {
       for ( int j = 1; j < numStages; ++j ) {
-        // B.2.d,i) Set the daeInArgs and daeOutArgs
         daeInArgs.set_beta( delta_t_ * irkButcherTableau_.A()(i,j) );
-        if (!is_null(W_op_bar)) {
-          if (first_W_op_bar)
-            daeOutArgs.set_W_op(daeModel_->create_W_op());
-          else
-            daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,j));
-        }
-        // B.2.d.ii) Evaluate W_op_bar(i,j)
+        daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,j));
         daeModel_->evalModel( daeInArgs, daeOutArgs );
-        if ( !is_null(W_op_bar) && first_W_op_bar )
-          W_op_bar->setNonconstBlock(i,j,daeOutArgs.get_W_op());
         daeOutArgs.set_W_op(Teuchos::null);
       }
     }
 
   }
-
-  //
-  // C) Final post-processing
-  //
-
-  if ( !is_null(W_op_bar) && first_W_op_bar )
-    W_op_bar->endBlockFill();
   
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
