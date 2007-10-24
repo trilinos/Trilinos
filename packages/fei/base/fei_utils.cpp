@@ -73,6 +73,68 @@ fei::utils::get_LinearSystemCore(fei::Matrix* matrix)
 }
 
 //----------------------------------------------------------------------------
+void fei::utils::getConnectivityArrays(fei::MatrixGraph& matrixGraph,
+                                       std::vector<int>& nodes,
+                                       std::vector<int>& elem_offsets)
+{
+  //first, iterate over the connectivity-blocks and count how many nodes
+  //and elements there are.
+  int num_elems = 0;
+  int num_nodes = 0;
+
+  std::map<int,fei::ConnectivityBlock*>& cBlocks =
+    matrixGraph.getConnectivityBlocks();
+  std::map<int,fei::ConnectivityBlock*>::iterator
+    iter = cBlocks.begin(),
+    iter_end = cBlocks.end();
+
+  for(; iter != iter_end; ++iter) {
+    fei::ConnectivityBlock* cblk = iter->second;
+
+    //if not symmetric, then assume it's not an element-block.
+    if (!cblk->isSymmetric()) continue;
+
+    num_elems += cblk->getConnectivityIDs().size();
+
+    fei::Pattern* pattern = cblk->getRowPattern();
+    num_nodes += pattern->getNumIDs();
+  }
+
+  nodes.resize(num_nodes);
+  elem_offsets.resize(num_elems+1);
+
+  iter = cBlocks.begin(),
+  iter_end = cBlocks.end();
+
+  int node_offset = 0;
+  int elem_offset = 0;
+  int elem_counter = 0;
+
+  for(; iter != iter_end; ++iter) {
+    fei::ConnectivityBlock* cblk = iter->second;
+
+    //if not symmetric, then assume it's not an element-block.
+    if (!cblk->isSymmetric()) continue;
+
+    fei::Pattern* pattern = cblk->getRowPattern();
+
+    int ne = cblk->getConnectivityIDs().size();
+    int nn = pattern->getNumIDs();
+    std::vector<fei::Record*>& cblk_nodes = cblk->getRowConnectivities();
+    for(unsigned i=0; i<cblk_nodes.size(); ++i) {
+      nodes[node_offset++] = cblk_nodes[i]->getID();
+    }
+
+    for(int i=0; i<ne; ++i) {
+      elem_offsets[elem_counter++] = elem_offset;
+      elem_offset += nn;
+    }
+  }
+
+  elem_offsets[elem_counter] = elem_offset;
+}
+
+//----------------------------------------------------------------------------
 void fei::utils::char_ptrs_to_strings(int numStrings,
                                      const char*const* charstrings,
                                      std::vector<std::string>& stdstrings)

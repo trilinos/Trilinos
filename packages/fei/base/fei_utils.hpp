@@ -10,8 +10,9 @@
 #ifndef _fei_utils_hpp_
 #define _fei_utils_hpp_
 
-#include <fei_macros.hpp>
-#include <fei_fwd.hpp>
+#include "fei_macros.hpp"
+#include "fei_fwd.hpp"
+#include "fei_version.h"
 
 #include <string>
 #include <vector>
@@ -58,6 +59,21 @@ double cpu_time();
    Returns NULL if unsuccessful.
 */
 LinearSystemCore* get_LinearSystemCore(fei::Matrix* matrix);
+
+/** Return element-node connectivity in a pair of arrays, as follows:
+  The 'nodes' array holds all of the node-identifiers (for nodes connected
+  to local elements). The 'elem_offsets' array holds offsets into the
+  'nodes' array at which the nodes for a given element can be found.
+
+  Thus:
+
+   num-elems = elem_offsets.size()-1;
+   nodes for i-th element lie in these positions:
+     nodes[elem_offsets[i] .. elem_offsets[i+1]-1]
+*/
+void getConnectivityArrays(fei::MatrixGraph& matrixGraph,
+                           std::vector<int>& nodes,
+                           std::vector<int>& elem_offsets);
 
 /** Given an integer length 'numStrings' and a list of pointers-to-char-pointer,
     wrap them in a std::vector of std::string objects.
