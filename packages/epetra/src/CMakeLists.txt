@@ -1,6 +1,6 @@
 ENABLE_LANGUAGE(Fortran)
 
-SET(BUILD_SHARED_LIBS TRUE)
+OPTION(BUILD_SHARED_LIBS OFF)
 
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
 #FIND_PACKAGE(LAPACK REQUIRED)
@@ -174,32 +174,35 @@ SET(FORTRAN_SOURCES
     Epetra_dcrssv.f
 )
 
-SET(MPI_HEADERS
-	Epetra_MpiComm.h
-	Epetra_MpiCommData.h
-	Epetra_MpiDistributor.h
-#	Epetra_MpiSmpComm.h
-#	Epetra_MpiSmpCommData.h
+IF(ENABLE_MPI)
+	SET(HEADERS
+		${HEADERS}
+		Epetra_MpiComm.h
+		Epetra_MpiCommData.h
+		Epetra_MpiDistributor.h
+	#	Epetra_MpiSmpComm.h
+	#	Epetra_MpiSmpCommData.h
 
-)
+	)
 
-SET(MPI_SOURCES
-	Epetra_MpiComm.cpp
-	Epetra_MpiCommData.cpp
-	Epetra_MpiDistributor.cpp
-#	Epetra_MpiSmpComm.cpp
-#	Epetra_MpiSmpCommData.cpp
-)
+	SET(SOURCES
+		${SOURCES}
+		Epetra_MpiComm.cpp
+		Epetra_MpiCommData.cpp
+		Epetra_MpiDistributor.cpp
+	#	Epetra_MpiSmpComm.cpp
+	#	Epetra_MpiSmpCommData.cpp
+	)
+
+	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ENDIF(ENABLE_MPI)
 
 ADD_LIBRARY(epetra_fortran ${FORTRAN_SOURCES})
 
 ADD_LIBRARY(epetra ${HEADERS} ${SOURCES})
+TARGET_LINK_LIBRARIES(epetra epetra_fortran ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
 
 IF(ENABLE_MPI)
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-  ADD_LIBRARY(epetra_mpi ${MPI_HEADERS} ${MPI_SOURCES})
-  TARGET_LINK_LIBRARIES(epetra epetra_fortran epetra_mpi ${MPI_LIBRARY} ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
-ELSE(ENABLE_MPI)
-  TARGET_LINK_LIBRARIES(epetra epetra_fortran ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+	TARGET_LINK_LIBRARIES(epetra ${MPI_LIBRARY})
 ENDIF(ENABLE_MPI)
 
