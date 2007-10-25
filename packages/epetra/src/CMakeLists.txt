@@ -1,18 +1,15 @@
-ENABLE_LANGUAGE(Fortran)
-
 OPTION(BUILD_SHARED_LIBS OFF)
 
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
-#FIND_PACKAGE(LAPACK REQUIRED)
 
-FIND_LIBRARY(BLAS_LIBRARY blas DOC "Path to the BLAS implementation")
-FIND_LIBRARY(LAPACK_LIBRARY lapack DOC "Path to the LAPACK implementation")
+FIND_LIBRARY(BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
+FIND_LIBRARY(LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
 
 # Setup configuration options
-
+# Fortran name mangling
 IF(WIN32)
 	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## __")
+	SET(F77_FUNC_ "(name,NAME) NAME")
 ELSE(WIN32)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## _")
@@ -154,19 +151,6 @@ SET(SOURCES
 	Epetra_Vector.cpp
 	)
 
-# The following currently only works on Linux with changes to Epetra_BLAS_wrappers.h
-# #ifdef __GNUC__ /* standard Epetra implementation */ 
-# #define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
-# #define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
-# #define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
-# #define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
-#
-# should be changed to
-# #ifdef __GNUC__ /* standard Epetra implementation */ 
-# #define EPETRA_DCRSMV_F77   F77_FUNC(epetra_dcrsmv,EPETRA_DCRSMV)
-# #define EPETRA_DCRSMM_F77   F77_FUNC(epetra_dcrsmm,EPETRA_DCRSMM)
-# #define EPETRA_DCRSSV_F77   F77_FUNC(epetra_dcrssv,EPETRA_DCRSSV)
-# #define EPETRA_DCRSSM_F77   F77_FUNC(epetra_dcrssm,EPETRA_DCRSSM)
 SET(FORTRAN_SOURCES
     Epetra_dcrsmm.f
     Epetra_dcrsmv.f
