@@ -67,12 +67,11 @@ void test_misc_FieldMask()
 
   //A general test of fei::FieldMask.
 
-  int numFields = 5;
+  unsigned numFields = 5;
   std::vector<int> fieldIDs(numFields);
   std::vector<int> fieldSizes(numFields);
-  int i;
   int checkNumIndices = 0;
-  for(i=0; i<numFields; ++i) {
+  for(unsigned i=0; i<numFields; ++i) {
     fieldIDs[i] = i;
     fieldSizes[i] = i;
     checkNumIndices += i;

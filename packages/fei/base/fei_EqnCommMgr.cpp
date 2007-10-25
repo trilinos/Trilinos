@@ -179,182 +179,181 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 //
 #ifndef FEI_SER
 
-  int i;
+  int numSendEqns = sendEqns_->getNumEqns();
+  SSVec** sendEqnsPtr = sendEqns_->eqns().dataPtr();
+  feiArray<int>& sendEqnNumbers = sendEqns_->eqnNumbersPtr();
+  feiArray<int> sendEqnLengths(numSendEqns);
+  for(int i=0; i<numSendEqns; ++i) {
+    sendEqnLengths[i] = sendEqnsPtr[i]->length();
+  }
 
-   int numSendEqns = sendEqns_->getNumEqns();
-   SSVec** sendEqnsPtr = sendEqns_->eqns().dataPtr();
-   feiArray<int>& sendEqnNumbers = sendEqns_->eqnNumbersPtr();
-   feiArray<int> sendEqnLengths(numSendEqns);
-   for(i=0; i<numSendEqns; ++i) {
-     sendEqnLengths[i] = sendEqnsPtr[i]->length();
-   }
+  sendProcEqns_->setProcEqnLengths(sendEqnNumbers.dataPtr(),
+                                   sendEqnLengths.dataPtr(),
+                                   numSendEqns);
 
-   sendProcEqns_->setProcEqnLengths(sendEqnNumbers.dataPtr(),
-                                    sendEqnLengths.dataPtr(),
-                                    numSendEqns);
+  MPI_Comm comm = commUtils_.getCommunicator();
 
-   MPI_Comm comm = commUtils_.getCommunicator();
+  CHK_ERR( mirrorProcEqns(*sendProcEqns_, *recvProcEqns_) );
+  CHK_ERR( mirrorProcEqnLengths(*sendProcEqns_, *recvProcEqns_) );
 
-   CHK_ERR( mirrorProcEqns(*sendProcEqns_, *recvProcEqns_) );
-   CHK_ERR( mirrorProcEqnLengths(*sendProcEqns_, *recvProcEqns_) );
+  sendEqns_->setNumRHSs(sendEqns_->getNumRHSs());
+  recvEqns_->setNumRHSs(sendEqns_->getNumRHSs());
 
-   sendEqns_->setNumRHSs(sendEqns_->getNumRHSs());
-   recvEqns_->setNumRHSs(sendEqns_->getNumRHSs());
+  size_t numRecvProcs = recvProcEqns_->getNumProcs();
+  size_t numSendProcs = sendProcEqns_->getNumProcs();
+  std::vector<int>& sendProcs       = sendProcEqns_->procsPtr();
 
-   size_t numRecvProcs = recvProcEqns_->getNumProcs();
-   size_t numSendProcs = sendProcEqns_->getNumProcs();
-   std::vector<int>& sendProcs       = sendProcEqns_->procsPtr();
+  //while we're here, let's allocate the array into which we will (later)
+  //recv the soln values for the remote equations we've contributed to.
+  sendEqnSoln_.resize(numSendEqns);
 
-   //while we're here, let's allocate the array into which we will (later)
-   //recv the soln values for the remote equations we've contributed to.
-   sendEqnSoln_.resize(numSendEqns);
+  //First we'll figure out the expected receive-lengths and the expected
+  //send lengths.
 
-   //First we'll figure out the expected receive-lengths and the expected
-   //send lengths.
+  std::vector<int> recvProcTotalLengths(numRecvProcs);
+  std::vector<int> sendProcTotalLengths(numSendProcs);
 
-   std::vector<int> recvProcTotalLengths(numRecvProcs);
-   std::vector<int> sendProcTotalLengths(numSendProcs);
+  std::vector<int>& recvProcs = recvProcEqns_->procsPtr();
+  std::vector<int>& eqnsPerRecvProc = recvProcEqns_->eqnsPerProcPtr();
+  std::vector<std::vector<int>*>& recvProcEqnLengths =
+    recvProcEqns_->procEqnLengthsPtr();
+  std::vector<std::vector<int>*>& recvProcEqnNumbers = 
+    recvProcEqns_->procEqnNumbersPtr();
 
-   std::vector<int>& recvProcs = recvProcEqns_->procsPtr();
-   std::vector<int>& eqnsPerRecvProc = recvProcEqns_->eqnsPerProcPtr();
-   std::vector<std::vector<int>*>& recvProcEqnLengths =
-     recvProcEqns_->procEqnLengthsPtr();
-   std::vector<std::vector<int>*>& recvProcEqnNumbers = 
-     recvProcEqns_->procEqnNumbersPtr();
+  std::vector<int>** recvProcEqnLengthsPtr = &recvProcEqnLengths[0];
+  std::vector<int>** recvProcEqnNumbersPtr = &recvProcEqnNumbers[0];
 
-   std::vector<int>** recvProcEqnLengthsPtr = &recvProcEqnLengths[0];
-   std::vector<int>** recvProcEqnNumbersPtr = &recvProcEqnNumbers[0];
+  for(unsigned i=0; i<numRecvProcs; i++) {
 
-   for(unsigned i=0; i<numRecvProcs; i++) {
+    //first we need the total of eqn-lengths for this recv-proc
+    int totalLength = 0;
+    for(int j=0; j<eqnsPerRecvProc[i]; j++) {
+      totalLength += (*(recvProcEqnLengthsPtr[i]))[j];
+    }
+    recvProcTotalLengths[i] = totalLength;
+  }
 
-     //first we need the total of eqn-lengths for this recv-proc
-     int totalLength = 0;
-     for(int j=0; j<eqnsPerRecvProc[i]; j++) {
-       totalLength += (*(recvProcEqnLengthsPtr[i]))[j];
-     }
-     recvProcTotalLengths[i] = totalLength;
-   }
+  std::vector<int>& eqnsPerSendProc = sendProcEqns_->eqnsPerProcPtr();
+  std::vector<std::vector<int>*>& sendProcEqnNumbers = 
+    sendProcEqns_->procEqnNumbersPtr();
+  std::vector<std::vector<int>*>& sendProcLengths =
+    sendProcEqns_->procEqnLengthsPtr();
 
-   std::vector<int>& eqnsPerSendProc = sendProcEqns_->eqnsPerProcPtr();
-   std::vector<std::vector<int>*>& sendProcEqnNumbers = 
-     sendProcEqns_->procEqnNumbersPtr();
-   std::vector<std::vector<int>*>& sendProcLengths =
-     sendProcEqns_->procEqnLengthsPtr();
+  std::vector<int>** sendProcEqnNumbersPtr = &sendProcEqnNumbers[0];
+  std::vector<int>** sendProcLengthsPtr = &sendProcLengths[0];
 
-   std::vector<int>** sendProcEqnNumbersPtr = &sendProcEqnNumbers[0];
-   std::vector<int>** sendProcLengthsPtr = &sendProcLengths[0];
+  for(unsigned i=0; i<numSendProcs; i++) {
+    int totalLength = 0;
+    for(int j=0; j<eqnsPerSendProc[i]; j++) {
+      totalLength += (*(sendProcLengthsPtr[i]))[j];
+    }
+    sendProcTotalLengths[i] = totalLength;
+  }
 
-   for(unsigned i=0; i<numSendProcs; i++) {
-      int totalLength = 0;
-      for(int j=0; j<eqnsPerSendProc[i]; j++) {
-         totalLength += (*(sendProcLengthsPtr[i]))[j];
+  //Before we get too carried away here, lets make sure that the messages we
+  //expect to receive from each other processor are the same length as the
+  //other processor plans to send. (Many times I've had crashes in MPI_Wait
+  //below, which are always mysterious to figure out. They usually result
+  //from mis-matched send/recv lengths.)
+
+  CHK_ERR( consistencyCheck("exchangeIndices", recvProcs, recvProcTotalLengths,
+                            sendProcs, sendProcTotalLengths) );
+
+  int** recvProcEqnIndices = NULL;
+
+  if (numRecvProcs > 0) {
+    recvProcEqnIndices = new int*[numRecvProcs];
+  }
+
+  MPI_Request* indRequests = NULL;
+
+  if (numRecvProcs > 0) {
+    indRequests = new MPI_Request[numRecvProcs];
+  }
+
+  int numRecvsStarted = 0;
+  int indTag = 199904;
+
+  //now, let's start the recvs for the incoming indices.
+  for(unsigned i=0; i<numRecvProcs; i++) {
+
+    int totalLength = recvProcTotalLengths[i];
+
+    recvProcEqnIndices[i] = new int[totalLength];
+
+    //launch the recvs for the indices now.
+    if (MPI_Irecv(recvProcEqnIndices[i], totalLength, MPI_INT,
+                  recvProcs[i], indTag, comm, &indRequests[i]) != MPI_SUCCESS) {
+       ERReturn(-1);
+    }
+
+    numRecvsStarted++;
+  }
+
+  //now we need to build the lists of outgoing indices and send those.
+  std::vector<int> indices;
+
+  for(unsigned i=0; i<numSendProcs; i++) {
+    int totalLength = sendProcTotalLengths[i];
+    int j;
+
+    indices.resize(totalLength);
+    int* indicesPtr = &indices[0];
+
+    int offset = 0;
+
+    for(j=0; j<eqnsPerSendProc[i]; j++) {
+      int eqnLoc = sendEqns_->getEqnIndex((*(sendProcEqnNumbersPtr[i]))[j]);
+      feiArray<int>& sendIndices = sendEqns_->eqns()[eqnLoc]->indices();
+      int* sendIndicesPtr = sendIndices.dataPtr();
+
+      for(int k=0; k<(*(sendProcLengthsPtr[i]))[j]; k++) {
+        indicesPtr[offset++] = sendIndicesPtr[k];
       }
-      sendProcTotalLengths[i] = totalLength;
-   }
+    }
 
-   //Before we get too carried away here, lets make sure that the messages we
-   //expect to receive from each other processor are the same length as the
-   //other processor plans to send. (Many times I've had crashes in MPI_Wait
-   //below, which are always mysterious to figure out. They usually result
-   //from mis-matched send/recv lengths.)
+    if (MPI_Send(indicesPtr, totalLength, MPI_INT, sendProcs[i],
+                 indTag, comm) != MPI_SUCCESS) ERReturn(-1)
+  }
 
-   CHK_ERR( consistencyCheck("exchangeIndices", recvProcs, recvProcTotalLengths,
-			     sendProcs, sendProcTotalLengths) );
+  //and finally, we're ready to complete the irecvs for the indices and put
+  //them away.
+  int numCompleted = 0;
+  for(unsigned i=0; i<numRecvProcs; i++) {
+    MPI_Status status;
+    int index = i;
+    MPI_Wait(&indRequests[i], &status);
+    numCompleted++;
 
-   int** recvProcEqnIndices = NULL;
+    int offset = 0;
+    for(int j=0; j<eqnsPerRecvProc[index]; j++) {
+      int eqn = (*(recvProcEqnNumbersPtr[index]))[j];
+      int* indxs = &(recvProcEqnIndices[index][offset]);
+      int len = (*(recvProcEqnLengthsPtr[index]))[j];
 
-   if (numRecvProcs > 0) {
-     recvProcEqnIndices = new int*[numRecvProcs];
-   }
+      recvEqns_->addIndices(eqn, indxs, len);
 
-   MPI_Request* indRequests = NULL;
+      offset += len;
+    }
 
-   if (numRecvProcs > 0) {
-      indRequests = new MPI_Request[numRecvProcs];
-   }
+    delete [] recvProcEqnIndices[index];
+  }
 
-   int numRecvsStarted = 0;
-   int indTag = 199904;
+  delete [] recvProcEqnIndices;
+  delete [] indRequests;
 
-   //now, let's start the recvs for the incoming indices.
-   for(unsigned i=0; i<numRecvProcs; i++) {
+  if (numRecvsStarted != numCompleted) {
+    FEI_CERR << "EqnCommMgr::exchangeIndices: recv-send mismatch; "
+          << "numRecvsStarted: " << numRecvsStarted << ", numCompleted: "
+         << numCompleted << FEI_ENDL;
+    std::abort();
+  }
 
-     int totalLength = recvProcTotalLengths[i];
+  //allocate the solnValue_ list, which is of size numRecvEqns.
+  int numRecvEqns = recvEqns_->getNumEqns();
+  solnValues_.resize(numRecvEqns);
 
-     recvProcEqnIndices[i] = new int[totalLength];
-
-     //launch the recvs for the indices now.
-     if (MPI_Irecv(recvProcEqnIndices[i], totalLength, MPI_INT,
-                recvProcs[i], indTag, comm, &indRequests[i]) != MPI_SUCCESS)
-	ERReturn(-1)
-
-     numRecvsStarted++;
-   }
-
-   //now we need to build the lists of outgoing indices and send those.
-   std::vector<int> indices;
-
-   for(unsigned i=0; i<numSendProcs; i++) {
-      int totalLength = sendProcTotalLengths[i];
-      int j;
-
-      indices.resize(totalLength);
-      int* indicesPtr = &indices[0];
-
-      int offset = 0;
-
-      for(j=0; j<eqnsPerSendProc[i]; j++) {
-         int eqnLoc = sendEqns_->getEqnIndex((*(sendProcEqnNumbersPtr[i]))[j]);
-	 feiArray<int>& sendIndices = sendEqns_->eqns()[eqnLoc]->indices();
-	 int* sendIndicesPtr = sendIndices.dataPtr();
-
-         for(int k=0; k<(*(sendProcLengthsPtr[i]))[j]; k++) {
-            indicesPtr[offset++] = sendIndicesPtr[k];
-         }
-      }
-
-      if (MPI_Send(indicesPtr, totalLength, MPI_INT, sendProcs[i],
-               indTag, comm) != MPI_SUCCESS) ERReturn(-1)
-   }
-
-   //and finally, we're ready to complete the irecvs for the indices and put
-   //them away.
-   int numCompleted = 0;
-   for(unsigned i=0; i<numRecvProcs; i++) {
-      MPI_Status status;
-      int index = i;
-      MPI_Wait(&indRequests[i], &status);
-      numCompleted++;
-
-      int offset = 0;
-      for(int j=0; j<eqnsPerRecvProc[index]; j++) {
-         int eqn = (*(recvProcEqnNumbersPtr[index]))[j];
-         int* indxs = &(recvProcEqnIndices[index][offset]);
-         int len = (*(recvProcEqnLengthsPtr[index]))[j];
-
-         recvEqns_->addIndices(eqn, indxs, len);
-
-         offset += len;
-      }
-
-      delete [] recvProcEqnIndices[index];
-   }
-
-   delete [] recvProcEqnIndices;
-   delete [] indRequests;
-
-   if (numRecvsStarted != numCompleted) {
-      FEI_CERR << "EqnCommMgr::exchangeIndices: recv-send mismatch; "
-           << "numRecvsStarted: " << numRecvsStarted << ", numCompleted: "
-          << numCompleted << FEI_ENDL;
-      std::abort();
-   }
-
-   //allocate the solnValue_ list, which is of size numRecvEqns.
-   int numRecvEqns = recvEqns_->getNumEqns();
-   solnValues_.resize(numRecvEqns);
-
-   exchangeIndicesCalled_ = true;
+  exchangeIndicesCalled_ = true;
 
   if (dbgOut != NULL) {
     FEI_OSTREAM& os = *dbgOut;
@@ -1159,11 +1158,9 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 //------------------------------------------------------------------------------
 int EqnCommMgr::exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper)
 {
-  int i;
-
   std::set<int> sendIndices;
   feiArray<SSVec*>& sendeqns = sendEqns_->eqns();
-  for(i=0; i<sendeqns.length(); ++i) {
+  for(int i=0; i<sendeqns.length(); ++i) {
     feiArray<int>& indices = sendeqns[i]->indices();
     int len = indices.length();
     if (len < 1) continue;
@@ -1175,7 +1172,7 @@ int EqnCommMgr::exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper)
 
   std::set<int> recvIndices;
   feiArray<SSVec*>& recveqns = recvEqns_->eqns();
-  for(i=0; i<recveqns.length(); ++i) {
+  for(int i=0; i<recveqns.length(); ++i) {
     feiArray<int>& indices = recveqns[i]->indices();
     int len = indices.length();
     if (len < 1) continue;
@@ -1236,7 +1233,9 @@ int EqnCommMgr::exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper)
     for(unsigned eq=0; eq<len; ++eq) {
       int ptEqn = dataPtr[offset++];
 
-      if (recvIndices.find(ptEqn) == recvIndices.end()) { offset += 2; continue; }
+      if (recvIndices.find(ptEqn) == recvIndices.end()) {
+        offset += 2; continue;
+      }
 
       int blkEqn = dataPtr[offset++];
       int blkSize = dataPtr[offset++];

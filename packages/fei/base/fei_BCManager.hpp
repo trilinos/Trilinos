@@ -63,7 +63,7 @@ class BCManager {
 
    int consolidateBCs();
 
-   int getNumBCs();
+   size_t getNumBCs();
 
    std::vector<const BCRecord*>& getBCRecords() { return( bcList_ ); }
 

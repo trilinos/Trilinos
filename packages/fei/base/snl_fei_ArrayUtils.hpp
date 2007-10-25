@@ -282,11 +282,11 @@ namespace snl_fei {
       @param listLength
       @param start Starting offset of search 'window'.
       @param end Ending offset of search 'window'. end should be less than 
-      length().
+      listLength.
       @param insertPoint
       @return offset position at which item was found. If not found, returns -1.
-      Also returns -1 if start>end, or if start<0 or if end >= length(). 
-      (Since 0-based indexing is used, 'end' can't be greater than length()-1.)
+      Also returns -1 if start>end, or if start<0 or if end >= listLength. 
+      (Since 0-based indexing is used, 'end' can't be greater than listLength-1.)
   */
   template<typename T>
     int binarySearch(const T& item, const T* list, int listLength,

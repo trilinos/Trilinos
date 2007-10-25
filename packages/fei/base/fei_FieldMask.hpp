@@ -66,7 +66,7 @@ namespace fei {
     bool hasFieldID(int fieldID) const;
 
     /** Return the number of fields in this field-mask. */
-    int getNumFields() const { return(fieldIDs_.size()); }
+    size_t getNumFields() const { return(fieldIDs_.size()); }
 
     /** Return the number of global indices corresponding to the set of fields
 	represented by this mask. This is sum(fieldSizes[i]*fieldInstances[i]).

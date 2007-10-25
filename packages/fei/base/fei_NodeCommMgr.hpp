@@ -41,7 +41,7 @@ class NodeCommMgr : public snl_fei::MessageHandler<int> {
    NodeCommMgr(MPI_Comm comm, int sharedNodeOwnership=STRICTLY_LOW_PROC);
    virtual ~NodeCommMgr();
 
-   int getNumSharedNodes() {return(sharedNodeIDs.size());}
+   size_t getNumSharedNodes() {return(sharedNodeIDs.size());}
    std::vector<GlobalID>& getLocalNodeIDs() {return(localNodeIDs);}
    std::vector<GlobalID>& getSharedNodeIDs() {return(sharedNodeIDs);}
    std::vector<int>& getSharedNodeNumbers() {return(sharedNodeNumbers);}

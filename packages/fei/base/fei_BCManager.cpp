@@ -56,7 +56,7 @@ void BCManager::addBCRecords(int numNodes, const GlobalID* nodeIDs,
 			    const double*const * beta,
                             const double*const * gamma)
 {
-  int oldLength = bcList_.size();
+  size_t oldLength = bcList_.size();
   bcList_.resize(oldLength+numNodes);
   const BCRecord** bcListPtr = &bcList_[0];
 
@@ -89,7 +89,7 @@ void BCManager::addBCRecords(int idType, int numNodes, const GlobalID* nodeIDs,
     beta[ii] = 0.0;
   }
 
-  int oldLength = bcList_.size();
+  size_t oldLength = bcList_.size();
   bcList_.resize(oldLength+numNodes);
   const BCRecord** bcListPtr = &bcList_[0];
 
@@ -122,7 +122,7 @@ int BCManager::finalizeBCEqns(fei::VectorSpace& vecSpace,
     ERReturn(-1);
   }
 
-  int numBCs = getNumBCs();
+  size_t numBCs = getNumBCs();
   std::vector<const BCRecord*>& BCs = getBCRecords();
 
   fei::SharedPtr<fei::Reducer> reducer = matrix.getMatrixGraph()->getReducer();
@@ -145,7 +145,7 @@ int BCManager::finalizeBCEqns(fei::VectorSpace& vecSpace,
     for(int ii=0; ii<3; ++ii) cols[ii] = ii;
   }
 
-  for(int i=0; i<numBCs; i++) {
+  for(unsigned i=0; i<numBCs; i++) {
     const BCRecord& bc = *(BCs[i]);
 
     int fieldID = bc.getFieldID();
@@ -207,7 +207,7 @@ int BCManager::finalizeBCEqns(NodeDatabase& nodeDB,
     ERReturn(-1);
   }
 
-  int numBCs = getNumBCs();
+  size_t numBCs = getNumBCs();
   std::vector<const BCRecord*>& BCs = getBCRecords();
 
   int cols[3];
@@ -216,7 +216,7 @@ int BCManager::finalizeBCEqns(NodeDatabase& nodeDB,
   //carry the arbitrary column-indices 0,1,2.
   for(int ii=0; ii<3; ii++) cols[ii] = ii;
 
-  for(int i=0; i<numBCs; i++) {
+  for(unsigned i=0; i<numBCs; i++) {
     const BCRecord& bc = *(BCs[i]);
 
     NodeDescriptor* node = NULL;
@@ -262,21 +262,21 @@ int BCManager::consolidateBCs()
   // simply appended to the list as BCs came in from the application, so they
   // are in "order").
   //
-  // If the duplicate records are imposing natural or mixed BCs on the node/field,
-  // then the alpha/beta/gamma contributions are simply added together in the
-  // BCRecord that is kept.
+  // If the duplicate records are imposing natural or mixed BCs on the
+  // node/field, then the alpha/beta/gamma contributions are simply added
+  // together in the BCRecord that is kept.
   //
   // If one record imposes an essential BC on a node/field and another record
   // imposes a natural or mixed BC on a node/field, then the essential BC is
   // kept and the natural/mixed is discarded.
   //
-  int numBCs = getNumBCs();
+  size_t numBCs = getNumBCs();
   if (numBCs == 0) return(0);
 
   std::vector<const BCRecord*> consolidatedList;
   consolidatedList.reserve(numBCs);
 
-  for(int i=0; i<numBCs; i++) {
+  for(unsigned i=0; i<numBCs; i++) {
     BCRecord* lastBC = const_cast<BCRecord*>(bcList_[i]);
 
     const BCRecord** listdata = &consolidatedList[0];
@@ -286,8 +286,8 @@ int BCManager::consolidateBCs()
 				      consolidatedList.size(), insertPoint);
 
     if (index >= 0) {
-      //lastBC specifies the same nodeID/fieldID pair as a BCRecord that's already
-      //in the consolidated list.
+      //lastBC specifies the same nodeID/fieldID pair as a BCRecord that's
+      //already in the consolidated list.
       BCRecord* bc = const_cast<BCRecord*>(consolidatedList[index]);
 
       double* bc_alpha = const_cast<double*>(bc->pointerToAlpha());
@@ -335,7 +335,7 @@ int BCManager::consolidateBCs()
 }
 
 //==============================================================================
-int BCManager::getNumBCs()
+size_t BCManager::getNumBCs()
 {
   return( bcList_.size() );
 }

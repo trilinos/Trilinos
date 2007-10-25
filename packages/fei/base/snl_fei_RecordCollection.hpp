@@ -72,7 +72,7 @@ namespace snl_fei {
     int setOwners_lowestSharing(fei::SharedIDs* sharedIDs);
 
     /** Query the number of records in this collection */
-    int getNumRecords()
+    size_t getNumRecords()
       {
 	return( records_.size() );
       }

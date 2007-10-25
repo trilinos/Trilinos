@@ -52,7 +52,7 @@ namespace fei {
 	std::vector<int>& tmpInt = commUtilsBase.commCore_->tmpIntData_;
 	tmpInt.assign(numProcs, 0);
 
-	int len = sendbuf.size();
+	size_t len = sendbuf.size();
 	int* tmpBuf = &tmpInt[0];
 
 	recvLengths.resize(numProcs);

@@ -103,7 +103,7 @@ class BlockDescriptor {
    int getNumElements() {return(numElements_);}
    void setNumElements(int numElems) {numElements_ = numElems;}
    
-   int getNumElemDofFieldsPerElement() {return(elemDofFieldIDs_.size());}
+   size_t getNumElemDofFieldsPerElement() {return(elemDofFieldIDs_.size());}
    int setElemDofFieldIDs(int numFields, const int* fieldIDs);
    std::vector<int>& getElemDofFieldIDs() { return(elemDofFieldIDs_); }
 

@@ -81,7 +81,7 @@ SSMat& SSMat::operator=(const SSMat& src)
 
   int alloclen = rows_->allocatedLength();
   if (alloclen > rows_->length()) {
-    SSVec** rowsPtr = rows_->dataPtr();
+    rowsPtr = rows_->dataPtr();
     for(int j=rows_->length(); j<alloclen; ++j) {
       rowsPtr[j] = NULL;
     }
@@ -583,7 +583,7 @@ int SSMat::matTransVec(SSVec& inVec, SSVec& result)
       int col = indPtr[j];
       double coef = coefPtr[j] * inVecCoef;
 
-      int index = snl_fei::binarySearch(col, resultIndicesPtr,
+      index = snl_fei::binarySearch(col, resultIndicesPtr,
                                         resultIndLen, insertPoint);
       if (index >= 0) resultCoefsPtr[index] += coef;
       else {

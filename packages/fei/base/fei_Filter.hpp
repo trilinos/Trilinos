@@ -56,23 +56,23 @@ class Filter {
                    const double *const *beta,  
                    const double *const *gamma) = 0;
 
-   virtual int sumInElem(GlobalID elemBlockID,
-			 GlobalID elemID,
-			 const GlobalID* elemConn,
-			 const double* const* elemStiffness,
-			 const double* elemLoad,
-			   int elemFormat) { return(0); }
+   virtual int sumInElem(GlobalID /*elemBlockID*/,
+			 GlobalID /*elemID*/,
+			 const GlobalID* /*elemConn*/,
+			 const double* const* /*elemStiffness*/,
+			 const double* /*elemLoad*/,
+			   int /*elemFormat*/) { return(0); }
 
-   virtual int sumInElemMatrix(GlobalID elemBlockID,
-			       GlobalID elemID,
-			       const GlobalID* elemConn,
-			       const double* const* elemStiffness,
-			       int elemFormat) { return(0); }
+   virtual int sumInElemMatrix(GlobalID /*elemBlockID*/,
+			       GlobalID /*elemID*/,
+			       const GlobalID* /*elemConn*/,
+			       const double* const* /*elemStiffness*/,
+			       int /*elemFormat*/) { return(0); }
 
-   virtual int sumInElemRHS(GlobalID elemBlockID,
-			    GlobalID elemID,
-			    const GlobalID* elemConn,
-			    const double* elemLoad) { return(0); }
+   virtual int sumInElemRHS(GlobalID /*elemBlockID*/,
+			    GlobalID /*elemID*/,
+			    const GlobalID* /*elemConn*/,
+			    const double* /*elemLoad*/) { return(0); }
 
     virtual int loadCRMult(int CRMultID, 
                    int numCRNodes,
@@ -89,24 +89,24 @@ class Filter {
                   double CRValue,
                   double penValue) = 0;
 
-   virtual int sumIntoMatrix(int patternID,
-			     const int* rowIDTypes,
-			     const GlobalID* rowIDs,
-			     const int* colIDTypes,
-			     const GlobalID* colIDs,
-			     const double* const* matrixEntries) { return(0); }
+   virtual int sumIntoMatrix(int /*patternID*/,
+			     const int* /*rowIDTypes*/,
+			     const GlobalID* /*rowIDs*/,
+			     const int* /*colIDTypes*/,
+			     const GlobalID* /*colIDs*/,
+			     const double* const* /*matrixEntries*/) { return(0); }
 
-   virtual int sumIntoRHS(int patternID,
-		  const int* rowIDTypes,
-		  const GlobalID* rowIDs,
-		  const double* vectorEntries) { return(0); }
+   virtual int sumIntoRHS(int /*patternID*/,
+		  const int* /*rowIDTypes*/,
+		  const GlobalID* /*rowIDs*/,
+		  const double* /*vectorEntries*/) { return(0); }
 
-   virtual int putIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     const double* const* matrixEntries) { return(0); }
+   virtual int putIntoMatrix(int /*patternID*/,
+		     const int* /*rowIDTypes*/,
+		     const GlobalID* /*rowIDs*/,
+		     const int* /*colIDTypes*/,
+		     const GlobalID* /*colIDs*/,
+		     const double* const* /*matrixEntries*/) { return(0); }
 
    virtual int getFromMatrix(int patternID,
 		     const int* rowIDTypes,
@@ -127,10 +127,10 @@ class Filter {
 		  const GlobalID* IDs,
 		  const double* rhsEntries) = 0;
 
-   virtual int putIntoRHS(int patternID,
-		  const int* rowIDTypes,
-                  const GlobalID* rowIDs,
-                  const double* vectorEntries) { return(0); }
+   virtual int putIntoRHS(int /*patternID*/,
+		  const int* /*rowIDTypes*/,
+                  const GlobalID* /*rowIDs*/,
+                  const double* /*vectorEntries*/) { return(0); }
 
    virtual int getFromRHS(int patternID,
 		  const int* rowIDTypes,

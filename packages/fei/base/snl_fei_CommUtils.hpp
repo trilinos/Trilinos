@@ -9,10 +9,11 @@
 #ifndef _snl_fei_CommUtils_hpp_
 #define _snl_fei_CommUtils_hpp_
 
-#include <snl_fei_fwd.hpp>
-#include <fei_mpi.h>
-#include <snl_fei_Utils.hpp>
-#include <fei_CommUtilsBase.hpp>
+#include "snl_fei_fwd.hpp"
+#include "fei_mpi.h"
+#include "snl_fei_Utils.hpp"
+#include "fei_CommUtilsBase.hpp"
+#include "fei_TemplateUtils.hpp"
 
 namespace snl_fei {
 
@@ -215,54 +216,7 @@ int snl_fei::CommUtils<T>::Allgatherv(std::vector<T>& sendbuf,
 {
   if (inErrorState_) return(-1);
 
-#ifdef FEI_SER
-  //If we're in serial mode, just copy sendbuf to recvbuf and return.
-
-  recvbuf = sendbuf;
-  recvLengths.resize(1);
-  recvLengths[0] = sendbuf.size();
-#else
-
-  try {
-
-  MPI_Datatype mpi_dtype = fei::mpiTraits<T>::mpi_type();
-
-  std::vector<int>& tmpInt = commCore_->tmpIntData_;
-  tmpInt.assign(numProcs_, 0);
-
-  size_t len = sendbuf.size();
-  int* tmpBuf = &tmpInt[0];
-
-  recvLengths.resize(numProcs_);
-
-  CHK_MPI( MPI_Allgather(&len, 1, MPI_INT, &recvLengths[0], 1, MPI_INT,
-                         comm_) );
-
-  int displ = 0;
-  for(int i=0; i<numProcs_; i++) {
-    tmpBuf[i] = displ;
-    displ += recvLengths[i];
-  }
-
-  if (displ == 0) {
-    recvbuf.resize(0);
-    return(0);
-  }
-
-  recvbuf.resize(displ);
-
-  CHK_MPI( MPI_Allgatherv(&sendbuf[0], (int)len, mpi_dtype,
-                          &recvbuf[0], &recvLengths[0], tmpBuf,
-                          mpi_dtype, comm_) );
-
-  }
-  catch(fei::Exception& exc) {
-    FEI_CERR << exc.what() << FEI_ENDL;
-    return(-1);
-  }
-#endif
-
-  return(0);
+  return( fei::Allgatherv<T>(comm_, sendbuf, recvLengths, recvbuf) );
 }
 
 //----------------------------------------------------------------------------

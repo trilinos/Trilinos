@@ -377,10 +377,10 @@ void execute_unit_tests(const std::string& path,
   //the array running the tests on each class instance.
 
   testers.push_back(fei::SharedPtr<tester>(new test_misc(comm)));
+  testers.push_back(fei::SharedPtr<tester>(new test_CommUtils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Utils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Set(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Reducer(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_CommUtils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Database(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_EqnBuffer(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_EqnCommMgr(comm)));
