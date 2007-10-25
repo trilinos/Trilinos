@@ -30,7 +30,8 @@
 
 %define %thyra_docstring
 "
-PyTrilinos.Thyra is the python interface to Trilinos package Thyra:
+PyTrilinos.Thyra is the python interface to the Trilinos abstract
+interface package Thyra:
 
     http://trilinos.sandia.gov/packages/thyra
 

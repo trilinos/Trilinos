@@ -30,36 +30,11 @@
 
 %define %ifpack_docstring
 "
-PyTrilinos.IFPACK is the python interface to Trilinos package IFPACK:
+PyTrilinos.Komplex is the python interface to the Trilinos complex
+linear algebra package Komplex:
 
-    http://trilinos.sandia.gov/packages/ifpack
+    http://trilinos.sandia.gov/packages/komplex
 
-The purpose of IFPACK is to provide incomplete foctorization
-preconditioners to Trilinos.  Note that the C++ version of IFPACK uses
-the prefix 'Ifpack_' which has been stripped from the python version.
-
-IFPACK provides the following user-level classes:
-
-    * Factory         - A factory for creating IFPACK preconditioners
-    * Preconditioner  - Pure virtual base class for defining interface
-    * IC              - Incomplete Cholesky preconditioner
-    * ICT             - Incomplete Cholesky preconditioner w/threshold
-    * ILU             - Incomplete lower/upper preconditioner
-    * ILUT            - Incomplete lower/upper preconditioner w/threshold
-    * PointRelaxation - Point relaxation predonditioner
-    * Amesos          - Use Amesos factorizations as preconditioners
-
-and functions:
-
-    * AnalyzeMatrix          - Analyze the basic properties of a matrix
-    * AnalyzeMatrixElements  - Analyze the distribution of values of a matrix
-    * AnalyzeVectorElements  - Analyze the distribution of values of a vector
-    * PrintSparsity          - Create PS file with sparsity pattern of matrix
-
-For examples of usage, please consult the following scripts in the
-example subdirectory of the PyTrilinos package:
-
-    * exIFPACK.py
 "
 %enddef
 

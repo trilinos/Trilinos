@@ -30,7 +30,8 @@
 
 %define %galeri_docstring
 "
-PyTrilinos.Galeri is the python interface to Trilinos package Galeri:
+PyTrilinos.Galeri is the python interface to the Trilinos example
+matrix package Galeri:
 
     http://trilinos.sandia.gov/packages/galeri
 

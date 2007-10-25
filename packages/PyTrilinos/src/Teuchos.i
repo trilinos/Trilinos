@@ -30,8 +30,8 @@
 
 %define %teuchos_docstring
 "
-PyTrilinos.Teuchos is the python interface to Trilinos package
-Teuchos:
+PyTrilinos.Teuchos is the python interface to the Trilinos tools and
+utilities package Teuchos:
 
     http://trilinos.sandia.gov/packages/teuchos
 

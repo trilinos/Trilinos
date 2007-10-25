@@ -30,7 +30,8 @@
 
 %define %ml_docstring
 "
-PyTrilinos.ML is the python interface to Trilinos package ML/MLAPI:
+PyTrilinos.ML is the python interface to the Trilinos multi-level
+preconditioner package ML/MLAPI:
 
     http://trilinos.sandia.gov/packages/ml
 

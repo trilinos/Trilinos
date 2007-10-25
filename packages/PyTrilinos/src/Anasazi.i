@@ -32,8 +32,8 @@
 // string
 %define %anasazi_docstring
 "
-PyTrilinos.Anasazi is the python interface to Trilinos package
-Anasazi:
+PyTrilinos.Anasazi is the python interface to the Trilinos eigensolver
+package Anasazi:
 
     http://trilinos.sandia.gov/packages/anasazi
 
@@ -53,6 +53,7 @@ names with concrete Epetra implementations:
     * StatusTest
     * StatusTestCombo
     * StatusTestMaxIters
+    * StatusTestOrderedResNorm
     * StatusTestOutput
     * StatusTestResNorm
     * OrthoManager
@@ -148,6 +149,7 @@ package:
 #include "AnasaziStatusTest.hpp"
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
+#include "AnasaziStatusTestOrderedResNorm.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziOrthoManager.hpp"
@@ -327,6 +329,11 @@ namespace std { struct ostream; }
 ////////////////////////////////////////
 %include "AnasaziStatusTestMaxIters.hpp"
 
+//////////////////////////////////////////////
+// Anasazi StatusTestOrderedResNorm support //
+//////////////////////////////////////////////
+%include "AnasaziStatusTestOrderedResNorm.hpp"
+
 //////////////////////////////////////
 // Anasazi StatusTestOutput support //
 //////////////////////////////////////
@@ -429,6 +436,8 @@ Anasazi::MultiVecTraits< double,
   Anasazi::StatusTestCombo< double, Epetra_MultiVector, Epetra_Operator >;
 %template (StatusTestMaxItersEpetra)
   Anasazi::StatusTestMaxIters< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestOrderedResNormEpetra)
+  Anasazi::StatusTestOrderedResNorm< double, Epetra_MultiVector, Epetra_Operator >;
 %template (StatusTestOutputEpetra)
   Anasazi::StatusTestOutput< double, Epetra_MultiVector, Epetra_Operator >;
 %template (StatusTestResNormEpetra)
@@ -508,6 +517,7 @@ def ClassName(*args):
 %anasazi_factory(StatusTest              )
 %anasazi_factory(StatusTestCombo         )
 %anasazi_factory(StatusTestMaxIters      )
+%anasazi_factory(StatusTestOrderedResNorm)
 %anasazi_factory(StatusTestOutput        )
 %anasazi_factory(StatusTestResNorm       )
 %anasazi_factory(OrthoManager            )

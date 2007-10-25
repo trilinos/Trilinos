@@ -30,8 +30,8 @@
 
 %define %aztecoo_docstring
 "
-PyTrilinos.AztecOO is the python interface to Trilinos package
-AztecOO:
+PyTrilinos.AztecOO is the python interface to the Trilinos iterative
+linear solver package AztecOO:
 
     http://trilinos.sandia.gov/packages/aztecoo
 

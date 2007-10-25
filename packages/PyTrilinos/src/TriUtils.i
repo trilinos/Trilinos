@@ -30,7 +30,8 @@
 
 %define %triutils_docstring
 "
-PyTrilinos.TriUtils is the python interface to Trilinos package TriUtils:
+PyTrilinos.TriUtils is the python interface to the Trilinos utilities
+package TriUtils:
 
     http://trilinos.sandia.gov/packages/triutils
 

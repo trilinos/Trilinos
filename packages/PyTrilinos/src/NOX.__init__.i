@@ -30,7 +30,8 @@
 
 %define %nox_docstring
 "
-PyTrilinos.NOX is the python interface to Trilinos package NOX:
+PyTrilinos.NOX is the python interface to the Trilinos nonlinear
+solver package NOX:
 
     http://trilinos.sandia.gov/packages/nox
 

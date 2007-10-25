@@ -30,8 +30,8 @@
 
 %define %epetraext_docstring
 "
-PyTrilinos.EpetraExt is the python interface to Trilinos package
-EpetraExt:
+PyTrilinos.EpetraExt is the python interface to the Trilinos linear
+algebra services extension package EpetraExt:
 
     http://trilinos.sandia.gov/packages/epetraext
 

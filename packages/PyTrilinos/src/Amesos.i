@@ -30,7 +30,8 @@
 
 %define %amesos_docstring
 "
-PyTrilinos.Amesos is the python interface to Trilinos package Amesos:
+PyTrilinos.Amesos is the python interface to the Trilinos direct
+linear solver package Amesos:
 
     http://trilinos.sandia.gov/packages/amesos
 

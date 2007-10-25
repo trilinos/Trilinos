@@ -30,7 +30,8 @@
 
 %define %loca_docstring
 "
-PyTrilinos.LOCA is the python interface to Trilinos package LOCA:
+PyTrilinos.LOCA is the python interface to the Trilinos continuation
+algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 

@@ -30,7 +30,8 @@
 
 %define %ifpack_docstring
 "
-PyTrilinos.IFPACK is the python interface to Trilinos package IFPACK:
+PyTrilinos.IFPACK is the python interface to the Trilinos
+preconditioner package IFPACK:
 
     http://trilinos.sandia.gov/packages/ifpack
 

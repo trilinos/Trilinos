@@ -30,7 +30,8 @@
 
 %define %epetra_docstring
 "
-PyTrilinos.Epetra is the python interface to Trilinos package Epetra:
+PyTrilinos.Epetra is the python interface to the Trilinos linear
+algebra services package Epetra:
 
     http://trilinos.sandia.gov/packages/epetra
 
