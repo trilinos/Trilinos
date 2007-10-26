@@ -5,16 +5,22 @@ SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
 FIND_LIBRARY(BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
 FIND_LIBRARY(LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
 
-# Setup configuration options
 # Fortran name mangling
-IF(WIN32)
+IF(CYGWIN)
+	SET(F77_FUNC "(name,NAME) name ## _")
+	SET(F77_FUNC_ "(name,NAME) name ## __")
+ELSEIF(WIN32)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) NAME")
-ELSE(WIN32)
+ELSE(CYGWIN)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## _")
-ENDIF(WIN32)
+ENDIF(CYGWIN)
 
+# Setup configuration options 
+# TODO: these and others in Epetra_config.h.in should be handled
+# properly. Currently, this does not seem to be too much to assume,
+# but you never know.
 SET(HAVE_CASSERT TRUE)
 SET(HAVE_CMATH TRUE)
 SET(HAVE_CSTDIO TRUE)
