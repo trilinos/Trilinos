@@ -44,6 +44,7 @@ ACLOCAL_AMFLAGS = -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
+	Trilinos_version.h \
 	commonTools/buildTools/strip_dup_incl_paths.pl \
 	commonTools/buildTools/strip_dup_libs.pl \
 	commonTools/test/coverage/README \
@@ -111,13 +112,14 @@ SUBDIRS = packages
 ## #######################################################################
 
 install-exec-hook:	
+	cp $(top_srcdir)/Trilinos_version.h $(exec_prefix)/include/. ;
 	cp $(top_srcdir)/commonTools/buildTools/strip_dup_incl_paths.pl $(exec_prefix)/include/. ;
 	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(exec_prefix)/include/.
 
 uninstall-hook:
+	rm -f  $(exec_prefix)/include/Trilinos_version.h
 	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl
 	rm -f $(exec_prefix)/include/strip_dup_libs.pl
-
 
 #
 # The below targets allow you to use the new
