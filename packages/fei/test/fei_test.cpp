@@ -484,7 +484,7 @@ int split_four_procs_into_two_groups(MPI_Comm comm,
     return(-1);
   }
 
-  int* procs = new int[numProcs];
+  std::vector<int> procs(numProcs);
   for(int i=0; i<numProcs; ++i) {
     procs[i] = i;
   }
@@ -495,8 +495,8 @@ int split_four_procs_into_two_groups(MPI_Comm comm,
   MPI_Group group;
   MPI_Comm_group(comm, &group);
 
-  MPI_Group_incl(group, newgroup1_size, procs, &newgroup1);
-  MPI_Group_incl(group, newgroup2_size, procs+midpoint, &newgroup2);
+  MPI_Group_incl(group, newgroup1_size, &procs[0], &newgroup1);
+  MPI_Group_incl(group, newgroup2_size, &procs[0]+midpoint, &newgroup2);
 
   MPI_Comm_create(comm, newgroup1, &newcomm1);
   MPI_Comm_create(comm, newgroup2, &newcomm2);

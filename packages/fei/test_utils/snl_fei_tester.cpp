@@ -650,15 +650,11 @@ int snl_fei_tester::save_multiplier_soln(DataReader& data, fei::Vector* vec,
 
    delete [] globalNumCRs;
 
-  int* crList = numLocalCRs > 0 ? new int[numLocalCRs] : NULL;
-
-  if (numLocalCRs > 0 && crList == NULL) {
-    ERReturn(-1);
-  }
+  std::vector<int> crList(numLocalCRs);
 
   int checkNum = 0;
   int err = vecSpace_->getOwnedAndSharedIDs(idTypes_[constraintTypeOffset_],
-				    numLocalCRs, crList, checkNum);
+				    numLocalCRs, &crList[0], checkNum);
   if (err != 0) {
     ERReturn(-1);
   }

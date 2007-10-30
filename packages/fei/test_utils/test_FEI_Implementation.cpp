@@ -140,7 +140,7 @@ int test_FEI_Implementation::test1()
     osstr << "debugOutput " << path_;
     std::string str = osstr.str();
     
-    params[1] = new char[str.size()];
+    params[1] = new char[str.size()+1];
     strcpy(params[1], str.c_str());
   }
 
@@ -347,7 +347,7 @@ int test_FEI_Implementation::test2()
     osstr << "debugOutput " << path_;
     std::string str = osstr.str();
     
-    params[1] = new char[str.size()];
+    params[1] = new char[str.size()+1];
     strcpy(params[1], str.c_str());
   }
 

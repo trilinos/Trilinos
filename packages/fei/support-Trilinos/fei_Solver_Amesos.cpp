@@ -147,6 +147,7 @@ int Solver_Amesos::solve(fei::LinearSystem* linearSystem,
   }
 
   amesos_solver_->Solve();
+  status = 0;
 
   return(0);
 }
