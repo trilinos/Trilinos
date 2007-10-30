@@ -9,6 +9,8 @@
 #ifndef _feitester_hpp_
 #define _feitester_hpp_
 
+#include <string>
+
 /**
    A test "harness" for fei implementations. This interface is intended to be
    specialized by more specific test harnesses that exercise various specific
@@ -29,6 +31,7 @@
 */
 class feitester {
  public:
+  feitester() : path_() {}
   virtual ~feitester(){}
 
   /** Method to obtain a name describing this test.
@@ -46,6 +49,15 @@ class feitester {
   virtual void dumpMatrixFiles() = 0;
 
   virtual void setParameter(const char* param) = 0;
+
+  void setPath(const std::string& path)
+  { path_ = path; }
+
+  void setPath(const char* path)
+  { path_ = path; }
+
+ protected:
+  std::string path_;
 };
 
 #endif // _feitester_hpp_

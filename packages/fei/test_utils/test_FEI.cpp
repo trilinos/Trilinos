@@ -158,7 +158,6 @@ int test_FEI::test1()
     std::string fullCheckFile = fully_qualified_name(checkFile);
     data_reader->checkFileName_ = fullCheckFile;
 
-
     //ok, all the data is in the 'data' object, so we're ready to start
     //handing it all over to an instantiation of the FEI.
 
@@ -178,6 +177,8 @@ int test_FEI::test1()
       ERReturn(-1);
     }
   }
+
+  fei_tester->setPath(path_);
 
   int errCode = fei_tester->testInitialization();
   if (errCode < 0) {

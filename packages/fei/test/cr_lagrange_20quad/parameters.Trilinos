@@ -1,5 +1,3 @@
-parameters
-8
 FEI_OUTPUT_LEVEL MATRIX_FILES
 outputLevel 2
 debugOutput .
@@ -8,4 +6,3 @@ AZ_precond  AZ_none
 AZ_scaling  AZ_none
 AZ_max_iter 100
 AZ_tol      1.e-8
-

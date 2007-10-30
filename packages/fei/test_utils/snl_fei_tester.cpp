@@ -78,6 +78,10 @@ int snl_fei_tester::testInitialization()
   fei::ParameterSet paramset;
   fei::utils::parse_strings(stdstrings, " ", paramset);
 
+  if (!path_.empty()) {
+    paramset.add(fei::Param("debugOutput", path_.c_str()));
+  }
+
   factory_->parameters(paramset);
 
   vecSpace_ = factory_->createVectorSpace(comm_, NULL);
