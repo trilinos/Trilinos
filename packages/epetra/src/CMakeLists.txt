@@ -1,7 +1,5 @@
 OPTION(BUILD_SHARED_LIBS OFF)
 
-SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
-
 FIND_LIBRARY(BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
 FIND_LIBRARY(LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
 
@@ -186,6 +184,22 @@ IF(ENABLE_MPI)
 
 	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ENDIF(ENABLE_MPI)
+
+IF(ENABLE_TESTS)
+    INCLUDE_DIRECTORIES(${epetra_SOURCE_DIR}/test/src)
+
+	SET(HEADERS
+		${HEADERS}
+        ${epetra_SOURCE_DIR}/test/src/Epetra_test_functions.h
+        ${epetra_SOURCE_DIR}/test/src/Epetra_matrix_data.h
+    )
+
+	SET(SOURCES
+		${SOURCES}
+        ${epetra_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
+        ${epetra_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
+    )
+ENDIF(ENABLE_TESTS)
 
 ADD_LIBRARY(epetra_fortran ${FORTRAN_SOURCES})
 
