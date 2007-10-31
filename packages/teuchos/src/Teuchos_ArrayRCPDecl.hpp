@@ -26,12 +26,17 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef TEUCHOS_ARRAY_RCP_DECL_HPP
 #define TEUCHOS_ARRAY_RCP_DECL_HPP
 
+
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Exceptions.hpp"
+
 
 namespace Teuchos {
+
 
 /** \brief Array reference-counted pointer class.
  *
@@ -65,6 +70,19 @@ public:
 
   //! @name Public types 
   //@{
+
+  /** \brief . */
+  typedef std::random_access_iterator_tag iterator_category;
+  /** \brief . */
+  typedef	T* iterator_type;
+  /** \brief . */
+  typedef	T value_type;
+  /** \brief . */
+  typedef T& reference; 
+  /** \brief . */
+  typedef T* pointer;
+  /** \brief . */
+  typedef	ptrdiff_t difference_type;
 
 	/** \brief . */
 	typedef T	element_type;
@@ -344,7 +362,7 @@ public:
 	/** \brief Return the number of <tt>ArrayRCP<></tt> objects that have a reference
 	 * to the underlying pointer that is being shared.
 	 *
-	 * @return  If <tt>this->get() == NULL</tt> then this function returns 0.
+	 * \returns  If <tt>this->get() == NULL</tt> then this function returns 0.
 	 * Otherwise, this function returns <tt>> 0</tt>.
 	 */
 	int count() const;
@@ -425,7 +443,7 @@ public:
 	 * <li><tt>this->has_ownership() == false</tt>
 	 * </ul>
 	 *
-	 * @return Returns the value of <tt>this->get()</tt>
+	 * \returns Returns the value of <tt>this->get()</tt>
 	 */
 	T* release();
 
@@ -515,7 +533,8 @@ public:
 
 };	// end class ArrayRCP<...>
 
-/** \brief Traits specialization.
+
+/** \brief Traits specialization for ArrayRCP.
  *
  * \relates ArrayRCP
  */
@@ -524,6 +543,18 @@ class TypeNameTraits<ArrayRCP<T> > {
 public:
   static std::string name() { return "ArrayRCP<"+TypeNameTraits<T>::name()+">"; }
 };
+
+
+/** \brief Traits specialization for ArrayRCP.
+ *
+ * \relates ArrayRCP
+ */
+template<typename T>
+class NullIteratorTraits<ArrayRCP<T> > {
+public:
+  static ArrayRCP<T> getNull() { return null; }
+};
+
 
 /** \brief Wraps a preallocated array of data with the assumption to call the
  * array version of delete.
@@ -537,6 +568,7 @@ ArrayRCP<T> arcp(
   , bool owns_mem = true
   );
 
+
 /** \brief Wraps a preallocated array of data and uses a templated
  * deallocation strategy object to define deletion .
  *
@@ -548,6 +580,7 @@ ArrayRCP<T> arcp(
   ,typename ArrayRCP<T>::Ordinal size
   , Dealloc_T dealloc, bool owns_mem
   );
+
  
 /** \brief Allocate a new array just given a dimension.
  *
@@ -560,6 +593,7 @@ ArrayRCP<T> arcp(
 template<class T>
 ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
 
+
 /** \brief Wrap an <tt>std::vector<T></tt> object as an
  * <tt>ArrayRCP<T></tt> object.
  *
@@ -568,6 +602,7 @@ ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
 template<class T>
 ArrayRCP<T> arcp( const RCP<std::vector<T> > &v );
 
+
 /** \brief Wrap a <tt>const std::vector<T></tt> object as an
  * <tt>ArrayRCP<const T></tt> object.
  *
@@ -575,6 +610,7 @@ ArrayRCP<T> arcp( const RCP<std::vector<T> > &v );
  */
 template<class T>
 ArrayRCP<const T> arcp( const RCP<const std::vector<T> > &v );
+
 
 /** \brief Get an <tt>std::vector<T></tt> object out of an
  * <tt>ArrayRCP<T></tt> object that was created using the
@@ -585,6 +621,7 @@ ArrayRCP<const T> arcp( const RCP<const std::vector<T> > &v );
 template<class T>
 RCP<std::vector<T> > get_std_vector( const ArrayRCP<T> &ptr );
 
+
 /** \brief Get a <tt>const std::vector<T></tt> object out of an
  * <tt>ArrayRCP<const T></tt> object that was created using the
  * <tt>arcp()</tt> above to wrap the std::vector in the first place.
@@ -594,12 +631,14 @@ RCP<std::vector<T> > get_std_vector( const ArrayRCP<T> &ptr );
 template<class T>
 RCP<const std::vector<T> > get_std_vector( const ArrayRCP<const T> &ptr );
 
+
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
  * \relates ArrayRCP
  */
 template<class T>
 bool is_null( const ArrayRCP<T> &p );
+
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
@@ -608,12 +647,14 @@ bool is_null( const ArrayRCP<T> &p );
 template<class T>
 bool operator==( const ArrayRCP<T> &p, ENull );
 
+
 /** \brief Returns true if <tt>p.get()!=NULL</tt>.
  *
  * \relates ArrayRCP
  */
 template<class T>
 bool operator!=( const ArrayRCP<T> &p, ENull );
+
 
 /** \brief .
  *
@@ -622,12 +663,14 @@ bool operator!=( const ArrayRCP<T> &p, ENull );
 template<class T1, class T2>
 bool operator==( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
+
 /** \brief .
  *
  * \relates ArrayRCP
  */
 template<class T1, class T2>
 bool operator!=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
+
 
 /** \brief .
  *
@@ -636,12 +679,14 @@ bool operator!=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 template<class T1, class T2>
 bool operator<( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
+
 /** \brief .
  *
  * \relates ArrayRCP
  */
 template<class T1, class T2>
 bool operator<=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
+
 
 /** \brief .
  *
@@ -650,12 +695,23 @@ bool operator<=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 template<class T1, class T2>
 bool operator>( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
+
 /** \brief .
  *
  * \relates ArrayRCP
  */
 template<class T1, class T2>
 bool operator>=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
+
+
+/** \brief Returns difference of two ArrayRCP object</tt>.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+typename ArrayRCP<T>::difference_type
+operator-( const ArrayRCP<T> &p1, const ArrayRCP<T> &p2 );
+
 
 /** \brief Reinterpret cast of underlying <tt>ArrayRCP</tt> type from
  * <tt>T1*</tt> to <tt>T2*</tt>.
@@ -671,6 +727,7 @@ bool operator>=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
  */
 template<class T2, class T1>
 ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
+
 
 /** \brief Implicit case the underlying <tt>ArrayRCP</tt> type from
  * <tt>T1*</tt> to <tt>T2*</tt>.
@@ -700,27 +757,30 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
 template<class T2, class T1>
 ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
 
+
 /** \brief Set extra data associated with a <tt>ArrayRCP</tt> object.
  *
- * @param  extra_data
- *               [in] Data object that will be set (copied)
- * @param  name  [in] The name given to the extra data.  The value of
- *               <tt>name</tt> together with the data type <tt>T1</tt> of the
- *               extra data must be unique from any other such data or
- *               the other data will be overwritten.
- * @param  p     [out] On output, will be updated with the input <tt>extra_data</tt>
- * @param  destroy_when
- *               [in] Determines when <tt>extra_data</tt> will be destroyed
- *               in relation to the underlying reference-counted object.
- *               If <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt>
- *               will be deleted before the underlying reference-counted object.
- *               If <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
- *               will be deleted after the underlying reference-counted object.
- * @param  force_unique
- *               [in] Determines if this type and name pair must be unique
- *               in which case if an object with this same type and name
- *               already exists, then an std::exception will be thrown.
- *               The default is <tt>true</tt> for safety.
+ * \param extra_data [in] Data object that will be set (copied)
+ *
+ * \param name [in] The name given to the extra data.  The value of
+ * <tt>name</tt> together with the data type <tt>T1</tt> of the extra data
+ * must be unique from any other such data or the other data will be
+ * overwritten.
+ *
+ * \param p [out] On output, will be updated with the input
+ * <tt>extra_data</tt>
+ *
+ * \param destroy_when [in] Determines when <tt>extra_data</tt> will be
+ * destroyed in relation to the underlying reference-counted object.  If
+ * <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt> will be deleted
+ * before the underlying reference-counted object.  If
+ * <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
+ * will be deleted after the underlying reference-counted object.
+ *
+ * \param force_unique [in] Determines if this type and name pair must be
+ * unique in which case if an object with this same type and name already
+ * exists, then an std::exception will be thrown.  The default is
+ * <tt>true</tt> for safety.
  *
  * If there is a call to this function with the same type of extra
  * data <tt>T1</tt> and same arguments <tt>p</tt> and <tt>name</tt>
@@ -757,31 +817,20 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * \relates ArrayRCP
  */
 template<class T1, class T2>
-void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p
-                     ,EPrePostDestruction destroy_when
-#ifndef __sun
-                     = POST_DESTROY
-#endif
-                     ,bool force_unique
-#ifndef __sun
-                     = true
-#endif
+void set_extra_data(
+  const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p,
+  EPrePostDestruction destroy_when = POST_DESTROY,
+  bool force_unique = true
 	);
-#ifdef __sun
-template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p )
-{ set_extra_data( extra_data, name, p, POST_DESTROY, true ); }
-template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p, EPrePostDestruction destroy_when )
-{ set_extra_data( extra_data, name, p, destroy_when, true ); }
-#endif
+
 
 /** \brief Get a non-const reference to extra data associated with a <tt>ArrayRCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extracted from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extracted from.
  *
- * @return Returns a non-const reference to the extra_data object.
+ * \param name [in] Name of the extra data.
+ *
+ * \returns Returns a non-const reference to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -797,12 +846,14 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, Array
 template<class T1, class T2>
 T1& get_extra_data( ArrayRCP<T2>& p, const std::string& name );
 
+
 /** \brief Get a const reference to extra data associated with a <tt>ArrayRCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extracted from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extracted from.
  *
- * @return Returns a const reference to the extra_data object.
+ * \param name [in] Name of the extra data.
+ *
+ * \returns Returns a const reference to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -824,13 +875,15 @@ T1& get_extra_data( ArrayRCP<T2>& p, const std::string& name );
 template<class T1, class T2>
 const T1& get_extra_data( const ArrayRCP<T2>& p, const std::string& name );
 
+
 /** \brief Get a pointer to non-const extra data (if it exists) associated
  * with a <tt>ArrayRCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extracted from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extracted from.
  *
- * @return Returns a non-const pointer to the extra_data object.
+ * \param name [in] Name of the extra data.
+ *
+ * \returns Returns a non-const pointer to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -850,12 +903,14 @@ const T1& get_extra_data( const ArrayRCP<T2>& p, const std::string& name );
 template<class T1, class T2>
 T1* get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name );
 
+
 /** \brief Get a pointer to const extra data (if it exists) associated with a <tt>ArrayRCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extracted from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extracted from.
  *
- * @return Returns a const pointer to the extra_data object if it exists.
+ * \param name [in] Name of the extra data.
+ *
+ * \returns Returns a const pointer to the extra_data object if it exists.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -881,6 +936,7 @@ T1* get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name );
 template<class T1, class T2>
 const T1* get_optional_extra_data( const ArrayRCP<T2>& p, const std::string& name );
 
+
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *
  * <b>Preconditions:</b><ul>
@@ -892,7 +948,8 @@ const T1* get_optional_extra_data( const ArrayRCP<T2>& p, const std::string& nam
  * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T& get_dealloc( ArrayRCP<T>& p );
+Dealloc_T& get_nonconst_dealloc( const ArrayRCP<T>& p );
+
 
 /** \brief Return a <tt>const</tt> reference to the underlying deallocator object.
  *
@@ -914,6 +971,7 @@ Dealloc_T& get_dealloc( ArrayRCP<T>& p );
 template<class Dealloc_T, class T>
 const Dealloc_T& get_dealloc( const ArrayRCP<T>& p );
 
+
 /** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
  * object if it exists.
  *
@@ -929,7 +987,8 @@ const Dealloc_T& get_dealloc( const ArrayRCP<T>& p );
  * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T* get_optional_dealloc( ArrayRCP<T>& p );
+const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
+
 
 /** \brief Return a pointer to the underlying <tt>const</tt> deallocator
  * object if it exists.
@@ -953,7 +1012,8 @@ Dealloc_T* get_optional_dealloc( ArrayRCP<T>& p );
  * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
+Dealloc_T* get_optional_nonconst_dealloc( const ArrayRCP<T>& p );
+
 
 /** \brief Output stream inserter.
  *
@@ -965,6 +1025,8 @@ const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
 template<class T>
 std::ostream& operator<<( std::ostream& out, const ArrayRCP<T>& p );
 
+
 } // end namespace Teuchos
+
 
 #endif	// TEUCHOS_ARRAY_RCP_DECL_HPP

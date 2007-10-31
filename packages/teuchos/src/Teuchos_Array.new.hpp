@@ -38,28 +38,25 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Teuchos {
 
 
 /** \brief .
- * \relates Array
+ *
+ * \ingroup teuchos_mem_mng_grp
  */
 class InvalidArrayStringRepresentation : public std::logic_error
 {public:InvalidArrayStringRepresentation(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
 
-/** \brief .
- * \relates Array
- */
-class RangeError : public std::range_error
-{public:RangeError(const std::string& what_arg) : std::range_error(what_arg) {}};
-
-
 /** \brief Memory-safe tempalted array class that encapsulates std::vector.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup teuchos_mem_mng_grp
  */
 template<typename T>
 class Array
@@ -80,16 +77,16 @@ public:
   /** \brief . */
   typedef typename std::vector<T>::const_reference const_reference;
 
-//#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-//  /** \brief . */
-//  typedef ArrayRCP<T> iterator;
-//  /** \brief . */
-//  typedef typename ArrayRCP<const T> const_iterator;
-//  /** \brief . */
-//  typedef typename ArrayRCP<T> reverse_iterator;
-//  /** \brief . */
-//  typedef typename ArrayRCP<const T> const_reverse_iterator;
-//#else
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  /** \brief . */
+  typedef ArrayRCP<T> iterator;
+  /** \brief . */
+  typedef ArrayRCP<const T> const_iterator;
+  /** \brief . */
+  typedef std::reverse_iterator<iterator> reverse_iterator;
+  /** \brief . */
+  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+#else
   /** \brief . */
   typedef typename std::vector<T>::iterator iterator;
   /** \brief . */
@@ -98,7 +95,7 @@ public:
   typedef typename std::vector<T>::reverse_iterator reverse_iterator;
   /** \brief . */
   typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
-//#endif
+#endif
 
   /** \brief . */
   typedef typename std::vector<T>::size_type size_type;
@@ -196,7 +193,7 @@ public:
 
   //@}
 
-  /** \name Non-standard functions. */
+  /** \name General non-standard functions. */
   //@{
 
   /** \brief Add a new entry at the end of the array.
@@ -228,34 +225,49 @@ public:
 
   //@}
 
+  /** \name Conversions to and from std::vector. */
+  //@{
+
+  /** \brief Copy constructor from an std::vector. */
+  Array( const std::vector<T> &v );
+
+  /** \brief Explicit copy conversion to an std::vector. */
+  std::vector<T> toVector() const;
+
+  /** \brief Assignment operator for std::vector. */
+  Array& operator=( const std::vector<T> &v );
+
+  //@}
+
 private:
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   RCP<std::vector<T> > vec_;
+  mutable ArrayRCP<T> arcp_;
+  mutable ArrayRCP<const T> carcp_;
 #else
   std::vector<T> vec_;
 #endif
 
-  std::vector<T>& vec()
-    {
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-      return *vec_;
-#else
-      return vec_;
-#endif
-    }
+  std::vector<T>& vec( bool isStructureBeingModified = false );
 
-  const std::vector<T>& vec() const
-    {
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-      return *vec_;
-#else
-      return vec_;
-#endif
-    }
+  const std::vector<T>& vec() const;
+
+  typename std::vector<T>::iterator raw_position( iterator position );
   
   void indexCheckCrash(int i) const;
 
+};
+
+
+/** \brief Traits specialization for RCP.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<typename T>
+class TypeNameTraits<Array<T> > {
+public:
+  static std::string name() { return "Array<"+TypeNameTraits<T>::name()+">"; }
 };
 
 
@@ -497,11 +509,15 @@ inline
 Array<T>::~Array()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEST_FOR_EXCEPTION(
-    vec_.count() > 1, std::runtime_error,
-    "Error, there is some client with a dangling iterator when the object that "
-    "created it is being deleted!"
-    );
+  const std::string errorMsg = 
+    "Error, there must be some client with a dangling reference to this array "
+    "object!  This could be a dangling iterator or a dangling view of something "
+    "else.";
+  TEST_FOR_EXCEPTION( arcp_.count() > 1, DanglingReferenceError, errorMsg );
+  arcp_ = null;
+  TEST_FOR_EXCEPTION( carcp_.count() > 1, DanglingReferenceError, errorMsg );
+  carcp_ = null;
+  TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError, errorMsg );
 #endif
 }
 
@@ -510,7 +526,7 @@ template<typename T>
 inline
 Array<T>& Array<T>::operator=(const Array& x)
 {
-  vec() = x.vec();
+  vec(true) = x.vec();
   return *this;
 }
 
@@ -519,7 +535,7 @@ template<typename T>
 inline
 void Array<T>::assign(size_type n, const value_type& val)
 {
-  vec().assign(n,val);
+  vec(true).assign(n,val);
 }
 
 
@@ -528,7 +544,7 @@ template<typename InputIterator>
 inline
 void Array<T>::assign(InputIterator first, InputIterator last)
 {
-  vec().assign(first,last);
+  vec(true).assign(first,last);
 }
 
 
@@ -537,7 +553,13 @@ inline
 typename Array<T>::iterator
 Array<T>::begin()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if (is_null(arcp_))
+    arcp_ = arcp(vec_);
+  return arcp_;
+#else
   return vec().begin();
+#endif
 }
 
 
@@ -546,7 +568,11 @@ inline
 typename Array<T>::iterator
 Array<T>::end()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return begin() + size();
+#else
   return vec().end();
+#endif
 }
 
 
@@ -555,7 +581,13 @@ inline
 typename Array<T>::const_iterator
 Array<T>::begin() const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if (is_null(carcp_))
+    carcp_ = arcp(rcp_const_cast<const std::vector<T> >(vec_));
+  return carcp_;
+#else
   return vec().begin();
+#endif
 }
 
 
@@ -564,7 +596,11 @@ inline
 typename Array<T>::const_iterator
 Array<T>::end() const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return begin() + size();
+#else
   return vec().end();
+#endif
 }
 
 
@@ -573,7 +609,11 @@ inline
 typename Array<T>::reverse_iterator
 Array<T>::rbegin()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return reverse_iterator(end());
+#else
   return vec().rbegin();
+#endif
 }
 
 
@@ -582,7 +622,11 @@ inline
 typename Array<T>::reverse_iterator
 Array<T>::rend()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return reverse_iterator(begin());
+#else
   return vec().rend();
+#endif
 }
 
 
@@ -591,7 +635,11 @@ inline
 typename Array<T>::const_reverse_iterator
 Array<T>::rbegin() const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return const_reverse_iterator(end());
+#else
   return vec().rbegin();
+#endif
 }
 
 
@@ -600,7 +648,11 @@ inline
 typename Array<T>::const_reverse_iterator
 Array<T>::rend() const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return const_reverse_iterator(begin());
+#else
   return vec().rend();
+#endif
 }
 
 
@@ -627,7 +679,7 @@ inline
 void
 Array<T>::resize(size_type new_size, const value_type& x)
 {
-  vec().resize(new_size,x);
+  vec(true).resize(new_size,x);
 }
 
 
@@ -652,7 +704,7 @@ template<typename T>
 inline
 void Array<T>::reserve(size_type n)
 {
-  vec().reserve(n);
+  vec(true).reserve(n);
 }
 
 
@@ -738,7 +790,7 @@ template<typename T>
 inline
 void Array<T>::push_back(const value_type& x)
 {
-  vec().push_back(x);
+  vec(true).push_back(x);
 }
 
 
@@ -746,7 +798,7 @@ template<typename T>
 inline
 void Array<T>::pop_back()
 {
-  vec().pop_back();
+  vec(true).pop_back();
 }
 
 
@@ -755,7 +807,7 @@ inline
 typename Array<T>::iterator
 Array<T>::insert(iterator position, const value_type& x)
 {
-  return vec().insert(position,x);
+  return vec(true).insert(raw_position(position),x);
 }
 
 
@@ -763,7 +815,7 @@ template<typename T>
 inline
 void Array<T>::insert(iterator position, size_type n, const value_type& x)
 {
-  vec().insert(position,n,x);
+  vec(true).insert(raw_position(position),n,x);
 }
 
 
@@ -772,7 +824,7 @@ template<typename InputIterator>
 inline
 void Array<T>::insert(iterator position, InputIterator first, InputIterator last)
 {
-  vec().insert(position,first,last);
+  vec(true).insert(raw_position(position),first,last);
 }
 
 
@@ -781,7 +833,7 @@ inline
 typename Array<T>::iterator
 Array<T>::erase(iterator position)
 {
-  return vec().erase(position);
+  return vec(true).erase(raw_position(position));
 }
 
 
@@ -790,7 +842,7 @@ inline
 typename Array<T>::iterator
 Array<T>::erase(iterator first, iterator last)
 {
-  return vec().erase(first,last);
+  return vec(true).erase(raw_position(first),raw_position(last));
 }
 
 
@@ -798,7 +850,7 @@ template<typename T>
 inline
 void Array<T>::swap(Array& x)
 {
-  vec().swap(x.vec());
+  vec(true).swap(x.vec());
 }
 
 
@@ -806,7 +858,7 @@ template<typename T>
 inline
 void Array<T>::clear()
 {
-  vec().clear();
+  vec(true).clear();
 }
 
 
@@ -849,6 +901,81 @@ bool Array<T>::hasBoundsChecking()
   return true;
 #else
   return false;
+#endif
+}
+
+
+// Conversions to and from std::vector
+
+
+template<typename T> inline
+Array<T>::Array( const std::vector<T> &v ) :
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  vec_(new std::vector<T>(v))
+#else
+  vec(v)
+#endif
+{}
+
+
+template<typename T> inline
+std::vector<T> Array<T>::toVector() const
+{
+  std::vector<T> v(begin(),end());
+  return v;
+}
+
+
+template<typename T> inline
+Array<T>& Array<T>::operator=( const std::vector<T> &v )
+{
+  vec(true) = v;
+  return *this;
+}
+
+
+// private
+
+
+template<typename T> inline
+std::vector<T>&
+Array<T>::vec( bool isStructureBeingModified )
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if (isStructureBeingModified) {
+    TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError,
+      "Error, Array is being modified while a dangling reference exists!");
+  }
+  return *vec_;
+#else
+  return vec_;
+#endif
+}
+
+
+template<typename T> inline
+const std::vector<T>&
+Array<T>::vec() const
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return *vec_;
+#else
+  return vec_;
+#endif
+}
+
+
+template<typename T> inline
+typename std::vector<T>::iterator
+Array<T>::raw_position( iterator position )
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEUCHOS_ASSERT(
+    begin().get() <= position.get() && position.get() <= end().get()
+    );
+  return vec_->begin() + (position - this->begin());
+#else
+  return position;
 #endif
 }
 

@@ -32,6 +32,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_Assert.hpp"
+
 
 // Temporarily uncomment any or all of these macros to see compilation
 // failures for code that is rightfully not supposed to compile (which is a
@@ -128,6 +130,14 @@ void test_ArrayRCP_iterators(
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; !( itr+1 == ptr ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
+  }
+
+  // Iterator - Iterator
+ 
+  {
+    if(verbose)
+      out << "\nChecking ptr.end() - ptr.begin() == ptr.size() ...\n";
+    TEUCHOS_ASSERT_EQUALITY( ptr.end() - ptr.begin(), ptr.size() );
   }
 
   // Iterator ++

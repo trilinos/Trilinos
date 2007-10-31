@@ -29,11 +29,16 @@
 #ifndef TEUCHOS_RCP_DECL_HPP
 #define TEUCHOS_RCP_DECL_HPP
 
+
 /*! \file Teuchos_RCPDecl.hpp
     \brief Reference-counted pointer class and non-member templated function implementations.
 */
 
+
 #include "Teuchos_any.hpp"
+#include "Teuchos_ENull.hpp"
+#include "Teuchos_NullIteratorTraits.hpp"
+
 
 #ifdef REFCOUNTPTR_INLINE_FUNCS
 #  define REFCOUNTPTR_INLINE inline
@@ -41,28 +46,26 @@
 #  define REFCOUNTPTR_INLINE
 #endif
 
+
 #ifdef TEUCHOS_DEBUG
 #  define TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 #endif
 
+
 namespace Teuchos {
+
 
 namespace PrivateUtilityPack {
   class RCP_node;
 }
 
-/** \brief Used to initialize a <tt>RCP</tt> object to NULL using an
- * implicit conversion!
- *
- * \relates RCP
- */
-enum ENull { null };
 
 /** \brief Used to specify a pre or post destruction of extra data
  *
  * \relates RCP
  */
 enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
+
 
 /** \brief Smart reference counting pointer class for automatic garbage
   collection.
@@ -611,7 +614,8 @@ public: // Bad bad bad
 
 };  // end class RCP<...>
 
-/** \brief Traits specialization.
+
+/** \brief Traits specialization for RCP.
  *
  * \ingroup teuchos_mem_mng_grp
  */
@@ -619,6 +623,17 @@ template<typename T>
 class TypeNameTraits<RCP<T> > {
 public:
   static std::string name() { return "RCP<"+TypeNameTraits<T>::name()+">"; }
+};
+
+
+/** \brief Traits specialization for RCP.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<typename T>
+class NullIteratorTraits<RCP<T> > {
+public:
+  static RCP<T> getNull() { return null; }
 };
 
 
@@ -637,6 +652,7 @@ public:
   void free( T* ptr ) { if(ptr) delete ptr; }
 };
 
+
 /** \brief Deallocator class that uses <tt>delete []</tt> to delete memory
  * allocated uisng <tt>new []</tt>
  *
@@ -651,6 +667,7 @@ public:
   /// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
   void free( T* ptr ) { if(ptr) delete [] ptr; }
 };
+
 
 /** \brief Deallocator subclass that Allows any functor object (including a
  * function pointer) to be used to free an object.
@@ -676,6 +693,7 @@ private:
   DeallocFunctorDelete(); // Not defined and not to be called!
 };
 
+
 /** \brief A simple function used to create a functor deallocator object.
  *
  * \relates DeallocFunctorDelete
@@ -686,6 +704,7 @@ deallocFunctorDelete( DeleteFunctor deleteFunctor )
 {
   return DeallocFunctorDelete<T,DeleteFunctor>(deleteFunctor);
 }
+
 
 /** \brief Deallocator subclass that Allows any functor object (including a
  * function pointer) to be used to free a handle (i.e. pointer to pointer) to
@@ -713,6 +732,7 @@ private:
   DeallocFunctorHandleDelete(); // Not defined and not to be called!
 };
 
+
 /** \brief A simple function used to create a functor deallocator object.
  *
  * \relates DeallocFunctorHandleDelete
@@ -724,15 +744,65 @@ deallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
   return DeallocFunctorHandleDelete<T,DeleteHandleFunctor>(deleteHandleFunctor);
 }
 
+
+/** \brief A deallocator class that wraps a simple value object and delegates
+ * to another deallocator object.
+ *
+ * The type <tt>Embedded</tt> must be a true value object with a default
+ * constructor, a copy constructor, and an assignment operator.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T, class Embedded, class Dealloc>
+class EmbeddedObjDealloc
+{
+public:
+  typedef typename Dealloc::ptr_t ptr_t;
+  EmbeddedObjDealloc(
+    const Embedded &embedded, EPrePostDestruction prePostDestroy,
+    Dealloc dealloc
+    ) : embedded_(embedded), prePostDestroy_(prePostDestroy), dealloc_(dealloc)
+    {}
+  void setObj( const Embedded &embedded ) { embedded_ = embedded; }
+  const Embedded& getObj() const { return embedded_; }
+  Embedded& getNonconstObj() { return embedded_; }
+  void free( T* ptr )
+    {
+      if (prePostDestroy_ == PRE_DESTROY)
+        embedded_ = Embedded();
+      dealloc_.free(ptr);
+      if (prePostDestroy_ == POST_DESTROY)
+        embedded_ = Embedded();
+    }
+private:
+  Embedded embedded_;
+  EPrePostDestruction prePostDestroy_;
+  Dealloc dealloc_;
+  EmbeddedObjDealloc(); // Not defined and not to be called!
+};
+
+
+/** \brief Create a dealocator with an embedded object.
+ *
+ * \relates EmbeddedObjDealloc
+ */
+template<class T, class Embedded >
+EmbeddedObjDealloc<T,Embedded,DeallocDelete<T> >
+embeddedObjDeallocDelete(const Embedded &embedded, EPrePostDestruction prePostDestroy)
+{
+  return EmbeddedObjDealloc<T,Embedded,DeallocDelete<T> >(
+    embedded, prePostDestroy,DeallocDelete<T>());
+}
+
+
 /** \brief Create a <tt>RCP</tt> object properly typed.
  *
- * @param  p  [in] Pointer to an object to be reference counted.
- * @param owns_mem
- *            [in] If <tt>owns_mem==true</tt>  then <tt>delete p</tt>
- *            will be called when the last reference to this object
- *            is removed.  If <tt>owns_mem==false</tt> then nothing
- *            will happen to delete the the object pointed to by
- *            <tt>p</tt> when the last reference is removed.
+ * \param p [in] Pointer to an object to be reference counted.
+ *
+ * \param owns_mem [in] If <tt>owns_mem==true</tt> then <tt>delete p</tt> will
+ * be called when the last reference to this object is removed.  If
+ * <tt>owns_mem==false</tt> then nothing will happen to delete the the object
+ * pointed to by <tt>p</tt> when the last reference is removed.
  *
  * <b>Preconditions:</b><ul>
  * <li> If <tt>owns_mem==true</tt> then <tt>p</tt> must have been
@@ -748,25 +818,20 @@ deallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
  * \relates RCP
  */
 template<class T>
-RCP<T> rcp( T* p, bool owns_mem
-#ifndef __sun
-  = true
-#endif
-  );
-#ifdef __sun // RAB: 20040303: Sun needs to fix their compiler
-template<class T> inline RCP<T> rcp( T* p ) { return rcp(p,true); }
-#endif
+RCP<T> rcp( T* p, bool owns_mem = true );
+
 
 /** \brief Initialize from a raw pointer with a deallocation policy.
  *
- * @param  p       [in] Raw C++ pointer that \c this will represent.
- * @param  dealloc [in] Deallocator policy object (copied by value) that defines
- *                 a function <tt>void Dealloc_T::free(T* p)</tt> that will
- *                 free the underlying object.
- * @param  owns_mem
- *                 [in] If true then <tt>return</tt> is allowed to delete
- *                 the underlying pointer by calling <tt>dealloc.free(p)</tt>.
- *                 when all references have been removed.
+ * \param p [in] Raw C++ pointer that \c this will represent.
+ *
+ * \param dealloc [in] Deallocator policy object (copied by value) that
+ * defines a function <tt>void Dealloc_T::free(T* p)</tt> that will free the
+ * underlying object.
+ *
+ * \param owns_mem [in] If true then <tt>return</tt> is allowed to delete the
+ * underlying pointer by calling <tt>dealloc.free(p)</tt>.  when all
+ * references have been removed.
  *
  * <b>Preconditions:</b><ul>
  * <li> The function <tt>void Dealloc_T::free(T* p)</tt> exists.
@@ -802,12 +867,65 @@ template<class T> inline RCP<T> rcp( T* p ) { return rcp(p,true); }
 template<class T, class Dealloc_T>
 RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 
+
+/* \brief Create an RCP with and also put in an embedded object.
+ *
+ * In this case the embedded object is destroyed (by setting to Embedded())
+ * before the object at <tt>*p</tt> is destroyed.
+ *
+ * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
+ * <tt>getNonconstEmbeddedObject()</tt>.
+ *
+ * \relates RCP
+ */
+template<class T, class Embedded>
+RCP<T>
+rcpWithEmbeddedObjPreDestroy( T* p, const Embedded &embedded, bool owns_mem = true );
+
+
+/* \brief Create an RCP with and also put in an embedded object.
+ *
+ * In this case the embedded object is destroyed (by setting to Embedded())
+ * after the object at <tt>*p</tt> is destroyed.
+ *
+ * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
+ * <tt>getNonconstEmbeddedObject()</tt>.
+ *
+ * \relates RCP
+ */
+template<class T, class Embedded>
+RCP<T>
+rcpWithEmbeddedObjPostDestroy( T* p, const Embedded &embedded, bool owns_mem = true );
+
+
+/* \brief Create an RCP with and also put in an embedded object.
+ *
+ * This function should be called when it is not important when the embedded
+ * object is destroyed (by setting to Embedded()) with respect to when
+ * <tt>*p</tt> is destroyed.
+ *
+ * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
+ * <tt>getNonconstEmbeddedObject()</tt>.
+ *
+ * \relates RCP
+ */
+template<class T, class Embedded>
+RCP<T>
+rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem = true );
+
+
+// 2007/10/25: rabartl: ToDo: put in versions of
+// rcpWithEmbedded[Pre,Post]DestoryWithDealloc(...) that also accept a general
+// deallocator!
+
+
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
  * \relates RCP
  */
 template<class T>
 bool is_null( const RCP<T> &p );
+
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
@@ -816,12 +934,14 @@ bool is_null( const RCP<T> &p );
 template<class T>
 bool operator==( const RCP<T> &p, ENull );
 
+
 /** \brief Returns true if <tt>p.get()!=NULL</tt>.
  *
  * \relates RCP
  */
 template<class T>
 bool operator!=( const RCP<T> &p, ENull );
+
 
 /** \brief Return true if two <tt>RCP</tt> objects point to the same
  * referenced-counted object and have the same node.
@@ -831,6 +951,7 @@ bool operator!=( const RCP<T> &p, ENull );
 template<class T1, class T2>
 bool operator==( const RCP<T1> &p1, const RCP<T2> &p2 );
 
+
 /** \brief Return true if two <tt>RCP</tt> objects do not point to the
  * same referenced-counted object and have the same node.
  *
@@ -838,6 +959,7 @@ bool operator==( const RCP<T1> &p1, const RCP<T2> &p2 );
  */
 template<class T1, class T2>
 bool operator!=( const RCP<T1> &p1, const RCP<T2> &p2 );
+
 
 /** \brief Implicit cast of underlying <tt>RCP</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
@@ -850,6 +972,7 @@ bool operator!=( const RCP<T1> &p1, const RCP<T2> &p2 );
  */
 template<class T2, class T1>
 RCP<T2> rcp_implicit_cast(const RCP<T1>& p1);
+
 
 /** \brief Static cast of underlying <tt>RCP</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
@@ -864,6 +987,7 @@ RCP<T2> rcp_implicit_cast(const RCP<T1>& p1);
 template<class T2, class T1>
 RCP<T2> rcp_static_cast(const RCP<T1>& p1);
 
+
 /** \brief Constant cast of underlying <tt>RCP</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * This function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>) compiles.
@@ -873,12 +997,14 @@ RCP<T2> rcp_static_cast(const RCP<T1>& p1);
 template<class T2, class T1>
 RCP<T2> rcp_const_cast(const RCP<T1>& p1);
 
+
 /** \brief Dynamic cast of underlying <tt>RCP</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
- * @param  p1             [in] The smart pointer casting from
- * @param  throw_on_fail  [in] If <tt>true</tt> then if the cast fails (for <tt>p1.get()!=NULL) then
- *                        a <tt>std::bad_cast</tt> std::exception is thrown with a very informative
- *                        error message.
+ * \param p1 [in] The smart pointer casting from
+ *
+ * \param throw_on_fail [in] If <tt>true</tt> then if the cast fails (for
+ * <tt>p1.get()!=NULL) then a <tt>std::bad_cast</tt> std::exception is thrown
+ * with a very informative error message.
  *
  * <b>Postconditions:</b><ul>
  * <li> If <tt>( p1.get()!=NULL && throw_on_fail==true && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
@@ -908,27 +1034,30 @@ template<class T2, class T1> inline RCP<T2> rcp_dynamic_cast( const RCP<T1>& p1 
 { return rcp_dynamic_cast<T2>(p1,false); }
 #endif
 
+
 /** \brief Set extra data associated with a <tt>RCP</tt> object.
  *
- * @param  extra_data
- *               [in] Data object that will be set (copied)
- * @param  name  [in] The name given to the extra data.  The value of
- *               <tt>name</tt> together with the data type <tt>T1</tt> of the
- *               extra data must be unique from any other such data or
- *               the other data will be overwritten.
- * @param  p     [out] On output, will be updated with the input <tt>extra_data</tt>
- * @param  destroy_when
- *               [in] Determines when <tt>extra_data</tt> will be destoryed
- *               in relation to the underlying reference-counted object.
- *               If <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt>
- *               will be deleted before the underlying reference-counted object.
- *               If <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
- *               will be deleted after the underlying reference-counted object.
- * @param  force_unique
- *               [in] Determines if this type and name pair must be unique
- *               in which case if an object with this same type and name
- *               already exists, then an std::exception will be thrown.
- *               The default is <tt>true</tt> for safety.
+ * \param extra_data [in] Data object that will be set (copied)
+ *
+ * \param name [in] The name given to the extra data.  The value of
+ * <tt>name</tt> together with the data type <tt>T1</tt> of the extra data
+ * must be unique from any other such data or the other data will be
+ * overwritten.
+ *
+ * \param p [out] On output, will be updated with the input
+ * <tt>extra_data</tt>
+ *
+ * \param destroy_when [in] Determines when <tt>extra_data</tt> will be
+ * destoryed in relation to the underlying reference-counted object.  If
+ * <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt> will be deleted
+ * before the underlying reference-counted object.  If
+ * <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
+ * will be deleted after the underlying reference-counted object.
+ *
+ * \param force_unique [in] Determines if this type and name pair must be
+ * unique in which case if an object with this same type and name already
+ * exists, then an std::exception will be thrown.  The default is
+ * <tt>true</tt> for safety.
  *
  * If there is a call to this function with the same type of extra
  * data <tt>T1</tt> and same arguments <tt>p</tt> and <tt>name</tt>
@@ -972,10 +1101,12 @@ void set_extra_data(
   bool force_unique = true
   );
 
+
 /** \brief Get a non-const reference to extra data associated with a <tt>RCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extraced from.
+ *
+ * \param name [in] Name of the extra data.
  *
  * @return Returns a non-const reference to the extra_data object.
  *
@@ -993,10 +1124,12 @@ void set_extra_data(
 template<class T1, class T2>
 T1& get_extra_data( RCP<T2>& p, const std::string& name );
 
+
 /** \brief Get a const reference to extra data associated with a <tt>RCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extraced from.
+ *
+ * \param name [in] Name of the extra data.
  *
  * @return Returns a const reference to the extra_data object.
  *
@@ -1020,11 +1153,13 @@ T1& get_extra_data( RCP<T2>& p, const std::string& name );
 template<class T1, class T2>
 const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
 
+
 /** \brief Get a pointer to non-const extra data (if it exists) associated
  * with a <tt>RCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extraced from.
+ *
+ * \param name [in] Name of the extra data.
  *
  * @return Returns a non-const pointer to the extra_data object.
  *
@@ -1046,10 +1181,13 @@ const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
 template<class T1, class T2>
 T1* get_optional_extra_data( RCP<T2>& p, const std::string& name );
 
-/** \brief Get a pointer to const extra data (if it exists) associated with a <tt>RCP</tt> object.
+
+/** \brief Get a pointer to const extra data (if it exists) associated with a
+ * <tt>RCP</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
- * @param  name [in] Name of the extra data.
+ * \param p [in] Smart pointer object that extra data is being extraced from.
+ *
+ * \param name [in] Name of the extra data.
  *
  * @return Returns a const pointer to the extra_data object if it exists.
  *
@@ -1077,7 +1215,9 @@ T1* get_optional_extra_data( RCP<T2>& p, const std::string& name );
 template<class T1, class T2>
 const T1* get_optional_extra_data( const RCP<T2>& p, const std::string& name );
 
-/** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
+
+/** \brief Return a non-<tt>const</tt> reference to the underlying deallocator
+ * object.
  *
  * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
@@ -1088,27 +1228,23 @@ const T1* get_optional_extra_data( const RCP<T2>& p, const std::string& name );
  * \relates RCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T& get_dealloc( RCP<T>& p );
+Dealloc_T& get_nonconst_dealloc( const RCP<T>& p );
 
-/** \brief Return a <tt>const</tt> reference to the underlying deallocator object.
+
+/** \brief Return a <tt>const</tt> reference to the underlying deallocator
+ * object.
  *
  * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
  *      (throws <tt>std::logic_error</tt>)
  * </ul>
- *
- * Note that the <tt>const</tt> version of this function provides only
- * a very ineffective attempt to avoid accidental changes to the
- * deallocation object.  A client can always just create a new
- * non-<tt>const</tt> <tt>RCP<T></tt> object from any
- * <tt>const</tt> <tt>RCP<T></tt> object and then call the
- * non-<tt>const</tt> version of this function.
  *
  * \relates RCP
  */
 template<class Dealloc_T, class T>
 const Dealloc_T& get_dealloc( const RCP<T>& p );
+
 
 /** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
  * object if it exists.
@@ -1125,7 +1261,8 @@ const Dealloc_T& get_dealloc( const RCP<T>& p );
  * \relates RCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T* get_optional_dealloc( RCP<T>& p );
+Dealloc_T* get_optional_nonconst_dealloc( const RCP<T>& p );
+
 
 /** \brief Return a pointer to the underlying <tt>const</tt> deallocator
  * object if it exists.
@@ -1139,27 +1276,42 @@ Dealloc_T* get_optional_dealloc( RCP<T>& p );
  *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
  *
- * Note that the <tt>const</tt> version of this function provides only
- * a very ineffective attempt to avoid accidental changes to the
- * deallocation object.  A client can always just create a new
- * non-<tt>const</tt> <tt>RCP<T></tt> object from any
- * <tt>const</tt> <tt>RCP<T></tt> object and then call the
- * non-<tt>const</tt> version of this function.
- *
  * \relates RCP
  */
 template<class Dealloc_T, class T>
 const Dealloc_T* get_optional_dealloc( const RCP<T>& p );
 
+
+/** \brief Get a const reference to an embedded object that was set by calling
+ * <tt>rcpWithEmbeddedObjPreDestroy()</tt>,
+ * <tt>rcpWithEmbeddedObjPostDestory()</tt>, or <tt>rcpWithEmbeddedObj()</tt>.
+ *
+ * \relates RCP
+ */
+template<class TOrig, class Embedded, class T>
+const Embedded& getEmbeddedObj( const RCP<T>& p );
+
+
+/** \brief Get a const reference to an embedded object that was set by calling
+ * <tt>rcpWithEmbeddedObjPreDestroy()</tt>,
+ * <tt>rcpWithEmbeddedObjPostDestory()</tt>, or <tt>rcpWithEmbeddedObj()</tt>.
+ *
+ * \relates RCP
+ */
+template<class TOrig, class Embedded, class T>
+Embedded& getNonconstEmbeddedObj( const RCP<T>& p );
+
+
 /** \brief Output stream inserter.
  *
- * The implementation of this function just print pointer addresses and
+ * The implementation of this function just print pointer addresse<s and
  * therefore puts not restrictions on the data types involved.
  *
  * \relates RCP
  */
 template<class T>
 std::ostream& operator<<( std::ostream& out, const RCP<T>& p );
+
 
 /** \brief Print the list of currently active RCP nodes.
  *
@@ -1179,6 +1331,8 @@ std::ostream& operator<<( std::ostream& out, const RCP<T>& p );
  */
 void print_active_RCP_nodes(std::ostream &out);
 
+
 } // end namespace Teuchos
+
 
 #endif  // TEUCHOS_RCP_DECL_HPP

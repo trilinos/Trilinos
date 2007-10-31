@@ -132,7 +132,7 @@ public:
     : RCP_node(has_ownership), ptr_(p), dealloc_(dealloc)
   {}
   //
-  Dealloc_T& get_dealloc() { return dealloc_; }
+  Dealloc_T& get_nonconst_dealloc() { return dealloc_; }
   //
   const Dealloc_T& get_dealloc() const { return dealloc_; }
   //
@@ -190,12 +190,14 @@ namespace Teuchos {
 // /////////////////////////////////////////////////////////////////////////////////
 // Inline member functions for RCP<...>.
 
+
 template<class T>
 inline
 RCP<T>::RCP( ENull )
   : ptr_(NULL)
   , node_(NULL)
 {}
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -204,6 +206,7 @@ RCP<T>::RCP(const RCP<T>& r_ptr)
 {
   if(node_) node_->incr_count();
 }
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -214,6 +217,7 @@ RCP<T>::RCP(const RCP<T2>& r_ptr)
 {
   if(node_) node_->incr_count();
 }
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -379,6 +383,7 @@ typename RCP<T>::node_t* RCP<T>::access_node() const
 // /////////////////////////////////////////////////////////////////////////////////
 // Inline non-member functions for RCP
 
+
 template<class T>
 inline
 Teuchos::RCP<T>
@@ -386,6 +391,7 @@ Teuchos::rcp( T* p, bool owns_mem )
 {
   return RCP<T>(p,owns_mem);
 }
+
 
 template<class T, class Dealloc_T>
 inline
@@ -395,12 +401,44 @@ Teuchos::rcp( T* p, Dealloc_T dealloc, bool owns_mem )
   return RCP<T>(p,dealloc,owns_mem);
 }
 
+
+template<class T, class Embedded>
+Teuchos::RCP<T>
+Teuchos::rcpWithEmbeddedObjPreDestroy(
+  T* p, const Embedded &embedded, bool owns_mem
+  )
+{
+  return rcp(
+    p, embeddedObjDeallocDelete<T>(embedded,PRE_DESTROY), owns_mem
+    );
+}
+
+
+template<class T, class Embedded>
+Teuchos::RCP<T>
+Teuchos::rcpWithEmbeddedObjPostDestroy(
+  T* p, const Embedded &embedded, bool owns_mem
+  )
+{
+  return rcp( p, embeddedObjDeallocDelete<T>(embedded,POST_DESTROY), owns_mem );
+}
+
+
+template<class T, class Embedded>
+Teuchos::RCP<T>
+Teuchos::rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem )
+{
+  return rcpWithEmbeddedObjPostDestroy<T,Embedded>(p,embedded,owns_mem);
+}
+
+
 template<class T>
 REFCOUNTPTR_INLINE
 bool Teuchos::is_null( const RCP<T> &p )
 {
   return p.get() == NULL;
 }
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -542,8 +580,7 @@ const T1* Teuchos::get_optional_extra_data( const RCP<T2>& p, const std::string&
 
 template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
-Dealloc_T&
-Teuchos::get_dealloc( RCP<T>& p )
+Dealloc_T& Teuchos::get_nonconst_dealloc( const RCP<T>& p )
 {
   typedef PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
   p.assert_not_null();
@@ -555,27 +592,26 @@ Teuchos::get_dealloc( RCP<T>& p )
     << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
     << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"
     );
-  return dnode->get_dealloc();
+  return dnode->get_nonconst_dealloc();
 }
 
 template<class Dealloc_T, class T>
 inline
-const Dealloc_T& 
-Teuchos::get_dealloc( const Teuchos::RCP<T>& p )
+const Dealloc_T& Teuchos::get_dealloc( const RCP<T>& p )
 {
-  return get_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
+  return get_nonconst_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
 }
 
 template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
 Dealloc_T*
-Teuchos::get_optional_dealloc( RCP<T>& p )
+Teuchos::get_optional_nonconst_dealloc( const RCP<T>& p )
 {
   p.assert_not_null();
   PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   if(dnode)
-    return &dnode->get_dealloc();
+    return &dnode->get_nonconst_dealloc();
   return NULL;
 }
 
@@ -584,8 +620,25 @@ inline
 const Dealloc_T*
 Teuchos::get_optional_dealloc( const Teuchos::RCP<T>& p )
 {
-  return get_optional_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
+  return get_optional_nonconst_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
 }
+
+
+template<class TOrig, class Embedded, class T>
+const Embedded& Teuchos::getEmbeddedObj( const RCP<T>& p )
+{
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  return get_dealloc<Dealloc_t>(p).getObj();
+}
+
+
+template<class TOrig, class Embedded, class T>
+Embedded& Teuchos::getNonconstEmbeddedObj( const RCP<T>& p )
+{
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  return get_nonconst_dealloc<Dealloc_t>(p).getNonconstObj();
+}
+
 
 template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const RCP<T>& p )

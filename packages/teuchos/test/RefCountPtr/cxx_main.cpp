@@ -223,6 +223,11 @@ int main( int argc, char* argv[] ) {
 	using Teuchos::get_optional_extra_data;
 	using Teuchos::get_dealloc;
 	using Teuchos::get_optional_dealloc;
+  using Teuchos::rcpWithEmbeddedObj;
+  using Teuchos::rcpWithEmbeddedObjPreDestroy;
+  using Teuchos::rcpWithEmbeddedObjPostDestroy;
+  using Teuchos::getEmbeddedObj;
+  using Teuchos::getNonconstEmbeddedObj;
 	using Teuchos::CommandLineProcessor;
 	
 	bool success = true, verbose = true;
@@ -507,9 +512,39 @@ int main( int argc, char* argv[] ) {
 		TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != NULL );
 		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != NULL ); // test const version
 
+		// Test storate extra data as and embedded and then getting it out again
+    
+    {
+      RCP<A> a_ptr  = rcpWithEmbeddedObj(new C,int(-5));
+      const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
+      TEST_FOR_EXCEPT( intRtn1 != -5 );
+      getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
+      const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
+      TEST_FOR_EXCEPT( intRtn2 != -4 );
+    }
+    
+    {
+      RCP<A> a_ptr  = rcpWithEmbeddedObjPreDestroy(new C,int(-5));
+      const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
+      TEST_FOR_EXCEPT( intRtn1 != -5 );
+      getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
+      const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
+      TEST_FOR_EXCEPT( intRtn2 != -4 );
+    }
+    
+    {
+      RCP<A> a_ptr  = rcpWithEmbeddedObjPostDestroy(new C,int(-5));
+      const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
+      TEST_FOR_EXCEPT( intRtn1 != -5 );
+      getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
+      const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
+      TEST_FOR_EXCEPT( intRtn2 != -4 );
+    }
+
     // Test pre-destruction of extra data
     int a_f_return = -2;
-    set_extra_data( Teuchos::rcp(new Get_A_f_return(&*a_ptr1,&a_f_return)), "a_f_return", &a_ptr1, Teuchos::PRE_DESTROY );
+    set_extra_data( rcp(new Get_A_f_return(&*a_ptr1,&a_f_return)),
+      "a_f_return", &a_ptr1, Teuchos::PRE_DESTROY );
 
 		// Set pointers to null to force releasing any owned memory
 		a_ptr1 = null;

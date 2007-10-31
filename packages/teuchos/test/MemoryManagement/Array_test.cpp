@@ -32,45 +32,47 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_getConst.hpp"
+#include "Teuchos_as.hpp"
 
 
-namespace Teuchos {
+template<class Container1, class Container2>
+bool compareContainers(
+  const Container1 &c1, const std::string &c1_name,
+  const Container2 &c2, const std::string &c2_name,
+  Teuchos::FancyOStream &out
+  )
+{
+  using Teuchos::as;
+  bool success = true;
 
-/** \brief Base traits class for getting a properly initialized null pointer.
- *
- * This default traits class simply
- */
-template<typename Ptr>
-class NullPtr {
-public:
-  static Ptr get() { return Ptr(0); }
-};
+  out << "\nComparing " << c1_name << " == " << c2_name << " ... ";
 
+  const int n = c1.size();
 
-template<typename T>
-class NullPtr<RCP<T> > {
-public:
-  static RCP<T> get() { return null; }
-};
+  // Compare sizes
+  if (as<int>(c2.size()) != n) {
+    out << "\nError, "<<c1_name<<".size() = "<<c1.size()<<" == " 
+        << c2_name<<".size() = "<<c2.size()<<" : failed!\n";
+    return false;
+  }
+  
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    const bool result = ( c1[i] == c2[i] );
+    if (!result) {
+      out << "\nError, "<<c1_name<<"["<<i<<"] = "<<c1[i]<<" == "
+          << c2_name<<"["<<i<<"] = "<<c2[i]<<": failed!\n";
+      success = false;
+    }
+  }
+  if (success) {
+    out << "passed\n";
+  }
 
+  return success;
 
-template<typename T>
-class NullPtr<ArrayRCP<T> > {
-public:
-  static ArrayRCP<T> get() { return null; }
-};
-
-
-template<typename Ptr>
-void setToNull( Ptr *ptr ) {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==ptr);
-#endif
-  *ptr = NullPtr<Ptr>::get();
 }
-
-
-} // namespace Teuchos
 
 
 template<class T>
@@ -78,10 +80,15 @@ bool test_Array( const int n, Teuchos::FancyOStream &out )
 {
   
   using Teuchos::Array;
+  using Teuchos::setToNull;
+  using Teuchos::outArg;
+  using Teuchos::getConst;
+  using Teuchos::NullIteratorTraits;
+  using Teuchos::TypeNameTraits;
 
   bool success = false, result;
  
-  out << "\nTesting Array<"<<Teuchos::TypeNameTraits<T>::name()<<"> of size = "<<n<<"\n";
+  out << "\nTesting "<<TypeNameTraits<Array<T> >::name()<<" of size = "<<n<<"\n";
   
   Teuchos::OSTab tab(out);
 
@@ -142,15 +149,314 @@ bool test_Array( const int n, Teuchos::FancyOStream &out )
   }
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
-  typedef typename Array<T>::iterator iter_t;
+  {
+    
+    out << "\nTest nonconst forward iterator access ... ";
 
-  iter_t itr = Teuchos::NullPtr<iter_t>::get();
+    bool local_success = true;
 
-  TEST_FOR_EXCEPT("ToDo: Implement more tests!");
+    typedef typename Array<T>::iterator iter_t;
+
+    iter_t iter = a.begin();
+
+    for ( int i = 0; i < n; ++i, ++iter ) {
+      const T t_i = a[i];
+      result = ( t_i == *iter );
+      if (!result) {
+        out << "\nError, a["<<i<<"] = " << a[i] << " == *iter = " << (*iter) << ": failed!";
+      }
+      if (!result) local_success = false;
+    }
+
+    iter = NullIteratorTraits<iter_t>::getNull();
+
+    if (local_success) {
+      out << "passed\n";
+    }
+    else {
+      success = false;
+    }
+    
+  }
+
+  {
+    
+    out << "\nTest const forward iterator access ... ";
+
+    bool local_success = true;
+
+    typedef typename Array<T>::const_iterator iter_t;
+
+    iter_t iter = getConst(a).begin();
+
+    for ( int i = 0; i < n; ++i, ++iter ) {
+      const T t_i = a[i];
+      result = ( t_i == *iter );
+      if (!result) {
+        out << "\nError, a["<<i<<"] = " << a[i] << " == *iter = " << (*iter) << ": failed!";
+      }
+      if (!result) local_success = false;
+    }
+
+    iter = NullIteratorTraits<iter_t>::getNull();
+
+    if (local_success) {
+      out << "passed\n";
+    }
+    else {
+      success = false;
+    }
+    
+  }
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *(a.begin()-1) throws ... ";
+    try {
+      T val = *(a.begin()-1);
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *a.end() throws ... ";
+    try {
+      T val = *a.end();
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *(getConst(a).begin()-1) throws ... ";
+    try {
+      T val = *(getConst(a).begin()-1);
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *getConst(a).end() throws ... ";
+    try {
+      T val = *getConst(a).end();
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+  {
+    
+    out << "\nTest nonconst reverse iterator access ... ";
+
+    bool local_success = true;
+
+    typedef typename Array<T>::reverse_iterator iter_t;
+
+    iter_t iter = a.rbegin();
+
+    for ( int i = 0; i < n; ++i, ++iter ) {
+      const T t_i = a[n-i-1];
+      result = ( t_i == *iter );
+      if (!result) {
+        out << "\nError, a["<<n-i-1<<"] = " << t_i << " == *iter = " << (*iter) << ": failed!";
+      }
+      if (!result) local_success = false;
+    }
+
+    iter = NullIteratorTraits<iter_t>::getNull();
+
+    if (local_success) {
+      out << "passed\n";
+    }
+    else {
+      success = false;
+    }
+    
+  }
+
+  {
+    
+    out << "\nTest const reverse iterator access ... ";
+
+    bool local_success = true;
+
+    typedef typename Array<T>::const_reverse_iterator iter_t;
+
+    iter_t iter = getConst(a).rbegin();
+
+    for ( int i = 0; i < n; ++i, ++iter ) {
+      const T t_i = a[n-i-1];
+      result = ( t_i == *iter );
+      if (!result) {
+        out << "\nError, a["<<n-i-1<<"] = " << t_i << " == *iter = " << (*iter) << ": failed!";
+      }
+      if (!result) local_success = false;
+    }
+
+    iter = NullIteratorTraits<iter_t>::getNull();
+
+    if (local_success) {
+      out << "passed\n";
+    }
+    else {
+      success = false;
+    }
+    
+  }
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *(a.rbegin()-1) throws ... ";
+    try {
+      T val = *(a.rbegin()-1);
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *a.rend() throws ... ";
+    try {
+      T val = *a.rend();
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *(getConst(a).rbegin()-1) throws ... ";
+    try {
+      T val = *(getConst(a).rbegin()-1);
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *getConst(a).rend() throws ... ";
+    try {
+      T val = *getConst(a).rend();
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::RangeError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that an iterator reference set to null does not throw ... ";
+    try {
+      typedef typename Array<T>::iterator iter_t;
+      iter_t iter = NullIteratorTraits<iter_t>::getNull();
+      {
+        Array<T> a2(n);
+        iter = a2.begin();
+        setToNull(outArg(iter));
+      }
+      out << "passed\n"; 
+    }
+    catch (const Teuchos::DanglingReferenceError& except) {
+      success = false;
+      out << "failed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that a dangling iterator reference throws exception ... ";
+    try {
+      typedef typename Array<T>::iterator iter_t;
+      iter_t iter = NullIteratorTraits<iter_t>::getNull();
+      {
+        Array<T> a2(n);
+        iter = a2.begin();
+        // We did not set to null before a2 was deleted!
+      }
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::DanglingReferenceError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+  {
+    out << "\nTest copy conversion to and from Teuchos::Array and std::vector ...\n";
+    std::vector<T> v2 = a.toVector();
+    Array<T> a2(v2);
+    result = compareContainers(a2,"a2",a,"a",out);
+    if (!result) success = false;
+  }
+
+  {
+    out << "\nTest assignment operator taking an std::vector ...\n";
+    std::vector<T> v2 = a.toVector();
+    Array<T> a2;
+    a2 = v2;
+    result = compareContainers(a2,"a2",a,"a",out);
+    if (!result) success = false;
+  }
+
+  out << "\nToDo: Test insert and delete operations!\n";
+  
+  out << "\nToDo: Test dangling iterators when doing insert and delete operations!\n";
+
+
+  out << "\nToDo: Implement more tests!\n";
 
   return success;
 
 }
+
 
 int main( int argc, char* argv[] ) {
 

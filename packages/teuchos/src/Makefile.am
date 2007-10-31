@@ -55,6 +55,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
+	$(srcdir)/Teuchos_ArrayView.hpp \
 	$(srcdir)/Teuchos_Assert.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
@@ -72,7 +73,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
+	$(srcdir)/Teuchos_ENull.hpp \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
+	$(srcdir)/Teuchos_Exceptions.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
@@ -86,6 +89,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
+	$(srcdir)/Teuchos_NullIteratorTraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
@@ -103,6 +107,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
+	$(srcdir)/Teuchos_Ptr.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
@@ -169,6 +174,7 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
+	$(srcdir)/Teuchos_Ptr.cpp \
 	$(srcdir)/Teuchos_RCP.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
