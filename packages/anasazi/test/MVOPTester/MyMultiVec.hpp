@@ -282,7 +282,7 @@ public:
   
   
   // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
-  void MvDot (const Anasazi::MultiVec<ScalarType>& A, std::vector<ScalarType>* b
+  void MvDot (const Anasazi::MultiVec<ScalarType>& A, std::vector<ScalarType> &b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
               , Anasazi::ConjType conj
 #endif
@@ -292,7 +292,7 @@ public:
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
     
-    assert (NumberVecs_ <= (int)b->size());
+    assert (NumberVecs_ <= (int)b.size());
     assert (NumberVecs_ == A.GetNumberVecs());
     assert (Length_ == A.GetVecLength());
     
@@ -304,7 +304,7 @@ public:
         for (int i = 0 ; i < Length_ ; ++i) {
           value += (*this)(i, v) * Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v));
         }
-        (*b)[v] = value;
+        b[v] = value;
       }
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
     } else {
@@ -313,16 +313,15 @@ public:
         for (int i = 0 ; i < Length_ ; ++i) {
           value += (*this)(i, v) * (*MyA)(i, v);
         }
-        (*b)[v] = value;
+        b[v] = value;
       }
     }
 #endif
   }  
   
-	void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec ) const 
+	void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> & normvec ) const 
   {
-    assert (normvec != 0);
-    assert (NumberVecs_ <= (int)normvec->size());
+    assert (NumberVecs_ <= (int)normvec.size());
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     
@@ -332,7 +331,7 @@ public:
         MagnitudeType val = Teuchos::ScalarTraits<ScalarType>::magnitude((*this)(i, v));
         value += val * val;
       }
-      (*normvec)[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
+      normvec[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
     }
   }
   

@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
     // compute 2-norm of residuals
     std::vector<MagnitudeType> resnorm(numev);
-    MVT::MvNorm( *Kvecs, &resnorm );
+    MVT::MvNorm( *Kvecs, resnorm );
 
     os << "Direct residual norms computed in BlockKrylovSchur_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual" << endl

@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
   OPT::Apply( *M, *evecs, *Mvecs );
   // Compute A*evecs - M*evecs*L
   MVT::MvTimesMatAddMv( -ONE, *Mvecs, L, ONE, *Avecs );
-  MVT::MvNorm( *Avecs, &normV );
+  MVT::MvNorm( *Avecs, normV );
 
   // check residuals
   for (int i=0; i<nevecs; i++) {

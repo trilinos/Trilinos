@@ -35,6 +35,7 @@
 #include "Epetra_Vector.h"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
+#include "AnasaziBasicOrthoManager.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef EPETRA_MPI
@@ -424,9 +425,10 @@ int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
 
     try {
-      rank = OM->projectAndNormalizeMat(*xcopy,mxcopy,
-                                     tuple< RCP< SerialDenseMatrix<int,ST> > >(C),R,
-                                     tuple<RCP<const MV> >(Q) );
+      rank = OM->projectAndNormalizeMat(
+          *xcopy,tuple<RCP<const MV> >(Q),
+          tuple< RCP< SerialDenseMatrix<int,ST> > >(C),R, mxcopy
+          );
 
       sout << "projectAndNormalize() returned rank " << rank << endl;
 
@@ -567,9 +569,9 @@ int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
 
     try {
-      OM->projectMat(*xcopy,mxcopy,
-                  tuple<RCP<SerialDenseMatrix<int,ST> > >(C),
-                  tuple<RCP<const MV> >(Q));
+      OM->projectMat(*xcopy, tuple<RCP<const MV> >(Q), 
+                  tuple<RCP<SerialDenseMatrix<int,ST> > >(C), mxcopy
+                  );
       // MX == M*X
       if (mxcopy != null) {
         tmp = MVT::CloneCopy(*xcopy);
@@ -672,7 +674,7 @@ int testNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<MV> X) {
     }
 
     try {
-      rank = OM->normalizeMat(*xcopy,mxcopy,R);
+      rank = OM->normalizeMat(*xcopy,R,mxcopy);
       sout << "normalize() returned rank " << rank << endl;
   
       ind.resize(rank);

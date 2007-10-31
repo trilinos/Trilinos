@@ -286,24 +286,24 @@ public:
   /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^T(this[i])\f$ where \c A[i] is the i-th column of \c A.
   */
   //void MvDot (const MultiVec<ScalarType>& A, std::vector<Teuchos::ScalarTraits<ScalarType>::magnitudeType>* b,
-  void MvDot (const MultiVec<ScalarType>& A, std::vector<ScalarType>* b,
+  void MvDot (const MultiVec<ScalarType>& A, std::vector<ScalarType> b,
               Anasazi::ConjType = Anasazi::CONJ) const
   {
     const TpetraMultiVec* MyA;
     MyA = dynamic_cast<const TpetraMultiVec*>(&A); 
     assert (MyA != 0);
     
-    assert (getNumVectors() == (int)b->size());
+    assert (getNumVectors() == (int)b.size());
     assert (getNumVectors() == A.GetNumberVecs());
     assert (getNumGlobalEntries() == A.GetVecLength());
     
     // hack here, it is not so good
     //vector<ScalarType> b2(getNumVectors());
 
-    this->dotProduct(*MyA, &((*b)[0]));
+    this->dotProduct(*MyA, &b[0]);
 
     //for (int i = 0 ; i < getNumVectors() ; ++i)
-      //(*b)[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(b2[i]);
+      //b[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(b2[i]);
   }
 
   //@}
@@ -312,12 +312,11 @@ public:
   /*! \brief Compute the 2-norm of each individual vector of \c *this.  
     Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
     */
-  void MvNorm (std::vector<Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec) const 
+  void MvNorm (std::vector<Teuchos::ScalarTraits<ScalarType>::magnitudeType > & normvec) const 
   {
-    assert (normvec != 0);
-    assert (getNumVectors() == (int)normvec->size());
+    assert (getNumVectors() == (int)normvec.size());
     
-    norm2(&((*normvec)[0]));
+    norm2(&normvec[0]);
   }
   //@}
 
