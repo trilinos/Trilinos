@@ -463,9 +463,9 @@ namespace Teuchos {
 
 template<typename T>
 inline
-Array<T>::Array() :
+Array<T>::Array()
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  vec_(rcp(new std::vector<T>()))
+  : vec_(rcp(new std::vector<T>()))
 #endif
 {}
 
@@ -913,7 +913,7 @@ Array<T>::Array( const std::vector<T> &v ) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   vec_(new std::vector<T>(v))
 #else
-  vec(v)
+  vec_(v)
 #endif
 {}
 
