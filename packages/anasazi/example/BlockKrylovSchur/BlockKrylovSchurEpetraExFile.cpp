@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
       
       // Compute A*evecs - lambda*evecs and its norm
       MVT::MvTimesMatAddMv( -1.0, *Mevecs, B, 1.0, Kevecs );
-      MVT::MvNorm( Kevecs, normR );
+      MVT::MvNorm( Kevecs, &normR );
       
       // Scale the norms by the eigenvalue
       for (int i=0; i<numev; i++) {
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
           MVT::MvTimesMatAddMv( -1.0, *tempMevec, Breal, 1.0, *tempKevec );
 
           // Compute the norm of the residual and increment counter
-          MVT::MvNorm( *tempKevec, resnorm );
+          MVT::MvNorm( *tempKevec, &resnorm );
           normR[i] = resnorm[0]/Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
           i++;
         } else {
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
           // Compute K*evecr - M*evecr*lambdar + M*eveci*lambdai
           MVT::MvTimesMatAddMv( -1.0, *tempMevec, Breal, 1.0, *tempKevec );
           MVT::MvTimesMatAddMv( 1.0, *tempeveci, Bimag, 1.0, *tempKevec );
-          MVT::MvNorm( *tempKevec, tempnrm );
+          MVT::MvNorm( *tempKevec, &tempnrm );
 
           // Get a copy of K*eveci
           tempKevec = MVT::CloneCopy( Kevecs, curind );
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
           // Compute K*eveci - M*eveci*lambdar - M*evecr*lambdai
           MVT::MvTimesMatAddMv( -1.0, *tempMevec, Bimag, 1.0, *tempKevec );
           MVT::MvTimesMatAddMv( -1.0, *tempeveci, Breal, 1.0, *tempKevec );
-          MVT::MvNorm( *tempKevec, resnorm );
+          MVT::MvNorm( *tempKevec, &resnorm );
 
           // Compute the norms and scale by magnitude of eigenvalue
           normR[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /

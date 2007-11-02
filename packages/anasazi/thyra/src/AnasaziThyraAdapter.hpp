@@ -260,8 +260,8 @@ namespace Anasazi {
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the 
         \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
-    static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType> &b )
-    { Thyra::dots(mv,A,&b[0]); }
+    static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>* b )
+    { Thyra::dots(mv,A,&((*b)[0])); }
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
@@ -285,8 +285,8 @@ namespace Anasazi {
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const TMVB& mv, std::vector<ScalarType> &normvec )
-    { Thyra::norms_2(mv,&normvec[0]); }
+    static void MvNorm( const TMVB& mv, std::vector<ScalarType>* normvec )
+    { Thyra::norms_2(mv,&((*normvec)[0])); }
 
     //@}
 

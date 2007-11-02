@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
     // compute M-norm of residuals
     OPT::Apply( *M, *Kvecs, *Mvecs );
-    MVT::MvDot( *Mvecs, *Kvecs, normV );
+    MVT::MvDot( *Mvecs, *Kvecs, &normV );
   
     for (int i=0; i<numev; i++) {
       normV[i] = SCT::squareroot( normV[i] );

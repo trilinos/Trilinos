@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
     // compute M-norm of residuals
     OPT::Apply( *thyra_M, *Kvecs, *Mvecs );
-    MVT::MvDot( *Mvecs, *Kvecs, normV );
+    MVT::MvDot( *Mvecs, *Kvecs, &normV );
 
     os << "Direct residual norms computed in BlockDavidsonThyra_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl

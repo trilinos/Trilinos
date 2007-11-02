@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     }
     A->Apply( *evecs, tempAevec );
     MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
-    MVT::MvNorm( tempAevec, normR );
+    MVT::MvNorm( tempAevec, &normR );
   }
 
   // Print the results

@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     K->Apply( *evecs, Kvec );  
     M->Apply( *evecs, Mvec );  
     MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
-    MVT::MvNorm( Kvec, normR );
+    MVT::MvNorm( Kvec, &normR );
   }
 
   // Print the results
