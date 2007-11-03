@@ -333,21 +333,21 @@ int main(int argc, char* argv[])
     *out << "\ninvM22 = " << describe(*invM22,verbLevel) << "\n";
 
     *out << "\nCreating prec(P1) ...\n";
-    LinearOpPtr precP1Op;
+    LinearOpPtr invP1;
     if(invertP1) {
       *out << "\nCreating prec(P1) as a full solver ...\n";
-      precP1Op = inverse(*P1_linsolve_strategy,P1);
+      invP1 = inverse(*P1_linsolve_strategy,P1);
     }
     else {
       *out << "\nCreating prec(P1) as just an algebraic preconditioner ...\n";
       RCP<Thyra::PreconditionerBase<double> >
         precP1 = prec(*P1_prec_strategy,P1);
       *out << "\nprecP1 = " << describe(*precP1,verbLevel) << "\n";
-      precP1Op = precP1->getUnspecifiedPrecOp();
+      invP1 = precP1->getUnspecifiedPrecOp();
     }
     rcp_const_cast<Thyra::LinearOpBase<double> >(
-      precP1Op)->setObjectLabel("precP1Op"); // Cast to set label ...
-    *out << "\nprecP1Op = " << describe(*precP1Op,verbLevel) << "\n";
+      invP1)->setObjectLabel("invP1"); // Cast to set label ...
+    *out << "\ninvP1 = " << describe(*invP1,verbLevel) << "\n";
 
     LinearOpPtr P2ToP1 = multiply( invM11, M21, "P2ToP1" );
     *out << "\nP2ToP1 = " << describe(*P2ToP1,verbLevel) << "\n";
@@ -355,7 +355,7 @@ int main(int argc, char* argv[])
     LinearOpPtr P1ToP2 = multiply( invM22, M12, "P1ToP2" );
     *out << "\nP1ToP2 = " << describe(*P1ToP2,verbLevel) << "\n";
 
-    LinearOpPtr precP2Op = multiply( P1ToP2, precP1Op, P2ToP1 );
+    LinearOpPtr precP2Op = multiply( P1ToP2, invP1, P2ToP1 );
     *out << "\nprecP2Op = " << describe(*precP2Op,verbLevel) << "\n";
       
     //
