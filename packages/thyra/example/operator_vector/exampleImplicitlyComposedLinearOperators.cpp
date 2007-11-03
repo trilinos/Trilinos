@@ -68,10 +68,10 @@ int exampleImplicitlyComposedLinearOperators(
 {
 
   // Using and other declarations
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::VectorSpaceBase;
   using Thyra::VectorBase;
   using Thyra::MultiVectorBase;
@@ -81,6 +81,7 @@ int exampleImplicitlyComposedLinearOperators(
   using Thyra::assign;
   using Thyra::multiply;
   using Thyra::add;
+  using Thyra::subtract;
   using Thyra::scale;
   using Thyra::adjoint;
   using Thyra::block1x2;
@@ -203,7 +204,7 @@ int exampleImplicitlyComposedLinearOperators(
 
   // M11 = D - Q^H*Q
   const RCP<const LinearOpBase<Scalar> > M11 =
-    add( D, scale(-one,multiply(adjoint(Q),Q)), "M11" );
+    subtract( D, multiply(adjoint(Q),Q), "M11" );
 
   out << "\nM11 = "  << describe(*M11,verbLevel);
   

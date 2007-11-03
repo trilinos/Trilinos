@@ -29,73 +29,107 @@
 #ifndef TEUCHOS_XML_PARAMETER_LIST_HELPERS_HPP
 #define TEUCHOS_XML_PARAMETER_LIST_HELPERS_HPP
 
+
 /*! \file Teuchos_XMLParameterListHelpers.hpp \brief Simple helper functions
      that make it easy to read and write XML to and from a parameterlist.
 */
 
+
 #include "Teuchos_ParameterList.hpp"
 
+
 namespace Teuchos {
+
 
 /** \brief Reads XML parameters from a file and updates those already in the
  * given parameter list.
  *
- * \param  xmlFileName  [in] The file name containing XML parameter list specification.
- * \param  paramList    [in/out]  On input, <tt>*paramList</tt> may be empty or contain some
- *                      parameters and sublists.  On output, parameters and sublist from
- *                      the file <tt>xmlFileName</tt> will be set or overide those in
- *                      <tt>*paramList</tt>.
+ * \param xmlFileName [in] The file name containing XML parameter list
+ * specification.
+ *
+ * \param paramList [in/out] On input, <tt>*paramList</tt> may be empty or
+ * contain some parameters and sublists. On output, parameters and sublist
+ * from the file <tt>xmlFileName</tt> will be set or overide those in
+ * <tt>*paramList</tt>.
  *
  * \ingroup XML
  */
 void updateParametersFromXmlFile(
-  const std::string            &xmlFileName
-  ,Teuchos::ParameterList      *paramList
+  const std::string &xmlFileName,
+  Teuchos::ParameterList *paramList
   );
+
+
+/** \brief Reads XML parameters from a file and return them in a new parameter list.
+ *
+ * \param xmlFileName [in] The file name containing XML parameter list
+ * specification.
+ *
+ * \ingroup XML
+ */
+RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
+
 
 /** \brief Reads XML parameters from a std::string and updates those already in the
  * given parameter list.
  *
- * \param  xmlStr       [in] String containing XML parameter list specification.
- * \param  paramList    [in/out]  On input, <tt>*paramList</tt> may be empty or contain some
- *                      parameters and sublists.  On output, parameters and sublist from
- *                      the file <tt>xmlStr</tt> will be set or overide those in
- *                      <tt>*paramList</tt>.
+ * \param xmlStr [in] String containing XML parameter list specification.
+ *
+ * \param paramList [in/out] On input, <tt>*paramList</tt> may be empty or
+ * contain some parameters and sublists. On output, parameters and sublist
+ * from the file <tt>xmlStr</tt> will be set or overide those in
+ * <tt>*paramList</tt>.
  *
  * \ingroup XML
  */
 void updateParametersFromXmlString(
-  const std::string            &xmlStr
-  ,Teuchos::ParameterList      *paramList
+  const std::string &xmlStr,
+  Teuchos::ParameterList *paramList
   );
+
+
+/** \brief Reads XML parameters from a std::string and return them in a new
+ * parameter list.
+ *
+ * \param xmlStr [in] String containing XML parameter list specification.
+ *
+ * \ingroup XML
+ */
+RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
+
 
 /** \brief Write parameters and sublists in XML format to an std::ostream.
  *
- * \param  paramList    [in]  Contains the parameters and sublists that will be written
- *                      to file.
- * \param  xmlOut       [in] The stream that will get the XML output.
+ * \param paramList [in] Contains the parameters and sublists that will be
+ * written to file.
+ *
+ * \param xmlOut [in] The stream that will get the XML output.
  *
  * \ingroup XML
  */
 void writeParameterListToXmlOStream(
-  const Teuchos::ParameterList      &paramList
-  ,std::ostream                     &xmlOut
+  const Teuchos::ParameterList &paramList,
+  std::ostream &xmlOut
   );
+
 
 /** \brief Write parameters and sublist to an XML file.
  *
- * \param  paramList    [in]  Contains the parameters and sublists that will be written
- *                      to file.
- * \param  xmlFileName  [in] The file name that will be create to contain the XML version
- *                      of the parameter list specification.
+ * \param paramList [in] Contains the parameters and sublists that will be
+ * written to file.
+ *
+ * \param xmlFileName [in] The file name that will be create to contain the
+ * XML version of the parameter list specification.
  *
  * \ingroup XML
  */
 void writeParameterListToXmlFile(
-  const Teuchos::ParameterList      &paramList
-  ,const std::string                &xmlFileName
+  const Teuchos::ParameterList &paramList,
+  const std::string &xmlFileName
   );
 
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_XML_PARAMETER_LIST_HELPERS_HPP

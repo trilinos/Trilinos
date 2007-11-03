@@ -216,7 +216,7 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
       *out
         <<  "numOps = "<< numOps << std::endl
         <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
-      tab.incrTab();
+      OSTab tab2(out);
       for( int k = 0; k < numOps; ++k ) {
         *out << "Op["<<k<<"] = " << Teuchos::describe(*getOp(k),verbLevel);
       }

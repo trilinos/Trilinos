@@ -53,6 +53,100 @@ bool isCompatible(
 }
 
 
+/** \brief Set default label on a LOWSB object.
+ *
+ *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
+ */
+template<class Scalar>
+void setDefaultObjectLabel(
+  const LinearOpBase<Scalar> &fwdOp,
+  LinearOpWithSolveBase<Scalar> *Op
+  )
+{
+  TEST_FOR_EXCEPT(0==Op);
+  const std::string OpLabel = Op->getObjectLabel();
+  const std::string fwdOpLabel = fwdOp.getObjectLabel();
+  if ( !OpLabel.length() && fwdOpLabel.length() )
+    Op->setObjectLabel(fwdOpLabel);
+}
+
+
+/** \brief Initialize a pre-created LOWSB object given a forward operator.
+ *
+ *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
+ */
+template<class Scalar>
+void initializeOp(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
+  LinearOpWithSolveBase<Scalar> *Op,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+  )
+{
+  lowsFactory.initializeOp(defaultLinearOpSource(fwdOp),Op,supportSolveUse);
+  setDefaultObjectLabel(*fwdOp,Op);
+}
+
+
+/** \brief Reinitialize a pre-created LOWSB object given a forward operator,
+ * reusing a much as possible from the prior LOWSB object.
+ *
+ *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
+ */
+template<class Scalar>
+void initializeAndReuseOp(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
+  LinearOpWithSolveBase<Scalar> *Op
+  )
+{
+  lowsFactory.initializeAndReuseOp(defaultLinearOpSource(fwdOp),Op);
+  setDefaultObjectLabel(*fwdOp,Op);
+}
+
+
+/** \brief Initialize a preconditioned LOWSB object given an external
+ * preconditioner.
+ *
+ *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
+ */
+template<class Scalar>
+void initializePreconditionedOp(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const PreconditionerBase<Scalar> > &prec,
+  LinearOpWithSolveBase<Scalar> *Op,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+  )
+{
+  lowsFactory.initializePreconditionedOp(
+    defaultLinearOpSource(fwdOp),prec,Op,supportSolveUse
+    );
+  setDefaultObjectLabel(*fwdOp,Op);
+}
+
+
+/** \brief Initialize a preconditioned LOWSB object given an external operator
+ * to be used to generate the preconditioner internally.
+ *
+ *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
+ */
+template<class Scalar>
+void initializeApproxPreconditionedOp(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &approxFwdOp,
+  LinearOpWithSolveBase<Scalar> *Op,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+  )
+{
+  lowsFactory.initializeApproxPreconditionedOp(
+    defaultLinearOpSource(fwdOp),defaultLinearOpSource(approxFwdOp),Op,supportSolveUse
+    );
+  setDefaultObjectLabel(*fwdOp,Op);
+}
+
+
 /** \brief Create and initialize a <tt>LinearOpWithSolveBase</tt> object from
  * a <tt>LinearOpBase</tt> object using a
  * <tt>LinearOpWithSolveFactoryBase</tt> strategy object.
@@ -67,7 +161,8 @@ linearOpWithSolve(
 {
   Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
     Op = lowsFactory.createOp();
-  lowsFactory.initializeOp(defaultLinearOpSource(fwdOp),&*Op,supportSolveUse);
+  Thyra::initializeOp<Scalar>( lowsFactory, fwdOp, &*Op, supportSolveUse
+    );
   return Op;
 }
 
@@ -92,78 +187,6 @@ inverse(
     linearOpWithSolve<Scalar>(LOWSF,fwdOp,supportSolveUse),
     fwdSolveCriteria, throwOnFwdSolveFailure,
     adjSolveCriteria, throwOnAdjSolveFailure
-    );
-}
-
-
-/** \brief Initialize a pre-created LOWSB object given a forward operator.
- *
- *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
- */
-template<class Scalar>
-void initializeOp(
-  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-  )
-{
-  lowsFactory.initializeOp(defaultLinearOpSource(fwdOp),Op,supportSolveUse);
-}
-
-
-/** \brief Reinitialize a pre-created LOWSB object given a forward operator,
- * reusing a much as possible from the prior LOWSB object.
- *
- *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
- */
-template<class Scalar>
-void initializeAndReuseOp(
-  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
-  LinearOpWithSolveBase<Scalar> *Op
-  )
-{
-  lowsFactory.initializeAndReuseOp(defaultLinearOpSource(fwdOp),Op);
-}
-
-
-/** \brief Initialize a preconditioned LOWSB object given an external
- * preconditioner.
- *
- *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
- */
-template<class Scalar>
-void initializePreconditionedOp(
-  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
-  const Teuchos::RCP<const PreconditionerBase<Scalar> > &prec,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-  )
-{
-  lowsFactory.initializePreconditionedOp(
-    defaultLinearOpSource(fwdOp),prec,Op,supportSolveUse
-    );
-}
-
-
-/** \brief Initialize a preconditioned LOWSB object given an external operator
- * to be used to generate the preconditioner internally.
- *
- *\ingroup thyra_operator_solve_support_LOWSF_helpers_grp
- */
-template<class Scalar>
-void initializeApproxPreconditionedOp(
-  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &approxFwdOp,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-  )
-{
-  lowsFactory.initializeApproxPreconditionedOp(
-    defaultLinearOpSource(fwdOp),defaultLinearOpSource(approxFwdOp),Op,supportSolveUse
     );
 }
 

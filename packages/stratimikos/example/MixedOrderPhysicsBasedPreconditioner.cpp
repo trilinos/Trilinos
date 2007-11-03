@@ -264,8 +264,8 @@ int main(int argc, char* argv[])
     // that specify the type of linear solver and/or preconditioner to use.
     //
 
-    RCP<ParameterList> paramList = rcp(new ParameterList);
-    Teuchos::updateParametersFromXmlFile( baseDir+"/"+paramsFile, &*paramList );
+    RCP<ParameterList> paramList =
+      Teuchos::getParametersFromXmlFile( baseDir+"/"+paramsFile );
     if(extraParamsFile.length())
       Teuchos::updateParametersFromXmlFile( baseDir+"/"+extraParamsFile, &*paramList );
     if(showParams) {
@@ -349,10 +349,10 @@ int main(int argc, char* argv[])
       invP1)->setObjectLabel("invP1"); // Cast to set label ...
     *out << "\ninvP1 = " << describe(*invP1,verbLevel) << "\n";
 
-    LinearOpPtr P2ToP1 = multiply( invM11, M21, "P2ToP1" );
+    LinearOpPtr P2ToP1 = multiply( invM11, M21 );
     *out << "\nP2ToP1 = " << describe(*P2ToP1,verbLevel) << "\n";
 
-    LinearOpPtr P1ToP2 = multiply( invM22, M12, "P1ToP2" );
+    LinearOpPtr P1ToP2 = multiply( invM22, M12 );
     *out << "\nP1ToP2 = " << describe(*P1ToP2,verbLevel) << "\n";
 
     LinearOpPtr precP2Op = multiply( P1ToP2, invP1, P2ToP1 );

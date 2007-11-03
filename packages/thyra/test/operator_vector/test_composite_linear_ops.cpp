@@ -305,9 +305,9 @@ bool run_composite_linear_ops_tests(
   result = linearOpTester.check(*A8,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out << "\nCreating a symmetric added operator A8b = A6 + adjoint(origA)*origA ...\n";
+  if(out.get()) *out << "\nCreating a symmetric subtracted operator A8b = A6 + adjoint(origA)*origA ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
-    A8b = add(A6,multiply(adjoint(origA),origA));
+    A8b = subtract(A6,multiply(adjoint(origA),origA));
   if(out.get()) *out << "\nA8b =\n" << describe(*A8b,verbLevel);
 
   if(out.get()) *out << "\nTesting A8b ...\n";

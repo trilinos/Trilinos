@@ -32,9 +32,10 @@
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
 
+
 void Teuchos::updateParametersFromXmlFile(
-  const std::string            &xmlFileName
-  ,Teuchos::ParameterList      *paramList
+  const std::string &xmlFileName,
+  Teuchos::ParameterList *paramList
   )
 {
   TEST_FOR_EXCEPT(paramList==NULL);
@@ -44,9 +45,18 @@ void Teuchos::updateParametersFromXmlFile(
   paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
 }
 
+
+Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlFile( const std::string &xmlFileName )
+{
+  RCP<ParameterList> pl = parameterList();
+  updateParametersFromXmlFile( xmlFileName, &*pl );
+  return pl;
+}
+
 void Teuchos::updateParametersFromXmlString(
-  const std::string            &xmlStr
-  ,Teuchos::ParameterList      *paramList
+  const std::string &xmlStr,
+  Teuchos::ParameterList *paramList
   )
 {
   TEST_FOR_EXCEPT(paramList==NULL);
@@ -56,9 +66,19 @@ void Teuchos::updateParametersFromXmlString(
   paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
 }
 
+
+Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlString( const std::string &xmlStr )
+{
+  RCP<ParameterList> pl = parameterList();
+  updateParametersFromXmlString( xmlStr, &*pl );
+  return pl;
+}
+
+
 void Teuchos::writeParameterListToXmlOStream(
-  const Teuchos::ParameterList      &paramList
-  ,std::ostream                     &xmlOut
+  const Teuchos::ParameterList &paramList,
+  std::ostream &xmlOut
   )
 {
   Teuchos::XMLParameterListWriter plWriter;
@@ -66,9 +86,10 @@ void Teuchos::writeParameterListToXmlOStream(
   xmlOut << xml << std::endl;
 }
 
+
 void Teuchos::writeParameterListToXmlFile(
-  const Teuchos::ParameterList      &paramList
-  ,const std::string                &xmlFileName
+  const Teuchos::ParameterList &paramList,
+  const std::string &xmlFileName
   )
 {
   std::ofstream ofs(xmlFileName.c_str());

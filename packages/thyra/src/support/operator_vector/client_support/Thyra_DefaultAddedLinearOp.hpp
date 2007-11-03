@@ -30,6 +30,7 @@
 #define THYRA_DEFAULT_ADDED_LINEAR_OP_HPP
 
 #include "Thyra_DefaultAddedLinearOpDecl.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
 
@@ -327,6 +328,7 @@ Thyra::nonconstAdd(
   return alo;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::add(
@@ -347,5 +349,55 @@ Thyra::add(
     alo->setObjectLabel(label);
   return alo;
 }
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstSubtract(
+  const RCP<LinearOpBase<Scalar> > &A,
+  const RCP<LinearOpBase<Scalar> > &B,
+  const std::string &label
+  )
+{
+  typedef ScalarTraits<Scalar> ST;
+  using Teuchos::arrayArg;
+  RCP<LinearOpBase<Scalar> >
+    alo = Teuchos::rcp(
+      new DefaultAddedLinearOp<Scalar>(
+        2,
+        arrayArg<RCP<LinearOpBase<Scalar> > >(
+          A, scale<Scalar>(-ST::one(),B) )()
+        )
+      );
+  if (label.length())
+    alo->setObjectLabel(label);
+  return alo;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::subtract(
+  const RCP<const LinearOpBase<Scalar> > &A,
+  const RCP<const LinearOpBase<Scalar> > &B,
+  const std::string &label
+  )
+{
+  typedef ScalarTraits<Scalar> ST;
+  using Teuchos::arrayArg;
+  RCP<LinearOpBase<Scalar> >
+    alo = Teuchos::rcp(
+      new DefaultAddedLinearOp<Scalar>(
+        2,
+        arrayArg<RCP<const LinearOpBase<Scalar> > >(
+          A, scale<Scalar>(-ST::one(),B) )()
+        )
+      );
+  if (label.length())
+    alo->setObjectLabel(label);
+  return alo;
+}
+
+
 
 #endif	// THYRA_DEFAULT_ADDED_LINEAR_OP_HPP

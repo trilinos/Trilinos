@@ -285,6 +285,32 @@ add(
   );
 
 
+/** \brief Form an implicit subtraction of two linear operators: <tt>M = A - B</tt>.
+ *
+ * \relates DefaultAddedLinearOp
+ */
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+nonconstSubtract(
+  const RCP<LinearOpBase<Scalar> > &A,
+  const RCP<LinearOpBase<Scalar> > &B,
+  const std::string &label = ""
+  );
+
+
+/** \brief Form an implicit subtraction of two linear operators: <tt>M = A - B</tt>.
+ *
+ * \relates DefaultAddedLinearOp
+ */
+template<class Scalar>
+RCP<const LinearOpBase<Scalar> >
+subtract(
+  const RCP<const LinearOpBase<Scalar> > &A,
+  const RCP<const LinearOpBase<Scalar> > &B,
+  const std::string &label = ""
+  );
+
+
 // /////////////////////////////////
 // Inline members
 
