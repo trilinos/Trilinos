@@ -26,13 +26,17 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
 #define THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
+
 
 #include "Teuchos_Handleable.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Concrete implementation of an SPMD vector space subclass which
  * creates <tt>DefaultSpmdVector</tt> and <tt>DefaultSpmdMultiVector</tt>
@@ -49,8 +53,9 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
-class DefaultSpmdVectorSpace : public SpmdVectorSpaceDefaultBase<Scalar>,
-                               public Teuchos::Handleable<VectorSpaceBase<Scalar> >
+class DefaultSpmdVectorSpace
+  : public SpmdVectorSpaceDefaultBase<Scalar>,
+    public Teuchos::Handleable<VectorSpaceBase<Scalar> >
 {
 public:
   /* handleable interface */
@@ -75,8 +80,8 @@ public:
 
   /** \brief Initialize a serial space.
    *
-   * \param  dim
-   *           [in] Gives the dimension of the vector space.
+   * \param dim
+   * [in] Gives the dimension of the vector space.
    *
    * Equivalent to calling <tt>this->initialize(Teuchos::null,dim,dim)</tt>
    */
@@ -86,18 +91,18 @@ public:
 
   /** \brief Initialize an SPMD space.
    *
-   * \param  comm
-   *           [in] The communicator.  This object must be maintained
-   *           by the client the entire time that <tt>this</tt> is in use.
-   * \param  localSubDim
-   *           [in] The number of elements in the local process.  This number
-   *           can be different in every process.
-   * \param  globalDim
-   *           [in] Gives the number of global elements in the vector
-   *           if <tt>globalDim > 0</tt>.  If <tt>globalDim < 0</tt>
-   *           then the global dimension is determined by the above argument
-   *           <tt>localSubDim</tt> but requires a global communication to
-   *           do so (i.e. <tt>Spmd_Allreduce()</tt>).
+   * \param comm
+   * [in] The communicator. This object must be maintained
+   * by the client the entire time that <tt>this</tt> is in use.
+   * \param localSubDim
+   * [in] The number of elements in the local process. This number
+   * can be different in every process.
+   * \param globalDim
+   * [in] Gives the number of global elements in the vector
+   * if <tt>globalDim > 0</tt>. If <tt>globalDim < 0</tt>
+   * then the global dimension is determined by the above argument
+   * <tt>localSubDim</tt> but requires a global communication to
+   * do so (i.e. <tt>Spmd_Allreduce()</tt>).
    *
    * Preconditions:<ul>
    * <li><tt>localSubDim > 0</tt>
@@ -116,18 +121,18 @@ public:
    * This function supports three different types of use-cases:
    * <ul>
    * <li><tt>comm.get()==NULL</tt> : Serial (i.e. single process) vectors
-   *     where <tt>this->dim() == localSubDim</tt>.
+   * where <tt>this->dim() == localSubDim</tt>.
    * <li><tt>comm.get()!=NULL && globalDim < 0</tt> : Distributed-memory vectors
-   *     where <tt>this->dim()</tt> is equal to the sum of the <tt>localSubDim</tt>
-   *     arguments in each process.  This will result in a call to <tt>Spmd_Allreduce()</tt>
-   *     inside of this function.
+   * where <tt>this->dim()</tt> is equal to the sum of the <tt>localSubDim</tt>
+   * arguments in each process. This will result in a call to <tt>Spmd_Allreduce()</tt>
+   * inside of this function.
    * <li><tt>comm.get()!=NULL && globalDim > 0</tt> : Distributed-memory vectors
-   *     where <tt>this->dim()</tt> returns <tt>globalDim</tt>.  This will not result
-   *     in a call to <tt>Teuchos::reduceAll()</tt> inside this function and therefore the client had better
-   *     be sure that <tt>globalDim</tt> is consistent with <tt>localSubDim</tt>
-   *     in each process.
+   * where <tt>this->dim()</tt> returns <tt>globalDim</tt>. This will not result
+   * in a call to <tt>Teuchos::reduceAll()</tt> inside this function and therefore the client had better
+   * be sure that <tt>globalDim</tt> is consistent with <tt>localSubDim</tt>
+   * in each process.
    * <li><tt>comm.get()!=NULL && globalDim == localSubDim</tt> : Locally-replicated
-   *     distributed-memory vectors where <tt>this->dim() == globalDim == localSubDim</tt>.
+   * distributed-memory vectors where <tt>this->dim() == globalDim == localSubDim</tt>.
    * </ul>
    */
   void initialize(
@@ -152,9 +157,9 @@ public:
   /** \brief Returns true if all the elements in <tt>rng</tt> are in this
    * process.
    */
-   bool hasInCoreView(
-     const Range1D& rng, const EViewType viewType, const EStrideType strideType
-     ) const;
+  bool hasInCoreView(
+    const Range1D& rng, const EViewType viewType, const EStrideType strideType
+    ) const;
   /** \brief . */
   Teuchos::RCP< const VectorSpaceBase<Scalar> > clone() const;
   //@}
@@ -193,7 +198,7 @@ public:
   /** \brief . */
   Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const;
   /** \brief . */
-   Index localSubDim() const;
+  Index localSubDim() const;
 
   //@}
 
@@ -202,13 +207,28 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const Teuchos::Comm<Index> >   comm_;
-  Index                                               localSubDim_;
-  int                                                 numProc_;
-  int                                                 procRank_;
-  
+  Teuchos::RCP<const Teuchos::Comm<Index> > comm_;
+  Index localSubDim_;
+  int numProc_;
+  int procRank_;
+ 
 }; // end class DefaultSpmdVectorSpace
 
+
+/** \brief Nonmember consturctor function.
+ *
+ * \relates DefaultSpmdVectorSpace
+ */
+template<class Scalar>
+RCP<DefaultSpmdVectorSpace<Scalar> >
+defaultSpmdVectorSpace( const Index dim )
+{
+  RCP<DefaultSpmdVectorSpace<Scalar> >
+    vs(new DefaultSpmdVectorSpace<Scalar>(dim));
+  return vs;
+}
+
 } // end namespace Thyra
+
 
 #endif // THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP

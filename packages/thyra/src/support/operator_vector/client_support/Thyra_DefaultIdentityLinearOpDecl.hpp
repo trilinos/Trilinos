@@ -161,6 +161,7 @@ private:
 
 };
 
+
 /** \brief Create an identity linear operator with given a vector space.
  *
  * \relates DefaultIdentityLinearOp
@@ -168,9 +169,12 @@ private:
 template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 identity(
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> > &space,
+  const std::string &label = ""
   );
 
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_DEFAULT_IDENTITY_LINEAR_OP_DECL_HPP

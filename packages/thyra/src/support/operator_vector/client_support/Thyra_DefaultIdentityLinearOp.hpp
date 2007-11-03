@@ -136,13 +136,20 @@ void DefaultIdentityLinearOp<Scalar>::apply(
 
 }	// end namespace Thyra
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::identity(
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> > &space,
+  const std::string &label
   )
 {
-  return Teuchos::rcp(new DefaultIdentityLinearOp<Scalar>(space));
+  RCP<Thyra::LinearOpBase<Scalar> >
+    ilo = Teuchos::rcp(new DefaultIdentityLinearOp<Scalar>(space));
+  if (label.length())
+    ilo->setObjectLabel(label);
+  return ilo;
 }
+
 
 #endif	// THYRA_DEFAULT_IDENTITY_LINEAR_OP_HPP

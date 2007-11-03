@@ -25,22 +25,28 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef THYRA_VECTOR_STD_OPS_DECL_HPP
 #define THYRA_VECTOR_STD_OPS_DECL_HPP
 
+
 #include "Thyra_OperatorVectorTypes.hpp"
 
+
 namespace Thyra {
+
 
 /** \defgroup Thyra_Op_Vec_VectorStdOps_grp Collection of all vector operations
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 
+
 /** \defgroup Thyra_Op_Vec_VectorStdOpsAll_grp Collection of vector operations for all scalar types.
  *
  * \ingroup Thyra_Op_Vec_VectorStdOps_grp
  */
+
 
 /** \defgroup Thyra_Op_Vec_VectorStdOpsAll_names_grp Vector operations with standard text names.
  *
@@ -48,10 +54,13 @@ namespace Thyra {
  */
 //@{
 
-/** \brief Sum of vector elements: <tt>result = sum( v(i), i = 0...v.space()->dim()-1 )</tt>.
+
+/** \brief Sum of vector elements:
+ * <tt>result = sum( v(i), i = 0...v.space()->dim()-1 )</tt>.
  */
 template<class Scalar>
 Scalar sum( const VectorBase<Scalar>& v );
+
 
 /** \brief Scalar product <tt>result = <x,y></tt>.
  *
@@ -60,13 +69,16 @@ Scalar sum( const VectorBase<Scalar>& v );
 template<class Scalar>
 Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
+
 /** \brief Natural norm: <tt>result = sqrt(<v,v>)</tt>.
  *
- * Returns <tt>Teuchos::ScalarTraits<Scalar>::squareroot(v.space()->scalarProd(v,v))</tt>.
+ * Returns
+ * <tt>Teuchos::ScalarTraits<Scalar>::squareroot(v.space()->scalarProd(v,v))</tt>.
  */
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 norm( const VectorBase<Scalar>& v );
+
 
 /** \brief One (1) norm: <tt>result = ||v||1</tt>.
  */
@@ -74,17 +86,21 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 norm_1( const VectorBase<Scalar>& v );
 
+
 /** \brief Euclidean (2) norm: <tt>result = ||v||2</tt>.
  */
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 norm_2( const VectorBase<Scalar>& v );
 
-/** \brief Weighted Euclidean (2) norm: <tt>result = sqrt( sum( w(i)*conj(v(i))*v(i)) )</tt>.
+
+/** \brief Weighted Euclidean (2) norm:
+ * <tt>result = sqrt( sum( w(i)*conj(v(i))*v(i)) )</tt>.
  */
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 norm_2( const VectorBase<Scalar> &w, const VectorBase<Scalar>& v );
+
 
 /** \brief Infinity norm: <tt>result = ||v||inf</tt>.
  */
@@ -92,37 +108,48 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 norm_inf( const VectorBase<Scalar>& v_rhs );
 
+
 /** \brief Dot product: <tt>result = conj(x)'*y</tt>.
  */
 template<class Scalar>
 Scalar dot( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
 
 /** \brief Get single element: <tt>result = v(i)</tt>.
  */
 template<class Scalar>
 Scalar get_ele( const VectorBase<Scalar>& v, Index i );
 
+
 /** \brief Set single element: <tt>v(i) = alpha</tt>.
  */
 template<class Scalar>
 void set_ele( Index i, Scalar alpha, VectorBase<Scalar>* v );
 
-/** \brief Assign all elements to a scalar: <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Assign all elements to a scalar:
+ * <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void put_scalar( const Scalar& alpha, VectorBase<Scalar>* y );
 
-/** \brief VectorBase assignment: <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Vector assignment:
+ * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void copy( const VectorBase<Scalar>& x, VectorBase<Scalar>* y );
 
-/** \brief Add a scalar to all elements: <tt>y(i) += alpha, i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Add a scalar to all elements:
+ * <tt>y(i) += alpha, i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void add_scalar( const Scalar& alpha, VectorBase<Scalar>* y );
 
-/** \brief Scale all elements by a scalar: <tt>y(i) *= alpha, i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Scale all elements by a scalar:
+ * <tt>y(i) *= alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * This takes care of the special cases of <tt>alpha == 0.0</tt>
  * (set <tt>y = 0.0</tt>) and <tt>alpha == 1.0</tt> (don't
@@ -131,73 +158,112 @@ void add_scalar( const Scalar& alpha, VectorBase<Scalar>* y );
 template<class Scalar>
 void scale( const Scalar& alpha, VectorBase<Scalar>* y );
 
-/** \brief Element-wise absolute value<tt>y(i) = abs(x(i)), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise absolute value:
+ * <tt>y(i) = abs(x(i)), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void abs( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
 
-/** \brief Element-wise reciprocal: <tt>y(i) = 1/x(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise reciprocal:
+ * <tt>y(i) = 1/x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void reciprocal( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
 
-/** \brief Element-wise product update: <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise product update:
+ * <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& v, VectorBase<Scalar>* y );
+void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
+  const VectorBase<Scalar>& v, VectorBase<Scalar>* y );
 
-/** \brief Element-wise product update: <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise conjugate product update:
+ * <tt>y(i) += alpha * conj(x(i)) * v(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void Vp_StVtV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& v);
+void ele_wise_conj_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
+  const VectorBase<Scalar>& v, VectorBase<Scalar>* y );
 
-/** \brief Element-wise product update: <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise product update:
+ * <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x, VectorBase<Scalar>* y );
+void Vp_StVtV( VectorBase<Scalar>* y, const Scalar& alpha,
+  const VectorBase<Scalar>& x, const VectorBase<Scalar>& v);
 
-/** \brief Element-wise product update: <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise product update:
+ * <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void Vt_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x );
+void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x,
+  VectorBase<Scalar>* y );
 
-/** \brief Element-wise division update: <tt>y(i) += alpha * x(i) / v(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise product update:
+    <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& v, VectorBase<Scalar>* y );
+void Vt_StV( VectorBase<Scalar>* y, const Scalar& alpha,
+  const VectorBase<Scalar> &x );
 
-/** \brief Linear combination: <tt>y(i) = beta*y(i) + sum( alpha[k]*x[k](i), k=0...m-1 ), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Element-wise division update:
+ * <tt>y(i) += alpha * x(i) / v(i), i = 0...y->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x,
+  const VectorBase<Scalar>& v, VectorBase<Scalar>* y );
+
+
+/** \brief Linear combination:
+ * <tt>y(i) = beta*y(i) + sum( alpha[k]*x[k](i), k=0...m-1 ), i = 0...y->space()->dim()-1</tt>.
  *
- * @param  m          [in] Number of vectors x[]
- * @param  alpha      [in] Array (length <tt>m</tt>) of input scalars.
- * @param  x          [in] Array (length <tt>m</tt>) of input vectors.
- * @param  beta       [in] Scalar multiplier for y
- * @param  y          [in/out] Target vector that is the result of the linear combination.
+ * \param m [in] Number of vectors x[]
+ *
+ * \param alpha [in] Array (length <tt>m</tt>) of input scalars.
+ *
+ * \param x [in] Array (length <tt>m</tt>) of input vectors.
+ *
+ * \param beta [in] Scalar multiplier for y
+ *
+ * \param y [in/out] Target vector that is the result of the linear
+ * combination.
  *
  * This function implements a general linear combination:
  \verbatim
- y(i) = beta*y(i) + alpha[0]*x[0](i) + alpha[1]*x[1](i) + ... + alpha[m-1]*x[m-1](i), i = 0...y->space()->dim()-1
+   y(i) = beta*y(i) + alpha[0]*x[0](i) + alpha[1]*x[1](i)
+          + ... + alpha[m-1]*x[m-1](i), i = 0...y->space()->dim()-1
  \endverbatim
  */
 template<class Scalar>
 void linear_combination(
-  const int                    m
-  ,const Scalar                alpha[]
-  ,const VectorBase<Scalar>*   x[]
-  ,const Scalar                &beta
-  ,VectorBase<Scalar>          *y
+  const int m
+  ,const Scalar alpha[]
+  ,const VectorBase<Scalar>* x[]
+  ,const Scalar &beta
+  ,VectorBase<Scalar> *y
   );
+
 
 /** \brief Seed the random number generator used in <tt>randomize()</tt>.
  *
- * @param  s  [in] The seed for the random number generator.
+ * \param s [in] The seed for the random number generator.
  *
- * Note, this just calls <tt>Teuchos::TOpRandomize<Scalar>::set_static_seed(s)</tt>.
+ * Note, this just calls
+ * <tt>Teuchos::TOpRandomize<Scalar>::set_static_seed(s)</tt>.
  */
 template<class Scalar>
 void seed_randomize( unsigned int s );
 
-/** \brief Random vector generation: <tt>v(i) = rand(l,u), , i = 1...v->space()->dim()</tt>.
+
+/** \brief Random vector generation:
+ * <tt>v(i) = rand(l,u), , i = 1...v->space()->dim()</tt>.
  * 
  * The elements <tt>v->getEle(i)</tt> are randomly generated between
  * <tt>[l,u]</tt>.
@@ -207,7 +273,9 @@ void seed_randomize( unsigned int s );
 template<class Scalar>
 void randomize( Scalar l, Scalar u, VectorBase<Scalar>* v );
 
+
 //@}
+
 
 /** \defgroup Thyra_Op_Vec_VectorStdOpsAll_LA_names_grp Vector with linear algebra naming convention.
  *
@@ -222,22 +290,30 @@ void randomize( Scalar l, Scalar u, VectorBase<Scalar>* v );
  */
 //@{
 
-/** \brief Assign all elements to a scalar: <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Assign all elements to a scalar:
+ * <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void assign( VectorBase<Scalar>* y, const Scalar& alpha );
 
-/** \brief VectorBase assignment: <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Vector assignment:
+ * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void assign( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
 
-/** \brief Add a scalar to all elements: <tt>y(i) += alpha, i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Add a scalar to all elements:
+ * <tt>y(i) += alpha, i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void Vp_S( VectorBase<Scalar>* y, const Scalar& alpha );
 
-/** \brief Scale all elements by a scalar: <tt>y(i) *= alpha, i = 0...y->space()->dim()-1</tt>.
+
+/** \brief Scale all elements by a scalar:
+ * <tt>y(i) *= alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * This takes care of the special cases of <tt>alpha == 0.0</tt>
  * (set <tt>y = 0.0</tt>) and <tt>alpha == 1.0</tt> (don't
@@ -246,67 +322,74 @@ void Vp_S( VectorBase<Scalar>* y, const Scalar& alpha );
 template<class Scalar>
 void Vt_S( VectorBase<Scalar>* y, const Scalar& alpha );
 
-/** \brief Assign scaled vector: <tt>y(i) = alpha * x(i), i = 0...y->space()->dim()-1</tt>.
- */
-template<class Scalar>
-void V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x );
 
-/** \brief AXPY: <tt>y(i) = alpha * x(i) + y(i), i = 0...y->space()->dim()-1</tt>.
+/** \brief Assign scaled vector:
+ * <tt>y(i) = alpha * x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar>& x );
+void V_StV( VectorBase<Scalar>* y, const Scalar& alpha,
+  const VectorBase<Scalar> &x );
+
+
+/** \brief AXPY:
+ * <tt>y(i) = alpha * x(i) + y(i), i = 0...y->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha,
+  const VectorBase<Scalar>& x );
+
 
 /** \brief <tt>y(i) = x(i) + beta*y(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta
-#ifndef SUN_CXX
-   = Teuchos::ScalarTraits<Scalar>::one()
-#endif
+void Vp_V(
+  VectorBase<Scalar>* y, const VectorBase<Scalar>& x,
+  const Scalar& beta = Teuchos::ScalarTraits<Scalar>::one()
   );
 
-#ifdef SUN_CXX
-
-template<class Scalar>
-inline
-void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
-{
-  Vp_V(y,x,Teuchos::ScalarTraits<Scalar>::one());
-}
-
-#endif
 
 /** \brief <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
 
+
 /** \brief <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_S( VectorBase<Scalar>* y, const Scalar& alpha );
 
+
 /** \brief <tt>z(i) = x(i) + y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+void V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x,
+  const VectorBase<Scalar>& y );
+
 
 /** \brief <tt>z(i) = x(i) - y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x,
+  const VectorBase<Scalar>& y );
+
 
 /** \brief <tt>z(i) = alpha*x(i) + y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha,
+  const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
 
 /** \brief <tt>z(i) = alpha*x(i) + beta*y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
-void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const Scalar &beta, const VectorBase<Scalar>& y );
+void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha,
+  const VectorBase<Scalar>& x, const Scalar &beta, const VectorBase<Scalar>& y );
+
 
 //@}
+
 
 /** \defgroup Thyra_Op_Vec_VectorStdOpsComparable_grp Subset of vector operations for types supporting relational operators.
  *
@@ -317,22 +400,24 @@ void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Sca
  */
 //@{
 
+
 /** \brief Min element: <tt>result = min{ x(i), i = 0...x.space()->dim()-1 } </tt>.
  */
 template<class Scalar>
 Scalar min( const VectorBase<Scalar>& x );
 
+
 /** \brief Min element and its index: Returns <tt>maxEle = x(k)</tt>
  * and <tt>maxIndex = k</tt> such that <tt>x(k) <= x(i)</tt> for all
  * <tt>i = 0...x.space()->dim()-1</tt>.
  *
- * @param  x         [in] Input vector.
- * @param  minEle    [out] The minimum element value.
- * @param  maxindex  [out] The global index of the minimum element.
- *                   If there is more than one element with the
- *                   maximum entry then this returns the lowest index
- *                   in order to make the output independent of the order
- *                   of operations.
+ * \param x [in] Input vector.
+ *
+ * \param minEle [out] The minimum element value.
+ *
+ * \param maxindex [out] The global index of the minimum element.  If there is
+ * more than one element with the maximum entry then this returns the lowest
+ * index in order to make the output independent of the order of operations.
  *
  * Preconditions:<ul>
  * <li><tt>minEle!=NULL</tt>
@@ -342,20 +427,23 @@ Scalar min( const VectorBase<Scalar>& x );
 template<class Scalar>
 void min( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex );
 
+
 /** \brief Minimum element greater than some bound and its index:
  * Returns <tt>minEle = x(k)</tt> and <tt>minIndex = k</tt> such that
  * <tt>x(k) <= x(i)</tt> for all <tt>i</tt> where <tt>x(i) >
  * bound</tt>.
  *
- * @param  x         [in] Input vector.
- * @param  bound     [in] The upper bound
- * @param  minEle    [out] The minimum element value as defined above.
- * @param  minIndex  [out] The global index of the maximum element.
- *                   If there is more than one element with the
- *                   minimum value then this returns the lowest index
- *                   in order to make the output independent of the order
- *                   of operations.  If no entries are less than <tt>bound</tt>
- *                   then <tt>minIndex < 0</tt> on return.
+ * \param x [in] Input vector.
+ *
+ * \param bound [in] The upper bound
+ *
+ * \param minEle [out] The minimum element value as defined above.
+ *
+ * \param minIndex [out] The global index of the maximum element.  If there is
+ * more than one element with the minimum value then this returns the lowest
+ * index in order to make the output independent of the order of operations.
+ * If no entries are less than <tt>bound</tt> then <tt>minIndex < 0</tt> on
+ * return.
  *
  * Preconditions:<ul>
  * <li><tt>minEle!=NULL</tt>
@@ -368,24 +456,27 @@ void min( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex );
  * </ul>
  */
 template<class Scalar>
-void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound, Scalar *minEle, Index *minIndex );
+void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
+  Scalar *minEle, Index *minIndex );
+
 
 /** \brief Max element: <tt>result = max{ x(i), i = 1...n } </tt>.
  */
 template<class Scalar>
 Scalar max( const VectorBase<Scalar>& x );
 
+
 /** \brief Max element and its index: Returns <tt>maxEle = x(k)</tt>
  * and <tt>maxIndex = k</tt> such that <tt>x(k) >= x(i)</tt> for
  * <tt>i = 0...x.space()->dim()-1</tt>.
  *
- * @param  x         [in] Input vector.
- * @param  maxEle    [out] The maximum element value.
- * @param  maxindex  [out] The global index of the maximum element.
- *                   If there is more than one element with the
- *                   maximum value then this returns the lowest index
- *                   in order to make the output independent of the order
- *                   of operations.
+ * \param x [in] Input vector.
+ *
+ * \param maxEle [out] The maximum element value.
+ *
+ * \param maxindex [out] The global index of the maximum element.  If there is
+ * more than one element with the maximum value then this returns the lowest
+ * index in order to make the output independent of the order of operations.
  *
  * Preconditions:<ul>
  * <li><tt>maxEle!=NULL</tt>
@@ -395,19 +486,22 @@ Scalar max( const VectorBase<Scalar>& x );
 template<class Scalar>
 void max( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex );
 
+
 /** \brief Max element less than bound and its index: Returns <tt>maxEle =
  * x(k)</tt> and <tt>maxIndex = k</tt> such that <tt>x(k) >= x(i)</tt> for all
  * <tt>i</tt> where <tt>x(i) < bound</tt>.
  *
- * @param  x         [in] Input vector.
- * @param  bound     [in] The upper bound
- * @param  maxEle    [out] The maximum element value as defined above.
- * @param  maxindex  [out] The global index of the maximum element.
- *                   If there is more than one element with the
- *                   maximum index then this returns the lowest index
- *                   in order to make the output independent of the order
- *                   of operations.  If no entries are less than <tt>bound</tt>
- *                   then <tt>minIndex < 0</tt> on return.
+ * \param x [in] Input vector.
+ *
+ * \param bound [in] The upper bound
+ *
+ * \param maxEle [out] The maximum element value as defined above.
+ *
+ * \param maxindex [out] The global index of the maximum element.  If there is
+ * more than one element with the maximum index then this returns the lowest
+ * index in order to make the output independent of the order of operations.
+ * If no entries are less than <tt>bound</tt> then <tt>minIndex < 0</tt> on
+ * return.
  *
  * Preconditions:<ul>
  * <li><tt>maxEle!=NULL</tt>
@@ -420,14 +514,19 @@ void max( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex );
  * </ul>
  */
 template<class Scalar>
-void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound, Scalar *maxEle, Index *maxIndex );
+void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
+  Scalar *maxEle, Index *maxIndex );
+
 
 //@}
 
+
 } // end namespace Thyra
+
 
 // /////////////////////////
 // Inline functions
+
 
 template<class Scalar>
 inline
@@ -435,6 +534,7 @@ Scalar Thyra::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>&
 {
   return x.space()->scalarProd(x,y);
 }
+
 
 template<class Scalar>
 inline

@@ -302,32 +302,33 @@ RTOP_SUPPORT_C = \
 
 RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_ROpCountNanInf.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpNorm1.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAssignVectors.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpDotProd.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpNorm2.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpEleWiseDivide.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpMax.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpMaxIndex.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpMaxIndexLessThanBound.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpMin.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpMinIndex.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpMinIndexGreaterThanBound.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpNorm1.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpNorm2.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpNormInf.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpSum.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpWeightedNorm2.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpAXPY.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpAbs.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpAddScalar.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpAssignScalar.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpAssignVectors.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpEleWiseConjProd.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpEleWiseDivide.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProd.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProdUpdate.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpMax.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpSum.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpMaxIndex.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpWeightedNorm2.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpRandomize.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpMaxIndexLessThanBound.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAXPY.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpReciprocal.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpMin.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAbs.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpScaleVector.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpMinIndex.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAddScalar.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.hpp\
-  $(srcdir)/ops_lib/RTOpPack_ROpMinIndexGreaterThanBound.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAssignScalar.hpp\
   $(srcdir)/ops_lib/RTOpPack_SUNDIALS_Ops.hpp
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RTOP_INCLUDES)

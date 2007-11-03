@@ -266,17 +266,16 @@ template<class Scalar>
 RCP<DefaultBlockedLinearOp<Scalar> > defaultBlockedLinearOp();
 
 
-/** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
+/** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
-block2x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A01
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A10
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A11
+block1x2(
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
+  const std::string &label = ""
   );
 
 
@@ -287,20 +286,9 @@ block2x2(
 template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 block2x1(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A10
-  );
-
-
-/** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
- *
- * \relates DefaultBlockedLinearOp
- */
-template<class Scalar>
-Teuchos::RCP<const LinearOpBase<Scalar> >
-block1x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A01
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
+  const std::string &label = ""
   );
 
 
@@ -309,24 +297,13 @@ block1x2(
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-nonconstBlock2x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A01
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A10
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A11
-  );
-
-
-/** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
- *
- * \relates DefaultBlockedLinearOp
- */
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-nonconstBlock2x1(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A10
+Teuchos::RCP<const LinearOpBase<Scalar> >
+block2x2(
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A11,
+  const std::string &label = ""
   );
 
 
@@ -337,8 +314,37 @@ nonconstBlock2x1(
 template<class Scalar>
 Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock1x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A01
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
+  const std::string &label = ""
+  );
+
+
+/** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstBlock2x1(
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
+  const std::string &label = ""
+  );
+
+
+/** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstBlock2x2(
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A11,
+  const std::string &label = ""
   );
 
 

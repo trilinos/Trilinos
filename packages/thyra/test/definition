@@ -70,6 +70,13 @@
     COMM = SERIAL;
 }
 
+
+(FRAMEWORK, INSTALL) {
+    TESTS = ../example/operator_vector/exampleImplicitlyComposedLinearOperators.exe;
+    ARGS = --verb-level="VERB_MEDIUM", --verb-level="VERB_EXTREME";
+    COMM = SERIAL;
+}
+
 (DOCUMENTATION) {
     TESTS = ../example/generate-sample-output.pl;
     COMM = SERIAL;

@@ -29,12 +29,15 @@
 #ifndef THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP
 #define THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP
 
+
 #include "Thyra_AddedLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_arrayArg.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates an
  * implicitly added linear operator out of one or more constituent
@@ -94,8 +97,8 @@ public:
    * functions described \ref Thyra_Op_Vec_AddedLinearOp_helpers_grp "here".
    */
   DefaultAddedLinearOp(
-    const int                                                   numOps
-    ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
+    const int numOps,
+    const RCP<LinearOpBase<Scalar> > Ops[]
     );
 
   /** Calls <tt>initialize()</tt>.
@@ -104,8 +107,8 @@ public:
    * functions described \ref Thyra_Op_Vec_AddedLinearOp_helpers_grp "here".
    */
   DefaultAddedLinearOp(
-    const int                                                   numOps
-    ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
+    const int numOps,
+    const RCP<const LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Initialize given a list of non-const linear operators.
@@ -128,8 +131,8 @@ public:
    * </ul>
    */
   void initialize(
-    const int                                                   numOps
-    ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
+    const int numOps,
+    const RCP<LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Initialize given a list of const linear operators.
@@ -152,8 +155,8 @@ public:
    * </ul>
    */
   void initialize(
-    const int                                                   numOps
-    ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
+    const int numOps,
+    const RCP<const LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Set to uninitialized.
@@ -174,9 +177,9 @@ public:
   /** \brief . */
   bool opIsConst(const int k) const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp(const int k);
+  RCP<LinearOpBase<Scalar> > getNonconstOp(const int k);
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const;
+  RCP<const LinearOpBase<Scalar> > getOp(const int k) const;
 
   //@}
 
@@ -186,15 +189,15 @@ public:
   /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
    * and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP< const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
    * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
+  RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -214,8 +217,8 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream                &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
   //@}
@@ -232,11 +235,11 @@ protected:
 
   /** \brief . */
   void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const ETransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    MultiVectorBase<Scalar> *Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
@@ -255,30 +258,36 @@ private:
 
 };
 
-/** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
- *
- * \relates DefaultAddedLinearOp
- */
-template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
-nonconstAdd(
-  const Teuchos::RCP<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &B
-  );
 
 /** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
  *
  * \relates DefaultAddedLinearOp
  */
 template<class Scalar>
-Teuchos::RCP<const LinearOpBase<Scalar> >
-add(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &B
+RCP<LinearOpBase<Scalar> >
+nonconstAdd(
+  const RCP<LinearOpBase<Scalar> > &A,
+  const RCP<LinearOpBase<Scalar> > &B,
+  const std::string &label = ""
   );
+
+
+/** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
+ *
+ * \relates DefaultAddedLinearOp
+ */
+template<class Scalar>
+RCP<const LinearOpBase<Scalar> >
+add(
+  const RCP<const LinearOpBase<Scalar> > &A,
+  const RCP<const LinearOpBase<Scalar> > &B,
+  const std::string &label = ""
+  );
+
 
 // /////////////////////////////////
 // Inline members
+
 
 template<class Scalar>
 inline
@@ -289,6 +298,8 @@ void DefaultAddedLinearOp<Scalar>::assertInitialized() const
 #endif
 }
 
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP

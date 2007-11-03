@@ -44,7 +44,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp()
 template<class Scalar>
 DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
   const int                                                   numOps
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
+  ,const RCP<LinearOpBase<Scalar> >          Ops[]
   )
 {
   initialize(numOps,Ops);
@@ -53,7 +53,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
 template<class Scalar>
 DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
   const int                                                   numOps
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
+  ,const RCP<const LinearOpBase<Scalar> >    Ops[]
   )
 {
   initialize(numOps,Ops);
@@ -62,7 +62,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::initialize(
   const int                                                   numOps
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
+  ,const RCP<LinearOpBase<Scalar> >          Ops[]
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -78,7 +78,7 @@ void DefaultAddedLinearOp<Scalar>::initialize(
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::initialize(
   const int                                                   numOps
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
+  ,const RCP<const LinearOpBase<Scalar> >    Ops[]
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -309,35 +309,43 @@ void DefaultAddedLinearOp<Scalar>::setupDefaultObjectLabel()
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstAdd(
-  const Teuchos::RCP<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &B
+  const RCP<LinearOpBase<Scalar> > &A,
+  const RCP<LinearOpBase<Scalar> > &B,
+  const std::string &label
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RCP;
-  return Teuchos::rcp(
-    new DefaultAddedLinearOp<Scalar>(
-      2
-      ,arrayArg<RCP<LinearOpBase<Scalar> > >(A,B)()
-      )
-    );
+  RCP<LinearOpBase<Scalar> >
+    alo = Teuchos::rcp(
+      new DefaultAddedLinearOp<Scalar>(
+        2
+        ,arrayArg<RCP<LinearOpBase<Scalar> > >(A,B)()
+        )
+      );
+  if (label.length())
+    alo->setObjectLabel(label);
+  return alo;
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::add(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &B
+  const RCP<const LinearOpBase<Scalar> > &A,
+  const RCP<const LinearOpBase<Scalar> > &B,
+  const std::string &label
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RCP;
-  return Teuchos::rcp(
-    new DefaultAddedLinearOp<Scalar>(
-      2
-      ,arrayArg<RCP<const LinearOpBase<Scalar> > >(A,B)()
-      )
-    );
+  RCP<LinearOpBase<Scalar> >
+    alo = Teuchos::rcp(
+      new DefaultAddedLinearOp<Scalar>(
+        2
+        ,arrayArg<RCP<const LinearOpBase<Scalar> > >(A,B)()
+        )
+      );
+  if (label.length())
+    alo->setObjectLabel(label);
+  return alo;
 }
 
 #endif	// THYRA_DEFAULT_ADDED_LINEAR_OP_HPP

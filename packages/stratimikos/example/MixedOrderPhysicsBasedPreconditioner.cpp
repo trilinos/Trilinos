@@ -104,9 +104,13 @@ int main(int argc, char* argv[])
   using Teuchos::RCP;
   using Teuchos::CommandLineProcessor;
   using Teuchos::ParameterList;
-  typedef ParameterList::PrintOptions PLPrintOptions;
   using Teuchos::sublist;
+  typedef ParameterList::PrintOptions PLPrintOptions;
   using Thyra::inverse;
+  using Thyra::initializePreconditionedOp;
+  using Thyra::initializeOp;
+  using Thyra::unspecifiedPrec;
+  using Thyra::solve;
   typedef RCP<const Thyra::LinearOpBase<double> > LinearOpPtr;
   typedef RCP<Thyra::VectorBase<double> > VectorPtr;
   
@@ -247,24 +251,9 @@ int main(int argc, char* argv[])
     LinearOpPtr M21=readEpetraCrsMatrixFromMatrixMarketAsLinearOp(
       baseDir+"/M21.mtx",comm,"M21");
     *out << "\nM21 = " << describe(*M21,verbLevel) << "\n";
-    /*
-    LinearOpPtr M12=readEpetraCrsMatrixFromMatrixMarketAsLinearOp(
-      baseDir+"/M12.mtx",
-      Thyra::get_Epetra_Operator(*M22)->OperatorRangeMap(),
-      Thyra::get_Epetra_Operator(*M11)->OperatorRangeMap(),
-      "M12"
-      );
-    *out << "\nM12 = " << describe(*M12,verbLevel) << "\n";
-    LinearOpPtr M21=readEpetraCrsMatrixFromMatrixMarketAsLinearOp(
-      baseDir+"/M21.mtx",
-      Thyra::get_Epetra_Operator(*M11)->OperatorRangeMap(),
-      Thyra::get_Epetra_Operator(*M22)->OperatorRangeMap(),
-      "M21"
-      );
-    *out << "\nM21 = " << describe(*M21,verbLevel) << "\n";
-    */
 
-    // ToDo: Replace the above functions with a general Thyra strategy object to do the reading
+    // ToDo: Replace the above functions with a general Thyra strategy object
+    // to do the reading
     
     //
     *out << "\nB) Get the preconditioner and/or linear solver strategies to invert M11, M22, P1, and P2 ...\n";
@@ -308,20 +297,16 @@ int main(int argc, char* argv[])
     // For M11 and M22, we want full linear solver factories with embedded
     // algebraic preconditioner factories.
 
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      M11_linsolve_strategy
+    RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > M11_linsolve_strategy
       = createLinearSolveStrategy(M11_linsolve_strategy_builder);
       
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      M22_linsolve_strategy
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > M22_linsolve_strategy
       = createLinearSolveStrategy(M22_linsolve_strategy_builder);
       
     // For P1, we only want its preconditioner factory.
 
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      P1_linsolve_strategy;
-    RCP<Thyra::PreconditionerFactoryBase<double> >
-      P1_prec_strategy;
+    RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > P1_linsolve_strategy;
+    RCP<const Thyra::PreconditionerFactoryBase<double> > P1_prec_strategy;
     if(invertP1)
       P1_linsolve_strategy
         = createLinearSolveStrategy(P1_linsolve_strategy_builder);
@@ -332,8 +317,7 @@ int main(int argc, char* argv[])
     // For P2, we only want a linear solver factory.  We will supply the
     // preconditioner ourselves (that is the whole point of this example).
 
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      P2_linsolve_strategy
+    RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > P2_linsolve_strategy
       = createLinearSolveStrategy(P2_linsolve_strategy_builder);
 
     //
@@ -341,18 +325,18 @@ int main(int argc, char* argv[])
     //
 
     *out << "\nCreating inv(M11) ...\n";
-    LinearOpPtr invM11 = inverse<double>(*M11_linsolve_strategy,M11);
+    LinearOpPtr invM11 = inverse(*M11_linsolve_strategy,M11);
     *out << "\ninvM11 = " << describe(*invM11,verbLevel) << "\n";
 
     *out << "\nCreating inv(M22) ...\n";
-    LinearOpPtr invM22 = inverse<double>(*M22_linsolve_strategy,M22);
+    LinearOpPtr invM22 = inverse(*M22_linsolve_strategy,M22);
     *out << "\ninvM22 = " << describe(*invM22,verbLevel) << "\n";
 
     *out << "\nCreating prec(P1) ...\n";
     LinearOpPtr precP1Op;
     if(invertP1) {
       *out << "\nCreating prec(P1) as a full solver ...\n";
-      precP1Op = inverse<double>(*P1_linsolve_strategy,P1);
+      precP1Op = inverse(*P1_linsolve_strategy,P1);
     }
     else {
       *out << "\nCreating prec(P1) as just an algebraic preconditioner ...\n";
@@ -365,10 +349,10 @@ int main(int argc, char* argv[])
       precP1Op)->setObjectLabel("precP1Op"); // Cast to set label ...
     *out << "\nprecP1Op = " << describe(*precP1Op,verbLevel) << "\n";
 
-    LinearOpPtr P2ToP1 = multiply(invM11,M21,"P2ToP1");
+    LinearOpPtr P2ToP1 = multiply( invM11, M21, "P2ToP1" );
     *out << "\nP2ToP1 = " << describe(*P2ToP1,verbLevel) << "\n";
 
-    LinearOpPtr P1ToP2 = multiply(invM22,M12,"P1ToP2");
+    LinearOpPtr P1ToP2 = multiply( invM22, M12, "P1ToP2" );
     *out << "\nP1ToP2 = " << describe(*P1ToP2,verbLevel) << "\n";
 
     LinearOpPtr precP2Op = multiply( P1ToP2, precP1Op, P2ToP1 );
@@ -382,20 +366,12 @@ int main(int argc, char* argv[])
       P2_lows = P2_linsolve_strategy->createOp();
     if(useP1Prec) {
       *out << "\nCreating the solver P2 using the specialized precP2Op\n";
-      Thyra::initializePreconditionedOp<double>(
-        *P2_linsolve_strategy,
-        P2,
-        Thyra::unspecifiedPrec(precP2Op),
-        &*P2_lows
-        );
+      initializePreconditionedOp<double>( *P2_linsolve_strategy, P2,
+        unspecifiedPrec(precP2Op), &*P2_lows );
     }
     else {
       *out << "\nCreating the solver P2 using algebraic preconditioner\n";
-      Thyra::initializeOp<double>(
-        *P2_linsolve_strategy,
-        P2,
-        &*P2_lows
-        );
+      initializeOp( *P2_linsolve_strategy, P2, &*P2_lows );
     }
     *out << "\nP2_lows = " << describe(*P2_lows,verbLevel) << "\n";
     
@@ -409,7 +385,7 @@ int main(int argc, char* argv[])
     Thyra::assign(&*x,0.0); // Must give an initial guess!
 
     Thyra::SolveStatus<double>
-      solveStatus = Thyra::solve( *P2_lows, Thyra::NOTRANS, *b, &*x );
+      solveStatus = solve( *P2_lows, Thyra::NOTRANS, *b, &*x );
 
     *out << "\nSolve status:\n" << solveStatus;
 

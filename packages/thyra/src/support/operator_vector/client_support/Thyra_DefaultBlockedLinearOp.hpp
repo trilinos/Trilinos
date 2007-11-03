@@ -344,7 +344,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
       OSTab tab(out);
       *out
         << "Constituent LinearOpBase objects for M = [ Op[0,0] ..."
-        << " ; ... ; ... Op[numRowBlocks-1,numColBlocks-1]:\n";
+        << " ; ... ; ... Op[numRowBlocks-1,numColBlocks-1] ]:\n";
       tab.incrTab();
       for( int i = 0; i < numRowBlocks_; ++i ) {
         for( int j = 0; j < numColBlocks_; ++j ) {
@@ -618,11 +618,52 @@ Thyra::defaultBlockedLinearOp()
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::block1x2(
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
+  const std::string &label
+  )
+{
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(1,2);
+  if(A00.get()) M->setBlock(0,0,A00);
+  if(A01.get()) M->setBlock(0,1,A01);
+  M->endBlockFill();
+  if (label.length())
+    M->setObjectLabel(label);
+  return M;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::block2x1(
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
+  const std::string &label
+  )
+{
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(2,1);
+  if(A00.get()) M->setBlock(0,0,A00);
+  if(A10.get()) M->setBlock(1,0,A10);
+  M->endBlockFill();
+  if (label.length())
+    M->setObjectLabel(label);
+  return M;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block2x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A01
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A10
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A11
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A11,
+  const std::string &label
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -633,40 +674,48 @@ Thyra::block2x2(
   if(A10.get()) M->setBlock(1,0,A10);
   if(A11.get()) M->setBlock(1,1,A11);
   M->endBlockFill();
+  if (label.length())
+    M->setObjectLabel(label);
   return M;
 }
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-Thyra::block2x1(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A10
-  )
-{
-  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
-    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
-  M->beginBlockFill(2,1);
-  if(A00.get()) M->setBlock(0,0,A00);
-  if(A10.get()) M->setBlock(1,0,A10);
-  M->endBlockFill();
-  return M;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-Thyra::block1x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &A01
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstBlock1x2(
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
+  const std::string &label
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(1,2);
-  if(A00.get()) M->setBlock(0,0,A00);
-  if(A01.get()) M->setBlock(0,1,A01);
+  if(A00.get()) M->setNonconstBlock(0,0,A00);
+  if(A01.get()) M->setNonconstBlock(0,1,A01);
   M->endBlockFill();
+  if (label.length())
+    M->setObjectLabel(label);
+  return M;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstBlock2x1(
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
+  const std::string &label
+  )
+{
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(2,1);
+  if(A00.get()) M->setNonconstBlock(0,0,A00);
+  if(A10.get()) M->setNonconstBlock(1,0,A10);
+  M->endBlockFill();
+  if (label.length())
+    M->setObjectLabel(label);
   return M;
 }
 
@@ -674,10 +723,11 @@ Thyra::block1x2(
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock2x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A01
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A10
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A11
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A11,
+  const std::string &label
   )
 {
   Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
@@ -688,40 +738,8 @@ Thyra::nonconstBlock2x2(
   if(A10.get()) M->setNonconstBlock(1,0,A10);
   if(A11.get()) M->setNonconstBlock(1,1,A11);
   M->endBlockFill();
-  return M;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Thyra::nonconstBlock2x1(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A10
-  )
-{
-  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
-    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
-  M->beginBlockFill(2,1);
-  if(A00.get()) M->setNonconstBlock(0,0,A00);
-  if(A10.get()) M->setNonconstBlock(1,0,A10);
-  M->endBlockFill();
-  return M;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Thyra::nonconstBlock1x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00
-  ,const Teuchos::RCP<LinearOpBase<Scalar> > &A01
-  )
-{
-  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
-    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
-  M->beginBlockFill(1,2);
-  if(A00.get()) M->setNonconstBlock(0,0,A00);
-  if(A01.get()) M->setNonconstBlock(0,1,A01);
-  M->endBlockFill();
+  if (label.length())
+    M->setObjectLabel(label);
   return M;
 }
 

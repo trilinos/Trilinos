@@ -61,7 +61,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4)
 subdir = example/operator_vector
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -87,14 +88,19 @@ CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = sillyCgSolve_serial$(EXEEXT)
 am__EXEEXT_2 = sillyCgSolve_mpi$(EXEEXT)
 am__EXEEXT_3 = sillyPowerMethod_serial$(EXEEXT)
+am__EXEEXT_4 = exampleImplicitlyComposedLinearOperators$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_sillyCgSolve_mpi_OBJECTS = sillyCgSolve_mpi.$(OBJEXT)
-sillyCgSolve_mpi_OBJECTS = $(am_sillyCgSolve_mpi_OBJECTS)
+am_exampleImplicitlyComposedLinearOperators_OBJECTS =  \
+	exampleImplicitlyComposedLinearOperators.$(OBJEXT)
+exampleImplicitlyComposedLinearOperators_OBJECTS =  \
+	$(am_exampleImplicitlyComposedLinearOperators_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(THYRA_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+am_sillyCgSolve_mpi_OBJECTS = sillyCgSolve_mpi.$(OBJEXT)
+sillyCgSolve_mpi_OBJECTS = $(am_sillyCgSolve_mpi_OBJECTS)
 am_sillyCgSolve_serial_OBJECTS = sillyCgSolve_serial.$(OBJEXT)
 sillyCgSolve_serial_OBJECTS = $(am_sillyCgSolve_serial_OBJECTS)
 am_sillyPowerMethod_serial_OBJECTS =  \
@@ -109,10 +115,11 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(sillyCgSolve_mpi_SOURCES) $(sillyCgSolve_serial_SOURCES) \
+SOURCES = $(exampleImplicitlyComposedLinearOperators_SOURCES) \
+	$(sillyCgSolve_mpi_SOURCES) $(sillyCgSolve_serial_SOURCES) \
 	$(sillyPowerMethod_serial_SOURCES)
-DIST_SOURCES = $(sillyCgSolve_mpi_SOURCES) \
-	$(sillyCgSolve_serial_SOURCES) \
+DIST_SOURCES = $(exampleImplicitlyComposedLinearOperators_SOURCES) \
+	$(sillyCgSolve_mpi_SOURCES) $(sillyCgSolve_serial_SOURCES) \
 	$(sillyPowerMethod_serial_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -240,6 +247,7 @@ top_srcdir = @top_srcdir@
 SILLY_CG_SOLVE_SERIAL = sillyCgSolve_serial
 SILLY_CG_SOLVE_MPI = sillyCgSolve_mpi
 SILLY_POWER_METHOD_SERIAL = sillyPowerMethod_serial
+EXAMPLE_IMPLICITLY_COMPOSED_LINEAR_OPERATORS = exampleImplicitlyComposedLinearOperators
 sillyCgSolve_serial_SOURCES = $(srcdir)/sillyCgSolve_serial.cpp
 sillyCgSolve_serial_DEPENDENCIES = $(common_dependencies)
 sillyCgSolve_serial_LDADD = $(common_ldadd)
@@ -249,6 +257,9 @@ sillyCgSolve_mpi_LDADD = $(common_ldadd)
 sillyPowerMethod_serial_SOURCES = $(srcdir)/sillyPowerMethod_serial.cpp
 sillyPowerMethod_serial_DEPENDENCIES = $(common_dependencies)
 sillyPowerMethod_serial_LDADD = $(common_ldadd)
+exampleImplicitlyComposedLinearOperators_SOURCES = $(srcdir)/exampleImplicitlyComposedLinearOperators.cpp
+exampleImplicitlyComposedLinearOperators_DEPENDENCIES = $(common_dependencies)
+exampleImplicitlyComposedLinearOperators_LDADD = $(common_ldadd)
 
 #
 # Common stuff
@@ -264,13 +275,15 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 
 # We don't need to install these headers, but we need the files in the tarball.
-EXTRA_DIST = $(srcdir)/ExampleTridiagSerialLinearOp.hpp \
-	     $(srcdir)/ExampleTridiagSpmdLinearOp.hpp \
-	     $(srcdir)/sillierCgSolve.hpp \
-	     $(srcdir)/silliestCgSolve.hpp \
-	     $(srcdir)/sillyCgSolve.hpp \
-	     $(srcdir)/sillyModifiedGramSchmidt.hpp \
-	     $(srcdir)/sillyPowerMethod.hpp
+EXTRA_DIST = \
+  $(srcdir)/ExampleTridiagSerialLinearOp.hpp \
+  $(srcdir)/ExampleTridiagSpmdLinearOp.hpp \
+  $(srcdir)/sillierCgSolve.hpp \
+  $(srcdir)/silliestCgSolve.hpp \
+  $(srcdir)/sillyCgSolve.hpp \
+  $(srcdir)/sillyModifiedGramSchmidt.hpp \
+  $(srcdir)/sillyPowerMethod.hpp \
+  $(srcdir)/exampleImplicitlyComposedLinearOperators.hpp
 
 all: all-am
 
@@ -308,6 +321,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+exampleImplicitlyComposedLinearOperators$(EXEEXT): $(exampleImplicitlyComposedLinearOperators_OBJECTS) $(exampleImplicitlyComposedLinearOperators_DEPENDENCIES) 
+	@rm -f exampleImplicitlyComposedLinearOperators$(EXEEXT)
+	$(CXXLINK) $(exampleImplicitlyComposedLinearOperators_OBJECTS) $(exampleImplicitlyComposedLinearOperators_LDADD) $(LIBS)
 sillyCgSolve_mpi$(EXEEXT): $(sillyCgSolve_mpi_OBJECTS) $(sillyCgSolve_mpi_DEPENDENCIES) 
 	@rm -f sillyCgSolve_mpi$(EXEEXT)
 	$(CXXLINK) $(sillyCgSolve_mpi_OBJECTS) $(sillyCgSolve_mpi_LDADD) $(LIBS)
@@ -324,6 +340,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleImplicitlyComposedLinearOperators.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sillyCgSolve_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sillyCgSolve_serial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sillyPowerMethod_serial.Po@am__quote@
@@ -341,6 +358,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+exampleImplicitlyComposedLinearOperators.o: $(srcdir)/exampleImplicitlyComposedLinearOperators.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT exampleImplicitlyComposedLinearOperators.o -MD -MP -MF $(DEPDIR)/exampleImplicitlyComposedLinearOperators.Tpo -c -o exampleImplicitlyComposedLinearOperators.o `test -f '$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp' || echo '$(srcdir)/'`$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/exampleImplicitlyComposedLinearOperators.Tpo $(DEPDIR)/exampleImplicitlyComposedLinearOperators.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp' object='exampleImplicitlyComposedLinearOperators.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o exampleImplicitlyComposedLinearOperators.o `test -f '$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp' || echo '$(srcdir)/'`$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp
+
+exampleImplicitlyComposedLinearOperators.obj: $(srcdir)/exampleImplicitlyComposedLinearOperators.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT exampleImplicitlyComposedLinearOperators.obj -MD -MP -MF $(DEPDIR)/exampleImplicitlyComposedLinearOperators.Tpo -c -o exampleImplicitlyComposedLinearOperators.obj `if test -f '$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp'; then $(CYGPATH_W) '$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/exampleImplicitlyComposedLinearOperators.Tpo $(DEPDIR)/exampleImplicitlyComposedLinearOperators.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp' object='exampleImplicitlyComposedLinearOperators.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o exampleImplicitlyComposedLinearOperators.obj `if test -f '$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp'; then $(CYGPATH_W) '$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exampleImplicitlyComposedLinearOperators.cpp'; fi`
 
 sillyCgSolve_mpi.o: $(srcdir)/sillyCgSolve_mpi.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sillyCgSolve_mpi.o -MD -MP -MF $(DEPDIR)/sillyCgSolve_mpi.Tpo -c -o sillyCgSolve_mpi.o `test -f '$(srcdir)/sillyCgSolve_mpi.cpp' || echo '$(srcdir)/'`$(srcdir)/sillyCgSolve_mpi.cpp

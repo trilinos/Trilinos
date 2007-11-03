@@ -35,8 +35,10 @@ EXEEXT = .exe
 SILLY_CG_SOLVE_SERIAL = sillyCgSolve_serial
 SILLY_CG_SOLVE_MPI = sillyCgSolve_mpi
 SILLY_POWER_METHOD_SERIAL = sillyPowerMethod_serial
+EXAMPLE_IMPLICITLY_COMPOSED_LINEAR_OPERATORS = exampleImplicitlyComposedLinearOperators
 
-noinst_PROGRAMS = $(SILLY_CG_SOLVE_SERIAL) $(SILLY_CG_SOLVE_MPI) $(SILLY_POWER_METHOD_SERIAL)
+noinst_PROGRAMS = $(SILLY_CG_SOLVE_SERIAL) $(SILLY_CG_SOLVE_MPI) $(SILLY_POWER_METHOD_SERIAL) \
+  $(EXAMPLE_IMPLICITLY_COMPOSED_LINEAR_OPERATORS)
 
 sillyCgSolve_serial_SOURCES = $(srcdir)/sillyCgSolve_serial.cpp
 sillyCgSolve_serial_DEPENDENCIES = $(common_dependencies)
@@ -49,6 +51,11 @@ sillyCgSolve_mpi_LDADD = $(common_ldadd)
 sillyPowerMethod_serial_SOURCES = $(srcdir)/sillyPowerMethod_serial.cpp
 sillyPowerMethod_serial_DEPENDENCIES = $(common_dependencies)
 sillyPowerMethod_serial_LDADD = $(common_ldadd)
+
+exampleImplicitlyComposedLinearOperators_SOURCES = $(srcdir)/exampleImplicitlyComposedLinearOperators.cpp
+exampleImplicitlyComposedLinearOperators_DEPENDENCIES = $(common_dependencies)
+exampleImplicitlyComposedLinearOperators_LDADD = $(common_ldadd)
+
 
 #
 # Common stuff
@@ -72,13 +79,15 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 
 # We don't need to install these headers, but we need the files in the tarball.
-EXTRA_DIST = $(srcdir)/ExampleTridiagSerialLinearOp.hpp \
-	     $(srcdir)/ExampleTridiagSpmdLinearOp.hpp \
-	     $(srcdir)/sillierCgSolve.hpp \
-	     $(srcdir)/silliestCgSolve.hpp \
-	     $(srcdir)/sillyCgSolve.hpp \
-	     $(srcdir)/sillyModifiedGramSchmidt.hpp \
-	     $(srcdir)/sillyPowerMethod.hpp
+EXTRA_DIST = \
+  $(srcdir)/ExampleTridiagSerialLinearOp.hpp \
+  $(srcdir)/ExampleTridiagSpmdLinearOp.hpp \
+  $(srcdir)/sillierCgSolve.hpp \
+  $(srcdir)/silliestCgSolve.hpp \
+  $(srcdir)/sillyCgSolve.hpp \
+  $(srcdir)/sillyModifiedGramSchmidt.hpp \
+  $(srcdir)/sillyPowerMethod.hpp \
+  $(srcdir)/exampleImplicitlyComposedLinearOperators.hpp
 
 # This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
 LIBS =

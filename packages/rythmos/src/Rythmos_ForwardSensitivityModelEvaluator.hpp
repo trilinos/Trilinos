@@ -272,7 +272,7 @@ namespace Rythmos {
     
  \endverbatim
 
- * Therefore, in this types of method, the term involving
+ * Therefore, in this type of method, the term involving
  * <tt>d(f)/d(x_dot)</tt> becomes:
 
  \verbatim

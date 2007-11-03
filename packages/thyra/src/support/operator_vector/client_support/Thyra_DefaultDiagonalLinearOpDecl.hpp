@@ -85,21 +85,21 @@ public:
   /** \brief Calls <tt>initialize()</tt> to construct given a vector space.
    */
   DefaultDiagonalLinearOp(
-    const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &space
+    const RCP<const VectorSpaceBase<Scalar> >  &space
     );
 
   /** \brief Calls <tt>initialize()</tt> to construct for a non-const diagonal
    * vector.
    */
   DefaultDiagonalLinearOp(
-    const Teuchos::RCP<VectorBase<Scalar> >   &diag
+    const RCP<VectorBase<Scalar> >   &diag
     );
 
   /** \brief Calls <tt>initialize()</tt> to construct for a const diagonal
    * vector.
    */
   DefaultDiagonalLinearOp(
-    const Teuchos::RCP<const VectorBase<Scalar> >   &diag
+    const RCP<const VectorBase<Scalar> >   &diag
     );
 
   /** \brief Initialize given a vector space which allocates a vector internally.
@@ -118,7 +118,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &space
+    const RCP<const VectorSpaceBase<Scalar> >  &space
     );
 
   /** \brief Initialize given a non-const diagonal vector.
@@ -136,9 +136,7 @@ public:
    * <li><tt>this->this->range().get() == diag->space().get()</tt>
    * </ul>
    */
-  void initialize(
-    const Teuchos::RCP<VectorBase<Scalar> >   &diag
-    );
+  void initialize(const RCP<VectorBase<Scalar> > &diag);
 
   /** \brief Initialize given a const diagonal vector.
    *
@@ -156,7 +154,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const VectorBase<Scalar> >   &diag
+    const RCP<const VectorBase<Scalar> >   &diag
     );
 
   /** \brief Uninitialize.
@@ -183,9 +181,9 @@ public:
   /** \brief . */
   bool isDiagConst() const;
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> > getNonconstDiag();
+  RCP<VectorBase<Scalar> > getNonconstDiag();
   /** \brief . */
-  Teuchos::RCP<const VectorBase<Scalar> > getDiag() const;
+  RCP<const VectorBase<Scalar> > getDiag() const;
 
   //@}
 
@@ -197,16 +195,16 @@ public:
    * <li><tt>this->getDiag().get()!=NULL</tt>
    * </ul>
    */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief Returns <tt>this->getDiag()->space()</tt>.
    *
    * Preconditions:<ul>
    * <li><tt>this->getDiag().get()!=NULL</tt>
    * </ul>
    */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
+  RCP<const LinearOpBase<Scalar> > clone() const;
   //@}
 
 protected:
@@ -235,6 +233,27 @@ private:
 
 };
 
+
+/** \brief Nonmember constructor function.
+ *
+ * \relates DefaultDiagonalLinearOp
+ */
+template<class Scalar>
+RCP<const LinearOpBase<Scalar> >
+diagonal(
+  const RCP<VectorBase<Scalar> > &diag,
+  const std::string &label = ""
+  )
+{
+  RCP<LinearOpBase<Scalar> >
+    dlo = Teuchos::rcp(new DefaultDiagonalLinearOp<Scalar>(diag));
+  if (label.length())
+    dlo->setObjectLabel(label);
+  return dlo;
+}
+
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_DIAGONAL_LINEAR_OP_DECL_HPP

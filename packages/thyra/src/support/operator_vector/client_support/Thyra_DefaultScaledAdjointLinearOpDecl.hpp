@@ -388,7 +388,11 @@ private:
  */
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-nonconstScale( const Scalar &scalar, const RCP<LinearOpBase<Scalar> > &Op );
+nonconstScale(
+  const Scalar &scalar,
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
+  );
 
 
 /** \brief Build an implicit <tt>const</tt> scaled linear operator.
@@ -408,7 +412,11 @@ nonconstScale( const Scalar &scalar, const RCP<LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
-scale( const Scalar &scalar, const RCP<const LinearOpBase<Scalar> > &Op );
+scale(
+  const Scalar &scalar,
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
+  );
 
 
 /** \brief Build an implicit non-<tt>const</tt> adjoined linear operator.
@@ -428,7 +436,10 @@ scale( const Scalar &scalar, const RCP<const LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-nonconstAdjoint( const RCP<LinearOpBase<Scalar> > &Op );
+nonconstAdjoint(
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
+  );
 
 
 /** \brief Build an implicit <tt>const</tt> adjoined linear operator.
@@ -448,7 +459,10 @@ nonconstAdjoint( const RCP<LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
-adjoint( const RCP<const LinearOpBase<Scalar> > &Op );
+adjoint(
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
+  );
 
 
 /** \brief Build an implicit non-<tt>const</tt> transposed linear operator.
@@ -468,7 +482,10 @@ adjoint( const RCP<const LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-nonconstTranspose( const RCP<LinearOpBase<Scalar> > &Op );
+nonconstTranspose(
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
+  );
 
 
 /** \brief Build an implicit <tt>const</tt> transposed linear operator.
@@ -488,7 +505,10 @@ nonconstTranspose( const RCP<LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
-transpose( const RCP<const LinearOpBase<Scalar> > &Op );
+transpose(
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
+  );
 
 
 /** \brief Build an implicit non-<tt>const</tt> scaled and/or adjoined
@@ -511,7 +531,8 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 nonconstScaleAndAdjoint(
   const Scalar &scalar, const ETransp &transp,
-  const RCP<LinearOpBase<Scalar> > &Op
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
   );
 
 
@@ -535,7 +556,8 @@ template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
 scaleAndAdjoint(
   const Scalar &scalar, const ETransp &transp,
-  const RCP<const LinearOpBase<Scalar> > &Op
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label = ""
   );
 
 
@@ -596,99 +618,157 @@ void DefaultScaledAdjointLinearOp<Scalar>::assertInitialized() const
 // Inline non-members
 
 
-template<class Scalar>
-inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+template<class Scalar> inline
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstScale(
-  const Scalar &scalar, const RCP<LinearOpBase<Scalar> > &Op
+  const Scalar &scalar,
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label
   )
 {
-  return Teuchos::rcp(new DefaultScaledAdjointLinearOp<Scalar>(scalar,NOTRANS,Op));
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(
+        scalar,NOTRANS,Op
+        )
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+template<class Scalar> inline
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::scale(
-  const Scalar &scalar, const RCP<const LinearOpBase<Scalar> > &Op
+  const Scalar &scalar,
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label
   )
 {
-  return Teuchos::rcp(
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(scalar,NOTRANS,Op)
     );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Thyra::nonconstAdjoint( const RCP<LinearOpBase<Scalar> > &Op )
+template<class Scalar> inline
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstAdjoint(
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label
+  )
 {
-  return Teuchos::rcp(
-    new DefaultScaledAdjointLinearOp<Scalar>(
-      Teuchos::ScalarTraits<Scalar>::one(),CONJTRANS,Op
-      )
-    );
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(
+        Teuchos::ScalarTraits<Scalar>::one(),CONJTRANS,Op
+        )
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-Thyra::adjoint( const RCP<const LinearOpBase<Scalar> > &Op )
+template<class Scalar> inline
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::adjoint(
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label
+  )
 {
-  return Teuchos::rcp(
-    new DefaultScaledAdjointLinearOp<Scalar>(
-      Teuchos::ScalarTraits<Scalar>::one(),CONJTRANS,Op
-      )
-    );
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(
+        Teuchos::ScalarTraits<Scalar>::one(),CONJTRANS,Op
+        )
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Thyra::nonconstTranspose( const RCP<LinearOpBase<Scalar> > &Op )
+template<class Scalar> inline
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstTranspose(
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label
+  )
 {
-  return Teuchos::rcp(
-    new DefaultScaledAdjointLinearOp<Scalar>(
-      Teuchos::ScalarTraits<Scalar>::one(),TRANS,Op
-      )
-    );
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(
+        Teuchos::ScalarTraits<Scalar>::one(),TRANS,Op
+        )
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-Thyra::transpose( const RCP<const LinearOpBase<Scalar> > &Op )
+template<class Scalar> inline
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::transpose(
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label
+  )
 {
-  return Teuchos::rcp(
-    new DefaultScaledAdjointLinearOp<Scalar>(
-      Teuchos::ScalarTraits<Scalar>::one(),TRANS,Op
-      )
-    );
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(
+        Teuchos::ScalarTraits<Scalar>::one(),TRANS,Op
+        )
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+template<class Scalar> inline
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstScaleAndAdjoint(
-  const Scalar &scalar, const ETransp &transp
-  ,const RCP<LinearOpBase<Scalar> > &Op
+  const Scalar &scalar,
+  const ETransp &transp,
+  const RCP<LinearOpBase<Scalar> > &Op,
+  const std::string &label
   )
 {
-  return Teuchos::rcp(new DefaultScaledAdjointLinearOp<Scalar>(scalar,transp,Op));
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(scalar,transp,Op)
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
-template<class Scalar>
-inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+template<class Scalar> inline
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::scaleAndAdjoint(
-  const Scalar &scalar, const ETransp &transp
-  ,const RCP<const LinearOpBase<Scalar> > &Op
+  const Scalar &scalar,
+  const ETransp &transp,
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  const std::string &label
   )
 {
-  return Teuchos::rcp(
-    new DefaultScaledAdjointLinearOp<Scalar>(
-      scalar,transp,Op
-      )
-    );
+  RCP<Thyra::LinearOpBase<Scalar> >
+    salo = Teuchos::rcp(
+      new DefaultScaledAdjointLinearOp<Scalar>(
+        scalar, transp, Op
+        )
+      );
+  if (label.length())
+    salo->setObjectLabel(label);
+  return salo;
 }
 
 
