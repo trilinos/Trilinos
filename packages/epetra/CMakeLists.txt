@@ -1,5 +1,8 @@
 PROJECT(epetra C CXX Fortran)
 
+# Setup package version
+SET(EPETRA_VERSION "3.7d")
+
 # Flag for turning on MPI support
 OPTION(ENABLE_MPI 
        "Build with MPI for parallel codes."
@@ -52,5 +55,19 @@ IF(ENABLE_TESTS)
   ADD_SUBDIRECTORY(test)
 ENDIF(ENABLE_TESTS)
 
-# Installation
+# Packaging
+SET(CPACK_PACKAGE_DESCRIPTION "Epetra is a linear algebra services package.")
+SET(CPACK_PACKAGE_FILE_NAME "epetra-setup-${EPETRA_VERSION}")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Epetra ${EPETRA_VERSION}")
+SET(CPACK_PACKAGE_REGISTRY_KEY "Epetra ${EPETRA_VERSION}")
+SET(CPACK_PACKAGE_NAME "epetra")
+SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
+SET(CPACK_PACKAGE_VERSION "${EPETRA_VERSION}")
+SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
+SET(CPACK_SOURCE_FILE_NAME "epetra-source-${EPETRA_VERSION}")
+
+IF(WIN32)
+	SET(CPACK_GENERATOR "NSIS")
+ENDIF(WIN32)
+
 INCLUDE(CPack)
