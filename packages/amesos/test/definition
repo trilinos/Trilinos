@@ -29,6 +29,7 @@
            Test_Epetra_CrsMatrix,
            Test_Detailed,
            Test_KLU,
+           Test_Singular,
            Test_SuperLU,
            Test_SuperLU_DIST,
            Test_LAPACK,

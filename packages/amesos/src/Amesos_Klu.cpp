@@ -434,6 +434,8 @@ int Amesos_Klu::PerformSymbolicFactorization()
 {
   ResetTimer(0);
 
+  int symbolic_ok = 0;
+
   if (MyPID_ == 0) {
 
     PrivateKluData_->common_ = rcp(new klu_common());
@@ -445,18 +447,23 @@ int Amesos_Klu::PerformSymbolicFactorization()
 	  ,true
 	  );
 
-	const  bool symbolic_ok =  (PrivateKluData_->Symbolic_.get() != NULL) 
+	symbolic_ok = (PrivateKluData_->Symbolic_.get() != NULL) 
 	  && PrivateKluData_->common_->status == KLU_OK ;
-	if ( ! symbolic_ok ) {
-	  cout << __FILE__ << "::" << __LINE__ <<
-	    " NumericallySingularMatrixError MyPID_ == 0 " ;
-	  AMESOS_CHK_ERR( NumericallySingularMatrixError ) ;
-	}
 
   }
 
-  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_, 0);
+  // Communicate the state of the symbolic factorization with everyone.
+  Comm().Broadcast(&symbolic_ok, 1, 0);
 
+  if ( !symbolic_ok ) {
+    if (MyPID_ == 0) {
+      AMESOS_CHK_ERR( StructurallySingularMatrixError );
+    } else
+      return( StructurallySingularMatrixError );
+  }
+
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_, 0);
+  
   return 0;
 }
 
@@ -471,6 +478,9 @@ int Amesos_Klu::PerformNumericFactorization( )
   // HKT, 1/18/2007:  The "TrustMe_" flag was put back in this code due to performance degradation; Bug# 3042.
   
   if (! TrustMe_ ) ResetTimer(0);
+
+  // This needs to be 1 just in case the pivot ordering is reused.
+  int numeric_ok = 1;
 
   if (MyPID_ == 0) {
 
@@ -521,11 +531,20 @@ int Amesos_Klu::PerformNumericFactorization( )
 	     ,true
 	     );
       
-      const  bool numeric_ok =  PrivateKluData_->Numeric_.get()!=NULL 
+      numeric_ok =  PrivateKluData_->Numeric_.get()!=NULL 
 	&& PrivateKluData_->common_->status == KLU_OK ;
-      if ( ! numeric_ok ) AMESOS_CHK_ERR( NumericallySingularMatrixError );  
       
     }
+  }
+
+  // Communicate the state of the numeric factorization with everyone.
+  Comm().Broadcast(&numeric_ok, 1, 0);
+
+  if ( ! numeric_ok ) {
+    if (MyPID_ == 0) {
+      AMESOS_CHK_ERR( NumericallySingularMatrixError );  
+    } else 
+      return( NumericallySingularMatrixError );
   }
 
   if ( !TrustMe_ ) {

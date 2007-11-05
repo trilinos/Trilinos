@@ -860,6 +860,7 @@ AC_CONFIG_FILES([
 		test/Test_KLU/Makefile
 		test/Test_UMFPACK/Makefile
 		test/Test_MUMPS/Makefile
+		test/Test_Singular/Makefile
 		test/Test_SuperLU/Makefile
 		test/Test_SuperLU_DIST/Makefile
 		test/Test_DSCPACK/Makefile

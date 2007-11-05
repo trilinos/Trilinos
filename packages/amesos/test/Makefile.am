@@ -44,6 +44,7 @@ SUBDIRS = scripts \
 	  Test_LAPACK \
 	  Test_KLU \
 	  Test_UMFPACK \
+	  Test_Singular \
 	  Test_SuperLU \
 	  Test_SuperLU_DIST \
 	  Test_MUMPS \
