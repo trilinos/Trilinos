@@ -1,10 +1,7 @@
 INCLUDE(${CMAKE_MODULE_PATH}/Epetra_Add_Test.cmake)
 
 # Syntax for adding a test:
-#   To specify the arguments to run the test with:
-#     SET(EXTRA_TEST_ARGS <P1> <P2> ...)
-#   To add the test:
-#     EPETRA_ADD_TEST(<TEST_DIR_NAME> <TEST_NAME> <SOURCE1> <SOURCE2> ...)
+#   EPETRA_ADD_TEST(<TEST_DIR_NAME> SOURCES <SOURCE1> <SOURCE2> ... ARGS <ARG1> <ARG2> ...)
 
 # The default arguments include "-v", as specified in the macro EPETRA_ADD_TEST
 
