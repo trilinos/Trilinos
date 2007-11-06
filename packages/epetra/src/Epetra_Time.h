@@ -48,12 +48,14 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifdef EPETRA_MPI
 #include "mpi.h"
-#elif ICL
+#else 
+#if ICL || defined(_WIN32)
 #include <time.h>
 #else
 #include <sys/time.h>
 #ifndef MINGW
 #include <sys/resource.h>
+#endif
 #endif
 #endif
 

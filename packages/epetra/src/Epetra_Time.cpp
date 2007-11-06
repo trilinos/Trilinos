@@ -72,7 +72,9 @@ double Epetra_Time::WallTime(void) const
 
 	}
 
-#elif ICL
+#else
+
+#if ICL || defined(_WIN32)
 
    clock_t start;
    //double duration;
@@ -98,6 +100,7 @@ double Epetra_Time::WallTime(void) const
    return( (double) clock() / CLOCKS_PER_SEC );
 #endif
 
+#endif
 #endif
 
 }

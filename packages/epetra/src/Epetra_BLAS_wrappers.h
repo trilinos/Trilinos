@@ -141,7 +141,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
-#ifdef __GNUC__ /* standard Epetra implementation */ 
+#if defined(__GNUC__) || defined(_WIN32) /* standard Epetra implementation */ 
 
 #define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
 #define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
