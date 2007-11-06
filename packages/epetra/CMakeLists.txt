@@ -22,30 +22,11 @@ OPTION(ENABLE_EXAMPLES
 )
 
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
+INCLUDE_DIRECTORIES(${CMAKE_MODULE_PATH})
 
 # MPI related configuration
 IF(ENABLE_MPI)
-  FIND_PACKAGE(MPI)
-  IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
-    SET(HAVE_MPI TRUE)
-    INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-    ADD_DEFINITIONS(-DMPICH_IGNORE_CXX_SEEK)
-# The following should be set when HAVE_MPI is set
-    ADD_DEFINITIONS(-DEPETRA_MPI)
-    FIND_PROGRAM(MPI_EXECUTABLE
-      NAMES mpiexec mpirun
-      PATHS /usr/bin /usr/local/bin /usr/local/mpi/bin 
-      ${MPI_LIBRARY}/../bin
-      "$ENV{ProgramFiles}/MPICH/SDK/Bin"
-      "$ENV{ProgramFiles}/MPICH2/Bin"
-      "C:/Program Files/MPICH/SDK/Bin"
-      "${MPI_LIBRARY}/../Bin"
-    )
-    MARK_AS_ADVANCED(MPI_EXECUTABLE)
-  ELSE(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
-    MESSAGE( SEND_ERROR "MPI_LIBRARY and MPI_INCLUDE_PATH must be specified")
-    SET(HAVE_MPI FALSE)
-  ENDIF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
+  INCLUDE(ConfigureMPI)
 ENDIF(ENABLE_MPI)
 
 # Use secure versions of CRT methods in Windows 
