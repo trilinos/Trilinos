@@ -11,7 +11,7 @@
 
 #ifndef ML_EDGE_MATRIX_FREE_PRECONDITIONER_H
 #define ML_EDGE_MATRIX_FREE_PRECONDITIONER_H
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
@@ -21,7 +21,10 @@
 #include "Epetra_RowMatrix.h"
 #include "ml_Preconditioner.h"
 #include "Epetra_Operator_With_MatMat.h"
+
+#ifdef HAVE_ML_IFPACK
 #include "Ifpack_Chebyshev.h"
+#endif
 
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -29,7 +32,9 @@
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
 
+#ifdef HAVE_ML_IFPACK
 class Ifpack_Chebyshev;
+#endif
 
 namespace ML_Epetra
 {
@@ -181,8 +186,10 @@ namespace ML_Epetra
     //! Level 2+ Preconditioner
     MultiLevelPreconditioner * CoarsePC; 
 
+#ifdef HAVE_ML_IFPACK    
     //! Ifpack Chebyshev Smoother
     Ifpack_Chebyshev* Smoother_;
+#endif
     
     //! Edge Domain Map
     const Epetra_Map* EdgeDomainMap_;

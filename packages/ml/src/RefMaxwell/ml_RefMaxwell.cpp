@@ -1,5 +1,5 @@
 #include "ml_config.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) 
 #include <string.h>
 #include "ml_RefMaxwell.h"
 #include "ml_epetra.h"
@@ -12,6 +12,7 @@
 #include "EpetraExt_MatrixMatrix.h" //haq
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_CrsMatrixIn.h"//haq
+using namespace std;
 
 static int c_iteration=0;//DEBUG
 

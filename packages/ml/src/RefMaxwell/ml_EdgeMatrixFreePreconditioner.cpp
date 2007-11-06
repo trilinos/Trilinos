@@ -6,6 +6,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
 #include "ml_RefMaxwell_11_Operator.h"
+using namespace std;
 
 //mucho hax
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
@@ -66,7 +67,11 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 
 // ================================================ ====== ==== ==== == = 
 ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0),verbose_(false),very_verbose_(false),print_hierarchy(false)
+  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),
+#ifdef HAVE_ML_IFPACK
+Smoother_(0),
+#endif
+verbose_(false),very_verbose_(false),print_hierarchy(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
@@ -172,6 +177,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 // Setup the Smoother
 int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 {
+#ifdef HAVE_ML_IFPACK
   /* Variables */
   double lambda_min = 0.0;
   double lambda_max = 0.0;
@@ -227,7 +233,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   ML_CHK_ERR(Smoother_->SetParameters(IFPACKList));
   ML_CHK_ERR(Smoother_->Initialize());
   ML_CHK_ERR(Smoother_->Compute());
-
+#else
+  if(!Comm_->MyPID())
+    printf("ERROR: RefMaxwell must be compiled with --enable-ml-ifpack for this mode to work\n");
+#endif
   return 0;
 }/*end SetupSmoother */
 
@@ -519,7 +528,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (CoarseMatrix) {delete CoarseMatrix; CoarseMatrix=0;}
   if (CoarseMat_ML) {ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;}
   if (CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
-  if (Smoother_) {delete Smoother_; Smoother_=0;}
+#ifdef HAVE_ML_IFPACK  
+  if (Smoother_){delete Smoother_; Smoother_=0;}
+#endif
   return 0;
 }/*end DestroyPreconditioner*/
 
@@ -547,7 +558,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
     MVOUT2(X,"xinit11",iteration);
 #endif   
     if(very_verbose_) re0=cms_compute_residual(Operator_,B,X);
+#ifdef HAVE_ML_IFPACK
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
+#endif
     if(very_verbose_) re1=cms_compute_residual(Operator_,B,X);
 
 #ifndef NO_OUTPUT    
@@ -587,8 +600,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
     }/*end if*/
     
     /* Post-Smoothing*/
+#ifdef HAVE_ML_IFPACK
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
-
+#endif
     if(very_verbose_) re3=cms_compute_residual(Operator_,B,X);
     
     if(very_verbose_ && !Comm_->MyPID())

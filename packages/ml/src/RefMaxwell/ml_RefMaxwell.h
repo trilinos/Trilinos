@@ -25,10 +25,6 @@
 #include "ml_Preconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
 
-#ifdef HAVE_ML_IFPACK
-#include "Ifpack_Preconditioner.h"
-#endif
-
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
