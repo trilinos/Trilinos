@@ -872,7 +872,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                   *MySubSmType == "IC"  ||
                   *MySubSmType == "ILUT" ||
                   *MySubSmType == "ICT")       {
-
+#ifdef HAVE_ML_IFPACK
           // --------------------------------------
           // incomplete factorization subsmoothers
           // --------------------------------------
@@ -904,8 +904,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           else
             sprintf(SmInfo,"%s,overlap=%d,level-of-fill=%3.2e",
                     MySubSmType->c_str(),*MySubSmOverlap,MySubSmLOF);
-
-
+#else
+          pr_error("%sIFPACK subsmoother unavailable.  Configure with --enable-ifpack.\n",
+                    ErrorMsg_);
+#endif
         } else if (Comm().MyPID() == 0)
           cerr << ErrorMsg_
             <<"Only Chebyshev (or MLS), SGS, ILU, IC, ILUT, and ICT" << endl
