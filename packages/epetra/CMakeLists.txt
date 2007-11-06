@@ -15,6 +15,12 @@ OPTION(ENABLE_TESTS
        OFF
 )
 
+# Flag to enable examples
+OPTION(ENABLE_EXAMPLES
+       "Build examples for this package."
+       OFF
+)
+
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
 
 # MPI related configuration
@@ -54,6 +60,11 @@ IF(ENABLE_TESTS)
   ENABLE_TESTING()
   ADD_SUBDIRECTORY(test)
 ENDIF(ENABLE_TESTS)
+
+IF(ENABLE_EXAMPLES)
+  ENABLE_TESTING()
+  ADD_SUBDIRECTORY(example)
+ENDIF(ENABLE_EXAMPLES)
 
 # Packaging
 SET(CPACK_PACKAGE_DESCRIPTION "Epetra is a linear algebra services package.")
