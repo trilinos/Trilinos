@@ -28,14 +28,31 @@
 #Builds a simple tester program.  Note that executables must end with a .exe
 #to allow certain proprietary operating systems to use them.
 
+#np# Include the Makefile.export file for this package to provide
+#np# access to the _LIBS and _INCLUDES macros
 include $(top_builddir)/Makefile.export.new_package
 
+#np# List the names of all exe's in this directory here
 bin_PROGRAMS = Hello_Test.exe
 
+#np# One SOURCES primary is needed for EACH exe listed above.  (Notice for all
+#np# of the following primaries that the pattern is
+#np# "(Exe_name)_(PRIMARY_NAME) = ").
+#np# List all source files needed to compile the exe.
 Hello_Test_exe_SOURCES = $(srcdir)/Hello_Test.cpp
 
+#np# One DEPENDENCIES primary is used for each exe listed above.  List any
+#np# libraries that the exe depends on.  (This primary is not absolutely
+#np# essential.)
 Hello_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 
+#np# One LDADD primary can be defined for each exe listed above.  Include
+#np# anything that should be passed to ld.  This is typically taken care 
+#np# of by the package's _LIBS value from Makefile.export.<package>
 Hello_Test_exe_LDADD = $(NEW_PACKAGE_LIBS)
 
+#np# One CPPFLAGS primary can be defined for each exe listed above.  Include
+#np# any -I's necessary for building the exe.  This is typically taken care
+#np# of by the package's _INCLUDES value from Makefile.export.<package>
 AM_CPPFLAGS = $(NEW_PACKAGE_INCLUDES)
+

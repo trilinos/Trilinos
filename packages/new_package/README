@@ -24,7 +24,7 @@
 # 
 # ************************************************************************
 
-NOTE: new_package is under construction!!
+NOTE: The automated script for updating names is not working perfectly
 
 Useful Terminology:
 	new package - A package to be added to the Trilinos Autotools
@@ -93,16 +93,21 @@ files for more details.  Instructions for customizing are listed behind
      Trilinos/packages/new_package/example/example1/Makefile.am
      Trilinos/packages/new_package/test/Makfile.am
      Trilinos/packages/new_package/test/test1/Makefile.am
-     Trilinos/packages/new_package/test/scripts/Makfile.am
-     Trilinos/packages/new_package/test/scripts/daily/Makfile.am
-     Trilinos/packages/new_package/test/scripts/daily/mpi/Makfile.am
-     Trilinos/packages/new_package/test/scripts/daily/serial/Makfile.am
-     Trilinos/packages/new_package/test/scripts/weekly/Makfile.am
+     Trilinos/packages/new_package/test/Hello_Test/Makefile.am
+     Trilinos/packages/new_package/Makefile.export.new_package.in
+
+The 'Hello_Test' Makefile.am uses Makefile.export, which is the recommended
+way to build tests and examples.  The 'example1' and 'test1' Makefile.am's
+do not use Makefile.export.  This should only be considered for packages that
+don't use Makefile.export.  Using Makefile.export is highly recommended.
 
 Note that not all of these files are used in building new_package, as it is 
 a very simple package.
 
 The following instructions may save you some time in this process:
+(Make sure the environment variable TRILINOS_HOME is set to the top level
+Trilinos directory of the Trilinos sandbox you are using.
+Ex. 'setenv TRILINOS_HOME /home/user/Trilinos'.)
 
 cd $TRILINOS_HOME
 cp -r new_package Yourpackagename
@@ -132,28 +137,19 @@ Trilinos/packages/np/src/Makefile.am or
 Trilinos/packages/np/example/Makefile.am type bootstrap in the 
 Trilinos/packages/np directory.
 
-The bootstrap should complete without any errors, however, at this
-time it is not uncommon to have the following warnings:
-
-configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
-configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
-
-These warnings will be fixed in the future.
+The bootstrap should complete without any errors or warnings.
 
 3.  Test and debug Autoconf and Automake files
 
 After you have run bootstrap, run configure in a clean BUILD directory.
-Running configure can take a long time.  Here is a tip to save time.   
-Disable all packages that you will not need, and while you are debugging
-the configure.ac script itself, disable all packages other than the 
-one you are working with.
+Disabling all packages that you will not need is recommended to save time.
 
 echo is one way to print out variables.  AC_CHECK_FILE can be used 
 to check for the existence of a particular file or directory.  
 
 
 Do not run configure in the source directory.  If you have done so,
-you will have to claen up the source directory before you can run
+you will have to clean up the source directory before you can run
 configure in a separate build directoy.  If make distclean does not
 work (at present it does not work consistently) you may have to start
 from scratch, with a cvs checkout and adding your new source files. 
@@ -171,6 +167,7 @@ CVS repository:
    cvs add src/Makefile.am
 
 For new_package, we added the following files in the config directory:
+
    cvs add ac_cxx_bool.m4 ac_cxx_have_std.m4 ac_cxx_have_stl.m4
    cvs add ac_cxx_mutable.m4 ac_cxx_namespaces.m4 ac_cxx_new_for_scoping.m4
    cvs add ac_cxx_reinterpret_cast.m4 ac_cxx_std_ios_base_fmtflags.m4
@@ -183,16 +180,24 @@ For new_package, we added the following files in the config directory:
    cvs add tac_arg_with_incdirs.m4 tac_arg_with_lapacklib.m4
    cvs add tac_arg_with_libdirs.m4 tac_arg_with_package.m4
    cvs add config.guess config.sub install-sh missing mkinstalldirs 
-   cvs add depcomp
+   cvs add depcomp strip_dup_incl_paths.pl strip_dup_libs.pl
 
 For new_package, we added the following automake and autoconf generated
 files to the CVS repository:
    cvs add example/Makefile.in src/Makefile.in src/New_Package_config.h.in
    cvs add Makefile.in configure aclocal.m4
 
+Not all of these files will be necessary for all packages.
+
 5. Perform tests and request new Mailman lists.
 
+ADDING TESTS TO THE TEST HARNESS
+================================
 
+Please see 
+http://software.sandia.gov/trilinos/developer/test_harness/test_definitions.html
+
+For information about adding tests to the Trilinos test harness.
 
 IMPROVING PORTABILITY
 =====================
@@ -201,13 +206,9 @@ Make sure that New_Package_config.h is included in all your source
 files, directly or indirectly - unless you don't need
 New_Package_config.h (as you might not if you don't have any package
 specific options, like newp_swahili).  Include New_Package_config.h
-before Epetra_ConfigDefs.h, or PACKAGE will get redefined. Some
-compilers will object to this.
+before Epetra_ConfigDefs.h, or PACKAGE will get redefined.  Many 
+portability issues have already been dealt with by other packages.  
+It can be beneficial to include (directly or indirectly) the 
+ConfigDefs file from another package that the new package depends 
+on (if any) in every source file in the new package.
 
-You should also include Epetra_ConfigDefs.h in all your source files.
-(This will happen automatically if you include just about any Epetra_*.h 
-file).  
-
-
-Avoid including <stdio>, <assert> or <stdio.h> or <assert.h>.  These
-are handled nicely in Epetra_ConfigDefs.h.  
