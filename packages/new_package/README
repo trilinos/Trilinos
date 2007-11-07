@@ -109,14 +109,23 @@ The following instructions may save you some time in this process:
 Trilinos directory of the Trilinos sandbox you are using.
 Ex. 'setenv TRILINOS_HOME /home/user/Trilinos'.)
 
-cd $TRILINOS_HOME
+cd $TRILINOS_HOME/packages
 cp -r new_package Yourpackagename
 
-set $path = { $TRILINOS_HOME $TRILINOS_HOME/commonTools/refactoring }
+export PATH=$PATH:$TRILINOS_HOME/commonTools/refactoring
 cd Yourpackagename
 edit ConvertToYourpackagename-string-replace.list
+edit ConvertToYourpackagename.sh
+(Edit ConvertToYourpackagename-string-replace.list to use your package name
+instead of Yourpackagename, yourpackagename, etc.  Edit the mv commands
+in ConvertToYourpackagename.sh by changing the filenames in the second half
+of the commands to the names you prefer.
+The source files for new_package will obviously not be used in your
+new package, but making these changes can help ensure a successful name
+conversion.)
 sh ConvertToYourpackagename.sh
 rm ../ConvertToYourpackagename-string-replace.list 
+./bootstrap
 
 You then need to check all occurences of #np# and modify them as appropriate, 
 you might also double check all occurences of #auto np# - to check the 

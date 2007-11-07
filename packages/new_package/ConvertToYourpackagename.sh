@@ -10,6 +10,7 @@
 #
 # 
 #
+mv Makefile.export.new_package.in Makefile.export.yourpackagename.in
 mv src/New_Package_ConfigDefs.h src/Yourpackagename_ConfigDefs.h
 mv src/New_Package_Version.h  src/Yourpackagename_Version.h
 mv src/New_Package_config.h.in src/Yourpackagename_config.h.in
