@@ -24,8 +24,6 @@
 # 
 # ************************************************************************
 
-NOTE: The automated script for updating names is not working perfectly
-
 Useful Terminology:
 	new package - A package to be added to the Trilinos Autotools
 			configure/build process.
