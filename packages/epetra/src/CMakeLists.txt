@@ -7,13 +7,22 @@ FIND_LIBRARY(LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK im
 IF(CYGWIN)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## __")
-ELSEIF(WIN32)
+ENDIF(CYGWIN)
+
+IF(WIN32)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) NAME")
-ELSE(CYGWIN)
+ENDIF(WIN32)
+
+IF(UNIX AND NOT APPLE)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## _")
-ENDIF(CYGWIN)
+ENDIF(UNIX AND NOT APPLE)
+
+IF(APPLE)
+	SET(F77_FUNC "(name,NAME) name ## _")
+	SET(F77_FUNC_ "(name,NAME) name ## __")
+ENDIF(APPLE)
 
 # Setup configuration options 
 # TODO: these and others in Epetra_config.h.in should be handled
