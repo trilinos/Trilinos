@@ -30,15 +30,20 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = Array_test
+bin_PROGRAMS = Array_test Ptr_test
 
 Array_test_SOURCES = $(srcdir)/Array_test.cpp
-
 Array_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-
 Array_test_LDADD = $(TEUCHOS_LIBS)
+
+Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
+Ptr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+Ptr_test_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
 # This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
 LIBS =
+
+
+EXTRA_DIST = TestClasses.hpp

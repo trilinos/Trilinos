@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = Array_test$(EXEEXT)
+bin_PROGRAMS = Array_test$(EXEEXT) Ptr_test$(EXEEXT)
 subdir = test/MemoryManagement
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,6 +101,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_Array_test_OBJECTS = Array_test.$(OBJEXT)
 Array_test_OBJECTS = $(am_Array_test_OBJECTS)
+am_Ptr_test_OBJECTS = Ptr_test.$(OBJEXT)
+Ptr_test_OBJECTS = $(am_Ptr_test_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -109,8 +111,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(Array_test_SOURCES)
-DIST_SOURCES = $(Array_test_SOURCES)
+SOURCES = $(Array_test_SOURCES) $(Ptr_test_SOURCES)
+DIST_SOURCES = $(Array_test_SOURCES) $(Ptr_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -243,7 +245,11 @@ top_srcdir = @top_srcdir@
 Array_test_SOURCES = $(srcdir)/Array_test.cpp
 Array_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Array_test_LDADD = $(TEUCHOS_LIBS)
+Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
+Ptr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+Ptr_test_LDADD = $(TEUCHOS_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
+EXTRA_DIST = TestClasses.hpp
 all: all-am
 
 .SUFFIXES:
@@ -303,6 +309,9 @@ clean-binPROGRAMS:
 Array_test$(EXEEXT): $(Array_test_OBJECTS) $(Array_test_DEPENDENCIES) 
 	@rm -f Array_test$(EXEEXT)
 	$(CXXLINK) $(Array_test_OBJECTS) $(Array_test_LDADD) $(LIBS)
+Ptr_test$(EXEEXT): $(Ptr_test_OBJECTS) $(Ptr_test_DEPENDENCIES) 
+	@rm -f Ptr_test$(EXEEXT)
+	$(CXXLINK) $(Ptr_test_OBJECTS) $(Ptr_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -311,6 +320,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Array_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ptr_test.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -339,6 +349,20 @@ Array_test.obj: $(srcdir)/Array_test.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Array_test.cpp' object='Array_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Array_test.obj `if test -f '$(srcdir)/Array_test.cpp'; then $(CYGPATH_W) '$(srcdir)/Array_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Array_test.cpp'; fi`
+
+Ptr_test.o: $(srcdir)/Ptr_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ptr_test.o -MD -MP -MF $(DEPDIR)/Ptr_test.Tpo -c -o Ptr_test.o `test -f '$(srcdir)/Ptr_test.cpp' || echo '$(srcdir)/'`$(srcdir)/Ptr_test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ptr_test.Tpo $(DEPDIR)/Ptr_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ptr_test.cpp' object='Ptr_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ptr_test.o `test -f '$(srcdir)/Ptr_test.cpp' || echo '$(srcdir)/'`$(srcdir)/Ptr_test.cpp
+
+Ptr_test.obj: $(srcdir)/Ptr_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ptr_test.obj -MD -MP -MF $(DEPDIR)/Ptr_test.Tpo -c -o Ptr_test.obj `if test -f '$(srcdir)/Ptr_test.cpp'; then $(CYGPATH_W) '$(srcdir)/Ptr_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ptr_test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ptr_test.Tpo $(DEPDIR)/Ptr_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ptr_test.cpp' object='Ptr_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ptr_test.obj `if test -f '$(srcdir)/Ptr_test.cpp'; then $(CYGPATH_W) '$(srcdir)/Ptr_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ptr_test.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

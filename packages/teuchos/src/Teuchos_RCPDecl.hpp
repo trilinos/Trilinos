@@ -500,14 +500,14 @@ public:
   /** \brief Pointer (<tt>-></tt>) access to members of underlying object.
    *
    * <b>Preconditions:</b><ul>
-   * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
    * </ul>
    */
   T* operator->() const;
   /** \brief Dereference the underlying object.
    *
    * <b>Preconditions:</b><ul>
-   * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
    * </ul>
    */
   T& operator*() const;
@@ -580,7 +580,7 @@ public:
    */
   template<class T2>
   bool shares_resource(const RCP<T2>& r_ptr) const;
-  /** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
+  /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
   const RCP<T>& assert_not_null() const;
 
 public: // Bad bad bad
@@ -1081,7 +1081,7 @@ template<class T2, class T1> inline RCP<T2> rcp_dynamic_cast( const RCP<T1>& p1 
  * data which will guarantee the order of deletion).
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> If this function has already been called with the same template
  *      type <tt>T1</tt> for <tt>extra_data</tt> and the same std::string <tt>name</tt>
  *      and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
@@ -1111,7 +1111,7 @@ void set_extra_data(
  * @return Returns a non-const reference to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
@@ -1134,7 +1134,7 @@ T1& get_extra_data( RCP<T2>& p, const std::string& name );
  * @return Returns a const reference to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
@@ -1164,7 +1164,7 @@ const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
  * @return Returns a non-const pointer to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -1192,7 +1192,7 @@ T1* get_optional_extra_data( RCP<T2>& p, const std::string& name );
  * @return Returns a const pointer to the extra_data object if it exists.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -1220,9 +1220,9 @@ const T1* get_optional_extra_data( const RCP<T2>& p, const std::string& name );
  * object.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
+ *      (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * \relates RCP
@@ -1235,9 +1235,9 @@ Dealloc_T& get_nonconst_dealloc( const RCP<T>& p );
  * object.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
+ *      (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * \relates RCP
@@ -1250,7 +1250,7 @@ const Dealloc_T& get_dealloc( const RCP<T>& p );
  * object if it exists.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -1268,7 +1268,7 @@ Dealloc_T* get_optional_nonconst_dealloc( const RCP<T>& p );
  * object if it exists.
  *
  * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>

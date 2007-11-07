@@ -78,7 +78,8 @@ int exampleImplicitlyComposedLinearOperators(
   using Thyra::LinearOpBase;
   using Thyra::defaultSpmdVectorSpace;
   using Thyra::randomize;
-  using Thyra::assign;
+  using Thyra::identity;
+  using Thyra::diagonal;
   using Thyra::multiply;
   using Thyra::add;
   using Thyra::subtract;

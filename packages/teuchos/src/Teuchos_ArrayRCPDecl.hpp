@@ -484,12 +484,12 @@ public:
   //! @name Assertion Functions. 
   //@{
 
-	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,
+	/** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
 	const ArrayRCP<T>& assert_not_null() const;
 
-	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>
+	/** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>
    * or<tt>this->get()!=NULL && (lowerOffset < this->lowerOffset() ||
    * this->upperOffset() < upperOffset</tt>, otherwise returns reference to
    * <tt>*this</tt>
@@ -804,7 +804,7 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * data which will guarantee the order of deletion).
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> If this function has already been called with the same template
  *      type <tt>T1</tt> for <tt>extra_data</tt> and the same std::string <tt>name</tt>
  *      and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
@@ -833,7 +833,7 @@ void set_extra_data(
  * \returns Returns a non-const reference to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li><tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
@@ -856,7 +856,7 @@ T1& get_extra_data( ArrayRCP<T2>& p, const std::string& name );
  * \returns Returns a const reference to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li><tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
@@ -886,7 +886,7 @@ const T1& get_extra_data( const ArrayRCP<T2>& p, const std::string& name );
  * \returns Returns a non-const pointer to the extra_data object.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -913,7 +913,7 @@ T1* get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name );
  * \returns Returns a const pointer to the extra_data object if it exists.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -940,9 +940,9 @@ const T1* get_optional_extra_data( const ArrayRCP<T2>& p, const std::string& nam
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
+ *      (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * \relates ArrayRCP
@@ -954,9 +954,9 @@ Dealloc_T& get_nonconst_dealloc( const ArrayRCP<T>& p );
 /** \brief Return a <tt>const</tt> reference to the underlying deallocator object.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>std::logic_error</tt>)
+ *      (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * Note that the <tt>const</tt> version of this function provides only
@@ -976,7 +976,7 @@ const Dealloc_T& get_dealloc( const ArrayRCP<T>& p );
  * object if it exists.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -994,7 +994,7 @@ const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
  * object if it exists.
  *
  * <b>Preconditions:</b><ul>
- * <li><tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+ * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * <b>Postconditions:</b><ul>

@@ -44,9 +44,9 @@ namespace Teuchos {
  * This class is meant to replace all but the lowest-level use of raw pointers
  * that point to single objects where the use of <tt>RCP</tt> is not justified
  * for performance or semantic reasons.  When built in optimized mode, this
- * class should impart little extra space or time overhead and should be
- * exactly equivalent to a raw C++ pointer except for default initalization to
- * NULL.
+ * class should impart little time overhead and should be exactly equivalent
+ * in the memory footprint to a raw C++ pointer and the only extra runtime
+ * overhead will be the default initalization to NULL.
  *
  * The main advantages of using this class over a raw pointer however are:
  *
@@ -105,12 +105,12 @@ public:
 	 * <li> <tt>this->get() == ptr</tt>
 	 * </ul>
    *
-   * Note: This constructor is <em>not</em> declared <tt>explicit</tt> so it
-   * defines an implicit conversion from a raw C++ pointer to a <tt>Ptr</tt>
-   * object.  This is okay in this context since there is not ownership issues
-   * to consider and it makes it easier to update code.
+   * Note: This constructor is declared <tt>explicit</tt> so there is no
+   * implicit conversion from a raw C++ pointer to a <tt>Ptr</tt> object.
+   * This is ment to avoid cases where an uninitialized pointer is used to
+   * implicitly initialize one of these objects.
    */
-  Ptr( T *ptr );
+  explicit Ptr( T *ptr );
 
   /** \brief Copy construct from same type.
 	 *
@@ -180,6 +180,37 @@ Ptr<T> outArg( T& arg )
 }
 
 
+/** \brief Create a pointer to a non-const object from a non-const object
+ * reference.
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<T> ptr( T& arg )
+{
+  return Ptr<T>(&arg);
+}
+
+
+/** \brief Create a pointer from a const object given a non-const object
+ * reference.
+ *
+ * <b>Warning!</b> Do not call this function of <tt>T</tt> is already const or
+ * a compilation error will occur!
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<const T> constPtr( const T& arg )
+{
+  return Ptr<const T>(&arg);
+}
+
+
+// 2007/11/07: rabartl: ToDo: Add the casting functions
+// ptr_[const,dynamic,static]_cast(...) to allow conversions.
+
+
 /** \brief Traits specialization for Ptr.
  *
  * \ingroup teuchos_mem_mng_grp
@@ -229,7 +260,7 @@ Ptr<T>::Ptr(const Ptr<T>& ptr)
 template<class T>
 template<class T2> inline
 Ptr<T>::Ptr(const Ptr<T2>& ptr)
-  :ptr_(ptr.ptr_)
+  :ptr_(ptr.get())
 {}
 
 
@@ -237,6 +268,7 @@ template<class T> inline
 Ptr<T>& Ptr<T>::operator=(const Ptr<T>& ptr)
 {
   ptr_ = ptr.get();
+  return *this;
 }
 
 

@@ -70,7 +70,7 @@ namespace Teuchos {
 void PrivateUtilityPack::throw_null( const std::string &type_name )
 {
   TEST_FOR_EXCEPTION(
-    true, std::logic_error
+    true, NullReferenceError
     ,"RCP<"<<type_name<<">::assert_not_null() : You can not"
     " call operator->() or operator*() if get()==NULL!" );
 }

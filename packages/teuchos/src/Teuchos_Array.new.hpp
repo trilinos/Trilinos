@@ -37,6 +37,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -108,6 +109,7 @@ public:
 
   /** \name std::vector functions */
   //@{
+
 
   /** \brief . */
   Array();

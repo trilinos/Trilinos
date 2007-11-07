@@ -41,24 +41,36 @@ namespace Teuchos {
  *
  * \ingroup teuchos_mem_mng_grp
  */
-class Exception : public std::logic_error
-{public:Exception(const std::string& what_arg) : std::logic_error(what_arg) {}};
+class ExceptionBase : public std::logic_error
+{public:ExceptionBase(const std::string& what_arg) : std::logic_error(what_arg) {}};
+// 2007/11/07: rabartl: Above, I had to change the name from Exception to
+// ExceptionBase because Marzio did a 'using namespace Teuchos' and then he
+// declared his own Exception class.  The file Laplacian3D.cpp failed to
+// compile.  STOP DOING USING NAMESPACE BLAH!!!!!!
+
+
+/** \brief Null reference error exception class.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+class NullReferenceError : public ExceptionBase
+{public:NullReferenceError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
 
 /** \brief Range error exception class.
  *
  * \ingroup teuchos_mem_mng_grp
  */
-class RangeError : public Exception
-{public:RangeError(const std::string& what_arg) : Exception(what_arg) {}};
+class RangeError : public ExceptionBase
+{public:RangeError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
 
 /** \brief Dangling reference error exception class.
  *
  * \ingroup teuchos_mem_mng_grp
  */
-class DanglingReferenceError : public Exception
-{public:DanglingReferenceError(const std::string& what_arg) : Exception(what_arg) {}};
+class DanglingReferenceError : public ExceptionBase
+{public:DanglingReferenceError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
 
 } // end namespace Teuchos

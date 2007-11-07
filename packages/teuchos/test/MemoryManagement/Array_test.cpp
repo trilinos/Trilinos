@@ -76,7 +76,7 @@ bool compareContainers(
 
 
 template<class T>
-bool test_Array( const int n, Teuchos::FancyOStream &out )
+bool testArray( const int n, Teuchos::FancyOStream &out )
 {
   
   using Teuchos::Array;
@@ -86,7 +86,7 @@ bool test_Array( const int n, Teuchos::FancyOStream &out )
   using Teuchos::NullIteratorTraits;
   using Teuchos::TypeNameTraits;
 
-  bool success = false, result;
+  bool success = true, result;
  
   out << "\nTesting "<<TypeNameTraits<Array<T> >::name()<<" of size = "<<n<<"\n";
   
@@ -211,6 +211,37 @@ bool test_Array( const int n, Teuchos::FancyOStream &out )
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   {
+    out << "\nTest that *a2.begin() throws for empty a2 ... ";
+    try {
+      Array<T> a2;
+      T val = *a2.begin();
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::NullReferenceError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that a2.begin() == a2.end() for empty a2 ... ";
+    Array<T> a2;
+    result = ( a2.begin() == a2.end() );
+    if (result) {
+      out << "passed\n";
+    }
+    else {
+      out << "failed\n";
+      success = false;
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
     out << "\nTest that *(a.begin()-1) throws ... ";
     try {
       T val = *(a.begin()-1);
@@ -328,6 +359,37 @@ bool test_Array( const int n, Teuchos::FancyOStream &out )
     }
     
   }
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that *a2.rbegin() throws for empty a2 ... ";
+    try {
+      Array<T> a2;
+      T val = *a2.rbegin();
+      val=0;
+      success = false;
+      out << "failed\n"; 
+    }
+    catch (const Teuchos::NullReferenceError& except) {
+      out << "passed\n"; 
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest that a2.rbegin() == a2.rend() for empty a2 ... ";
+    Array<T> a2;
+    result = ( a2.rbegin() == a2.rend() );
+    if (result) {
+      out << "passed\n";
+    }
+    else {
+      out << "failed\n";
+      success = false;
+    }
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   {
@@ -464,6 +526,7 @@ int main( int argc, char* argv[] ) {
   using Teuchos::Array;
 	
 	bool success = true;
+  bool result;
  
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
@@ -491,19 +554,24 @@ int main( int argc, char* argv[] ) {
 
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
  
-    test_Array<int>(n,*out);
-    test_Array<float>(n,*out);
-    test_Array<double>(n,*out);
+    result = testArray<int>(n,*out);
+    if (!result) success = false;
+
+    result = testArray<float>(n,*out);
+    if (!result) success = false;
+
+    result = testArray<double>(n,*out);
+    if (!result) success = false;
  
     // ToDo: Fill in the rest of the types!
- 
-    *out << "\nAll tests for Array seem to check out!\n";
  
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
  
   if (success)
-    *out << "\nEnd Result: TEST PASSED" << std::endl;	
+    *out << "\nEnd Result: TEST PASSED" << std::endl;
+  else
+    *out << "\nEnd Result: TEST FAILED" << std::endl;
  
   return ( success ? 0 : 1 );
  

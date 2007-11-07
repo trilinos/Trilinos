@@ -41,6 +41,7 @@
 
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_Exceptions.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_map.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -587,7 +588,7 @@ Dealloc_T& Teuchos::get_nonconst_dealloc( const RCP<T>& p )
   PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   TEST_FOR_EXCEPTION(
-    dnode==NULL, std::logic_error
+    dnode==NULL, NullReferenceError
     ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
     << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
     << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"

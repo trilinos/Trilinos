@@ -570,6 +570,8 @@ REFCOUNTPTR_INLINE
 Teuchos::ArrayRCP<T>
 Teuchos::arcp( const RCP<std::vector<T> > &v )
 {
+  if ( is_null(v) || !v->size() )
+    return null;
   Teuchos::ArrayRCP<T> ptr = arcp(&(*v)[0],0,v->size(),false);
   set_extra_data( v, "std::vector", &ptr );
   return ptr;
@@ -793,7 +795,7 @@ Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
   PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   TEST_FOR_EXCEPTION(
-    dnode==NULL, std::logic_error
+    dnode==NULL, NullReferenceError
     ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
     << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
     << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"

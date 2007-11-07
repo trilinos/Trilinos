@@ -29,9 +29,15 @@
 #ifndef TEUCHOS_ARRAY_VIEW_HPP
 #define TEUCHOS_ARRAY_VIEW_HPP
 
-#include "Teuchos_ArrayRefCountPtr.hpp"
+
+#include "Teuchos_ENull.hpp"
+
 
 namespace Teuchos {
+
+
+template<class T> class ArrayRCP;
+
 
 /** \brief Array view class.
  *
@@ -54,25 +60,47 @@ template<class T>
 class ArrayView {
 public:
 
-  //! @name Public types 
+  /** \name std::vector typedefs */
   //@{
 
-	/** \brief . */
-	typedef T	element_type;
   /** \brief. */
   typedef Teuchos_Index Ordinal;
+
+  /** \brief . */
+  typedef T value_type;
+  /** \brief . */
+  typedef T* pointer;
+  /** \brief . */
+  typedef const T* const_pointer;
+  /** \brief . */
+  typedef T& reference;
+  /** \brief . */
+  typedef const T& const_reference;
+
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-	/** \brief . */
-	typedef ArrayRefCountPtr<T> iterator;
+  /** \brief . */
+  typedef ArrayRCP<T> iterator;
+  /** \brief . */
+  typedef ArrayRCP<const T> const_iterator;
 #else
-	typedef T* iterator;
+  /** \brief . */
+  typedef typename pointer iterator;
+  /** \brief . */
+  typedef typename const_pointer const_iterator;
 #endif
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-/** \brief . */
-	typedef ArrayRefCountPtr<T> const_iterator;
-#else
-	typedef T* const_iterator;
-#endif
+
+  /** \brief . */
+  typedef std::reverse_iterator<iterator> reverse_iterator;
+  /** \brief . */
+  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+
+
+  /** \brief . */
+  typedef typename std::vector<T>::size_type size_type;
+  /** \brief . */
+  typedef typename std::vector<T>::difference_type difference_type;
+  /** \brief . */
+  typedef typename std::vector<T>::allocator_type allocator_type;
 
   //@}
 
@@ -229,8 +257,12 @@ public:
 
 private:
 
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ArrayRCP<T> aptr_;
+#else
 	T *ptr_;
   int size_;
+#endif
 
 };
 
@@ -240,7 +272,7 @@ private:
  * \relates ArrayView
  */
 template<class T>
-ArrayView<T> array( T* p, typename ArrayView<T>::Ordinal size );
+ArrayView<T> arrayView( T* p, typename ArrayView<T>::Ordinal size );
 
 
 /** \brief Construct a array to const data .
@@ -248,7 +280,7 @@ ArrayView<T> array( T* p, typename ArrayView<T>::Ordinal size );
  * \relates ArrayView
  */
 template<class T>
-const ArrayView<T> array( const T* p, typename ArrayView<T>::Ordinal size );
+const ArrayView<T> arrayView( const T* p, typename ArrayView<T>::Ordinal size );
 
 
 /** \brief Get a new <tt>std::vector<T></tt> object out of an
