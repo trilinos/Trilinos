@@ -84,9 +84,9 @@ public:
   typedef ArrayRCP<const T> const_iterator;
 #else
   /** \brief . */
-  typedef typename pointer iterator;
+  typedef pointer iterator;
   /** \brief . */
-  typedef typename const_pointer const_iterator;
+  typedef const_pointer const_iterator;
 #endif
 
   /** \brief . */
