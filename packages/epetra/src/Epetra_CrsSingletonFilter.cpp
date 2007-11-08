@@ -60,13 +60,15 @@ Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter(){
   if (Full2ReducedRHSImporter_!=0) delete Full2ReducedRHSImporter_;
   if (Full2ReducedLHSImporter_!=0) delete Full2ReducedLHSImporter_;
   if (RedistributeDomainExporter_!=0) delete RedistributeDomainExporter_;
+  if (RowMapColors_ != 0) delete RowMapColors_;
+  if (ColMapColors_ != 0) delete ColMapColors_;
 
-  if (ColSingletonRowLIDs_ != 0) delete ColSingletonRowLIDs_;
-  if (ColSingletonColLIDs_ != 0) delete ColSingletonColLIDs_;
-  if (ColSingletonPivotLIDs_ != 0) delete ColSingletonPivotLIDs_;
-  if (ColSingletonPivots_ != 0) delete ColSingletonPivots_;
+  if (ColSingletonRowLIDs_ != 0) delete [] ColSingletonRowLIDs_;
+  if (ColSingletonColLIDs_ != 0) delete [] ColSingletonColLIDs_;
+  if (ColSingletonPivotLIDs_ != 0) delete [] ColSingletonPivotLIDs_;
+  if (ColSingletonPivots_ != 0) delete [] ColSingletonPivots_;
   if (tempExportX_ != 0) delete tempExportX_;
-  if (Indices_ != 0) delete Indices_;
+  if (Indices_ != 0) delete [] Indices_;
   if (tempX_ != 0) delete tempX_;
   if (tempB_ != 0) delete tempB_;
 
