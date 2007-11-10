@@ -123,7 +123,7 @@ public:
   /** \brief . */
   ~Array();
   /** \brief . */
-  Array& operator=(const Array& x);
+  Array& operator=(const Array<T>& x);
   /** \brief . */
   void assign(size_type n, const value_type& val);
   /** \brief . */
@@ -202,11 +202,7 @@ public:
    *
    * Resize to allow space for the new entry.
    */
-  Array<T>& append(const T& entry)
-    {
-      this->push_back(entry);
-      return *this;
-    }
+  Array<T>& append(const T& x);
 
   /** \brief Remove the i-th element from the array, with optional
    * boundschecking.
@@ -251,13 +247,19 @@ private:
   std::vector<T> vec_;
 #endif
 
-  std::vector<T>& vec( bool isStructureBeingModified = false );
+  inline std::vector<T>& vec(
+    bool isStructureBeingModified = false,
+    bool activeIter = false
+    );
 
-  const std::vector<T>& vec() const;
+  inline const std::vector<T>& vec() const;
 
-  typename std::vector<T>::iterator raw_position( iterator position );
+  inline typename std::vector<T>::iterator
+  raw_position( iterator position );
   
-  void indexCheckCrash(int i) const;
+  inline void assertIndex(int i) const;
+
+  inline void assertNotNull() const;
 
 };
 
@@ -359,8 +361,7 @@ Array<T> fromStringToArray(const std::string& arrayStr);
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a);
 
                       
@@ -368,8 +369,7 @@ Array<T> tuple(const T& a);
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b);
 
 
@@ -377,8 +377,7 @@ Array<T> tuple(const T& a, const T& b);
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c);
 
 
@@ -386,8 +385,7 @@ Array<T> tuple(const T& a, const T& b, const T& c);
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c, const T& d);
 
 
@@ -395,8 +393,7 @@ Array<T> tuple(const T& a, const T& b, const T& c, const T& d);
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e);
 
 
@@ -404,8 +401,7 @@ Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e);
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f);
 
@@ -414,8 +410,7 @@ Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g);
 
@@ -424,8 +419,7 @@ Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g, const T& h);
 
@@ -434,8 +428,7 @@ Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
  *
  * \relates Array
  */
-template<typename T>
-inline
+template<typename T> inline
 Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g, const T& h, const T& i);
 
@@ -463,8 +456,7 @@ namespace Teuchos {
 // std::vector functions
 
 
-template<typename T>
-inline
+template<typename T> inline
 Array<T>::Array()
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   : vec_(rcp(new std::vector<T>()))
@@ -472,8 +464,7 @@ Array<T>::Array()
 {}
 
 
-template<typename T>
-inline
+template<typename T> inline
 Array<T>::Array(size_type n, const value_type& value) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   vec_(rcp(new std::vector<T>(n,value)))
@@ -483,20 +474,17 @@ Array<T>::Array(size_type n, const value_type& value) :
 {}
 
 
-template<typename T>
-inline
-Array<T>::Array(const Array& x) :
+template<typename T> inline
+Array<T>::Array(const Array<T>& x) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  vec_(rcp(new std::vector<T>(x)))
+  vec_(rcp(new std::vector<T>(*x.vec_)))
 #else
-  vec_(x)
+  vec_(x.vec_)
 #endif
 {}
 
 
-template<typename T>
-template<typename InputIterator>
-inline
+template<typename T> template<typename InputIterator> inline
 Array<T>::Array(InputIterator first, InputIterator last) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   vec_(rcp(new std::vector<T>(first,last)))
@@ -506,8 +494,7 @@ Array<T>::Array(InputIterator first, InputIterator last) :
 {}
 
 
-template<typename T>
-inline
+template<typename T> inline
 Array<T>::~Array()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -524,8 +511,7 @@ Array<T>::~Array()
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Array<T>& Array<T>::operator=(const Array& x)
 {
   vec(true) = x.vec();
@@ -533,25 +519,21 @@ Array<T>& Array<T>::operator=(const Array& x)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::assign(size_type n, const value_type& val)
 {
   vec(true).assign(n,val);
 }
 
 
-template<typename T>
-template<typename InputIterator>
-inline
+template<typename T> template<typename InputIterator> inline
 void Array<T>::assign(InputIterator first, InputIterator last)
 {
   vec(true).assign(first,last);
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::iterator
 Array<T>::begin()
 {
@@ -565,8 +547,7 @@ Array<T>::begin()
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::iterator
 Array<T>::end()
 {
@@ -578,8 +559,7 @@ Array<T>::end()
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_iterator
 Array<T>::begin() const
 {
@@ -593,8 +573,7 @@ Array<T>::begin() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_iterator
 Array<T>::end() const
 {
@@ -606,8 +585,7 @@ Array<T>::end() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::reverse_iterator
 Array<T>::rbegin()
 {
@@ -619,8 +597,7 @@ Array<T>::rbegin()
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::reverse_iterator
 Array<T>::rend()
 {
@@ -632,8 +609,7 @@ Array<T>::rend()
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_reverse_iterator
 Array<T>::rbegin() const
 {
@@ -645,8 +621,7 @@ Array<T>::rbegin() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_reverse_iterator
 Array<T>::rend() const
 {
@@ -658,8 +633,7 @@ Array<T>::rend() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::size_type
 Array<T>::size() const
 {
@@ -667,8 +641,7 @@ Array<T>::size() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::size_type
 Array<T>::max_size() const
 {
@@ -676,8 +649,7 @@ Array<T>::max_size() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void
 Array<T>::resize(size_type new_size, const value_type& x)
 {
@@ -685,8 +657,7 @@ Array<T>::resize(size_type new_size, const value_type& x)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::size_type
 Array<T>::capacity() const
 {
@@ -694,170 +665,198 @@ Array<T>::capacity() const
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 bool Array<T>::empty() const
 {
   return vec().empty();
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::reserve(size_type n)
 {
   vec(true).reserve(n);
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::reference
 Array<T>::operator[](size_type i)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  indexCheckCrash(i);
+  assertIndex(i);
 #endif
   return vec()[i];
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_reference
 Array<T>::operator[](size_type i) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  indexCheckCrash(i);
+  assertIndex(i);
 #endif
   return vec()[i];
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::reference
 Array<T>::at(size_type i)
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertIndex(i);
+#endif
   return vec().at(i);
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_reference
 Array<T>::at(size_type i) const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertIndex(i);
+#endif
   return vec().at(i);
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::reference
 Array<T>::front()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+#endif
   return vec().front();
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_reference
 Array<T>::front() const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+#endif
   return vec().front();
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::reference
 Array<T>::back()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+#endif
   return vec().back();
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::const_reference
 Array<T>::back() const
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+#endif
   return vec().back();
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::push_back(const value_type& x)
 {
   vec(true).push_back(x);
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::pop_back()
 {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+#endif
   vec(true).pop_back();
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::iterator
 Array<T>::insert(iterator position, const value_type& x)
 {
-  return vec(true).insert(raw_position(position),x);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  // Assert a valid iterator and get vector iterator
+  const typename std::vector<T>::iterator raw_poss = raw_position(position);
+  const difference_type i = position - begin();
+  vec(true,true).insert(raw_poss,x);
+  return begin() + i;
+#else
+  return vec_.insert(position,x);
+#endif
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::insert(iterator position, size_type n, const value_type& x)
 {
-  vec(true).insert(raw_position(position),n,x);
+  vec(true,true).insert(raw_position(position),n,x);
 }
 
 
-template<typename T>
-template<typename InputIterator>
-inline
+template<typename T> template<typename InputIterator> inline
 void Array<T>::insert(iterator position, InputIterator first, InputIterator last)
 {
-  vec(true).insert(raw_position(position),first,last);
+  vec(true,true).insert(raw_position(position),first,last);
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::iterator
 Array<T>::erase(iterator position)
 {
-  return vec(true).erase(raw_position(position));
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+  // Assert a valid iterator and get vector iterator
+  const typename std::vector<T>::iterator raw_poss = raw_position(position);
+  const difference_type i = position - begin();
+  vec(true,true).erase(raw_poss);
+  return begin() + i;
+#else
+  return vec_.erase(position);
+#endif
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 typename Array<T>::iterator
 Array<T>::erase(iterator first, iterator last)
 {
-  return vec(true).erase(raw_position(first),raw_position(last));
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertNotNull();
+  // Assert a valid iterator and get vector iterator
+  const typename std::vector<T>::iterator raw_first = raw_position(first);
+  const typename std::vector<T>::iterator raw_last = raw_position(last);
+  const difference_type i = first - begin();
+  vec(true,true).erase(raw_first,raw_last);
+  return begin() + i;
+#else
+  return vec_.erase(first,last);
+#endif
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::swap(Array& x)
 {
   vec(true).swap(x.vec());
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 void Array<T>::clear()
 {
   vec(true).clear();
@@ -867,19 +866,26 @@ void Array<T>::clear()
 // Non-standard functions
 
 
-template<typename T>
+template<typename T> inline
+Array<T>& Array<T>::append(const T& x)
+{
+  this->push_back(x);
+  return *this;
+}
+
+
+template<typename T> inline
 void Array<T>::remove(int i)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  indexCheckCrash(i);
+  assertIndex(i);
 #endif
   // Erase the i-th element of this array.
   this->erase( this->begin() + i );
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 std::string Array<T>::toString() const
 {
   std::ostringstream ss;
@@ -923,6 +929,8 @@ Array<T>::Array( const std::vector<T> &v ) :
 template<typename T> inline
 std::vector<T> Array<T>::toVector() const
 {
+  if (!size())
+    return std::vector<T>();
   std::vector<T> v(begin(),end());
   return v;
 }
@@ -939,14 +947,35 @@ Array<T>& Array<T>::operator=( const std::vector<T> &v )
 // private
 
 
-template<typename T> inline
+template<typename T>
 std::vector<T>&
-Array<T>::vec( bool isStructureBeingModified )
+Array<T>::vec( bool isStructureBeingModified, bool activeIter )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (isStructureBeingModified) {
-    TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError,
-      "Error, Array is being modified while a dangling reference exists!");
+    arcp_ = null; // Give up my ArrayRCP since the array we be getting modifed!
+    if (activeIter) {
+      // If there is an active iterator in this call, then we need to allow
+      // for the existance of one or more other iterators!  We can't know for
+      // sure how many other iterators there will be since some copy
+      // constructors might be called etc.!  This leaves a dangerous
+      // situration in place where the client might access the iterator after
+      // this call.
+      
+      // 2007/11/08: rabartl: ToDo: I need to add a bool field to RCP_node
+      // that stores of the underlying object is valid or not.  I can then put
+      // in a debug-enabled check that any use of that object will be invalid
+      // and throw!
+      
+    }
+    else {
+      // If there is no active iterator, then we don't allow any other dangling
+      // references or we will thrown an exception!
+      if (isStructureBeingModified) {
+        TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError,
+          "Error, Array is being modified while a dangling reference exists!");
+      }
+    }
   }
   return *vec_;
 #else
@@ -972,9 +1001,15 @@ typename std::vector<T>::iterator
 Array<T>::raw_position( iterator position )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEUCHOS_ASSERT(
-    begin().get() <= position.get() && position.get() <= end().get()
+  const iterator begin = this->begin();
+  const iterator end = this->end();
+  TEST_FOR_EXCEPTION(
+    !(begin <= position && position <= end), DanglingReferenceError,
+    "Error, this iterator is no longer valid for this Aray!"
     );
+  // Note, above operator<=(...) functions will throw
+  // IncompatibleIteratorsError if the iterators do not share the same
+  // RCP_node object!
   return vec_->begin() + (position - this->begin());
 #else
   return position;
@@ -983,12 +1018,23 @@ Array<T>::raw_position( iterator position )
 
 
 template<typename T> inline
-void Array<T>::indexCheckCrash(int i) const
+void Array<T>::assertIndex(int i) const
 {
   TEST_FOR_EXCEPTION(
     !( 0 <= i && i < length() ), RangeError,
-    "Array<"<<TypeNameTraits<T>::name()<<">::indexCheckCrash: "
+    "Array<"<<TypeNameTraits<T>::name()<<">::assertIndex(i): "
     "index " << i << " out of range [0, "<< length() << ")"
+    );
+}
+
+
+template<typename T> inline
+void Array<T>::assertNotNull() const
+{
+  TEST_FOR_EXCEPTION(
+    !size(), NullReferenceError,
+    "Array<"<<TypeNameTraits<T>::name()<<">::assertNotNull(): "
+    "Error, the array has size zero!"
     );
 }
 
@@ -999,8 +1045,7 @@ void Array<T>::indexCheckCrash(int i) const
 // Nonmember functions
 
 
-template<typename T>
-inline
+template<typename T> inline
 std::ostream& Teuchos::operator<<(
   std::ostream& os, const Array<T>& array
   )
@@ -1009,8 +1054,7 @@ std::ostream& Teuchos::operator<<(
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 int Teuchos::hashCode(const Array<T>& array)
 {
   int rtn = hashCode(array.length());
@@ -1022,8 +1066,7 @@ int Teuchos::hashCode(const Array<T>& array)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 std::string Teuchos::toString(const Array<T>& array)
 {
   return array.toString();
@@ -1106,8 +1149,7 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
 }
 
                       
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a)
 {
@@ -1116,8 +1158,7 @@ Teuchos::tuple(const T& a)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b)
 {
@@ -1128,8 +1169,7 @@ Teuchos::tuple(const T& a, const T& b)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c)
 {
@@ -1141,8 +1181,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d)
 {
@@ -1155,8 +1194,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e)
 {
@@ -1170,8 +1208,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e)
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f)
@@ -1187,8 +1224,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g)
@@ -1205,8 +1241,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g, const T& h)
@@ -1224,8 +1259,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g, const T& h, const T& i)
@@ -1244,8 +1278,7 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 }
 
 
-template<typename T>
-inline
+template<typename T> inline
 Teuchos::Array<T>
 Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g, const T& h, const T& i, const T& j)

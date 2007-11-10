@@ -91,15 +91,38 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   </ul>
 
+<li> <b> Memory Management: </b>
+
+  <ul>
+
+  <li> Teuchos::Ptr:  Light-weight smart pointer class for replacing the use
+  if raw C++ pointers for pointing to a single object in funtion argument
+  lists.  This is only for non-persisting relationships.
+
+  <li> Teuchos::RCP: Reference-counted smart pointer class for managing
+  dynamically allocated memory to single object that is safe under multiple
+  inheritance.  This is only for persisting relationships.
+
+  <li> Teuchos::ArrayRCP:  Reference-counted pointer for managing dynamically
+  allocated array memory.  This is a general replacement for a raw C++ pointer
+  to handle an array.  This is only for persisting relationships.
+
+  <li> Teuchos::Array: is a templated array class similar to the STL vector,
+  but with optional boundschecking. Boundschecking is useful for debugging,
+  and can be turned on at compile time with the
+  <tt>--enable-teuchos-debug</tt> or <tt>--enable-teuchos-abc</tt>
+  configure flags.
+
+  <li> Teuchos::ArrayView: A light-weight replacement for raw pointers for passing
+  arrays into functions.  This is only for non-persisting relationships.
+
+  </ul>
+
 <li> <b> Low-Level Language Support: </b>
 
   <ul>
 
-  <li> Smart pointer: Teuchos::RCP - a reference-counted
-  pointer for managing dynamically allocated memory that is safe under
-  multiple inheritance.
-
-	<li> Abstract factories:
+  <li> Abstract factories:
     <ul>
     <li> Teuchos::AbstractFactory - defines a basic "Abstract Factory" interface
          that allocates objects and returns them wrapped in <tt>Teuchos::RCP</tt>
@@ -180,10 +203,16 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   message.  It then throws an "intelligent" exception informing the
   user of the file, line, and message where
   the exception was thrown.  The macro TEST_FOR_EXCEPT() is a shorter
-	macro that just accepts a logic test and is therefore easier to write.
-	Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).
+  macro that just accepts a logic test and is therefore easier to write.
+  Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).
 
   </ul>
+
+<li> <b> Testing Support </b>
+
+  Teuchos contains some utilities that make it easier to write tests
+
+  See \ref teuchos_testing_grp
 
 </ul>
 
@@ -192,12 +221,8 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 <ul>
 
 <li> <b> Containers </b>
-<ul>
 
-<li> Teuchos::Array is a templated
-array class similar to the STL vector, but with optional boundschecking.
-Boundschecking is useful for debugging, and can be turned on at compile time with
-the <tt>--enable-teuchos-abc</tt> configure flag. 
+<ul>
 
 <li> Teuchos::Hashtable is a templated map with constant-time lookup.
 

@@ -180,6 +180,28 @@ Ptr<T> outArg( T& arg )
 }
 
 
+/** \brief create a non-persisting const input argument for a function call.
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<T> optInArg( T& arg )
+{
+  return Ptr<T>(&arg);
+}
+
+
+/** \brief create a non-persisting const input argument for a function call.
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<const T> constOptInArg( T& arg )
+{
+  return Ptr<const T>(&arg);
+}
+
+
 /** \brief Create a pointer to a non-const object from a non-const object
  * reference.
  *
@@ -201,7 +223,7 @@ Ptr<T> ptr( T& arg )
  * \relates Ptr
  */
 template<typename T> inline
-Ptr<const T> constPtr( const T& arg )
+Ptr<const T> constPtr( T& arg )
 {
   return Ptr<const T>(&arg);
 }

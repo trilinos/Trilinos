@@ -1069,10 +1069,8 @@ RCP<ParameterList> sublist(
   const RCP<ParameterList> &paramList, const std::string& name, bool mustAlreadyExist = false
   )
 {
-  RCP<ParameterList>
-    sublist = Teuchos::rcp(&paramList->sublist(name,mustAlreadyExist),false);
-  set_extra_data(paramList,"masterParamList",&sublist);
-  return sublist;
+  return rcpWithEmbeddedObjPostDestroy(
+    &paramList->sublist(name,mustAlreadyExist), paramList, false );
 }
 
 /*! \relates ParameterList
@@ -1083,10 +1081,8 @@ RCP<const ParameterList> sublist(
   const RCP<const ParameterList> &paramList, const std::string& name
   )
 {
-  RCP<const ParameterList>
-    sublist = Teuchos::rcp(&paramList->sublist(name),false);
-  set_extra_data(paramList,"masterParamList",&sublist);
-  return sublist;
+  return rcpWithEmbeddedObjPostDestroy(
+    &paramList->sublist(name), paramList, false );
 }
   
 /*! \relates ParameterList

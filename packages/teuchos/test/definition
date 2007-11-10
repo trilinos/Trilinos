@@ -23,6 +23,16 @@
     COMM = MPI(1),SERIAL;
 }
 
+# Below I suppress the startup banner since
+# this was getting in the way of the generation
+# if the output string for the commparison
+(FRAMEWORK,INSTALL) {
+    TESTS = MemoryManagement/Ptr_test.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
 # This does not work unless the C code is compiled
 # to work correctly when exceptions are thrown
 #(FRAMEWORK,INSTALL) {

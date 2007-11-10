@@ -5,6 +5,8 @@
 
 /** \defgroup teuchos_mem_mng_grp Teuchos Memory Management Utilities */
 
+/** \defgroup teuchos_testing_grp Teuchos Testing Utilities */
+
 /** \example FancyOutputting_test.cpp */
 
 /** \example ArrayRefCountPtr_test.cpp */

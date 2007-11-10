@@ -135,6 +135,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_TableEntry.hpp \
 	$(srcdir)/Teuchos_TableFormat.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
+	$(srcdir)/Teuchos_TestingHelpers.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
 	$(srcdir)/Teuchos_TypeNameTraits.hpp \

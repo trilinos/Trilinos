@@ -563,9 +563,10 @@ public:
  */
 template<class T>
 ArrayRCP<T> arcp(
-  T* p, typename ArrayRCP<T>::Ordinal lowerOffset
-  ,typename ArrayRCP<T>::Ordinal size
-  , bool owns_mem = true
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+   bool owns_mem = true
   );
 
 
@@ -576,9 +577,10 @@ ArrayRCP<T> arcp(
  */
 template<class T, class Dealloc_T>
 ArrayRCP<T> arcp(
-  T* p, typename ArrayRCP<T>::Ordinal lowerOffset
-  ,typename ArrayRCP<T>::Ordinal size
-  , Dealloc_T dealloc, bool owns_mem
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+   Dealloc_T dealloc, bool owns_mem
   );
 
  
@@ -592,6 +594,70 @@ ArrayRCP<T> arcp(
  */
 template<class T>
 ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
+
+
+/* \brief Create an RCP with and also put in an embedded object.
+ *
+ * In this case the embedded object is destroyed (by setting to Embedded())
+ * before the object at <tt>*p</tt> is destroyed.
+ *
+ * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
+ * <tt>getNonconstEmbeddedObject()</tt>.
+ *
+ * \relates RCP
+ */
+template<class T, class Embedded>
+ArrayRCP<T>
+arcpWithEmbeddedObjPreDestroy(
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+  const Embedded &embedded,
+  bool owns_mem = true
+  );
+
+
+/* \brief Create an RCP with and also put in an embedded object.
+ *
+ * In this case the embedded object is destroyed (by setting to Embedded())
+ * after the object at <tt>*p</tt> is destroyed.
+ *
+ * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
+ * <tt>getNonconstEmbeddedObject()</tt>.
+ *
+ * \relates RCP
+ */
+template<class T, class Embedded>
+ArrayRCP<T>
+arcpWithEmbeddedObjPostDestroy(
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+  const Embedded &embedded,
+  bool owns_mem = true
+  );
+
+
+/* \brief Create an RCP with and also put in an embedded object.
+ *
+ * This function should be called when it is not important when the embedded
+ * object is destroyed (by setting to Embedded()) with respect to when
+ * <tt>*p</tt> is destroyed.
+ *
+ * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
+ * <tt>getNonconstEmbeddedObject()</tt>.
+ *
+ * \relates RCP
+ */
+template<class T, class Embedded>
+ArrayRCP<T>
+arcpWithEmbeddedObj(
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+  const Embedded &embedded,
+  bool owns_mem = true
+  );
 
 
 /** \brief Wrap an <tt>std::vector<T></tt> object as an
@@ -1013,6 +1079,26 @@ const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
  */
 template<class Dealloc_T, class T>
 Dealloc_T* get_optional_nonconst_dealloc( const ArrayRCP<T>& p );
+
+
+/** \brief Get a const reference to an embedded object that was set by calling
+ * <tt>arcpWithEmbeddedObjPreDestroy()</tt>,
+ * <tt>arcpWithEmbeddedObjPostDestory()</tt>, or <tt>arcpWithEmbeddedObj()</tt>.
+ *
+ * \relates RCP
+ */
+template<class TOrig, class Embedded, class T>
+const Embedded& getEmbeddedObj( const ArrayRCP<T>& p );
+
+
+/** \brief Get a const reference to an embedded object that was set by calling
+ * <tt>arcpWithEmbeddedObjPreDestroy()</tt>,
+ * <tt>arcpWithEmbeddedObjPostDestory()</tt>, or <tt>arcpWithEmbeddedObj()</tt>.
+ *
+ * \relates RCP
+ */
+template<class TOrig, class Embedded, class T>
+Embedded& getNonconstEmbeddedObj( const ArrayRCP<T>& p );
 
 
 /** \brief Output stream inserter.

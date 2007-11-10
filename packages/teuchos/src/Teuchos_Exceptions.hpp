@@ -73,6 +73,14 @@ class DanglingReferenceError : public ExceptionBase
 {public:DanglingReferenceError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
 
+/** \brief Incompatiable iterators error exception class.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+class IncompatibleIteratorsError : public ExceptionBase
+{public:IncompatibleIteratorsError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
+
 } // end namespace Teuchos
 
 

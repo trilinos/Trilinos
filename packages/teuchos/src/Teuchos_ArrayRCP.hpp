@@ -434,7 +434,8 @@ ArrayRCP<T>::ArrayRCP(
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
+       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
     add_new_RCP_node(node_,os.str());
   }
 #endif
@@ -445,17 +446,21 @@ template<class T>
 REFCOUNTPTR_INLINE
 template<class Dealloc_T>
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc, bool has_ownership
+  T* p, Ordinal lowerOffset, Ordinal upperOffset,
+  Dealloc_T dealloc, bool has_ownership
   )
   : ptr_(p)
-  , node_( p ? new PrivateUtilityPack::RCP_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
+  , node_( p
+    ? new PrivateUtilityPack::RCP_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership)
+    : NULL )
   ,lowerOffset_(lowerOffset)
   ,upperOffset_(upperOffset)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
+       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
     add_new_ArrayRCP_node(node_,os.str());
   }
 #endif
@@ -523,7 +528,10 @@ inline void assert_shares_resource(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!p1.shares_resource(p2));
+  TEST_FOR_EXCEPTION(
+    !p1.shares_resource(p2), IncompatibleIteratorsError,
+    "Error, these iterators are *not* pointing to the same valid memory!"
+    );
 #endif
 }
 } // namespace Utilities
@@ -565,6 +573,57 @@ Teuchos::arcp( typename ArrayRCP<T>::Ordinal size )
 }
 
 
+template<class T, class Embedded>
+Teuchos::ArrayRCP<T>
+Teuchos::arcpWithEmbeddedObjPreDestroy(
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+  const Embedded &embedded,
+  bool owns_mem
+  )
+{
+  return arcp(
+    p, lowerOffset, size,
+    embeddedObjDeallocDelete<T>(embedded,PRE_DESTROY),
+    owns_mem
+    );
+}
+
+
+template<class T, class Embedded>
+Teuchos::ArrayRCP<T>
+Teuchos::arcpWithEmbeddedObjPostDestroy(
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+  const Embedded &embedded,
+  bool owns_mem
+  )
+{
+  return arcp(
+    p, lowerOffset, size,
+    embeddedObjDeallocDelete<T>(embedded,POST_DESTROY),
+    owns_mem
+    );
+}
+
+
+template<class T, class Embedded>
+Teuchos::ArrayRCP<T>
+Teuchos::arcpWithEmbeddedObj(
+  T* p,
+  typename ArrayRCP<T>::Ordinal lowerOffset,
+  typename ArrayRCP<T>::Ordinal size,
+  const Embedded &embedded,
+  bool owns_mem
+  )
+{
+  return arcpWithEmbeddedObjPostDestroy<T,Embedded>(
+    p, lowerOffset, size, embedded, owns_mem );
+}
+
+
 template<class T>
 REFCOUNTPTR_INLINE
 Teuchos::ArrayRCP<T>
@@ -572,18 +631,10 @@ Teuchos::arcp( const RCP<std::vector<T> > &v )
 {
   if ( is_null(v) || !v->size() )
     return null;
-  Teuchos::ArrayRCP<T> ptr = arcp(&(*v)[0],0,v->size(),false);
-  set_extra_data( v, "std::vector", &ptr );
-  return ptr;
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-Teuchos::RCP<std::vector<T> >
-Teuchos::get_std_vector( const ArrayRCP<T> &ptr )
-{
-  return get_extra_data<RCP<std::vector<T> > >(ptr,"std::vector");
+  return arcpWithEmbeddedObjPostDestroy<T,RCP<std::vector<T> > >(
+    &(*v)[0], 0, v->size(),
+    v, false
+    );
 }
 
 
@@ -592,9 +643,21 @@ REFCOUNTPTR_INLINE
 Teuchos::ArrayRCP<const T>
 Teuchos::arcp( const RCP<const std::vector<T> > &v )
 {
-  Teuchos::ArrayRCP<const T> ptr = arcp(&(*v)[0],0,v->size(),false);
-  set_extra_data( v, "std::vector", &ptr );
-  return ptr;
+  if ( is_null(v) || !v->size() )
+    return null;
+  return arcpWithEmbeddedObjPostDestroy<const T,RCP<const std::vector<T> > >(
+    &(*v)[0], 0, v->size(),
+    v, false
+    );
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+Teuchos::RCP<std::vector<T> >
+Teuchos::get_std_vector( const ArrayRCP<T> &ptr )
+{
+  return getEmbeddedObj<T,RCP<std::vector<T> > >(ptr);
 }
 
 
@@ -603,7 +666,7 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<const std::vector<T> >
 Teuchos::get_std_vector( const ArrayRCP<const T> &ptr )
 {
-  return get_extra_data<RCP<const std::vector<T> > >(ptr,"std::vector");
+  return getEmbeddedObj<const T,RCP<const std::vector<T> > >(ptr);
 }
 
 
@@ -793,7 +856,8 @@ Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
   typedef PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
   p.assert_not_null();
   PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-    *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+    *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(
+      p.access_node());
   TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
     ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
@@ -825,6 +889,22 @@ Teuchos::get_optional_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
   if(dnode)
     return &dnode->get_nonconst_dealloc();
   return 0;
+}
+
+
+template<class TOrig, class Embedded, class T>
+const Embedded& Teuchos::getEmbeddedObj( const ArrayRCP<T>& p )
+{
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  return get_dealloc<Dealloc_t>(p).getObj();
+}
+
+
+template<class TOrig, class Embedded, class T>
+Embedded& Teuchos::getNonconstEmbeddedObj( const ArrayRCP<T>& p )
+{
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  return get_nonconst_dealloc<Dealloc_t>(p).getNonconstObj();
 }
 
 
