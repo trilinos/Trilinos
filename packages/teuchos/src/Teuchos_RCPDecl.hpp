@@ -35,7 +35,7 @@
 */
 
 
-#include "Teuchos_any.hpp"
+#include "Teuchos_RCPNode.hpp"
 #include "Teuchos_ENull.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
 
@@ -53,18 +53,6 @@
 
 
 namespace Teuchos {
-
-
-namespace PrivateUtilityPack {
-  class RCP_node;
-}
-
-
-/** \brief Used to specify a pre or post destruction of extra data
- *
- * \relates RCP
- */
-enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
 
 
 /** \brief Smart reference counting pointer class for automatic garbage
@@ -583,20 +571,13 @@ public:
   /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
   const RCP<T>& assert_not_null() const;
 
-public: // Bad bad bad
-
-  // //////////////////////////////////////
-  // Private types
-
-  typedef PrivateUtilityPack::RCP_node      node_t;
-
 private:
 
   // //////////////////////////////////////////////////////////////
   // Private data members
 
-  T       *ptr_;  // NULL if this pointer is null
-  node_t  *node_;  // NULL if this pointer is null
+  T *ptr_; // NULL if this pointer is null
+  RCPNode *node_; // NULL if this pointer is null
 
 public: // Bad bad bad
 #ifndef DOXYGEN_COMPILE
@@ -606,10 +587,10 @@ public: // Bad bad bad
   RCP( T* p, Dealloc_T dealloc, bool has_ownership );
   // This is a very bad breach of encapsulation that is needed since MS VC++ 5.0 will
   // not allow me to declare template functions as friends.
-  RCP( T* p, node_t* node);
+  RCP( T* p, RCPNode* node);
   T*& access_ptr();
-  node_t*& access_node();
-  node_t* access_node() const;
+  RCPNode*& access_node();
+  RCPNode* access_node() const;
 #endif
 
 };  // end class RCP<...>
@@ -1311,25 +1292,6 @@ Embedded& getNonconstEmbeddedObj( const RCP<T>& p );
  */
 template<class T>
 std::ostream& operator<<( std::ostream& out, const RCP<T>& p );
-
-
-/** \brief Print the list of currently active RCP nodes.
- *
- * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
- * defined, this function will print out all of the RCP nodes that are
- * currently active.  This function can be called at any time during a
- * program.
- *
- * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
- * defined this function will get called automatically after the program ends
- * and all of the local and global RCP objects have been destroyed.  If any
- * RCP nodes are printed at that time, then this is an indication that there
- * may be some circular references that will caused memory leaks.  You memory
- * checking tool such as valgrind or purify should complain about this!
- *
- * \relates RCP
- */
-void print_active_RCP_nodes(std::ostream &out);
 
 
 } // end namespace Teuchos

@@ -129,7 +129,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
-	$(srcdir)/Teuchos_Ptr.cpp $(srcdir)/Teuchos_RCP.cpp \
+	$(srcdir)/Teuchos_Ptr.cpp $(srcdir)/Teuchos_RCPNode.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \
@@ -179,7 +179,7 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) Teuchos_CTimeMonitor.$(OBJEXT) \
 	Teuchos_ParameterListAcceptorDefaultBase.$(OBJEXT) \
 	Teuchos_ParameterListNonAcceptor.$(OBJEXT) \
 	Teuchos_PerformanceMonitorUtils.$(OBJEXT) \
-	Teuchos_Ptr.$(OBJEXT) Teuchos_RCP.$(OBJEXT) \
+	Teuchos_Ptr.$(OBJEXT) Teuchos_RCPNode.$(OBJEXT) \
 	Teuchos_Range1D.$(OBJEXT) Teuchos_ScalarTraits.$(OBJEXT) \
 	Teuchos_StandardParameterEntryValidators.$(OBJEXT) \
 	Teuchos_StringToIntMap.$(OBJEXT) Teuchos_TableColumn.$(OBJEXT) \
@@ -234,8 +234,10 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp $(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
-	$(srcdir)/Teuchos_ArrayView.hpp $(srcdir)/Teuchos_Assert.hpp \
-	$(srcdir)/Teuchos_BLAS.hpp $(srcdir)/Teuchos_BLAS_types.hpp \
+	$(srcdir)/Teuchos_ArrayView.hpp \
+	$(srcdir)/Teuchos_ArrayViewDecl.hpp \
+	$(srcdir)/Teuchos_Assert.hpp $(srcdir)/Teuchos_BLAS.hpp \
+	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_CTimeMonitor.h $(srcdir)/Teuchos_Comm.hpp \
 	$(srcdir)/Teuchos_CommHelpers.hpp \
@@ -281,6 +283,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp $(srcdir)/Teuchos_RCP.hpp \
+	$(srcdir)/Teuchos_RCPNode.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RCPDecl.hpp $(srcdir)/Teuchos_Range1D.hpp \
@@ -496,6 +499,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
 	$(srcdir)/Teuchos_ArrayView.hpp \
+	$(srcdir)/Teuchos_ArrayViewDecl.hpp \
 	$(srcdir)/Teuchos_Assert.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
@@ -549,6 +553,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
+	$(srcdir)/Teuchos_RCPNode.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RCPDecl.hpp \
@@ -616,7 +621,7 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_Ptr.cpp \
-	$(srcdir)/Teuchos_RCP.cpp \
+	$(srcdir)/Teuchos_RCPNode.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \
@@ -929,7 +934,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_PerformanceMonitorUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Ptr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RCP.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RCPNode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Range1D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ScalarTraits.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po@am__quote@
@@ -1242,19 +1247,19 @@ Teuchos_Ptr.obj: $(srcdir)/Teuchos_Ptr.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Ptr.obj `if test -f '$(srcdir)/Teuchos_Ptr.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Ptr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Ptr.cpp'; fi`
 
-Teuchos_RCP.o: $(srcdir)/Teuchos_RCP.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_RCP.o -MD -MP -MF $(DEPDIR)/Teuchos_RCP.Tpo -c -o Teuchos_RCP.o `test -f '$(srcdir)/Teuchos_RCP.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_RCP.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_RCP.Tpo $(DEPDIR)/Teuchos_RCP.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_RCP.cpp' object='Teuchos_RCP.o' libtool=no @AMDEPBACKSLASH@
+Teuchos_RCPNode.o: $(srcdir)/Teuchos_RCPNode.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_RCPNode.o -MD -MP -MF $(DEPDIR)/Teuchos_RCPNode.Tpo -c -o Teuchos_RCPNode.o `test -f '$(srcdir)/Teuchos_RCPNode.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_RCPNode.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_RCPNode.Tpo $(DEPDIR)/Teuchos_RCPNode.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_RCPNode.cpp' object='Teuchos_RCPNode.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_RCP.o `test -f '$(srcdir)/Teuchos_RCP.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_RCP.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_RCPNode.o `test -f '$(srcdir)/Teuchos_RCPNode.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_RCPNode.cpp
 
-Teuchos_RCP.obj: $(srcdir)/Teuchos_RCP.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_RCP.obj -MD -MP -MF $(DEPDIR)/Teuchos_RCP.Tpo -c -o Teuchos_RCP.obj `if test -f '$(srcdir)/Teuchos_RCP.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_RCP.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_RCP.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_RCP.Tpo $(DEPDIR)/Teuchos_RCP.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_RCP.cpp' object='Teuchos_RCP.obj' libtool=no @AMDEPBACKSLASH@
+Teuchos_RCPNode.obj: $(srcdir)/Teuchos_RCPNode.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_RCPNode.obj -MD -MP -MF $(DEPDIR)/Teuchos_RCPNode.Tpo -c -o Teuchos_RCPNode.obj `if test -f '$(srcdir)/Teuchos_RCPNode.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_RCPNode.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_RCPNode.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_RCPNode.Tpo $(DEPDIR)/Teuchos_RCPNode.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_RCPNode.cpp' object='Teuchos_RCPNode.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_RCP.obj `if test -f '$(srcdir)/Teuchos_RCP.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_RCP.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_RCP.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_RCPNode.obj `if test -f '$(srcdir)/Teuchos_RCPNode.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_RCPNode.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_RCPNode.cpp'; fi`
 
 Teuchos_Range1D.o: $(srcdir)/Teuchos_Range1D.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Range1D.o -MD -MP -MF $(DEPDIR)/Teuchos_Range1D.Tpo -c -o Teuchos_Range1D.o `test -f '$(srcdir)/Teuchos_Range1D.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Range1D.cpp

@@ -55,9 +55,9 @@ ArrayRCP<T>::ArrayRCP( ENull )
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRCP<T>::ArrayRCP(const ArrayRCP<T>& r_ptr)
-  : ptr_(r_ptr.ptr_), node_(r_ptr.node_)
-  , lowerOffset_(r_ptr.lowerOffset_)
-  , upperOffset_(r_ptr.upperOffset_)
+  :ptr_(r_ptr.ptr_), node_(r_ptr.node_),
+   lowerOffset_(r_ptr.lowerOffset_),
+   upperOffset_(r_ptr.upperOffset_)
 {
   if(node_) node_->incr_count();
 }
@@ -70,7 +70,7 @@ ArrayRCP<T>::~ArrayRCP()
   if(node_ && node_->deincr_count() == 0 ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
     printActiveRCPNodes.foo(); // Make sure this object is used!
-    remove_RCP_node(node_);
+    remove_RCPNode(node_);
 #endif
     delete node_;
   }
@@ -85,7 +85,7 @@ ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
     return *this; // Assignment to self
   if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-    remove_RCP_node(node_);
+    remove_RCPNode(node_);
 #endif
     delete node_;
   }
@@ -389,7 +389,7 @@ inline
 const ArrayRCP<T>&
 ArrayRCP<T>::assert_not_null() const
 {
-  if(!ptr_) PrivateUtilityPack::throw_null(TypeNameTraits<T>::name());
+  if(!ptr_) throw_null_ptr_error(TypeNameTraits<T>::name());
   return *this;
 }
 
@@ -423,7 +423,7 @@ ArrayRCP<T>::ArrayRCP(
   : ptr_(p)
   , node_(
     p
-    ? new PrivateUtilityPack::RCP_node_tmpl<T,DeallocArrayDelete<T> >(
+    ? new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
       p,DeallocArrayDelete<T>(),has_ownership
       )
     : NULL
@@ -436,7 +436,7 @@ ArrayRCP<T>::ArrayRCP(
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
        <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
-    add_new_RCP_node(node_,os.str());
+    add_new_RCPNode(node_,os.str());
   }
 #endif
 }
@@ -451,7 +451,7 @@ ArrayRCP<T>::ArrayRCP(
   )
   : ptr_(p)
   , node_( p
-    ? new PrivateUtilityPack::RCP_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership)
+    ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership)
     : NULL )
   ,lowerOffset_(lowerOffset)
   ,upperOffset_(upperOffset)
@@ -461,7 +461,7 @@ ArrayRCP<T>::ArrayRCP(
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
        <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
-    add_new_ArrayRCP_node(node_,os.str());
+    add_new_ArrayRCPNode(node_,os.str());
   }
 #endif
 }
@@ -470,14 +470,15 @@ ArrayRCP<T>::ArrayRCP(
 template<class T>
 inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset, Ordinal upperOffset, node_t* node
+  T* p, Ordinal lowerOffset, Ordinal upperOffset, RCPNode* node
   )
-  : ptr_(p)
-  , node_(node)
-  ,lowerOffset_(lowerOffset)
-  ,upperOffset_(upperOffset)
+  :ptr_(p),
+   node_(node),
+   lowerOffset_(lowerOffset),
+   upperOffset_(upperOffset)
 {
-  if(node_) node_->incr_count();
+  if(node_)
+    node_->incr_count();
 }
 
 
@@ -499,7 +500,7 @@ T* ArrayRCP<T>::access_ptr() const
 
 template<class T>
 inline
-typename ArrayRCP<T>::node_t*& ArrayRCP<T>::access_node()
+RCPNode*& ArrayRCP<T>::access_node()
 {
   return node_;
 }
@@ -507,7 +508,7 @@ typename ArrayRCP<T>::node_t*& ArrayRCP<T>::access_node()
 
 template<class T>
 inline
-typename ArrayRCP<T>::node_t* ArrayRCP<T>::access_node() const
+RCPNode* ArrayRCP<T>::access_node() const
 {
   return node_;
 }
@@ -853,10 +854,10 @@ inline
 Dealloc_T& 
 Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 {
-  typedef PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
+  typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
   p.assert_not_null();
-  PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-    *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(
+  RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(
       p.access_node());
   TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
@@ -883,7 +884,7 @@ Dealloc_T*
 Teuchos::get_optional_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 {
   p.assert_not_null();
-  typedef PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+  typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     RCPNT;
   RCPNT *dnode = dynamic_cast<RCPNT*>(p.access_node());
   if(dnode)

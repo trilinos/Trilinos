@@ -44,7 +44,6 @@ STANDARD_SUBDIRS = \
   MemoryManagement \
   ParameterList \
   Polling \
-  RefCountPtr \
   ScalarTraits \
   Time \
   Workspace \

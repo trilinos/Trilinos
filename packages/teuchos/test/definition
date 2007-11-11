@@ -6,28 +6,10 @@
 # this was getting in the way of the generation
 # if the output string for the commparison
 (FRAMEWORK,INSTALL) {
-    TESTS = RefCountPtr/RefCountPtr_test.exe,
-            RefCountPtr/ArrayRefCountPtr_test.exe;
-    ARGS = --verbose --teuchos-suppress-startup-banner;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI(1),SERIAL;
-}
-
-# Below I suppress the startup banner since
-# this was getting in the way of the generation
-# if the output string for the commparison
-(FRAMEWORK,INSTALL) {
-    TESTS = MemoryManagement/Array_test.exe;
-    ARGS = --teuchos-suppress-startup-banner;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI(1),SERIAL;
-}
-
-# Below I suppress the startup banner since
-# this was getting in the way of the generation
-# if the output string for the commparison
-(FRAMEWORK,INSTALL) {
-    TESTS = MemoryManagement/Ptr_test.exe;
+    TESTS = MemoryManagement/Array_test.exe,
+            MemoryManagement/ArrayRCP_test.exe,
+            MemoryManagement/RCP_test.exe,
+            MemoryManagement/Ptr_test.exe;
     ARGS = --teuchos-suppress-startup-banner;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1),SERIAL;

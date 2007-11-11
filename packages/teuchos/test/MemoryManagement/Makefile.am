@@ -30,15 +30,27 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = Array_test Ptr_test
+bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test
+
+RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
+RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+RCP_test_LDADD = $(TEUCHOS_LIBS)
+
+Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
+Ptr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+Ptr_test_LDADD = $(TEUCHOS_LIBS)
+
+ArrayRCP_test_SOURCES = $(srcdir)/ArrayRCP_test.cpp
+ArrayRCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+ArrayRCP_test_LDADD = $(TEUCHOS_LIBS)
 
 Array_test_SOURCES = $(srcdir)/Array_test.cpp
 Array_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Array_test_LDADD = $(TEUCHOS_LIBS)
 
-Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
-Ptr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-Ptr_test_LDADD = $(TEUCHOS_LIBS)
+ArrayView_test_SOURCES = $(srcdir)/ArrayView_test.cpp
+ArrayView_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+ArrayView_test_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 

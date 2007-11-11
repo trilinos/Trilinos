@@ -29,12 +29,15 @@
 #ifndef TEUCHOS_RCP_HPP
 #define TEUCHOS_RCP_HPP
 
+
 /*! \file Teuchos_RCP.hpp
     \brief Reference-counted pointer class and non-member templated function implementations.
 */
+
 /** \example example/RCP/cxx_main.cpp
     This is an example of how to use the <tt>Teuchos::RCP</tt> class.
 */
+
 /** \example test/RCP/cxx_main.cpp
     This is a more detailed testing program that uses all of the <tt>Teuchos::RCP</tt> class.
 */
@@ -46,143 +49,12 @@
 #include "Teuchos_map.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+
 //#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES // Define this on command line to keep track of this!
+
 
 // /////////////////////////////////////////////////////////////////////////
 // Inline implementations below, not for the client to look at.
-
-namespace Teuchos {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-namespace PrivateUtilityPack {
-
-//
-class RCP_node;
-
-// Assert that the pointer is not null
-void throw_null( const std::string &type_name );
-
-// Node class to keep track of the delete address and
-// the reference count for RCP<...>
-class RCP_node {
-public:
-  RCP_node(bool has_ownership)
-    : count_(1), has_ownership_(has_ownership), extra_data_map_(NULL)
-  {}
-  virtual ~RCP_node()
-  {
-    if(extra_data_map_) delete extra_data_map_;
-  }
-  int count() const {
-    return count_;  
-  }
-  int incr_count() {
-    return ++count_;
-  }
-  int deincr_count() {
-    return --count_;
-  }
-  void has_ownership(bool has_ownership) {
-    has_ownership_ = has_ownership;
-  }
-  bool has_ownership() const {
-    return has_ownership_;
-  }
-  void set_extra_data( const any &extra_data, const std::string& name, EPrePostDestruction destroy_when, bool force_unique );
-  any& get_extra_data( const std::string& type_name, const std::string& name );
-  const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
-    return const_cast<RCP_node*>(this)->get_extra_data(type_name,name);
-  }
-  any* get_optional_extra_data( const std::string& type_name, const std::string& name );
-  const any* get_optional_extra_data( const std::string& type_name, const std::string& name ) const {
-    return const_cast<RCP_node*>(this)->get_optional_extra_data(type_name,name);
-  }
-protected:
-  void pre_delete_extra_data() {
-    if(extra_data_map_) impl_pre_delete_extra_data();
-  }
-private:
-  struct extra_data_entry_t {
-    extra_data_entry_t() : destroy_when(POST_DESTROY) {}
-    extra_data_entry_t( const any &_extra_data, EPrePostDestruction _destroy_when )
-      : extra_data(_extra_data), destroy_when(_destroy_when) {}
-    any extra_data;
-    EPrePostDestruction destroy_when;
-  };  
-  typedef Teuchos::map<std::string,extra_data_entry_t> extra_data_map_t;
-  int                 count_;
-  bool                has_ownership_;
-  extra_data_map_t    *extra_data_map_;
-  // Above is made a pointer to reduce overhead for the general case
-  // where this is not used
-  void impl_pre_delete_extra_data();
-  // Not defined and not to be called
-  RCP_node();
-  RCP_node(const RCP_node&);
-  RCP_node& operator=(const RCP_node&);
-};  // end class RCP_node;
-
-// Implementation class for actually deleting the object if has_ownership() == true.
-template<class T, class Dealloc_T>
-class RCP_node_tmpl : public RCP_node {
-public:
-
-  //
-  RCP_node_tmpl(T* p, Dealloc_T dealloc, bool has_ownership)
-    : RCP_node(has_ownership), ptr_(p), dealloc_(dealloc)
-  {}
-  //
-  Dealloc_T& get_nonconst_dealloc() { return dealloc_; }
-  //
-  const Dealloc_T& get_dealloc() const { return dealloc_; }
-  //
-  ~RCP_node_tmpl() {
-    this->pre_delete_extra_data();
-    if( has_ownership() )
-      dealloc_.free(ptr_);
-  }
-
-private:
-
-  T           *ptr_;
-  Dealloc_T   dealloc_;
-  // not defined and not to be called
-  RCP_node_tmpl();
-  RCP_node_tmpl(const RCP_node_tmpl&);
-  RCP_node_tmpl& operator=(const RCP_node_tmpl&);
-
-}; // end class RCP_node_tmpl<T>
-
-// Add new RCP to global list
-void add_new_RCP_node( RCP_node* rcp_node, const std::string &info );
-
-// Remove RCP from global list
-void remove_RCP_node( RCP_node* rcp_node );
-
-// Print global list on destruction
-class PrintActiveRCPNodes {
-public:
-  PrintActiveRCPNodes();
-  ~PrintActiveRCPNodes();
-  void foo();
-private:
-  static int count_;
-};
-
-}  // end namespace PrivateUtilityPack 
-
-} // namespace Teuchos
-
-namespace {
-// This static variable should be delcared before all other static variables
-// that depend on RCP and therefore This static varaible should be
-// deleted *after* all of these other static variables that depend on
-// RCP go away!
-Teuchos::PrivateUtilityPack::PrintActiveRCPNodes printActiveRCPNodes;
-} // namespace
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 namespace Teuchos {
@@ -214,7 +86,7 @@ REFCOUNTPTR_INLINE
 template <class T2>
 RCP<T>::RCP(const RCP<T2>& r_ptr)
   : ptr_(const_cast<T2*>(r_ptr.get()))                 // will not compile if T1 is not an ancestor of T2
-  , node_(const_cast<node_t*>(r_ptr.access_node()))
+  , node_(const_cast<RCPNode*>(r_ptr.access_node()))
 {
   if(node_) node_->incr_count();
 }
@@ -226,8 +98,8 @@ RCP<T>::~RCP()
 {
   if(node_ && node_->deincr_count() == 0 ) {
 #ifdef TEUCHOS_DEBUG
-    printActiveRCPNodes.foo(); // Make sure this object is used!
-    remove_RCP_node(node_);
+    local_printActiveRCPNodes.foo(); // Make sure this object is used!
+    remove_RCPNode(node_);
 #endif
     delete node_;
   }
@@ -241,7 +113,7 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
     return *this; // Assignment to self
   if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_DEBUG
-    remove_RCP_node(node_);
+    remove_RCPNode(node_);
 #endif
     delete node_;
   }
@@ -319,7 +191,7 @@ bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const {
 template<class T>
 inline
 const RCP<T>& RCP<T>::assert_not_null() const {
-  if(!ptr_) PrivateUtilityPack::throw_null(TypeNameTraits<T>::name());
+  if(!ptr_) throw_null_ptr_error(TypeNameTraits<T>::name());
   return *this;
 }
 
@@ -329,13 +201,13 @@ template<class T>
 inline
 RCP<T>::RCP( T* p, bool has_ownership )
   : ptr_(p)
-  , node_( p ? new PrivateUtilityPack::RCP_node_tmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
+  , node_( p ? new RCPNodeTmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
-    add_new_RCP_node(node_,os.str());
+    add_new_RCPNode(node_,os.str());
   }
 #endif
 }
@@ -345,20 +217,20 @@ REFCOUNTPTR_INLINE
 template<class Dealloc_T>
 RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership )
   : ptr_(p)
-  , node_( p ? new PrivateUtilityPack::RCP_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
+  , node_( p ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
-    add_new_RCP_node(node_,os.str());
+    add_new_RCPNode(node_,os.str());
   }
 #endif
 }
 
 template<class T>
 inline
-RCP<T>::RCP( T* p, node_t* node)
+RCP<T>::RCP( T* p, RCPNode* node)
   : ptr_(p), node_(node)
 {
   if(node_) node_->incr_count();
@@ -371,12 +243,12 @@ T*& RCP<T>::access_ptr()
 
 template<class T>
 inline
-typename RCP<T>::node_t*& RCP<T>::access_node()
+RCPNode*& RCP<T>::access_node()
 {  return node_; }
 
 template<class T>
 inline
-typename RCP<T>::node_t* RCP<T>::access_node() const
+RCPNode* RCP<T>::access_node() const
 {  return node_; }
 
 }  // end namespace Teuchos
@@ -583,10 +455,10 @@ template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
 Dealloc_T& Teuchos::get_nonconst_dealloc( const RCP<T>& p )
 {
-  typedef PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
+  typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
   p.assert_not_null();
-  PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-    *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
     ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
@@ -609,8 +481,8 @@ Dealloc_T*
 Teuchos::get_optional_nonconst_dealloc( const RCP<T>& p )
 {
   p.assert_not_null();
-  PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-    *dnode = dynamic_cast<PrivateUtilityPack::RCP_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   if(dnode)
     return &dnode->get_nonconst_dealloc();
   return NULL;

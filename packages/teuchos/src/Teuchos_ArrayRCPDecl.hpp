@@ -143,12 +143,12 @@ public:
 	 * the array if owned.
 	 *
 	 * Deallocates array if <tt>this->has_ownership() == true</tt> and
-	 * <tt>this->count() == 1</tt>.  If <tt>this->count() == 1</tt> but
+	 * <tt>this->count() == 1</tt>. If <tt>this->count() == 1</tt> but
 	 * <tt>this->has_ownership() == false</tt> then the array is not deleted
-	 * (usually using <tt>delete []</tt>).  If <tt>this->count() > 1</tt> then
+	 * (usually using <tt>delete []</tt>). If <tt>this->count() > 1</tt> then
 	 * the internal reference count shared by all the other related
 	 * <tt>ArrayRCP<...></tt> objects for this shared array is
-	 * deincremented by one.  If <tt>this->get() == NULL</tt> then nothing
+	 * deincremented by one. If <tt>this->get() == NULL</tt> then nothing
 	 * happens.
 	 */
 	~ArrayRCP();
@@ -159,7 +159,7 @@ public:
 	 * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt>
 	 * before this operation is called, then the array will be deleted prior to
 	 * binding to the pointer (possibly <tt>NULL</tt>) pointed to in
-	 * <tt>r_ptr</tt>.  Assignment to self (i.e. <tt>this->get() ==
+	 * <tt>r_ptr</tt>. Assignment to self (i.e. <tt>this->get() ==
 	 * r_ptr.get()</tt>) is harmless and this function does nothing.
 	 *
 	 * Postconditions:
@@ -362,7 +362,7 @@ public:
 	/** \brief Return the number of <tt>ArrayRCP<></tt> objects that have a reference
 	 * to the underlying pointer that is being shared.
 	 *
-	 * \returns  If <tt>this->get() == NULL</tt> then this function returns 0.
+	 * \returns If <tt>this->get() == NULL</tt> then this function returns 0.
 	 * Otherwise, this function returns <tt>> 0</tt>.
 	 */
 	int count() const;
@@ -396,7 +396,7 @@ public:
    *
    * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
    * returned is an <tt>ArrayRCP<T></tt> object and all operations are
-   * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
+   * checked at runtime. When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
    * <b>Postconditions:</b><ul>
@@ -410,7 +410,7 @@ public:
    *
    * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
    * returned is an <tt>ArrayRCP<T></tt> object and all operations are
-   * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
+   * checked at runtime. When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
    * <b>Postconditions:</b><ul>
@@ -429,14 +429,14 @@ public:
 	 *
 	 * After this function is called then the client is responsible for deleting
 	 * the returned pointer no matter how many <tt>ref_count_ptr<T></tt> objects
-	 * have a reference to it.  If <tt>this-></tt>get() <tt>== NULL</tt>, then
+	 * have a reference to it. If <tt>this-></tt>get() <tt>== NULL</tt>, then
 	 * this call is meaningless.
 	 *
 	 * Note that this function does not have the exact same semantics as does
-	 * <tt>auto_ptr<T>::release()</tt>.  In <tt>auto_ptr<T>::release()</tt>,
+	 * <tt>auto_ptr<T>::release()</tt>. In <tt>auto_ptr<T>::release()</tt>,
 	 * <tt>this</tt> is set to <tt>NULL</tt> while here in ArrayRCP<T>::
 	 * release() only an ownership flag is set and <tt>this</tt> still points to
-	 * the same array.  It would be difficult to duplicate the behavior of
+	 * the same array. It would be difficult to duplicate the behavior of
 	 * <tt>auto_ptr<T>::release()</tt> for this class.
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -450,18 +450,18 @@ public:
 	/** \brief Give <tt>this</tt> and other <tt>ArrayRCP<></tt> objects
 	 * ownership of the underlying referenced array to delete it.
 	 *
-	 * See <tt>~ArrayRCP()</tt> above.  This function does nothing if
+	 * See <tt>~ArrayRCP()</tt> above. This function does nothing if
 	 * <tt>this->get() == NULL</tt>.
 	 *
 	 * <b>Postconditions:</b><ul>
 	 * <li> If <tt>this->get() == NULL</tt> then
-	 *   <ul>
-	 *   <li><tt>this->has_ownership() == false</tt> (always!).
-	 *   </ul>
+	 * <ul>
+	 * <li><tt>this->has_ownership() == false</tt> (always!).
+	 * </ul>
 	 * <li> else
-	 *   <ul>
-	 *   <li><tt>this->has_ownership() == true</tt>
-	 *   </ul>
+	 * <ul>
+	 * <li><tt>this->has_ownership() == true</tt>
+	 * </ul>
 	 * </ul>
 	 */
 	void set_has_ownership();
@@ -472,7 +472,7 @@ public:
 	 * See <tt>~ArrayRCP()</tt> above.
 	 *
 	 * \return If this->get() <tt>== NULL</tt> then this function always returns
-	 * <tt>false</tt>.  Otherwise the value returned from this function depends
+	 * <tt>false</tt>. Otherwise the value returned from this function depends
 	 * on which function was called most recently, if any;
 	 * <tt>set_has_ownership()</tt> (<tt>true</tt>) or <tt>release()</tt>
 	 * (<tt>false</tt>).
@@ -498,20 +498,13 @@ public:
 
   //@}
 
-public: // Bad bad bad
-
-	// //////////////////////////////////////
-	// Private types
-
-	typedef PrivateUtilityPack::RCP_node node_t;
-
 private:
 
 	// //////////////////////////////////////////////////////////////
 	// Private data members
 
-	T       *ptr_;  // NULL if this pointer is null
-	node_t	*node_;	// NULL if this pointer is null
+	T *ptr_; // NULL if this pointer is null
+	RCPNode	*node_;	// NULL if this pointer is null
   Ordinal lowerOffset_;
   Ordinal upperOffset_;
 
@@ -524,11 +517,11 @@ public:
 	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc, bool has_ownership );
 	// This is a very bad breach of encapsulation that is needed since MS VC++ 5.0 will
 	// not allow me to declare template functions as friends.
-	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, node_t* node);
-	T*&           access_ptr();
-	T*            access_ptr() const; // No preconditions
-	node_t*&      access_node();
-	node_t*       access_node() const;
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, RCPNode* node);
+	T*& access_ptr();
+	T* access_ptr() const; // No preconditions
+	RCPNode*& access_node();
+	RCPNode* access_node() const;
 #endif
 
 };	// end class ArrayRCP<...>
@@ -566,7 +559,7 @@ ArrayRCP<T> arcp(
   T* p,
   typename ArrayRCP<T>::Ordinal lowerOffset,
   typename ArrayRCP<T>::Ordinal size,
-   bool owns_mem = true
+  bool owns_mem = true
   );
 
 
@@ -580,7 +573,7 @@ ArrayRCP<T> arcp(
   T* p,
   typename ArrayRCP<T>::Ordinal lowerOffset,
   typename ArrayRCP<T>::Ordinal size,
-   Dealloc_T dealloc, bool owns_mem
+  Dealloc_T dealloc, bool owns_mem
   );
 
  
@@ -785,7 +778,7 @@ operator-( const ArrayRCP<T> &p1, const ArrayRCP<T> &p2 );
  * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
  *
  * <b>Warning!</b> Do not use this function unless you absolutely know what
- * you are doing.  Doing a reinterpret cast is always a tricking thing and
+ * you are doing. Doing a reinterpret cast is always a tricking thing and
  * must only be done by developers who are 100% comfortable with what they are
  * doing.
  *
@@ -801,18 +794,18 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
  * The function will compile only if (<tt>T2 *p = p1.get();</tt>) compiles.
  *
  * <b>Warning!</b> Do not use this function unless you absolutely know what you
- * are doing.  While implicit casting of pointers to single objects is usually
+ * are doing. While implicit casting of pointers to single objects is usually
  * 100% safe, implicit casting pointers to arrays of objects can be very
- * dangerous.  One std::exception that is always safe is when you are implicit
+ * dangerous. One std::exception that is always safe is when you are implicit
  * casting an array of pointers to non-const objects to an array of const
- * pointers to const objects.  For example, the following implicit conversion
+ * pointers to const objects. For example, the following implicit conversion
  * from a array pointer objects <tt>aptr1</tt> of type
  * <tt>ArrayRCP<T*></tt> to 
 
  \code
 
-  ArrayRCP<const T * const>
-    aptr2 = arcp_implicit_cast<const T * const>(ptr1);
+ ArrayRCP<const T * const>
+ aptr2 = arcp_implicit_cast<const T * const>(ptr1);
 
  \endcode
 
@@ -828,7 +821,7 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  *
  * \param extra_data [in] Data object that will be set (copied)
  *
- * \param name [in] The name given to the extra data.  The value of
+ * \param name [in] The name given to the extra data. The value of
  * <tt>name</tt> together with the data type <tt>T1</tt> of the extra data
  * must be unique from any other such data or the other data will be
  * overwritten.
@@ -837,24 +830,24 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * <tt>extra_data</tt>
  *
  * \param destroy_when [in] Determines when <tt>extra_data</tt> will be
- * destroyed in relation to the underlying reference-counted object.  If
+ * destroyed in relation to the underlying reference-counted object. If
  * <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt> will be deleted
- * before the underlying reference-counted object.  If
+ * before the underlying reference-counted object. If
  * <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>
  * will be deleted after the underlying reference-counted object.
  *
  * \param force_unique [in] Determines if this type and name pair must be
  * unique in which case if an object with this same type and name already
- * exists, then an std::exception will be thrown.  The default is
+ * exists, then an std::exception will be thrown. The default is
  * <tt>true</tt> for safety.
  *
  * If there is a call to this function with the same type of extra
  * data <tt>T1</tt> and same arguments <tt>p</tt> and <tt>name</tt>
  * has already been made, then the current piece of extra data already
- * set will be overwritten with <tt>extra_data</tt>.  However, if the
+ * set will be overwritten with <tt>extra_data</tt>. However, if the
  * type of the extra data <tt>T1</tt> is different, then the extra
- * data can be added and not overwrite existing extra data.  This
- * means that extra data is keyed on both the type and name.  This
+ * data can be added and not overwrite existing extra data. This
+ * means that extra data is keyed on both the type and name. This
  * helps to minimize the chance that clients will unexpectedly
  * overwrite data by accident.
  *
@@ -864,7 +857,7 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * <tt>destroy_when==PRE_DESTROY</tt> are first, (2) then the underlying
  * reference-counted object is deleted, and (3) the rest of the extra data
  * that was added with <tt>destroy_when==PRE_DESTROY</tt> is then deleted.
- * The order in which the objects are destroyed is not guaranteed.  Therefore,
+ * The order in which the objects are destroyed is not guaranteed. Therefore,
  * clients should be careful not to add extra data that has deletion
  * dependencies (instead consider using nested ArrayRCP objects as extra
  * data which will guarantee the order of deletion).
@@ -872,9 +865,9 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * <b>Preconditions:</b><ul>
  * <li><tt>p->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> If this function has already been called with the same template
- *      type <tt>T1</tt> for <tt>extra_data</tt> and the same std::string <tt>name</tt>
- *      and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
- *      std::exception will be thrown.
+ * type <tt>T1</tt> for <tt>extra_data</tt> and the same std::string <tt>name</tt>
+ * and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
+ * std::exception will be thrown.
  * </ul>
  *
  * Note, this function is made a non-member function to be consistent
@@ -901,7 +894,7 @@ void set_extra_data(
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li><tt>name</tt> and <tt>T1</tt> must have been used in a previous
- *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
+ * call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
  *
  * Note, this function must be a non-member function since the client
@@ -924,7 +917,7 @@ T1& get_extra_data( ArrayRCP<T2>& p, const std::string& name );
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li><tt>name</tt> and <tt>T1</tt> must have been used in a previous
- *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
+ * call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
  *
  * Note, this function must be a non-member function since the client
@@ -933,7 +926,7 @@ T1& get_extra_data( ArrayRCP<T2>& p, const std::string& name );
  * Also note that this const version is a false sense of security
  * since a client can always copy a const <tt>ArrayRCP</tt> object
  * into a non-const object and then use the non-const version to
- * change the data.  However, its presence will help to avoid some
+ * change the data. However, its presence will help to avoid some
  * types of accidental changes to this extra data.
  *
  * \relates ArrayRCP
@@ -957,8 +950,8 @@ const T1& get_extra_data( const ArrayRCP<T2>& p, const std::string& name );
  *
  * <b>Postconditions:</b><ul>
  * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
- *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
- *      and otherwise <tt>return == NULL</tt>.
+ * call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
+ * and otherwise <tt>return == NULL</tt>.
  * </ul>
  *
  * Note, this function must be a non-member function since the client
@@ -984,8 +977,8 @@ T1* get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name );
  *
  * <b>Postconditions:</b><ul>
  * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
- *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
- *      and otherwise <tt>return == NULL</tt>.
+ * call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
+ * and otherwise <tt>return == NULL</tt>.
  * </ul>
  *
  * Note, this function must be a non-member function since the client
@@ -994,7 +987,7 @@ T1* get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name );
  * Also note that this const version is a false sense of security
  * since a client can always copy a const <tt>ArrayRCP</tt> object
  * into a non-const object and then use the non-const version to
- * change the data.  However, its presence will help to avoid some
+ * change the data. However, its presence will help to avoid some
  * types of accidental changes to this extra data.
  *
  * \relates ArrayRCP
@@ -1008,7 +1001,7 @@ const T1* get_optional_extra_data( const ArrayRCP<T2>& p, const std::string& nam
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>NullReferenceError</tt>)
+ * (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * \relates ArrayRCP
@@ -1022,12 +1015,12 @@ Dealloc_T& get_nonconst_dealloc( const ArrayRCP<T>& p );
  * <b>Preconditions:</b><ul>
  * <li><tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>NullReferenceError</tt>)
+ * (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * Note that the <tt>const</tt> version of this function provides only
  * a very ineffective attempt to avoid accidental changes to the
- * deallocation object.  A client can always just create a new
+ * deallocation object. A client can always just create a new
  * non-<tt>const</tt> <tt>ArrayRCP<T></tt> object from any
  * <tt>const</tt> <tt>ArrayRCP<T></tt> object and then call the
  * non-<tt>const</tt> version of this function.
@@ -1047,7 +1040,7 @@ const Dealloc_T& get_dealloc( const ArrayRCP<T>& p );
  *
  * <b>Postconditions:</b><ul>
  * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
+ * then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
  *
  * \relates ArrayRCP
@@ -1065,12 +1058,12 @@ const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
  *
  * <b>Postconditions:</b><ul>
  * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
+ * then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
  *
  * Note that the <tt>const</tt> version of this function provides only
  * a very ineffective attempt to avoid accidental changes to the
- * deallocation object.  A client can always just create a new
+ * deallocation object. A client can always just create a new
  * non-<tt>const</tt> <tt>ArrayRCP<T></tt> object from any
  * <tt>const</tt> <tt>ArrayRCP<T></tt> object and then call the
  * non-<tt>const</tt> version of this function.

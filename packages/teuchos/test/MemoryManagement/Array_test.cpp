@@ -231,7 +231,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
   {
-    out << "\nTest that a2.begin() == a2.end() for empty a2 ... ";
+    out << "\nTest that a2.begin() == a2.end() for empty a2 ...\n";
     Array<T> a2;
     TEST_ITER_EQUALITY( a2.begin(), a2.end() );
   }
@@ -273,7 +273,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
   {
-    out << "\nTest that a2.rbegin() == a2.rend() for empty a2 ... ";
+    out << "\nTest that a2.rbegin() == a2.rend() for empty a2 ...\n";
     Array<T> a2;
     TEST_ITER_EQUALITY( a2.rbegin(), a2.rend() );
   }
@@ -313,14 +313,14 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   }
 
   {
-    out << "\nTest that an iterator reference set to null does not throw ... ";
+    out << "\nTest that an iterator reference set to null does not throw ...\n";
     typedef typename Array<T>::iterator iter_t;
     iter_t iter = NullIteratorTraits<iter_t>::getNull();
     TEST_NOTHROW( Array<T> a2(n); iter = a2.begin(); setToNull(outArg(iter)) );
   }
 
   {
-    out << "\nTest that a dangling iterator reference throws exception ... ";
+    out << "\nTest that a dangling iterator reference throws exception ...\n";
     typedef typename Array<T>::iterator iter_t;
     iter_t iter = NullIteratorTraits<iter_t>::getNull();
     TEST_THROW( { Array<T> a2(n); iter = a2.begin(); }, Teuchos::DanglingReferenceError );
@@ -402,7 +402,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
   {
-    out << "\nTest trying to erase twice with the same iterator which should throw ... ";
+    out << "\nTest trying to erase twice with the same iterator which should throw ...\n";
     Array<T> a2(a);
     const typename Array<T>::iterator iter = a2.begin();
     a2.erase(iter); // After this point, the iterator is no longer valid!
@@ -461,7 +461,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   {
-    out << "\nTest to string ...";
+    out << "\nTest to string ...\n";
     std::ostringstream o;
     o << "{";
     for ( int i = 0; i < n; ++i ) {
@@ -469,7 +469,6 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     }
     o << "}";
     TEST_EQUALITY( o.str(), a.toString() );
-    out << "passed\n"; 
   }
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -486,6 +485,10 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 
 }
 
+
+//
+// Main testing program
+//
 
 int main( int argc, char* argv[] ) {
 

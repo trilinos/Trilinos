@@ -61,7 +61,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = Array_test$(EXEEXT) Ptr_test$(EXEEXT)
+bin_PROGRAMS = RCP_test$(EXEEXT) Ptr_test$(EXEEXT) \
+	ArrayRCP_test$(EXEEXT) Array_test$(EXEEXT) \
+	ArrayView_test$(EXEEXT)
 subdir = test/MemoryManagement
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,10 +101,16 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_ArrayRCP_test_OBJECTS = ArrayRCP_test.$(OBJEXT)
+ArrayRCP_test_OBJECTS = $(am_ArrayRCP_test_OBJECTS)
+am_ArrayView_test_OBJECTS = ArrayView_test.$(OBJEXT)
+ArrayView_test_OBJECTS = $(am_ArrayView_test_OBJECTS)
 am_Array_test_OBJECTS = Array_test.$(OBJEXT)
 Array_test_OBJECTS = $(am_Array_test_OBJECTS)
 am_Ptr_test_OBJECTS = Ptr_test.$(OBJEXT)
 Ptr_test_OBJECTS = $(am_Ptr_test_OBJECTS)
+am_RCP_test_OBJECTS = RCP_test.$(OBJEXT)
+RCP_test_OBJECTS = $(am_RCP_test_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -111,8 +119,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(Array_test_SOURCES) $(Ptr_test_SOURCES)
-DIST_SOURCES = $(Array_test_SOURCES) $(Ptr_test_SOURCES)
+SOURCES = $(ArrayRCP_test_SOURCES) $(ArrayView_test_SOURCES) \
+	$(Array_test_SOURCES) $(Ptr_test_SOURCES) $(RCP_test_SOURCES)
+DIST_SOURCES = $(ArrayRCP_test_SOURCES) $(ArrayView_test_SOURCES) \
+	$(Array_test_SOURCES) $(Ptr_test_SOURCES) $(RCP_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -242,12 +252,21 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-Array_test_SOURCES = $(srcdir)/Array_test.cpp
-Array_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-Array_test_LDADD = $(TEUCHOS_LIBS)
+RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
+RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+RCP_test_LDADD = $(TEUCHOS_LIBS)
 Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
 Ptr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Ptr_test_LDADD = $(TEUCHOS_LIBS)
+ArrayRCP_test_SOURCES = $(srcdir)/ArrayRCP_test.cpp
+ArrayRCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+ArrayRCP_test_LDADD = $(TEUCHOS_LIBS)
+Array_test_SOURCES = $(srcdir)/Array_test.cpp
+Array_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+Array_test_LDADD = $(TEUCHOS_LIBS)
+ArrayView_test_SOURCES = $(srcdir)/ArrayView_test.cpp
+ArrayView_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+ArrayView_test_LDADD = $(TEUCHOS_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 EXTRA_DIST = TestClasses.hpp
 all: all-am
@@ -306,12 +325,21 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+ArrayRCP_test$(EXEEXT): $(ArrayRCP_test_OBJECTS) $(ArrayRCP_test_DEPENDENCIES) 
+	@rm -f ArrayRCP_test$(EXEEXT)
+	$(CXXLINK) $(ArrayRCP_test_OBJECTS) $(ArrayRCP_test_LDADD) $(LIBS)
+ArrayView_test$(EXEEXT): $(ArrayView_test_OBJECTS) $(ArrayView_test_DEPENDENCIES) 
+	@rm -f ArrayView_test$(EXEEXT)
+	$(CXXLINK) $(ArrayView_test_OBJECTS) $(ArrayView_test_LDADD) $(LIBS)
 Array_test$(EXEEXT): $(Array_test_OBJECTS) $(Array_test_DEPENDENCIES) 
 	@rm -f Array_test$(EXEEXT)
 	$(CXXLINK) $(Array_test_OBJECTS) $(Array_test_LDADD) $(LIBS)
 Ptr_test$(EXEEXT): $(Ptr_test_OBJECTS) $(Ptr_test_DEPENDENCIES) 
 	@rm -f Ptr_test$(EXEEXT)
 	$(CXXLINK) $(Ptr_test_OBJECTS) $(Ptr_test_LDADD) $(LIBS)
+RCP_test$(EXEEXT): $(RCP_test_OBJECTS) $(RCP_test_DEPENDENCIES) 
+	@rm -f RCP_test$(EXEEXT)
+	$(CXXLINK) $(RCP_test_OBJECTS) $(RCP_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -319,8 +347,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayRCP_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayView_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Array_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ptr_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCP_test.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -335,6 +366,34 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ArrayRCP_test.o: $(srcdir)/ArrayRCP_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayRCP_test.o -MD -MP -MF $(DEPDIR)/ArrayRCP_test.Tpo -c -o ArrayRCP_test.o `test -f '$(srcdir)/ArrayRCP_test.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayRCP_test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ArrayRCP_test.Tpo $(DEPDIR)/ArrayRCP_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ArrayRCP_test.cpp' object='ArrayRCP_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArrayRCP_test.o `test -f '$(srcdir)/ArrayRCP_test.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayRCP_test.cpp
+
+ArrayRCP_test.obj: $(srcdir)/ArrayRCP_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayRCP_test.obj -MD -MP -MF $(DEPDIR)/ArrayRCP_test.Tpo -c -o ArrayRCP_test.obj `if test -f '$(srcdir)/ArrayRCP_test.cpp'; then $(CYGPATH_W) '$(srcdir)/ArrayRCP_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ArrayRCP_test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ArrayRCP_test.Tpo $(DEPDIR)/ArrayRCP_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ArrayRCP_test.cpp' object='ArrayRCP_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArrayRCP_test.obj `if test -f '$(srcdir)/ArrayRCP_test.cpp'; then $(CYGPATH_W) '$(srcdir)/ArrayRCP_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ArrayRCP_test.cpp'; fi`
+
+ArrayView_test.o: $(srcdir)/ArrayView_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayView_test.o -MD -MP -MF $(DEPDIR)/ArrayView_test.Tpo -c -o ArrayView_test.o `test -f '$(srcdir)/ArrayView_test.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayView_test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ArrayView_test.Tpo $(DEPDIR)/ArrayView_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ArrayView_test.cpp' object='ArrayView_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArrayView_test.o `test -f '$(srcdir)/ArrayView_test.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayView_test.cpp
+
+ArrayView_test.obj: $(srcdir)/ArrayView_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayView_test.obj -MD -MP -MF $(DEPDIR)/ArrayView_test.Tpo -c -o ArrayView_test.obj `if test -f '$(srcdir)/ArrayView_test.cpp'; then $(CYGPATH_W) '$(srcdir)/ArrayView_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ArrayView_test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ArrayView_test.Tpo $(DEPDIR)/ArrayView_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ArrayView_test.cpp' object='ArrayView_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArrayView_test.obj `if test -f '$(srcdir)/ArrayView_test.cpp'; then $(CYGPATH_W) '$(srcdir)/ArrayView_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ArrayView_test.cpp'; fi`
 
 Array_test.o: $(srcdir)/Array_test.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Array_test.o -MD -MP -MF $(DEPDIR)/Array_test.Tpo -c -o Array_test.o `test -f '$(srcdir)/Array_test.cpp' || echo '$(srcdir)/'`$(srcdir)/Array_test.cpp
@@ -363,6 +422,20 @@ Ptr_test.obj: $(srcdir)/Ptr_test.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ptr_test.cpp' object='Ptr_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ptr_test.obj `if test -f '$(srcdir)/Ptr_test.cpp'; then $(CYGPATH_W) '$(srcdir)/Ptr_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ptr_test.cpp'; fi`
+
+RCP_test.o: $(srcdir)/RCP_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCP_test.o -MD -MP -MF $(DEPDIR)/RCP_test.Tpo -c -o RCP_test.o `test -f '$(srcdir)/RCP_test.cpp' || echo '$(srcdir)/'`$(srcdir)/RCP_test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCP_test.Tpo $(DEPDIR)/RCP_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCP_test.cpp' object='RCP_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCP_test.o `test -f '$(srcdir)/RCP_test.cpp' || echo '$(srcdir)/'`$(srcdir)/RCP_test.cpp
+
+RCP_test.obj: $(srcdir)/RCP_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCP_test.obj -MD -MP -MF $(DEPDIR)/RCP_test.Tpo -c -o RCP_test.obj `if test -f '$(srcdir)/RCP_test.cpp'; then $(CYGPATH_W) '$(srcdir)/RCP_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCP_test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCP_test.Tpo $(DEPDIR)/RCP_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCP_test.cpp' object='RCP_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCP_test.obj `if test -f '$(srcdir)/RCP_test.cpp'; then $(CYGPATH_W) '$(srcdir)/RCP_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCP_test.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

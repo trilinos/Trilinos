@@ -56,6 +56,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
 	$(srcdir)/Teuchos_ArrayView.hpp \
+	$(srcdir)/Teuchos_ArrayViewDecl.hpp \
 	$(srcdir)/Teuchos_Assert.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
@@ -109,6 +110,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
+	$(srcdir)/Teuchos_RCPNode.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RCPDecl.hpp \
@@ -176,7 +178,7 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_Ptr.cpp \
-	$(srcdir)/Teuchos_RCP.cpp \
+	$(srcdir)/Teuchos_RCPNode.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \

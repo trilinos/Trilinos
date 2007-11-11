@@ -26,9 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_RCP.hpp"
+#include "Teuchos_RCPNode.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Exceptions.hpp"
 
 
 namespace {
@@ -50,7 +50,7 @@ struct InfoAndCallNumber {
 };
 
 
-typedef std::map<Teuchos::PrivateUtilityPack::RCP_node*,InfoAndCallNumber>
+typedef std::map<Teuchos::RCPNode*,InfoAndCallNumber>
 rcp_node_list_t;
 
 
@@ -64,10 +64,7 @@ rcp_node_list_t *rcp_node_list = 0;
 } // namespace
 
 
-namespace Teuchos {
-
-
-void PrivateUtilityPack::throw_null( const std::string &type_name )
+void Teuchos::throw_null_ptr_error( const std::string &type_name )
 {
   TEST_FOR_EXCEPTION(
     true, NullReferenceError
@@ -76,10 +73,15 @@ void PrivateUtilityPack::throw_null( const std::string &type_name )
 }
 
 
-namespace PrivateUtilityPack {
+//
+// RCPNode
+//
 
 
-void RCP_node::set_extra_data(
+namespace Teuchos {
+
+
+void RCPNode::set_extra_data(
   const any &extra_data, const std::string& name
   ,EPrePostDestruction destroy_when
   ,bool force_unique
@@ -94,14 +96,16 @@ void RCP_node::set_extra_data(
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       itr != extra_data_map_->end(), std::invalid_argument
-      ,"Error, the type:name pair \'" << type_and_name << "\' already exists and force_unique==true!" );
+      ,"Error, the type:name pair \'" << type_and_name
+      << "\' already exists and force_unique==true!" );
 #endif
   }
-  (*extra_data_map_)[type_and_name] = extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
+  (*extra_data_map_)[type_and_name] =
+    extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
 }
 
 
-any& RCP_node::get_extra_data( const std::string& type_name, const std::string& name )
+any& RCPNode::get_extra_data( const std::string& type_name, const std::string& name )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
@@ -120,7 +124,8 @@ any& RCP_node::get_extra_data( const std::string& type_name, const std::string& 
 }
 
 
-any* RCP_node::get_optional_extra_data( const std::string& type_name, const std::string& name )
+any* RCPNode::get_optional_extra_data( const std::string& type_name,
+  const std::string& name )
 {
   if( extra_data_map_ == NULL ) return NULL;
   const std::string type_and_name( type_name + std::string(":") + name );
@@ -131,17 +136,19 @@ any* RCP_node::get_optional_extra_data( const std::string& type_name, const std:
 }
 
 
-void RCP_node::impl_pre_delete_extra_data()
+void RCPNode::impl_pre_delete_extra_data()
 {
-  for( extra_data_map_t::iterator itr = extra_data_map_->begin(); itr != extra_data_map_->end(); ++itr ) {
+  for(
+    extra_data_map_t::iterator itr = extra_data_map_->begin();
+    itr != extra_data_map_->end();
+    ++itr
+    )
+  {
     extra_data_map_t::value_type &entry = *itr;
     if(entry.second.destroy_when == PRE_DESTROY)
       entry.second.extra_data = any();
   }
 }
-
-
-} // namespace PrivateUtilityPack
 
 
 // Define this macro here locally and rebuild just this *.cpp file and update
@@ -152,7 +159,10 @@ void RCP_node::impl_pre_delete_extra_data()
 //#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 
 
-void PrivateUtilityPack::add_new_RCP_node( RCP_node* rcp_node, const std::string &info )
+} // namespace Teuchos
+
+
+void Teuchos::add_new_RCPNode( RCPNode* rcp_node, const std::string &info )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   TEST_FOR_EXCEPT(0==rcp_node_list);
@@ -163,7 +173,7 @@ void PrivateUtilityPack::add_new_RCP_node( RCP_node* rcp_node, const std::string
 }
 
 
-void PrivateUtilityPack::remove_RCP_node( RCP_node* rcp_node )
+void Teuchos::remove_RCPNode( RCPNode* rcp_node )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   TEST_FOR_EXCEPT(0==rcp_node_list);
@@ -174,10 +184,12 @@ void PrivateUtilityPack::remove_RCP_node( RCP_node* rcp_node )
 }
 
 
-namespace PrivateUtilityPack {
+//
+// PrintActiveRCPNodes
+//
 
 
-PrintActiveRCPNodes::PrintActiveRCPNodes()
+Teuchos::PrintActiveRCPNodes::PrintActiveRCPNodes()
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   std::cerr << "\nCalled PrintActiveRCPNodes::PrintActiveRCPNodes() : count = " << count_ << "\n";
@@ -188,7 +200,7 @@ PrintActiveRCPNodes::PrintActiveRCPNodes()
 }
 
 
-PrintActiveRCPNodes::~PrintActiveRCPNodes()
+Teuchos::PrintActiveRCPNodes::~PrintActiveRCPNodes()
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   std::cerr << "\nCalled PrintActiveRCPNodes::~PrintActiveRCPNodes() : count = " << count_ << "\n";
@@ -198,34 +210,28 @@ PrintActiveRCPNodes::~PrintActiveRCPNodes()
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
-    print_active_RCP_nodes(std::cerr);
+    printActiveRCPNodes(std::cerr);
     TEST_FOR_EXCEPT(0==rcp_node_list);
     delete rcp_node_list;
   }
 }
 
 
-void PrintActiveRCPNodes::foo()
+void Teuchos::PrintActiveRCPNodes::foo()
 {
   int dummy = count_;
   ++dummy; // Avoid unused variable warning (bug 2664)
 }
 
 
-int PrintActiveRCPNodes::count_ = 0;
+int Teuchos::PrintActiveRCPNodes::count_ = 0;
 
 
-} // namespace PrivateUtilityPack
-
-
-} // namespace Teuchos
- 
-
-void Teuchos::print_active_RCP_nodes(std::ostream &out)
+void Teuchos::printActiveRCPNodes(std::ostream &out)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   out
-    << "\nCalled PrivateUtilityPack::print_active_RCP_nodes() :"
+    << "\nCalled printActiveRCPNodes() :"
     << " rcp_node_list.size() = " << rcp_node_list.size() << "\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
@@ -234,7 +240,7 @@ void Teuchos::print_active_RCP_nodes(std::ostream &out)
   if(itr != rcp_node_list->end()) {
     out
       << "\n***"
-      << "\n*** Warning! The following Teucho::RCP_node objects were created but have"
+      << "\n*** Warning! The following Teucho::RCPNode objects were created but have"
       << "\n*** not been destoryed yet.  This may be an indication that these objects may"
       << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
       << "\n*** that these objects are not destoryed correctly."
@@ -242,7 +248,7 @@ void Teuchos::print_active_RCP_nodes(std::ostream &out)
     while( itr != rcp_node_list->end() ) {
       const rcp_node_list_t::value_type &entry = *itr;
       out
-        << "\n  RCP_node address = \'" << entry.first << "\',"
+        << "\n  RCPNode address = \'" << entry.first << "\',"
         << " information = " << entry.second.info << ","
         << " call number = " << entry.second.call_number;
       ++itr;
