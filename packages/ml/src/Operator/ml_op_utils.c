@@ -1229,18 +1229,19 @@ int ML_Operator_Dump(ML_Operator *Ke, double *x, double *rhs,
 
 int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
 {
-  int allocated_space, *cols, i, j, n;
+  int allocated_space, *cols, i, j, n, Nghost;
   double *vals, *tdiag;
    if (Amat->diagonal == NULL) 
    {
       if (Amat->getrow->func_ptr == NULL) 
-         pr_error("Error(ML_Jacobi): Need diagonal\n");
+         pr_error("Error(ML_Operator_Getrow_Diag): No getrow function\n");
       else 
       {
+         Nghost = ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm);
          allocated_space = 30;
          cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
          vals = (double *) ML_allocate(allocated_space*sizeof(double));
-         tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
+         tdiag = (double *) ML_allocate((Amat->outvec_leng+Nghost+1)*sizeof(double));
          for (i = 0; i < Amat->outvec_leng; i++) 
          {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
@@ -1260,6 +1261,10 @@ int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
             for (j = 0; j < n; j++) 
                if (cols[j] == i) tdiag[i] = vals[j];
          }
+         if ( Amat->getrow->pre_comm != NULL )
+           ML_exchange_bdry(tdiag,Amat->getrow->pre_comm,Amat->getrow->Nrows, 
+                            Amat->comm, ML_OVERWRITE,NULL);
+
          ML_free(cols); ML_free(vals);
          ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
          ML_free(tdiag);
