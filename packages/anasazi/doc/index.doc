@@ -35,9 +35,13 @@ solver managers allow convenient programming for standard use cases.
 Unlike <a href="http://www.caam.rice.edu/software/ARPACK/">ARPACK</a>, which provides a single eigensolver, %Anasazi provides a framework capable of describing a wide variety of eigenproblems and algorithms for solving them. %Anasazi can currently solve complex and real, Hermitian and non-Hermitian, eigenvalue problems, via the following included methods:
 
    <ul>
-   <li>Block Krylov-Schur method, a block extension of <em>A Krylov-Schur Algorithm for Large Eigenproblems</em>, G. W. Stewart, SIAM J. Matrix Anal. Appl., 23, pp. 601-614.
+   <li>Block Krylov-Schur method, a block extension of <em>A Krylov-Schur Algorithm for
+   Large Eigenproblems</em>, G. W. Stewart, SIAM J. Matrix Anal. Appl., 23, pp. 601-614 (2000).
    <li>Block Davidson method described in <em>A Comparison of Eigensolvers for Large-scale 3D Modal Analysis Using AMG-Preconditioned Iterative Methods</em>, P. Arbenz, U. L. Hetmaniuk, R. B. Lehoucq, R. S. Tuminaro, Internat. J. for Numer. Methods Engrg., 64, pp. 204-236 (2005)
-   <li>LOBPCG, a stable implementation of <em>Toward  the optimal preconditioned eigensolver: Locally optimal block preconditioned conjugate gradient method</em>, SIAM J. Sci. Comput., 23 (2001), pp. 517-541, as described in <em>Basis selection in LOBPCG</em>, U. L. Hetmaniuk and R. B. Lehoucq, accepted for publication in the J.  Comp. Physics.
+   <li>LOBPCG, a stable implementation of <em>Toward  the optimal preconditioned
+   eigensolver: Locally optimal block preconditioned conjugate gradient method</em>, SIAM
+   J. Sci. Comput., 23 (2001), pp. 517-541, as described in <em>Basis selection in
+   LOBPCG</em>, U. L. Hetmaniuk and R. B. Lehoucq, J. Comput. Physics, 218, pp. 324-332 (2006)
    </ul>
 
    \section contributors Anasazi Contributors
