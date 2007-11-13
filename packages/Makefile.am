@@ -86,10 +86,6 @@ if BUILD_BELOS
 BELOS_SUBDIR = belos
 endif
 
-if BUILD_CAPO
-CAPO_SUBDIR = capo
-endif
-
 if BUILD_CLAPS
 CLAPS_SUBDIR = claps
 endif
@@ -258,7 +254,6 @@ PACKAGE_NAMES = \
 	$(FEI_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
-	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \

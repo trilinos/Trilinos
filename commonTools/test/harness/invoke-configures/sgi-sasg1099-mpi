@@ -34,7 +34,6 @@
         --with-ar="CC -ar -WR,-v -o" \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \

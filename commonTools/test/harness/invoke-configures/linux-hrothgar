@@ -9,7 +9,6 @@ F77=gfortran \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \

@@ -72,11 +72,6 @@ IF PACKAGE belos SUBDIRECTORY thyra THEN
 INSERT --disable-belos-thyra
 DONE
 
-# Capo -------------------------------------------------------------------------
-IF PACKAGE capo THEN
-REMOVE --enable-capo
-DONE
-
 # Claps ------------------------------------------------------------------------
 IF PACKAGE claps THEN
 REMOVE --enable-claps
@@ -265,7 +260,6 @@ DONE
 # RTOp -------------------------------------------------------------------------
 IF PACKAGE rtop THEN
 REMOVE --enable-rtop
-REMOVE --enable-capo
 REMOVE --enable-meros
 REMOVE --enable-rythmos
 REMOVE --enable-thyra
@@ -311,7 +305,6 @@ REMOVE --enable-meros
 REMOVE --enable-moocho
 REMOVE --enable-anasazi
 REMOVE --with-loca-anasazi
-REMOVE --enable-capo
 REMOVE --enable-galeri
 REMOVE --enable-nox
 REMOVE --enable-rythmos
@@ -332,7 +325,6 @@ IF PACKAGE thyra THEN
 REMOVE --enable-thyra
 REMOVE --enable-meros
 REMOVE --enable-stratimikos
-REMOVE --enable-capo
 REMOVE --enable-rythmos
 REMOVE --enable-amesos-thyra
 REMOVE --enable-anasazi-thyra

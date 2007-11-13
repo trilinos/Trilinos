@@ -12,8 +12,6 @@ FFLAGS="-O5 -funroll-all-loops" \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
---disable-capo-examples \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \

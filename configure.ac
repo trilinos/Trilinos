@@ -53,8 +53,6 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo, a linear solver and prec
 
 TAC_ARG_ENABLE_FEATURE(belos, [Build belos, a linear solver package], BELOS, no)
 
-TAC_ARG_ENABLE_FEATURE(capo, [Build capo, a continuation algorithm package], CAPO, no)
-
 TAC_ARG_ENABLE_FEATURE(claps, [Build claps, a domain decomposition preconditioner package], CLAPS, no)
 
 TAC_ARG_ENABLE_FEATURE(didasko, [Build didasko, a Trilinos tutorial package], DIDASKO, no)
@@ -139,7 +137,6 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
  	test "X$ac_cv_use_anasazi" != "Xno" ||
  	test "X$ac_cv_use_aristos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
-	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
@@ -165,7 +162,6 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
 
 if test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
-	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno" ||
@@ -181,7 +177,6 @@ fi
 AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
-	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno"; then
@@ -492,17 +487,6 @@ else
   BUILD_NEW_PACKAGE=no
 fi
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$BUILD_NEW_PACKAGE" != "Xno")
-
-if test "X$ac_cv_use_capo" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/capo])
-  BUILD_CAPO=yes
-  if test "X$ac_cv_use_capo_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-capo"
-  fi
-else
-  BUILD_CAPO=no
-fi
-AM_CONDITIONAL(BUILD_CAPO, test "X$BUILD_CAPO" != "Xno")
 
 if test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/moertel])

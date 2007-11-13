@@ -30,7 +30,6 @@
         --with-ar="ar rcv" \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \

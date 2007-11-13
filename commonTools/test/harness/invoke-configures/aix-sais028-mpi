@@ -46,7 +46,6 @@
 --enable-teuchos-extended \
 --enable-thyra \
 --enable-belos \
---enable-capo \
 --enable-meros \
 --enable-moertel \
 --enable-moocho \

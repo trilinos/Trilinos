@@ -30,7 +30,6 @@ FLIBS="-lg2c" \
 --enable-anasazi \
 --enable-rythmos --disable-rythmos-nox \
 --enable-stratimikos \
---enable-capo \
 --enable-moocho --enable-moocho-ma28 \
 --enable-new_package \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/serial/debug

@@ -11,7 +11,6 @@ FFLAGS=-O0 \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \

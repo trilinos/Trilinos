@@ -19,7 +19,6 @@ FFLAGS=-O3 \
 --enable-aristos \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \
