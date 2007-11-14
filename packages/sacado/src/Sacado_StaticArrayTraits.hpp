@@ -32,6 +32,8 @@
 #ifndef SACADO_STATICARRAYTRAITS_HPP
 #define SACADO_STATICARRAYTRAITS_HPP
 
+#include <cstring>
+
 #include "Sacado_Traits.hpp"
 
 namespace Sacado {
@@ -59,19 +61,20 @@ namespace Sacado {
    * \brief Static array allocation class that is specialized for scalar
    * i.e., fundamental or built-in types (float, double, etc...).
    */
-//     template <typename T>
-//     struct ss_array<T,true> {
+  template <typename T>
+  struct ss_array<T,true> {
+    
+    //! Copy array from \c src to \c dest of length \c sz
+    static inline void copy(const T* src, T* dest, int sz) {
+      std::memcpy(dest,src,sz*sizeof(T));
+    }
+    
+    //! Zero out array \c dest of length \c sz
+    static inline void zero(T* dest, int sz) {
+      std::memset(dest,0,sz*sizeof(T));
+    }
 
-//       //! Copy array from \c src to \c dest of length \c sz
-//       static inline void copy(const T* src, T* dest, int sz) {
-// 	memcpy(dest,src,sz*sizeof(T));
-//       }
-
-//       //! Zero out array \c dest of length \c sz
-//       static inline void zero(T* dest, int sz) {
-// 	memset(dest,0,sz*sizeof(T));
-//       }
-//     };
+  };
 
 } // namespace Sacado
 

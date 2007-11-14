@@ -159,7 +159,9 @@ operator=(const Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >& x)
   val_ = x.val_;
 
   // Copy dx_
-  ss_array<T>::copy(x.dx_, dx_, Num);
+  //ss_array<T>::copy(x.dx_, dx_, Num);
+  for (int i=0; i<Num; i++)
+    dx_[i] = x.dx_[i];
   
   return *this;
 }

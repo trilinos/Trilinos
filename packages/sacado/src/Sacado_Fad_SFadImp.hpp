@@ -81,6 +81,14 @@ Expr(const int sz, const int i, const T & x) : val_(x)
 }
 
 template <typename T, int Num> 
+inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
+Expr(const Expr< Sacado::Fad::SFadExprTag<T,Num> >& x) : val_(x.val())
+{ 
+  for (int i=0; i<Num; i++)
+    dx_[i] = x.dx_[i];
+}
+
+template <typename T, int Num> 
 template <typename S> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 Expr(const Expr<S>& x) : val_(x.val())
@@ -140,7 +148,8 @@ operator=(const Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& x)
   val_ = x.val_;
 
   // Copy dx_
-  ss_array<T>::copy(x.dx_, dx_, Num);
+  for (int i=0; i<Num; i++)
+    dx_[i] = x.dx_[i];
   
   return *this;
 }

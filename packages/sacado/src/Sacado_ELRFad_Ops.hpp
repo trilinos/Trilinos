@@ -64,30 +64,54 @@ namespace Sacado {							\
   namespace ELRFad {							\
 									\
     template <typename ExprT>						\
-    class OP {								\
+    class OP {};							\
+									\
+    template <typename ExprT>						\
+    class Expr< OP<ExprT> > {						\
     public:								\
 									\
       typedef typename ExprT::value_type value_type;			\
 									\
-      OP() {}						                \
+      typedef typename ExprT::base_expr_type base_expr_type;		\
 									\
-      static value_type computeValue(const ExprT& expr) {		\
+      static const int num_args = ExprT::num_args;			\
+									\
+      Expr(const ExprT& expr_) : expr(expr_)  {}			\
+									\
+      int size() const { return expr.size(); }				\
+									\
+      template <int Arg>						\
+      bool isActive() const { return expr.template isActive<Arg>(); }	\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
-      static value_type computeAdjoint(const value_type& bar,		\
-				       const ExprT& expr) {		\
-	return ADJOINT;							\
+      void computePartials(const value_type& bar,			\
+			   value_type partials[]) const {		\
+	expr.computePartials(ADJOINT, partials);			\
       }									\
+									\
+      void getTangents(int i, value_type dots[]) const {		\
+	expr.getTangents(i, dots); }					\
+									\
+      template <int Arg>						\
+      value_type getTangent(int i) const {				\
+	return expr.template getTangent<Arg>(i);			\
+      }									\
+									\
+    protected:								\
+									\
+      const ExprT& expr;						\
     };									\
 									\
     template <typename T>						\
-    inline Expr< UnaryExpr< Expr<T>, OP > >				\
+    inline Expr< OP< Expr<T> > >					\
     OPNAME (const Expr<T>& expr)					\
     {									\
-      typedef UnaryExpr< Expr<T>, OP > expr_t;				\
+      typedef OP< Expr<T> > expr_t;					\
       									\
-      return Expr<expr_t>(expr_t(expr));				\
+      return Expr<expr_t>(expr);					\
     }									\
   }									\
 }
@@ -181,7 +205,10 @@ namespace Sacado {							\
   namespace ELRFad {							\
 									\
     template <typename ExprT1, typename ExprT2>				\
-    class OP {								\
+    class OP {};							\
+									\
+    template <typename ExprT1, typename ExprT2>				\
+    class Expr< OP<ExprT1,ExprT2> > {					\
 									\
     public:								\
 									\
@@ -190,60 +217,92 @@ namespace Sacado {							\
       typedef typename Sacado::Promote<value_type_1,			\
 				       value_type_2>::type value_type;  \
 									\
-      OP() {}			                                        \
+      typedef typename ExprT1::base_expr_type base_expr_type_1;		\
+      typedef typename ExprT2::base_expr_type base_expr_type_2;		\
+      typedef typename ExprPromote<base_expr_type_1,			\
+				   base_expr_type_2>::type base_expr_type; \
 									\
-      static value_type							\
-      computeValue(const ExprT1& expr1, const ExprT2& expr2) {	        \
+      static const int num_args1 = ExprT1::num_args;			\
+      static const int num_args2 = ExprT2::num_args;			\
+      static const int num_args = num_args1 + num_args2;		\
+									\
+      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
+	expr1(expr1_), expr2(expr2_) {}					\
+									\
+      int size() const {						\
+	int sz1 = expr1.size(), sz2 = expr2.size();			\
+	return sz1 > sz2 ? sz1 : sz2;					\
+      }									\
+									\
+      template <int Arg> bool isActive() const {			\
+	if (Arg < num_args1)						\
+	  return expr1.template isActive<Arg>();			\
+	else								\
+	  return expr2.template isActive<Arg-num_args1>();		\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
-      static value_type							\
-      computeLeftAdjoint(const value_type& bar,				\
-		     const ExprT1& expr1,				\
-		     const ExprT2& expr2) {				\
-	return LADJOINT;						\
+      void computePartials(const value_type& bar,			\
+			   value_type partials[]) const {		\
+	if (num_args1 > 0)						\
+	  expr1.computePartials(LADJOINT, partials);			\
+	if (num_args2 > 0)						\
+	  expr2.computePartials(RADJOINT, partials+num_args1);		\
       }									\
 									\
-      static value_type							\
-      computeRightAdjoint(const value_type& bar,			\
-			  const ExprT1& expr1,				\
-			  const ExprT2& expr2) {			\
-	return RADJOINT;						\
+      void getTangents(int i, value_type dots[]) const {		\
+	expr1.getTangents(i, dots);					\
+	expr2.getTangents(i, dots+num_args1);				\
       }									\
+									\
+      template <int Arg> value_type getTangent(int i) const {		\
+	if (Arg < num_args1)						\
+	  return expr1.template getTangent<Arg>(i);			\
+	else								\
+	  return expr2.template getTangent<Arg-num_args1>(i);		\
+      }									\
+									\
+    protected:								\
+									\
+      typename ExprConstRef<ExprT1>::type expr1;			\
+      typename ExprConstRef<ExprT2>::type expr2;			\
+									\
     };									\
 									\
     template <typename T1, typename T2>					\
-    inline Expr< BinaryExpr< Expr<T1>, Expr<T2>, OP > >			\
+    inline Expr< OP< Expr<T1>, Expr<T2> > >				\
     OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)		\
     {									\
-      typedef BinaryExpr< Expr<T1>, Expr<T2>, OP > expr_t;		\
+      typedef OP< Expr<T1>, Expr<T2> > expr_t;				\
     									\
-      return Expr<expr_t>(expr_t(expr1, expr2));			\
+      return Expr<expr_t>(expr1, expr2);				\
     }									\
 									\
     template <typename T>						\
-    inline Expr< BinaryExpr< ConstExpr<typename Expr<T>::value_type>,	\
-			     Expr<T>, OP > >				\
+    inline Expr< OP< ConstExpr<typename Expr<T>::value_type>,		\
+		     Expr<T> > >					\
     OPNAME (const typename Expr<T>::value_type& c,			\
 	    const Expr<T>& expr)					\
     {									\
       typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
-      typedef BinaryExpr< ConstT, Expr<T>, OP > expr_t;			\
+      typedef OP< ConstT, Expr<T> > expr_t;				\
 									\
-      return Expr<expr_t>(expr_t(ConstT(c), expr));			\
+      return Expr<expr_t>(ConstT(c), expr);				\
     }									\
 									\
     template <typename T>						\
-    inline Expr< BinaryExpr< Expr<T>,					\
-			     ConstExpr<typename Expr<T>::value_type>,	\
-			     OP > >					\
+    inline Expr< OP< Expr<T>,						\
+		     ConstExpr<typename Expr<T>::value_type> > >	\
     OPNAME (const Expr<T>& expr,					\
 	    const typename Expr<T>::value_type& c)			\
     {									\
       typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
-      typedef BinaryExpr< Expr<T>, ConstT, OP > expr_t;			\
+      typedef OP< Expr<T>, ConstT > expr_t;				\
 									\
-      return Expr<expr_t>(expr_t(expr, ConstT(c)));			\
+      return Expr<expr_t>(expr, ConstT(c));				\
     }									\
   }									\
 }

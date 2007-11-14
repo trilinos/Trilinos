@@ -111,8 +111,7 @@ namespace Sacado {
       Expr(const int sz, const int i, const T & x);
 
       //! Copy constructor
-      Expr(const Expr& x) : val_(x.val_) { 
-	ss_array<T>::copy(x.dx_, dx_, Num); }
+      Expr(const Expr& x);
 
       //! Copy constructor from any Expression object
       template <typename S> Expr(const Expr<S>& x);
@@ -175,13 +174,13 @@ namespace Sacado {
       const T* dx() const { return &(dx_[0]);}
 
       //! Returns derivative component \c i with bounds checking
-      T dx(int i) const { return dx_[i]; }
+      const T& dx(int i) const { return dx_[i]; }
     
       //! Returns derivative component \c i without bounds checking
       T& fastAccessDx(int i) { return dx_[i];}
 
       //! Returns derivative component \c i without bounds checking
-      T fastAccessDx(int i) const { return dx_[i];}
+      const T& fastAccessDx(int i) const { return dx_[i];}
     
       //@}
 

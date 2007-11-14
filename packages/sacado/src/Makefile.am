@@ -124,6 +124,23 @@ SACADO_TEMPLATE_H = \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp
 
+SACADO_PCE_H = \
+	$(srcdir)/pce/Sacado_PCE_StandardPoly.hpp \
+	$(srcdir)/pce/Sacado_PCE_StandardPolyImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_HermiteBasis.hpp \
+	$(srcdir)/pce/Sacado_PCE_HermiteBasisImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_HermiteEBasis.hpp \
+	$(srcdir)/pce/Sacado_PCE_HermiteEBasisImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasis.hpp \
+	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasisImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_TripleProduct.hpp \
+	$(srcdir)/pce/Sacado_PCE_TripleProductImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_Workspace.hpp \
+	$(srcdir)/pce/Sacado_PCE_WorkspaceImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_Hermite.hpp \
+	$(srcdir)/pce/Sacado_PCE_HermiteImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_HermiteTraits.hpp
+
 if BUILD_PARAMLIB
 
 SACADO_PARAMETER_H = \
@@ -185,6 +202,7 @@ SACADO_H = \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H) \
+	$(SACADO_PCE_H) \
 	$(SACADO_PARAMETER_H) \
 	$(SACADO_SFC_H) \
 	$(SACADO_UTIL_H)

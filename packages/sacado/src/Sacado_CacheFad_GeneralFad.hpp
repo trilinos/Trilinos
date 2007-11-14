@@ -188,7 +188,7 @@ namespace Sacado {
       T& fastAccessDx(int i) { return s_.dx_[i];}
 
       //! Returns derivative component \c i without bounds checking
-      T fastAccessDx(int i) const { return s_.dx_[i];}
+      const T& fastAccessDx(int i) const { return s_.dx_[i];}
     
       //@}
 

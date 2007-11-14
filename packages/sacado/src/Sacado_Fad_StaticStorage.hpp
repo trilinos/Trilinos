@@ -66,7 +66,11 @@ namespace Sacado {
 
       //! Copy constructor
       StaticStorage(const StaticStorage& x) : 
-	val_(x.val_), sz_(x.sz_) { ss_array<T>::copy(x.dx_, dx_, sz_); }
+	val_(x.val_), sz_(x.sz_) { 
+	//ss_array<T>::copy(x.dx_, dx_, sz_); 
+	for (int i=0; i<sz_; i++)
+	  dx_[i] = x.dx_[i];
+      }
 
       //! Destructor
       ~StaticStorage() {}
@@ -75,7 +79,9 @@ namespace Sacado {
       StaticStorage& operator=(const StaticStorage& x) {
 	val_ = x.val_;
 	sz_ = x.sz_;
-	ss_array<T>::copy(x.dx_, dx_, sz_);
+	//ss_array<T>::copy(x.dx_, dx_, sz_);
+	for (int i=0; i<sz_; i++)
+	  dx_[i] = x.dx_[i];
 	return *this;
       }
 
