@@ -30,6 +30,7 @@
 
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_CommandLineParser.h"
+#include <cstring>
 
 Trilinos_Util_Map::Trilinos_Util_Map(void)
 {
