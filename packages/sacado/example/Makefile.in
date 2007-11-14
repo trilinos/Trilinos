@@ -99,7 +99,8 @@ noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	$(am__EXEEXT_1) sfad_example$(EXEEXT) dmfad_example$(EXEEXT) \
 	trad_example$(EXEEXT) trad_dfad_example$(EXEEXT) \
 	taylor_example$(EXEEXT) dfad_taylor_example$(EXEEXT) \
-	dfad_sfc_example$(EXEEXT) trad_sfc_example$(EXEEXT)
+	dfad_sfc_example$(EXEEXT) trad_sfc_example$(EXEEXT) \
+	pce_example$(EXEEXT)
 DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = example
@@ -131,7 +132,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_ad_example_OBJECTS = ad_example-ad_example.$(OBJEXT)
 ad_example_OBJECTS = $(am_ad_example_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 ad_example_LINK = $(CXXLD) $(ad_example_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_dfad_dfad_example_OBJECTS =  \
@@ -156,6 +156,10 @@ dfad_taylor_example_LINK = $(CXXLD) $(dfad_taylor_example_CXXFLAGS) \
 am_dmfad_example_OBJECTS = dmfad_example-dmfad_example.$(OBJEXT)
 dmfad_example_OBJECTS = $(am_dmfad_example_OBJECTS)
 dmfad_example_LINK = $(CXXLD) $(dmfad_example_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_pce_example_OBJECTS = pce_example-pce_example.$(OBJEXT)
+pce_example_OBJECTS = $(am_pce_example_OBJECTS)
+pce_example_LINK = $(CXXLD) $(pce_example_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_sfad_example_OBJECTS = sfad_example-sfad_example.$(OBJEXT)
 sfad_example_OBJECTS = $(am_sfad_example_OBJECTS)
@@ -190,15 +194,15 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
 	$(dfad_example_SOURCES) $(dfad_sfc_example_SOURCES) \
 	$(dfad_taylor_example_SOURCES) $(dmfad_example_SOURCES) \
-	$(sfad_example_SOURCES) $(taylor_example_SOURCES) \
-	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES) \
-	$(trad_sfc_example_SOURCES)
+	$(pce_example_SOURCES) $(sfad_example_SOURCES) \
+	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
+	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES)
 DIST_SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
 	$(dfad_example_SOURCES) $(dfad_sfc_example_SOURCES) \
 	$(dfad_taylor_example_SOURCES) $(dmfad_example_SOURCES) \
-	$(sfad_example_SOURCES) $(taylor_example_SOURCES) \
-	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES) \
-	$(trad_sfc_example_SOURCES)
+	$(pce_example_SOURCES) $(sfad_example_SOURCES) \
+	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
+	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -327,13 +331,9 @@ top_srcdir = @top_srcdir@
 @BUILD_NESTED_FAD_FALSE@FADFAD_EXAMPLES = 
 @BUILD_NESTED_FAD_TRUE@FADFAD_EXAMPLES = dfad_dfad_example
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
-dfad_example_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mpl \
-	-I$(top_builddir)/src
-
+dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
-dfad_example_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
+dfad_example_LDADD = $(SACADO_LIBS)
 ad_example_SOURCES = $(srcdir)/ad_example.cpp
 ad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 ad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
@@ -374,6 +374,10 @@ trad_sfc_example_SOURCES = $(srcdir)/trad_sfc_example.cpp
 trad_sfc_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 trad_sfc_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 trad_sfc_example_LDADD = $(dfad_example_LDADD)
+pce_example_SOURCES = $(srcdir)/pce_example.cpp
+pce_example_CXXFLAGS = $(dfad_example_CXXFLAGS) -I$(top_srcdir)/src/pce
+pce_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+pce_example_LDADD = $(dfad_example_LDADD)
 FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
 ELEMENT_H = \
 	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
@@ -553,6 +557,9 @@ dfad_taylor_example$(EXEEXT): $(dfad_taylor_example_OBJECTS) $(dfad_taylor_examp
 dmfad_example$(EXEEXT): $(dmfad_example_OBJECTS) $(dmfad_example_DEPENDENCIES) 
 	@rm -f dmfad_example$(EXEEXT)
 	$(dmfad_example_LINK) $(dmfad_example_OBJECTS) $(dmfad_example_LDADD) $(LIBS)
+pce_example$(EXEEXT): $(pce_example_OBJECTS) $(pce_example_DEPENDENCIES) 
+	@rm -f pce_example$(EXEEXT)
+	$(pce_example_LINK) $(pce_example_OBJECTS) $(pce_example_LDADD) $(LIBS)
 sfad_example$(EXEEXT): $(sfad_example_OBJECTS) $(sfad_example_DEPENDENCIES) 
 	@rm -f sfad_example$(EXEEXT)
 	$(sfad_example_LINK) $(sfad_example_OBJECTS) $(sfad_example_LDADD) $(LIBS)
@@ -581,6 +588,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_sfc_example-dfad_sfc_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_taylor_example-dfad_taylor_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dmfad_example-dmfad_example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pce_example-pce_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sfad_example-sfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/taylor_example-taylor_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad_dfad_example-trad_dfad_example.Po@am__quote@
@@ -684,6 +692,20 @@ dmfad_example-dmfad_example.obj: $(srcdir)/dmfad_example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/dmfad_example.cpp' object='dmfad_example-dmfad_example.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dmfad_example_CXXFLAGS) $(CXXFLAGS) -c -o dmfad_example-dmfad_example.obj `if test -f '$(srcdir)/dmfad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/dmfad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dmfad_example.cpp'; fi`
+
+pce_example-pce_example.o: $(srcdir)/pce_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pce_example_CXXFLAGS) $(CXXFLAGS) -MT pce_example-pce_example.o -MD -MP -MF $(DEPDIR)/pce_example-pce_example.Tpo -c -o pce_example-pce_example.o `test -f '$(srcdir)/pce_example.cpp' || echo '$(srcdir)/'`$(srcdir)/pce_example.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/pce_example-pce_example.Tpo $(DEPDIR)/pce_example-pce_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/pce_example.cpp' object='pce_example-pce_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pce_example_CXXFLAGS) $(CXXFLAGS) -c -o pce_example-pce_example.o `test -f '$(srcdir)/pce_example.cpp' || echo '$(srcdir)/'`$(srcdir)/pce_example.cpp
+
+pce_example-pce_example.obj: $(srcdir)/pce_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pce_example_CXXFLAGS) $(CXXFLAGS) -MT pce_example-pce_example.obj -MD -MP -MF $(DEPDIR)/pce_example-pce_example.Tpo -c -o pce_example-pce_example.obj `if test -f '$(srcdir)/pce_example.cpp'; then $(CYGPATH_W) '$(srcdir)/pce_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/pce_example.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/pce_example-pce_example.Tpo $(DEPDIR)/pce_example-pce_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/pce_example.cpp' object='pce_example-pce_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pce_example_CXXFLAGS) $(CXXFLAGS) -c -o pce_example-pce_example.obj `if test -f '$(srcdir)/pce_example.cpp'; then $(CYGPATH_W) '$(srcdir)/pce_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/pce_example.cpp'; fi`
 
 sfad_example-sfad_example.o: $(srcdir)/sfad_example.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sfad_example_CXXFLAGS) $(CXXFLAGS) -MT sfad_example-sfad_example.o -MD -MP -MF $(DEPDIR)/sfad_example-sfad_example.Tpo -c -o sfad_example-sfad_example.o `test -f '$(srcdir)/sfad_example.cpp' || echo '$(srcdir)/'`$(srcdir)/sfad_example.cpp
@@ -929,6 +951,9 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.sacado
 
 all-local:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -29,6 +29,9 @@
 # ************************************************************************
 # @HEADER
 
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.sacado
+
 EXEEXT = .exe
 
 all-local:
@@ -54,15 +57,13 @@ noinst_PROGRAMS = \
 	taylor_example \
 	dfad_taylor_example \
 	dfad_sfc_example \
-	trad_sfc_example
+	trad_sfc_example \
+	pce_example
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
-dfad_example_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mpl \
-	-I$(top_builddir)/src
+dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
-dfad_example_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
+dfad_example_LDADD = $(SACADO_LIBS)
 
 ad_example_SOURCES = $(srcdir)/ad_example.cpp
 ad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
@@ -113,6 +114,11 @@ trad_sfc_example_SOURCES = $(srcdir)/trad_sfc_example.cpp
 trad_sfc_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 trad_sfc_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 trad_sfc_example_LDADD = $(dfad_example_LDADD)
+
+pce_example_SOURCES = $(srcdir)/pce_example.cpp
+pce_example_CXXFLAGS = $(dfad_example_CXXFLAGS) -I$(top_srcdir)/src/pce
+pce_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+pce_example_LDADD = $(dfad_example_LDADD)
 
 include FEApp/MakefileFEAppStub.am
 EXTRA_DIST = $(FEAPP_H) $(FEAPP)
