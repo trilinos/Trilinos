@@ -749,6 +749,10 @@ BUILD_IFPACK_ML_TRUE
 BUILD_IFPACK_ML_FALSE
 BUILD_NOX_ML_TRUE
 BUILD_NOX_ML_FALSE
+BUILD_EPETRAEXT_AMESOS_TRUE
+BUILD_EPETRAEXT_AMESOS_FALSE
+BUILD_EPETRAEXT_ISORROPIA_TRUE
+BUILD_EPETRAEXT_ISORROPIA_FALSE
 BLAS_LIBS
 ac_aux_dir
 LIBOBJS
@@ -1372,6 +1376,12 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
+  --enable-epetraext      Make epetraext available for use in
+                          trilinoscouplings interfaces (default is )
+  --enable-isorropia      Make isorropia available for use in
+                          trilinoscouplings interfaces (default is )
+  --enable-amesos         Make amesos available for use in trilinoscouplings
+                          interfaces (default is )
   --enable-ifpack         Make ifpack available for use in trilinoscouplings
                           interfaces (default is )
   --enable-ml             Make ml available for use in trilinoscouplings
@@ -7876,6 +7886,84 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 
 
+# Check whether --enable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval=$enable_epetraext; ac_cv_use_epetraext=$enableval
+else
+  ac_cv_use_epetraext=
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use epetraext" >&5
+echo $ECHO_N "checking whether to use epetraext... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRAEXT
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+# Check whether --enable-isorropia was given.
+if test "${enable_isorropia+set}" = set; then
+  enableval=$enable_isorropia; ac_cv_use_isorropia=$enableval
+else
+  ac_cv_use_isorropia=
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use isorropia" >&5
+echo $ECHO_N "checking whether to use isorropia... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_isorropia" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ISORROPIA
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+# Check whether --enable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval=$enable_amesos; ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use amesos" >&5
+echo $ECHO_N "checking whether to use amesos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-ifpack was given.
 if test "${enable_ifpack+set}" = set; then
   enableval=$enable_ifpack; ac_cv_use_ifpack=$enableval
@@ -7968,6 +8056,24 @@ fi
 else
   BUILD_NOX_ML_TRUE='#'
   BUILD_NOX_ML_FALSE=
+fi
+
+
+ if test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_amesos" = "Xyes"; then
+  BUILD_EPETRAEXT_AMESOS_TRUE=
+  BUILD_EPETRAEXT_AMESOS_FALSE='#'
+else
+  BUILD_EPETRAEXT_AMESOS_TRUE='#'
+  BUILD_EPETRAEXT_AMESOS_FALSE=
+fi
+
+
+ if test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_isorropia" = "Xyes"; then
+  BUILD_EPETRAEXT_ISORROPIA_TRUE=
+  BUILD_EPETRAEXT_ISORROPIA_FALSE='#'
+else
+  BUILD_EPETRAEXT_ISORROPIA_TRUE='#'
+  BUILD_EPETRAEXT_ISORROPIA_FALSE=
 fi
 
 
@@ -9950,7 +10056,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.trilinoscouplings src/Makefile test/Makefile examples/Makefile examples/ml/NonlinML/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.trilinoscouplings src/Makefile test/Makefile examples/Makefile examples/ml/NonlinML/Makefile examples/epetraext/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10158,6 +10264,20 @@ if test -z "${BUILD_NOX_ML_TRUE}" && test -z "${BUILD_NOX_ML_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_NOX_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRAEXT_AMESOS_TRUE}" && test -z "${BUILD_EPETRAEXT_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRAEXT_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRAEXT_ISORROPIA_TRUE}" && test -z "${BUILD_EPETRAEXT_ISORROPIA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT_ISORROPIA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRAEXT_ISORROPIA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10636,6 +10756,7 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "examples/ml/NonlinML/Makefile") CONFIG_FILES="$CONFIG_FILES examples/ml/NonlinML/Makefile" ;;
+    "examples/epetraext/Makefile") CONFIG_FILES="$CONFIG_FILES examples/epetraext/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -10873,13 +10994,17 @@ BUILD_IFPACK_ML_TRUE!$BUILD_IFPACK_ML_TRUE$ac_delim
 BUILD_IFPACK_ML_FALSE!$BUILD_IFPACK_ML_FALSE$ac_delim
 BUILD_NOX_ML_TRUE!$BUILD_NOX_ML_TRUE$ac_delim
 BUILD_NOX_ML_FALSE!$BUILD_NOX_ML_FALSE$ac_delim
+BUILD_EPETRAEXT_AMESOS_TRUE!$BUILD_EPETRAEXT_AMESOS_TRUE$ac_delim
+BUILD_EPETRAEXT_AMESOS_FALSE!$BUILD_EPETRAEXT_AMESOS_FALSE$ac_delim
+BUILD_EPETRAEXT_ISORROPIA_TRUE!$BUILD_EPETRAEXT_ISORROPIA_TRUE$ac_delim
+BUILD_EPETRAEXT_ISORROPIA_FALSE!$BUILD_EPETRAEXT_ISORROPIA_FALSE$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 41; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

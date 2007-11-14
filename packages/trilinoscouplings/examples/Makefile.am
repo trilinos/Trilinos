@@ -30,9 +30,15 @@
 
 all-local:
 	@echo ""
-	echo "Trilinos package ml subdirectory examples built successfully."
+	echo "Trilinos package trilinoscouplings subdirectory examples built successfully."
 	@echo ""
 
-SUBDIRS = ml/NonlinML
+if BUILD_EPETRAEXT_ISORROPIA
+EPETRAEXT_SUBDIR = epetraext
+else
+EPETRAEXT_SUBDIR =
+endif
+
+SUBDIRS = ml/NonlinML $(EPETRAEXT_SUBDIR)
 
 EXTRA_DIST = 

@@ -101,6 +101,26 @@ IFPACK_ML =
 
 endif
 
+EXTRA_EPETRAEXT_ISORROPIA_H = \
+	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.h
+
+EXTRA_EPETRAEXT_ISORROPIA = \
+	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp
+
+if BUILD_EPETRAEXT_ISORROPIA 
+
+EPETRAEXT_ISORROPIA_H = \
+	$(EXTRA_EPETRAEXT_ISORROPIA_H)
+EPETRAEXT_ISORROPIA = \
+	$(EXTRA_EPETRAEXT_ISORROPIA)
+
+else      
+
+EPETRAEXT_ISORROPIA_H =
+EPETRAEXT_ISORROPIA = 
+
+endif
+
 ##conditional NOX dependencies
 #EXTRA_NOX_ML_H = \
 #   -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
@@ -125,18 +145,22 @@ TRILINOSCOUPLINGS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
 	$(IFPACK_ML_H) \
-	$(NOX_ML_H)
+	$(NOX_ML_H) \
+	$(EPETRAEXT_ISORROPIA_H)      
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
-	$(IFPACK_ML)
+	$(IFPACK_ML) \
+	$(EPETRAEXT_ISORROPIA)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
 	$(EXTRA_IFPACK_ML_H) \
-	$(EXTRA_NOX_ML_H)
+	$(EXTRA_NOX_ML_H) \
+	$(EXTRA_EPETRAEXT_ISORROPIA) \
+	$(EXTRA_EPETRAEXT_ISORROPIA_H)
 
 include $(top_builddir)/Makefile.export.trilinoscouplings
 

@@ -15,34 +15,8 @@
 @SET_MAKE@
 
 #@HEADER
-# ************************************************************************
-# 
-#              ML: Multilevel Preconditioning Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Ray Tuminaro or Jonathan Hu ({rstumin|jhu}@sandia.gov) 
-# 
-# ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -62,7 +36,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = examples
+noinst_PROGRAMS = epetraext_isorropia_lptrans_example$(EXEEXT)
+subdir = examples/epetraext
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
@@ -84,20 +59,25 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/TrilinosCouplings_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-dvi-recursive install-exec-recursive \
-	install-html-recursive install-info-recursive \
-	install-pdf-recursive install-ps-recursive install-recursive \
-	installcheck-recursive installdirs-recursive pdf-recursive \
-	ps-recursive uninstall-recursive
-RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
-  distclean-recursive maintainer-clean-recursive
+PROGRAMS = $(noinst_PROGRAMS)
+am_epetraext_isorropia_lptrans_example_OBJECTS = epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.$(OBJEXT)
+epetraext_isorropia_lptrans_example_OBJECTS =  \
+	$(am_epetraext_isorropia_lptrans_example_OBJECTS)
+epetraext_isorropia_lptrans_example_LINK = $(CXXLD) \
+	$(epetraext_isorropia_lptrans_example_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(epetraext_isorropia_lptrans_example_SOURCES)
+DIST_SOURCES = $(epetraext_isorropia_lptrans_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = ml/NonlinML epetraext
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -122,7 +102,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -215,13 +195,14 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_EPETRAEXT_ISORROPIA_FALSE@EPETRAEXT_SUBDIR = 
-@BUILD_EPETRAEXT_ISORROPIA_TRUE@EPETRAEXT_SUBDIR = epetraext
-SUBDIRS = ml/NonlinML $(EPETRAEXT_SUBDIR)
-EXTRA_DIST = 
-all: all-recursive
+epetraext_isorropia_lptrans_example_SOURCES = $(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp 
+epetraext_isorropia_lptrans_example_CXXFLAGS = $(TRILINOSCOUPLINGS_INCLUDES)
+epetraext_isorropia_lptrans_example_LDADD = $(TRILINOSCOUPLINGS_LIBS)
+epetraext_isorropia_lptrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)
+all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -231,9 +212,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/epetraext/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  examples/Makefile
+	  $(AUTOMAKE) --foreign  examples/epetraext/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -252,75 +233,47 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+epetraext_isorropia_lptrans_example$(EXEEXT): $(epetraext_isorropia_lptrans_example_OBJECTS) $(epetraext_isorropia_lptrans_example_DEPENDENCIES) 
+	@rm -f epetraext_isorropia_lptrans_example$(EXEEXT)
+	$(epetraext_isorropia_lptrans_example_LINK) $(epetraext_isorropia_lptrans_example_OBJECTS) $(epetraext_isorropia_lptrans_example_LDADD) $(LIBS)
 
-$(RECURSIVE_CLEAN_TARGETS):
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o: $(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_isorropia_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o -MD -MP -MF $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Tpo -c -o epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o `test -f '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Tpo $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp' object='epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_isorropia_lptrans_example_CXXFLAGS) $(CXXFLAGS) -c -o epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o `test -f '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp
+
+epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.obj: $(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_isorropia_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.obj -MD -MP -MF $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Tpo -c -o epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.obj `if test -f '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Tpo $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp' object='epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_isorropia_lptrans_example_CXXFLAGS) $(CXXFLAGS) -c -o epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.obj `if test -f '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -332,23 +285,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	  empty_fix=.; \
-	else \
-	  include_option=--include; \
-	  empty_fix=; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test ! -f $$subdir/TAGS || \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -361,7 +301,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -409,37 +349,19 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || $(MKDIR_P) "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    distdir=`$(am__cd) $(distdir) && pwd`; \
-	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="$$top_distdir" \
-	        distdir="$$distdir/$$subdir" \
-		am__remove_distdir=: \
-		am__skip_length_check=: \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
-all-am: Makefile all-local
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+check: check-am
+all-am: Makefile $(PROGRAMS)
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -455,81 +377,81 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
 install-data-am:
 
-install-dvi: install-dvi-recursive
+install-dvi: install-dvi-am
 
 install-exec-am:
 
-install-html: install-html-recursive
+install-html: install-html-am
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
-install-pdf: install-pdf-recursive
+install-pdf: install-pdf-am
 
-install-ps: install-ps-recursive
+install-ps: install-ps-am
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am:
 
-.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
-	install-strip
+.MAKE: install-am install-strip
 
-.PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am all-local check check-am clean clean-generic ctags \
-	ctags-recursive distclean distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-recursive uninstall uninstall-am
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am
 
 
-all-local:
-	@echo ""
-	echo "Trilinos package trilinoscouplings subdirectory examples built successfully."
-	@echo ""
+# include definitions of TRILINOSCOUPLINGS_INCLUDES and TRILINOSCOUPLINGS_LIBS
+include $(top_builddir)/Makefile.export.trilinoscouplings
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

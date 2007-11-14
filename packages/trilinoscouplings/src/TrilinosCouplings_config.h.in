@@ -14,6 +14,9 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define if want to build amesos */
+#undef HAVE_AMESOS
+
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
@@ -32,6 +35,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build epetraext */
+#undef HAVE_EPETRAEXT
+
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
@@ -49,6 +55,9 @@
 
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
+
+/* Define if want to build isorropia */
+#undef HAVE_ISORROPIA
 
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK

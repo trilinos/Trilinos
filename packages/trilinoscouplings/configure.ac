@@ -263,6 +263,12 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE(epetraext, [Make epetraext available for use in trilinoscouplings interfaces], EPETRAEXT)
+
+TAC_ARG_ENABLE_FEATURE(isorropia, [Make isorropia available for use in trilinoscouplings interfaces], ISORROPIA)
+
+TAC_ARG_ENABLE_FEATURE(amesos, [Make amesos available for use in trilinoscouplings interfaces], AMESOS)
+
 TAC_ARG_ENABLE_FEATURE(ifpack, [Make ifpack available for use in trilinoscouplings interfaces], IFPACK)
 
 TAC_ARG_ENABLE_FEATURE(ml, [Make ml available for use in trilinoscouplings interfaces], ML)
@@ -272,6 +278,10 @@ TAC_ARG_ENABLE_FEATURE(nox, [Make nox available for use in trilinoscouplings int
 AM_CONDITIONAL(BUILD_IFPACK_ML, test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_ifpack" = "Xyes")
 
 AM_CONDITIONAL(BUILD_NOX_ML, test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_nox" = "Xyes")
+
+AM_CONDITIONAL(BUILD_EPETRAEXT_AMESOS, test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_amesos" = "Xyes")
+
+AM_CONDITIONAL(BUILD_EPETRAEXT_ISORROPIA, test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_isorropia" = "Xyes")
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -336,6 +346,7 @@ AC_CONFIG_FILES([
 		test/Makefile
         examples/Makefile
         examples/ml/NonlinML/Makefile
+        examples/epetraext/Makefile
 		])
 
 AC_OUTPUT()
