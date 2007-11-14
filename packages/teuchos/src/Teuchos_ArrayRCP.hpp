@@ -31,6 +31,7 @@
 
 
 #include "Teuchos_ArrayRCPDecl.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_map.hpp"
@@ -242,7 +243,7 @@ ArrayRCP<T> ArrayRCP<T>::operator-(Ordinal offset) const
 }
 
 
-// Views
+// ArrayView views
 
 
 template<class T>
@@ -257,7 +258,7 @@ ArrayRCP<const T> ArrayRCP<T>::getConst() const
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRCP<T>
-ArrayRCP<T>::subview( Ordinal lowerOffset, Ordinal size ) const
+ArrayRCP<T>::persistingView( Ordinal lowerOffset, Ordinal size ) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assert_in_range(lowerOffset,size);
@@ -349,6 +350,42 @@ ArrayRCP<T>::end() const
 }
 
 
+// Views 
+
+
+template<class T> inline
+ArrayView<T> ArrayRCP<T>::view( Ordinal lowerOffset, Ordinal size ) const
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assert_in_range(lowerOffset,size);
+#endif
+  return arrayView(ptr_ + lowerOffset, size );
+}
+
+
+template<class T> inline
+ArrayView<T> ArrayRCP<T>::operator()( Ordinal lowerOffset, Ordinal size ) const
+{
+  return view(lowerOffset,size);
+}
+
+
+template<class T> inline
+ArrayView<T> ArrayRCP<T>::operator()() const
+{
+  if (!size())
+    return null;
+  return arrayView(ptr_ + lowerOffset_, size() );
+}
+
+
+template<class T> inline
+ArrayRCP<T>::operator ArrayView<T>() const
+{
+  return this->operator()();
+}
+
+
 // Ownership
 
 
@@ -389,7 +426,8 @@ inline
 const ArrayRCP<T>&
 ArrayRCP<T>::assert_not_null() const
 {
-  if(!ptr_) throw_null_ptr_error(TypeNameTraits<T>::name());
+  if(!ptr_)
+    throw_null_ptr_error(TypeNameTraits<T>::name());
   return *this;
 }
 
@@ -528,7 +566,7 @@ inline void assert_shares_resource(
   const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2
   )
 {
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_FOR_EXCEPTION(
     !p1.shares_resource(p2), IncompatibleIteratorsError,
     "Error, these iterators are *not* pointing to the same valid memory!"
@@ -861,7 +899,8 @@ Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
       p.access_node());
   TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
-    ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
+    ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name()
+    << "," << TypeNameTraits<T>::name() << ">(p): "
     << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
     << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"
     );

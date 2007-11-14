@@ -84,6 +84,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 {
   
   using Teuchos::Array;
+  using Teuchos::ArrayView;
   using Teuchos::setToNull;
   using Teuchos::outArg;
   using Teuchos::getConst;
@@ -114,7 +115,6 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   TEST_EQUALITY( as<int>(a.size()), n );
   TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
   TEST_COMPARE( as<int>(a.capacity()), >=, n );
-  TEST_EQUALITY( as<int>(a.size()), n );
  
   {
     out << "\nInitializing data ...\n";
@@ -481,6 +481,93 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 #endif
   }
 
+  //
+  out << "\nG) Test views ...\n";
+  //
+
+  {
+    out << "\nTest full non-const subview ...\n";
+    const ArrayView<T> av2 = a(0,n);
+    TEST_COMPARE_ARRAYS( av2, a );
+  }
+
+  {
+    out << "\nTest full shorthand non-const subview ...\n";
+    const ArrayView<T> av2 = a();
+    TEST_COMPARE_ARRAYS( av2, a );
+  }
+
+  {
+    out << "\nTest full const subview ...\n";
+    const ArrayView<const T> cav2 = getConst(a)(0,n);
+    TEST_COMPARE_ARRAYS( cav2, a );
+  }
+
+  {
+    out << "\nTest full non-const to const subview ...\n";
+    const ArrayView<const T> cav2 = a(0,n);
+    TEST_COMPARE_ARRAYS( cav2, a );
+  }
+
+  {
+    out << "\nTest full short-hand const subview ...\n";
+    const ArrayView<const T> cav2 = getConst(a)();
+    TEST_COMPARE_ARRAYS( cav2, a );
+  }
+
+  {
+    out << "\nTest non-const initial range view ...\n";
+    Array<T> a2(n,as<T>(-1));
+    const ArrayView<T> av2 = a2; // Tests implicit conversion!
+    const ArrayView<T> av2_end = av2(0,n-1);
+    TEST_EQUALITY( av2_end.size(), n-1 );
+    av2_end.assign( a(0,n-1) );
+    av2.back() = as<T>(n-1);
+    TEST_COMPARE_ARRAYS( a2, a );
+  }
+
+  {
+    out << "\nTest non-const middle range view ...\n";
+    Array<T> a2(n,as<T>(-1));
+    const ArrayView<T> av2 = a2; // Tests implicit conversion!
+    const ArrayView<T> av2_middle = av2(1,n-2);
+    TEST_EQUALITY( av2_middle.size(), n-2 );
+    av2_middle.assign( a(1,n-2) );
+    av2.front() = as<T>(0);
+    av2.back() = as<T>(n-1);
+    TEST_COMPARE_ARRAYS( a2, a );
+  }
+
+  {
+    out << "\nTest const view ... ";
+    const ArrayView<const T> av2 = a; // Tests implicit conversion to const!
+    const ArrayView<const T> av2_middle = av2(1,n-2);
+    TEST_EQUALITY( av2_middle.size(), n-2 );
+    bool local_success = true;
+    for ( int i = 0; i < n-2; ++i )
+      TEST_ARRAY_ELE_EQUALITY( av2_middle, i, as<T>(i+1) );
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    out << "\nTest constructing Array<T> from ArrayView<T> ...\n";
+    const ArrayView<T> av2 = a;
+    Array<T> a2(av2);
+    TEST_COMPARE_ARRAYS( a2, a );
+  }
+
+  {
+    out << "\nTest constructing Array<T> from ArrayView<const T> ...\n";
+    const ArrayView<const T> av2 = a;
+    Array<T> a2(av2);
+    TEST_COMPARE_ARRAYS( a2, a );
+  }
+
+  // ToDo: Add more tests!
+
+  // ToDo: Test requesting views outside of valid range!
+  
   return success;
 
 }

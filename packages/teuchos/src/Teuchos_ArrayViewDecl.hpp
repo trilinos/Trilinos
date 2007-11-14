@@ -32,6 +32,7 @@
 
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_ENull.hpp"
+#include "Teuchos_NullIteratorTraits.hpp"
 
 
 namespace Teuchos {
@@ -52,6 +53,15 @@ template<class T> class ArrayRCP;
  * bound to a different view of data.  Therefore, a <tt>const ArrayView</tt>
  * object means that the data entries are <tt>const</tt> which is similar to
  * the behavior of a <tt>const std::vector</tt> object for instance.
+ *
+ * Note that once an <tt>ArrayView</tt> object has been constructed, it can
+ * not be changed to point to different memory.  This is to help avoid
+ * improper usage.  Therefore, an const ArrayView<T> object is no less
+ * restrictive than a non-const ArrayView<T> object.  It is the type of T
+ * itself that determines if the underying data can be changed or not.
+ * Therefore, the only non-const public functions defined on this interface
+ * are the constructors and destructor!  This may all seem strange but it is
+ * very effective.
  *
  * ToDo: Finish documentation!
  *
@@ -81,46 +91,51 @@ public:
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   /** \brief . */
   typedef ArrayRCP<T> iterator;
-  /** \brief . */
-  typedef ArrayRCP<const T> const_iterator;
 #else
   /** \brief . */
   typedef pointer iterator;
-  /** \brief . */
-  typedef const_pointer const_iterator;
 #endif
 
   /** \brief . */
-  typedef std::reverse_iterator<iterator> reverse_iterator;
+  typedef size_t size_type;
   /** \brief . */
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-
-
-  /** \brief . */
-  typedef typename std::vector<T>::size_type size_type;
-  /** \brief . */
-  typedef typename std::vector<T>::difference_type difference_type;
-  /** \brief . */
-  typedef typename std::vector<T>::allocator_type allocator_type;
+  typedef ptrdiff_t difference_type;
 
   //@}
 
-  //! @name Constructors/Initializers 
+  //! @name Constructors/Destructors
   //@{
 
-	/** \brief Initialize <tt>ArrayView<T></tt> to NULL.
-	 *
-	 * This allows clients to write code like:
-	 \code
-	 ArrayView<int> p = null;
-	 \endcode
-	 * or
-	 \code
-	 ArrayView<int> p;
-	 \endcode
-	 * and construct to <tt>NULL</tt>
+	/** \brief Initialize to NULL.
+   *
+   * <b>WARNING!</b> Once you initialize to null, you can not rebind to view!
+   *
+   * Note: A default value is not given for <tt>null_arg</tt> since we want to
+   * avoid mistakes where a view is initalized to null and then can't be reset
+   * to point to something else!
 	 */
-	ArrayView( ENull null_arg = null );
+	ArrayView( ENull null_arg );
+
+	/** \brief Initialize view from raw memory.
+	 *
+   * \param p [in] Pointer to array of typed memory of size <tt>size</tt>.  If
+   * <tt>p==0</tt>, then <tt>*this</tt> is a null view.  Note that the memory
+   * pointed to by <tt>p</tt> can not go away until this view object is
+   * destoryed!
+   *
+   * \param size [in] The size of the array that <tt>*this</tt> will represent
+   * pointer to by <tt>p</tt>.  If <tt>p==0</tt> then <tt>size</tt> must be 0!
+   *
+	 * Preconditions:<ul>
+	 * <li>[<tt>p!=0</tt>] <tt>size > 0</tt>
+	 * <li>[<tt>p==0</tt>] <tt>size == 0</tt>
+	 * </ul>
+   *
+	 * Postconditions:<ul>
+	 * <li>???
+	 * </ul>
+	 */
+	ArrayView( T* p, Ordinal size);
 
 	/** \brief Initialize from another <tt>ArrayView<T></tt> object.
 	 *
@@ -142,15 +157,6 @@ public:
 	 */
 	~ArrayView();
 
-	/** \brief Copy the data from one array view object to this array view
-   * object.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->size() == array.size()</tt>
-	 * </ul>
-	 */
-	ArrayView<T>& operator=(const ArrayView<T>& array);
-
   //@}
 
   //! @name General query functions 
@@ -164,6 +170,11 @@ public:
   //! @name Element Access Functions 
   //@{
 
+  /** \brief Get unchecked pointer to underlying array memory (may return
+   * NULL).
+   */
+  T* get() const;
+
 	/** \brief Random object access.
 	 *
 	 * <b>Preconditions:</b><ul>
@@ -171,40 +182,76 @@ public:
    * <li><tt>0 <= offset && offset < this->size()</tt>
 	 * </ul>
    */
-	T& operator[](Ordinal offset) const;
+	T& operator[](Ordinal i) const;
+
+  /** \brief Get the first element. */
+  T& front() const;
+
+  /** \brief Get the last element. */
+  T& back() const;
 
   //@}
 
   //! @name Views 
   //@{
 
-	/** \brief Return a non-const view of a contiguous range of elements.
+	/** \brief Return a view of a contiguous range of elements.
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->get() != NULL</tt>
-   * <li><tt>0 <= lowerOffset</tt>
-   * <li><tt>lowerOffset + size < this->size()</tt>
+   * <li><tt>0 <= offset && offset + size <= this->size()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<T> operator()( Ordinal lowerOffset, Ordinal size );
+	ArrayView<T> view( Ordinal offset, Ordinal size ) const;
 
-	/** \brief Return a const view of a contiguous range of elements.
+	/** \brief Return a view of a contiguous range of elements (calls view(offset,size)).
+   */
+	ArrayView<T> operator()( Ordinal offset, Ordinal size ) const;
+
+	/** \brief Return a *this (just for compatibility with Array and ArrayPtr)
+   */
+	const ArrayView<T>& operator()() const;
+
+  /** \brief Return an ArrayView<const T> of an ArrayView<T> object.
+   *
+   * WARNING!  If <tt>T</tt> is already const (e.g. <tt>const double</tt>)
+   * then do not try to instantiate this function since it will not compile!
+   */
+  ArrayView<const T> getConst() const;
+
+  /** \brief Impliict conversion from ArrayView<T> to ArrayView<const T>.
+   *
+   * WARNING!  If <tt>T</tt> is already const (e.g. <tt>const double</tt>)
+   * then do not try to instantiate this function since it will not compile!
+   */
+  operator ArrayView<const T>() const;
+
+  //@}
+
+  /** \name Assignment */
+  //@{
+
+	/** \brief Copy the data from one array view object to this array view
+   * object.
 	 *
 	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->get() != NULL</tt>
-   * <li><tt>0 <= lowerOffset</tt>
-   * <li><tt>lowerOffset + size < this->size()</tt>
+	 * <li><tt>this->size() == array.size()</tt>
 	 * </ul>
-	 *
-	 * <b>Postconditions:</b><ul>
-   * <li><tt>returnVal.size() == size</tt>
-	 * </ul>
+   *
+   * WARNING!  If <tt>T</tt> is a const type (e.g. <tt>const double</tt>) then
+   * do not try to instantiate this function since it will not compile!
+   *
+   * NOTE: This function is really like an operator=() function except that it
+   * is declared const.  This is the correct behavior since a const ArrayView
+   * simply means that we can not change what *this points to.  The type of
+   * the template argument always determines if the underlyihng data is const
+   * or not.
    */
-	const ArrayView<T> operator()( Ordinal lowerOffset, Ordinal size ) const;
+	void assign(const ArrayView<const T>& array) const;
 
   //@}
 
@@ -223,7 +270,7 @@ public:
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */
-  const_iterator begin() const;
+  iterator begin() const;
 
   /** \brief Return an iterator to past the end of the array of data.
    *
@@ -237,38 +284,47 @@ public:
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */
-  const_iterator end() const;
+  iterator end() const;
 
   //@}
 
   //! @name Assertion Functions. 
   //@{
 
-	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->size()==0</tt>,
+	/** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
 	const ArrayView<T>& assert_not_null() const;
 
-	/** \brief Throws <tt>std::logic_error</tt> if <tt>lowerOffset < 0 ||
-   * this->size() <= lowerOffset+size</tt>.
+	/** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>
+   * or<tt>this->get()!=NULL</tt>, throws <tt>RangeError</tt> if <tt>(offset < 0 ||
+   * this->size() < offset+size</tt>, otherwise returns reference to <tt>*this</tt>
    */
-	const ArrayView<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
+	const ArrayView<T>& assert_in_range( Ordinal offset, Ordinal size ) const;
 
   //@}
 
 private:
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  RCPNode *node_;
-#else
 	T *ptr_;
   int size_;
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  RCPNode *node_;
+  ArrayRCP<T> arcp_;
 #endif
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  void setUpIterators();
+#endif
+
+  // Not defined and not to be called!
+	ArrayView();
+	ArrayView& operator=(const ArrayView&);
 
 };
 
 
-/** \brief Construct a array to non-const data .
+/** \brief Construct a const or non-const view to const or non-const data.
  *
  * \relates ArrayView
  */
@@ -276,30 +332,42 @@ template<class T>
 ArrayView<T> arrayView( T* p, typename ArrayView<T>::Ordinal size );
 
 
-/** \brief Construct a array to const data .
+/** \brief Construct a non-const view of an std::vector.
  *
  * \relates ArrayView
  */
 template<class T>
-const ArrayView<T> arrayView( const T* p, typename ArrayView<T>::Ordinal size );
+ArrayView<T> arrayView( std::vector<T>& vec );
+
+
+/** \brief Construct a const view of an std::vector.
+ *
+ * \relates ArrayView
+ */
+template<class T>
+ArrayView<const T> arrayView( const std::vector<T>& vec );
 
 
 /** \brief Get a new <tt>std::vector<T></tt> object out of an
  * <tt>ArrayView<T></tt> object.
  *
- * \relates ArrayView
- */
-template<class T>
-std::vector<T> create_std_vector( ArrayView<T> &ptr );
-
-
-/** \brief Get a new <tt>std::vector<T></tt> object out of an
- * <tt>ArrayView<T></tt> object.
+ * Note that a copy of data is made!
  *
  * \relates ArrayView
  */
 template<class T>
-const std::vector<T> create_std_vector( const ArrayView<T> &ptr );
+std::vector<T> createVector( const ArrayView<T> &ptr );
+
+
+/** \brief Get a new <tt>std::vector<T></tt> object out of an
+ * <tt>ArrayView<const T></tt> object.
+ *
+ * Note that a copy of data is made!
+ *
+ * \relates ArrayView
+ */
+template<class T>
+std::vector<T> createVector( const ArrayView<const T> &ptr );
 
 
 /** \brief Output stream inserter.
@@ -316,11 +384,12 @@ std::ostream& operator<<( std::ostream& out, const ArrayView<T>& p );
 } // end namespace Teuchos
 
 
-// ////////////////////////////////
-// Implementations
+//
+// Inline members
+//
 
 
-// ToDo: Add implementations!
+// ToDo: Fill in!
 
 
 #endif	// TEUCHOS_ARRAY_VIEW_DECL_HPP

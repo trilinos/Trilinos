@@ -33,6 +33,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Exceptions.hpp"
+#include "Teuchos_ArrayViewDecl.hpp"
 
 
 namespace Teuchos {
@@ -338,7 +339,7 @@ public:
    */
 	ArrayRCP<const T> getConst() const;
 
-	/** \brief Return a view of a contiguous range of elements.
+	/** \brief Return a persisting view of a contiguous range of elements.
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->get() != NULL</tt>
@@ -352,7 +353,7 @@ public:
    * <li><tt>return->upperOffset() == size-1</tt>
 	 * </ul>
    */
-	ArrayRCP<T> subview( Ordinal lowerOffset, Ordinal size ) const;
+	ArrayRCP<T> persistingView( Ordinal lowerOffset, Ordinal size ) const;
 
   //@}
 
@@ -419,6 +420,43 @@ public:
    * </ul>
    */
   const_iterator end() const;
+
+  //@}
+
+  //! @name ArrayView views 
+  //@{
+
+	/** \brief Return view of a contiguous range of elements.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->get() != NULL</tt>
+   * <li><tt>this->lowerOffset() <= lowerOffset</tt>
+   * <li><tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
+	 * </ul>
+	 *
+	 * <b>Postconditions:</b><ul>
+   * <li><tt>return->get() == this->get() + lowerOffset</tt>
+   * <li><tt>return->lowerOffset() == 0</tt>
+   * <li><tt>return->upperOffset() == size-1</tt>
+	 * </ul>
+   */
+	ArrayView<T> view( Ordinal lowerOffset, Ordinal size ) const;
+
+	/** \brief Return a view of a contiguous range of elements (calls
+   * view(offset,size)).
+   */
+	ArrayView<T> operator()( Ordinal lowerOffset, Ordinal size ) const;
+
+	/** \brief Return an ArrayView of *this.
+   *
+   * NOTE: This will return a null ArrayView if this->size() == 0.
+   */
+	ArrayView<T> operator()() const;
+
+  /** \brief Perform an implicit conversion to a ArrayView (calls
+   * operator()()).
+   */
+	operator ArrayView<T>() const;
 
   //@}
 
@@ -490,9 +528,9 @@ public:
 	const ArrayRCP<T>& assert_not_null() const;
 
 	/** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>
-   * or<tt>this->get()!=NULL && (lowerOffset < this->lowerOffset() ||
-   * this->upperOffset() < upperOffset</tt>, otherwise returns reference to
-   * <tt>*this</tt>
+   * or<tt>this->get()!=NULL</tt>, throws <tt>RangeError</tt> if
+   * <tt>(lowerOffset < this->lowerOffset() || this->upperOffset() <
+   * upperOffset</tt>, otherwise returns reference to <tt>*this</tt>
    */
 	const ArrayRCP<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
 

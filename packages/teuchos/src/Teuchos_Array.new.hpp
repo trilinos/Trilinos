@@ -107,7 +107,7 @@ public:
 
   //@}
 
-  /** \name std::vector functions */
+  /** \name All constructors */
   //@{
 
 
@@ -116,14 +116,22 @@ public:
   /** \brief . */
   explicit Array(size_type n, const value_type& value = value_type());
   /** \brief . */
-  Array(const Array& x);
+  Array(const Array<T>& x);
   /** \brief . */
   template<typename InputIterator>
   Array(InputIterator first, InputIterator last);
   /** \brief . */
+  Array(const ArrayView<const T>& a);
+  /** \brief . */
   ~Array();
   /** \brief . */
-  Array& operator=(const Array<T>& x);
+  Array& operator=(const Array<T>& a);
+
+  //@}
+
+  /** \name Other std::vector functions */
+  //@{
+
   /** \brief . */
   void assign(size_type n, const value_type& val);
   /** \brief . */
@@ -234,6 +242,69 @@ public:
 
   /** \brief Assignment operator for std::vector. */
   Array& operator=( const std::vector<T> &v );
+
+  //@}
+
+  //! @name Views 
+  //@{
+
+	/** \brief Return non-const view of a contiguous range of elements.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->size()() > 0</tt>
+   * <li><tt>0 <= offset && offset + size <= this->size()</tt>
+	 * </ul>
+	 *
+	 * <b>Postconditions:</b><ul>
+   * <li><tt>returnVal.size() == size</tt>
+	 * </ul>
+   */
+	ArrayView<T> view( size_type offset, size_type size );
+
+	/** \brief Return const view of a contiguous range of elements.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->size()() > 0</tt>
+   * <li><tt>0 <= offset && offset + size <= this->size()</tt>
+	 * </ul>
+	 *
+	 * <b>Postconditions:</b><ul>
+   * <li><tt>returnVal.size() == size</tt>
+	 * </ul>
+   */
+	ArrayView<const T> view( size_type offset, size_type size ) const;
+
+	/** \brief Return a non-const view of a contiguous range of elements (calls
+   * view(offset,size)).
+   */
+	ArrayView<T> operator()( size_type offset, size_type size );
+
+	/** \brief Return a non-const view of a contiguous range of elements (calls
+   * view(offset,size)).
+   */
+	ArrayView<const T> operator()( size_type offset, size_type size ) const;
+
+	/** \brief Return an non-const ArrayView of *this.
+   *
+   * NOTE: This will return a null ArrayView if this->size() == 0.
+   */
+	ArrayView<T> operator()();
+
+	/** \brief Return an const ArrayView of *this.
+   *
+   * NOTE: This will return a null ArrayView if this->size() == 0.
+   */
+	ArrayView<const T> operator()() const;
+
+  /** \brief Perform an implicit conversion to a non-const ArrayView (calls
+   * operator()()).
+   */
+	operator ArrayView<T>();
+
+  /** \brief Perform an implicit conversion to a non-const ArrayView (calls
+   * operator()()).
+   */
+	operator ArrayView<const T>() const;
 
   //@}
 
@@ -453,7 +524,7 @@ Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 namespace Teuchos {
 
 
-// std::vector functions
+// All constructors
 
 
 template<typename T> inline
@@ -512,11 +583,24 @@ Array<T>::~Array()
 
 
 template<typename T> inline
-Array<T>& Array<T>::operator=(const Array& x)
+Array<T>::Array(const ArrayView<const T>& a)
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  : vec_(rcp(new std::vector<T>()))
+#endif
 {
-  vec(true) = x.vec();
+  insert(begin(),a.begin(),a.end());
+}
+
+
+template<typename T> inline
+Array<T>& Array<T>::operator=(const Array& a)
+{
+  vec(true) = a.vec();
   return *this;
 }
+
+
+// Other std::vector functions
 
 
 template<typename T> inline
@@ -941,6 +1025,80 @@ Array<T>& Array<T>::operator=( const std::vector<T> &v )
 {
   vec(true) = v;
   return *this;
+}
+
+
+// Views
+
+
+template<typename T> inline
+ArrayView<T> Array<T>::view( size_type offset, size_type size )
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertIndex(offset);
+  assertIndex(offset+size-1);
+#endif
+  return arrayView( &vec()[offset], size );
+  // ToDo: Add support for detecting dangling references!
+}
+
+
+template<typename T> inline
+ArrayView<const T> Array<T>::view( size_type offset, size_type size ) const
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  assertIndex(offset);
+  assertIndex(offset+size-1);
+#endif
+  return arrayView( &vec()[offset], size );
+  //return arrayView( &const_cast<std::vector<T>&>(vec())[offset], size );
+}
+
+
+template<typename T> inline
+ArrayView<T> Array<T>::operator()( size_type offset, size_type size )
+{
+  return view(offset,size);
+}
+
+
+template<typename T> inline
+ArrayView<const T> Array<T>::operator()( size_type offset, size_type size ) const
+{
+  return view(offset,size);
+}
+
+
+template<typename T> inline
+ArrayView<T> Array<T>::operator()()
+{
+  if (!size())
+    return null;
+  return arrayView( &vec()[0], size() );
+  // ToDo: Add support for detecting dangling references!
+}
+
+
+template<typename T> inline
+ArrayView<const T> Array<T>::operator()() const
+{
+  if (!size())
+    return null;
+  return arrayView( &vec()[0], size() );
+}
+
+
+template<typename T> inline
+Array<T>::operator ArrayView<T>()
+{
+  return this->operator()();
+}
+
+
+template<typename T> inline
+Array<T>::operator ArrayView<const T>() const
+{
+  return this->operator()();
 }
 
 

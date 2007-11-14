@@ -158,7 +158,7 @@ bool compareArrays(
  */
 #define TEUCHOS_TEST_THROW( code, ExceptType, out, success  ) \
   try { \
-    (out) << "Test that code ("#code";) throws : "; \
+    (out) << "Test that code {"#code";} throws : "; \
     code; \
     (success) = false; \
     (out) << "failed\n"; \
@@ -176,7 +176,7 @@ bool compareArrays(
  */
 #define TEUCHOS_TEST_NOTHROW( code, out, success  ) \
   try { \
-    (out) << "Test that code ("#code";) does not throw : "; \
+    (out) << "Test that code {"#code";} does not throw : "; \
     code; \
     (out) << "passes\n"; \
   } \

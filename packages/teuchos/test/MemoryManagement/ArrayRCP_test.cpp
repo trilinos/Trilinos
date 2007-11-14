@@ -33,6 +33,44 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TestingHelpers.hpp"
+
+
+//
+// Define local macros to make defining tests easier for this particular test
+// code.
+//
+// Note, macros with these types of names should only exist in a *.cpp file
+// after all #includes are done!
+//
+
+
+#define TEST_EQUALITY_CONST( v1, v2 ) \
+  TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success )
+
+#define TEST_EQUALITY( v1, v2 ) \
+  TEUCHOS_TEST_EQUALITY( v1, v2, out, success )
+
+#define TEST_ITER_EQUALITY( iter1, iter2 ) \
+  TEUCHOS_TEST_ITER_EQUALITY( iter1, iter2, out, success )
+
+#define TEST_ARRAY_ELE_EQUALITY( a, i, val ) \
+   TEUCHOS_TEST_ARRAY_ELE_EQUALITY( a, i, val, false, out, local_success )
+
+#define TEST_COMPARE( v1, comp, v2 ) \
+  TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success )
+
+#define TEST_COMPARE_ARRAYS( a1, a2 ) \
+  { \
+    const bool result = compareArrays(a1,#a1,a2,#a2,out); \
+    if (!result) success = false; \
+  }
+
+#define TEST_THROW( code, ExceptType  ) \
+  TEUCHOS_TEST_THROW( code, ExceptType, out, success  )
+
+#define TEST_NOTHROW( code  ) \
+  TEUCHOS_TEST_NOTHROW( code, out, success  )
 
 
 // Temporarily uncomment any or all of these macros to see compilation
@@ -44,10 +82,14 @@
 //#define SHOW_COMPILE_FAILURE_2
 //#define SHOW_COMPILE_FAILURE_3
 
+
+//
+// Iterator testing function
+//
+
 template<class T>
-void test_ArrayRCP_iterators(
+bool test_ArrayRCP_iterators(
   const Teuchos::ArrayRCP<T> &ptr,
-  const bool verbose,
   Teuchos::FancyOStream &out
   )
 {
@@ -57,8 +99,12 @@ void test_ArrayRCP_iterators(
   using Teuchos::arcp;
   using Teuchos::arcp_reinterpret_cast;
 
-  if(verbose)
-    out << "\nTesting iterators and accessors for ptr = " << ptr <<"\n";
+  bool success = true;
+
+  out
+    << "\n***"
+    << "\n*** Testing iterators and accessors for ptr = " << ptr
+    << "\n***\n";
 
   Teuchos::OSTab tab(out);
 
@@ -67,32 +113,28 @@ void test_ArrayRCP_iterators(
   // Pointer ++
  
   {
-    if(verbose)
-      out << "\nChecking ++itr and < ...\n";
+    out << "\nChecking ++itr and < ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; itr < ptr+size; ++i, ++itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking itr++ and <= ...\n";
+    out << "\nChecking itr++ and <= ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; itr <= ptr+size-1; ++i, itr++ )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking itr+=1 and != ...\n";
+    out << "\nChecking itr+=1 and != ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; itr != ptr+size; ++i, itr+=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking itr=itr+1 and == ...\n";
+    out << "\nChecking itr=itr+1 and == ...\n";
     ArrayRCP<T> itr = ptr;
     for( int i = 0; !( itr == ptr+size ); ++i, itr=itr+1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
@@ -101,32 +143,28 @@ void test_ArrayRCP_iterators(
   // Pointer --
  
   {
-    if(verbose)
-      out << "\nChecking --itr and >= ...\n";
+    out << "\nChecking --itr and >= ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr >= ptr; --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking itr-- and > ...\n";
+    out << "\nChecking itr-- and > ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr+1 > ptr; i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking itr-=1 and != ...\n";
+    out << "\nChecking itr-=1 and != ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr+1 != ptr; i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking itr=itr-1 and == ...\n";
+    out << "\nChecking itr=itr-1 and == ...\n";
     ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; !( itr+1 == ptr ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
@@ -135,40 +173,35 @@ void test_ArrayRCP_iterators(
   // Iterator - Iterator
  
   {
-    if(verbose)
-      out << "\nChecking ptr.end() - ptr.begin() == ptr.size() ...\n";
+    out << "\nChecking ptr.end() - ptr.begin() == ptr.size() ...\n";
     TEUCHOS_ASSERT_EQUALITY( ptr.end() - ptr.begin(), ptr.size() );
   }
 
   // Iterator ++
  
   {
-    if(verbose)
-      out << "\nChecking iterator ++itr and < ...\n";
+    out << "\nChecking iterator ++itr and < ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr < ptr.end(); ++i, ++itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking iterator itr++ and <= ...\n";
+    out << "\nChecking iterator itr++ and <= ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr <= ptr.end()-1; ++i, itr++ )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking iterator itr+=1 and != ...\n";
+    out << "\nChecking iterator itr+=1 and != ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr != ptr.end(); ++i, itr+=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking iterator itr=itr+1 and == ...\n";
+    out << "\nChecking iterator itr=itr+1 and == ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; !( itr == ptr.end() ); ++i, itr=itr+1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
@@ -177,71 +210,130 @@ void test_ArrayRCP_iterators(
   // Iterator --
  
   {
-    if(verbose)
-      out << "\nChecking iterator --itr and >= ...\n";
+    out << "\nChecking iterator --itr and >= ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr >= ptr.begin(); --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking iterator itr-- and > ...\n";
+    out << "\nChecking iterator itr-- and > ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr+1 > ptr.begin(); i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking iterator itr-=1 and != ...\n";
+    out << "\nChecking iterator itr-=1 and != ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr+1 != ptr.begin(); i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
  
   {
-    if(verbose)
-      out << "\nChecking iterator itr=itr-1 and == ...\n";
+    out << "\nChecking iterator itr=itr-1 and == ...\n";
     typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; !( itr+1 == ptr.begin() ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
+  return success;
+
 }
 
+
+//
+// Main testing function for a specific ArrayRCP
+//
+
+
 template<class T>
-void test_ArrayRCP(
+bool test_ArrayRCP(
   const Teuchos::ArrayRCP<T> &ptr,
-  const bool verbose,
   Teuchos::FancyOStream &out
   )
 {
 
-  using Teuchos::ArrayRCP;
-  using Teuchos::null;
-  using Teuchos::arcp;
-  using Teuchos::arcp_reinterpret_cast;
+  using Teuchos::ArrayView;
+
+  bool success = true, result;
  
-  if(verbose)
-    out << "\nTesting ptr = " << ptr <<"\n";
+  out
+    << "\n***"
+    << "\n*** Testing ptr = " << ptr
+    << "\n***\n";
 
   Teuchos::OSTab tab(out);
 
-  const int size = ptr.size();
+  const int n = ptr.size();
  
   {
-    if(verbose)
-      out << "\nInitializing data ...\n";
-    for( int i = 0; i < size; ++i )
+    out << "\nInitializing data ...\n";
+    for( int i = 0; i < n; ++i )
       ptr[i] = i;
   }
 
   TEST_FOR_EXCEPT( !(&*ptr == ptr.get()) );
 
-  test_ArrayRCP_iterators(ptr,verbose,out);
+  result = test_ArrayRCP_iterators(ptr,out);
+  if (!result) success = false;
+
+
+  //
+  out << "\nG) Test views ...\n";
+  //
+
+  {
+    out << "\nTest full non-const subview ...\n";
+    const ArrayView<T> av2 = ptr(0,n);
+    TEST_COMPARE_ARRAYS( av2, ptr );
+  }
+
+  {
+    out << "\nTest full shorthand non-const subview ...\n";
+    const ArrayView<T> av2 = ptr();
+    TEST_COMPARE_ARRAYS( av2, ptr );
+  }
+
+  {
+    out << "\nTest full const subview ...\n";
+    const ArrayView<const T> cav2 = ptr.getConst()(0,n);
+    TEST_COMPARE_ARRAYS( cav2, ptr );
+  }
+
+  {
+    out << "\nTest full non-const to const subview ...\n";
+    const ArrayView<const T> cav2 = ptr(0,n);
+    TEST_COMPARE_ARRAYS( cav2, ptr );
+  }
+
+  {
+    out << "\nTest full short-hand const subview ...\n";
+    const ArrayView<const T> cav2 = ptr.getConst()();
+    TEST_COMPARE_ARRAYS( cav2, ptr );
+  }
+
+  {
+    out << "\nTest implicit conversion from ArrayRCP<T> to ArrayView<T> ...\n";
+    const ArrayView<T> av2 = ptr;
+    TEST_COMPARE_ARRAYS( av2, ptr );
+  }
+
+  {
+    out << "\nTest implicit conversion from ArrayRCP<const T> to ArrayView<const T> ...\n";
+    const ArrayView<const T> av2 = ptr.getConst();
+    TEST_COMPARE_ARRAYS( av2, ptr );
+  }
+
+  return success;
 
 }
+
+
+//
+// Main driver program
+//
+
 
 int main( int argc, char* argv[] ) {
 
@@ -253,7 +345,7 @@ int main( int argc, char* argv[] ) {
   using Teuchos::arcp;
   using Teuchos::arcp_reinterpret_cast;
 	
-	bool success = true, verbose = true;
+	bool success = true, result;
  
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
@@ -269,7 +361,6 @@ int main( int argc, char* argv[] ) {
     CommandLineProcessor clp(false); // Don't throw exceptions
     clp.setOption( "num-ints", &num_ints, "Number of ints to allocate space for" );
     clp.setOption( "num-doubles", &num_doubles, "Number of doubles to allocate space for" );
-		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
 			*out << "\nEnd Result: TEST FAILED" << std::endl;
@@ -281,29 +372,26 @@ int main( int argc, char* argv[] ) {
 
     const int total_bytes = num_doubles*sizeOfDouble + num_ints*sizeOfInt;
 
-    if(verbose)
-      *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
+    *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
  
-		if(verbose)
-			*out << "\nTesting basic ArrayRCP functionality ...\n";
+    *out << "\nTesting basic ArrayRCP functionality ...\n";
 
     ArrayRCP<char>
       char_ptr1 = arcp<char>(total_bytes);
 
-    if(verbose)
-      *out << "\nchar_ptr1 = " << char_ptr1 << "\n";
+    *out << "\nchar_ptr1 = " << char_ptr1 << "\n";
 
     TEST_FOR_EXCEPT( !(char_ptr1.size() == total_bytes) );
     TEST_FOR_EXCEPT( !(char_ptr1.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr1.upperOffset() == total_bytes-1) );
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
-    test_ArrayRCP(char_ptr1,verbose,*out);
+    result = test_ArrayRCP(char_ptr1,*out);
+    if (!result) success = false;
 
     ArrayRCP<char>
       char_ptr2 = null;
 
-    if(verbose)
-      *out << "\nchar_ptr2 = " << char_ptr2 << "\n";
+    *out << "\nchar_ptr2 = " << char_ptr2 << "\n";
 
     TEST_FOR_EXCEPT( !(char_ptr2.size() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
@@ -312,14 +400,14 @@ int main( int argc, char* argv[] ) {
     ArrayRCP<char>
       char_ptr2b(char_ptr1); // excplicitly test copy constructor
 
-    if(verbose)
-      *out << "\nchar_ptr2b = " << char_ptr2b << "\n";
+    *out << "\nchar_ptr2b = " << char_ptr2b << "\n";
 
     TEST_FOR_EXCEPT( !(char_ptr2b.size() == total_bytes) );
     TEST_FOR_EXCEPT( !(char_ptr2b.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr2b.upperOffset() == total_bytes-1) );
     TEST_FOR_EXCEPT( !(char_ptr2b.count() == 2) );
-    test_ArrayRCP(char_ptr2b,verbose,*out);
+    result = test_ArrayRCP(char_ptr2b,*out);
+    if (!result) success = false;
 
     char_ptr2b = null;
 
@@ -329,57 +417,56 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
 
     ArrayRCP<char>
-      char_ptr3 = char_ptr1.subview(total_bytes/2,total_bytes/2);
+      char_ptr3 = char_ptr1.persistingView(total_bytes/2,total_bytes/2);
 
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 2) );
     TEST_FOR_EXCEPT( !(char_ptr3.count() == 2) );
     TEST_FOR_EXCEPT( !(char_ptr3.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr3.upperOffset() == total_bytes/2-1) );
-    test_ArrayRCP(char_ptr3,verbose,*out);
+    result = test_ArrayRCP(char_ptr3,*out);
+    if (!result) success = false;
 
-    if(verbose)
-      *out << "\nchar_ptr3 = " << char_ptr3 << "\n";
+    *out << "\nchar_ptr3 = " << char_ptr3 << "\n";
 
-    if(verbose)
-      *out << "\nBreak up char_ptr1 into views of double and int data\n";
+    *out << "\nBreak up char_ptr1 into views of double and int data\n";
 
     int offset = 0;
  
-    ArrayRCP<double>
-      double_ptr1 = arcp_reinterpret_cast<double>(char_ptr1.subview(offset,sizeOfDouble*num_doubles));
+    ArrayRCP<double> double_ptr1 = arcp_reinterpret_cast<double>(
+      char_ptr1.persistingView(offset,sizeOfDouble*num_doubles)
+      );
 
-    if(verbose)
-      *out
-        << "\ndouble_ptr1 = " << double_ptr1 << "\n";
+    *out << "\ndouble_ptr1 = " << double_ptr1 << "\n";
 
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 3) );
     TEST_FOR_EXCEPT( !(double_ptr1.count() == 3) );
     TEST_FOR_EXCEPT( !(double_ptr1.size() == num_doubles) );
 
-    test_ArrayRCP(double_ptr1,verbose,*out);
+    result = test_ArrayRCP(double_ptr1,*out);
+    if (!result) success = false;
  
     offset += sizeOfDouble*num_doubles;
 
-    ArrayRCP<int>
-      int_ptr1 = arcp_reinterpret_cast<int>(char_ptr1.subview(offset,sizeOfInt*num_ints));
+    ArrayRCP<int> int_ptr1 = arcp_reinterpret_cast<int>(
+      char_ptr1.persistingView(offset,sizeOfInt*num_ints)
+      );
 
-    if(verbose)
-      *out
-        << "\nint_ptr1 = " << int_ptr1 << "\n";
+    *out << "\nint_ptr1 = " << int_ptr1 << "\n";
 
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 4) );
     TEST_FOR_EXCEPT( !(int_ptr1.count() == 4) );
     TEST_FOR_EXCEPT( !(int_ptr1.size() == num_ints) );
 
-    test_ArrayRCP(int_ptr1,verbose,*out);
+    result = test_ArrayRCP(int_ptr1,*out);
+    if (!result) success = false;
 
-    if(verbose)
-      *out << "\nCreating a constant view of double_ptr1\n";
+    *out << "\nCreating a constant view of double_ptr1\n";
  
     ArrayRCP<const double>
       double_ptr2 = double_ptr1.getConst();
 
-    test_ArrayRCP_iterators(double_ptr2,verbose,*out);
+    result = test_ArrayRCP_iterators(double_ptr2,*out);
+    if (!result) success = false;
 
 #ifdef SHOW_COMPILE_FAILURE_1
     // This will not compile since this function tries to use operator[] to
@@ -390,8 +477,7 @@ int main( int argc, char* argv[] ) {
     }
 #endif
 
-    if(verbose)
-      *out << "\nCreating an array of RCP objects!\n";
+    *out << "\nCreating an array of RCP objects!\n";
 
     ArrayRCP<RCP<double> >
       rcp_ptr1 = arcp<RCP<double> >(num_doubles);
@@ -399,18 +485,18 @@ int main( int argc, char* argv[] ) {
     for( int i = 0; i < num_doubles; ++i )
       rcp_ptr1[i] = rcp(new double(i));
 
-    test_ArrayRCP_iterators(rcp_ptr1,verbose,*out);
+    result = test_ArrayRCP_iterators(rcp_ptr1,*out);
+    if (!result) success = false;
 
-    if(verbose)
-      *out << "\nCreating a const view of rcp_ptr1\n";
+    *out << "\nCreating a const view of rcp_ptr1\n";
 
     ArrayRCP<const RCP<double> >
       rcp_ptr2 = rcp_ptr1.getConst();
 
-    test_ArrayRCP_iterators(rcp_ptr2,verbose,*out);
+    result = test_ArrayRCP_iterators(rcp_ptr2,*out);
+    if (!result) success = false;
 
-    if(verbose)
-      *out << "\nCreating an ARCP<double*> object doubleptr_ptr1 and dynamically allocation each element\n";
+    *out << "\nCreating an ARCP<double*> object doubleptr_ptr1 and dynamically allocation each element\n";
 
     ArrayRCP<double*>
       doubleptr_ptr1 = arcp<double*>(total_bytes);
@@ -418,15 +504,16 @@ int main( int argc, char* argv[] ) {
     for( int i = 0; i < doubleptr_ptr1.size(); ++i )
       doubleptr_ptr1[i] = new double(i);
 
-    test_ArrayRCP_iterators(doubleptr_ptr1,verbose,*out);
+    result = test_ArrayRCP_iterators(doubleptr_ptr1,*out);
+    if (!result) success = false;
 
-    if(verbose)
-      *out << "\nCreating an ARCP<double*const> view of a doubleptr_ptr1\n";
+    *out << "\nCreating an ARCP<double*const> view of a doubleptr_ptr1\n";
  
     ArrayRCP<double*const>
       doubleptr_ptr2 = doubleptr_ptr1.getConst();
 
-    test_ArrayRCP_iterators(doubleptr_ptr2,verbose,*out);
+    result = test_ArrayRCP_iterators(doubleptr_ptr2,*out);
+    if (!result) success = false;
 
 #ifdef SHOW_COMPILE_FAILURE_2
     // This will not compile since this function tries to use operator[] to
@@ -438,13 +525,13 @@ int main( int argc, char* argv[] ) {
     }
 #endif
 
-    if(verbose)
-      *out << "\nCreating an ARCP<const double * const> view of a doubleptr_ptr1\n";
+    *out << "\nCreating an ARCP<const double * const> view of a doubleptr_ptr1\n";
  
     ArrayRCP<const double*const>
       doubleptr_ptr3 = Teuchos::arcp_implicit_cast<const double*const>(doubleptr_ptr1);
 
-    test_ArrayRCP_iterators(doubleptr_ptr3,verbose,*out);
+    result = test_ArrayRCP_iterators(doubleptr_ptr3,*out);
+    if (!result) success = false;
 
 #ifdef SHOW_COMPILE_FAILURE_3
     // This will not compile since this function tries to use operator[] to
@@ -459,16 +546,15 @@ int main( int argc, char* argv[] ) {
     for( int i = 0; i < doubleptr_ptr1.size(); ++i )
       delete doubleptr_ptr1[i];
 
-    if(verbose)
-      *out << "\nWrapping std::vector<T> objects as ArrayRefCount objects ...\n";
+    *out << "\nWrapping std::vector<T> objects as ArrayRefCount objects ...\n";
 
     ArrayRCP<char>
       vchar_ptr1 = arcp(rcp(new std::vector<char>(total_bytes)));
 
-    if(verbose)
-      *out << "\nvchar_ptr1 = " << vchar_ptr1 << "\n";
+    *out << "\nvchar_ptr1 = " << vchar_ptr1 << "\n";
  
-    test_ArrayRCP(vchar_ptr1,verbose,*out);
+    result = test_ArrayRCP(vchar_ptr1,*out);
+    if (!result) success = false;
  
     ArrayRCP<const char> vchar_ptr2 =
       arcp(
@@ -477,10 +563,10 @@ int main( int argc, char* argv[] ) {
           )
         );
  
-    if(verbose)
-      *out << "\nvchar_ptr2 = " << vchar_ptr2 << "\n";
+    *out << "\nvchar_ptr2 = " << vchar_ptr2 << "\n";
 
-    test_ArrayRCP_iterators(vchar_ptr2,verbose,*out);
+    result = test_ArrayRCP_iterators(vchar_ptr2,*out);
+    if (!result) success = false;
 
 #ifndef __sun
     // RAB: 2006/07/12: The sun compiler declares this call to
@@ -491,11 +577,10 @@ int main( int argc, char* argv[] ) {
  
     // ToDo: Fill in the rest of the tests!
  
-		if(verbose)
-			*out << "\nAll tests for ArrayRCP seem to check out!\n";
+    *out << "\nAll tests for ArrayRCP seem to check out!\n";
  
 	}
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
  
   if(success)
     *out << "\nEnd Result: TEST PASSED" << std::endl;	
