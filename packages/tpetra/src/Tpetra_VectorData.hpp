@@ -51,7 +51,7 @@ namespace Tpetra {
 	protected:
 		Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 		VectorSpace<OrdinalType, ScalarType> VectorSpace_;
-		Teuchos::Array<ScalarType> scalarArray_;
+		std::vector<ScalarType> scalarArray_;
 		ScalarType seed_;
 	
 	private:

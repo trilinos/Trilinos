@@ -458,6 +458,9 @@ public:
    */
 	operator ArrayView<T>() const;
 
+  /** \brief Convert from ArrayRCP<T> to ArrayRCP<const T>. */
+	operator ArrayRCP<const T>() const;
+
   //@}
 
   //! @name Ownership 

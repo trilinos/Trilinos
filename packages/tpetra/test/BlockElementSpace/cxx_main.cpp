@@ -115,7 +115,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	// create ElementSpace objects (3 of them, 1 for each ES ctr)
 	Tpetra::ElementSpace<OrdinalType> es1(numElements, indexBase, platform);
 	Tpetra::ElementSpace<OrdinalType> es2(negOne, numElements, indexBase, platform);
-	Teuchos::Array<OrdinalType> gidList;
+	std::vector<OrdinalType> gidList;
 	generateColumn(gidList, myImageID, numElements);
 	Tpetra::ElementSpace<OrdinalType> es3(negOne, numElements, gidList, indexBase, platform);
 
@@ -127,7 +127,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 
 	// variable-sized ctr
 	if(verbose) cout << "BlockElementSpace constructor (variable-sized)...";
-	Teuchos::Array<OrdinalType> eSizeList = Teuchos::tuple(one, one, one+one, one+one+one, one+one+one+one+one);
+	std::vector<OrdinalType> eSizeList = Teuchos::tuple(one, one, one+one, one+one+one, one+one+one+one+one).toVector();
 	Tpetra::BlockElementSpace<OrdinalType> bes2(es1, eSizeList);
 	if(debug) cout << bes2;
 

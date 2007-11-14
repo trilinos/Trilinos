@@ -386,6 +386,13 @@ ArrayRCP<T>::operator ArrayView<T>() const
 }
 
 
+template<class T> inline
+ArrayRCP<T>::operator ArrayRCP<const T>() const
+{
+  return ArrayRCP<const T>(ptr_,lowerOffset_,upperOffset_,node_);
+}
+
+
 // Ownership
 
 

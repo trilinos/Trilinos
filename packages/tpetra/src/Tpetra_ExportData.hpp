@@ -61,13 +61,13 @@ namespace Tpetra {
     
 	protected:
 		// OT vectors
-		Teuchos::Array<OrdinalType> permuteToLIDs_;
-		Teuchos::Array<OrdinalType> permuteFromLIDs_;
-		Teuchos::Array<OrdinalType> remoteLIDs_;
-		Teuchos::Array<OrdinalType> remoteGIDs_;
-		Teuchos::Array<OrdinalType> exportLIDs_;
-		Teuchos::Array<OrdinalType> exportGIDs_;
-		Teuchos::Array<OrdinalType> exportImageIDs_;
+		std::vector<OrdinalType> permuteToLIDs_;
+		std::vector<OrdinalType> permuteFromLIDs_;
+		std::vector<OrdinalType> remoteLIDs_;
+		std::vector<OrdinalType> remoteGIDs_;
+		std::vector<OrdinalType> exportLIDs_;
+		std::vector<OrdinalType> exportGIDs_;
+		std::vector<OrdinalType> exportImageIDs_;
     
 		// OTs
 		OrdinalType numSameIDs_;

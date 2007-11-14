@@ -454,7 +454,7 @@ namespace Anasazi {
         // orthogonalize against Q
         // if !this->_hasOp, the curMX will be ignored.
         // we don't care about these coefficients; in fact, we need to preserve the previous coeffs
-        projectMat(*curX,curMX,Teuchos::null,Q);
+        projectMat(*curX,curMX,Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),Q);
       }
     } while (1);
 

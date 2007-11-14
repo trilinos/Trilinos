@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_Array.new.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -564,7 +564,13 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     TEST_COMPARE_ARRAYS( a2, a );
   }
 
-  // ToDo: Add more tests!
+  {
+    out << "\nTest operator==() ...\n";
+    Array<T> a2(a);
+    TEST_EQUALITY( a2, a );
+  }
+
+  // ToDo: Add tests for all comparison operators!
 
   // ToDo: Test requesting views outside of valid range!
   
