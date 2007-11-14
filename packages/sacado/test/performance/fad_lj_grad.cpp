@@ -48,44 +48,68 @@ void FAD::error(const char *msg) {
   std::cout << msg << std::endl;
 }
 
+namespace {
+  double xi[3], xj[3], pa[4], f[3], delr[3];
+}
+
+template <typename T>
+inline T
+vec3_distsq(const T xi[], const double xj[]) {
+  T delr0 = xi[0]-xj[0];
+  T delr1 = xi[1]-xj[1];
+  T delr2 = xi[2]-xj[2];
+  return delr0*delr0 + delr1*delr1 + delr2*delr2;
+}
+
+template <typename T>
+inline T
+vec3_distsq(const T xi[], const double xj[], T delr[]) {
+  delr[0] = xi[0]-xj[0];
+  delr[1] = xi[1]-xj[1];
+  delr[2] = xi[2]-xj[2];
+  return delr[0]*delr[0] + delr[1]*delr[1] + delr[2]*delr[2];
+}
+
 template <typename T>
 inline void
-func1(const T& x1, const T& x2, T& y) {
-  y = (x1*x2 + sin(x1)/x2);
+lj(const T xi[], const double xj[], T& energy) {
+  T delr2 = vec3_distsq(xi,xj);
+  T delr_2 = 1.0/delr2;
+  T delr_6 = delr_2*delr_2*delr_2;
+  energy = (pa[1]*delr_6 - pa[2])*delr_6 - pa[3];
 }
 
 inline void
-func1_and_deriv(int n, double x1, double x2, double* x1dot, double* x2dot, 
-		double& y, double* ydot) {
-  double s = sin(x1);
-  double c = cos(x1);
-  double t = s/x2;
-  double t1 = x2 + c/x2;
-  double t2 = x1 - t/x2;
-  y = x1*x2 + t;
-  for (int i=0; i<10; i++)
-    ydot[i] = t1*x1dot[i] + t2*x2dot[i];
+lj_and_grad(const double xi[], const double xj[], double& energy,
+	    double f[]) {
+  double delr2 = vec3_distsq(xi,xj,delr);
+  double delr_2 = 1.0/delr2;
+  double delr_6 = delr_2*delr_2*delr_2;
+  energy = (pa[1]*delr_6 - pa[2])*delr_6 - pa[3];
+  double tmp = (-12.0*pa[1]*delr_6 - 6.0*pa[2])*delr_6*delr_2;
+  f[0] = delr[0]*tmp;
+  f[1] = delr[1]*tmp;
+  f[2] = delr[2]*tmp;
 }
 
 template <typename FadType>
 double
-do_time(int nderiv, int nloop)
+do_time(int nloop)
 {
-  FadType x1, x2, y;
-  Sacado::Random urand(0.0, 1.0);
+  Teuchos::Time timer("lj", false);
+  FadType xi_fad[3], energy;
 
-  x1 = FadType(nderiv,  urand.number());
-  x2 = FadType(nderiv,  urand.number());
-  y = 0.0;
-  for (int j=0; j<nderiv; j++) {
-    x1.fastAccessDx(j) = urand.number();
-    x2.fastAccessDx(j) = urand.number();
+  for (int i=0; i<3; i++) {
+    xi_fad[i] = FadType(3, i, xi[i]);
   }
   
-  Teuchos::Time timer("mult", false);
   timer.start(true);
   for (int j=0; j<nloop; j++) {
-    func1(x1, x2, y);
+
+    lj(xi_fad, xj, energy);
+
+    for (int i=0; i<3; i++)
+      f[i] += -energy.fastAccessDx(i);
   }
   timer.stop();
 
@@ -93,27 +117,19 @@ do_time(int nderiv, int nloop)
 }
 
 double
-do_time_analytic(int nderiv, int nloop)
+do_time_analytic(int nloop)
 {
-  double x1, x2, y;
-  double *x1dot, *x2dot, *ydot;
-  Sacado::Random urand(0.0, 1.0);
+  Teuchos::Time timer("lj", false);
+  double energy, ff[3];
 
-  x1 = urand.number();
-  x2 = urand.number();
-  y = 0.0;
-  x1dot = new double[nderiv];
-  x2dot = new double[nderiv];
-  ydot = new double[nderiv];
-  for (int j=0; j<nderiv; j++) {
-    x1dot[j] = urand.number();
-    x2dot[j] = urand.number();
-  }
-  
-  Teuchos::Time timer("mult", false);
   timer.start(true);
   for (int j=0; j<nloop; j++) {
-    func1_and_deriv(nderiv, x1, x2, x1dot, x2dot, y, ydot);
+
+    lj_and_grad(xi, xj, energy, ff);
+
+    for (int i=0; i<3; i++)
+      f[i] += -ff[i];
+
   }
   timer.stop();
 
@@ -131,8 +147,6 @@ int main(int argc, char* argv[]) {
     // Set up command line options
     Teuchos::CommandLineProcessor clp;
     clp.setDocString("This program tests the speed of various forward mode AD implementations for a single multiplication operation");
-    int nderiv = 10;
-    clp.setOption("nderiv", &nderiv, "Number of derivative components");
     int nloop = 1000000;
     clp.setOption("nloop", &nloop, "Number of loops");
 
@@ -143,46 +157,53 @@ int main(int argc, char* argv[]) {
       return 1;
 
     // Memory pool & manager
-    Sacado::Fad::MemPoolManager<double> poolManager(10);
-    Sacado::Fad::MemPool* pool = poolManager.getMemoryPool(nderiv);
+    Sacado::Fad::MemPoolManager<double> poolManager(3);
+    Sacado::Fad::MemPool* pool = poolManager.getMemoryPool(3);
     Sacado::Fad::DMFad<double>::setDefaultPool(pool);
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
-    std::cout << "Times (sec) for nderiv = " << nderiv 
-	      << " nloop =  " << nloop << ":  " << std::endl;
+    std::cout << "Times (sec) nloop =  " << nloop << ":  " << std::endl;
 
-    ta = do_time_analytic(nderiv, nloop);
+    Sacado::Random urand(0.0, 1.0);
+    for (int i=0; i<3; i++) {
+      xi[i] = urand.number();
+      xj[i] = urand.number();
+      pa[i] = urand.number();
+    }
+    pa[3] = urand.number();
+
+    ta = do_time_analytic(nloop);
     std::cout << "Analytic:  " << std::setw(w) << ta << std::endl;
 
-    t = do_time< FAD::TFad<10,double> >(nderiv, nloop);
+    t = do_time< FAD::TFad<3,double> >(nloop);
     std::cout << "TFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
-    t = do_time< FAD::Fad<double> >(nderiv, nloop);
+    t = do_time< FAD::Fad<double> >(nloop);
     std::cout << "Fad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
-    t = do_time< Sacado::Fad::SFad<double,10> >(nderiv, nloop);
+    t = do_time< Sacado::Fad::SFad<double,3> >(nloop);
     std::cout << "SFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
-    t = do_time< Sacado::Fad::SLFad<double,10> >(nderiv, nloop);
+    t = do_time< Sacado::Fad::SLFad<double,3> >(nloop);
     std::cout << "SLFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
     
-    t = do_time< Sacado::Fad::DFad<double> >(nderiv, nloop);
+    t = do_time< Sacado::Fad::DFad<double> >(nloop);
     std::cout << "DFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
-    t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
+    t = do_time< Sacado::Fad::DMFad<double> >(nloop);
     std::cout << "DMFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl; 
 
-    t = do_time< Sacado::ELRFad::SFad<double,10> >(nderiv, nloop);
+    t = do_time< Sacado::ELRFad::SFad<double,3> >(nloop);
     std::cout << "ELRSFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
-    t = do_time< Sacado::ELRFad::SLFad<double,10> >(nderiv, nloop);
+    t = do_time< Sacado::ELRFad::SLFad<double,3> >(nloop);
     std::cout << "ELRSLFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
-    t = do_time< Sacado::ELRFad::DFad<double> >(nderiv, nloop);
+    t = do_time< Sacado::ELRFad::DFad<double> >(nloop);
     std::cout << "ELRDFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
     
-    t = do_time< Sacado::CacheFad::DFad<double> >(nderiv, nloop);
+    t = do_time< Sacado::CacheFad::DFad<double> >(nloop);
     std::cout << "CacheFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
     
   }

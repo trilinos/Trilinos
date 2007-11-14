@@ -39,6 +39,7 @@ include $(top_builddir)/Makefile.export.sacado
 noinst_PROGRAMS = \
 	fad_expr_depth \
 	fad_expr \
+	fad_lj_grad \
 	taylor_expr
 
 endif
@@ -59,6 +60,11 @@ fad_expr_SOURCES = fad_expr.cpp
 fad_expr_CXXFLAGS = $(fad_expr_depth_CXXFLAGS)
 fad_expr_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
 fad_expr_LDADD = $(fad_expr_depth_LDADD)
+
+fad_lj_grad_SOURCES = fad_lj_grad.cpp
+fad_lj_grad_CXXFLAGS = $(fad_expr_depth_CXXFLAGS)
+fad_lj_grad_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+fad_lj_grad_LDADD = $(fad_expr_depth_LDADD)
 
 if ENABLE_ADOLC
 TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
