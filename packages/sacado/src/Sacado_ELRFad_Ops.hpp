@@ -192,11 +192,11 @@ FAD_UNARYOP_MACRO(atanh,
 FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
 		  std::abs(expr.val()),
-		  expr.val() >= 0 ? bar : -bar)
+		  (expr.val() >= value_type(0.)) ? bar : value_type(-bar))
 FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
 		  std::fabs(expr.val()),
-		  expr.val() >= 0 ? bar : -bar)
+		  (expr.val() >= value_type(0.)) ? bar : value_type(-bar))
 
 #undef FAD_UNARYOP_MACRO
 
