@@ -297,6 +297,7 @@ CORE_H = \
   $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
   $(srcdir)/Rythmos_InterpolatorBase.hpp\
   $(srcdir)/Rythmos_LinearInterpolator.hpp\
+  $(srcdir)/Rythmos_LinearTimeInvariantModelEvaluator.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
   $(srcdir)/Rythmos_SimpleIntegrator.hpp\
@@ -311,6 +312,7 @@ CORE_H = \
   $(srcdir)/Rythmos_StepperBase.hpp\
   $(srcdir)/Rythmos_StepperHelpers.hpp\
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
+  $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
   $(srcdir)/Rythmos_Types.hpp\

@@ -66,31 +66,28 @@ public:
 
   /** \brief . */
   friend bool Teuchos::operator==( const Array<T> &a1, const Array<T> &a2 )
-    { return a1.vec() == a2.vec(); }
+    { return (a1.vec() == a2.vec()); }
 
   /** \brief . */
   friend bool Teuchos::operator!=( const Array<T> &a1, const Array<T> &a2 )
-    { return a1.vec() != a2.vec(); }
-
-  /** \brief . */
-  friend bool Teuchos::operator>( const Array<T> &a1, const Array<T> &a2 )
-    { return a1.vec() > a2.vec(); }
-
-  /** \brief . */
-  friend bool Teuchos::operator>=( const Array<T> &a1, const Array<T> &a2 )
-    { return a1.vec() >= a2.vec(); }
-
-  /** \brief . */
-  friend bool Teuchos::operator<( const Array<T> &a1, const Array<T> &a2 )
-    { return a1.vec() < a2.vec(); }
-
-  /** \brief . */
-  friend bool Teuchos::operator<=( const Array<T> &a1, const Array<T> &a2 )
-    { return a1.vec() <= a2.vec(); }
+    { return (a1.vec() != a2.vec()); }
 
   /** \brief . */
   friend void swap( const Array<T> &a1, const Array<T> &a2 )
     { a1.swap(a2); }
+
+  /*
+  friend bool Teuchos::operator<( const Array<T> &a1, const Array<T> &a2 )
+    { return (a1.vec() < a2.vec()); }
+  friend bool Teuchos::operator<=( const Array<T> &a1, const Array<T> &a2 )
+    { return (a1.vec() <= a2.vec()); }
+  friend bool Teuchos::operator>=( const Array<T> &a1, const Array<T> &a2 )
+    { return (a1.vec() >= a2.vec()); }
+  friend bool Teuchos::operator>( const Array<T> &a1, const Array<T> &a2 )
+    { return (a1.vec() > a2.vec()); }
+  */
+  // 2007/11/14: rabartl: Above: The GCC 3.4.6 compiler complains about
+  // operator< not being supported by __gnu_cxx::__normal_iterator!
 
   /** \name std::vector typedefs */
   //@{
@@ -389,9 +386,23 @@ public:
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Array<T>& array);
 
-/** \relates Array */
-template<typename T>
+
+/** \brief Return the hash code.
+ *
+ * \relates Array.
+ */
+template<typename T> inline
 int hashCode(const Array<T>& array);
+
+
+/** \brief Copy conversion to an std::vector.
+ *
+ * This function is included for consistency with ArrayView.
+ *
+ * \relates Array.
+ */
+template<typename T> inline
+std::vector<T> createVector( const Array<T> &a );
 
 
 /** \brief Convert an array to a string representation.
@@ -1249,6 +1260,13 @@ int Teuchos::hashCode(const Array<T>& array)
     rtn += hashCode(array[i]);
   }
   return rtn;
+}
+
+
+template<typename T> inline
+std::vector<T> Teuchos::createVector( const Array<T> &a )
+{
+  return a.toVector();
 }
 
 

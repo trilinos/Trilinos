@@ -296,10 +296,10 @@ Thyra::get_Epetra_Vector(
   // First, try to grab the Epetra_Vector straight out of the
   // RCP since this is the fastest way.
   //
-  const RCP<Epetra_Vector>
-    *epetra_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
+  const Ptr<const RCP<Epetra_Vector> >
+    epetra_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
       v,"Epetra_Vector");
-  if(epetra_v_ptr) {
+  if(!is_null(epetra_v_ptr)) {
     return *epetra_v_ptr;
   }
   //
@@ -372,15 +372,15 @@ Thyra::get_Epetra_Vector(
   // First, try to grab the Epetra_Vector straight out of the
   // RCP since this is the fastest way.
   //
-  const RCP<const Epetra_Vector>
-    *epetra_v_ptr = get_optional_extra_data<RCP<const Epetra_Vector> >(
+  const Ptr<const RCP<const Epetra_Vector> >
+    epetra_v_ptr = get_optional_extra_data<RCP<const Epetra_Vector> >(
       v,"Epetra_Vector");
-  if(epetra_v_ptr)
+  if(!is_null(epetra_v_ptr))
     return *epetra_v_ptr;
-  const RCP<Epetra_Vector>
-    *epetra_nonconst_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
+  const Ptr<const RCP<Epetra_Vector> >
+    epetra_nonconst_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
       v,"Epetra_Vector");
-  if(epetra_nonconst_v_ptr)
+  if(!is_null(epetra_nonconst_v_ptr))
     return *epetra_nonconst_v_ptr;
   //
   // Same as above function except as stated below
@@ -438,10 +438,10 @@ Thyra::get_Epetra_MultiVector(
   // First, try to grab the Epetra_MultiVector straight out of the
   // RCP since this is the fastest way.
   //
-  const RCP<Epetra_MultiVector>
-    *epetra_mv_ptr = get_optional_extra_data<RCP<Epetra_MultiVector> >(
+  const Ptr<const RCP<Epetra_MultiVector> >
+    epetra_mv_ptr = get_optional_extra_data<RCP<Epetra_MultiVector> >(
       mv,"Epetra_MultiVector");
-  if(epetra_mv_ptr) {
+  if(!is_null(epetra_mv_ptr)) {
     return *epetra_mv_ptr;
   }
   //
@@ -516,11 +516,11 @@ Thyra::get_Epetra_MultiVector(
   // First, try to grab the Epetra_MultiVector straight out of the
   // RCP since this is the fastest way.
   //
-  const RCP<const Epetra_MultiVector>
-    *epetra_mv_ptr
+  const Ptr<const RCP<const Epetra_MultiVector> >
+    epetra_mv_ptr
     = get_optional_extra_data<RCP<const Epetra_MultiVector> >(
       mv,"Epetra_MultiVector" );
-  if(epetra_mv_ptr) {
+  if(!is_null(epetra_mv_ptr)) {
     return *epetra_mv_ptr;
   }
   //

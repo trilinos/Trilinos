@@ -202,15 +202,25 @@ Ptr<const T> constOptInArg( T& arg )
 }
 
 
-/** \brief Create a pointer to a non-const object from a non-const object
- * reference.
+/** \brief Create a pointer to a object from an object reference.
  *
  * \relates Ptr
  */
 template<typename T> inline
-Ptr<T> ptr( T& arg )
+Ptr<T> ptrRef( T& arg )
 {
   return Ptr<T>(&arg);
+}
+
+
+/** \brief Create a pointer to an object from a raw pointer.
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<T> ptr( T* p )
+{
+  return Ptr<T>(p);
 }
 
 
@@ -231,6 +241,62 @@ Ptr<const T> constPtr( T& arg )
 
 // 2007/11/07: rabartl: ToDo: Add the casting functions
 // ptr_[const,dynamic,static]_cast(...) to allow conversions.
+
+
+/** \brief Returns if is null or not.
+ *
+ * \relates Ptr
+ */
+template<class T> inline
+bool is_null( const Ptr<T> &p )
+{
+  return p.get() == 0;
+}
+
+
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
+ *
+ * \relates Ptr
+ */
+template<class T> inline
+bool operator==( const Ptr<T> &p, ENull )
+{
+  return p.get() == 0;
+}
+
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ *
+ * \relates Ptr
+ */
+template<class T>
+bool operator!=( const Ptr<T> &p, ENull )
+{
+  return p.get() != 0;
+}
+
+
+/** \brief Return true if two <tt>Ptr</tt> objects point to the same object.
+ *
+ * \relates Ptr
+ */
+template<class T1, class T2>
+bool operator==( const Ptr<T1> &p1, const Ptr<T2> &p2 )
+{
+  return p1.get() == p2.get();
+}
+
+
+/** \brief Return true if two <tt>Ptr</tt> objects do not point to the same
+ * object.
+ *
+ * \relates Ptr
+ */
+template<class T1, class T2>
+bool operator!=( const Ptr<T1> &p1, const Ptr<T2> &p2 )
+{
+  return p1.get() != p2.get();
+}
 
 
 /** \brief Traits specialization for Ptr.

@@ -27,18 +27,23 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef RTOPPACK_TYPES_HPP
 #define RTOPPACK_TYPES_HPP
+
 
 #include "RTOp_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TestForException.hpp"
 
+
 namespace RTOpPack {
+
 
 //
 // Basic types
 //
+
 
 /** \brief Depreciated . */
 typedef Teuchos_Index index_type;
@@ -47,9 +52,11 @@ typedef char  char_type;
 /** \brief . */
 typedef index_type Index;
 
+
 //
 // Exceptions
 //
+
 
 /** \brief . */
 class UnknownError : public std::logic_error
@@ -67,9 +74,11 @@ class InvalidNumTargVecs : public std::logic_error
 class IncompatibleVecs : public std::logic_error
 {public: IncompatibleVecs(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
+
 //
 // VectorBase subviews
 //
+
 
 /** \brief Class for a non-mutable sub-vector.
  *
@@ -97,30 +106,34 @@ public:
   /** \brief . */
   ConstSubVectorView() : globalOffset_(0), subDim_(0), values_(NULL), stride_(0) {}
   /** \brief . */
-  ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim, const Scalar *values, ptrdiff_t stride)
+  ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
+    const Scalar *values, ptrdiff_t stride)
     :globalOffset_(globalOffset), subDim_(subDim), values_(values), stride_(stride) 
     {}
   /** \brief . */
   ConstSubVectorView( const ConstSubVectorView<Scalar>& sv )
-    :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()), values_(sv.values()), stride_(sv.stride()) 
+    :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()),
+     values_(sv.values()), stride_(sv.stride()) 
     {}
   /** \brief . */
-  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim, const Scalar *values, ptrdiff_t stride)
-    { globalOffset_=globalOffset; subDim_=subDim; values_=values; stride_=stride;  }
+  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim,
+    const Scalar *values, ptrdiff_t stride)
+    { globalOffset_=globalOffset; subDim_=subDim; values_=values; stride_=stride; }
   /** \brief . */
   void set_uninitialized()
     { globalOffset_ = 0; subDim_=0; values_=NULL; stride_ = 0; }
   /** \brief . */
   void setGlobalOffset(Teuchos_Index globalOffset) { globalOffset_ = globalOffset; } 
   /** \brief . */
-  Teuchos_Index   globalOffset() const { return globalOffset_; }
+  Teuchos_Index globalOffset() const { return globalOffset_; }
   /** \brief . */
-  Teuchos_Index   subDim()       const { return subDim_;  }
+  Teuchos_Index subDim() const { return subDim_; }
   /** \brief . */
-  const Scalar*     values()       const { return values_;  }
+  const Scalar* values() const { return values_; }
   /** \brief . */
-  ptrdiff_t         stride()       const { return stride_;  }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  ptrdiff_t stride() const { return stride_; }
+  /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i
+   * < subDim())</tt>). */
   const Scalar& operator[](Teuchos_Index i) const
     {
 #ifdef TEUCHOS_DEBUG
@@ -131,14 +144,17 @@ public:
 #endif
       return values_[ stride_*i ];
     }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i
+   * < subDim())</tt>). */
   const Scalar& operator()(Teuchos_Index i) const { return (*this)[i]; }
 private:
-  Teuchos_Index     globalOffset_;
-  Teuchos_Index     subDim_;
-  const Scalar      *values_;
-  ptrdiff_t         stride_;
+  Teuchos_Index globalOffset_;
+  Teuchos_Index subDim_;
+  const Scalar *values_;
+  // 2007/11/14: rabartl: ToDo: Replace with ArrayRCP<Scalar>
+  ptrdiff_t stride_;
 };
+
 
 /** \brief Class for a mutable sub-vector.
  *
@@ -158,26 +174,33 @@ public:
   /** \brief . */
   SubVectorView() {}
   /** \brief . */
-  SubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim, Scalar *values, ptrdiff_t stride)
+  SubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
+    Scalar *values, ptrdiff_t stride)
     :ConstSubVectorView<Scalar>(globalOffset, subDim, values, stride)
-    {}
+     {}
   /** \brief . */
-  SubVectorView( const SubVectorView<Scalar> & sv)
+  SubVectorView(const SubVectorView<Scalar> & sv)
     :ConstSubVectorView<Scalar>(sv)
     {}
   /** \brief . */
-  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim, Scalar *values, ptrdiff_t stride)
+  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim,
+    Scalar *values, ptrdiff_t stride)
     { ConstSubVectorView<Scalar>::initialize(globalOffset, subDim, values, stride); }
   /** \brief . */
   void set_uninitialized()
     { ConstSubVectorView<Scalar>::set_uninitialized(); }
   /** \brief . */
-  Scalar* values() const { return const_cast<Scalar*>(ConstSubVectorView<Scalar>::values());  }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
-  Scalar& operator[](Teuchos_Index i) const { return const_cast<Scalar&>(ConstSubVectorView<Scalar>::operator[](i)); } // Is range changed in subclass!
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  Scalar* values() const
+    { return const_cast<Scalar*>(ConstSubVectorView<Scalar>::values());  }
+  /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i
+   * < subDim())</tt>). */
+  Scalar& operator[](Teuchos_Index i) const
+    { return const_cast<Scalar&>(ConstSubVectorView<Scalar>::operator[](i)); }
+  /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i
+   * < subDim())</tt>). */
   Scalar& operator()(Teuchos_Index i) const { return (*this)[i]; }
 };
+
 
 /** \brief Class for a (sparse or dense) sub-vector.
  *
@@ -319,43 +342,49 @@ public:
     }
   /** \brief . */
   void setGlobalOffset(Teuchos_Index globalOffset) { globalOffset_ = globalOffset; } 
-  /// Offset for the sub-vector into the global vector
-  Teuchos_Index                  globalOffset() const { return globalOffset_; } 
-  /// Dimension of the sub-vector
-  Teuchos_Index                  subDim() const { return subDim_; }
-  /// Number of nonzero elements (<tt>subNz == subDim</tt> for dense vectors)
-  Teuchos_Index                  subNz() const { return subNz_; }
-  /// Array (size min{|<tt>valueStride*subNz</tt>|,1}) for the values in the vector
-  const Scalar*                    values() const { return values_; }
-  /// Stride between elements in <tt>values[]</tt>
-  ptrdiff_t                        valuesStride() const { return valuesStride_; }
+  /** \brief Offset for the sub-vector into the global vector. */
+  Teuchos_Index globalOffset() const { return globalOffset_; } 
+  /** \brief Dimension of the sub-vector. */
+  Teuchos_Index subDim() const { return subDim_; }
+  /** \brief Number of nonzero elements (<tt>subNz == subDim</tt> for dense
+   * vectors). */
+  Teuchos_Index subNz() const { return subNz_; }
+  /** \brief Array (size min{|<tt>valueStride*subNz</tt>|,1}) for the values
+   * in the vector. */
+  const Scalar* values() const { return values_; }
+  /** \brief Stride between elements in <tt>values[]</tt>. */
+  ptrdiff_t valuesStride() const { return valuesStride_; }
   /** \brief Array (size min{|<tt>indicesStride*subNz</tt>|,1} if not <tt>NULL</tt>) for the
-    * indices of the nonzero elements in the vector (sparse vectors only)
-    */
-  const Teuchos_Index*           indices() const { return indices_; }
-  /// Stride between indices in indices[] (sparse vectors only)
-  ptrdiff_t                        indicesStride() const { return indicesStride_; }
-  /// Offset of indices[] into local sub-vector (sparse vectors only)
-  ptrdiff_t                        localOffset() const { return localOffset_; }
-  /// If <tt>isSorted == 0</tt> then the vector is not sorted, otherwise it is sorted (sparse vectors only)
-  int                              isSorted() const { return isSorted_; }
+   * indices of the nonzero elements in the vector (sparse vectors only)
+   */
+  const Teuchos_Index* indices() const { return indices_; }
+  /** \brief Stride between indices in indices[] (sparse vectors only). */
+  ptrdiff_t indicesStride() const { return indicesStride_; }
+  /** \brief Offset of indices[] into local sub-vector (sparse vectors
+   * only). */
+  ptrdiff_t localOffset() const { return localOffset_; }
+  /** \brief If <tt>isSorted == 0</tt> then the vector is not sorted,
+   * otherwise it is sorted (sparse vectors only). */
+  int isSorted() const { return isSorted_; }
 private:
-  Teuchos_Index                  globalOffset_;
-  Teuchos_Index                  subDim_;
-  Teuchos_Index                  subNz_;
-  const Scalar                     *values_;
-  ptrdiff_t                        valuesStride_;
-  const Teuchos_Index            *indices_;
-  ptrdiff_t                        indicesStride_;
-  ptrdiff_t                        localOffset_;
-  int                              isSorted_;
+  Teuchos_Index globalOffset_;
+  Teuchos_Index subDim_;
+  Teuchos_Index subNz_;
+  const Scalar *values_;
+  // 2007/11/14: rabartl: ToDo: Replace with ArrayRCP<Scalar>
+  ptrdiff_t valuesStride_;
+  const Teuchos_Index *indices_;
+  ptrdiff_t indicesStride_;
+  ptrdiff_t localOffset_;
+  int isSorted_;
 };
+
 
 template<class Scalar>
 void assign_entries( const SubVectorView<Scalar> *msv, const ConstSubVectorView<Scalar> &sv )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(msv==NULL);
+ TEST_FOR_EXCEPT(msv==NULL);
   TEST_FOR_EXCEPT(msv->subDim() != sv.subDim());
 #endif
   for( int i = 0; i < sv.subDim(); ++i ) {
@@ -363,9 +392,11 @@ void assign_entries( const SubVectorView<Scalar> *msv, const ConstSubVectorView<
   }
 }
 
+
 //
 // MultiVectorBase subviews
 //
+
 
 /** \brief Class for a non-mutable sub-multi-vector (submatrix).
  *
@@ -418,25 +449,27 @@ public:
     ,const Scalar *values, Teuchos_Index leadingDim
     )
     { globalOffset_=globalOffset; subDim_=subDim; colOffset_=colOffset; numSubCols_=numSubCols;
-    values_=values; leadingDim_=leadingDim; }
+      values_=values; leadingDim_=leadingDim; }
   /** \brief . */
   void set_uninitialized()
     { globalOffset_ = 0; subDim_=0; colOffset_=0, numSubCols_=0; values_=NULL; leadingDim_=0; }
   /** \brief . */
   void setGlobalOffset(Teuchos_Index globalOffset) { globalOffset_ = globalOffset; } 
   /** \brief . */
-  Teuchos_Index   globalOffset()   const { return globalOffset_; }
+  Teuchos_Index globalOffset() const { return globalOffset_; }
   /** \brief . */
-  Teuchos_Index   subDim()         const { return subDim_; }
+  Teuchos_Index subDim() const { return subDim_; }
   /** \brief . */
-  Teuchos_Index   colOffset()      const { return colOffset_; }
+  Teuchos_Index colOffset() const { return colOffset_; }
   /** \brief . */
-  Teuchos_Index   numSubCols()     const { return numSubCols_; }
+  Teuchos_Index numSubCols() const { return numSubCols_; }
   /** \brief . */
-  const Scalar*     values()         const { return values_; }
+  const Scalar* values() const { return values_; }
   /** \brief . */
-  Teuchos_Index   leadingDim()     const { return leadingDim_;  }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j< numSubCols()</tt>)
+  Teuchos_Index leadingDim() const { return leadingDim_; }
+  /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL &&
+   * (0<=i<subDim()) && (0<=j< numSubCols()</tt>).
+   */
   const Scalar& operator()(Teuchos_Index i, Teuchos_Index j) const
     {
 #ifdef TEUCHOS_DEBUG
@@ -451,7 +484,9 @@ public:
 #endif
       return values_[ i + leadingDim_*j ];
     }
-  /// Return a <tt>ConstSubVectorView</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && (0<=j<numSubCols()</tt>)
+  /** \brief Return a <tt>ConstSubVectorView</tt> view of the jth sub-column
+   * (Preconditions: <tt>values()!=NULL && (0<=j<numSubCols()</tt>).
+   */
   ConstSubVectorView<Scalar> col( const Teuchos_Index j ) const
     {
 #ifdef TEUCHOS_DEBUG
@@ -463,13 +498,15 @@ public:
       return ConstSubVectorView<Scalar>(globalOffset(),subDim(),values()+j*leadingDim(),1);
     }
 private:
-  Teuchos_Index     globalOffset_;
-  Teuchos_Index     subDim_;
-  Teuchos_Index     colOffset_;
-  Teuchos_Index     numSubCols_;
-  const Scalar        *values_;
-  Teuchos_Index     leadingDim_;
+  Teuchos_Index globalOffset_;
+  Teuchos_Index subDim_;
+  Teuchos_Index colOffset_;
+  Teuchos_Index numSubCols_;
+  const Scalar *values_;
+  // 2007/11/14: rabartl: ToDo: Replace with ArrayRCP<Scalar>
+  Teuchos_Index leadingDim_;
 };
+
 
 /** \brief Class for a mutable sub-vector.
  *
@@ -512,10 +549,14 @@ public:
     { ConstSubMultiVectorView<Scalar>::set_uninitialized(); }
   /** \brief . */
   Scalar* values() const { return const_cast<Scalar*>(ConstSubMultiVectorView<Scalar>::values());  }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0<=i< subDim()) && (0<=j<numSubCols()</tt>)
+   /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL && (0<=i<
+    * subDim()) && (0<=j<numSubCols()</tt>).
+    */
   Scalar& operator()(Teuchos_Index i, Teuchos_Index j) const
-    { return const_cast<Scalar&>(ConstSubMultiVectorView<Scalar>::operator()(i,j)); } // Is range checked in subclass
-  /// Return a <tt>SubVectorView</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && && (0<=j<numSubCols()</tt>)
+    { return const_cast<Scalar&>(ConstSubMultiVectorView<Scalar>::operator()(i,j)); }
+   /** \brief Return a <tt>SubVectorView</tt> view of the jth sub-column
+    * (Preconditions: <tt>values()!=NULL && && (0<=j<numSubCols()</tt>).
+    */
   SubVectorView<Scalar> col( const Teuchos_Index j ) const
     {
 #ifdef TEUCHOS_DEBUG
@@ -528,6 +569,8 @@ public:
     }
 };
 
+
+/** \brief . */
 template<class Scalar>
 void assign_entries( const SubMultiVectorView<Scalar> *msmv, const ConstSubMultiVectorView<Scalar> &smv )
 {
@@ -543,14 +586,17 @@ void assign_entries( const SubMultiVectorView<Scalar> *msmv, const ConstSubMulti
   }
 }
 
+
 //
 // Templated types
 //
 
+
 /** \brief . */
 template<class Scalar>  class RTOpT;
 
+
 } // namespace RTOpPack
 
-#endif // RTOPPACK_TYPES_HPP
 
+#endif // RTOPPACK_TYPES_HPP

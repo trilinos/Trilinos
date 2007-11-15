@@ -88,6 +88,7 @@ void scaleModelVar(
   using Teuchos::null;
   using Teuchos::rcp;
   using Teuchos::RCP;
+  using Teuchos::Ptr;
   using Teuchos::rcp_const_cast;
   typedef EpetraExt::ModelEvaluator EME;
 
@@ -108,11 +109,11 @@ void scaleModelVar(
       if ( is_null(scaled_vec) )
         scaled_vec = rcp(new Epetra_Vector(orig_vec->Map()));
       // See if there is a "hidden" forward scaling vector to use
-      RCP<const Epetra_Vector>
-        *fwd_s_vec
+      Ptr<RCP<const Epetra_Vector> >
+        fwd_s_vec
         = Teuchos::get_optional_extra_data<RCP<const Epetra_Vector> >(
           inv_s_vec, fwdScalingVecName );
-      if ( fwd_s_vec ) {
+      if ( !is_null(fwd_s_vec) ) {
         // Use the "hidden" forward scaling vector and multiply
         scaled_vec->Multiply( 1.0, **fwd_s_vec, *orig_vec, 0.0 );
       }

@@ -155,14 +155,14 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 
   {
     out << "\nTest copy conversion to and from Teuchos::Array and std::vector ...\n";
-    std::vector<T> v2 = a.toVector();
+    std::vector<T> v2 = createVector(a);
     Array<T> a2(v2);
     TEST_COMPARE_ARRAYS( a2, a );
   }
 
   {
     out << "\nTest assignment operator taking an std::vector ...\n";
-    std::vector<T> v2 = a.toVector();
+    std::vector<T> v2 = createVector(a);
     Array<T> a2;
     a2 = v2;
     TEST_COMPARE_ARRAYS( a2, a );
@@ -170,7 +170,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 
   {
     out << "\nTest construction using iterators ...\n";
-    std::vector<T> v2 = a.toVector();
+    std::vector<T> v2 = createVector(a);
     Array<T> a2(a.begin(),a.end());
     TEST_COMPARE_ARRAYS( a2, a );
   }
@@ -565,9 +565,15 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   }
 
   {
-    out << "\nTest operator==() ...\n";
+    out << "\nTest comparison operators ...\n";
     Array<T> a2(a);
-    TEST_EQUALITY( a2, a );
+    TEST_EQUALITY_CONST( (a2==a), true );
+    TEST_EQUALITY_CONST( (a2!=a), false );
+    // See Teuchos_Array.hpp
+    //TEST_EQUALITY_CONST( (a2<=a), true );
+    //TEST_EQUALITY_CONST( (a2>=a), true );
+    //TEST_EQUALITY_CONST( (a2<a), false );
+    //TEST_EQUALITY_CONST( (a2>a), false );
   }
 
   // ToDo: Add tests for all comparison operators!

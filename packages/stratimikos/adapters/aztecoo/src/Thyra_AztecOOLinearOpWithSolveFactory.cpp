@@ -726,10 +726,10 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       startingOver = false;
       // We must wipe out the old preconditoner if we are not reusing the
       // preconditioner
-      bool *constructedAztecPreconditioner = NULL;
+      Ptr<bool> constructedAztecPreconditioner;
       if(
         !reusePrec
-        && ( constructedAztecPreconditioner = get_optional_extra_data<bool>(
+        && !is_null( constructedAztecPreconditioner = get_optional_extra_data<bool>(
                aztecFwdSolver,"AOOLOWSF::constructedAztecPreconditoner") )
         && *constructedAztecPreconditioner
         )
@@ -739,10 +739,10 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       }
       // We must see if we set an external preconditioner but will not do so
       // again in which case we must blow away AztecOO and start over again!
-      bool *setPreconditionerOperator = NULL;
+      Ptr<bool> setPreconditionerOperator;
       if(
         localPrecType != PT_FROM_PREC_OP
-        && ( setPreconditionerOperator = get_optional_extra_data<bool>(
+        && !is_null( setPreconditionerOperator = get_optional_extra_data<bool>(
                aztecFwdSolver,"AOOLOWSF::setPreconditonerOperator") )
         && *setPreconditionerOperator
         )

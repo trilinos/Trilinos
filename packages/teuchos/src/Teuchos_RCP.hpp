@@ -148,11 +148,17 @@ T* RCP<T>::get() const {
 }
 
 template<class T>
+inline
+Ptr<T> RCP<T>::ptr() const {
+  return Ptr<T>(ptr_);
+}
+
+template<class T>
 REFCOUNTPTR_INLINE
-T* RCP<T>::release() {
+Ptr<T> RCP<T>::release() {
   if(node_)
     node_->has_ownership(false);
-  return ptr_;
+  return Ptr<T>(ptr_);
 }
 
 template<class T>
@@ -433,22 +439,24 @@ const T1& Teuchos::get_extra_data( const RCP<T2>& p, const std::string& name )
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-T1* Teuchos::get_optional_extra_data( RCP<T2>& p, const std::string& name )
+Teuchos::Ptr<T1>
+Teuchos::get_optional_extra_data( RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
   any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
-  if( extra_data ) return &any_cast<T1>(*extra_data);
-  return NULL;
+  if( extra_data ) return Ptr<T1>(&any_cast<T1>(*extra_data));
+  return null;
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-const T1* Teuchos::get_optional_extra_data( const RCP<T2>& p, const std::string& name )
+Teuchos::Ptr<const T1>
+Teuchos::get_optional_extra_data( const RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
   any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
-  if( extra_data ) return &any_cast<T1>(*extra_data);
-  return NULL;
+  if( extra_data ) return Ptr<const T1>(&any_cast<T1>(*extra_data));
+  return null;
 }
 
 template<class Dealloc_T, class T>
@@ -477,20 +485,20 @@ const Dealloc_T& Teuchos::get_dealloc( const RCP<T>& p )
 
 template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
-Dealloc_T*
+Teuchos::Ptr<Dealloc_T>
 Teuchos::get_optional_nonconst_dealloc( const RCP<T>& p )
 {
   p.assert_not_null();
   RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   if(dnode)
-    return &dnode->get_nonconst_dealloc();
-  return NULL;
+    return ptr(&dnode->get_nonconst_dealloc());
+  return null;
 }
 
 template<class Dealloc_T, class T>
 inline
-const Dealloc_T*
+Teuchos::Ptr<const Dealloc_T>
 Teuchos::get_optional_dealloc( const Teuchos::RCP<T>& p )
 {
   return get_optional_nonconst_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));

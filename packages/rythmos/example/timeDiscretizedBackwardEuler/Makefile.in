@@ -42,7 +42,6 @@
 # ***********************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -62,7 +61,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = example
+noinst_PROGRAMS = $(am__EXEEXT_1)
+subdir = example/timeDiscretizedBackwardEuler
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -93,21 +93,30 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Rythmos_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-dvi-recursive install-exec-recursive \
-	install-html-recursive install-info-recursive \
-	install-pdf-recursive install-ps-recursive install-recursive \
-	installcheck-recursive installdirs-recursive pdf-recursive \
-	ps-recursive uninstall-recursive
-RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
-  distclean-recursive maintainer-clean-recursive
+am__EXEEXT_1 = timeDiscretizedBackwardEuler$(EXEEXT)
+PROGRAMS = $(noinst_PROGRAMS)
+am_timeDiscretizedBackwardEuler_OBJECTS =  \
+	timeDiscretizedBackwardEulerMain.$(OBJEXT)
+timeDiscretizedBackwardEuler_OBJECTS =  \
+	$(am_timeDiscretizedBackwardEuler_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(timeDiscretizedBackwardEuler_SOURCES)
+DIST_SOURCES = $(timeDiscretizedBackwardEuler_SOURCES)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = basicExample diagonalTransient \
-	timeDiscretizedBackwardEuler epetra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -132,7 +141,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -146,7 +155,9 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -236,12 +247,55 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@@ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE@RYTHMOS_STRATIMIKOS_EXAMPLES = basicExample diagonalTransient timeDiscretizedBackwardEuler
-@ENABLE_RYTHMOS_NOX_EPETRA_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@@ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE@RYTHMOS_NOX_EXAMPLES = epetra
-SUBDIRS = $(RYTHMOS_STRATIMIKOS_EXAMPLES) $(RYTHMOS_NOX_EXAMPLES)
-all: all-recursive
+
+#
+# Actual programs
+#
+EXAMPLE = timeDiscretizedBackwardEuler
+timeDiscretizedBackwardEuler_SOURCES = \
+	 $(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+
+timeDiscretizedBackwardEuler_DEPENDENCIES = $(common_dependencies)
+timeDiscretizedBackwardEuler_LDADD = $(common_ldadd)
+
+#
+# Links
+#
+@ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE@LINK_DIAGONAL_AMESOS = timeDiscretizedBackwardEuler_amesos.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@LINK_DIAGONAL_AZTECOO = timeDiscretizedBackwardEuler_aztecoo.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_AZTECOO_IFPACK = timeDiscretizedBackwardEuler_aztecoo_ifpack.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_AZTECOO_ML = timeDiscretizedBackwardEuler_aztecoo_ml.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@LINK_DIAGONAL_BELOS = timeDiscretizedBackwardEuler_belos.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_BELOS_IFPACK = timeDiscretizedBackwardEuler_belos_ifpack.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_BELOS_ML = timeDiscretizedBackwardEuler_belos_ml.exe
+DIAGONAL_EXE_LINKS = \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
+
+
+#
+# Common stuff
+#
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a
+
+_EXPORT_INCLUDES = $(RYTHMOS_TEST_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_TEST_LIBS)
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(_EXPORT_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
+all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -251,9 +305,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/timeDiscretizedBackwardEuler/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/Makefile
+	  $(AUTOMAKE) --foreign  example/timeDiscretizedBackwardEuler/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -272,75 +326,47 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+timeDiscretizedBackwardEuler$(EXEEXT): $(timeDiscretizedBackwardEuler_OBJECTS) $(timeDiscretizedBackwardEuler_DEPENDENCIES) 
+	@rm -f timeDiscretizedBackwardEuler$(EXEEXT)
+	$(CXXLINK) $(timeDiscretizedBackwardEuler_OBJECTS) $(timeDiscretizedBackwardEuler_LDADD) $(LIBS)
 
-$(RECURSIVE_CLEAN_TARGETS):
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeDiscretizedBackwardEulerMain.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+timeDiscretizedBackwardEulerMain.o: $(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT timeDiscretizedBackwardEulerMain.o -MD -MP -MF $(DEPDIR)/timeDiscretizedBackwardEulerMain.Tpo -c -o timeDiscretizedBackwardEulerMain.o `test -f '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp' || echo '$(srcdir)/'`$(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/timeDiscretizedBackwardEulerMain.Tpo $(DEPDIR)/timeDiscretizedBackwardEulerMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/timeDiscretizedBackwardEulerMain.cpp' object='timeDiscretizedBackwardEulerMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o timeDiscretizedBackwardEulerMain.o `test -f '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp' || echo '$(srcdir)/'`$(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+
+timeDiscretizedBackwardEulerMain.obj: $(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT timeDiscretizedBackwardEulerMain.obj -MD -MP -MF $(DEPDIR)/timeDiscretizedBackwardEulerMain.Tpo -c -o timeDiscretizedBackwardEulerMain.obj `if test -f '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; then $(CYGPATH_W) '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/timeDiscretizedBackwardEulerMain.Tpo $(DEPDIR)/timeDiscretizedBackwardEulerMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/timeDiscretizedBackwardEulerMain.cpp' object='timeDiscretizedBackwardEulerMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o timeDiscretizedBackwardEulerMain.obj `if test -f '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; then $(CYGPATH_W) '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -352,23 +378,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	  empty_fix=.; \
-	else \
-	  include_option=--include; \
-	  empty_fix=; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test ! -f $$subdir/TAGS || \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -381,7 +394,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -429,37 +442,19 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || $(MKDIR_P) "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    distdir=`$(am__cd) $(distdir) && pwd`; \
-	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="$$top_distdir" \
-	        distdir="$$distdir/$$subdir" \
-		am__remove_distdir=: \
-		am__skip_length_check=: \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
-all-am: Makefile all-local
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+check: check-am
+all-am: Makefile $(PROGRAMS) all-local
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -475,78 +470,106 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
 install-data-am:
 
-install-dvi: install-dvi-recursive
+install-dvi: install-dvi-am
 
 install-exec-am:
 
-install-html: install-html-recursive
+install-html: install-html-am
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
-install-pdf: install-pdf-recursive
+install-pdf: install-pdf-am
 
-install-ps: install-ps-recursive
+install-ps: install-ps-am
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am:
 
-.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
-	install-strip
+.MAKE: install-am install-strip
 
-.PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am all-local check check-am clean clean-generic ctags \
-	ctags-recursive distclean distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-recursive uninstall uninstall-am
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am
 
 
-all-local:
+all-local: $(DIAGONAL_EXE_LINKS)
+	@echo ""
+	@echo "rythmos/example/timeDiscretizedBackwardEuler built successfully."
+	@echo ""
+
+timeDiscretizedBackwardEuler_amesos.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+timeDiscretizedBackwardEuler_aztecoo.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+timeDiscretizedBackwardEuler_aztecoo_ifpack.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+timeDiscretizedBackwardEuler_aztecoo_ml.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+timeDiscretizedBackwardEuler_belos.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+timeDiscretizedBackwardEuler_belos_ifpack.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+timeDiscretizedBackwardEuler_belos_ml.exe: timeDiscretizedBackwardEuler.exe
+	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

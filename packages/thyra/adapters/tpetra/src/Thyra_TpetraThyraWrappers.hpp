@@ -30,9 +30,9 @@ objects in %Thyra object and for getting %Tpetra views of %Thyra objects.
  * <tt>return.get()==NULL</tt>.
  */
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<const Teuchos::Comm<Index> >
+RCP<const Teuchos::Comm<Index> >
 create_Comm(
-  const Teuchos::RCP<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
+  const RCP<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
   );
 
 /** \brief Concrete an <tt>SpmdVectorSpaceBase</tt> object given an
@@ -58,9 +58,9 @@ create_Comm(
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const SpmdVectorSpaceDefaultBase<Scalar> >
+RCP<const SpmdVectorSpaceDefaultBase<Scalar> >
 create_VectorSpace(
-  const Teuchos::RCP<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
+  const RCP<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
   );
 
 /** \brief Create a non-<tt>const</tt> <tt>SpmdVectorBase</tt> object from
@@ -87,10 +87,10 @@ create_VectorSpace(
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<SpmdVectorBase<Scalar> >
+RCP<SpmdVectorBase<Scalar> >
 create_Vector(
-  const Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >      &tpetra_v
-  ,const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >   &space       = Teuchos::null
+  const RCP<Tpetra::Vector<Ordinal,Scalar> >      &tpetra_v
+  ,const RCP<const SpmdVectorSpaceBase<Scalar> >   &space       = Teuchos::null
   );
 
 /** \brief Create an <tt>const</tt> <tt>SpmdVectorBase</tt> wrapper object
@@ -114,10 +114,10 @@ create_Vector(
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const SpmdVectorBase<Scalar> >
+RCP<const SpmdVectorBase<Scalar> >
 create_Vector(
-  const Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> >  &tpetra_v
-  ,const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >     &space       = Teuchos::null
+  const RCP<const Tpetra::Vector<Ordinal,Scalar> >  &tpetra_v
+  ,const RCP<const SpmdVectorSpaceBase<Scalar> >     &space       = Teuchos::null
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Tpetra::Vector</tt> view from a
@@ -128,7 +128,7 @@ create_Vector(
  * <li> <tt>tpetra_vs</tt> must be compatible with <tt>*v.space()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> ></tt> object is already
+ * If a <tt>RCP<Tpetra::Vector<Ordinal,Scalar> ></tt> object is already
  * attached to the node of the smart pointer for <tt>v</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*v</tt> is
  * created and returned.  In the latter case the smart pointer <tt>v</tt> is
@@ -143,10 +143,10 @@ create_Vector(
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
+RCP<Tpetra::Vector<Ordinal,Scalar> >
 get_Tpetra_Vector(
   const Tpetra::VectorSpace<Ordinal,Scalar>           &tpetra_vs
-  ,const Teuchos::RCP<VectorBase<Scalar> >    &v
+  ,const RCP<VectorBase<Scalar> >    &v
   );
 
 /** \brief Get a <tt>const</tt> <tt>Tpetra::Vector</tt> view from a
@@ -157,7 +157,7 @@ get_Tpetra_Vector(
  * <li> <tt>tpetra_vs</tt> must be compatible with <tt>*v.space()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> ></tt> object is already
+ * If a <tt>RCP<Tpetra::Vector<Ordinal,Scalar> ></tt> object is already
  * attached to the node of the smart pointer for <tt>v</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*v</tt> is
  * created and returned.  In the latter case the smart pointer <tt>v</tt> is
@@ -169,10 +169,10 @@ get_Tpetra_Vector(
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> >
+RCP<const Tpetra::Vector<Ordinal,Scalar> >
 get_Tpetra_Vector(
   const Tpetra::VectorSpace<Ordinal,Scalar>                &tpetra_vs
-  ,const Teuchos::RCP<const VectorBase<Scalar> >   &v
+  ,const RCP<const VectorBase<Scalar> >   &v
   );
 /** \brief Get smart pointer to non-<tt>const</tt>
  * <tt>Tpetra::Operator</tt> object from reference to a
@@ -200,7 +200,7 @@ get_Tpetra_Vector(
  * \ingroup Tpetra_Thyra_Op_Vec_get_Tpetra_Operator_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >
+RCP<Tpetra::Operator<Ordinal,Scalar> >
 get_Tpetra_Operator( LinearOpBase<Scalar> &op );
 
 /** \brief Get smart pointer to <tt>const</tt>
@@ -229,7 +229,7 @@ get_Tpetra_Operator( LinearOpBase<Scalar> &op );
  * \ingroup Tpetra_Thyra_Op_Vec_get_Tpetra_Operator_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >
+RCP<const Tpetra::Operator<Ordinal,Scalar> >
 get_Tpetra_Operator( const LinearOpBase<Scalar> &op );
 
 } // namespace Thyra
@@ -252,7 +252,7 @@ class CopyFromTpetraToThyraVector {
 public:
   CopyFromTpetraToThyraVector(
     Tpetra::Vector<Ordinal,Scalar>                          const& tpetra_v
-    ,Teuchos::RCP<DetachedVectorView<Scalar> > const& detachedView
+    ,RCP<DetachedVectorView<Scalar> > const& detachedView
     )
     :tpetra_v_(tpetra_v),detachedView_(detachedView)
     {}
@@ -263,7 +263,7 @@ public:
     }
 private:
   Tpetra::Vector<Ordinal,Scalar> const& tpetra_v_; // Can not be a RCP due to circular references!
-  Teuchos::RCP<DetachedVectorView<Scalar> > detachedView_;
+  RCP<DetachedVectorView<Scalar> > detachedView_;
   // Not defined and not to be called
   CopyFromTpetraToThyraVector();
   CopyFromTpetraToThyraVector(const CopyFromTpetraToThyraVector&);
@@ -274,12 +274,11 @@ private:
 } // namespace Thyra
 
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
+RCP<const Teuchos::Comm<Thyra::Index> >
 Thyra::create_Comm(
-  const Teuchos::RCP<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
+  const RCP<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
   )
 {
-  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::set_extra_data;
@@ -314,19 +313,19 @@ Thyra::create_Comm(
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const Thyra::SpmdVectorSpaceDefaultBase<Scalar> >
+RCP<const Thyra::SpmdVectorSpaceDefaultBase<Scalar> >
 Thyra::create_VectorSpace(
-  const Teuchos::RCP<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
+  const RCP<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
   )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( !tpetra_vs.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
-  Teuchos::RCP<const Teuchos::Comm<Index> >
+  RCP<const Teuchos::Comm<Index> >
     comm = create_Comm(Teuchos::rcp(&tpetra_vs->comm(),false)).assert_not_null();
   Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", &comm );
   const Index localSubDim = tpetra_vs->getNumMyEntries();
-  Teuchos::RCP<DefaultSpmdVectorSpace<Scalar> >
+  RCP<DefaultSpmdVectorSpace<Scalar> >
     vs = Teuchos::rcp(
       new DefaultSpmdVectorSpace<Scalar>(
         comm
@@ -346,15 +345,15 @@ Thyra::create_VectorSpace(
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<Thyra::SpmdVectorBase<Scalar> >
+RCP<Thyra::SpmdVectorBase<Scalar> >
 Thyra::create_Vector(
-  const Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >             &tpetra_v
-  ,const Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >   &space_in
+  const RCP<Tpetra::Vector<Ordinal,Scalar> >             &tpetra_v
+  ,const RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >   &space_in
   )
 {
   if(!tpetra_v.get()) return Teuchos::null;
   // Create the space if it is missing
-  Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >
+  RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >
     space = space_in;
   if(!space.get())
     space =
@@ -364,22 +363,22 @@ Thyra::create_Vector(
   // New local view of raw data
   Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
-  Teuchos::RCP<SpmdVectorBase<Scalar> >
+  RCP<SpmdVectorBase<Scalar> >
     v = Teuchos::rcp(new DefaultSpmdVector<Scalar>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const Thyra::SpmdVectorBase<Scalar> >
+RCP<const Thyra::SpmdVectorBase<Scalar> >
 Thyra::create_Vector(
-  const Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> >       &tpetra_v
-  ,const Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >   &space_in
+  const RCP<const Tpetra::Vector<Ordinal,Scalar> >       &tpetra_v
+  ,const RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >   &space_in
   )
 {
   if(!tpetra_v.get()) return Teuchos::null;
   // Create the space if it is missing
-  Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >
+  RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >
     space = space_in;
   if(!space.get())
     space =
@@ -389,26 +388,29 @@ Thyra::create_Vector(
   // New local view of raw data
   const Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
-  Teuchos::RCP<const SpmdVectorBase<Scalar> >
+  RCP<const SpmdVectorBase<Scalar> >
     v = Teuchos::rcp(new DefaultSpmdVector<Scalar>(space,Teuchos::rcp(const_cast<Scalar*>(localValues),false),1));
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
+RCP<Tpetra::Vector<Ordinal,Scalar> >
 Thyra::get_Tpetra_Vector(
   const Tpetra::VectorSpace<Ordinal,Scalar>                  &tpetra_vs
-  ,const Teuchos::RCP<Thyra::VectorBase<Scalar> >    &v
+  ,const RCP<Thyra::VectorBase<Scalar> >    &v
   )
 {
+  
+  using Teuchos::get_optional_extra_data;
+  
   //
   // Warning! There is some advanced stuff going on here using RCP and extra
   // data.  This code is not fragile but you have to know what you are doing
   // if you are going to modify it!
   //
 #ifdef TEUCHOS_DEBUG
-  Teuchos::RCP<const VectorSpaceBase<Scalar> >
+  RCP<const VectorSpaceBase<Scalar> >
     thyra_vs = create_VectorSpace<Ordinal,Scalar>(Teuchos::rcp(&tpetra_vs,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
 #endif
@@ -416,9 +418,9 @@ Thyra::get_Tpetra_Vector(
   // First, try to grab the Tpetra::Vector straight out of the
   // RCP since this is the fastest way.
   //
-  const Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
-    *tpetra_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
-  if(tpetra_v_ptr) {
+  const Ptr<const RCP<Tpetra::Vector<Ordinal,Scalar> > > tpetra_v_ptr =
+    get_optional_extra_data<RCP<Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
+  if(!is_null(tpetra_v_ptr)) {
     return *tpetra_v_ptr;
   }
   //
@@ -439,14 +441,14 @@ Thyra::get_Tpetra_Vector(
   // "remembered" by 'detachedView' so that 'v' will not go away until the //
   // detached view is copied back.
   //
-  Teuchos::RCP<DetachedVectorView<Scalar> >
+  RCP<DetachedVectorView<Scalar> >
     detachedView = Teuchos::rcp(
       new DetachedVectorView<Scalar>(
         v,Range1D(localOffset,localOffset+localSubDim-1)
         )
       );
   // Create a temporary Tpetra::Vector object and copy the local data into it.
-  Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
+  RCP<Tpetra::Vector<Ordinal,Scalar> >
     tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
   for( Index i = 0; i < detachedView->subDim(); ++i )
     (*tpetra_v)[i] = (*detachedView)[i];
@@ -473,14 +475,15 @@ Thyra::get_Tpetra_Vector(
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> >
+RCP<const Tpetra::Vector<Ordinal,Scalar> >
 Thyra::get_Tpetra_Vector(
   const Tpetra::VectorSpace<Ordinal,Scalar>                       &tpetra_vs
-  ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> >   &v
+  ,const RCP<const Thyra::VectorBase<Scalar> >   &v
   )
 {
+  using Teuchos::get_optional_extra_data;
 #ifdef TEUCHOS_DEBUG
-  Teuchos::RCP<const VectorSpaceBase<Scalar> >
+  RCP<const VectorSpaceBase<Scalar> >
     thyra_vs = create_VectorSpace<Ordinal,Scalar>(Teuchos::rcp(&tpetra_vs,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
 #endif
@@ -488,13 +491,13 @@ Thyra::get_Tpetra_Vector(
   // First, try to grab the Tpetra::Vector straight out of the
   // RCP since this is the fastest way.
   //
-  const Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> >
-    *tpetra_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
-  if(tpetra_v_ptr)
+  const Ptr<const RCP<const Tpetra::Vector<Ordinal,Scalar> > > tpetra_v_ptr =
+    get_optional_extra_data<RCP<const Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
+  if(!is_null(tpetra_v_ptr))
     return *tpetra_v_ptr;
-  const Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
-    *tpetra_nonconst_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
-  if(tpetra_nonconst_v_ptr)
+  const Ptr<const RCP<Tpetra::Vector<Ordinal,Scalar> > > tpetra_nonconst_v_ptr =
+    get_optional_extra_data<RCP<Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
+  if(!is_null(tpetra_nonconst_v_ptr))
     return *tpetra_nonconst_v_ptr;
   //
   // The assumption that we (rightly) make here is that if the vector spaces
@@ -514,14 +517,14 @@ Thyra::get_Tpetra_Vector(
   // "remembered" by 'detachedView' so that 'v' will not go away until the
   // detached view is finished being used and is destroyed.
   //
-  Teuchos::RCP<ConstDetachedVectorView<Scalar> >
+  RCP<ConstDetachedVectorView<Scalar> >
     detachedView = Teuchos::rcp(
       new ConstDetachedVectorView<Scalar>(
         v,Range1D(localOffset,localOffset+localSubDim-1)
         )
       );
   // Create a temporary Tpetra::Vector object and copy the local data into it.
-  Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
+  RCP<Tpetra::Vector<Ordinal,Scalar> >
     tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
   for( Index i = 0; i < detachedView->subDim(); ++i )
     (*tpetra_v)[i] = (*detachedView)[i];
@@ -534,14 +537,14 @@ Thyra::get_Tpetra_Vector(
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >
+RCP<Tpetra::Operator<Ordinal,Scalar> >
 Thyra::get_Tpetra_Operator( Thyra::LinearOpBase<Scalar> &op )
 {
   return Teuchos::dyn_cast<TpetraLinearOp<Ordinal,Scalar> >(op).getNonconstTpetraOp();
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >
+RCP<const Tpetra::Operator<Ordinal,Scalar> >
 Thyra::get_Tpetra_Operator( const Thyra::LinearOpBase<Scalar> &op )
 {
   return Teuchos::dyn_cast<const TpetraLinearOp<Ordinal,Scalar> >(op).getTpetraOp();

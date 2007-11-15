@@ -493,6 +493,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/basicExample/Makefile
 		example/diagonalTransient/Makefile
+		example/timeDiscretizedBackwardEuler/Makefile
 		example/epetra/Makefile
 		example/epetra/1Dfem/Makefile
 		test/Makefile

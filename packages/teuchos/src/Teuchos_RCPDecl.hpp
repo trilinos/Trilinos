@@ -36,6 +36,7 @@
 
 
 #include "Teuchos_RCPNode.hpp"
+#include "Teuchos_Ptr.hpp"
 #include "Teuchos_ENull.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
 
@@ -499,9 +500,13 @@ public:
    * </ul>
    */
   T& operator*() const;
-    /** \brief Get the raw C++ pointer to the underlying object.
+  /** \brief Get the raw C++ pointer to the underlying object.
+   *
+   * NOTE: Prefer to get the safer Ptr<T> object from ptr()!
    */
   T* get() const;
+  /** \brief Get a safer wrapper raw C++ pointer to the underlying object. */
+  Ptr<T> ptr() const;
   /** \brief Release the ownership of the underlying dynamically allocated object.
    *
    * After this function is called then the client is responsible for
@@ -523,7 +528,7 @@ public:
    *
    * @return Returns the value of <tt>this->get()</tt>
    */
-  T* release();
+  Ptr<T> release();
   /** \brief Return the number of <tt>RCP<></tt> objects that have a reference
    * to the underlying pointer that is being shared.
    *
@@ -1004,16 +1009,8 @@ RCP<T2> rcp_const_cast(const RCP<T1>& p1);
  */
 template<class T2, class T1>
 RCP<T2> rcp_dynamic_cast(
-  const RCP<T1>& p1
-  ,bool throw_on_fail
-#ifndef __sun
-  = false
-#endif
+  const RCP<T1>& p1, bool throw_on_fail = false
   );
-#ifdef __sun // RAB: 20041019: Sun needs to fix their compiler
-template<class T2, class T1> inline RCP<T2> rcp_dynamic_cast( const RCP<T1>& p1 )
-{ return rcp_dynamic_cast<T2>(p1,false); }
-#endif
 
 
 /** \brief Set extra data associated with a <tt>RCP</tt> object.
@@ -1160,7 +1157,7 @@ const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
  * \relates RCP
  */
 template<class T1, class T2>
-T1* get_optional_extra_data( RCP<T2>& p, const std::string& name );
+Ptr<T1> get_optional_extra_data( RCP<T2>& p, const std::string& name );
 
 
 /** \brief Get a pointer to const extra data (if it exists) associated with a
@@ -1194,7 +1191,7 @@ T1* get_optional_extra_data( RCP<T2>& p, const std::string& name );
  * \relates RCP
  */
 template<class T1, class T2>
-const T1* get_optional_extra_data( const RCP<T2>& p, const std::string& name );
+Ptr<const T1> get_optional_extra_data( const RCP<T2>& p, const std::string& name );
 
 
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator
@@ -1242,7 +1239,7 @@ const Dealloc_T& get_dealloc( const RCP<T>& p );
  * \relates RCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T* get_optional_nonconst_dealloc( const RCP<T>& p );
+Ptr<Dealloc_T> get_optional_nonconst_dealloc( const RCP<T>& p );
 
 
 /** \brief Return a pointer to the underlying <tt>const</tt> deallocator
@@ -1260,7 +1257,7 @@ Dealloc_T* get_optional_nonconst_dealloc( const RCP<T>& p );
  * \relates RCP
  */
 template<class Dealloc_T, class T>
-const Dealloc_T* get_optional_dealloc( const RCP<T>& p );
+Ptr<const Dealloc_T> get_optional_dealloc( const RCP<T>& p );
 
 
 /** \brief Get a const reference to an embedded object that was set by calling
