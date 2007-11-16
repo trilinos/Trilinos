@@ -2813,14 +2813,14 @@ Returns the Epetra_Map object associated with the range of this
 operator. ";
 
 
-// File: classAnasazi_1_1EpetraWSymMVOp.xml
-%feature("docstring") Anasazi::EpetraWSymMVOp "
+// File: classAnasazi_1_1EpetraW2SymMVOp.xml
+%feature("docstring") Anasazi::EpetraW2SymMVOp "
 
 Adapter class for creating a weighted symmetric operator from an
 Epetra_MultiVector and Epetra_Operator.
 
 This class will apply the operation $(WA)^T*WA$ for the Apply method
-of the Anasazi::Operator. The Anasazi::EpetraWSymMvOp operator is
+of the Anasazi::Operator. The Anasazi::EpetraW2SymMvOp operator is
 useful when trying to compute a few singular values of the
 Epetra_MultiVector $A$ under the weighting matrix $W$. The singular
 values are the square-root of the eigenvalues of $(WA)^T*WA$.
@@ -2830,13 +2830,45 @@ Epetra with Anasazi will only provide a double-precision eigensolver.
 
 C++ includes: AnasaziEpetraAdapter.hpp ";
 
+%feature("docstring")  Anasazi::EpetraW2SymMVOp::EpetraW2SymMVOp "Anasazi::EpetraW2SymMVOp::EpetraW2SymMVOp(const Teuchos::RCP< const
+Epetra_MultiVector > &MV, const Teuchos::RCP< Epetra_Operator > &OP)
+
+Basic constructor for applying operator $A^T*W*A$. ";
+
+%feature("docstring")  Anasazi::EpetraW2SymMVOp::~EpetraW2SymMVOp "Anasazi::EpetraW2SymMVOp::~EpetraW2SymMVOp()
+
+Destructor. ";
+
+%feature("docstring")  Anasazi::EpetraW2SymMVOp::Apply "void
+Anasazi::EpetraW2SymMVOp::Apply(const MultiVec< double > &X, MultiVec<
+double > &Y) const
+
+Apply method.
+
+This method will apply $(WA)^T*WA$ to X, returning Y. ";
+
+
+// File: classAnasazi_1_1EpetraWSymMVOp.xml
+%feature("docstring") Anasazi::EpetraWSymMVOp "
+
+Adapter class for creating a weighted operator from an
+Epetra_MultiVector and Epetra_Operator.
+
+This class will apply the operation $A^T*W*A$ for the Apply method of
+the Anasazi::Operator. The Anasazi::EpetraWSymMvOp operator is useful
+when trying to compute a few singular values of the Epetra_MultiVector
+$A$ under the weighting matrix $W$. The singular values are the
+square-root of the eigenvalues of $A^T*W*A$.
+
+The Epetra package performs double-precision arithmetic, so the use of
+Epetra with Anasazi will only provide a double-precision eigensolver.
+
+C++ includes: AnasaziEpetraAdapter.hpp ";
+
 %feature("docstring")  Anasazi::EpetraWSymMVOp::EpetraWSymMVOp "Anasazi::EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RCP< const
 Epetra_MultiVector > &MV, const Teuchos::RCP< Epetra_Operator > &OP)
 
-Basic constructor for applying operator $A^TA$ [default] or $AA^T$.
-
-If isTrans is false this operator will apply $A^TA$, else it will
-apply $AA^T$. ";
+Basic constructor for applying operator $A^T*W*A$. ";
 
 %feature("docstring")  Anasazi::EpetraWSymMVOp::~EpetraWSymMVOp "Anasazi::EpetraWSymMVOp::~EpetraWSymMVOp()
 

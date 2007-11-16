@@ -120,7 +120,7 @@ row.
 
 An alternative is possible if you do not want to provide a non-trivial
 implementation of the ExtraMyEntryView methods (See
-Epetra_VbrRowMatrix for and example): Implement ExtractMyRowCopy and
+Epetra_VbrRowMatrix for an example): Implement ExtractMyRowCopy and
 NumMyRowEntries as above.
 
 Implement ExtractMyEntryView (both versions) returning a -1 integer

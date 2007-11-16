@@ -1271,8 +1271,8 @@ Teuchos::throwScalarTraitsNanInfError(const std::string &errMsg) ";
 
 %feature("docstring")
 Teuchos::Exceptions::updateParametersFromXmlFile "void
-Teuchos::updateParametersFromXmlFile(const std::string
-&xmlFileName,Teuchos::ParameterList *paramList)
+Teuchos::updateParametersFromXmlFile(const std::string &xmlFileName,
+Teuchos::ParameterList *paramList)
 
 Reads XML parameters from a file and updates those already in the
 given parameter list.
@@ -1287,10 +1287,22 @@ paramList:  [in/out] On input, *paramList may be empty or contain some
 parameters and sublists. On output, parameters and sublist from the
 file xmlFileName will be set or overide those in *paramList. ";
 
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP< ParameterList > Teuchos::getParametersFromXmlFile(const
+std::string &xmlFileName)
+
+Reads XML parameters from a file and return them in a new parameter
+list.
+
+Parameters:
+-----------
+
+xmlFileName:  [in] The file name containing XML parameter list
+specification. ";
+
 %feature("docstring")
 Teuchos::Exceptions::updateParametersFromXmlString "void
-Teuchos::updateParametersFromXmlString(const std::string
-&xmlStr,Teuchos::ParameterList *paramList)
+Teuchos::updateParametersFromXmlString(const std::string &xmlStr,
+Teuchos::ParameterList *paramList)
 
 Reads XML parameters from a std::string and updates those already in
 the given parameter list.
@@ -1304,10 +1316,22 @@ paramList:  [in/out] On input, *paramList may be empty or contain some
 parameters and sublists. On output, parameters and sublist from the
 file xmlStr will be set or overide those in *paramList. ";
 
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
+"RCP< ParameterList > Teuchos::getParametersFromXmlString(const
+std::string &xmlStr)
+
+Reads XML parameters from a std::string and return them in a new
+parameter list.
+
+Parameters:
+-----------
+
+xmlStr:  [in] String containing XML parameter list specification. ";
+
 %feature("docstring")
 Teuchos::Exceptions::writeParameterListToXmlOStream "void
 Teuchos::writeParameterListToXmlOStream(const Teuchos::ParameterList
-&paramList,std::ostream &xmlOut)
+&paramList, std::ostream &xmlOut)
 
 Write parameters and sublists in XML format to an std::ostream.
 
@@ -1322,7 +1346,7 @@ xmlOut:  [in] The stream that will get the XML output. ";
 %feature("docstring")
 Teuchos::Exceptions::writeParameterListToXmlFile "void
 Teuchos::writeParameterListToXmlFile(const Teuchos::ParameterList
-&paramList,const std::string &xmlFileName)
+&paramList, const std::string &xmlFileName)
 
 Write parameters and sublist to an XML file.
 
