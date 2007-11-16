@@ -164,7 +164,7 @@ using Teuchos::RCP;
 %rename (buildSolver) myBuildSolver;
 %nox_solver_exception(myBuildSolver)
 // NOX::Solver::buildSolver in NOX_Solver_Factory.H returns a
-// Teuchos::RCP<NOX::Solver::Generic>.  As far as I can tall, SWIG
+// Teuchos::RCP<NOX::Solver::Generic>.  As far as I can tell, SWIG
 // cannot properly upcast the NOX::Solver::Generic object wrapped
 // within the Teuchos::RCP<> in order to, say, call its solve()
 // method.  Therefore, I write my own wrapper around buildSolver()
@@ -189,29 +189,29 @@ using Teuchos::RCP;
     // Build a NOX::Solver::Generic object via the buildSolver factory
     Teuchos::RCP<NOX::Solver::Generic> rcp_solver =
       NOX::Solver::buildSolver(grp, tests, params);
-    NOX::Solver::Generic * solver_ptr = rcp_solver.release();
+    Teuchos::Ptr<NOX::Solver::Generic> solver_ptr = rcp_solver.release();
     // Try to upcast to a derived class
     {
       NOX::Solver::LineSearchBased * result =
-	reinterpret_cast<NOX::Solver::LineSearchBased*>(solver_ptr);
+	reinterpret_cast<NOX::Solver::LineSearchBased*>(solver_ptr.get());
       if (result)
 	return SWIG_NewPointerObj(result, swig_NSLSB_ptr, 1);
     }
     {
       NOX::Solver::TrustRegionBased * result =
-	reinterpret_cast<NOX::Solver::TrustRegionBased*>(solver_ptr);
+	reinterpret_cast<NOX::Solver::TrustRegionBased*>(solver_ptr.get());
       if (result)
 	return SWIG_NewPointerObj(result, swig_NSTRB_ptr, 1);
     }
     {
       NOX::Solver::InexactTrustRegionBased * result =
-	reinterpret_cast<NOX::Solver::InexactTrustRegionBased*>(solver_ptr);
+	reinterpret_cast<NOX::Solver::InexactTrustRegionBased*>(solver_ptr.get());
       if (result)
 	return SWIG_NewPointerObj(result, swig_NSITRB_ptr, 1);
     }
     {
       NOX::Solver::TensorBased * result =
-	reinterpret_cast<NOX::Solver::TensorBased*>(solver_ptr);
+	reinterpret_cast<NOX::Solver::TensorBased*>(solver_ptr.get());
       if (result)
 	return SWIG_NewPointerObj(result, swig_NSTB_ptr, 1);
     }
