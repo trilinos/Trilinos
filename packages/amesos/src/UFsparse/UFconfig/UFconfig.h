@@ -85,8 +85,8 @@ extern "C" {
  *  CHOLMOD	version 1.1.0
  *  CSparse	version 2.0.0
  *  CXSparse	version 2.0.1
- *  KLU		version 0.9
- *  BTF		version 0.9
+ *  KLU		version 1.0
+ *  BTF		version 1.0
  *  LDL		version 1.3
  *  UFconfig	version number is the same as UFsparse
  *  UMFPACK	version 5.0.0
