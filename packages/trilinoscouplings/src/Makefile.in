@@ -101,6 +101,8 @@ AR = ar
 ARFLAGS = cru
 libtrilinoscouplings_a_DEPENDENCIES =
 am__libtrilinoscouplings_a_SOURCES_DIST =  \
+	$(srcdir)/TrilinosCouplings_Version.h \
+	$(srcdir)/ifpack/Ifpack_ML.cpp \
 	$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp \
 	$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp \
 	$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp \
@@ -108,21 +110,25 @@ am__libtrilinoscouplings_a_SOURCES_DIST =  \
 	$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp \
 	$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp \
 	$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp \
-	$(srcdir)/ifpack/Ifpack_ML.cpp \
-	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp
+	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
 am__objects_1 =
-am__objects_2 = nlnml_prepostoperator.$(OBJEXT) \
+am__objects_2 = Ifpack_ML.$(OBJEXT)
+@BUILD_IFPACK_ML_TRUE@am__objects_3 = $(am__objects_2)
+am__objects_4 = nlnml_prepostoperator.$(OBJEXT) \
 	nlnml_ConstrainedMultiLevelOperator.$(OBJEXT) \
 	nlnml_linearsystem.$(OBJEXT) nlnml_nonlinearlevel.$(OBJEXT) \
 	nlnml_coarselevelnoxinterface.$(OBJEXT) \
 	nlnml_preconditioner1.$(OBJEXT) \
 	nlnml_preconditioner_utils.$(OBJEXT)
-am__objects_3 = Ifpack_ML.$(OBJEXT)
-@BUILD_IFPACK_ML_TRUE@am__objects_4 = $(am__objects_3)
-am__objects_5 = EpetraExt_Isorropia_CrsGraph.$(OBJEXT)
-@BUILD_EPETRAEXT_ISORROPIA_TRUE@am__objects_6 = $(am__objects_5)
-am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_4) $(am__objects_6)
+@BUILD_NOX_ML_TRUE@am__objects_5 = $(am__objects_4)
+am__objects_6 = EpetraExt_Isorropia_CrsGraph.$(OBJEXT)
+@BUILD_EPETRAEXT_ISORROPIA_TRUE@am__objects_7 = $(am__objects_6)
+am__objects_8 = EpetraExt_AmesosBTF_CrsGraph.$(OBJEXT)
+@BUILD_EPETRAEXT_AMESOS_TRUE@am__objects_9 = $(am__objects_8)
+am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
+	$(am__objects_3) $(am__objects_5) $(am__objects_7) \
+	$(am__objects_9)
 libtrilinoscouplings_a_OBJECTS = $(am_libtrilinoscouplings_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -141,7 +147,7 @@ SOURCES = $(libtrilinoscouplings_a_SOURCES) \
 DIST_SOURCES = $(am__libtrilinoscouplings_a_SOURCES_DIST) \
 	$(EXTRA_libtrilinoscouplings_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/TrilinosCouplings_ConfigDefs.h \
-	$(srcdir)/TrilinosCouplings_Version.h \
+	$(srcdir)/ifpack/Ifpack_ML.h \
 	$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
 	$(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H \
 	$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H \
@@ -150,8 +156,8 @@ am__include_HEADERS_DIST = $(srcdir)/TrilinosCouplings_ConfigDefs.h \
 	$(srcdir)/ml/NonlinML/nlnml_linearsystem.H \
 	$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H \
 	$(srcdir)/ml/NonlinML/nlnml_prepostoperator.H \
-	$(srcdir)/ifpack/Ifpack_ML.h \
-	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.h
+	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.h \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -293,27 +299,11 @@ top_srcdir = @top_srcdir@
 CORE_H = \
 	$(srcdir)/TrilinosCouplings_ConfigDefs.h
 
-CORE = 
-UTIL_H = \
-	$(srcdir)/TrilinosCouplings_Version.h \
-    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
-    $(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H         \
-    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H       \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner.H                \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H          \
-    $(srcdir)/ml/NonlinML/nlnml_linearsystem.H                  \
-    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H                \
-    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.H
+CORE = \
+	$(srcdir)/TrilinosCouplings_Version.h 
 
-UTIL = \
-    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp                     \
-    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
-    $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp                        \
-    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp                      \
-    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp                     \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
-
+UTIL_H = 
+UTIL = 
 
 #
 #  Files which are included in select builds are typically have
@@ -323,6 +313,33 @@ UTIL = \
 # Because TrilinosCouplings interfaces are only build when all required
 # packages are available, interface files must be listed as conditionally
 # compiled files (ie with an EXTRA_ prefix).
+EXTRA_NOX_ML_H = \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
+    $(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H         \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H       \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner.H                \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H          \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.H                  \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H                \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.H
+
+EXTRA_NOX_ML = \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp                        \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp                      \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+
+@BUILD_NOX_ML_FALSE@NOX_ML_H = 
+@BUILD_NOX_ML_TRUE@NOX_ML_H = \
+@BUILD_NOX_ML_TRUE@	$(EXTRA_NOX_ML_H)
+
+@BUILD_NOX_ML_FALSE@NOX_ML = 
+@BUILD_NOX_ML_TRUE@NOX_ML = \
+@BUILD_NOX_ML_TRUE@	$(EXTRA_NOX_ML)
+
 EXTRA_IFPACK_ML_H = \
 	$(srcdir)/ifpack/Ifpack_ML.h 
 
@@ -351,6 +368,20 @@ EXTRA_EPETRAEXT_ISORROPIA = \
 @BUILD_EPETRAEXT_ISORROPIA_TRUE@EPETRAEXT_ISORROPIA = \
 @BUILD_EPETRAEXT_ISORROPIA_TRUE@	$(EXTRA_EPETRAEXT_ISORROPIA)
 
+EXTRA_EPETRAEXT_AMESOS_H = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h
+
+EXTRA_EPETRAEXT_AMESOS = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+
+@BUILD_EPETRAEXT_AMESOS_FALSE@EPETRAEXT_AMESOS_H = 
+@BUILD_EPETRAEXT_AMESOS_TRUE@EPETRAEXT_AMESOS_H = \
+@BUILD_EPETRAEXT_AMESOS_TRUE@	$(EXTRA_EPETRAEXT_AMESOS_H)
+
+@BUILD_EPETRAEXT_AMESOS_FALSE@EPETRAEXT_AMESOS = 
+@BUILD_EPETRAEXT_AMESOS_TRUE@EPETRAEXT_AMESOS = \
+@BUILD_EPETRAEXT_AMESOS_TRUE@	$(EXTRA_EPETRAEXT_AMESOS)
+
 
 #EXTRA_NOX_ML_H = \
 #   -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
@@ -375,7 +406,8 @@ TRILINOSCOUPLINGS_H = \
 	$(UTIL_H) \
 	$(IFPACK_ML_H) \
 	$(NOX_ML_H) \
-	$(EPETRAEXT_ISORROPIA_H)      
+	$(EPETRAEXT_ISORROPIA_H) \
+	$(EPETRAEXT_AMESOS_H)      
 
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
@@ -383,14 +415,19 @@ libtrilinoscouplings_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
 	$(IFPACK_ML) \
-	$(EPETRAEXT_ISORROPIA)
+	$(NOX_ML) \
+	$(EPETRAEXT_ISORROPIA) \
+	$(EPETRAEXT_AMESOS)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
 	$(EXTRA_IFPACK_ML_H) \
+	$(EXTRA_NOX_ML) \
 	$(EXTRA_NOX_ML_H) \
 	$(EXTRA_EPETRAEXT_ISORROPIA) \
-	$(EXTRA_EPETRAEXT_ISORROPIA_H)
+	$(EXTRA_EPETRAEXT_ISORROPIA_H) \
+	$(EXTRA_EPETRAEXT_AMESOS) \
+	$(EXTRA_EPETRAEXT_AMESOS_H)
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(TRILINOSCOUPLINGS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRILINOSCOUPLINGS_INCLUDES))
@@ -530,6 +567,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Isorropia_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ML.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Po@am__quote@
@@ -553,6 +591,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Ifpack_ML.o: $(srcdir)/ifpack/Ifpack_ML.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ML.o -MD -MP -MF $(DEPDIR)/Ifpack_ML.Tpo -c -o Ifpack_ML.o `test -f '$(srcdir)/ifpack/Ifpack_ML.cpp' || echo '$(srcdir)/'`$(srcdir)/ifpack/Ifpack_ML.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_ML.Tpo $(DEPDIR)/Ifpack_ML.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ifpack/Ifpack_ML.cpp' object='Ifpack_ML.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ML.o `test -f '$(srcdir)/ifpack/Ifpack_ML.cpp' || echo '$(srcdir)/'`$(srcdir)/ifpack/Ifpack_ML.cpp
+
+Ifpack_ML.obj: $(srcdir)/ifpack/Ifpack_ML.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ML.obj -MD -MP -MF $(DEPDIR)/Ifpack_ML.Tpo -c -o Ifpack_ML.obj `if test -f '$(srcdir)/ifpack/Ifpack_ML.cpp'; then $(CYGPATH_W) '$(srcdir)/ifpack/Ifpack_ML.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ifpack/Ifpack_ML.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_ML.Tpo $(DEPDIR)/Ifpack_ML.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ifpack/Ifpack_ML.cpp' object='Ifpack_ML.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ML.obj `if test -f '$(srcdir)/ifpack/Ifpack_ML.cpp'; then $(CYGPATH_W) '$(srcdir)/ifpack/Ifpack_ML.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ifpack/Ifpack_ML.cpp'; fi`
 
 nlnml_prepostoperator.o: $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_prepostoperator.o -MD -MP -MF $(DEPDIR)/nlnml_prepostoperator.Tpo -c -o nlnml_prepostoperator.o `test -f '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp
@@ -652,20 +704,6 @@ nlnml_preconditioner_utils.obj: $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_preconditioner_utils.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; fi`
 
-Ifpack_ML.o: $(srcdir)/ifpack/Ifpack_ML.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ML.o -MD -MP -MF $(DEPDIR)/Ifpack_ML.Tpo -c -o Ifpack_ML.o `test -f '$(srcdir)/ifpack/Ifpack_ML.cpp' || echo '$(srcdir)/'`$(srcdir)/ifpack/Ifpack_ML.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_ML.Tpo $(DEPDIR)/Ifpack_ML.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ifpack/Ifpack_ML.cpp' object='Ifpack_ML.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ML.o `test -f '$(srcdir)/ifpack/Ifpack_ML.cpp' || echo '$(srcdir)/'`$(srcdir)/ifpack/Ifpack_ML.cpp
-
-Ifpack_ML.obj: $(srcdir)/ifpack/Ifpack_ML.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ML.obj -MD -MP -MF $(DEPDIR)/Ifpack_ML.Tpo -c -o Ifpack_ML.obj `if test -f '$(srcdir)/ifpack/Ifpack_ML.cpp'; then $(CYGPATH_W) '$(srcdir)/ifpack/Ifpack_ML.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ifpack/Ifpack_ML.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_ML.Tpo $(DEPDIR)/Ifpack_ML.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ifpack/Ifpack_ML.cpp' object='Ifpack_ML.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ML.obj `if test -f '$(srcdir)/ifpack/Ifpack_ML.cpp'; then $(CYGPATH_W) '$(srcdir)/ifpack/Ifpack_ML.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ifpack/Ifpack_ML.cpp'; fi`
-
 EpetraExt_Isorropia_CrsGraph.o: $(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_Isorropia_CrsGraph.o -MD -MP -MF $(DEPDIR)/EpetraExt_Isorropia_CrsGraph.Tpo -c -o EpetraExt_Isorropia_CrsGraph.o `test -f '$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_Isorropia_CrsGraph.Tpo $(DEPDIR)/EpetraExt_Isorropia_CrsGraph.Po
@@ -679,6 +717,20 @@ EpetraExt_Isorropia_CrsGraph.obj: $(srcdir)/epetraext/EpetraExt_Isorropia_CrsGra
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp' object='EpetraExt_Isorropia_CrsGraph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_Isorropia_CrsGraph.obj `if test -f '$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp'; fi`
+
+EpetraExt_AmesosBTF_CrsGraph.o: $(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_AmesosBTF_CrsGraph.o -MD -MP -MF $(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Tpo -c -o EpetraExt_AmesosBTF_CrsGraph.o `test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Tpo $(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp' object='EpetraExt_AmesosBTF_CrsGraph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_AmesosBTF_CrsGraph.o `test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+
+EpetraExt_AmesosBTF_CrsGraph.obj: $(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_AmesosBTF_CrsGraph.obj -MD -MP -MF $(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Tpo -c -o EpetraExt_AmesosBTF_CrsGraph.obj `if test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Tpo $(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp' object='EpetraExt_AmesosBTF_CrsGraph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_AmesosBTF_CrsGraph.obj `if test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

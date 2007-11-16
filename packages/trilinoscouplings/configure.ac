@@ -344,9 +344,9 @@ AC_CONFIG_FILES([
 		Makefile.export.trilinoscouplings
 		src/Makefile
 		test/Makefile
-        examples/Makefile
-        examples/ml/NonlinML/Makefile
-        examples/epetraext/Makefile
+        	examples/Makefile
+        	examples/ml/NonlinML/Makefile
+        	examples/epetraext/Makefile
 		])
 
 AC_OUTPUT()

@@ -51,27 +51,12 @@ all-local:
 CORE_H = \
 	$(srcdir)/TrilinosCouplings_ConfigDefs.h
 
-CORE =
+CORE = \
+	$(srcdir)/TrilinosCouplings_Version.h 
 
-UTIL_H = \
-	$(srcdir)/TrilinosCouplings_Version.h \
-    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
-    $(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H         \
-    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H       \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner.H                \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H          \
-    $(srcdir)/ml/NonlinML/nlnml_linearsystem.H                  \
-    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H                \
-    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.H
+UTIL_H =
 
-UTIL = \
-    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp                     \
-    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
-    $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp                        \
-    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp                      \
-    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp                     \
-    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+UTIL = 
 
 #
 #  Files which are included in select builds are typically have
@@ -81,6 +66,40 @@ UTIL = \
 # Because TrilinosCouplings interfaces are only build when all required
 # packages are available, interface files must be listed as conditionally
 # compiled files (ie with an EXTRA_ prefix).
+
+EXTRA_NOX_ML_H = \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
+    $(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H         \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H       \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner.H                \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H          \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.H                  \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H                \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.H
+
+EXTRA_NOX_ML = \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp                        \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp                      \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+
+if BUILD_NOX_ML
+
+NOX_ML_H = \
+	$(EXTRA_NOX_ML_H)
+NOX_ML = \
+	$(EXTRA_NOX_ML)
+
+else
+
+NOX_ML_H =
+NOX_ML = 
+
+endif
+
 EXTRA_IFPACK_ML_H = \
 	$(srcdir)/ifpack/Ifpack_ML.h 
 
@@ -121,6 +140,27 @@ EPETRAEXT_ISORROPIA =
 
 endif
 
+EXTRA_EPETRAEXT_AMESOS_H = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h
+
+EXTRA_EPETRAEXT_AMESOS = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+
+if BUILD_EPETRAEXT_AMESOS
+
+EPETRAEXT_AMESOS_H = \
+	$(EXTRA_EPETRAEXT_AMESOS_H)
+
+EPETRAEXT_AMESOS = \
+	$(EXTRA_EPETRAEXT_AMESOS)
+
+else
+
+EPETRAEXT_AMESOS_H =
+EPETRAEXT_AMESOS =
+
+endif
+
 ##conditional NOX dependencies
 #EXTRA_NOX_ML_H = \
 #   -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
@@ -130,7 +170,6 @@ endif
 #else
 #NOX_ML_H =
 #endif
-
 
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
@@ -146,21 +185,27 @@ TRILINOSCOUPLINGS_H = \
 	$(UTIL_H) \
 	$(IFPACK_ML_H) \
 	$(NOX_ML_H) \
-	$(EPETRAEXT_ISORROPIA_H)      
+	$(EPETRAEXT_ISORROPIA_H) \
+	$(EPETRAEXT_AMESOS_H)      
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
 	$(IFPACK_ML) \
-	$(EPETRAEXT_ISORROPIA)
+	$(NOX_ML) \
+	$(EPETRAEXT_ISORROPIA) \
+	$(EPETRAEXT_AMESOS)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
 	$(EXTRA_IFPACK_ML_H) \
+	$(EXTRA_NOX_ML) \
 	$(EXTRA_NOX_ML_H) \
 	$(EXTRA_EPETRAEXT_ISORROPIA) \
-	$(EXTRA_EPETRAEXT_ISORROPIA_H)
+	$(EXTRA_EPETRAEXT_ISORROPIA_H) \
+	$(EXTRA_EPETRAEXT_AMESOS) \
+	$(EXTRA_EPETRAEXT_AMESOS_H)
 
 include $(top_builddir)/Makefile.export.trilinoscouplings
 
