@@ -65,7 +65,8 @@ def makePyTrilinosExtensions(moduleName):
     # Parse and evaluate all of the Makefile variables in the current directory
     vars   = processMakefile("Makefile")
     srcdir = vars["srcdir"]
-    CXX    = vars["CXX"]
+    CXX    = vars["CXX"   ]
+    CC     = vars.get("CC",CXX)
 
     # Obtain the NumPy version
     from numpy import __version__ as numpyVersion
@@ -73,7 +74,7 @@ def makePyTrilinosExtensions(moduleName):
     # Compiler and linker.  This ensures that the MPI compilers are used when
     # appropriate.
     sysconfig.get_config_vars()
-    sysconfig._config_vars["CC" ] = CXX
+    sysconfig._config_vars["CC" ] = CC
     sysconfig._config_vars["CXX"] = CXX
 
     # Obtain the shared library directory name
