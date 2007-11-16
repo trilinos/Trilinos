@@ -108,8 +108,8 @@ Deconstructor. ";
 
 /*  Set Functions  */
 
-%feature("docstring")  Teuchos::ParameterList::setName "void
-Teuchos::ParameterList::setName(const std::string &name)
+%feature("docstring")  Teuchos::ParameterList::setName "ParameterList
+& Teuchos::ParameterList::setName(const std::string &name)
 
 Set the name of *this list. ";
 
@@ -136,7 +136,18 @@ or in parameters already set in *this being overrided. Parameters in
 *this with the same names as those in source will not be overwritten.
 ";
 
-%feature("docstring")  Teuchos::ParameterList::set "void
+%feature("docstring")
+Teuchos::ParameterList::disableRecursiveValidation "ParameterList &
+Teuchos::ParameterList::disableRecursiveValidation()
+
+Disallow recusive validation when this sublist is used in a valid
+parameter list.
+
+This function should be called when setting a sublist in a valid
+parameter list which is broken off to be passed to another object. The
+other object should validate its own list. ";
+
+%feature("docstring")  Teuchos::ParameterList::set "ParameterList &
 Teuchos::ParameterList::set(std::string const &name, T const &value,
 std::string const &docString=\"\", RCP< const ParameterEntryValidator
 > const &validator=null)
@@ -151,7 +162,7 @@ internally.
 
 Sets the parameter as \"unused\". ";
 
-%feature("docstring")  Teuchos::ParameterList::set "void
+%feature("docstring")  Teuchos::ParameterList::set "ParameterList &
 Teuchos::ParameterList::set(std::string const &name, char value[],
 std::string const &docString=\"\", RCP< const ParameterEntryValidator
 > const &validator=null)
@@ -159,7 +170,7 @@ std::string const &docString=\"\", RCP< const ParameterEntryValidator
 Template specialization for the case when a user sets the parameter
 with a character std::string in parenthesis. ";
 
-%feature("docstring")  Teuchos::ParameterList::set "void
+%feature("docstring")  Teuchos::ParameterList::set "ParameterList&
 Teuchos::ParameterList::set(std::string const &name, const char
 value[], std::string const &docString=\"\", RCP< const
 ParameterEntryValidator > const &validator=null)
@@ -167,16 +178,15 @@ ParameterEntryValidator > const &validator=null)
 Template specialization for the case when a user sets the parameter
 with a character std::string in parenthesis. ";
 
-%feature("docstring")  Teuchos::ParameterList::set "void
+%feature("docstring")  Teuchos::ParameterList::set "ParameterList &
 Teuchos::ParameterList::set(std::string const &name, ParameterList
 const &value, std::string const &docString=\"\")
 
 Template specialization for the case when a user sets the parameter
 with a ParameterList. ";
 
-%feature("docstring")  Teuchos::ParameterList::setEntry "void
-Teuchos::ParameterList::setEntry(const std::string &name, const
-ParameterEntry &entry)
+%feature("docstring")  Teuchos::ParameterList::setEntry "ParameterList & Teuchos::ParameterList::setEntry(const std::string
+&name, const ParameterEntry &entry)
 
 Set a parameter directly as a ParameterEntry.
 
@@ -292,7 +302,7 @@ exists. ";
 Teuchos::ParameterList::remove(std::string const &name, bool
 throwIfNotExists=true)
 
-Remove a parameter (does not depend on the type).
+Remove a parameter (does not depend on the type of the parameter).
 
 Parameters:
 -----------
@@ -300,11 +310,11 @@ Parameters:
 name:  [in] The name of the parameter to remove
 
 throwIfNotExists:  [in] If true then if the parameter with the name
-name an std::exception will be thrown!
+name does not exist then a std::exception will be thrown!
 
-Returns true of the parameter was removed, and false if the parameter
-was not removed (return value possible only if throwIfExists==false).
-";
+Returns true if the parameter was removed, and false if the parameter
+was not removed ( false return value possible only if
+throwIfExists==false). ";
 
 /*  Sublist Functions  */
 
@@ -336,7 +346,9 @@ Teuchos::ParameterList::isParameter(const std::string &name) const
 
 Query the existence of a parameter.
 
-\"true\" if a parameter with this name exists, else \"false\". ";
+\"true\" if a parameter with this name exists, else \"false\".
+Warning, this function should almost never be used! Instead, consider
+using getEntryPtr() instead. ";
 
 %feature("docstring")  Teuchos::ParameterList::isSublist "bool
 Teuchos::ParameterList::isSublist(const std::string &name) const
@@ -344,7 +356,8 @@ Teuchos::ParameterList::isSublist(const std::string &name) const
 Query the existence of a parameter and whether it is a parameter list.
 
 \"true\" if a parameter with this name exists and is itself a
-parameter list, else \"false\". ";
+parameter list, else \"false\". Warning, this function should almost
+never be used! Instead, consider using getEntryPtr() instead. ";
 
 %feature("docstring")  Teuchos::ParameterList::isType "bool
 Teuchos::ParameterList::isType(const std::string &name) const
@@ -355,7 +368,8 @@ Query the existence and type of a parameter.
 \"false\".
 
 The syntax for calling this method is:  list.template isType<int>(
-\"Iters\" ) ";
+\"Iters\" ). Warning, this function should almost never be used!
+Instead, consider using getEntryPtr() instead. ";
 
 %feature("docstring")  Teuchos::ParameterList::isType "bool
 Teuchos::ParameterList::isType(const std::string &name, T *ptr) const
@@ -365,7 +379,7 @@ Query the existence and type of a parameter.
 \"true\" is a parameter with this name exists and is of type T, else
 \"false\".
 
-It is not recommended that this method be used directly! Please use
+It is not recommended that this method be used directly!  Please use
 either the helper function isParameterType or non-nominal isType
 method. ";
 
@@ -423,7 +437,7 @@ Access to name (i.e., returns i->first). ";
 validateUsed=VALIDATE_USED_ENABLED, EValidateDefaults const
 validateDefaults=VALIDATE_DEFAULTS_ENABLED) const
 
-Validate the parameters is this list given valid selections in the
+Validate the parameters in this list given valid selections in the
 input list.
 
 Parameters:
@@ -454,6 +468,13 @@ If the parameter exists and has the right type, but the value is not
 valid then an std::exception type  Exceptions::InvalidParameterValue
 will be thrown.
 
+Recursive validation stops when: The maxinum depth is reached
+
+A sublist note in validParamList has been marked with the
+disableRecursiveValidation() function, or
+
+There are not more parameters or sublists left in *this
+
 A breath-first search is performed to validate all of the parameters
 in one sublist before moving into nested subslist. ";
 
@@ -462,7 +483,7 @@ Teuchos::ParameterList::validateParametersAndSetDefaults "void
 Teuchos::ParameterList::validateParametersAndSetDefaults(ParameterList
 const &validParamList, int const depth=1000)
 
-Validate the parameters is this list given valid selections in the
+Validate the parameters in this list given valid selections in the
 input list and set defaults for those not set.
 
 Parameters:
@@ -486,6 +507,13 @@ valid then an std::exception type  Exceptions::InvalidParameterValue
 will be thrown. If a parameter in validParamList does not exist in
 *this, then it will be set at its default value as determined by
 validParamList.
+
+Recursive validation stops when: The maxinum depth is reached
+
+A sublist note in validParamList has been marked with the
+disableRecursiveValidation() function, or
+
+There are not more parameters or sublists left in *this
 
 A breath-first search is performed to validate all of the parameters
 in one sublist before moving into nested subslist. ";
@@ -620,6 +648,66 @@ The default implementation returns Teuchos::null. ";
 
 %feature("docstring")
 Teuchos::ParameterListAcceptor::~ParameterListAcceptor "Teuchos::ParameterListAcceptor::~ParameterListAcceptor() ";
+
+
+// File: classTeuchos_1_1ParameterListAcceptorDefaultBase.xml
+%feature("docstring") Teuchos::ParameterListAcceptorDefaultBase "
+
+Intermediate node base class for objects that accept parameter lists
+that implements some of the needed behavior automatically.
+
+Subclasses just need to implement  setParameterList() and
+getValidParameters(). The underlying paraemeter list is accessed using
+the protected members  setMyParamList() and  getMyParamList().
+
+C++ includes: Teuchos_ParameterListAcceptorDefaultBase.hpp ";
+
+/*  Overridden from ParameterListAcceptor  */
+
+%feature("docstring")
+Teuchos::ParameterListAcceptorDefaultBase::getParameterList "RCP<
+ParameterList >
+Teuchos::ParameterListAcceptorDefaultBase::getParameterList() ";
+
+%feature("docstring")
+Teuchos::ParameterListAcceptorDefaultBase::unsetParameterList "RCP<
+ParameterList >
+Teuchos::ParameterListAcceptorDefaultBase::unsetParameterList() ";
+
+%feature("docstring")
+Teuchos::ParameterListAcceptorDefaultBase::getParameterList "RCP<
+const ParameterList >
+Teuchos::ParameterListAcceptorDefaultBase::getParameterList() const ";
+
+/*  Protected accessors to actual parameter list object.  */
+
+
+// File: classTeuchos_1_1ParameterListNonAcceptor.xml
+%feature("docstring") Teuchos::ParameterListNonAcceptor "
+
+Mix-in implementation subclass to be inherited by concrete subclasses
+who's interface says that they take a parameter list but do not have
+any parameters yet.
+
+ToDo: Finish documention.
+
+C++ includes: Teuchos_ParameterListNonAcceptor.hpp ";
+
+/*  Overridden from ParameterListAcceptor  */
+
+%feature("docstring")
+Teuchos::ParameterListNonAcceptor::setParameterList "void
+Teuchos::ParameterListNonAcceptor::setParameterList(RCP< ParameterList
+> const &paramList)
+
+Accepts a parameter list but asserts that it is empty. ";
+
+%feature("docstring")
+Teuchos::ParameterListNonAcceptor::getValidParameters "RCP< const
+ParameterList >
+Teuchos::ParameterListNonAcceptor::getValidParameters() const
+
+Returns a non-null but empty parameter list. ";
 
 
 // File: structTeuchos_1_1ScalarTraits.xml
@@ -1271,7 +1359,19 @@ XML version of the parameter list specification. ";
 // File: Teuchos__ParameterListAcceptor_8hpp.xml
 
 
+// File: Teuchos__ParameterListAcceptorDefaultBase_8cpp.xml
+
+
+// File: Teuchos__ParameterListAcceptorDefaultBase_8hpp.xml
+
+
 // File: Teuchos__ParameterListExceptions_8hpp.xml
+
+
+// File: Teuchos__ParameterListNonAcceptor_8cpp.xml
+
+
+// File: Teuchos__ParameterListNonAcceptor_8hpp.xml
 
 
 // File: Teuchos__ScalarTraits_8cpp.xml

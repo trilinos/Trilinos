@@ -76,17 +76,6 @@ def makePyTrilinosExtensions(moduleName):
     sysconfig._config_vars["CC" ] = CXX
     sysconfig._config_vars["CXX"] = CXX
 
-    # Define lists of various helper code
-    epetraNumPyVectorSrc = [os.path.join(srcdir,"Epetra_NumPyIntVector.cpp"  ),
-                            os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"),
-                            os.path.join(srcdir,"Epetra_NumPyVector.cpp"     ),
-                            os.path.join(srcdir,"Epetra_NumPyFEVector.cpp"   )]
-    epetraNumPySerialDenseSrc = [os.path.join(srcdir,"Epetra_NumPyIntSerialDenseMatrix.cpp"),
-                                 os.path.join(srcdir,"Epetra_NumPyIntSerialDenseVector.cpp"),
-                                 os.path.join(srcdir,"Epetra_NumPySerialDenseMatrix.cpp"   ),
-                                 os.path.join(srcdir,"Epetra_NumPySerialDenseVector.cpp"   )]
-    epetraNumPySrc = epetraNumPyVectorSrc + epetraNumPySerialDenseSrc
-
     # Obtain the shared library directory name
     shared = os.path.join("..", "shared")
 
@@ -123,6 +112,9 @@ def makePyTrilinosExtensions(moduleName):
     # then remove any duplicate entries
     options = vars[includeVar].split() + \
               vars[libVar].split()
+    if vars["ENABLE_TEUCHOS"] == "true": options.append("-lteuchos")
+    if vars["ENABLE_EPETRA" ] == "true": options.append("-lepetra" )
+    options.append("-lpytrilinos")
     uniquifyList(options)
 
     # Distribute the individual options to the appropriate Extension class arguments
@@ -172,13 +164,6 @@ def makePyTrilinosExtensions(moduleName):
 
         # Build the list of sources
         sources = [interface.replace(".i","_wrap.cpp")]
-        if moduleName in ("Epetra",):
-            sources.extend(epetraNumPySrc)
-        if moduleName in ("EpetraExt","TriUtils","AztecOO","Galeri","IFPACK","Anasazi"):
-            sources.extend(epetraNumPyVectorSrc)
-        if extName in ("PyTrilinos.NOX.Epetra.___init__",
-                       "PyTrilinos.NOX.Epetra._Interface"):
-            sources.extend(epetraNumPyVectorSrc)
 
         # Create the Extension object and add it to the list
         extensions.append(Extension(extName,

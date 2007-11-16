@@ -3475,6 +3475,21 @@ double *Values, int *Indices)
 
 Insert a list of elements in a given global row of the matrix.
 
+This method is used to construct a matrix for the first time. It
+cannot be used if the matrix structure has already been fixed (via a
+call to FillComplete()). If multiple values are inserted for the same
+matrix entry, the values are initially stored separately, so memory
+use will grow as a result. However, when FillComplete is called the
+values will be summed together and the additional memory will be
+released.
+
+For example, if the values 2.0, 3.0 and 4.0 are all inserted in Row 1,
+Column 2, extra storage is used to store each of the three values
+separately. In this way, the insert process does not require any
+searching and can be faster. However, when FillComplete() is called,
+the values will be summed together to equal 9.0 and only a single
+entry will remain in the matrix for Row 1, Column 2.
+
 Parameters:
 -----------
 
@@ -3489,6 +3504,9 @@ Indices:  - (In) Global column indices corresponding to values.
 Integer error code, set to 0 if successful. Note that if the allocated
 length of the row has to be expanded, a positive warning code will be
 returned.
+
+WARNING:  This method may not be called once FillComplete() has been
+called.
 
 IndicesAreLocal()==false && IndicesAreContiguous()==false ";
 

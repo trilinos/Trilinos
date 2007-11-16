@@ -137,6 +137,10 @@ def main():
            makeMacros["ENABLE_THYRA" ] == "true":
             builders.append(SharedUtils.SharedTrilinosBuilder("moochothyra"))
 
+        # Add the PyTrilinos shared library builder to the end of the list
+        if makeMacros["ENABLE_PYTRILINOS"] == "true":
+            builders.append(SharedUtils.SharedPyTrilinosBuilder())
+
         # Build command
         if command in ("build", "install"):
             # Convert package libraries to shared

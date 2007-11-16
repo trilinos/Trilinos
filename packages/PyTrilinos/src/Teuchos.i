@@ -101,6 +101,9 @@ ParameterList will accept a python dictionary.
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
 
+// Local includes
+#include "NumPyImporter.h"
+
 // Namespace flattening
 using std::string;
 using Teuchos::RCP;

@@ -67,9 +67,6 @@ from   MakefileVariables   import *
 from   PyTrilinosExtension import *
 import SharedUtils
 
-import PyTrilinosExtension
-print PyTrilinosExtension.__file__
-
 # Package name
 PyTrilinos = "PyTrilinos"
 

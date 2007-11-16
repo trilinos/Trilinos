@@ -110,12 +110,13 @@ shellRE    = re.compile(r"\$\(shell"                               )
 #############################################################################
 
 def findBlock(text, pos=0):
-    """Given the input text (potentially multiline) and an optional pos marking
-    the starting position, find an opening delimeter -- either (, [, {, single
+    """
+    Given the input text (potentially multiline) and an optional pos marking the
+    starting position, find an opening delimeter -- either (, [, {, single
     quote, or double quote -- and return a tuple of integers indicating the
     character indexes of the text block -- closed with ), ], }, single quote, or
-    double quote, respectively -- while correctly handling nested blocks."""
-
+    double quote, respectively -- while correctly handling nested blocks.
+    """
     # Define delimeter strings
     quote1Delimeter = "'"
     quote2Delimeter = '"'
@@ -190,9 +191,11 @@ def findBlock(text, pos=0):
 #############################################################################
 
 def joinContinuationLines(lines):
-    """Given lines, a list of strings, check for the continuation character
-    ('\') at the end of each line.  If found, combine the appropriate strings
-    into one, leaving blank lines in the list to avoid duplication."""
+    """
+    Given lines, a list of strings, check for the continuation character ('\')
+    at the end of each line.  If found, combine the appropriate strings into
+    one, leaving blank lines in the list to avoid duplication.
+    """
     for i in range(len(lines)-1):
         line = lines[i]
         match = continueRE.search(line)
@@ -203,7 +206,9 @@ def joinContinuationLines(lines):
 #############################################################################
 
 def isNotBlankLine(s):
-    """Return True if a string is not a blank line"""
+    """
+    Return True if a string is not a blank line
+    """
     if blankRE.match(s):
         return False
     return True
@@ -217,9 +222,11 @@ parsedMakefileVariables = { }
 #############################################################################
 
 def parseMakefile(filename):
-    """Open filename, read in the text and return a dictionary of make variable
+    """
+    Open filename, read in the text and return a dictionary of make variable
     names and values.  If an include statement is found, this routine will be
-    called recursively."""
+    called recursively.
+    """
     absFilename = os.path.abspath(filename)
     if parsedMakefileVariables.has_key(absFilename):
         return parsedMakefileVariables[absFilename]
@@ -249,14 +256,15 @@ def parseMakefile(filename):
 #############################################################################
 
 def evaluate(value, dict):
-    """Evaluate the string 'value' by applying the following algorithm: if value
+    """
+    Evaluate the string 'value' by applying the following algorithm: if value
     contains substring '$(VARNAME)' and dict has key VARNAME, substitute
     dict[VARNAME] for the variable reference.  If VARNAME is not a key for the
     dictionary, substitute the null string.  If value contains substring
     '$(shell ...)', then call this routine recursively on the obtained command
     string.  If the resulting command string is unchanged, execute it as a shell
-    command and substitutue the results.  Return the evaluated string."""
-
+    command and substitutue the results.  Return the evaluated string.
+    """
     # Initialize
     change = False
 
@@ -304,20 +312,23 @@ def evaluate(value, dict):
 #############################################################################
 
 def makeSubstitutions(dict):
-    """Loop over the items of a dictionary of variable names and string values.
-    If the value contains the substring(s) '$(VARNAME)' and VARNAME is a key in
-    the dictionary, then substitute the appropriate value.  If VARNAME is not a
-    key in the dictionary, then substitute the null string.  For circular
-    substitutions, substitute the null string."""
+    """
+    Loop over the items of a dictionary of variable names and string values.  If
+    the value contains the substring(s) '$(VARNAME)' and VARNAME is a key in the
+    dictionary, then substitute the appropriate value.  If VARNAME is not a key
+    in the dictionary, then substitute the null string.  For circular
+    substitutions, substitute the null string.
+    """
     for varName in dict:
         dict[varName] = evaluate(dict[varName],dict)
 
 #############################################################################
 
 def specialNormPath(path):
-    """Apply os.path.normpath to argument path, but remove a leading option
-    such as '-I' or '-L' before the call and add it back before the result is
-    returned."""
+    """
+    Apply os.path.normpath to argument path, but remove a leading option such as
+    '-I' or '-L' before the call and add it back before the result is returned.
+    """
     if len(path) <= 2: return path
     start = 0
     if path[0] == "-": start = 2
@@ -326,8 +337,10 @@ def specialNormPath(path):
 #############################################################################
 
 def uniquifyList(list,reverse=False):
-    """Remove duplicate items from a list, preserving the forward order
-    (default) or reverse order if the reverse flag is set."""
+    """
+    Remove duplicate items from a list, preserving the forward order (default)
+    or reverse order if the reverse flag is set.
+    """
     if reverse: list.reverse()
     i = 1
     while i < len(list):
@@ -340,10 +353,12 @@ def uniquifyList(list,reverse=False):
 #############################################################################
 
 def uniquifyString(s, delim=' ', reverse=False):
-    """Split a string using the specified delimeter, apply specialNormPath to
-    each string, uniquify the resulting list (passing along the optional reverse
+    """
+    Split a string using the specified delimeter, apply specialNormPath to each
+    string, uniquify the resulting list (passing along the optional reverse
     flag), and return a string that joins the unique list with the same
-    delimeter."""
+    delimeter.
+    """
     list = s.split(delim)
     list = [specialNormPath(path.strip()) for path in list]
     uniquifyList(list,reverse)
@@ -352,17 +367,21 @@ def uniquifyString(s, delim=' ', reverse=False):
 #############################################################################
 
 def uniquifyDict(dict,reverse=False):
-    """Loop over each item in a dictionary of variable names and string values
-    and uniquify the string, passing along the optional reverse flag."""
+    """
+    Loop over each item in a dictionary of variable names and string values and
+    uniquify the string, passing along the optional reverse flag.
+    """
     for key in dict:
         dict[key] = uniquifyString(dict[key],reverse=reverse)
 
 #############################################################################
 
 def processMakefile(filename):
-    """Open filename, read its contents and parse it for Makefile assignments,
+    """
+    Open filename, read its contents and parse it for Makefile assignments,
     creating a dictionary of variable names and string values.  Substitute
-    variable values when '$(...)' appears in a string value."""
+    variable values when '$(...)' appears in a string value.
+    """
     # We want to change directories to the directory that contains the
     # Makefile.  Then, when we make substitutions, any $(shell ...) expansions
     # will be done from the assumed directory.
@@ -384,11 +403,12 @@ def processMakefile(filename):
 #############################################################################
 
 def main():
-    """This is the routine that gets called if MakefileVariable.py is invoked
-    from the shell.  Process any command-line options that may be given, take
-    the first argument as a filename, process it to obtain a dictionary of
-    variable name/value pairs, and output the results."""
-
+    """
+    This is the routine that gets called if MakefileVariable.py is invoked from
+    the shell.  Process any command-line options that may be given, take the
+    first argument as a filename, process it to obtain a dictionary of variable
+    name/value pairs, and output the results.
+    """
     # Initialization
     (progDir,progName) = os.path.split(sys.argv[0])
     options      = "hmpv"
