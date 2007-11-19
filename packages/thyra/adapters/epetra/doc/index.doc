@@ -26,11 +26,11 @@ the Epetra to Thyra adapter code.
 <ul>
 
 <li><a
-href="../../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA
+href="../../../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA
 Operator/Vector Interfaces</a>
 
 <li><a
-href="../../../doc/html/index.html">Main Epetra Documentation</a>
+href="../../../../../epetra/doc/html/index.html">Main Epetra Documentation</a>
 
 </ul>
 
