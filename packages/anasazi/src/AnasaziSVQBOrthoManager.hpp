@@ -77,6 +77,7 @@ namespace Anasazi {
     //@}
 
 
+
     //! @name Methods implementing Anasazi::MatOrthoManager
     //@{ 
 
@@ -120,10 +121,13 @@ namespace Anasazi {
      \f]
     */
     void projectMat ( 
-        MV &X, 
-        Teuchos::RCP<MV> MX = Teuchos::null, 
-        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
-        Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const;
+          MV &X, 
+          Teuchos::Array<Teuchos::RCP<const MV> >  Q,
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C
+              = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null)),
+          Teuchos::RCP<MV> MX                        = Teuchos::null,
+          Teuchos::Array<Teuchos::RCP<const MV> > MQ = Teuchos::tuple(Teuchos::RCP<const MV>(Teuchos::null))
+        ) const;
 
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
@@ -165,9 +169,10 @@ namespace Anasazi {
      @return Rank of the basis computed by this method, less than or equal to the number of columns in \c X. This specifies how many columns in the returned \c X and rows in the returned \c B are valid.
     */
     int normalizeMat ( 
-        MV &X, 
-        Teuchos::RCP<MV> MX = Teuchos::null, 
-        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::tuple(Teuchos::null) ) const;
+          MV &X, 
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null,
+          Teuchos::RCP<MV> MX                                         = Teuchos::null
+        ) const;
 
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
@@ -230,11 +235,14 @@ namespace Anasazi {
 
     */
     int projectAndNormalizeMat ( 
-        MV &X, 
-        Teuchos::RCP<MV> MX = Teuchos::null, 
-        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
-        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null, 
-        Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const;
+          MV &X, 
+          Teuchos::Array<Teuchos::RCP<const MV> >  Q,
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C
+              = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null)),
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null, 
+          Teuchos::RCP<MV>                                         MX = Teuchos::null,
+          Teuchos::Array<Teuchos::RCP<const MV> >                  MQ = Teuchos::tuple(Teuchos::RCP<const MV>(Teuchos::null))
+        ) const;
 
     //@}
 
@@ -253,7 +261,12 @@ namespace Anasazi {
      *  The method has the option of exploiting a caller-provided \c MX.
      */
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthogErrorMat(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const;
+    orthogErrorMat(
+          const MV &X, 
+          const MV &Y,
+          Teuchos::RCP<const MV> MX = Teuchos::null, 
+          Teuchos::RCP<const MV> MY = Teuchos::null
+        ) const;
 
     //@}
 
@@ -262,8 +275,8 @@ namespace Anasazi {
     MagnitudeType eps_;
     bool debug_;
   
-    // ! Routine to find an orthogonal/orthonormal basis for the 
-    int findBasis( MV &X, Teuchos::RCP<MV> MX, 
+    // ! Routine to find an orthogonal/orthonormal basis
+    int findBasis(MV &X, Teuchos::RCP<MV> MX, 
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                    Teuchos::Array<Teuchos::RCP<const MV> > Q,
@@ -293,7 +306,7 @@ namespace Anasazi {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-    innerProdMat(X,X,MX,xTx);
+    innerProdMat(X,X,xTx,MX,MX);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -304,25 +317,30 @@ namespace Anasazi {
   // Compute the distance from orthogonality
   template<class ScalarType, class MV, class OP>
   typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-  SVQBOrthoManager<ScalarType,MV,OP>::orthogErrorMat(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const {
-    int r1 = MVT::GetNumberVecs(X1);
-    int r2 = MVT::GetNumberVecs(X2);
-    Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r2,r1);
-    innerProdMat(X2,X1,MX1,xTx);
+  SVQBOrthoManager<ScalarType,MV,OP>::orthogErrorMat(
+          const MV &X, 
+          const MV &Y,
+          Teuchos::RCP<const MV> MX,
+          Teuchos::RCP<const MV> MY
+      ) const {
+    int r1 = MVT::GetNumberVecs(X);
+    int r2 = MVT::GetNumberVecs(Y);
+    Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r1,r2);
+    innerProdMat(X,Y,xTx,MX,MY);
     return xTx.normFrobenius();
   }
 
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Find an Op-orthonormal basis for span(X) - span(W)
-  template<class ScalarType, class MV, class OP>
-  int SVQBOrthoManager<ScalarType, MV, OP>::projectAndNormalizeMat(
-                                    MV &X, Teuchos::RCP<MV> MX, 
-                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
 
-    return findBasis(X,MX,C,B,Q,true);
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class ScalarType, class MV, class OP>
+  void SVQBOrthoManager<ScalarType, MV, OP>::projectMat(
+          MV &X, 
+          Teuchos::Array<Teuchos::RCP<const MV> >  Q,
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+          Teuchos::RCP<MV> MX,
+          Teuchos::Array<Teuchos::RCP<const MV> > MQ) const {
+    findBasis(X,MX,C,Teuchos::null,Q,false);
   }
 
 
@@ -331,8 +349,9 @@ namespace Anasazi {
   // Find an Op-orthonormal basis for span(X), with rank numvectors(X)
   template<class ScalarType, class MV, class OP>
   int SVQBOrthoManager<ScalarType, MV, OP>::normalizeMat(
-                            MV &X, Teuchos::RCP<MV> MX, 
-                            Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+          MV &X, 
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+          Teuchos::RCP<MV> MX) const {
     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C;
     Teuchos::Array<Teuchos::RCP<const MV> > Q;
     return findBasis(X,MX,C,B,Q,true);
@@ -341,13 +360,19 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Find an Op-orthonormal basis for span(X) - span(W)
   template<class ScalarType, class MV, class OP>
-  void SVQBOrthoManager<ScalarType, MV, OP>::projectMat(
-                                MV &X, Teuchos::RCP<MV> MX, 
-                                Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
-    findBasis(X,MX,C,Teuchos::null,Q,false);
+  int SVQBOrthoManager<ScalarType, MV, OP>::projectAndNormalizeMat(
+          MV &X, 
+          Teuchos::Array<Teuchos::RCP<const MV> >  Q,
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+          Teuchos::RCP<MV> MX,
+          Teuchos::Array<Teuchos::RCP<const MV> > MQ) const {
+    return findBasis(X,MX,C,B,Q,true);
   }
+
+
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -543,7 +568,7 @@ namespace Anasazi {
         numGS++;
 
         // Compute the norms of the vectors
-        normMat(X,MX,&normX);
+        normMat(X,normX,MX);
         // normalize the vectors
         Teuchos::RCP<MV> Xi,MXi;
         std::vector<int> ind(1);
@@ -564,11 +589,11 @@ namespace Anasazi {
           std::vector<MagnitudeType> nrm2(xc);
           std::cout << dbgstr << "max post-scale norm: (with/without MX) : ";
           MagnitudeType maxpsnw = ZERO, maxpsnwo = ZERO;
-          normMat(X,MX,&nrm2);
+          normMat(X,nrm2,MX);
           for (int i=0; i<xc; i++) {
             maxpsnw = (nrm2[i] > maxpsnw ? nrm2[i] : maxpsnw);
           }
-          MatOrthoManager<ScalarType,MV,OP>::norm(X,&nrm2);
+          norm(X,nrm2);
           for (int i=0; i<xc; i++) {
             maxpsnwo = (nrm2[i] > maxpsnwo ? nrm2[i] : maxpsnwo);
           }
@@ -576,7 +601,7 @@ namespace Anasazi {
         }
         // project the vectors onto the Qi
         for (int i=0; i<nq; i++) {
-          innerProdMat(*Q[i],X,MX,*newC[i]);
+          innerProdMat(*Q[i],X,*newC[i],Teuchos::null,MX);
         }
         // remove the components in Qi from X
         for (int i=0; i<nq; i++) {
@@ -657,7 +682,7 @@ namespace Anasazi {
           numSVQB++;
 
           // compute X^T Op X
-          innerProdMat(X,X,MX,XtMX);
+          innerProdMat(X,X,XtMX,MX,MX);
 
           // compute scaling matrix for XtMX: D^{.5} and D^{-.5} (D-half  and  D-half-inv)
           std::vector<MagnitudeType> Dh(xc), Dhi(xc);
@@ -810,9 +835,9 @@ namespace Anasazi {
            << "," << numRand 
            << ")" << std::endl;
     }
-
     return xc;
   }
+
 
 } // namespace Anasazi
 

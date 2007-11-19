@@ -896,7 +896,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         // use augTmp as storage for M*augV, if hasM
         {
           Teuchos::Array<Teuchos::RCP<const MV> > against;
-          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
           if (probauxvecs != Teuchos::null) against.push_back(probauxvecs);
           if (curlocked != Teuchos::null)   against.push_back(curlocked);
           against.push_back(newLocked);
@@ -904,7 +904,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           if (problem_->getM() != Teuchos::null) {
             OPT::Apply(*problem_->getM(),*augV,*augTmp);
           }
-          ortho->projectAndNormalizeMat(*augV,augTmp,dummy,Teuchos::null,against);
+          ortho->projectAndNormalizeMat(*augV,against,dummyC,Teuchos::null,augTmp);
         }
 
         //

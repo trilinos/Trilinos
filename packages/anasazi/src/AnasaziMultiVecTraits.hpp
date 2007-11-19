@@ -149,7 +149,7 @@ namespace Anasazi {
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Hmv[i]\f$.
      */
-    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b
+    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType> &b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
 			, ConjType conj = Anasazi::CONJ
 #endif
@@ -173,7 +173,7 @@ namespace Anasazi {
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec )
+    static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &normvec )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     //@}

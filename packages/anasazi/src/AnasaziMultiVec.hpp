@@ -136,7 +136,7 @@ public:
         /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^H*\c this[i] where \c A[i] is the i-th column of A.
    */
   
-        virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b 
+        virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType> & b 
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
 			     , ConjType conj = Anasazi::CONJ
 #endif
@@ -150,7 +150,7 @@ public:
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
 	*/
 
-	virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec ) const = 0;
+	virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> & normvec ) const = 0;
 
 	//@}
   //! @name Initialization methods
@@ -298,7 +298,7 @@ public:
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^H mv[i]\f$.
      */
-    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b
+    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType> & b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
 		       , ConjType conj = Anasazi::CONJ
 #endif
@@ -326,7 +326,7 @@ public:
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec )
+    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> & normvec )
     { mv.MvNorm(normvec); }
 
     //@}

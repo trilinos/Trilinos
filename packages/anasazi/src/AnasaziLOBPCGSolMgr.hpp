@@ -622,9 +622,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           }
 
           Teuchos::Array<Teuchos::RCP<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
-          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
           // ortho X against the aux vectors
-          ortho->projectAndNormalizeMat(*newstateX,newstateMX,dummy,Teuchos::null,curauxvecs);
+          ortho->projectAndNormalizeMat(*newstateX,curauxvecs,dummyC,Teuchos::null,newstateMX);
 
           if (hadP) {
             //
@@ -644,11 +644,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
             if (fullOrtho_) {
               // ortho P against the new aux vectors and new X
               curauxvecs.push_back(newstateX);
-              ortho->projectAndNormalizeMat(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
+              ortho->projectAndNormalizeMat(*newstateP,curauxvecs,dummyC,Teuchos::null,newstateMP);
             }
             else {
               // ortho P against the new aux vectors
-              ortho->projectAndNormalizeMat(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
+              ortho->projectAndNormalizeMat(*newstateP,curauxvecs,dummyC,Teuchos::null,newstateMP);
             }
           }
           // set the new state
@@ -747,7 +747,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       // project against auxvecs and locked vecs, and orthonormalize the basis
-      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
       Teuchos::Array<Teuchos::RCP<const MV> > Q;
       {
         if (curNumLocked > 0) {
@@ -760,7 +760,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           Q.push_back(probauxvecs);
         }
       }
-      int rank = ortho->projectAndNormalizeMat(*restart,Mrestart,dummy,Teuchos::null,Q);
+      int rank = ortho->projectAndNormalizeMat(*restart,Q,dummyC,Teuchos::null,Mrestart);
       if (rank < blockSize_) {
         // quit
         printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << blockSize_ << ".\n"

@@ -190,10 +190,10 @@ namespace Anasazi {
      * \f$b[i] = A[i]^Hmv[i]\f$.
      */
     static void MvDot ( const MV& mv, const MV& A, 
-			std::vector<ScalarType>* b) 
+			std::vector<ScalarType> &b) 
     {
-      for (unsigned int i=0; i<b->size(); i++)
-	(*b)[i] = A[i].innerProduct(mv[i]);
+      for (unsigned int i=0; i<b.size(); i++)
+        b[i] = A[i].innerProduct(mv[i]);
     }
 
     /*! 
@@ -223,9 +223,9 @@ namespace Anasazi {
      * the \c i-th column of \c mv.
      */
     static void MvNorm( const MV& mv, 
-			std::vector<double>* normvec ) 
+			std::vector<double> &normvec ) 
     {
-      mv.norm(*normvec);
+      mv.norm(normvec);
     }
 
     //@}

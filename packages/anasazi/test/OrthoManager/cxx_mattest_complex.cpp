@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the OrthoManager interface to ICGSOrthoManager, 
+//  This test is for the MatOrthoManager interface to ICGSOrthoManager, 
 //  SVQBOrthoManager and BasicOrthoManager
 //
 // The matrix used is from MatrixMarket:
@@ -91,9 +91,9 @@ const MT ATOL = 10;
 RCP< Anasazi::BasicOutputManager<ST> > MyOM;
 
 // some forward declarations
-int testProject(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> X2);
-int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S);
-int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> X2);
+int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> X2);
+int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S);
+int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> X2);
 
 MT MVDiff(const MV &X, const MV &Y);
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
     }
 
     // Create ortho managers
-    RCP<OrthoManager<ST,MV> > OM;
+    RCP<MatOrthoManager<ST,MV,OP> > OM;
     if (ortho == "SVQB") {
       OM = rcp( new SVQBOrthoManager<ST,MV,OP>(M) );
     }
@@ -223,26 +223,23 @@ int main(int argc, char *argv[])
       // just a random multivector
       MVT::MvRandom(*S);
       
-      MyOM->stream(Errors) << " project(): testing on random multivector " << endl;
-      numFailed += testProject(OM,S,X1,X2);
+      MyOM->stream(Errors) << " projectMat(): testing on random multivector " << endl;
+      numFailed += testProjectMat(OM,S,X1,X2);
     }
 
 
     {
-      // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
-      // note, this is allowed under the restrictions on project(), 
-      // because <X1,Y2> = 0
-      // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
-      // it should require randomization, as 
-      // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
+      // run a X1,X2 range multivector against P_X1 P_X2
+      // note, this is allowed under the restrictions on projectMat, 
+      // because <X1,X2> = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
       
-      MyOM->stream(Errors) << " project(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
-      numFailed += testProject(OM,S,X1,X2);
+      MyOM->stream(Errors) << " projectMat(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
+      numFailed += testProjectMat(OM,S,X1,X2);
     }
 
 
@@ -255,8 +252,8 @@ int main(int argc, char *argv[])
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
       
-      MyOM->stream(Errors) << " normalize(): testing on rank-deficient multivector " << endl;
-      numFailed += testNormalize(OM,S);
+      MyOM->stream(Errors) << " normalizeMat(): testing on rank-deficient multivector " << endl;
+      numFailed += testNormalizeMat(OM,S);
     }
 
 
@@ -272,8 +269,8 @@ int main(int argc, char *argv[])
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
       
-      MyOM->stream(Errors) << " normalize(): testing on rank-1 multivector " << endl;
-      numFailed += testNormalize(OM,S);
+      MyOM->stream(Errors) << " normalizeMat(): testing on rank-1 multivector " << endl;
+      numFailed += testNormalizeMat(OM,S);
     }
 
 
@@ -281,8 +278,8 @@ int main(int argc, char *argv[])
       std::vector<int> ind(1); 
       MVT::MvRandom(*S);
       
-      MyOM->stream(Errors) << " projectAndNormalize(): testing on random multivector " << endl;
-      numFailed += testProjectAndNormalize(OM,S,X1,X2);
+      MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on random multivector " << endl;
+      numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
 
 
@@ -299,8 +296,8 @@ int main(int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
       
-      MyOM->stream(Errors) << " projectAndNormalize(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
-      numFailed += testProjectAndNormalize(OM,S,X1,X2);
+      MyOM->stream(Errors) << " projectAndNormalizeMat(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
+      numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
 
 
@@ -313,8 +310,8 @@ int main(int argc, char *argv[])
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
       
-      MyOM->stream(Errors) << " projectAndNormalize(): testing on rank-deficient multivector " << endl;
-      numFailed += testProjectAndNormalize(OM,S,X1,X2);
+      MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on rank-deficient multivector " << endl;
+      numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
 
 
@@ -330,8 +327,8 @@ int main(int argc, char *argv[])
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
       
-      MyOM->stream(Errors) << " projectAndNormalize(): testing on rank-1 multivector " << endl;
-      numFailed += testProjectAndNormalize(OM,S,X1,X2);
+      MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on rank-1 multivector " << endl;
+      numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
 
   }
@@ -356,14 +353,15 @@ int main(int argc, char *argv[])
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM, 
-                            RCP<const MV> S, 
-                            RCP<const MV> X1, RCP<const MV> X2) {
+int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, 
+                               RCP<const MV> S, 
+                               RCP<const MV> X1, RCP<const MV> X2) {
 
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
   int numerr = 0;
+  bool hasM = (OM->getOp() != null);
   std::ostringstream sout;
 
   //
@@ -396,7 +394,20 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
   //
 
   int numtests;
-  numtests = 4;
+  RCP<const MV> MX1, MX2;
+  RCP<MV> MS;
+  if (hasM) {
+    MX1 = MVT::Clone(*S,sizeX1);
+    MX2 = MVT::Clone(*S,sizeX2);
+    MS  = MVT::Clone(*S,sizeS);
+    OPT::Apply(*(OM->getOp()),*X1,const_cast<MV&>(*MX1));
+    OPT::Apply(*(OM->getOp()),*X2,const_cast<MV&>(*MX2));
+    OPT::Apply(*(OM->getOp()),*S ,*MS);
+    numtests = 32;
+  }
+  else {
+    numtests = 4;
+  }
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
@@ -410,7 +421,21 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 
   for (int t=0; t<numtests; t++) {
 
-    Array<RCP<const MV> > theX;
+    // pointers to simplify calls below
+    RCP<const MV> lclMX1;
+    RCP<const MV> lclMX2;
+    RCP<MV> lclMS;
+    if ( t & 4 ) {
+      lclMX1 = MX1;
+    }
+    if ( t & 8 ) {
+      lclMX2 = MX2;
+    }
+    if ( t & 16 ) {
+      lclMS = MS;
+    }
+
+    Array<RCP<const MV> > theX, theMX;
     RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
     if ( (t && 3) == 0 ) {
@@ -420,16 +445,19 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
     else if ( (t && 3) == 1 ) {
       // X1
       theX = tuple(X1);
+      theMX = tuple(lclMX1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
       theX = tuple(X2);
+      theMX = tuple(lclMX2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
+      theMX = tuple(lclMX1,lclMX2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
@@ -444,31 +472,35 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 
       // here is where the outputs go
       Array<RCP<MV> > S_outs;
+      Array<RCP<MV> > MS_outs;
       Array<Array<RCP<SerialDenseMatrix<int,ST> > > > C_outs;
       Array<RCP<SerialDenseMatrix<int,ST> > > B_outs;
-      RCP<MV> Scopy;
+      RCP<MV> Scopy, MScopy;
       Array<int> ret_out;
 
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
+      if (lclMS != Teuchos::null) {
+        MScopy = MVT::CloneCopy(*lclMS);
+      }
       // randomize this data, it should be overwritten
       B->random();
       for (unsigned int i=0; i<C.size(); i++) {
         C[i]->random();
       }
       // run test
-      int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
-      sout << "projectAndNormalize() returned rank " << ret << endl;
+      int ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
+      sout << "projectAndNormalizeMat() returned rank " << ret << endl;
       if (ret == 0) {
         sout << "   Cannot continue." << endl;
         numerr++;
         break;
       }
       ret_out.push_back(ret);
-      // projectAndNormalize() is only required to return a 
+      // projectAndNormalizeMat() is only required to return a 
       // basis of rank "ret"
       // this is what we will test:
-      //   the first "ret" columns in Scopy
+      //   the first "ret" columns in Scopy, MScopy
       //   the first "ret" rows in B
       // save just the parts that we want
       // we allocate S and MS for each test, so we can save these as views
@@ -479,10 +511,17 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           ind[i] = i;
         }
         S_outs.push_back( MVT::CloneView(*Scopy,ind) );
+        if (MScopy != null) {
+          MS_outs.push_back( MVT::CloneView(*MScopy,ind) );
+        }
+        else {
+          MS_outs.push_back( Teuchos::null );
+        }
         B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
       }
       else {
         S_outs.push_back( Scopy );
+        MS_outs.push_back( MScopy );
         B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(*B) ) );
       }
       C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >(0) );
@@ -497,6 +536,9 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       if ( (t && 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
+        if (lclMS != Teuchos::null) {
+          MScopy = MVT::CloneCopy(*lclMS);
+        }
         // randomize this data, it should be overwritten
         B->random();
         for (unsigned int i=0; i<C.size(); i++) {
@@ -504,19 +546,20 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
+        theMX = tuple( theMX[1], theMX[0] );
         // run test
-        int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
-        sout << "projectAndNormalize() returned rank " << ret << endl;
+        int ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
+        sout << "projectAndNormalizeMat() returned rank " << ret << endl;
         if (ret == 0) {
           sout << "   Cannot continue." << endl;
           numerr++;
           break;
         }
         ret_out.push_back(ret);
-        // projectAndNormalize() is only required to return a 
+        // projectAndNormalizeMat() is only required to return a 
         // basis of rank "ret"
         // this is what we will test:
-        //   the first "ret" columns in Scopy
+        //   the first "ret" columns in Scopy, MScopy
         //   the first "ret" rows in B
         // save just the parts that we want
         // we allocate S and MS for each test, so we can save these as views
@@ -527,10 +570,17 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
             ind[i] = i;
           }
           S_outs.push_back( MVT::CloneView(*Scopy,ind) );
+          if (MScopy != null) {
+            MS_outs.push_back( MVT::CloneView(*MScopy,ind) );
+          }
+          else {
+            MS_outs.push_back( Teuchos::null );
+          }
           B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
         }
         else {
           S_outs.push_back( Scopy );
+          MS_outs.push_back( MScopy );
           B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(*B) ) );
         }
         C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
@@ -539,11 +589,23 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
         theX = tuple( theX[1], theX[0] );
+        theMX = tuple( theMX[1], theMX[0] );
       }
 
 
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
+        // MS == M*S
+        if (MS_outs[o] != null) {
+          RCP<MV> tmp = MVT::Clone(*S_outs[o],ret_out[o]);
+          OPT::Apply(*(OM->getOp()),*S_outs[o],*tmp);
+          MT err = MVDiff(*tmp,*MS_outs[o]);
+          if (err > TOL) {
+            sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+            numerr++;
+          }
+          sout << "  " << t << "|| MS - M*S ||           : " << err << endl;
+        }
         // S^T M S == I
         {
           MT err = OM->orthonormError(*S_outs[o]);
@@ -569,6 +631,21 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
             numerr++;
           }
           sout << "  " << t << "|| S_in - X1*C1 - X2*C2 - S_out*B || : " << err << endl;
+#ifdef TEUCHOS_DEBUG
+          if (err > ATOL*TOL) {
+            sout << "S\n" << *S << endl;
+            sout << "S_out\n" << *S_outs[o] << endl;
+            sout << "B_out\n" << *B_outs[o] << endl;
+            if (C_outs[o].size() > 0) {
+              sout << "X1\n" << *X1 << endl;
+              sout << "C_out[1]\n" << *C_outs[o][0] << endl;
+              if (C_outs[o].size() > 1) {
+                sout << "X22n" << *X2 << endl;
+                sout << "C_out[2]\n" << *C_outs[o][1] << endl;
+              }
+            }
+          }
+#endif
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
@@ -591,7 +668,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       }
     }
     catch (OrthoError e) {
-      sout << "   -------------------------------------------         projectAndNormalize() threw exception" << endl;
+      sout << "   -------------------------------------------         projectAndNormalizeMat() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
     }
@@ -609,11 +686,12 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
+int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
 {
 
   const int sizeS = MVT::GetNumberVecs(*S);
   int numerr = 0;
+  bool hasM = (OM->getOp() != null);
   std::ostringstream sout;
 
   //
@@ -634,9 +712,23 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
   //
 
   int numtests;
-  numtests = 1;
+  RCP<MV> MS;
+  if (hasM) {
+    MS  = MVT::Clone(*S,sizeS);
+    OPT::Apply(*(OM->getOp()),*S ,*MS);
+    numtests = 2;
+  }
+  else {
+    numtests = 1;
+  }
 
   for (int t=0; t<numtests; t++) {
+
+    // pointers to simplify calls below
+    RCP<MV> lclMS;
+    if ( t & 1 ) {
+      lclMS = MS;
+    }
 
     RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
 
@@ -645,25 +737,28 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       // test all outputs for correctness
 
       // here is where the outputs go
-      RCP<MV> Scopy;
+      RCP<MV> Scopy, MScopy;
       int ret;
 
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
+      if (lclMS != Teuchos::null) {
+        MScopy = MVT::CloneCopy(*lclMS);
+      }
       // randomize this data, it should be overwritten
       B->random();
       // run test
-      ret = OM->normalize(*Scopy,B);
-      sout << "normalize() returned rank " << ret << endl;
+      ret = OM->normalizeMat(*Scopy,B,MScopy);
+      sout << "normalizeMat() returned rank " << ret << endl;
       if (ret == 0) {
         sout << "   Cannot continue." << endl;
         numerr++;
         break;
       }
-      // normalize() is only required to return a 
+      // normalizeMat() is only required to return a 
       // basis of rank "ret"
       // this is what we will test:
-      //   the first "ret" columns in Scopy
+      //   the first "ret" columns in Scopy, MScopy
       //   the first "ret" rows in B
       // get pointers to the parts that we want
       if (ret < sizeS) {
@@ -672,10 +767,24 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
           ind[i] = i;
         }
         Scopy = MVT::CloneView(*Scopy,ind);
+        if (MScopy != null) {
+          MScopy = MVT::CloneView(*MScopy,ind);
+        }
         B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
       }
 
       // test all outputs for correctness
+      // MS == M*S
+      if (MScopy != null) {
+        RCP<MV> tmp = MVT::Clone(*Scopy,ret);
+        OPT::Apply(*(OM->getOp()),*Scopy,*tmp);
+        MT err = MVDiff(*tmp,*MScopy);
+        if (err > TOL) {
+          sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+          numerr++;
+        }
+        sout << "  " << t << "|| MS - M*S ||           : " << err << endl;
+      }
       // S^T M S == I
       {
         MT err = OM->orthonormError(*Scopy);
@@ -698,7 +807,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       }
     }
     catch (OrthoError e) {
-      sout << "   -------------------------------------------         normalize() threw exception" << endl;
+      sout << "   -------------------------------------------         normalizeMat() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
     }
@@ -716,7 +825,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testProject(RCP<OrthoManager<ST,MV> > OM, 
+int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM, 
                    RCP<const MV> S, 
                    RCP<const MV> X1, RCP<const MV> X2) {
 
@@ -724,6 +833,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
   int numerr = 0;
+  bool hasM = (OM->getOp() != null);
   std::ostringstream sout;
 
   //
@@ -756,7 +866,20 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
   //
 
   int numtests;
-  numtests = 8;
+  RCP<const MV> MX1, MX2;
+  RCP<MV> MS;
+  if (hasM) {
+    MX1 = MVT::Clone(*S,sizeX1);
+    MX2 = MVT::Clone(*S,sizeX2);
+    MS  = MVT::Clone(*S,sizeS);
+    OPT::Apply(*(OM->getOp()),*X1,const_cast<MV&>(*MX1));
+    OPT::Apply(*(OM->getOp()),*X2,const_cast<MV&>(*MX2));
+    OPT::Apply(*(OM->getOp()),*S ,*MS);
+    numtests = 64;
+  }
+  else {
+    numtests = 8;
+  }
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
@@ -770,7 +893,21 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
   for (int t=0; t<numtests; t++) {
 
-    Array<RCP<const MV> > theX;
+    // pointers to simplify calls below
+    RCP<const MV> lclMX1;
+    RCP<const MV> lclMX2;
+    RCP<MV> lclMS;
+    if ( t & 8 ) {
+      lclMX1 = MX1;
+    }
+    if ( t & 16 ) {
+      lclMX2 = MX2;
+    }
+    if ( t & 32 ) {
+      lclMS = MS;
+    }
+
+    Array<RCP<const MV> > theX, theMX;
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
     if ( (t && 3) == 0 ) {
       // neither X1 nor X2
@@ -779,16 +916,19 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
     else if ( (t && 3) == 1 ) {
       // X1
       theX = tuple(X1);
+      theMX = tuple(lclMX1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
       theX = tuple(X2);
+      theMX = tuple(lclMX2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
+      theMX = tuple(lclMX1,lclMX2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
@@ -803,20 +943,25 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
       // here is where the outputs go
       Array<RCP<MV> > S_outs;
+      Array<RCP<MV> > MS_outs;
       Array<Array<RCP<SerialDenseMatrix<int,ST> > > > C_outs;
-      RCP<MV> Scopy;
+      RCP<MV> Scopy, MScopy;
 
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
+      if (lclMS != Teuchos::null) {
+        MScopy = MVT::CloneCopy(*lclMS);
+      }
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
         C[i]->random();
       }
       // run test
-      OM->project(*Scopy,theX,C);
+      OM->projectMat(*Scopy,theX,C,MScopy,theMX);
       // we allocate S and MS for each test, so we can save these as views
       // however, save copies of the C
       S_outs.push_back( Scopy );
+      MS_outs.push_back( MScopy );
       C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >(0) );
       if (C.size() > 0) {
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
@@ -829,17 +974,22 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       if ( (t && 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
+        if (lclMS != Teuchos::null) {
+          MScopy = MVT::CloneCopy(*lclMS);
+        }
         // randomize this data, it should be overwritten
         for (unsigned int i=0; i<C.size(); i++) {
           C[i]->random();
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
+        theMX = tuple( theMX[1], theMX[0] );
         // run test
-        OM->project(*Scopy,theX,C);
+        OM->projectMat(*Scopy,theX,C,MScopy,theMX);
         // we allocate S and MS for each test, so we can save these as views
         // however, save copies of the C
         S_outs.push_back( Scopy );
+        MS_outs.push_back( MScopy );
         // we are in a special case: P_X1 and P_X2, so we know we applied 
         // two projectors, and therefore have two C[i]
         C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
@@ -848,10 +998,22 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
         theX = tuple( theX[1], theX[0] );
+        theMX = tuple( theMX[1], theMX[0] );
       }
 
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
+        // MS == M*S
+        if (MS_outs[o] != null) {
+          RCP<MV> tmp = MVT::Clone(*S_outs[o],sizeS);
+          OPT::Apply(*(OM->getOp()),*S_outs[o],*tmp);
+          MT err = MVDiff(*tmp,*MS_outs[o]);
+          if (err > TOL) {
+            sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+            numerr++;
+          }
+          sout << "  " << t << "|| MS - M*S ||           : " << err << endl;
+        }
         // S_in = X1*C1 + C2*C2 + S_out
         {
           RCP<MV> tmp = MVT::CloneCopy(*S_outs[o]);
@@ -910,7 +1072,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
     }
     catch (OrthoError e) {
-      sout << "   -------------------------------------------         project() threw exception" << endl;
+      sout << "   -------------------------------------------         projectMat() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
     }

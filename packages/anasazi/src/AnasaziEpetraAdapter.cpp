@@ -200,7 +200,7 @@ namespace Anasazi {
   // 
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b
+  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double> & b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
                                , ConjType conj
 #endif
@@ -209,9 +209,9 @@ namespace Anasazi {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvDot() cast of MultiVec<double> to EpetraMultiVec failed.");
 
-    if ((b!=NULL) && ( (int)b->size() >= A_vec->NumVectors() ) ) {
+    if (( (int)b.size() >= A_vec->NumVectors() ) ) {
       TEST_FOR_EXCEPTION( 
-          this->Dot( *A_vec, &(*b)[0] ) != 0,
+          this->Dot( *A_vec, &b[0] ) != 0,
           EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvDot() call to Epetra_MultiVec::Dot() returned a nonzero value.");
     }
   }

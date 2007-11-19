@@ -126,7 +126,7 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
       
       // Compute the norm of the Ritz residual vectors
       std::vector<MagnitudeType> ritzVecNrm( numRitzVecs );
-      MVT::MvNorm( *ritzVectors, &ritzVecNrm );
+      MVT::MvNorm( *ritzVectors, ritzVecNrm );
       MagnitudeType error;
       for (int i=0; i<numRitzVecs; i++) {
         error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
@@ -136,7 +136,7 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
       /* TO DO: Fix the iteration to compute residuals in the event of a non-euclidean normalization of the basis.
 
       std::vector<MagnitudeType> ritzResNrm( MVT::GetNumberVecs( *ritzResiduals ) );
-      MVT::MvNorm( *ritzResiduals, &ritzResNrm );
+      MVT::MvNorm( *ritzResiduals, ritzResNrm );
       for (int i=0; i<(int)ritzResNrm.size(); i++) {
       error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzResids[i] - ritzResNrm[i] );
       cout << error/ritzResNrm[i] << endl;

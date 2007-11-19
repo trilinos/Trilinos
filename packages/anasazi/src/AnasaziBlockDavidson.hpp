@@ -493,8 +493,8 @@ namespace Anasazi {
     // H_ will occasionally point at the current block of vectors in the basis V_
     // MH_,KH_ will occasionally point at MX_,KX_ when they are used as temporary storage
     Teuchos::RCP<MV> X_, KX_, MX_, R_,
-                             H_, KH_, MH_,
-                             V_;
+                     H_, KH_, MH_,
+                     V_;
     //
     // Projected matrices
     //
@@ -927,20 +927,24 @@ namespace Anasazi {
       TEST_FOR_EXCEPTION( newstate.KK->numRows() < curDim_ || newstate.KK->numCols() < curDim_, std::invalid_argument, 
                           "Anasazi::BlockDavidson::initialize(newstate): Projected matrix in new state must be as large as specified state rank.");
 
-
       // put data in V
       std::vector<int> nevind(curDim_);
       for (int i=0; i<curDim_; ++i) nevind[i] = i;
-      if (newstate.V != V_) {
-        MVT::SetBlock(*newstate.V,nevind,*V_);
-      }
       lclV = MVT::CloneView(*V_,nevind);
+      if (newstate.V != V_) {
+        if (curDim_ < MVT::GetNumberVecs(*newstate.V)) {
+          newstate.V = MVT::CloneView(*newstate.V,nevind);
+        }
+        MVT::MvAddMv(ZERO,*newstate.V,ONE,*newstate.V,*lclV);
+      }
 
       // put data into KK_
       lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
       if (newstate.KK != KK_) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> newKK(Teuchos::View,*newstate.KK,curDim_,curDim_);
-        lclKK->assign(newKK);
+        if (newstate.KK->numRows() > curDim_ || newstate.KK->numCols() > curDim_) {
+          newstate.KK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.KK,curDim_,curDim_) );
+        }
+        lclKK->assign(*newstate.KK);
       }
       //
       // make lclKK Hermitian in memory (copy the upper half to the lower half)
@@ -998,6 +1002,9 @@ namespace Anasazi {
         MVT::MvRandom(*lclV);
       }
       else {
+        if (MVT::GetNumberVecs(*ivec) > curDim_) {
+          ivec = MVT::CloneView(*ivec,dimind);
+        }
         // assign ivec to first part of lclV
         MVT::SetBlock(*ivec,dimind,*lclV);
       }
@@ -1024,15 +1031,15 @@ namespace Anasazi {
       if (auxVecs_.size() > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        int rank = orthman_->projectAndNormalizeMat(*lclV,tmpVecs,dummy,Teuchos::null,auxVecs_);
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
+        int rank = orthman_->projectAndNormalizeMat(*lclV,auxVecs_,dummyC,Teuchos::null,tmpVecs);
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        int rank = orthman_->normalizeMat(*lclV,tmpVecs,Teuchos::null);
+        int rank = orthman_->normalizeMat(*lclV,Teuchos::null,tmpVecs);
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
@@ -1297,9 +1304,10 @@ namespace Anasazi {
 
         Teuchos::Array<Teuchos::RCP<const MV> > against = auxVecs_;
         against.push_back(Vprev);
-        int rank = orthman_->projectAndNormalizeMat(*H_,MH_,
-                                            Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),
-                                            Teuchos::null,against);
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
+        int rank = orthman_->projectAndNormalizeMat(*H_,against,
+                                            dummyC,
+                                            Teuchos::null,MH_);
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockDavidsonOrthoFailure,
                            "Anasazi::BlockDavidson::iterate(): unable to compute orthonormal basis for H.");
       }
@@ -1461,7 +1469,7 @@ namespace Anasazi {
   BlockDavidson<ScalarType,MV,OP>::getResNorms() {
     if (Rnorms_current_ == false) {
       // Update the residual norms
-      orthman_->norm(*R_,&Rnorms_);
+      orthman_->norm(*R_,Rnorms_);
       Rnorms_current_ = true;
     }
     return Rnorms_;
@@ -1475,7 +1483,7 @@ namespace Anasazi {
   BlockDavidson<ScalarType,MV,OP>::getRes2Norms() {
     if (R2norms_current_ == false) {
       // Update the residual 2-norms 
-      MVT::MvNorm(*R_,&R2norms_);
+      MVT::MvNorm(*R_,R2norms_);
       R2norms_current_ = true;
     }
     return R2norms_;

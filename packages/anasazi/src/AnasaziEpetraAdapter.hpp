@@ -40,6 +40,7 @@
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -188,7 +189,7 @@ namespace Anasazi {
   
     /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^H(this[i])\f$ where \c A[i] is the i-th column of \c A.
     */
-    void MvDot ( const MultiVec<double>& A, std::vector<double>* b
+    void MvDot ( const MultiVec<double>& A, std::vector<double> &b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
         , ConjType conj = Anasazi::CONJ
 #endif
@@ -212,9 +213,9 @@ namespace Anasazi {
     /*! \brief Compute the 2-norm of each individual vector of \c *this.  
       Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
     */
-    void MvNorm ( std::vector<double>* normvec ) const {
-      if ((normvec!=NULL) && ((int)normvec->size() >= GetNumberVecs()) ) {
-        TEST_FOR_EXCEPTION( this->Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
+    void MvNorm ( std::vector<double> & normvec ) const {
+      if (((int)normvec.size() >= GetNumberVecs()) ) {
+        TEST_FOR_EXCEPTION( this->Norm2(&normvec[0])!=0, EpetraMultiVecFailure,
             "Anasazi::EpetraMultiVec::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value.");
       }
     };
@@ -595,7 +596,13 @@ namespace Anasazi {
     \return Reference-counted pointer to the new Epetra_MultiVector.
     */
     static Teuchos::RCP<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); }
+    { 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(numvecs <= 0,std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,numvecs): numvecs must be greater than zero.");
+#endif
+      return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); 
+    }
 
     /*! \brief Creates a new Epetra_MultiVector and copies contents of \c mv into the new vector (deep copy).
       
@@ -611,6 +618,14 @@ namespace Anasazi {
     */
     static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,index): numvecs must be greater than zero.");
+      TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,index): indices must be >= zero.");
+      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.NumVectors(), std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,index): indices must be < mv.NumVectors().");
+#endif
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::Copy, mv, &tmp_index[0], index.size()) ); 
     }
@@ -622,6 +637,14 @@ namespace Anasazi {
     */      
     static Teuchos::RCP<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+      TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView(mv,index): indices must be >= zero.");
+      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.NumVectors(), std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView(mv,index): indices must be < mv.NumVectors().");
+#endif
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
     }
@@ -633,6 +656,14 @@ namespace Anasazi {
     */      
     static Teuchos::RCP<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(const mv,index): numvecs must be greater than zero.");
+      TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(const mv,index): indices must be >= zero.");
+      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.NumVectors(), std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(const mv,index): indices must be < mv.NumVectors().");
+#endif
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
     }
@@ -664,15 +695,64 @@ namespace Anasazi {
       Epetra_MultiVector B_Pvec(::Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
       TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
      */
     static void MvAddMv( double alpha, const Epetra_MultiVector& A, double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
-      TEST_FOR_EXCEPTION( mv.Update( alpha, A, beta, B, 0.0 )!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update() returned a nonzero value.");
+      // epetra mv.Update(alpha,A,beta,B,gamma) will check 
+      //   alpha == 0.0 
+      // and 
+      //   beta == 0.0 
+      // and based on this will call 
+      //   mv.Update(beta,B,gamma) 
+      // or 
+      //   mv.Update(alpha,A,gamma)
+      //
+      // mv.Update(alpha,A,gamma) 
+      // will then check for one of 
+      //   gamma == 0
+      // or 
+      //   gamma == 1
+      // or 
+      //   alpha == 1 
+      // in that order. however, it will not look for the combination
+      //   alpha == 1 and gamma = 0
+      // which is a common use case when we wish to assign 
+      //   mv = A   (in which case alpha == 1, beta == gamma == 0)
+      // or 
+      //   mv = B   (in which case beta == 1, alpha == gamma == 0)
+      // 
+      // therefore, we will check for these use cases ourselves
+      if (beta == 0.0) {
+        if (alpha == 1.0) {
+          // assign
+          mv = A;
+        }
+        else {
+          // single update
+          TEST_FOR_EXCEPTION( mv.Update( alpha, A, 0.0 )!=0, EpetraMultiVecFailure,
+              "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update(alpha,A,0.0) returned a nonzero value.");
+        }
+      }
+      else if (alpha == 0.0) {
+        if (beta == 1.0) {
+          // assign 
+          mv = B;
+        }
+        else {
+          // single update
+          TEST_FOR_EXCEPTION( mv.Update( beta, B, 0.0 )!=0, EpetraMultiVecFailure,
+              "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update(beta,B,0.0) returned a nonzero value.");
+        }
+      }
+      else {
+        // double update
+        TEST_FOR_EXCEPTION( mv.Update( alpha, A, beta, B, 0.0 )!=0, EpetraMultiVecFailure,
+            "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update(alpha,A,beta,B,0.0) returned a nonzero value.");
+      }
     }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
@@ -687,19 +767,25 @@ namespace Anasazi {
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
       
       TEST_FOR_EXCEPTION( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 )!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
-    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b
+    static void MvDot( const Epetra_MultiVector& A, const Epetra_MultiVector& B, std::vector<double> &b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
                       , ConjType conj = Anasazi::CONJ
 #endif
                       )
     {
-      TEST_FOR_EXCEPTION( mv.Dot( A, &(*b)[0] )!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvDot call to Epetra_MultiVector::Dot() returned a nonzero value.");     
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(A.NumVectors() != B.NumVectors(),std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvDot(A,B,b): A and B must have the same number of vectors.");
+      TEST_FOR_EXCEPTION(b.size() != (unsigned int)A.NumVectors(),std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvDot(A,B,b): b must have room for all dot products.");
+#endif
+      TEST_FOR_EXCEPTION( A.Dot( B, &b[0] )!=0, EpetraMultiVecFailure,
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvDot(A,B,b) call to Epetra_MultiVector::Dot() returned a nonzero value.");     
     }
 
     //@}
@@ -709,10 +795,14 @@ namespace Anasazi {
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec )
+    static void MvNorm( const Epetra_MultiVector& mv, std::vector<double> &normvec )
     { 
-      TEST_FOR_EXCEPTION( mv.Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value."); 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION((unsigned int)mv.NumVectors() != normvec.size(),std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvNorm(mv,normvec): normvec must be the same size of mv.");
+#endif
+      TEST_FOR_EXCEPTION( mv.Norm2(&normvec[0])!=0, EpetraMultiVecFailure,
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value."); 
     }
 
     //@}
@@ -723,48 +813,33 @@ namespace Anasazi {
      */
     static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
     { 
-      // Extract the "numvecs" columns of mv indicated by the index vector.
-      int numvecs = index.size();
-      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], numvecs);
-
-      if ( A.NumVectors() != numvecs ) {
-        std::vector<int> index2( numvecs );
-        for(int i=0; i<numvecs; i++)
-          index2[i] = i;
-        Epetra_MultiVector A_vec(::View, A, &index2[0], numvecs);      
-        TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 )!=0, EpetraMultiVecFailure,
-            "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value."); 
-      }
-      else {
-        TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A, 0.0, A, 0.0 )!=0, EpetraMultiVecFailure,
-            "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value.");
-      }
+      TEST_FOR_EXCEPTION((unsigned int)A.NumVectors() != index.size(),std::invalid_argument,
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::SetBlock(A,index,mv): index must be the same size as A");
+      Teuchos::RCP<Epetra_MultiVector> mv_sub = CloneView(mv,index);
+      *mv_sub = A;
     }
-    
+
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
     static void MvScale ( Epetra_MultiVector& mv, double alpha ) 
     { 
       TEST_FOR_EXCEPTION( mv.Scale( alpha )!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value."); 
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale(mv,double alpha) returned a nonzero value."); 
     }
-    
+
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
      */
     static void MvScale ( Epetra_MultiVector& mv, const std::vector<double>& alpha )
     { 
       // Check to make sure the vector is as long as the multivector has columns.
       int numvecs = mv.NumVectors();
-      TEST_FOR_EXCEPTION( (int)alpha.size() != numvecs, std::invalid_argument,
-                          "MultiVecTraits<double, Epetra_MultiVector>::MvScale(MV mv,vector alpha) alpha argument size was inconsistent with number of vectors in mv.")
-
-      std::vector<int> tmp_index( 1, 0 );
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION( alpha.size() != (unsigned int)numvecs, std::invalid_argument,
+                          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale(mv,vector alpha): size of alpha inconsistent with number of vectors in mv.")
+#endif
       for (int i=0; i<numvecs; i++) {
-        Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
-        TEST_FOR_EXCEPTION( temp_vec.Scale( alpha[i] )!=0, EpetraMultiVecFailure,
-            "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
-        tmp_index[0]++;
+        TEST_FOR_EXCEPTION( mv(i)->Scale(alpha[i]), EpetraMultiVecFailure,
+            "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
       }
     }
 
@@ -773,7 +848,7 @@ namespace Anasazi {
     static void MvRandom( Epetra_MultiVector& mv )
     { 
       TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
     }
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
@@ -781,9 +856,9 @@ namespace Anasazi {
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
     { 
       TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure,
-          "MultiVecTraits<double, Epetra_MultiVector>::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
     }
-    
+
     //@}
 
     //! @name Print method
@@ -826,7 +901,12 @@ namespace Anasazi {
                         const Epetra_MultiVector& x, 
                         Epetra_MultiVector& y )
     { 
-      TEST_FOR_EXCEPTION( Op.Apply( x, y ) != 0, OperatorError, "Error in Epetra_Operator::Apply()!" );
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(x.NumVectors() != y.NumVectors(),std::invalid_argument,
+          "Anasazi::OperatorTraits<double,Epetra_MultiVector,Epetra_Operator>::Apply(Op,x,y): x and y must have the same number of columns.");
+#endif
+      TEST_FOR_EXCEPTION( Op.Apply( x, y ) != 0, OperatorError, 
+          "Anasazi::OperatorTraits<double,Epetra_Multivector,Epetra_Operator>::Apply(): Error in Epetra_Operator::Apply()." );
     }
     
   };

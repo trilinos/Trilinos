@@ -456,7 +456,7 @@ namespace Anasazi {
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
     const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >             tester_;
     const Teuchos::RCP<OrthoManager<ScalarType,MV> >        orthman_;
     //
     // Information obtained from the eigenproblem
@@ -885,14 +885,14 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
         
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        int rank = orthman_->projectAndNormalize(*newV,dummy,Teuchos::null,auxVecs_);
+        int rank = orthman_->projectAndNormalize(*newV,auxVecs_);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
                             "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        int rank = orthman_->normalize(*newV,Teuchos::null);
+        int rank = orthman_->normalize(*newV);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
                             "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
@@ -1019,7 +1019,7 @@ namespace Anasazi {
         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
           subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
                                ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
-        int rank = orthman_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+        int rank = orthman_->projectAndNormalize(*Vnext,AVprev,AsubH,subR);
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
                            "Anasazi::BlockKrylovSchur::iterate(): couldn't generate basis of full rank.");
       }
@@ -1142,7 +1142,7 @@ namespace Anasazi {
         
         // Compute || FE_k^T - (AV-VH) ||
         std::vector<MagnitudeType> arnNorms( curDim_ );
-        orthman_->norm( *lclAV, &arnNorms );
+        orthman_->norm( *lclAV, arnNorms );
         
         for (int i=0; i<curDim_; i++) {        
         os << " >> Error in Krylov-Schur factorization (R = AV-VS-FB^H), ||R[" << i << "]|| : " << arnNorms[i] << std::endl;
@@ -1298,7 +1298,7 @@ namespace Anasazi {
 
           // Compute the norm of the new Ritz vectors
           std::vector<MagnitudeType> ritzNrm( numRitzVecs_ );
-          MVT::MvNorm( *view_ritzVectors, &ritzNrm );
+          MVT::MvNorm( *view_ritzVectors, ritzNrm );
 
           // Release memory used to compute Ritz vectors before scaling the current vectors.
           tmpritzVectors_ = Teuchos::null;
@@ -1491,7 +1491,7 @@ namespace Anasazi {
             
             MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, ritzRes, ST_ZERO, *ritzResVecs );
             std::vector<MagnitudeType> ritzResNrms(curDim_);
-            MVT::MvNorm( *ritzResVecs, &ritzResNrms );
+            MVT::MvNorm( *ritzResVecs, ritzResNrms );
             i = 0;
             while( i < curDim_ ) {
               if ( tmp_ritzValues[curDim_+i] != MT_ZERO ) {

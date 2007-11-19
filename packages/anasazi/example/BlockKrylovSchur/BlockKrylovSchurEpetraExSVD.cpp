@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(sol.Evecs->CloneView( index ));
     Teuchos::SerialDenseMatrix<int,double> S(numev,numev);
     A->Apply( *evecs, Av );
-    Av.MvNorm( &tempnrm );
+    Av.MvNorm( tempnrm );
     for (i=0; i<numev; i++) { S(i,i) = one/tempnrm[i]; };
     u.MvTimesMatAddMv( one, Av, S, zero );
     //
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
     //
     for (i=0; i<numev; i++) { S(i,i) = evals[i].realpart; }
     Av.MvTimesMatAddMv( -one, u, S, one );
-    Av.MvNorm( &directnrm );
+    Av.MvNorm( directnrm );
     if (MyPID==0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<std::setw(16)<<"Singular Value"

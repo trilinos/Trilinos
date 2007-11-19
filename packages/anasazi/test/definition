@@ -18,12 +18,29 @@
             BlockDavidson/BlockDavidson_solvertest.exe,
             BlockDavidson/BlockDavidson_auxtest.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
-            OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_basic_test.exe,
             SortManager/SortManager_test.exe,
             StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
+    TESTS = OrthoManager/OrthoManager_gentest.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose, 
+           --verbose --noMass;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
+    TESTS = OrthoManager/OrthoManager_test.exe,
+            OrthoManager/OrthoManager_mattest.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --useMass --ortho=SVQB, --verbose --noMass --ortho=SVQB, 
+           --verbose --useMass --ortho=Basic, --verbose --noMass --ortho=Basic,
+           --verbose --useMass --ortho=ICGS, --verbose --noMass --ortho=ICGS;
     COMM = SERIAL, MPI;
 }
 
@@ -40,7 +57,7 @@
            --verbose --exsitu --rblocks=4 --locking, 
            --verbose --exsitu --rblocks=4 --nolocking, 
            --verbose --insitu --rblocks=4 --nolocking;
-    COMM = SERIAL, MPI(1-11 13-*);
+    COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
@@ -49,6 +66,57 @@
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --insitu, --verbose --exsitu;
     COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = OrthoManager/OrthoManagerComplex_test.exe,
+            OrthoManager/OrthoManagerComplex_mattest.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --ortho=SVQB,  --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --ortho=SVQB,
+           --verbose --ortho=Basic, --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --ortho=Basic,
+           --verbose --ortho=ICGS,  --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --ortho=ICGS;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = OrthoManager/OrthoManagerComplex_gentest.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = MVOPTester/MVOPComplex_test.exe,
+            LOBPCG/LOBPCGComplex_test.exe,
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = BlockDavidson/BlockDavidsonComplex_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --locking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --nolocking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --nolocking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --locking;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun,
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_lap_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests,COVERAGE) {
@@ -62,40 +130,6 @@
     TESTS = ../thyra/test/BlockDavidson/BlockDavidsonThyra_test.exe,
             ../thyra/test/BlockKrylovSchur/BlockKrylovSchurThyra_test.exe,
             ../thyra/test/LOBPCG/LOBPCGThyra_test.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = MVOPTester/MVOPComplex_test.exe,
-            OrthoManager/OrthoManagerComplex_test.exe,
-            LOBPCG/LOBPCGComplex_test.exe,
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = BlockDavidson/BlockDavidsonComplex_test.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --locking, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --nolocking, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --nolocking, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --locking;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_test.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun,
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_lap_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;

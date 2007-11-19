@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
     OPT::Apply( *K, *evecs, *Kvecs );
 
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
-    MVT::MvNorm( *Kvecs, &normV );
+    MVT::MvNorm( *Kvecs, normV );
   
     os << "Direct residual norms computed in BlockKrylovSchurComplex_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl

@@ -569,8 +569,8 @@ namespace Anasazi {
     //
     // State Multivecs
     // V_, KV_ MV_  and  R_ are primary pointers to allocated multivectors
-    // the rest are multivector views into V_, KV_ and MV_
     Teuchos::RCP<MV> V_, KV_, MV_, R_;
+    // the rest are multivector views into V_, KV_ and MV_
     Teuchos::RCP<MV> X_, KX_, MX_,
                      H_, KH_, MH_,
                      P_, KP_, MP_;
@@ -1087,13 +1087,13 @@ namespace Anasazi {
       if (numAuxVecs_ > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        int rank = orthman_->projectAndNormalizeMat(*X_,MX_,dummy,Teuchos::null,auxVecs_);
+        int rank = orthman_->projectAndNormalizeMat(*X_,auxVecs_,dummy,Teuchos::null,MX_);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        int rank = orthman_->normalizeMat(*X_,MX_,Teuchos::null);
+        int rank = orthman_->normalizeMat(*X_,Teuchos::null,MX_);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
@@ -1376,7 +1376,7 @@ namespace Anasazi {
       }
       {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        int rank = orthman_->projectAndNormalizeMat(*H_,MH_,C,Teuchos::null,Q);
+        int rank = orthman_->projectAndNormalizeMat(*H_,Q,C,Teuchos::null,MH_);
         // our views are currently in place; it is safe to throw an exception
         TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
                            "Anasazi::LOBPCG::iterate(): unable to compute orthonormal basis for H.");
@@ -1419,8 +1419,8 @@ namespace Anasazi {
       //    P' [KP]
       //    P' [MP]
       //    [X H P] CX
-      //       [X H P] CP    if  fullOrtho
-      //         [H P] CP    if !fullOrtho
+      //    [X H P] CP    if  fullOrtho
+      //      [H P] CP    if !fullOrtho
       //
       // since M[X H P] is potentially the same memory as [X H P], and 
       // because we are not allowed to have overlapping non-const views of 
@@ -1892,7 +1892,7 @@ namespace Anasazi {
   LOBPCG<ScalarType,MV,OP>::getResNorms() {
     if (Rnorms_current_ == false) {
       // Update the residual norms
-      orthman_->norm(*R_,&Rnorms_);
+      orthman_->norm(*R_,Rnorms_);
       Rnorms_current_ = true;
     }
     return Rnorms_;
@@ -1906,7 +1906,7 @@ namespace Anasazi {
   LOBPCG<ScalarType,MV,OP>::getRes2Norms() {
     if (R2norms_current_ == false) {
       // Update the residual 2-norms 
-      MVT::MvNorm(*R_,&R2norms_);
+      MVT::MvNorm(*R_,R2norms_);
       R2norms_current_ = true;
     }
     return R2norms_;

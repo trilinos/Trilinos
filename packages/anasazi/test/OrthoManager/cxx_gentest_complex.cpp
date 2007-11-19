@@ -28,36 +28,54 @@
 //
 //  This test is for the GenOrthoManager interface to ICGSOrthoManager
 //
+// The matrix used is from MatrixMarket:
+// Name: MHD1280B: Alfven Spectra in Magnetohydrodynamics
+// Source: Source: A. Booten, M.N. Kooper, H.A. van der Vorst, S. Poedts and J.P. Goedbloed University of Utrecht, the Netherlands
+// Discipline: Plasma physics
+// URL: http://math.nist.gov/MatrixMarket/data/NEP/mhd/mhd1280b.html
+// Size: 1280 x 1280
+// NNZ: 22778 entries
+//
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziSolverUtils.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziICGSOrthoManager.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
+// I/O for Harwell-Boeing files
+#ifdef HAVE_ANASAZI_TRIUTILS
+#include "iohb.h"
 #endif
 
-#include "ModeLaplace1DQ1.h"
+// templated multivector and sparse matrix classes
+#include "MyMultiVec.hpp"
+#include "MyBetterOperator.hpp"
 
 using namespace Teuchos;
 using namespace Anasazi;
 using namespace std;
 
-typedef double                       ST;
-typedef Epetra_MultiVector           MV;
-typedef Epetra_Operator              OP;
-typedef MultiVecTraits<double,MV>    MVT;
-typedef OperatorTraits<double,MV,OP> OPT;
-typedef ScalarTraits<double>         SCT;
+#ifdef HAVE_COMPLEX
+  typedef std::complex<double> ST;
+#elif HAVE_COMPLEX_H
+  typedef ::complex<double> ST;
+#else
+  typedef double ST;
+  // no complex. quit with failure.
+int main() {
+  std::cout << "Not compiled with complex support." << std::endl;
+  std::cout << "End Result: TEST FAILED" << std::endl;
+  return -1;
+}
+#endif
+
+typedef MultiVec<ST>              MV;
+typedef Operator<ST>              OP;
+typedef MultiVecTraits<ST,MV>    MVT;
+typedef OperatorTraits<ST,MV,OP> OPT;
+typedef ScalarTraits<ST>         SCT;
 typedef SCT::magnitudeType           MT;
 
 const ST ONE = SCT::one();
@@ -79,18 +97,11 @@ MT MVDiff(const MV &X, const MV &Y);
 int main(int argc, char *argv[]) 
 {
   
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
   bool verbose = false;
   int numFailed = 0;
   bool debug = false;
   bool useMass = true;
+  std::string filename;
   int dim = 100;
   int sizeS  = 5;
   int sizeX1 = 11; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
@@ -102,15 +113,13 @@ int main(int argc, char *argv[])
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+    cmdp.setOption("numElements",&numElements,"Controls the size of multivectors.");
     cmdp.setOption("dim",&dim,"Controls the size of multivectors.");
-    cmdp.setOption("useMass","noMass",&useMass,"Use a mass matrix for inner product.");
     cmdp.setOption("sizeS",&sizeS,"Controls the width of the input multivector.");
     cmdp.setOption("sizeX1",&sizeX1,"Controls the width of the first basis.");
     cmdp.setOption("sizeX2",&sizeX2,"Controls the width of the second basis.");
+    cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
-      MPI_Finalize();
-#endif
       return -1;
     }
 
@@ -131,34 +140,32 @@ int main(int argc, char *argv[])
     // Output Anasazi version
     MyOM->stream(Anasazi::Warnings) << Anasazi_Version() << endl << endl;
 
-    // Problem information
-    RCP<const Epetra_CrsMatrix> M;
-    RCP<ModalProblem> testCase;
-    if (useMass) {
-      const int space_dim = 1;
-      std::vector<ST> brick_dim( space_dim );
-      brick_dim[0] = 1.0;
-      std::vector<int> elements( space_dim );
-      elements[0] = dim+1;
-
-      // Create problem
-      testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
-      // Get the mass matrix
-      M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+    //  Problem information
+    RCP< const MyBetterOperator<ST> > M;
+    if (filename != "") {
+      int dim2,nnz;
+      double *dvals;
+      int *colptr,*rowind;
+      nnz = -1;
+      int info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+          &colptr,&rowind,&dvals);
+      TEST_FOR_EXCEPTION(info == 0 || nnz < 0, 
+          std::runtime_error,
+          "Error reading file " << filename << ". info == " << info << " and nnz == " << nnz);
+      // Convert interleaved doubles to complex values
+      std::vector<ST> cvals(nnz);
+      for (int ii=0; ii<nnz; ii++) {
+        cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
+      }
+      // Build the problem matrix
+      M = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
     }
 
     // Create ortho managers
     RCP<GenOrthoManager<ST,MV,OP> > OM = rcp( new ICGSOrthoManager<ST,MV,OP>(M) );
 
     // multivector to spawn off of
-    RCP<MV> S;
-    if (useMass) {
-      S = rcp( new Epetra_MultiVector(M->OperatorDomainMap(),sizeS) );
-    }
-    else {
-      Epetra_Map map(dim,0,Comm);
-      S = rcp( new Epetra_MultiVector(map, sizeS) );
-    }
+    RCP<MV> S = rcp( new MyMultiVec<ST>(dim, sizeS) );
 
     // create X1, Y1, X2, Y2
     //
@@ -188,7 +195,7 @@ int main(int argc, char *argv[])
       Teuchos::LAPACK<int,ST> lapack;
       TEST_FOR_EXCEPTION(sizeX1 < sizeX2,std::logic_error,"Internal logic error: sizeX1 < sizeX2.");
       Array<ST> LUwork(sizeX1);
-      vector<MT> norms1(sizeX1), norms2(sizeX2);
+      std::vector<MT> norms1(sizeX1), norms2(sizeX2);
       // use a BasicOrthoManager for testing
       RCP<MatOrthoManager<ST,MV,OP> > OM_basic = rcp( new BasicOrthoManager<ST,MV,OP>(M) );
 
@@ -276,6 +283,9 @@ int main(int argc, char *argv[])
 
       // X2 ortho to Y1
       MVT::MvRandom(*X2);
+      MVT::MvNorm(*X2,norms2);
+      for (unsigned int i=0; i<norms2.size(); i++) norms2[i] = ONE/norms2[i];
+      MVT::MvScale(*X2,norms2);
       OM_basic->project(*X2,tuple<RCP<const MV> >(Y1));
       err = OM_basic->orthogError(*X2,*Y1);
       TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
@@ -480,10 +490,6 @@ int main(int argc, char *argv[])
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,cout,success);
-
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
 
   if (numFailed || success==false) {
     if (numFailed) {

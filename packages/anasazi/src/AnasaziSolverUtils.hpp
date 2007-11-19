@@ -648,7 +648,7 @@ namespace Anasazi {
     
     MagnitudeType maxCoeffX = SCT::magnitude(SCT::zero());
     std::vector<MagnitudeType> tmp( xc );
-    MVT::MvNorm(MX, &tmp);
+    MVT::MvNorm(MX, tmp);
 
     for (int i = 0; i < xc; ++i) {
       maxCoeffX = (tmp[i] > maxCoeffX) ? tmp[i] : maxCoeffX;
@@ -664,7 +664,7 @@ namespace Anasazi {
       MtimesX = MVT::CloneCopy(X);
     }
     MVT::MvAddMv( -1.0, MX, 1.0, *MtimesX, *MtimesX );
-    MVT::MvNorm( *MtimesX, &tmp );
+    MVT::MvNorm( *MtimesX, tmp );
    
     for (int i = 0; i < xc; ++i) {
       maxDiff = (tmp[i] > maxDiff) ? tmp[i] : maxDiff;
