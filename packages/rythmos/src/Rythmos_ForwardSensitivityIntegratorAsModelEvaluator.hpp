@@ -37,6 +37,8 @@
 #include "Rythmos_IntegratorBase.hpp"
 #include "Rythmos_InterpolationBufferHelpers.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
+#include "Rythmos_ForwardResponseSensitivityComputer.hpp"
+#include "Rythmos_extractStateAndSens.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
@@ -660,6 +662,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
 {
 
   using Teuchos::as;
+  using Teuchos::null;
   using Teuchos::describe;
   using Teuchos::OSTab;
   using Teuchos::rcp_dynamic_cast;
@@ -667,23 +670,28 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSSB;
   typedef Thyra::ModelEvaluatorBase MEB;
   namespace FSIAMET = ForwardSensitivityIntegratorAsModelEvaluatorTypes;
+
+  //
+  // Stream output and other basic setup
+  //
   
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
-    "Rythmos::ForwardSensitivityIntegratorAsModelEvaluator", inArgs, outArgs, Teuchos::null
+    "Rythmos::ForwardSensitivityIntegratorAsModelEvaluator", inArgs, outArgs, null
     );
   VOTSSB stateIntegrator_outputTempState(
     stateIntegrator_,out,incrVerbLevel(verbLevel,-1));
   VOTSSB stateAndSensIntegrator_outputTempState(
     stateAndSensIntegrator_,out,incrVerbLevel(verbLevel,-1));
 
-  const bool trace = out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW);
-  const bool print_norms = out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_MEDIUM);
-  const bool print_x = out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_EXTREME);
+  const bool trace =
+    out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW);
+  const bool print_norms =
+    out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_MEDIUM);
+  const bool print_x =
+    out.get() && includesVerbLevel(localVerbLevel,Teuchos::VERB_EXTREME);
 
   const RCP<const Thyra::ModelEvaluator<Scalar> >
     stateModel = stateStepper_->getModel();
-  
-  //const int np = this->get_p_space(0)->dim();
   
   const int np = responseFuncs_[0]->get_p_space(p_index_)->dim();
   
@@ -700,16 +708,16 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
   // Integrate state+sens or just state?
   const bool integrateStateAndSens = !D_d_hat_D_p.isEmpty();
 
-  // Shortcut exit if no output where requested
+  // Shortcut exit if no output was requested
   if ( is_null(d_hat) && D_d_hat_D_p.isEmpty() ) {
     if (trace)
-      *out << "\nSkipping evaluation since no outputs where requested!\n";
+      *out << "\nSkipping evaluation since no outputs were requested!\n";
     return;
   }
     
   //
-  // B) Process the InArgs knowing what if we will integrate just the state or
-  //    the state+sens.
+  // B) Process the InArgs knowing if we will integrate just the state or the
+  // state+sens.
   //
     
   const RCP<const Thyra::VectorBase<Scalar> >
@@ -727,7 +735,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
   }
     
   //
-  // C) Setup the stepper and the integrator
+  // C) Setup the stepper and the integrator for state+sens or only state
   //
 
   RCP<IntegratorBase<Scalar> > integrator;
@@ -746,32 +754,29 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
   // D) Setup for computing and processing the individual response functions
   //
 
-  const RCP<const Thyra::VectorSpaceBase<Scalar> >
-    g_space = responseFuncs_[0]->get_g_space(g_index_);
+  ForwardResponseSensitivityComputer<Scalar>
+    forwardResponseSensitivityComputer;
+  forwardResponseSensitivityComputer.setOStream(out);
+  forwardResponseSensitivityComputer.setVerbLevel(localVerbLevel);
+  forwardResponseSensitivityComputer.dumpSensitivities(dumpSensitivities_);
+  forwardResponseSensitivityComputer.setResponseFunction(
+    responseFuncs_[0],
+    responseFuncs_[0]->createInArgs(), // Will replace this for each point!
+    p_index_, g_index_
+    );
 
   // D.a) Create storage for the individual response function ouptuts g_k
   // and its derivaitves
+
   RCP<Thyra::VectorBase<Scalar> > g_k;
-  RCP<Thyra::LinearOpBase<Scalar> > D_g_D_x_dot_k;
-  RCP<Thyra::LinearOpBase<Scalar> > D_g_D_x_k;
-  RCP<Thyra::MultiVectorBase<Scalar> > D_g_D_p_k;
   RCP<Thyra::MultiVectorBase<Scalar> > D_g_hat_D_p_k;
-  {
-    if (!is_null(d_hat)) {
-      g_k = createMember(g_space);
-    }
-    if (!D_d_hat_D_p.isEmpty()) {
-      if (response_func_supports_D_x_dot_)
-        D_g_D_x_dot_k = responseFuncs_[0]->create_DgDx_dot_op(g_index_);
-      D_g_D_x_k = responseFuncs_[0]->create_DgDx_op(g_index_);
-      if (response_func_supports_D_p_)
-        D_g_D_p_k = createMembers(g_space,np);
-      D_g_hat_D_p_k = createMembers(g_space,np);
-    }
+
+  if (!is_null(d_hat)) {
+    g_k = forwardResponseSensitivityComputer.create_g_hat();
   }
-  // 2007/09/08: rabartl: Todo: Above: We should change from using
-  // multi-vectors for DgDx_dot and DgDx to linear operators since we just
-  // need to apply them.
+  if (!D_d_hat_D_p.isEmpty()) {
+    D_g_hat_D_p_k = forwardResponseSensitivityComputer.create_D_g_hat_D_p();
+  }
 
   // D.b) Zero out d_hat and D_d_hat_D_p if we are doing a summation type of
   // evaluation
@@ -824,7 +829,9 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
 
     {
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityIntegratorAsModelEvaluator::evalModel: integrate");
+      TEUCHOS_FUNC_TIME_MONITOR(
+        "Rythmos:ForwardSensitivityIntegratorAsModelEvaluator::evalModel: integrate"
+        );
 #endif
       get_fwd_x_and_x_dot( *integrator, t, &x_bar, &x_bar_dot );
     }
@@ -842,20 +849,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
     RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
     RCP<const Thyra::MultiVectorBase<Scalar> > S, S_dot;
     if (integrateStateAndSens) {
-      RCP<const Thyra::ProductVectorBase<Scalar> >
-        x_bar_pv = Thyra::productVectorBase<Scalar>(x_bar),
-        x_bar_dot_pv = Thyra::productVectorBase<Scalar>(x_bar_dot);
-      RCP<const Thyra::DefaultMultiVectorProductVector<Scalar> >
-        s_bar = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
-          x_bar_pv->getVectorBlock(1).assert_not_null(), true
-          ),
-        s_bar_dot = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
-          x_bar_dot_pv->getVectorBlock(1).assert_not_null(), true
-          );
-      x = x_bar_pv->getVectorBlock(0);
-      x_dot = x_bar_dot_pv->getVectorBlock(0);
-      S = s_bar->getMultiVector();
-      S_dot = s_bar_dot->getMultiVector();
+      extractStateAndSens( x_bar, x_bar_dot, &x, &S, &x_dot, &S_dot );
     }
     else {
       x = x_bar;
@@ -864,7 +858,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
       
     //
     // E.2) Evaluate the response function g_k and its derivatives at this
-    // point
+    // time point
     //
       
     if (trace)
@@ -875,83 +869,27 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
     MEB::InArgs<Scalar> responseInArgs = responseFunc->createInArgs();
     responseInArgs.setArgs(responseFuncInArgs_[k]);
     responseInArgs.set_p(p_index_,p);
-    responseInArgs.set_x(x);
-    if (response_func_supports_x_dot_)
-      responseInArgs.set_x_dot(x_dot);
-      
-    // E.2.a) Setup output arguments
-      
-    MEB::OutArgs<Scalar> responseOutArgs = responseFunc->createOutArgs();
-      
-    if (!is_null(g_k))
-      responseOutArgs.set_g(g_index_,g_k);
-      
-    if (!D_d_hat_D_p.isEmpty()) {
-        
-      // D_g_D_x_dot
-      if (response_func_supports_D_x_dot_) {
-        responseOutArgs.set_DgDx_dot(
-          g_index_,
-          MEB::Derivative<Scalar>(D_g_D_x_dot_k)
-          );
-      }
-      
-      // D_g_D_x
-      responseOutArgs.set_DgDx(
-        g_index_,
-        MEB::Derivative<Scalar>(D_g_D_x_k)
-        );
-        
-      // D_g_D_p
-      if (response_func_supports_D_p_) {
-        responseOutArgs.set_DgDp(
-          g_index_, p_index_,
-          MEB::Derivative<Scalar>(D_g_D_p_k,MEB::DERIV_MV_BY_COL)
-          );
-      }
-        
-    }
-      
-    // E.2.b) Evaluate the response function k
 
-    {
-#ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityIntegratorAsModelEvaluator::evalModel: evalResponse");
-#endif
-      responseFunc->evalModel( responseInArgs, responseOutArgs );
+    forwardResponseSensitivityComputer.resetResponseFunction(
+      responseFunc, responseInArgs
+      );
+
+    if (!is_null(D_g_hat_D_p_k)) {
+      forwardResponseSensitivityComputer.computeResponseAndSensitivity(
+        x_dot.get(), S_dot.get(), *x, *S, t, g_k.get(), &*D_g_hat_D_p_k
+        );
     }
-      
-    // E.2.c) Print the outputs just coputed
-      
-    if (print_norms) {
-      if (!is_null(g_k))
-        *out << "\n||g_k||inf = " << norm_inf(*g_k) << endl;
-      //if (!is_null(D_g_D_x_dot_k))
-      //  *out << "\n||D_g_D_x_k||inf = " << norms_inf(*D_g_D_x_k) << endl;
-      //if (!is_null(D_g_D_x_k))
-      //  *out << "\n||D_g_D_x_k||inf = " << norms_inf(*D_g_D_x_k) << endl;
-      if (!is_null(D_g_D_p_k))
-        *out << "\n||D_g_D_p_k||inf = " << norms_inf(*D_g_D_p_k) << endl;
+    else {
+      forwardResponseSensitivityComputer.computeResponse(
+        x_dot.get(), *x, t, g_k.get()
+        );
     }
-      
-    if ( !is_null(g_k) && (dumpSensitivities_ || print_x) )
-      *out << "\ng_k = " << *g_k;
-      
-    if (print_x) {
-      if (!is_null(D_g_D_x_dot_k))
-        *out << "\nD_g_D_x_dot_k = " << *D_g_D_x_k << endl;
-      if (!is_null(D_g_D_x_k))
-        *out << "\nD_g_D_x_k = " << *D_g_D_x_k << endl;
-      if (!is_null(D_g_D_p_k))
-        *out << "\nD_g_D_p_k = " << *D_g_D_p_k << endl;
-    }
-      
+
     //
-    // E.3) Assemble the output response function d_hat and D_d_hat_D_p
+    // E.3) Assemble the final response functions and derivatives
     //
-      
+
     // E.3.a) Assemble d_hat from g_k
-      
     if (!is_null(d_hat)) {
       if (responseType_ == FSIAMET::RESPONSE_TYPE_SUM) {
         if (trace) *out << "\nd_hat += g_k ...\n";
@@ -962,49 +900,9 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
         assign( &*prod_d_hat->getNonconstVectorBlock(k), *g_k );
       }
     }
-      
 
-    // E.3.b) D_d_hat_D_p = DgDx_dot * S_dot + DgDx * S + DgDp 
-  
+    // E.3.b) Assemble D_d_hat_Dp from D_g_hat_D_p_k
     if (!D_d_hat_D_p.isEmpty()) {
-
-#ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityIntegratorAsModelEvaluator::evalModel: computeSens");
-#endif
-
-      if (trace)
-        *out << "\nD_g_hat_D_p = DgDx_dot * S_dot + DgDx * S + DgDp ...\n";
-      
-      assign( &*D_g_hat_D_p_k, ST::zero() );
-      
-      // D_g_hat_D_p += DgDx_dot * S_dot
-      if (response_func_supports_D_x_dot_) {
-        Thyra::apply(
-          *D_g_D_x_dot_k, Thyra::NOTRANS, *S_dot,
-          &*D_g_hat_D_p_k, ST::one(), ST::one() );
-      }
-      
-      // D_g_hat_D_p += DgDx * S
-      Thyra::apply(
-        *D_g_D_x_k, Thyra::NOTRANS, *S,
-        &*D_g_hat_D_p_k, ST::one(), ST::one() );
-      
-      // D_g_hat_D_p += DgDp
-      if (response_func_supports_D_p_) {
-        Vp_V( &*D_g_hat_D_p_k, *D_g_D_p_k );
-      }
-      
-      if (dumpSensitivities_ || print_x)
-        *out << "\nD_g_hat_D_p = "
-             << Teuchos::describe(*D_g_hat_D_p_k,Teuchos::VERB_EXTREME);
-      
-    }
-
-    // E.3.c) Assemble D_d_hat_Dp from D_g_hat_D_p_k
-
-    if (!D_d_hat_D_p.isEmpty()) {
-
-      // Assemble in summation mode
       if (responseType_ == FSIAMET::RESPONSE_TYPE_SUM) {
         if (trace) *out << "\nD_d_hat_D_p += D_g_hat_D_p_k ...\n";
         Vp_V( &*D_d_hat_D_p.getMultiVector(), *D_g_hat_D_p_k );
@@ -1012,7 +910,6 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
           *out << "\nD_d_hat_D_p = "
                << Teuchos::describe(*D_d_hat_D_p.getMultiVector(),Teuchos::VERB_EXTREME);
       }
-      // Assembled in block mode
       else if (responseType_ == FSIAMET::RESPONSE_TYPE_BLOCK) {
         if (trace) *out << "\nD_d_hat_D_p["<<k<<"] = D_g_hat_D_p_k ...\n";
         assign(
@@ -1020,7 +917,6 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
           *D_g_hat_D_p_k
           );
       }
-
     }
 
   }

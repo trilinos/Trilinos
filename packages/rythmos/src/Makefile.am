@@ -43,6 +43,7 @@ all-local:
 CORE_H = \
   $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
   $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
+  $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
   $(srcdir)/Rythmos_DataStore.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
@@ -50,6 +51,8 @@ CORE_H = \
   $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
   $(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp\
   $(srcdir)/Rythmos_ForwardEulerStepper.hpp\
+  $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
+  $(srcdir)/Rythmos_ForwardResponseSensitivityComputerObserver.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityIntegratorAsModelEvaluator.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityModelEvaluator.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
@@ -73,6 +76,7 @@ CORE_H = \
   $(srcdir)/Rythmos_LinearInterpolator.hpp\
   $(srcdir)/Rythmos_LinearTimeInvariantModelEvaluator.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
+  $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
   $(srcdir)/Rythmos_SimpleIntegrator.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
@@ -90,6 +94,7 @@ CORE_H = \
   $(srcdir)/Rythmos_TimeRange.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
   $(srcdir)/Rythmos_Types.hpp\
+  $(srcdir)/Rythmos_extractStateAndSens.hpp\
   $(srcdir)/Rythmos_Version.h
 
 CORE = \
