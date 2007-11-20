@@ -37,7 +37,7 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = ml_aztec_simple$(EXEEXT) ml_operator$(EXEEXT) \
 	ml_preconditioner$(EXEEXT) ml_user_smoothing$(EXEEXT) \
-	ml_readex$(EXEEXT)
+	ml_readex$(EXEEXT) GetNecessaryFiles$(EXEEXT)
 subdir = examples/BasicExamples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -75,6 +75,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_GetNecessaryFiles_OBJECTS =
+GetNecessaryFiles_OBJECTS = $(am_GetNecessaryFiles_OBJECTS)
+GetNecessaryFiles_LDADD = $(LDADD)
 am_ml_aztec_simple_OBJECTS =  \
 	ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
 ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
@@ -110,12 +113,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_operator_SOURCES) \
-	$(ml_preconditioner_SOURCES) $(ml_readex_SOURCES) \
-	$(ml_user_smoothing_SOURCES)
-DIST_SOURCES = $(ml_aztec_simple_SOURCES) $(ml_operator_SOURCES) \
-	$(ml_preconditioner_SOURCES) $(ml_readex_SOURCES) \
-	$(ml_user_smoothing_SOURCES)
+SOURCES = $(GetNecessaryFiles_SOURCES) $(ml_aztec_simple_SOURCES) \
+	$(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) \
+	$(ml_readex_SOURCES) $(ml_user_smoothing_SOURCES)
+DIST_SOURCES = $(GetNecessaryFiles_SOURCES) $(ml_aztec_simple_SOURCES) \
+	$(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) \
+	$(ml_readex_SOURCES) $(ml_user_smoothing_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -268,6 +271,7 @@ ml_user_smoothing_SOURCES = $(srcdir)/ml_user_smoothing.cpp
 ml_user_smoothing_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_user_smoothing_CXXFLAGS = $(EXAMPLE_INCLUDES)
 ml_user_smoothing_LDADD = $(EXAMPLE_LIBS)
+GetNecessaryFiles_SOURCES = $(top_srcdir)/examples/BasicExamples
 all: all-am
 
 .SUFFIXES:
@@ -606,6 +610,9 @@ uninstall-am:
 
 
 include $(top_builddir)/Makefile.export.ml
+#copy these files over to the build area
+GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
+	@if test ! -e ./.data; then cp -f $(srcdir)/.data.gz .; gunzip -f ./.data.gz ; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

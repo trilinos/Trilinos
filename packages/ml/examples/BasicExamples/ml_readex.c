@@ -285,7 +285,7 @@ start_time = AZ_second();
   MPI_Finalize();
 #endif
 	
-  return 0;
+  exit(EXIT_SUCCESS);
 	
 }
 
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  return(0);
+  exit(EXIT_SUCCESS);
 }
 
 #endif

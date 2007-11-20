@@ -13,7 +13,8 @@ noinst_PROGRAMS = ml_aztec_simple   \
                   ml_operator       \
                   ml_preconditioner \
                   ml_user_smoothing \
-		  ml_readex        
+                  ml_readex \
+                  GetNecessaryFiles
 
 CCLD = $(CXX)
 
@@ -41,3 +42,8 @@ ml_user_smoothing_SOURCES      = $(srcdir)/ml_user_smoothing.cpp
 ml_user_smoothing_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_user_smoothing_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 ml_user_smoothing_LDADD        = $(EXAMPLE_LIBS)
+
+GetNecessaryFiles_SOURCES= $(top_srcdir)/examples/BasicExamples
+#copy these files over to the build area
+GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
+	@if test ! -e ./.data; then cp -f $(srcdir)/.data.gz .; gunzip -f ./.data.gz ; fi
