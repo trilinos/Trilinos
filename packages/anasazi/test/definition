@@ -36,7 +36,8 @@
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_mattest.exe;
+            OrthoManager/OrthoManager_mattest.exe,
+            OrthoManager/OrthoManagerFloat_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --useMass --ortho=SVQB, --verbose --noMass --ortho=SVQB, 
            --verbose --useMass --ortho=Basic, --verbose --noMass --ortho=Basic,
@@ -146,7 +147,9 @@
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_basic_test.exe,
+            OrthoManager/OrthoManager_mattest.exe,
+            OrthoManager/OrthoManager_gentest.exe,
+            OrthoManager/OrthoManagerFloat_test.exe,
             SortManager/SortManager_test.exe,
             StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;

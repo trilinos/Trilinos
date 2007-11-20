@@ -407,7 +407,7 @@ namespace Anasazi {
     if (eps_ == 0) {
       Teuchos::LAPACK<int,MagnitudeType> lapack;
       eps_ = lapack.LAMCH('E');
-      eps_ = SCT::magnitude(SCT::pow(eps_,.75));
+      eps_ = Teuchos::ScalarTraits<MagnitudeType>::pow(eps_,.75);
     }
     TEST_FOR_EXCEPTION(
         tol_ < SCT::magnitude(SCT::zero()) || tol_ > SCT::magnitude(SCT::one()),
