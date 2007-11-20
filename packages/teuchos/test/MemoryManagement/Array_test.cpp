@@ -442,12 +442,22 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   }
 
   {
-    out << "\nTest swap() ...\n";
+    out << "\nTest member swap() ...\n";
     Array<T> a2(a);
     Array<T> a3(a);
     for ( int i = 0; i < n; ++i )
-      a2[i] += 1;
+      a2[i] += as<T>(1);
     a2.swap(a3);
+    TEST_COMPARE_ARRAYS( a2, a );
+  }
+
+  {
+    out << "\nTest non-member swap() ...\n";
+    Array<T> a2(a);
+    Array<T> a3(a);
+    for ( int i = 0; i < n; ++i )
+      a2[i] += as<T>(1);
+    swap(a2,a3);
     TEST_COMPARE_ARRAYS( a2, a );
   }
 

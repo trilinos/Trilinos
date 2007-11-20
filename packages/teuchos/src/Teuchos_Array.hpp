@@ -73,7 +73,7 @@ public:
     { return (a1.vec() != a2.vec()); }
 
   /** \brief . */
-  friend void swap( const Array<T> &a1, const Array<T> &a2 )
+  friend void swap( Array<T> &a1, Array<T> &a2 )
     { a1.swap(a2); }
 
   /*
