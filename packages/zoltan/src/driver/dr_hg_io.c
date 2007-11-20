@@ -226,7 +226,7 @@ int read_hypergraph_file(
                     &npins,     /* local number of pins */
                     &hindex, &hvertex, &vwgt_dim, &vwgts, 
                     &hewgt_dim, &hewgts, &ch_start, &ch_adj,
-                    &base, &global_npins)) {
+                    &ch_ewgt_dim, &ch_ewgts, &base, &global_npins)) {
       Gen_Error(0, "fatal: Error returned from MM_readfile");
       return 0;
     }

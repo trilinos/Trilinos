@@ -332,14 +332,9 @@ int error = 0;  /* flag to indicate status */
     /* Populate Zoltan hg data structs. */
     /************************/
 
-/* Hack. Can we interpret Zoltan parameters? */
-#ifdef USE_EDGE_WEIGHTS
-    *ewgt_dim = 1;
-#endif
-
-#ifdef USE_VERTEX_WEIGHTS
-    *vwgt_dim = 1;
-#endif
+    /* Default is no weights. For symmetric matrices, generate weights later! */
+    *ewgt_dim = 0;
+    *vwgt_dim = 0;
 
     *nPins = nz;
 
@@ -396,6 +391,11 @@ int error = 0;  /* flag to indicate status */
       float *vwgts = NULL;     /* vertex weights for diagonal entries */
       float *ewgts = NULL;     /* edge weights for off-diagonals */
      
+      /* Assume symmetric matrix. Always create weights, but they are 
+         only used if user sets Zoltan parameter obj_weight_dim=1. */
+      *ewgt_dim = 1;
+      *vwgt_dim = 1;
+
       cnt = (int *) calloc(N, sizeof(int));
       start = (int *) malloc((N+1) * sizeof(int));
       if (*vwgt_dim)
