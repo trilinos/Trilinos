@@ -593,7 +593,7 @@ namespace Anasazi {
           for (int i=0; i<xc; i++) {
             maxpsnw = (nrm2[i] > maxpsnw ? nrm2[i] : maxpsnw);
           }
-          norm(X,nrm2);
+          this->norm(X,nrm2);
           for (int i=0; i<xc; i++) {
             maxpsnwo = (nrm2[i] > maxpsnwo ? nrm2[i] : maxpsnwo);
           }
