@@ -64,7 +64,7 @@ const ST ONE = SCT::one();
 const MT ZERO = SCT::magnitude(SCT::zero());
 
 // this is the tolerance that all tests are performed against
-const MT TOL = 1.0e-12;
+const MT TOL = 1.0e-11;
 const MT ATOL = 10;
 
 // declare an output manager for handling local output
