@@ -280,8 +280,8 @@ namespace Anasazi {
   private:
     //! Parameter for re-orthogonalization.
     MagnitudeType kappa_;
-    MagnitudeType tol_;
     MagnitudeType eps_;
+    MagnitudeType tol_;
   
     // ! Routine to find an orthonormal basis
     int findBasis(MV &X, Teuchos::RCP<MV> MX, 
@@ -303,7 +303,7 @@ namespace Anasazi {
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa,
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType eps,
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol ) : 
-    MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa), tol_(tol), eps_(eps),
+    MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa), eps_(tol), tol_(eps),
     timerReortho_(Teuchos::TimeMonitor::getNewTimer("Anasazi::BasicOrthoManager::Re-orthogonalization"))
   {
     TEST_FOR_EXCEPTION(eps_ < SCT::magnitude(SCT::zero()),std::invalid_argument,
@@ -311,7 +311,7 @@ namespace Anasazi {
     if (eps_ == 0) {
       Teuchos::LAPACK<int,MagnitudeType> lapack;
       eps_ = lapack.LAMCH('E');
-      eps_ = SCT::pow(eps_,.75);
+      eps_ = SCT::magnitude(SCT::pow(eps_,.75));
     }
     TEST_FOR_EXCEPTION(
         tol_ < SCT::magnitude(SCT::zero()) || tol_ > SCT::magnitude(SCT::one()),

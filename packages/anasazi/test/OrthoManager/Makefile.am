@@ -45,7 +45,7 @@ EXEEXT = .exe
 
 if BUILD_TEUCHOS_COMPLEX
 if BUILD_TRIUTILS
-ORTHOMANAGER_COMPLEX_TEST = OrthoManagerComplex_test OrthoManagerComplex_mattest OrthoManagerComplex_gentest Dummy
+ORTHOMANAGER_COMPLEX_TEST = OrthoManagerComplex_test OrthoManagerComplex_mattest OrthoManagerComplex_gentest OrthoManagerFloat_test Dummy
 endif
 endif
 
@@ -63,6 +63,8 @@ OrthoManager_mattest_SOURCES = $(srcdir)/cxx_mattest.cpp
 OrthoManager_gentest_SOURCES = $(srcdir)/cxx_gentest.cpp
 
 OrthoManager_test_SOURCES = $(srcdir)/cxx_main.cpp
+
+OrthoManagerFloat_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 OrthoManagerComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
 
@@ -87,6 +89,12 @@ OrthoManager_gentest_DEPENDENCIES = \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 OrthoManager_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+OrthoManagerFloat_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -118,6 +126,8 @@ OrthoManager_gentest_CXXFLAGS = -I$(top_srcdir)/src
 
 OrthoManager_test_CXXFLAGS = -I$(top_srcdir)/src
 
+OrthoManagerFloat_test_CXXFLAGS = -I$(top_srcdir)/src
+
 OrthoManagerComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 OrthoManagerComplex_mattest_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
@@ -135,6 +145,10 @@ OrthoManager_gentest_LDADD = \
 	$(EXPORT_LIBS) 
 
 OrthoManager_test_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+OrthoManagerFloat_test_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) 
 
