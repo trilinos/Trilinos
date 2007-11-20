@@ -303,7 +303,7 @@ namespace Anasazi {
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa,
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType eps,
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol ) : 
-    MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa), eps_(eps), tol_(tol),
+    MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa), tol_(tol), eps_(eps),
     timerReortho_(Teuchos::TimeMonitor::getNewTimer("Anasazi::BasicOrthoManager::Re-orthogonalization"))
   {
     TEST_FOR_EXCEPTION(eps_ < SCT::magnitude(SCT::zero()),std::invalid_argument,
