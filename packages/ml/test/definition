@@ -1,29 +1,20 @@
-#
-# FRAMEWORK group
-#
-
-(FRAMEWORK, MLExamples) {
-    DIRS = ../examples/BasicExamples,
-	  #../examples/Advanced,
-          #../examples/Elasticity,
-          # ../examples/MatrixFormats,
-	  #../examples/MatrixReading,
-	  # ../examples/Maxwell,
-	   ../examples/MultipleRHS,
-	  #../examples/Other,
-	  # ../examples/StandAlone,
-	   ../examples/TwoLevelDD,
-          #../examples/Visualization,
-	   ../examples/MLAPI;
-    COMM = SERIAL, MPI(1-4);
-}
-
-#
-# Examples with data files
-#
+# Note:  DESCEND_DIRS means that the test harness cd's to the directories
+#        before running.  This is useful if the examples need to read in data.
 (FRAMEWORK, MLExamples) {
     DESCEND_DIRS = YES;
-	DIRS = ../examples/XML;
+    DIRS = ../examples/BasicExamples,
+           ../examples/MultipleRHS,
+           ../examples/XML,
+           ../examples/TwoLevelDD,
+           #../examples/Advanced,
+           #../examples/Elasticity,
+           # ../examples/MatrixFormats,
+           #../examples/MatrixReading,
+           # ../examples/Maxwell,
+           #../examples/Other,
+           # ../examples/StandAlone,
+           #../examples/Visualization,
+           ../examples/MLAPI;
     COMM = SERIAL, MPI(1-4);
 }
 
@@ -37,7 +28,7 @@
            MultiLevelPreconditioner_Sym,
            MatrixFree,
            Miscellaneous,
-	   RefMaxwell,
+           RefMaxwell,
          # Scalability,
          # VerySimple,
            Zoltan,
