@@ -34,6 +34,8 @@
 #ifndef ANASAZI_CONFIGDEFS_HPP
 #define ANASAZI_CONFIGDEFS_HPP
 
+#include "Teuchos_ConfigDefs.hpp"
+
 #ifndef __cplusplus
 #  define __cplusplus
 #endif
@@ -180,10 +182,6 @@
 #  elif  defined(HAVE_COMPLEX_H)
 #    define ANSZI_CPLX_CLASS ::complex
 #  endif
-#endif
-
-#ifdef HAVE_TEUCHOS_DEBUG
-#  define TEUCHOS_DEBUG
 #endif
 
 /*
