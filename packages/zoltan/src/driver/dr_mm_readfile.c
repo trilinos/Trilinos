@@ -27,11 +27,11 @@
 extern "C" {
 #endif
 
-/* struct for indices i & j and a value */
+/* struct for indices i & j and a real value */
 struct ijv
 {
   int i, j;
-  /* double val; */
+  float v;
 };
 
 /* comparison functions. */
@@ -54,8 +54,9 @@ int MM_readfile (
  int *nVtx, int *nEdge, int *nPins,
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
- int *ewgt_dim, float **ewgt,
+ int *ewgt_dim, float **ewgt,  /* hyperedge weights */
  int **ch_start, int **ch_adj,
+ int *ch_ewgt_dim, float **ch_ewgts, /* graph weights */
  int *base,
  int *global_nPins)
 {
@@ -69,6 +70,7 @@ int read_in_chunks = 0;
 char line[128];
 int *sendcount = NULL, *start = NULL, *outVals  = NULL;
 int *myVals= NULL, *inVals= NULL, *inptr = NULL;
+struct ijv *myIJV = NULL, *iptr = NULL;
 int remaining, chunksize, amt, myInCount, myMaxCount, myCount; 
 int rc, edge, vtx, idx,owner, num_lone_vertices;
 short *assignments=NULL;
@@ -286,24 +288,24 @@ int error = 0;  /* flag to indicate status */
       /* Not reading in chunks.
        * Process 0 will read in the entire file.
        */
-      myVals = (int *) malloc(gnz * sizeof(int) * 2);
-      if (gnz && !myVals){
+      myIJV = (struct ijv *) malloc(gnz * sizeof(struct ijv));
+      if (gnz && !myIJV){
         fprintf(stderr,"%s Memory allocation\n",yo);
         error = 1;
         return error;
       }
-      inptr = myVals;
+
       for (k=0; k<gnz; k++){
         fgets(line, 128, f);
-        sscanf(line, "%d %d", inptr, inptr+1);
+        sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
+               &(myIJV[k].v));
         
         if (pio_info->matrix_obj==ROWS){
-          tmp = inptr[0];
-          inptr[0] = inptr[1];
-          inptr[1] = tmp;
+          tmp = myIJV[k].i;
+          myIJV[k].i = myIJV[k].j;
+          myIJV[k].j = tmp;
         }
-        inptr[0]--;
-        inptr += 2;
+        --(myIJV[k].i);
       }
       nz = gnz;
     }
@@ -311,7 +313,7 @@ int error = 0;  /* flag to indicate status */
     /************************/
     /* sort indices         */
     /************************/
-    qsort(myVals, nz, sizeof(int)*2, comp);
+    qsort(myIJV, nz, sizeof(struct ijv), comp);
 
     /************************/
     /* Debug: write out matrix */
@@ -322,18 +324,22 @@ int error = 0;  /* flag to indicate status */
       printf("Debug: Sparse matrix in %s is:\n", yo);
       mm_write_banner(stdout, matcode);
       mm_write_mtx_crd_size(stdout, M, N, nz);
-      inptr = myVals;
-      for (k=0; k<nz; k++,inptr+=2)
-          printf("%d %d\n", inptr[0]+1, inptr[1]);
+      for (k=0; k<nz; k++)
+          printf("%d %d %f\n", myIJV[k].i, myIJV[k].j, myIJV[k].v);
     }
 
     /************************/
     /* Populate Zoltan hg data structs. */
     /************************/
 
-    /* Weights not supported. */
-    *vwgt_dim = 0;
-    *ewgt_dim = 0;
+/* Hack. Can we interpret Zoltan parameters? */
+#ifdef USE_EDGE_WEIGHTS
+    *ewgt_dim = 1;
+#endif
+
+#ifdef USE_VERTEX_WEIGHTS
+    *vwgt_dim = 1;
+#endif
 
     *nPins = nz;
 
@@ -345,7 +351,7 @@ int error = 0;  /* flag to indicate status */
          goto End;
     }
 
-    /* Construct index and vertex arrays from mat (ijv) array */
+    /* Construct index and vertex arrays from matrix (myVals) */
 
     /* Initialize index array to -1. */
 
@@ -355,7 +361,8 @@ int error = 0;  /* flag to indicate status */
        make list of vertices (index j). Data are sorted by i index. */
     prev_edge = -1;
     num_lone_vertices=0;
-    for (k=0,inptr=myVals; k<(*nPins); k++,inptr+=2){
+    /* for (k=0,inptr=myVals; k<(*nPins); k++,inptr+=2){ */
+    for (k=0,inptr=(int*)(myIJV+k); k<(*nPins); k++){
       /* next edge is mat[k].i */
       if (inptr[0] > prev_edge) {
         (*index)[inptr[0]] = k;
@@ -386,21 +393,27 @@ int error = 0;  /* flag to indicate status */
       int *cnt = NULL;
       start = NULL;   /* index of start of vertices' edge lists */
       int *adj = NULL;     /* list of adjacent vertices */
+      float *vwgts = NULL;     /* vertex weights for diagonal entries */
+      float *ewgts = NULL;     /* edge weights for off-diagonals */
      
       cnt = (int *) calloc(N, sizeof(int));
       start = (int *) malloc((N+1) * sizeof(int));
-      if ((N && !cnt) || !start) {
+      if (*vwgt_dim)
+        vwgts = (float *) malloc((*vwgt_dim) * N * sizeof(int));
+      if (*ewgt_dim)
+        ewgts = (float *) malloc((*ewgt_dim) * (*nPins) * sizeof(int));
+      if ((N && !cnt) || !start || ((*vwgt_dim && N) && !vwgts) 
+         || ((*ewgt_dim && *nPins) && !ewgts)) {
         fprintf(stderr, "%s Insufficient memory.", yo);
         error = 1;
         goto End;
       }
       
       /* Count number of neighbors for each vertex */
-
-      for (k = 0,inptr=myVals; k < nz; k++,inptr+=2) {
-        if (inptr[0]+1 != inptr[1]) { /* Don't include self-edges */
-          cnt[inptr[0]]++;
-          if (cnt[inptr[0]] == 1) num_lone_vertices--;
+      for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
+        if (iptr->i+1 != iptr->j) { /* Don't include self-edges */
+          cnt[iptr->i]++;
+          if (cnt[iptr->i] == 1) num_lone_vertices--;
         }
       }
       if (num_lone_vertices){
@@ -423,15 +436,38 @@ int error = 0;  /* flag to indicate status */
         error = 1;
         goto End;
       }
-      for (k = 0,inptr=myVals; k < nz; k++,inptr+=2) {
-        if (inptr[0]+1 != inptr[1]) { /* Don't include self-edges */
-          adj[start[inptr[0]]+cnt[inptr[0]]] = inptr[1];
-          cnt[inptr[0]]++;
+      for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
+        if (iptr->i+1 == iptr->j) { /* Diagonal entry */
+          if (*vwgt_dim)
+            vwgts[iptr->i] = iptr->v;
+        }
+        else { /* Off-diagonal */
+          adj[start[iptr->i]+cnt[iptr->i]] = iptr->j;
+          cnt[iptr->i]++;
+          if (*ewgt_dim)
+            ewgts[k] = iptr->v;
         }
       }
       safe_free((void **) &cnt);
       *ch_start = start;
       *ch_adj = adj;
+      *ch_ewgts = ewgts;
+      *vwgt = vwgts;
+#if 0
+      /* DEBUG */
+      if (vwgts){
+        printf("zdrive debug, vertex weights: ");
+        for (k=0; k< 5; k++)
+          printf("%f ", vwgts[k]);
+        printf("\n");
+        printf("zdrive debug, edge weights: ");
+      }
+      if (ewgts){
+        for (k=0; k< 5; k++)
+          printf("%f ", ewgts[k]);
+        printf("\n");
+      }
+#endif
     }  /* N == M */
 
 End:
