@@ -914,6 +914,7 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
   unsigned int *idx1=NULL, *idx2=NULL;
   unsigned int *rowIDs=NULL, *colIDs=NULL, *idList=NULL;
   char rowcol[8];
+  struct Zoltan_Struct *zz_copy=NULL;
 
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
 
@@ -956,6 +957,19 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
     if (Proc == 0)
       printf("DRIVER:  Callback time = %g\n", Timer_Global_Callback_Time);
 #endif /* TIMER_CALLBACKS */
+
+    /* Test Zoltan_MP_Copy_Structure and Zoltan_MP_Free_Structure */
+    zz_copy = Zoltan_Copy(zz);
+    if (zz_copy == NULL){
+        Gen_Error(0, "fatal:  Zoltan_Copy failure\n");
+        return 0;
+    }
+    if (Zoltan_Copy_To(zz, zz_copy)){
+        Gen_Error(0, "fatal:  Zoltan_Copy_To failure\n");
+        return 0;
+    }
+
+    Zoltan_Destroy(&zz_copy);
 
     if (Debug_Driver > 5) {
       /* Display entire matrix - only works if matrix no larger
@@ -1112,23 +1126,6 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
       ZOLTAN_FREE(&idx2);
     }
   }
-
-#if 0
-    /*
-     * Test copy function TODO - copy ZOLTAN_MP_DATA structure
-     */
-    zz_copy = Zoltan_Copy(zz);
-    if (zz_copy == NULL){
-        Gen_Error(0, "fatal:  Zoltan_Copy failure\n");
-        return 0;
-    }
-    if (Zoltan_Copy_To(zz, zz_copy)){
-        Gen_Error(0, "fatal:  Zoltan_Copy_To failure\n");
-        return 0;
-    }
-
-    Zoltan_Destroy(&zz_copy);
-#endif
 
   /* TODO - evaluate balance - can't use Zoltan_LB_Eval because we
    * don't require sparse_matrix app to define those queries.
