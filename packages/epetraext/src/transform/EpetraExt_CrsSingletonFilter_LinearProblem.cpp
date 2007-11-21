@@ -100,12 +100,20 @@ analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
   int flag = Analyze( FullMatrix_ );
   assert( flag >= 0 );
 
-  if( verbose_ )
-  {
+  if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) {
     cout << "\nAnalyzed Singleton Problem:\n";
     cout << "---------------------------\n";
-    cout << "Singletons Detected: " << SingletonsDetected() << endl;
-    cout << "Num Singletons:      " << NumSingletons() << endl;
+  }
+  if ( SingletonsDetected() ) {
+    if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) {
+      cout << "Singletons Detected!" << endl;;
+      cout << "Num Singletons:      " << NumSingletons() << endl;
+    }
+  }
+  else {
+    if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) 
+        cout << "No Singletons Detected!" << endl;
+  }
 /*
     cout << "List of Row Singletons:\n";
     int * slist = RowMapColors_->ColorLIDList(1);
@@ -118,9 +126,9 @@ analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
       cout << slist[i] << " ";
     cout << "\n";
 */
+  if ( verbose_ && FullMatrix_->Comm().MyPID()==0 )
     cout << "---------------------------\n\n";
-  }
-
+ 
   return true;
 }
 
@@ -136,7 +144,7 @@ construct()
 
   newObj_ = ReducedProblem();
 
-  if( verbose_ )
+  if( verbose_ && FullMatrix_->Comm().MyPID()==0 )
   {
     cout << "\nConstructedSingleton Problem:\n";
     cout << "---------------------------\n";
