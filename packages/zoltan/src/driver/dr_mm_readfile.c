@@ -313,7 +313,10 @@ int error = 0;  /* flag to indicate status */
     /************************/
     /* sort indices         */
     /************************/
-    qsort(myIJV, nz, sizeof(struct ijv), comp);
+    if (myIJV)
+      qsort(myIJV, nz, sizeof(struct ijv), comp);
+    else  /* chunky style: (i,j) pairs are packed in myVals */
+      qsort(myVals, nz, 2*sizeof(int), comp);
 
     /************************/
     /* Debug: write out matrix */
@@ -356,8 +359,11 @@ int error = 0;  /* flag to indicate status */
        make list of vertices (index j). Data are sorted by i index. */
     prev_edge = -1;
     num_lone_vertices=0;
-    /* for (k=0,inptr=myVals; k<(*nPins); k++,inptr+=2){ */
-    for (k=0,inptr=(int*)(myIJV+k); k<(*nPins); k++){
+    for (k=0; k<(*nPins); k++){
+      if (myIJV)
+        inptr=(int*)(myIJV+k);
+      else
+        inptr= myVals+2*k; 
       /* next edge is mat[k].i */
       if (inptr[0] > prev_edge) {
         (*index)[inptr[0]] = k;
@@ -410,12 +416,20 @@ int error = 0;  /* flag to indicate status */
       }
       
       /* Count number of neighbors for each vertex */
-      for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
-        if (iptr->i+1 != iptr->j) { /* Don't include self-edges */
-          cnt[iptr->i]++;
-          if (cnt[iptr->i] == 1) num_lone_vertices--;
+      if (myIJV)
+        for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
+          if (iptr->i+1 != iptr->j) { /* Don't include self-edges */
+            cnt[iptr->i]++;
+            if (cnt[iptr->i] == 1) num_lone_vertices--;
+          }
         }
-      }
+      else /* chunky style, use myVals */
+        for (k = 0,inptr=myVals; k < nz; ++k, inptr+=2) {
+          if (inptr[0]+1 != inptr[1]) { /* Don't include self-edges */
+            cnt[inptr[0]]++;
+            if (cnt[inptr[0]] == 1) num_lone_vertices--;
+          }
+        }
       if (num_lone_vertices){
         printf("WARNING (Proc %d): in graph generated from hg, have %d vertices with no adjacencies\n",Proc,num_lone_vertices);
       }
@@ -436,17 +450,28 @@ int error = 0;  /* flag to indicate status */
         error = 1;
         goto End;
       }
-      for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
-        if (iptr->i+1 == iptr->j) { /* Diagonal entry */
-          if (*vwgt_dim)
-            vwgts[iptr->i] = iptr->v;
+      if (myIJV)
+        for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
+          if (iptr->i+1 == iptr->j) { /* Diagonal entry */
+            if (*vwgt_dim)
+              vwgts[iptr->i] = iptr->v;
+          }
+          else { /* Off-diagonal */
+            adj[start[iptr->i]+cnt[iptr->i]] = iptr->j;
+            cnt[iptr->i]++;
+            if (*ewgt_dim)
+              ewgts[k] = iptr->v;
+          }
         }
-        else { /* Off-diagonal */
-          adj[start[iptr->i]+cnt[iptr->i]] = iptr->j;
-          cnt[iptr->i]++;
-          if (*ewgt_dim)
-            ewgts[k] = iptr->v;
-        }
+      else /* chunky style, use myVals */
+        for (k = 0,inptr=myVals; k < nz; ++k, inptr+=2) {
+          if (inptr[0]+1 == inptr[1]) { /* Diagonal entry */
+            /* ignore self edges */
+          }
+          else { /* Off-diagonal */
+            adj[start[inptr[0]]+cnt[inptr[0]]] = inptr[1];
+            cnt[inptr[0]]++;
+          }
       }
       safe_free((void **) &cnt);
       *ch_start = start;
