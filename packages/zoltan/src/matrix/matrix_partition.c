@@ -14,6 +14,8 @@
 #ifndef __ZOLTAN_MATRIX_PARTITION
 #define __ZOLTAN_MATRIX_PARTITION
 
+#define TEST_COPY 1
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -73,8 +75,6 @@ int Zoltan_MP_Set_Param(
   }
   return(status);
 }
-
-
     
 /***********************************************************************
 ** Allow user of parallel hypergraph methods to input a sparse matrix, 
@@ -128,6 +128,8 @@ static int mp_1d_get_rows(ZOLTAN_MP_DATA *mpd,
         IJTYPE nRows, IJTYPE *rowIDs, int *rowProcs, int *rowParts);
 static int mp_1d_get_columns(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nCols, IJTYPE *colIDs, int *colProcs, int *colParts);
+
+#if HAVE_2D_METHODS
 /*
  * Functions specifically to process approach MP_NZ. 
  */
@@ -138,6 +140,7 @@ static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
   int *export_procs, int *export_to_part);
 static int mp_2d_get_nzs(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nNzs, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
+#endif
 
 /*
  * Functions to create a search structure to locate rows, columns
@@ -146,9 +149,13 @@ static int mp_2d_get_nzs(ZOLTAN_MP_DATA *mpd,
  * has completed.  The lookup function Zoltan_Lookup_Obj is global.
  */
 static void free_obj_lookup_table(obj_lookup **lu);
+static int copy_obj_lookup_table(obj_lookup **toLU, int **toProc, int **toPart,
+                                  obj_lookup *fromLU, int *fromProc, int *fromPart);
 static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs);
+#if HAVE_2D_METHODS
 static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
                    IJTYPE *listI, IJTYPE *indexJ, IJTYPE *listJ);
+#endif
 
 /****************************************************************/
 /****************************************************************/
@@ -252,37 +259,32 @@ int Zoltan_Matrix_Partition(ZZ *zz)
 {
   char *yo = "Zoltan_Matrix_Partition";
   int ierr = ZOLTAN_OK;
-  ZZ *zzLib = NULL;
   IJTYPE nnz;
+
+  if (zz->LB.Data_Structure){
+    zz->LB.Free_Structure(zz);
+  }
 
   /* The persistent structure we will save at zz->LB.Data_Structure */
 
   ZOLTAN_MP_DATA *mpd = MP_Initialize_Structure(zz);
-
   if (mpd == NULL){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
-  if (zz->LB.Data_Structure){
-    zz->LB.Free_Structure(zz);
-  }
-  zz->LB.Data_Structure = mpd;
-
-  /* Process parameters, write to mpd.  */
-
   ierr = MP_Initialize_Params(zz, mpd);
-
   if (ierr != ZOLTAN_OK){
     goto End;
   }
 
   /*
    * Create the Zoltan problem that we will define from the input sparse matrix.
+   * Initially a copy of the caller's Zoltan_Struct, so that we have the same
+   * parameters the caller had, the same MPI communicator.
    */
 
-  zzLib = Zoltan_Create(zz->Communicator);
-  mpd->zzLib = zzLib;
+  mpd->zzLib = Zoltan_Copy(zz);
 
   /* Call application defined query functions to get the non-zeros.
    * User has a choice of giving us compressed rows or compressed columns.
@@ -370,12 +372,14 @@ int Zoltan_Matrix_Partition(ZZ *zz)
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "setup for partitioning\n");
         }
         break;
+#if HAVE_2D_METHODS
       case MP_NZ_TYPE:
         ierr = mp_2d_setup(mpd);
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "setup for partitioning\n");
         }
         break;
+#endif
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
         ierr = ZOLTAN_FATAL;
@@ -395,7 +399,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
   int *import_to_part, *export_to_part;
   int *import_procs, *export_procs;
 
-  ierr = Zoltan_LB_Partition(zzLib,
+  ierr = Zoltan_LB_Partition(mpd->zzLib,
       &changes, &num_gid_entries, &num_lid_entries, 
       &num_import,
       &import_global_ids, &import_local_ids, &import_procs, &import_to_part,
@@ -430,6 +434,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
           ZOLTAN_PRINT_ERROR(zz->Proc, yo,"processing results of partitioning\n");
         }
         break;
+#if HAVE_2D_METHODS
       case MP_NZ_TYPE:
         /*
          * Save nonzero assignment for all local nonzeros.
@@ -440,6 +445,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
           ZOLTAN_PRINT_ERROR(zz->Proc, yo,"processing results of partitioning\n");
         }
         break;
+#endif
       default:
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid approach.\n");
         ierr = ZOLTAN_FATAL;
@@ -455,7 +461,84 @@ End:
     &import_global_ids, &import_local_ids, &import_procs, &import_to_part,
     &export_global_ids, &export_local_ids, &export_procs, &export_to_part);
 
+  zz->LB.Data_Structure = mpd;
+
   return ierr;
+}
+/****************************************************************/
+/****************************************************************/
+#define COPY_BUFFER(buf, type, num) \
+  if (from->buf) { \
+    to->buf = (type *)ZOLTAN_MALLOC((num) * sizeof(type)); \
+    if (!to->buf) { \
+      ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory."); \
+      return(ZOLTAN_MEMERR); \
+    } \
+    memcpy(to->buf, from->buf, (num) * sizeof(type)); \
+  } \
+  else { \
+    to->buf = NULL; \
+  }
+
+/*
+ * Called by Zoltan_Copy()
+ */
+int Zoltan_MP_Copy_Structure(ZZ *toZZ, ZZ const * fromZZ)
+{
+  char *yo = "Zoltan_MP_Copy_Structure";
+  int rc;
+  ZOLTAN_MP_DATA *to = NULL;
+  ZOLTAN_MP_DATA *from= (ZOLTAN_MP_DATA *)fromZZ->LB.Data_Structure;
+
+  to = (ZOLTAN_MP_DATA *)ZOLTAN_MALLOC(sizeof(ZOLTAN_MP_DATA));
+  memcpy(to, from, sizeof(ZOLTAN_MP_DATA));
+
+  if (from->zzLib){
+    /* toZZ and fromZZ are MP problems, they have in them zzLib 
+     * which should be another type of problem, like PHG.  It's
+     * the problem that was created by Zoltan_Matrix_Partition.
+     */
+    to->zzLib = Zoltan_Copy(from->zzLib);
+  }
+
+  if (from->numRC){
+    COPY_BUFFER(rcGID, IJTYPE, from->numRC)
+    COPY_BUFFER(nzIndex, IJTYPE, from->numRC+1)
+    COPY_BUFFER(nzGID, IJTYPE, from->nzIndex[from->numRC])
+  }
+  if (from->numCR){
+    COPY_BUFFER(crGID, IJTYPE, from->numCR)
+    COPY_BUFFER(mirrorNzIndex, IJTYPE, from->numCR+1)
+    COPY_BUFFER(mirrorNzGID, IJTYPE, from->mirrorNzIndex[from->numCR])
+  }
+  if (from->nMyVtx){
+    COPY_BUFFER(vtxGID, IJTYPE, from->nMyVtx)
+  }
+
+  rc = copy_obj_lookup_table(&to->row_lookup, &to->rowproc, &to->rowpart,
+                            from->row_lookup, from->rowproc, from->rowpart);
+
+  if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN))
+    return rc;
+
+  rc = copy_obj_lookup_table(&to->col_lookup, &to->colproc, &to->colpart,
+                            from->col_lookup, from->colproc, from->colpart);
+
+  if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN))
+    return rc;
+
+  rc = copy_obj_lookup_table(&to->nz_lookup, &to->nzproc, &to->nzpart,
+                            from->nz_lookup, from->nzproc, from->nzpart);
+
+  if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN))
+    return rc;
+
+  if (toZZ->LB.Free_Structure)
+    toZZ->LB.Free_Structure(toZZ);
+
+  toZZ->LB.Data_Structure = (void *)to;
+
+  return ZOLTAN_OK;
 }
 /****************************************************************/
 /****************************************************************/
@@ -720,6 +803,79 @@ int Zoltan_Lookup_Obj(obj_lookup *lu, IJTYPE I, IJTYPE J)
   return -1;
 }
 /*
+** Copy an obj_lookup structure, and optionally proc and part arrays
+** that it is used find entries in.
+*/
+static int copy_obj_lookup_table(obj_lookup **toLU, int **toProc, int **toPart,
+                                  obj_lookup *fromLU, int *fromProc, int *fromPart)
+{
+int table_size, num_objs, offset, i;
+struct obj_node *nodes, *p1;
+struct obj_node **table;
+obj_lookup *lu;
+
+  if (!toLU){
+    return ZOLTAN_FATAL;
+  }
+
+  *toLU = NULL;
+  if (toProc)
+    *toProc = NULL;
+  if (toPart)
+    *toPart = NULL;
+
+  if (!fromLU) return ZOLTAN_OK;
+
+  table_size = fromLU->table_size;
+  num_objs   = fromLU->num_objs;
+
+  lu = (obj_lookup *)ZOLTAN_MALLOC(sizeof(obj_lookup));
+  if (!lu) return ZOLTAN_MEMERR;
+  if (fromProc && toProc){
+    *toProc = (int *)ZOLTAN_MALLOC(sizeof(int) * num_objs);
+    if (num_objs && !(*toProc)) return ZOLTAN_MEMERR;
+    memcpy(*toProc, fromProc, sizeof(int) * num_objs);
+  }
+  if (fromPart && toPart){
+    *toPart = (int *)ZOLTAN_MALLOC(sizeof(int) * num_objs);
+    if (num_objs && !(*toPart)) return ZOLTAN_MEMERR;
+    memcpy(*toPart, fromPart, sizeof(int) * num_objs);
+  }
+  nodes = (struct obj_node *)ZOLTAN_MALLOC(sizeof(struct obj_node) * num_objs);
+  if (num_objs && !nodes) return ZOLTAN_MEMERR;
+  memcpy(nodes, fromLU->htTop, sizeof(struct obj_node) * num_objs);
+
+  table = (struct obj_node **)ZOLTAN_MALLOC(sizeof(struct obj_node *) * table_size);
+  if (table_size && !table) return ZOLTAN_MEMERR;
+  memcpy(table, fromLU->ht, sizeof(struct obj_node *) * table_size);
+
+  lu->htTop = nodes;
+  lu->ht = table;
+  lu->table_size = table_size;
+  lu->num_objs = num_objs;
+  lu->key_size = fromLU->key_size;
+
+  /* Move pointers to point into new arrays */
+  for (i=0; i<table_size; i++){
+    p1 = lu->ht[i];
+    offset = p1 - fromLU->htTop;
+    if ((offset >= 0) && (offset < num_objs)){
+      lu->ht[i] = lu->htTop + offset;
+    }
+  }
+  for (i=0; i<num_objs; i++){
+    p1 = lu->htTop[i].next;
+    offset = p1 - fromLU->htTop;
+    if ((offset >= 0) && (offset < num_objs)){
+      lu->htTop[i].next = lu->htTop + offset;
+    }
+  }
+    
+  *toLU = lu;
+  
+  return ZOLTAN_OK;
+}
+/*
 ** Create a hash table mapping the list of GIDs in objGIDs to their
 ** array index in the objGIDs list.  GIDs in objGIDs are unique.
 */
@@ -731,6 +887,11 @@ static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs)
   obj_lookup *lu = NULL;
   int size_id;
 
+  /*
+   * If you change this function, you may also have to change
+   * copy_obj_lookup_table() and free_obj_lookup_table().
+   */
+
   lu = (obj_lookup *)ZOLTAN_MALLOC(sizeof(obj_lookup));
   if (!lu){
     return NULL;
@@ -738,6 +899,7 @@ static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs)
 
   lu->key_size = 1;
   lu->table_size = numObjs / 4;
+  lu->num_objs = numObjs;
   if (lu->table_size < 4) lu->table_size = 4;
 
   lu->ht = 
@@ -772,6 +934,7 @@ static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs)
 
   return lu;
 }
+#if HAVE_2D_METHODS
 /*
 ** Create a hash table mapping the (I,J) pairs to their location in
 ** listJ.  IDs in listI are unique.  Number of pairs is sizeJ.
@@ -784,6 +947,11 @@ static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
   struct obj_node *hn;
   obj_lookup *lu = NULL;
   ZOLTAN_ID_TYPE ids[2];
+
+  /*
+   * If you change this function, you may also have to change
+   * copy_obj_lookup_table() and free_obj_lookup_table().
+   */
 
   if (sizeof(IJTYPE) > sizeof(ZOLTAN_ID_TYPE)){
     ZOLTAN_PRINT_ERROR(0, "create_obj_lookup_table2", 
@@ -798,6 +966,7 @@ static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
 
   lu->key_size = 2;
   lu->table_size = sizeJ / 4;
+  lu->num_objs = sizeJ;
   if (lu->table_size < 4) lu->table_size = 4;
 
   lu->ht = 
@@ -832,6 +1001,7 @@ static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
   }
   return lu;
 }
+#endif
 
 /****************************************************************/
 /****************************************************************/
@@ -1231,6 +1401,8 @@ End:
   return ierr;
 }
 
+#if HAVE_2D_METHODS
+
 /****************************************************************/
 /****************************************************************/
 /* Functions that support MATRIX_APPROACH = MP_NONZEROS
@@ -1238,7 +1410,6 @@ End:
  * The objects to be partitioned are the matrix nonzeros.
  *
  */
-
 ZOLTAN_NUM_OBJ_FN mp_2d_get_num_obj;
 ZOLTAN_OBJ_LIST_FN mp_2d_get_obj_list;
 ZOLTAN_NUM_GEOM_FN mp_2d_get_num_geom;
@@ -1394,6 +1565,7 @@ static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
 
   return ierr;
 }
+#endif
 
 /****************************************************************/
 /****************************************************************/

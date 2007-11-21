@@ -52,7 +52,8 @@ struct obj_node{
 typedef struct _obj_lookup{
   struct obj_node *htTop;
   struct obj_node **ht;
-  IJTYPE table_size;
+  IJTYPE table_size;   /* Length of ht array */
+  IJTYPE num_objs;     /* Length of htTop array */
   int    key_size;
 } obj_lookup;
 
