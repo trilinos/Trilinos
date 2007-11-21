@@ -33,3 +33,6 @@ Test_Singular_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_Singular_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_Singular_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_Singular_LDADD = $(EXAMPLE_LIBS)
+
+EXTRA_DIST = bcsstm05_ns.rua
+
