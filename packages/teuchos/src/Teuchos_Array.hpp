@@ -907,6 +907,14 @@ void Array<T>::pop_back()
 }
 
 
+// 2007/11/20: rabartl: Note: In the below insertion and deletion functions,
+// you have to grab the raw iterator first before you call vec(true,true)
+// which will invalidate the iterator.  I had it that raw_position(...) was
+// called in the same statement at vec(true,true) and some compilers migh call
+// vec(true,true) before they call raw_position(...) which results in an
+// exception being thrown.
+
+
 template<typename T> inline
 typename Array<T>::iterator
 Array<T>::insert(iterator position, const value_type& x)
@@ -926,14 +934,24 @@ Array<T>::insert(iterator position, const value_type& x)
 template<typename T> inline
 void Array<T>::insert(iterator position, size_type n, const value_type& x)
 {
-  vec(true,true).insert(raw_position(position),n,x);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  const typename std::vector<T>::iterator raw_poss = raw_position(position);
+  vec(true,true).insert(raw_poss,n,x);
+#else
+  return vec_.insert(position,n,x);
+#endif
 }
 
 
 template<typename T> template<typename InputIterator> inline
 void Array<T>::insert(iterator position, InputIterator first, InputIterator last)
 {
-  vec(true,true).insert(raw_position(position),first,last);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  const typename std::vector<T>::iterator raw_poss = raw_position(position);
+  vec(true,true).insert(raw_poss,first,last);
+#else
+  return vec_.insert(position,first,last);
+#endif
 }
 
 
