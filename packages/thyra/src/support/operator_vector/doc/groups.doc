@@ -162,7 +162,7 @@ are shown below:
 <li><tt>Thyra::DefaultProductVector</tt> is a general concrete implementation of <tt>Thyra::ProductVectorBase</tt>
     that should be sufficient for most use cases.
 <li><tt>Thyra::DefaultProductMultiVector</tt> is a general concrete implementation of <tt>Thyra::ProductMultiVectorBase</tt>
-    that should be sufficient for most use cases. (ToDo: This needs to be implemented!)
+    that should be sufficient for most use cases.
 </ul>
 
 Note that the above concrete subclasses are very efficient for must,
@@ -1314,6 +1314,10 @@ detailed discussion of this example/test program.
 To see the full listing of this click: <a
 href="test__composite__linear__ops_8cpp-example.html">
 test_composite_linear_ops.cpp </a>.
+
+*/
+
+/** \example exampleImplicitlyComposedLinearOperators.cpp
 
 */
 
