@@ -432,9 +432,8 @@ namespace Anasazi {
       Xi = MVT::CloneView(X,ind);
       MXi = MVT::CloneView(*MX,ind);
       MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
-      TEST_FOR_EXCEPTION(SCT::real(z(0,0)) < -SCT::sfmin(),
-          std::logic_error,
-          "Anasazi::MatOrthoManager::normMat(): x'*M*x is negative.");
+      TEST_FOR_EXCEPTION(SCT::real(z(0,0)) < -SCT::sfmin(), std::logic_error,
+          "Anasazi::MatOrthoManager::normMat(): x'*M*x is negative: " << z(0,0));
       normvec[i] = SCT::magnitude( SCT::squareroot( SCT::magnitude(z(0,0)) ) );
     }
   }
