@@ -188,7 +188,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
      */
     zz->LB.LB_Fn = NULL;  
     zz->LB.Free_Structure = Zoltan_MP_Free_Structure;
-    zz->LB.Copy_Structure = NULL;
+    zz->LB.Copy_Structure = Zoltan_MP_Copy_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
 #else

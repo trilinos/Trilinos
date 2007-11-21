@@ -310,6 +310,7 @@ extern ZOLTAN_LB_COPY_DATA_FN Zoltan_RCB_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_RIB_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_HSFC_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_Hier_Copy_Structure;
+extern ZOLTAN_LB_COPY_DATA_FN Zoltan_MP_Copy_Structure;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;
