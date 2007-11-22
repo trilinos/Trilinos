@@ -7361,7 +7361,7 @@ GNU_HAVE_SWIG=${WITH_SWIG}
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile util/MakefileVariables.py util/PyTrilinosExtension.py util/SharedUtils.py util/pkg_info.py shared/Makefile src/Makefile src/.deps/dummy src/PyTrilinos/.dummy src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy test/Makefile example/Makefile"
+ac_config_files="$ac_config_files Makefile util/MakefileVariables.py util/PyTrilinosExtension.py util/SharedUtils.py util/pkg_info.py shared/Makefile src/Makefile src/pyfragments.swg src/.deps/dummy src/PyTrilinos/.dummy src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy test/Makefile example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8272,6 +8272,7 @@ do
     "util/pkg_info.py") CONFIG_FILES="$CONFIG_FILES util/pkg_info.py" ;;
     "shared/Makefile") CONFIG_FILES="$CONFIG_FILES shared/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+    "src/pyfragments.swg") CONFIG_FILES="$CONFIG_FILES src/pyfragments.swg" ;;
     "src/.deps/dummy") CONFIG_FILES="$CONFIG_FILES src/.deps/dummy" ;;
     "src/PyTrilinos/.dummy") CONFIG_FILES="$CONFIG_FILES src/PyTrilinos/.dummy" ;;
     "src/PyTrilinos/NOX/.dummy") CONFIG_FILES="$CONFIG_FILES src/PyTrilinos/NOX/.dummy" ;;

@@ -98,7 +98,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/PyTrilinos_config.h.in $(top_srcdir)/config/swig.am
+	$(srcdir)/PyTrilinos_config.h.in $(srcdir)/pyfragments.swg.in \
+	$(top_srcdir)/config/swig.am
 @HAVE_MPI_TRUE@am__append_1 = -DHAVE_MPI
 @HAVE_PYTRILINOS_EPETRAEXT_HDF5_TRUE@@HAVE_PYTRILINOS_EPETRAEXT_TRUE@am__append_2 = -DHAVE_EPETRAEXT_HDF5
 @HAVE_PYTRILINOS_AZTECOO_TEUCHOS_TRUE@@HAVE_PYTRILINOS_AZTECOO_TRUE@am__append_3 = -DHAVE_AZTECOO_TEUCHOS 
@@ -119,7 +120,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = PyTrilinos_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = pyfragments.swg
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -236,10 +237,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
-	     Epetra.i Epetra_doc.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
-	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i \
-	     Epetra_Vectors.i Epetra_NumPyIntSerialDenseMatrix.cpp \
+EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_doc.i Epetra_Base.i \
+	     Epetra_Comm.i Epetra_Graphs.i Epetra_Maps.i Epetra_Operators.i \
+	     Epetra_SerialDense.i Epetra_Vectors.i \
+	     Epetra_NumPyIntSerialDenseMatrix.cpp \
 	     Epetra_NumPyIntSerialDenseMatrix.h \
 	     Epetra_NumPyIntSerialDenseVector.cpp \
 	     Epetra_NumPyIntSerialDenseVector.h \
@@ -251,14 +252,15 @@ EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
 	     Epetra_NumPyFEVector.cpp Epetra_NumPyFEVector.h \
 	     Epetra_RowMatrix_Utils.i EpetraExt.i EpetraExt_doc.i Galeri.i \
 	     Galeri_doc.i IFPACK.i Komplex.i LOCA.__init__.i LOCA.Abstract.i \
-	     LOCA.Bifurcation.i LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i \
-	     LOCA.LAPACK.i LOCA.MultiContinuation.i LOCA.TimeDependent.i ML.i \
-	     MLAPI_PyMatrix.h NOX.__init__.i NOX_doc.i NOX.Abstract.i \
-	     NOX.Epetra.__init__.i \
+	     LOCA.Bifurcation.i LOCA.Continuation.i LOCA.Epetra.i \
+	     LOCA.Homotopy.i LOCA.LAPACK.i LOCA.MultiContinuation.i \
+	     LOCA.TimeDependent.i ML.i MLAPI_PyMatrix.h NOX.__init__.i \
+	     NOX_doc.i NOX.Abstract.i NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     Teuchos.i Teuchos_doc.i Teuchos_Epetra.i Teuchos_ParameterList_ext.i \
-	     Teuchos_PythonParameter.cpp Teuchos_PythonParameter.h Thyra.i \
-	     TriUtils.i UserArray.patch NumPyImporter.h numpy.i numpy_include.h \
+	     Teuchos.i Teuchos_doc.i Teuchos_Epetra.i \
+	     Teuchos_ParameterList_ext.i Teuchos_PythonParameter.cpp \
+	     Teuchos_PythonParameter.h Thyra.i TriUtils.i UserArray.patch \
+	     NumPyImporter.h numpy.i pyfragments.swg.in numpy_include.h \
 	     setup.py scripts/ParamConvert.py
 
 
@@ -443,6 +445,8 @@ $(srcdir)/PyTrilinos_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f PyTrilinos_config.h stamp-h1
+pyfragments.swg: $(top_builddir)/config.status $(srcdir)/pyfragments.swg.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 tags: TAGS
 TAGS:
 

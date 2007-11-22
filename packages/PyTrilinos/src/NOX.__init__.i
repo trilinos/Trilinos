@@ -88,6 +88,9 @@ script in the example subdirectory of the PyTrilinos package:
 #include "NOX_StatusTest_MaxIters.H"
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_FiniteValue.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // General ignore directives

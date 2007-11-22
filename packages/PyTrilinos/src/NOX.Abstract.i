@@ -63,6 +63,9 @@ NOX.Abstract provides the following user-level classes:
 #include "NOX_Abstract_PrePostOperator.H"
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Abstract_Vector.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // General ignore directives

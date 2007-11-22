@@ -395,6 +395,7 @@ AC_CONFIG_FILES([
 		util/pkg_info.py
 		shared/Makefile
 		src/Makefile
+		src/pyfragments.swg
 		src/.deps/dummy
 		src/PyTrilinos/.dummy
 		src/PyTrilinos/NOX/.dummy

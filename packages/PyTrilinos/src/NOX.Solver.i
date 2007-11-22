@@ -80,6 +80,9 @@ in addition to the following factory function:
 #include "NOX_Solver_TensorBased.H"
 #include "NOX_Solver_Factory.H"
 
+// Local includes
+#include "NumPyImporter.h"
+
 // Namespace flattening
 using Teuchos::RCP;
 %}

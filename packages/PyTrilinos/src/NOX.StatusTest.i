@@ -73,6 +73,9 @@ NOX.StatusTest provides the following user-level classes:
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_Abstract_Group.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // Trilinos interface file imports
