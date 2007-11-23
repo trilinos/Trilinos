@@ -28,6 +28,10 @@
 
 %include "numpy.i"
 
+// Helper functions here use some code in numpy.i fragments, so we
+// nedd to activate those fragments.
+%fragment("NumPy_Fragments");
+
 %{
 #include "Python.h"
 #include "Epetra_RowMatrix.h"

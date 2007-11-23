@@ -200,7 +200,7 @@ package:
 // more convenient numpy array.                                        //
 /////////////////////////////////////////////////////////////////////////
 %define %anasazi_eigenvalues_typemap(ScalarType, NumPyType)
-%typemap(out)
+%typemap(out,fragment="NumPy_Backward_Compatibility,NumPy_Macros")
   (std::vector< Anasazi::Value< ScalarType > >)
 {
   npy_intp dims[1] = { $1.size() };
@@ -211,7 +211,6 @@ package:
     data[2*i+1] = $1[i].imagpart;
   }
   return array;
-  //return PyArray_SimpleNewFromData(1, dims, NumPyType, (void*)(&$1[0]));
 }
 %enddef
 %anasazi_eigenvalues_typemap(float , NPY_CFLOAT )
