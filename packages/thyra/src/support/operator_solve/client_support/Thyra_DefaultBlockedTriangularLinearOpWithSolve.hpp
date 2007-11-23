@@ -493,8 +493,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
   // will be returned.  This may result in different decisions being taken in
   // different clusters with bad consequences.  To really handle multiple
   // clusters correctly, we need a strategy object that knows how to do these
-  // reductions correctly.  Actually, would could use Teuchos:Comm along with
-  // a user-defined reduction object to do these reductions correctly!
+  // reductions correctly.  Actually, we could use Teuchos:Comm along with a
+  // user-defined reduction object to do these reductions correctly!
 
 }
 

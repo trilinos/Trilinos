@@ -205,14 +205,17 @@ const RCP<T>& RCP<T>::assert_not_null() const {
 
 template<class T>
 inline
-RCP<T>::RCP( T* p, bool has_ownership )
-  : ptr_(p)
-  , node_( p ? new RCPNodeTmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
+RCP<T>::RCP( T* p, bool has_ownership_in )
+  :ptr_(p),
+  node_(
+    p
+    ? new RCPNodeTmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership_in)
+    : NULL )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
     add_new_RCPNode(node_,os.str());
   }
 #endif
@@ -221,14 +224,14 @@ RCP<T>::RCP( T* p, bool has_ownership )
 template<class T>
 REFCOUNTPTR_INLINE
 template<class Dealloc_T>
-RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership )
+RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
   : ptr_(p)
-  , node_( p ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
+  , node_( p ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership_in) : NULL )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
     add_new_RCPNode(node_,os.str());
   }
 #endif

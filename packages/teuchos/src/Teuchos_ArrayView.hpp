@@ -54,15 +54,15 @@ ArrayView<T>::ArrayView( ENull null_arg )
 
 
 template<class T> inline
-ArrayView<T>::ArrayView( T* p, Ordinal size)
-  :ptr_(p), size_(size)
+ArrayView<T>::ArrayView( T* p, Ordinal size_in)
+  :ptr_(p), size_(size_in)
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ,node_(0)
 #endif
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEST_FOR_EXCEPT( p != 0 && size <= 0 );
-  TEST_FOR_EXCEPT( p == 0 && size != 0 );
+  TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+  TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
   setUpIterators();
 #endif
 }
@@ -143,21 +143,21 @@ T& ArrayView<T>::back() const
 
 
 template<class T> inline
-ArrayView<T> ArrayView<T>::view(Ordinal offset, Ordinal size) const
+ArrayView<T> ArrayView<T>::view(Ordinal offset, Ordinal size_in) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(offset,size);
+  assert_in_range(offset,size_in);
 #endif
-  return ArrayView<T>(ptr_+offset,size);
+  return ArrayView<T>(ptr_+offset,size_in);
   // WARNING: The above code had better be correct since we are using raw
   // pointer arithmetic!
 }
 
 
 template<class T> inline
-ArrayView<T> ArrayView<T>::operator()( Ordinal offset, Ordinal size ) const
+ArrayView<T> ArrayView<T>::operator()( Ordinal offset, Ordinal size_in ) const
 {
-  return view(offset,size);
+  return view(offset,size_in);
 }
 
 
@@ -241,13 +241,13 @@ const ArrayView<T>& ArrayView<T>::assert_not_null() const
 
 template<class T>
 const ArrayView<T>&
-ArrayView<T>::assert_in_range( Ordinal offset, Ordinal size ) const
+ArrayView<T>::assert_in_range( Ordinal offset, Ordinal size_in ) const
 {
   assert_not_null();
   TEST_FOR_EXCEPTION(
-    !( 0 <= offset && offset+size <= this->size() ), Teuchos::RangeError,
+    !( 0 <= offset && offset+size_in <= this->size() ), Teuchos::RangeError,
     "Teuchos::ArrayView<"<<TypeNameTraits<T>::name()<<">::assert_in_range():"
-    " Error, [offset,offset+size) = ["<<offset<<","<<(offset+size)<<")"
+    " Error, [offset,offset+size) = ["<<offset<<","<<(offset+size_in)<<")"
     " does not lie in the range [0,"<<this->size()<<")!"
     );
   return*this;

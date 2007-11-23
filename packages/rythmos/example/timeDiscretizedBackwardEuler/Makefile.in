@@ -96,7 +96,8 @@ CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = timeDiscretizedBackwardEuler$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_timeDiscretizedBackwardEuler_OBJECTS =  \
-	timeDiscretizedBackwardEulerMain.$(OBJEXT)
+	timeDiscretizedBackwardEulerMain.$(OBJEXT) \
+	EpetraExt_DiagonalTransientModel.$(OBJEXT)
 timeDiscretizedBackwardEuler_OBJECTS =  \
 	$(am_timeDiscretizedBackwardEuler_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -129,7 +130,8 @@ BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPPFLAGS = @CPPFLAGS@
+CPPFLAGS = @CPPFLAGS@ \
+	-I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -253,7 +255,8 @@ top_srcdir = @top_srcdir@
 #
 EXAMPLE = timeDiscretizedBackwardEuler
 timeDiscretizedBackwardEuler_SOURCES = \
-	 $(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+  $(srcdir)/timeDiscretizedBackwardEulerMain.cpp\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
 
 timeDiscretizedBackwardEuler_DEPENDENCIES = $(common_dependencies)
 timeDiscretizedBackwardEuler_LDADD = $(common_ldadd)
@@ -338,6 +341,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_DiagonalTransientModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeDiscretizedBackwardEulerMain.Po@am__quote@
 
 .cpp.o:
@@ -367,6 +371,20 @@ timeDiscretizedBackwardEulerMain.obj: $(srcdir)/timeDiscretizedBackwardEulerMain
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/timeDiscretizedBackwardEulerMain.cpp' object='timeDiscretizedBackwardEulerMain.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o timeDiscretizedBackwardEulerMain.obj `if test -f '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; then $(CYGPATH_W) '$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/timeDiscretizedBackwardEulerMain.cpp'; fi`
+
+EpetraExt_DiagonalTransientModel.o: $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_DiagonalTransientModel.o -MD -MP -MF $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo -c -o EpetraExt_DiagonalTransientModel.o `test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo $(DEPDIR)/EpetraExt_DiagonalTransientModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' object='EpetraExt_DiagonalTransientModel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_DiagonalTransientModel.o `test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+
+EpetraExt_DiagonalTransientModel.obj: $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_DiagonalTransientModel.obj -MD -MP -MF $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo -c -o EpetraExt_DiagonalTransientModel.obj `if test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo $(DEPDIR)/EpetraExt_DiagonalTransientModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' object='EpetraExt_DiagonalTransientModel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_DiagonalTransientModel.obj `if test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

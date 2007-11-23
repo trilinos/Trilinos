@@ -520,24 +520,24 @@ private:
 // Behavior modes
 
 inline
-void CommandLineProcessor::throwExceptions( const bool & throwExceptions )
-{ throwExceptions_ = throwExceptions; }
+void CommandLineProcessor::throwExceptions( const bool & throwExceptions_in )
+{ throwExceptions_ = throwExceptions_in; }
 
 inline
 bool CommandLineProcessor::throwExceptions() const
 { return throwExceptions_; }
 
 inline
-void CommandLineProcessor::recogniseAllOptions( const bool & recogniseAllOptions )
-{ recogniseAllOptions_ = recogniseAllOptions; }
+void CommandLineProcessor::recogniseAllOptions( const bool & recogniseAllOptions_in )
+{ recogniseAllOptions_ = recogniseAllOptions_in; }
 
 inline
 bool CommandLineProcessor::recogniseAllOptions() const
 { return recogniseAllOptions_; }
 
 inline
-void CommandLineProcessor::addOutputSetupOptions( const bool &addOutputSetupOptions )
-{ addOutputSetupOptions_ = addOutputSetupOptions; }
+void CommandLineProcessor::addOutputSetupOptions( const bool &addOutputSetupOptions_in )
+{ addOutputSetupOptions_ = addOutputSetupOptions_in; }
 
 inline
 bool CommandLineProcessor::addOutputSetupOptions() const

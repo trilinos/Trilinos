@@ -42,7 +42,8 @@ EXAMPLE = timeDiscretizedBackwardEuler
 noinst_PROGRAMS = $(EXAMPLE)
 
 timeDiscretizedBackwardEuler_SOURCES = \
-	 $(srcdir)/timeDiscretizedBackwardEulerMain.cpp
+  $(srcdir)/timeDiscretizedBackwardEulerMain.cpp\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
 
 timeDiscretizedBackwardEuler_DEPENDENCIES = $(common_dependencies)
 
@@ -131,7 +132,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
-CPPFLAGS += 
+CPPFLAGS += -I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -254,7 +254,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"Stratimikos\">
             <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
@@ -277,7 +277,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"Stratimikos\">
             <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
@@ -301,7 +301,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2) {
     TESTS = ../example/diagonalTransient/diagonalTransient_aztecoo.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -348,7 +348,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2b,RythmosBelos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -381,7 +381,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL3,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -423,7 +423,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL4,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -465,7 +465,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL5,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -508,7 +508,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL6,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -544,7 +544,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL7,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -580,7 +580,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -624,7 +624,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"TimeStepNonlinearSolver\">
             <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
@@ -667,7 +667,7 @@
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL10,RythmosBelos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
     ARGS =
-      --linear-solver-extra-params="
+      --extra-params="
         <ParameterList>
           <ParameterList name=\"Stratimikos\">
             <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>

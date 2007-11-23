@@ -1089,40 +1089,40 @@ Array<T>& Array<T>::operator=( const std::vector<T> &v )
 
 
 template<typename T> inline
-ArrayView<T> Array<T>::view( size_type offset, size_type size )
+ArrayView<T> Array<T>::view( size_type offset, size_type size_in )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(offset);
-  assertIndex(offset+size-1);
+  assertIndex(offset+size_in-1);
 #endif
-  return arrayView( &vec()[offset], size );
+  return arrayView( &vec()[offset], size_in );
   // ToDo: Add support for detecting dangling references!
 }
 
 
 template<typename T> inline
-ArrayView<const T> Array<T>::view( size_type offset, size_type size ) const
+ArrayView<const T> Array<T>::view( size_type offset, size_type size_in ) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(offset);
-  assertIndex(offset+size-1);
+  assertIndex(offset+size_in-1);
 #endif
-  return arrayView( &vec()[offset], size );
+  return arrayView( &vec()[offset], size_in );
   //return arrayView( &const_cast<std::vector<T>&>(vec())[offset], size );
 }
 
 
 template<typename T> inline
-ArrayView<T> Array<T>::operator()( size_type offset, size_type size )
+ArrayView<T> Array<T>::operator()( size_type offset, size_type size_in )
 {
-  return view(offset,size);
+  return view(offset,size_in);
 }
 
 
 template<typename T> inline
-ArrayView<const T> Array<T>::operator()( size_type offset, size_type size ) const
+ArrayView<const T> Array<T>::operator()( size_type offset, size_type size_in ) const
 {
-  return view(offset,size);
+  return view(offset,size_in);
 }
 
 
@@ -1216,10 +1216,10 @@ typename std::vector<T>::iterator
 Array<T>::raw_position( iterator position )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  const iterator begin = this->begin();
-  const iterator end = this->end();
+  const iterator first = this->begin();
+  const iterator last = this->end();
   TEST_FOR_EXCEPTION(
-    !(begin <= position && position <= end), DanglingReferenceError,
+    !(first <= position && position <= last), DanglingReferenceError,
     "Error, this iterator is no longer valid for this Aray!"
     );
   // Note, above operator<=(...) functions will throw

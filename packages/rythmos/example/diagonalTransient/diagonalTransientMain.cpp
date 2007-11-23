@@ -136,13 +136,13 @@ int main(int argc, char *argv[])
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
-    std::string linearSolverParamsFile = "";
-    clp.setOption( "linear-solver-params-file", &linearSolverParamsFile,
-      "File name for XML linear solver parameters for Stratimikos" );
+    std::string paramsFileName = "";
+    clp.setOption( "params-file", &paramsFileName,
+      "File name for XML parameters" );
 
-    std::string linearSolverExtraParams = "";
-    clp.setOption( "linear-solver-extra-params", &linearSolverExtraParams,
-      "Extra XML parameter list string for linear solver parameters for Stratimikos" );
+    std::string extraParamsString = "";
+    clp.setOption( "extra-params", &extraParamsString,
+      "Extra XML parameters" );
 
     double maxStateError = 1e-6;
     clp.setOption( "max-state-error", &maxStateError,
@@ -207,10 +207,10 @@ int main(int argc, char *argv[])
     
     RCP<ParameterList>
       paramList = Teuchos::parameterList();
-    if (linearSolverParamsFile.length())
-      updateParametersFromXmlFile( linearSolverParamsFile, &*paramList );
-    if (linearSolverExtraParams.length())
-      updateParametersFromXmlString( linearSolverExtraParams, &*paramList );
+    if (paramsFileName.length())
+      updateParametersFromXmlFile( paramsFileName, &*paramList );
+    if (extraParamsString.length())
+      updateParametersFromXmlString( extraParamsString, &*paramList );
 
     if (testExactSensitivity) {
       paramList->sublist(DiagonalTransientModel_name).set("Exact Solution as Response",true);

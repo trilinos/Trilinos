@@ -31,6 +31,7 @@
 #define RYTHMOS_TIME_DISCRETIZED_BACKWARD_EULER_MODEL_EVALUATOR_HPP
 
 
+#include "Rythmos_Types.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
@@ -66,7 +67,8 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initCond,
     const Scalar finalTime,
-    const int numTimeSteps
+    const int numTimeSteps,
+    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory = Teuchos::null
     );
 
   //@}
@@ -111,6 +113,9 @@ private:
   Scalar finalTime_;
   int numTimeSteps_;
 
+  Scalar initTime_;
+  Scalar delta_t_;
+
   RCP<const Thyra::ProductVectorSpaceBase<Scalar> > x_bar_space_;
   RCP<const Thyra::ProductVectorSpaceBase<Scalar> > f_bar_space_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_bar_factory_;
@@ -128,12 +133,13 @@ timeDiscretizedBackwardEulerModelEvaluator(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initCond,
   const Scalar finalTime,
-  const int numTimeSteps
+  const int numTimeSteps,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory
   )
 {
   RCP<TimeDiscretizedBackwardEulerModelEvaluator<Scalar> >
     model(new TimeDiscretizedBackwardEulerModelEvaluator<Scalar>());
-  model->initialize(daeModel,initCond,finalTime,numTimeSteps);
+  model->initialize(daeModel,initCond,finalTime,numTimeSteps,W_bar_factory);
   return model;
 }
 
@@ -147,6 +153,10 @@ timeDiscretizedBackwardEulerModelEvaluator(
 
 template<class Scalar>
 TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::TimeDiscretizedBackwardEulerModelEvaluator()
+  :finalTime_(-1.0),
+   numTimeSteps_(-1),
+   initTime_(0.0),
+   delta_t_(-1.0) // Flag for uninitailized!
 {}
 
 
@@ -158,7 +168,8 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::initialize(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initCond,
   const Scalar finalTime,
-  const int numTimeSteps
+  const int numTimeSteps,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &W_bar_factory
   )
 {
 
@@ -174,13 +185,21 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::initialize(
   finalTime_ = finalTime;
   numTimeSteps_ = numTimeSteps;
 
+  initTime_ = initCond.get_t();
+  delta_t_ = (finalTime_ - initTime_) / numTimeSteps_;
+
   x_bar_space_ = productVectorSpace(daeModel_->get_x_space(),numTimeSteps_);
   f_bar_space_ = productVectorSpace(daeModel_->get_f_space(),numTimeSteps_);
 
-  W_bar_factory_ =
-    Thyra::defaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(
-      daeModel_->get_W_factory()
-      );
+  if (!is_null(W_bar_factory)) {
+    W_bar_factory_ = W_bar_factory;
+  }
+  else {
+    W_bar_factory_ =
+      Thyra::defaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(
+        daeModel_->get_W_factory()
+        );
+  }
   
 }
 
@@ -272,11 +291,92 @@ TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::createOutArgsImpl() const
 
 template<class Scalar>
 void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-  const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs_bar,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+
+
+  using Teuchos::rcp_dynamic_cast;
+  typedef ScalarTraits<Scalar> ST;
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Thyra::VectorBase<Scalar> VB;
+  typedef Thyra::ProductVectorBase<Scalar> PVB;
+  typedef Thyra::BlockedLinearOpBase<Scalar> BLWB;
+
+/*
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
+    "Rythmos::ImplicitRKModelEvaluator",inArgs_bar,outArgs_bar,daeModel_
+    );
+*/
+
+  TEST_FOR_EXCEPTION( delta_t_ <= 0.0, std::logic_error,
+    "Error, you have not initialized this object correctly!" );
+
+  //
+  // A) Unwrap the inArgs and outArgs to get at product vectors and block op
+  //
+
+  const RCP<const PVB> x_bar = rcp_dynamic_cast<const PVB>(inArgs_bar.get_x(), true);
+  const RCP<PVB> f_bar = rcp_dynamic_cast<PVB>(outArgs_bar.get_f(), true);
+  RCP<BLWB> W_op_bar = rcp_dynamic_cast<BLWB>(outArgs_bar.get_W_op(), true);
+
+  //
+  // B) Assemble f_bar and W_op_bar by looping over stages
+  //
+
+  MEB::InArgs<Scalar> daeInArgs = daeModel_->createInArgs();
+  MEB::OutArgs<Scalar> daeOutArgs = daeModel_->createOutArgs();
+  const RCP<VB> x_dot_i = createMember(daeModel_->get_x_space());
+  daeInArgs.setArgs(initCond_);
+  
+  Scalar t_i = initTime_; // ToDo: Define t_init!
+
+  const Scalar oneOverDeltaT = 1.0/delta_t_;
+
+  for ( int i = 0; i < numTimeSteps_; ++i ) {
+
+    // B.1) Setup the DAE's inArgs for time step eqn f(i) ...
+    const RCP<const Thyra::VectorBase<Scalar> >
+      x_i = x_bar->getVectorBlock(i),
+      x_im1 = ( i==0 ? initCond_.get_x() : x_bar->getVectorBlock(i-1) );
+    V_VmV( &*x_dot_i, *x_i, *x_im1 ); // x_dot_i = 1/dt * ( x[i] - x[i-1] )
+    Vt_S( &*x_dot_i, oneOverDeltaT ); // ... 
+    daeInArgs.set_x_dot( x_dot_i );
+    daeInArgs.set_x( x_i );
+    daeInArgs.set_t( t_i );
+    daeInArgs.set_alpha( oneOverDeltaT );
+    daeInArgs.set_beta( 1.0 );
+
+    // B.2) Setup the DAE's outArgs for f(i) and/or W(i,i) ...
+    if (!is_null(f_bar))
+      daeOutArgs.set_f( f_bar->getNonconstVectorBlock(i) );
+    if (!is_null(W_op_bar))
+      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i));
+
+    // B.3) Compute f_bar(i) and/or W_op_bar(i,i) ...
+    daeModel_->evalModel( daeInArgs, daeOutArgs );
+    daeOutArgs.set_f(Teuchos::null);
+    daeOutArgs.set_W_op(Teuchos::null);
+    
+    // B.4) Evaluate W_op_bar(i,i-1)
+    if ( !is_null(W_op_bar) && i > 0 ) {
+      daeInArgs.set_alpha( -oneOverDeltaT );
+      daeInArgs.set_beta( 0.0 );
+      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i-1));
+      daeModel_->evalModel( daeInArgs, daeOutArgs );
+      daeOutArgs.set_W_op(Teuchos::null);
+    }
+
+    //
+    t_i += delta_t_;
+
+  }
+
+/*  
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
+*/
+
 }
 
 

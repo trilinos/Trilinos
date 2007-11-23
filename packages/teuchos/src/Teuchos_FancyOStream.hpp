@@ -1026,38 +1026,38 @@ template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::writeFrontMatter()
 {
   bool didOutput = false;
-  std::ostream &out = this->out();
+  std::ostream &o = this->out();
   if(showProcRank_) {
-    out << "p=" << std::right << std::setw(rankPrintWidth_) << procRank_;
+    o << "p=" << std::right << std::setw(rankPrintWidth_) << procRank_;
     didOutput = true;
   }
   if(showLinePrefix_) {
     if(didOutput)
-      out << ", ";
+      o << ", ";
     std::string currLinePrefix = "";
     if ( linePrefixStack_.size() )
       currLinePrefix = this->getTopLinePrefix();
     const int localMaxLenLinePrefix =
       TEUCHOS_MAX( as<int>(currLinePrefix.length()), maxLenLinePrefix_ );
-    out << std::left << std::setw(localMaxLenLinePrefix);
-    out << currLinePrefix;
+    o << std::left << std::setw(localMaxLenLinePrefix);
+    o << currLinePrefix;
     didOutput = true;
   }
   if(showTabCount_) {
     if(didOutput)
-      out << ", ";
-    out << "tabs=" << std::right << std::setw(2) << tabIndent_;
+      o << ", ";
+    o << "tabs=" << std::right << std::setw(2) << tabIndent_;
     didOutput = true;
   }
   // ToDo: Add the Prefix name if asked
   // ToDo: Add the processor number if asked
   // ToDo: Add the number of indents if asked
   if(didOutput) {
-    out << " |" << tabIndentStr_;
+    o << " |" << tabIndentStr_;
   }
   if(enableTabbingStack_==0) {
     for( int i = 0; i < tabIndent_; ++i )
-      out << tabIndentStr_;
+      o << tabIndentStr_;
   }
 }
 

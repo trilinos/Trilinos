@@ -28,10 +28,9 @@
 //@HEADER 
 
 
-#include "Rythmos_BackwardEulerStepper.hpp"
-#include "Rythmos_LinearTimeInvariantModelEvaluator.hpp"
+#include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp"
-#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -44,6 +43,41 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_as.hpp"
 
+
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif // HAVE_MPI
+
+
+namespace {
+
+
+const std::string DiagonalTransientModel_name = "DiagonalTransientModel";
+
+const std::string DAELinearSolver_name = "DAE Linear Solver";
+
+const std::string OverallLinearSolver_name = "Overall Linear Solver";
+
+
+Teuchos::RCP<const Teuchos::ParameterList>
+getValidParameters()
+{
+  using Teuchos::RCP; using Teuchos::ParameterList;
+  static RCP<const ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->sublist(DiagonalTransientModel_name).disableRecursiveValidation();
+    pl->sublist(DAELinearSolver_name).disableRecursiveValidation();
+    pl->sublist(OverallLinearSolver_name).disableRecursiveValidation();
+    validPL = pl;
+  }
+  return validPL;
+}
+
+
+} // namespace
 
 
 int main(int argc, char *argv[])
@@ -65,9 +99,16 @@ int main(int argc, char *argv[])
   using Thyra::createMember;
   using Thyra::createMembers;
   
-  bool result, success = true;
+  bool success = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  RCP<Epetra_Comm> epetra_comm;
+#ifdef HAVE_MPI
+  epetra_comm = rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
+#else
+  epetra_comm = rcp( new Epetra_SerialComm );
+#endif // HAVE_MPI
 
   RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -82,13 +123,13 @@ int main(int argc, char *argv[])
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
-    std::string linearSolverParamsFile = "";
-    clp.setOption( "linear-solver-params-file", &linearSolverParamsFile,
-      "File name for XML linear solver parameters for Stratimikos" );
+    std::string paramsFileName = "";
+    clp.setOption( "params-file", &paramsFileName,
+      "File name for XML parameters" );
 
-    std::string linearSolverExtraParams = "";
-    clp.setOption( "linear-solver-extra-params", &linearSolverExtraParams,
-      "Extra XML parameter list string for linear solver parameters for Stratimikos" );
+    std::string extraParamsString = "";
+    clp.setOption( "extra-params", &extraParamsString,
+      "Extra XML parameter string" );
 
     Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
     setVerbosityLevelOption( "verb-level", &verbLevel,
@@ -123,74 +164,63 @@ int main(int argc, char *argv[])
     //
     
     RCP<ParameterList> paramList = Teuchos::parameterList();
-    if (linearSolverParamsFile.length())
-      updateParametersFromXmlFile( linearSolverParamsFile, &*paramList );
-    if (linearSolverExtraParams.length())
-      updateParametersFromXmlString( linearSolverExtraParams, &*paramList );
+    if (paramsFileName.length())
+      updateParametersFromXmlFile( paramsFileName, &*paramList );
+    if (extraParamsString.length())
+      updateParametersFromXmlString( extraParamsString, &*paramList );
 
-    // ToDo: Validate the parameter list
+    paramList->validateParameters(*getValidParameters());
 
-    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
-    linearSolverBuilder.setParameterList(paramList);
+    //
+    // C) Create the Stratimikos linear solver factories.
+    //
+
+    // Get the linear solve strategy that will be used to solve for the linear
+    // system with the dae's W matrix.
+    Thyra::DefaultRealLinearSolverBuilder daeLinearSolverBuilder;
+    daeLinearSolverBuilder.setParameterList(sublist(paramList,DAELinearSolver_name));
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-      W_factory = createLinearSolveStrategy(linearSolverBuilder);
+      daeLOWSF = createLinearSolveStrategy(daeLinearSolverBuilder);
 
-    //
-    *out << "\nC) Get the data for the problem:\n\n";
-    //
-    // Get the defining matrices M, K, delta_t, initial conditions etc ...
-    //
-
-    // 2007/11/14: rabartl: Initially we will just fake M, K etc ...
-
-    // Create space for LTI matrices
-    const int n = 2;
-    const RCP<const Thyra::VectorSpaceBase<Scalar> >
-      space = Thyra::defaultSpmdVectorSpace<Scalar>(n);
+    // Get the linear solve strategy that can be used to override the overall
+    // linear system solve
+    Thyra::DefaultRealLinearSolverBuilder overallLinearSolverBuilder;
+    overallLinearSolverBuilder.setParameterList(sublist(paramList,OverallLinearSolver_name));
+    RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+      overallLOWSF = createLinearSolveStrategy(overallLinearSolverBuilder);
     
-    // Intially just create random square multi-vectors for M and K
-    RCP<Thyra::MultiVectorBase<Scalar> >
-      mvM = createMembers(space,n,"M"),
-      mvK = createMembers(space,n,"K");
-    assign( &*mvM, 1.0 );
-    assign( &*mvK, 2.0 );
-    RCP<const Thyra::LinearOpBase<Scalar> >
-      M = mvM,
-      K = mvK;
+    //
+    // D) Create the underlying EpetraExt::ModelEvaluator
+    //
+
+    RCP<EpetraExt::DiagonalTransientModel> epetraDaeModel =
+      EpetraExt::diagonalTransientModel(
+        epetra_comm,
+        sublist(paramList,DiagonalTransientModel_name)
+        );
+
+    *out <<"\nepetraDaeModel valid options:\n";
+    epetraDaeModel->getValidParameters()->print(
+      *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
+      );
     
-    *out << "\nM = " << describe(*M,verbLevel);
-    *out << "\nK = " << describe(*K,verbLevel);
-
     //
-    *out << "\nD) Create the LinearTimeInvariantModelEvaluator DAE ...\n\n";
-    //
-
-    RCP<Thyra::ModelEvaluator<Scalar> >
-      ltiModel = Rythmos::linearTimeInvariantModelEvaluator(M,K,W_factory);
-
-    *out << "\nltiModel = " << describe(*ltiModel,verbLevel);
-
-    //
-    // E) Create the TimeDiscretizedBackwardEulerModelEvaluator
+    // E) Create the Thyra-wrapped ModelEvaluator
     //
     
-    // E.1) Create the initial condition
+    RCP<Thyra::ModelEvaluator<double> > daeModel =
+      epetraModelEvaluator(epetraDaeModel,daeLOWSF);
 
-    RCP<Thyra::VectorBase<Scalar> >
-      x_init = createMember(ltiModel->get_x_space()),
-      x_dot_init = createMember(ltiModel->get_x_space());
-
-    assign( &*x_init, 1.0 );
-    assign( &*x_dot_init, 0.0 );
-
-    MEB::InArgs<Scalar> initCond = ltiModel->createInArgs();
-    initCond.set_x(x_init);
-    initCond.set_x_dot(x_dot_init);
-    initCond.set_t(0.0);
+    //
+    // F) Create the TimeDiscretizedBackwardEulerModelEvaluator
+    //
+    
+    MEB::InArgs<Scalar> initCond = daeModel->createInArgs();
+    initCond.setArgs(daeModel->getNominalValues());
 
     RCP<Thyra::ModelEvaluator<Scalar> >
       discretizedModel = Rythmos::timeDiscretizedBackwardEulerModelEvaluator<Scalar>(
-        ltiModel, initCond, finalTime, numTimeSteps );
+        daeModel, initCond, finalTime, numTimeSteps, overallLOWSF );
     
     *out << "\ndiscretizedModel = " << describe(*discretizedModel,verbLevel);
 
@@ -225,9 +255,12 @@ int main(int argc, char *argv[])
 
     // Solve linear system!
 
-    Thyra::solve( *W_bar, Thyra::NOTRANS, *f_bar, &*x_bar );
+    Thyra::SolveStatus<Scalar> solveStatus =
+      Thyra::solve( *W_bar, Thyra::NOTRANS, *f_bar, &*x_bar );
 
-    *out << "\nx_bar = " << describe(*x_bar,verbLevel);
+    *out << "\nsolveStatus:\n" << solveStatus;
+
+    *out << "\nx_bar = " << describe(*x_bar,solnVerbLevel);
     
     //
     // G) Verify that the solution is correct???

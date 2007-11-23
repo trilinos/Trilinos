@@ -79,9 +79,9 @@ bool compareArrays(
 #define TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success ) \
   { \
     (out) << #v1" = "<<(v1)<<" == "<<(v2)<<" : "; \
-    const bool result = (v1) == (v2); \
-    (out) << Teuchos::passfail(result) << "\n"; \
-    if (!result) (success) = false; \
+    const bool l_result = (v1) == (v2); \
+    (out) << Teuchos::passfail(l_result) << "\n"; \
+    if (!l_result) (success) = false; \
   }
 
 
@@ -94,9 +94,9 @@ bool compareArrays(
 #define TEUCHOS_TEST_EQUALITY( v1, v2, out, success ) \
   { \
     (out) << #v1" = "<<(v1)<<" == "#v2" = "<<(v2)<<" : "; \
-    const bool result = (v1) == (v2); \
-    if (!result) (success) = false; \
-    (out) << Teuchos::passfail(result) << "\n"; \
+    const bool l_result = (v1) == (v2); \
+    if (!l_result) (success) = false; \
+    (out) << Teuchos::passfail(l_result) << "\n"; \
   }
 
 
@@ -112,9 +112,9 @@ bool compareArrays(
 #define TEUCHOS_TEST_ITER_EQUALITY( iter1, iter2, out, success ) \
   { \
     (out) << #iter1" == "#iter2" =  : "; \
-    const bool result = (iter1) == (iter2); \
-    if (!result) (success) = false; \
-    (out) << Teuchos::passfail(result) << "\n"; \
+    const bool l_result = (iter1) == (iter2); \
+    if (!l_result) (success) = false; \
+    (out) << Teuchos::passfail(l_result) << "\n"; \
   }
 
 
@@ -126,11 +126,11 @@ bool compareArrays(
  */
 #define TEUCHOS_TEST_ARRAY_ELE_EQUALITY( a, i, val, printPass, out, success ) \
   { \
-    const bool result = ( (a)[i] == (val) ); \
-    if (!result) (success) = false; \
-    if (printPass || !(result)) { \
+    const bool l_result = ( (a)[i] == (val) ); \
+    if (!l_result) (success) = false; \
+    if (printPass || !(l_result)) { \
       out << #a"["<<i<<"] = " << (a)[i] << " == "#val" = " << (val) \
-          << " : " << Teuchos::passfail(result) << "\n"; \
+          << " : " << Teuchos::passfail(l_result) << "\n"; \
     } \
   }
 
@@ -144,9 +144,9 @@ bool compareArrays(
 #define TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success ) \
   { \
     out << #v1" = "<<(v1)<<" "#comp" "#v2" = "<<(v2)<<" : "; \
-    const bool result = (v1) comp (v2); \
-    if (!result) (success) = false; \
-    (out) << Teuchos::passfail(result) << "\n"; \
+    const bool l_result = (v1) comp (v2); \
+    if (!l_result) (success) = false; \
+    (out) << Teuchos::passfail(l_result) << "\n"; \
   }
 
 

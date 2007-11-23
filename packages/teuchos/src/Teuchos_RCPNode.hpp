@@ -62,8 +62,8 @@ enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
 class RCPNode {
 public:
   /** \brief . */
-  RCPNode(bool has_ownership)
-    : count_(1), has_ownership_(has_ownership), extra_data_map_(NULL)
+  RCPNode(bool has_ownership_in)
+    : count_(1), has_ownership_(has_ownership_in), extra_data_map_(NULL)
     {}
   /** \brief . */
   virtual ~RCPNode()
@@ -84,8 +84,8 @@ public:
     return --count_;
   }
   /** \brief . */
-  void has_ownership(bool has_ownership) {
-    has_ownership_ = has_ownership;
+  void has_ownership(bool has_ownership_in) {
+    has_ownership_ = has_ownership_in;
   }
   /** \brief . */
   bool has_ownership() const {
@@ -149,8 +149,8 @@ template<class T, class Dealloc_T>
 class RCPNodeTmpl : public RCPNode {
 public:
   /** \brief . */
-  RCPNodeTmpl(T* p, Dealloc_T dealloc, bool has_ownership)
-    : RCPNode(has_ownership), ptr_(p), dealloc_(dealloc)
+  RCPNodeTmpl(T* p, Dealloc_T dealloc, bool has_ownership_in)
+    : RCPNode(has_ownership_in), ptr_(p), dealloc_(dealloc)
     {}
   /** \brief . */
   Dealloc_T& get_nonconst_dealloc() { return dealloc_; }

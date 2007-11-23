@@ -258,15 +258,15 @@ ArrayRCP<const T> ArrayRCP<T>::getConst() const
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRCP<T>
-ArrayRCP<T>::persistingView( Ordinal lowerOffset, Ordinal size ) const
+ArrayRCP<T>::persistingView( Ordinal lowerOffset_in, Ordinal size_in ) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(lowerOffset,size);
+  assert_in_range(lowerOffset_in,size_in);
 #endif
   ArrayRCP<T> ptr = *this;
-  ptr.ptr_ = ptr.ptr_ + lowerOffset;
+  ptr.ptr_ = ptr.ptr_ + lowerOffset_in;
   ptr.lowerOffset_ = 0;
-  ptr.upperOffset_ = size-1;
+  ptr.upperOffset_ = size_in-1;
   return ptr;
 }
 
@@ -354,19 +354,19 @@ ArrayRCP<T>::end() const
 
 
 template<class T> inline
-ArrayView<T> ArrayRCP<T>::view( Ordinal lowerOffset, Ordinal size ) const
+ArrayView<T> ArrayRCP<T>::view( Ordinal lowerOffset_in, Ordinal size_in ) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(lowerOffset,size);
+  assert_in_range(lowerOffset_in,size_in);
 #endif
-  return arrayView(ptr_ + lowerOffset, size );
+  return arrayView(ptr_ + lowerOffset_in, size_in );
 }
 
 
 template<class T> inline
-ArrayView<T> ArrayRCP<T>::operator()( Ordinal lowerOffset, Ordinal size ) const
+ArrayView<T> ArrayRCP<T>::operator()( Ordinal lowerOffset_in, Ordinal size_in ) const
 {
-  return view(lowerOffset,size);
+  return view(lowerOffset_in,size_in);
 }
 
 
@@ -442,15 +442,15 @@ ArrayRCP<T>::assert_not_null() const
 template<class T>
 inline
 const ArrayRCP<T>&
-ArrayRCP<T>::assert_in_range( Ordinal lowerOffset, Ordinal size ) const
+ArrayRCP<T>::assert_in_range( Ordinal lowerOffset_in, Ordinal size_in ) const
 {
   assert_not_null();
   TEST_FOR_EXCEPTION(
-    !( lowerOffset_ <= lowerOffset && lowerOffset+size-1 <= upperOffset_ ),
+    !( lowerOffset_ <= lowerOffset_in && lowerOffset_in+size_in-1 <= upperOffset_ ),
     Teuchos::RangeError,
     "Teuchos::ArrayRCP<"<<TypeNameTraits<T>::name()<<">::assert_in_range:"
     " Error, [lowerOffset,lowerOffset+size-1] = ["
-    <<lowerOffset<<","<<(lowerOffset+size-1)<<"] does not lie in the"
+    <<lowerOffset_in<<","<<(lowerOffset_in+size_in-1)<<"] does not lie in the"
     " range ["<<lowerOffset_<<","<<upperOffset_<<"]!"
     );
   return *this;
@@ -463,24 +463,24 @@ ArrayRCP<T>::assert_in_range( Ordinal lowerOffset, Ordinal size ) const
 template<class T>
 inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership
+  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in, bool has_ownership_in
   )
   : ptr_(p)
   , node_(
     p
     ? new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
-      p,DeallocArrayDelete<T>(),has_ownership
+      p,DeallocArrayDelete<T>(),has_ownership_in
       )
     : NULL
     )
-  ,lowerOffset_(lowerOffset)
-  ,upperOffset_(upperOffset)
+  ,lowerOffset_(lowerOffset_in)
+  ,upperOffset_(upperOffset_in)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
-       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
     add_new_RCPNode(node_,os.str());
   }
 #endif
@@ -491,21 +491,21 @@ template<class T>
 REFCOUNTPTR_INLINE
 template<class Dealloc_T>
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset, Ordinal upperOffset,
-  Dealloc_T dealloc, bool has_ownership
+  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in,
+  Dealloc_T dealloc, bool has_ownership_in
   )
   : ptr_(p)
   , node_( p
-    ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership)
+    ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership_in)
     : NULL )
-  ,lowerOffset_(lowerOffset)
-  ,upperOffset_(upperOffset)
+  ,lowerOffset_(lowerOffset_in)
+  ,upperOffset_(upperOffset_in)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
-       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
     add_new_ArrayRCPNode(node_,os.str());
   }
 #endif
@@ -515,12 +515,12 @@ ArrayRCP<T>::ArrayRCP(
 template<class T>
 inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset, Ordinal upperOffset, RCPNode* node
+  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in, RCPNode* node
   )
   :ptr_(p),
    node_(node),
-   lowerOffset_(lowerOffset),
-   upperOffset_(upperOffset)
+   lowerOffset_(lowerOffset_in),
+   upperOffset_(upperOffset_in)
 {
   if(node_)
     node_->incr_count();
@@ -589,11 +589,11 @@ inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp(
 T* p, typename ArrayRCP<T>::Ordinal lowerOffset
-  ,typename ArrayRCP<T>::Ordinal size
+  ,typename ArrayRCP<T>::Ordinal size_in
   ,bool owns_mem
   )
 {
-  return ArrayRCP<T>(p,lowerOffset,lowerOffset+size-1,owns_mem);
+  return ArrayRCP<T>(p,lowerOffset,lowerOffset+size_in-1,owns_mem);
 }
 
 
@@ -602,11 +602,11 @@ inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp(
 T* p, typename ArrayRCP<T>::Ordinal lowerOffset
-  ,typename ArrayRCP<T>::Ordinal size
+  ,typename ArrayRCP<T>::Ordinal size_in
   ,Dealloc_T dealloc, bool owns_mem
   )
 {
-  return ArrayRCP<T>(p,lowerOffset,lowerOffset+size-1,dealloc,owns_mem);
+  return ArrayRCP<T>(p,lowerOffset,lowerOffset+size_in-1,dealloc,owns_mem);
 }
 
 
