@@ -38,23 +38,22 @@ namespace Thyra {
  * definition of an application-specific scalar product to be swapped
  * in and out.
  *
- * This subclass defines machinery for extracting out the definition
- * of a scalar product as an object that can be replaced.  The default
- * implementation of scalar product is the Euclidean scalar product
- * (i.e. dot product).  The idea is that, in most cases, the
- * definition of a scalar product may be more general than a specific
- * concrete vector implementation (i.e. a single scalar product may
- * work with all serial and all MPI-based vectors if, for example, it
- * is implemented through an <tt>RTOpPack::RTOpT</tt> object).  Or, a
- * scalar product way work with any MPI SPMD vector or multi-vector.
- * This subclass allows an application code to set a specialized
- * scalar product without having marry a particular concrete vector
- * (vector space) implementation.
+ * This subclass defines machinery for extracting out the definition of a
+ * scalar product as an object that can be replaced.  The default
+ * implementation of scalar product is the Euclidean scalar product (i.e. dot
+ * product).  The idea is that, in most cases, the definition of a scalar
+ * product may be more general than a specific concrete vector implementation
+ * (i.e. a single scalar product may work with all serial and all MPI-based
+ * vectors if, for example, it is implemented through an
+ * <tt>RTOpPack::RTOpT</tt> object).  Or, a scalar product way work with any
+ * MPI SPMD vector or multi-vector.  This subclass allows an application code
+ * to set a specialized scalar product without having to depend on a
+ * particular concrete vector (and vector space) implementation.
  *
- * Almost every concrete <tt>VectorSpaceBase</tt> subclass should inherit
- * from this subclass since it makes it easy for application
- * developers to redefine the scalar product without having to create
- * a new <tt>VectorSpaceBase</tt> subclass which can have many
+ * Almost every data-structure centric concrete <tt>VectorSpaceBase</tt>
+ * subclass should inherit from this subclass since it makes it easy for
+ * application developers to redefine the scalar product without having to
+ * create a new <tt>VectorSpaceBase</tt> subclass which can have many
  * repercussions.
  *
  * The reason that this machinery in this base subclass is separated out from

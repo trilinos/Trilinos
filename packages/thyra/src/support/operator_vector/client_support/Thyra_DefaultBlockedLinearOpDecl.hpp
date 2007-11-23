@@ -60,7 +60,7 @@ namespace Thyra {
 
  * where <tt>Op[]</tt> is a logical 2D array of <tt>LinearOpBase</tt> objects
  * and <tt>M=this->productRange()->getNumBlocks()</tt> and
- * <tt>N=this->productDomain()->getNumBlocks().  Of course the operator
+ * <tt>N=this->productDomain()->getNumBlocks()</tt>.  Of course the operator
  * <tt>M</tt> is not constructed explicitly but instead just applies the
  * constituent linear operators with each set of blocks.
  *

@@ -3,9 +3,9 @@
 The package Stratimikos contains a unified set of Thyra-based wrappers to
 linear solver and preconditioner capabilities in Trilinos.  The name
 Stratimikos was created from the Greek words "stratigiki" and "grammikos"
-which which mean "strategy" and "linear in English.  The word "stratimikos"
-itself has no real meaning itself.  The Stratimikos package is also a place
-where unified testing of linear solvers and preconditioners can be performed.
+which which mean "strategy" and "linear" in English.  The word "stratimikos"
+has no real meaning in itself.  The Stratimikos package is also a place where
+unified testing of linear solvers and preconditioners can be performed.
 
 \section stratimikos_software_sec Stratimikos software
 

@@ -300,7 +300,7 @@ void AztecOOLinearOpWithSolveFactory::setParameterList(
   defaultAdjTolerance_ = adjSolvePL.get(Tolerance_name,defaultAdjTolerance_);
   //
   if(precFactory_.get()) {
-    // Only reset the PF's PL if the sublist exists or the PF does ot already
+    // Only reset the PF's PL if the sublist exists or the PF does not already
     // have a PL.  We don't want to overwrite an externally set PL for the PF
     // if we don't have a nested sublist defined here!
     const bool nestedPFSublistExists = paramList_->isSublist(precFactoryName_);
