@@ -48,13 +48,19 @@
 # added --debug to one test below to help pinpoint a problem on beowulf
 # removed 12 proc run; this was causing the problem
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = BlockDavidson/BlockDavidson_test.exe,
+    TESTS = BlockDavidson/BlockDavidson_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --exsitu --locking,
+           --verbose --exsitu --nolocking;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
+    TESTS = BlockDavidson/BlockDavidson_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --insitu --locking, 
-           --verbose --exsitu --locking, 
-           --verbose --exsitu --nolocking, 
            --verbose --insitu --nolocking,
-           --debug   --insitu --rblocks=4 --locking, 
+           --verbose --insitu --rblocks=4 --locking, 
            --verbose --exsitu --rblocks=4 --locking, 
            --verbose --exsitu --rblocks=4 --nolocking, 
            --verbose --insitu --rblocks=4 --nolocking;
