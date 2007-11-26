@@ -24,12 +24,18 @@
     EXIT-STATUS = STRING-COMPARISON ; 
 }
 
+(FRAMEWORK, INSTALL) {
+    DIRS = Test_Singular;
+    COMM = SERIAL, MPI(1-4);
+    DESCEND_DIRS = YES;
+    EXIT-STATUS = STRING-COMPARISON ;
+}
+
 (FRAMEWORK, INSTALL ) {   
     DIRS = Test_Epetra_RowMatrix,
            Test_Epetra_CrsMatrix,
            Test_Detailed,
            Test_KLU,
-           Test_Singular,
            Test_SuperLU,
            Test_SuperLU_DIST,
            Test_LAPACK,

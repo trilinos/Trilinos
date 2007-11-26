@@ -126,13 +126,18 @@ int main(int argc, char *argv[])
   int minRet = 0;
   Comm.MinAll( &numRet, &minRet, 1 );
 
-  if (minRet != NumericallySingularMatrixError)
-    exit(EXIT_FAILURE);
+  if (minRet != NumericallySingularMatrixError) {
+    if (Comm.MyPID()==0)
+      std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
+  }
+  else {
+    if (Comm.MyPID()==0)
+      std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+  }
  
-
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return(EXIT_SUCCESS);
+  return(0);
 }
