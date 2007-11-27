@@ -258,8 +258,8 @@ template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::reset() {
   ind_.resize(0);
   state_ = Undefined;
-  typedef typename STPArray::iterator iterator;
-  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::iterator iter;
+  for (iter i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->reset();
   }
 }
@@ -268,8 +268,8 @@ template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::clearStatus() {
   ind_.resize(0);
   state_ = Undefined;
-  typedef typename STPArray::iterator iterator;
-  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::iterator iter;
+  for (iter i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->clearStatus();
   }
 }
@@ -290,8 +290,8 @@ std::ostream& StatusTestCombo<ScalarType,MV,OP>::print(std::ostream& os, int ind
     break;
   }
   // print children, with extra indention
-  typedef typename STPArray::const_iterator const_iterator;
-  for (const_iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::const_iterator const_iter;
+  for (const_iter i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->print(os,indent+2);
   }
   return os;
@@ -300,8 +300,8 @@ std::ostream& StatusTestCombo<ScalarType,MV,OP>::print(std::ostream& os, int ind
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalOR( Eigensolver<ScalarType,MV,OP>* solver ) {
   state_ = Failed;
-  typedef typename STPArray::iterator iterator;
-  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::iterator iter;
+  for (iter i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (i == tests_.begin()) {
       ind_ = (*i)->whichVecs();
@@ -335,8 +335,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalOR( Eigensolver<ScalarType,MV,
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQOR( Eigensolver<ScalarType,MV,OP>* solver ) {
   state_ = Failed;
-  typedef typename STPArray::iterator iterator;
-  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::iterator iter;
+  for (iter i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (i == tests_.begin()) {
       ind_ = (*i)->whichVecs();
@@ -371,8 +371,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQOR( Eigensolver<ScalarType,
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalAND( Eigensolver<ScalarType,MV,OP>* solver ) {
   state_ = Passed;
-  typedef typename STPArray::iterator iterator;
-  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::iterator iter;
+  for (iter i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (i == tests_.begin()) {
       ind_ = (*i)->whichVecs();
@@ -406,8 +406,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalAND( Eigensolver<ScalarType,MV
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQAND( Eigensolver<ScalarType,MV,OP>* solver ) {
   state_ = Passed;
-  typedef typename STPArray::iterator iterator;
-  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
+  typedef typename STPArray::iterator iter;
+  for (iter i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (i == tests_.begin()) {
       ind_ = (*i)->whichVecs();

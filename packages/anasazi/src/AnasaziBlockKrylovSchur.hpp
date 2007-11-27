@@ -1125,7 +1125,7 @@ namespace Anasazi {
 
       if (curDim_) {
         // Compute AV      
-        Teuchos::RCP<MV> lclAV = MVT::Clone(*V_,curDim_);
+        lclAV = MVT::Clone(*V_,curDim_);
         {
           Teuchos::TimeMonitor lcltimer( *timerOp_ );
           OPT::Apply(*Op_,*lclV,*lclAV);
@@ -1290,9 +1290,7 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> subCopyQ( Teuchos::View, copyQ, curDim_, numRitzVecs_ );
           
           // Convert back to Ritz vectors of the operator.
-          std::vector<int> curind( (numRitzVecs_) );
-          for (int i=0; i<(int)curind.size(); i++) { curind[i] = i; }
-
+          curind.resize( numRitzVecs_ );  // This is already initialized above
           Teuchos::RCP<MV> view_ritzVectors = MVT::CloneView( *ritzVectors_, curind );
           MVT::MvTimesMatAddMv( ST_ONE, *tmpritzVectors_, subCopyQ, ST_ZERO, *view_ritzVectors );
 
@@ -1536,7 +1534,7 @@ namespace Anasazi {
             //
             // Sort the ritzResiduals_ based on the ordering from the Sort Manager.
             std::vector<MagnitudeType> ritz2( curDim_ );
-            for (int i=0; i<curDim_; i++) { ritz2[i] = ritzResiduals_[ ritzOrder_[i] ]; }
+            for (i=0; i<curDim_; i++) { ritz2[i] = ritzResiduals_[ ritzOrder_[i] ]; }
             blas_mag.COPY( curDim_, &ritz2[0], 1, &ritzResiduals_[0], 1 );
             
             // The Ritz values have now been updated.

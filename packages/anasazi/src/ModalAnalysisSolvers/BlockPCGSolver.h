@@ -89,7 +89,7 @@ class BlockPCGSolver : public virtual Epetra_Operator {
     char * Label() const { return "Epetra_Operator for Block PCG solver"; };
 
     bool UseTranspose() const { return (false); };
-    int SetUseTranspose(bool UseTranspose) { return 0; };
+    int SetUseTranspose(bool UseTranspose_in) { return 0; };
 
     bool HasNormInf() const { return (false); };
     double NormInf() const  { return (-1.0); };

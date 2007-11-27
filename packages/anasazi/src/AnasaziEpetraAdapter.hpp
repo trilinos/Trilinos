@@ -89,7 +89,7 @@ namespace Anasazi {
 
       \returns Pointer to an EpetraMultiVec
     */
-    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs);
+    EpetraMultiVec(const Epetra_BlockMap& Map_in, const int numvecs);
 
     //! Copy constructor.
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
@@ -103,7 +103,7 @@ namespace Anasazi {
 
       \returns Pointer to an EpetraMultiVec
     */
-    EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
+    EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, const int numvecs, const int stride=0);
 
     //! Create multi-vector from list of vectors in an existing EpetraMultiVec.
     /*! @param CV [in] Enumerated type set to Copy or View.
@@ -348,7 +348,7 @@ namespace Anasazi {
     bool UseTranspose() const { return (false); };
 
     //! If set true, the transpose of this operator will be applied [not functional for this operator].
-    int SetUseTranspose(bool UseTranspose) { return 0; };
+    int SetUseTranspose(bool UseTranspose_in) { return 0; };
     
     //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
     bool HasNormInf() const { return (false); };
@@ -422,7 +422,7 @@ namespace Anasazi {
     bool UseTranspose() const { return (false); };
 
     //! If set true, the transpose of this operator will be applied [not functional for this operator].
-    int SetUseTranspose(bool UseTranspose) { return 0; };
+    int SetUseTranspose(bool UseTranspose_in) { return 0; };
     
     //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
     bool HasNormInf() const { return (false); };

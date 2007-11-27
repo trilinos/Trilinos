@@ -437,11 +437,11 @@ int main(int argc, char *argv[]) {
           << std::setw(16) << "Imag Part"
           << std::setw(20) << "Direct Residual"<< endl;
       cout<<"-----------------------------------------------------------"<<endl;
-      for (int i=0; i<numev; i++) {
-        cout<< std::setw(16) << evals[i].realpart 
-            << std::setw(16) << evals[i].imagpart 
-            << std::setw(20) << normA[i] << endl;
-        if ( normA[i] > tol ) {
+      for (int j=0; j<numev; j++) {
+        cout<< std::setw(16) << evals[j].realpart 
+            << std::setw(16) << evals[j].imagpart 
+            << std::setw(20) << normA[j] << endl;
+        if ( normA[j] > tol ) {
           testFailed = true;
         }
       }  

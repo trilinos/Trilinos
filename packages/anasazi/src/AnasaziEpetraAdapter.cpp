@@ -42,15 +42,15 @@ namespace Anasazi {
 
   // Construction/Destruction
   
-  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array, 
+  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, 
                                  const int numvecs, const int stride)
-    : Epetra_MultiVector(Copy, Map, array, stride, numvecs) 
+    : Epetra_MultiVector(Copy, Map_in, array, stride, numvecs) 
   {
   }
   
   
-  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs)
-    : Epetra_MultiVector(Map, numvecs) 
+  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, const int numvecs)
+    : Epetra_MultiVector(Map_in, numvecs) 
   {
   }
   

@@ -254,12 +254,6 @@ int main(int argc, char *argv[]) {
   
   if (numev > 0) {
     
-    // Get the eigenvalues and eigenvectors from the eigenproblem
-    Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
-    std::vector<Anasazi::Value<double> > evals = sol.Evals;
-    Teuchos::RCP<MV> evecs = sol.Evecs;
-    int numev = sol.numVecs;
-    
     Teuchos::SerialDenseMatrix<int,double> dmatr(numev,numev);
     Epetra_MultiVector tempvec(K->Map(), MVT::GetNumberVecs( *evecs ));
     OPT::Apply( *K, *evecs, tempvec );

@@ -280,7 +280,7 @@ namespace Anasazi {
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                    Teuchos::Array<Teuchos::RCP<const MV> > Q,
-                   bool normalize ) const;
+                   bool normalize_in ) const;
   };
 
 
@@ -407,7 +407,7 @@ namespace Anasazi {
                 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                 Teuchos::Array<Teuchos::RCP<const MV> > Q,
-                bool normalize) const {
+                bool normalize_in) const {
 
     const ScalarType ONE  = SCT::one();
     const MagnitudeType MONE = SCTM::one();
@@ -431,18 +431,18 @@ namespace Anasazi {
       qsize += qcs[i];
     }
 
-    if (normalize == true && qsize + xc > xr) {
+    if (normalize_in == true && qsize + xc > xr) {
       // not well-posed
       TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Orthogonalization constraints not feasible" );
     }
 
     // try to short-circuit as early as possible
-    if (normalize == false && (qsize == 0 || xc == 0)) {
+    if (normalize_in == false && (qsize == 0 || xc == 0)) {
       // nothing to do
       return 0;
     }
-    else if (normalize == true && (xc == 0 || xr == 0)) {
+    else if (normalize_in == true && (xc == 0 || xr == 0)) {
       // normalize requires X not empty
       TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): X must be non-empty" );
@@ -484,7 +484,7 @@ namespace Anasazi {
     // C were allocated above
     // Allocate MX and B (if necessary)
     // Set B = I
-    if (normalize == true) {
+    if (normalize_in == true) {
       if ( B == Teuchos::null ) {
         B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
       }
@@ -505,7 +505,7 @@ namespace Anasazi {
      * workX will be a multivector of the same size as X, used to perform X*S when normalizing
      */
     Teuchos::RCP<MV> workX;
-    if (normalize) {
+    if (normalize_in) {
       workX = MVT::Clone(X,xc);
     }
     if (this->_hasOp) {
@@ -528,7 +528,7 @@ namespace Anasazi {
      **********************************************************************/
     std::vector<ScalarType> work;
     std::vector<MagnitudeType> lambda, lambdahi, rwork;
-    if (normalize) {
+    if (normalize_in) {
       // get size of work from ILAENV
       int lwork = lapack.ILAENV(1,"hetrd","VU",xc,-1,-1,-1);
       // lwork >= (nb+1)*n for complex
@@ -650,7 +650,7 @@ namespace Anasazi {
           }
         }
         // accumulate into C
-        if (normalize) {
+        if (normalize_in) {
           // we are normalizing
           int info;
           for (int i=0; i<nq; i++) {
@@ -673,7 +673,7 @@ namespace Anasazi {
 
       ////////////////////////////////////////////////////////////////////////////////////
       // perform normalization
-      if (normalize) {
+      if (normalize_in) {
 
         MagnitudeType condT = tolerance;
         
@@ -794,15 +794,15 @@ namespace Anasazi {
 
             numRand++;
             // put random info in the first iZeroMax+1 vectors of X,MX
-            std::vector<int> ind(iZeroMax+1);
+            std::vector<int> ind2(iZeroMax+1);
             for (int i=0; i<iZeroMax+1; i++) {
-              ind[i] = i;
+              ind2[i] = i;
             }
             Teuchos::RCP<MV> Xnull,MXnull;
-            Xnull = MVT::CloneView(X,ind);
+            Xnull = MVT::CloneView(X,ind2);
             MVT::MvRandom(*Xnull);
             if (this->_hasOp) {
-              MXnull = MVT::CloneView(*MX,ind);
+              MXnull = MVT::CloneView(*MX,ind2);
               OPT::Apply(*(this->_Op),*Xnull,*MXnull);
               this->_OpCounter += MVT::GetNumberVecs(*Xnull);
               MXnull = Teuchos::null;
@@ -824,7 +824,7 @@ namespace Anasazi {
           doGramSchmidt = true;
         }
       }
-      // end if(normalize)
+      // end if(normalize_in)
        
     } // end while (doGramSchmidt)
 
