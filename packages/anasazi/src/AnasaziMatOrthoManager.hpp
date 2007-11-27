@@ -411,6 +411,7 @@ namespace Anasazi {
       Teuchos::RCP<const MV> MX) const 
   {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef Teuchos::ScalarTraits<typename SCT::magnitudeType> MT;
     typedef MultiVecTraits<ScalarType,MV>     MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
@@ -432,9 +433,7 @@ namespace Anasazi {
       Xi = MVT::CloneView(X,ind);
       MXi = MVT::CloneView(*MX,ind);
       MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
-      TEST_FOR_EXCEPTION(SCT::real(z(0,0)) < -SCT::sfmin(), std::logic_error,
-          "Anasazi::MatOrthoManager::normMat(): x'*M*x is negative: " << z(0,0) << " < " << -SCT::sfmin());
-      normvec[i] = SCT::magnitude( SCT::squareroot( SCT::magnitude(z(0,0)) ) );
+      normvec[i] = MT::squareroot( SCT::magnitude(z(0,0)) );
     }
   }
 
