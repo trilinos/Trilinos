@@ -40,9 +40,9 @@ Object::Object(int tracebackModeIn) : label_(0)
   tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 }
 //=============================================================================
-Object::Object(const char* label, int tracebackModeIn) : label_(0)
+Object::Object(const char* label_in, int tracebackModeIn) : label_(0)
 {
-  setLabel(label);
+  setLabel(label_in);
   tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 }
 //=============================================================================
@@ -86,11 +86,11 @@ char* Object::label() const
   return(label_);
 }
 //=============================================================================
-void Object::setLabel(const char* label)
+void Object::setLabel(const char* label_in)
 { 
   if (label_ != 0)
     delete [] label_;
-  label_ = new char[std::strlen(label) + 1];
-  std::strcpy(label_, label);
+  label_ = new char[std::strlen(label_in) + 1];
+  std::strcpy(label_, label_in);
 }
 } // namespace Teuchos

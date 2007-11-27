@@ -78,8 +78,8 @@ class PerformanceMonitorBase
 public:
 
   /** \brief Construct with a counter. */
-  PerformanceMonitorBase(T& counter, bool reset=false)
-    : counter_(counter), isRecursiveCall_(counter_.isRunning())
+  PerformanceMonitorBase(T& counter_in, bool reset=false)
+    : counter_(counter_in), isRecursiveCall_(counter_.isRunning())
     {
       counter_.incrementNumCalls();
     }

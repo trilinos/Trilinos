@@ -253,15 +253,17 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e)
 template<typename T>
 inline
 ParameterEntry::ParameterEntry(
-  T value, bool isDefault, bool isList
-  ,const std::string &docString
-  ,RCP<const ParameterEntryValidator> const& validator
+  T value_in,
+  bool isDefault_in,
+  bool isList_in, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
+  const std::string &docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
   )
-  : val_(value),
+  : val_(value_in),
     isUsed_(false),
-    isDefault_(isDefault),
-    docString_(docString),
-    validator_(validator)
+    isDefault_(isDefault_in),
+    docString_(docString_in),
+    validator_(validator_in)
 {}
 
 inline
@@ -273,16 +275,16 @@ ParameterEntry::~ParameterEntry()
 template<typename T>
 inline
 void ParameterEntry::setValue(
-  T value, bool isDefault, const std::string &docString
-  ,RCP<const ParameterEntryValidator> const& validator
+  T value_in, bool isDefault_in, const std::string &docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  val_ = value;
-  isDefault_ = isDefault;
-  if(docString.length())
-    docString_ = docString;
-  if(validator.get())
-    validator_ = validator;
+  val_ = value_in;
+  isDefault_ = isDefault_in;
+  if(docString_in.length())
+    docString_ = docString_in;
+  if(validator_in.get())
+    validator_ = validator_in;
 }
 
 // Get Methods

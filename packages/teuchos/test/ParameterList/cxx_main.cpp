@@ -1056,11 +1056,11 @@ int main( int argc, char *argv[] )
     const int
       nonlinearSolverValue = Teuchos::getIntegralValue<int>(PL_Main,"Nonlinear Solver");
     const bool
-      result = (nonlinearSolverValue == 0);
+      l_result = (nonlinearSolverValue == 0);
     cout
       << "Read value = " << nonlinearSolverValue << " == 0 : "
-      << ( result ? "passed" : "failed") << "\n";
-    if(!result) ++FailedTests;
+      << ( l_result ? "passed" : "failed") << "\n";
+    if(!l_result) ++FailedTests;
   }
   catch(const std::exception &e) {
     if(verbose) {
@@ -1079,11 +1079,11 @@ int main( int argc, char *argv[] )
     const std::string
       nonlinearSolverValue = Teuchos::getStringValue<int>(PL_Main,"Nonlinear Solver");
     const bool
-      result = (nonlinearSolverValue == "Line Search Based");
+      l_result = (nonlinearSolverValue == "Line Search Based");
     cout
       << "Read value = \"" << nonlinearSolverValue << " == \"Line Search Based\" : "
-      << ( result ? "passed" : "failed") << "\n";
-    if(!result) ++FailedTests;
+      << ( l_result ? "passed" : "failed") << "\n";
+    if(!l_result) ++FailedTests;
   }
   catch(const std::exception &e) {
     if(verbose) {
@@ -1183,11 +1183,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters",0
           );
       const bool
-        result = (lineserchMaxIters == int(3));
+        l_result = (lineserchMaxIters == int(3));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1210,11 +1210,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters",0.0
           );
       const bool
-        result = (lineserchMaxIters == double(3.0));
+        l_result = (lineserchMaxIters == double(3.0));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1237,11 +1237,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters","0"
           );
       const bool
-        result = (lineserchMaxIters == "3");
+        l_result = (lineserchMaxIters == "3");
       cout
         << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1266,11 +1266,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == int(3));
+        l_result = (lineserchMaxIters == int(3));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1293,11 +1293,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == double(3.0));
+        l_result = (lineserchMaxIters == double(3.0));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1320,11 +1320,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == "3");
+        l_result = (lineserchMaxIters == "3");
       cout
         << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1382,11 +1382,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == int(3));
+        l_result = (lineserchMaxIters == int(3));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1409,11 +1409,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == double(3.0));
+        l_result = (lineserchMaxIters == double(3.0));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1436,11 +1436,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == "3");
+        l_result = (lineserchMaxIters == "3");
       cout
         << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1506,11 +1506,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == int(3));
+        l_result = (lineserchMaxIters == int(3));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1539,11 +1539,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == double(3.0));
+        l_result = (lineserchMaxIters == double(3.0));
       cout
         << "Read value = " << lineserchMaxIters << " == 3 : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {
@@ -1572,11 +1572,11 @@ int main( int argc, char *argv[] )
           ,"Max Iters"
           );
       const bool
-        result = (lineserchMaxIters == "3");
+        l_result = (lineserchMaxIters == "3");
       cout
         << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
-        << ( result ? "passed" : "failed") << "\n";
-      if(!result) ++FailedTests;
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
     }
     catch(const std::exception &e) {
       if(verbose) {

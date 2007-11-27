@@ -39,6 +39,9 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_DataAccess.hpp"
 
+// 2007/11/26: rabartl: This class has to change from using 'char*' to
+// std::string!
+
 /*! \class Teuchos::Object
     \brief The base Teuchos class.
 

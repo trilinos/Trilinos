@@ -106,22 +106,22 @@ void WorkspaceStore::protected_initialize(size_t num_bytes)
 
 // RawWorkspace
 
-RawWorkspace::RawWorkspace(WorkspaceStore* workspace_store, size_t num_bytes)
+RawWorkspace::RawWorkspace(WorkspaceStore* workspace_store, size_t num_bytes_in)
 {
-  if(num_bytes) {
+  if(num_bytes_in) {
     workspace_store_ = workspace_store;
-    if( !workspace_store_ || workspace_store_->num_bytes_remaining() < num_bytes ) {
-      workspace_begin_ = ::new char[num_bytes];
-      workspace_end_   = workspace_begin_ + num_bytes;
+    if( !workspace_store_ || workspace_store_->num_bytes_remaining() < num_bytes_in ) {
+      workspace_begin_ = ::new char[num_bytes_in];
+      workspace_end_   = workspace_begin_ + num_bytes_in;
       owns_memory_     = true;
       if(workspace_store_)
-  workspace_store_->num_dyn_allocations_++;
+        workspace_store_->num_dyn_allocations_++;
     }
     else {
       workspace_begin_ = workspace_store_->curr_ws_ptr_;
-      workspace_end_   = workspace_begin_ + num_bytes;
+      workspace_end_   = workspace_begin_ + num_bytes_in;
       owns_memory_     = false;
-      workspace_store_->curr_ws_ptr_ += num_bytes;
+      workspace_store_->curr_ws_ptr_ += num_bytes_in;
       workspace_store_->num_static_allocations_++;
     }
   }
@@ -132,7 +132,7 @@ RawWorkspace::RawWorkspace(WorkspaceStore* workspace_store, size_t num_bytes)
     owns_memory_     = false;
   }
   if(workspace_store_) {
-    workspace_store_->num_current_bytes_total_ += num_bytes;
+    workspace_store_->num_current_bytes_total_ += num_bytes_in;
     if( workspace_store_->num_current_bytes_total_ > workspace_store_->num_max_bytes_needed_ )
       workspace_store_->num_max_bytes_needed_ = workspace_store_->num_current_bytes_total_;
   }
@@ -148,9 +148,9 @@ RawWorkspace::~RawWorkspace()
   else {
     if(workspace_store_) {
       TEST_FOR_EXCEPTION(
-       workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
-       ,"RawWorkspace::~RawWorkspace(...): Error, "
-       "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
+        workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
+        ,"RawWorkspace::~RawWorkspace(...): Error, "
+        "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
       workspace_store_->curr_ws_ptr_ = workspace_begin_;
     }
   }

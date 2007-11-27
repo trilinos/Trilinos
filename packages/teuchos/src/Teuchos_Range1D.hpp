@@ -246,10 +246,10 @@ Range1D::Range1D( EInvalidRange )
 
 
 inline
-Range1D::Range1D(Index lbound, Index ubound)
-  : lbound_(lbound), ubound_(ubound)
+Range1D::Range1D(Index lbound_in, Index ubound_in)
+  : lbound_(lbound_in), ubound_(ubound_in)
 {
-  assert_valid_range(lbound,ubound);
+  assert_valid_range(lbound_in,ubound_in);
 }
 
 inline
@@ -286,24 +286,29 @@ Range1D& Range1D::operator+=( Index incr ) {
 }
 
 inline
-Range1D& Range1D::operator-=( Index incr ) {
+Range1D& Range1D::operator-=( Index incr )
+{
   assert_valid_range( lbound_ - incr, ubound_ - incr );
   lbound_ -= incr;
   ubound_ -= incr;
   return *this;
 }
 
+
 // See Range1D.cpp
 inline
-void Range1D::assert_valid_range(int lbound, int ubound) const {
+void Range1D::assert_valid_range(int lbound_in, int ubound_in) const
+{
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
-    lbound < 0, std::range_error
-    ,"Range1D::assert_valid_range(): Error, lbound ="<<lbound<<" must be greater than or equal to 0."
+    lbound_in < 0, std::range_error
+    ,"Range1D::assert_valid_range(): Error, lbound ="
+    <<lbound_in<<" must be greater than or equal to 0."
     );
   TEST_FOR_EXCEPTION(
-    lbound > ubound, std::range_error
-    ,"Range1D::assert_valid_range(): Error, lbound = "<<lbound<<" > ubound = "<<ubound
+    lbound_in > ubound_in, std::range_error
+    ,"Range1D::assert_valid_range(): Error, lbound = "
+    <<lbound_in<<" > ubound = "<<ubound_in
     );
 #endif
 }

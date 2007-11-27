@@ -30,8 +30,9 @@
 
 namespace Teuchos {
 
-StringToIntMap::StringToIntMap(  const std::string& defaultGroupName, int n, const char* strings[] )
-	: defaultGroupName_(defaultGroupName)
+StringToIntMap::StringToIntMap(
+  const std::string& defaultGroupName_in, int n, const char* strings[]
+  ) : defaultGroupName_(defaultGroupName_in)
 {
 	typedef map_t::value_type val_t;
 	for( int i = 0; i < n; ++i ) {

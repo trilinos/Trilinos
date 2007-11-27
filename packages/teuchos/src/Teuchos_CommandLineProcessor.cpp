@@ -63,13 +63,13 @@ const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
 const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
 
 CommandLineProcessor::CommandLineProcessor(
-  bool   throwExceptions
-  ,bool  recogniseAllOptions
-  ,bool  addOutputSetupOptions
+  bool   throwExceptions_in
+  ,bool  recogniseAllOptions_in
+  ,bool  addOutputSetupOptions_in
   )
-  :throwExceptions_(throwExceptions)
-  ,recogniseAllOptions_(recogniseAllOptions)
-  ,addOutputSetupOptions_(addOutputSetupOptions)
+  :throwExceptions_(throwExceptions_in)
+  ,recogniseAllOptions_(recogniseAllOptions_in)
+  ,addOutputSetupOptions_(addOutputSetupOptions_in)
   ,output_all_front_matter_(output_all_front_matter_default_)
   ,output_show_line_prefix_(output_show_line_prefix_default_)
   ,output_show_tab_count_(output_show_tab_count_default_)
@@ -179,8 +179,8 @@ CommandLineProcessor::parse(
     if( opt_name == echo_cl_opt ) {
       if(errout && procRank == 0) {
         *errout << "\nEchoing the command-line:\n\n";
-        for( int i = 0; i < argc; ++i )
-          *errout << argv[i] << " ";
+        for( int j = 0; j < argc; ++j )
+          *errout << argv[j] << " ";
         *errout << "\n\n";
       }
       continue;

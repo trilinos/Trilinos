@@ -62,16 +62,16 @@ inline void seconds_initialize() {
 namespace Teuchos {
 
 //=============================================================================
-Time::Time(const std::string& name, bool start) 
-  : startTime_(0), totalTime_(0), isRunning_(false), name_(name), numCalls_(0)
+Time::Time(const std::string& name_in, bool start_in) 
+  : startTime_(0), totalTime_(0), isRunning_(false), name_(name_in), numCalls_(0)
 {
-  if(start) this->start();
+  if(start_in) this->start();
 }
 
-void Time::start(bool reset)
+void Time::start(bool reset_in)
 {
   isRunning_ = true;
-  if (reset) totalTime_ = 0;
+  if (reset_in) totalTime_ = 0;
   startTime_ = wallTime();
 }
 

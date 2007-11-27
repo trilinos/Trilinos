@@ -79,7 +79,7 @@ public:
   void setPrecision(int p) {precision_ = p;}
 
   /** \brief Set the number of characters to be left as blank spaces in each column */
-  void setColumnSpacing(int columnSpacing) {columnSpacing_ = columnSpacing;}
+  void setColumnSpacing(int columnSpacing_in) {columnSpacing_ = columnSpacing_in;}
 
   /** \brief Set the interval at which a horizontal line will be written between
    * rows. 

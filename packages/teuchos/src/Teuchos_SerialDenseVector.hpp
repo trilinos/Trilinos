@@ -89,7 +89,8 @@ namespace Teuchos {
 	This method can be called at any point after construction.  Any values previously in
 	this object will be destroyed and the resized std::vector starts with all zero values.
     */
-    int size(OrdinalType length) {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length, 1));}
+    int size(OrdinalType length_in)
+      {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length_in, 1));}
 
     //! Resizing method for changing the size of a SerialDenseVector, keeping the entries.
     /*!
@@ -98,7 +99,8 @@ namespace Teuchos {
 	This method can be called at any point after construction.  Any values previously in
 	this object will be copied to the resized std::vector.
     */	
-    int resize(OrdinalType length) {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length, 1));}
+    int resize(OrdinalType length_in)
+      {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length_in, 1));}
   //@}
 
   //! @name Comparison methods.
@@ -176,11 +178,11 @@ namespace Teuchos {
   SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector() : SerialDenseMatrix<OrdinalType,ScalarType>() {}
 
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector( OrdinalType length ) : SerialDenseMatrix<OrdinalType,ScalarType>( length, 1 ) {}
+  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector( OrdinalType length_in ) : SerialDenseMatrix<OrdinalType,ScalarType>( length_in, 1 ) {}
 
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(DataAccess CV, ScalarType* values, OrdinalType length) : 
-    SerialDenseMatrix<OrdinalType,ScalarType>( CV, values, length, length, 1 ) {}
+  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(DataAccess CV, ScalarType* values_in, OrdinalType length_in) : 
+    SerialDenseMatrix<OrdinalType,ScalarType>( CV, values_in, length_in, length_in, 1 ) {}
 
   template<typename OrdinalType, typename ScalarType>
   SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(const SerialDenseVector<OrdinalType, ScalarType> &Source) :

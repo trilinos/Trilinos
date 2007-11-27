@@ -626,9 +626,9 @@ bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 // Inline and Template Function Definitions
 
 inline
-ParameterList& ParameterList::setName( const std::string &name )
+ParameterList& ParameterList::setName( const std::string &name_in )
 {
-  name_ = name;
+  name_ = name_in;
   return *this;
 }
 
@@ -637,63 +637,63 @@ ParameterList& ParameterList::setName( const std::string &name )
 template<typename T>
 inline
 ParameterList& ParameterList::set(
-  std::string const& name, T const& value, std::string const& docString
-  ,RCP<const ParameterEntryValidator> const& validator
+  std::string const& name_in, T const& value_in, std::string const& docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  ParameterEntry &entry = params_[name]; // Will add the entry if not exists
-  entry.setValue(value,false,docString,validator);
+  ParameterEntry &foundEntry = params_[name_in]; // Will add the entry if not exists
+  foundEntry.setValue(value_in,false,docString_in,validator_in);
   // Validate the value *after* you set it.  It is important to use
   // entry.validator() instead of validator since validator might be null!
-  if(entry.validator().get())
-    entry.validator()->validate(entry,name,this->name());
+  if(foundEntry.validator().get())
+    foundEntry.validator()->validate(foundEntry,name_in,this->name());
   return *this;
 }
 
 inline
 ParameterList& ParameterList::set(
-  std::string const& name, char value[], std::string const& docString
+  std::string const& name_in, char value[], std::string const& docString
   ,RCP<const ParameterEntryValidator> const& validator
   ) 
-{ return set( name, std::string(value), docString, validator ); }
+{ return set( name_in, std::string(value), docString, validator ); }
 
 inline
 ParameterList& ParameterList::set(
-  const std::string& name, const char value[], const std::string &docString
+  const std::string& name_in, const char value[], const std::string &docString
   ,RCP<const ParameterEntryValidator> const& validator
   ) 
-{ return set( name, std::string(value), docString, validator ); }
+{ return set( name_in, std::string(value), docString, validator ); }
 
 inline
 ParameterList& ParameterList::set(
-  std::string const& name, ParameterList const& value, std::string const& docString
+  std::string const& name_in, ParameterList const& value, std::string const& docString
   )
 {
-  sublist(name) = value;
+  sublist(name_in) = value;
   return *this;
 }
 
 inline
-ParameterList& ParameterList::setEntry(std::string const& name, ParameterEntry const& entry)
+ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntry const& entry_in)
 {
-  params_[name] = entry;
+  params_[name_in] = entry_in;
   return *this;
 }
 
 // Get functions
 
 template<typename T>
-T& ParameterList::get(const std::string& name, T def_value)
+T& ParameterList::get(const std::string& name_in, T def_value)
 {
-  ConstIterator i = params_.find(name);
+  ConstIterator i = params_.find(name_in);
     
   // The parameter was not found, add it to the list
   if (i == params_.end()) {
-    params_[name].setValue(def_value, true);
-    i = params_.find(name);
+    params_[name_in].setValue(def_value, true);
+    i = params_.find(name_in);
   } else {
     // The parameter was found, make sure it is the same type as T.
-    this->template validateEntryType<T>("get",name,entry(i));
+    this->template validateEntryType<T>("get",name_in,entry(i));
   }
 
   // Return the value of the parameter
@@ -701,36 +701,36 @@ T& ParameterList::get(const std::string& name, T def_value)
 }
 
 inline
-std::string& ParameterList::get(const std::string& name, char def_value[])
-{ return get(name, std::string(def_value)); }
+std::string& ParameterList::get(const std::string& name_in, char def_value[])
+{ return get(name_in, std::string(def_value)); }
 
 inline
-std::string& ParameterList::get(const std::string& name, const char def_value[])
-{ return get(name, std::string(def_value)); }
+std::string& ParameterList::get(const std::string& name_in, const char def_value[])
+{ return get(name_in, std::string(def_value)); }
 
 template<typename T>
-T& ParameterList::get(const std::string& name) 
+T& ParameterList::get(const std::string& name_in) 
 {
-  ParameterEntry *entry = this->getEntryPtr(name);
-  validateEntryExists("get",name,entry);
-  this->template validateEntryType<T>("get",name,*entry);
-  return getValue<T>(*entry);
+  ParameterEntry *foundEntry = this->getEntryPtr(name_in);
+  validateEntryExists("get",name_in,foundEntry);
+  this->template validateEntryType<T>("get",name_in,*foundEntry);
+  return getValue<T>(*foundEntry);
 }
   
 template<typename T>
-const T& ParameterList::get(const std::string& name) const
+const T& ParameterList::get(const std::string& name_in) const
 {
-  const ParameterEntry *entry = this->getEntryPtr(name);
-  validateEntryExists("get",name,entry);
-  this->template validateEntryType<T>("get",name,*entry);
-  return getValue<T>(*entry);
+  const ParameterEntry *foundEntry = this->getEntryPtr(name_in);
+  validateEntryExists("get",name_in,foundEntry);
+  this->template validateEntryType<T>("get",name_in,*foundEntry);
+  return getValue<T>(*foundEntry);
 }
 
 template<typename T>
 inline
-T* ParameterList::getPtr(const std::string& name) 
+T* ParameterList::getPtr(const std::string& name_in) 
 {
-  ConstIterator i = params_.find(name);
+  ConstIterator i = params_.find(name_in);
   if ( i == params_.end() || entry(i).getAny().type() != typeid(T) )
     return NULL;
   return &getValue<T>(entry(i));
@@ -738,35 +738,35 @@ T* ParameterList::getPtr(const std::string& name)
   
 template<typename T>
 inline
-const T* ParameterList::getPtr(const std::string& name) const
+const T* ParameterList::getPtr(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name);
+  ConstIterator i = params_.find(name_in);
   if ( i == params_.end() || entry(i).getAny().type() != typeid(T) )
     return NULL;
   return &getValue<T>(entry(i));
 }
 
 inline
-ParameterEntry& ParameterList::getEntry(const std::string& name)
+ParameterEntry& ParameterList::getEntry(const std::string& name_in)
 {
-  ParameterEntry *entry = this->getEntryPtr(name);
-  validateEntryExists("get",name,entry);
-  return *entry;
+  ParameterEntry *foundEntry = this->getEntryPtr(name_in);
+  validateEntryExists("get",name_in,foundEntry);
+  return *foundEntry;
 }
   
 inline
-const ParameterEntry& ParameterList::getEntry(const std::string& name) const
+const ParameterEntry& ParameterList::getEntry(const std::string& name_in) const
 {
-  const ParameterEntry *entry = this->getEntryPtr(name);
-  validateEntryExists("get",name,entry);
-  return *entry;
+  const ParameterEntry *foundEntry = this->getEntryPtr(name_in);
+  validateEntryExists("get",name_in,foundEntry);
+  return *foundEntry;
 }
 
 inline
 ParameterEntry*
-ParameterList::getEntryPtr(const std::string& name)
+ParameterList::getEntryPtr(const std::string& name_in)
 {
-  Map::iterator i = params_.find(name);
+  Map::iterator i = params_.find(name_in);
   if ( i == params_.end() )
     return NULL;
   return &entry(i);
@@ -774,9 +774,9 @@ ParameterList::getEntryPtr(const std::string& name)
 
 inline
 const ParameterEntry*
-ParameterList::getEntryPtr(const std::string& name) const
+ParameterList::getEntryPtr(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name);
+  ConstIterator i = params_.find(name_in);
   if ( i == params_.end() )
     return NULL;
   return &entry(i);
@@ -792,9 +792,9 @@ const std::string& ParameterList::name() const
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<typename T>
-bool ParameterList::isType(const std::string& name, T* ptr) const
+bool ParameterList::isType(const std::string& name_in, T* ptr) const
 {
-  ConstIterator i = params_.find(name);
+  ConstIterator i = params_.find(name_in);
   // If parameter doesn't exist, return false.
   if (i == params_.end()) 
     return false;
@@ -803,9 +803,9 @@ bool ParameterList::isType(const std::string& name, T* ptr) const
 #endif
   
 template<typename T>
-bool ParameterList::isType(const std::string& name) const
+bool ParameterList::isType(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name);
+  ConstIterator i = params_.find(name_in);
   // If parameter doesn't exist, return false.
   if (i == params_.end()) 
     return false;
@@ -819,14 +819,14 @@ bool ParameterList::isType(const std::string& name) const
 template<typename T>
 inline
 void ParameterList::validateEntryType(
-  const std::string &funcName, const std::string &name,
-  const ParameterEntry &entry
+  const std::string &funcName, const std::string &name_in,
+  const ParameterEntry &entry_in
   ) const
 {
   TEST_FOR_EXCEPTION_PURE_MSG(
-    entry.getAny().type() != typeid(T), Exceptions::InvalidParameterType
-    ,"Error!  An attempt was made to access parameter \""<<name<<"\""
-    " of type \""<<entry.getAny().typeName()<<"\""
+    entry_in.getAny().type() != typeid(T), Exceptions::InvalidParameterType
+    ,"Error!  An attempt was made to access parameter \""<<name_in<<"\""
+    " of type \""<<entry_in.getAny().typeName()<<"\""
     "\nin the parameter (sub)list \""<<this->name()<<"\""
     "\nusing the incorrect type \""<<TypeNameTraits<T>::name()<<"\"!"
     );

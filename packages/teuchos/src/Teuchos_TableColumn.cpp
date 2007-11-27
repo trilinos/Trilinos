@@ -68,9 +68,9 @@ TableColumn::TableColumn(const Array<double>& first,
     }
 }
 
-void TableColumn::addEntry(const RCP<TableEntry>& entry)
+void TableColumn::addEntry(const RCP<TableEntry>& entry_in)
 {
-  data_.append(entry);
+  data_.append(entry_in);
 }
 
 

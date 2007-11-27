@@ -64,13 +64,13 @@ int main(int argc, char** argv)
       ParameterList prec("Preconditioner");
       prec.set("type", "ILUk");           // set some of these to isUsed for completeness
       {
-        std::string tmp = prec.get<std::string>("type");
+        std::string l_tmp = prec.get<std::string>("type");
       }
       prec.set("k", 2);
       solver.set("Preconditioner",prec);
       solver.set("type", "gmres");        // set some of these to isUsed for completeness
       {
-        std::string tmp = solver.get<std::string>("type");
+        std::string l_tmp = solver.get<std::string>("type");
       }
       solver.set("maxiters", 1000);
       solver.set("restarts", 100);

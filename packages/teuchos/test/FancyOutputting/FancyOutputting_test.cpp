@@ -230,7 +230,7 @@ void AlgorithmA::doAlgorithm()
         << "\nUsing tolerance of " << algoTol_ << "\n";
     {
       // Here I temporaraly turn off tabbing so that I can print an imporant warning message.
-      OSTab tab = this->getOSTab(OSTab::DISABLE_TABBING);
+      OSTab tab2 = this->getOSTab(OSTab::DISABLE_TABBING);
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
         *out << "\n***\n*** Warning, I am doing something very dangerous so watch out!!!\n***\n";
     }
@@ -243,7 +243,7 @@ void AlgorithmA::doAlgorithm()
       // falls in this category.  The first thing I do is manually indent
       // the stream one tab and set a line prefix for the dumb code since
       // it may not do this itself.
-      OSTab tab = this->getOSTab(1,"DUMBALGO");
+      OSTab tab2 = this->getOSTab(1,"DUMBALGO");
       // Now a Pass in the updated FancyOStream object, which is properly
       // indented now, through the std::ostream interface.  I also pass in
       // the std::string that is being used for creating tabs.  The output from
@@ -451,14 +451,14 @@ int main(int argc, char* argv[])
     RCP<FancyOStream>
       out2 = rcp(new FancyOStream(rcp(new std::ostringstream),"  "));
     {
-      OSTab tab(out);
+      OSTab tab1(out);
       *out << "This should be indented one tab!\n";
       {
-        OSTab tab(out);
+        OSTab tab2(out);
         *out << "This should be indented two tabs!\n";
         *out2 << "This should be indented zero tabs from out2!\n";
         {
-          OSTab tab(out2);
+          OSTab tab3(out2);
           *out << "This should be indented two tabs!\n";
           *out2 << "This should be indented one tab from out2!\n";
         }

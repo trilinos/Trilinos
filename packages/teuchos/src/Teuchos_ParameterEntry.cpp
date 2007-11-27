@@ -62,11 +62,11 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
 
 
 void ParameterEntry::setAnyValue(
-  const any &value, bool isDefault
+  const any &value_in, bool isDefault_in
   )
 {
-  val_ = value;
-  isDefault_ = isDefault;
+  val_ = value_in;
+  isDefault_ = isDefault_in;
   validator_ = null;
   isUsed_ = false;
   docString_ = "";
@@ -74,25 +74,27 @@ void ParameterEntry::setAnyValue(
 
 
 void ParameterEntry::setValidator(
-  RCP<const ParameterEntryValidator> const& validator
+  RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  validator_ = validator;
+  validator_ = validator_in;
 }
 
 
-void ParameterEntry::setDocString(const std::string &docString)
+void ParameterEntry::setDocString(const std::string &docString_in)
 {
-  docString_ = docString;
+  docString_ = docString_in;
 }
 
 
-ParameterList& ParameterEntry::setList(bool isDefault, const std::string &docString)
+ParameterList& ParameterEntry::setList(
+  bool isDefault_in, const std::string &docString_in
+  )
 {
   val_ = ParameterList();
-  isDefault_ = isDefault;
+  isDefault_ = isDefault_in;
   isUsed_ = true;
-  docString_ = docString;
+  docString_ = docString_in;
   return any_cast<ParameterList>( val_ );
 }
 

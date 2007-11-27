@@ -129,14 +129,14 @@ void TableFormat::writeWholeTable(
 {
 
   /* compute the total width */
-  int pageWidth = 0;
+  int pgWidth = 0;
   for (unsigned int i=0; i<columnNames.size(); i++)
   {
     int cw = defaultColumnWidth();
     if (columnWidths_.size() != 0) cw = columnWidths_[i];
-    pageWidth += cw;
+    pgWidth += cw;
   }
-  setPageWidth(std::max(pageWidth_, pageWidth));
+  setPageWidth(std::max(pageWidth_, pgWidth));
   
   /* write the header */
   out << thickline() << std::endl;
