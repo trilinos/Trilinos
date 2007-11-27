@@ -95,11 +95,7 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialDenseVector.cpp \
 	$(srcdir)/Epetra_SerialDenseSVD.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
-	$(srcdir)/Epetra_IntSerialDenseVector.cpp \
-	$(srcdir)/Epetra_dcrsmv.f \
-	$(srcdir)/Epetra_dcrsmm.f \
-	$(srcdir)/Epetra_dcrssv.f \
-	$(srcdir)/Epetra_dcrssm.f
+	$(srcdir)/Epetra_IntSerialDenseVector.cpp
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
@@ -110,6 +106,23 @@ SERIAL = \
 	$(srcdir)/Epetra_SerialComm.cpp  \
 	$(srcdir)/Epetra_SerialCommData.cpp  \
 	$(srcdir)/Epetra_SerialDistributor.cpp
+
+EXTRA_FORTRAN_KERNELS = \
+        $(srcdir)/Epetra_dcrsmv.f \
+        $(srcdir)/Epetra_dcrsmm.f \
+        $(srcdir)/Epetra_dcrssv.f \
+        $(srcdir)/Epetra_dcrssm.f
+
+if FORTRAN_DISABLED
+
+FORTRAN_KERNELS =
+
+else
+
+FORTRAN_KERNELS = \
+	$(EXTRA_FORTRAN_KERNELS)
+
+endif
 
 EXTRA_MPI_H = \
 	$(srcdir)/Epetra_MpiComm.h  \
@@ -272,13 +285,15 @@ libepetra_a_SOURCES = \
 	$(DIST) \
 	$(COMP) \
 	$(MPI) \
-	$(MPISMP)
+	$(MPISMP) \
+	$(FORTRAN_KERNELS)
 
 EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
 	$(EXTRA_MPISMP) \
-	$(EXTRA_MPISMP_H)
+	$(EXTRA_MPISMP_H) \
+	$(EXTRA_FORTRAN_KERNELS)
 
 include $(top_builddir)/Makefile.export.epetra
 

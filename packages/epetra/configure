@@ -748,6 +748,8 @@ SUB_TEST_TRUE
 SUB_TEST_FALSE
 SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
+FORTRAN_DISABLED_TRUE
+FORTRAN_DISABLED_FALSE
 FLIBS
 BLAS_LIBS
 LAPACK_LIBS
@@ -7713,6 +7715,13 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
+ if test "X$ac_cv_use_fortran" != "Xyes"; then
+  FORTRAN_DISABLED_TRUE=
+  FORTRAN_DISABLED_FALSE='#'
+else
+  FORTRAN_DISABLED_TRUE='#'
+  FORTRAN_DISABLED_FALSE=
+fi
 
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
 
@@ -11063,6 +11072,13 @@ echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${FORTRAN_DISABLED_TRUE}" && test -z "${FORTRAN_DISABLED_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"FORTRAN_DISABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"FORTRAN_DISABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -11826,6 +11842,8 @@ SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
 SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
+FORTRAN_DISABLED_TRUE!$FORTRAN_DISABLED_TRUE$ac_delim
+FORTRAN_DISABLED_FALSE!$FORTRAN_DISABLED_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 LAPACK_LIBS!$LAPACK_LIBS$ac_delim
@@ -11836,7 +11854,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

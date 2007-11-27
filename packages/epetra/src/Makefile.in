@@ -119,8 +119,6 @@ am__libepetra_a_SOURCES_DIST = $(srcdir)/Epetra_BLAS.cpp \
 	$(srcdir)/Epetra_SerialDenseSVD.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp \
 	$(srcdir)/Epetra_IntSerialDenseVector.cpp \
-	$(srcdir)/Epetra_dcrsmv.f $(srcdir)/Epetra_dcrsmm.f \
-	$(srcdir)/Epetra_dcrssv.f $(srcdir)/Epetra_dcrssm.f \
 	$(srcdir)/Epetra_SerialComm.cpp \
 	$(srcdir)/Epetra_SerialCommData.cpp \
 	$(srcdir)/Epetra_SerialDistributor.cpp \
@@ -145,7 +143,9 @@ am__libepetra_a_SOURCES_DIST = $(srcdir)/Epetra_BLAS.cpp \
 	$(srcdir)/Epetra_BasicRowMatrix.cpp \
 	$(srcdir)/Epetra_JadMatrix.cpp $(srcdir)/Epetra_MpiComm.cpp \
 	$(srcdir)/Epetra_MpiCommData.cpp \
-	$(srcdir)/Epetra_MpiDistributor.cpp
+	$(srcdir)/Epetra_MpiDistributor.cpp $(srcdir)/Epetra_dcrsmv.f \
+	$(srcdir)/Epetra_dcrsmm.f $(srcdir)/Epetra_dcrssv.f \
+	$(srcdir)/Epetra_dcrssm.f
 am__objects_1 = Epetra_BLAS.$(OBJEXT) Epetra_LAPACK.$(OBJEXT) \
 	Epetra_Object.$(OBJEXT)
 am__objects_2 = Epetra_Flops.$(OBJEXT) Epetra_Time.$(OBJEXT) \
@@ -158,9 +158,7 @@ am__objects_3 = Epetra_SerialDenseMatrix.$(OBJEXT) \
 	Epetra_SerialDenseVector.$(OBJEXT) \
 	Epetra_SerialDenseSVD.$(OBJEXT) \
 	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
-	Epetra_IntSerialDenseVector.$(OBJEXT) Epetra_dcrsmv.$(OBJEXT) \
-	Epetra_dcrsmm.$(OBJEXT) Epetra_dcrssv.$(OBJEXT) \
-	Epetra_dcrssm.$(OBJEXT)
+	Epetra_IntSerialDenseVector.$(OBJEXT)
 am__objects_4 = Epetra_SerialComm.$(OBJEXT) \
 	Epetra_SerialCommData.$(OBJEXT) \
 	Epetra_SerialDistributor.$(OBJEXT)
@@ -184,9 +182,13 @@ am__objects_7 = Epetra_MpiComm.$(OBJEXT) Epetra_MpiCommData.$(OBJEXT) \
 @HAVE_MPI_TRUE@am__objects_8 = $(am__objects_7)
 am__objects_9 = Epetra_MpiComm.$(OBJEXT) Epetra_MpiCommData.$(OBJEXT)
 @HAVE_THREADS_TRUE@am__objects_10 = $(am__objects_9)
+am__objects_11 = Epetra_dcrsmv.$(OBJEXT) Epetra_dcrsmm.$(OBJEXT) \
+	Epetra_dcrssv.$(OBJEXT) Epetra_dcrssm.$(OBJEXT)
+@FORTRAN_DISABLED_FALSE@am__objects_12 = $(am__objects_11)
 am_libepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_8) $(am__objects_10)
+	$(am__objects_6) $(am__objects_8) $(am__objects_10) \
+	$(am__objects_12)
 libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -434,11 +436,7 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialDenseVector.cpp \
 	$(srcdir)/Epetra_SerialDenseSVD.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
-	$(srcdir)/Epetra_IntSerialDenseVector.cpp \
-	$(srcdir)/Epetra_dcrsmv.f \
-	$(srcdir)/Epetra_dcrsmm.f \
-	$(srcdir)/Epetra_dcrssv.f \
-	$(srcdir)/Epetra_dcrssm.f
+	$(srcdir)/Epetra_IntSerialDenseVector.cpp
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
@@ -450,6 +448,16 @@ SERIAL = \
 	$(srcdir)/Epetra_SerialCommData.cpp  \
 	$(srcdir)/Epetra_SerialDistributor.cpp
 
+EXTRA_FORTRAN_KERNELS = \
+        $(srcdir)/Epetra_dcrsmv.f \
+        $(srcdir)/Epetra_dcrsmm.f \
+        $(srcdir)/Epetra_dcrssv.f \
+        $(srcdir)/Epetra_dcrssm.f
+
+@FORTRAN_DISABLED_FALSE@FORTRAN_KERNELS = \
+@FORTRAN_DISABLED_FALSE@	$(EXTRA_FORTRAN_KERNELS)
+
+@FORTRAN_DISABLED_TRUE@FORTRAN_KERNELS = 
 EXTRA_MPI_H = \
 	$(srcdir)/Epetra_MpiComm.h  \
 	$(srcdir)/Epetra_MpiCommData.h  \
@@ -590,13 +598,15 @@ libepetra_a_SOURCES = \
 	$(DIST) \
 	$(COMP) \
 	$(MPI) \
-	$(MPISMP)
+	$(MPISMP) \
+	$(FORTRAN_KERNELS)
 
 EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
 	$(EXTRA_MPISMP) \
-	$(EXTRA_MPISMP_H)
+	$(EXTRA_MPISMP_H) \
+	$(EXTRA_FORTRAN_KERNELS)
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))

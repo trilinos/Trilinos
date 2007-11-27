@@ -254,7 +254,7 @@ TAC_ARG_WITH_LIBDIRS
 TAC_ARG_WITH_INCDIRS
 
 TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
-
+AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
 AC_F77_WRAPPERS
 
