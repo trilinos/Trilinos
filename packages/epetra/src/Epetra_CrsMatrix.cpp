@@ -2611,6 +2611,7 @@ void Epetra_CrsMatrix::UpdateExportVector(int NumVectors) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
   
+#ifndef FORTRAN_DISABLED
   if (StorageOptimized() && Graph().StorageOptimized()) {
 
     double * Values = All_Values();
@@ -2640,6 +2641,9 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
     return;
   }
   else if (!StorageOptimized() && !Graph().StorageOptimized()) {
+#else
+  if (!StorageOptimized() && !Graph().StorageOptimized()) {
+#endif
 
 
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
@@ -2681,6 +2685,7 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
 void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 
   int NumCols = NumMyCols();
+#ifndef FORTRAN_DISABLED
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
@@ -2708,6 +2713,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 #endif
     return;
   }
+#endif // FORTRAN_DISABLED
   for(int i = 0; i < NumCols; i++) 
     y[i] = 0.0; // Initialize y for transpose multiply
 
@@ -2755,6 +2761,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const {
 
+#ifndef FORTRAN_DISABLED
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
@@ -2796,6 +2803,9 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 #endif
   }
   else if (!StorageOptimized() && !Graph().StorageOptimized()) {
+#else
+  if (!StorageOptimized() && !Graph().StorageOptimized()) {
+#endif
 
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
@@ -2833,6 +2843,7 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, int NumVectors)  const{
 
   int NumCols = NumMyCols();
+#ifndef FORTRAN_DISABLED
   if (StorageOptimized() && Graph().StorageOptimized()) {
     if (LDX!=0 && LDY!=0) {
       double * Values = All_Values_;
@@ -2861,6 +2872,7 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
       return;
     }
   }
+#endif
   for (int k=0; k<NumVectors; k++) 
     for (int i=0; i < NumCols; i++) 
       Y[k][i] = 0.0; // Initialize y for transpose multiply
@@ -2923,6 +2935,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 
   int i, j, j0;
 
+#ifndef FORTRAN_DISABLED
   if (StorageOptimized() && Graph().StorageOptimized() && ((UnitDiagonal && NoDiagonal())|| (!UnitDiagonal && !NoDiagonal()))) {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
@@ -2939,7 +2952,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
   //=================================================================
   else { // !StorageOptimized()
   //=================================================================
-    
+#endif    
     if (!Trans) {
       
       if (Upper) {
@@ -3027,7 +3040,9 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
       }
       
     }
+#ifndef FORTRAN_DISABLED
   }
+#endif
   return;
 }
 //=======================================================================================================
@@ -3040,6 +3055,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
+#ifndef FORTRAN_DISABLED
     if (LDX!=0 && LDY!=0 && ((UnitDiagonal && NoDiagonal()) || (!UnitDiagonal && !NoDiagonal()))) {
       int iupper = Upper ? 1:0;
       int itrans = Trans ? 1:0;
@@ -3050,6 +3066,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 			 *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
       return;
     }
+#endif
     if(!Trans) {   
       if(Upper) {   
 	j0 = 1;
