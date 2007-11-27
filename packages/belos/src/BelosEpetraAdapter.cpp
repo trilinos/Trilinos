@@ -42,22 +42,22 @@ using namespace Belos;
   //////////////////////////////////////////////////////////////////////
   
   
-EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array, 
+EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, 
 			       const int numvecs, const int stride)
-  : Epetra_MultiVector(Copy, Map, array, stride, numvecs) 
+  : Epetra_MultiVector(Copy, Map_in, array, stride, numvecs) 
 {
 }
 
 
-EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs, bool zeroOut)
-  : Epetra_MultiVector(Map, numvecs, zeroOut) 
+EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, const int numvecs, bool zeroOut)
+  : Epetra_MultiVector(Map_in, numvecs, zeroOut) 
 {
 }
 
 
-EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 				
+EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV_in, const Epetra_MultiVector& P_vec, 				
 			       const std::vector<int>& index )
-  : Epetra_MultiVector(CV, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
+  : Epetra_MultiVector(CV_in, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
 {
 }
 

@@ -485,7 +485,7 @@ StatusType StatusTestImpResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     curSoln_ = lp.updateSolution( cur_update );
     RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_) );
     lp.computeCurrResVec( &*cur_res, &*curSoln_ );
-    std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
+    tmp_resvector.resize( MVT::GetNumberVecs( *cur_res ) );
     std::vector<MagnitudeType> tmp_testvector( have );
     MVT::MvNorm( *cur_res, tmp_resvector, resnormtype_ );
     

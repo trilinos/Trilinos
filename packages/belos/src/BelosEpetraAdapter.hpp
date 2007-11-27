@@ -69,9 +69,9 @@ namespace Belos {
   class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
     // constructors
-    EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
-    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs, bool zeroOut=true);
-    EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
+    EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, const int numvecs, const int stride=0);
+    EpetraMultiVec(const Epetra_BlockMap& Map_in, const int numvecs, bool zeroOut=true);
+    EpetraMultiVec(Epetra_DataAccess CV_in, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
     EpetraMultiVec& operator=(const EpetraMultiVec& pv) { Epetra_MultiVector::operator=(pv); return *this; }
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
     ~EpetraMultiVec();
@@ -201,7 +201,7 @@ namespace Belos {
     bool UseTranspose() const { return (false); };
 
     //! If set true, the transpose of this operator will be applied [not functional for this operator].
-    int SetUseTranspose(bool UseTranspose) { return 0; };
+    int SetUseTranspose(bool UseTranspose_in) { return 0; };
 
     //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
     bool HasNormInf() const { return (false); };

@@ -909,7 +909,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	newstate.V = V_0;
 	newstate.z = z_0;
 	newstate.curDim = 0;
-	gmres_iter->initialize(newstate);
+	gmres_iter->initializeGmres(newstate);
 	
 	// Perform one cycle of Gmres iteration
 	bool primeConverged = false;
@@ -1271,12 +1271,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	      r_ = MVT::Clone( *(problem_->getRHS()), 1 );
 	    problem_->computeCurrPrecResVec( &*r_ );
 	    
-	    // Get a matrix to hold the orthonormalization coefficients.
-	    Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > z_0 = 
-	      rcp( new Teuchos::SerialDenseVector<int,ScalarType>(1) );
-	    
-	    // Orthonormalize the new r_
-	    int rank = ortho_->normalize( *r_, z_0 );
+	    // Orthonormalize the new r_, z_0 already exists
+	    rank = ortho_->normalize( *r_, z_0 );
 	    TEST_FOR_EXCEPTION(rank != 1,GCRODRSolMgrOrthoFailure,
 			       "Belos::GCRODRSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 	    
@@ -1285,13 +1281,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    gcrodr_iter->setSize( keff, numBlocks_ );
 
 	    // Set the new state and initialize the solver.
-	    GCRODRIterState<ScalarType,MV> newstate;
-	    newstate.V = r_;
-	    newstate.z = z_0;
-	    newstate.U = U_;
-	    newstate.C = C_;
-	    newstate.curDim = 0;
-	    gcrodr_iter->initialize(newstate);
+	    GCRODRIterState<ScalarType,MV> restartState;
+	    restartState.V = r_;
+	    restartState.z = z_0;
+	    restartState.U = U_;
+	    restartState.C = C_;
+	    restartState.curDim = 0;
+	    gcrodr_iter->initialize(restartState);
 	    
 	  } // end of restarting
 	  

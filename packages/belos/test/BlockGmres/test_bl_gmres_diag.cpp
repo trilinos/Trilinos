@@ -61,7 +61,7 @@ class Vector_Operator
 {
 public:
   
-  Vector_Operator(int m, int n) : m(m), n(n) {};
+  Vector_Operator(int m_in, int n_in) : m(m_in), n(n_in) {};
   
   virtual ~Vector_Operator() {};
   
@@ -87,7 +87,7 @@ class Diagonal_Operator : public Vector_Operator
 {
 public:
   
-  Diagonal_Operator(int n, double v) : Vector_Operator(n, n), v(v) { };
+  Diagonal_Operator(int n_in, double v_in) : Vector_Operator(n_in, n_in), v(v_in) { };
   
   ~Diagonal_Operator() { };
   
@@ -107,7 +107,7 @@ class Diagonal_Operator_2 : public Vector_Operator
 {
 public:
   
-  Diagonal_Operator_2(int n, double v) : Vector_Operator(n, n), v(v) { };
+  Diagonal_Operator_2(int n_in, double v_in) : Vector_Operator(n_in, n_in), v(v_in) { };
   
   ~Diagonal_Operator_2() { };
   
@@ -131,8 +131,8 @@ class Composed_Operator : public Vector_Operator
 public:
   
   Composed_Operator(int n, 
-		    const Teuchos::RCP<Vector_Operator>& pA, 
-		    const Teuchos::RCP<Vector_Operator>& pB);
+		    const Teuchos::RCP<Vector_Operator>& pA_in, 
+		    const Teuchos::RCP<Vector_Operator>& pB_in);
   
   virtual ~Composed_Operator() {};
   
@@ -144,10 +144,10 @@ private:
   Teuchos::RCP<Vector_Operator> pB; 
 };
 
-Composed_Operator::Composed_Operator(int n, 
-                                     const Teuchos::RCP<Vector_Operator>& pA, 
-                                     const Teuchos::RCP<Vector_Operator>& pB) 
-  : Vector_Operator(n, n), pA(pA), pB(pB) 
+Composed_Operator::Composed_Operator(int n_in, 
+                                     const Teuchos::RCP<Vector_Operator>& pA_in, 
+                                     const Teuchos::RCP<Vector_Operator>& pB_in) 
+  : Vector_Operator(n_in, n_in), pA(pA_in), pB(pB_in) 
 {
 }
 
@@ -164,10 +164,10 @@ class Trilinos_Interface : public Epetra_Operator
 {
 public:
   
-  Trilinos_Interface(const Teuchos::RCP<Vector_Operator>   pA,
-		     const Teuchos::RCP<const Epetra_Comm> pComm,
-		     const Teuchos::RCP<const Epetra_Map>  pMap)
-    : pA(pA), pComm(pComm), pMap(pMap) 
+  Trilinos_Interface(const Teuchos::RCP<Vector_Operator>   pA_in,
+		     const Teuchos::RCP<const Epetra_Comm> pComm_in,
+		     const Teuchos::RCP<const Epetra_Map>  pMap_in)
+    : pA(pA_in), pComm(pComm_in), pMap(pMap_in) 
   {
   };
   
@@ -184,7 +184,7 @@ public:
   
   bool UseTranspose() const {return(use_transpose);};      // always set to false
   
-  int SetUseTranspose(bool UseTranspose_) { use_transpose = false; return(-1); };
+  int SetUseTranspose(bool UseTranspose_in) { use_transpose = false; return(-1); };
   
   bool HasNormInf() const {return(false);};                // cannot return inf-norm
   
@@ -222,9 +222,9 @@ class Iterative_Inverse_Operator : public Vector_Operator
   
 public:
   
-  Iterative_Inverse_Operator(int n, int blocksize, 
-			     const Teuchos::RCP<Vector_Operator>& pA, 
-			     std::string opString="Iterative Solver", bool print=false);              
+  Iterative_Inverse_Operator(int n_in, int blocksize, 
+			     const Teuchos::RCP<Vector_Operator>& pA_in, 
+			     std::string opString="Iterative Solver", bool print_in=false);              
   
   virtual ~Iterative_Inverse_Operator() {}
   
@@ -246,12 +246,12 @@ private:
   Teuchos::RCP<BlockGmresSolMgr<double,MV,OP> >      pBelos;
 };
 
-Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
-                                                       const Teuchos::RCP<Vector_Operator>& pA, 
-                                                       std::string opString, bool print)
-  : Vector_Operator(n, n),      // square operator
-    pA(pA), 
-    print(print),
+Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n_in, int blocksize,
+                                                       const Teuchos::RCP<Vector_Operator>& pA_in, 
+                                                       std::string opString, bool print_in)
+  : Vector_Operator(n_in, n_in),      // square operator
+    pA(pA_in), 
+    print(print_in),
     timer(opString)
 {
   

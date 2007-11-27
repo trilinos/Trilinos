@@ -941,7 +941,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	      break;  // break from while(1){block_gmres_iter->iterate()}
 
 	    // Get a new state struct and initialize the solver.
-	    PseudoBlockGmresIterState<ScalarType,MV> newState;
+	    PseudoBlockGmresIterState<ScalarType,MV> defState;
 
 	    // Inform the linear problem that we are finished with this current linear system.
 	    problem_->setCurrLS();
@@ -949,8 +949,6 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    // Get the state.
 	    PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
 	    int curDim = oldState.curDim;
-	    std::vector<int> index( curDim );
-	    for (int i=0; i<curDim; ++i) { index[i] = i; }	      
 
 	    // Get a new state struct and reset currRHSIdx to have the right-hand sides that 
 	    // are left to converge for this block.
@@ -969,11 +967,11 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 		defRHSIdx.push_back( i );
 	      }
 	      else {
-		newState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
-		newState.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
-		newState.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
-		newState.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
-		newState.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
+		defState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
+		defState.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
+		defState.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
+		defState.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
+		defState.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
 		currRHSIdx[have] = currRHSIdx[i];
 		have++;
 	      }
@@ -997,10 +995,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    problem_->setLSIndex( currRHSIdx );
 	    
 	    // Set the dimension of the subspace, which is the same as the old subspace size.
-	    newState.curDim = curDim;
+	    defState.curDim = curDim;
 	    
 	    // Initialize the solver with the deflated system.
-	    block_gmres_iter->initialize(newState);
+	    block_gmres_iter->initialize(defState);
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
@@ -1041,11 +1039,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
 	    // Compute the restart vectors
 	    // NOTE: Force the linear problem to update the current residual since the solution was updated.
-	    Teuchos::RCP<MV> R_0 = MVT::Clone( *(problem_->getInitPrecResVec()), currRHSIdx.size() );
+	    R_0 = MVT::Clone( *(problem_->getInitPrecResVec()), currRHSIdx.size() );
 	    problem_->computeCurrPrecResVec( &*R_0 );
-	    std::vector<int> index(1);
 	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-	      index[0] = i;
+	      index[0] = i;  // index(1) vector declared on line 891
 	
 	      tmpV = MVT::CloneView( *R_0, index );
 	

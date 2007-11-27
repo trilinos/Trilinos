@@ -699,7 +699,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
       // Set the new state and initialize the solver.
       CGIterationState<ScalarType,MV> newstate;
       newstate.R = R_0;
-      block_cg_iter->initialize(newstate);
+      block_cg_iter->initializeCG(newstate);
 
       while(1) {
 	
@@ -752,16 +752,16 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
 	    // Get the current residual std::vector.
 	    std::vector<MagnitudeType> norms;
-            Teuchos::RCP<MV> R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
+            R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
 	    for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
 	    // Set the new blocksize for the solver.
 	    block_cg_iter->setBlockSize( have );
 
 	    // Set the new state and initialize the solver.
-	    CGIterationState<ScalarType,MV> newstate;
-	    newstate.R = R_0;
-	    block_cg_iter->initialize(newstate);
+	    CGIterationState<ScalarType,MV> defstate;
+	    defstate.R = R_0;
+	    block_cg_iter->initializeCG(defstate);
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //

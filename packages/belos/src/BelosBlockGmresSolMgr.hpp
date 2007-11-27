@@ -951,7 +951,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       newstate.V = V_0;
       newstate.z = z_0;
       newstate.curDim = 0;
-      block_gmres_iter->initialize(newstate);
+      block_gmres_iter->initializeGmres(newstate);
       int numRestarts = 0;
 
       while(1) {
@@ -1012,27 +1012,25 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    
             // Compute the restart std::vector.
             // Get a view of the current Krylov basis.
-            Teuchos::RCP<MV> V_0  = MVT::Clone( *(oldState.V), blockSize_ );
+            V_0  = MVT::Clone( *(oldState.V), blockSize_ );
             if (isFlexible_)
               problem_->computeCurrResVec( &*V_0 );
             else
               problem_->computeCurrPrecResVec( &*V_0 );
 
             // Get a view of the first block of the Krylov basis.
-            Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
-              rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+            z_0 = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
 	    
             // Orthonormalize the new V_0
-            int rank = ortho_->normalize( *V_0, z_0 );
+            rank = ortho_->normalize( *V_0, z_0 );
             TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
               "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 
             // Set the new state and initialize the solver.
-            GmresIterationState<ScalarType,MV> newstate;
             newstate.V = V_0;
             newstate.z = z_0;
             newstate.curDim = 0;
-            block_gmres_iter->initialize(newstate);
+            block_gmres_iter->initializeGmres(newstate);
 
           } // end of restarting
 
