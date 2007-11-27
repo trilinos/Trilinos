@@ -56,6 +56,9 @@
 /* Define if want to build with format_io enabled */
 #undef HAVE_FORMAT_IO
 
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
+
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 

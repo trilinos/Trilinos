@@ -195,6 +195,12 @@ const int DefaultTracebackMode = 1;
 const int DefaultTracebackMode = 0;
 #endif
 
+#ifndef HAVE_FORTRAN_SUPPORT
+#ifndef FORTRAN_DISABLED
+#define FORTRAN_DISABLED
+#endif
+#endif
+
 #else /*HAVE_CONFIG_H is not defined*/
 
 #ifndef __cplusplus

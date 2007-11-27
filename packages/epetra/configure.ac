@@ -253,6 +253,8 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
 AC_F77_WRAPPERS
 
