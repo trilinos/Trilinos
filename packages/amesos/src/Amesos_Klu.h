@@ -157,7 +157,7 @@ public:
     If SetUseTranspose() is set to true, 
     \f$A^T X = B\f$ is computed.
   */  
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
 
   bool UseTranspose() const {return(UseTranspose_);};
 

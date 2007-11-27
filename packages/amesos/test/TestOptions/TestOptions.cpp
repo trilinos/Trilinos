@@ -122,7 +122,7 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
       if (  LastFourBytes == ".mtx" ) { 
 	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( filename, Comm, readMap, 
 							       readA, readx, readb, readxexact) );   
-	FILE* in_file = fopen( filename, "r");
+	in_file = fopen( filename, "r");
 	assert (in_file != NULL) ;  // Checked in Trilinos_Util_CountMatrixMarket() 
 	const int BUFSIZE = 800 ; 
 	char buffer[BUFSIZE] ; 
@@ -793,8 +793,6 @@ int NextMain( int argc, char *argv[] ) {
 
 
 
-  Teuchos::ParameterList ParamList ;
-  //    ParamList.set( "DebugLevel", 1 );
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;

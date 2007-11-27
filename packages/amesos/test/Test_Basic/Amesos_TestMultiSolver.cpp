@@ -260,7 +260,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 				 (Epetra_MultiVector *) passb );
 
   double max_resid = 0.0;
-  for ( int i = 0 ; i < special+1 ; i++ ) { 
+  for ( int j = 0 ; j < special+1 ; j++ ) { 
     
     Epetra_Time TotalTime( Comm ) ; 
     if ( false ) { 

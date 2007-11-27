@@ -102,8 +102,8 @@ public:
 
   bool MatrixShapeOK() const;
 
-  int SetUseTranspose(bool UseTranspose) {
-    UseTranspose_ = UseTranspose; 
+  int SetUseTranspose(bool UseTranspose_in) {
+    UseTranspose_ = UseTranspose_in; 
     return(0);
   }
 

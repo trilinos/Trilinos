@@ -100,11 +100,11 @@ public:
 //=============================================================================
 Amesos_Paraklete::Amesos_Paraklete(const Epetra_LinearProblem &prob ) :
   PrivateParakleteData_( rcp( new Amesos_Paraklete_Pimpl() ) ),
+  ParakleteComm_(0),
   CrsMatrixA_(0),
   TrustMe_(false),
   UseTranspose_(false),
   Problem_(&prob),
-  ParakleteComm_(0),
   MtxConvTime_(-1),
   MtxRedistTime_(-1),
   VecRedistTime_(-1),

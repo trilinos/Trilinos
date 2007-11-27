@@ -40,7 +40,7 @@ class SparseSolverResult : public Epetra_Object {
     first_time( UnUsedDbl ), middle_time( UnUsedDbl ), 
     last_time( UnUsedDbl ), total_time( UnUsedDbl ),
     error( UnUsedDbl), residual(UnUsedDbl), 
-    Xnorm( UnUsedDbl ), Bnorm( UnUsedDbl ), Anorm( UnUsedDbl ) 
+    Anorm( UnUsedDbl ), Xnorm( UnUsedDbl ), Bnorm( UnUsedDbl ) 
   { 
   ; } ; 
   ~SparseSolverResult(){};

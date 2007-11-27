@@ -32,8 +32,8 @@ class Amesos_TestRowMatrix : public virtual Epetra_RowMatrix {
 public:
   //@{ \name Constructor.
   //! Constructor
-  Amesos_TestRowMatrix(Epetra_RowMatrix* Matrix) :
-    Matrix_(Matrix)
+  Amesos_TestRowMatrix(Epetra_RowMatrix* Matrix_in) :
+    Matrix_(Matrix_in)
   {}
 
   //@}
@@ -278,9 +278,9 @@ public:
 #endif
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool UseTranspose_in)
   {
-    return(Matrix().SetUseTranspose(UseTranspose));
+    return(Matrix().SetUseTranspose(UseTranspose_in));
   }
 
   //! Returns the current UseTranspose setting.

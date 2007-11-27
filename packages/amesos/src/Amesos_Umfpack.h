@@ -112,7 +112,7 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
 
   bool UseTranspose() const {return(UseTranspose_);};
 
