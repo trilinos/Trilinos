@@ -464,7 +464,6 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
 
   int myPid = MyComm.MyPID();
   int nMax = 0;
-  int i, j;
 
   // Allocate working arrays
 
@@ -481,7 +480,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
   call.LAMCH('E', eps);
 
   double gap = Epetra_MaxDouble;
-  for (i=0; i<numDiscrete; ++i) {
+  for (int i=0; i<numDiscrete; ++i) {
     used[i] = -1;
     for (int j = i; j < numDiscrete; ++j)
       if (discrete[j] > (1.0 + 10.0*eps)*discrete[i]) {
@@ -491,15 +490,15 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
       }
   }
 
-  for (i=0; i<nev; ++i) 
+  for (int i=0; i<nev; ++i) 
     bestMatch[i] = -1;
 
-  for (i=0; i<nev; ++i) {
+  for (int i=0; i<nev; ++i) {
     if (lambda[i] < continuous[0])
       continue;
     bestMatch[i] = (i == 0) ? 0 : bestMatch[i-1] + 1;
     int jStart = bestMatch[i];
-    for (j = jStart; j < numDiscrete; ++j) {
+    for (int j = jStart; j < numDiscrete; ++j) {
       double diff = fabs(lambda[i]-discrete[j]);
       if (diff < 0.5*gap*lambda[i]) {
         bestMatch[i] = j;
@@ -519,7 +518,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
   }
 
   int iCount = 0;
-  for (i=0; i<nev; ++i) {
+  for (int i=0; i<nev; ++i) {
     if (bestMatch[i] == -1) {
       if (myPid == 0) {
         cout << "      ************** ************** ";
@@ -535,7 +534,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
   double lastDiscrete = 0.0;
   if (smallest) {
     // print the smallest eigenvalues, up to the ones we've matched
-    for (i=0; i<numDiscrete; ++i) {
+    for (int i=0; i<numDiscrete; ++i) {
       if ((iCount == nev) && (discrete[i] > lastDiscrete))
         break;
       nMax = i;
@@ -573,7 +572,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
   else {
     // print the largest eigenvalues, from the first that we've matched
     bool started = false;
-    for (i=0; i<numDiscrete; ++i) {
+    for (int i=0; i<numDiscrete; ++i) {
       if (used[i] >= 0) {
         if (started == false) {
           nMax = i;

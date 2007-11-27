@@ -750,7 +750,7 @@ namespace Anasazi {
   void BlockDavidson<ScalarType,MV,OP>::setSize (int blockSize, int numBlocks) 
   {
     // time spent here counts towards timerInit_
-    Teuchos::TimeMonitor lcltimer( *timerInit_ );
+    Teuchos::TimeMonitor initimer( *timerInit_ );
 
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -874,7 +874,7 @@ namespace Anasazi {
     // NOTE: memory has been allocated by setBlockSize(). Use setBlock below; do not Clone
     // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives
 
-    Teuchos::TimeMonitor lcltimer( *timerInit_ );
+    Teuchos::TimeMonitor inittimer( *timerInit_ );
 
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; ++i) bsind[i] = i;
@@ -1540,23 +1540,22 @@ namespace Anasazi {
     std::stringstream os;
     os.precision(2);
     os.setf(std::ios::scientific, std::ios::floatfield);
-    MagnitudeType tmp;
 
     os << " Debugging checks: iteration " << iter_ << where << endl;
 
     // V and friends
     std::vector<int> lclind(curDim_);
     for (int i=0; i<curDim_; ++i) lclind[i] = i;
-    Teuchos::RCP<MV> lclV,lclKV;
+    Teuchos::RCP<MV> lclV;
     if (initialized_) {
       lclV = MVT::CloneView(*V_,lclind);
     }
     if (chk.checkV && initialized_) {
-      tmp = orthman_->orthonormError(*lclV);
-      os << " >> Error in V^H M V == I  : " << tmp << endl;
+      MagnitudeType err = orthman_->orthonormError(*lclV);
+      os << " >> Error in V^H M V == I  : " << err << endl;
       for (unsigned int i=0; i<auxVecs_.size(); ++i) {
-        tmp = orthman_->orthogError(*lclV,*auxVecs_[i]);
-        os << " >> Error in V^H M Q[" << i << "] == 0 : " << tmp << endl;
+        err = orthman_->orthogError(*lclV,*auxVecs_[i]);
+        os << " >> Error in V^H M Q[" << i << "] == 0 : " << err << endl;
       }
       Teuchos::SerialDenseMatrix<int,ScalarType> curKK(curDim_,curDim_);
       Teuchos::RCP<MV> lclKV = MVT::Clone(*V_,curDim_);
@@ -1575,71 +1574,71 @@ namespace Anasazi {
 
     // X and friends
     if (chk.checkX && initialized_) {
-      tmp = orthman_->orthonormError(*X_);
-      os << " >> Error in X^H M X == I  : " << tmp << endl;
+      MagnitudeType err = orthman_->orthonormError(*X_);
+      os << " >> Error in X^H M X == I  : " << err << endl;
       for (unsigned int i=0; i<auxVecs_.size(); ++i) {
-        tmp = orthman_->orthogError(*X_,*auxVecs_[i]);
-        os << " >> Error in X^H M Q[" << i << "] == 0 : " << tmp << endl;
+        err = orthman_->orthogError(*X_,*auxVecs_[i]);
+        os << " >> Error in X^H M Q[" << i << "] == 0 : " << err << endl;
       }
     }
     if (chk.checkMX && hasM_ && initialized_) {
-      tmp = Utils::errorEquality(*X_, *MX_, MOp_);
-      os << " >> Error in MX == M*X     : " << tmp << endl;
+      MagnitudeType err = Utils::errorEquality(*X_, *MX_, MOp_);
+      os << " >> Error in MX == M*X     : " << err << endl;
     }
     if (chk.checkKX && initialized_) {
-      tmp = Utils::errorEquality(*X_, *KX_, Op_);
-      os << " >> Error in KX == K*X     : " << tmp << endl;
+      MagnitudeType err = Utils::errorEquality(*X_, *KX_, Op_);
+      os << " >> Error in KX == K*X     : " << err << endl;
     }
 
     // H and friends
     if (chk.checkH && initialized_) {
-      tmp = orthman_->orthonormError(*H_);
-      os << " >> Error in H^H M H == I  : " << tmp << endl;
-      tmp = orthman_->orthogError(*H_,*lclV);
-      os << " >> Error in H^H M V == 0  : " << tmp << endl;
-      tmp = orthman_->orthogError(*H_,*X_);
-      os << " >> Error in H^H M X == 0  : " << tmp << endl;
+      MagnitudeType err = orthman_->orthonormError(*H_);
+      os << " >> Error in H^H M H == I  : " << err << endl;
+      err = orthman_->orthogError(*H_,*lclV);
+      os << " >> Error in H^H M V == 0  : " << err << endl;
+      err = orthman_->orthogError(*H_,*X_);
+      os << " >> Error in H^H M X == 0  : " << err << endl;
       for (unsigned int i=0; i<auxVecs_.size(); ++i) {
-        tmp = orthman_->orthogError(*H_,*auxVecs_[i]);
-        os << " >> Error in H^H M Q[" << i << "] == 0 : " << tmp << endl;
+        err = orthman_->orthogError(*H_,*auxVecs_[i]);
+        os << " >> Error in H^H M Q[" << i << "] == 0 : " << err << endl;
       }
     }
     if (chk.checkKH && initialized_) {
-      tmp = Utils::errorEquality(*H_, *KH_, Op_);
-      os << " >> Error in KH == K*H     : " << tmp << endl;
+      MagnitudeType err = Utils::errorEquality(*H_, *KH_, Op_);
+      os << " >> Error in KH == K*H     : " << err << endl;
     }
     if (chk.checkMH && hasM_ && initialized_) {
-      tmp = Utils::errorEquality(*H_, *MH_, MOp_);
-      os << " >> Error in MH == M*H     : " << tmp << endl;
+      MagnitudeType err = Utils::errorEquality(*H_, *MH_, MOp_);
+      os << " >> Error in MH == M*H     : " << err << endl;
     }
 
     // R: this is not M-orthogonality, but standard Euclidean orthogonality
     if (chk.checkR && initialized_) {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);
-      tmp = xTx.normFrobenius();
-      os << " >> Error in X^H R == 0    : " << tmp << endl;
+      MagnitudeType err = xTx.normFrobenius();
+      os << " >> Error in X^H R == 0    : " << err << endl;
     }
 
     // KK
     if (chk.checkKK && initialized_) {
-      Teuchos::SerialDenseMatrix<int,ScalarType> tmp(curDim_,curDim_), lclKK(Teuchos::View,*KK_,curDim_,curDim_);
+      Teuchos::SerialDenseMatrix<int,ScalarType> SDMerr(curDim_,curDim_), lclKK(Teuchos::View,*KK_,curDim_,curDim_);
       for (int j=0; j<curDim_; ++j) {
         for (int i=0; i<curDim_; ++i) {
-          tmp(i,j) = lclKK(i,j) - SCT::conjugate(lclKK(j,i));
+          SDMerr(i,j) = lclKK(i,j) - SCT::conjugate(lclKK(j,i));
         }
       }
-      os << " >> Error in KK - KK^H == 0 : " << tmp.normFrobenius() << endl;
+      os << " >> Error in KK - KK^H == 0 : " << SDMerr.normFrobenius() << endl;
     }
 
     // Q
     if (chk.checkQ) {
       for (unsigned int i=0; i<auxVecs_.size(); ++i) {
-        tmp = orthman_->orthonormError(*auxVecs_[i]);
-        os << " >> Error in Q[" << i << "]^H M Q[" << i << "] == I : " << tmp << endl;
+        MagnitudeType err = orthman_->orthonormError(*auxVecs_[i]);
+        os << " >> Error in Q[" << i << "]^H M Q[" << i << "] == I : " << err << endl;
         for (unsigned int j=i+1; j<auxVecs_.size(); ++j) {
-          tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
-          os << " >> Error in Q[" << i << "]^H M Q[" << j << "] == 0 : " << tmp << endl;
+          err = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
+          os << " >> Error in Q[" << i << "]^H M Q[" << j << "] == 0 : " << err << endl;
         }
       }
     }

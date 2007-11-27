@@ -661,9 +661,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // perform Householder QR of Sr = Q [D;0], where D is unit diag.
           // WARNING: this will overwrite Sr; however, we do not need Sr anymore after this
           std::vector<ScalarType> tau(newdim), work(newdim);
-          int info;
-          lapack.GEQRF(curdim,newdim,Sr.values(),Sr.stride(),&tau[0],&work[0],work.size(),&info);
-          TEST_FOR_EXCEPTION(info != 0,std::logic_error,
+          int geqrf_info;
+          lapack.GEQRF(curdim,newdim,Sr.values(),Sr.stride(),&tau[0],&work[0],work.size(),&geqrf_info);
+          TEST_FOR_EXCEPTION(geqrf_info != 0,std::logic_error,
                              "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
           if (printer->isVerbosity(Debug)) {
             Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,Sr,newdim,newdim);
