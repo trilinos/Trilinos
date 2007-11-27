@@ -513,6 +513,9 @@ if test "X$ac_cv_use_pytrilinos" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno"; then
     ac_configure_args="$ac_configure_args --enable-pytrilinos"
   fi
+  if test "X$ac_cv_use_shared" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-shared"
+  fi
 else
   BUILD_PYTRILINOS=no
 fi
