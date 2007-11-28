@@ -23,17 +23,17 @@ OPTION(ENABLE_EXAMPLES
 )
 
 # Flag to enable Fortran library builds
-IF(WIN32)
+IF(WIN32 AND NOT CYGWIN)
   OPTION(ENABLE_FORTRAN
          "Build Fortran library for this package."
          OFF
   )
-ELSEIF(WIN32)
+ELSE(WIN32 AND NOT CYGWIN)
   OPTION(ENABLE_FORTRAN
          "Build Fortran library for this package."
          ON
   )
-ENDIF(WIN32)
+ENDIF(WIN32 AND NOT CYGWIN)
 
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
 INCLUDE_DIRECTORIES(${CMAKE_MODULE_PATH})
