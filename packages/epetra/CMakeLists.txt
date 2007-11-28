@@ -1,4 +1,5 @@
-PROJECT(epetra C CXX Fortran)
+# Project name
+PROJECT(epetra CXX C)
 
 # Setup package version
 SET(EPETRA_VERSION "3.7d")
@@ -22,13 +23,25 @@ OPTION(ENABLE_EXAMPLES
 )
 
 # Flag to enable Fortran library builds
-OPTION(ENABLE_FORTRAN
-       "Build Fortran library for this package."
-       ON
-)
+IF(WIN32)
+  OPTION(ENABLE_FORTRAN
+         "Build Fortran library for this package."
+         OFF
+  )
+ELSEIF(WIN32)
+  OPTION(ENABLE_FORTRAN
+         "Build Fortran library for this package."
+         ON
+  )
+ENDIF(WIN32)
 
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
 INCLUDE_DIRECTORIES(${CMAKE_MODULE_PATH})
+
+# Fortran related configuration
+IF(ENABLE_FORTRAN)
+  ENABLE_LANGUAGE(Fortran)
+ENDIF(ENABLE_FORTRAN)
 
 # MPI related configuration
 IF(ENABLE_MPI)
@@ -70,3 +83,4 @@ IF(WIN32)
 ENDIF(WIN32)
 
 INCLUDE(CPack)
+
