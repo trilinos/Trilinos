@@ -7,7 +7,7 @@ INCLUDE(${CMAKE_MODULE_PATH}/Epetra_Add_Test.cmake)
 
 EPETRA_ADD_TEST(BlockMap SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
 
-EPETRA_ADD_TEST(BasicPerfTest SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
+EPETRA_ADD_TEST(BasicPerfTest SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v INSTALL)
 
 EPETRA_ADD_TEST(Comm SOURCES cxx_main.cpp ARGS -v)
 

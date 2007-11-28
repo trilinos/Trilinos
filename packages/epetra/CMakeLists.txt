@@ -5,48 +5,47 @@ PROJECT(epetra CXX C)
 SET(EPETRA_VERSION "3.7d")
 
 # Flag for turning on MPI support
-OPTION(ENABLE_MPI 
-       "Build with MPI for parallel codes."
+OPTION(EPETRA_ENABLE_MPI 
+       "Build Epetra with MPI for parallel codes."
        OFF
 )
 
 # Flag to enable tests
-OPTION(ENABLE_TESTS
-       "Build tests for this package."
+OPTION(EPETRA_ENABLE_TESTS
+       "Build Epetra tests."
        OFF
 )
 
 # Flag to enable examples
-OPTION(ENABLE_EXAMPLES
-       "Build examples for this package."
+OPTION(EPETRA_ENABLE_EXAMPLES
+       "Build Epetra examples."
        OFF
 )
 
-# Flag to enable Fortran library builds
+# Flag to enable Fortran implementation code for performance
 IF(WIN32 AND NOT CYGWIN)
-  OPTION(ENABLE_FORTRAN
-         "Build Fortran library for this package."
-         OFF
-  )
+	SET(EPETRA_ENABLE_FORTRAN_DEFAULT OFF)
 ELSE(WIN32 AND NOT CYGWIN)
-  OPTION(ENABLE_FORTRAN
-         "Build Fortran library for this package."
-         ON
-  )
+	SET(EPETRA_ENABLE_FORTRAN_DEFAULT ON)
 ENDIF(WIN32 AND NOT CYGWIN)
 
-SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
-INCLUDE_DIRECTORIES(${CMAKE_MODULE_PATH})
+OPTION(EPETRA_ENABLE_FORTRAN
+	"Build Fortran library for this package."
+	${EPETRA_ENABLE_FORTRAN_DEFAULT}
+	)
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR/cmake})
 
 # Fortran related configuration
-IF(ENABLE_FORTRAN)
+IF(EPETRA_ENABLE_FORTRAN)
   ENABLE_LANGUAGE(Fortran)
-ENDIF(ENABLE_FORTRAN)
+ENDIF(EPETRA_ENABLE_FORTRAN)
 
 # MPI related configuration
-IF(ENABLE_MPI)
+IF(EPETRA_ENABLE_MPI)
   INCLUDE(ConfigureMPI)
-ENDIF(ENABLE_MPI)
+ENDIF(EPETRA_ENABLE_MPI)
 
 # Use secure versions of CRT methods in Windows 
 # (addresses C4996 build errors in MSVS)
@@ -56,31 +55,11 @@ ENDIF(WIN32)
 
 ADD_SUBDIRECTORY(src)
 
-IF(ENABLE_TESTS OR ENABLE_EXAMPLES)
-  ENABLE_TESTING()
-  INCLUDE(Dart)
-  IF(ENABLE_TESTS)
-    ADD_SUBDIRECTORY(test)
-  ENDIF(ENABLE_TESTS)
-  IF(ENABLE_EXAMPLES)
-    ADD_SUBDIRECTORY(example)
-  ENDIF(ENABLE_EXAMPLES)
-ENDIF(ENABLE_TESTS OR ENABLE_EXAMPLES)
+IF(EPETRA_ENABLE_TESTS)
+	ADD_SUBDIRECTORY(test)
+ENDIF(EPETRA_ENABLE_TESTS)
 
-# Packaging
-SET(CPACK_PACKAGE_DESCRIPTION "Epetra is a linear algebra services package.")
-SET(CPACK_PACKAGE_FILE_NAME "epetra-setup-${EPETRA_VERSION}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Epetra ${EPETRA_VERSION}")
-SET(CPACK_PACKAGE_REGISTRY_KEY "Epetra ${EPETRA_VERSION}")
-SET(CPACK_PACKAGE_NAME "epetra")
-SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
-SET(CPACK_PACKAGE_VERSION "${EPETRA_VERSION}")
-SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
-SET(CPACK_SOURCE_FILE_NAME "epetra-source-${EPETRA_VERSION}")
-
-IF(WIN32)
-	SET(CPACK_GENERATOR "NSIS")
-ENDIF(WIN32)
-
-INCLUDE(CPack)
+IF(EPETRA_ENABLE_EXAMPLES)
+	ADD_SUBDIRECTORY(example)
+ENDIF(EPETRA_ENABLE_EXAMPLES)
 
