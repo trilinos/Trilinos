@@ -352,7 +352,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
     if (!is_null(f_bar))
       daeOutArgs.set_f( f_bar->getNonconstVectorBlock(i) );
     if (!is_null(W_op_bar))
-      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i));
+      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i).assert_not_null());
 
     // B.3) Compute f_bar(i) and/or W_op_bar(i,i) ...
     daeModel_->evalModel( daeInArgs, daeOutArgs );
@@ -363,7 +363,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
     if ( !is_null(W_op_bar) && i > 0 ) {
       daeInArgs.set_alpha( -oneOverDeltaT );
       daeInArgs.set_beta( 0.0 );
-      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i-1));
+      daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,i-1).assert_not_null());
       daeModel_->evalModel( daeInArgs, daeOutArgs );
       daeOutArgs.set_W_op(Teuchos::null);
     }

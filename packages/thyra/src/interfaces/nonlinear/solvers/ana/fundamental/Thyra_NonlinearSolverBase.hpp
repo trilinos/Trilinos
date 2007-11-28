@@ -194,6 +194,23 @@ public:
 
 };
 
+
+/** \brief . 
+ *
+ * \relates NonlinearSolverBase
+ */
+template <class Scalar>
+const SolveStatus<Scalar> solve(
+  NonlinearSolverBase<Scalar> &nonlinearSolver,
+    VectorBase<Scalar> *x,
+    const SolveCriteria<Scalar> *solveCriteria = NULL,
+    VectorBase<Scalar> *delta = NULL
+    )
+{
+  return nonlinearSolver.solve(x,solveCriteria,delta);
+}
+
+
 // ///////////////////////////////
 // Implementations
 

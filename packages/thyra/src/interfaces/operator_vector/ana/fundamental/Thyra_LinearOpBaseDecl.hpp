@@ -167,17 +167,17 @@ namespace Thyra {
  * <ul>
  *
  * <li><b>Fully Uninitialized</b>:
- *     State: <tt>(is_null(this->range()) && is_null(this->range()))</tt>,
+ *     State: <tt>(is_null(this->range()) && is_null(this->domain()))</tt>,
  *     Nonmember function: <tt>isFullyUninitialized()</tt>
  *
  * <li><b>Partially Initialized</b>:
- *     State: <tt>(!is_null(this->range()) && !is_null(this->range()))
+ *     State: <tt>(!is_null(this->range()) && !is_null(this->domain()))
  *            && (!this->applySupports(conj) && !this->applyTransposeSupports(conj))</tt>
  *            for all values of <tt>conj</tt>,
  *     Nonmember function: <tt>isPartiallyInitialized()</tt>
  *
  * <li><b>Fully Initialized</b>:
- *     State: <tt>(!is_null(this->range()) && !is_null(this->range()))
+ *     State: <tt>(!is_null(this->range()) && !is_null(this->domain()))
  *            && (this->applySupports(conj) || this->applyTransposeSupports(conj))</tt>
  *            for at least one valid value for <tt>conj</tt>,
  *     Nonmember function: <tt>isFullyInitialized()</tt>

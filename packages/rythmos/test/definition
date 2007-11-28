@@ -688,6 +688,25 @@
 }
 
 
+#
+# timeDiscretizationBackwardEuler.exe
+#
+
+
+(FRAMEWORK,INSTALL,TIMEDISCR,TIMEDISCR0,RythmosBelos) {
+    TESTS = ../example/timeDiscretizedBackwardEuler/timeDiscretizedBackwardEuler.exe;
+    ARGS = \
+      --params-file=../example/timeDiscretizedBackwardEuler/timeDiscretizedBackwardEuler1.xml \
+      --verb-level=VERB_EXTREME \
+      --num-time-steps=10 \
+      --final-time=1e-3;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+
+
 # Explicit Taylor polynomial integration on Van der Pol oscillator
 (FRAMEWORK,INSTALL) {
     TESTS = ExplicitTaylorPolynomialStepper/VanDerPolOscillator/vdp.exe;

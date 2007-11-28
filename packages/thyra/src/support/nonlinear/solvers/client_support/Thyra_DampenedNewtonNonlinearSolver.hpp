@@ -125,9 +125,9 @@ public:
   RCP<const ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   SolveStatus<Scalar> solve(
-    VectorBase<Scalar> *x
-    ,const SolveCriteria<Scalar> *solveCriteria
-    ,VectorBase<Scalar> *delta = NULL
+    VectorBase<Scalar> *x,
+    const SolveCriteria<Scalar> *solveCriteria,
+    VectorBase<Scalar> *delta
     );
   /** \brief . */
   RCP<const VectorBase<Scalar> > get_current_x() const;

@@ -26,12 +26,14 @@
 # ***********************************************************************
 #@HEADER
 
+
 EXEEXT = .exe
 
-all-local: $(DIAGONAL_EXE_LINKS)
+all-local: $(TIMEDISCR_EXE_LINKS) $(TIMEDISCR_INPUT_FILES)
 	@echo ""
 	@echo "rythmos/example/timeDiscretizedBackwardEuler built successfully."
 	@echo ""
+
 
 #
 # Actual programs
@@ -55,26 +57,26 @@ timeDiscretizedBackwardEuler_LDADD = $(common_ldadd)
 #
 
 if ENABLE_RYTHMOS_STRATIMIKOS_AMESOS
-LINK_DIAGONAL_AMESOS=timeDiscretizedBackwardEuler_amesos.exe
+LINK_TIMEDISCR_AMESOS=timeDiscretizedBackwardEuler_amesos.exe
 endif
 
 if ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO
-LINK_DIAGONAL_AZTECOO=timeDiscretizedBackwardEuler_aztecoo.exe
+LINK_TIMEDISCR_AZTECOO=timeDiscretizedBackwardEuler_aztecoo.exe
 if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
-LINK_DIAGONAL_AZTECOO_IFPACK=timeDiscretizedBackwardEuler_aztecoo_ifpack.exe
+LINK_TIMEDISCR_AZTECOO_IFPACK=timeDiscretizedBackwardEuler_aztecoo_ifpack.exe
 endif
 if ENABLE_RYTHMOS_STRATIMIKOS_ML
-LINK_DIAGONAL_AZTECOO_ML=timeDiscretizedBackwardEuler_aztecoo_ml.exe
+LINK_TIMEDISCR_AZTECOO_ML=timeDiscretizedBackwardEuler_aztecoo_ml.exe
 endif
 endif
 
 if ENABLE_RYTHMOS_STRATIMIKOS_BELOS
-LINK_DIAGONAL_BELOS=timeDiscretizedBackwardEuler_belos.exe
+LINK_TIMEDISCR_BELOS=timeDiscretizedBackwardEuler_belos.exe
 if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
-LINK_DIAGONAL_BELOS_IFPACK=timeDiscretizedBackwardEuler_belos_ifpack.exe
+LINK_TIMEDISCR_BELOS_IFPACK=timeDiscretizedBackwardEuler_belos_ifpack.exe
 endif
 if ENABLE_RYTHMOS_STRATIMIKOS_ML
-LINK_DIAGONAL_BELOS_ML=timeDiscretizedBackwardEuler_belos_ml.exe
+LINK_TIMEDISCR_BELOS_ML=timeDiscretizedBackwardEuler_belos_ml.exe
 endif
 endif
 
@@ -99,14 +101,26 @@ timeDiscretizedBackwardEuler_belos_ifpack.exe: timeDiscretizedBackwardEuler.exe
 timeDiscretizedBackwardEuler_belos_ml.exe: timeDiscretizedBackwardEuler.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-DIAGONAL_EXE_LINKS = \
-  $(LINK_DIAGONAL_AMESOS) \
-  $(LINK_DIAGONAL_AZTECOO) \
-  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
-  $(LINK_DIAGONAL_AZTECOO_ML) \
-  $(LINK_DIAGONAL_BELOS) \
-  $(LINK_DIAGONAL_BELOS_IFPACK) \
-  $(LINK_DIAGONAL_BELOS_ML)
+TIMEDISCR_EXE_LINKS = \
+  $(LINK_TIMEDISCR_AMESOS) \
+  $(LINK_TIMEDISCR_AZTECOO) \
+  $(LINK_TIMEDISCR_AZTECOO_IFPACK) \
+  $(LINK_TIMEDISCR_AZTECOO_ML) \
+  $(LINK_TIMEDISCR_BELOS) \
+  $(LINK_TIMEDISCR_BELOS_IFPACK) \
+  $(LINK_TIMEDISCR_BELOS_ML)
+
+
+#
+# XML input files
+#
+
+TIMEDISCR_INPUT_FILES = \
+  timeDiscretizedBackwardEuler1.xml
+
+timeDiscretizedBackwardEuler1.xml: $(srcdir)/_timeDiscretizedBackwardEuler1.xml
+	cp $< $@
+
 
 #
 # Common stuff
@@ -136,3 +150,11 @@ CPPFLAGS += -I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransie
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =
+
+
+#
+# All extra files that have to be added to the tarball!
+#
+
+EXTRA_DIST = \
+  _timeDiscretizedBackwardEuler1.xml

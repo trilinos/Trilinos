@@ -33,6 +33,8 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_DampenedNewtonNonlinearSolver.hpp"
+#include "Thyra_TestingTools.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -60,6 +62,8 @@ const std::string DAELinearSolver_name = "DAE Linear Solver";
 
 const std::string OverallLinearSolver_name = "Overall Linear Solver";
 
+const std::string NonlinearSolver_name = "Nonlinear Solver";
+
 
 Teuchos::RCP<const Teuchos::ParameterList>
 getValidParameters()
@@ -71,6 +75,7 @@ getValidParameters()
     pl->sublist(DiagonalTransientModel_name).disableRecursiveValidation();
     pl->sublist(DAELinearSolver_name).disableRecursiveValidation();
     pl->sublist(OverallLinearSolver_name).disableRecursiveValidation();
+    pl->sublist(NonlinearSolver_name).disableRecursiveValidation();
     validPL = pl;
   }
   return validPL;
@@ -146,6 +151,10 @@ int main(int argc, char *argv[])
     clp.setOption(
       "dump-final-solutions", "no-dump-final-solutions", &dumpFinalSolutions,
       "Determine if the final solutions are dumpped or not." );
+
+    double maxStateError = 1e-6;
+    clp.setOption( "max-state-error", &maxStateError,
+      "The maximum allowed error in the integrated state in relation to the exact state solution" );
     
     // ToDo: Read in more parameters
 
@@ -225,38 +234,27 @@ int main(int argc, char *argv[])
     *out << "\ndiscretizedModel = " << describe(*discretizedModel,verbLevel);
 
     //
-    // F) Create the RHS and solve the overall linear system (which solves the
-    // forward problem)
+    // F) Setup a nonlinear solver and solve the system
     //
 
-    // We know that this is a linear model so we need to just done one linear
-    // solve and we are done!
+    // F.1) Setup a nonlinear solver
 
-    // F.1) Setup the input and output objects for (linear) f_bar(x_bar) = 0
+    Thyra::DampenedNewtonNonlinearSolver<Scalar> nonlinearSolver;
+    nonlinearSolver.setOStream(out);
+    nonlinearSolver.setVerbLevel(verbLevel);
+    //nonlinearSolver.setParameterList(sublist(paramList,NonlinearSolver_name));
+    //2007/11/27: rabartl: ToDo: Implement parameter list handling for
+    //DampenedNonlinearSolve so that I can uncomment the above line.
+    nonlinearSolver.setModel(discretizedModel);
+
+    // F.2) Solve the system
 
     RCP<Thyra::VectorBase<Scalar> > 
       x_bar = createMember(discretizedModel->get_x_space());
     V_S( &*x_bar, 0.0 );
- 
-    RCP<Thyra::VectorBase<Scalar> > 
-      f_bar = createMember(discretizedModel->get_f_space());
- 
-    RCP<Thyra::LinearOpWithSolveBase<Scalar> > 
-      W_bar = discretizedModel->create_W();
-
-    MEB::InArgs<Scalar> inArgs_bar = discretizedModel->createInArgs();
-    inArgs_bar.set_x(x_bar);
-
-    MEB::OutArgs<Scalar> outArgs_bar = discretizedModel->createOutArgs();
-    outArgs_bar.set_f(f_bar);
-    outArgs_bar.set_W(W_bar);
-    
-    discretizedModel->evalModel(inArgs_bar,outArgs_bar);
-
-    // Solve linear system!
 
     Thyra::SolveStatus<Scalar> solveStatus =
-      Thyra::solve( *W_bar, Thyra::NOTRANS, *f_bar, &*x_bar );
+      Thyra::solve( nonlinearSolver, &*x_bar );
 
     *out << "\nsolveStatus:\n" << solveStatus;
 
@@ -266,8 +264,24 @@ int main(int argc, char *argv[])
     // G) Verify that the solution is correct???
     //
 
-    TEST_FOR_EXCEPT("ToDo: Implement!");
+    // Check against the end time exact solution.
+
+    RCP<const Thyra::VectorBase<Scalar> >
+      exact_x_final = Thyra::create_Vector(
+        epetraDaeModel->getExactSolution(finalTime),
+        daeModel->get_x_space()
+        );
+
+    RCP<const Thyra::VectorBase<Scalar> > solved_x_final
+      = rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(x_bar,true)->getVectorBlock(numTimeSteps-1);
     
+    const bool result = Thyra::testRelNormDiffErr(
+      "exact_x_final", *exact_x_final, "solved_x_final", *solved_x_final,
+      "maxStateError", maxStateError, "warningTol", 1.0, // Don't warn
+      &*out, solnVerbLevel
+      );
+    if (!result) success = false;
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success);
 

@@ -145,7 +145,7 @@ int main( int argc, char* argv[] )
 
     newtonSolver.setModel(thyraModel);
     Thyra::SolveStatus<double>
-      solveStatus = newtonSolver.solve(&*x,&solveCriteria);
+      solveStatus = Thyra::solve( newtonSolver, &*x, &solveCriteria );
     
     *out << "\nNonlinear solver return status:\n";
     {
