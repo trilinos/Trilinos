@@ -21,6 +21,12 @@ OPTION(ENABLE_EXAMPLES
        OFF
 )
 
+# Flag to enable Fortran library builds
+OPTION(ENABLE_FORTRAN
+       "Build Fortran library for this package."
+       ON
+)
+
 SET(CMAKE_MODULE_PATH "${epetra_SOURCE_DIR}/cmake")
 INCLUDE_DIRECTORIES(${CMAKE_MODULE_PATH})
 
