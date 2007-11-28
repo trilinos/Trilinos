@@ -14,8 +14,6 @@
 #ifndef __ZOLTAN_MATRIX_PARTITION
 #define __ZOLTAN_MATRIX_PARTITION
 
-#define TEST_COPY 1
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -95,7 +93,7 @@ int Zoltan_MP_Set_Param(
 **    MP_COLS    partition the columns (objects are columns
 **                for hypergraph model hyperedges are rows)
 **
-**    MP_NONZEROS    partition the nonzeros 
+**    MP_NZ      partition the nonzeros 
 **
 ** If you want to add a new approach to Zoltan_Matrix_Partition, you
 ** need to write functions analogous to the 5 functions written
@@ -129,7 +127,7 @@ static int mp_1d_get_rows(ZOLTAN_MP_DATA *mpd,
 static int mp_1d_get_columns(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nCols, IJTYPE *colIDs, int *colProcs, int *colParts);
 
-#if HAVE_2D_METHODS
+#ifdef HAVE_2D_METHODS
 /*
  * Functions specifically to process approach MP_NZ. 
  */
@@ -138,6 +136,7 @@ static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
   int num_export,
   unsigned int *export_global_ids, unsigned int *export_local_ids, 
   int *export_procs, int *export_to_part);
+/* TODO */
 static int mp_2d_get_nzs(ZOLTAN_MP_DATA *mpd, 
         IJTYPE nNzs, IJTYPE *I, IJTYPE *J, int *ijProcs, int *ijParts);
 #endif
@@ -152,7 +151,7 @@ static void free_obj_lookup_table(obj_lookup **lu);
 static int copy_obj_lookup_table(obj_lookup **toLU, int **toProc, int **toPart,
                                   obj_lookup *fromLU, int *fromProc, int *fromPart);
 static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs);
-#if HAVE_2D_METHODS
+#ifdef HAVE_2D_METHODS
 static obj_lookup *create_obj_lookup_table2(IJTYPE sizeI, IJTYPE sizeJ,
                    IJTYPE *listI, IJTYPE *indexJ, IJTYPE *listJ);
 #endif
@@ -372,7 +371,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "setup for partitioning\n");
         }
         break;
-#if HAVE_2D_METHODS
+#ifdef HAVE_2D_METHODS
       case MP_NZ_TYPE:
         ierr = mp_2d_setup(mpd);
         if (ierr != ZOLTAN_OK){
@@ -434,7 +433,7 @@ int Zoltan_Matrix_Partition(ZZ *zz)
           ZOLTAN_PRINT_ERROR(zz->Proc, yo,"processing results of partitioning\n");
         }
         break;
-#if HAVE_2D_METHODS
+#ifdef HAVE_2D_METHODS
       case MP_NZ_TYPE:
         /*
          * Save nonzero assignment for all local nonzeros.
@@ -934,7 +933,7 @@ static obj_lookup *create_obj_lookup_table(IJTYPE numObjs, IJTYPE *objGIDs)
 
   return lu;
 }
-#if HAVE_2D_METHODS
+#ifdef HAVE_2D_METHODS
 /*
 ** Create a hash table mapping the (I,J) pairs to their location in
 ** listJ.  IDs in listI are unique.  Number of pairs is sizeJ.
@@ -1401,11 +1400,11 @@ End:
   return ierr;
 }
 
-#if HAVE_2D_METHODS
+#ifdef HAVE_2D_METHODS
 
 /****************************************************************/
 /****************************************************************/
-/* Functions that support MATRIX_APPROACH = MP_NONZEROS
+/* Functions that support MATRIX_APPROACH = MP_NZ (nonzeros)
  *
  * The objects to be partitioned are the matrix nonzeros.
  *
@@ -1414,11 +1413,12 @@ ZOLTAN_NUM_OBJ_FN mp_2d_get_num_obj;
 ZOLTAN_OBJ_LIST_FN mp_2d_get_obj_list;
 ZOLTAN_NUM_GEOM_FN mp_2d_get_num_geom;
 ZOLTAN_GEOM_MULTI_FN mp_2d_get_geom;
-/* ZOLTAN_HG_SIZE_CS_FN mp_2d_get_size_matrix; */
-/* ZOLTAN_HG_CS_FN mp_2d_get_matrix; */
+ZOLTAN_HG_SIZE_CS_FN mp_2d_get_size_matrix;
+ZOLTAN_HG_CS_FN mp_2d_get_matrix;
 
 static int mp_2d_setup(ZOLTAN_MP_DATA *mpd)
 {
+  const char *yo= "mp_2d_setup";
   int ierr = ZOLTAN_OK;
 
   Zoltan_Set_Param(mpd->zzLib, "NUM_GID_ENTRIES", "2");
@@ -1430,16 +1430,16 @@ static int mp_2d_setup(ZOLTAN_MP_DATA *mpd)
   Zoltan_Set_Param(mpd->zzLib, "RETURN_LISTS", "PARTITION");
 
   /* Set LB_METHOD from MP_METHOD, default is HYPERGRAPH. */
-  if (strcmp(mpd->method, "HYPERGRAPH")==0) /* TODO */
+  if (strcmp(mpd->method, "HYPERGRAPH")==0) /* TODO temp hack */
     strcpy(mpd->method, "BLOCK"); 
   Zoltan_Set_Param(mpd->zzLib, "LB_METHOD", mpd->method);
 
   Zoltan_Set_Num_Obj_Fn(mpd->zzLib, mp_2d_get_num_obj, mpd);
   Zoltan_Set_Obj_List_Fn(mpd->zzLib, mp_2d_get_obj_list, mpd);
-  /* Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, mp_2d_get_size_matrix, mpd); */
-  /* Zoltan_Set_HG_CS_Fn(mpd->zzLib, mp_2d_get_matrix, mpd); */
+  Zoltan_Set_HG_Size_CS_Fn(mpd->zzLib, mp_2d_get_size_matrix, mpd);
+  Zoltan_Set_HG_CS_Fn(mpd->zzLib, mp_2d_get_matrix, mpd);
 
-/*
+/* Do we need 2d version of the stubs below?? 
   ierr = make_mirror(mpd);
 
   if (ierr != ZOLTAN_OK){
@@ -1528,8 +1528,56 @@ void mp_2d_get_geom(
 
 }
 
+/* Fine-grain hypergraph. */
+void mp_2d_get_size_matrix(void *data, int *num_lists, int *num_nzs,
+  int *format, int *ierr)
+{
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+  const char *yo = "mp_2d_get_size_matrix";
 
-/* TODO: Hypergraph query functions. These should build fine-grain hgraph. */
+  if (mpd->approach == MP_NZ_TYPE){
+    /* Fine-grain: Each nonzero (i,j) corresponds to a vertex that 
+       belongs to hyperedges for row i and column j.
+       It is simplest to store fine hypergraph in compresssed vertex
+       format, since each vertex belongs to exactly two hyperedges. */
+    *num_lists = mpd->nzIndex[mpd->numRC];
+    *num_nzs  = 2*mpd->nzIndex[mpd->numRC];
+    *format = ZOLTAN_COMPRESSED_VERTEX;
+  }
+  else{
+    *ierr = ZOLTAN_FATAL;
+    ZOLTAN_PRINT_ERROR(-1, yo, "Internal error: Expected MP_NZ_TYPE.\n");
+  }
+}
+
+void mp_2d_get_matrix(void *data, int num_gid_entries, int num_vtx_edge,
+  int num_nzs, int format, 
+  ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR nz_GID, int *ierr)
+{
+  const char *yo = "mp_2d_get_matrix";
+  int i, j, k, nnz;
+  ZOLTAN_MP_DATA *mpd = (ZOLTAN_MP_DATA *)data;
+  *ierr = ZOLTAN_OK;
+  IJTYPE *vtxedgeGID = (IJTYPE *)vtxedge_GID;
+  IJTYPE *nzGID = (IJTYPE *)nz_GID;
+
+  if (mpd->approach == MP_NZ_TYPE){
+    nnz = mpd->nzIndex[mpd->numRC];
+    for (k=0; k<nnz; k++){
+      vtxedge_ptr[k] = 2*k;
+      vtxedgeGID[k] = k;
+      /* Each nonzero has two ints for its ID  */
+      /* TODO: This won't work because vtx IDs have size 1 but nz IDs size 2! */
+      nzGID[2*k] = mpd->crGID[i]; /* row i */
+      nzGID[2*k+1] = mpd->numRC + mpd->crGID[j]; /* col j */
+    }
+  }
+  else{
+    *ierr = ZOLTAN_FATAL;
+    ZOLTAN_PRINT_ERROR(-1, yo, "Internal error: Expected MP_NZ_TYPE.\n");
+  }
+}
 
 /* Store partition results in mpd struct. */
 static int mp_2d_result(ZOLTAN_MP_DATA *mpd,
