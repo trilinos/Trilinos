@@ -1,0 +1,6 @@
+PROJECT(teuchos)
+
+SET(TEUCHOS_VERSION "1.5d")
+
+ADD_SUBDIRECTORY(src)
+

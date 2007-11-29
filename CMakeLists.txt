@@ -4,6 +4,7 @@ SET(TRILINOS_VERSION "9.0d")
 # Setup user options ...
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 OPTION(TRILINOS_BUILD_EPETRA "Build the epetra package." ON)
+OPTION(TRILINOS_BUILD_TEUCHOS "Build the teuchos package." ON)
 
 # Hide the advanced stuff ...
 MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
