@@ -502,7 +502,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
         // run test
-        int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
+        ret = OM->projectAndNormalize(*Scopy,theX,C,B);
         sout << "projectAndNormalize() returned rank " << ret << endl;
         if (ret == 0) {
           sout << "   Cannot continue." << endl;

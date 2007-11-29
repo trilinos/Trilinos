@@ -78,9 +78,6 @@ typedef OperatorTraits<ST,MV,OP> OPT;
 typedef ScalarTraits<ST>         SCT;
 typedef SCT::magnitudeType           MT;
 
-const ST ONE = SCT::one();
-const MT ZERO = SCT::magnitude(SCT::zero());
-
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
 const MT ATOL = 10;
@@ -97,6 +94,8 @@ MT MVDiff(const MV &X, const MV &Y);
 int main(int argc, char *argv[]) 
 {
   
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   bool verbose = false;
   int numFailed = 0;
   bool debug = false;
@@ -515,6 +514,8 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
                                RCP<const MV> X1, RCP<const MV> Y1,
                                RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) {
 
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -733,7 +734,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         theMX = tuple( theMX[1], theMX[0] );
         theMY = tuple( theMY[1], theMY[0] );
         // run test
-        int ret = OM->projectAndNormalizeGen(
+        ret = OM->projectAndNormalizeGen(
             *Scopy,theX,theY,localIsBiortho,C,B,MScopy,theMX,theMY);
         sout << "projectAndNormalizeGen() returned rank " << ret << endl;
         if (ret == 0) {
@@ -868,6 +869,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
                    RCP<const MV> X1, RCP<const MV> Y1,
                    RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) {
 
+  const ST ONE = SCT::one();
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -1156,6 +1158,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
 
 
 MT MVDiff(const MV &X, const MV &Y) {
+  const ST ONE = SCT::one();
   const int sizeX = MVT::GetNumberVecs(X);
   SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
 

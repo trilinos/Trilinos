@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     Values[0] = one;
     Indices[0] = i;
     NumEntries = 1;
-    int info = M->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+    info = M->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
     assert( info==0 );
   }
   // Finish up

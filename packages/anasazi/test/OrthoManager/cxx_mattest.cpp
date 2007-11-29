@@ -62,9 +62,6 @@ typedef OperatorTraits<double,MV,OP> OPT;
 typedef ScalarTraits<double>         SCT;
 typedef SCT::magnitudeType           MT;
 
-const ST ONE = SCT::one();
-const MT ZERO = SCT::magnitude(SCT::zero());
-
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
 const MT ATOL = 10;
@@ -82,6 +79,8 @@ MT MVDiff(const MV &X, const MV &Y);
 int main(int argc, char *argv[]) 
 {
   
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
 #ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
@@ -355,6 +354,8 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
                                RCP<const MV> S, 
                                RCP<const MV> X1, RCP<const MV> X2) {
 
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -546,7 +547,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         theX = tuple( theX[1], theX[0] );
         theMX = tuple( theMX[1], theMX[0] );
         // run test
-        int ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
+        ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
         sout << "projectAndNormalizeMat() returned rank " << ret << endl;
         if (ret == 0) {
           sout << "   Cannot continue." << endl;
@@ -687,6 +688,8 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
 int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
 {
 
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   int numerr = 0;
   bool hasM = (OM->getOp() != null);
@@ -827,6 +830,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
                    RCP<const MV> S, 
                    RCP<const MV> X1, RCP<const MV> X2) {
 
+  const ST ONE = SCT::one();
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -1088,6 +1092,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
 
 
 MT MVDiff(const MV &X, const MV &Y) {
+  const ST ONE = SCT::one();
   const int sizeX = MVT::GetNumberVecs(X);
   SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
 

@@ -957,7 +957,7 @@ namespace Anasazi {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
     // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives
 
-    Teuchos::TimeMonitor lcltimer( *timerInit_ );
+    Teuchos::TimeMonitor inittimer( *timerInit_ );
 
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; i++) bsind[i] = i;
@@ -1363,8 +1363,6 @@ namespace Anasazi {
       // orthogonalize H against the auxiliary vectors
       // optionally: orthogonalize H against X and P ([X P] is already orthonormal)
       Teuchos::Array<Teuchos::RCP<const MV> > Q;
-      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = 
-        Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
       Q = auxVecs_;
       if (fullOrtho_) {
         // X and P are not contiguous, so there is not much point in putting them under 
@@ -1376,7 +1374,9 @@ namespace Anasazi {
       }
       {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        int rank = orthman_->projectAndNormalizeMat(*H_,Q,C,Teuchos::null,MH_);
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC = 
+          Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
+        int rank = orthman_->projectAndNormalizeMat(*H_,Q,dummyC,Teuchos::null,MH_);
         // our views are currently in place; it is safe to throw an exception
         TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
                            "Anasazi::LOBPCG::iterate(): unable to compute orthonormal basis for H.");
@@ -1601,8 +1601,8 @@ namespace Anasazi {
         // Build C = ( S21 S21 )
         //           ( S31 S31 )
         Teuchos::SerialDenseMatrix<int,ScalarType> C(nevLocal_,twoBlocks),
-                                                tmp1(nevLocal_,twoBlocks),
-                                                tmp2(twoBlocks  ,twoBlocks);
+                                                MMC(nevLocal_,twoBlocks),
+                                                CMMC(twoBlocks  ,twoBlocks);
 
         // first block of rows: ( S11 0 )
         for (int j=0; j<oneBlock; j++) {
@@ -1634,35 +1634,38 @@ namespace Anasazi {
           }
         }
 
-        // compute tmp1 = lclMM*C
-        int teuchosret;
-        teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,C,ZERO);
-        TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
-                           "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
-
-        // compute tmp2 = C^H*tmp1 == C^H*lclMM*C
-        teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,C,tmp1,ZERO);
-        TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
-                           "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
-
-        // compute R (cholesky) of tmp2
-        int info;
-        lapack.POTRF('U',twoBlocks,tmp2.values(),tmp2.stride(),&info);
-        // our views ARE NOT currently in place; we must reestablish them before throwing an exception
-        if (info != 0) {
-          cXHP = Teuchos::null;
-          cHP = Teuchos::null;
-          cK_XHP = Teuchos::null;
-          cK_HP = Teuchos::null;
-          cM_XHP = Teuchos::null;
-          cM_HP = Teuchos::null;
-          setupViews();
+        // compute MMC = lclMM*C
+        {
+          int teuchosret;
+          teuchosret = MMC.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,C,ZERO);
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+              "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
+          // compute CMMC = C^H*MMC == C^H*lclMM*C
+          teuchosret = CMMC.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,C,MMC,ZERO);
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+              "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
         }
-        TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
-                           "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.");
+
+        // compute R (cholesky) of CMMC
+        {
+          int info;
+          lapack.POTRF('U',twoBlocks,CMMC.values(),CMMC.stride(),&info);
+          // our views ARE NOT currently in place; we must reestablish them before throwing an exception
+          if (info != 0) {
+            cXHP = Teuchos::null;
+            cHP = Teuchos::null;
+            cK_XHP = Teuchos::null;
+            cK_HP = Teuchos::null;
+            cM_XHP = Teuchos::null;
+            cM_HP = Teuchos::null;
+            setupViews();
+          }
+          TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
+              "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.");
+        }
         // compute C = C inv(R)
         blas.TRSM(Teuchos::RIGHT_SIDE,Teuchos::UPPER_TRI,Teuchos::NO_TRANS,Teuchos::NON_UNIT_DIAG,
-                  nevLocal_,twoBlocks,ONE,tmp2.values(),tmp2.stride(),C.values(),C.stride());
+                  nevLocal_,twoBlocks,ONE,CMMC.values(),CMMC.stride(),C.values(),C.stride());
         // put C(:,0:oneBlock-1) into CX
         CX = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy,C,nevLocal_,oneBlock,0,0) );
         // put C(:,oneBlock:twoBlocks-1) into CP

@@ -61,9 +61,6 @@ typedef MultiVecTraits<double,MV>    MVT;
 typedef ScalarTraits<double>         SCT;
 typedef SCT::magnitudeType           MT;
 
-const ST ONE = SCT::one();
-const MT ZERO = SCT::magnitude(SCT::zero());
-
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
 const MT ATOL = 10;
@@ -88,6 +85,9 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
+
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
 
   bool verbose = false;
   int numFailed = 0;
@@ -357,6 +357,8 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
                             RCP<const MV> S, 
                             RCP<const MV> X1, RCP<const MV> X2) {
 
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -502,7 +504,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
         // run test
-        int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
+        ret = OM->projectAndNormalize(*Scopy,theX,C,B);
         sout << "projectAndNormalize() returned rank " << ret << endl;
         if (ret == 0) {
           sout << "   Cannot continue." << endl;
@@ -609,6 +611,8 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
 {
 
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   int numerr = 0;
   std::ostringstream sout;
@@ -717,6 +721,8 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
                    RCP<const MV> S, 
                    RCP<const MV> X1, RCP<const MV> X2) {
 
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -925,6 +931,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
 
 MT MVDiff(const MV &X, const MV &Y) {
+  const ST ONE = SCT::one();
   const int sizeX = MVT::GetNumberVecs(X);
   SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
 

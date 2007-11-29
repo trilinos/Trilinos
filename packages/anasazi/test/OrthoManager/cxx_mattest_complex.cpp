@@ -548,7 +548,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         theX = tuple( theX[1], theX[0] );
         theMX = tuple( theMX[1], theMX[0] );
         // run test
-        int ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
+        ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
         sout << "projectAndNormalizeMat() returned rank " << ret << endl;
         if (ret == 0) {
           sout << "   Cannot continue." << endl;
