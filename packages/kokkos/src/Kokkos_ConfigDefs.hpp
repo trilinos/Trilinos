@@ -29,7 +29,7 @@
 #ifndef KOKKOS_CONFIGDEFS_H
 #define KOKKOS_CONFIGDEFS_H
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
                                                                                 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -103,7 +103,7 @@ using std::endl;
 #include <iostream.h>
 #endif
 
-#else /*HAVE_CONFIG_H is not defined*/
+#else /*TRILINOS_NO_CONFIG_H is defined*/
 
 #include <string>
 using std::string;
@@ -126,5 +126,5 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-#endif /*HAVE_CONFIG_H */
+#endif /*ndef TRILINOS_NO_CONFIG_H */
 #endif /* KOKKOS_CONFIGDEFS_H */

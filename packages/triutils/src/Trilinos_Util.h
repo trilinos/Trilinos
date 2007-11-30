@@ -40,7 +40,7 @@ class Epetra_MultiVector;
 #define Trilinos_Util_max(x,y) (( x > y ) ? x : y)     /* max function  */
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -149,7 +149,7 @@ using std::sqrt;
 #include <map.h>
 #endif
 
-#else /*HAVE_CONFIG_H*/
+#else /*ndef TRILINOS_NO_CONFIG_H*/
 
 #include <iostream.h>
 #include <string.h>
@@ -158,7 +158,7 @@ using std::sqrt;
 #include <map>
 #include <math.h>
 
-#endif /*HAVE_CONFIG_H*/
+#endif /*ndef TRILINOS_NO_CONFIG_H*/
 
 void Trilinos_Util_read_hb(char *data_file, int MyPID,
 	      int *N_global, int *n_nonzeros, 

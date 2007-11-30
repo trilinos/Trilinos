@@ -29,7 +29,7 @@
 #ifndef IOHB_H
 #define IOHB_H
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need
