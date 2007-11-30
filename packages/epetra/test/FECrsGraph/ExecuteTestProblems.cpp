@@ -31,7 +31,6 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
 #include "Epetra_FECrsGraph.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"

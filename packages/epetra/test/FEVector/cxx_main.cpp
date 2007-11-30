@@ -68,6 +68,12 @@ int main(int argc, char *argv[]) {
   if (verbose)cout << endl;
   Comm.Barrier();
 
+  EPETRA_TEST_ERR( fevec0(Comm, verbose), ierr);
+
+  Comm.Barrier();
+  if (verbose)cout << endl;
+  Comm.Barrier();
+
   EPETRA_TEST_ERR( fevec1(Comm, verbose), ierr);
 
   Comm.Barrier();

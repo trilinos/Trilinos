@@ -48,7 +48,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   
   if (verbose&&MyPID==0) cout << "constructing Epetra_FEVector" << endl;
 
-  Epetra_FEVector A(Map);
+  Epetra_FEVector A(Map, 1);
  
   //For an extreme test, we'll have each processor sum-in a 1.0 for All
   //global ids.
@@ -112,7 +112,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   return(ierr);
 }
 
-int fevec1(Epetra_Comm& Comm, bool verbose)
+int fevec0(Epetra_Comm& Comm, bool verbose)
 {
   int ierr = 0;
   int NumGlobalRows = 4;
@@ -127,22 +127,22 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 
   int NumCols = 3;
   int* Indices = new int[NumCols];
- 
+
   double* Values = new double[NumCols];
- 
+
 // Create vectors
 
-  Epetra_FEVector b(Map);
-  Epetra_FEVector x0(Map);
- 
+  Epetra_FEVector b(Map, 1);
+  Epetra_FEVector x0(Map, 1);
+
 // source terms
   NumCols = 2;
- 
+
   if(MyPID==0)  // indices corresponding to element 0 on processor 0
   {
     Indices[0] = 0;
     Indices[1] = 3;
- 
+
     Values[0] = 1./2.;
     Values[1] = 1./2.;
 
@@ -151,13 +151,13 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
    {
     Indices[0] = 1;
     Indices[1] = 2;
- 
+
     Values[0] = 0;
     Values[1] = 0;
    }
 
   EPETRA_TEST_ERR( b.SumIntoGlobalValues(NumCols, Indices, Values),
-		   ierr);
+                   ierr);
 
   EPETRA_TEST_ERR( b.GlobalAssemble(), ierr);
 
@@ -181,6 +181,97 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 
   delete [] Values;
   delete [] Indices;
+
+  return(0);
+}
+
+int fevec1(Epetra_Comm& Comm, bool verbose)
+{
+  int Numprocs = Comm.NumProc();
+
+  if (Numprocs != 2) return(0);
+  int MyPID   = Comm.MyPID();
+
+  int ierr = 0;
+  int NumGlobalRows = 6;
+  const int NumVectors = 4;
+  int indexBase = 0;
+  Epetra_Map Map(NumGlobalRows, indexBase, Comm);
+
+  const int Num = 4;
+  int Indices[Num];
+ 
+  double Values[Num];
+ 
+// Create vectors
+
+  Epetra_FEVector b(Map, NumVectors);
+  Epetra_FEVector x0(Map, NumVectors);
+ 
+// source terms
+ 
+  if(MyPID==0)  // indices corresponding to element 0 on processor 0
+  {
+    Indices[0] = 0;
+    Indices[1] = 1;
+    Indices[2] = 4;
+    Indices[3] = 5;
+ 
+    Values[0] = 1./2.;
+    Values[1] = 1./2.;
+    Values[2] = 1./2.;
+    Values[3] = 1./2.;
+
+   }
+   else
+   {
+    Indices[0] = 1;
+    Indices[1] = 2;
+    Indices[2] = 3;
+    Indices[3] = 4;
+ 
+    Values[0] = 0;
+    Values[1] = 0;
+    Values[2] = 0;
+    Values[3] = 0;
+   }
+
+  for(int i=0; i<NumVectors; ++i) {
+    EPETRA_TEST_ERR( b.SumIntoGlobalValues(Num, Indices, Values, i),
+		   ierr);
+  }
+
+  EPETRA_TEST_ERR( b.GlobalAssemble(), ierr);
+
+  double nrm2[NumVectors];
+
+  b.Norm2(nrm2);
+
+  for(int i=1; i<NumVectors; ++i) {
+    if (fabs(nrm2[i]-nrm2[0]) > 1.e-12) {
+      EPETRA_TEST_ERR(-1, ierr);
+      return(-1);
+    }
+  }
+
+
+  if (verbose&&MyPID==0) {
+    cout << "b:"<<endl;
+  }
+
+  if (verbose) {
+    b.Print(cout);
+  }
+
+  x0 = b;
+
+  if (verbose&&MyPID==0) {
+    cout << "x:"<<endl;
+  }
+
+  if (verbose) {
+    x0.Print(cout);
+  }
 
   return(0);
 }
@@ -209,8 +300,8 @@ int fevec2(Epetra_Comm& Comm, bool verbose)
  
 // Create vectors
 
-  Epetra_FEVector b(Map);
-  Epetra_FEVector x0(Map);
+  Epetra_FEVector b(Map, 1);
+  Epetra_FEVector x0(Map, 1);
  
 // source terms
   NumCols = 2;

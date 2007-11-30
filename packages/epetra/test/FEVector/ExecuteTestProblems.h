@@ -35,6 +35,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose);
 
+int fevec0(Epetra_Comm& Comm, bool verbose);
+
 int fevec1(Epetra_Comm& Comm, bool verbose);
 
 int fevec2(Epetra_Comm& Comm, bool verbose);

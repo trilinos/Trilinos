@@ -74,7 +74,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   //matrix_data object will have all 4 rows on each processor)
 
   int i;
-  int* rowlengths = new int[4];
+  int rowlengths[4];
   rowlengths[0] = 3;
   rowlengths[1] = 4;
   rowlengths[2] = 3;
@@ -103,8 +103,8 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   //above-described finite-element problem.
 
   int indexBase = 0, ierr = 0;
-  int* myNodes = new int[4];
-  double* values = new double[9];
+  int myNodes[4];
+  double values[9];
   values[0] = 2.0;
   values[1] = 1.0;
   values[2] = 1.0;
@@ -147,8 +147,6 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   EPETRA_TEST_ERR( A.InsertGlobalValues(numMyNodes, myNodes,
                                         numMyNodes, myNodes, values,
                                         Epetra_FECrsMatrix::ROW_MAJOR),ierr);
-  delete [] myNodes;
-  delete [] values;
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
@@ -355,8 +353,8 @@ int Drumm3(const Epetra_Map& map, bool verbose)
 
 // Create vectors for CG algorithm
 
-  Epetra_FEVector* bptr = new Epetra_FEVector(A.RowMap());
-  Epetra_FEVector* x0ptr = new Epetra_FEVector(A.RowMap());
+  Epetra_FEVector* bptr = new Epetra_FEVector(A.RowMap(), 1);
+  Epetra_FEVector* x0ptr = new Epetra_FEVector(A.RowMap(), 1);
 
   Epetra_FEVector& b = *bptr;
   Epetra_FEVector& x0 = *x0ptr;

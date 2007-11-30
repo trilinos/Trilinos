@@ -323,7 +323,7 @@ int quad2(const Epetra_Map& map, bool verbose)
   }
 
   //now let's make sure that we can perform a matvec...
-  Epetra_FEVector x(blkMap), y(blkMap);
+  Epetra_FEVector x(blkMap, 1), y(blkMap, 1);
   x.PutScalar(1.0);
 
   EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr);
