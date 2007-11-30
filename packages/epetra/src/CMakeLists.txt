@@ -1,27 +1,3 @@
-FIND_LIBRARY(EPETRA_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
-FIND_LIBRARY(EPETRA_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
-
-# Fortran name mangling
-IF(CYGWIN)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## __")
-ENDIF(CYGWIN)
-
-IF(WIN32)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) NAME")
-ENDIF(WIN32)
-
-IF(UNIX AND NOT APPLE)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## _")
-ENDIF(UNIX AND NOT APPLE)
-
-IF(APPLE)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## __")
-ENDIF(APPLE)
-
 # Setup configuration options 
 # TODO: these and others in Epetra_config.h.in should be handled
 # properly. Currently, this does not seem to be too much to assume,
@@ -219,7 +195,7 @@ ENDIF(EPETRA_ENABLE_TESTS)
 ADD_LIBRARY(epetra ${HEADERS} ${SOURCES})
 
 # BLAS and LAPACK libraries are required
-TARGET_LINK_LIBRARIES(epetra ${EPETRA_LAPACK_LIBRARY} ${EPETRA_BLAS_LIBRARY})
+TARGET_LINK_LIBRARIES(epetra ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
 
 IF(EPETRA_ENABLE_FORTRAN)
   ADD_LIBRARY(epetra_fortran ${FORTRAN_SOURCES})

@@ -16,6 +16,31 @@ MARK_AS_ADVANCED(LIBRARY_OUTPUT_PATH)
 MARK_AS_ADVANCED(CMAKE_OSX_ARCHITECTURES)
 MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 
+# Setup global requirements ...
+FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
+FIND_LIBRARY(TRILINOS_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
+
+# Setup Fortran name mangling
+IF(CYGWIN)
+	SET(F77_FUNC "(name,NAME) name ## _")
+	SET(F77_FUNC_ "(name,NAME) name ## __")
+ENDIF(CYGWIN)
+
+IF(WIN32)
+	SET(F77_FUNC "(name,NAME) name ## _")
+	SET(F77_FUNC_ "(name,NAME) NAME")
+ENDIF(WIN32)
+
+IF(UNIX AND NOT APPLE)
+	SET(F77_FUNC "(name,NAME) name ## _")
+	SET(F77_FUNC_ "(name,NAME) name ## _")
+ENDIF(UNIX AND NOT APPLE)
+
+IF(APPLE)
+	SET(F77_FUNC "(name,NAME) name ## _")
+	SET(F77_FUNC_ "(name,NAME) name ## __")
+ENDIF(APPLE)
+
 # Setup testing ...
 INCLUDE(CTest)
 MARK_AS_ADVANCED(DART_TESTING_TIMEOUT)

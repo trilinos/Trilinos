@@ -6,10 +6,10 @@
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case), which must not contain underscores, for linking with Fortran. */
-#cmakedefine F77_FUNC
+#define F77_FUNC@F77_FUNC@
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
-#cmakedefine F77_FUNC_
+#define F77_FUNC_@F77_FUNC_@
 
 /* Define if F77 and FC dummy `main' functions are identical. */
 #cmakedefine FC_DUMMY_MAIN_EQ_F77
@@ -209,7 +209,7 @@
 
 /* template qualifier required for calling template methods from non-template
    code */
-#cmakedefine INVALID_TEMPLATE_QUALIFIER
+#define INVALID_TEMPLATE_QUALIFIER @INVALID_TEMPLATE_QUALIFIER@
 
 /* Define to the address where bug reports for this package should be sent. */
 #cmakedefine PACKAGE_BUGREPORT

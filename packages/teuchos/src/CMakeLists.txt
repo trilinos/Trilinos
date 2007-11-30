@@ -1,3 +1,8 @@
+OPTION(TEUCHOS_ENABLE_EXTENDED
+	"Enable experimental Teuchos features."
+	ON
+	)
+
 SET(HAVE_ALGORITHM TRUE)
 SET(HAVE_CASSERT TRUE)
 SET(HAVE_CERRNO TRUE)
@@ -177,6 +182,55 @@ SET(SOURCES
 	Teuchos_dyn_cast.cpp 
 	Teuchos_exit.cpp
 	)
+
+IF(TEUCHOS_ENABLE_EXTENDED)
+	SET(HEADERS
+		${HEADERS}
+		Teuchos_ExpatHandlerAdapter.hpp 
+		Teuchos_FileInputSource.hpp 
+		Teuchos_FileInputStream.hpp 
+		Teuchos_HashSet.hpp 
+		Teuchos_Hashtable.hpp 
+		Teuchos_HashUtils.hpp 
+		Teuchos_Libxml2HandlerAdapter.hpp 
+		Teuchos_ParameterXMLFileReader.hpp 
+		Teuchos_StringInputSource.hpp 
+		Teuchos_StringInputStream.hpp 
+		Teuchos_StrUtils.hpp 
+		Teuchos_TreeBuildingXMLHandler.hpp
+		Teuchos_XMLInputSource.hpp
+		Teuchos_XMLInputStream.hpp
+		Teuchos_XMLObject.hpp
+		Teuchos_XMLObjectImplem.hpp 
+		Teuchos_XMLParameterListHelpers.hpp 
+		Teuchos_XMLParameterListReader.hpp 
+		Teuchos_XMLParameterListWriter.hpp 
+		Teuchos_XMLParser.hpp
+		)
+
+	SET(SOURCES
+		${SOURCES}
+		Teuchos_ExpatHandlerAdapter.cpp 
+		Teuchos_FileInputSource.cpp 
+		Teuchos_FileInputStream.cpp 
+		Teuchos_HashUtils.cpp 
+		Teuchos_Libxml2HandlerAdapter.cpp 
+		Teuchos_ParameterXMLFileReader.cpp 
+		Teuchos_StrUtils.cpp 
+		Teuchos_StringInputSource.cpp 
+		Teuchos_StringInputStream.cpp 
+		Teuchos_TreeBuildingXMLHandler.cpp 
+		Teuchos_XMLInputSource.cpp 
+		Teuchos_XMLInputStream.cpp 
+		Teuchos_XMLObject.cpp 
+		Teuchos_XMLObjectImplem.cpp 
+		Teuchos_XMLParameterListHelpers.cpp 
+		Teuchos_XMLParameterListReader.cpp 
+		Teuchos_XMLParameterListWriter.cpp 
+		Teuchos_XMLParser.cpp 
+		)
+
+ENDIF(TEUCHOS_ENABLE_EXTENDED)
 
 ADD_LIBRARY(teuchos ${HEADERS} ${SOURCES})
 
