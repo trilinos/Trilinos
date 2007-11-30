@@ -563,8 +563,8 @@ void Thyra::apply(
   const EConj conj,
   const MultiVectorBase<DomainScalar> &X,
   MultiVectorBase<RangeScalar> *Y,
-  const RangeScalar alpha = ScalarTraits<RangeScalar>::one(),
-  const RangeScalar beta = ScalarTraits<RangeScalar>::zero()
+  const RangeScalar alpha,
+  const RangeScalar beta
   )
 {
   M.apply(conj,X,Y,alpha,beta);
@@ -578,8 +578,8 @@ void Thyra::applyTranspose(
   const EConj conj,
   const MultiVectorBase<RangeScalar> &X,
   MultiVectorBase<DomainScalar> *Y,
-  const DomainScalar alpha = ScalarTraits<DomainScalar>::one(),
-  const DomainScalar beta = ScalarTraits<DomainScalar>::zero()
+  const DomainScalar alpha,
+  const DomainScalar beta
   )
 {
   M.applyTranspose(conj,X,Y,alpha,beta);
@@ -592,8 +592,8 @@ void Thyra::apply(
   const ETransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
-  const Scalar alpha = ScalarTraits<Scalar>::one(),
-  const Scalar beta = ScalarTraits<Scalar>::zero()
+  const Scalar alpha,
+  const Scalar beta
   )
 {
   if(real_trans(M_trans)==NOTRANS) {
