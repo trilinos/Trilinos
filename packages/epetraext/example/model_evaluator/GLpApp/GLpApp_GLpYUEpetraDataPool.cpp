@@ -215,7 +215,7 @@ GLpYUEpetraDataPool::GLpYUEpetraDataPool(
 
   // Set desired state q.
   Epetra_Map standardmap(A_->DomainMap());
-  q_ = Teuchos::rcp(new Epetra_FEVector(standardmap));
+  q_ = Teuchos::rcp(new Epetra_FEVector(standardmap,1));
   int * qintvalues = new int[standardmap.NumMyElements()];
   double * qdvalues = new double[standardmap.NumMyElements()];
   standardmap.MyGlobalElements(qintvalues);
@@ -1087,7 +1087,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
 
   A = rcp(new Epetra_FECrsMatrix(Copy, standardmap, 0));
   M = rcp(new Epetra_FECrsMatrix(Copy, standardmap, 0));
-  b = rcp(new Epetra_FEVector(standardmap));
+  b = rcp(new Epetra_FEVector(standardmap,1));
 
   // Declare quantities needed for the call to the local assembly routine.
   int format = Epetra_FECrsMatrix::COLUMN_MAJOR;
@@ -1650,7 +1650,7 @@ int GLpApp::nonlinhessvec(const Epetra_Comm & Comm,
   Epetra_Map standardmap(-1, numMyLocNodes, (int*)ipindx.A(), indexBase, Comm);
   Epetra_Map overlapmap(-1, numLocNodes, (int*)pindx.A(), indexBase, Comm);
 
-  hessvec = rcp(new Epetra_FEVector(standardmap));
+  hessvec = rcp(new Epetra_FEVector(standardmap,1));
 
   int* nodes = new int[numNodesPerElem];
   int i=0, j=0, err=0;
@@ -1962,7 +1962,7 @@ int GLpApp::nonlinvec(const Epetra_Comm & Comm,
   Epetra_Map standardmap(-1, numMyLocNodes, (int*)ipindx.A(), indexBase, Comm);
   Epetra_Map overlapmap(-1, numLocNodes, (int*)pindx.A(), indexBase, Comm);
 
-  g = rcp(new Epetra_FEVector(standardmap));
+  g = rcp(new Epetra_FEVector(standardmap,1));
 
   int* nodes = new int[numNodesPerElem];
   int i=0, j=0, err=0;
