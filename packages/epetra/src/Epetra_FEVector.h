@@ -39,33 +39,27 @@ class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseVector;
 
 /** Epetra Finite-Element Vector. This class inherits Epetra_MultiVector
-  and thus provides all Epetra_MultiVector functionality, with one
-  restriction: currently an Epetra_FEVector only has 1 internal vector.
+  and thus provides all Epetra_MultiVector functionality.
 
   The added functionality provided by Epetra_FEVector is the ability to
   perform finite-element style vector assembly. It accepts sub-vector
   contributions, such as those that would come from element-load vectors, etc.,
-  and these sub-vectors need not be wholly locally owned. In other words, the
-  user can assemble overlapping data (e.g., corresponding to shared
+  and these sub-vectors need not be owned by the local processor. In other
+  words, the user can assemble overlapping data (e.g., corresponding to shared
   finite-element nodes). When the user is finished assembling their vector
   data, they then call the method Epetra_FEVector::GlobalAssemble() which
   gathers the overlapping data (all non-local data that was input on each
   processor) into the data-distribution specified by the map that the
   Epetra_FEVector is constructed with.
-
-  Note: At the current time (Sept 6, 2002) the methods in this implementation
-  assume that there is only 1 point associated with each map element. This 
-  limitation will be removed in the near future.
 */
 
 class Epetra_FEVector : public Epetra_MultiVector {
  public:
    /** Constructor that requires a map specifying a non-overlapping
-      data layout. The methods SumIntoGlobalValues() and 
-      ReplaceGlobalValues() will accept any global IDs, and GlobalAssemble()
-      will move any non-local data onto the appropriate owning processors.
+      data layout.
    */
    Epetra_FEVector(const Epetra_BlockMap& Map,
+                   int numVectors,
 		   bool ignoreNonLocalEntries=false);
 
   /** Copy constructor. */
@@ -77,7 +71,9 @@ class Epetra_FEVector : public Epetra_MultiVector {
    /** Accumulate values into the vector, adding them to any values that
        already exist for the specified indices.
    */
-   int SumIntoGlobalValues(int numIDs, const int* GIDs, const double* values);
+   int SumIntoGlobalValues(int numIDs,
+                           const int* GIDs, const double* values,
+                           int vectorIndex=0);
 
    /** Accumulate values into the vector, adding them to any values that
        already exist for the specified GIDs.
@@ -89,12 +85,14 @@ class Epetra_FEVector : public Epetra_MultiVector {
        the accompanying list of GIDs.
    */
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
-			   const Epetra_SerialDenseVector& values);
+			   const Epetra_SerialDenseVector& values,
+                           int vectorIndex=0);
 
    /** Copy values into the vector overwriting any values that already exist
         for the specified indices.
     */
-   int ReplaceGlobalValues(int numIDs, const int* GIDs, const double* values);
+   int ReplaceGlobalValues(int numIDs, const int* GIDs, const double* values,
+                           int vectorIndex=0);
 
    /** Copy values into the vector, replacing any values that
        already exist for the specified GIDs.
@@ -106,15 +104,19 @@ class Epetra_FEVector : public Epetra_MultiVector {
        the accompanying list of GIDs.
    */
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
-			   const Epetra_SerialDenseVector& values);
+			   const Epetra_SerialDenseVector& values,
+                           int vectorIndex=0);
 
-   int SumIntoGlobalValues(int numIDs, const int* GIDs,
+   int SumIntoGlobalValues(int numIDs,
+                           const int* GIDs,
 			   const int* numValuesPerID,
-			   const double* values);
+			   const double* values,
+                           int vectorIndex=0);
 
    int ReplaceGlobalValues(int numIDs, const int* GIDs,
 			   const int* numValuesPerID,
-			   const double* values);
+			   const double* values,
+                           int vectorIndex=0);
 
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this vector at construction time.
@@ -136,29 +138,33 @@ class Epetra_FEVector : public Epetra_MultiVector {
  private:
   int inputValues(int numIDs,
                   const int* GIDs, const double* values,
-                  bool accumulate);
+                  bool suminto,
+                  int vectorIndex);
 
   int inputValues(int numIDs,
                   const int* GIDs, const int* numValuesPerID,
 		  const double* values,
-                  bool accumulate);
+                  bool suminto,
+                  int vectorIndex);
 
-  int inputNonlocalValue(int GID, double value, bool accumulate);
+  int inputNonlocalValue(int GID, double value, bool suminto,
+                         int vectorIndex);
 
   int inputNonlocalValues(int GID, int numValues, const double* values,
-			  bool accumulate);
+			  bool suminto, int vectorIndex);
 
   void destroyNonlocalData();
 
   int myFirstID_;
   int myNumIDs_;
-  double* myCoefs_;
 
   int* nonlocalIDs_;
   int* nonlocalElementSize_;
   int numNonlocalIDs_;
-  int allocatedNonlocalLength_;
+  int numNonlocalIDsAlloc_;
   double** nonlocalCoefs_;
+  int numNonlocalCoefs_;
+  int numNonlocalCoefsAlloc_;
 
   bool ignoreNonLocalEntries_;
 };

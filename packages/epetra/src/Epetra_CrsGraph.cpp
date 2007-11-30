@@ -1200,7 +1200,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
     int * IndexOffset = CrsGraphData_->IndexOffset_ .Values();
     for(i = 0; i < numMyBlockRows; i++) {
       NumIndices = IndexOffset[i+1] - IndexOffset[i];
-      int* ColIndices = CrsGraphData_->Indices_[i];
+      int*& ColIndices = CrsGraphData_->Indices_[i];
       if (tmp!=ColIndices) { // No need to copy if pointing to same space
 	for(j = 0; j < NumIndices; j++) 
 	  tmp[j] = ColIndices[j];

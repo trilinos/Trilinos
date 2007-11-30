@@ -471,8 +471,6 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
     return(0);
   }
 
-  int i, j;
-
   //In this method we need to gather all the non-local (overlapping) data
   //that's been input on each processor, into the
   //non-overlapping distribution defined by the map that 'this' matrix was
@@ -481,16 +479,15 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
   //First build a map that describes our nonlocal data.
   //We'll use the arbitrary distribution constructor of Map.
 
-  Epetra_Map* sourceMap = new Epetra_Map(-1, numNonlocalRows_, nonlocalRows_,
-					 Map().IndexBase(), Map().Comm());
+  Epetra_Map sourceMap(-1, numNonlocalRows_, nonlocalRows_,
+			 Map().IndexBase(), Map().Comm());
 
   //If sourceMap has global size 0, then no nonlocal data exists and we can
   //skip most of this function.
-  if (sourceMap->NumGlobalElements() < 1) {
+  if (sourceMap.NumGlobalElements() < 1) {
     if (callFillComplete) {
       EPETRA_CHK_ERR( FillComplete(DomainMap(), RangeMap()) );
     }
-    delete sourceMap;
     return(0);
   }
 
@@ -502,8 +499,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
   int* cols = NULL;
   int insertPoint = -1;
 
-  for(i=0; i<numNonlocalRows_; ++i) {
-    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
+  for(int i=0; i<numNonlocalRows_; ++i) {
+    for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
       int col = nonlocalCols_[i][j];
       int offset = Epetra_Util_binary_search(col, cols, numCols, insertPoint);
       if (offset < 0) {
@@ -513,8 +510,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
     }
   }
 
-  Epetra_Map* colMap = new Epetra_Map(-1, numCols, cols,
-				      Map().IndexBase(), Map().Comm());
+  Epetra_Map colMap(-1, numCols, cols,
+		      Map().IndexBase(), Map().Comm());
 
   delete [] cols;
   numCols = 0;
@@ -523,20 +520,18 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
   //now we need to create a matrix with sourceMap and colMap, and fill it with
   //our nonlocal data so we can then export it to the correct owning processors.
 
-  Epetra_CrsMatrix* tempMat = new Epetra_CrsMatrix(Copy, *sourceMap, *colMap,
-						   nonlocalRowLengths_);
-
+  Epetra_CrsMatrix tempMat(Copy, sourceMap, colMap, nonlocalRowLengths_);
 
   //Next we need to make sure the 'indices-are-global' attribute of tempMat's
   //graph is set to true, in case this processor doesn't end up calling the
   //InsertGlobalValues method...
 
-  const Epetra_CrsGraph& graph = tempMat->Graph();
+  const Epetra_CrsGraph& graph = tempMat.Graph();
   Epetra_CrsGraph& nonconst_graph = const_cast<Epetra_CrsGraph&>(graph);
   nonconst_graph.SetIndicesAreGlobal(true);
 
-  for(i=0; i<numNonlocalRows_; ++i) {
-    EPETRA_CHK_ERR( tempMat->InsertGlobalValues(nonlocalRows_[i],
+  for(int i=0; i<numNonlocalRows_; ++i) {
+    EPETRA_CHK_ERR( tempMat.InsertGlobalValues(nonlocalRows_[i],
 					       nonlocalRowLengths_[i],
 					       nonlocalCoefs_[i],
 					       nonlocalCols_[i]) );
@@ -545,29 +540,24 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
   //Now we need to call FillComplete on our temp matrix. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the matrix with.
-  EPETRA_CHK_ERR(tempMat->FillComplete(DomainMap(), RangeMap()));
+  EPETRA_CHK_ERR(tempMat.FillComplete(DomainMap(), RangeMap()));
 
-  Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
+  Epetra_Export exporter(sourceMap, RowMap());
 
-  EPETRA_CHK_ERR(Export(*tempMat, *exporter, Add));
+  EPETRA_CHK_ERR(Export(tempMat, exporter, Add));
 
   if(callFillComplete) {
     EPETRA_CHK_ERR(FillComplete(DomainMap(), RangeMap()));
   }
 
   //now reset the values in our nonlocal data
-  for(i=0; i<numNonlocalRows_; ++i) {
-    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
+  for(int i=0; i<numNonlocalRows_; ++i) {
+    for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
       nonlocalCols_[i][j] = 0;
       nonlocalCoefs_[i][j] = 0.0;
     }
     nonlocalRowLengths_[i] = 0;
   }
-
-  delete exporter;
-  delete tempMat;
-  delete sourceMap;
-  delete colMap;
 
   return(0);
 }
@@ -797,8 +787,8 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int row,
   int insertPoint = -1;
 
   //find offset of this row in our list of nonlocal rows.
-  int rowoffset = Epetra_Util_binary_search(row, nonlocalRows_, numNonlocalRows_,
-					    insertPoint);
+  int rowoffset = Epetra_Util_binary_search(row, nonlocalRows_,
+                                          numNonlocalRows_, insertPoint);
 
   if (rowoffset < 0) {
     EPETRA_CHK_ERR( InsertNonlocalRow(row, insertPoint) );
@@ -817,8 +807,8 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int row,
 int Epetra_FECrsMatrix::InsertNonlocalRow(int row, int offset)
 {
   int alloc_len = numNonlocalRows_;
-  EPETRA_CHK_ERR( Epetra_Util_insert(row, offset, nonlocalRows_, numNonlocalRows_,
-				     alloc_len, 1) );
+  EPETRA_CHK_ERR( Epetra_Util_insert(row, offset, nonlocalRows_,
+                                     numNonlocalRows_, alloc_len, 1) );
 
   int tmp1 = numNonlocalRows_-1;
   int tmp2 = alloc_len-1;
@@ -869,11 +859,11 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
 {
   int*& colIndices = nonlocalCols_[rowoffset];
   double*& coefs = nonlocalCoefs_[rowoffset];
+  int len = nonlocalRowLengths_[rowoffset];
 
   int insertPoint = -1;
   int coloffset = Epetra_Util_binary_search(col, colIndices,
-					    nonlocalRowLengths_[rowoffset],
-					    insertPoint);
+					    len, insertPoint);
 
   if (coloffset >= 0) {
     if (mode == SUMINTO || mode == INSERT) {
@@ -898,3 +888,4 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
 
   return(0);
 }
+

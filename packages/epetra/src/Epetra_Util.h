@@ -195,9 +195,44 @@ int Epetra_Util_binary_search(int item,
                               int len,
                               int& insertPoint);
 
+template<class T>
+int Epetra_Util_insert_empty_positions(T*& array, int& usedLength,
+                                       int& allocatedLength,
+                                       int insertOffset, int numPositions,
+                                       int allocChunkSize=32)
+{
+  if (insertOffset < 0 || insertOffset > usedLength ||
+      usedLength > allocatedLength) {
+    return(-1);
+  }
+
+  if ((usedLength+numPositions) < allocatedLength) {
+    for(int i=usedLength-1; i>=insertOffset; --i) {
+      array[i+numPositions] = array[i];
+    }
+    usedLength += numPositions;
+    return(0);
+  }
+
+  T* newlist = new T[allocatedLength+allocChunkSize];
+
+  allocatedLength += allocChunkSize;
+
+  for(int i=0; i<insertOffset; ++i) {
+    newlist[i] = array[i];
+  }
+
+  for(int i=insertOffset; i<usedLength; ++i) {
+    newlist[i+numPositions] = array[i];
+  }
+
+  usedLength += numPositions;
+  delete [] array;
+  array = newlist;
+  return(0);
+}
+
 /** Function to insert an item in a list, at a specified offset.
-    @return error-code 0 if successful, -1 if input parameters seem
-     unreasonable (offset > usedLength, offset<0, etc).
 
     @param item to be inserted
     @param offset location at which to insert item
@@ -218,39 +253,15 @@ int Epetra_Util_insert(T item, int offset, T*& list,
                         int& allocatedLength,
                         int allocChunkSize=32)
 {
-  if (offset < 0 || offset > usedLength) {
-    return(-1);
+  int code = Epetra_Util_insert_empty_positions<T>(list, usedLength,
+                                                allocatedLength, offset, 1,
+                                                allocChunkSize);
+  if (code != 0) {
+    return(code);
   }
 
-  if (usedLength < allocatedLength) {
-    for(int i=usedLength; i>offset; --i) {
-      list[i] = list[i-1];
-    }
-    list[offset] = item;
-    ++usedLength;
-    return(0);
-  }
+  list[offset] = item;
 
-  T* newlist = new T[allocatedLength+allocChunkSize];
-  if (newlist == NULL) {
-    return(-1);
-  }
-
-  allocatedLength += allocChunkSize;
-  int i;
-  for(i=0; i<offset; ++i) {
-    newlist[i] = list[i];
-  }
-
-  newlist[offset] = item;
-
-  for(i=offset+1; i<=usedLength; ++i) {
-    newlist[i] = list[i-1];
-  }
-
-  ++usedLength;
-  delete [] list;
-  list = newlist;
   return(0);
 }
 
