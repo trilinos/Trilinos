@@ -1,53 +1,65 @@
-INCLUDE(${CMAKE_MODULE_PATH}/Epetra_Add_Test.cmake)
+INCLUDE(Trilinos_Add_Executable)
 
-# Syntax for adding a test:
-#   EPETRA_ADD_TEST(<TEST_DIR_NAME> SOURCES <SOURCE1> <SOURCE2> ... ARGS <ARG1> <ARG2> ...)
+# Syntax for adding an executable:
+#   TRILINOS_ADD_EXECUTABLE(<SOURCE_DIR> [TEST] [MPITEST] [INSTALL] SOURCES <SOURCE1> <SOURCE2> ... ARGS <ARG1> <ARG2> ...)
 
-# The default arguments include "-v", as specified in the macro EPETRA_ADD_TEST
+INCLUDE_DIRECTORIES(${Epetra_BINARY_DIR}/src)
+INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/src)
 
-EPETRA_ADD_TEST(BlockMap SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
+LINK_LIBRARIES(epetra ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
 
-EPETRA_ADD_TEST(BasicPerfTest SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v INSTALL)
+IF(EPETRA_ENABLE_MPI)
+	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+	LINK_LIBRARIES(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
+	SET(TEST_ARGUMENTS TEST MPITEST)
+ELSE(EPETRA_ENABLE_MPI)
+	SET(TEST_ARGUMENTS TEST)
+ENDIF(EPETRA_ENABLE_MPI)
 
-EPETRA_ADD_TEST(Comm SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(BlockMap ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
 
-EPETRA_ADD_TEST(CrsGraph SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(BasicPerfTest ${TEST_ARGUMENTS} INSTALL SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
 
-EPETRA_ADD_TEST(CrsMatrix SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(RowMatrix SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(CrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(CrsRectMatrix SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(Directory SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(RowMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(FECrsGraph SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(CrsRectMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(FECrsMatrix SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(FEVbrMatrix SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(FECrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-EPETRA_ADD_TEST(FEVector SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-EPETRA_ADD_TEST(ImportExport SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(FEVbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-EPETRA_ADD_TEST(IntSerialDense SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(FEVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-EPETRA_ADD_TEST(Map SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(ImportExport ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+
+TRILINOS_ADD_EXECUTABLE(IntSerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+
+TRILINOS_ADD_EXECUTABLE(Map ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
 
 # This test was commented out in the AUTOTOOLS configuration:
-EPETRA_ADD_TEST(MapColoring SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(MapColoring ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(MultiVector SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(MultiVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
 
-EPETRA_ADD_TEST(Object SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(Object ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(RowMatrixTransposer SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(RowMatrixTransposer ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(SerialDense SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(SerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(SerialSpdDense SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(SerialSpdDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(VbrMatrix SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(VbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-EPETRA_ADD_TEST(Vector SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(Vector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
+

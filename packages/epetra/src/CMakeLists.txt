@@ -39,7 +39,7 @@ ELSE(EPETRA_ENABLE_FORTRAN)
   SET(HAVE_FORTRAN_SUPPORT FALSE)
 ENDIF(EPETRA_ENABLE_FORTRAN)
 
-CONFIGURE_FILE(${epetra_SOURCE_DIR}/cmake/Epetra_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/Epetra_config.h)
+CONFIGURE_FILE(${Epetra_SOURCE_DIR}/cmake/Epetra_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/Epetra_config.h)
 
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/Epetra_config.h DESTINATION lib/trilinos-${TRILINOS_VERSION}/include)
 
@@ -201,18 +201,18 @@ IF(EPETRA_ENABLE_MPI)
 ENDIF(EPETRA_ENABLE_MPI)
 
 IF(EPETRA_ENABLE_TESTS)
-    INCLUDE_DIRECTORIES(${epetra_SOURCE_DIR}/test/src)
+    INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/test/src)
 
 	SET(HEADERS
 		${HEADERS}
-        ${epetra_SOURCE_DIR}/test/src/Epetra_test_functions.h
-        ${epetra_SOURCE_DIR}/test/src/Epetra_matrix_data.h
+        ${Epetra_SOURCE_DIR}/test/src/Epetra_test_functions.h
+        ${Epetra_SOURCE_DIR}/test/src/Epetra_matrix_data.h
     )
 
 	SET(SOURCES
 		${SOURCES}
-        ${epetra_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
-        ${epetra_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
+        ${Epetra_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
+        ${Epetra_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
     )
 ENDIF(EPETRA_ENABLE_TESTS)
 

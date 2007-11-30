@@ -1,5 +1,7 @@
-PROJECT(trilinos)
+PROJECT(Trilinos)
 SET(TRILINOS_VERSION "9.0d")
+
+SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Setup user options ...
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)

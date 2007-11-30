@@ -1,5 +1,5 @@
 # Project name
-PROJECT(epetra CXX C)
+PROJECT(Epetra CXX C)
 
 # Setup package version
 SET(EPETRA_VERSION "3.7d")
