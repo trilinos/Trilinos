@@ -298,12 +298,16 @@ Teuchos::ArrayView<const T> Teuchos::arrayView( const std::vector<T>& vec )
 }
 
 
+#ifndef __sun
+
 template<class T> inline
 std::vector<T> Teuchos::createVector( const ArrayView<T> &ptr )
 {
   std::vector<T> v(ptr.begin(),ptr.end());
   return v;
 }
+
+#endif // __sun
 
 
 template<class T> inline

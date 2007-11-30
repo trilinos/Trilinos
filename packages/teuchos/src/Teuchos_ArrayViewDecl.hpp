@@ -348,6 +348,15 @@ template<class T>
 ArrayView<const T> arrayView( const std::vector<T>& vec );
 
 
+#ifndef __sun
+
+
+// 2007/11/30: From some reason, the Sun C++ compile on sass9000 compains that
+// a call to this function below is ambiguous.  However, if you just comment
+// the function out, then the code on g++ (3.4.6 at least) will not compile.
+// Therefore, I have no choice but to put in a hacked ifdef for the sun.
+
+
 /** \brief Get a new <tt>std::vector<T></tt> object out of an
  * <tt>ArrayView<T></tt> object.
  *
@@ -357,6 +366,9 @@ ArrayView<const T> arrayView( const std::vector<T>& vec );
  */
 template<class T>
 std::vector<T> createVector( const ArrayView<T> &ptr );
+
+
+#endif // __sun
 
 
 /** \brief Get a new <tt>std::vector<T></tt> object out of an
