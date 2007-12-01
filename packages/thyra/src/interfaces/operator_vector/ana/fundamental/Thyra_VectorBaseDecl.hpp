@@ -76,8 +76,8 @@ namespace Thyra {
  *
  * There already exists RTOp-based implementations of several standard vector
  * operations and some convenience functions that wrap these operators and
- * call <tt>applyOp()</tt>.  These wrapper functions can be found \ref
- * Thyra_Op_Vec_VectorStdOps_grp "here".
+ * call <tt>applyOp()</tt>.  These wrapper functions can be found
+ * <a href="../../../../../../support/operator_vector/doc/html/group__Thyra__Op__Vec__VectorStdOps__grp.html">here</a>
  *
  * \section Thyra_VB_expl_access_sec Explicit vector coefficient access
  *
