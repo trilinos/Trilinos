@@ -42,7 +42,9 @@ class Epetra_NumPyFEVector : public Epetra_FEVector {
 public:
 
   // Constructors
-  Epetra_NumPyFEVector(const Epetra_BlockMap & blockMap, bool ignoreNonLocalEntries=false);
+  Epetra_NumPyFEVector(const Epetra_BlockMap & blockMap,
+		       int numVectors,
+		       bool ignoreNonLocalEntries=false);
   Epetra_NumPyFEVector(const Epetra_FEVector & source);
 
   // Destructor

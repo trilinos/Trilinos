@@ -147,14 +147,15 @@ void Epetra_NumPyFEVector::cleanup()
 // Constructors
 // =============================================================================
 Epetra_NumPyFEVector::Epetra_NumPyFEVector(const Epetra_BlockMap & blockMap,
+					   int numVectors,
 					   bool ignoreNonLocalEntries):
-  Epetra_FEVector(blockMap, ignoreNonLocalEntries)
+  Epetra_FEVector(blockMap, numVectors, ignoreNonLocalEntries)
 {
   // Create the array object
-  intp dims[ ] = { blockMap.NumMyPoints() };
+  intp dims[ ] = { numVectors, blockMap.NumMyPoints() };
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
 						      (void *)v[0]);
 
   // Copy the Epetra_BlockMap
@@ -166,10 +167,10 @@ Epetra_NumPyFEVector::Epetra_NumPyFEVector(const Epetra_FEVector & source):
   Epetra_FEVector(source)
 {
   map = new Epetra_BlockMap(source.Map());
-  intp dims[ ] = { map->NumMyPoints() };
+  intp dims[ ] = { source.NumVectors(), map->NumMyPoints() };
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
 						      (void *)v[0]);
 }
 
