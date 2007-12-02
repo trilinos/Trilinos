@@ -59,7 +59,7 @@ class Epetra_FEVector : public Epetra_MultiVector {
       data layout.
    */
    Epetra_FEVector(const Epetra_BlockMap& Map,
-                   int numVectors,
+                   int numVectors=1,
 		   bool ignoreNonLocalEntries=false);
 
   /** Copy constructor. */
