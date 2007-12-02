@@ -40,8 +40,8 @@ under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2004-3268}
-\SANDprintDate{June 2004}
+\SANDnum{SAND2004-3268 (Updated December 2007)}
+\SANDprintDate{December 2007}
 \SANDauthor{
 Roscoe A. Bartlett \\ Optimization and Uncertainty Estimation
 }
@@ -101,8 +101,7 @@ to get started using it right away.  However, more detailed
 information on the design and advanced features of
 {}\texttt{RCP} is provided by the companion document
 ``Teuchos::RCP : The Trilinos Smart Reference-Counted Pointer
-Class for (Almost) Automatic Dynamic Memory Management in C++''
-{}\cite{ref:RefCountPtr}.
+Class for (Almost) Automatic Dynamic Memory Management in C++''.
 %
 \end{abstract}
 %
@@ -214,33 +213,26 @@ basic concepts of object-oriented programming (good sources include
 Furthermore, the reader should be comfortable with the use of C++
 pointers and references.
 
-The appendices contain basic reference material for
-{}\texttt{RCP}.  In many respects, the appendices are
-the most important contribution of this document.  For those readers
-that like to see the C++ declarations right away, Appendix
-{}\ref{rcpqs:apdx:c++decl} contains the C++ declarations for the
-template class {}\texttt{RCP} and some important
-associated non-member templated functions.  Appendix
-{}\ref{rcpqs:apdx:quickstart} is a short reference-card-like
-quick-start for the use of {}\texttt{RCP}.  The
-quick-start in this appendix shows how to create
-{}\texttt{RCP} objects from raw C++ pointers, how to
-represent different forms on constantness, cast from one pointer type
-to another, access the underlying reference-counted object as well as
-to associate and manage extra data.  Appendix
+The appendices contain basic reference material for {}\texttt{RCP}.  In many
+respects, the appendices are the most important contribution of this document.
+For those readers that like to see the C++ declarations right away, Appendix
+{}\ref{rcpqs:apdx:c++decl} contains the C++ declarations for the template
+class {}\texttt{RCP} and some important associated non-member templated
+functions.  Appendix {}\ref{rcpqs:apdx:quickstart} is a short
+reference-card-like quick-start for the use of {}\texttt{RCP}.  The
+quick-start in this appendix shows how to create {}\texttt{RCP} objects from
+raw C++ pointers, how to represent different forms on constantness, cast from
+one pointer type to another, access the underlying reference-counted object as
+well as to associate and manage extra data.  Appendix
 {}\ref{rcpqs:apdx:commandments} gives some commandments for the use of
 {}\texttt{RCP} and reinforces the material in Appendix
-{}\ref{rcpqs:apdx:quickstart}.  Appendix
-{}\ref{rcpqs:apdx:passing-args} gives tables of recommended idioms for
-how to pass raw C++ objects and {}\texttt{RCP}-wrapped
-objects to and from functions.  More detailed discussions of all of
-the material in the appendices is contained in the design document for
-{}\texttt{RCP} {}\cite{ref:RefCountPtr}.  Appendix
-{}\ref{rcpqs:apdx:ex-prg} gives a listing for an example program that
-uses raw pointer variables and direct calls to operator {}\texttt{new}
-and operator {}\texttt{delete} while Appendix
-{}\ref{rcpqs:apdx:ex-prg-refactored} shows a refactoring of this
-example program to use {}\texttt{RCP}.
+{}\ref{rcpqs:apdx:quickstart}.  Appendix {}\ref{rcpqs:apdx:passing-args} gives
+tables of recommended idioms for how to pass raw C++ objects and
+{}\texttt{RCP}-wrapped objects to and from functions.  Appendix
+{}\ref{rcpqs:apdx:ex-prg} gives a listing for an example program that uses raw
+pointer variables and direct calls to operator {}\texttt{new} and operator
+{}\texttt{delete} while Appendix {}\ref{rcpqs:apdx:ex-prg-refactored} shows a
+refactoring of this example program to use {}\texttt{RCP}.
 
 {}\textbf{Note!}  Anxious readers are encouraged to jump directly to
 Appendix {}\ref{rcpqs:apdx:ex-prg} and
@@ -250,29 +242,26 @@ with the reference material in the appendices, should be enough for
 semi-experienced C++ developers to start using
 {}\texttt{RCP} right away.
 
-For less anxious readers, in the following section, we describe why
-the use of raw C++ pointers and raw calls to operator {}\texttt{new}
-and especially operator {}\texttt{delete} is difficult to program
-correctly in even moderately complex C++ programs.  We then discuss
-the different ways C++ pointers are used in such programs and describe
-how to refactor these programs to replace some of the raw C++ pointers
-and raw calls to operator {}\texttt{delete} with
-{}\texttt{RCP}.  In the following discussion we will
-define {}\textit{persisting} and {}\textit{non-persisting}
-associations and will make a distinction between them (see page
-{}\pageref{rcp:non-persisting-defined}).  {}\texttt{RCP}
-is recommended for use only with {}\textit{persisting} associations.
-The consistent use of {}\texttt{RCP} extends the
-vocabulary of C++ in helping to distinguish between these two types of
-relationships.  In addition, {}\texttt{RCP} is designed
-for the memory management of individual objects, not raw C++ arrays of
-objects.  Array allocation and deallocation should be performed using
-standard C++ containers such as {}\texttt{std\-::vector<>},
-{}\texttt{std\-::valarray<>} or some other such convenient C++ array
-class.  However, it is quite common to dynamically allocate arrays of
-{}\texttt{RCP} objects and use
-{}\texttt{RCP} to manage the lifetime of such array
-class objects.
+For less anxious readers, in the following section, we describe why the use of
+raw C++ pointers and raw calls to operator {}\texttt{new} and especially
+operator {}\texttt{delete} is difficult to program correctly in even
+moderately complex C++ programs.  We then discuss the different ways C++
+pointers are used in such programs and describe how to refactor these programs
+to replace some of the raw C++ pointers and raw calls to operator
+{}\texttt{delete} with {}\texttt{RCP}.  In the following discussion we will
+define {}\textit{persisting} and {}\textit{non-persisting} associations and
+will make a distinction between them (see page
+{}\pageref{rcp:non-persisting-defined}).  {}\texttt{RCP} is recommended for
+use only with {}\textit{persisting} associations.  The consistent use of
+{}\texttt{RCP} extends the vocabulary of C++ in helping to distinguish between
+these two types of relationships.  In addition, {}\texttt{RCP} is designed for
+the memory management of individual objects, not raw C++ arrays of objects.
+Array allocation and deallocation should be performed using standard C++
+containers such as {}\texttt{std\-::vector<>}, {}\texttt{std\-::valarray<>} or
+some other such convenient C++ array class but the best choice is typically a
+debug range-checked class like {}\texttt{Teuchos\-::Array}.  However, it is
+quite common to dynamically allocate arrays of {}\texttt{RCP} objects and use
+{}\texttt{RCP} to manage the lifetime of such array class objects.
 
 %
 \section{An example C++ program}
@@ -539,7 +528,7 @@ public:
     :utilityFactory_(utilityFactory),
     utility_(utilityFactory->createUtility())
     ,shareUtility_(shareUtility) {}
-  void h( ClientB *b ) {
+  void h( const Ptr<ClientB> &b ) {
     if( shareUtility_ ) b->initialize(utility_);
     else b->initialize(utilityFactory_->createUtility());
   }
@@ -582,6 +571,14 @@ void someFunction( const RCP<A> &a );
 (except in cases where an implicit conversion is being performed as
 described in Appendix {}\ref{rcpqs:apdx:quickstart}) and thereby
 easing debugging.
+
+Lastly, above, the class {}\texttt{Ptr} is a Teuchos non-reference-counted
+smart pointer class designed to avoid raw pointers.  It is used for
+non-persisting associations where a raw pointer would otherwise be used.
+{}\texttt{Ptr} initializes to NULL and in debug mode it will throw exception
+exceptions when dereferencing NULL.  {}\texttt{Ptr} plays a small role in the
+overall strategy to avoid all raw C++ pointers at the application programming
+level.
 
 As an aside, note that Appendix {}\ref{rcpqs:apdx:passing-args} gives
 recommended idioms for how to pass raw C++ objects and
@@ -644,17 +641,6 @@ number of {}\texttt{RCP} objects that point to the
 underlying reference-counted object.  This information can be useful
 in some cases.
 
-\item \textbf{Associating extra data with a reference-counted object}
-
-There are some more difficult use cases where certain types of
-information or other objects must be bundled with a reference-counted
-object and must not be deleted until the reference-counted object is
-deleted.  The non-member templated functions
-{}\texttt{set\-\_extra\-\_data<>(...)} and
-{}\texttt{get\-\_extra\-\_data<>(...)} serve this purpose (see item
-({}\ref{rcpqs:apdx:qs:extra-data}) in Appendix
-{}\ref{rcpqs:apdx:quickstart}).
-
 \item \textbf{Customized deallocation policies}
 
 The default behavior of {}\texttt{RCP} is to call
@@ -666,10 +652,42 @@ the templated function {}\texttt{Teuchos\-::rcp(...)} that takes a
 templated deallocation policy object that defines how a
 reference-counted object is deallocated when required.
 
-\end{enumerate}
+\item \textbf{Associating extra data with a reference-counted object}
 
-These features are discussed in detail in the design document
-{}\cite{ref:RefCountPtr}.
+There are some more difficult use cases where certain types of information or
+other objects must be bundled with a reference-counted object and must not be
+deleted until the reference-counted object is deleted.  The non-member
+templated functions {}\texttt{set\-\_extra\-\_data<>(...)} and
+{}\texttt{get\-\_extra\-\_data<>(...)} serve this purpose (see item
+({}\ref{rcpqs:apdx:qs:extra-data}) in Appendix {}\ref{rcpqs:apdx:quickstart}).
+Note that the extra data mechanism relies on an {}\texttt{std::map} and string
+comparisons etc. and can impart some unacceptably high overhead in some use
+cases.
+
+\item \textbf{Embeddeding an object on creation of an RCP object}
+
+Similar to the use of extra data, the RCP class also supports the concept of
+an embedded object.  The functions
+{}\texttt{rcp\-With\-Embedded\-Obj\-[PreDestroy,PostDestroy](...)} (see
+{}\ref{rcpqs:apdx:qs:embedded-objects} in Appendix
+{}\ref{rcpqs:apdx:quickstart}) can be used create an {}\texttt{RCP} object and
+embedd any other value-type object in the created {}\texttt{RCPNode}.  This
+uses a customized deallocator class and imparts less overhead than the extra
+data feature at the cost of being less flexible (i.e.\ you can can only embedd
+a single value object and it must be done right when the first {}\texttt{RCP}
+object is created).  The advantage of this approach is that access of the
+embedded object using the {}\texttt{get\-[Nonconst]\-Embedded\-Obj(...)} is
+faster than when using extra data but requires that you provide more
+information.
+
+\item \textbf{Checking for memory leaks from circular references}
+
+In a debug build, the user can enable checking for memory leaks caused by
+circular references among RCP objects.  If cicular references do exist, then
+RCPNode objects that where created but not removed are displaed at the end of
+a program.  See the file {}\texttt{Teuchos\-\_RCP.cpp} for details.
+
+\end{enumerate}
 
 %
 \section{Summary}
@@ -754,45 +772,59 @@ private:
 
 template<class T>            RCP<T>   rcp( T* p );
 template<class T>            RCP<T>   rcp( T* p, bool owns_mem);
-template<class T
-  ,class Dealloc_T>          RCP<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+template<class T,
+  class Dealloc_T>           RCP<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+template<class T,
+  class Embedded>            RCP<T>   rcpWithEmbeddedObjPreDestroy( T* p,
+                                       const Embedded &embedded, bool owns_mem = true );
+template<class T,
+  class Embedded>            RCP<T>   rcpWithEmbeddedObjPostDestroy( T* p,
+                                        const Embedded &embedded, bool owns_mem = true );
+template<class T,
+  class Embedded>            RCP<T>   rcpWithEmbeddedObj( T* p,
+                                        const Embedded &embedded, bool owns_mem = true );
 template<class T>            bool     is_null(const RCP<T>& p);
 template<class T>            bool     operator==(const RCP<T>& p, ENull);
 template<class T>            bool     operator!=(const RCP<T>& p, ENull);
-template<class T2, class T1> bool     operator==(const RCP<T1>& p1
-                                                 ,const RCP<T2>& p2 );
-template<class T2, class T1> bool     operator!=(const RCP<T1>& p1
-                                                 ,const RCP<T2>& p2 );
-template<class T2, class T1> RCP<T2>  rcp_implicit_cast(const RCP<T1>& p1);
-template<class T2, class T1> RCP<T2>  rcp_static_cast(const RCP<T1>& p1);
-template<class T2, class T1> RCP<T2>  rcp_const_cast(const RCP<T1>& p1);
-template<class T2, class T1> RCP<T2>  rcp_dynamic_cast(const RCP<T1>& p1
-                                                ,bool throw_on_fail = false );
+template<class T2, class T1> bool     operator==(const RCP<T1>& p1,
+                                                 const RCP<T2>& p2 );
+template<class T2, class T1> bool     operator!=(const RCP<T1>& p1,
+                                                 const RCP<T2>& p2 );
 \end{verbatim}}
 \pagebreak
 {\scriptsize\begin{verbatim}
+template<class T2, class T1> RCP<T2>          rcp_implicit_cast(const RCP<T1>& p1);
+template<class T2, class T1> RCP<T2>          rcp_static_cast(const RCP<T1>& p1);
+template<class T2, class T1> RCP<T2>          rcp_const_cast(const RCP<T1>& p1);
+template<class T2, class T1> RCP<T2>          rcp_dynamic_cast(const RCP<T1>& p1,
+                                                       bool throw_on_fail = false );
 template<class T1, class T2> int              set_extra_data( const T1 &extra_data,
-                                                const std::string& name, RCP<T2> *p,
+                                                const std::string& name, const Ptr<RCP<T2> > &p,
                                                 bool force_unique = true,
                                                 EPrePostDestruction destroy_when = POST_DESTROY );
-template<class T1, class T2> T1&              get_extra_data( RCP<T2>& p,
-                                                const std::string& name );
 template<class T1, class T2> const T1&        get_extra_data( const RCP<T2>& p,
                                                 const std::string& name );
-template<class T1, class T2> T1*              get_optional_extra_data( RCP<T2>& p,
+template<class T1, class T2> T1&              get_nonconst_extra_data( const RCP<T2>& p,
+                                                const std::string& name );
+template<class T1, class T2> T1*              get_optional_extra_data( const RCP<T2>& p,
                                                 const std::string& name );
 template<class T1, class T2> const T1*        get_optional_extra_data( const RCP<T2>& p,
                                                 const std::string& name );
-template<class Dealloc_T
-  , class T>                 Dealloc_T&       get_dealloc( RCP<T>& p );
-template<class Dealloc_T
-  , class T>                 const Dealloc_T& get_dealloc( const RCP<T>& p );
-template<class Dealloc_T
-  , class T>                 Dealloc_T*       get_optional_dealloc( RCP<T>& p );
-template<class Dealloc_T
-  , class T>                 const Dealloc_T* get_optional_dealloc( const RCP<T>& p );
+template<class Dealloc_T,
+  class T>                   const Dealloc_T& get_dealloc( const RCP<T>& p );
+template<class Dealloc_T,
+  class T>                   Dealloc_T&       get_nonconst_dealloc( const RCP<T>& p );
+template<class Dealloc_T,
+  class T>                   const Dealloc_T* get_optional_dealloc( const RCP<T>& p );
+template<class Dealloc_T,
+  class T>                   Dealloc_T*       get_optional_nonconst_dealloc( const RCP<T>& p );
+template<class TOrig,
+  class Embedded, class T>   const Embedded&  getEmbeddedObj( const RCP<T>& p );
+template<class TOrig,
+  class Embedded, class T>   Embedded&        getNonconstEmbeddedObj( const RCP<T>& p );
 
-}
+
+} // namespace Teuchos
 \end{verbatim}}
 
 %
@@ -855,12 +887,10 @@ or
 RCP<C> c_ptr(new C);
 \end{verbatim}}
 %
-\item {\bf Creating a \texttt{RCP} object to an array allocated using \texttt{new[n]}}
+\item {\bf Creating a \texttt{RCP} object to an array allocated using \texttt{new[n]}} \\
 \label{rcpqs:apdx:qs:array-new}
 %
- {\small\begin{verbatim}
-RCP<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
-\end{verbatim}}
+See the class {}\texttt{Teuchos::ArrayRCP}.
 %
 \item {\bf Initializing a \texttt{RCP} object to an object
        \underline{not} allocated with \texttt{new}}
@@ -945,13 +975,13 @@ a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same A object
 C &c_ref = *c_ptr;
 \end{verbatim}}
 %
-\item {\bf Access to object pointer (unchecked, may return \texttt{NULL})}
+\item {\bf Access to object pointer (unchecked, may return \texttt{NULL}, NOT RECOMMENDED)}
 %
 {\small\begin{verbatim}
 C *c_rptr = c_ptr.get();
 \end{verbatim}}
 %
-\item {\bf Access to object pointer (debug runtime checked, will not return \texttt{NULL})}
+\item {\bf Access to object pointer (debug runtime checked, will not return \texttt{NULL}, NOT RECOMMENDED)}
 %
 {\small\begin{verbatim}
 C *c_rptr = &*c_ptr;
@@ -966,7 +996,7 @@ c_ptr->f();
 \item {\bf Testing for non-null}
 %
 {\small\begin{verbatim}
-if( a_ptr.get() ) std::cout << "a_ptr is not null!\n";
+if( !is_null(a_ptr) ) std::cout << "a_ptr is not null!\n";
 \end{verbatim}}
 %
 or
@@ -978,19 +1008,13 @@ if( a_ptr != null ) std::cout << "a_ptr is not null!\n";
 \item {\bf Testing for null}
 %
 {\small\begin{verbatim}
-if( !a_ptr.get() ) std::cout << "a_ptr is null!\n";
+if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
 \end{verbatim}}
 %
 or
 %
 {\small\begin{verbatim}
 if( a_ptr == null ) std::cout << "a_ptr is null!\n";
-\end{verbatim}}
-%
-or
-%
-{\small\begin{verbatim}
-if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
 \end{verbatim}}
 
 %
@@ -1119,6 +1143,35 @@ if(b1) (*b1)->f();
 %
 \end{enumerate}
 
+\item {\bf Embedded objects}
+\label{rcpqs:apdx:qs:embedded-objects}
+
+%
+\begin{enumerate}
+%
+\item {\bf Creating an RCP object with embedded data}
+%
+{\small\begin{verbatim}
+RCP<D> d_ptr(new D);
+RCP<A> a_ptr rcpWithEmbeddedObj(new C, rcp(new D));
+\end{verbatim}}
+%
+\item {\bf Extract reference to const embedded object}
+%
+{\small\begin{verbatim}
+const RCP<D> &d_ptr = getEmbeddedObj<C,RCP<D> >(a_ptr);
+\end{verbatim}}
+%
+\item {\bf Extract reference to nonconst embedded object}
+%
+{\small\begin{verbatim}
+RCP<D> &d_ptr = getNonconstEmbeddedObj<C,RCP<D> >(a_ptr);
+d_ptr = null; // Sets the actual embedded RCP<D> object in a_ptr to null!
+\end{verbatim}}
+%
+\end{enumerate}
+
+
 \end{enumerate}
 
 %
@@ -1126,15 +1179,11 @@ if(b1) (*b1)->f();
 \label{rcpqs:apdx:commandments}
 %
 
-Here are listed commandments for the use of
-{}\texttt{RCP}.  These commandments reinforce some of
-the material in the quick-start in Appendix
-{}\ref{rcpqs:apdx:quickstart}.  The reasoning behind these
-commandments can be found in the design document for
-{}\texttt{RCP} {}\cite{ref:RefCountPtr}.  Along with
-each commandment is one or more anti-commandments stating the negative
-of the commandment.  C++ code fragments are also included to
-demonstrate each commandment and anti-commandment.
+Here are listed commandments for the use of {}\texttt{RCP}.  These
+commandments reinforce some of the material in the quick-start in Appendix
+{}\ref{rcpqs:apdx:quickstart}.  Along with each commandment is one or more
+anti-commandments stating the negative of the commandment.  C++ code fragments
+are also included to demonstrate each commandment and anti-commandment.
 
 \begin{commandment}\label{rcp:cmd:rcp-new}
 Thou shall put a pointer for an object allocated with operator
@@ -1244,26 +1293,25 @@ using raw pointer access.
 \label{rcpqs:apdx:passing-args}
 %
 
-Below are recommended idioms for passing required\footnote{Required
-arguments must be bound to valid objects (i.e.~can not be
-{}\texttt{NULL})} and optional\footnote{Optional arguments may be
-{}\texttt{NULL} in some cases} arguments into and out of C++ functions
-for various use cases and different types of objects.  These idioms
-show how to write function arguments prototypes which exploit the C++
-language in a way that makes these function prototypes as self
-documenting as possible, avoid coding errors and increase readability
-of C++ code.  In general, {}\texttt{RCP<T>} objects should
-be passed and manipulated as though they where raw C++ pointer
-{}\texttt{T*} objects.  However, while raw C++ pointer objects should
-generally be passed by value, {}\texttt{RCP} objects
-should generally be passed by reference for several reasons (see
-{}\cite{ref:RefCountPtr} for more details).
+Below are recommended idioms for passing required\footnote{Required arguments
+must be bound to valid objects (i.e.~can not be {}\texttt{NULL})} and
+optional\footnote{Optional arguments may be {}\texttt{NULL} in some cases}
+arguments into and out of C++ functions for various use cases and different
+types of objects.  These idioms show how to write function prototype argument
+declarations which exploit the C++ language in a way that makes these function
+prototypes as self documenting as possible, avoids coding errors, and
+increases readability\footnote{What makes code more ``readable'' is subjective
+of course.} of C++ code.  In general, {}\texttt{RCP<T>} objects should be
+passed and manipulated as though they where raw C++ pointer {}\texttt{T*}
+objects.  However, while raw C++ pointer objects should generally be passed by
+value, {}\texttt{RCP} objects should generally be passed by reference for
+several reasons.
 
 %
 %\fbox{
 \begin{center}
 \begin{minipage}{{}\textwidth}
-\begin{tabular}{|c|c|c|}
+\begin{tabular}{|l|l|l|}
 \hline
 Argument purpose
 & Non-Persisting
@@ -1272,40 +1320,28 @@ Argument purpose
 \hline
 non-changeable object (required$^1$)
 & \begin{minipage}{12ex}
-    \begin{center}
     {\tiny .}\\
     {}\texttt{S s} \\
     or \\
     {}\texttt{const S s} \\
     or \\
     {}\texttt{const S \&s} \\
-    {\tiny .}
-    \end{center}
+    %{\tiny .}
   \end{minipage}
 & {}\texttt{const RCP<const S> \&s} \\
 \hline
 non-changeable object (optional$^2$)
-& {}\texttt{const S *s}
+& {}\texttt{const Ptr<const S> \&s}
 & {}\texttt{const RCP<const S> \&s} \\
 \hline
 changeable object
-& {}\texttt{S *s}
+& {}\texttt{const Ptr<S> \&s}
 & {}\texttt{const RCP<S> \&s} \\
 \hline
-array of non-changeable objects
-& {}\texttt{const S s[]}
-& {}\texttt{const RCP<const S> s[]} \\
-\hline
-array of changeable objects
-& {}\texttt{S s[]}
-& {}\texttt{const RCP<S> s[]} \\
-\hline
-\end{tabular}
-\begin{center}
-C++ declarations for passing small concrete (i.e.~with value
-semantics) objects to and from functions where {}\texttt{S} is a place
-holder for an actual built-in or user-defined data type.
-\end{center}
+\end{tabular}\\[2ex]
+C++ declarations for passing small concrete objects (i.e.~with value
+semantics) to and from functions where {}\texttt{S} is a place holder for an
+actual built-in or user-defined data type.
 \end{minipage}
 \end{center}
 %} % end fbox
@@ -1315,7 +1351,7 @@ holder for an actual built-in or user-defined data type.
 %\fbox{
 \begin{center}
 \begin{minipage}{{}\textwidth}
-\begin{tabular}{|c|c|c|}
+\begin{tabular}{|l|l|l|}
 \hline
 Argument purpose
 & Non-Persisting
@@ -1327,27 +1363,18 @@ non-changeable object (required$^1$)
 & {}\texttt{const RCP<const A> \&a} \\
 \hline
 non-changeable object (optional$^2$)
-& {}\texttt{const A *a}
+& {}\texttt{const Ptr<const A> \&a}
 & {}\texttt{const RCP<const A> \&a} \\
 \hline
 changeable object
-& {}\texttt{A *a}
+& {}\texttt{const Ptr<A> \&a}
 & {}\texttt{const RCP<A> \&a} \\
 \hline
-array of non-changeable objects
-& {}\texttt{const A*const a[]}
-& {}\texttt{const RCP<const A> a[]} \\
-\hline
-array of changeable objects
-& {}\texttt{A*const a[]}
-& {}\texttt{const RCP<A> a[]} \\
-\hline
-\end{tabular}
-\begin{center}
-C++ declarations for passing abstract (i.e.~with reference or pointer
-semantics) or large concrete objects to and from functions where
-{}\texttt{A} is a place holder for an actual abstract C++ base class.
-\end{center}
+\end{tabular}\\[2ex]
+C++ declarations for passing abstract objects (i.e.\ with reference or pointer
+semantics) or large concrete objects (i.e.\ that are too expensive to copy) to
+and from functions where {}\texttt{A} is a place holder for an actual abstract
+C++ base class.
 \end{minipage}
 \end{center}
 %} % end fbox
@@ -1452,7 +1479,8 @@ int main( int argc, char* argv[] )
 
 // Inject symbols for RCP so we don't need Teuchos:: qualification
 using Teuchos::RCP;
-using Teuchos::rcp;
+using Teuchos::rcp; // Warning! This can be dangerous and is not to be used in general!
+using Teuchos::Ptr;
 
 // Abstract interfaces
 class UtilityBase {
@@ -1502,7 +1530,7 @@ public:
     :utilityFactory_(utilityFactory)
     ,utility_(utilityFactory->createUtility())
     ,shareUtility_(shareUtility) {}
-  void h( ClientB *b ) {
+  void h( const Ptr<ClientB> &b ) {
     if( shareUtility_ ) b->initialize(utility_);
     else b->initialize(utilityFactory_->createUtility());
   }
