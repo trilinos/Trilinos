@@ -43,7 +43,7 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultProductMultiVector<Scalar>::DefaultProductMultiVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
   const int numMembers
   )
   :numBlocks_(0)
@@ -54,8 +54,8 @@ DefaultProductMultiVector<Scalar>::DefaultProductMultiVector(
 
 template<class Scalar>
 DefaultProductMultiVector<Scalar>::DefaultProductMultiVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<MultiVectorBase<Scalar> > multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
   )
   :numBlocks_(0)
 {
@@ -65,8 +65,8 @@ DefaultProductMultiVector<Scalar>::DefaultProductMultiVector(
 
 template<class Scalar>
 DefaultProductMultiVector<Scalar>::DefaultProductMultiVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
   )
   :numBlocks_(0)
 {
@@ -76,7 +76,7 @@ DefaultProductMultiVector<Scalar>::DefaultProductMultiVector(
 
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::initialize(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
   const int numMembers
   )
 {
@@ -84,19 +84,18 @@ void DefaultProductMultiVector<Scalar>::initialize(
   TEST_FOR_EXCEPT( is_null(productSpace) );
   TEST_FOR_EXCEPT( numMembers <= 0 );
 #endif
-  Teuchos::Array<Teuchos::RCP<MultiVectorBase<Scalar> > >
-    multiVecs;
+  Array<RCP<MultiVectorBase<Scalar> > > multiVecs;
   const int numBlocks = productSpace->numBlocks();
   for ( int k = 0; k < numBlocks; ++k )
     multiVecs.push_back(createMembers(productSpace->getBlock(k),numMembers));
-  initialize(productSpace,&multiVecs[0]);
+  initialize(productSpace,multiVecs);
 }
 
 
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::initialize(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<MultiVectorBase<Scalar> > multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
   )
 {
   initializeImpl(productSpace,multiVecs);
@@ -105,8 +104,8 @@ void DefaultProductMultiVector<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::initialize(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
   )
 {
   initializeImpl(productSpace,multiVecs);
@@ -122,7 +121,7 @@ void DefaultProductMultiVector<Scalar>::uninitialize()
 }
 
 
-// Overridden from Teuchos::Describable
+// Overridden public functions from Teuchos::Describable
 
                                                 
 template<class Scalar>
@@ -142,13 +141,11 @@ std::string DefaultProductMultiVector<Scalar>::description() const
 
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::describe(
-  Teuchos::FancyOStream &out_arg,
+  FancyOStream &out_arg,
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RCP;
-  using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
   if (verbLevel == Teuchos::VERB_NONE)
@@ -186,11 +183,11 @@ void DefaultProductMultiVector<Scalar>::describe(
 }
 
 
-// Overridden from ProductMultiVectorBase
+// Overridden public functions from ProductMultiVectorBase
 
 
 template<class Scalar>
-Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
+RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultProductMultiVector<Scalar>::productSpace() const
 {
   return productSpace_;
@@ -205,7 +202,7 @@ bool DefaultProductMultiVector<Scalar>::blockIsConst(const int k) const
 
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
+RCP<MultiVectorBase<Scalar> >
 DefaultProductMultiVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return multiVecs_[k].getNonconstObj();
@@ -213,22 +210,61 @@ DefaultProductMultiVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 
 
 template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
+RCP<const MultiVectorBase<Scalar> >
 DefaultProductMultiVector<Scalar>::getMultiVectorBlock(const int k) const
 {
   return multiVecs_[k].getConstObj();
 }
 
 
-// Overriden from MultiVectorBase
+// Overridden public functions from MultiVectorBase
 
 
 template<class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::col(Index j) const
+RCP<MultiVectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::clone_mv() const
+{
+  assertInitialized();
+  Array<RCP<MultiVectorBase<Scalar> > > blocks;
+  for ( int k = 0; k < numBlocks_; ++k )
+    blocks.push_back(multiVecs_[k].getConstObj()->clone_mv());
+  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
+}
+
+
+// Overriden public functions from LinearOpBase
+
+
+template<class Scalar>
+RCP< const VectorSpaceBase<Scalar> >
+DefaultProductMultiVector<Scalar>::range() const
+{
+  return productSpace_;
+}
+
+
+template<class Scalar>
+RCP< const VectorSpaceBase<Scalar> >
+DefaultProductMultiVector<Scalar>::domain() const
+{
+  if (is_null(productSpace_))
+    return Teuchos::null;
+  return multiVecs_[0].getConstObj()->domain();
+}
+
+
+// protected
+
+
+// Overriden protected functions from MultiVectorBase
+
+
+template<class Scalar>
+RCP<const VectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::colImpl(Index j) const
 {
   validateColIndex(j);
-  Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > cols_;
+  Array<RCP<const VectorBase<Scalar> > > cols_;
   for ( int k = 0; k < numBlocks_; ++k )
     cols_.push_back(multiVecs_[k].getConstObj()->col(j));
   return defaultProductVector<Scalar>(productSpace_,&cols_[0]);
@@ -236,11 +272,11 @@ DefaultProductMultiVector<Scalar>::col(Index j) const
 
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::col(Index j)
+RCP<VectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::nonconstColImpl(Index j)
 {
   validateColIndex(j);
-  Teuchos::Array<Teuchos::RCP<VectorBase<Scalar> > > cols_;
+  Array<RCP<VectorBase<Scalar> > > cols_;
   for ( int k = 0; k < numBlocks_; ++k )
     cols_.push_back(multiVecs_[k].getNonconstObj()->col(j));
   return defaultProductVector<Scalar>(productSpace_,&cols_[0]);
@@ -248,65 +284,63 @@ DefaultProductMultiVector<Scalar>::col(Index j)
 
 
 template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::subView( const Range1D& colRng ) const
+RCP<const MultiVectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::contigSubViewImpl( const Range1D& colRng ) const
 {
   assertInitialized();
-  Teuchos::Array<Teuchos::RCP<const MultiVectorBase<Scalar> > > blocks_;
+  Array<RCP<const MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
-    blocks_.push_back(multiVecs_[k].getConstObj()->subView(colRng));
-  return defaultProductMultiVector<Scalar>(productSpace_,&blocks_[0]);
+    blocks.push_back(multiVecs_[k].getConstObj()->subView(colRng));
+  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
 }
 
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::subView( const Range1D& colRng )
+RCP<MultiVectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::nonconstContigSubViewImpl( const Range1D& colRng )
 {
   assertInitialized();
-  Teuchos::Array<Teuchos::RCP<MultiVectorBase<Scalar> > > blocks_;
+  Array<RCP<MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
-    blocks_.push_back(multiVecs_[k].getNonconstObj()->subView(colRng));
-  return defaultProductMultiVector<Scalar>(productSpace_,&blocks_[0]);
+    blocks.push_back(multiVecs_[k].getNonconstObj()->subView(colRng));
+  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
 }
 
 
 template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::subView(
-  const int numCols, const int cols[]
+RCP<const MultiVectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::nonContigSubViewImpl(
+  const ArrayView<const int> &cols
   ) const
 {
   assertInitialized();
-  Teuchos::Array<Teuchos::RCP<const MultiVectorBase<Scalar> > > blocks_;
+  Array<RCP<const MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
-    blocks_.push_back(multiVecs_[k].getConstObj()->subView(numCols,cols));
-  return defaultProductMultiVector<Scalar>(productSpace_,&blocks_[0]);
+    blocks.push_back(multiVecs_[k].getConstObj()->subView(cols));
+  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
 }
 
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::subView(
-  const int numCols, const int cols[]
+RCP<MultiVectorBase<Scalar> >
+DefaultProductMultiVector<Scalar>::nonconstNonContigSubViewImpl(
+  const ArrayView<const int> &cols
   )
 {
   assertInitialized();
-  Teuchos::Array<Teuchos::RCP<MultiVectorBase<Scalar> > > blocks_;
+  Array<RCP<MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
-    blocks_.push_back(multiVecs_[k].getNonconstObj()->subView(numCols,cols));
-  return defaultProductMultiVector<Scalar>(productSpace_,&blocks_[0]);
+    blocks.push_back(multiVecs_[k].getNonconstObj()->subView(cols));
+  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
 }
 
 
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   const RTOpPack::RTOpT<Scalar> &primary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs_in[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
-  RTOpPack::ReductTarget*const reduct_objs[],
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs_in,
+  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs_inout,
+  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
   const Index primary_first_ele_offset_in,
   const Index primary_sub_dim_in,
   const Index primary_global_offset_in,
@@ -315,8 +349,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   ) const
 {
   
-  using Teuchos::Array;
-  using Teuchos::RCP;
+  using Teuchos::ptr_dynamic_cast;
   using Thyra::applyOp;
 
   assertInitialized();
@@ -325,9 +358,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   const Index rangeDim = this->range()->dim();
 
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( num_multi_vecs < 0 );
-  TEST_FOR_EXCEPT( num_multi_vecs > 0 && multi_vecs_in == 0 );
-  for ( int j = 0; j < num_multi_vecs; ++j ) {
+  for ( int j = 0; j < multi_vecs_in.size(); ++j ) {
     THYRA_ASSERT_VEC_SPACES(
       "DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(...)",
       *this->range(), *multi_vecs_in[j]->range()
@@ -337,9 +368,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       *this->domain(), *multi_vecs_in[j]->domain()
       );
   }
-  TEST_FOR_EXCEPT( num_targ_multi_vecs < 0 );
-  TEST_FOR_EXCEPT( num_targ_multi_vecs > 0 && targ_multi_vecs_inout == 0 );
-  for ( int j = 0; j < num_targ_multi_vecs; ++j ) {
+  for ( int j = 0; j < targ_multi_vecs_inout.size(); ++j ) {
     THYRA_ASSERT_VEC_SPACES(
       "DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(...)",
       *this->range(), *targ_multi_vecs_inout[j]->range()
@@ -395,35 +424,35 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
 
   bool allProductMultiVectors = true;
 
-  Array<const ProductMultiVectorBase<Scalar>*> multi_vecs;
-  for ( int j = 0; j < num_multi_vecs && allProductMultiVectors; ++j ) {
+  Array<Ptr<const ProductMultiVectorBase<Scalar> > > multi_vecs;
+  for ( int j = 0; j < multi_vecs_in.size() && allProductMultiVectors; ++j ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT( multi_vecs_in[j] == 0 );
+    TEST_FOR_EXCEPT( is_null(multi_vecs_in[j]) );
 #endif
-    const ProductMultiVectorBase<Scalar>
-      *multi_vecs_k = dynamic_cast<const ProductMultiVectorBase<Scalar>*>(
+    const Ptr<const ProductMultiVectorBase<Scalar> >
+      multi_vecs_j = ptr_dynamic_cast<const ProductMultiVectorBase<Scalar> >(
         multi_vecs_in[j]
         );
-    if ( multi_vecs_k ) {
-      multi_vecs.push_back(multi_vecs_k);
+    if ( !is_null(multi_vecs_j) ) {
+      multi_vecs.push_back(multi_vecs_j);
     }
     else {
       allProductMultiVectors = false;
     }
   }
 
-  Array<ProductMultiVectorBase<Scalar>*> targ_multi_vecs;
-  for ( int j = 0; j < num_targ_multi_vecs && allProductMultiVectors; ++j )
+  Array<Ptr<ProductMultiVectorBase<Scalar> > > targ_multi_vecs;
+  for ( int j = 0; j < targ_multi_vecs_inout.size() && allProductMultiVectors; ++j )
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT( targ_multi_vecs_inout[j] == 0 );
+    TEST_FOR_EXCEPT( is_null(targ_multi_vecs_inout[j]) );
 #endif
-    ProductMultiVectorBase<Scalar>
-      *targ_multi_vecs_k = dynamic_cast<ProductMultiVectorBase<Scalar>*>(
+    Ptr<ProductMultiVectorBase<Scalar> >
+      targ_multi_vecs_j = ptr_dynamic_cast<ProductMultiVectorBase<Scalar> >(
         targ_multi_vecs_inout[j]
         );
-    if ( targ_multi_vecs_k ) {
-      targ_multi_vecs.push_back(targ_multi_vecs_k);
+    if (!is_null(targ_multi_vecs_j)) {
+      targ_multi_vecs.push_back(targ_multi_vecs_j);
     }
     else {
       allProductMultiVectors = false;
@@ -444,13 +473,13 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
     // We must set up temporary arrays for the pointers to the MultiVectorBase
     // blocks for each block of objects!  What a mess!
     Array<RCP<const MultiVectorBase<Scalar> > >
-      multi_vecs_rcp_block_k(num_multi_vecs);
-    Array<const MultiVectorBase<Scalar>*>
-      multi_vecs_block_k(num_multi_vecs);
+      multi_vecs_rcp_block_k(multi_vecs_in.size());
+    Array<Ptr<const MultiVectorBase<Scalar> > >
+      multi_vecs_block_k(multi_vecs_in.size());
     Array<RCP<MultiVectorBase<Scalar> > >
-      targ_multi_vecs_rcp_block_k(num_targ_multi_vecs);
-    Array<MultiVectorBase<Scalar>*>
-      targ_multi_vecs_block_k(num_targ_multi_vecs);
+      targ_multi_vecs_rcp_block_k(targ_multi_vecs_inout.size());
+    Array<Ptr<MultiVectorBase<Scalar> > >
+      targ_multi_vecs_block_k(targ_multi_vecs_inout.size());
 
     Index num_rows_remaining = primary_sub_dim;
     Index g_off = -primary_first_ele_offset_in;
@@ -475,26 +504,24 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
 
       // Fill the MultiVector array objects for this block
 
-      for ( int j = 0; j < num_multi_vecs; ++j ) {
-        RCP<const MultiVectorBase<Scalar> >
-          multi_vecs_rcp_block_k_j = multi_vecs[j]->getMultiVectorBlock(k);
+      for ( int j = 0; j < multi_vecs_in.size(); ++j ) {
+        RCP<const MultiVectorBase<Scalar> > multi_vecs_rcp_block_k_j =
+          multi_vecs[j]->getMultiVectorBlock(k);
         multi_vecs_rcp_block_k[j] = multi_vecs_rcp_block_k_j;
-        multi_vecs_block_k[j] = &*multi_vecs_rcp_block_k_j;
+        multi_vecs_block_k[j] = multi_vecs_rcp_block_k_j.ptr();
       }
 
-      for ( int j = 0; j < num_targ_multi_vecs; ++j ) {
-        RCP<MultiVectorBase<Scalar> >
-          targ_multi_vecs_rcp_block_k_j = targ_multi_vecs[j]->getNonconstMultiVectorBlock(k);
+      for ( int j = 0; j < targ_multi_vecs_inout.size(); ++j ) {
+        RCP<MultiVectorBase<Scalar> > targ_multi_vecs_rcp_block_k_j =
+          targ_multi_vecs[j]->getNonconstMultiVectorBlock(k);
         targ_multi_vecs_rcp_block_k[j] = targ_multi_vecs_rcp_block_k_j;
-        targ_multi_vecs_block_k[j] = &*targ_multi_vecs_rcp_block_k_j;
+        targ_multi_vecs_block_k[j] = targ_multi_vecs_rcp_block_k_j.ptr();
       }
 
       // Apply the RTOp object to the MultiVectors for this block
 
       Thyra::applyOp<Scalar>(
-        primary_op,
-        num_multi_vecs, num_multi_vecs ? &multi_vecs_block_k[0] : 0,
-        num_targ_multi_vecs, num_targ_multi_vecs ? &targ_multi_vecs_block_k[0] : 0,
+        primary_op, multi_vecs_block_k, targ_multi_vecs_block_k,
         reduct_objs,
         g_off < 0 ? -g_off : 0, // primary_first_ele_offset
         local_sub_dim,  // primary_sub_dim
@@ -512,9 +539,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
     // column-by-column implementation that will work correctly in serial.
 
     MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
-      primary_op,
-      num_multi_vecs, multi_vecs_in,
-      num_targ_multi_vecs, targ_multi_vecs_inout,
+      primary_op, multi_vecs_in, targ_multi_vecs_inout,
       reduct_objs,
       primary_first_ele_offset_in, primary_sub_dim_in, primary_global_offset_in,
       secondary_first_ele_offset_in, secondary_sub_dim_in
@@ -572,45 +597,7 @@ void DefaultProductMultiVector<Scalar>::commitNonconstDetachedMultiVectorViewImp
 }
 
 
-template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::clone_mv() const
-{
-  assertInitialized();
-  Teuchos::Array<Teuchos::RCP<MultiVectorBase<Scalar> > > blocks_;
-  for ( int k = 0; k < numBlocks_; ++k )
-    blocks_.push_back(multiVecs_[k].getConstObj()->clone_mv());
-  return defaultProductMultiVector<Scalar>(productSpace_,&blocks_[0]);
-  
-
-  return Teuchos::null;
-  // ToDo: Override when needed!
-  TEST_FOR_EXCEPT(true);
-}
-
-
-// Overriden from LinearOpBase
-
-
-template<class Scalar>
-Teuchos::RCP< const VectorSpaceBase<Scalar> >
-DefaultProductMultiVector<Scalar>::range() const
-{
-  return productSpace_;
-}
-
-
-template<class Scalar>
-Teuchos::RCP< const VectorSpaceBase<Scalar> >
-DefaultProductMultiVector<Scalar>::domain() const
-{
-  if (is_null(productSpace_))
-    return Teuchos::null;
-  return multiVecs_[0].getConstObj()->domain();
-}
-
-
-// Overridden from SingleScalarLinearOpBase
+// Overridden protected functions from SingleScalarLinearOpBase
 
 
 template<class Scalar>
@@ -669,7 +656,7 @@ void DefaultProductMultiVector<Scalar>::apply(
     const ProductMultiVectorBase<Scalar>
       &X = dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in);
     for ( int k = 0; k < numBlocks_; ++k ) {
-      Teuchos::RCP<const MultiVectorBase<Scalar> >
+      RCP<const MultiVectorBase<Scalar> >
         M_k = multiVecs_[k].getConstObj(),
         X_k = X.getMultiVectorBlock(k);
       if ( 0 == k ) {
@@ -689,8 +676,8 @@ void DefaultProductMultiVector<Scalar>::apply(
 template<class Scalar>
 template<class MultiVectorType>
 void DefaultProductMultiVector<Scalar>::initializeImpl(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<MultiVectorType> multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<MultiVectorType> > &multiVecs
   )
 {
   // This function provides the "strong" guarantee (i.e. if an exception is
@@ -698,9 +685,9 @@ void DefaultProductMultiVector<Scalar>::initializeImpl(
   // function was called)!
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( is_null(productSpace) );
-  TEST_FOR_EXCEPT( 0==multiVecs );
+  TEST_FOR_EXCEPT( multiVecs.size() != productSpace->numBlocks() );
 #endif // TEUCHOS_DEBUG
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
+  const RCP<const VectorSpaceBase<Scalar> >
     theDomain = multiVecs[0]->domain();
   const int numBlocks = productSpace->numBlocks();
 #ifdef TEUCHOS_DEBUG
@@ -713,10 +700,7 @@ void DefaultProductMultiVector<Scalar>::initializeImpl(
 #endif
   productSpace_ = productSpace;
   numBlocks_ = numBlocks;
-  multiVecs_.resize(0);
-  for ( int k = 0; k < numBlocks; ++k ) {
-    multiVecs_.push_back(multiVecs[k]);
-  }
+  multiVecs_.assign(multiVecs.begin(),multiVecs.end());
 }
 
 

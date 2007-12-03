@@ -29,9 +29,12 @@
 #ifndef THYRA_PRODUCT_VECTOR_BASE_HPP
 #define THYRA_PRODUCT_VECTOR_BASE_HPP
 
+
 #include "Thyra_ProductMultiVectorBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base interface for product vectors.
  *
@@ -77,8 +80,8 @@ public:
   /** \brief Returns a non-persisting non-<tt>const</tt> view of the
    * (zero-based) <tt>k</tt>th block vector.
    *
-   * \param  k [in] The (zero-based) <tt>k</tt>th block index
-   *           specifying which vector block to access.
+   * \param k [in] The (zero-based) <tt>k</tt>th block index specifying which
+   * vector block to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>
@@ -101,8 +104,8 @@ public:
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
    * <tt>k</tt>th block vector.
    *
-   * \param  k [in] The (zero-based) <tt>k</tt>th block index specifying which
-   *           vectorblock to access.
+   * \param k [in] The (zero-based) <tt>k</tt>th block index specifying which
+   * vectorblock to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>

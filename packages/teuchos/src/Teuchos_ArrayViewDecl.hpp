@@ -33,6 +33,7 @@
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_ENull.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
+#include "Teuchos_ConstTypeTraits.hpp"
 
 
 namespace Teuchos {
@@ -153,6 +154,16 @@ public:
 	 */
 	ArrayView(const ArrayView<T>& array);
 
+  /** \brief Non-const view of an std::vector<T> .*/
+	ArrayView(
+    std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+    );
+
+  /** \brief Const view of an std::vector<T> .*/
+  ArrayView(
+    const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+    );
+
 	/** \brief Destroy the array view object.
 	 */
 	~ArrayView();
@@ -261,7 +272,7 @@ public:
   /** \brief Return an iterator to beginning of the array of data.
    *
    * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
-   * returned is an <tt>ArrayView<T></tt> object and all operations are
+   * returned is an <tt>ArrayRCP<T></tt> object and all operations are
    * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
@@ -337,7 +348,7 @@ ArrayView<T> arrayView( T* p, typename ArrayView<T>::Ordinal size );
  * \relates ArrayView
  */
 template<class T>
-ArrayView<T> arrayView( std::vector<T>& vec );
+ArrayView<T> arrayViewFromVector( std::vector<T>& vec );
 
 
 /** \brief Construct a const view of an std::vector.
@@ -345,7 +356,7 @@ ArrayView<T> arrayView( std::vector<T>& vec );
  * \relates ArrayView
  */
 template<class T>
-ArrayView<const T> arrayView( const std::vector<T>& vec );
+ArrayView<const T> arrayViewFromVector( const std::vector<T>& vec );
 
 
 #ifndef __sun

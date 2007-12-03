@@ -130,6 +130,15 @@ public:
 
   //@}
 
+  /** @name Extensions to ProductVectorBase suitable for physically-blocked vectors */
+  //@{
+
+  /** \brief . */
+  void setBlock(int i, const Teuchos::RCP<const VectorBase<Scalar> >& b); 
+  /** \brief . */
+  void setNonconstBlock(int i, const Teuchos::RCP<VectorBase<Scalar> >& b); 
+  //@}
+
   /** @name Overridden from ProductVectorBase */
   //@{
 
@@ -140,15 +149,7 @@ public:
 
   //@}
 
-  /** @name Extensions to ProductVectorBase suitable for physically-blocked vectors */
-  //@{
-  /** */
-  void setBlock(int i, const Teuchos::RCP<const VectorBase<Scalar> >& b); 
-  /** */
-  void setNonconstBlock(int i, const Teuchos::RCP<VectorBase<Scalar> >& b); 
-  //@}
-
-  /** @name Overridden from ProductMultiVectorBase */
+  /** @name Overridden public functions from ProductMultiVectorBase */
   //@{
 
   /** \brief . */
@@ -164,7 +165,7 @@ public:
 
   //@}
 
-  /** @name Overridden from VectorBase */
+  /** @name Overridden public functions from VectorBase */
   //@{
 
   /** \brief . */
@@ -181,6 +182,14 @@ public:
     ,const Index                     sub_dim
     ,const Index                     global_offset
     ) const;
+
+  //@}
+
+protected:
+
+  /** @name Overridden protected functions from VectorBase */
+  //@{
+
   /** \brief . */
   void acquireDetachedVectorViewImpl(
     const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
@@ -198,7 +207,7 @@ public:
     RTOpPack::SubVectorView<Scalar>* sub_vec
     );
   /** \brief . */
-  void setSubVector(
+  void setSubVectorImpl(
     const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
     );
 

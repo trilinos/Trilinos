@@ -54,7 +54,7 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
+  const RCP<const Teuchos::Comm<Index> > &comm
   ,const Index localSubDim, const Index globalDim
   )
   :localSubDim_(0),numProc_(0),procRank_(0)
@@ -72,7 +72,7 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
-  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
+  const RCP<const Teuchos::Comm<Index> > &comm
   ,const Index localSubDim, const Index globalDim
   )
 {
@@ -103,24 +103,20 @@ void DefaultSpmdVectorSpace<Scalar>::uninitialize()
 // Overridden from VectorSpace
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
+RCP<VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMember() const
 {
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      Teuchos::rcp(this,false)
-      ,Teuchos::rcp(
-        localSubDim_ ? new Scalar[localSubDim_] : 0
-        ,Teuchos::DeallocArrayDelete<Scalar>()
-        ,true
-        )
-      ,1
+      Teuchos::rcp(this,false),
+      Teuchos::arcp<Scalar>(localSubDim_),
+      1
       )
     );
 }
 
 template<class Scalar>
-Teuchos::RCP< MultiVectorBase<Scalar> >
+RCP< MultiVectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return Teuchos::rcp(
@@ -134,7 +130,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembers(int numMembers) const
 }
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
+RCP<VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMemberView(
   const RTOpPack::SubVectorView<Scalar> &raw_v
   ) const
@@ -144,15 +140,15 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      Teuchos::rcp(this,false)
-      ,Teuchos::rcp( raw_v.values(), false )
-      ,raw_v.stride()
+      Teuchos::rcp(this,false),
+      Teuchos::arcp(raw_v.values(),0,raw_v.subDim(),false),
+      raw_v.stride()
       )
     );
 }
 
 template<class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMemberView(
   const RTOpPack::ConstSubVectorView<Scalar> &raw_v
   ) const
@@ -162,43 +158,51 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      Teuchos::rcp(this,false)
-      ,Teuchos::rcp( const_cast<Scalar*>(raw_v.values()), false )
-      ,raw_v.stride()
+      Teuchos::rcp(this,false),
+      Teuchos::arcp(const_cast<Scalar*>(raw_v.values()),0,raw_v.subDim(),false),
+      raw_v.stride()
       )
     );
 }
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultSpmdVectorSpace<Scalar>::createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
+RCP<MultiVectorBase<Scalar> >
+DefaultSpmdVectorSpace<Scalar>::createMembersView(
+  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv
+  ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
-      Teuchos::rcp(this,false)
-      ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true)
-      ,Teuchos::rcp( raw_mv.values(), false )
-      ,raw_mv.leadingDim()
+      Teuchos::rcp(this,false),
+      Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+        this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true),
+      Teuchos::arcp(raw_mv.values(),0,raw_mv.leadingDim()*raw_mv.numSubCols(),false),
+      raw_mv.leadingDim()
       )
     );
 }
 
 template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
-DefaultSpmdVectorSpace<Scalar>::createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
+RCP<const MultiVectorBase<Scalar> >
+DefaultSpmdVectorSpace<Scalar>::createMembersView(
+  const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv
+  ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
-      Teuchos::rcp(this,false)
-      ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true)
-      ,Teuchos::rcp( const_cast<Scalar*>(raw_mv.values()), false )
-      ,raw_mv.leadingDim()
+      Teuchos::rcp(this,false),
+      Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+        this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true),
+      Teuchos::arcp(
+        const_cast<Scalar*>(raw_mv.values()),
+        0,raw_mv.leadingDim()*raw_mv.numSubCols(),false),
+      raw_mv.leadingDim()
       )
     );
 }
@@ -214,7 +218,7 @@ bool DefaultSpmdVectorSpace<Scalar>::hasInCoreView(
 }
 
 template<class Scalar>
-Teuchos::RCP< const VectorSpaceBase<Scalar> >
+RCP< const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::clone() const
 {
   return Teuchos::rcp(
@@ -225,7 +229,7 @@ DefaultSpmdVectorSpace<Scalar>::clone() const
 // Overridden from SpmdVectorSpaceDefaultBase
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Comm<Index> >
+RCP<const Teuchos::Comm<Index> >
 DefaultSpmdVectorSpace<Scalar>::getComm() const
 {
   return comm_;

@@ -55,13 +55,6 @@ class DefaultColumnwiseMultiVector
 {
 public:
 
-  /** \brief . */
-  using SingleRhsLinearOpBase<Scalar>::apply;
-  /** \brief . */
-  using MultiVectorDefaultBase<Scalar>::col; // Inject *all* functions!
-  /** \brief . */
-  using MultiVectorDefaultBase<Scalar>::subView; // Inject *all* functions!
-
   /** @name Constructors/Initializers */
   //@{
 
@@ -76,14 +69,14 @@ public:
 
   /// Calls <tt>initialize()</tt>.
   DefaultColumnwiseMultiVector(
-    const Teuchos::RCP<VectorBase<Scalar> > &col_vec
+    const RCP<VectorBase<Scalar> > &col_vec
     );
 
   /// Calls <tt>initialize()</tt>.
   DefaultColumnwiseMultiVector(
-    const Teuchos::RCP<const VectorSpaceBase<Scalar> >          &range
-    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >         &domain
-    ,const Teuchos::RCP<VectorBase<Scalar> >                    col_vecs[] = NULL
+    const RCP<const VectorSpaceBase<Scalar> > &range,
+    const RCP<const VectorSpaceBase<Scalar> > &domain,
+    const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs = Teuchos::null
     );
   
   /** \brief Initialize given a single vector object.
@@ -103,7 +96,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<VectorBase<Scalar> > &col_vec
+    const RCP<VectorBase<Scalar> > &col_vec
     );
 
   /** \brief Initialize given the spaces for the columns and rows and possibly the column vectors.
@@ -139,9 +132,9 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const VectorSpaceBase<Scalar> >          &range
-    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >         &domain
-    ,const Teuchos::RCP<VectorBase<Scalar> >                    col_vecs[] = NULL
+    const RCP<const VectorSpaceBase<Scalar> > &range,
+    const RCP<const VectorSpaceBase<Scalar> > &domain,
+    const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs = Teuchos::null
     );
 
   /// Set uninitialized.
@@ -152,17 +145,18 @@ public:
   /** @name Overridden from OpBase */
   //@{
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > range() const;
+  RCP<const VectorSpaceBase<Scalar> > range() const;
   /** \brief . */
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > domain() const;
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
   //@}
 
   /** @name Overridden from MultiVectorBase */
   //@{
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> > col(Index j);
+  RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
+  RCP<MultiVectorBase<Scalar> >
+  nonconstContigSubViewImpl( const Range1D& col_rng );
   //@}
 
 protected:
@@ -204,10 +198,9 @@ protected:
 
 private:
   
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > range_;
-  Teuchos::RCP<const VectorSpaceBase<Scalar> > domain_;
-  std::vector< Teuchos::RCP<VectorBase<Scalar> > > col_vecs_;
-  int num_cols_;
+  RCP<const VectorSpaceBase<Scalar> > range_;
+  RCP<const VectorSpaceBase<Scalar> > domain_;
+  Array< RCP<VectorBase<Scalar> > > col_vecs_;
   
 }; // end class DefaultColumnwiseMultiVector
 

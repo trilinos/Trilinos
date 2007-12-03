@@ -44,9 +44,8 @@ namespace Thyra {
  * <tt>Thyra::DefaultSpmdVectorSpace</tt> and using the function
  * <tt>Thyra::createMember()</tt>.
  *
- * The storage type can be anything since a <tt>Teuchos::RCP</tt> is
- * used to pass in the local values pointer into the constructor and
- * <tt>initialize()</tt>.
+ * The storage type can be anything since an <tt>ArrayRCP</tt> is used to pass
+ * in the local values pointer into the constructor and <tt>initialize()</tt>.
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
@@ -63,9 +62,9 @@ public:
 
   /** \brief Calls <tt>initialize()</tt>. */
   DefaultSpmdVector(
-    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >   &spmdSpace
-    ,const Teuchos::RCP<Scalar>                              &localValues
-    ,const Index                                                     stride
+    const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
+    ,const ArrayRCP<Scalar> &localValues
+    ,const Index stride
     );
 
   /** \brief Initialize.
@@ -94,9 +93,9 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >   &spmdSpace
-    ,const Teuchos::RCP<Scalar>                              &localValues
-    ,const Index                                                     stride
+    const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
+    ,const ArrayRCP<Scalar> &localValues
+    ,const Index stride
     );
 
   /** \brief Set to an uninitialized state.
@@ -105,9 +104,9 @@ public:
    * <li><tt>this->spmdSpace().get() == NULL</tt>.
    */
   void uninitialize(
-    Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >    *spmdSpace     = NULL
-    ,Teuchos::RCP<Scalar>                               *localValues   = NULL
-    ,Index                                                      *stride        = NULL
+    RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace = NULL
+    ,ArrayRCP<Scalar> *localValues = NULL
+    ,Index *stride = NULL
     );
 
   //@}
@@ -116,9 +115,9 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<Scalar> getRCPtr();
+  ArrayRCP<Scalar> getRCPtr();
   /** \brief . */
-  Teuchos::RCP<const Scalar> getRCPtr() const;
+  ArrayRCP<const Scalar> getRCPtr() const;
   /** \brief . */
   Scalar* getPtr();
   /** \brief . */
@@ -132,7 +131,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
+  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
   void getLocalData( Scalar** localValues, Index* stride );
   /** \brief . */
@@ -149,9 +148,9 @@ private:
   // ///////////////////////////////////////
   // Private data members
   
-  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  spmdSpace_;
-  Teuchos::RCP<Scalar>                              localValues_;
-  Index                                                     stride_;
+  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace_;
+  ArrayRCP<Scalar> localValues_;
+  Index stride_;
 
 }; // end class DefaultSpmdVector
 
@@ -160,7 +159,7 @@ private:
 
 template<class Scalar>
 inline
-Teuchos::RCP<Scalar>
+ArrayRCP<Scalar>
 DefaultSpmdVector<Scalar>::getRCPtr()
 {
   return localValues_;
@@ -168,7 +167,7 @@ DefaultSpmdVector<Scalar>::getRCPtr()
 
 template<class Scalar>
 inline
-Teuchos::RCP<const Scalar>
+ArrayRCP<const Scalar>
 DefaultSpmdVector<Scalar>::getRCPtr() const
 {
   return localValues_;

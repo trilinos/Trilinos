@@ -67,11 +67,6 @@ class VectorDefaultBase
 {
 public:
 
-  /** \brief . */
-  using MultiVectorDefaultBase<Scalar>::col;
-  /** \brief . */
-  using SingleRhsLinearOpBase<Scalar>::apply;
-
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
 
@@ -109,53 +104,77 @@ public:
 
   /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
   //@{
-  /// Returns <tt>this->space()</tt>
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
-  /// Returns a <tt>DefaultSerialVectorSpace</tt> object with dimension 1.
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
+
+  /** \brief Returns <tt>this->space()</tt>. */
+  RCP< const VectorSpaceBase<Scalar> > range() const;
+  /** \brief Returns a <tt>DefaultSerialVectorSpace</tt> object with dimension 1. */
+  RCP< const VectorSpaceBase<Scalar> > domain() const;
+
   //@}
 
   /** @name Overridden from MultiVectorBase (should never need to be overridden in subclasses) */
   //@{
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RCP<VectorBase<Scalar> > col(Index j);
-  /// Returns <tt>this->clone_v()</tt>
-  Teuchos::RCP<MultiVectorBase<Scalar> > clone_mv() const;
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const Range1D& col_rng ) const;
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
-  /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
-  /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
-  void acquireDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const;
-  /// Implemented in terms of <tt>this->releaseDetachedView()</tt>
-  void releaseDetachedMultiVectorViewImpl(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const;
-  /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
-  void acquireNonconstDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    );
-  /// Implemented in terms of <tt>this->commitDetachedView()</tt>
-  void commitNonconstDetachedMultiVectorViewImpl(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    );
+
+  /** \brief Returns <tt>this->clone_v()</tt>. */
+  RCP<MultiVectorBase<Scalar> > clone_mv() const;
+
   //@}
 
   /** \name Overridden from VectorBase */
   //@{
 
-  /// Simply creates a new vector and copies the contents from <tt>*this</tt>.
-  Teuchos::RCP<VectorBase<Scalar> > clone_v() const;
+  /** \brief Simply creates a new vector and copies the contents from
+   * <tt>*this</tt>.
+   */
+  RCP<VectorBase<Scalar> > clone_v() const;
+
+  //@}
+
+protected:
+
+  /** @name Overridden protected functions from MultiVectorBase */
+  //@{
+
+  /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
+  RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
+  /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
+  RCP<const MultiVectorBase<Scalar> >
+  contigSubViewImpl( const Range1D& col_rng ) const;
+  /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
+  RCP<MultiVectorBase<Scalar> >
+  nonconstContigSubViewImpl( const Range1D& col_rng );
+  /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
+  RCP<const MultiVectorBase<Scalar> >
+  nonContigSubViewImpl( const ArrayView<int> &cols ) const;
+  /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
+  RCP<MultiVectorBase<Scalar> >
+  nonconstNonContigSubViewImpl( const ArrayView<int> &cols );
+  /** \brief Implemented in terms of <tt>this->acquireDetachedView()</tt>. */
+  void acquireDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
+    ) const;
+  /** \brief Implemented in terms of <tt>this->releaseDetachedView()</tt>. */
+  void releaseDetachedMultiVectorViewImpl(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const;
+  /** \brief Implemented in terms of <tt>this->acquireDetachedView()</tt>. */
+  void acquireNonconstDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
+    );
+  /** \brief Implemented in terms of <tt>this->commitDetachedView()</tt>. */
+  void commitNonconstDetachedMultiVectorViewImpl(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
+
+  //@}
+
+  /** @name Overridden protected functions from VectorBase */
+  //@{
+
   /** \brief .
    *
    * This implementation is based on a vector reduction operator class (see
@@ -217,13 +236,14 @@ public:
    * applications, this is entirely adequate.  For parallel applications this
    * may be bad!
    */
-  virtual void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
+  virtual void setSubVectorImpl( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
 
   //@}
 
-protected:
-
-  /** @name Overridden from SingleRhsLinearOpBase (should never need to be overridden in subclasses) */
+  /** @name Overridden protected functions from SingleRhsLinearOpBase.
+   *
+   * These functions should never need to be overridden in subclasses
+   */
   //@{
 
   /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
@@ -248,13 +268,13 @@ private:
   // /////////////////////////////////////
   // Private data members
 
-  Teuchos::RCP<VectorSpaceBase<Scalar> >  domain_; // Only initialized if *this is used as a MultiVectorBase
+  RCP<VectorSpaceBase<Scalar> >  domain_; // Only initialized if *this is used as a MultiVectorBase
 
   // /////////////////////////////////////
   // Private member functions
 
   void validateColRng( const Range1D &rowRng ) const;
-  void validateColIndexes(  const int numCols, const int cols[] ) const;
+  void validateColIndexes( const ArrayView<int> &cols ) const;
 
 };
 

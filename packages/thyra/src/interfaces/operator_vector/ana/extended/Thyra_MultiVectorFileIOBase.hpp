@@ -33,7 +33,9 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Abstract strategy interface for reading and writing
  * (multi)vector objects to and from files.
@@ -75,15 +77,14 @@ public:
 
   /** \brief Read a (multi)vector from a file given the file base name.
    *
-   * \param  fileNameBase
-   *           [in] The base name of the file(s) that will be used to read the
-   *           multi-vector from.
-   * \param  mv
-   *           [in/out] On output, this multi-vector will be filled with the
-   *           values from the given file(s).  This multi-vector must have
-   *           already been created and structured in such a way that is
-   *           compatible with the format of the multi-vector stored in the
-   *           given file and the implementation of this interface.
+   * \param fileNameBase [in] The base name of the file(s) that will be used
+   * to read the multi-vector from.
+   *
+   * \param mv [in/out] On output, this multi-vector will be filled with the
+   * values from the given file(s).  This multi-vector must have already been
+   * created and structured in such a way that is compatible with the format
+   * of the multi-vector stored in the given file and the implementation of
+   * this interface.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>mv!=NULL</tt>
@@ -91,30 +92,30 @@ public:
    * </ul>
    */
   virtual void readMultiVectorFromFile(
-    const std::string                 &fileNameBase
-    ,Thyra::MultiVectorBase<Scalar>   *mv
+    const std::string &fileNameBase,
+    Thyra::MultiVectorBase<Scalar> *mv
     ) const = 0;
   
   /** \brief Write a (multi)vector to a file given the file base name.
    *
-   * \param  mv
-   *           [in] The multi-vector that will be written to file(s).
-   * \param  fileNameBase
-   *           [in] The base name of the file(s) that will written to
-   *           with the values of the multi-vector.
+   * \param mv [in] The multi-vector that will be written to file(s).
+   *
+   * \param fileNameBase [in] The base name of the file(s) that will written
+   * to with the values of the multi-vector.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->isCompatible(mv)==true</tt>.
    * </ul>
    */
   virtual void writeMultiVectorToFile(
-    const Thyra::MultiVectorBase<Scalar>   &mv
-    ,const std::string                     &fileNameBase
+    const Thyra::MultiVectorBase<Scalar> &mv,
+    const std::string &fileNameBase
     ) const = 0;
   
   //@}
   
 };
+
 
 /** \brief Read a vector from file(s) given the file base name and a vector
  * space.
@@ -124,17 +125,18 @@ public:
 template<class Scalar>
 Teuchos::RCP<VectorBase<Scalar> >
 readVectorFromFile(
-  const MultiVectorFileIOBase<Scalar>     &fileIO
-  ,const std::string                      &fileNameBase
-  ,const VectorSpaceBase<Scalar>          &vecSpc
+  const MultiVectorFileIOBase<Scalar> &fileIO,
+  const std::string &fileNameBase,
+  const VectorSpaceBase<Scalar> &vecSpc
   )
 {
-  Teuchos::RCP<VectorBase<Scalar> >
-    v = createMember(vecSpc);
+  Teuchos::RCP<VectorBase<Scalar> > v = createMember(vecSpc);
   fileIO.readMultiVectorFromFile(fileNameBase,&*v);
   return v;
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_MULTI_VECTOR_FILE_IO_BASE_HPP

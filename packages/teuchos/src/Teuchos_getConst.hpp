@@ -35,14 +35,14 @@ namespace Teuchos {
 
 /** \brief Return a constant reference to an object given a non-const reference.
  *
- * \ingroup teuchos_language_support_grp
- *
  * This function just provides a shorthand notation for
  * \verbatim const_cast<const T&>(t) \endverbatim
  * as
  * \verbatim getCost(t) \endverbatim
  * so that one does not have to type in the name of the class
  * which can be quite long in some cases.
+ *
+ * \ingroup teuchos_language_support_grp
  */
 template<class T>
 inline const T& getConst( T& t ) {	return t; }

@@ -50,7 +50,7 @@
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
 #  include "Teuchos_VerboseObject.hpp"
 #  define THYRA_VECTOR_VERBOSE_OUT_STATEMENT \
-     Teuchos::RCP<Teuchos::FancyOStream> dbgout = Teuchos::VerboseObjectBase::getDefaultOStream()
+     RCP<Teuchos::FancyOStream> dbgout = Teuchos::VerboseObjectBase::getDefaultOStream()
 #endif // THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
 
 
@@ -65,7 +65,7 @@ template<class Scalar>
 std::string VectorDefaultBase<Scalar>::description() const
 {
   std::ostringstream oss;
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
+  const RCP<const VectorSpaceBase<Scalar> >
     space = this->space();
   oss << Teuchos::Describable::description();
   if(is_null(space)) {
@@ -85,7 +85,6 @@ void VectorDefaultBase<Scalar>::describe(
     ,const Teuchos::EVerbosityLevel      verbLevel
     ) const
 {
-  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   RCP<FancyOStream> out = rcp(&out_arg,false);
@@ -106,24 +105,28 @@ void VectorDefaultBase<Scalar>::describe(
 
 
 template<class Scalar>
-Teuchos::RCP< const VectorSpaceBase<Scalar> >
+RCP< const VectorSpaceBase<Scalar> >
 VectorDefaultBase<Scalar>::range() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::range() called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::range() called!\n";
 #endif
   return this->space();
 }
 
 
 template<class Scalar>
-Teuchos::RCP< const VectorSpaceBase<Scalar> >
+RCP< const VectorSpaceBase<Scalar> >
 VectorDefaultBase<Scalar>::domain() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::domain() called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::domain() called!\n";
 #endif
   if(!domain_.get())
     const_cast<VectorDefaultBase<Scalar>*>(this)->domain_
@@ -132,113 +135,56 @@ VectorDefaultBase<Scalar>::domain() const
 }
 
 
-// Overridden from SingleRhsLinearOpBase
-
-
-template<class Scalar>
-bool VectorDefaultBase<Scalar>::opSupported(ETransp M_trans) const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
-}
-
-
-template<class Scalar>
-void VectorDefaultBase<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
-  ) const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  // Validate input
-#ifdef TEUCHOS_DEBUG
-  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("VectorDefaultBase<Scalar>::apply()",*this,M_trans,x,y);
-#endif
-  // Here M = m (where m is a column vector)
-  if( M_trans == NOTRANS || (M_trans == CONJ && !ST::isComplex) ) {
-    // y = beta*y + alpha*m*x  (x is a scalar!)
-#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-    THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-    *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::apply(...) : y = beta*y + alpha*m*x  (x is a scalar!)\n";
-#endif
-    Vt_S( y, beta );
-    Vp_StV( y, Scalar(alpha*get_ele(x,0)), *this );
-  }
-  else if( M_trans == CONJTRANS || (M_trans == TRANS && !ST::isComplex) ) {
-    // y = beta*y + alpha*m'*x  (y is a scalar!)
-#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-    THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-    *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::apply(...) : y = beta*y + alpha*m'*x  (y is a scalar!)\n";
-#endif
-    Scalar y_inout;
-    if( beta == ST::zero() ) {
-      y_inout = ST::zero();
-    }
-    else {
-      y_inout = beta*get_ele(*y,0);
-    }
-#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_SPMD_APPLY_OP_DUMP)
-    RTOpPack::show_spmd_apply_op_dump = true;
-#endif
-#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT)
-    RTOpPack::rtop_helpers_dump_all = true;
-#endif
-    y_inout += alpha*this->space()->scalarProd(*this,x);
-#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_SPMD_APPLY_OP_DUMP)
-    RTOpPack::show_spmd_apply_op_dump = false;
-#endif
-#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT)
-    RTOpPack::rtop_helpers_dump_all = false;
-#endif
-    set_ele(0,y_inout,y);
-#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-    *dbgout
-      << "\nThyra::VectorDefaultBase<"<<ST::name()<<">::apply(...) : y_inout = "
-      << y_inout << "\n";
-#endif
-  }
-  else {
-    TEST_FOR_EXCEPTION(
-      true,std::logic_error
-      ,"VectorBase<"<<ST::name()<<">::apply(M_trans,...): Error, M_trans="<<toString(M_trans)<<" not supported!"
-      );
-  }
-}
-
-
 // Overridden from MultiVectorBase
 
 
 template<class Scalar>
-inline
-void VectorDefaultBase<Scalar>::validateColRng( const Range1D &col_rng ) const
-{
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( col_rng.full_range() || ( col_rng.lbound() == 0 && col_rng.ubound() == 0) ) );
-#endif
-}
-
-
-template<class Scalar>
-inline
-void VectorDefaultBase<Scalar>::validateColIndexes(  const int numCols, const int cols[] ) const
-{
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( numCols != 1 || cols == NULL || cols[0] != 0 );
-#endif
-}
-
-
-template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
-VectorDefaultBase<Scalar>::col(Index j)
+RCP<MultiVectorBase<Scalar> >
+VectorDefaultBase<Scalar>::clone_mv() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::col(j) called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::clone_mv() called!\n";
+#endif
+  return this->clone_v();
+}
+
+
+// Overridden from VectorBase
+
+
+template<class Scalar>
+RCP<VectorBase<Scalar> >
+VectorDefaultBase<Scalar>::clone_v() const
+{
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::clone_v() called!\n";
+#endif
+  RCP<VectorBase<Scalar> > copy = createMember(this->space());
+  assign( &*copy, *this );
+  return copy;
+}
+
+
+// protected
+
+
+// Overridden protected functions from MultiVectorVectorBase
+
+
+template<class Scalar>
+RCP<VectorBase<Scalar> >
+VectorDefaultBase<Scalar>::nonconstColImpl(Index j)
+{
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()<<">::nonconstColImpl(j) called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( j != 0 );
@@ -248,24 +194,14 @@ VectorDefaultBase<Scalar>::col(Index j)
 
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::clone_mv() const
+RCP<const MultiVectorBase<Scalar> >
+VectorDefaultBase<Scalar>::contigSubViewImpl( const Range1D& col_rng ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::clone_mv() called!\n";
-#endif
-  return this->clone_v();
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::subView( const Range1D& col_rng ) const
-{
-#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(col_rng) const called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::contigSubViewImpl(col_rng) const called!\n";
 #endif
   validateColRng(col_rng);
   return Teuchos::rcp(this,false);
@@ -273,12 +209,14 @@ VectorDefaultBase<Scalar>::subView( const Range1D& col_rng ) const
 
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::subView( const Range1D& col_rng )
+RCP<MultiVectorBase<Scalar> >
+VectorDefaultBase<Scalar>::nonconstContigSubViewImpl( const Range1D& col_rng )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(col_rng) called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::nonconstContigSubViewImpl(col_rng) called!\n";
 #endif
   validateColRng(col_rng);
   return Teuchos::rcp(this,false);
@@ -286,27 +224,31 @@ VectorDefaultBase<Scalar>::subView( const Range1D& col_rng )
 
 
 template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) const
+RCP<const MultiVectorBase<Scalar> >
+VectorDefaultBase<Scalar>::nonContigSubViewImpl( const ArrayView<int> &cols ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(numCols,cols) const called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::nonContigSubViewImpl(cols) called!\n";
 #endif
-  validateColIndexes(numCols,cols);
+  validateColIndexes(cols);
   return Teuchos::rcp(this,false);
 }
 
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
+RCP<MultiVectorBase<Scalar> >
+VectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl( const ArrayView<int> &cols )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(numCols,cols) called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::nonconstNonContigSubViewImpl(cols) called!\n";
 #endif
-  validateColIndexes(numCols,cols);
+  validateColIndexes(cols);
   return Teuchos::rcp(this,false);
 }
 
@@ -320,7 +262,9 @@ void VectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::acquireDetachedMultiVectorViewImpl() const called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::acquireDetachedMultiVectorViewImpl() const called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
@@ -342,12 +286,15 @@ void VectorDefaultBase<Scalar>::releaseDetachedMultiVectorViewImpl(
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::releaseDetachedMultiVectorViewImpl() const called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::releaseDetachedMultiVectorViewImpl() const called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
-  RTOpPack::ConstSubVectorView<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
+  RTOpPack::ConstSubVectorView<Scalar> sv(
+    sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
   releaseDetachedView(&sv);
   sub_mv->set_uninitialized();
 }
@@ -362,7 +309,9 @@ void VectorDefaultBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::acquireNonconstDetachedMultiVectorViewImpl() called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::acquireNonconstDetachedMultiVectorViewImpl() called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
@@ -384,32 +333,21 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::commitNonconstDetachedMultiVectorViewImpl() called!\n";
+  *dbgout << "\nThyra::VectorDefaultBase<"
+          <<Teuchos::ScalarTraits<Scalar>::name()
+          <<">::commitNonconstDetachedMultiVectorViewImpl() called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
-  RTOpPack::SubVectorView<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
+  RTOpPack::SubVectorView<Scalar> sv(
+    sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
   commitDetachedView(&sv);
   sub_mv->set_uninitialized();
 }
 
 
-// Overridden from VectorBase
-
-
-template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
-VectorDefaultBase<Scalar>::clone_v() const
-{
-#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::clone_v() called!\n";
-#endif
-  Teuchos::RCP<VectorBase<Scalar> > copy = createMember(this->space());
-  assign( &*copy, *this );
-  return copy;
-}
+// Overridden protected functions from VectorBase
 
 
 template<class Scalar>
@@ -422,7 +360,8 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(rng.ubound() < this->space()->dim()), std::out_of_range
-    ,"VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng,...): Error, rng = ["<<rng.lbound()<<","<<rng.ubound()
+    ,"VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng,...):"
+    " Error, rng = ["<<rng.lbound()<<","<<rng.ubound()
     <<"] is not in range = [0,"<<(this->space()->dim()-1)<<"]" );
 #endif
   // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
@@ -432,7 +371,7 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
   // Initialize the operator
   RTOpPack::ROpGetSubVector<Scalar> get_sub_vector_op(rng.lbound(),rng.ubound());
   // Create the reduction object (another sub_vec)
-  Teuchos::RCP<RTOpPack::ReductTarget>
+  RCP<RTOpPack::ReductTarget>
     reduct_obj = get_sub_vector_op.reduct_obj_create(); // This is really of type RTOpPack::ConstSubVectorView<Scalar>!
   // Perform the reduction (get the sub-vector requested)
   const VectorBase<Scalar>* sub_vecs[] = { this };
@@ -453,7 +392,8 @@ void VectorDefaultBase<Scalar>::releaseDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
+  // Free sub_vec if needed (note this is dependent on the implementation of
+  // this operator class!)
   RTOpPack::ReductTargetSubVectorT<Scalar>::free(sub_vec);
 }
 
@@ -490,7 +430,7 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(
     sub_vec_inout->globalOffset(), sub_vec_inout->subDim()
     ,sub_vec_inout->values(), sub_vec_inout->stride()
     );
-  VectorDefaultBase<Scalar>::setSubVector( spc_sub_vec ); // Commit the changes!
+  VectorDefaultBase<Scalar>::setSubVectorImpl( spc_sub_vec ); // Commit the changes!
   RTOpPack::ConstSubVectorView<Scalar> sub_vec(*sub_vec_inout);
   VectorDefaultBase<Scalar>::releaseDetachedVectorViewImpl( &sub_vec ); // Free the memory!
   sub_vec_inout->set_uninitialized(); // Make null as promised!
@@ -498,7 +438,7 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(
 
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec )
+void VectorDefaultBase<Scalar>::setSubVectorImpl( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec )
 {
   RTOpPack::TOpSetSubVector<Scalar> set_sub_vector_op(sub_vec);
   VectorBase<Scalar>* targ_vecs[1] = { this };
@@ -506,6 +446,114 @@ void VectorDefaultBase<Scalar>::setSubVector( const RTOpPack::SparseSubVectorT<S
     set_sub_vector_op,0,NULL,1,targ_vecs,NULL
     ,sub_vec.globalOffset(),sub_vec.subDim(),sub_vec.globalOffset() // first_ele_offset,sub_dim,global_offset
     );
+}
+
+
+// Overridden protected functions from SingleRhsLinearOpBase
+
+
+template<class Scalar>
+bool VectorDefaultBase<Scalar>::opSupported(ETransp M_trans) const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
+}
+
+
+template<class Scalar>
+void VectorDefaultBase<Scalar>::apply(
+  const ETransp                M_trans
+  ,const VectorBase<Scalar>    &x
+  ,VectorBase<Scalar>          *y
+  ,const Scalar                alpha
+  ,const Scalar                beta
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // Validate input
+#ifdef TEUCHOS_DEBUG
+  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES(
+    "VectorDefaultBase<Scalar>::apply()",*this,M_trans,x,y);
+#endif
+  // Here M = m (where m is a column vector)
+  if( M_trans == NOTRANS || (M_trans == CONJ && !ST::isComplex) ) {
+    // y = beta*y + alpha*m*x  (x is a scalar!)
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+    THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+    *dbgout << "\nThyra::VectorDefaultBase<"
+            <<Teuchos::ScalarTraits<Scalar>::name()
+            <<">::apply(...) : y = beta*y + alpha*m*x  (x is a scalar!)\n";
+#endif
+    Vt_S( y, beta );
+    Vp_StV( y, Scalar(alpha*get_ele(x,0)), *this );
+  }
+  else if( M_trans == CONJTRANS || (M_trans == TRANS && !ST::isComplex) ) {
+    // y = beta*y + alpha*m'*x  (y is a scalar!)
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+    THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+    *dbgout << "\nThyra::VectorDefaultBase<"
+            <<Teuchos::ScalarTraits<Scalar>::name()
+            <<">::apply(...) : y = beta*y + alpha*m'*x  (y is a scalar!)\n";
+#endif
+    Scalar y_inout;
+    if( beta == ST::zero() ) {
+      y_inout = ST::zero();
+    }
+    else {
+      y_inout = beta*get_ele(*y,0);
+    }
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_SPMD_APPLY_OP_DUMP)
+    RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT)
+    RTOpPack::rtop_helpers_dump_all = true;
+#endif
+    y_inout += alpha*this->space()->scalarProd(*this,x);
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_SPMD_APPLY_OP_DUMP)
+    RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT)
+    RTOpPack::rtop_helpers_dump_all = false;
+#endif
+    set_ele(0,y_inout,y);
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+    *dbgout
+      << "\nThyra::VectorDefaultBase<"<<ST::name()<<">::apply(...) : y_inout = "
+      << y_inout << "\n";
+#endif
+  }
+  else {
+    TEST_FOR_EXCEPTION(
+      true,std::logic_error
+      ,"VectorBase<"<<ST::name()
+      <<">::apply(M_trans,...): Error, M_trans="
+      <<toString(M_trans)<<" not supported!"
+      );
+  }
+}
+
+
+// private
+
+
+template<class Scalar>
+inline
+void VectorDefaultBase<Scalar>::validateColRng( const Range1D &col_rng ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(
+    !( col_rng.full_range() || ( col_rng.lbound() == 0 && col_rng.ubound() == 0) ) );
+#endif
+}
+
+
+template<class Scalar>
+inline
+void VectorDefaultBase<Scalar>::validateColIndexes( const ArrayView<int> &cols ) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( cols.size() != 1 || cols[0] != 0 );
+#endif
 }
 
 

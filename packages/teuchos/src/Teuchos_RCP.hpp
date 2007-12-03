@@ -104,6 +104,7 @@ RCP<T>::~RCP()
   }
 }
 
+
 template<class T>
 REFCOUNTPTR_INLINE
 RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
@@ -122,6 +123,7 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
   return *this;
 }
 
+
 template<class T>
 inline
 T* RCP<T>::operator->() const {
@@ -130,6 +132,7 @@ T* RCP<T>::operator->() const {
 #endif
   return ptr_;
 }
+
 
 template<class T>
 inline
@@ -140,17 +143,20 @@ T& RCP<T>::operator*() const {
   return *ptr_;
 }
 
+
 template<class T>
 inline
 T* RCP<T>::get() const {
   return ptr_;
 }
 
+
 template<class T>
 inline
 Ptr<T> RCP<T>::ptr() const {
   return Ptr<T>(ptr_);
 }
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -160,6 +166,7 @@ Ptr<T> RCP<T>::release() {
   return Ptr<T>(ptr_);
 }
 
+
 template<class T>
 REFCOUNTPTR_INLINE
 int RCP<T>::count() const {
@@ -168,12 +175,14 @@ int RCP<T>::count() const {
   return 0;
 }
 
+
 template<class T>
 REFCOUNTPTR_INLINE
 void RCP<T>::set_has_ownership() {
   if(node_)
     node_->has_ownership(true);
 }
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -182,6 +191,7 @@ bool RCP<T>::has_ownership() const {
     return node_->has_ownership();
   return false;
 }
+
 
 template<class T>
 REFCOUNTPTR_INLINE
@@ -193,6 +203,7 @@ bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const {
   // C++ protected/private protection mechanism!
 }
 
+
 template<class T>
 inline
 const RCP<T>& RCP<T>::assert_not_null() const {
@@ -200,7 +211,9 @@ const RCP<T>& RCP<T>::assert_not_null() const {
   return *this;
 }
 
+
 // very bad public functions
+
 
 template<class T>
 inline
@@ -220,6 +233,7 @@ RCP<T>::RCP( T* p, bool has_ownership_in )
 #endif
 }
 
+
 template<class T>
 REFCOUNTPTR_INLINE
 template<class Dealloc_T>
@@ -236,6 +250,7 @@ RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
 #endif
 }
 
+
 template<class T>
 inline
 RCP<T>::RCP( T* p, RCPNode* node)
@@ -244,22 +259,27 @@ RCP<T>::RCP( T* p, RCPNode* node)
   if(node_) node_->incr_count();
 }
 
+
 template<class T>
 inline
 T*& RCP<T>::access_ptr()
 {  return ptr_; }
+
 
 template<class T>
 inline
 RCPNode*& RCP<T>::access_node()
 {  return node_; }
 
+
 template<class T>
 inline
 RCPNode* RCP<T>::access_node() const
 {  return node_; }
 
+
 }  // end namespace Teuchos
+
 
 // /////////////////////////////////////////////////////////////////////////////////
 // Inline non-member functions for RCP
@@ -328,12 +348,14 @@ bool Teuchos::operator==( const RCP<T> &p, ENull )
   return p.get() == NULL;
 }
 
+
 template<class T>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const RCP<T> &p, ENull )
 {
   return p.get() != NULL;
 }
+
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
@@ -342,12 +364,14 @@ bool Teuchos::operator==( const RCP<T1> &p1, const RCP<T2> &p2 )
   return p1.access_node() == p2.access_node();
 }
 
+
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const RCP<T1> &p1, const RCP<T2> &p2 )
 {
   return p1.access_node() != p2.access_node();
 }
+
 
 template<class T2, class T1>
 REFCOUNTPTR_INLINE
@@ -364,6 +388,7 @@ Teuchos::rcp_implicit_cast(const RCP<T1>& p1)
   return p2;
 }
 
+
 template<class T2, class T1>
 REFCOUNTPTR_INLINE
 Teuchos::RCP<T2>
@@ -379,6 +404,7 @@ Teuchos::rcp_static_cast(const RCP<T1>& p1)
   return p2;
 }
 
+
 template<class T2, class T1>
 REFCOUNTPTR_INLINE
 Teuchos::RCP<T2>
@@ -393,6 +419,7 @@ Teuchos::rcp_const_cast(const RCP<T1>& p1)
   }
   return p2;
 }
+
 
 template<class T2, class T1>
 REFCOUNTPTR_INLINE
@@ -415,6 +442,7 @@ Teuchos::rcp_dynamic_cast(const RCP<T1>& p1, bool throw_on_fail)
   return p2;
 }
 
+
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RCP<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
@@ -423,13 +451,6 @@ void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teu
   p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
 }
 
-template<class T1, class T2>
-REFCOUNTPTR_INLINE
-T1& Teuchos::get_extra_data( RCP<T2>& p, const std::string& name )
-{
-  p.assert_not_null();
-  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
-}
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
@@ -439,16 +460,15 @@ const T1& Teuchos::get_extra_data( const RCP<T2>& p, const std::string& name )
   return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
 }
 
+
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-Teuchos::Ptr<T1>
-Teuchos::get_optional_extra_data( RCP<T2>& p, const std::string& name )
+T1& Teuchos::get_nonconst_extra_data( const RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
-  if( extra_data ) return Ptr<T1>(&any_cast<T1>(*extra_data));
-  return null;
+  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
 }
+
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
@@ -460,6 +480,27 @@ Teuchos::get_optional_extra_data( const RCP<T2>& p, const std::string& name )
   if( extra_data ) return Ptr<const T1>(&any_cast<T1>(*extra_data));
   return null;
 }
+
+
+template<class T1, class T2>
+REFCOUNTPTR_INLINE
+Teuchos::Ptr<T1>
+Teuchos::get_optional_nonconst_extra_data( const RCP<T2>& p, const std::string& name )
+{
+  p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
+  if( extra_data ) return Ptr<T1>(&any_cast<T1>(*extra_data));
+  return null;
+}
+
+
+template<class Dealloc_T, class T>
+inline
+const Dealloc_T& Teuchos::get_dealloc( const RCP<T>& p )
+{
+  return get_nonconst_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
+}
+
 
 template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
@@ -478,12 +519,6 @@ Dealloc_T& Teuchos::get_nonconst_dealloc( const RCP<T>& p )
   return dnode->get_nonconst_dealloc();
 }
 
-template<class Dealloc_T, class T>
-inline
-const Dealloc_T& Teuchos::get_dealloc( const RCP<T>& p )
-{
-  return get_nonconst_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
-}
 
 template<class Dealloc_T, class T>
 REFCOUNTPTR_INLINE
@@ -498,10 +533,11 @@ Teuchos::get_optional_nonconst_dealloc( const RCP<T>& p )
   return null;
 }
 
+
 template<class Dealloc_T, class T>
 inline
 Teuchos::Ptr<const Dealloc_T>
-Teuchos::get_optional_dealloc( const Teuchos::RCP<T>& p )
+Teuchos::get_optional_dealloc( const RCP<T>& p )
 {
   return get_optional_nonconst_dealloc<Dealloc_T>(const_cast<RCP<T>&>(p));
 }
@@ -534,5 +570,6 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const RCP<T>& p )
     <<"}";
   return out;
 }
+
 
 #endif // TEUCHOS_RCP_HPP

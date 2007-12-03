@@ -729,7 +729,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       Ptr<bool> constructedAztecPreconditioner;
       if(
         !reusePrec
-        && !is_null( constructedAztecPreconditioner = get_optional_extra_data<bool>(
+        && !is_null( constructedAztecPreconditioner = get_optional_nonconst_extra_data<bool>(
                aztecFwdSolver,"AOOLOWSF::constructedAztecPreconditoner") )
         && *constructedAztecPreconditioner
         )
@@ -742,7 +742,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       Ptr<bool> setPreconditionerOperator;
       if(
         localPrecType != PT_FROM_PREC_OP
-        && !is_null( setPreconditionerOperator = get_optional_extra_data<bool>(
+        && !is_null( setPreconditionerOperator = get_optional_nonconst_extra_data<bool>(
                aztecFwdSolver,"AOOLOWSF::setPreconditonerOperator") )
         && *setPreconditionerOperator
         )

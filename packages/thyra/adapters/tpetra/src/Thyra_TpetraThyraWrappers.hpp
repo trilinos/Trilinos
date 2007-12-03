@@ -364,7 +364,13 @@ Thyra::create_Vector(
   Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
   RCP<SpmdVectorBase<Scalar> >
-    v = Teuchos::rcp(new DefaultSpmdVector<Scalar>(space,Teuchos::rcp(localValues,false),1));
+    v = Teuchos::rcp(
+      new DefaultSpmdVector<Scalar>(
+        space,
+        Teuchos::arcp(localValues,0,tpetra_v->vectorSpace().getNumMyEntries(),false),
+        1
+        )
+      );
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
 }
@@ -389,7 +395,13 @@ Thyra::create_Vector(
   const Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
   RCP<const SpmdVectorBase<Scalar> >
-    v = Teuchos::rcp(new DefaultSpmdVector<Scalar>(space,Teuchos::rcp(const_cast<Scalar*>(localValues),false),1));
+    v = Teuchos::rcp(
+      new DefaultSpmdVector<Scalar>(
+        space,
+        Teuchos::arcp(const_cast<Scalar*>(localValues),0,tpetra_v->vectorSpace().getNumMyEntries(),false),
+        1
+        )
+      );
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
 }

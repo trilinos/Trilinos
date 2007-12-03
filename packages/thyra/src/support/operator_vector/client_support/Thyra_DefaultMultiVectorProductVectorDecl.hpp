@@ -136,7 +136,7 @@ public:
 
   //@}
 
-  /** @name Overridden from VectorBase */
+  /** @name Overridden public functions from VectorBase */
   //@{
 
   /** \brief . */
@@ -153,6 +153,14 @@ public:
     const Index sub_dim,
     const Index global_offset
     ) const;
+
+  //@}
+
+protected:
+
+  /** @name Overridden protected functions from VectorBase */
+  //@{
+
   /** \brief . */
   void acquireDetachedVectorViewImpl(
     const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
@@ -170,7 +178,7 @@ public:
     RTOpPack::SubVectorView<Scalar>* sub_vec
     );
   /** \brief . */
-  void setSubVector(
+  void setSubVectorImpl(
     const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
     );
 

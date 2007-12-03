@@ -70,6 +70,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+	$(srcdir)/Teuchos_ConstTypeTraits.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
@@ -110,10 +111,10 @@ CORE_H = \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
-	$(srcdir)/Teuchos_RCPNode.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RCPDecl.hpp \
+	$(srcdir)/Teuchos_RCPNode.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \

@@ -29,11 +29,14 @@
 #ifndef THYRA_VECTOR_BASE_DECL_HPP
 #define THYRA_VECTOR_BASE_DECL_HPP
 
+
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorBaseDecl.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Abstract interface for finite-dimensional dense vectors.
  *
@@ -130,9 +133,6 @@ class VectorBase : virtual public MultiVectorBase<Scalar>
 {
 public:
 
-  /** \brief . */
-  using MultiVectorBase<Scalar>::col;
-
   /** @name Space membership */
   //@{
 
@@ -210,24 +210,69 @@ public:
 
   //@}
 
-  /** \brief Temporary NVI function. */
+  /** @name Explicit sub-vector access */
+  //@{
+
+  /** \brief Calls acquireDetachedVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
   void acquireDetachedView(
     const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const
-    {
-      acquireDetachedVectorViewImpl(rng,sub_vec);
-    }
+    { acquireDetachedVectorViewImpl(rng,sub_vec); }
 
-  /** @name Explicit sub-vector access */
+  /** \brief Calls releaseDetachedVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  void releaseDetachedView(
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const
+    { releaseDetachedVectorViewImpl(sub_vec); }
+
+  /** \brief Calls acquireNonconstDetachedVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  void acquireDetachedView(
+    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
+    )
+    { acquireNonconstDetachedVectorViewImpl(rng,sub_vec); }
+
+  /** \brief Calls commitDetachedView().
+   *
+   * Temporary NVI function.
+   */
+  void commitDetachedView(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    )
+    { commitNonconstDetachedVectorViewImpl(sub_vec); }
+
+  /** \brief Calls setSubVectorImpl().
+   *
+   * Temporary NVI function.
+   */
+  void setSubVector(
+    const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
+    )
+    { setSubVectorImpl(sub_vec); }
+
+  //@}
+
+protected:
+
+  /** @name Protected virtual functions to be overridden by subclasses */
   //@{
 
   /** \brief Get a non-mutable explicit view of a sub-vector.
    *
-   * @param  rng      [in] The range of the elements to extract the sub-vector view.
-   * @param  sub_vec  [in/out] View of the sub-vector.  Prior to the
-   *                  first call to this function, <tt>sub_vec->set_uninitialized()</tt> must be called.
-   *                  Technically <tt>*sub_vec</tt> owns the memory but this memory can be freed
-   *                  only by calling <tt>this->releaseDetachedView(sub_vec)</tt>.
+   * \param rng [in] The range of the elements to extract the sub-vector view.
+   *
+   * \param sub_vec [in/out] View of the sub-vector.  Prior to the first call
+   * to this function, <tt>sub_vec->set_uninitialized()</tt> must be called.
+   * Technically <tt>*sub_vec</tt> owns the memory but this memory can be
+   * freed only by calling <tt>this->releaseDetachedView(sub_vec)</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -265,20 +310,12 @@ public:
     const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const = 0;
 
-  /** \brief Temporary NVI function. */
-  void releaseDetachedView(
-    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const
-    {
-      releaseDetachedVectorViewImpl(sub_vec);
-    }
-
   /** \brief Free an explicit view of a sub-vector.
    *
-   * @param  sub_vec
-   *        [in/out] The memory referred to by <tt>sub_vec->values()</tt>
-   *        will be released if it was allocated and <tt>*sub_vec</tt>
-   *              will be zeroed out using <tt>sub_vec->set_uninitialized()</tt>.
+   * \param sub_vec [in/out] The memory referred to by
+   * <tt>sub_vec->values()</tt> will be released if it was allocated and
+   * <tt>*sub_vec</tt> will be zeroed out using
+   * <tt>sub_vec->set_uninitialized()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -296,23 +333,16 @@ public:
     RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const = 0;
 
-  /** \brief Temporary NVI function. */
-  void acquireDetachedView(
-    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
-    )
-    {
-      acquireNonconstDetachedVectorViewImpl(rng,sub_vec);
-    }
-
   /** \brief Get a mutable explicit view of a sub-vector.
    *
-   * @param  rng      [in] The range of the elements to extract the sub-vector view.
-   * @param  sub_vec  [in/out] Mutable view of the sub-vector.  Prior to the
-   *                  first call to this function <tt>sub_vec->set_uninitialized()</tt> must
-   *                  have been called for the correct behavior.  Technically
-   *                  <tt>*sub_vec</tt> owns the memory but this memory must be committed
-   *                  and freed by calling <tt>this->commitDetachedView(sub_vec)</tt> after
-   *                  the client is finished modifying the view.
+   * \param rng [in] The range of the elements to extract the sub-vector view.
+   *
+   * \param sub_vec [in/out] Mutable view of the sub-vector.  Prior to the
+   * first call to this function <tt>sub_vec->set_uninitialized()</tt> must
+   * have been called for the correct behavior.  Technically <tt>*sub_vec</tt>
+   * owns the memory but this memory must be committed and freed by calling
+   * <tt>this->commitDetachedView(sub_vec)</tt> after the client is finished
+   * modifying the view.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -355,22 +385,13 @@ public:
     const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
     ) = 0;
 
-  /** \brief Temporary NVI function. */
-  void commitDetachedView(
-    RTOpPack::SubVectorView<Scalar>* sub_vec
-    )
-    {
-      commitNonconstDetachedVectorViewImpl(sub_vec);
-    }
-
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
-   * @param sub_vec
-   *        [in/out] The data in <tt>sub_vec->values()</tt> will be written
-   *              back internal storage and the memory referred to by
-   *              <tt>sub_vec->values()</tt> will be released if it was allocated
-   *        and <tt>*sub_vec</tt> will be zeroed out using
-   *        <tt>sub_vec->set_uninitialized()</tt>.
+   * \param sub_vec [in/out] The data in <tt>sub_vec->values()</tt> will be
+   * written back internal storage and the memory referred to by
+   * <tt>sub_vec->values()</tt> will be released if it was allocated and
+   * <tt>*sub_vec</tt> will be zeroed out using
+   * <tt>sub_vec->set_uninitialized()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -392,14 +413,14 @@ public:
 
   /** \brief Set a specific sub-vector.
    *
-   * @param  sub_vec  [in] Represents the elements in the sub-vector to be set.
+   * \param sub_vec [in] Represents the elements in the sub-vector to be set.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>sub_vec.globalOffset() + sub_vec.subDim() < this->space()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
-    *
+   *
    * <b>Postconditions:</b><ul>
    * <li> All of the elements in the range
    *      <tt>[sub_vec.globalOffset(),sub_vec.globalOffset()+sub_vec.subDim()-1]</tt>
@@ -413,57 +434,65 @@ public:
    * vector object will be set equal to those in the input view
    * <tt>sub_vec</tt>.
    */
-  virtual void setSubVector(
+  virtual void setSubVectorImpl(
     const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
     ) = 0;
 
   //@}
 
-}; // end class VectorBase
+};
+
 
 /** \brief Apply a reduction/transformation operator over a set of vectors:
  * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
  * z[0]...z[nz-1],(*reduct_obj)</tt>.
  *
- * @param  op
- *            [in] Reduction/transformation operator to apply over each sub-vector
- *            and assemble the intermediate targets into <tt>reduct_obj</tt> (if
- *            <tt>reduct_obj != RTOp_REDUCT_OBJ_NULL</tt>).
- * @param  num_vecs
- *           [in] Number of non-mutable vectors in <tt>vecs[]</tt>.
- *           If <tt>vecs==NULL</tt> then this argument is ignored but should be set to zero.
- * @param  vecs
- *           [in] Array (length <tt>num_vecs</tt>) of a set of pointers to
- *           non-mutable vectors to include in the operation.
- *           The order of these vectors is significant to <tt>op</tt>.
- * @param  num_targ_vecs
- *           [in] Number of mutable vectors in <tt>targ_vecs[]</tt>.
- *           If <tt>targ_vecs==NULL</tt>  then this argument is ignored but should be set to zero.
- * @param  targ_vecs
- *           [in] Array (length <tt>num_targ_vecs</tt>) of a set of pointers to
- *           mutable vectors to include in the operation.
- *           The order of these vectors is significant to <tt>op</tt>.
- *           If <tt>targ_vecs==NULL</tt> then <tt>op</tt> is called with no mutable vectors.
- * @param  reduct_obj
- *           [in/out] Target object of the reduction operation.
- *           This object must have been created by the <tt>op.reduct_obj_create_raw(&reduct_obj)</tt>
- *           function first.  The reduction operation will be added to <tt>(*reduct_obj)</tt> if
- *           <tt>(*reduct_obj)</tt> has already been through a reduction.  By allowing the info in
- *           <tt>(*reduct_obj)</tt> to be added to the reduction over all of these vectors, the reduction
- *           operation can be accumulated over a set of abstract vectors  which can be useful for implementing
- *           composite vectors for instance.  If <tt>op.get_reduct_type_num_entries(...)</tt> returns
- *           <tt>num_values == 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars == 0</tt> then
- *           <tt>reduct_obj</tt> should be set to <tt>RTOp_REDUCT_OBJ_NULL</tt> and no reduction will be performed.
- * @param  first_ele_offset
- *           [in] (default = 0) The index of the first element in <tt>this</tt> to be included.
- * @param  sub_dim
- *           [in] (default = -1) The number of elements in these vectors to include in the reduction/transformation
- *            operation.  The value of <tt>sub_dim < 0</tt> means to include all available elements.
- *            The value of <tt>sub_dim == 0</tt> means to include none of the elements of the vector.  This last
- *            value is somewhat undefined but has meaning in some specialized contexts (such as for SPMD
- *            vectors).
- * @param  global_offset
- *           [in] (default = 0) The offset applied to the included vector elements.
+ * \param op [in] Reduction/transformation operator to apply over each
+ * sub-vector and assemble the intermediate targets into <tt>reduct_obj</tt>
+ * (if <tt>reduct_obj != RTOp_REDUCT_OBJ_NULL</tt>).
+ *
+ * \param num_vecs [in] Number of non-mutable vectors in <tt>vecs[]</tt>.  If
+ * <tt>vecs==NULL</tt> then this argument is ignored but should be set to
+ * zero.
+ *
+ * \param vecs [in] Array (length <tt>num_vecs</tt>) of a set of pointers to
+ * non-mutable vectors to include in the operation.  The order of these
+ * vectors is significant to <tt>op</tt>.
+ *
+ * \param num_targ_vecs [in] Number of mutable vectors in
+ * <tt>targ_vecs[]</tt>.  If <tt>targ_vecs==NULL</tt> then this argument is
+ * ignored but should be set to zero.
+ *
+ * \param targ_vecs [in] Array (length <tt>num_targ_vecs</tt>) of a set of
+ * pointers to mutable vectors to include in the operation.  The order of
+ * these vectors is significant to <tt>op</tt>.  If <tt>targ_vecs==NULL</tt>
+ * then <tt>op</tt> is called with no mutable vectors.
+ *
+ * \param reduct_obj [in/out] Target object of the reduction operation.  This
+ * object must have been created by the
+ * <tt>op.reduct_obj_create_raw(&reduct_obj)</tt> function first.  The
+ * reduction operation will be added to <tt>(*reduct_obj)</tt> if
+ * <tt>(*reduct_obj)</tt> has already been through a reduction.  By allowing
+ * the info in <tt>(*reduct_obj)</tt> to be added to the reduction over all of
+ * these vectors, the reduction operation can be accumulated over a set of
+ * abstract vectors which can be useful for implementing composite vectors for
+ * instance.  If <tt>op.get_reduct_type_num_entries(...)</tt> returns
+ * <tt>num_values == 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars ==
+ * 0</tt> then <tt>reduct_obj</tt> should be set to
+ * <tt>RTOp_REDUCT_OBJ_NULL</tt> and no reduction will be performed.
+ *
+ * \param first_ele_offset [in] (default = 0) The index of the first element
+ * in <tt>this</tt> to be included.
+ *
+ * \param sub_dim [in] (default = -1) The number of elements in these vectors
+ * to include in the reduction/transformation operation.  The value of
+ * <tt>sub_dim < 0</tt> means to include all available elements.  The value of
+ * <tt>sub_dim == 0</tt> means to include none of the elements of the vector.
+ * This last value is somewhat undefined but has meaning in some specialized
+ * contexts (such as for SPMD vectors).
+ *
+ * \param global_offset [in] (default = 0) The offset applied to the included
+ * vector elements.
  *
  *
  * <b>Preconditions:</b><ul>
@@ -528,6 +557,8 @@ void applyOp(
       reduct_obj,first_ele_offset,sub_dim,global_offset);
 }
 
+
 } // end namespace Thyra
+
 
 #endif  // THYRA_VECTOR_BASE_DECL_HPP

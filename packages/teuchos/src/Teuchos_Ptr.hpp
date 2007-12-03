@@ -33,6 +33,7 @@
 
 #include "Teuchos_ENull.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_dyn_cast.hpp"
 
 
 namespace Teuchos {
@@ -296,6 +297,103 @@ template<class T1, class T2>
 bool operator!=( const Ptr<T1> &p1, const Ptr<T2> &p2 )
 {
   return p1.get() != p2.get();
+}
+
+
+/** \brief Implicit cast of underlying <tt>Ptr</tt> type from <tt>T1*</tt> to
+ * <tt>T2*</tt>.
+ *
+ * The function will compile only if (<tt>T2* p2 = p1.get();</tt>) compiles.
+ *
+ * This is to be used for conversions up an inheritance hierarchy and from
+ * non-const to const and any other standard implicit pointer conversions
+ * allowed by C++.
+ *
+ * \relates Ptr
+ */
+template<class T2, class T1>
+Ptr<T2> ptr_implicit_cast(const Ptr<T1>& p1)
+{
+  return Ptr<T2>(p1.get()); // Will only compile if conversion is legal!
+}
+
+
+/** \brief Static cast of underlying <tt>Ptr</tt> type from <tt>T1*</tt> to
+ * <tt>T2*</tt>.
+ *
+ * The function will compile only if (<tt>static_cast<T2*>(p1.get());</tt>)
+ * compiles.
+ *
+ * This can safely be used for conversion down an inheritance hierarchy with
+ * polymorphic types only if <tt>dynamic_cast<T2>(p1.get()) ==
+ * static_cast<T2>(p1.get())</tt>.  If not then you have to use
+ * <tt>ptr_dynamic_cast<tt><T2>(p1)</tt>.
+ *
+ * \relates Ptr
+ */
+template<class T2, class T1>
+Ptr<T2> ptr_static_cast(const Ptr<T1>& p1)
+{
+  return Ptr<T2>(static_cast<T2*>(p1.get())); // Will only compile if conversion is legal!
+}
+
+
+/** \brief Constant cast of underlying <tt>Ptr</tt> type from <tt>T1*</tt> to
+ * <tt>T2*</tt>.
+ *
+ * This function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>)
+ * compiles.
+ *
+ * \relates Ptr
+ */
+template<class T2, class T1>
+Ptr<T2> ptr_const_cast(const Ptr<T1>& p1)
+{
+  return Ptr<T2>(const_cast<T2*>(p1.get())); // Will only compile if conversion is legal!
+}
+
+
+/** \brief Dynamic cast of underlying <tt>Ptr</tt> type from <tt>T1*</tt> to
+ * <tt>T2*</tt>.
+ *
+ * \param p1 [in] The smart pointer casting from
+ *
+ * \param throw_on_fail [in] If <tt>true</tt> then if the cast fails (for
+ * <tt>p1.get()!=NULL) then a <tt>std::bad_cast</tt> std::exception is thrown
+ * with a very informative error message.
+ *
+ * <b>Postconditions:</b><ul>
+ * <li> If <tt>( p1.get()!=NULL && throw_on_fail==true && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
+ *      then an <tt>std::bad_cast</tt> std::exception is thrown with a very informative error message.
+ * <li> If <tt>( p1.get()!=NULL && dynamic_cast<T2*>(p1.get())!=NULL ) == true</tt>
+ *      then <tt>return.get() == dynamic_cast<T2*>(p1.get())</tt>.
+ * <li> If <tt>( p1.get()!=NULL && throw_on_fail==false && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
+ *      then <tt>return.get() == NULL</tt>.
+ * <li> If <tt>( p1.get()==NULL ) == true</tt>
+ *      then <tt>return.get() == NULL</tt>.
+ * </ul>
+ *
+ * This function will compile only if (<tt>dynamic_cast<T2*>(p1.get());</tt>)
+ * compiles.
+ *
+ * \relates Ptr
+ */
+template<class T2, class T1>
+Ptr<T2> ptr_dynamic_cast(
+  const Ptr<T1>& p1, bool throw_on_fail = false
+  )
+{
+  if( p1.get() ) {
+    T2 *check = NULL;
+    if(throw_on_fail)
+      check = &dyn_cast<T2>(*p1);
+    else
+      check = dynamic_cast<T2*>(p1.get());
+    if(check) {
+      return Ptr<T2>(check);
+    }
+  }
+  return null;
 }
 
 

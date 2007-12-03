@@ -37,6 +37,7 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Thyra {
 
@@ -48,7 +49,7 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector()
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
-  const Teuchos::RCP<VectorBase<Scalar> > &col_vec
+  const RCP<VectorBase<Scalar> > &col_vec
   )
 {
   this->initialize(col_vec);
@@ -56,9 +57,9 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
-  const  Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
-  ,const  Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
-  ,const Teuchos::RCP<VectorBase<Scalar> >              col_vecs[]
+  const RCP<const VectorSpaceBase<Scalar> > &range,
+  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs
   )
 {
   this->initialize(range,domain,col_vecs);
@@ -66,7 +67,7 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
 
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
-  const Teuchos::RCP<VectorBase<Scalar> > &col_vec
+  const RCP<VectorBase<Scalar> > &col_vec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -76,16 +77,15 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
 #endif
   range_  = col_vec->space();
   domain_ = range_->smallVecSpcFcty()->createVecSpc(1);
-  num_cols_ = 1;
   col_vecs_.resize(1);
   col_vecs_[0] = col_vec;
 }
   
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
-  const  Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
-  ,const  Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
-  ,const Teuchos::RCP<VectorBase<Scalar> >              col_vecs[]
+  const RCP<const VectorSpaceBase<Scalar> > &range,
+  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -98,14 +98,13 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
 #endif
   range_ = range;
   domain_ = domain;
-  num_cols_ = domain->dim();
-  col_vecs_.resize(num_cols_);
-  if(col_vecs) {
-    for( Index j = 0; j < num_cols_; ++j )
+  col_vecs_.resize(col_vecs.size());
+  if (col_vecs.size()) {
+    for( Index j = 0; j < col_vecs.size(); ++j )
       col_vecs_[j] = col_vecs[j];
   }
   else {
-    for( Index j = 0; j < num_cols_; ++j )
+    for( Index j = 0; j < col_vecs.size(); ++j )
       col_vecs_[j] = createMember(range_);
   }
 }
@@ -121,14 +120,14 @@ void DefaultColumnwiseMultiVector<Scalar>::set_uninitialized()
 // Overridden from OpBase
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::range() const
 {
   return range_;
 }
 
 template<class Scalar>
-Teuchos::RCP<const VectorSpaceBase<Scalar> >
+RCP<const VectorSpaceBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::domain() const
 {
   return domain_;
@@ -193,19 +192,21 @@ void DefaultColumnwiseMultiVector<Scalar>::apply(
 // Overridden from MultiVectorBase
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
-DefaultColumnwiseMultiVector<Scalar>::col(Index j)
+RCP<VectorBase<Scalar> >
+DefaultColumnwiseMultiVector<Scalar>::nonconstColImpl(Index j)
 {
+  using Teuchos::as;
+  const int num_cols = col_vecs_.size();
   TEST_FOR_EXCEPTION(
-    !(  0 <= j  && j < num_cols_ ), std::logic_error
-    ,"Error, j = " << j << " does not fall in the range [0,"<<(num_cols_-1)<< "]!"
+    !(  0 <= j  && j < num_cols ), std::logic_error
+    ,"Error, j = " << j << " does not fall in the range [0,"<<(num_cols-1)<< "]!"
     );
   return col_vecs_[j];
 }
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultColumnwiseMultiVector<Scalar>::subView( const Range1D& col_rng_in )
+RCP<MultiVectorBase<Scalar> >
+DefaultColumnwiseMultiVector<Scalar>::nonconstContigSubViewImpl( const Range1D& col_rng_in )
 {
   const Index numCols = domain_->dim();
   const Range1D col_rng = Teuchos::full_range(col_rng_in,0,numCols-1);
@@ -218,9 +219,9 @@ DefaultColumnwiseMultiVector<Scalar>::subView( const Range1D& col_rng_in )
 #endif
   return Teuchos::rcp(
     new DefaultColumnwiseMultiVector<Scalar>(
-      range_
-      ,domain_->smallVecSpcFcty()->createVecSpc(col_rng.size())
-      ,&col_vecs_[col_rng.lbound()]
+      range_,
+      domain_->smallVecSpcFcty()->createVecSpc(col_rng.size()),
+      col_vecs_(col_rng.lbound(),col_rng.size())
       )
     );
 }

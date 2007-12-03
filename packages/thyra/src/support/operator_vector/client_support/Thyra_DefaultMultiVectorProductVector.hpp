@@ -50,8 +50,8 @@ DefaultMultiVectorProductVector<Scalar>::DefaultMultiVectorProductVector()
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::initialize(
-  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<MultiVectorBase<Scalar> > &multiVec
+  const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const RCP<MultiVectorBase<Scalar> > &multiVec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -75,8 +75,8 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::initialize(
-  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<const MultiVectorBase<Scalar> > &multiVec
+  const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const MultiVectorBase<Scalar> > &multiVec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -99,7 +99,7 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
 
 
 template <class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
+RCP<MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVector()
 {
   return multiVec_.getNonconstObj();
@@ -107,7 +107,7 @@ DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVector()
 
 
 template <class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
+RCP<const MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getMultiVector() const
 {
   return multiVec_.getConstObj();
@@ -146,8 +146,6 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RCP;
-  using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
   RCP<FancyOStream> out = rcp(&out_arg,false);
@@ -179,7 +177,7 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
 
 
 template <class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
+RCP<VectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
 #ifdef TEUCHOS_DEBUG
@@ -190,7 +188,7 @@ DefaultMultiVectorProductVector<Scalar>::getNonconstVectorBlock(const int k)
 
 
 template <class Scalar>
-Teuchos::RCP<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getVectorBlock(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -204,7 +202,7 @@ DefaultMultiVectorProductVector<Scalar>::getVectorBlock(const int k) const
 
 
 template <class Scalar>
-Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
+RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::productSpace() const
 {
   return productSpace_;
@@ -222,7 +220,7 @@ bool DefaultMultiVectorProductVector<Scalar>::blockIsConst(const int k) const
 
 
 template <class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
+RCP<MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
@@ -230,18 +228,18 @@ DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVectorBlock(const int k
 
 
 template <class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
+RCP<const MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
   return getVectorBlock(k);
 }
 
 
-// Overridden from VectorBase
+// Overridden public functions from VectorBase
 
 
 template <class Scalar>
-Teuchos::RCP< const VectorSpaceBase<Scalar> >
+RCP< const VectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::space() const
 {
   return productSpace_;
@@ -269,12 +267,18 @@ void DefaultMultiVectorProductVector<Scalar>::applyOp(
 }
 
 
+// protected
+
+
+// Overridden protected functions from VectorBase
+
+
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::acquireDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  this->getDefaultProductVector()->acquireDetachedVectorViewImpl(rng_in,sub_vec);
+  this->getDefaultProductVector()->acquireDetachedView(rng_in,sub_vec);
 }
 
 
@@ -283,7 +287,7 @@ void DefaultMultiVectorProductVector<Scalar>::releaseDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  this->getDefaultProductVector()->releaseDetachedVectorViewImpl(sub_vec);
+  this->getDefaultProductVector()->releaseDetachedView(sub_vec);
 }
 
 
@@ -306,7 +310,7 @@ void DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewIm
 
 
 template <class Scalar>
-void DefaultMultiVectorProductVector<Scalar>::setSubVector(
+void DefaultMultiVectorProductVector<Scalar>::setSubVectorImpl(
   const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
   )
 {
@@ -318,7 +322,7 @@ void DefaultMultiVectorProductVector<Scalar>::setSubVector(
 
 
 template <class Scalar>
-Teuchos::RCP<const DefaultProductVector<Scalar> >
+RCP<const DefaultProductVector<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getDefaultProductVector() const
 {
 
@@ -327,8 +331,6 @@ DefaultMultiVectorProductVector<Scalar>::getDefaultProductVector() const
   // automatically.  Later, we might be able to change this once we have a
   // Thyra::MultiVectorBase::hasDirectColumnVectorView() function and it
   // returns true.  Until then, this is the safe way to do this ...
-
-  using Teuchos::Array; using Teuchos::RCP;
 
   Array<RCP<const VectorBase<Scalar> > > vecArray;
   for ( int k = 0; k < numBlocks_; ++k) {

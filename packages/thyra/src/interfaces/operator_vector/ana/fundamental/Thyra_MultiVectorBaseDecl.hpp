@@ -32,7 +32,9 @@
 #include "Thyra_LinearOpBaseDecl.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Interface for a collection of column vectors called a multi-vector.
  * 
@@ -477,15 +479,239 @@ class MultiVectorBase : virtual public LinearOpBase<Scalar>
 {
 public:
 
-  /** \brief . */
-  using LinearOpBase<Scalar>::describe;
-
   /** @name Provide access to the columns as VectorBase objects */
+  //@{
+
+  /** \brief Calls colImpl().
+   *
+   * Temporary NVI function.
+   */
+  RCP<const VectorBase<Scalar> > col(Index j) const
+    { return colImpl(j); }
+
+  /** \brief Calls nonconstColImpl().
+   *
+   * Temporary NVI function.
+   */
+  RCP<VectorBase<Scalar> > col(Index j)
+    { return nonconstColImpl(j); }
+
+  //@}
+
+  /** @name Multi-vector sub-views */
+  //@{
+
+  /** \brief Calls contigSubViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  RCP<const MultiVectorBase<Scalar> >
+  subView( const Range1D& colRng ) const
+    {
+      return contigSubViewImpl(colRng);
+    }
+
+  /** \brief Calls nonconstContigSubViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  RCP<MultiVectorBase<Scalar> >
+  subView( const Range1D& colRng )
+    { return nonconstContigSubViewImpl(colRng); }
+
+  /** \brief nonContigSubViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  RCP<const MultiVectorBase<Scalar> >
+  subView( const ArrayView<const int> &cols ) const
+    { return nonContigSubViewImpl(cols); }
+
+  /** \brief nonconstNonContigSubViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  RCP<MultiVectorBase<Scalar> >
+  subView( const ArrayView<const int> &cols )
+    { return nonconstNonContigSubViewImpl(cols); }
+  
+  //@}
+
+  /** @name Collective reduction/transformation operator apply functions */
+  //@{
+
+  /** \brief Calls mvMultiReductApplyOpImpl().
+   *
+   * Temporary NVI function.
+   */
+  void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+    const Index primary_first_ele_offset, // ToDo: Remove!
+    const Index primary_sub_dim, // ToDo: Remove!
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
+    ) const
+    {
+      mvMultiReductApplyOpImpl(
+        primary_op, multi_vecs, targ_multi_vecs, reduct_objs,
+        primary_first_ele_offset, primary_sub_dim,
+        primary_global_offset, secondary_first_ele_offset, secondary_sub_dim
+        );
+    }
+
+  /** \brief mvSingleReductApplyOpImpl().
+   *
+   * Temporary NVI function.
+   */
+  void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const RTOpPack::RTOpT<Scalar> &secondary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index primary_first_ele_offset, // ToDo: Remove!
+    const Index primary_sub_dim, // ToDo: Remove!
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
+    ) const
+    {
+      mvSingleReductApplyOpImpl(
+        primary_op, secondary_op, multi_vecs, targ_multi_vecs, reduct_obj,
+        primary_first_ele_offset, primary_sub_dim,
+        primary_global_offset, secondary_first_ele_offset,
+        secondary_sub_dim
+        );
+    }
+  
+  //@}
+
+  /** @name Explicit sub-multi-vector access */
+  //@{
+
+  /** \brief Calls acquireDetachedMultiVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  void acquireDetachedView(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
+    ) const
+    { acquireDetachedMultiVectorViewImpl( rowRng, colRng, sub_mv ); }
+
+  /** \brief Calls releaseDetachedMultiVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  void releaseDetachedView(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const
+    { releaseDetachedMultiVectorViewImpl(sub_mv); }
+
+  /** \brief Calls acquireNonconstDetachedMultiVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  void acquireDetachedView(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
+    )
+    { acquireNonconstDetachedMultiVectorViewImpl(rowRng,colRng,sub_mv); }
+
+  /** \brief Calls commitNonconstDetachedMultiVectorViewImpl().
+   *
+   * Temporary NVI function.
+   */
+  void commitDetachedView(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    )
+    { commitNonconstDetachedMultiVectorViewImpl(sub_mv); }
+
+  //@}
+
+  /** @name Cloning */
+  //@{
+
+  /** \brief Clone the multi-vector object (if supported).
+   *
+   * The default implementation uses the vector space to create a
+   * new multi-vector object and then uses a transformation operator
+   * to assign the vector elements.  A subclass should only override
+   * this function if it can do something more sophisticated
+   * (i.e. lazy evaluation) but in general, this is not needed.
+   */
+  virtual RCP<MultiVectorBase<Scalar> > clone_mv() const = 0;
+
+  //@}
+
+  /** @name Overridden functions from LinearOpBase */
+  //@{
+
+  /// This function is simply overridden to return <tt>this->clone_mv()</tt>.
+  RCP<const LinearOpBase<Scalar> > clone() const;
+
+  //@}
+
+  /** @name Deprecated */
+  //@{
+
+  /** \brief Deprecated. */
+  RCP<const MultiVectorBase<Scalar> >
+  subView( const int numCols, const int cols[] ) const
+    { return subView( Teuchos::arrayView<const int>(cols,numCols) ); }
+
+  /** \brief Deprecated. */
+  RCP<MultiVectorBase<Scalar> >
+  subView( const int numCols, const int cols[] )
+    { return subView( Teuchos::arrayView<const int>(cols,numCols) ); }
+
+  /** \brief Deprecated. */
+  void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const int num_multi_vecs,
+    const MultiVectorBase<Scalar>*const multi_vecs_in[],
+    const int num_targ_multi_vecs,
+    MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
+    RTOpPack::ReductTarget*const reduct_objs_inout[],
+    const Index primary_first_ele_offset,
+    const Index primary_sub_dim,
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim_in
+    ) const;
+
+  /** \brief Deprecated. */
+  void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const RTOpPack::RTOpT<Scalar> &secondary_op,
+    const int num_multi_vecs,
+    const MultiVectorBase<Scalar>*const multi_vecs_in[],
+    const int num_targ_multi_vecs,
+    MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
+    RTOpPack::ReductTarget* reduct_obj,
+    const Index primary_first_ele_offset,
+    const Index primary_sub_dim,
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
+    ) const;
+
+  //@}
+
+protected:
+
+  /** @name Protected virtual functions to be overridden by subclasses */
   //@{
 
   /** \brief Return a non-changeable view of a constituent column vector.
    *
-   * \param  j  [in] zero-based index of the column to return a view for
+   * \param j [in] zero-based index of the column to return a view for
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -504,11 +730,11 @@ public:
    * implementation needed by most subclasses) is based on the
    * non-const version <tt>col()</tt>.
    */
-  virtual RCP<const VectorBase<Scalar> > col(Index j) const;
+  virtual RCP<const VectorBase<Scalar> > colImpl(Index j) const;
 
   /** \brief Return a changeable view of a constituent column vector.
    *
-   * \param  j  [in] zero-based index of the column to return a view for
+   * \param j [in] zero-based index of the column to return a view for
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -526,20 +752,16 @@ public:
    * <b>Note:</b> <tt>*this</tt> is not guaranteed to be modified until the
    * smart pointer returned by this function is destroyed.
    */
-  virtual RCP<VectorBase<Scalar> > col(Index j) = 0;
+  virtual RCP<VectorBase<Scalar> > nonconstColImpl(Index j) = 0;
 
-  //@}
-
-  /** @name Multi-vector sub-views */
-  //@{
-
-  /** \brief Return a non-changeable sub-view of a contiguous set of columns of the this multi-vector.
+  /** \brief Return a non-changeable sub-view of a contiguous set of columns
+   * of the this multi-vector.
    *
    * \anchor Thyra_MVB_subView_contiguous_const
    *
-   * @param  colRng  [in] zero-based range of columns to create a view of.  Note that it is valid for
-   *                  <tt>colRng.full_range()==true</tt> in which case the view of the entire
-   *                  multi-vector is taken.
+   * \param colRng [in] zero-based range of columns to create a view of.  Note
+   * that it is valid for <tt>colRng.full_range()==true</tt> in which case the
+   * view of the entire multi-vector is taken.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -557,16 +779,16 @@ public:
    * the behavior of this view.
    */
   virtual RCP<const MultiVectorBase<Scalar> >
-  subView( const Range1D& colRng ) const = 0;
-  
+  contigSubViewImpl( const Range1D& colRng ) const = 0;
+
   /** \brief Return a changeable sub-view of a contiguous set of columns of
    * the this multi-vector.
    *
    * \anchor Thyra_MVB_subView_contiguous_nonconst
    *
-   * @param  colRng  [in] zero-based range of columns to create a view of.  Note that it is valid for
-   *                  <tt>colRng.full_range()==true</tt> in which case the view of the entire
-   *                  multi-vector is taken.
+   * \param colRng [in] zero-based range of columns to create a view of.  Note
+   * that it is valid for <tt>colRng.full_range()==true</tt> in which case the
+   * view of the entire multi-vector is taken.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -584,91 +806,61 @@ public:
    * the behavior of this view.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  subView( const Range1D& colRng ) = 0;
+  nonconstContigSubViewImpl( const Range1D& colRng ) = 0;
 
   /** \brief Return a non-changeable sub-view of a non-contiguous set of columns of this multi-vector.
    *
    * \anchor Thyra_MVB_subView_noncontiguous_const
    *
-   * @param  numCols  [in] The number of columns to extract a view for.
-   * @param  cols     [in] Array (length <tt>numCols</tt>) of the zero-based column indexes to use in the
-   *                  returned view.
+   * \param cols [in] Array of the zero-based column indexes to use in the
+   * returned view.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>numCols <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
-   * <li> <tt>0 <= cols[k] < this->domain()->dim()</tt>, for <tt>k=0...numCols-1</tt> (throw <tt>std::invalid_argument</tt>)
-   * <li> <tt>col[k1] != col[k2]</tt>, for all <tt>k1 != k2</tt> in the range <tt>[0,numCols-1]</tt>
+   * <li> <tt>cols.size() <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>0 <= cols[k] < this->domain()->dim()</tt>, for <tt>k=0...cols.size()-1</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>col[k1] != col[k2]</tt>, for all <tt>k1 != k2</tt> in the range <tt>[0,cols.size()-1]</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>this->range()->isCompatible(*return->range()) == true</tt>
-   * <li> <tt>return->domain()->dim() == numCols</tt>
+   * <li> <tt>return->domain()->dim() == cols.size()</tt>
    * <li> <tt>*return->col(k)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
-   *      for <tt>k=0...numCols-1</tt>
+   *      for <tt>k=0...cols.size()-1</tt>
    * </ul>
    *
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
    * the behavior of this view.
    */
   virtual RCP<const MultiVectorBase<Scalar> >
-  subView( const int numCols, const int cols[] ) const = 0;
+  nonContigSubViewImpl( const ArrayView<const int> &cols ) const = 0;
 
   /** \brief Return a changeable sub-view of a non-contiguous set of columns of this multi-vector.
    *
    * \anchor Thyra_MVB_subView_noncontiguous_nonconst
    *
-   * @param  numCols  [in] The number of columns to extract a view for.
-   * @param  cols     [in] Array (length <tt>numCols</tt>) of the zero-based column indexes to use in the
-   *                  returned view.
+   * \param cols [in] Array of the zero-based column indexes to use in the
+   * returned view.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>numCols <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
-   * <li> <tt>0 <= cols[k] < this->domain()->dim()</tt>, for <tt>k=0...numCols-1</tt> (throw <tt>std::invalid_argument</tt>)
-   * <li> <tt>col[k1] != col[k2]</tt>, for all <tt>k1 != k2</tt> in the range <tt>[0,numCols-1]</tt>
+   * <li> <tt>cols.size() <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>0 <= cols[k] < this->domain()->dim()</tt>, for <tt>k=0...cols.size()-1</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>col[k1] != col[k2]</tt>, for all <tt>k1 != k2</tt> in the range <tt>[0,cols.size()-1]</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>this->range()->isCompatible(*return->range()) == true</tt>
-   * <li> <tt>return->domain()->dim() == numCols</tt>
+   * <li> <tt>return->domain()->dim() == cols.size()</tt>
    * <li> <tt>*return->col(k)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
-   *      for <tt>k=0...numCols-1</tt>
+   *      for <tt>k=0...cols.size()-1</tt>
    * </ul>
    *
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
    * the behavior of this view.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  subView( const int numCols, const int cols[] ) = 0;
-  
-  //@}
-
-  /** @name Collective reduction/transformation operator apply functions */
-  //@{
-
-  /** \brief Temporary NVI function. */
-  void applyOp(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs[],
-    RTOpPack::ReductTarget*const reduct_objs[],
-    const Index primary_first_ele_offset,
-    const Index primary_sub_dim,
-    const Index primary_global_offset,
-    const Index secondary_first_ele_offset,
-    const Index secondary_sub_dim
-    ) const
-    {
-      mvMultiReductApplyOpImpl(
-        primary_op, num_multi_vecs, multi_vecs, num_targ_multi_vecs,
-        targ_multi_vecs, reduct_objs,
-        primary_first_ele_offset, primary_sub_dim,
-        primary_global_offset, secondary_first_ele_offset, secondary_sub_dim
-        );
-    }
+  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols ) = 0;
 
   /** \brief Apply a reduction/transformation operator column by column and
    * return an array of the reduction objects.
@@ -693,42 +885,15 @@ public:
    */
   virtual void mvMultiReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs[],
-    RTOpPack::ReductTarget*const reduct_objs[],
-    const Index primary_first_ele_offset,
-    const Index primary_sub_dim,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+    const Index primary_first_ele_offset, // ToDo: Remove!
+    const Index primary_sub_dim, // ToDo: Remove!
     const Index primary_global_offset,
     const Index secondary_first_ele_offset,
     const Index secondary_sub_dim
     ) const = 0;
-
-  /** \brief Temporary NVI function. */
-  void applyOp(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const RTOpPack::RTOpT<Scalar> &secondary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs[],
-    RTOpPack::ReductTarget *reduct_obj,
-    const Index primary_first_ele_offset,
-    const Index primary_sub_dim,
-    const Index primary_global_offset,
-    const Index secondary_first_ele_offset,
-    const Index secondary_sub_dim
-    ) const
-    {
-      mvSingleReductApplyOpImpl(
-        primary_op, secondary_op, num_multi_vecs, multi_vecs,
-        num_targ_multi_vecs, targ_multi_vecs, reduct_obj,
-        primary_first_ele_offset, primary_sub_dim,
-        primary_global_offset, secondary_first_ele_offset,
-        secondary_sub_dim
-        );
-    }
 
   /** \brief Apply a reduction/transformation operator column by column and
    * reduce the intermediate reduction objects into a single reduction object.
@@ -753,41 +918,28 @@ public:
   virtual void mvSingleReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
     const RTOpPack::RTOpT<Scalar> &secondary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs[],
-    RTOpPack::ReductTarget *reduct_obj,
-    const Index primary_first_ele_offset,
-    const Index primary_sub_dim,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index primary_first_ele_offset, // ToDo: Remove!
+    const Index primary_sub_dim, // ToDo: Remove!
     const Index primary_global_offset,
     const Index secondary_first_ele_offset,
     const Index secondary_sub_dim
     ) const = 0;
-  
-  //@}
-
-  /** @name Explicit sub-multi-vector access */
-  //@{
-
-  /** \brief Temporary NVI function. */
-  void acquireDetachedView(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const
-    {
-      acquireDetachedMultiVectorViewImpl( rowRng, colRng, sub_mv );
-    }
 
   /** \brief Get a non-changeable explicit view of a sub-multi-vector.
    *
-   * @param  rowRng   [in] The range of the rows to extract the sub-multi-vector view.
-   * @param  colRng   [in] The range of the columns to extract the sub-multi-vector view.
-   * @param  sub_mv   [in/out] View of the sub-multi_vector.  Prior to the
-   *                  first call to this function, <tt>sub_mv->set_uninitialized()</tt> must be called.
-   *                  Technically <tt>*sub_mv</tt> owns the memory but this memory can be freed
-   *                  only by calling <tt>this->releaseDetachedView(sub_mv)</tt>.
+   * \param rowRng [in] The range of the rows to extract the sub-multi-vector
+   * view.
+   *
+   * \param colRng [in] The range of the columns to extract the
+   * sub-multi-vector view.
+   *
+   * \param sub_mv [in/out] View of the sub-multi_vector.  Prior to the first
+   * call to this function, <tt>sub_mv->set_uninitialized()</tt> must be
+   * called.  Technically <tt>*sub_mv</tt> owns the memory but this memory can
+   * be freed only by calling <tt>this->releaseDetachedView(sub_mv)</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -845,27 +997,19 @@ public:
     RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const = 0;
 
-  /** \brief Temporary NVI function. */
-  void releaseDetachedView(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const
-    {
-      releaseDetachedMultiVectorViewImpl(sub_mv);
-    }
-
   /** \brief Free a non-changeable explicit view of a sub-multi-vector.
    *
-   * @param  sub_mv
-   *				[in/out] The memory referred to by <tt>sub_mv->values()</tt>
-   *				will be released if it was allocated and <tt>*sub_mv</tt>
-   *              will be zeroed out using <tt>sub_mv->set_uninitialized()</tt>.
+   * \param sub_mv * [in/out] The memory referred to by
+   * <tt>sub_mv->values()</tt> * will be released if it was allocated and
+   * <tt>*sub_mv</tt> will be zeroed out using
+   * <tt>sub_mv->set_uninitialized()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>sub_mv</tt> must have been passed through a call to 
    *      <tt>this->acquireDetachedView(...,sub_mv)</tt>
    * </ul>
-    *
+   *
    * <b>Postconditions:</b><ul>
    * <li> See <tt>RTOpPack::ConstSubMultiVectorView::set_uninitialized()</tt> for <tt>sub_mv</tt>
    * </ul>
@@ -882,25 +1026,19 @@ public:
     RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
     ) const = 0;
 
-  /** \brief Temporary NVI function. */
-  void acquireDetachedView(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    )
-    {
-      acquireNonconstDetachedMultiVectorViewImpl(rowRng,colRng,sub_mv);
-    }
-
   /** \brief Get a changeable explicit view of a sub-multi-vector.
    *
-   * @param  rowRng   [in] The range of the rows to extract the sub-multi-vector view.
-   * @param  colRng   [in] The range of the columns to extract the sub-multi-vector view.
-   * @param  sub_mv   [in/out] Changeable view of the sub-multi-vector.  Prior to the
-   *                  first call <tt>sub_mv->set_uninitialized()</tt> must
-   *                  have been called for the correct behavior.  Technically
-   *                  <tt>*sub_mv</tt> owns the memory but this memory must be committed
-   *                  and freed only by calling <tt>this->commitDetachedView(sub_mv)</tt>.
+   * \param rowRng [in] The range of the rows to extract the sub-multi-vector
+   * view.
+   *
+   * \param colRng [in] The range of the columns to extract the
+   * sub-multi-vector view.
+   *
+   * \param sub_mv [in/out] Changeable view of the sub-multi-vector.  Prior to
+   * the first call <tt>sub_mv->set_uninitialized()</tt> must have been called
+   * for the correct behavior.  Technically <tt>*sub_mv</tt> owns the memory
+   * but this memory must be committed and freed only by calling
+   * <tt>this->commitDetachedView(sub_mv)</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -915,7 +1053,6 @@ public:
    *      in the row and column ranges <tt>full_range(rowRng,0,this->range()->dim()-1)</tt>
    *      and <tt>full_range(colRng,0,this->domain()->dim()-1)</tt> respectively.
    * </ul>
-   *
    *
    * <b>Note:</b> This view is to be used immediately and then committed back
    * with a call to <tt>commitDetachedView()</tt>.
@@ -967,22 +1104,13 @@ public:
     RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     ) = 0;
 
-  /** \brief Temporary NVI function. */
-  void commitDetachedView(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    )
-    {
-      commitNonconstDetachedMultiVectorViewImpl(sub_mv);
-    }
-
   /** \brief Commit changes for a changeable explicit view of a sub-multi-vector.
    *
-   * @param sub_mv
-   *				[in/out] The data in <tt>sub_mv->values()</tt> will be written
-   *              back to internal storage and the memory referred to by
-   *              <tt>sub_mv->values()</tt> will be released if it was allocated
-   *				and <tt>*sub_mv</tt> will be zeroed out using
-   *				<tt>sub_mv->set_uninitialized()</tt>.
+   * \param sub_mv * [in/out] The data in <tt>sub_mv->values()</tt> will be
+   * written back to internal storage and the memory referred to by
+   * <tt>sub_mv->values()</tt> will be released if it was allocated * and
+   * <tt>*sub_mv</tt> will be zeroed out using *
+   * <tt>sub_mv->set_uninitialized()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -1009,41 +1137,92 @@ public:
 
   //@}
 
-  /** @name Cloning */
-  //@{
+};
 
-  /** \brief Clone the multi-vector object (if supported).
-   *
-   * The default implementation uses the vector space to create a
-   * new multi-vector object and then uses a transformation operator
-   * to assign the vector elements.  A subclass should only override
-   * this function if it can do something more sophisticated
-   * (i.e. lazy evaluation) but in general, this is not needed.
-   */
-  virtual RCP<MultiVectorBase<Scalar> > clone_mv() const = 0;
-
-  //@}
-
-  /** @name Overridden functions from LinearOpBase */
-  //@{
-
-  /// This function is simply overridden to return <tt>this->clone_mv()</tt>.
-  RCP<const LinearOpBase<Scalar> > clone() const;
-
-  //@}
-
-private:
-  
-#ifdef DOXYGEN_COMPILE
-  VectorBase<Scalar>  *columns; // Doxygen only
-#endif	
-
-}; // end class MultiVectorBase<Scalar>
 
 /** \brief Apply a reduction/transformation operator column by column and
  * return an array of the reduction objects.
  *
  * ToDo: Finish documentation!
+ *
+ * \relates MultiVectorBase
+ */
+template<class Scalar>
+inline
+void applyOp(
+  const RTOpPack::RTOpT<Scalar> &primary_op,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+  const Index primary_first_ele_offset = 0,
+  const Index primary_sub_dim = -1,
+  const Index primary_global_offset = 0,
+  const Index secondary_first_ele_offset = 0,
+  const Index secondary_sub_dim = -1
+  )
+{
+  if(multi_vecs.size())
+    multi_vecs[0]->applyOp(
+      primary_op
+      ,multi_vecs,targ_multi_vecs
+      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
+      );
+  else if(targ_multi_vecs.size())
+    targ_multi_vecs[0]->applyOp(
+      primary_op
+      ,multi_vecs,targ_multi_vecs
+      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
+      );
+}
+
+
+/** \brief Apply a reduction/transformation operator column by column and
+ * reduce the intermediate reduction objects into one reduction object.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \relates MultiVectorBase
+ */
+template<class Scalar>
+inline
+void applyOp(
+  const RTOpPack::RTOpT<Scalar> &primary_op,
+  const RTOpPack::RTOpT<Scalar> &secondary_op,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index primary_first_ele_offset = 0,
+  const Index primary_sub_dim = -1,
+  const Index primary_global_offset = 0,
+  const Index secondary_first_ele_offset = 0,
+  const Index secondary_sub_dim = -1
+  )
+{
+  if(multi_vecs.size())
+    multi_vecs[0]->applyOp(
+      primary_op,secondary_op
+      ,multi_vecs,targ_multi_vecs
+      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
+      );
+  else if(targ_multi_vecs.size())
+    targ_multi_vecs[0]->applyOp(
+      primary_op,secondary_op
+      ,multi_vecs,targ_multi_vecs
+      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
+      );
+}
+
+
+//
+// Deprecated non-members
+//
+
+
+/** \brief Deprecated.
  *
  * \relates MultiVectorBase
  */
@@ -1079,8 +1258,8 @@ void applyOp(
       );
 }
 
-/** \brief Apply a reduction/transformation operator column by column and
- * reduce the intermediate reduction objects into one reduction object.
+
+/** \brief Deprecated.
  *
  * ToDo: Finish documentation!
  *
@@ -1119,6 +1298,87 @@ void applyOp(
       );
 }
 
+
+//
+// Deprecated member implementations
+//
+
+
+template<class Scalar>
+void MultiVectorBase<Scalar>::applyOp(
+  const RTOpPack::RTOpT<Scalar> &primary_op,
+  const int num_multi_vecs,
+  const MultiVectorBase<Scalar>*const multi_vecs_in[],
+  const int num_targ_multi_vecs,
+  MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
+  RTOpPack::ReductTarget*const reduct_objs_inout[],
+  const Index primary_first_ele_offset,
+  const Index primary_sub_dim,
+  const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+  const Index secondary_sub_dim_in
+  ) const
+{
+  Array<Ptr<const MultiVectorBase<Scalar> > > multi_vecs;
+  for (int k = 0; k < num_multi_vecs; ++k)
+    multi_vecs.push_back(Teuchos::ptr(multi_vecs_in[k]));
+  Array<Ptr<MultiVectorBase<Scalar> > > targ_multi_vecs;
+  for (int k = 0; k < num_targ_multi_vecs; ++k)
+    targ_multi_vecs.push_back(Teuchos::ptr(targ_multi_vecs_inout[k]));
+  Array<Ptr<RTOpPack::ReductTarget> > reduct_objs;
+  if (reduct_objs_inout) {
+    const int secondary_sub_dim =
+      (
+        secondary_sub_dim_in >= 0
+        ? secondary_sub_dim_in
+        : ( num_multi_vecs ? multi_vecs[0]->domain() : targ_multi_vecs[0]->domain() )->dim()
+        );
+    const int num_reduct_objs = ( secondary_sub_dim - secondary_first_ele_offset );
+    for (int k = 0; k < num_reduct_objs; ++k)
+      reduct_objs.push_back(Teuchos::ptr(reduct_objs_inout[k]));
+  }
+  mvMultiReductApplyOpImpl(
+    primary_op
+    ,multi_vecs,targ_multi_vecs
+    ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+    ,secondary_first_ele_offset,secondary_sub_dim_in
+    );
+}
+
+
+template<class Scalar>
+void MultiVectorBase<Scalar>::applyOp(
+  const RTOpPack::RTOpT<Scalar> &primary_op,
+  const RTOpPack::RTOpT<Scalar> &secondary_op,
+  const int num_multi_vecs,
+  const MultiVectorBase<Scalar>*const multi_vecs_in[],
+  const int num_targ_multi_vecs,
+  MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
+  RTOpPack::ReductTarget* reduct_obj,
+  const Index primary_first_ele_offset,
+  const Index primary_sub_dim,
+  const Index primary_global_offset,
+  const Index secondary_first_ele_offset,
+  const Index secondary_sub_dim
+  ) const
+{
+  Array<Ptr<const MultiVectorBase<Scalar> > > multi_vecs;
+  for (int k = 0; k < num_multi_vecs; ++k)
+    multi_vecs.push_back(Teuchos::ptr(multi_vecs_in[k]));
+  Array<Ptr<MultiVectorBase<Scalar> > > targ_multi_vecs;
+  for (int k = 0; k < num_targ_multi_vecs; ++k)
+    targ_multi_vecs.push_back(Teuchos::ptr(targ_multi_vecs_inout[k]));
+  mvSingleReductApplyOpImpl(
+    primary_op, secondary_op
+    ,multi_vecs,targ_multi_vecs
+    ,Teuchos::ptr(reduct_obj)
+    ,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+    ,secondary_first_ele_offset,secondary_sub_dim
+    );
+}
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_MULTI_VECTOR_BASE_DECL_HPP

@@ -157,7 +157,12 @@ Thyra::create_Vector(
   // Build the Vector
   RCP<SpmdVectorBase<double> >
     v = Teuchos::rcp(
-      new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
+      new DefaultSpmdVector<double>(
+        space,
+        Teuchos::arcp(localValues,0,epetra_v->Map().NumMyElements(),false),
+        1
+        )
+      );
   Teuchos::set_extra_data<RCP<Epetra_Vector> >( epetra_v, "Epetra_Vector", &v );
   return v;
 }
@@ -183,7 +188,12 @@ Thyra::create_Vector(
   // Build the Vector
   RCP<const SpmdVectorBase<double> >
     v = Teuchos::rcp(
-      new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
+      new DefaultSpmdVector<double>(
+        space,
+        Teuchos::arcp(localValues,0,epetra_v->Map().NumMyElements(),false),
+        1
+        )
+      );
   Teuchos::set_extra_data<RCP<const Epetra_Vector> >( epetra_v, "Epetra_Vector", &v );
   return v;
 }
@@ -219,13 +229,16 @@ Thyra::create_MultiVector(
     epetra_mv->ExtractView( &localValues, &leadingDim );
   }
   else {
-    TEST_FOR_EXCEPT(true); // ToDo: Implement!
+    TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
   }
   // Build the MultiVector
   RCP<SpmdMultiVectorBase<double> >
     mv = Teuchos::rcp(
       new DefaultSpmdMultiVector<double>(
-        range,domain,Teuchos::rcp(localValues,false),leadingDim
+        range,
+        domain,
+        Teuchos::arcp(localValues,0,leadingDim*epetra_mv->NumVectors(),false),
+        leadingDim
         )
       );
   Teuchos::set_extra_data<RCP<Epetra_MultiVector> >(
@@ -264,13 +277,16 @@ Thyra::create_MultiVector(
     epetra_mv->ExtractView( &localValues, &leadingDim );
   }
   else {
-    TEST_FOR_EXCEPT(true); // ToDo: Implement!
+    TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
   }
   // Build the MultiVector
   RCP<const SpmdMultiVectorBase<double> >
     mv = Teuchos::rcp(
       new DefaultSpmdMultiVector<double>(
-        range,domain,Teuchos::rcp(localValues,false),leadingDim
+        range,
+        domain,
+        Teuchos::arcp(localValues,0,leadingDim*epetra_mv->NumVectors(),false),
+        leadingDim
         )
       );
   Teuchos::set_extra_data<RCP<const Epetra_MultiVector> >(
@@ -629,12 +645,3 @@ Thyra::get_Epetra_MultiVector(
   }
   return ::Thyra::get_Epetra_MultiVector(map,rcp(&mv,false));
 }
-
-
-
-
-
-
-
-
-

@@ -1078,6 +1078,31 @@ void set_extra_data(
   EPrePostDestruction destroy_when = POST_DESTROY,
   bool force_unique = true
   );
+// 2007/12/01: rabartl: Above, replace const RCP<T2> *p with const Ptr<RCP<T2>
+// > &p but leave the old deprecated version for backward compatibility!
+
+
+/** \brief Get a const reference to extra data associated with a <tt>RCP</tt> object.
+ *
+ * \param p [in] Smart pointer object that extra data is being extraced from.
+ *
+ * \param name [in] Name of the extra data.
+ *
+ * @return Returns a const reference to the extra_data object.
+ *
+ * <b>Preconditions:</b><ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
+ * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
+ *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
+ * </ul>
+ *
+ * Note, this function must be a non-member function since the client
+ * must manually select the first template argument.
+ *
+ * \relates RCP
+ */
+template<class T1, class T2>
+const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
 
 
 /** \brief Get a non-const reference to extra data associated with a <tt>RCP</tt> object.
@@ -1100,36 +1125,35 @@ void set_extra_data(
  * \relates RCP
  */
 template<class T1, class T2>
-T1& get_extra_data( RCP<T2>& p, const std::string& name );
+T1& get_nonconst_extra_data( const RCP<T2>& p, const std::string& name );
 
 
-/** \brief Get a const reference to extra data associated with a <tt>RCP</tt> object.
+/** \brief Get a pointer to const extra data (if it exists) associated with a
+ * <tt>RCP</tt> object.
  *
  * \param p [in] Smart pointer object that extra data is being extraced from.
  *
  * \param name [in] Name of the extra data.
  *
- * @return Returns a const reference to the extra_data object.
+ * @return Returns a const pointer to the extra_data object if it exists.
  *
  * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
- * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
- *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
+ * </ul>
+ *
+ * <b>Postconditions:</b><ul>
+ * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
+ *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
+ *      and otherwise <tt>return == NULL</tt>.
  * </ul>
  *
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
  *
- * Also note that this const version is a false sense of security
- * since a client can always copy a const <tt>RCP</tt> object
- * into a non-const object and then use the non-const version to
- * change the data.  However, its presence will help to avoid some
- * types of accidental changes to this extra data.
- *
  * \relates RCP
  */
 template<class T1, class T2>
-const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
+Ptr<const T1> get_optional_extra_data( const RCP<T2>& p, const std::string& name );
 
 
 /** \brief Get a pointer to non-const extra data (if it exists) associated
@@ -1157,56 +1181,7 @@ const T1& get_extra_data( const RCP<T2>& p, const std::string& name );
  * \relates RCP
  */
 template<class T1, class T2>
-Ptr<T1> get_optional_extra_data( RCP<T2>& p, const std::string& name );
-
-
-/** \brief Get a pointer to const extra data (if it exists) associated with a
- * <tt>RCP</tt> object.
- *
- * \param p [in] Smart pointer object that extra data is being extraced from.
- *
- * \param name [in] Name of the extra data.
- *
- * @return Returns a const pointer to the extra_data object if it exists.
- *
- * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
- * </ul>
- *
- * <b>Postconditions:</b><ul>
- * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
- *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
- *      and otherwise <tt>return == NULL</tt>.
- * </ul>
- *
- * Note, this function must be a non-member function since the client
- * must manually select the first template argument.
- *
- * Also note that this const version is a false sense of security
- * since a client can always copy a const <tt>RCP</tt> object
- * into a non-const object and then use the non-const version to
- * change the data.  However, its presence will help to avoid some
- * types of accidental changes to this extra data.
- *
- * \relates RCP
- */
-template<class T1, class T2>
-Ptr<const T1> get_optional_extra_data( const RCP<T2>& p, const std::string& name );
-
-
-/** \brief Return a non-<tt>const</tt> reference to the underlying deallocator
- * object.
- *
- * <b>Preconditions:</b><ul>
- * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
- * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      (throws <tt>NullReferenceError</tt>)
- * </ul>
- *
- * \relates RCP
- */
-template<class Dealloc_T, class T>
-Dealloc_T& get_nonconst_dealloc( const RCP<T>& p );
+Ptr<T1> get_optional_nonconst_extra_data( const RCP<T2>& p, const std::string& name );
 
 
 /** \brief Return a <tt>const</tt> reference to the underlying deallocator
@@ -1224,22 +1199,19 @@ template<class Dealloc_T, class T>
 const Dealloc_T& get_dealloc( const RCP<T>& p );
 
 
-/** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
- * object if it exists.
+/** \brief Return a non-<tt>const</tt> reference to the underlying deallocator
+ * object.
  *
  * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
- * </ul>
- *
- * <b>Postconditions:</b><ul>
- * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
- *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
+ * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      (throws <tt>NullReferenceError</tt>)
  * </ul>
  *
  * \relates RCP
  */
 template<class Dealloc_T, class T>
-Ptr<Dealloc_T> get_optional_nonconst_dealloc( const RCP<T>& p );
+Dealloc_T& get_nonconst_dealloc( const RCP<T>& p );
 
 
 /** \brief Return a pointer to the underlying <tt>const</tt> deallocator
@@ -1258,6 +1230,24 @@ Ptr<Dealloc_T> get_optional_nonconst_dealloc( const RCP<T>& p );
  */
 template<class Dealloc_T, class T>
 Ptr<const Dealloc_T> get_optional_dealloc( const RCP<T>& p );
+
+
+/** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
+ * object if it exists.
+ *
+ * <b>Preconditions:</b><ul>
+ * <li> <tt>p.get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
+ * </ul>
+ *
+ * <b>Postconditions:</b><ul>
+ * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
+ *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
+ * </ul>
+ *
+ * \relates RCP
+ */
+template<class Dealloc_T, class T>
+Ptr<Dealloc_T> get_optional_nonconst_dealloc( const RCP<T>& p );
 
 
 /** \brief Get a const reference to an embedded object that was set by calling

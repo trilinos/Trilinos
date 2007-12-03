@@ -74,7 +74,7 @@ public:
 
   /** \brief Calls <tt>initialize()</tt> to construct an SPMD space. */
   DefaultSpmdVectorSpace(
-    const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
+    const RCP<const Teuchos::Comm<Index> > &comm
     ,const Index localSubDim, const Index globalDim
     );
 
@@ -136,7 +136,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
+    const RCP<const Teuchos::Comm<Index> > &comm
     ,const Index localSubDim, const Index globalDim
     );
 
@@ -161,7 +161,7 @@ public:
     const Range1D& rng, const EViewType viewType, const EStrideType strideType
     ) const;
   /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > clone() const;
+  RCP< const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
 protected:
@@ -170,22 +170,22 @@ protected:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> >
+  RCP<VectorBase<Scalar> >
   createMember() const;
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
   createMembers(int numMembers) const;
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> >
+  RCP<VectorBase<Scalar> >
   createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const;
   /** \brief . */
-  Teuchos::RCP<const VectorBase<Scalar> >
+  RCP<const VectorBase<Scalar> >
   createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const;
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
   createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> >
+  RCP<const MultiVectorBase<Scalar> >
   createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
 
   //@}
@@ -196,7 +196,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const;
+  RCP<const Teuchos::Comm<Index> > getComm() const;
   /** \brief . */
   Index localSubDim() const;
 
@@ -207,7 +207,7 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const Teuchos::Comm<Index> > comm_;
+  RCP<const Teuchos::Comm<Index> > comm_;
   Index localSubDim_;
   int numProc_;
   int procRank_;

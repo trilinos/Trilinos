@@ -72,9 +72,13 @@ int main( int argc, char* argv[] ) {
 	using Teuchos::rcp_dynamic_cast;
 	using Teuchos::set_extra_data;
 	using Teuchos::get_extra_data;
+	using Teuchos::get_nonconst_extra_data;
 	using Teuchos::get_optional_extra_data;
+	using Teuchos::get_optional_nonconst_extra_data;
 	using Teuchos::get_dealloc;
+	using Teuchos::get_nonconst_dealloc;
 	using Teuchos::get_optional_dealloc;
+	using Teuchos::get_optional_nonconst_dealloc;
   using Teuchos::rcpWithEmbeddedObj;
   using Teuchos::rcpWithEmbeddedObjPreDestroy;
   using Teuchos::rcpWithEmbeddedObjPostDestroy;
@@ -346,13 +350,14 @@ int main( int argc, char* argv[] ) {
 		// Test out getting the deallocator object
 		a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
 		get_dealloc<DeallocDelete<C> >(a_ptr1);
-    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(a_ptr1)==null );
-    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(a_ptr1)!=null );
+		get_nonconst_dealloc<DeallocDelete<C> >(a_ptr1);
+    TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<C> >(a_ptr1)==null );
+    TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<A> >(a_ptr1)!=null );
     TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RCP<A>&>(a_ptr1))==null );
     TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RCP<A>&>(a_ptr1))!=null );
     
 		// Test storing extra data and then getting it out again
-		TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
+		TEST_FOR_EXCEPT( get_optional_nonconst_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
 		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
 		set_extra_data( int(-5), "int", &a_ptr1 );
 		TEST_FOR_EXCEPT( get_extra_data<int>(a_ptr1,"int") != -5 );

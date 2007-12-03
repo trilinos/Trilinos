@@ -32,7 +32,9 @@
 #include "Thyra_MultiVectorBaseDecl.hpp"
 #include "Thyra_LinearOpDefaultBaseDecl.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Node subclass that uses a default <tt>MultiVectorBase</tt>
  * implementation</tt> to provide default implementations for as many other
@@ -58,60 +60,77 @@ class MultiVectorDefaultBase
 {
 public:
 
-  /** \brief . */
-  using MultiVectorBase<Scalar>::col;
-  /** \brief . */
-  using MultiVectorBase<Scalar>::subView;
-  /** \brief . */
-  using LinearOpDefaultBase<Scalar>::describe;
-
   /** \name Overridden public member functions from MultiVectorBase */
   //@{
+
+  /** \brief .
+   *
+   * This implementation uses the vector space to create a new multi-vector
+   * object and then uses a transformation operator to assign the vector
+   * elements.  A subclass should only override this function if it can do
+   * something more sophisticated (i.e. lazy evaluation) but in general, this
+   * is not needed.
+   */
+  virtual RCP<MultiVectorBase<Scalar> > clone_mv() const;
+
+  //@}
+
+protected:
+
+  /** \name Overridden protected member functions from MultiVectorBase */
+  //@{
+
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
+  RCP<const MultiVectorBase<Scalar> >
+  contigSubViewImpl( const Range1D& colRng ) const;
+
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const Range1D& colRng );
+  RCP<MultiVectorBase<Scalar> >
+  nonconstContigSubViewImpl( const Range1D& colRng );
+
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  RCP<const MultiVectorBase<Scalar> >
+  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
+
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
+  RCP<MultiVectorBase<Scalar> >
+  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
+
   /** \brief .
    *
    * This implementation calls <tt>VectorBase::applyOp()</tt> on each column
    * <tt>this->col(j)</tt> for <tt>j = 0 ... this->range()->dim()-1</tt>.
    */
   virtual void mvMultiReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar>         &primary_op
-    ,const int                            num_multi_vecs
-    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
-    ,const int                            num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
-    ,RTOpPack::ReductTarget*const         reduct_objs[]
-    ,const Index                          primary_first_ele_offset
-    ,const Index                          primary_sub_dim
-    ,const Index                          primary_global_offset
-    ,const Index                          secondary_first_ele_offset
-    ,const Index                          secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+    const Index primary_first_ele_offset, // ToDo: Remove!
+    const Index primary_sub_dim, // ToDo: Remove!
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
     ) const;
+
   /** \brief .
    *
    * This implementation calls <tt>applyOp()</tt> where an array of reduction
    * objects is taken.
    */
   virtual void mvSingleReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar>         &primary_op
-    ,const RTOpPack::RTOpT<Scalar>        &secondary_op
-    ,const int                            num_multi_vecs
-    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
-    ,const int                            num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
-    ,RTOpPack::ReductTarget               *reduct_obj
-    ,const Index                          primary_first_ele_offset
-    ,const Index                          primary_sub_dim
-    ,const Index                          primary_global_offset
-    ,const Index                          secondary_first_ele_offset
-    ,const Index                          secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const RTOpPack::RTOpT<Scalar> &secondary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index primary_first_ele_offset, // ToDo: Remove!
+    const Index primary_sub_dim, // ToDo: Remove!
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
     ) const;
+
   /** \brief .
    *
    * This implementation is based on the vector operation
@@ -132,6 +151,7 @@ public:
     const Range1D &colRng,
     RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const;
+
   /** \brief .
    *
    * This implementation is a companion to the implementation for
@@ -141,6 +161,7 @@ public:
   virtual void releaseDetachedMultiVectorViewImpl(
     RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
     ) const;
+
   /** \brief .
    *
    * This implementation is based on the vector operation
@@ -161,6 +182,7 @@ public:
     const Range1D &colRng,
     RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     );
+
   /** \brief .
    *
    * This implementation is a companion to the default implementation for
@@ -170,19 +192,13 @@ public:
   virtual void commitNonconstDetachedMultiVectorViewImpl(
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     );
-  /** \brief .
-   *
-   * This implementation uses the vector space to create a new multi-vector
-   * object and then uses a transformation operator to assign the vector
-   * elements.  A subclass should only override this function if it can do
-   * something more sophisticated (i.e. lazy evaluation) but in general, this
-   * is not needed.
-   */
-  virtual Teuchos::RCP<MultiVectorBase<Scalar> > clone_mv() const;
+
   //@}
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP

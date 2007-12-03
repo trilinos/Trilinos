@@ -70,14 +70,43 @@ ArrayView<T>::ArrayView( T* p, Ordinal size_in)
 
 template<class T> inline
 ArrayView<T>::ArrayView(const ArrayView<T>& array)
+  :ptr_(array.ptr_), size_(array.size_)
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ,arcp_(array.arcp_) // It is okay to share the same iterator implementation!
+#endif
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_FOR_EXCEPT(array.node_); // Error can't handle this yetQ
 #endif
-  ptr_ = array.ptr_;
-  size_ = array.size_;
+}
+
+
+template<class T> inline
+ArrayView<T>::ArrayView(
+  std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  )
+  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  arcp_ = array.arcp_; // It is okay to share the same iterator implementation!
+  ,node_(0)
+#endif
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  setUpIterators();
+#endif
+}
+
+
+template<class T> inline
+ArrayView<T>::ArrayView(
+  const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  )
+  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ,node_(0)
+#endif
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  setUpIterators();
 #endif
 }
 
@@ -285,16 +314,16 @@ Teuchos::arrayView( T* p, typename ArrayView<T>::Ordinal size )
 
 
 template<class T> inline
-Teuchos::ArrayView<T> Teuchos::arrayView( std::vector<T>& vec )
+Teuchos::ArrayView<T> Teuchos::arrayViewFromVector( std::vector<T>& vec )
 {
-  return Teuchos::arrayView(&vec[0],vec.size());
+  return ArrayView<T>(vec);
 }
 
 
 template<class T> inline
-Teuchos::ArrayView<const T> Teuchos::arrayView( const std::vector<T>& vec )
+Teuchos::ArrayView<const T> Teuchos::arrayViewFromVector( const std::vector<T>& vec )
 {
-  return Teuchos::arrayView(&vec[0],vec.size());
+  return ArrayView<const T>(vec);
 }
 
 

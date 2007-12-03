@@ -1,7 +1,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
+//                    Teuchos: Common Tools Package
 //                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,32 +26,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTI_VECTOR_BASE_HPP
-#define THYRA_MULTI_VECTOR_BASE_HPP
+#ifndef TEUCHOS_CONST_TYPE_TRAITS_HPP
+#define TEUCHOS_CONST_TYPE_TRAITS_HPP
 
-#include "Thyra_MultiVectorBaseDecl.hpp"
-#include "Thyra_LinearOpBase.hpp"
 
-namespace Thyra {
+#include "Teuchos_ConfigDefs.hpp"
 
-// Provide access to the columns as VectorBase objects
 
-template<class Scalar>
-RCP<const VectorBase<Scalar> >
-MultiVectorBase<Scalar>::colImpl(Index j) const
-{
-  return const_cast<MultiVectorBase*>(this)->nonconstColImpl(j);
-}
+namespace Teuchos {
 
-// Overridden methods from LinearOpBase
 
-template<class Scalar>
-RCP<const LinearOpBase<Scalar> >
-MultiVectorBase<Scalar>::clone() const
-{
-  return this->clone_mv();
-}
+/** \brief Traits class that strips of 'const'.
+ *
+ * See "Modern C++ Design", 2001, by Andrei Alexandrescu.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
+template<class T>
+class ConstTypeTraits {
+private:
+  /** \brief . */
+  template<class U> struct UnConst
+  { typedef U Result; };
+  /** \brief . */
+  template<class U> struct UnConst<const U>
+  { typedef U Result; };
+public:
+  /** \brief . */
+  typedef typename UnConst<T>::Result NonConstType;
+};
 
-} // end namespace Thyra
 
-#endif // THYRA_MULTI_VECTOR_BASE_HPP
+} // end namespace Teuchos
+
+
+#endif	// TEUCHOS_CONST_TYPE_TRAITS_HPP

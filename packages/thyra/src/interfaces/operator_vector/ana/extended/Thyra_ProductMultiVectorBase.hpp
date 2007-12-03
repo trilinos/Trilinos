@@ -33,7 +33,9 @@
 
 namespace Thyra {
 
+
 template<class Scalar> class ProductVectorSpaceBase;
+
 
 /** \brief Base interface for product multi-vectors.
  *
@@ -61,8 +63,8 @@ public:
 
   /** \brief Return if the <tt>kth</tt> multi-vector block is const-only.
    *
-   * \param  k  [in] The (zero-based) <tt>kth</tt> block index
-   *            specifying which multi-vector block to access.
+   * \param k [in] The (zero-based) <tt>kth</tt> block index specifying which
+   * multi-vector block to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>
@@ -74,8 +76,8 @@ public:
   /** \brief Returns a non-persisting non-<tt>const</tt> view of the
    * zero-based <tt>kth</tt> block multi-vector.
    *
-   * \param  k  [in] The (zero-based) <tt>kth</tt> block index
-   *            specifying which multi-vector block to access.
+   * \param k [in] The (zero-based) <tt>kth</tt> block index specifying which
+   * multi-vector block to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>
@@ -97,8 +99,8 @@ public:
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
    * <tt>kth</tt> block multi-vector.
    *
-   * \param  k  [in] The (zero-based) <tt>kth</tt> block index
-   *            specifying which multi-vector block to access.
+   * \param k [in] The (zero-based) <tt>kth</tt> block index specifying which
+   * multi-vector block to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>
@@ -110,6 +112,8 @@ public:
   
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_PRODUCT_MULTI_VECTOR_BASE_HPP

@@ -125,9 +125,9 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
-  Teuchos::RCP<const LinearOpBase<double> >
+  RCP<const LinearOpBase<double> >
     fwdOp = fwdOpSrc.getOp();
-  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
+  RCP<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
@@ -141,14 +141,14 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
   return true;
 }
 
-Teuchos::RCP<LinearOpWithSolveBase<double> >
+RCP<LinearOpWithSolveBase<double> >
 AmesosLinearOpWithSolveFactory::createOp() const
 {
   return Teuchos::rcp(new AmesosLinearOpWithSolve());
 }
 
 void AmesosLinearOpWithSolveFactory::initializeOp(
-  const Teuchos::RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
+  const RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
   ,LinearOpWithSolveBase<double>                                   *Op
   ,const ESupportSolveUse                                          supportSolveUse
   ) const
@@ -157,12 +157,12 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
-  const Teuchos::RCP<const LinearOpBase<double> > 
+  const RCP<const LinearOpBase<double> > 
     fwdOp = fwdOpSrc->getOp();
   //
   // Unwrap and get the forward Epetra_Operator object
   //
-  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
+  RCP<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
@@ -197,12 +197,12 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // so this is where we setup everything from the ground up.
     //
     // Create the linear problem and set the operator with memory of RCP to Epetra_Operator view!
-    Teuchos::RCP<Epetra_LinearProblem>
+    RCP<Epetra_LinearProblem>
       epetraLP = Teuchos::rcp(new Epetra_LinearProblem());
     epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
-    Teuchos::set_extra_data< Teuchos::RCP<const Epetra_Operator> >( epetraFwdOp, epetraFwdOp_str, &epetraLP );
+    Teuchos::set_extra_data< RCP<const Epetra_Operator> >( epetraFwdOp, epetraFwdOp_str, &epetraLP );
     // Create the concrete solver
-    Teuchos::RCP<Amesos_BaseSolver>
+    RCP<Amesos_BaseSolver>
       amesosSolver;
     {
       TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:InitConstruct");
@@ -299,13 +299,13 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     //
     // Get non-const pointers to the linear problem and the amesos solver.
     // These const-casts are just fine since the amesosOp in non-const.
-    Teuchos::RCP<Epetra_LinearProblem>
+    RCP<Epetra_LinearProblem>
       epetraLP = Teuchos::rcp_const_cast<Epetra_LinearProblem>(amesosOp->get_epetraLP());
-    Teuchos::RCP<Amesos_BaseSolver>
+    RCP<Amesos_BaseSolver>
       amesosSolver = amesosOp->get_amesosSolver();
     // Reset the forward operator with memory of RCP to Epetra_Operator view!
     epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
-    Teuchos::get_extra_data< Teuchos::RCP<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = epetraFwdOp;
+    Teuchos::get_nonconst_extra_data<RCP<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = epetraFwdOp;
     // Reset the parameters
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(Amesos_Settings_name));
     // Repivot if asked
@@ -341,8 +341,8 @@ bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPrec
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
-  const Teuchos::RCP<const LinearOpSourceBase<double> >       &fwdOpSrc
-  ,const Teuchos::RCP<const PreconditionerBase<double> >      &prec
+  const RCP<const LinearOpSourceBase<double> >       &fwdOpSrc
+  ,const RCP<const PreconditionerBase<double> >      &prec
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
@@ -356,8 +356,8 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
-  const Teuchos::RCP<const LinearOpSourceBase<double> >       &fwdOpSrc
-  ,const Teuchos::RCP<const LinearOpSourceBase<double> >      &approxFwdOpSrc
+  const RCP<const LinearOpSourceBase<double> >       &fwdOpSrc
+  ,const RCP<const LinearOpSourceBase<double> >      &approxFwdOpSrc
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
@@ -372,9 +372,9 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
 
 void AmesosLinearOpWithSolveFactory::uninitializeOp(
   LinearOpWithSolveBase<double>                               *Op
-  ,Teuchos::RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
-  ,Teuchos::RCP<const PreconditionerBase<double> >    *prec
-  ,Teuchos::RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
+  ,RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
+  ,RCP<const PreconditionerBase<double> >    *prec
+  ,RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -383,12 +383,12 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
 #endif
   AmesosLinearOpWithSolve
     *amesosOp = &Teuchos::dyn_cast<AmesosLinearOpWithSolve>(*Op);
-  Teuchos::RCP<const LinearOpSourceBase<double> >
+  RCP<const LinearOpSourceBase<double> >
     _fwdOpSrc = amesosOp->extract_fwdOpSrc(); // Will be null if uninitialized!
   if(_fwdOpSrc.get()) {
     // Erase the Epetra_Operator view of the forward operator!
-    Teuchos::RCP<Epetra_LinearProblem> epetraLP = amesosOp->get_epetraLP();
-    Teuchos::get_extra_data< Teuchos::RCP<const Epetra_Operator> >(
+    RCP<Epetra_LinearProblem> epetraLP = amesosOp->get_epetraLP();
+    Teuchos::get_nonconst_extra_data< RCP<const Epetra_Operator> >(
       epetraLP,epetraFwdOp_str
       )
       = Teuchos::null;
@@ -405,7 +405,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
 // Overridden from ParameterListAcceptor
 
 void AmesosLinearOpWithSolveFactory::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
@@ -431,27 +431,27 @@ void AmesosLinearOpWithSolveFactory::setParameterList(
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::getParameterList()
 {
   return paramList_;
 }
 
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
+  RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::getParameterList() const
 {
   return paramList_;
 }
 
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::getValidParameters() const
 {
   return generateAndGetValidParameters();
@@ -470,10 +470,10 @@ std::string AmesosLinearOpWithSolveFactory::description() const
 
 // private
 
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
 {
-  static Teuchos::RCP<Teuchos::ParameterList> validParamList;
+  static RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("Amesos"));
     validParamList->set(

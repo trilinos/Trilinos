@@ -184,6 +184,68 @@ int main( int argc, char* argv[] ) {
       TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.get() );
     }
  
+    {
+      // Test ptr_implicit_cast()
+      C c;
+      Ptr<C> c_ptr(&c);
+      Ptr<A> a_ptr1 = c_ptr;
+      Ptr<A> a_ptr2 = Teuchos::ptr_implicit_cast<A>(c_ptr);
+      TEUCHOS_ASSERT_EQUALITY( &*a_ptr1, &*a_ptr2 );
+    }
+ 
+    {
+      // Test ptr_static_cast()
+      E e;
+      Ptr<D> d_ptr(&e);
+      Ptr<E> e_ptr = Teuchos::ptr_static_cast<E>(d_ptr);
+      TEUCHOS_ASSERT_EQUALITY( &*e_ptr, &e );
+    }
+ 
+    {
+      // Test ptr_const_cast()
+      C c;
+      Ptr<const C> c_ptr1(&c);
+      Ptr<C> c_ptr2 = Teuchos::ptr_const_cast<C>(c_ptr1);
+      TEUCHOS_ASSERT_EQUALITY( &*c_ptr2, &*c_ptr1 );
+    }
+ 
+    {
+      // Test null ptr_dynamic_cast()
+      Ptr<A> a_ptr;
+      Ptr<C> c_ptr = Teuchos::ptr_dynamic_cast<C>(a_ptr);
+      TEUCHOS_ASSERT_EQUALITY( c_ptr.get(), 0 );
+    }
+ 
+    {
+      // Test non-throw non-null ptr_dynamic_cast()
+      C c;
+      Ptr<A> a_ptr(&c);
+      Ptr<C> c_ptr = Teuchos::ptr_dynamic_cast<C>(a_ptr);
+      TEUCHOS_ASSERT_EQUALITY( &*c_ptr, &c );
+    }
+ 
+    {
+      // Test good throwing non-null ptr_dynamic_cast()
+      C c;
+      Ptr<A> a_ptr(&c);
+      Ptr<C> c_ptr = Teuchos::ptr_dynamic_cast<C>(a_ptr,true);
+      TEUCHOS_ASSERT_EQUALITY( &*c_ptr, &c );
+    }
+ 
+    {
+      // Test bad throwing non-null ptr_dynamic_cast()
+      B1 b1;
+      Ptr<A> a_ptr(&b1);
+      try {
+        Ptr<C> b2_ptr = Teuchos::ptr_dynamic_cast<C>(a_ptr,true);
+        TEST_FOR_EXCEPTION( true, std::logic_error,
+          "If you get here then the test failed!" );
+      }
+      catch ( const Teuchos::m_bad_cast &execpt ) {
+        // Test passed!
+      }
+    }
+ 
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
  

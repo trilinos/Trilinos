@@ -66,7 +66,7 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
 
 
 template<class Scalar>
-Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
+RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
 {
   return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
@@ -80,11 +80,11 @@ SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+  const ETransp M_trans
+  ,const MultiVectorBase<Scalar> &X
+  ,MultiVectorBase<Scalar> *Y
+  ,const Scalar alpha
+  ,const Scalar beta
   ) const
 {
   this->single_scalar_euclidean_apply_impl(M_trans,X,Y,alpha,beta);
@@ -96,17 +96,15 @@ void SpmdMultiVectorBase<Scalar>::apply(
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
-  const RTOpPack::RTOpT<Scalar>         &pri_op
-  ,const int                            num_multi_vecs
-  ,const MultiVectorBase<Scalar>*const  multi_vecs[]
-  ,const int                            num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*const         reduct_objs[]
-  ,const Index                          pri_first_ele_offset_in
-  ,const Index                          pri_sub_dim_in
-  ,const Index                          pri_global_offset_in
-  ,const Index                          sec_first_ele_offset_in
-  ,const Index                          sec_sub_dim_in
+  const RTOpPack::RTOpT<Scalar> &pri_op,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+  const Index pri_first_ele_offset_in,
+  const Index pri_sub_dim_in,
+  const Index pri_global_offset_in,
+  const Index sec_first_ele_offset_in,
+  const Index sec_sub_dim_in
   ) const
 {
   using Teuchos::dyn_cast;
@@ -122,10 +120,10 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
     "was not implemented properly!"
     );
   apply_op_validate_input(
-    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(), *this->range()
-    ,pri_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-    ,reduct_objs,pri_first_ele_offset_in,pri_sub_dim_in,pri_global_offset_in
-    ,sec_first_ele_offset_in,sec_sub_dim_in
+    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(), *this->range(),
+    pri_op, multi_vecs, targ_multi_vecs, reduct_objs,
+    pri_first_ele_offset_in, pri_sub_dim_in, pri_global_offset_in,
+    sec_first_ele_offset_in, sec_sub_dim_in
     );
 #endif
   // Flag that we are in applyOp()
@@ -135,9 +133,9 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   const bool locallyReplicated = (localSubDim_ == globalDim_);
   // Get the overlap in the current process with the input logical sub-vector
   // from (first_ele_offset_in,sub_dim_in,global_offset_in)
-  Teuchos_Index  overlap_first_local_ele_off  = 0;
-  Teuchos_Index  overlap_local_sub_dim        = 0;
-  Teuchos_Index  overlap_global_offset        = 0;
+  Teuchos_Index overlap_first_local_ele_off = 0;
+  Teuchos_Index overlap_local_sub_dim = 0;
+  Teuchos_Index overlap_global_offset = 0;
   RTOp_parallel_calc_overlap(
     globalDim_, localSubDim_, localOffset_, pri_first_ele_offset_in, pri_sub_dim_in, pri_global_offset_in
     ,&overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_offset
@@ -153,36 +151,40 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
       ,sec_sub_dim_in >= 0 ? sec_first_ele_offset_in+sec_sub_dim_in-1 : numCols-1
       );
   // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> > sub_multi_vecs(wss,num_multi_vecs);
-  Workspace<RTOpPack::SubMultiVectorView<Scalar> > targ_sub_multi_vecs(wss,num_targ_multi_vecs);
+  Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> > sub_multi_vecs(wss,multi_vecs.size());
+  Workspace<RTOpPack::SubMultiVectorView<Scalar> > targ_sub_multi_vecs(wss,targ_multi_vecs.size());
   if( overlap_first_local_ele_off >= 0 ) {
-    for(int k = 0; k < num_multi_vecs; ++k ) {
+    for(int k = 0; k < multi_vecs.size(); ++k ) {
       multi_vecs[k]->acquireDetachedView( local_rng, col_rng, &sub_multi_vecs[k] );
       sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
     }
-    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
+    for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
       targ_multi_vecs[k]->acquireDetachedView( local_rng, col_rng, &targ_sub_multi_vecs[k] );
       targ_sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
     }
   }
+  Workspace<RTOpPack::ReductTarget*> reduct_objs_ptr(wss,reduct_objs.size());
+  for (int k = 0; k < reduct_objs.size(); ++k) {
+    reduct_objs_ptr[k] = &*reduct_objs[k];
+  }
   // Apply the RTOp operator object (all processors must participate)
   RTOpPack::SPMD_apply_op(
-    locallyReplicated ? NULL : spmdSpc.getComm().get()                                 // comm
-    ,pri_op                                                                            // op
-    ,col_rng.size()                                                                    // num_cols
-    ,num_multi_vecs                                                                    // num_multi_vecs
-    ,num_multi_vecs && overlap_first_local_ele_off>=0 ? &sub_multi_vecs[0] : NULL      // sub_multi_vecs
-    ,num_targ_multi_vecs                                                               // num_targ_multi_vecs
-    ,num_targ_multi_vecs && overlap_first_local_ele_off>=0 ? &targ_sub_multi_vecs[0] : NULL// targ_sub_multi_vecs
-    ,reduct_objs                                                                       // reduct_objs
+    locallyReplicated ? NULL : spmdSpc.getComm().get() // comm
+    ,pri_op // op
+    ,col_rng.size() // num_cols
+    ,multi_vecs.size() // multi_vecs.size()
+    ,multi_vecs.size() && overlap_first_local_ele_off>=0 ? &sub_multi_vecs[0] : NULL // sub_multi_vecs
+    ,targ_multi_vecs.size() // targ_multi_vecs.size()
+    ,targ_multi_vecs.size() && overlap_first_local_ele_off>=0 ? &targ_sub_multi_vecs[0] : NULL// targ_sub_multi_vecs
+    ,reduct_objs.size() ? &reduct_objs_ptr[0] : 0 // reduct_objs
     );
   // Free and commit the local data
   if( overlap_first_local_ele_off >= 0 ) {
-    for(int k = 0; k < num_multi_vecs; ++k ) {
+    for(int k = 0; k < multi_vecs.size(); ++k ) {
       sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
       multi_vecs[k]->releaseDetachedView( &sub_multi_vecs[k] );
     }
-    for(int k = 0; k < num_targ_multi_vecs; ++k ) {
+    for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
       targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
       targ_multi_vecs[k]->commitDetachedView( &targ_sub_multi_vecs[k] );
     }
@@ -196,7 +198,7 @@ template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::acquireDetachedMultiVectorViewImpl(
   const Range1D &rowRng_in,
   const Range1D &colRng_in,
-  RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
+  RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
   ) const
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
@@ -209,30 +211,30 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedMultiVectorViewImpl(
     return;
   }
   /*
-  if (localValuesViewPtr_) {
+    if (localValuesViewPtr_) {
     freeLocalData( localValuesViewPtr_ );
     localValuesViewPtr_ = 0;
-  }
+    }
   */
   // 2007/06/08: rabartl: ABove, this logic for this is all wrong when partial
-  // views are requested.  Therefore, I must assume here that these are always
-  // direct views.  The problem is that client code can ask for one column
-  // view at a time which is perfectly okay.  However, the current way this is
-  // setup does not handle this well.  This all needs to be reworked to clean
+  // views are requested. Therefore, I must assume here that these are always
+  // direct views. The problem is that client code can ask for one column
+  // view at a time which is perfectly okay. However, the current way this is
+  // setup does not handle this well. This all needs to be reworked to clean
   // this up.
   const Scalar *localValues = NULL;
   int leadingDim = 0;
   this->getLocalData(&localValues,&leadingDim);
   localValuesViewPtr_ = localValues;
   sub_mv->initialize(
-    rowRng.lbound()                               // globalOffset
-    ,rowRng.size()                                // subDim
-    ,colRng.lbound()                              // colOffset
-    ,colRng.size()                                // numSubCols
+    rowRng.lbound() // globalOffset
+    ,rowRng.size() // subDim
+    ,colRng.lbound() // colOffset
+    ,colRng.size() // numSubCols
     ,localValues
     +(rowRng.lbound()-localOffset_)
-    +colRng.lbound()*leadingDim                   // values
-    ,leadingDim                                   // leadingDim
+    +colRng.lbound()*leadingDim // values
+    ,leadingDim // leadingDim
     );
 }
 
@@ -253,11 +255,11 @@ void SpmdMultiVectorBase<Scalar>::releaseDetachedMultiVectorViewImpl(
     return;
   }
   /*
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localValuesViewPtr_ == 0 );
-#endif
-  freeLocalData( localValuesViewPtr_ );
-  localValuesViewPtr_ = 0;
+    #ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPT( localValuesViewPtr_ == 0 );
+    #endif
+    freeLocalData( localValuesViewPtr_ );
+    localValuesViewPtr_ = 0;
   */
   // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   sub_mv->set_uninitialized();
@@ -287,10 +289,10 @@ void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
   }
   // rng consists of all local data so get it!
   /*
-  if (nonconstLocalValuesViewPtr_) {
+    if (nonconstLocalValuesViewPtr_) {
     commitLocalData( nonconstLocalValuesViewPtr_ );
     nonconstLocalValuesViewPtr_ = 0;
-  }
+    }
   */
   // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   Scalar *localValues = NULL;
@@ -298,14 +300,14 @@ void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
   this->getLocalData(&localValues,&leadingDim);
   nonconstLocalValuesViewPtr_ = localValues;
   sub_mv->initialize(
-    rowRng.lbound()                               // globalOffset
-    ,rowRng.size()                                // subDim
-    ,colRng.lbound()                              // colOffset
-    ,colRng.size()                                // numSubCols
+    rowRng.lbound() // globalOffset
+    ,rowRng.size() // subDim
+    ,colRng.lbound() // colOffset
+    ,colRng.size() // numSubCols
     ,localValues
     +(rowRng.lbound()-localOffset_)
-    +colRng.lbound()*leadingDim                   // values
-    ,leadingDim                                   // leadingDim
+    +colRng.lbound()*leadingDim // values
+    ,leadingDim // leadingDim
     );
 }
 
@@ -326,11 +328,11 @@ void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
     return;
   }
   /*
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( nonconstLocalValuesViewPtr_ == 0 );
-#endif
-  commitLocalData( nonconstLocalValuesViewPtr_ );
-  nonconstLocalValuesViewPtr_ = 0;
+    #ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPT( nonconstLocalValuesViewPtr_ == 0 );
+    #endif
+    commitLocalData( nonconstLocalValuesViewPtr_ );
+    nonconstLocalValuesViewPtr_ = 0;
   */
   // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   sub_mv->set_uninitialized();
@@ -342,11 +344,11 @@ void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::euclideanApply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+  const ETransp M_trans
+  ,const MultiVectorBase<Scalar> &X
+  ,MultiVectorBase<Scalar> *Y
+  ,const Scalar alpha
+  ,const Scalar beta
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -363,18 +365,18 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   //
   // The first operation (M_trans == NOTRANS) is:
   //
-  //     Y = beta * Y + alpha * M * X
+  // Y = beta * Y + alpha * M * X
   //
   // where Y and M have compatible (distributed?) range vector
-  // spaces and X is a locally replicated serial multi-vector.  This
+  // spaces and X is a locally replicated serial multi-vector. This
   // operation does not require any global communication.
   //
   // The second operation (M_trans == TRANS) is:
   //
-  //     Y = beta * Y + alpha * M' * X
+  // Y = beta * Y + alpha * M' * X
   //
   // where M and X have compatible (distributed?) range vector spaces
-  // and Y is a locally replicated serial multi-vector.  This operation
+  // and Y is a locally replicated serial multi-vector. This operation
   // requires a local reduction.
   //
 
@@ -386,7 +388,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *this->spmdSpace();
 
   // Get the Spmd communicator
-  const Teuchos::RCP<const Teuchos::Comm<Index> >
+  const RCP<const Teuchos::Comm<Index> >
     comm = spmdSpc.getComm();
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>
@@ -417,7 +419,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.start();
 #endif
-    
+ 
   DetachedMultiVectorView<Scalar>
     Y_local(
       *Y
@@ -457,31 +459,31 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   // If nonlocal (i.e. M_trans==TRANS) then create temporary storage
   // for:
   //
-  //     Y_local_tmp = alpha * M(local) * X(local)                 : on nonroot processes
+  // Y_local_tmp = alpha * M(local) * X(local) : on nonroot processes
   //
   // or
   //
-  //     Y_local_tmp = beta*Y_local + alpha * M(local) * X(local)  : on root process (localOffset_==0)
+  // Y_local_tmp = beta*Y_local + alpha * M(local) * X(local) : on root process (localOffset_==0)
   // 
   // and set
   //
-  //     localBeta = ( localOffset_ == 0 ? beta : 0.0 )
+  // localBeta = ( localOffset_ == 0 ? beta : 0.0 )
   //
   // Above, we choose localBeta such that we will only perform
-  // Y_local = beta * Y_local + ...  on one process (the root
-  // process where localOffset_==0x).  Then, when we add up Y_local
+  // Y_local = beta * Y_local + ... on one process (the root
+  // process where localOffset_==0x). Then, when we add up Y_local
   // on all of the processors and we will get the correct result.
   //
   // If strictly local (i.e. M_trans == NOTRANS) then set:
   //
-  //      Y_local_tmp = Y_local
-  //      localBeta = beta
+  // Y_local_tmp = Y_local
+  // localBeta = beta
   //
 
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.start();
 #endif
-    
+ 
   Workspace<Scalar> Y_local_tmp_store(wss,Y_local.subDim()*Y_local.numSubCols(),false);
   RTOpPack::SubMultiVectorView<Scalar> Y_local_tmp;
   Scalar localBeta;
@@ -515,15 +517,15 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   timer.stop();
   std::cout << "\nSpmdMultiVectorBase<Scalar>::apply(...): Time for setting up Y_local_tmp and localBeta = " << timer.totalElapsedTime() << " seconds\n";
 #endif
-    
+ 
   //
   // Perform the local multiplication:
   //
-  //     Y(local) = localBeta * Y(local) + alpha * op(M(local)) * X(local)
+  // Y(local) = localBeta * Y(local) + alpha * op(M(local)) * X(local)
   //
   // or in BLAS lingo:
   //
-  //     C        = beta      * C        + alpha * op(A)        * op(B)
+  // C = beta * C + alpha * op(A) * op(B)
   //
 
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
@@ -532,33 +534,33 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   Teuchos::ETransp t_transp;
   if(ST::isComplex) {
     switch(M_trans) {
-      case NOTRANS:   t_transp = Teuchos::NO_TRANS;     break;
-      case TRANS:     t_transp = Teuchos::TRANS;        break;
-      case CONJTRANS: t_transp = Teuchos::CONJ_TRANS;   break;
+      case NOTRANS: t_transp = Teuchos::NO_TRANS; break;
+      case TRANS: t_transp = Teuchos::TRANS; break;
+      case CONJTRANS: t_transp = Teuchos::CONJ_TRANS; break;
       default: TEST_FOR_EXCEPT(true);
     }
   }
   else {
     switch(real_trans(M_trans)) {
-      case NOTRANS:   t_transp = Teuchos::NO_TRANS;     break;
-      case TRANS:     t_transp = Teuchos::TRANS;        break;
+      case NOTRANS: t_transp = Teuchos::NO_TRANS; break;
+      case TRANS: t_transp = Teuchos::TRANS; break;
       default: TEST_FOR_EXCEPT(true);
     }
   }
   blas_.GEMM(
-    t_transp                                                                  // TRANSA
-    ,Teuchos::NO_TRANS                                                        // TRANSB
-    ,Y_local.subDim()                                                         // M
-    ,Y_local.numSubCols()                                                     // N
-    ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim()   // K
-    ,alpha                                                                    // ALPHA
-    ,const_cast<Scalar*>(M_local.values())                                    // A
-    ,M_local.leadingDim()                                                     // LDA
-    ,const_cast<Scalar*>(X_local.values())                                    // B
-    ,X_local.leadingDim()                                                     // LDB
-    ,localBeta                                                                // BETA
-    ,Y_local_tmp.values()                                                     // C
-    ,Y_local_tmp.leadingDim()                                                 // LDC
+    t_transp // TRANSA
+    ,Teuchos::NO_TRANS // TRANSB
+    ,Y_local.subDim() // M
+    ,Y_local.numSubCols() // N
+    ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim() // K
+    ,alpha // ALPHA
+    ,const_cast<Scalar*>(M_local.values()) // A
+    ,M_local.leadingDim() // LDA
+    ,const_cast<Scalar*>(X_local.values()) // B
+    ,X_local.leadingDim() // LDB
+    ,localBeta // BETA
+    ,Y_local_tmp.values() // C
+    ,Y_local_tmp.leadingDim() // LDC
     );
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
@@ -568,11 +570,11 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 #endif
 
   if( comm.get() ) {
-    
+ 
     //
     // Perform the global reduction of Y_local_tmp back into Y_local
     //
-    
+ 
     if( real_trans(M_trans)==TRANS && globalDim_ > localSubDim_ ) {
       // Contiguous buffer for final reduction
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);
@@ -624,16 +626,16 @@ void SpmdMultiVectorBase<Scalar>::updateSpmdSpace()
   if(globalDim_ == 0) {
     const SpmdVectorSpaceBase<Scalar> *spmdSpace = this->spmdSpace().get();
     if(spmdSpace) {
-      globalDim_    = spmdSpace->dim();
-      localOffset_  = spmdSpace->localOffset();
-      localSubDim_  = spmdSpace->localSubDim();
-      numCols_      = this->domain()->dim();
+      globalDim_ = spmdSpace->dim();
+      localOffset_ = spmdSpace->localOffset();
+      localSubDim_ = spmdSpace->localSubDim();
+      numCols_ = this->domain()->dim();
     }
     else {
-      globalDim_    = 0;
-      localOffset_  = -1;
-      localSubDim_  = 0;
-      numCols_      = 0;
+      globalDim_ = 0;
+      localOffset_ = -1;
+      localSubDim_ = 0;
+      numCols_ = 0;
     }
   }
 }

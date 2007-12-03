@@ -189,6 +189,35 @@ void DefaultProductVector<Scalar>::describe(
 }
 
 
+// Extensions to ProductVectorBase suitable for physically-blocked vectors
+
+
+template <class Scalar>
+void DefaultProductVector<Scalar>::setBlock(
+  int i, const Teuchos::RCP<const VectorBase<Scalar> >& b
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
+  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
+#endif
+  vecs_[i] = b;
+}
+
+
+template <class Scalar>
+void DefaultProductVector<Scalar>::setNonconstBlock(
+  int i, const Teuchos::RCP<VectorBase<Scalar> >& b
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
+  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
+#endif
+  vecs_[i] = b;
+}
+
+
 // Overridden from ProductVectorBase
 
 
@@ -196,7 +225,9 @@ template <class Scalar>
 Teuchos::RCP<VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+#endif
   return vecs_[k].getNonconstObj();
 }
 
@@ -205,7 +236,9 @@ template <class Scalar>
 Teuchos::RCP<const VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getVectorBlock(const int k) const
 {
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+#endif
   return vecs_[k].getConstObj();
 }
 
@@ -224,7 +257,9 @@ DefaultProductVector<Scalar>::productSpace() const
 template <class Scalar>
 bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
 {
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+#endif
   return vecs_[k].isConst();
 }
 
@@ -234,28 +269,6 @@ Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
-}
-
-
-template <class Scalar>
-void DefaultProductVector<Scalar>
-::setBlock(int i, 
-           const Teuchos::RCP<const VectorBase<Scalar> >& b)
-{
-  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
-  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
-  vecs_[i] = b;
-}
-
-
-template <class Scalar>
-void DefaultProductVector<Scalar>
-::setNonconstBlock(int i, 
-                   const Teuchos::RCP<VectorBase<Scalar> >& b)
-{
-  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
-  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
-  vecs_[i] = b;
 }
 
 
@@ -457,6 +470,12 @@ void DefaultProductVector<Scalar>::applyOp(
 }
 
 
+// protected
+
+
+// Overridden protected functions from VectorBase
+
+
 template <class Scalar>
 void DefaultProductVector<Scalar>::acquireDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
@@ -584,7 +603,7 @@ void DefaultProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
 
 
 template <class Scalar>
-void DefaultProductVector<Scalar>::setSubVector(
+void DefaultProductVector<Scalar>::setSubVectorImpl(
   const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
   )
 {

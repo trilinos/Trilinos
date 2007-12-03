@@ -35,6 +35,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"

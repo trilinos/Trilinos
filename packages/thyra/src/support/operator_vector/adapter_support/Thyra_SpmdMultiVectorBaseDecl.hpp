@@ -120,7 +120,7 @@ public:
   /** \brief Returns the SPMD vector space object for the range of
    * <tt>*this</tt> multi-vector.
    */
-  virtual Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
+  virtual RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
 
   /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of
    * the local multi-vector data.
@@ -210,7 +210,7 @@ public:
   //@{
 
   /// Returns <tt>spmdSpace</tt>.
-  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
 
   //@}
 
@@ -235,11 +235,9 @@ public:
   /** \brief . */
   void mvMultiReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs[],
-    RTOpPack::ReductTarget*const reduct_objs[],
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
     const Index primary_first_ele,
     const Index primary_sub_dim,
     const Index primary_global_offset,

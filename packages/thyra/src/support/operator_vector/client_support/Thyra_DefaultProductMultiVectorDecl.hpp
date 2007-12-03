@@ -66,49 +66,40 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
+  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductMultiVector(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
     const int numMembers
     );
 
-  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
+  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductMultiVector(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const Teuchos::RCP<MultiVectorBase<Scalar> > multiVecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
     );
 
-  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
+  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductMultiVector(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
     );
 
-  /** \brief Initialize.
-   *
-   * ToDo: Finish documentation.
-   */
+  /** \brief . */
   void initialize(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
     const int numMembers
     );
 
-  /** \brief Initialize.
-   *
-   * ToDo: Finish documentation.
-   */
+  /** \brief . */
   void initialize(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const Teuchos::RCP<MultiVectorBase<Scalar> > multiVecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
     );
 
-  /** \brief Initialize.
-   *
-   * ToDo: Finish documentation.
-   */
+  /** \brief . */
   void initialize(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
     );
 
   /** \brief Uninitialize.
@@ -119,7 +110,7 @@ public:
 
   //@}
 
-  /** @name Overridden from Teuchos::Describable */
+  /** @name Overridden public functions from Teuchos::Describable */
   //@{
                                                 
   /** \brief . */
@@ -133,50 +124,69 @@ public:
 
   //@}
 
-  /** \name Overridden from ProductMultiVectorBase */
+  /** \name Overridden public functions from ProductMultiVectorBase */
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
+  RCP<const ProductVectorSpaceBase<Scalar> >
   productSpace() const;
   /** \brief . */
   bool blockIsConst(const int k) const;
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
   getNonconstMultiVectorBlock(const int k);
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> >
+  RCP<const MultiVectorBase<Scalar> >
   getMultiVectorBlock(const int k) const;
 
   //@}
 
-  /** \name Overriden from MultiVectorBase */
+  /** \name Overriden public functions from MultiVectorBase */
+  //@{
+  /** \brief . */
+  RCP<MultiVectorBase<Scalar> > clone_mv() const;
+
+  //@}
+
+  /** \name Overriden from LinearOpBase */
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const VectorBase<Scalar> > col(Index j) const;
+  RCP< const VectorSpaceBase<Scalar> >
+  range() const;
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> > col(Index j);
+  RCP< const VectorSpaceBase<Scalar> >
+  domain() const;
+
+  //@}
+
+protected:
+
+  /** \name Overriden protected functions from MultiVectorBase */
+  //@{
+
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> >
-  subView( const Range1D& colRng ) const;
+  RCP<const VectorBase<Scalar> > colImpl(Index j) const;
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> >
-  subView( const Range1D& colRng );
+  RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> >
-  subView( const int numCols, const int cols[] ) const;
+  RCP<const MultiVectorBase<Scalar> >
+  contigSubViewImpl( const Range1D& colRng ) const;
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> >
-  subView( const int numCols, const int cols[] );
+  RCP<MultiVectorBase<Scalar> >
+  nonconstContigSubViewImpl( const Range1D& colRng );
+  /** \brief . */
+  RCP<const MultiVectorBase<Scalar> >
+  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
+  /** \brief . */
+  RCP<MultiVectorBase<Scalar> >
+  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
   /** \brief . */
   void mvMultiReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs[],
-    RTOpPack::ReductTarget*const reduct_objs[],
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
     const Index primary_first_ele_offset,
     const Index primary_sub_dim,
     const Index primary_global_offset,
@@ -203,24 +213,8 @@ public:
   void commitNonconstDetachedMultiVectorViewImpl(
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     );
-  /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> > clone_mv() const;
 
   //@}
-
-  /** \name Overriden from LinearOpBase */
-  //@{
-
-  /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> >
-  range() const;
-  /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> >
-  domain() const;
-
-  //@}
-
-protected:
 
   /** \name Overridden from SingleScalarLinearOpBase */
   //@{
@@ -248,7 +242,7 @@ private:
   // //////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > productSpace_;
+  RCP<const DefaultProductVectorSpace<Scalar> > productSpace_;
   Teuchos::Array<CNMVC> multiVecs_;
   // cache
   int numBlocks_;
@@ -258,8 +252,8 @@ private:
 
   template<class MultiVectorType>
   void initializeImpl(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const Teuchos::RCP<MultiVectorType> multiVecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<MultiVectorType> > &multiVecs
     );
   
   void assertInitialized() const;
@@ -278,9 +272,9 @@ private:
  */
 template<class Scalar>
 inline
-Teuchos::RCP<DefaultProductMultiVector<Scalar> >
+RCP<DefaultProductMultiVector<Scalar> >
 defaultProductMultiVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
   const int numMembers
   )
 {
@@ -295,10 +289,10 @@ defaultProductMultiVector(
  * \relates DefaultProductMultiVector
  */
 template<class Scalar>
-Teuchos::RCP<DefaultProductMultiVector<Scalar> >
+RCP<DefaultProductMultiVector<Scalar> >
 defaultProductMultiVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<MultiVectorBase<Scalar> > multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
   )
 {
   return Teuchos::rcp(
@@ -312,10 +306,10 @@ defaultProductMultiVector(
  * \relates DefaultProductMultiVector
  */
 template<class Scalar>
-Teuchos::RCP<DefaultProductMultiVector<Scalar> >
+RCP<DefaultProductMultiVector<Scalar> >
 defaultProductMultiVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
   )
 {
   return Teuchos::rcp(

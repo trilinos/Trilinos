@@ -46,11 +46,11 @@ template<class Scalar>
 class CopyBackSpmdMultiVectorEntries {
 public:
   CopyBackSpmdMultiVectorEntries(
-    const int numCols, const int cols[]
-    ,const Scalar *localValuesView, const Index localSubDim
-    ,Scalar *localValues,const Index leadingDim
+    const ArrayView<const int> &cols,
+    const Scalar *localValuesView, const Index localSubDim,
+    Scalar *localValues,const Index leadingDim
     )
-    :cols_(cols,cols+numCols)
+    :cols_(cols)
     ,localValuesView_(localValuesView),localSubDim_(localSubDim)
     ,localValues_(localValues),leadingDim_(leadingDim)
     {}
@@ -58,13 +58,13 @@ public:
     {
       //std::cout << "\nEntering CopyBackSpmdMultiVectorEntries::~CopyBackSpmdMultiVectorEntries()...\n";
       // Copy from contiguous storage
-      const int    numCols = cols_.size();
-      const Scalar *lvv    = &*localValuesView_;
-      Scalar       *lv     = &*localValues_;
+      const int numCols = cols_.size();
+      const Scalar *lvv = &*localValuesView_;
+      Scalar *lv = &*localValues_;
       for( int k = 0; k < numCols; ++k ) {
         const int col_k = cols_[k];
-        const Scalar *lvv_k  = lvv + localSubDim_*k;
-        Scalar       *lv_k   = lv + leadingDim_*col_k;
+        const Scalar *lvv_k = lvv + localSubDim_*k;
+        Scalar *lv_k = lv + leadingDim_*col_k;
         //std::cout << "\nlvv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lvv_k[j] << ","; std::cout << "]\n";
         std::copy( lvv_k, lvv_k + localSubDim_, lv_k );
         //std::cout << "\nlv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lv_k[j] << ","; std::cout << "]\n";
@@ -72,11 +72,11 @@ public:
       //std::cout << "\nLeaving CopyBackSpmdMultiVectorEntries::~CopyBackSpmdMultiVectorEntries()\n";
     }
 private:
-  std::vector<int>   cols_;
-  const Scalar       *localValuesView_;
-  Index              localSubDim_;
-  Scalar             *localValues_;
-  Index              leadingDim_;
+  Array<int> cols_;
+  const Scalar *localValuesView_;
+  Index localSubDim_;
+  Scalar *localValues_;
+  Index leadingDim_;
   // Not defined and not to be called
   CopyBackSpmdMultiVectorEntries();
   CopyBackSpmdMultiVectorEntries(const CopyBackSpmdMultiVectorEntries&);
@@ -96,8 +96,8 @@ DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector()
 
 template<class Scalar>
 DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
-  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace
+  ,const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
   )
 {
   initialize(spmdRangeSpace,domainSpace);
@@ -105,10 +105,10 @@ DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
 
 template<class Scalar>
 DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
-  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
-  ,const Teuchos::RCP<Scalar>                                    &localValues
-  ,const Index                                                           leadingDim
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace
+  ,const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
+  ,const ArrayRCP<Scalar> &localValues
+  ,const Index leadingDim
   )
 {
   initialize(spmdRangeSpace,domainSpace,localValues,leadingDim);
@@ -116,29 +116,25 @@ DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::initialize(
-  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace
+  ,const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
   )
 {
   const Index localSubDim = spmdRangeSpace->localSubDim();
   initialize(
-    spmdRangeSpace
-    ,domainSpace
-    ,Teuchos::rcp(
-      localSubDim ? new Scalar[localSubDim*domainSpace->dim()] : 0
-      ,Teuchos::DeallocArrayDelete<Scalar>()
-      ,true
-      )
-    ,localSubDim
+    spmdRangeSpace,
+    domainSpace,
+    Teuchos::arcp<Scalar>( localSubDim ? localSubDim*domainSpace->dim() : 0 ),
+    localSubDim
     );
 }
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::initialize(
-  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
-  ,const Teuchos::RCP<Scalar>                                    &localValues
-  ,const Index                                                           leadingDim
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace
+  ,const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
+  ,const ArrayRCP<Scalar> &localValues
+  ,const Index leadingDim
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -148,29 +144,29 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
   TEST_FOR_EXCEPT(leadingDim < spmdRangeSpace->localSubDim());
 #endif
   spmdRangeSpace_ = spmdRangeSpace;
-  domainSpace_   = domainSpace;
-  localValues_   = localValues;
-  leadingDim_    = leadingDim;
+  domainSpace_ = domainSpace;
+  localValues_ = localValues;
+  leadingDim_ = leadingDim;
   this->updateSpmdSpace();
 }
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::uninitialize(
-  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         *spmdRangeSpace
-  ,Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  *domainSpace
-  ,Teuchos::RCP<Scalar>                                    *localValues
-  ,Index                                                           *leadingDim
+  RCP<const SpmdVectorSpaceBase<Scalar> > *spmdRangeSpace
+  ,RCP<const ScalarProdVectorSpaceBase<Scalar> > *domainSpace
+  ,ArrayRCP<Scalar> *localValues
+  ,Index *leadingDim
   )
 {
   if(spmdRangeSpace) *spmdRangeSpace = spmdRangeSpace_;
-  if(domainSpace)   *domainSpace   = domainSpace_;
-  if(localValues)   *localValues   = localValues_;
-  if(leadingDim)    *leadingDim    = leadingDim_;
+  if(domainSpace) *domainSpace = domainSpace_;
+  if(localValues) *localValues = localValues_;
+  if(leadingDim) *leadingDim = leadingDim_;
 
-  spmdRangeSpace_  = Teuchos::null;
-  domainSpace_    = Teuchos::null;
-  localValues_    = Teuchos::null;
-  leadingDim_     = 0;
+  spmdRangeSpace_ = Teuchos::null;
+  domainSpace_ = Teuchos::null;
+  localValues_ = Teuchos::null;
+  leadingDim_ = 0;
 
   this->updateSpmdSpace();
 }
@@ -178,7 +174,7 @@ void DefaultSpmdMultiVector<Scalar>::uninitialize(
 // Overridden from EuclideanLinearOpBase
 
 template<class Scalar>
-Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
+RCP< const ScalarProdVectorSpaceBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -190,8 +186,8 @@ DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
 // Overridden from MultiVectorBase
 
 template<class Scalar>
-Teuchos::RCP<VectorBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::col(Index j)
+RCP<VectorBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::nonconstColImpl(Index j)
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nSpmdMultiVectorStd<Scalar>::col() called!\n";
@@ -201,17 +197,19 @@ DefaultSpmdMultiVector<Scalar>::col(Index j)
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      spmdRangeSpace_
-      ,Teuchos::rcp( (&*localValues_) + j*leadingDim_, false )
-      ,1
+      spmdRangeSpace_,
+      localValues_.persistingView(j*leadingDim_,spmdRangeSpace_->dim()),
+      1
       )
     );
   //return Teuchos::rcp(new DefaultVectorMultiVector<Scalar>(subView(Range1D(j,j))));
 }
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::subView( const Range1D& col_rng_in )
+RCP<MultiVectorBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::nonconstContigSubViewImpl(
+  const Range1D& col_rng_in
+  )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nSpmdMultiVectorStd<Scalar>::subView() called!\n";
@@ -219,57 +217,61 @@ DefaultSpmdMultiVector<Scalar>::subView( const Range1D& col_rng_in )
   const Range1D colRng = this->validateColRange(col_rng_in);
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
-      spmdRangeSpace_
-      ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+      spmdRangeSpace_,
+      Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(colRng.size())
         ,true
-        )
-      ,Teuchos::rcp( (&*localValues_) + colRng.lbound()*leadingDim_, false )
-      ,leadingDim_
+        ),
+      localValues_.persistingView(colRng.lbound()*leadingDim_,colRng.size()*spmdRangeSpace_->dim()),
+      leadingDim_
       )
     );
 }
 
 template<class Scalar>
-Teuchos::RCP<const MultiVectorBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] ) const
+RCP<const MultiVectorBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::nonContigSubViewImpl(
+  const ArrayView<const int> &cols
+  ) const
 {
-  Teuchos::RCP<Scalar> localValuesView = createContiguousCopy(numCols,cols);
+  const int numCols = cols.size();
+  const ArrayRCP<Scalar> localValuesView = createContiguousCopy(cols);
   return 
     Teuchos::rcp(
       new DefaultSpmdMultiVector<Scalar>(
-        spmdRangeSpace_
-        ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+        spmdRangeSpace_,
+        Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
           spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(numCols)
-          ,true)
-        ,localValuesView
-        ,spmdRangeSpace_->localSubDim()
+          ,true),
+        localValuesView,
+        spmdRangeSpace_->localSubDim()
         )
       );
 }
 
 template<class Scalar>
-Teuchos::RCP<MultiVectorBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] )
+RCP<MultiVectorBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl( const ArrayView<const int> &cols )
 {
-  Teuchos::RCP<Scalar> localValuesView = createContiguousCopy(numCols,cols);
+  const int numCols = cols.size();
+  const ArrayRCP<Scalar> localValuesView = createContiguousCopy(cols);
   const Index localSubDim = spmdRangeSpace_->localSubDim();
-  Teuchos::RCP<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
     view = Teuchos::rcp(
       new DefaultSpmdMultiVector<Scalar>(
-        spmdRangeSpace_
-        ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+        spmdRangeSpace_,
+        Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
           spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(numCols)
-          ,true)
-        ,localValuesView
-        ,localSubDim
+          ,true),
+        localValuesView,
+        localSubDim
         )
       );
-  Teuchos::RCP<CopyBackSpmdMultiVectorEntries<Scalar> >
+  RCP<CopyBackSpmdMultiVectorEntries<Scalar> >
     copyBackView
     = Teuchos::rcp(
       new CopyBackSpmdMultiVectorEntries<Scalar>(
-        numCols,cols,&*localValuesView,localSubDim,&*localValues_,leadingDim_
+        cols,&*localValuesView,localSubDim,&*localValues_,leadingDim_
         )
       );
   Teuchos::set_extra_data(copyBackView,"copyBackView",&view,Teuchos::PRE_DESTROY);
@@ -279,7 +281,7 @@ DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] )
 // Overridden from SpmdMultiVectorBase
 
 template<class Scalar>
-Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
+RCP<const SpmdVectorSpaceBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::spmdSpace() const
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -301,7 +303,7 @@ void DefaultSpmdMultiVector<Scalar>::getLocalData(
   TEST_FOR_EXCEPT( leadingDim==NULL );
 #endif
   *localValues = &*localValues_;
-  *leadingDim  = leadingDim_;
+  *leadingDim = leadingDim_;
 }
 
 template<class Scalar>
@@ -329,7 +331,7 @@ void DefaultSpmdMultiVector<Scalar>::getLocalData(
   TEST_FOR_EXCEPT( leadingDim==NULL );
 #endif
   *localValues = &*localValues_;
-  *leadingDim  = leadingDim_;
+  *leadingDim = leadingDim_;
 }
 
 template<class Scalar>
@@ -347,26 +349,23 @@ void DefaultSpmdMultiVector<Scalar>::freeLocalData( const Scalar *localValues ) 
 // private
 
 template<class Scalar>
-Teuchos::RCP<Scalar>
+ArrayRCP<Scalar>
 DefaultSpmdMultiVector<Scalar>::createContiguousCopy(
-  const int numCols, const int cols[]
+  const ArrayView<const int> &cols
   ) const
 {
+  const int numCols = cols.size();
 #ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar>  &domain   = *domainSpace_;
-  const Index                    dimDomain = domain.dim();
+  const VectorSpaceBase<Scalar> &domain = *domainSpace_;
+  const Index dimDomain = domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
   const Index localSubDim = spmdRangeSpace_->localSubDim();
-  Teuchos::RCP<Scalar>
-    localValuesView
-    = Teuchos::rcp(
-      new Scalar[numCols*localSubDim], Teuchos::DeallocArrayDelete<Scalar>(), true
-      );
+  ArrayRCP<Scalar> localValuesView = Teuchos::arcp<Scalar>(numCols*localSubDim);
   // Copy to contiguous storage
-  const Scalar *lv   = &*localValues_;
-  Scalar       *lvv  = &*localValuesView;
+  const Scalar *lv = &*localValues_;
+  Scalar *lvv = &*localValuesView;
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
 #ifdef TEUCHOS_DEBUG
@@ -376,8 +375,8 @@ DefaultSpmdMultiVector<Scalar>::createContiguousCopy(
       << " is not in the range [0,"<<(dimDomain-1)<<"]!"
       );
 #endif
-    const Scalar *lv_k   = lv + leadingDim_*col_k;
-    Scalar       *lvv_k  = lvv + localSubDim*k;
+    const Scalar *lv_k = lv + leadingDim_*col_k;
+    Scalar *lvv_k = lvv + localSubDim*k;
     std::copy( lv_k, lv_k + localSubDim, lvv_k );
   }
   return localValuesView;

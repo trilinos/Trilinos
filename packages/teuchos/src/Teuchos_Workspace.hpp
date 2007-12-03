@@ -30,6 +30,7 @@
 #define TEUCHOS_WORKSPACE_HPP
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
@@ -214,6 +215,10 @@ public:
 	 * </ul>
 	 */
 	const T& operator[](size_t i) const;
+  /** \brief Return a non-const array view. */
+  operator ArrayView<T>(); 
+  /** \brief Return a const view object. */
+  operator ArrayView<const T>() const; 
 private:
 	RawWorkspace  raw_workspace_;
 	bool          call_constructors_;
@@ -367,6 +372,24 @@ inline
 const T& Workspace<T>::operator[](size_t i) const
 {
 	return const_cast<Workspace<T>*>(this)->operator[](i);
+}
+
+template<class T>
+inline
+Workspace<T>::operator ArrayView<T>()
+{
+  if (size()==0)
+    return Teuchos::null;
+  return arrayView<T>( &(*this)[0], size() );
+}
+
+template<class T>
+inline
+Workspace<T>::operator ArrayView<const T>() const
+{
+  if (size()==0)
+    return Teuchos::null;
+  return arrayView<const T>( &(*this)[0], size() );
 }
 
 #ifdef __PGI // Should not have to define this but pgCC is complaining!

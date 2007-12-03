@@ -59,10 +59,11 @@ template<typename T> class Array;
 // 2007/11/30: rabartl: Below, I had to move the initial declaration of these
 // non-member template functions outside of the Array class since the Sun
 // compiler on sass9000 would not accept this.  However, this did work on a
-// number of compiles such a g++, Intel C++ etc.  Also, the old inclass
+// number of other compilers such a g++, Intel C++ etc.  The old in-class
 // non-member friend definition is clearly ISO 98 C++ as shown in Item 46 of
 // "Effective C++: Third Edition".  This is not the end of the world but this
 // is something to remember for this platform.
+
 
 /** \brief Equality operator.
  *
@@ -72,7 +73,7 @@ template<typename T> inline
 bool operator==( const Array<T> &a1, const Array<T> &a2 );
 
 
-/** \brief Inequality operator.
+/** \brief Non-equality operator.
  *
  * \relates Array
  */
@@ -86,6 +87,38 @@ bool operator!=( const Array<T> &a1, const Array<T> &a2 );
  */
 template<typename T> inline
 void swap( Array<T> &a1, Array<T> &a2 );
+
+
+/** \brief Less-than operator.
+ *
+ * \relates Array
+ */
+template<typename T> inline
+bool operator<( const Array<T> &a1, const Array<T> &a2 );
+
+
+/** \brief Less-than-or-equal operator.
+ *
+ * \relates Array
+ */
+template<typename T> inline
+bool operator<=( const Array<T> &a1, const Array<T> &a2 );
+
+
+/** \brief Greater-than operator.
+ *
+ * \relates Array
+ */
+template<typename T> inline
+bool operator>( const Array<T> &a1, const Array<T> &a2 );
+
+
+/** \brief Greater-than-or-equal operator.
+ *
+ * \relates Array
+ */
+template<typename T> inline
+bool operator>=( const Array<T> &a1, const Array<T> &a2 );
 
 
 /** \brief Memory-safe tempalted array class that encapsulates std::vector.
@@ -116,18 +149,21 @@ public:
   template<typename T2>
   friend void swap( Array<T2> &a1, Array<T2> &a2 );
 
-  /*
-  friend bool Teuchos::operator<( const Array<T> &a1, const Array<T> &a2 )
-    { return (a1.vec() < a2.vec()); }
-  friend bool Teuchos::operator<=( const Array<T> &a1, const Array<T> &a2 )
-    { return (a1.vec() <= a2.vec()); }
-  friend bool Teuchos::operator>=( const Array<T> &a1, const Array<T> &a2 )
-    { return (a1.vec() >= a2.vec()); }
-  friend bool Teuchos::operator>( const Array<T> &a1, const Array<T> &a2 )
-    { return (a1.vec() > a2.vec()); }
-  */
-  // 2007/11/14: rabartl: Above: The GCC 3.4.6 compiler complains about
-  // operator< not being supported by __gnu_cxx::__normal_iterator!
+  /** \brief . */
+  template<typename T2>
+  friend bool Teuchos::operator<( const Array<T2> &a1, const Array<T2> &a2 );
+
+  /** \brief . */
+  template<typename T2>
+  friend bool Teuchos::operator<=( const Array<T2> &a1, const Array<T2> &a2 );
+
+  /** \brief . */
+  template<typename T2>
+  friend bool Teuchos::operator>( const Array<T2> &a1, const Array<T2> &a2 );
+
+  /** \brief . */
+  template<typename T2>
+  friend bool Teuchos::operator>=( const Array<T2> &a1, const Array<T2> &a2 );
 
   /** \name std::vector typedefs */
   //@{
@@ -1313,6 +1349,26 @@ bool Teuchos::operator!=( const Array<T> &a1, const Array<T> &a2 )
 template<typename T> inline
 void Teuchos::swap( Array<T> &a1, Array<T> &a2 )
 { a1.swap(a2); }
+
+
+template<typename T> inline
+bool Teuchos::operator<( const Array<T> &a1, const Array<T> &a2 )
+{ return (a1.vec() < a2.vec()); }
+
+
+template<typename T> inline
+bool Teuchos::operator<=( const Array<T> &a1, const Array<T> &a2 )
+{ return (a1.vec() <= a2.vec()); }
+
+
+template<typename T> inline
+bool Teuchos::operator>( const Array<T> &a1, const Array<T> &a2 )
+{ return (a1.vec() > a2.vec()); }
+
+
+template<typename T> inline
+bool Teuchos::operator>=( const Array<T> &a1, const Array<T> &a2 )
+{ return (a1.vec() >= a2.vec()); }
 
 
 template<typename T> inline

@@ -44,9 +44,9 @@ DefaultSpmdVector<Scalar>::DefaultSpmdVector()
 
 template<class Scalar>
 DefaultSpmdVector<Scalar>::DefaultSpmdVector(
-  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  &spmdSpace
-  ,const Teuchos::RCP<Scalar>                             &localValues
-  ,const Index                                                    stride
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
+  ,const ArrayRCP<Scalar> &localValues
+  ,const Index stride
   )
 {
   initialize(spmdSpace,localValues,stride);
@@ -54,9 +54,9 @@ DefaultSpmdVector<Scalar>::DefaultSpmdVector(
 
 template<class Scalar>
 void DefaultSpmdVector<Scalar>::initialize(
-  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  &spmdSpace
-  ,const Teuchos::RCP<Scalar>                             &localValues
-  ,const Index                                                    stride
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
+  ,const ArrayRCP<Scalar> &localValues
+  ,const Index stride
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -64,26 +64,26 @@ void DefaultSpmdVector<Scalar>::initialize(
   TEST_FOR_EXCEPT(spmdSpace->localSubDim() > 0 && localValues.get()==NULL);
   TEST_FOR_EXCEPT(stride==0);
 #endif
-  spmdSpace_      = spmdSpace;
-  localValues_   = localValues;
-  stride_        = stride;
+  spmdSpace_ = spmdSpace;
+  localValues_ = localValues;
+  stride_ = stride;
   this->updateSpmdSpace();
 }
 
 template<class Scalar>
 void DefaultSpmdVector<Scalar>::uninitialize(
-  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  *spmdSpace
-  ,Teuchos::RCP<Scalar>                             *localValues
-  ,Index                                                    *stride
+  RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace
+  ,ArrayRCP<Scalar> *localValues
+  ,Index *stride
   )
 {
-  if(spmdSpace)      *spmdSpace       = spmdSpace_;
-  if(localValues)   *localValues    = localValues_;
-  if(stride)        *stride         = stride_;
+  if(spmdSpace) *spmdSpace = spmdSpace_;
+  if(localValues) *localValues = localValues_;
+  if(stride) *stride = stride_;
 
-  spmdSpace_       = Teuchos::null;
-  localValues_    = Teuchos::null;
-  stride_         = 0;
+  spmdSpace_ = Teuchos::null;
+  localValues_ = Teuchos::null;
+  stride_ = 0;
 
   this->updateSpmdSpace();
 }
@@ -91,7 +91,7 @@ void DefaultSpmdVector<Scalar>::uninitialize(
 // Overridden from SpmdVectorBase
 
 template<class Scalar>
-Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
+RCP<const SpmdVectorSpaceBase<Scalar> >
 DefaultSpmdVector<Scalar>::spmdSpace() const
 {
   return spmdSpace_;
