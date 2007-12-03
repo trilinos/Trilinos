@@ -29,8 +29,16 @@
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = OrthoManager/OrthoManager_gentest.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose, 
-           --verbose --noMass;
+    ARGS = --verbose;
+    X-HOST = gabriel.sandia.gov;
+    COMM = SERIAL, MPI;
+}
+
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
+    TESTS = OrthoManager/OrthoManager_gentest.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --noMass;
     COMM = SERIAL, MPI;
 }
 
