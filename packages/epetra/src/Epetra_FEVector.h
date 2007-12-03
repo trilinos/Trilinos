@@ -57,6 +57,18 @@ class Epetra_FEVector : public Epetra_MultiVector {
  public:
    /** Constructor that requires a map specifying a non-overlapping
       data layout.
+      @param Map Map describing a non-overlapping distribution for the
+         underlying Epetra_MultiVector that this Epetra_FEVector will
+         be funnelling data into.
+
+      @param numVectors Optional argument, default value is 1. (See the
+           documentation for Epetra_MultiVector for the meaning of this
+          argument.
+
+      @param ignoreNonLocalEntries Optional argument, default value is false.
+             Under certain special circumstances it is desirable to have
+             non-local contributions ignored rather than saving them for
+             the GlobalAssemble step.
    */
    Epetra_FEVector(const Epetra_BlockMap& Map,
                    int numVectors=1,
