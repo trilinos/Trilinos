@@ -407,15 +407,21 @@
     return NULL;
   }
 
-  void __setitem__(PyObject* args, double val) {
-    int row;
-    int col;
-    if (!PyArg_ParseTuple(args, "ii", &row, &col)) {
+  PyObject * __setitem__(PyObject* args, double val) {
+    PyObject * rowObj = NULL;
+    PyObject * colObj = NULL;
+    int row           = 0;
+    int col           = 0;
+    if (!(PyArg_ParseTuple(args, "OO:Epetra_CrsMatrix___setitem__",
+			   &rowObj, &colObj)      &&
+	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &row)) &&
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &col))    )) {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return;
+      return NULL;
     }
     if (self->ReplaceGlobalValues(row, 1, &val, &col))
       self->InsertGlobalValues(row, 1, &val, &col);
+    return Py_BuildValue("");
   }
 
   PyObject* __getitem__(PyObject* args) const {
@@ -430,12 +436,13 @@
     double     result        = 0.0;
     double   * values        = NULL;
     double   * data          = NULL;
+    PyObject * rowObj        = NULL;
+    PyObject * colObj        = NULL;
     PyObject * returnObj     = NULL;
 
     // If the argument is an integer, get the global row ID, construct
     // a return PyArray, and obtain the data pointer
-    if (PyInt_Check(args)) {
-      grid = (int) PyInt_AsLong(args);
+    if (SWIG_IsOK(SWIG_AsVal_int(args, &grid))) {
       dimensions[0] = self->NumMyCols();
       returnObj = PyArray_SimpleNew(1,dimensions,NPY_DOUBLE);
       if (returnObj == NULL) goto fail;
@@ -494,7 +501,10 @@
       }
 
     // If the arguments are two integers, obtain a single result value
-    } else if (PyArg_ParseTuple(args, "ii", &grid, &gcid)) {
+    } else if (PyArg_ParseTuple(args, "OO:Epetra_CrsMatrix___getitem__",
+				&rowObj, &colObj)       &&
+	       SWIG_IsOK(SWIG_AsVal_int(rowObj, &grid)) &&
+	       SWIG_IsOK(SWIG_AsVal_int(colObj, &gcid))   ) {
       lrid = self->LRID(grid);
       if (lrid == -1) {
 	PyErr_Format(PyExc_IndexError, "Global row %d not on processor", grid);
@@ -573,26 +583,41 @@
 %extend Epetra_FECrsMatrix {
   void __setitem__(PyObject* args, double val) 
   {
-    int Row, Col;
-    if (!PyArg_ParseTuple(args, "ii", &Row, &Col)) {
+    int row = 0;
+    int col = 0;
+    PyObject *rowObj = NULL;
+    PyObject *colObj = NULL;
+
+    if (!(PyArg_ParseTuple(args, "OO:Epetra_FECrsMatrix___setitem__",
+			   &rowObj, &colObj)      &&
+	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &row)) &&
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &col))    ))
+    {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
       return;
     }
 
-    if (self->ReplaceGlobalValues(1, &Row, 1, &Col, &val))
-      self->InsertGlobalValues(1, &Row, 1, &Col, &val);
+    if (self->ReplaceGlobalValues(1, &row, 1, &col, &val))
+      self->InsertGlobalValues(1, &row, 1, &col, &val);
   }
 
   PyObject* __getitem__(PyObject* args) 
   {
-    int Row, Col;
-    if (PyInt_Check(args))
+    int row = 0;
+    int col = 0;
+    PyObject *rowObj = NULL;
+    PyObject *colObj = NULL;
+
+    if (SWIG_IsOK(SWIG_AsVal_int(args, &row)))
     {
-      return(Epetra_RowMatrix_GetEntries(*self, PyLong_AsLong(args)));
+      return(Epetra_RowMatrix_GetEntries(*self, row));
     }
-    else if (PyArg_ParseTuple(args, "ii", &Row, &Col))
+    else if (PyArg_ParseTuple(args, "OO:Epetra_FECrsMatrix___getitem__",
+			      &rowObj, &colObj)      && 
+	     SWIG_IsOK(SWIG_AsVal_int(rowObj, &row)) &&
+	     SWIG_IsOK(SWIG_AsVal_int(colObj, &col))    )
     {
-      return(Epetra_RowMatrix_GetEntry(*self, Row, Col));
+      return(Epetra_RowMatrix_GetEntry(*self, row, col));
     }
     else
     {

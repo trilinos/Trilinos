@@ -262,21 +262,33 @@ namespace MLAPI {
     MultiVector __mul__(double rhs) {
       return(*self * rhs);
     }
-    void __setitem__(PyObject* args, double value) {
+    PyObject * __setitem__(PyObject* args, double value) {
+      PyObject * rowObj = NULL;
+      PyObject * colObj = NULL;
       int Row, Col;
-      if (!PyArg_ParseTuple(args, "ii", &Row, &Col)) {
+      if (!(PyArg_ParseTuple(args, "OO:MLAPI_MultiVector___setitem__",
+			     &rowObj, &colObj)      &&
+	    SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	    SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))   )) {
 	PyErr_SetString(PyExc_IndexError, "Invalid index");
-	return;
+	return NULL;
       }
       (*self)(Row, Col) = value;
+      return Py_BuildValue("");
     }
-    double __getitem__(PyObject* args) {
-      int Row, Col;
-      if (!PyArg_ParseTuple(args, "ii", &Row, &Col)) {
+    PyObject * __getitem__(PyObject* args) {
+      PyObject * rowObj = NULL;
+      PyObject * colObj = NULL;
+      int Row           = 0;
+      int Col           = 0;
+      if (!(PyArg_ParseTuple(args, "OO:MLAPI_MultiVector___getitem__",
+			     &rowObj, &colObj)      &&
+	    SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	    SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    )) {
 	PyErr_SetString(PyExc_IndexError, "Invalid index");
-	return(0.0);
+	return NULL;
       }
-      return((*self)(Row, Col));
+      return SWIG_From_double((*self)(Row, Col));
     }
   }
 }
@@ -293,12 +305,18 @@ namespace MLAPI {
 namespace MLAPI {
   %extend Operator {
     PyObject* __getitem__(PyObject* args) {
+      PyObject * rowObj = NULL;
+      PyObject * colObj = NULL;
+      int Row           = 0;
+      int Col           = 0;
       Epetra_RowMatrix* Matrix = self->GetRCPRowMatrix().get();
-      int Row, Col;
-      if (PyInt_Check(args)) {
-	return Epetra_RowMatrix_GetEntries(*Matrix, PyLong_AsLong(args));
+      if (SWIG_IsOK(SWIG_AsVal_int(args, &Row))) {
+	return Epetra_RowMatrix_GetEntries(*Matrix, Row);
       }
-      else if (PyArg_ParseTuple(args, "ii", &Row, &Col)) {
+      else if (PyArg_ParseTuple(args, "OO:MLAPI_Operator___getitem__",
+				&rowObj, &colObj)      &&
+	       SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	       SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    ) {
 	return Epetra_RowMatrix_GetEntry(*Matrix, Row, Col);
       }
       else {
@@ -389,28 +407,40 @@ namespace MLAPI {
 // MLAPI_PyMatrix support //
 ////////////////////////////
 %include "MLAPI_PyMatrix.h"
-namespace {
-  %extend PyMatrix {
-    void __setitem__(PyObject* args, double val) {
-      int Row, Col;
-      if (!PyArg_ParseTuple(args, "ii", &Row, &Col)) {
-	PyErr_SetString(PyExc_IndexError, "Invalid index");
-	return;
-      }
-      self->SetElement(Row, Col, val);
+%extend PyMatrix
+{
+  PyObject * __setitem__(PyObject* args, double val) {
+    PyObject * rowObj = NULL;
+    PyObject * colObj = NULL;
+    int Row           = 0;
+    int Col           = 0;
+    if (!(PyArg_ParseTuple(args, "OO:PyMatrix___setitem__",
+			   &rowObj, &colObj)      &&
+	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))   )) {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return NULL;
     }
-    PyObject* __getitem__(PyObject* args) {
-      int Row, Col;
-      if (PyInt_Check(args)) {
-	return Epetra_RowMatrix_GetEntries(*(self->GetMatrix()), PyLong_AsLong(args));
-      }
-      else if (PyArg_ParseTuple(args, "ii", &Row, &Col)) {
-	return Epetra_RowMatrix_GetEntry(*(self->GetMatrix()), Row, Col);
-      }
-      else {
-	PyErr_SetString(PyExc_IndexError, "Input argument not supported");
-	return NULL;
-      }
+    self->SetElement(Row, Col, val);
+    return Py_BuildValue("");
+  }
+  PyObject* __getitem__(PyObject* args) {
+    PyObject * rowObj = NULL;
+    PyObject * colObj = NULL;
+    int Row           = 0;
+    int Col           = 0;
+    if (SWIG_IsOK(SWIG_AsVal_int(args, &Row))) {
+      return Epetra_RowMatrix_GetEntries(*(self->GetMatrix()), Row);
+    }
+    else if (PyArg_ParseTuple(args, "OO:PyMatrix___getitem__",
+			      &rowObj, &colObj)      &&
+	     SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	     SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    ) {
+      return Epetra_RowMatrix_GetEntry(*(self->GetMatrix()), Row, Col);
+    }
+    else {
+      PyErr_SetString(PyExc_IndexError, "Input argument not supported");
+      return NULL;
     }
   }
 }
