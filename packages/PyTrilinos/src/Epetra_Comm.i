@@ -61,6 +61,7 @@ PyObject* Finalize();
     count     = PyArray_SIZE(partialArray);
     globalObj = PyArray_SimpleNew(array_numdims(partialArray),
 				  array_dimensions(partialArray), type);
+    PyArray_FILLWBYTE(globalObj, 0);
     if (type == NPY_INT) {
       int* partialVals = (int*) array_data(partialArray);
       int* globalVals  = (int*) array_data(globalObj);
