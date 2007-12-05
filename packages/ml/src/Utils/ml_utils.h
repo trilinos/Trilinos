@@ -223,6 +223,7 @@ std::cout << "--- Leaving:
    void ML_fast_hash(int value, int table[], int tableLengthMinusOne,
                      int *spaceUsed, int *hashKey);
 #endif
+   void ML_print_align(int int2match, char *space, int pad);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
