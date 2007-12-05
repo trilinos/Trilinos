@@ -72,7 +72,7 @@
 #undef VERSION
 #endif
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 #include "NOX_Config.h"
 #endif
 

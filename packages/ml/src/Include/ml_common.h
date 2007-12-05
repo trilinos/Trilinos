@@ -52,7 +52,7 @@
 #undef VERSION
 #endif
 
-#ifdef HAVE_CONFIG_H 
+#ifndef TRILINOS_NO_CONFIG_H 
 #include "ml_config.h"
 
 /* aztecoo depends on epetra ...*/
@@ -174,6 +174,6 @@
 #endif
 #endif
 
-#endif /*ifdef HAVE_CONFIG_H*/
+#endif /*ifndef TRILINOS_NO_CONFIG_H*/
 
 #endif

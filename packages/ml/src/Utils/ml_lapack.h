@@ -132,7 +132,7 @@ typedef long ftnlen;
 /* Use autoconf's definition of F77_FUNC 
    unless using old make system */
 
-#ifndef HAVE_CONFIG_H
+#ifdef TRILINOS_NO_CONFIG_H
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -143,7 +143,7 @@ typedef long ftnlen;
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
-#endif /* HAVE_CONFIG_H */
+#endif /* TRILINOS_NO_CONFIG_H */
 
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
@@ -530,7 +530,7 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 /* Use autoconf's definition of F77_FUNC 
    unless using old make system */
 
-#ifndef HAVE_CONFIG_H
+#ifdef TRILINOS_NO_CONFIG_H
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -541,7 +541,7 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
-#endif /* HAVE_CONFIG_H */
+#endif /* TRILINOS_NO_CONFIG_H */
 
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
