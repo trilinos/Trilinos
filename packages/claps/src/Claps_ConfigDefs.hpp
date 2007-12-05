@@ -46,7 +46,7 @@ const double Epetra_MaxDouble = 1.0E+100;
 const double Epetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Epetra_Underflow = 2.23E-308;
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -154,7 +154,7 @@ namespace Claps {
 }
 
 /*-----------------------------------------------------------------------
-  Must refine the following up to #else HAVE_CONFIG_H is not defined
+  Must refine the following up to #else TRILINOS_NO_CONFIG_H is defined
   -----------------------------------------------------------------------*/
 
 #ifdef EPETRA_SIMULATE_BOOL
@@ -199,7 +199,7 @@ const int DefaultTracebackMode = 1;
 const int DefaultTracebackMode = 0;
 #endif
 
-#else /*HAVE_CONFIG_H is not defined*/
+#else /*TRILINOS_NO_CONFIG_H is defined*/
 
 #ifndef __cplusplus
 #define __cplusplus
@@ -272,7 +272,7 @@ using namespace std;
 const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
 const int DefaultTracebackMode = 1;
 
-#endif /*HAVE_CONFIG_H*/
+#endif /*ndef TRILINOS_NO_CONFIG_H*/
 
 // Delete any previous definition of EPETRA_NO_ERROR_REPORTS
 
