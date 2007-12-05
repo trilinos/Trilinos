@@ -2497,3 +2497,23 @@ void ML_fast_hash(int new_val, int hash_list[], int hlm1,int *hash_used,
   }
 }
 #endif /*ifndef ML_UseInlinedHashFunction*/
+
+/* ************************************************************************* */
+/*
+  Takes an integer as input, and returns a character array containing a space that
+  is the same print length (i.e., the same number of characters on the screen.)
+  For example, '-12345' would return '      ' (6 spaces).  Useful for aligning
+  prints.
+*/
+void ML_print_align(int int2match, char *space, int pad)
+{
+  int jj;
+  double dtemp;
+  if (int2match < 0) pad++;
+  dtemp=fabs(int2match);
+  for (jj=0; jj<pad; jj++) space[jj]=' ';
+  jj=pad;
+  while (dtemp>=1) {space[jj++]=' '; dtemp /= 10;}
+  if (int2match == 0) space[jj++]=' ';
+  space[jj] = '\0';
+}
