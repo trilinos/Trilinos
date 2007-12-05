@@ -40,7 +40,7 @@
 #  define __cplusplus
 #endif
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -147,7 +147,7 @@
 #    include <math.h>
 #  endif /* JANUS_STLPORT */
 
-#else /*HAVE_CONFIG_H is not defined*/
+#else /*TRILINOS_NO_CONFIG_H is defined*/
 
 #  include <iterator>
 #  include <iostream>
@@ -169,7 +169,7 @@
 #  include <algorithm>
 #  include <numeric>
 
-#endif /*HAVE_CONFIG_H*/
+#endif /*ndef TRILINOS_NO_CONFIG_H*/
 
 /* Define some macros */
 #define ANASAZI_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */
