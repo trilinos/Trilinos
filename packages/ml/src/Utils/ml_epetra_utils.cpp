@@ -152,7 +152,17 @@ int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
   Epetra_Vector X(View, A->OperatorDomainMap(), p);
   Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
   
+#ifndef ML_MODIFIED_EPETRA_CRS_MATVEC
   A->Multiply(false, X, Y);
+#else
+  // to use this feature, you must modify Epetra's CSR matvec to time
+  // communication and computation separately.  I've included the
+  // modified method in a comment at the bottom of this file.
+  double apply_only_time, total_time;
+  A->Multiply(false, X, Y, &apply_only_time, &total_time);
+  mat_in->apply_without_comm_time += apply_only_time;
+  mat_in->apply_time += total_time;
+#endif
 
   return 1;
 }
@@ -197,7 +207,7 @@ int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
     int ierr;
     ierr = ML_Epetra_getrow_Filter(mat_in, 1, &i, allocated_space, 
                                    &columns[0], &values[0], &row_lengths);
-    assert (ierr == 1);
+    assert (ierr == 1); ierr++;
 
     for (int j = 0 ; j < row_lengths ; ++j)
       ap[i] += values[j] * p[columns[j]];
@@ -579,7 +589,6 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
 
   case ML_Epetra::ML_NO_FILTER:
     return(1);
-    break;
 
   case ML_Epetra::ML_EQN_FILTER:
 
@@ -3483,10 +3492,108 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
 
 } //BreakForDebugger()
 
+/*
+  // -------------------------------------------------------------------
+  // Epetra_CrsMatrix matvec, modified to return timing information.  If
+  // you want timing of the user's Epetra_CrsMatrix matvec, replace the
+  // function of the same name in epetra/src/Epetra_CrsMatrix.cpp with
+  // the code below.
+  // -------------------------------------------------------------------
+
+#include "Epetra_Time.h"
+
+int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vector& y,  double *compTime, double *allTime) const {
+
+#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
+  TEUCHOS_FUNC_TIME_MONITOR("Epetra_CrsMatrix::Multiply(TransA,x,y)");
+#endif
+  //
+  // This function forms the product y = A * x or y = A' * x
+  //
+
+  double apply_only_time = 0.0, total_time = 0.0;
+
+  if(!Filled()) 
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  Epetra_Time TotalTime(Comm());
+
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+
+  Epetra_Vector * xcopy = 0;
+  if (&x==&y && Importer()==0 && Exporter()==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
+  }
+  UpdateImportVector(1); // Refresh import and output vectors if needed
+  UpdateExportVector(1);
+
+  if(!TransA) {
+
+    // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+    if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      xp = (double*) ImportVector_->Values();
+    }
+		
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if(Exporter() != 0)  yp = (double*) ExportVector_->Values();
+		
+    // Do actual computation
+    Epetra_Time ApplyTime(Comm());
+    GeneralMV(xp, yp);
+    apply_only_time += ApplyTime.ElapsedTime();
+
+    if(Exporter() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+  }
+	
+  else { // Transpose operation
+
+    // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
+    if(Exporter() != 0) {
+      EPETRA_CHK_ERR(ExportVector_->Import(x, *Exporter(), Insert));
+      xp = (double*) ExportVector_->Values();
+    }
+
+    // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
+    if(Importer() != 0) yp = (double*) ImportVector_->Values();
+
+    // Do actual computation
+    Epetra_Time ApplyTime(Comm());
+    GeneralMTV(xp, yp);
+    apply_only_time += ApplyTime.ElapsedTime();
+
+    if(Importer() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+  }
+  total_time += TotalTime.ElapsedTime();
+
+  if (compTime) *compTime = apply_only_time;
+  if (allTime)  *allTime  = total_time;
+
+  UpdateFlops(2 * NumGlobalNonzeros());
+  if (xcopy!=0) {
+    delete xcopy;
+    EPETRA_CHK_ERR(1); // Return positive code to alert the user about needing extra copy of x
+    return(1);
+  }
+  return(0);
+}
+*/
+
 #else
 
   /*noop for certain compilers*/
   int ML_EPETRA_EMPTY;
 
 #endif /*ifdef ML_WITH_EPETRA*/
-
