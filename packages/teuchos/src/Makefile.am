@@ -141,6 +141,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_TestingHelpers.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
+	$(srcdir)/Teuchos_Tuple.hpp \
 	$(srcdir)/Teuchos_TypeNameTraits.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \

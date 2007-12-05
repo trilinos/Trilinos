@@ -278,7 +278,7 @@ DiagonalTransientModel::getValidParameters() const
       Lambda_max_name, Lambda_max_default, "",
       &*pl
       );
-    setStringToIntegralParameter(
+    setStringToIntegralParameter<ELambdaFit>(
       Lambda_fit_name, Lambda_fit_default, "",
       tuple<std::string>("Linear","Random"),
       tuple<ELambdaFit>(LAMBDA_FIT_LINEAR,LAMBDA_FIT_RANDOM),

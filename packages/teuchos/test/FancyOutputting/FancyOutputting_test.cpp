@@ -185,7 +185,7 @@ AlgorithmA::getValidParameters() const
   if (is_null(validParams)) {
     RCP<ParameterList>
       pl = Teuchos::rcp(new ParameterList("AlgorithmA"));
-    setStringToIntegralParameter(
+    setStringToIntegralParameter<EAlgoType>(
       AlgoType_name, AlgoType_default,
       "The algorithm type to use",
       tuple<std::string>("Bob", "John", "Harry"),

@@ -186,14 +186,14 @@ getValidAztecOOParameters()
   if(pl.get()) return pl;
   pl = validAztecOOParams = rcp(new ParameterList());
   //
-  setStringToIntegralParameter(
+  setStringToIntegralParameter<int>(
     AztecSolver_name, "GMRES",
     "Type of linear solver algorithm to use.",
     tuple<std::string>("CG","GMRES","CGS","TFQMR","BiCGStab","LU"),
     tuple<int>(AZ_cg,AZ_gmres,AZ_cgs,AZ_tfqmr,AZ_bicgstab,AZ_lu),
     &*pl
     );
-  setStringToIntegralParameter(
+  setStringToIntegralParameter<EAztecPreconditioner>(
     AztecPreconditioner_name, "ilu",
     "Type of internal preconditioner to use.\n"
     "Note! this preconditioner will only be used if the input operator\n"
@@ -242,7 +242,7 @@ getValidAztecOOParameters()
     "\"Least-squares Polynomial\" internal preconditioners.",
     &*pl
     );
-  setStringToIntegralParameter(
+  setStringToIntegralParameter<int>(
     RCMReordering_name, "Disabled",
     "Determines if RCM reordering is used with the internal\n"
     "\"ilu\" or \"ilut\" preconditioners.",
@@ -250,7 +250,7 @@ getValidAztecOOParameters()
     tuple<int>(1,0),
     &*pl
     );
-  setStringToIntegralParameter(
+  setStringToIntegralParameter<int>(
     Orthogonalization_name, "Classical",
     "The type of orthogonalization to use with the \"GMRES\" solver.",
     tuple<std::string>("Classical","Modified"),
@@ -263,7 +263,7 @@ getValidAztecOOParameters()
     "a restart is performed.",
     &*pl
     );
-  setStringToIntegralParameter(
+  setStringToIntegralParameter<int>(
     ConvergenceTest_name, "r0", // Same as "rhs" when x=0
     "The convergence test to use for terminating the iterative solver.",
     tuple<std::string>("r0","rhs","Anorm","no scaling","sol"),

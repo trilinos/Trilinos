@@ -37,7 +37,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_Tuple.hpp"
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -124,6 +124,37 @@ bool operator>=( const Array<T> &a1, const Array<T> &a2 );
 /** \brief Memory-safe tempalted array class that encapsulates std::vector.
  *
  * ToDo: Finish documentation!
+ *
+ * \section Teuchos_Array_Tuple_sec Tuple Construction
+ *
+ * A user can create a Teuchos::Tuple object to initialize an Array object by
+ * using one of the the convenient overloaded Teuchos::tuple() non-member
+ * constructor functions.  For example, see Array_test.cpp for how this is
+ * done.
+ *
+ * \section Teuchos_Array_DesignDiscussion_sec Design Discussion
+ *
+ * Currently, this class defines implicit conversions to ArrayView.  An
+ * alternative design would be to have Array derive from ArrayView.  This is a
+ * workable design but it would impart some extra storage and runtime
+ * overhead.  Perhaps the most significant overhead would be having the reset
+ * the base ArrayView pointer and size on each and every change in the
+ * structure of the container.  This would import extra overhead beyond a
+ * straight std::vector.
+ *
+ * The big advantage of deriving Array from ArrayView is that this would allow
+ * Array to be used to call some functions taking ArrayView without requiring
+ * an implicit conversion.  While the implicit shallow conversion from Array
+ * to ArrayView is very cheap (just a pointer and int copy), it does cause
+ * problems where the compiler will refuse to perform an implicit conversion
+ * to call a templated function.  However, note that an implicit conversion to
+ * an ArrayView<const T> would always have to be performed no matter what.
+ *
+ * In summary, having Array implicitly convert to ArrayView instead of having
+ * Array derive from ArrayView results in faster and simpler code at the
+ * expense of the compiler refusing the make implicit conversions in some
+ * cases when calling template functions.  Such conversion problems can always
+ * be dealt with by using explicit templat arguments.
  *
  * \ingroup teuchos_mem_mng_grp
  */
@@ -223,6 +254,9 @@ public:
   Array(InputIterator first, InputIterator last);
   /** \brief . */
   Array(const ArrayView<const T>& a);
+  /** \brief . */
+  template<int N>
+  Array(const Tuple<T,N>& t);
   /** \brief . */
   ~Array();
   /** \brief . */
@@ -542,90 +576,6 @@ std::string toString(const Array<T>& array);
  */
 template<typename T>
 Array<T> fromStringToArray(const std::string& arrayStr);
-                      
-/** \brief Create an array with one entry.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a);
-
-                      
-/** \brief Create an array with two entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b);
-
-
-/** \brief Create an array with three entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c);
-
-
-/** \brief Create an array with four entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d);
-
-
-/** \brief Create an array with five entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e);
-
-
-/** \brief Create an array with six entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f);
-
-
-/** \brief Create an array with seven entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g);
-
-
-/** \brief Create an array with eight entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g, const T& h);
-
-
-/** \brief Create an array with nine entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g, const T& h, const T& i);
-
-
-/** \brief Create an array with ten entries.
- *
- * \relates Array
- */
-template<typename T> inline
-Array<T> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g, const T& h, const T& i, const T& j);
 
 
 } // namespace Teuchos
@@ -704,6 +654,18 @@ Array<T>::Array(const ArrayView<const T>& a)
 #endif
 {
   insert(begin(),a.begin(),a.end());
+}
+
+
+template<typename T>
+template<int N>
+inline
+Array<T>::Array(const Tuple<T,N>& t)
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  : vec_(rcp(new std::vector<T>()))
+#endif
+{
+  insert(begin(),t.begin(),t.end());
 }
 
 
@@ -1479,155 +1441,6 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
       );
   }
   return a;
-}
-
-                      
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a)
-{
-  Array<T> rtn(1, a);
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b)
-{
-  Array<T> rtn(2);
-  rtn[0] = a;
-  rtn[1] = b;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c)
-{
-  Array<T> rtn(3);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d)
-{
-  Array<T> rtn(4);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e)
-{
-  Array<T> rtn(5);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  rtn[4] = e;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f)
-{
-  Array<T> rtn(6);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  rtn[4] = e;
-  rtn[5] = f;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g)
-{
-  Array<T> rtn(7);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  rtn[4] = e;
-  rtn[5] = f;
-  rtn[6] = g;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g, const T& h)
-{
-  Array<T> rtn(8);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  rtn[4] = e;
-  rtn[5] = f;
-  rtn[6] = g;
-  rtn[7] = h;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g, const T& h, const T& i)
-{
-  Array<T> rtn(9);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  rtn[4] = e;
-  rtn[5] = f;
-  rtn[6] = g;
-  rtn[7] = h;
-  rtn[8] = i;
-  return rtn;
-}
-
-
-template<typename T> inline
-Teuchos::Array<T>
-Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
-  const T& f, const T& g, const T& h, const T& i, const T& j)
-{
-  Array<T> rtn(10);
-  rtn[0] = a;
-  rtn[1] = b;
-  rtn[2] = c;
-  rtn[3] = d;
-  rtn[4] = e;
-  rtn[5] = f;
-  rtn[6] = g;
-  rtn[7] = h;
-  rtn[8] = i;
-  rtn[9] = j;
-  return rtn;
 }
 
 

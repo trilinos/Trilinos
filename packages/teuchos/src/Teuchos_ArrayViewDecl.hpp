@@ -66,6 +66,11 @@ template<class T> class ArrayRCP;
  *
  * ToDo: Finish documentation!
  *
+ * \section Teuchos_ArrayView_DesignDiscussion_sec Design Discussion
+ *
+ * This class is setup to allow derived classes that can only be allocated on
+ * the stack.
+ *
  * \ingroup teuchos_mem_mng_grp
  */
 template<class T>
@@ -136,7 +141,7 @@ public:
 	 * <li>???
 	 * </ul>
 	 */
-	ArrayView( T* p, Ordinal size);
+	ArrayView( T* p, Ordinal size );
 
 	/** \brief Initialize from another <tt>ArrayView<T></tt> object.
 	 *
@@ -315,7 +320,11 @@ public:
 
   //@}
 
+
 private:
+
+  // ///////////////////////
+  // Private data members
 
 	T *ptr_;
   int size_;
@@ -328,9 +337,16 @@ private:
   void setUpIterators();
 #endif
 
+  // ///////////////////////
+  // Private member functions
+
   // Not defined and not to be called!
-	ArrayView();
+  ArrayView();
 	ArrayView& operator=(const ArrayView&);
+
+  // Disable dynamic allocation
+	static void* operator new(size_t);
+	static void operator delete(void*);
 
 };
 

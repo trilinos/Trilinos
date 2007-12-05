@@ -298,13 +298,13 @@ void StateAndForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     stateModel = sensModel_->getStateModel();
   
-  x_bar_space_ = Thyra::productVectorSpace(
+  x_bar_space_ = Thyra::productVectorSpace<Scalar>(
     tuple<RCP<const Thyra::VectorSpaceBase<Scalar> > >(
       stateModel->get_x_space(), sensModel_->get_x_space()
       )
     );
 
-  f_bar_space_ = Thyra::productVectorSpace(
+  f_bar_space_ = Thyra::productVectorSpace<Scalar>(
     tuple<RCP<const Thyra::VectorSpaceBase<Scalar> > >(
       stateModel->get_f_space(), sensModel_->get_f_space()
       )

@@ -91,6 +91,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   using Teuchos::NullIteratorTraits;
   using Teuchos::TypeNameTraits;
   using Teuchos::as;
+  using Teuchos::tuple;
   typedef typename Array<T>::size_type size_type;
 
   bool success = true;
@@ -585,7 +586,149 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     TEST_EQUALITY_CONST( (a2>a), false );
   }
 
-  // ToDo: Add tests for all comparison operators!
+  //
+  out << "\nH) Test tuple(...) construction ...\n";
+  //
+
+  {
+    const size_type n = 1;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 2;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 3;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 4;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 5;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3,4);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 6;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3,4,5);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 7;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3,4,5,6);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 8;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3,4,5,6,7);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 9;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3,4,5,6,7,8);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const size_type n = 10;
+    out << "\nTest Array<T> = tuple(0,...,"<<n-1<<")\n";
+    Array<T> an = tuple<T>(0,1,2,3,4,5,6,7,8,9);
+    TEST_EQUALITY_CONST(an.size(),n);
+    out << "Test that an[i] == i ... ";
+    bool local_success = true;
+    for( size_type i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( an, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
 
   // ToDo: Test requesting views outside of valid range!
   

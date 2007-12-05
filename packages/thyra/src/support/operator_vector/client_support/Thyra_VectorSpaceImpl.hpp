@@ -146,7 +146,7 @@ namespace Thyra
   Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1)
   {
-    return productSpace(Teuchos::tuple(s1));
+    return productSpace<Scalar>(Teuchos::tuple(s1));
   }
 
   //========================================================================
@@ -155,7 +155,7 @@ namespace Thyra
   productSpace(VectorSpace<Scalar>& s1, 
                VectorSpace<Scalar>& s2)
   {
-    return productSpace(Teuchos::tuple(s1, s2));
+    return productSpace<Scalar>(Teuchos::tuple(s1, s2));
   }
 
   //========================================================================
@@ -164,7 +164,7 @@ namespace Thyra
   productSpace(VectorSpace<Scalar>& s1,VectorSpace<Scalar>& s2,
                VectorSpace<Scalar>& s3)
   {
-    return productSpace(Teuchos::tuple(s1, s2, s3));
+    return productSpace<Scalar>(Teuchos::tuple(s1, s2, s3));
   }
 
   //========================================================================

@@ -54,7 +54,7 @@ ArrayView<T>::ArrayView( ENull null_arg )
 
 
 template<class T> inline
-ArrayView<T>::ArrayView( T* p, Ordinal size_in)
+ArrayView<T>::ArrayView( T* p, Ordinal size_in )
   :ptr_(p), size_(size_in)
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ,node_(0)
@@ -285,6 +285,7 @@ ArrayView<T>::assert_in_range( Ordinal offset, Ordinal size_in ) const
 
 // private
 
+
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
 template<class T>
@@ -295,6 +296,27 @@ void ArrayView<T>::setUpIterators()
 }
 
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+
+template<class T> inline
+void* ArrayView<T>::operator new(size_t)
+{
+  // Should never be called!
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_FOR_EXCEPT(true);
+#endif
+  return 0;
+}
+
+
+template<class T> inline
+void ArrayView<T>::operator delete(void*)
+{
+  // Should never be called!
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_FOR_EXCEPT(true);
+#endif
+}
 
 
 } // namespace Teuchos

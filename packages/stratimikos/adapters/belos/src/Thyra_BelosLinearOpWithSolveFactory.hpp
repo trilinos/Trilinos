@@ -269,7 +269,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   static Teuchos::RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
-    setStringToIntegralParameter(
+    setStringToIntegralParameter<ESolverType>(
       SolverType_name, SolverType_default,
       "Type of linear solver algorithm to use.",
       tuple<std::string>(

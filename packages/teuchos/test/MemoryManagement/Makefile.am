@@ -30,7 +30,7 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test
+bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test Tuple_test
 
 RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
@@ -51,6 +51,10 @@ Array_test_LDADD = $(TEUCHOS_LIBS)
 ArrayView_test_SOURCES = $(srcdir)/ArrayView_test.cpp
 ArrayView_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 ArrayView_test_LDADD = $(TEUCHOS_LIBS)
+
+Tuple_test_SOURCES = $(srcdir)/Tuple_test.cpp
+Tuple_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+Tuple_test_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 

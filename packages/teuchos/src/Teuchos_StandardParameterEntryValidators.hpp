@@ -66,7 +66,7 @@ public:
    *             [in] The default name of the parameter (used in error messages)
    */
   StringToIntegralParameterEntryValidator(
-    Array<std::string> const& strings,
+    ArrayView<const std::string> const& strings,
     std::string const& defaultParameterName
     );
 
@@ -86,8 +86,8 @@ public:
    * </ul>
    */
   StringToIntegralParameterEntryValidator(
-    Array<std::string> const& strings,
-    Array<IntegralType> const& integralValues, 
+    ArrayView<const std::string> const& strings,
+    ArrayView<const IntegralType> const& integralValues, 
     std::string const& defaultParameterName
     );
 
@@ -110,9 +110,9 @@ public:
    * </ul>
    */
   StringToIntegralParameterEntryValidator(
-    Array<std::string> const& strings,
-    Array<std::string> const& stringsDocs,
-    Array<IntegralType> const& integralValues, 
+    ArrayView<const std::string> const& strings,
+    ArrayView<const std::string> const& stringsDocs,
+    ArrayView<const IntegralType> const& integralValues, 
     std::string const& defaultParameterName
     );
 
@@ -238,8 +238,8 @@ private:
   map_t map_;
 
   void setValidValues(
-    Array<std::string> const& strings,
-    Array<std::string> const* stringsDocs = NULL
+    ArrayView<const std::string> const& strings,
+    ArrayView<const std::string> const* stringsDocs = NULL
     );
 
   // Not defined and not to be called.
@@ -255,7 +255,7 @@ private:
 template<class IntegralType>
 RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings,
+  ArrayView<const std::string> const& strings,
   std::string const& defaultParameterName
   );
 
@@ -267,8 +267,8 @@ stringToIntegralParameterEntryValidator(
 template<class IntegralType>
 RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const IntegralType> const& integralValues, 
   std::string const& defaultParameterName
   );
 
@@ -280,9 +280,9 @@ stringToIntegralParameterEntryValidator(
 template<class IntegralType>
 RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings,
-  Array<std::string> const& stringsDocs,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const std::string> const& stringsDocs,
+  ArrayView<const IntegralType> const& integralValues, 
   std::string const& defaultParameterName
   );
 
@@ -302,7 +302,7 @@ void setStringToIntegralParameter(
   std::string const& paramName,
   std::string const& defaultValue,
   std::string const& docString,
-  Array<std::string> const& strings,
+  ArrayView<const std::string> const& strings,
   ParameterList * paramList
   );
 
@@ -322,8 +322,8 @@ void setStringToIntegralParameter(
   std::string const& paramName,
   std::string const& defaultValue,
   std::string const& docString,
-  Array<std::string> const& strings,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const IntegralType> const& integralValues, 
   ParameterList * paramList
   );
 
@@ -344,9 +344,9 @@ void setStringToIntegralParameter(
   std::string const& paramName,
   std::string const& defaultValue,
   std::string const& docString,
-  Array<std::string> const& strings,
-  Array<std::string> const& stringsDocs,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const std::string> const& stringsDocs,
+  ArrayView<const IntegralType> const& integralValues, 
   ParameterList * paramList
   );
 
@@ -718,7 +718,7 @@ std::string getNumericStringParameter(
 
 template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings, std::string const& defaultParameterName
+  ArrayView<const std::string> const& strings, std::string const& defaultParameterName
   )
   :defaultParameterName_(defaultParameterName)
 {
@@ -737,7 +737,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 
 template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings, Array<IntegralType> const& integralValues 
+  ArrayView<const std::string> const& strings, ArrayView<const IntegralType> const& integralValues 
   ,std::string const& defaultParameterName
   )
   :defaultParameterName_(defaultParameterName)
@@ -760,9 +760,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 
 template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  Array<std::string>    const& strings
-  ,Array<std::string>   const& stringsDocs
-  ,Array<IntegralType>  const& integralValues 
+  ArrayView<const std::string>    const& strings
+  ,ArrayView<const std::string>   const& stringsDocs
+  ,ArrayView<const IntegralType>  const& integralValues 
   ,std::string          const& defaultParameterName
   )
   :defaultParameterName_(defaultParameterName)
@@ -935,8 +935,8 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
-  Array<std::string>   const& strings
-  ,Array<std::string>  const* stringsDocs
+  ArrayView<const std::string>   const& strings
+  ,ArrayView<const std::string>  const* stringsDocs
   )
 {
   validStringValues_ = rcp(new Array<std::string>(strings));
@@ -966,7 +966,7 @@ template<class IntegralType>
 inline
 Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings,
+  ArrayView<const std::string> const& strings,
   std::string const& defaultParameterName
   )
 {
@@ -982,8 +982,8 @@ template<class IntegralType>
 inline
 Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const IntegralType> const& integralValues, 
   std::string const& defaultParameterName
   )
 {
@@ -999,9 +999,9 @@ template<class IntegralType>
 inline
 Teuchos::RCP< Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
-  Array<std::string> const& strings,
-  Array<std::string> const& stringsDocs,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const std::string> const& stringsDocs,
+  ArrayView<const IntegralType> const& integralValues, 
   std::string const& defaultParameterName
   )
 {
@@ -1018,7 +1018,7 @@ void Teuchos::setStringToIntegralParameter(
   std::string const& paramName,
   std::string const& defaultValue,
   std::string const& docString,
-  Array<std::string> const& strings,
+  ArrayView<const std::string> const& strings,
   ParameterList * paramList
   )
 {
@@ -1037,8 +1037,8 @@ void Teuchos::setStringToIntegralParameter(
   std::string const& paramName,
   std::string const& defaultValue,
   std::string const& docString,
-  Array<std::string> const& strings,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const IntegralType> const& integralValues, 
   ParameterList * paramList
   )
 {
@@ -1057,9 +1057,9 @@ void Teuchos::setStringToIntegralParameter(
   std::string const& paramName,
   std::string const& defaultValue,
   std::string const& docString,
-  Array<std::string> const& strings,
-  Array<std::string> const& stringsDocs,
-  Array<IntegralType> const& integralValues, 
+  ArrayView<const std::string> const& strings,
+  ArrayView<const std::string> const& stringsDocs,
+  ArrayView<const IntegralType> const& integralValues, 
   ParameterList * paramList
   )
 
