@@ -19,6 +19,7 @@
 }
 
 (FRAMEWORK, MLTests) {
+    DESCEND_DIRS = YES;
     DIRS = AztecSimple,
            Communicator,
            IFPACKSmoothers,

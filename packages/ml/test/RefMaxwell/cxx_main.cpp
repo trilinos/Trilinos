@@ -221,9 +221,6 @@ int main(int argc, char* argv[]){
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  /* Is this portable?  No.  Does it work?  Yup. */
-  chdir("RefMaxwell");
   
   matrix_read(Comm);
 
