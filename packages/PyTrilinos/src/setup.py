@@ -86,10 +86,21 @@ def buildInitFile(filename,depfile,pyTrilinosModules,
             print "   ", module
         print
         content = """
+try:
+    import dl
+    dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
+    del dl
+except SystemError:
+    dlopenflags = 258
+import sys
+sys.setdlopenflags(dlopenflags)
+
 __all__ = %s
+
 __version__ = '%s'
-def version(): return 'Trilinos version: %s\\nPyTrilinos version: ' + __version__
-        """ % (str(pyTrilinosModules), pyTrilinosVersion, trilinosVersion)
+def version():
+    return 'Trilinos version: %s\\nPyTrilinos version: ' + __version__
+""" % (str(pyTrilinosModules), pyTrilinosVersion, trilinosVersion)
         open(filename,"w").write(content)
 
 # Main script

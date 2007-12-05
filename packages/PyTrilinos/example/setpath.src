@@ -1,3 +1,4 @@
+# -*- python -*-
 # @HEADER
 # ************************************************************************
 #
@@ -36,6 +37,18 @@ import os
 import sys
 from   distutils.util import get_platform
 
+# The following logic is in PyTrilinos/__init__.py, but that file does not get
+# executed by the test scripts
+try:
+    import dl
+    dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
+    del dl
+except SystemError:
+    dlopenflags = 258
+import sys
+sys.setdlopenflags(dlopenflags)
+
+# Define the setpath function
 def setpath(srcdir="src"):
     """
     setpath(srcdir="src") -> void
