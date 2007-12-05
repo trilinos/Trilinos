@@ -47,7 +47,7 @@
 
 #define __AZTECDEFSH__
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -156,7 +156,7 @@
 #include <malloc.h>
 #endif
 
-#else HAVE_CONFIG_H
+#else ndef HAVE_CONFIG_H
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -165,7 +165,7 @@
 #include <float.h>
 #include <sys/time.h>
 #include <malloc.h> */
-#endif /*HAVE_CONFIG_H*/
+#endif /*ndef HAVE_CONFIG_H*/
 
 
 #ifndef __AZTECH__

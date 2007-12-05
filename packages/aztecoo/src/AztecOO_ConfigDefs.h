@@ -31,7 +31,7 @@
 #ifndef AZTECOO_CONFIGDEFS_H
 #define AZTECOO_CONFIGDEFS_H
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package
@@ -107,5 +107,5 @@
 #endif
 
 #endif /*__cplusplus */
-#endif /*HAVE_CONFIG_H*/
+#endif /*ndef TRILINOS_NO_CONFIG_H*/
 #endif /* AZTECOO_CONFIGDEFS_H */

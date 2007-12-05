@@ -86,7 +86,7 @@
 #define az_fcd char * 
 #define PREFIX
 
-#ifndef HAVE_CONFIG_H
+#ifdef TRILINOS_NO_CONFIG_H
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -103,7 +103,7 @@
 #define F77_FUNC_(lcase,UCASE) lcase ## __
 #endif
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
-#endif /* HAVE_CONFIG_H */
+#endif /* TRILINOS_NO_CONFIG_H */
 
 #endif
 

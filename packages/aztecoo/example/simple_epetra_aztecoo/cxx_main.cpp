@@ -31,7 +31,7 @@
 
 /* The next two ifdefs should be removed when when the revision of
  az_aztec_defs.h is complete. */
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>

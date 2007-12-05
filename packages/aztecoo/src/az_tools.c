@@ -43,7 +43,7 @@
  * $Name$
  *====================================================================*/
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 #include "AztecOO_config.h"
 #endif
 
