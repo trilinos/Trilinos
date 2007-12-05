@@ -193,7 +193,7 @@
 
 /* In the future use autoconf's definition of F77_FUNC */ 
 
-#ifndef HAVE_CONFIG_H
+#ifdef TRILINOS_NO_CONFIG_H
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -205,7 +205,7 @@
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 
-#endif /* HAVE_CONFIG_H */
+#endif /* TRILINOS_NO_CONFIG_H */
 
 #define DROTG_F77   F77_FUNC(drotg,DROTG)
 #define DROT_F77    F77_FUNC(drot,DROT)

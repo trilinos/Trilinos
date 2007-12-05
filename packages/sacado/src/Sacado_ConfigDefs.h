@@ -72,7 +72,7 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #undef VERSION
 #endif
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 #include <Sacado_config.h>
 #endif
 

@@ -347,7 +347,7 @@
 #define PREFIX
 #define Teuchos_fcd const char * 
 
-#ifndef HAVE_CONFIG_H
+#ifdef TRILINOS_NO_CONFIG_H
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -359,7 +359,7 @@
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 
-#endif /* HAVE_CONFIG_H */
+#endif /* TRILINOS_NO_CONFIG_H */
 
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
