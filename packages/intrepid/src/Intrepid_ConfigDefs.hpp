@@ -36,7 +36,7 @@
 #ifndef INTREPID_CONFIGDEFS_HPP
 #define INTREPID_CONFIGDEFS_HPP
 
-#ifdef HAVE_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -177,9 +177,7 @@
 
 #endif /* __cplusplus */
 
-#else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
-
-#endif /* end HAVE_CONFIG_H */
+#endif /* end ndef TRILINOS_NO_CONFIG_H */
 
 /*
  * Intrepid_Version() method
