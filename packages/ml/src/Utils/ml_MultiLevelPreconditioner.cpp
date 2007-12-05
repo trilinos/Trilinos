@@ -97,6 +97,7 @@
 #include "ml_ifpack_wrap.h"
 
 using namespace Teuchos;
+using namespace std;
 
 // ================================================ ====== ==== ==== == =
 void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int sum, int max)
@@ -117,6 +118,12 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     int NumDestroy = OutputList_.get("number of destruction phases", 0);
     OutputList_.set("number of destruction phases", ++NumDestroy);
   }
+
+  if (verbose_ && mlpLabel_ != "not-set")
+    cout << "***" << endl
+         << "*** destroying ML_Epetra::MultiLevelPreconditioner [" 
+         << mlpLabel_ << "]" << endl
+         << "***" << endl;
   
   ML_Aggregate_VizAndStats_Clean(ml_);
   if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
@@ -815,31 +822,34 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_EXIT(EXIT_FAILURE);
     }  
 
+  mlpLabel_ = List_.get("ML label","not-set");
   if (verbose_) {
     std::cout << PrintMsg_ << "*** " << std::endl;
-    std::cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner" << std::endl;
-    std::cout << PrintMsg_ << "***" << std::endl;
-    std::cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
+    cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner";
+    if (mlpLabel_ != "not-set")
+      cout << " [" << mlpLabel_ << "]";
+    cout << endl << PrintMsg_ << "***" << endl;
+    cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
      << " rows and " << RowMatrix_->NumGlobalNonzeros() 
-         << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << std::endl;
+         << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << endl;
     {
       const Epetra_CrsMatrix * dummy = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
-      if( dummy ) std::cout << "The linear system matrix is an Epetra_CrsMatrix" << std::endl;
+      if( dummy ) cout << "The linear system matrix is an Epetra_CrsMatrix" << endl;
     }    
     {
       const Epetra_VbrMatrix * dummy = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
-      if( dummy ) std::cout << "The linear system matrix is an Epetra_VbrMatrix" << std::endl;
-    }    
+      if( dummy ) cout << "The linear system matrix is an Epetra_VbrMatrix" << endl;
+    }
     
     if( List_.isParameter("default values") ){
-      std::cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << std::endl;
+      cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << endl;
     }
-    std::cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << std::endl;
-    if( IsIncreasing == "increasing" ) std::cout << PrintMsg_ << "Using increasing levels. ";
-    else                               std::cout << PrintMsg_ << "Using decreasing levels. ";
-    std::cout << "Finest level  = " << LevelID_[0];
-    std::cout << ", coarsest level = " << LevelID_[NumLevels_-1] << std::endl;
-    std::cout << "Number of applications of the ML cycle = " << CycleApplications_ << std::endl;
+    cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
+    if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
+    else                               cout << PrintMsg_ << "Using decreasing levels. ";
+    cout << "Finest level  = " << LevelID_[0];
+    cout << ", coarsest level = " << LevelID_[NumLevels_-1] << endl;
+    cout << "Number of applications of the ML cycle = " << CycleApplications_ << endl;
   }
 
   const Epetra_VbrMatrix* VbrMatrix;
@@ -851,14 +861,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
     int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
     int NumRows = VbrMatrix->RowMap().NumGlobalPoints();
     if( NumRows % NumBlockRows ) {
-      std::cerr << "# rows must be a multiple of # block rows ("
-       << NumRows << "," << NumBlockRows << ")" << std::endl;
+      cerr << "# rows must be a multiple of # block rows ("
+       << NumRows << "," << NumBlockRows << ")" << endl;
       exit( EXIT_FAILURE );
     }
     NumPDEEqns_ = NumRows/NumBlockRows;
   }
 
-  if( verbose_ ) std::cout << "Number of PDE equations = " << NumPDEEqns_ << std::endl;
+  if( verbose_ ) cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
   
   int MaxCreationLevels = NumLevels_;
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;

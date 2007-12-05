@@ -285,37 +285,9 @@ void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info)
 {
    int i;
    ML_CommInfoOP *c_info;
-#ifdef ML_TIMING_DETAILED
-   double maxt,mint,avgt;
-   int maxp, minp;
-   int proc_active;
-   int NumActiveProc;
-   ML_Comm *comm;
-#endif
    c_info = *comm_info;
    if (c_info != NULL) 
    {
-#ifdef ML_TIMING_DETAILED
-      if ( (ML_mylabel != NULL) &&
-           (c_info->comm != NULL) &&
-           (c_info->NumActiveProc > 0) )
-      {
-        comm = c_info->comm;
-        NumActiveProc = c_info->NumActiveProc;
-        proc_active = c_info->proc_active;
-        avgt = ML_gsum_double( (proc_active ? c_info->time : 0.0), comm);
-        avgt = avgt/((double) NumActiveProc);
-        maxt = ML_gmax_double( (proc_active ? c_info->time: 0.0), comm);
-        maxp =ML_gmax_int((maxt == c_info->time ? comm->ML_mypid:0),comm);
-        mint = - c_info->time;
-        mint = ML_gmax_double( (proc_active ? mint: -1.0e20), comm);
-        mint = - mint;
-        minp =ML_gmax_int((mint == c_info->time ? comm->ML_mypid:0),comm);
-        if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-           printf(" %s: exchange boundary time :      %2.3e (%d) %2.3e (%d) %2.3e\n",
-                  ML_mylabel,maxt, maxp, mint, minp, avgt);
-      }
-#endif
       if (c_info->remap != NULL) ML_free(c_info->remap);
       for (i = 0; i < c_info->N_neighbors; i++)
 	  {

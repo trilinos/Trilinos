@@ -113,7 +113,11 @@ int ML_Operator_Clean( ML_Operator *mat)
 {
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    double maxt,mint,avgt;
+   double maxc,minc;
+   double Nglobrows, Nglobcols, nnz;
    int maxp,minp;
+   int mypid,i;
+   char space[8];
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    double mflops, maxfl,minfl,avgfl;
@@ -130,37 +134,64 @@ int ML_Operator_Clean( ML_Operator *mat)
       else proc_active = 0;
       NumActiveProc = ML_gsum_int(proc_active, mat->comm);
    }
+   mypid = mat->comm->ML_mypid;
    if ( (mat->label != NULL) && (NumActiveProc>0) && ML_Get_PrintLevel()>10)
    {
-      if (mat->comm->ML_mypid == 0)
-        printf(" %s: active processors :      %d\n",mat->label,NumActiveProc);
+      i = mat->invec_leng; 
+      Nglobcols = ML_gsum_double((double)i, mat->comm);
+      i = mat->outvec_leng; 
+      Nglobrows = ML_gsum_double((double)i, mat->comm);
+      nnz = ML_Comm_GsumDouble(mat->comm, (double) mat->N_nonzeros);
+      if (mypid == 0)
+        printf(" %s stats : %d active procs, %1.0f rows, %1.0f cols, %1.0f nnz\n",
+               mat->label,NumActiveProc,Nglobcols,Nglobrows,nnz);
       maxt = ML_gmax_double( (proc_active ? mat->build_time : 0.0 ), mat->comm);
-      maxp = ML_gmax_int((maxt == mat->build_time ? mat->comm->ML_mypid:0),mat->comm);
+      maxp = ML_gmax_int((maxt == mat->build_time ? mypid:0),mat->comm);
       avgt = ML_gsum_double( (proc_active ? mat->build_time : 0.0), mat->comm);
       avgt = avgt/((double) NumActiveProc);
       mint = - mat->build_time;
       mint = ML_gmax_double( (proc_active ? mint: -1.0e20), mat->comm);
       mint = - mint;
-      minp = ML_gmax_int((mint == mat->build_time ? mat->comm->ML_mypid:0),mat->comm);
-      if (mat->comm->ML_mypid == 0)
-         printf(" %s: build time             :      %2.3e (%d) %2.3e (%d) %2.3e\n",
+      minp = ML_gmax_int((mint == mat->build_time ? mypid:0),mat->comm);
+      if (mypid == 0)
+        printf(" %s: build time                :        %2.3e (%d) %2.3e (%d) %2.3e\n",
                 mat->label,maxt, maxp, mint, minp, avgt);
    }
    if  (mat->label != NULL  &&  NumActiveProc>0
         &&  mat->ntimes>0  &&  ML_Get_PrintLevel()>10 )
    {
-      avgt = ML_gsum_double( (proc_active ? mat->apply_time : 0.0), mat->comm);
+      double total_time=0.0; /* computation + communication */
+      double comp_time=0.0;  /* computation only */
+      if (mat->type == ML_TYPE_CRS_MATRIX) {
+        total_time = mat->apply_time;
+        comp_time = mat->apply_without_comm_time;
+      }
+      else {
+        total_time = mat->apply_time;
+        if (mat->getrow != NULL) {
+          if (mat->getrow->pre_comm != NULL)
+            comp_time = mat->apply_time - mat->getrow->pre_comm->time;
+          else if (mat->getrow->post_comm != NULL)
+            comp_time = mat->apply_time - mat->getrow->post_comm->time;
+        }
+      }
+      avgt = ML_gsum_double( (proc_active ? total_time : 0.0), mat->comm);
       avgt = avgt/((double) NumActiveProc);
-      maxt = ML_gmax_double( (proc_active ? mat->apply_time : 0.0 ), mat->comm);
-      maxp =ML_gmax_int((maxt == mat->apply_time ? mat->comm->ML_mypid:0),mat->comm);
-      mint = - mat->apply_time;
+      maxt = ML_gmax_double( (proc_active ? total_time : 0.0 ), mat->comm);
+      maxp =ML_gmax_int((maxt == total_time ? mypid:0),mat->comm);
+      maxc = ML_gsum_double( (mypid==maxp ? comp_time:0.0), mat->comm);
+      mint = - total_time;
       mint = ML_gmax_double( (proc_active ? mint: -1.0e20), mat->comm);
       mint = - mint;
-      minp =ML_gmax_int((mint == mat->apply_time ? mat->comm->ML_mypid:0),mat->comm);
-      if (mat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" %s: apply time (%7d)   :      %2.3e (%d) %2.3e (%d) %2.3e\n",
+      minp =ML_gmax_int((mint == total_time ? mypid:0),mat->comm);
+      minc = ML_gsum_double( (mypid==minp ? comp_time:0.0), mat->comm);
+      if (mypid == 0) {
+         printf(" %s: apply+comm time (%7d) :        %2.3e (%d) %2.3e (%d) %2.3e\n",
                 mat->label,mat->ntimes,maxt, maxp, mint, minp, avgt);
-
+         ML_print_align(maxp, space, 2);
+         printf(" %s:      apply only           :        %2.3e %s %2.3e\n",
+                mat->label,maxc, space, minc);
+      }
    }
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
@@ -263,6 +294,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    if (mat->DirichletRows != NULL)
      ML_free(mat->DirichletRows);
 
+   fflush(stdout);
    return 0;
 }
 

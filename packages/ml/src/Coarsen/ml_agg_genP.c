@@ -301,11 +301,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE, ML_FALSE);
 
-      if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"after_repartition");
-        ML_Operator_Profile(ml->Amat+next,str);
-      }
-
       ML_Comm_Barrier(ml->comm);
 
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]),
@@ -2633,10 +2628,6 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, 
                              ML_TRUE, ML_FALSE);
 
-      if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"after_repartition");
-        ML_Operator_Profile(ml->Amat+next,str);
-      }
       ML_Comm_Barrier(ml->comm);
 
 #ifdef ML_TIMING

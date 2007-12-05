@@ -690,6 +690,9 @@ private:
   ML_Aggregate* agg_;
   //! Label for this object
   char* Label_;
+  //! User-provided label for identifying preconditioner ctor/dtor, in the case
+  //  of multiple instances of ML_Epetra::MultiLevelPreconditioner.
+  std::string mlpLabel_;
 
   //! pointer to linear system matrix
   const Epetra_RowMatrix* RowMatrix_;

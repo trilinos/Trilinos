@@ -74,6 +74,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setStringToIntegralParameter<int>("eigen-analysis: type","cg","Scheme to compute spectral radius",
                                tuple<std::string>("cg","Anorm","power-method"),PL);
   setIntParameter("eigen-analysis: iterations",10,"# iterations of eigen-anaysis",PL,intParam);
+  PL->set("ML label","dummy string");
 
   /* Multigrid Cycle Options (Section 6.4.2) */
   setIntParameter("cycle applications",1,"# MG cycles",PL,intParam);
