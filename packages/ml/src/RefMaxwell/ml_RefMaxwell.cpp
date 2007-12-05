@@ -178,7 +178,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* Pull Solver Mode, verbosity, matrix output */
   mode=List_.get("refmaxwell: mode","additive");
   print_hierarchy= List_.get("print hierarchy",false);  
-  int vb_level=List_.get("output",0);
+  int vb_level=List_.get("ML output",0);
   if(vb_level >= 11) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
@@ -325,8 +325,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     //NTS: Add Adaptive, MatrixFree
     if(print_hierarchy) NodePC->Print();
   }/*end if*/
-
-  
+ 
   /* Setup the Edge Smoother */
   //  if(mode=="additive")
     SetEdgeSmoother(List_);
@@ -442,6 +441,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   int smoother_sweeps=List.get("smoother: sweeps",2);
   int edge_sweeps=List.get("subsmoother: edge sweeps",2);
   int node_sweeps=List.get("subsmoother: node sweeps",2);  
+  int output=List.get("ML output",0);
 
   //#define ALWAYS_USE_HIPTMAIR
 #ifndef ALWAYS_USE_HIPTMAIR
@@ -468,6 +468,11 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PostList.set("coarse: pre or post","post");
     PostList.set("smoother: pre or post","post"); 
     PostList.set("zero starting solution", false);
+
+    PreList.set("ML output",output);
+    PostList.set("ML output",output);
+    PreList.set("ML label","(1,1) block fine pre-smoother");
+    PostList.set("ML label","(1,1) block fine post-smoother");
     
     if(HasOnlyDirichletNodes){
       if(PreList.get("coarse: type","dummy") == "Hiptmair"){
@@ -502,6 +507,8 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PostList.set("coarse: pre or post","post");
     PostList.set("smoother: pre or post","post"); 
     PostList.set("zero starting solution", false);
+    PreList.set("ML label","(1,1) block fine pre-smoother");
+    PostList.set("ML label","(1,1) block fine post-smoother");
     PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
     PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,PostList);    
   }/*end else*/
@@ -813,6 +820,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List11c.set("smoother: type","Chebyshev");
   List11c.set("aggregation: threshold",.01);//CMS 
   List11c.set("coarse: type","Chebyshev");  
+  List11c.set("ML label","coarse (1,1) block");
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
   
   /* Build Teuchos List: (1,1) */
@@ -831,6 +839,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List22.set("aggregation: type","Uncoupled");
   List22.set("aggregation: threshold",.01);//CMS
   List22.set("coarse: type","Chebyshev");
+  List22.set("ML label","(2,2) block");
 
   // This line is commented out due to IFPACK issues
   //  List22.set("smoother: sweeps (level 0)",0);

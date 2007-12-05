@@ -258,7 +258,17 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     return 0;
   }/*end if*/
   if(verbose_ && !Comm_->MyPID()) printf("BuildNullspace: Pulling %d vectors\n",dim);
-  
+
+  /* Normalize */
+  double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));
+  for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) xcoord[i] /= d1;
+  d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), ycoord, ycoord, ml_comm_));
+  for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) ycoord[i] /= d1;
+  if (dim==3) {
+    d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), zcoord, zcoord, ml_comm_));
+    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) zcoord[i] /= d1;
+  }
+
   /* Build the MultiVector */
   double ** d_coords=new double* [dim];
   d_coords[0]=xcoord; d_coords[1]=ycoord;
@@ -466,6 +476,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   bool disable_addon=List_.get("refmaxwell: disable addon",false);
   const ML_RefMaxwell_11_Operator *Op11 = dynamic_cast<const ML_RefMaxwell_11_Operator*>(Operator_);
   if(disable_addon && Op11){
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: AP (*without* addon)\n");
     ML_Operator *SM_ML = ML_Operator_Create(ml_comm_);
     Temp_ML = ML_Operator_Create(ml_comm_);
     ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&(((ML_RefMaxwell_11_Operator *)Op11)->SM_Matrix()),SM_ML,verbose_);
