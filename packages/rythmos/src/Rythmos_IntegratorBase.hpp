@@ -71,20 +71,31 @@ public:
     { return Teuchos::null; }
 
   /** \brief . */
+  virtual bool acceptsTrailingInterpolationBuffer() const 
+    { return false; }
+
+  /** \brief . */
   virtual void setTrailingInterpolationBuffer(
     const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
     ) 
     { TEST_FOR_EXCEPT(true); }
 
   /** \brief . */
-  virtual bool acceptsTrailingInterpolationBuffer() const 
-    { return false; }
+  virtual RCP<InterpolationBufferBase<Scalar> >
+  getTrailingInterpolationBuffer()
+    { return Teuchos::null; }
+
+  /** \brief . */
+  virtual RCP<const InterpolationBufferBase<Scalar> >
+  getTrailingInterpolationBuffer() const
+    { return Teuchos::null; }
 
   /** \brief Specify the stepper to use for integration which effectively
    * reinitializes the intergrator.
    *
    * \param stepper [inout,persisting] Gives the stepper that will be used to
-   * advance the time solution.
+   * advance the time solution.  Note that it is expected that the stepper
+   * will be fully initialized and ready to start taking time steps.
    *
    * \param finalTime [in] Gives the final time that the integrator will allow
    * itself to integrate too.
@@ -98,8 +109,8 @@ public:
    * <li><tt>!is_null(stepper)</tt>
    * <li><tt>stepper->getTimeRange().size() >= 0.0</tt>
    * <li><tt>compareTimeValues(finalTime,stepper->getTimeRange().upper()) >= 0</tt>
-   * <li>If setStepper and setInterpolationBuffer have already been called then
-   *     <tt>compareTimeValues(trailingInterpBuffer_->getTimeRange().upper(),stepper->getTimeRange().lower())==0</tt>.
+   * <li>If setStepper() and setInterpolationBuffer() have already been called then
+   *     <tt>compareTimeValues(getTrailingInterpBuffer()->getTimeRange().upper(),stepper->getTimeRange().lower())==0</tt>.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -107,12 +118,6 @@ public:
    * <li><tt>compareTimeValues(this->getFwdTimeRange().lower(),stepper->getTimeRange().lower())==0</tt>
    * <li><tt>compareTimeValues(this->getFwdTimeRange().upper(),finalTime)==0</tt>
    * </ul>
-   *
-   * 2007/08/24: rabartl: ToDo: We should add another enum argument that
-   * specifies if we should let the stepper step past finalTime or if it has
-   * to stop exactly (within some floating point error) on top of finalTime at
-   * the very end.  In essense, we should pass in if finalTime is a soft or
-   * hard breakpoint.
    */
   virtual void setStepper(
     const RCP<StepperBase<Scalar> > &stepper,
@@ -199,7 +204,7 @@ public:
 };
 
 
-// 2007/09/14: rabartl: ToDo: Move these functions into a file
+// 2007/09/14: rabartl: ToDo: Below, Move these functions into a file
 // Rythmos_IntegratorBaseHelpers.hpp.
 
 

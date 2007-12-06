@@ -213,55 +213,51 @@ public:
 
   /** \brief Intialize.
    *
-   * \param  stateModel
-   *           [in,persisting] The ModelEvaluator that defines the
-   *           parameterized state model <tt>f(x_dot,x,p)</tt>.
-   * \param  p_index
-   *           [in] The index of the parameter subvector in <tt>stateModel</tt>
-   *           for which sensitivities will be computed for.
-   * \param  baseStatePoint
-   *           [in] Whatever input arguments are needed to define the state
-   *           of the model including the parameters except x, x_dot, and t!
-   * \param  stateStepper
-   *           [in,persisting] The stepper object that will be used to advance
-   *           the state solution <tt>x(t)</tt>.  This stepper need not be
-   *           setup with a model or a nonlinear timestep solver.  All this
-   *           stepper object needs is to be given its parameters to determine
-   *           exactly what timestepping algorithm will be employed.  The
-   *           model and the timestep solver objects will be set internally.
-   * \param  stateTimeStepSolver
-   *           [in,persisting] The nonlinear solver object that is used to 
-   *           solve for the state timestep equation.  This is needed to
-   *           extract the Jacobian matrix that is used in the sensitivity model.
-   *           If the stepper is not an implicit stepper and does not use
-   *           an implicit time step solver, then this argument should be left
-   *           null.
-   * \param  sensStepper
-   *           [in,persisting] The stepper object that will be used to advance
-   *           the sensitivity solution <tt>S(t)</tt>.  This stepper need not
-   *           be setup with a model or a nonlinear timestep solver.  All this
-   *           stepper object needs is to be given its parameters to determine
-   *           exactly what timestepping algorithm will be employed.  The
-   *           model and the timestep solver objects will be set internally.
-   *           If this argument is null, then the <tt>stateStepper</tt> object
-   *           will be cloned to generate this stepper object.  The most
-   *           common use cases should just pass in <tt>Teuchos::null</tt> and
-   *           just use the identical stepper as the state stepper.  However,
-   *           this argument allows a client to specialize exactly what the
-   *           sensitivity stepper does and therefore this hook is allowed.
-   * \param  sensTimeStepSolver
-   *           [in,persisting] The nonlinear solver object that is used to
-   *           solve for the (linear) sensitivity timestep equation.  If the
-   *           stepper is not an implicit stepper and does not use an implicit
-   *           timestep solver, then this argument can be left null.  If the
-   *           stepper is implicit, and this argument is left null, then a
-   *           <tt>Thyra::LinearNonlinearSolver</tt> object will be created
-   *           and used.  The most common use cases should just pass in
-   *           <tt>Teuchos::null</tt> and just use the simple linear nonlinear
-   *           solver to will perform just a single linear solve.  However,
-   *           this argument allows a client to specialize exactly what the
-   *           nonlinear solver in the sensitivity stepper does and therefore
-   *           this hook is exposed to clients.
+   * \param stateModel [in,persisting] The ModelEvaluator that defines the
+   * parameterized state model <tt>f(x_dot,x,p)</tt>.
+   *
+   * \param p_index [in] The index of the parameter subvector in
+   * <tt>stateModel</tt> for which sensitivities will be computed for.
+   *
+   * \param baseStatePoint [in] Whatever input arguments are needed to define
+   * the state of the model including the parameters except x, x_dot, and t!
+   *
+   * \param stateStepper [in,persisting] The stepper object that will be used
+   * to advance the state solution <tt>x(t)</tt>.  This stepper need not be
+   * setup with a model or a nonlinear timestep solver.  All this stepper
+   * object needs is to be given its parameters to determine exactly what
+   * timestepping algorithm will be employed.  The model and the timestep
+   * solver objects will be set internally.
+   *
+   * \param stateTimeStepSolver [in,persisting] The nonlinear solver object
+   * that is used to solve for the state timestep equation.  This is needed to
+   * extract the Jacobian matrix that is used in the sensitivity model.  If
+   * the stepper is not an implicit stepper and does not use an implicit time
+   * step solver, then this argument should be left null.
+   *
+   * \param sensStepper [in,persisting] The stepper object that will be used
+   * to advance the sensitivity solution <tt>S(t)</tt>.  This stepper need not
+   * be setup with a model or a nonlinear timestep solver.  All this stepper
+   * object needs is to be given its parameters to determine exactly what
+   * timestepping algorithm will be employed.  The model and the timestep
+   * solver objects will be set internally.  If this argument is null, then
+   * the <tt>stateStepper</tt> object will be cloned to generate this stepper
+   * object.  The most common use cases should just pass in
+   * <tt>Teuchos::null</tt> and just use the identical stepper as the state
+   * stepper.  However, this argument allows a client to specialize exactly
+   * what the sensitivity stepper does and therefore this hook is allowed.
+   *
+   * \param sensTimeStepSolver [in,persisting] The nonlinear solver object
+   * that is used to solve for the (linear) sensitivity timestep equation.  If
+   * the stepper is not an implicit stepper and does not use an implicit
+   * timestep solver, then this argument can be left null.  If the stepper is
+   * implicit, and this argument is left null, then a
+   * <tt>Thyra::LinearNonlinearSolver</tt> object will be created and used.
+   * The most common use cases should just pass in <tt>Teuchos::null</tt> and
+   * just use the simple linear nonlinear solver to will perform just a single
+   * linear solve.  However, this argument allows a client to specialize
+   * exactly what the nonlinear solver in the sensitivity stepper does and
+   * therefore this hook is exposed to clients.
    */
   void initialize(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
@@ -339,13 +335,13 @@ public:
    * and the parameter values.
    *
    * The InArgs object must be created using
-   * <tt>this->getModel()->createInArgs()</tt> and them populated with the
-   * inital values.  The product vectors for <tt>x_bar</tt> and
+   * <tt>this->getModel()->createInArgs()</tt> and then populated with the
+   * initial values.  The product vectors for <tt>x_bar</tt> and
    * <tt>x_bar_dot</tt> can be created using
    * <tt>this->getStateAndFwdSensModel()->create_x_bar_vec(...)</tt>.  All of
    * the input objects in <tt>state_and_sens_ic</tt> will be cloned and
    * therefore no memory of the objects in <tt>state_and_sens_ic</tt> will be
-   * retained as calling this function.
+   * retained after calling this function.
    */
   void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_and_sens_ic
@@ -503,7 +499,6 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 {
 
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::tuple;
 
   typedef Thyra::ModelEvaluatorBase MEB;
 
@@ -829,7 +824,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
       coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
       coeff_x = singleResidualModel->get_coeff_x();
     
-    // Get W (and force and update if not up to date already)
+    // Get W (and force an update if not up to date already)
 
     if (mediumTrace && forceUpToDateW_)
       *out << "\nForcing an update of W at the converged state timestep ...\n";

@@ -46,12 +46,12 @@
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
-// 10/9/06 tscoffe:  IntegratorDefault includes: 
+// DefaultIntegrator includes: 
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_HermiteInterpolator.hpp"
-#include "Rythmos_IntegratorDefault.hpp"
-
+#include "Rythmos_DefaultIntegrator.hpp"
+#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
-    clp.setOption( "useintegrator", "normal", &useIntegrator, "Use IntegratorDefault as integrator" );
+    clp.setOption( "useintegrator", "normal", &useIntegrator, "Use DefaultIntegrator as integrator" );
     clp.setOption( "buffersize", &buffersize, "Number of solutions to store in InterpolationBuffer" );
     setVerbosityLevelOption( "verb-level", &verbLevel, "Overall verbosity level.", &clp );
 
@@ -324,22 +324,34 @@ int main(int argc, char *argv[])
     {
       if (useIntegrator)
       {
-        // Set up fixed-step-size integration:
-        RCP<Teuchos::ParameterList> 
-          integratorParams = rcp(new Teuchos::ParameterList);
-        integratorParams->set( "Take Variable Steps", false );
-        integratorParams->set( "fixed_dt", dt );
-        integratorParams->sublist("VerboseObject").set(
-          "Verbosity Level",
-          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
-          );
         // Create integrator using stepper and linear interpolation buffer:
         RCP<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = rcp(new Rythmos::LinearInterpolator<double>());
         RCP<Rythmos::InterpolationBuffer<double> > 
           IB = rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
-        IB->setParameterList(integratorParams);
-        Rythmos::IntegratorDefault<double> integrator(stepper_ptr,IB,integratorParams);
+        RCP<Teuchos::ParameterList> 
+          IBParams = Teuchos::parameterList();
+        IBParams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
+        IB->setParameterList(IBParams);
+        // Set up fixed-step-size integration:
+        RCP<Teuchos::ParameterList> 
+          integratorParams = Teuchos::parameterList();
+        integratorParams->set( "Take Variable Steps", false );
+        integratorParams->set( "Fixed dt", dt );
+        integratorParams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
+        RCP<Rythmos::IntegratorBase<double> >
+          defaultIntegrator = Rythmos::controlledDefaultIntegrator<double>(
+            Rythmos::simpleIntegrationControlStrategy<double>(integratorParams)
+            );
+        Rythmos::IntegratorBase<double> &integrator = *defaultIntegrator;
+        integrator.setStepper(stepper_ptr,finalTime);
+        integrator.setTrailingInterpolationBuffer(IB);
         // Ask for desired time value:
         Array<double> time_vals;
         for (int i=0 ; i<=N ; ++i)
@@ -378,13 +390,6 @@ int main(int argc, char *argv[])
       if (useIntegrator)
       {
         // Set up fixed-step-size integration:
-        RCP<Teuchos::ParameterList> 
-          integratorParams = rcp(new Teuchos::ParameterList);
-        integratorParams->set( "Take Variable Steps", true );
-        integratorParams->sublist("VerboseObject").set(
-          "Verbosity Level",
-          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
-          );
         // Create integrator using stepper and interpolation buffer:
         //RCP<Rythmos::InterpolatorBase<double> > 
         //  linearInterpolator = rcp(new Rythmos::LinearInterpolator<double>());
@@ -394,8 +399,27 @@ int main(int argc, char *argv[])
           hermiteInterpolator = rcp(new Rythmos::HermiteInterpolator<double>());
         RCP<Rythmos::InterpolationBuffer<double> > 
           IB = rcp(new Rythmos::InterpolationBuffer<double>(hermiteInterpolator,buffersize));
-        IB->setParameterList(integratorParams);
-        Rythmos::IntegratorDefault<double> integrator(stepper_ptr,IB,integratorParams);
+        RCP<Teuchos::ParameterList> 
+          IBParams = Teuchos::parameterList();
+        IBParams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
+        IB->setParameterList(IBParams);
+        RCP<Teuchos::ParameterList> 
+          integratorParams = Teuchos::parameterList();
+        integratorParams->set( "Take Variable Steps", true );
+        integratorParams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
+        RCP<Rythmos::IntegratorBase<double> >
+          defaultIntegrator = Rythmos::controlledDefaultIntegrator<double>(
+            Rythmos::simpleIntegrationControlStrategy<double>(integratorParams)
+            );
+        Rythmos::IntegratorBase<double> &integrator = *defaultIntegrator;
+        integrator.setStepper(stepper_ptr,finalTime);
+        integrator.setTrailingInterpolationBuffer(IB);
         // Ask for desired time value:
         Array<double> time_vals;
         for (int i=0 ; i<=N ; ++i)

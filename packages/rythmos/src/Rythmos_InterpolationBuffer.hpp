@@ -465,6 +465,7 @@ void InterpolationBuffer<Scalar>::describe(
 template <class Scalar>
 void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
 {
+  // 2007/12/05: rabartl: ToDo: Validate the parameter list!
   parameterList_ = paramList;
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
   outputLevel = std::min(std::max(outputLevel,-1),4);

@@ -51,21 +51,20 @@ void TestForException_break( const std::string &msg );
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
- * @param  throw_exception_test
- *               [in] Test for when to throw the exception.  This can and
- *               should be an expression that may mean something to the user.
- *               The text verbatim of this expression is included in the
- *               formed error string.
- * @param  Exception
- *               [in] This should be the name of an exception class.  The
- *               only requirement for this class is that it have a constructor
- *               that accepts an std::string object (as all of the standard
- *               exception classes do).
- * @param  msg   [in] This is any expression that can be included in an
- *               output stream operation.  This is useful when buinding
- *               error messages on the fly.  Note that the code in this
- *               argument only gets evaluated if <tt>throw_exception_test</tt>
- *               evaluates to <tt>true</tt> when an exception is throw.
+ * \param throw_exception_test [in] Test for when to throw the exception.
+ * This can and should be an expression that may mean something to the user.
+ * The text verbatim of this expression is included in the formed error
+ * string.
+ *
+ * \param Exception [in] This should be the name of an exception class.  The
+ * only requirement for this class is that it have a constructor that accepts
+ * an std::string object (as all of the standard exception classes do).
+ *
+ * \param msg [in] This is any expression that can be included in an output
+ * stream operation.  This is useful when buinding error messages on the fly.
+ * Note that the code in this argument only gets evaluated if
+ * <tt>throw_exception_test</tt> evaluates to <tt>true</tt> when an exception
+ * is throw.
  *
  * The way that this macro is intended to be used is to 
  * call it in the source code like a function.  For example,
@@ -152,29 +151,43 @@ void TestForException_break( const std::string &msg );
 /** \brief This macro is designed to be a short version of
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *
- * @param  throw_exception_test
- *               [in] Test for when to throw the exception.  This can and
- *               should be an expression that may mean something to the user.
- *               The text verbatim of this expression is included in the
- *               formed error string.
+ * \param throw_exception_test [in] Test for when to throw the exception.
+ * This can and should be an expression that may mean something to the user.
+ * The text verbatim of this expression is included in the formed error
+ * string.
  *
  * \note The exception thrown is <tt>std::logic_error</tt>.
  */
 #define TEST_FOR_EXCEPT(throw_exception_test) \
   TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
 
+/** \brief This macro is designed to be a short version of
+ * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+ *
+ * \param throw_exception_test [in] Test for when to throw the exception.
+ * This can and should be an expression that may mean something to the user.
+ * The text verbatim of this expression is included in the formed error
+ * string.
+ *
+ * \param msg [in] The error message.
+ *
+ * \note The exception thrown is <tt>std::logic_error</tt>.
+ */
+#define TEST_FOR_EXCEPT_MSG(throw_exception_test,msg) \
+  TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,msg)
+
 /** \brief This macro is the same as <tt>TEST_FOR_EXCEPTION()</tt> except that the
  * exception will be caught, the message printed, and then rethrown.
  *
- * @param  throw_exception_test
- *               [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
- * @param  Exception
- *               [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
- * @param  msg   [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
- * @param  out_ptr
- *               [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will receive
- *               a printout of a line of output that gives the exception type and
- *               the error message that is generated.
+ * \param throw_exception_test [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param Exception [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param msg [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
+ * receive a printout of a line of output that gives the exception type and
+ * the error message that is generated.
  */
 #define TEST_FOR_EXCEPTION_PRINT(throw_exception_test,Exception,msg,out_ptr) \
 try { \
@@ -193,20 +206,20 @@ catch(const std::exception &except) { \
 /** \brief This macro is the same as <tt>TEST_FOR_EXCEPT()</tt> except that the
  * exception will be caught, the message printed, and then rethrown.
  *
- * @param  throw_exception_test
- *               [in] See <tt>TEST_FOR_EXCEPT()</tt>.
- * @param  out_ptr
- *               [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will receive
- *               a printout of a line of output that gives the exception type and
- *               the error message that is generated.
+ * \param throw_exception_test [in] See <tt>TEST_FOR_EXCEPT()</tt>.
+ *
+ * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
+ * receive a printout of a line of output that gives the exception type and
+ * the error message that is generated.
  */
 #define TEST_FOR_EXCEPT_PRINT(throw_exception_test,out_ptr) \
   TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
 
 
 /** \brief This macro intercepts an exception, prints a standardized message including
- * the current filename and line number, and then throws the exception up the stack
- * @param exc [in] the exception that has been caught
+ * the current filename and line number, and then throws the exception up the stack.
+ *
+ * \param exc [in] the exception that has been caught
  */
 #define TEUCHOS_TRACE(exc)\
 { \

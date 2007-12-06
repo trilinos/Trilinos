@@ -33,7 +33,7 @@
 #include "Rythmos_ImplicitRKStepper.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
-#include "Rythmos_SimpleIntegrator.hpp"
+#include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
@@ -322,10 +322,10 @@ int main(int argc, char *argv[])
       integratorPL->set( "Take Variable Steps", as<bool>(numTimeSteps < 0) );
       integratorPL->set( "Fixed dt", as<double>((finalTime - state_ic.get_t())/numTimeSteps) );
       RCP<Rythmos::IntegratorBase<Scalar> >
-        simpleIntegrator = Rythmos::controlledSimpleIntegrator<Scalar>(
+        defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(
           Rythmos::simpleIntegrationControlStrategy<Scalar>(integratorPL)
           );
-      integrator = simpleIntegrator;
+      integrator = defaultIntegrator;
     }
 
     RCP<Rythmos::StepperAsModelEvaluator<Scalar> >

@@ -26,14 +26,16 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_SIMPLE_INTEGRATOR_H
-#define Rythmos_SIMPLE_INTEGRATOR_H
+#ifndef RYTHMOS_DEFAULT_INTEGRATOR_HPP
+#define RYTHMOS_DEFAULT_INTEGRATOR_HPP
 
 
 #include "Rythmos_IntegratorBase.hpp"
 #include "Rythmos_InterpolationBufferHelpers.hpp"
 #include "Rythmos_IntegrationControlStrategyBase.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
+#include "Rythmos_InterpolationBufferAppenderBase.hpp"
+#include "Rythmos_PointwiseInterpolationBufferAppender.hpp"
 #include "Rythmos_StepperHelpers.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -44,11 +46,11 @@
 namespace Rythmos {
 
 
-/** \brief A very simple concrete subclass for <tt>IntegratorBase</tt> that
- * allows just for simple fixed steps or variable steps.
+/** \brief A concrete subclass for <tt>IntegratorBase</tt> that allows a good
+ * deal of customization.
  */
 template<class Scalar> 
-class SimpleIntegrator
+class DefaultIntegrator
   : virtual public IntegratorBase<Scalar>,
     virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
@@ -61,7 +63,7 @@ public:
   //@{
   
   /** \brief . */
-  SimpleIntegrator();
+  DefaultIntegrator();
 
   /** \brief . */
   void setIntegrationControlStrategy(
@@ -72,6 +74,19 @@ public:
   void setIntegrationObserver(
     const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
     );
+
+  /** \brief . */
+  void setInterpolationBufferAppender(
+    const RCP<InterpolationBufferAppenderBase<Scalar> > &interpBufferAppender
+    );
+
+  /** \brief . */
+  RCP<const InterpolationBufferAppenderBase<Scalar> >
+  getInterpolationBufferAppender();
+
+  /** \brief . */
+  RCP<InterpolationBufferAppenderBase<Scalar> >
+  unSetInterpolationBufferAppender();
 
   //@}
 
@@ -103,7 +118,23 @@ public:
   RCP<StepperBase<Scalar> > unSetStepper();
 
   /** \brief . */
-  Teuchos::RCP<const StepperBase<Scalar> > getStepper() const;
+  RCP<const StepperBase<Scalar> > getStepper() const;
+
+  /** \brief . */
+  bool acceptsTrailingInterpolationBuffer() const;
+  
+  /** \brief . */
+  void setTrailingInterpolationBuffer(
+    const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+    );
+
+  /** \brief . */
+  RCP<InterpolationBufferBase<Scalar> >
+  getTrailingInterpolationBuffer();
+
+  /** \brief . */
+  RCP<const InterpolationBufferBase<Scalar> >
+  getTrailingInterpolationBuffer() const;
 
   /** \brief . */
   void getFwdPoints(
@@ -160,6 +191,8 @@ private:
 
   RCP<IntegrationControlStrategyBase<Scalar> > integrationControlStrategy_;
   RCP<IntegrationObserverBase<Scalar> > integrationObserver_;
+  RCP<InterpolationBufferBase<Scalar> > trailingInterpBuffer_;
+  RCP<InterpolationBufferAppenderBase<Scalar> > interpBufferAppender_;
   RCP<StepperBase<Scalar> > stepper_;
   TimeRange<Scalar> integrationTimeDomain_;
   bool landOnFinalTime_;
@@ -175,6 +208,8 @@ private:
   // /////////////////////////
   // Private member functions
 
+  void finalizeSetup();
+
   bool advanceStepperToTime( const Scalar& t );
 
 };
@@ -182,47 +217,32 @@ private:
 
 /** \brief .
  *
- * \relates SimpleIntegrator
+ * \relates DefaultIntegrator
  */
 template<class Scalar> 
-RCP<SimpleIntegrator<Scalar> >
-simpleIntegrator()
+RCP<DefaultIntegrator<Scalar> >
+defaultIntegrator()
 {
-  RCP<SimpleIntegrator<Scalar> >
-    integrator = Teuchos::rcp(new SimpleIntegrator<Scalar>());
+  RCP<DefaultIntegrator<Scalar> >
+    integrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
   return integrator;
 }
 
 
 /** \brief .
  *
- * \relates SimpleIntegrator
+ * \relates DefaultIntegrator
  */
 template<class Scalar> 
-RCP<SimpleIntegrator<Scalar> >
-controlledSimpleIntegrator(
-  const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
-  )
-{
-  RCP<SimpleIntegrator<Scalar> >
-    integrator = Teuchos::rcp(new SimpleIntegrator<Scalar>());
-  integrator->setIntegrationControlStrategy(integrationControlStrategy);
-  return integrator;
-}
-
-
-/** \brief .
- *
- * \relates SimpleIntegrator
- */
-template<class Scalar> 
-RCP<SimpleIntegrator<Scalar> >
-observedSimpleIntegrator(
+RCP<DefaultIntegrator<Scalar> >
+defaultIntegrator(
+  const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy,
   const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
   )
 {
-  RCP<SimpleIntegrator<Scalar> >
-    integrator = Teuchos::rcp(new SimpleIntegrator<Scalar>());
+  RCP<DefaultIntegrator<Scalar> >
+    integrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
+  integrator->setIntegrationControlStrategy(integrationControlStrategy);
   integrator->setIntegrationObserver(integrationObserver);
   return integrator;
 }
@@ -230,18 +250,33 @@ observedSimpleIntegrator(
 
 /** \brief .
  *
- * \relates SimpleIntegrator
+ * \relates DefaultIntegrator
  */
 template<class Scalar> 
-RCP<SimpleIntegrator<Scalar> >
-simpleIntegrator(
-  const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy,
+RCP<DefaultIntegrator<Scalar> >
+controlledDefaultIntegrator(
+  const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
+  )
+{
+  RCP<DefaultIntegrator<Scalar> >
+    integrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
+  integrator->setIntegrationControlStrategy(integrationControlStrategy);
+  return integrator;
+}
+
+
+/** \brief .
+ *
+ * \relates DefaultIntegrator
+ */
+template<class Scalar> 
+RCP<DefaultIntegrator<Scalar> >
+observedDefaultIntegrator(
   const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
   )
 {
-  RCP<SimpleIntegrator<Scalar> >
-    integrator = Teuchos::rcp(new SimpleIntegrator<Scalar>());
-  integrator->setIntegrationControlStrategy(integrationControlStrategy);
+  RCP<DefaultIntegrator<Scalar> >
+    integrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
   integrator->setIntegrationObserver(integrationObserver);
   return integrator;
 }
@@ -262,18 +297,18 @@ simpleIntegrator(
 
 template<class Scalar>
 const std::string
-SimpleIntegrator<Scalar>::maxNumTimeSteps_name_ = "Max Number Time Steps";
+DefaultIntegrator<Scalar>::maxNumTimeSteps_name_ = "Max Number Time Steps";
 
 template<class Scalar>
 const int
-SimpleIntegrator<Scalar>::maxNumTimeSteps_default_ = 10000;
+DefaultIntegrator<Scalar>::maxNumTimeSteps_default_ = 10000;
 
 
 // Constructors, Initializers, Misc
 
 
 template<class Scalar>
-SimpleIntegrator<Scalar>::SimpleIntegrator()
+DefaultIntegrator<Scalar>::DefaultIntegrator()
   :landOnFinalTime_(true),
    maxNumTimeSteps_(maxNumTimeSteps_default_),
    currTimeStepIndex_(-1)
@@ -281,7 +316,7 @@ SimpleIntegrator<Scalar>::SimpleIntegrator()
 
 
 template<class Scalar>
-void SimpleIntegrator<Scalar>::setIntegrationControlStrategy(
+void DefaultIntegrator<Scalar>::setIntegrationControlStrategy(
   const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
   )
 {
@@ -293,7 +328,7 @@ void SimpleIntegrator<Scalar>::setIntegrationControlStrategy(
 
 
 template<class Scalar>
-void SimpleIntegrator<Scalar>::setIntegrationObserver(
+void DefaultIntegrator<Scalar>::setIntegrationObserver(
   const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
   )
 {
@@ -304,11 +339,38 @@ void SimpleIntegrator<Scalar>::setIntegrationObserver(
 }
 
 
+template<class Scalar> 
+void DefaultIntegrator<Scalar>::setInterpolationBufferAppender(
+  const RCP<InterpolationBufferAppenderBase<Scalar> > &interpBufferAppender
+  )
+{
+  interpBufferAppender_ = interpBufferAppender.assert_not_null();
+}
+
+
+template<class Scalar> 
+RCP<const InterpolationBufferAppenderBase<Scalar> >
+DefaultIntegrator<Scalar>::getInterpolationBufferAppender()
+{
+  return interpBufferAppender_;
+}
+
+
+template<class Scalar> 
+RCP<InterpolationBufferAppenderBase<Scalar> >
+DefaultIntegrator<Scalar>::unSetInterpolationBufferAppender()
+{
+  RCP<InterpolationBufferAppenderBase<Scalar> > InterpBufferAppender;
+  std::swap( InterpBufferAppender, interpBufferAppender_ );
+  return InterpBufferAppender;
+}
+
+
 // Overridden from ParameterListAcceptor
 
 
 template<class Scalar> 
-void SimpleIntegrator<Scalar>::setParameterList(
+void DefaultIntegrator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
@@ -323,7 +385,7 @@ void SimpleIntegrator<Scalar>::setParameterList(
 
 template<class Scalar> 
 RCP<const ParameterList>
-SimpleIntegrator<Scalar>::getValidParameters() const
+DefaultIntegrator<Scalar>::getValidParameters() const
 {
   static RCP<const ParameterList> validPL;
   if (is_null(validPL) ) {
@@ -343,10 +405,10 @@ SimpleIntegrator<Scalar>::getValidParameters() const
 
 template<class Scalar>
 RCP<IntegratorBase<Scalar> >
-SimpleIntegrator<Scalar>::cloneIntegrator() const
+DefaultIntegrator<Scalar>::cloneIntegrator() const
 {
-  RCP<SimpleIntegrator<Scalar> >
-    newIntegrator = Teuchos::rcp(new SimpleIntegrator<Scalar>());
+  RCP<DefaultIntegrator<Scalar> >
+    newIntegrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
   // Only copy control information, not the state of an existing integration!
   newIntegrator->stepper_ = Teuchos::null;
   const RCP<const ParameterList> paramList = this->getParameterList();
@@ -363,7 +425,7 @@ SimpleIntegrator<Scalar>::cloneIntegrator() const
 
 
 template<class Scalar> 
-void SimpleIntegrator<Scalar>::setStepper(
+void DefaultIntegrator<Scalar>::setStepper(
   const RCP<StepperBase<Scalar> > &stepper,
   const Scalar &finalTime,
   const bool landOnFinalTime
@@ -389,22 +451,57 @@ void SimpleIntegrator<Scalar>::setStepper(
       );
 }
 
+
 template<class Scalar>
-RCP<StepperBase<Scalar> > SimpleIntegrator<Scalar>::unSetStepper()
+RCP<StepperBase<Scalar> > DefaultIntegrator<Scalar>::unSetStepper()
 {
   RCP<StepperBase<Scalar> > stepper_temp = stepper_;
   stepper_ = Teuchos::null;
   return(stepper_temp);
 }
 
+
 template<class Scalar>
-Teuchos::RCP<const StepperBase<Scalar> > SimpleIntegrator<Scalar>::getStepper() const
+RCP<const StepperBase<Scalar> > DefaultIntegrator<Scalar>::getStepper() const
 {
   return(stepper_);
 }
 
+
 template<class Scalar>
-void SimpleIntegrator<Scalar>::getFwdPoints(
+bool DefaultIntegrator<Scalar>::acceptsTrailingInterpolationBuffer() const
+{
+  return true;
+}
+
+
+template<class Scalar>
+void DefaultIntegrator<Scalar>::setTrailingInterpolationBuffer(
+  const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+  )
+{
+  trailingInterpBuffer_ = trailingInterpBuffer.assert_not_null();
+}
+
+
+template<class Scalar>
+RCP<InterpolationBufferBase<Scalar> >
+DefaultIntegrator<Scalar>::getTrailingInterpolationBuffer()
+{
+  return trailingInterpBuffer_;
+}
+
+
+template<class Scalar>
+RCP<const InterpolationBufferBase<Scalar> >
+DefaultIntegrator<Scalar>::getTrailingInterpolationBuffer() const
+{
+  return trailingInterpBuffer_;
+}
+
+
+template<class Scalar>
+void DefaultIntegrator<Scalar>::getFwdPoints(
   const Array<Scalar>& time_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
@@ -413,7 +510,7 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
 {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::getFwdPoints");
+  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints");
 #endif
 
   using Teuchos::incrVerbLevel;
@@ -422,7 +519,9 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
   typedef InterpolationBufferBase<Scalar> IBB;
   typedef Teuchos::VerboseObjectTempState<IBB> VOTSIBB;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  finalizeSetup();
+
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   VOTSIBB stepper_outputTempState(stepper_,out,incrVerbLevel(verbLevel,-1));
@@ -435,7 +534,7 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
     *out << "\nRequested time points: " << Teuchos::toString(time_vec) << "\n";
 
   //
-  // 1) Initial setup
+  // 0) Initial setup
   //
 
   const int numTimePoints = time_vec.size();
@@ -463,8 +562,9 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
 
   {
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::getFwdPoints: getPoints");
+    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints");
 #endif
+    // 2007/10/05: rabartl: ToDo: Get points from trailingInterpBuffer_ first!
     getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
   }
 
@@ -481,7 +581,7 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
     bool advanceStepperToTimeSucceeded = false;
     {
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::getFwdPoints: advanceStepperToTime");
+      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: advanceStepperToTime");
 #endif
       advanceStepperToTimeSucceeded= advanceStepperToTime(t);
     }
@@ -495,7 +595,7 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
     // Extract the next set of points (perhaps just one) from the stepper
     {
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::getFwdPoints: getPoints (fwd)");
+      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints (fwd)");
 #endif
       getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
     }
@@ -510,7 +610,7 @@ void SimpleIntegrator<Scalar>::getFwdPoints(
 
 template<class Scalar> 
 TimeRange<Scalar>
-SimpleIntegrator<Scalar>::getFwdTimeRange() const
+DefaultIntegrator<Scalar>::getFwdTimeRange() const
 {
   return timeRange(
     stepper_->getTimeRange().lower(),
@@ -521,19 +621,17 @@ SimpleIntegrator<Scalar>::getFwdTimeRange() const
 
 // Overridden from InterpolationBufferBase
 
-template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> > SimpleIntegrator<Scalar>::get_x_space() const
-{
-  if (stepper_ == Teuchos::null) {
-    RCP<const Thyra::VectorSpaceBase<Scalar> > space;
-    return(space);
-  } else {
-    return(stepper_->get_x_space());
-  }
-}
 
 template<class Scalar> 
-void SimpleIntegrator<Scalar>::addPoints(
+RCP<const Thyra::VectorSpaceBase<Scalar> >
+DefaultIntegrator<Scalar>::get_x_space() const
+{
+  return stepper_->get_x_space();
+}
+
+
+template<class Scalar> 
+void DefaultIntegrator<Scalar>::addPoints(
   const Array<Scalar>& time_vec,
   const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
   const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -544,40 +642,41 @@ void SimpleIntegrator<Scalar>::addPoints(
 
 
 template<class Scalar> 
-void SimpleIntegrator<Scalar>::getPoints(
+void DefaultIntegrator<Scalar>::getPoints(
   const Array<Scalar>& time_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
   Array<ScalarMag>* accuracy_vec
   ) const
 {
+  // 2007/10/05: rabartl: ToDo: Get points from trailingInterpBuffer_ as well!
   stepper_->getPoints(time_vec,x_vec,xdot_vec,accuracy_vec);
 }
 
 
 template<class Scalar> 
-TimeRange<Scalar> SimpleIntegrator<Scalar>::getTimeRange() const
+TimeRange<Scalar> DefaultIntegrator<Scalar>::getTimeRange() const
 {
   return stepper_->getTimeRange();
 }
 
 
 template<class Scalar> 
-void SimpleIntegrator<Scalar>::getNodes(Array<Scalar>* time_vec) const
+void DefaultIntegrator<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   stepper_->getNodes(time_vec);
 }
 
 
 template<class Scalar> 
-void SimpleIntegrator<Scalar>::removeNodes(Array<Scalar>& time_vec)
+void DefaultIntegrator<Scalar>::removeNodes(Array<Scalar>& time_vec)
 {
   stepper_->removeNodes(time_vec);
 }
 
 
 template<class Scalar> 
-int SimpleIntegrator<Scalar>::getOrder() const
+int DefaultIntegrator<Scalar>::getOrder() const
 {
   return stepper_->getOrder();
 }
@@ -587,11 +686,20 @@ int SimpleIntegrator<Scalar>::getOrder() const
 
 
 template<class Scalar> 
-bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t )
+void DefaultIntegrator<Scalar>::finalizeSetup()
+{
+  if (!is_null(trailingInterpBuffer_) && is_null(interpBufferAppender_))
+    interpBufferAppender_ = pointwiseInterpolationBufferAppender<Scalar>();
+  // ToDo: Do other setup?
+}
+
+
+template<class Scalar> 
+bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t )
 {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::advanceStepperToTime");
+  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime");
 #endif
 
   using std::endl;
@@ -601,7 +709,7 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
 
@@ -655,7 +763,7 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
     if (stepCtrlInfoLast_.limitedByBreakPoint) {
       if ( stepCtrlInfoLast_.breakPointType == BREAK_POINT_TYPE_HARD ) {
 #ifdef ENABLE_RYTHMOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::restart");
+        TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::restart");
 #endif
         if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
           *out << "\nAt a hard-breakpoint, restarting time integrator ...\n";
@@ -674,7 +782,7 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
     StepControlInfo<Scalar> trialStepCtrlInfo;
     {
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::advanceStepperToTime: getStepCtrl");
+      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
 #endif
       if (!is_null(integrationControlStrategy_)) {
         // Let an external strategy object determine the step size and type.
@@ -747,7 +855,7 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
     Scalar stepSizeTaken;
     {
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::advanceStepperToTime: takeStep");
+      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: takeStep");
 #endif
       stepSizeTaken = stepper_->takeStep(
         trialStepCtrlInfo.stepSize, trialStepCtrlInfo.stepType
@@ -786,6 +894,12 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
       *out << stepCtrlInfo;
     }
 
+    // Append the trailing interploation buffer (if defined)
+    if (!is_null(trailingInterpBuffer_)) {
+      interpBufferAppender_->append(*stepper_,currStepperTimeRange,
+        trailingInterpBuffer_.ptr() );
+    }
+
     //
     // D) Output info about step
     //
@@ -793,7 +907,7 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
     {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:SimpleIntegrator::advanceStepperToTime: output");
+      TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: output");
 #endif
       
       // Print our own brief output
@@ -843,4 +957,4 @@ bool SimpleIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t 
 } // namespace Rythmos
 
 
-#endif //Rythmos_SIMPLE_INTEGRATOR_H
+#endif //RYTHMOS_DEFAULT_INTEGRATOR_HPP

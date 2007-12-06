@@ -272,6 +272,7 @@ CORE_H = \
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
   $(srcdir)/Rythmos_DataStore.hpp\
+  $(srcdir)/Rythmos_DefaultIntegrator.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
@@ -293,20 +294,20 @@ CORE_H = \
   $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
   $(srcdir)/Rythmos_IntegratorBase.hpp\
-  $(srcdir)/Rythmos_IntegratorDefault.hpp\
   $(srcdir)/Rythmos_InterpolationBuffer.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferAppender.hpp\
+  $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
   $(srcdir)/Rythmos_InterpolatorBase.hpp\
   $(srcdir)/Rythmos_LinearInterpolator.hpp\
   $(srcdir)/Rythmos_LinearTimeInvariantModelEvaluator.hpp\
+  $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
-  $(srcdir)/Rythmos_SimpleIntegrator.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
+  $(srcdir)/Rythmos_SmartInterpolationBufferAppender.hpp\
   $(srcdir)/Rythmos_SolverAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_StateAndForwardSensitivityModelEvaluator.hpp\
   $(srcdir)/Rythmos_StepControlInfo.hpp\

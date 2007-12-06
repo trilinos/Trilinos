@@ -235,8 +235,8 @@ SimpleIntegrationControlStrategy<Scalar>::getValidParameters() const
       numTimeSteps_name_, numTimeSteps_default_,
       "Gives the number of fixed time steps.  The actual step size gets computed\n"
       "on the fly given the size of the time domain.\n"
-      "This is only read and used if \"" + takeVariableSteps_name_ + "\" is set to true\n"
-      "and \"" + fixed_dt_name_ + "\" is not not to a number > 0.0."
+      "This is only read and used if \"" + takeVariableSteps_name_ + "\" is set to false\n"
+      "and \"" + fixed_dt_name_ + "\" is set to < 0.0."
       );
     pl->set(
       fixed_dt_name_, fixed_dt_default_,
