@@ -129,7 +129,7 @@ double Time::wallTime()
   //std::cout << "ticks = " << ticks << ", sec = " << sec << std::endl;
   return sec;
 
-#elif ICL
+#elif ICL || defined(_WIN32)
 
   clock_t start;
 
