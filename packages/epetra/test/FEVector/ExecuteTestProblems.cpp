@@ -255,6 +255,18 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
   }
 
 
+  //now sum-in again, to make sure the previous call to GlobalAssemble
+  //didn't do something nasty to internal non-local data structures.
+  //(This is a specific case that has bitten me. Hence this test...)
+  for(int i=0; i<NumVectors; ++i) {
+    EPETRA_TEST_ERR( b.SumIntoGlobalValues(Num, Indices, Values, i),
+                   ierr);
+  }
+
+  //and now GlobalAssemble again...
+  EPETRA_TEST_ERR( b.GlobalAssemble(), ierr);
+
+
   if (verbose&&MyPID==0) {
     cout << "b:"<<endl;
   }

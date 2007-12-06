@@ -80,6 +80,9 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
 Epetra_FEVector::~Epetra_FEVector()
 {
   destroyNonlocalData();
+
+  delete [] nonlocalCoefs_;
+  nonlocalCoefs_ = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -398,6 +401,8 @@ Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
 
   destroyNonlocalData();
 
+  delete [] nonlocalCoefs_;
+
   if (source.numNonlocalIDsAlloc_ > 0) {
     numNonlocalIDsAlloc_ = source.numNonlocalIDsAlloc_;
     numNonlocalIDs_ = source.numNonlocalIDs_;
@@ -409,6 +414,7 @@ Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
       nonlocalElementSize_[i] = elemSize;
     }
   }
+
   nonlocalCoefs_ = new double*[NumVectors()];
   for(int i=0; i<NumVectors(); ++i) nonlocalCoefs_[i] = NULL;
 
@@ -446,11 +452,12 @@ void Epetra_FEVector::destroyNonlocalData()
   if (nonlocalCoefs_ != NULL && numNonlocalCoefsAlloc_ > 0) {
     for(int i=0; i<NumVectors(); ++i) {
       delete [] nonlocalCoefs_[i];
+      nonlocalCoefs_[i] = NULL;
     }
-  }
 
-  delete [] nonlocalCoefs_;
-  nonlocalCoefs_ = NULL;
+    numNonlocalCoefs_ = 0;
+    numNonlocalCoefsAlloc_ = 0;
+  }
 
   return;
 }
