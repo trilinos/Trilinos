@@ -210,7 +210,8 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const
   {
-    ScalarType roe, scale, r;
+    ScalarType scale, r;
+    ScalarType roe = ScalarTraits<ScalarType>::zero();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
 
