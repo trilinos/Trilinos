@@ -5,6 +5,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Setup user options ...
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+OPTION(TRILINOS_BUILD_ANASAZI "Build the anasazi package." ON)
 OPTION(TRILINOS_BUILD_EPETRA "Build the epetra package." ON)
 OPTION(TRILINOS_BUILD_TEUCHOS "Build the teuchos package." ON)
 
@@ -19,6 +20,34 @@ MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 # Setup global requirements ...
 FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
 FIND_LIBRARY(TRILINOS_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
+
+# Set global options that will be inserted into config.h files ...
+# Note: we should really be probing for these values, but will hard-code them in the short-term.
+# Most of these should be fine for all but ridiculously out-of-date C++ compilers, but you never know.
+#SET(HAVE_ALGORITHM TRUE)
+#SET(HAVE_CASSERT TRUE)
+#SET(HAVE_CERRNO TRUE)
+#SET(HAVE_CLIMITS TRUE)
+#SET(HAVE_CMATH TRUE)
+#SET(HAVE_COMPLEX TRUE)
+#SET(HAVE_CSTDARG TRUE)
+#SET(HAVE_CSTDIO TRUE)
+#SET(HAVE_CSTDLIB TRUE)
+#SET(HAVE_CSTRING TRUE)
+#SET(HAVE_IOMANIP TRUE)
+#SET(HAVE_IOSTREAM TRUE)
+#SET(HAVE_LIST TRUE)
+#SET(HAVE_MAP TRUE)
+#SET(HAVE_MEMORY TRUE)
+#SET(HAVE_MUTABLE TRUE)
+#SET(HAVE_NAMESPACES TRUE)
+#SET(HAVE_NEW_FOR_SCOPING TRUE)
+#SET(HAVE_NUMERIC_LIMITS TRUE)
+#SET(HAVE_POW TRUE)
+#SET(HAVE_SET TRUE)
+#SET(HAVE_SSTREAM TRUE)
+#SET(HAVE_STDEXCEPT TRUE)
+#SET(HAVE_STRING TRUE)
 
 # Setup Fortran name mangling
 IF(CYGWIN)
