@@ -883,7 +883,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
       newstate.V = V_0;
       newstate.z = z_0;
       newstate.curDim = 0;
-      block_gmres_iter->initialize(newstate);
+      block_gmres_iter->initializeGmres(newstate);
       int numRestarts = 0;
       
       while(1) {
@@ -955,7 +955,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
             newstate.V = V_0;
             newstate.z = z_0;
             newstate.curDim = 0;
-            block_gmres_iter->initialize(newstate);
+            block_gmres_iter->initializeGmres(newstate);
 	    
           } // end of restarting
 	  

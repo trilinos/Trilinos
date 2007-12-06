@@ -20,7 +20,7 @@ if BUILD_EPETRAEXT
 if BUILD_IFPACK
 BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile BlockFlexGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile
 endif
-BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
+BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile BlockGmresPolyEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
 endif
 endif
 
@@ -38,11 +38,18 @@ BlockFlexGmresEpetraExFile_SOURCES = $(srcdir)/BlockFlexGmresEpetraExFile.cpp
 
 BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp 
 
+BlockGmresPolyEpetraExFile_SOURCES = $(srcdir)/BlockGmresPolyEpetraExFile.cpp 
+
 PseudoBlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp 
 
 PseudoBlockGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockGmresEpetraExFile.cpp 
 
 BlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockGmresPolyEpetraExFile_DEPENDENCIES = \
 			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
@@ -72,6 +79,8 @@ PseudoBlockPrecGmresEpetraExFile_DEPENDENCIES = \
 
 BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
+BlockGmresPolyEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+
 BlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
 BlockFlexGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
@@ -81,6 +90,8 @@ PseudoBlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src
 PseudoBlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
 BlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+BlockGmresPolyEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 BlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 

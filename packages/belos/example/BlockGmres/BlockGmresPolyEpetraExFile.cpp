@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
  
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
+    = rcp( new Belos::GmresPolySolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
 
   //
   // **********Print out information about problem*******************

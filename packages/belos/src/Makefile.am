@@ -30,6 +30,7 @@ CORE_H = \
 	$(srcdir)/BelosGCRODRIter.hpp \
 	$(srcdir)/BelosGCRODRSolMgr.hpp \
         $(srcdir)/BelosGmresIteration.hpp \
+	$(srcdir)/BelosGmresPolySolMgr.hpp \
 	$(srcdir)/BelosICGSOrthoManager.hpp \
 	$(srcdir)/BelosIMGSOrthoManager.hpp \
 	$(srcdir)/BelosIteration.hpp \

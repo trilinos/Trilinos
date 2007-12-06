@@ -68,6 +68,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = BlockGmresEpetraExFile$(EXEEXT) \
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	BlockGmresPolyEpetraExFile$(EXEEXT) \
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	PseudoBlockGmresEpetraExFile$(EXEEXT) \
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 @BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = BlockPrecGmresEpetraExFile$(EXEEXT) \
@@ -90,6 +91,12 @@ BlockGmresEpetraExFile_OBJECTS = $(am_BlockGmresEpetraExFile_OBJECTS)
 BlockGmresEpetraExFile_LINK = $(CXXLD) \
 	$(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_BlockGmresPolyEpetraExFile_OBJECTS = BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.$(OBJEXT)
+BlockGmresPolyEpetraExFile_OBJECTS =  \
+	$(am_BlockGmresPolyEpetraExFile_OBJECTS)
+BlockGmresPolyEpetraExFile_LINK = $(CXXLD) \
+	$(BlockGmresPolyEpetraExFile_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_BlockPrecGmresEpetraExFile_OBJECTS = BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.$(OBJEXT)
 BlockPrecGmresEpetraExFile_OBJECTS =  \
 	$(am_BlockPrecGmresEpetraExFile_OBJECTS)
@@ -125,11 +132,13 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(BlockFlexGmresEpetraExFile_SOURCES) \
 	$(BlockGmresEpetraExFile_SOURCES) \
+	$(BlockGmresPolyEpetraExFile_SOURCES) \
 	$(BlockPrecGmresEpetraExFile_SOURCES) $(Dummy_SOURCES) \
 	$(PseudoBlockGmresEpetraExFile_SOURCES) \
 	$(PseudoBlockPrecGmresEpetraExFile_SOURCES)
 DIST_SOURCES = $(BlockFlexGmresEpetraExFile_SOURCES) \
 	$(BlockGmresEpetraExFile_SOURCES) \
+	$(BlockGmresPolyEpetraExFile_SOURCES) \
 	$(BlockPrecGmresEpetraExFile_SOURCES) $(Dummy_SOURCES) \
 	$(PseudoBlockGmresEpetraExFile_SOURCES) \
 	$(PseudoBlockPrecGmresEpetraExFile_SOURCES)
@@ -261,14 +270,20 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile BlockFlexGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile
-@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile BlockGmresPolyEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
 Dummy_SOURCES = Dummy
 BlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/BlockPrecGmresEpetraExFile.cpp 
 BlockFlexGmresEpetraExFile_SOURCES = $(srcdir)/BlockFlexGmresEpetraExFile.cpp 
 BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp 
+BlockGmresPolyEpetraExFile_SOURCES = $(srcdir)/BlockGmresPolyEpetraExFile.cpp 
 PseudoBlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp 
 PseudoBlockGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockGmresEpetraExFile.cpp 
 BlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockGmresPolyEpetraExFile_DEPENDENCIES = \
 			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
@@ -297,11 +312,13 @@ PseudoBlockPrecGmresEpetraExFile_DEPENDENCIES = \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+BlockGmresPolyEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 BlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 BlockFlexGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 PseudoBlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 PseudoBlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 BlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+BlockGmresPolyEpetraExFile_LDADD = $(EXPORT_LIBS)
 BlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 BlockFlexGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 PseudoBlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
@@ -353,6 +370,9 @@ BlockFlexGmresEpetraExFile$(EXEEXT): $(BlockFlexGmresEpetraExFile_OBJECTS) $(Blo
 BlockGmresEpetraExFile$(EXEEXT): $(BlockGmresEpetraExFile_OBJECTS) $(BlockGmresEpetraExFile_DEPENDENCIES) 
 	@rm -f BlockGmresEpetraExFile$(EXEEXT)
 	$(BlockGmresEpetraExFile_LINK) $(BlockGmresEpetraExFile_OBJECTS) $(BlockGmresEpetraExFile_LDADD) $(LIBS)
+BlockGmresPolyEpetraExFile$(EXEEXT): $(BlockGmresPolyEpetraExFile_OBJECTS) $(BlockGmresPolyEpetraExFile_DEPENDENCIES) 
+	@rm -f BlockGmresPolyEpetraExFile$(EXEEXT)
+	$(BlockGmresPolyEpetraExFile_LINK) $(BlockGmresPolyEpetraExFile_OBJECTS) $(BlockGmresPolyEpetraExFile_LDADD) $(LIBS)
 BlockPrecGmresEpetraExFile$(EXEEXT): $(BlockPrecGmresEpetraExFile_OBJECTS) $(BlockPrecGmresEpetraExFile_DEPENDENCIES) 
 	@rm -f BlockPrecGmresEpetraExFile$(EXEEXT)
 	$(BlockPrecGmresEpetraExFile_LINK) $(BlockPrecGmresEpetraExFile_OBJECTS) $(BlockPrecGmresEpetraExFile_LDADD) $(LIBS)
@@ -371,6 +391,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockFlexGmresEpetraExFile-BlockFlexGmresEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Po@am__quote@
@@ -416,6 +437,20 @@ BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj: $(srcdir)/BlockGmresEpetraExF
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockGmresEpetraExFile.cpp' object='BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj `if test -f '$(srcdir)/BlockGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockGmresEpetraExFile.cpp'; fi`
+
+BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.o: $(srcdir)/BlockGmresPolyEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresPolyEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.o -MD -MP -MF $(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Tpo -c -o BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.o `test -f '$(srcdir)/BlockGmresPolyEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockGmresPolyEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Tpo $(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockGmresPolyEpetraExFile.cpp' object='BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresPolyEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.o `test -f '$(srcdir)/BlockGmresPolyEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockGmresPolyEpetraExFile.cpp
+
+BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.obj: $(srcdir)/BlockGmresPolyEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresPolyEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.obj -MD -MP -MF $(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Tpo -c -o BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.obj `if test -f '$(srcdir)/BlockGmresPolyEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockGmresPolyEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockGmresPolyEpetraExFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Tpo $(DEPDIR)/BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockGmresPolyEpetraExFile.cpp' object='BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresPolyEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockGmresPolyEpetraExFile-BlockGmresPolyEpetraExFile.obj `if test -f '$(srcdir)/BlockGmresPolyEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockGmresPolyEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockGmresPolyEpetraExFile.cpp'; fi`
 
 BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o: $(srcdir)/BlockPrecGmresEpetraExFile.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o -MD -MP -MF $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Tpo -c -o BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o `test -f '$(srcdir)/BlockPrecGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockPrecGmresEpetraExFile.cpp
