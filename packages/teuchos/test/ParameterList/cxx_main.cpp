@@ -48,6 +48,7 @@ using Teuchos::ParameterList;
 typedef ParameterList::PrintOptions PLPrintOptions;
 using Teuchos::ParameterEntry;
 using Teuchos::OSTab;
+using Teuchos::rcp;
 
 void print_break() { std::cout << "---------------------------------------------------" << std::endl; }
 double Plus ( double a, double b ) { return a+b; }
