@@ -13,34 +13,34 @@ IF(EPETRA_ENABLE_MPI)
 	LINK_LIBRARIES(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
 ENDIF(EPETRA_ENABLE_MPI)
 
-TRILINOS_ADD_EXECUTABLE(petra_power_method SOURCES cxx_main.cpp ARGS 100)
+TRILINOS_ADD_EXECUTABLE(petra_power_method EXAMPLE SOURCES cxx_main.cpp ARGS 100)
 
-TRILINOS_ADD_EXECUTABLE(verySimple SOURCES cxx_main.cpp)
+TRILINOS_ADD_EXECUTABLE(verySimple EXAMPLE SOURCES cxx_main.cpp)
 
-TRILINOS_ADD_EXECUTABLE(UG_Ex1 SOURCES cxx_main.cpp power_method.cpp ARGS 100)
+TRILINOS_ADD_EXECUTABLE(UG_Ex1 EXAMPLE SOURCES cxx_main.cpp power_method.cpp ARGS 100)
 
-TRILINOS_ADD_EXECUTABLE(UG_ExMaps SOURCES cxx_main.cpp ARGS 100)
+TRILINOS_ADD_EXECUTABLE(UG_ExMaps EXAMPLE SOURCES cxx_main.cpp ARGS 100)
 
-TRILINOS_ADD_EXECUTABLE(my_example SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_EXECUTABLE(my_example EXAMPLE SOURCES cxx_main.cpp ARGS -v)
 
 
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 
 # Linking error
-#TRILINOS_ADD_EXECUTABLE(C_wrappers SOURCES c_main.c)
+#TRILINOS_ADD_EXECUTABLE(C_wrappers EXAMPLE SOURCES c_main.c)
 
 # Requires ifpack, aztecOO
-#TRILINOS_ADD_EXECUTABLE(Fortran SOURCES f_main.F)
+#TRILINOS_ADD_EXECUTABLE(Fortran EXAMPLE SOURCES f_main.F)
 
 # Must be run on 3 MPI processes
-#TRILINOS_ADD_EXECUTABLE(ImportExport SOURCES cxx_main.cpp)
+#TRILINOS_ADD_EXECUTABLE(ImportExport EXAMPLE SOURCES cxx_main.cpp)
 
 # Requires the first argument to be a Harwell-Boeing matrix file
-#TRILINOS_ADD_EXECUTABLE(InverseIteration SOURCES cxx_main.cpp)
+#TRILINOS_ADD_EXECUTABLE(InverseIteration EXAMPLE SOURCES cxx_main.cpp)
 
 # Works
-#TRILINOS_ADD_EXECUTABLE(MapColoring SOURCES cxx_main.cpp ARGS 100 200)
+#TRILINOS_ADD_EXECUTABLE(MapColoring EXAMPLE SOURCES cxx_main.cpp ARGS 100 200)
 
 # Includes/linking errors
-#TRILINOS_ADD_EXECUTABLE(petra_nonlinear SOURCES cc_main.cc basis.cc ARGS 51)
+#TRILINOS_ADD_EXECUTABLE(petra_nonlinear EXAMPLE SOURCES cc_main.cc basis.cc ARGS 51)
 
