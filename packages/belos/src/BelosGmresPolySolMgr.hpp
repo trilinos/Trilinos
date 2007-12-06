@@ -26,11 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef BELOS_HYBRID_BLOCK_GMRES_SOLMGR_HPP
-#define BELOS_HYBRID_BLOCK_GMRES_SOLMGR_HPP
+#ifndef BELOS_GMRES_POLY_SOLMGR_HPP
+#define BELOS_GMRES_POLY_SOLMGR_HPP
 
-/*! \file BelosHybridBlockGmresSolMgr.hpp
- *  \brief The Belos::HybridBlockGmresSolMgr provides a solver manager for the hybrid block GMRES linear solver.
+/*! \file BelosGmresPolySolMgr.hpp
+ *  \brief The Belos::GmresPolySolMgr provides a solver manager for the hybrid block GMRES linear solver.
  */
 
 #include "BelosConfigDefs.hpp"
@@ -54,15 +54,15 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/** \example BlockGmres/HybridBlockGmresEpetraEx.cpp
-    This is an example of how to use the Belos::HybridBlockGmresSolMgr solver manager.
+/** \example BlockGmres/GmresPolyEpetraEx.cpp
+    This is an example of how to use the Belos::GmresPolySolMgr solver manager.
     \example BlockGmres/HybridBlockPrecGmresEpetraEx.cpp
-    This is an example of how to use the Belos::HybridBlockGmresSolMgr solver manager with an Ifpack preconditioner.
+    This is an example of how to use the Belos::GmresPolySolMgr solver manager with an Ifpack preconditioner.
 */
 
-/*! \class Belos::HybridBlockGmresSolMgr
+/*! \class Belos::GmresPolySolMgr
  *
- *  \brief The Belos::HybridBlockGmresSolMgr provides a powerful and fully-featured solver manager over the hybrid block GMRES linear solver.
+ *  \brief The Belos::GmresPolySolMgr provides a powerful and fully-featured solver manager over the hybrid block GMRES linear solver.
 
  \ingroup belos_solver_framework
 
@@ -71,31 +71,31 @@
 
 namespace Belos {
   
-//! @name HybridBlockGmresSolMgr Exceptions
+//! @name GmresPolySolMgr Exceptions
 //@{
   
-/** \brief HybridBlockGmresSolMgrLinearProblemFailure is thrown when the linear problem is
+/** \brief GmresPolySolMgrLinearProblemFailure is thrown when the linear problem is
  * not setup (i.e. setProblem() was not called) when solve() is called.
  *
- * This std::exception is thrown from the HybridBlockGmresSolMgr::solve() method.
+ * This std::exception is thrown from the GmresPolySolMgr::solve() method.
  *
  */
-class HybridBlockGmresSolMgrLinearProblemFailure : public BelosError {public:
-  HybridBlockGmresSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
+class GmresPolySolMgrLinearProblemFailure : public BelosError {public:
+  GmresPolySolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
-/** \brief HybridBlockGmresSolMgrOrthoFailure is thrown when the orthogonalization manager is
+/** \brief GmresPolySolMgrOrthoFailure is thrown when the orthogonalization manager is
  * unable to generate orthonormal columns from the initial basis vectors.
  *
- * This std::exception is thrown from the HybridBlockGmresSolMgr::solve() method.
+ * This std::exception is thrown from the GmresPolySolMgr::solve() method.
  *
  */
-class HybridBlockGmresSolMgrOrthoFailure : public BelosError {public:
-  HybridBlockGmresSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
+class GmresPolySolMgrOrthoFailure : public BelosError {public:
+  GmresPolySolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
 template<class ScalarType, class MV, class OP>
-class HybridBlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
+class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP> {
     
 private:
   typedef MultiVecTraits<ScalarType,MV> MVT;
@@ -109,14 +109,14 @@ public:
   //! @name Constructors/Destructor
   //@{ 
    
-  /*! \brief Empty constructor for HybridBlockGmresSolMgr.
+  /*! \brief Empty constructor for GmresPolySolMgr.
    * This constructor takes no arguments and sets the default values for the solver.
    * The linear problem must be passed in using setProblem() before solve() is called on this object.
    * The solver values can be changed using setParameters().
    */
-  HybridBlockGmresSolMgr();
+  GmresPolySolMgr();
  
-  /*! \brief Basic constructor for HybridBlockGmresSolMgr.
+  /*! \brief Basic constructor for GmresPolySolMgr.
    *
    * This constructor accepts the LinearProblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
@@ -128,11 +128,11 @@ public:
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8
    */
-  HybridBlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  GmresPolySolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
     const Teuchos::RCP<Teuchos::ParameterList> &pl );
     
   //! Destructor.
-  virtual ~HybridBlockGmresSolMgr() {};
+  virtual ~GmresPolySolMgr() {};
   //@}
     
   //! @name Accessor methods
@@ -223,7 +223,7 @@ private:
       return Belos::None;
     } else 
       TEST_FOR_EXCEPTION( true ,std::logic_error,
-        "Belos::HybridBlockGmresSolMgr(): Invalid residual scaling type.");
+        "Belos::GmresPolySolMgr(): Invalid residual scaling type.");
   }
   
   // Method for checking current status test against defined linear problem.
@@ -286,51 +286,51 @@ private:
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType HybridBlockGmresSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType GmresPolySolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType HybridBlockGmresSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType GmresPolySolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
 
 template<class ScalarType, class MV, class OP>
-const int HybridBlockGmresSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
+const int GmresPolySolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
 
 template<class ScalarType, class MV, class OP>
-const int HybridBlockGmresSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+const int GmresPolySolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const bool HybridBlockGmresSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
+const bool GmresPolySolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
 
 template<class ScalarType, class MV, class OP>
-const int HybridBlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
+const int GmresPolySolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
-const int HybridBlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
+const int GmresPolySolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
 
 template<class ScalarType, class MV, class OP>
-const int HybridBlockGmresSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+const int GmresPolySolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
-const int HybridBlockGmresSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+const int GmresPolySolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
-const std::string HybridBlockGmresSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
+const std::string GmresPolySolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
 
 template<class ScalarType, class MV, class OP>
-const std::string HybridBlockGmresSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
+const std::string GmresPolySolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
 
 template<class ScalarType, class MV, class OP>
-const std::string HybridBlockGmresSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+const std::string GmresPolySolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
 
 template<class ScalarType, class MV, class OP>
-const std::string HybridBlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
+const std::string GmresPolySolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> HybridBlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> GmresPolySolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-HybridBlockGmresSolMgr<ScalarType,MV,OP>::HybridBlockGmresSolMgr() :
+GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
@@ -355,7 +355,7 @@ HybridBlockGmresSolMgr<ScalarType,MV,OP>::HybridBlockGmresSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-HybridBlockGmresSolMgr<ScalarType,MV,OP>::HybridBlockGmresSolMgr( 
+GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr( 
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
   problem_(problem),
@@ -392,7 +392,7 @@ HybridBlockGmresSolMgr<ScalarType,MV,OP>::HybridBlockGmresSolMgr(
 
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
-HybridBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
+GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -444,7 +444,7 @@ HybridBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 
 template<class ScalarType, class MV, class OP>
-void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
 
   // Create the internal parameter list if ones doesn't already exist.
@@ -477,7 +477,7 @@ void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   if (params->isParameter("Block Size")) {
     blockSize_ = params->get("Block Size",blockSize_default_);    
     TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
-      "Belos::HybridBlockGmresSolMgr: \"Block Size\" must be strictly positive.");
+      "Belos::GmresPolySolMgr: \"Block Size\" must be strictly positive.");
 
     // Update parameter in our list.
     params_->set("Block Size", blockSize_);
@@ -487,7 +487,7 @@ void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   if (params->isParameter("Num Blocks")) {
     numBlocks_ = params->get("Num Blocks",numBlocks_default_);
     TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
-      "Belos::HybridBlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
+      "Belos::GmresPolySolMgr: \"Num Blocks\" must be strictly positive.");
 
     // Update parameter in our list.
     params_->set("Num Blocks", numBlocks_);
@@ -501,7 +501,7 @@ void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
-      std::string solveLabel = label_ + ": HybridBlockGmresSolMgr total solve time";
+      std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
     }
   }
@@ -511,7 +511,7 @@ void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
                         std::invalid_argument,
-			"Belos::HybridBlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
+			"Belos::GmresPolySolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
       // Create orthogonalization manager
@@ -679,13 +679,13 @@ void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     } 
     else {
       TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
-        "Belos::HybridBlockGmresSolMgr(): Invalid orthogonalization type.");
+        "Belos::GmresPolySolMgr(): Invalid orthogonalization type.");
     }  
   }
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
-    std::string solveLabel = label_ + ": HybridBlockGmresSolMgr total solve time";
+    std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
   }
 
@@ -695,7 +695,7 @@ void HybridBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
 // Check the status test versus the defined linear problem
 template<class ScalarType, class MV, class OP>
-bool HybridBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
+bool GmresPolySolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestGenResNorm_t;
@@ -706,7 +706,7 @@ bool HybridBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   // If there is a left preconditioner, we create a combined status test that checks the implicit
   // and then explicit residual norm to see if we have convergence.
-  if (!Teuchos::is_null(problem_->getLeftPrec()) && !isFlexible_) {
+  if (!Teuchos::is_null(problem_->getLeftPrec())) {
     expResTest_ = true;
   }
 
@@ -766,7 +766,7 @@ bool HybridBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType HybridBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
@@ -778,15 +778,15 @@ ReturnType HybridBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,HybridBlockGmresSolMgrLinearProblemFailure,
-    "Belos::HybridBlockGmresSolMgr::solve(): Linear problem is not a valid object.");
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GmresPolySolMgrLinearProblemFailure,
+    "Belos::GmresPolySolMgr::solve(): Linear problem is not a valid object.");
 
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),HybridBlockGmresSolMgrLinearProblemFailure,
-    "Belos::HybridBlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GmresPolySolMgrLinearProblemFailure,
+    "Belos::GmresPolySolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   if (!isSTSet_ || (!expResTest_ && !Teuchos::is_null(problem_->getLeftPrec())) ) {
-    TEST_FOR_EXCEPTION( checkStatusTest(),HybridBlockGmresSolMgrLinearProblemFailure,
-      "Belos::HybridBlockGmresSolMgr::solve(): Linear problem and requested status tests are incompatible.");
+    TEST_FOR_EXCEPTION( checkStatusTest(),GmresPolySolMgrLinearProblemFailure,
+      "Belos::GmresPolySolMgr::solve(): Linear problem and requested status tests are incompatible.");
   }
 
   // Create indices for the linear systems to be solved.
@@ -875,8 +875,8 @@ ReturnType HybridBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       
       // Orthonormalize the new V_0
       int rank = ortho_->normalize( *V_0, z_0 );
-      TEST_FOR_EXCEPTION(rank != blockSize_,HybridBlockGmresSolMgrOrthoFailure,
-			 "Belos::HybridBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
+      TEST_FOR_EXCEPTION(rank != blockSize_,GmresPolySolMgrOrthoFailure,
+			 "Belos::GmresPolySolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
       
       // Set the new state and initialize the solver.
       GmresIterationState<ScalarType,MV> newstate;
@@ -947,8 +947,8 @@ ReturnType HybridBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    
             // Orthonormalize the new V_0
             int rank = ortho_->normalize( *V_0, z_0 );
-            TEST_FOR_EXCEPTION(rank != blockSize_,HybridBlockGmresSolMgrOrthoFailure,
-			       "Belos::HybridBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
+            TEST_FOR_EXCEPTION(rank != blockSize_,GmresPolySolMgrOrthoFailure,
+			       "Belos::GmresPolySolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 	    
             // Set the new state and initialize the solver.
             GmresIterationState<ScalarType,MV> newstate;
@@ -968,7 +968,7 @@ ReturnType HybridBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  
           else {
             TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::HybridBlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
+			       "Belos::GmresPolySolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
           }
         }
         catch (GmresIterationOrthoFailure e) {
@@ -1046,17 +1046,17 @@ ReturnType HybridBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
   
   if (!isConverged || loaDetected_) {
-    return Unconverged; // return from HybridBlockGmresSolMgr::solve() 
+    return Unconverged; // return from GmresPolySolMgr::solve() 
   }
-  return Converged; // return from HybridBlockGmresSolMgr::solve() 
+  return Converged; // return from GmresPolySolMgr::solve() 
 }
   
 //  This method requires the solver manager to return a std::string that describes itself.
 template<class ScalarType, class MV, class OP>
-std::string HybridBlockGmresSolMgr<ScalarType,MV,OP>::description() const
+std::string GmresPolySolMgr<ScalarType,MV,OP>::description() const
   {
   std::ostringstream oss;
-  oss << "Belos::HybridBlockGmresSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+  oss << "Belos::GmresPolySolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
   oss << "Ortho Type='"<<orthoType_<<"\', Block Size=" <<blockSize_;
   oss << ", Num Blocks=" <<numBlocks_<< ", Max Restarts=" << maxRestarts_;
@@ -1066,4 +1066,4 @@ std::string HybridBlockGmresSolMgr<ScalarType,MV,OP>::description() const
   
 } // end Belos namespace
 
-#endif /* BELOS_HYBRID_BLOCK_GMRES_SOLMGR_HPP */
+#endif /* BELOS_GMRES_POLY_SOLMGR_HPP */
