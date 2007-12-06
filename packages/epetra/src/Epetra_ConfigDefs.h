@@ -126,7 +126,7 @@ using std::sprintf;
 #include <iostream.h>
 #endif
 
-#if HAVE_SSTREAM
+#ifdef HAVE_SSTREAM
 #include <sstream>
 #endif
 

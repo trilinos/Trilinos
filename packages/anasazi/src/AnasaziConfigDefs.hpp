@@ -131,9 +131,9 @@
 #    include <iterator.h>
 #  endif
 
-#  if HAVE_STDEXCEPT
+#  ifdef HAVE_STDEXCEPT
 #    include <stdexcept>
-#  elif HAVE_STDEXCEPT_H
+#  elif defined HAVE_STDEXCEPT_H
 #    include <stdexcept.h>
 #  endif
 
