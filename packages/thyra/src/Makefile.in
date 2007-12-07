@@ -335,6 +335,7 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorStdOpsTesterDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorTesterDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_OperatorVectorClientSupport.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_ParameterDrivenMultiVectorInput.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SUNDIALS_Ops.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleRhsLinearOpBase.hpp\
