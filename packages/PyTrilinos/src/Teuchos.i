@@ -83,6 +83,7 @@ ParameterList will accept a python dictionary.
 // Teuchos includes
 #include "Teuchos_FILEstream.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_NullIteratorTraits.hpp"
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_any.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -162,6 +163,7 @@ using Teuchos::RCP;
 //Teuchos imports
 namespace Teuchos { class any; }
 %import "Teuchos_TypeNameTraits.hpp"
+%import "Teuchos_NullIteratorTraits.hpp"
 %import "Teuchos_RCPDecl.hpp"
 %import "Teuchos_ParameterEntry.hpp"
 %import "Teuchos_XMLObjectImplem.hpp"

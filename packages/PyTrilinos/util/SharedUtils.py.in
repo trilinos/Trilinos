@@ -121,6 +121,24 @@ def removeExtensionModules(path):
 
 ######################################################################
 
+def getCompileOptions(makeMacros):
+    """
+    Given a set of Makefile macros, extract the set of compile options, uniquify
+    them, and return a list of those options with any 'illegal' options removed.
+    """
+    illegalOptions = ["-ansi", "-pedantic"]
+    compileOptions = makeMacros["CPPFLAGS"].split() + \
+                     makeMacros["CXXFLAGS"].split()
+    uniquifyList(compileOptions)
+    for opt in illegalOptions:
+        try:
+            compileOptions.remove(opt)
+        except ValueError:
+            pass
+    return compileOptions
+
+######################################################################
+
 class SharedTrilinosBuilder:
     """
     Class for performing various build processes (build, install, clean,
@@ -418,8 +436,7 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
                 includes += " -I" + numpy.get_include()
             except AttributeError:
                 includes += " -I" + numpy.get_numpy_include()
-        options = self.makeMacros["CPPFLAGS"] + " " + \
-                  self.makeMacros["CXXFLAGS"]
+        options = " ".join(getCompileOptions(self.makeMacros))
         if int(numpy.__version__.split(".")[0]) > 0:
             options += " -DNUMPY_NOPREFIX"
         return " ".join([cxx, includes, options, "-c", src, "-o", obj])
