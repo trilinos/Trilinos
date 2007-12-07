@@ -222,7 +222,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstContigSubViewImpl(
         spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(colRng.size())
         ,true
         ),
-      localValues_.persistingView(colRng.lbound()*leadingDim_,colRng.size()*spmdRangeSpace_->dim()),
+      localValues_.persistingView(colRng.lbound()*leadingDim_,colRng.size()*spmdRangeSpace_->localSubDim()),
       leadingDim_
       )
     );
