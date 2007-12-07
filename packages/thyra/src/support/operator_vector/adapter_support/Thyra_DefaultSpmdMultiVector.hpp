@@ -198,7 +198,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstColImpl(Index j)
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
       spmdRangeSpace_,
-      localValues_.persistingView(j*leadingDim_,spmdRangeSpace_->dim()),
+      localValues_.persistingView(j*leadingDim_,spmdRangeSpace_->localSubDim()),
       1
       )
     );
