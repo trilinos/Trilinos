@@ -41,11 +41,14 @@
 
 namespace Thyra {
 
+
 // Constructors/Initializers
+
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector()
 {}
+
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
@@ -54,6 +57,7 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
 {
   this->initialize(col_vec);
 }
+
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
@@ -65,21 +69,24 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
   this->initialize(range,domain,col_vecs);
 }
 
+
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
   const RCP<VectorBase<Scalar> > &col_vec
   )
 {
 #ifdef TEUCHOS_DEBUG
-  const char err_msg[] = "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
-  TEST_FOR_EXCEPTION( col_vec.get() == NULL,           std::invalid_argument, err_msg ); 
-  TEST_FOR_EXCEPTION( col_vec->space().get() == NULL,  std::invalid_argument, err_msg ); 
+  const std::string err_msg =
+    "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
+  TEST_FOR_EXCEPT_MSG( is_null(col_vec), err_msg ); 
+  TEST_FOR_EXCEPT_MSG( is_null(col_vec->space()), err_msg ); 
 #endif
   range_  = col_vec->space();
   domain_ = range_->smallVecSpcFcty()->createVecSpc(1);
   col_vecs_.resize(1);
   col_vecs_[0] = col_vec;
 }
+
   
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
@@ -89,25 +96,29 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  const char err_msg[] = "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
-  TEST_FOR_EXCEPTION( range.get()   == NULL, std::invalid_argument, err_msg ); 
-  TEST_FOR_EXCEPTION( domain.get()  == NULL, std::invalid_argument, err_msg ); 
-  TEST_FOR_EXCEPTION( range->dim()  == 0,    std::invalid_argument, err_msg ); 
-  TEST_FOR_EXCEPTION( domain->dim() == 0,    std::invalid_argument, err_msg );
+  const std::string err_msg =
+    "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
+  TEST_FOR_EXCEPT_MSG( is_null(range), err_msg ); 
+  TEST_FOR_EXCEPT_MSG( is_null(domain), err_msg ); 
+  TEST_FOR_EXCEPT_MSG( range->dim()  == 0, err_msg ); 
+  TEST_FOR_EXCEPT_MSG( domain->dim() == 0, err_msg );
   // ToDo: Check the compatibility of the vectors in col_vecs!
 #endif
+  const int domainDim = domain->dim();
   range_ = range;
   domain_ = domain;
-  col_vecs_.resize(col_vecs.size());
+  col_vecs_.clear();
+  col_vecs_.reserve(domainDim);
   if (col_vecs.size()) {
-    for( Index j = 0; j < col_vecs.size(); ++j )
-      col_vecs_[j] = col_vecs[j];
+    for( Index j = 0; j < domainDim; ++j )
+      col_vecs_.push_back(col_vecs[j]);
   }
   else {
-    for( Index j = 0; j < col_vecs.size(); ++j )
-      col_vecs_[j] = createMember(range_);
+    for( Index j = 0; j < domainDim; ++j )
+      col_vecs_.push_back(createMember(range_));
   }
 }
+
 
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::set_uninitialized()
@@ -117,7 +128,9 @@ void DefaultColumnwiseMultiVector<Scalar>::set_uninitialized()
   domain_ = Teuchos::null;
 }
 
+
 // Overridden from OpBase
+
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
@@ -126,6 +139,7 @@ DefaultColumnwiseMultiVector<Scalar>::range() const
   return range_;
 }
 
+
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::domain() const
@@ -133,7 +147,9 @@ DefaultColumnwiseMultiVector<Scalar>::domain() const
   return domain_;
 }
 
+
 // Overridden from SingleRhsLinearOpBase
+
 
 template<class Scalar>
 bool DefaultColumnwiseMultiVector<Scalar>::opSupported(ETransp M_trans) const
@@ -141,6 +157,7 @@ bool DefaultColumnwiseMultiVector<Scalar>::opSupported(ETransp M_trans) const
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
 }
+
 
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::apply(
@@ -152,7 +169,8 @@ void DefaultColumnwiseMultiVector<Scalar>::apply(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("MultiVectorBase<Scalar>::apply()",*this,M_trans,x,y);
+  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES(
+    "MultiVectorBase<Scalar>::apply()",*this,M_trans,x,y);
 #endif
   const Index nc = this->domain()->dim();
   // y *= beta
@@ -173,10 +191,10 @@ void DefaultColumnwiseMultiVector<Scalar>::apply(
   }
   else {
     //
-    //                   [ alpha*dot(M.col(0),x)    ]
-    // y += alpha*M'*x = [ alpha*dot(M.col(1),x)    ]
-    //                   [ ...                      ]
-    //                   [ alpha*dot(M.col(nc-1),x) ]
+    //                    [ alpha*dot(M.col(0),x)    ]
+    // y += alpha*M^T*x = [ alpha*dot(M.col(1),x)    ]
+    //                    [ ...                      ]
+    //                    [ alpha*dot(M.col(nc-1),x) ]
     //
     // Extract an explicit view of y
     RTOpPack::SubVectorView<Scalar> y_sub_vec;               
@@ -189,7 +207,9 @@ void DefaultColumnwiseMultiVector<Scalar>::apply(
   }
 }
 
+
 // Overridden from MultiVectorBase
+
 
 template<class Scalar>
 RCP<VectorBase<Scalar> >
@@ -204,16 +224,21 @@ DefaultColumnwiseMultiVector<Scalar>::nonconstColImpl(Index j)
   return col_vecs_[j];
 }
 
+
 template<class Scalar>
 RCP<MultiVectorBase<Scalar> >
-DefaultColumnwiseMultiVector<Scalar>::nonconstContigSubViewImpl( const Range1D& col_rng_in )
+DefaultColumnwiseMultiVector<Scalar>::nonconstContigSubViewImpl(
+  const Range1D& col_rng_in
+  )
 {
   const Index numCols = domain_->dim();
   const Range1D col_rng = Teuchos::full_range(col_rng_in,0,numCols-1);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !( col_rng.ubound() < numCols ), std::logic_error
-    ,"DefaultColumnwiseMultiVector<Scalar>::subView(col_rng): Error, the input range col_rng = ["<<col_rng.lbound()<<","<<col_rng.ubound()<<"] "
+    ,"DefaultColumnwiseMultiVector<Scalar>::subView(col_rng):"
+    "Error, the input range col_rng = ["<<col_rng.lbound()
+    <<","<<col_rng.ubound()<<"] "
     "is not in the range [0,"<<(numCols-1)<<"]!"
     );
 #endif
@@ -225,7 +250,9 @@ DefaultColumnwiseMultiVector<Scalar>::nonconstContigSubViewImpl( const Range1D& 
       )
     );
 }
+
   
 } // end namespace Thyra
+
 
 #endif // THYRA_MULTI_VECTOR_COLS_HPP
