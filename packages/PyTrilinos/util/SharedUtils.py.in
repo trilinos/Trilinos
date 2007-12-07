@@ -325,7 +325,7 @@ class SharedTrilinosBuilder:
 
         # Build a new shared library
         if needsToBeBuilt(self.absDylibName, glob.glob(os.path.join(self.buildDir,"*.o"))):
-            print "\nConverting", self.package, "to a shared library"
+            print "\nLinking", self.package, "as a shared library"
             changeDirectory(self.buildDir)
             runCommand(self.linkCmd)
             print "Moving", self.dylibName, "to", self.absDylibName
@@ -466,7 +466,8 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
                 runCommand(self.getCompileCmd(src, obj))
 
         # Create the shared PyTrilinos library
-        SharedTrilinosBuilder.buildShared(self)
+        if len(self.sources) > 0:
+            SharedTrilinosBuilder.buildShared(self)
         
     ######################################################################
 
