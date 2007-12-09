@@ -74,7 +74,7 @@ click on the [doxygen collection] next to each header below.
 The thrya package is broadly divided into interoperability interfaces and
 support software and the directory structure and the doxygen documentation is
 also divided in this way.  Below are links to the different Doxygen
-documentation collections for the different aspects of Thyra.  This
+documentation collections for the different aspects of %Thyra.  This
 organization also mirrors the <a href="../../browser/doc/html/dirs.html">directory
 structure of thyra</a>.
 
@@ -242,9 +242,9 @@ Thyra interfaces.  For example, one will find the
 
 \subsection thyra_browse_sec Browse all of Thyra as a single doxygen collection
 
-You can browse all of Thyra as a <A HREF="../../browser/doc/html/index.html">single
+You can browse all of %Thyra as a <A HREF="../../browser/doc/html/index.html">single
 doxygen collection</A>. Warning: This is not the recommended way to learn
-about Thyra software.  However, this is a good way to browse the <a
+about %Thyra software.  However, this is a good way to browse the <a
 href="../../browser/doc/html/dirs.html">directory structure of thyra</a>, to <a
 href="../../browser/doc/html/files.html">locate files</a>, etc.
 
@@ -357,14 +357,14 @@ use by external makefiles (see \ref thyra_external_projects_sec "below").
 
 See the output from <tt>./configure --help</tt> (where <tt>./</tt> is the base
 source directory for the <tt>thyra</tt> package) for a complete listing of all
-of the configure options that Thyra responds to.
+of the configure options that %Thyra responds to.
 
 The %Thyra package is also affected by configure options passed to
 other packages; some of these options are:
 
 <ul>
 <li><b><tt>--enable-teuchos-debug</tt></b>: Causes a great deal
-of return error checking code to be added to the Thyra support
+of return error checking code to be added to the %Thyra support
 software.
 <li><b><tt>--enable-teuchos-complex</tt></b>: Causes the
 <tt>std::complex<></tt> scalar type to be used in templated examples
@@ -378,7 +378,7 @@ Note that the above options will not be listed by
 <tt>Trilinos/packages/thyra/configure --help</tt> but instead are listed by
 <tt>Trilinos/packages/teuchos/configure --help</tt>.
 
-\section thyra_external_projects_sec Building and Linking Against Thyra in External Projects
+\section thyra_external_projects_sec Building and Linking Against %Thyra in External Projects
 
 It is recommended that developers external to Trilinos install %Thyra with the
 rest of Trilinos and then compile and link against the installed headers and
@@ -514,20 +514,20 @@ order, are:
 
 \section thyra_related_software_sec Other Software Related to Thyra
 
-Below is a partial list of software related to Thyra.
+Below is a partial list of software related to %Thyra.
 
 <ul>
 
 <li><b><a href="../../../stratimikos/doc/html/index.html">Stratimikos: Unified
-Wrappers for Thyra Linear Solver and Preconditioner Adapters</a></b>:
-Stratimikos contains neatly packaged access to all of the Thyra linear solver
+Wrappers for %Thyra Linear Solver and Preconditioner Adapters</a></b>:
+Stratimikos contains neatly packaged access to all of the %Thyra linear solver
 and preconditioner wrappers.  Currently, these allow the creation of linear
 solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
 implementation allows for the arbitrary implemention of the linear operators
 and vector spaces.
 
 <li><b><a href="../../../moocho/doc/html/index.html">MOOCHO/Thyra:
-Adapters that take Thyra Nonlinear Model Evaluator objects and express them as
+Adapters that take %Thyra Nonlinear Model Evaluator objects and express them as
 simulation-constrained optimization problems</a></b>: These adapters allow an
 application to access the nonlinear, simulation-constrained optimiztion
 algorithms in MOOCHO through the Thyra::ModelEvaluator interface.
