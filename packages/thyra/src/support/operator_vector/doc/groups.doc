@@ -131,24 +131,24 @@ object (see the "Composite" and "Decorator" design patterns in the GoF's
 <li> <b>Implicit product vector spaces, vectors and multi-vectors</b>
 
 One particularly useful category of composite linear algebra objects
-is the product vector space \f$\mathcal{X} = \mathcal{V}_1 {}\times
-\mathcal{V}_2 {}\times {}\ldots {}\times \mathcal{V}_m\f$ where
-\f$\mathcal{V}_k\f$, for \f$k = 1 {}\ldots m\f$, are different constituent
+is the product vector space \f$\mathcal{X} = \mathcal{V}_0 {}\times
+\mathcal{V}_1 {}\times {}\ldots {}\times \mathcal{V}_{m-1}\f$ where
+\f$\mathcal{V}_k\f$, for \f$k = 0 {}\ldots {m-1}\f$, are different constituent
 vector spaces.  Product vector spaces give rise to product vectors
 
 \f[
-x = \left[\begin{array}{c} v_1 \\ v_2 \\ \vdots \\ v_m \end{array}\right]
+x = \left[\begin{array}{c} v_0 \\ v_1 \\ \vdots \\ v_{m-1} \end{array}\right]
 \f]
 
-(where \f$v_1 \in \mathcal{V}_1, v_2 \in \mathcal{V}_2, \ldots, v_m
-\in \mathcal{V}_m\f$) and product multi-vectors
+(where \f$v_0 \in \mathcal{V}_0, v_1 \in \mathcal{V}_1, \ldots, v_{m-1}
+\in \mathcal{V}_{m-1}\f$) and product multi-vectors
 
 \f[
-X = \left[\begin{array}{c} V_1 \\ V_2 \\ \vdots \\ V_m \end{array}\right].
+X = \left[\begin{array}{c} V_0 \\ V_1 \\ \vdots \\ V_{m-1} \end{array}\right].
 \f]
 
-(where \f$V_1 \in \mathcal{V}_1 | \mathcal{D}, V_2 \in \mathcal{V}_2 | \mathcal{D},
-\ldots, V_m \in \mathcal{V}_m | \mathcal{D}\f$ and \f$\mathcal{D}\f$ is the
+(where \f$V_0 \in \mathcal{V}_0 | \mathcal{D}, V_1 \in \mathcal{V}_1 | \mathcal{D},
+\ldots, V_{m-1} \in \mathcal{V}_{m-1} | \mathcal{D}\f$ and \f$\mathcal{D}\f$ is the
 domain space for the multi-vectors).
 
 Very general concrete implementations of the product vector space, vector and
@@ -219,7 +219,7 @@ subclasses are shown below:
   subclass that represent the implicit addition of two or more constituent 
   <tt>Thyra::LinearOpBase</tt> objects of the form
 
-  \f$M =\; A_1 + A_2 + \ldots + A_m}\f$
+  \f$M =\; A_0 + A_1 + \ldots + A_{m-1}}\f$
 
   composed out of one or more constituent linear operators
   \f$A_0, A_1 \ldots A_{m-1}\f$.
@@ -228,7 +228,7 @@ subclasses are shown below:
   subclass that defines a composite multiplicative
   <tt>Thyra::LinearOpBase</tt> of the form
 
-  \f$M =\; A_1 A_2 \ldots A_m}\f$
+  \f$M =\; A_0 A_1 \ldots A_{m-1}}\f$
 
   composed out of one or more constituent linear operators
   \f$A_0, A_1 \ldots A_{m-1}\f$.
@@ -238,10 +238,10 @@ subclasses are shown below:
   <tt>Thyra::LinearOpBase</tt> objects of the form
 
   \f$M = \begin{array}{cccc}
-    A_{0,0} & A_{0,1} & \ldots & A_{0,N} \\
-    A_{1,0} & A_{1,1} & \ldots & A_{1,N} \\
+    A_{0,0} & A_{0,1} & \ldots & A_{0,n-1} \\
+    A_{1,0} & A_{1,1} & \ldots & A_{1,n-1} \\
     \vdots &  \vdots  & \ddots & \vdots \\
-    A_{M,0} & A_{M,1} & \ldots & A_{M,N}
+    A_{m-1,0} & A_{m-1,1} & \ldots & A_{m-1,n-1}
   \end{array}\f$
 
   composed out of one or more constituent linear operators.

@@ -15,6 +15,20 @@ pushd ../../../doc/Thyra/linear_algebra_function_convention; make pdf ; popd
 cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/support/operator_vector/doc/html/.
 
 echo
+echo "Generating ThyraCodingGuideLines.pdf file ..."
+echo
+
+pushd ../../../doc/Thyra/coding_guildlines; make pdf ; popd
+cp ../../../doc/Thyra/coding_guildlines/ThyraCodingGuideLines.pdf ../src/support/operator_vector/doc/html/.
+
+echo
+echo "Generating ThyraOverview.pdf file ..."
+echo
+
+pushd ../../../doc/Thyra/overview; make pdf ; popd
+cp ../../../doc/Thyra/overview/ThyraOverview.pdf ../src/support/operator_vector/doc/html/.
+
+echo
 echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/fundamental ..."
 echo
 
