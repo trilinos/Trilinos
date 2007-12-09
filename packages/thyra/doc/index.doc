@@ -473,7 +473,7 @@ Reduction/Transformation Operators [PDF]</a></b>
 
 This paper describes the need for, and the basic design of,
 <tt>RTOpPack::RTOpT</tt>.  The concrete implementation described in this paper
-used C structs while the current <tt>%RTOpPack::RTOpT</tt> is a fully
+used C structs while the current <tt>%RTOpPack::%RTOpT</tt> is a fully
 templated C++ class implementation.
 
 <li><b><a
@@ -504,17 +504,12 @@ order, are:
 
 <ul>
 <li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer, MOOCHO lead developer
-<li> Paul Boggs (ptboggs@sandia.gov) : Split/O3D lead developer, %Thyra developer
-<li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer, %Thyra developer
-<li> Michael Heroux (maherou@sandia.gov): Trilinos leader, Epetra and AztecOO lead developer, %Thyra developer
-<li> Rob Hoekstra (rjhoeks@sandia.gov) : %EpetraExt lead developer
-<li> Victoria Howle (vehowle@sandia.gov) : %Meros lead developer, %Thyra developer
-<li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer, %Thyra developer
+<li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer
+<li> Michael Heroux (maherou@sandia.gov): Trilinos lead, Epetra and AztecOO lead developer
+<li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer
 <li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
-<li> Eric Phipps (etphipp@sandia.gov) : %LOCA lead developer, %Thyra developer
-<li> Bill Spotz (wfspotz@sanida.gov) : %PyTrilinos Lead developer, %Thyra/Python adapter developer
-<li> Heidi Thornquist (hkthorn@sandia.gov): %Belos and Anasazi lead developer, %Thyra developer
-<li> Allan Williams (william@sandia.gov) : %FEI lead developer, %Thyra developer
+<li> Eric Phipps (etphipp@sandia.gov) : %LOCA lead developer
+<li> Allan Williams (william@sandia.gov) : %FEI lead developer
 </ul>
 
 \section thyra_related_software_sec Other Software Related to Thyra
