@@ -263,7 +263,7 @@ PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
 PARAMS_INC	= params_const.h
 
-PAR_CSRC	= par_average.c par_bisect.c par_median.c \
+PAR_CSRC	= par_average.c par_bisect.c par_median.c par_median_randomized.c \
 		  par_sync.c par_stats.c \
                   par_tflops_special.c
 PAR_INC		= par_const.h par_average_const.h par_median_const.h \

@@ -60,12 +60,27 @@ extern "C" {
 #define RCB_DEFAULT_OVERALLOC 1.2
 #define RCB_DEFAULT_REUSE FALSE
 
+/* PIVOT_CHOICE_ORDERED: call Zoltan_RB_find_median which walks through
+ *   potential medians (pivots) in order by numeric value.
+ * PIVOT_CHOICE_MEDIAN_OF_RANDOM: call Zoltan_RB_find_median_randomized,
+ *   which makes a somewhat random choice of potential pivot, by trying
+ *   the median value of a small random selection of pivots.
+ * PIVOT_CHOICE_RANDOM: call Zoltan_RB_find_median_randomized,
+ *   which makes a very random choice of potential pivot, by trying
+ *   the somewhat random value from a small random selection of pivots.
+ *   Choice of potential pivot is faster than "MEDIAN_OF_RANDOM" because
+ *   we don't find the median of the small random selection of pivots.
+ */
+#define PIVOT_CHOICE_ORDERED 1                
+#define PIVOT_CHOICE_MEDIAN_OF_RANDOM 2
+#define PIVOT_CHOICE_RANDOM 3
+
 /*****************************************************************************/
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
   double, int, int, int, int, int, int, int, int, int, int, double, int, int,
-  float *);
+  int, float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
 static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
   struct rcb_box *);
@@ -94,6 +109,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
                   { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
                   { "AVERAGE_CUTS", NULL, "INT", 0 },
+                  { "PIVOT_CHOICE", NULL, "INT", 0 },
                   { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
                   { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
                   { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
@@ -175,6 +191,7 @@ int Zoltan_RCB(
                                   partition sets at each level of recursion */
     int average_cuts;         /* Flag forcing median line to be drawn halfway
                                  between two closest objects. */
+    int pivot_choice;
     int idummy;
     int final_output;
     int ierr=ZOLTAN_OK;
@@ -205,6 +222,8 @@ int Zoltan_RCB(
                               (void *) &ddummy);
     Zoltan_Bind_Param(RCB_params, "AVERAGE_CUTS",
                               (void *) &average_cuts);
+    Zoltan_Bind_Param(RCB_params, "PIVOT_CHOICE",
+                              (void *) &pivot_choice);
 
     /* Set default values. */
     overalloc = RCB_DEFAULT_OVERALLOC;
@@ -224,6 +243,7 @@ int Zoltan_RCB(
     final_output = 0;
     ddummy = 0.0;
     average_cuts = 0;
+    pivot_choice = PIVOT_CHOICE_ORDERED;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
@@ -242,7 +262,7 @@ int Zoltan_RCB(
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
                  rectilinear_blocks, obj_wgt_comp, mcnorm, 
-                 max_aspect_ratio, recompute_box, average_cuts, part_sizes);
+                 max_aspect_ratio, recompute_box, average_cuts, pivot_choice, part_sizes);
 
     return(ierr);
 }
@@ -288,6 +308,7 @@ static int rcb_fn(
                                    partition sets at each level of recursion */
   int average_cuts,             /* Flag forcing median line to be drawn halfway
                                    between two closest objects. */
+  int pivot_choice,
   float *part_sizes             /* Input: Array of size 
                                    zz->LB.Num_Global_Parts * wgtflag 
                                    containing the percentage of work 
@@ -470,7 +491,6 @@ static int rcb_fn(
   counters[6] = 0;
   for (i = 0; i < 7; i++) reuse_count[i] = 0;
 
-
   /* create mark and list arrays for dots */
 
   allocflag = 0;
@@ -545,7 +565,6 @@ static int rcb_fn(
       if (outgoing) ZOLTAN_FREE(&proc_list);
     }
   }
-
 
   /* set dot weights = 1.0 if user didn't and determine total weight */
 
@@ -770,16 +789,31 @@ static int rcb_fn(
         time2 = Zoltan_Time(zz->Timer);
   
       if (wgtflag <= 1){
-        if (!Zoltan_RB_find_median(
+        if (pivot_choice == PIVOT_CHOICE_ORDERED){
+          if (!Zoltan_RB_find_median(
                zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
                fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
                dotlist, rectilinear_blocks, average_cuts)) {
-          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
-          ierr = ZOLTAN_FATAL;
-          goto End;
+            ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+            ierr = ZOLTAN_FATAL;
+            goto End;
+          }
+        }
+        else{
+          if (!Zoltan_RB_find_median_randomized(
+               zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
+               fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
+               nprocs, old_nprocs, proclower, old_nparts, 
+               wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+               weight[0], weightlo, weighthi,
+               dotlist, rectilinear_blocks, average_cuts, pivot_choice)) {
+            ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median_randomized.");
+            ierr = ZOLTAN_FATAL;
+            goto End;
+          }
         }
       }
       else { 
