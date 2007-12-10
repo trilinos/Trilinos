@@ -225,7 +225,7 @@ namespace Anasazi {
       }
       //
       // Swap two scalars
-      std::swap<int>( permcopy[j], permcopy[i] );
+      std::swap( permcopy[j], permcopy[i] );
 
       swapvec[i] = j;
     }
@@ -238,7 +238,7 @@ namespace Anasazi {
       //
       // Swap residuals (if they exist)
       if (resids) {
-        std::swap<MagnitudeType>(  (*resids)[i], (*resids)[j] );
+        std::swap(  (*resids)[i], (*resids)[j] );
       }
       //
       // Swap corresponding vectors

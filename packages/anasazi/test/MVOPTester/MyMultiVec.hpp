@@ -160,9 +160,9 @@ public:
   }
   
   // Update *this with alpha * A * B + beta * (*this). 
-  void MvTimesMatAddMv (const ScalarType alpha, const Anasazi::MultiVec<ScalarType> &A, 
+  void MvTimesMatAddMv (ScalarType alpha, const Anasazi::MultiVec<ScalarType> &A, 
                         const Teuchos::SerialDenseMatrix<int, ScalarType> &B, 
-                        const ScalarType beta)
+                        ScalarType beta)
   {
     
     assert (Length_ == A.GetVecLength());
@@ -213,8 +213,8 @@ public:
   }
   
   // Replace *this with alpha * A + beta * B. 
-  void MvAddMv (const ScalarType alpha, const Anasazi::MultiVec<ScalarType>& A, 
-                const ScalarType beta,  const Anasazi::MultiVec<ScalarType>& B)
+  void MvAddMv (ScalarType alpha, const Anasazi::MultiVec<ScalarType>& A, 
+                ScalarType beta,  const Anasazi::MultiVec<ScalarType>& B)
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
@@ -357,7 +357,7 @@ public:
   }
   
   // Scale the vectors by alpha
-  void MvScale( const ScalarType alpha )
+  void MvScale( ScalarType alpha )
   {
     for (int v = 0 ; v < NumberVecs_ ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {
@@ -387,7 +387,7 @@ public:
   }
   
   // Replace each element of the vectors in *this with alpha.
-  void  MvInit (const ScalarType alpha)
+  void  MvInit (ScalarType alpha)
   {
     for (int v = 0 ; v < NumberVecs_ ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {
