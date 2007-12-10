@@ -154,6 +154,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* allocate initial temporary storage space for getrow           */
    /* also allocate space for storing the diagonal (if epsilon>0)   */
    /* ------------------------------------------------------------- */
+   if (Amatrix->max_nz_per_row > maxnnz_per_row) 
+      maxnnz_per_row = Amatrix->max_nz_per_row;
+
 
    col_ind = (int *)    ML_allocate( maxnnz_per_row * sizeof(int) );
    col_val = (double *) ML_allocate( maxnnz_per_row * sizeof(double) );
