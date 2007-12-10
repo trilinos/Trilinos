@@ -294,11 +294,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
       ML_Comm_Barrier(ml->comm);
 
-      if (ML_Get_PrintLevel() > 10) {
-        sprintf(str,"before_repartition");
-        ML_Operator_Profile(ml->Amat+next,str);
-      }
-
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE, ML_FALSE);
 
       ML_Comm_Barrier(ml->comm);
@@ -2249,9 +2244,11 @@ static void ML_Init_Aux(ML* ml, int level)
   int DiagID;
   double DiagValue;
   int** filter;
-  double dist, largest;
+  double dist;
   double* x_coord,* y_coord,* z_coord;
   ML_Aggregate_Viz_Stats *grid_info;
+  double *LaplacianDiag;
+  int     Nghost;
 
   ML_Operator* A = &(ml->Amat[level]);
   grid_info = (ML_Aggregate_Viz_Stats *) A->to->Grid->Grid;
@@ -2269,6 +2266,10 @@ static void ML_Init_Aux(ML* ml, int level)
   ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
 
   n = A->invec_leng;
+  Nghost = ML_CommInfoOP_Compute_TotalRcvLength(A->getrow->pre_comm);
+
+  LaplacianDiag = (double *) ML_allocate((A->getrow->Nrows+Nghost+1)*
+                                         sizeof(double));
 
   filter = (int**) ML_allocate(sizeof(int*) * n);
 
@@ -2276,21 +2277,16 @@ static void ML_Init_Aux(ML* ml, int level)
   columns = (int *)    ML_allocate(allocated * sizeof(int));
   values  = (double *) ML_allocate(allocated * sizeof(double));
 
-  for (i = 0 ; i < n ; ++i)
-  {
+  for (i = 0 ; i < n ; ++i) {
     BlockRow = i;
     DiagID = -1;
     DiagValue = 0.0;
-    largest = 0.;
-    count = 0;
 
     ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
 
-    for (j = 0; j < entries; j++) 
-    {
+    for (j = 0; j < entries; j++) {
       BlockCol = columns[j];
-      if (BlockRow != BlockCol)
-      {
+      if (BlockRow != BlockCol) {
         dist = 0.0;
         switch (N_dimensions) {
         case 3:
@@ -2301,8 +2297,7 @@ static void ML_Init_Aux(ML* ml, int level)
           dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
         }
 
-        if (dist == 0.0)
-        {
+        if (dist == 0.0) {
           printf("node %d = %e ", i, x_coord[BlockRow]);
           if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
           if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
@@ -2316,41 +2311,56 @@ static void ML_Init_Aux(ML* ml, int level)
         }
 
         dist = 1.0 / dist;
-        if (dist > largest) largest = dist;
-        values[j] = dist;
         DiagValue += dist;
       }
-      else if (columns[j] == i)
-      {
+      else if (columns[j] == i) {
         DiagID = j;
       }
     }
 
-    if (DiagID == -1)
-    {
+    if (DiagID == -1) {
       fprintf(stderr, "ERROR: matrix has no diagonal!\n"
               "ERROR: (file %s, line %d)\n",
               __FILE__, __LINE__);
       exit(EXIT_FAILURE);
     }
+    LaplacianDiag[BlockRow] = DiagValue;
+  }
+  if ( A->getrow->pre_comm != NULL )
+     ML_exchange_bdry(LaplacianDiag,A->getrow->pre_comm,A->getrow->Nrows,
+                      A->comm, ML_OVERWRITE,NULL);
 
-    /* Let's drop all elements that are within some threshold of the  */
-    /* largest off-diagonal element.                                  */
-    /* Note: we know that all the elements of the Laplacian are       */
-    /*       positive. Further, the previous criteria was nonsymmetric*/
-    /*       ... and so is the new one.                               */
 
-    DiagValue = threshold*largest;
+  for (i = 0 ; i < n ; ++i) {
+    BlockRow = i;
+
+    ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
+
+    for (j = 0; j < entries; j++) {
+      BlockCol = columns[j];
+      if (BlockRow != BlockCol) {
+        dist = 0.0;
+        switch (N_dimensions) {
+        case 3:
+          dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+        case 2:
+          dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+        case 1:
+          dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+        }
+
+        dist = 1.0 / dist;
+        values[j] = dist;
+      }
+    }
+
     count = 0;
-
-    /* It does not look like things are thrown out in a symmetric  */
-    /* fashion. That is, we should look at the diagonal associated */
-    /* with both the row and the column.                           */
-
-    for (j = 0 ; j < entries ; ++j) 
-    {
-      if (values[j] < DiagValue)
+    for (j = 0 ; j < entries ; ++j) {
+      if (  (i != columns[j]) && 
+            (values[j]*values[j] <
+       LaplacianDiag[BlockRow]*LaplacianDiag[columns[j]]*threshold*threshold)){
         columns[count++] = columns[j];
+      }
     }
 
     /* insert the rows */
@@ -2628,6 +2638,10 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, 
                              ML_TRUE, ML_FALSE);
 
+      if (ML_Get_PrintLevel() > 10) {
+        sprintf(str,"after_repartition");
+        ML_Operator_Profile(ml->Amat+next,str);
+      }
       ML_Comm_Barrier(ml->comm);
 
 #ifdef ML_TIMING
