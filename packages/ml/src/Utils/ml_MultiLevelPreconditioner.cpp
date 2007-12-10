@@ -3480,7 +3480,7 @@ ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
     else
       B = const_cast<Epetra_RowMatrix *>(&A);
 
-    if (verbose_) {
+    if (verbose_ && !A.Comm().MyPID()) {
       if (B != &A)
         printf("** Transforming column map of %s matrix\n", matrixLabel);
       else

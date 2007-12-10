@@ -198,7 +198,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Sanity Check: We have at least some Dirichlet nodes */
   int HasInterior = numBCnodes != Nn;
-  if(very_verbose_) {
+  if(very_verbose_ && !Comm_->MyPID()) {
     printf("[%d] HasInterior = %d %d/%d\n",Comm_->MyPID(),HasInterior,Nn-numBCnodes,Nn);
     if(!Comm_->MyPID()) printf("Edge Matrix: Unknowns = %d Nonzeros = %d\n",SM_Matrix_->NumGlobalRows(),SM_Matrix_->NumGlobalNonzeros());
   }
