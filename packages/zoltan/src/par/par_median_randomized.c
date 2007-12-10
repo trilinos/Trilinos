@@ -79,26 +79,23 @@ static double serial_find_median(double *dots, double *wgts, int dotnum);
  * Maybe this is overkill and we should just call random_candidate() below.
  */
 
-double random_median_candidate(MPI_Comm comm, int have_dots, double dot)
+static double random_median_candidate(MPI_Comm comm, double dot, double invalidDot)
 {
 int rank, size, i, ndots;
 double candidate;
-int *valid=NULL;
 double *values=NULL;
 
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-  valid  = (int *)ZOLTAN_MALLOC(size * sizeof(int));
   values = (double *)ZOLTAN_MALLOC(size * sizeof(double));
 
   if (rank==0){
 
-    MPI_Gather(&have_dots, 1, MPI_INT, valid, 1, MPI_INT, 0, comm);
     MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
 
     for (i=0, ndots=0; i<size; i++){
-      if (valid[i]){
+      if (values[i] != invalidDot){
         values[ndots++] = values[i];
       }
     }
@@ -106,11 +103,9 @@ double *values=NULL;
     candidate = serial_find_median(values, NULL, ndots);
   }
   else{
-    MPI_Gather(&have_dots, 1, MPI_INT, valid, 1, MPI_INT, 0, comm);
     MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
   }
 
-  ZOLTAN_FREE(&valid);
   ZOLTAN_FREE(&values);
 
   MPI_Bcast(&candidate, 1, MPI_DOUBLE, 0, comm);
@@ -238,26 +233,23 @@ int tempInt;
 }
 /* If random_median_candidate is overkill, just... */
 static int candidate_choice=0;
-double random_candidate(MPI_Comm comm, int have_dots, double dot)
+static double random_candidate(MPI_Comm comm, double dot, double invalidDot)
 {
 int rank, size, i, ndots, offset, c2, c3;
 double candidate;
-int *valid=NULL;
 double *values=NULL;
 
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-  valid  = (int *)ZOLTAN_MALLOC(size * sizeof(int));
   values = (double *)ZOLTAN_MALLOC(size * sizeof(double));
 
   if (rank==0){
 
-    MPI_Gather(&have_dots, 1, MPI_INT, valid, 1, MPI_INT, 0, comm);
     MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
 
     for (i=0, ndots=0; i<size; i++){
-      if (valid[i]){
+      if (values[i] != invalidDot){
         values[ndots++] = values[i];
       }
     }
@@ -279,11 +271,9 @@ double *values=NULL;
     }
   }
   else{
-    MPI_Gather(&have_dots, 1, MPI_INT, valid, 1, MPI_INT, 0, comm);
     MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
   }
 
-  ZOLTAN_FREE(&valid);
   ZOLTAN_FREE(&values);
 
   MPI_Bcast(&candidate, 1, MPI_DOUBLE, 0, comm);
@@ -383,6 +373,7 @@ int Zoltan_RB_find_median_randomized(
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
   double  diff1, diff2;
   double  dot, tmp_half = 0.0;
+  double  invalidDot = valuemax + 1.0;
 
   int     i, j, k, numlist, ndots;
   int     markactive;                /* which side of cut is active = 0/1 */
@@ -496,17 +487,15 @@ int Zoltan_RB_find_median_randomized(
       }
       else {
         if (numlist > 0){
-          ndots = 1;
           dot = dots[dotlist[numlist >> 1]];
         }
         else{
-          ndots = 0;
-          dot = 0.0;
+          dot = invalidDot;
         }
         if (pivot_choice == PIVOT_CHOICE_MEDIAN_OF_RANDOM)
-          tmp_half = random_median_candidate(local_comm, ndots, dot);
+          tmp_half = random_median_candidate(local_comm, dot, invalidDot);
         else 
-          tmp_half = random_candidate(local_comm, ndots, dot);
+          tmp_half = random_candidate(local_comm, dot, invalidDot);
       }
 
       /* initialize local median data structure */
