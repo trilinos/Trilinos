@@ -4,12 +4,6 @@ PROJECT(Epetra CXX C)
 # Setup package version
 SET(EPETRA_VERSION "3.7d")
 
-# Flag for turning on MPI support
-OPTION(EPETRA_ENABLE_MPI 
-       "Build Epetra with MPI for parallel codes."
-       OFF
-)
-
 # Flag to enable tests
 OPTION(EPETRA_ENABLE_TESTS
        "Build Epetra tests."
@@ -41,11 +35,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR/cmake})
 IF(EPETRA_ENABLE_FORTRAN)
   ENABLE_LANGUAGE(Fortran)
 ENDIF(EPETRA_ENABLE_FORTRAN)
-
-# MPI related configuration
-IF(EPETRA_ENABLE_MPI)
-  INCLUDE(ConfigureMPI)
-ENDIF(EPETRA_ENABLE_MPI)
 
 # Use secure versions of CRT methods in Windows 
 # (addresses C4996 build errors in MSVS)
