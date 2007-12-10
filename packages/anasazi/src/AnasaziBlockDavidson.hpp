@@ -98,7 +98,7 @@ namespace Anasazi {
      *  H is a pointer into V, and is only useful when BlockDavidson::iterate() throw a BlockDavidsonOrthoFailure exception.
      */
     Teuchos::RCP<const MV> H;
-    //! The current Ritz values. This vector is a copy of the internal 
+    //! The current Ritz values. This vector is a copy of the internal data.
     Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     /*! \brief The current projected K matrix.
      *
@@ -729,9 +729,8 @@ namespace Anasazi {
     state.H = H_;
     state.KK = KK_;
     if (curDim_ > 0) {
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(&theta_[0],&theta_[curDim_]));
-    }
-    else {
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_.begin(),theta_.begin()+curDim_) );
+    } else {
       state.T = Teuchos::rcp(new std::vector<MagnitudeType>(0));
     }
     return state;
