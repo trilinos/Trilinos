@@ -36,7 +36,7 @@
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DirectionalFiniteDiffCalculator.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -168,6 +168,10 @@ int main(int argc, char *argv[])
     clp.setOption( "fwd-sens-solve", "state-solve", &doFwdSensSolve,
       "Do the forward sensitivity solve or just the state solve" );
 
+    bool doFwdSensErrorControl = false;
+    clp.setOption( "fwd-sens-err-cntrl", "no-fwd-sens-err-cntrl", &doFwdSensErrorControl,
+      "Do error control on the forward sensitivity solve or not" );
+
     double maxRestateError = 0.0;
     clp.setOption( "max-restate-error", &maxRestateError,
       "The maximum allowed error between the state integrated by itself verses integrated along with DxDp" );
@@ -225,7 +229,7 @@ int main(int argc, char *argv[])
     // linear system with the W.
     //
 
-    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(sublist(paramList,Stratimikos_name));
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       W_factory = createLinearSolveStrategy(linearSolverBuilder);
@@ -384,14 +388,24 @@ int main(int argc, char *argv[])
       // Create the forward sensitivity stepper
       //
       
-      RCP<Rythmos::ForwardSensitivityStepper<Scalar> >
-        stateAndSensStepper = Rythmos::forwardSensitivityStepper<Scalar>(
+      RCP<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper = 
+        Rythmos::forwardSensitivityStepper<Scalar>();
+      if (doFwdSensErrorControl) {
+        stateAndSensStepper->initializeDecoupledSteppers(
+          stateModel, 0, stateModel->getNominalValues(),
+          stateStepper, nonlinearSolver,
+          integrator->cloneIntegrator(), finalTime
+          );
+      }
+      else {
+        stateAndSensStepper->initializeSyncedSteppers(
           stateModel, 0, stateModel->getNominalValues(),
           stateStepper, nonlinearSolver
           );
-      // The above call will result in stateStepper and nonlinearSolver being
-      // cloned.  This helps to ensure consistency between the state and
-      // sensitivity computations!
+        // The above call will result in stateStepper and nonlinearSolver being
+        // cloned.  This helps to ensure consistency between the state and
+        // sensitivity computations!
+      }
 
       //
       // Set the initial condition for the state and forward sensitivities

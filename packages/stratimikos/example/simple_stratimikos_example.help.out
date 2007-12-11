@@ -28,7 +28,7 @@ Usage: ../example/simple_stratimikos_example.exe [options]
 
 DETAILED DOCUMENTATION:
 
-Simple example for the use of the Stratimikos facade Thyra::DefaultRealLinearSolverBuilder.
+Simple example for the use of the Stratimikos facade Stratimikos::DefaultLinearSolverBuilder.
 
 To print out just the valid options use --matrix-file="" --only-print-options with --print-xml-format or --print-readable-format.
 

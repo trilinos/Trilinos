@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "test_single_stratimikos_solver.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
@@ -95,13 +95,13 @@ bool Thyra::test_single_stratimikos_solver(
     RCP<const LinearOpBase<double> >
       A = Thyra::epetraLinearOp(epetra_A);
 
-    if(out) *out << "\nCreating a Thyra::DefaultRealLinearSolverBuilder object ...\n";
+    if(out) *out << "\nCreating a Stratimikos::DefaultLinearSolverBuilder object ...\n";
     
     RCP<Thyra::LinearSolverBuilderBase<double> >
-      linearSolverBuilder = rcp(new Thyra::DefaultRealLinearSolverBuilder);
+      linearSolverBuilder = rcp(new Stratimikos::DefaultLinearSolverBuilder);
 
     if(out) {
-      *out << "\nValid parameters for DefaultRealLinearSolverBuilder ...\n";
+      *out << "\nValid parameters for DefaultLinearSolverBuilder ...\n";
       linearSolverBuilder->getValidParameters()->print(*out,1,true,false);
     }
 

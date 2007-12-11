@@ -227,6 +227,25 @@ get_fwd_x( IntegratorBase<Scalar>& integrator, const Scalar t )
 /** \brief Nonmember helper function to get x and/or x_dot at s (forward)
  * time t.
  *
+ * \param integrator [modified] This is the integrator that the x and x_dot
+ * will be gotten from.  This is declared non-const since the state of the
+ * integrator may change when getting forward points in time.
+ *
+ * \param t [in] The time point to get x and x_dot at.
+ *
+ * \param x [out] RCP to state vector to get if <tt>x!=0</tt>.
+ *
+ * \param x_dot [out] RCP to state derivative vector to get if
+ * <tt>x_dot!=0</tt>.
+ *
+ * Note that <tt>*x</tt> (if <tt>x!=0</tt>) and <tt>*x_dot</tt> (if
+ * <tt>x_dot!=0</tt>) should be null on input since the RCP will get set
+ * internally.  Note that on output <tt>*x</tt> and <tt>*x_dot</tt> is a const
+ * vector so the client can not change them.  The client should destroy (or
+ * set to null) the RCP objects as soon as it is finished reading the vectors.
+ * The input values of <tt>x==0</tt> and/or <tt>x_dot==0</tt> are valid which
+ * means that these vectors will not be returned.
+ *
  * \relates IntegratorBase
  */
 template<class Scalar> 

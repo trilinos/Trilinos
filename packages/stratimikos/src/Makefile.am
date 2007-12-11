@@ -50,10 +50,11 @@ all-local:
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.hpp\
 	$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.hpp
 
 CORE = \
-	$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp
+	$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp
 
 #Specify locations of include files within Trilinos
 

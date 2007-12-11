@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     bool            printXmlFormat         = false;
     bool            showDoc                = true;
 
-    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
 
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
                    ,"Print the valid options with or without documentation." );
     
     clp.setDocString(
-      "Simple example for the use of the Stratimikos facade Thyra::DefaultRealLinearSolverBuilder.\n"
+      "Simple example for the use of the Stratimikos facade Stratimikos::DefaultLinearSolverBuilder.\n"
       "\n"
       "To print out just the valid options use --matrix-file=\"\" --only-print-options with --print-xml-format"
       " or --print-readable-format.\n"

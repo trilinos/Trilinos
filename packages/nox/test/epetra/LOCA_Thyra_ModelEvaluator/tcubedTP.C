@@ -51,7 +51,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
     stratParams.set("Preconditioner Type", "Ifpack");
 
     // Create the linear solver type with Stratimikos
-    ::Thyra::DefaultRealLinearSolverBuilder builder;
+    ::Stratimikos::DefaultLinearSolverBuilder builder;
     builder.setParameterList(Teuchos::rcp(&stratParams,false));
     Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
       lowsFactory = builder.createLinearSolveStrategy("");

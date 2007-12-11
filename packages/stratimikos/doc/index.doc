@@ -7,16 +7,40 @@ which which mean "strategy" and "linear" in English.  The word "stratimikos"
 has no real meaning in itself.  The Stratimikos package is also a place where
 unified testing of linear solvers and preconditioners can be performed.
 
-\section stratimikos_software_sec Stratimikos software
+Currently, Stratimikos is really just the single class
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt> which provides uniform access
+to linear solver capabilities in Trilinos where the underlying operator can be
+viewed as either an <tt>Epetra_CrsMatrix</tt> object or as an
+<tt>Epetra_RowMatrix</tt> object.  This class builds linear solvers using the
+Thyra linear solver and preconditioner factory adapters given below.  The
+linear solver and preconditioner factories are returned as
+<tt>Thyra::LinearOpWithSolveFactoryBase</tt> and
+<tt>Thyra::PreconditionerFactoryBase</tt> objects respectively.
 
-<ul>
+The interface is parameter-list driven. An example parameter list in XML form
+that selects AztecOO and Ifpack is shown below:
 
-<li><tt>Thyra::DefaultRealLinearSolverBuilder</tt>: A utility class that
-provides uniform access to linear solver capabilities in Trilinos where the
-underlying operator can be viewed as either an <tt>Epetra_CrsMatrix</tt>
-object or as an <tt>Epetra_RowMatrix</tt> object.  This class builds linear
-solvers using the Thyra linear solver and preconditioner factory adapters
-given below.
+\verbinclude _aztecoo.ifpack.xml
+
+The parameter <tt>"Linear Solver Type"</tt> selects the linear solver type
+(currently supported are "Amesos", "AztecOO", and "Belos").  The parameter
+<tt>""Preconditioner Type"</tt> selects the preconditioner type (currently
+supported are "None", "ML", and "Ifpack").
+
+Many other example XML input files (e.g. <tt>*.xml</tt>) can be found in the
+directory <tt>stratimikos/example</tt>.  The full listing of supported
+parameters can be found in the documentation for
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt>.
+
+The example <tt>simple_stratimikos_example.cpp</tt> shows how to wrap Epetra
+objects and then use <tt>Stratimikos::DefaultLinearSolverBuilder</tt> to solve
+a linear system.
+
+The example <tt>MixedOrderPhysicsBasedPreconditioner.cpp</tt> shows the use of
+Stratimikos in a more sophisticated context.
+
+See how all of the examples and tests are run by looking at
+<tt>stratimikos/test/definition</tt>.
 
 </ul>
 
@@ -25,7 +49,7 @@ given below.
 These adapters provide concrete subclasses implementing the abstract
 interfaces <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and
 <tt>Thyra::LinearOpWithSolveBase</tt>.  It is these implementations that are
-used in the implementation of <tt>Thyra::DefaultRealLinearSolverBuilder</tt>
+used in the implementation of <tt>Stratimikos::DefaultLinearSolverBuilder</tt>
 but they can also be used on their own.
 
 <ul>
@@ -46,7 +70,7 @@ Must be enabled with <tt>--enable-belos</tt>.
 These adapters provide concrete subclasses implementing the abstract interface
 <tt>Thyra::PreconditionerFactoryBase</tt>.  It is these implementations that
 are used in the implementation of
-<tt>Thyra::DefaultRealLinearSolverBuilder</tt> but can also be used on their
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt> but can also be used on their
 own.
 
 <ul>
@@ -64,8 +88,12 @@ Must be enabled with <tt>--enable-ifpack</tt>.
 <ul>
 
 <li><tt><a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>:
-Shows how to use the <tt>Thyra::DefaultRealLinearSolverBuilder</tt> to solve
+Shows how to use the <tt>Stratimikos::DefaultLinearSolverBuilder</tt> to solve
 linear systems based on Epetra objects.
+
+<li><tt><a href="MixedOrderPhysicsBasedPreconditioner_8cpp-example.html">MixedOrderPhysicsBasedPreconditioner.cpp</a></tt>:
+Shows a more sophisticated example including the use of multiple Stratimikos
+sublists embedded in a single parameter-list.
 
 </ul>
 

@@ -57,7 +57,7 @@
 
 // Includes for Stratimikos:
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
-#  include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#  include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #endif
 
 #include <string>
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.addOutputSetupOptions(true);
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
-    Thyra::DefaultRealLinearSolverBuilder lowsfCreator;
+    Stratimikos::DefaultLinearSolverBuilder lowsfCreator;
     lowsfCreator.setupCLP(&clp);
 #endif
 

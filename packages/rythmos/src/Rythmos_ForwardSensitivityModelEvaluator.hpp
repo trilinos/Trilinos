@@ -30,6 +30,7 @@
 #define RYTHMOS_FORWARD_SENSITIVITY_MODEL_EVALUATOR_HPP
 
 
+#include "Rythmos_IntegratorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -321,47 +322,66 @@ public:
    * called later in order to fully initalize the model.
    */
   void initializeStructure(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
   
   /** \brief . */
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+  RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
   
   /** \brief . */
   int get_p_index() const;
 
-  /** \brief Initialize full state.
+  /** \brief Set the state integrator that will be used to get x and x_dot at
+   * various time points.
    *
-   * \param  stateBasePoint
-   *           [in] The base point <tt>(x_dot_tilde,x_tilde,t_tilde,...)</tt>
-   *           for which the sensitivities will be computed and represented
-   *           at.  Any sensitivities that are needed are computed at this
-   *           point.  The value of <tt>alpha</tt> and <tt>beta</tt> here are
-   *           ignored.
-   * \param  W_tilde
-   *           [in,persisting] The composite state derivative matrix computed
-   *           at the base point <tt>stateBasePoint</tt> with
-   *           <tt>alpha=coeff_x_dot</tt> and <tt>beta=coeff_x</tt>.  This
-   *           argument can be null, in which case it can be computed
-   *           internally if needed or not at all.
-   * \param  coeff_x_dot
-   *           [in] The value of <tt>alpha</tt> for which <tt>W_tilde</tt> was
-   *           computed.
-   * \param  coeff_x
-   *           [in] The value of <tt>beta</tt> for which <tt>W_tilde</tt> was
-   *           computed.
-   * \param  DfDx_dot
-   *           [in] The matrix <tt>d(f)/d(x_dot)</tt> computed at
-   *           <tt>stateBasePoint</tt> if available.  If this argument is null,
-   *           then it will be computed internally if needed.  The value is
-   *           <tt>Teuchos::null</tt>.
-   * \param  DfDp
-   *           [in] The matrix <tt>d(f)/d(p(p_index))</tt> computed at
-   *           <tt>stateBasePoint</tt> if available.  If this argument is null,
-   *           then it will be computed internally if needed.  The value is
-   *           <tt>Teuchos::null</tt>.
+   * \param stateIntegrator [in,persisting] The integrator that will deliver x
+   * and xdot at any valid time t.  This integrator must be completely step up
+   * and ready to return points from stateIntegrator->getFwdPoints(...).
+   *
+   * \param stateBasePoint [in,persisting] Contains all of the base point
+   * information for an evaluation except for <tt>t</tt>, <tt>x</tt>, and
+   * <tt>x_dot</tt>.  For exmaple, this will contain any parameters or extra
+   * input that defines the point.
+   *
+   * With a state integrator is set here, the client need not call
+   * <tt>initializePointState()</tt> for individual time points!
+   */
+  void setStateIntegrator(
+    const RCP<IntegratorBase<Scalar> > &stateIntegrator,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
+    );
+
+  /** \brief Initialize full state for a single point in time.
+   *
+   * \param stateBasePoint [in] The base point
+   * <tt>(x_dot_tilde,x_tilde,t_tilde,...)</tt> for which the sensitivities
+   * will be computed and represented at time <tt>t_tilde</tt>.  Any
+   * sensitivities that are needed must be computed at this same time point.
+   * The value of <tt>alpha</tt> and <tt>beta</tt> here are ignored.
+   *
+   * \param W_tilde [in,persisting] The composite state derivative matrix
+   * computed at the base point <tt>stateBasePoint</tt> with
+   * <tt>alpha=coeff_x_dot</tt> and <tt>beta=coeff_x</tt>.  This argument can
+   * be null, in which case it can be computed internally if needed or not at
+   * all.
+   *
+   * \param coeff_x_dot [in] The value of <tt>alpha</tt> for which
+   * <tt>W_tilde</tt> was computed.
+   *
+   * \param coeff_x [in] The value of <tt>beta</tt> for which <tt>W_tilde</tt>
+   * was computed.
+   *
+   * \param DfDx_dot [in] The matrix <tt>d(f)/d(x_dot)</tt> computed at
+   * <tt>stateBasePoint</tt> if available.  If this argument is null, then it
+   * will be computed internally if needed.  The default value is
+   * <tt>Teuchos::null</tt>.
+   *
+   * \param DfDp [in] The matrix <tt>d(f)/d(p(p_index))</tt> computed at
+   * <tt>stateBasePoint</tt> if available.  If this argument is null, then it
+   * will be computed internally if needed.  The default value is
+   * <tt>Teuchos::null</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>!is_null(W_tilde)</tt>
@@ -372,13 +392,13 @@ public:
    * <tt>*this</tt> model is fully initialized and ready to compute the
    * requested outputs.
    */
-  void initializeState(
+  void initializePointState(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-    const Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
+    const RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
     const Scalar &coeff_x_dot,
     const Scalar &coeff_x,
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
-    const Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
+    const RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
+    const RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
     );
 
   // 2007/05/22: rabartl: ToDo: Add an InterpolationBufferBase
@@ -394,15 +414,34 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  //@}
+
+  /** \name Deprecated. */
+  //@{
+
+  /** \brief Deprecated. */
+  void initializeState(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
+    const RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
+    const Scalar &coeff_x_dot,
+    const Scalar &coeff_x,
+    const RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
+    const RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
+    )
+    {
+      initializePointState( stateBasePoint, W_tilde, coeff_x_dot, coeff_x,
+        DfDx_dot, DfDp );
+    }
 
   //@}
 
@@ -426,21 +465,28 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
   int np_;
-  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > s_bar_space_;
-  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > f_sens_space_;
+
+  RCP<IntegratorBase<Scalar> > stateIntegrator_;
+
+  RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > s_bar_space_;
+  RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > f_sens_space_;
+
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
 
-  mutable Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > W_tilde_;
+  mutable RCP<const Thyra::LinearOpWithSolveBase<Scalar> > W_tilde_;
   mutable Scalar coeff_x_dot_;
   mutable Scalar coeff_x_;
-  mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > DfDx_dot_;
-  mutable Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DfDp_;
+  mutable RCP<const Thyra::LinearOpBase<Scalar> > DfDx_dot_;
+  mutable RCP<const Thyra::MultiVectorBase<Scalar> > DfDp_;
 
+  mutable RCP<Thyra::LinearOpWithSolveBase<Scalar> > W_tilde_compute_;
+  mutable RCP<Thyra::LinearOpBase<Scalar> > DfDx_dot_compute_;
+  mutable RCP<Thyra::MultiVectorBase<Scalar> > DfDp_compute_;
 
   // /////////////////////////
   // Private member functions
@@ -469,7 +515,7 @@ ForwardSensitivityModelEvaluator<Scalar>::ForwardSensitivityModelEvaluator()
 
 template<class Scalar>
 void ForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index
   )
 {
@@ -508,11 +554,25 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
 
   nominalValues_ = this->createInArgs();
 
+  //
+  // Wipe out matrix storage
+  //
+
+  stateBasePoint_ = MEB::InArgs<Scalar>();
+  W_tilde_ = Teuchos::null;
+  coeff_x_dot_ = 0.0;
+  coeff_x_ = 0.0;
+  DfDx_dot_ = Teuchos::null;
+  DfDp_ = Teuchos::null;
+  W_tilde_compute_ = Teuchos::null;
+  DfDx_dot_compute_ = Teuchos::null;
+  DfDp_compute_ = Teuchos::null;
+
 }
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::getStateModel() const
 {
   return stateModel_;
@@ -527,13 +587,24 @@ int ForwardSensitivityModelEvaluator<Scalar>::get_p_index() const
 
 
 template<class Scalar>
-void ForwardSensitivityModelEvaluator<Scalar>::initializeState(
+void ForwardSensitivityModelEvaluator<Scalar>::setStateIntegrator(
+  const RCP<IntegratorBase<Scalar> > &stateIntegrator,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
+  )
+{
+  stateIntegrator_ = stateIntegrator.assert_not_null();
+  stateBasePoint_ = stateBasePoint;
+}
+
+
+template<class Scalar>
+void ForwardSensitivityModelEvaluator<Scalar>::initializePointState(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
+  const RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
   const Scalar &coeff_x_dot,
   const Scalar &coeff_x,
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot,
-  const Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp
+  const RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot,
+  const RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp
   )
 {
 
@@ -584,7 +655,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializeState(
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::get_x_space() const
 {
   return s_bar_space_;
@@ -592,7 +663,7 @@ ForwardSensitivityModelEvaluator<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::get_f_space() const
 {
   return f_sens_space_;
@@ -608,7 +679,7 @@ ForwardSensitivityModelEvaluator<Scalar>::getNominalValues() const
 
 
 template<class Scalar>
-Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::create_W() const
 {
   return Thyra::multiVectorLinearOpWithSolve<Scalar>();
@@ -738,7 +809,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModelImpl(
 #endif
 
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
-    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
+    RCP<Thyra::MultiVectorBase<Scalar> >
       S_diff = createMembers( stateModel_->get_x_space(), np_ );
     V_StVpV( &*S_diff, Scalar(-coeff_x_dot_/coeff_x_), *S, *S_dot );
     // F_sens = (1/coeff_x) * W_tilde * S
@@ -804,6 +875,14 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
   ) const
 {
 
+
+
+
+
+
+
+
+
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::VerboseObjectTempState<MEB> VOTSME;
 
@@ -853,6 +932,164 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
       DfDp_ = DfDp_compute;
   
   }
+
+
+
+
+
+  TEST_FOR_EXCEPT_MSG( !is_null(stateIntegrator_),
+    "ToDo: Update for using the stateIntegrator!" );
+
+/* 2007/12/11: rabartl: ToDo: Update the code below to work for the general
+ * case.  It does not work in its current form!
+ */
+
+/*
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::VerboseObjectTempState<MEB> VOTSME;
+
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  
+  const Scalar t = point.get_t();
+
+  //
+  // A) Set up the base point at time t and determine what needs to be
+  // computed here.
+  //
+
+  bool update_W_tilde = false;
+  bool update_DfDx_dot = false;
+  bool update_DfDp = false;
+
+  if (!is_null(stateIntegrator_)) {
+    // Get x and x_dot at t and flag to recompute all matrices!
+    RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
+    get_fwd_x_and_x_dot( *stateIntegrator_, t, &x, &x_dot );
+    stateBasePoint_.set_t(t);
+    stateBasePoint_.set_x(x);
+    stateBasePoint_.set_x_dot(x_dot);
+    update_W_tilde = true;
+    update_DfDx_dot = true;
+    update_DfDp = true;
+  }
+  else {
+    // The time point should be the same so only compute matrices that have
+    // not already been computed.
+    TEUCHOS_ASSERT_EQUALITY( t , stateBasePoint_.get_t() );
+    if (is_null(W_tilde_))
+      update_W_tilde = true;
+    if (is_null(DfDx_dot_))
+      update_DfDx_dot = true;
+    if (is_null(DfDp_))
+      update_DfDx_dot = true;
+  }
+
+  //
+  // B) Compute DfDx_dot and DfDp at the same time if needed
+  //
+
+  if ( update_DfDx_dot || update_DfDp ) {
+
+    // B.1) Allocate storage for matrices.  Note: All of these matrices are
+    // needed so any of these that is null must be coputed!
+
+    if ( is_null(DfDx_dot_) || is_null(DfDx_dot_compute_) )
+      DfDx_dot_compute_ = stateModel_->create_W_op();
+
+    if ( is_null(DfDp_) || is_null(DfDp_compute_) )
+      DfDp_compute_ = Thyra::create_DfDp_mv(
+        *stateModel_,p_index_,
+        MEB::DERIV_MV_BY_COL
+        ).getMultiVector();
+
+    // B.2) Setup the InArgs and OutArgs
+
+    MEB::InArgs<Scalar> inArgs = stateBasePoint_;
+    MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
+    
+    if (update_DfDx_dot) {
+      inArgs.set_alpha(1.0);
+      inArgs.set_beta(0.0);
+      outArgs.set_W_op(DfDx_dot_compute_);
+    }
+    // 2007/12/07: rabartl: ToDo: I need to change the structure of the
+    // derivative properties in OutArgs to keep track of whether DfDx_dot is
+    // constant or not separate from W.  Right now I can't do this.  This is
+    // one reason to add a new DfDx_dot output object to OutArgs.  A better
+    // solution is a more general data structure giving the dependence of f()
+    // and g[j]() on x, x_dot, p[l], t, etc ...
+
+    if (update_DfDp) {
+      outArgs.set_DfDp(
+        p_index_,
+        MEB::Derivative<Scalar>(DfDp_compute_, MEB::DERIV_MV_BY_COL)
+        );
+    }
+
+    // B.3) Evaluate the outputs
+    
+    VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
+    stateModel_->evalModel(inArgs,outArgs);
+
+    // B.4) Set the outputs
+
+    if (!is_null(DfDx_dot_compute_))
+      DfDx_dot_ = DfDx_dot_compute_;
+
+    if (!is_null(DfDp_compute_))
+      DfDp_ = DfDp_compute_;
+  
+  }
+
+  //
+  // C) Compute W_tilde separately if needed
+  //
+
+  if ( update_W_tilde ) {
+
+    // C.1) Allocate storage for matrices.  Note: All of these matrices are
+    // needed so any of these that is null must be coputed!
+
+    if ( is_null(W_tilde_) || is_null(W_tilde_compute_) )
+      W_tilde_compute_ = stateModel_->create_W();
+
+    // C.2) Setup the InArgs and OutArgs
+
+    MEB::InArgs<Scalar> inArgs = stateBasePoint_;
+    MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
+    
+    if (is_null(W_tilde_)) {
+      coeff_x_dot_ = point.get_alpha();
+      coeff_x_ = point.get_beta();
+      inArgs.set_alpha(coeff_x_dot_);
+      inArgs.set_beta(coeff_x_);
+      outArgs.set_W(W_tilde_compute_);
+    }
+
+    // C.3) Evaluate the outputs
+    
+    VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
+    stateModel_->evalModel(inArgs,outArgs);
+
+    // B.4) Set the outputs
+
+    if (!is_null(W_tilde_compute_))
+      W_tilde_ = W_tilde_compute_;
+
+  }
+
+  // 2007/12/07: rabartl: Note: Above, we see an example of where it would be
+  // good to have a separate OutArg for DfDx_dot (as a LOB object) so that we
+  // can compute W and DfDx_dot (and any other output quantitiy) at the same
+  // time.
+
+*/
+
+
+
+
 
 }
 

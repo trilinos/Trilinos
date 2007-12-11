@@ -214,7 +214,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     // behavior then you should use this function.  If you do not like this
     // behavior, then consider using the Ifpack/Thyra adapter
     // Thyra::IfpackPreconditionerFactory or better yet the Stratimikos
-    // wrapper class Thyra::DefaultRealLinearSolverBuilder.
+    // wrapper class Stratimikos::DefaultLinearSolverBuilder.
   }
   return 0;
 }

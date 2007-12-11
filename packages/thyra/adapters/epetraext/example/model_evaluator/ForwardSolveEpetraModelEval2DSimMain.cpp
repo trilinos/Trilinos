@@ -2,7 +2,7 @@
 #include "EpetraModelEval4DOpt.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_DampenedNewtonNonlinearSolver.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -96,12 +96,12 @@ int main( int argc, char* argv[] )
 
     *out << "\nCreating linear solver strategy ...\n";
 
-    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(Teuchos::parameterList());
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = linearSolverBuilder.createLinearSolveStrategy("Amesos");
     // Above, we are just using the stratimkikos class
-    // DefaultRealLinearSolverBuilder to create a default Amesos solver
+    // DefaultLinearSolverBuilder to create a default Amesos solver
     // (typically KLU) with a default set of options.  By setting a parameter
     // list on linearSolverBuilder, you build from a number of solvers.
 

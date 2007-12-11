@@ -31,7 +31,7 @@
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_DampenedNewtonNonlinearSolver.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -186,14 +186,14 @@ int main(int argc, char *argv[])
 
     // Get the linear solve strategy that will be used to solve for the linear
     // system with the dae's W matrix.
-    Thyra::DefaultRealLinearSolverBuilder daeLinearSolverBuilder;
+    Stratimikos::DefaultLinearSolverBuilder daeLinearSolverBuilder;
     daeLinearSolverBuilder.setParameterList(sublist(paramList,DAELinearSolver_name));
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       daeLOWSF = createLinearSolveStrategy(daeLinearSolverBuilder);
 
     // Get the linear solve strategy that can be used to override the overall
     // linear system solve
-    Thyra::DefaultRealLinearSolverBuilder overallLinearSolverBuilder;
+    Stratimikos::DefaultLinearSolverBuilder overallLinearSolverBuilder;
     overallLinearSolverBuilder.setParameterList(sublist(paramList,OverallLinearSolver_name));
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       overallLOWSF = createLinearSolveStrategy(overallLinearSolverBuilder);

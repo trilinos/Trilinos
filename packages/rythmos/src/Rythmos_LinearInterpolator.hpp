@@ -31,30 +31,35 @@
 
 #include "Rythmos_InterpolatorBase.hpp"
 
+
 namespace Rythmos {
 
+
+/** \brief Concrete implemenation of <tt>InterpolatorBase</tt> just just does
+ * simple linear interploation.
+ */
 template<class Scalar>
 class LinearInterpolator : virtual public InterpolatorBase<Scalar>
 {
 public:
 
-  /// Destructor
+  /** \brief . */
   ~LinearInterpolator() {};
 
-  /// Constructor
+  /** \brief . */
   LinearInterpolator();
 
   /** \brief . */
   bool supportsCloning() const;
 
   /** \brief . */
-  Teuchos::RCP<InterpolatorBase<Scalar> > cloneInterpolator() const;
+  RCP<InterpolatorBase<Scalar> > cloneInterpolator() const;
 
   /** \brief . */
   void interpolate(
-    const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const Array<Scalar> &t_values
-    ,typename DataStore<Scalar>::DataStoreVector_t *data_out
+    const typename DataStore<Scalar>::DataStoreVector_t &data_in,
+    const Array<Scalar> &t_values,
+    typename DataStore<Scalar>::DataStoreVector_t *data_out
     ) const;
 
   /** \brief . */
@@ -65,28 +70,30 @@ public:
 
   /** \brief . */
   void describe(
-    Teuchos::FancyOStream &out,
+    FancyOStream &out,
     const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
   /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const& paramList);
 
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  RCP<ParameterList> getParameterList();
 
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  RCP<ParameterList> unsetParameterList();
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList> parameterList_;
+  RCP<ParameterList> parameterList_;
 
 };
+
 
 template<class Scalar>
 LinearInterpolator<Scalar>::LinearInterpolator()
 {}
+
 
 template<class Scalar>
 bool LinearInterpolator<Scalar>::supportsCloning() const
@@ -94,34 +101,39 @@ bool LinearInterpolator<Scalar>::supportsCloning() const
   return true;
 }
 
+
 template<class Scalar>
-Teuchos::RCP<InterpolatorBase<Scalar> >
+RCP<InterpolatorBase<Scalar> >
 LinearInterpolator<Scalar>::cloneInterpolator() const
 {
-  Teuchos::RCP<LinearInterpolator<Scalar> >
+  RCP<LinearInterpolator<Scalar> >
     interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
   if (!is_null(parameterList_))
     interpolator->parameterList_ = parameterList(*parameterList_);
   return interpolator;
 }
 
+
 template<class Scalar>
 void LinearInterpolator<Scalar>::interpolate(
-    const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const Array<Scalar> &t_values
-    ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
+  const typename DataStore<Scalar>::DataStoreVector_t &data_in,
+  const Array<Scalar> &t_values,
+  typename DataStore<Scalar>::DataStoreVector_t *data_out
+  ) const
 {
+
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+
 #ifdef TEUCHOS_DEBUG
   assertBaseInterpolatePreconditions(data_in,t_values,data_out);
 #endif // TEUCHOS_DEBUG
-  data_out->clear();
-  if (t_values.size() == 0) {
-    return;
-  }
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  
+  // Output info
+  const RCP<FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel(); 
   Teuchos::OSTab ostab(out,1,"LI::interpolator");
-  if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "data_in:" << std::endl;
     for (unsigned int i=0 ; i<data_in.size() ; ++i) {
       *out << "data_in[" << i << "] = " << std::endl;
@@ -133,33 +145,42 @@ void LinearInterpolator<Scalar>::interpolate(
     }
   }
 
+  data_out->clear();
+
+  // Return immediatly if not time points are requested ...
+  if (t_values.size() == 0) {
+    return;
+  }
+
   if (data_in.size() == 1) {
-    // trivial case of one node
-    // preconditions assert that t_values[0] == data_in[0].time so we can just pass it out
+    // trivial case of one node.  Preconditions assert that t_values[0] ==
+    // data_in[0].time so we can just pass it out
     DataStore<Scalar> DS(data_in[0]);
     data_out->push_back(DS);
-  } else {
-    // data_in.size() >= 2
+  }
+  else { // data_in.size() >= 2
     int n = 0; // index into t_values
-    for (int i=0 ; i<Teuchos::as<int>(data_in.size())-1 ; ++i) {
+    // Loop through all of the time interpolation points in the buffer and
+    // satisfiy all of the requested time points that you find.  NOTE: The
+    // loop will be existed once all of the time points are satisified (see
+    // return below).
+    for (int i=0 ; i < as<int>(data_in.size())-1; ++i) {
       const Scalar& ti = data_in[i].time;
       const Scalar& tip1 = data_in[i+1].time;
       const Scalar  h = tip1-ti;
+      // For the interploation range of [ti,tip1], satisify all of the
+      // requested points in this range.
       while ((ti <= t_values[n]) && (t_values[n] <= tip1)) {
         // First we check for exact node matches:
-        if (t_values[n] == ti) {
+        if (compareTimeValues(t_values[n],ti)==0) {
           DataStore<Scalar> DS(data_in[i]);
           data_out->push_back(DS);
-        } else if (t_values[n] == tip1) {
+        }
+        else if (compareTimeValues(t_values[n],tip1)==0) {
           DataStore<Scalar> DS(data_in[i+1]);
           data_out->push_back(DS);
-        } else {
-          const Scalar& t = t_values[n];
-          Teuchos::RCP<const Thyra::VectorBase<Scalar> > xi =      data_in[i  ].x;
-          Teuchos::RCP<const Thyra::VectorBase<Scalar> > xip1 =    data_in[i+1].x;
-          Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdoti =   data_in[i  ].xdot;
-          Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotip1 = data_in[i+1].xdot;
-        
+        }
+        else {
           // interpolate this point
           //
           // x(t) = (t-ti)/(tip1-ti) * xip1 + (1-(t-ti)/(tip1-ti)) * xi
@@ -170,41 +191,54 @@ void LinearInterpolator<Scalar>::interpolate(
           //    x(tip1) = xip1
           //
           DataStore<Scalar> DS;
+          const Scalar& t = t_values[n];
           DS.time = t;
+          // Get the time and interpolation node points
+          RCP<const Thyra::VectorBase<Scalar> > xi = data_in[i].x;
+          RCP<const Thyra::VectorBase<Scalar> > xip1 = data_in[i+1].x;
+          RCP<const Thyra::VectorBase<Scalar> > xdoti = data_in[i].xdot;
+          RCP<const Thyra::VectorBase<Scalar> > xdotip1 = data_in[i+1].xdot;
+          // Get constants used in interplation
           const Scalar dt = t-ti;
           const Scalar dt_over_h = dt / h;
           const Scalar one_minus_dt_over_h = ST::one() - dt_over_h;
-          // x
+          // x = dt/h * xip1 + (1-dt/h) * xi
           RCP<Thyra::VectorBase<Scalar> > x = createMember(xi->space());
           Thyra::V_StVpStV(&*x,dt_over_h,*xip1,one_minus_dt_over_h,*xi);
           DS.x = x;
-          // xdot
+          // x = dt/h * xdotip1 + (1-dt/h) * xdoti
           RCP<Thyra::VectorBase<Scalar> > xdot;
           if ((xdoti != Teuchos::null) && (xdotip1 != Teuchos::null)) {
             xdot = createMember(xdoti->space());
             Thyra::V_StVpStV(&*xdot,dt_over_h,*xdotip1,one_minus_dt_over_h,*xdoti);
           }
           DS.xdot = xdot;
-          // And finally we estimate our order of accuracy
+          // Estimate our accuracy ???
           DS.accuracy = h;
-          // Push DataStore object onto vector:
+          // 2007/12/06: rabartl: Above, should the be a relative value of
+          // some type.  What does this really mean?
+          // Store this interplation
           data_out->push_back(DS);
-          // Move to the next time to consider!
         }
+        // Move to the next user time point to consider!
         n++;
-        if (n == Teuchos::as<int>(t_values.size())) {
+        if (n == as<int>(t_values.size())) {
+          // WE ARE ALL DONE!  MOVE OUT!
           return;
         }
       }
+      // Move on the the next interpolation time range
     }
   } // data_in.size() == 1
 }
+
 
 template<class Scalar>
 int LinearInterpolator<Scalar>::order() const
 {
   return(1);
 }
+
 
 template<class Scalar>
 std::string LinearInterpolator<Scalar>::description() const
@@ -213,27 +247,35 @@ std::string LinearInterpolator<Scalar>::description() const
   return(name);
 }
 
+
 template<class Scalar>
 void LinearInterpolator<Scalar>::describe(
-      Teuchos::FancyOStream       &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ) const
+  FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
 {
-  if ( (Teuchos::as<int>(verbLevel) == Teuchos::as<int>(Teuchos::VERB_DEFAULT) ) ||
-       (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW)     )
-     ) {
+  using Teuchos::as;
+  if ( (as<int>(verbLevel) == as<int>(Teuchos::VERB_DEFAULT) ) ||
+       (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW)     )
+     )
+  {
     out << description() << "::describe" << std::endl;
-  } else if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW)) {
-  } else if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
-  } else if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_HIGH)) {
   }
+  else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW))
+  {}
+  else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM))
+  {}
+  else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH))
+  {}
 }
+
 
 template <class Scalar>
 void LinearInterpolator<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<ParameterList> const& paramList
   )
 {
+  // 2007/12/06: rabartl: ToDo: Validate this parameter list!
   parameterList_ = paramList;
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
   outputLevel = std::min(std::max(outputLevel,-1),4);
@@ -243,20 +285,24 @@ void LinearInterpolator<Scalar>::setParameterList(
 
 }
 
+
 template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList> LinearInterpolator<Scalar>::getParameterList()
+RCP<ParameterList> LinearInterpolator<Scalar>::getParameterList()
 {
   return(parameterList_);
 }
 
+
 template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
+RCP<ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
-  parameterList_ = Teuchos::null;
+  RCP<ParameterList> temp_param_list;
+  std::swap( temp_param_list, parameterList_ );
   return(temp_param_list);
 }
 
+
 } // namespace Rythmos
+
 
 #endif // Rythmos_LINEAR_INTERPOLATOR_H

@@ -7,7 +7,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
 #include "Thyra_EpetraThyraWrappers.hpp"  // Contains create_MultiVector
@@ -61,7 +61,7 @@ int simpleStratimikosSolve(
     // therefore can be used in any use case.
     //
  
-    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     // Set the parameter list
     linearSolverBuilder.setParameterList( rcp(paramList,false) ) ; 
     // Create a linear solver factory given information read from the

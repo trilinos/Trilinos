@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
@@ -273,19 +273,19 @@ int main(int argc, char* argv[])
       paramList->print(*out,PLPrintOptions().indent(2).showTypes(true));
     }
     
-    Thyra::DefaultRealLinearSolverBuilder M11_linsolve_strategy_builder;
+    Stratimikos::DefaultLinearSolverBuilder M11_linsolve_strategy_builder;
     M11_linsolve_strategy_builder.setParameterList(
       sublist(paramList,"M11 Solver",true) );
 
-    Thyra::DefaultRealLinearSolverBuilder M22_linsolve_strategy_builder;
+    Stratimikos::DefaultLinearSolverBuilder M22_linsolve_strategy_builder;
     M22_linsolve_strategy_builder.setParameterList(
       sublist(paramList,"M22 Solver",true) );
 
-    Thyra::DefaultRealLinearSolverBuilder P1_linsolve_strategy_builder;
+    Stratimikos::DefaultLinearSolverBuilder P1_linsolve_strategy_builder;
     P1_linsolve_strategy_builder.setParameterList(
       sublist(paramList,"P1 Solver",true) );
 
-    Thyra::DefaultRealLinearSolverBuilder P2_linsolve_strategy_builder;
+    Stratimikos::DefaultLinearSolverBuilder P2_linsolve_strategy_builder;
     P2_linsolve_strategy_builder.setParameterList(
       sublist(paramList,"P2 Solver",true) );
 

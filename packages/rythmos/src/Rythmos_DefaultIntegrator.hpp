@@ -191,8 +191,10 @@ private:
 
   RCP<IntegrationControlStrategyBase<Scalar> > integrationControlStrategy_;
   RCP<IntegrationObserverBase<Scalar> > integrationObserver_;
+
   RCP<InterpolationBufferBase<Scalar> > trailingInterpBuffer_;
   RCP<InterpolationBufferAppenderBase<Scalar> > interpBufferAppender_;
+  
   RCP<StepperBase<Scalar> > stepper_;
   TimeRange<Scalar> integrationTimeDomain_;
   bool landOnFinalTime_;
@@ -409,17 +411,26 @@ DefaultIntegrator<Scalar>::cloneIntegrator() const
 {
   RCP<DefaultIntegrator<Scalar> >
     newIntegrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
-  // Only copy control information, not the state of an existing integration!
+  // Only copy control information, not the stepper or the model it contains!
   newIntegrator->stepper_ = Teuchos::null;
   const RCP<const ParameterList> paramList = this->getParameterList();
-  if (!is_null(paramList))
+  if (!is_null(paramList)) {
     newIntegrator->setParameterList(Teuchos::parameterList(*paramList));
-  if(!is_null(integrationControlStrategy_))
+  }
+  if (!is_null(integrationControlStrategy_)) {
     newIntegrator->integrationControlStrategy_ =
       integrationControlStrategy_->cloneIntegrationControlStrategy().assert_not_null();
-  if(!is_null(integrationObserver_))
+  }
+  if (!is_null(integrationObserver_)) {
     newIntegrator->integrationObserver_ =
       integrationObserver_->cloneIntegrationObserver().assert_not_null();
+  }
+  if (!is_null(trailingInterpBuffer_)) {
+    TEST_FOR_EXCEPT_MSG(true,"ToDo: Clone the trailing interpolation buffer");
+  }
+  if (!is_null(interpBufferAppender_)) {
+    TEST_FOR_EXCEPT_MSG(true,"ToDo: Clone the trailing interpolation buffer appender");
+  }
   return newIntegrator;
 }
 

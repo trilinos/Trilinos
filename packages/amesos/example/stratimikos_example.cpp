@@ -32,7 +32,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "simpleStratimikosSolve.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 //  #include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"

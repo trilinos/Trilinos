@@ -39,122 +39,129 @@
 
 namespace Rythmos {
 
+
 /** \brief concrete class for interpolation buffer functionality. */
 template<class Scalar> 
 class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 {
-  public:
+public:
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-    /// Redefined from Rythmos::InterpolationBufferBase
-    /** \brief. */
-    RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  /// Redefined from Rythmos::InterpolationBufferBase
+  /** \brief. */
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
     
-    /** \brief. */
-    InterpolationBuffer();
-    InterpolationBuffer( const RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
+  /** \brief. */
+  InterpolationBuffer();
+  InterpolationBuffer( const RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
-    /// Initialize the buffer:
-    void initialize( const RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
+  /// Initialize the buffer:
+  void initialize( const RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
-    /// Set the interpolator for this buffer
-    void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator_);
+  /// Set the interpolator for this buffer
+  void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator_);
     
-    /// Unset the interpolator for this buffer
-    RCP<InterpolatorBase<Scalar> >& unSetInterpolator();
+  /// Unset the interpolator for this buffer
+  RCP<InterpolatorBase<Scalar> >& unSetInterpolator();
 
-    /// Set the maximum storage of this buffer
-    void setStorage( int storage );
+  /// Set the maximum storage of this buffer
+  void setStorage( int storage );
     
-    /// Get the maximum storage of this buffer
-    int getStorage() const;
+  /// Get the maximum storage of this buffer
+  int getStorage() const;
         
-    /// Destructor
-    ~InterpolationBuffer() {};
+  /// Destructor
+  ~InterpolationBuffer() {};
 
-    /// Add point to buffer
-    void addPoints(
-      const Array<Scalar>& time_vec
-      ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec);
+  /// Add point to buffer
+  void addPoints(
+    const Array<Scalar>& time_vec
+    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec);
 
-    /// Get value from buffer
-    void getPoints(
-      const Array<Scalar>& time_vec
-      ,Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,Array<ScalarMag>* accuracy_vec
-      ) const;
+  /// Get value from buffer
+  void getPoints(
+    const Array<Scalar>& time_vec
+    ,Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec
+    ) const;
 
-    /** \brief . */
-    TimeRange<Scalar> getTimeRange() const;
+  /** \brief . */
+  TimeRange<Scalar> getTimeRange() const;
 
-    /// Get interpolation nodes
-    void getNodes(Array<Scalar>* time_vec) const;
+  /// Get interpolation nodes
+  void getNodes(Array<Scalar>* time_vec) const;
 
-    /// Get order of interpolation
-    int getOrder() const;
+  /// Get order of interpolation
+  int getOrder() const;
     
-    /// Remove interpolation nodes
-    void removeNodes(Array<Scalar>& time_vec);
+  /// Remove interpolation nodes
+  void removeNodes(Array<Scalar>& time_vec);
 
-    /// Redefined from Teuchos::Describable
-    /** \brief . */
-    std::string description() const;
+  /// Redefined from Teuchos::Describable
+  /** \brief . */
+  std::string description() const;
 
-    /** \brief . */
-    void describe(
-      Teuchos::FancyOStream       &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ) const;
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream       &out
+    ,const Teuchos::EVerbosityLevel      verbLevel
+    ) const;
 
-    /// Redefined from Teuchos::ParameterListAcceptor
-    /** \brief . */
-    void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  /// Redefined from Teuchos::ParameterListAcceptor
+  /** \brief . */
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
 
-    /** \brief . */
-    RCP<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  RCP<Teuchos::ParameterList> getParameterList();
 
-    /** \brief . */
-    RCP<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  RCP<Teuchos::ParameterList> unsetParameterList();
 
-    enum IBPolicy {
-      BUFFER_STATIC = 0
-      ,BUFFER_KEEP_NEWEST = 1
-    };
+  enum IBPolicy {
+    BUFFER_STATIC = 0
+    ,BUFFER_KEEP_NEWEST = 1
+  };
     
-  private:
+private:
 
-    RCP<InterpolatorBase<Scalar> > interpolator_;
-    int storage_limit_;
-    typename DataStore<Scalar>::DataStoreVector_t data_vec_;
+  RCP<InterpolatorBase<Scalar> > interpolator_;
+  int storage_limit_;
+  typename DataStore<Scalar>::DataStoreVector_t data_vec_;
 
-    RCP<Teuchos::ParameterList> parameterList_;
+  RCP<Teuchos::ParameterList> parameterList_;
 
-    IBPolicy policy_;
+  IBPolicy policy_;
 
 };
 
+
 // ////////////////////////////
 // Defintions
+
+
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer()
 {
   initialize(Teuchos::null,0);
 }
 
+
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer( 
-    const RCP<InterpolatorBase<Scalar> >& interpolator_
-    ,int storage_ 
-    )
+  const RCP<InterpolatorBase<Scalar> >& interpolator_
+  ,int storage_ 
+  )
 {
   initialize(interpolator_,storage_);
 }
 
+
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> > InterpolationBuffer<Scalar>::get_x_space() const
+RCP<const Thyra::VectorSpaceBase<Scalar> >
+InterpolationBuffer<Scalar>::get_x_space() const
 {
   if (data_vec_.size() == 0) {
     RCP<const Thyra::VectorSpaceBase<Scalar> > space;
@@ -164,11 +171,12 @@ RCP<const Thyra::VectorSpaceBase<Scalar> > InterpolationBuffer<Scalar>::get_x_sp
   }
 }
 
+
 template<class Scalar>
 void InterpolationBuffer<Scalar>::initialize( 
-    const RCP<InterpolatorBase<Scalar> >& interpolator_
-    ,int storage_
-    )
+  const RCP<InterpolatorBase<Scalar> >& interpolator_
+  ,int storage_
+  )
 {
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::initialize");
@@ -189,9 +197,11 @@ void InterpolationBuffer<Scalar>::setStorage( int storage )
 {
   int storage_limit = std::max(2,storage); // Minimum of two points so interpolation is possible
   TEST_FOR_EXCEPTION(
-      Teuchos::as<int>(data_vec_.size()) > storage_limit, std::logic_error,
-      "Error, specified storage = " << storage_limit << " is below current number of vectors stored = " << data_vec_.size() << "!\n"
-      );
+    Teuchos::as<int>(data_vec_.size()) > storage_limit,
+    std::logic_error,
+    "Error, specified storage = " << storage_limit
+    << " is below current number of vectors stored = " << data_vec_.size() << "!\n"
+    );
   storage_limit_ = storage_limit;
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::setStorage");
@@ -200,16 +210,18 @@ void InterpolationBuffer<Scalar>::setStorage( int storage )
   }
 }
 
+
 template<class Scalar>
 int InterpolationBuffer<Scalar>::getStorage() const
 {
   return(storage_limit_);
 }
 
+
 template<class Scalar>
 void InterpolationBuffer<Scalar>::setInterpolator(
-    const RCP<InterpolatorBase<Scalar> >& interpolator
-    )
+  const RCP<InterpolatorBase<Scalar> >& interpolator
+  )
 {
   if (interpolator_ == Teuchos::null) {
     interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar>);
@@ -223,38 +235,39 @@ void InterpolationBuffer<Scalar>::setInterpolator(
   }
 }
 
+
 template<class Scalar>
 void InterpolationBuffer<Scalar>::addPoints( 
-    const Array<Scalar>& time_vec
-    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
-    )
+  const Array<Scalar>& time_vec
+  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
+  )
 {
 #ifdef TEUCHOS_DEBUG
   // Check preconditions
   assertTimePointsAreSorted(time_vec);
   int tsize = time_vec.size();
   TEST_FOR_EXCEPTION(
-      tsize == 0, std::logic_error,
-      "Error, time_vec is empty!"
-      );
+    tsize == 0, std::logic_error,
+    "Error, time_vec is empty!"
+    );
   TEST_FOR_EXCEPTION(
-      Teuchos::as<int>(x_vec.size()) == tsize, std::logic_error,
-      "Error, size of x_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
-      );
+    Teuchos::as<int>(x_vec.size()) == tsize, std::logic_error,
+    "Error, size of x_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
+    );
   TEST_FOR_EXCEPTION(
-      Teuchos::as<int>(xdot_vec.size()) == tsize, std::logic_error,
-      "Error, size of xdot_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
-      );
+    Teuchos::as<int>(xdot_vec.size()) == tsize, std::logic_error,
+    "Error, size of xdot_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
+    );
   for (int i=0; i<tsize ; ++i) {
     TEST_FOR_EXCEPTION(
-        x_vec[i] == Teuchos::null, std::logic_error,
-        "Error, x_vec[" << i << "] == null!\n"
-        );
+      x_vec[i] == Teuchos::null, std::logic_error,
+      "Error, x_vec[" << i << "] == null!\n"
+      );
     TEST_FOR_EXCEPTION(
-        xdot_vec[i] == Teuchos::null, std::logic_error,
-        "Error, xdot_vec[" << i << "] == null!\n"
-        );
+      xdot_vec[i] == Teuchos::null, std::logic_error,
+      "Error, xdot_vec[" << i << "] == null!\n"
+      );
   }
   assertNoTimePointsInsideCurrentTimeRange(*this,time_vec);
 #endif // TEUCHOS_DEBUG
@@ -282,9 +295,9 @@ void InterpolationBuffer<Scalar>::addPoints(
   if ((data_vec_.size()+input_data_list.size()) > Teuchos::as<unsigned int>(storage_limit_)) { 
     if (policy_ == BUFFER_STATIC) {
       TEST_FOR_EXCEPTION(
-          true, std::logic_error,
-          "Error, buffer is full and buffer policy is BUFFER_STATIC, no points can be added\n"
-          );
+        true, std::logic_error,
+        "Error, buffer is full and buffer policy is BUFFER_STATIC, no points can be added\n"
+        );
     } else if (policy_ == BUFFER_KEEP_NEWEST) {
       if (input_data_list.front() > data_vec_.back()) {
         // Case:  all of new points are past end of existing points
@@ -297,7 +310,7 @@ void InterpolationBuffer<Scalar>::addPoints(
         }
         if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
           *out << "Removing " << num_extra_points 
-            << " from beginning of data_vec to make room for new points." << std::endl;
+               << " from beginning of data_vec to make room for new points." << std::endl;
         }
         data_vec_.erase(data_vec_.begin(),data_it);
       } else if (input_data_list.back() < data_vec_.front()) {
@@ -311,22 +324,22 @@ void InterpolationBuffer<Scalar>::addPoints(
         }
         if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
           *out << "Removing " << num_extra_points 
-            << " from end of data_vec to make room for new points." << std::endl;
+               << " from end of data_vec to make room for new points." << std::endl;
         }
         data_vec_.erase(data_it,data_vec_.end());
       } else {
         // Case:  Some points are before beginning of data_vec and some points are after end of data_vec
         TEST_FOR_EXCEPTION(
-            true, std::logic_error,
-            "Error, incoming points are on both sides of TimeRange, this feature not implemented yet.\n"
-            );
+          true, std::logic_error,
+          "Error, incoming points are on both sides of TimeRange, this feature not implemented yet.\n"
+          );
       }
     } else {
       // Unknown Buffer policy:
       TEST_FOR_EXCEPTION(
-          true, std::logic_error,
-          "Error, unknown buffer policy.\n"
-          );
+        true, std::logic_error,
+        "Error, unknown buffer policy.\n"
+        );
     }
   }
   // Now add all the remaining points to data_vec
@@ -342,13 +355,14 @@ void InterpolationBuffer<Scalar>::addPoints(
   }
 }
 
+
 template<class Scalar>
 void InterpolationBuffer<Scalar>::getPoints(
-    const Array<Scalar>& time_vec
-    ,Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,Array<ScalarMag>* accuracy_vec
-    ) const
+  const Array<Scalar>& time_vec
+  ,Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+  ,Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+  ,Array<ScalarMag>* accuracy_vec
+  ) const
 {
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::getPoints");
@@ -359,8 +373,8 @@ void InterpolationBuffer<Scalar>::getPoints(
   TEST_FOR_EXCEPTION(
     (time_vec.size() != time_out_vec.size()), std::logic_error,
     "Error, number of time points returned from interpolator = " <<
-      time_out_vec.size() << " != " << time_vec.size() << 
-      " = number of time points requested\n"
+    time_out_vec.size() << " != " << time_vec.size() << 
+    " = number of time points requested\n"
     );
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "Conversion of DataStoreVector to Vector successful" << std::endl;
@@ -374,6 +388,7 @@ TimeRange<Scalar> InterpolationBuffer<Scalar>::getTimeRange() const
   TimeRange<Scalar> timerange(data_vec_.front().time,data_vec_.back().time);
   return(timerange);
 }
+
 
 template<class Scalar>
 void InterpolationBuffer<Scalar>::getNodes( Array<Scalar>* time_vec ) const
@@ -394,6 +409,7 @@ void InterpolationBuffer<Scalar>::getNodes( Array<Scalar>* time_vec ) const
   }
 }
 
+
 template<class Scalar>
 void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec ) 
 {
@@ -404,12 +420,12 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
   TimeRange<Scalar> range = this->getTimeRange();
   for (int i=0; i<N ; ++i) {
     TEST_FOR_EXCEPTION(
-        ~(range.lower() <= time_vec[i]) && (time_vec[i] <= range.upper()),
-        std::logic_error,
-        "Error, time_vec[" << i << "] = " << time_vec[i] << 
-          "is not in range of this interpolation buffer = [" << 
-          range.lower() << "," << range.upper() << "]!\n"
-        );
+      ~(range.lower() <= time_vec[i]) && (time_vec[i] <= range.upper()),
+      std::logic_error,
+      "Error, time_vec[" << i << "] = " << time_vec[i] << 
+      "is not in range of this interpolation buffer = [" << 
+      range.lower() << "," << range.upper() << "]!\n"
+      );
   }
 #endif // TEUCHOS_DEBUG
   RCP<Thyra::VectorBase<Scalar> > vec_temp;
@@ -419,18 +435,20 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
     typename DataStore<Scalar>::DataStoreVector_t::iterator 
       data_it = std::find(data_vec_.begin(),data_vec_.end(),ds_temp);
     TEST_FOR_EXCEPTION(
-        data_it == data_vec_.end(), std::logic_error,
-        "Error, time_vec[" << i << "] = " << time_vec[i] << "is not a node in the interpolation buffer!\n"
-        );
+      data_it == data_vec_.end(), std::logic_error,
+      "Error, time_vec[" << i << "] = " << time_vec[i] << "is not a node in the interpolation buffer!\n"
+      );
     data_vec_.erase(data_it);
   }
 }
+
 
 template<class Scalar>
 int InterpolationBuffer<Scalar>::getOrder() const
 {
   return(interpolator_->order());
 }
+
 
 template<class Scalar>
 std::string InterpolationBuffer<Scalar>::description() const
@@ -439,15 +457,16 @@ std::string InterpolationBuffer<Scalar>::description() const
   return(name);
 }
 
+
 template<class Scalar>
 void InterpolationBuffer<Scalar>::describe(
-      Teuchos::FancyOStream                &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ) const
+  Teuchos::FancyOStream                &out
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
 {
   if ( (Teuchos::as<int>(verbLevel) == Teuchos::as<int>(Teuchos::VERB_DEFAULT) ) ||
-       (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW)     )
-     ) {
+    (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW)     )
+    ) {
     out << description() << "::describe" << std::endl;
     out << "interpolator = " << interpolator_->description() << std::endl;
     out << "storage_limit = " << storage_limit_ << std::endl;
@@ -461,6 +480,7 @@ void InterpolationBuffer<Scalar>::describe(
     }
   }
 }
+
 
 template <class Scalar>
 void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
@@ -479,11 +499,13 @@ void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> c
   }
 }
 
+
 template <class Scalar>
 RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::getParameterList()
 {
   return(parameterList_);
 }
+
 
 template <class Scalar>
 RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
@@ -493,6 +515,8 @@ RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
   return(temp_param_list);
 }
 
+
 } // namespace Rythmos
+
 
 #endif // Rythmos_INTERPOLATION_BUFFER_H

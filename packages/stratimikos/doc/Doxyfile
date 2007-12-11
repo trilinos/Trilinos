@@ -39,7 +39,8 @@ EXAMPLE_PATTERNS       =
 EXAMPLE_PATH           = ../test \
                          ../example \
                          ../test/test_single_stratimikos_solver.cpp \ 
-                         ../example/simple_stratimikos_example.cpp 
+                         ../example/simple_stratimikos_example.cpp \
+                         ../example/MixedOrderPhysicsBasedPreconditioner.cpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

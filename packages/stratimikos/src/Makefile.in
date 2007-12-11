@@ -100,7 +100,7 @@ LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
 libstratimikos_a_DEPENDENCIES =
-am__objects_1 = Thyra_DefaultRealLinearSolverBuilder.$(OBJEXT)
+am__objects_1 = Stratimikos_DefaultLinearSolverBuilder.$(OBJEXT)
 am_libstratimikos_a_OBJECTS = $(am__objects_1)
 libstratimikos_a_OBJECTS = $(am_libstratimikos_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -251,10 +251,11 @@ top_srcdir = @top_srcdir@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.hpp\
 	$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.hpp
 
 CORE = \
-	$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp
+	$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(STRATIMIKOS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(STRATIMIKOS_INCLUDES))
@@ -400,7 +401,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -416,19 +417,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Thyra_DefaultRealLinearSolverBuilder.o: $(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultRealLinearSolverBuilder.o -MD -MP -MF $(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Tpo -c -o Thyra_DefaultRealLinearSolverBuilder.o `test -f '$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Tpo $(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp' object='Thyra_DefaultRealLinearSolverBuilder.o' libtool=no @AMDEPBACKSLASH@
+Stratimikos_DefaultLinearSolverBuilder.o: $(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stratimikos_DefaultLinearSolverBuilder.o -MD -MP -MF $(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Tpo -c -o Stratimikos_DefaultLinearSolverBuilder.o `test -f '$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Tpo $(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp' object='Stratimikos_DefaultLinearSolverBuilder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultRealLinearSolverBuilder.o `test -f '$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stratimikos_DefaultLinearSolverBuilder.o `test -f '$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp
 
-Thyra_DefaultRealLinearSolverBuilder.obj: $(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultRealLinearSolverBuilder.obj -MD -MP -MF $(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Tpo -c -o Thyra_DefaultRealLinearSolverBuilder.obj `if test -f '$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Tpo $(DEPDIR)/Thyra_DefaultRealLinearSolverBuilder.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp' object='Thyra_DefaultRealLinearSolverBuilder.obj' libtool=no @AMDEPBACKSLASH@
+Stratimikos_DefaultLinearSolverBuilder.obj: $(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stratimikos_DefaultLinearSolverBuilder.obj -MD -MP -MF $(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Tpo -c -o Stratimikos_DefaultLinearSolverBuilder.obj `if test -f '$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Tpo $(DEPDIR)/Stratimikos_DefaultLinearSolverBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp' object='Stratimikos_DefaultLinearSolverBuilder.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultRealLinearSolverBuilder.obj `if test -f '$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_DefaultRealLinearSolverBuilder.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stratimikos_DefaultLinearSolverBuilder.obj `if test -f '$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stratimikos_DefaultLinearSolverBuilder.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

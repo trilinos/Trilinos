@@ -59,7 +59,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "EpetraModelEval2DSim.H"
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
-  ::Thyra::DefaultRealLinearSolverBuilder builder;
+  ::Stratimikos::DefaultLinearSolverBuilder builder;
   
   Teuchos::RCP<Teuchos::ParameterList> p = 
     Teuchos::rcp(new Teuchos::ParameterList);

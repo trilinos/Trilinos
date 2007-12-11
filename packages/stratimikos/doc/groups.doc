@@ -2,7 +2,7 @@
 /** \example simple_stratimikos_example.cpp
 
 Simple example program for how the
-<tt>Thyra::DefaultRealLinearSolverBuilder</tt> class is used to take a
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt> class is used to take a
 parameter list (e.g. read from a file) and use it so solve a linear system
 read in as Epetra objects from a file.
 
@@ -50,7 +50,7 @@ Here is the main driver program itself without line numbers:
 /** \example test_single_stratimikos_solver.cpp
 
 The bottom of this page shows a simple test program for how the
-<tt>Thyra::DefaultRealLinearSolverBuilder</tt> class is used to take a
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt> class is used to take a
 parameter list (e.g. read from a file) and use it to build
 <tt>Thyra::LinearOpWithSolveFactory</tt> and
 <tt>Thyra::PreconditionerFactoryBase</tt> objects.
@@ -64,6 +64,10 @@ Sample output looks like:
 \verbinclude test_single_stratimikos_solver_driver.FourByFour.belos.ifpack.out
 
 Here is the main driver itself:
+
+*/
+
+/** \example MixedOrderPhysicsBasedPreconditioner.cpp
 
 */
 
