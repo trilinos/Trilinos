@@ -298,6 +298,9 @@ SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H = \
   $(srcdir)/support/nonlinear/solvers/client_support/Thyra_DefaultStateEliminationModelEvaluator.hpp\
   $(srcdir)/support/nonlinear/solvers/client_support/Thyra_LinearNonlinearSolver.hpp
 
+OPERATOR_VECTOR_EXAMPLE_H = \
+  $(top_srcdir)/example/operator_vector/sillyModifiedGramSchmidt.hpp
+
 #Specify locations of include files within Trilinos
 
 include $(top_builddir)/Makefile.export.thyra
@@ -329,7 +332,8 @@ THYRA_H = \
   $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H)\
   $(INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H)\
-  $(SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H)
+  $(SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H)\
+  $(OPERATOR_VECTOR_EXAMPLE_H)
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
   $(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
