@@ -133,6 +133,36 @@ example subdirectory of the PyTrilinos package:
 #include "EpetraExt_XMLWriter.h"
 %}
 
+// Standard exception handling
+%include "exception.i"
+
+// Auto-documentation feature
+%feature("autodoc", "1");
+
+// Include EpetraExt documentation
+%include "EpetraExt_dox.i"    // Doxygen-generated documentation
+%include "EpetraExt_doc.i"    // Manually written documentation
+
+// C++ STL support
+%include "stl.i"
+
+// Trilinos interface support
+%import "Teuchos.i"
+%import "Epetra.i"
+
+// General exception handling
+%exception {
+  try {
+    $action
+  } catch(Teuchos::EmptyXMLError & e) {
+    SWIG_exception(SWIG_ValueError, e.what());
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
+
 ////////////
 // Macros //
 ////////////
@@ -157,31 +187,6 @@ Epetra_ ## ClassName * Read ## ClassName(std::string name)
   return obj;
 }
 %enddef
-
-// C++ STL support
-%include "stl.i"
-
-// Trilinos interface support
-%import "Teuchos.i"
-%import "Epetra.i"
-
-// Include EpetraExt documentation
-%include "EpetraExt_dox.i"    // Doxygen-generated documentation
-%include "EpetraExt_doc.i"    // Manually written documentation
-
-// General exception handling
-%include "exception.i"
-%exception {
-  try {
-    $action
-  } catch(std::logic_error & e) {
-    SWIG_exception(SWIG_RuntimeError, e.what());
-  } catch(Teuchos::EmptyXMLError & e) {
-    SWIG_exception(SWIG_ValueError, e.what());
-  } catch(...) {
-    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception caught");
-  }
-}
 
 ///////////////////////////////
 // EpetraExt_Version support //

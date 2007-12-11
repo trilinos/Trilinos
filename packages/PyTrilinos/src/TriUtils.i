@@ -91,6 +91,9 @@ example subdirectory of the PyTrilinos package:
 #include "Trilinos_Util_Version.h"
 %}
 
+// Standard exception handling
+%include "exception.i"
+
 // Auto-documentation feature
 %feature("autodoc", "1");
 
@@ -103,6 +106,18 @@ example subdirectory of the PyTrilinos package:
 
 // Epetra interface includes
 %import "Epetra.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
 
 ///////////////////////////////////
 // Trilinos_Util_Version support //

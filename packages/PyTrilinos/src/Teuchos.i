@@ -114,6 +114,9 @@ using Teuchos::RCP;
 using std::string;
 using Teuchos::RCP;
 
+// Standard exception handling
+%include "exception.i"
+
 // Global swig features
 %feature("autodoc", "1");
 %feature("compactdefaultargs");
@@ -129,32 +132,23 @@ using Teuchos::RCP;
 %include "stl.i"
 %include "std_except.i"
 
-// Define macro for handling exceptions thrown by Teuchos methods and
-// constructors
-%define %teuchos_exception(className,methodName)
-%exception Teuchos::className::methodName {
+// General exception handling
+%exception
+{
   try {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  }
-  catch(Teuchos::Exceptions::InvalidParameterType e) {
-    PyErr_SetString(PyExc_TypeError, e.what());
-    SWIG_fail;
-  }
-  catch(Teuchos::Exceptions::InvalidParameter e) {
+  } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+    SWIG_exception(SWIG_TypeError, e.what());
+  } catch(Teuchos::Exceptions::InvalidParameter & e) {
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
-  catch(std::runtime_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    SWIG_fail;
-  }
-  catch(std::logic_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    SWIG_fail;
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-%enddef
 
 // General ignore directives
 %ignore *::operator=;
@@ -180,14 +174,6 @@ __version__ = Teuchos_Version().split()[2]
 ////////////////////////////////////
 // Teuchos::ParameterList support //
 ////////////////////////////////////
-%teuchos_exception(ParameterList, ParameterList)
-%teuchos_exception(ParameterList, set)
-%teuchos_exception(ParameterList, setParameters)
-%teuchos_exception(ParameterList, get)
-%teuchos_exception(ParameterList, sublist)
-%teuchos_exception(ParameterList, type)
-%teuchos_exception(ParameterList, __setitem__)
-%teuchos_exception(ParameterList, update)
 // There are a lot of extensions to the Teuchos::ParameterList class,
 // so I put them all in their own file
 %include "Teuchos_ParameterList_ext.i"
@@ -269,24 +255,6 @@ Teuchos::ParameterList &
 ////////////////////////////////
 // Teuchos::XMLObject support //
 ////////////////////////////////
-%teuchos_exception(XMLObject, deepCopy         )
-%teuchos_exception(XMLObject, checkTag         )
-%teuchos_exception(XMLObject, getTag           )
-%teuchos_exception(XMLObject, getAttribute     )
-%teuchos_exception(XMLObject, getContentLine   )
-%teuchos_exception(XMLObject, getRequired      )
-%teuchos_exception(XMLObject, getRequiredDouble)
-%teuchos_exception(XMLObject, getRequiredInt   )
-%teuchos_exception(XMLObject, getRequiredBool  )
-%teuchos_exception(XMLObject, getChild         )
-%teuchos_exception(XMLObject, addAttribute     )
-%teuchos_exception(XMLObject, addContentLine   )
-%teuchos_exception(XMLObject, addRequired      )
-%teuchos_exception(XMLObject, addRequiredDouble)
-%teuchos_exception(XMLObject, addRequiredInt   )
-%teuchos_exception(XMLObject, addRequiredBool  )
-%teuchos_exception(XMLObject, addChild         )
-%teuchos_exception(XMLObject, toString         )
 %ignore Teuchos::XMLObject::XMLObject(XMLObjectImplem*);
 %extend Teuchos::XMLObject {
   std::string __str__() const {
@@ -313,7 +281,6 @@ Teuchos::ParameterList &
 /////////////////////////////////////
 // Teuchos::XMLInputSource support //
 /////////////////////////////////////
-%teuchos_exception(XMLInputSource, getObject)
 %ignore Teuchos::XMLInputSource::stream() const;
 %include "Teuchos_XMLInputSource.hpp"
 

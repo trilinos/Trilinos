@@ -112,32 +112,24 @@ using namespace NOX::Abstract;
 using namespace NOX::Epetra;
 %}
 
-// Define macro for handling exceptions thrown by NOX.Epetra methods and
-// constructors
-%define %nox_epetra_exception(className,methodName)
-  %exception NOX::Epetra::className::methodName {
+// General exception handling
+%include "exception.i"
+%exception
+{
   try {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  }
-  catch(Teuchos::Exceptions::InvalidParameterType e) {
-    PyErr_SetString(PyExc_TypeError, e.what());
-    SWIG_fail;
-  }
-  catch(Teuchos::Exceptions::InvalidParameter e) {
+  } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+    SWIG_exception(SWIG_TypeError, e.what());
+  } catch(Teuchos::Exceptions::InvalidParameter & e) {
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
-  catch(std::runtime_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    SWIG_fail;
-  }
-  catch(std::logic_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    SWIG_fail;
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-%enddef
 
 // Include NOX documentation
 %include "NOX_dox.i"    // Doxygen-generated documentation
@@ -226,7 +218,6 @@ using namespace NOX::Epetra;
 //////////////////////////////
 // NOX.Epetra.Group support //
 //////////////////////////////
-%nox_epetra_exception(Group,Group)
 %rename(Group_None) NOX::Epetra::Group::None;
 %include "NOX_Epetra_Group.H"
 
@@ -240,13 +231,11 @@ using namespace NOX::Epetra;
 /////////////////////////////////////////
 // NOX.Epetra.FiniteDifference support //
 /////////////////////////////////////////
-%nox_epetra_exception(FiniteDifference,FiniteDifference)
 %include "NOX_Epetra_FiniteDifference.H"
 
 /////////////////////////////////////////////////
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
-%nox_epetra_exception(FiniteDifferenceColoring,FiniteDifferenceColoring)
 namespace NOX {
   namespace Epetra {
     %extend FiniteDifferenceColoring {
@@ -293,7 +282,6 @@ namespace NOX {
 ///////////////////////////////////
 // NOX.Epetra.MatrixFree support //
 ///////////////////////////////////
-%nox_epetra_exception(MatrixFree,MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
 
 ////////////////////////////////
@@ -306,7 +294,6 @@ namespace NOX {
 /////////////////////////////////////
 // NOX.Epetra.LinearSystem support //
 /////////////////////////////////////
-%nox_epetra_exception(LinearSystem,LinearSystem)
 %feature("director") NOX::Epetra::LinearSystem;
 // The following #define is to change the name of NOX method
 // arguments that conflict with a SWIG director method argument
@@ -316,5 +303,4 @@ namespace NOX {
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //
 ////////////////////////////////////////////
-%nox_epetra_exception(LinearSystemAztecOO,LinearSystemAztecOO)
 %include "NOX_Epetra_LinearSystem_AztecOO.H"

@@ -109,7 +109,6 @@
 //////////////////////////////////////
 %ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
 %rename(SerialDenseSolver) Epetra_SerialDenseSolver;
-%epetra_exception(Epetra_SerialDenseSolver, ReciprocalConditionEstimate)
 %epetra_intarray1d_output_method(Epetra_SerialDenseSolver,IPIV,M)
 %epetra_array2d_output_method(Epetra_SerialDenseSolver,A,M,N    )
 %epetra_array2d_output_method(Epetra_SerialDenseSolver,B,N,NRHS )
@@ -145,8 +144,6 @@
 //////////////////////////////////////////////
 %rename(NumPyIntSerialDenseMatrix) Epetra_NumPyIntSerialDenseMatrix;
 %epetra_numpy_ctor_exception(Epetra_NumPyIntSerialDenseMatrix)
-%epetra_exception(Epetra_NumPyIntSerialDenseMatrix, Reshape)
-%epetra_exception(Epetra_NumPyIntSerialDenseMatrix, Shape  )
 %include "Epetra_NumPyIntSerialDenseMatrix.h"
 %pythoncode %{
 class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
@@ -227,7 +224,6 @@ _Epetra.NumPyIntSerialDenseMatrix_swigregister(IntSerialDenseMatrix)
 //////////////////////////////////////////////
 %rename(NumPyIntSerialDenseVector) Epetra_NumPyIntSerialDenseVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyIntSerialDenseVector)
-%epetra_exception(Epetra_NumPyIntSerialDenseVector, Resize)
 %include "Epetra_NumPyIntSerialDenseVector.h"
 %pythoncode %{
 class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
@@ -300,8 +296,6 @@ _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 ///////////////////////////////////////////
 %rename(NumPySerialDenseMatrix) Epetra_NumPySerialDenseMatrix;
 %epetra_numpy_ctor_exception(Epetra_NumPySerialDenseMatrix)
-%epetra_exception(Epetra_NumPySerialDenseMatrix, Reshape)
-%epetra_exception(Epetra_NumPySerialDenseMatrix, Shape  )
 %include "Epetra_NumPySerialDenseMatrix.h"
 %pythoncode %{
 class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
@@ -382,7 +376,6 @@ _Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 ///////////////////////////////////////////
 %rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
 %epetra_numpy_ctor_exception(Epetra_NumPySerialDenseVector)
-%epetra_exception(Epetra_NumPySerialDenseVecto, Resize)
 %include "Epetra_NumPySerialDenseVector.h"
 %pythoncode %{
 class SerialDenseVector(UserArray,NumPySerialDenseVector):

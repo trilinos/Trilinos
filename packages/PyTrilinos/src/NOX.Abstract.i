@@ -68,16 +68,31 @@ NOX.Abstract provides the following user-level classes:
 #include "NumPyImporter.h"
 %}
 
-// General ignore directives
-%ignore *::operator=;
-%ignore *::operator[];
+// Standard exception handling
+%include "exception.i"
 
 // Include NOX documentation
 %include "NOX_dox.i"    // Doxygen-generated documentation
 %include "NOX_doc.i"    // Manually written documentation
 
+// General ignore directives
+%ignore *::operator=;
+%ignore *::operator[];
+
 // Trilinos module imports
 %import "Teuchos.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
+  }
+}
 
 // Support for Teuchos::RCPs
 %teuchos_rcp_typemaps(NOX::Abstract::Group)

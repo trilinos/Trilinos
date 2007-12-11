@@ -134,9 +134,8 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 
 %}
 
-// General ignore directives
-%ignore *::operator=;
-%ignore *::operator[];
+// Standard exception handling
+%include "exception.i"
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -144,10 +143,26 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 // Include ML documentation
 %include "ML_dox.i"
 
+// General ignore directives
+%ignore *::operator=;
+%ignore *::operator[];
+
 // External Trilinos package imports
 %include "Epetra_RowMatrix_Utils.i"
 %import  "Teuchos.i"
 %import  "Epetra.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
+  }
+}
 
 ///////////////////////
 // ml_config support //

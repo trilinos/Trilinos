@@ -110,9 +110,8 @@ example subdirectory of the PyTrilinos package:
 #include "Galeri_ReadHB.h"
 %}
 
-// Trilinos package imports
-%import "Teuchos.i"
-%import "Epetra.i"
+// Standard exception handling
+%include "exception.i"
 
 // Turn on autodocumentation
 %feature("autodoc", "1");
@@ -123,6 +122,22 @@ example subdirectory of the PyTrilinos package:
 
 // Typemap support for STL
 %include "stl.i"
+
+// Trilinos package imports
+%import "Teuchos.i"
+%import "Epetra.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
 
 ////////////////////////////
 // Galeri_Version support //

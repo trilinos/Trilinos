@@ -70,8 +70,6 @@
 %ignore Epetra_BlockMap::ReferenceCount() const;
 %ignore Epetra_BlockMap::DataPtr() const;
 %rename(BlockMap) Epetra_BlockMap;
-%epetra_exception(Epetra_BlockMap, Epetra_BlockMap )
-%epetra_exception(Epetra_BlockMap, MyGlobalElements)
 %apply (int DIM1, int * IN_ARRAY1) {(int NumMyElements, const int * MyGlobalElements)};
 %apply (int DIM1, int * IN_ARRAY1) {(int NumElements,   const int * ElementSizeList )};
 %extend Epetra_BlockMap {
@@ -239,8 +237,6 @@
 // Epetra_Map support //
 ////////////////////////
 %rename(Map) Epetra_Map;
-%epetra_exception(Epetra_Map, Epetra_Map      )
-%epetra_exception(Epetra_Map, MyGlobalElements)
 %include "Epetra_Map.h"
 %clear (int NumMyElements, const int * MyGlobalElements);
 
@@ -248,8 +244,6 @@
 // Epetra_LocalMap support //
 /////////////////////////////
 %rename(LocalMap) Epetra_LocalMap;
-%epetra_exception(Epetra_LocalMap, Epetra_LocalMap )
-%epetra_exception(Epetra_LocalMap, MyGlobalElements)
 %include "Epetra_LocalMap.h"
 
 //////////////////////////////
@@ -299,7 +293,6 @@
 // Epetra_Import support //
 ///////////////////////////
 %rename(Import) Epetra_Import;
-%epetra_exception(Epetra_Export, Epetra_Export)
 %include "Epetra_Import.h"
 %epetra_mover_class(Import)
 
@@ -307,6 +300,5 @@
 // Epetra_Export support //
 ///////////////////////////
 %rename(Export) Epetra_Export;
-%epetra_exception(Epetra_Import, Epetra_Import)
 %include "Epetra_Export.h"
 %epetra_mover_class(Export)

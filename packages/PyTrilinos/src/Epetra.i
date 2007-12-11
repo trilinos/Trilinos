@@ -107,7 +107,6 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 // SWIG library includes
 using std::string;
 %include "stl.i"
-%include "exception.i"
 
 // SWIG NumPy interface file
 %include "numpy.i"

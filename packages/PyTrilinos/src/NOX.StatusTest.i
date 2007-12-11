@@ -78,16 +78,8 @@ NOX.StatusTest provides the following user-level classes:
 #include "NumPyImporter.h"
 %}
 
-// Trilinos interface file imports
-%import "Teuchos.i"
-
-// RCP typemaps
-%teuchos_rcp_typemaps(NOX::StatusTest::Generic)
-
-// General ignore directives
-%ignore *::operator=;
-%ignore operator<<;
-%ignore *::print(ostream& stream, int indent = 0) const;
+// Standard exception handling
+%include "exception.i"
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -99,13 +91,34 @@ NOX.StatusTest provides the following user-level classes:
 // SWIG library includes
 %include "stl.i"
 
+// General ignore directives
+%ignore *::operator=;
+%ignore operator<<;
+%ignore *::print(ostream& stream, int indent = 0) const;
+
+// Trilinos interface file imports
+%import "Teuchos.i"
+
 // NOX::Abstract import
 %ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
 %import "NOX_Abstract_Group.H"
 
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
+  }
+}
+
 ////////////////////////////////////
 // NOX_StatusTest_Generic support //
 ////////////////////////////////////
+%teuchos_rcp_typemaps(NOX::StatusTest::Generic)
 %rename(StatusTest_None) NOX::StatusTest::None;
 %include "NOX_StatusTest_Generic.H"
 namespace NOX {

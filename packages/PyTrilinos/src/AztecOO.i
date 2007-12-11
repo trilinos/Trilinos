@@ -112,24 +112,31 @@ example subdirectory of the PyTrilinos package:
 // Include the NumPy typemaps
 %include "numpy.i"
 
+// Include the standard exception handlers
+%include "exception.i"
+
 // External Trilinos interface imports
 %import "Epetra.i"
 #ifdef HAVE_AZTECOO_TEUCHOS
 %import "Teuchos.i"
 #endif
 
-// Exception handling
-%define %aztecoo_exception(className,methodName)
-%exception className::methodName {
+// General exception handling
+%exception
+{
   try {
     $action
     if (PyErr_Occurred()) SWIG_fail;
   } catch(int errCode) {
-    PyErr_Format(PyExc_RuntimeError, "Error code = %d\nSee stderr for details", errCode);
+    PyErr_Format(PyExc_RuntimeError, "Error code = %d\nSee stderr for details",
+		 errCode);
     SWIG_fail;
   }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
 }
-%enddef
 
 // Macro for methods that return C arrays
 %define %aztecoo_return_array(className,methodName,type,typeName,length)
@@ -158,8 +165,6 @@ __version__ = AztecOO_Version().split()[2]
 /////////////////////
 // AztecOO support //
 /////////////////////
-%aztecoo_exception(AztecOO,SetParameters)
-%aztecoo_exception(AztecOO,Iterate      )
 %ignore AztecOO::GetAllAztecStatus(double*);
 %aztecoo_return_array(AztecOO, GetAllAztecOptions, int,    NPY_INT,    AZ_OPTIONS_SIZE)
 %aztecoo_return_array(AztecOO, GetAllAztecParams,  double, NPY_DOUBLE, AZ_PARAMS_SIZE )

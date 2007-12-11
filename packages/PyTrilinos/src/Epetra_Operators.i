@@ -53,7 +53,6 @@
 // Macro code //
 ////////////////
 %define %epetra_global_row_method(className,methodName)
-%epetra_exception(className, methodName)
 %apply (double * IN_ARRAY1, int DIM1) {(double * Values,  int NumValues )};
 %apply (int    * IN_ARRAY1, int DIM1) {(int    * Indices, int NumIndices)};
 %extend className
@@ -130,7 +129,6 @@
 %enddef
 
 %define %epetra_my_row_method(className,methodName)
-%epetra_exception(className,methodName)
 %ignore className::methodName(int,int,double*,int*);
 %apply (double * IN_ARRAY1, int DIM1) {(double * Values,  int NumValues )};
 %apply (int    * IN_ARRAY1, int DIM1) {(int    * Indices, int NumIndices)};
@@ -296,9 +294,6 @@
 // Epetra_CrsMatrix support //
 //////////////////////////////
 %rename(CrsMatrix) Epetra_CrsMatrix;
-%epetra_exception(Epetra_CrsMatrix, Epetra_CrsMatrix)
-%epetra_exception(Epetra_CrsMatrix, OptimizeStorage )
-%epetra_exception(Epetra_CrsMatrix, __setitem__     )
 %epetra_global_row_method(Epetra_CrsMatrix, InsertGlobalValues )
 %epetra_global_row_method(Epetra_CrsMatrix, ReplaceGlobalValues)
 %epetra_global_row_method(Epetra_CrsMatrix, SumIntoGlobalValues)
@@ -653,13 +648,6 @@
 // Epetra_VbrMatrix support //
 //////////////////////////////
 %rename(VbrMatrix) Epetra_VbrMatrix;
-%epetra_exception(Epetra_VbrMatrix, Epetra_VbrMatrix);
-%epetra_exception(Epetra_VbrMatrix, BeginInsertGlobalValues );
-%epetra_exception(Epetra_VbrMatrix, BeginInsertMyValues     );
-%epetra_exception(Epetra_VbrMatrix, BeginReplaceGlobalValues);
-%epetra_exception(Epetra_VbrMatrix, BeginReplaceMyValues    );
-%epetra_exception(Epetra_VbrMatrix, BeginSumIntoGlobalValues);
-%epetra_exception(Epetra_VbrMatrix, BeginSumIntoMyValues    );
 %apply (int * IN_ARRAY1, int DIM1) {(int * NumBlockEntriesPerRow, int NumRows)};
 %apply (int DIM1, int * IN_ARRAY1) {(int NumBlockEntries, int * BlockIndices)};
 %extend Epetra_VbrMatrix {
@@ -722,7 +710,6 @@
 //////////////////////////////
 %ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
 %rename(JadMatrix) Epetra_JadMatrix;
-%epetra_exception(Epetra_JadMatrix, Epetra_JadMatrix)
 %include "Epetra_JadMatrix.h"
 
 //////////////////////////////////

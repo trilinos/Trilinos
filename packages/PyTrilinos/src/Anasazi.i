@@ -163,9 +163,8 @@ package:
 
 %}
 
-// General ignore directives
-%ignore *::operator=;
-%ignore *::print;
+// Standard exception handling
+%include "exception.i"
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -176,9 +175,25 @@ package:
 // C++ STL support
 %include "stl.i"
 
+// General ignore directives
+%ignore *::operator=;
+%ignore *::print;
+
 // Support for other Trilinos packages
 %include "numpy.i"
 %include "Teuchos_Epetra.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
+  }
+}
 
 //////////////////////////////////////////////
 // Support these classes, encapsulated in a //

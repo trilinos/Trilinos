@@ -87,32 +87,8 @@ in addition to the following factory function:
 using Teuchos::RCP;
 %}
 
-// Define macro for handling exceptions thrown by NOX.Solver methods and
-// constructors
-%define %nox_solver_exception(functionName)
-  %exception NOX::Solver::functionName {
-  try {
-    $action
-    if (PyErr_Occurred()) SWIG_fail;
-  }
-  catch(Teuchos::Exceptions::InvalidParameterType e) {
-    PyErr_SetString(PyExc_TypeError, e.what());
-    SWIG_fail;
-  }
-  catch(Teuchos::Exceptions::InvalidParameter e) {
-    PyErr_SetString(PyExc_KeyError, e.what());
-    SWIG_fail;
-  }
-  catch(std::runtime_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    SWIG_fail;
-  }
-  catch(std::logic_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    SWIG_fail;
-  }
-}
-%enddef
+// Standard exception handling
+%include "exception.i"
 
 // Include NOX documentation
 %include "NOX_dox.i"    // Doxygen-generated documentation
@@ -130,6 +106,24 @@ using Teuchos::RCP;
 %import "Teuchos.i"
 %import "NOX.Abstract.i"
 %import "NOX.StatusTest.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+    SWIG_exception(SWIG_TypeError, e.what());
+  } catch(Teuchos::Exceptions::InvalidParameter & e) {
+    PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
 
 //////////////////////////////////
 // NOX::Solver::Generic support //
@@ -165,7 +159,6 @@ using Teuchos::RCP;
 // NOX::Solver::buildSolver support //
 //////////////////////////////////////
 %rename (buildSolver) myBuildSolver;
-%nox_solver_exception(myBuildSolver)
 // NOX::Solver::buildSolver in NOX_Solver_Factory.H returns a
 // Teuchos::RCP<NOX::Solver::Generic>.  As far as I can tell, SWIG
 // cannot properly upcast the NOX::Solver::Generic object wrapped

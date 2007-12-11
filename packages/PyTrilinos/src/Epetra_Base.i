@@ -78,24 +78,19 @@ except ImportError:
         from numpy.lib.UserArray import UserArray
 %}
 
-// General ignore directives
-%ignore *::operator=;                // Not overrideable in python
-%ignore *::operator[];               // Replaced with __setitem__ method
-%ignore *::operator[] const;         // Replaced with __getitem__ method
-%ignore *::UpdateFlops(int) const;   // Use long int version
-%ignore *::UpdateFlops(float) const; // Use double version
-
 ////////////////////////
 // Exception handling //
 ////////////////////////
 
+// Standard exception handling
+%include "exception.i"
+
 // Define the EpetraError exception
 %constant PyObject * Error = PyExc_EpetraError;  // This steals the reference
 
-// Define macro for handling exceptions thrown by Epetra methods and
-// constructors
-%define %epetra_exception(className,methodName)
-%exception className::methodName {
+// General exception handling
+%exception
+{
   try {
     $action
     if (PyErr_Occurred()) SWIG_fail;
@@ -103,8 +98,11 @@ except ImportError:
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
   }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
 }
-%enddef
 
 // Define macro for handling exceptions thrown by Epetra_NumPy*
 // constructors
@@ -119,9 +117,18 @@ except ImportError:
   } catch (int errCode) {
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
+  } catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
 %enddef
+
+// General ignore directives
+%ignore *::operator=;                // Not overrideable in python
+%ignore *::operator[];               // Replaced with __setitem__ method
+%ignore *::operator[] const;         // Replaced with __getitem__ method
+%ignore *::UpdateFlops(int) const;   // Use long int version
+%ignore *::UpdateFlops(float) const; // Use double version
 
 //////////////////////////////
 // Raw data buffer handling //
@@ -263,7 +270,6 @@ __version__ = Version().split()[2]
 // Epetra_Object support //
 ///////////////////////////
 %rename(Object) Epetra_Object;
-%epetra_exception(Epetra_Object,Print)
 %extend Epetra_Object {
   // The __str__() method is used by the python str() operator on any
   // object given to the python print command.

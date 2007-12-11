@@ -138,9 +138,8 @@ exAmesos_Factory.py.
 
 %}
 
-// External Trilinos packages
-%import "Teuchos.i"
-%import "Epetra.i"
+// Standard exception handling
+%include "exception.i"
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -150,6 +149,22 @@ exAmesos_Factory.py.
 
 // SWIG library includes
 %include "stl.i"
+
+// External Trilinos packages
+%import "Teuchos.i"
+%import "Epetra.i"
+
+// General exception handling
+%exception
+{
+  try {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
 
 /////////////////////////
 // Amesos core support //
