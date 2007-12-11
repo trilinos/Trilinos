@@ -216,3 +216,6 @@ using Teuchos::RCP;
     return NULL;
   }
 }
+
+// Turn off the exception handling
+%exception;

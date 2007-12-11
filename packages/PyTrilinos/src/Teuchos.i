@@ -426,3 +426,6 @@ def ScalarTraits(scalarType):
   const Teuchos::RCP<Teuchos::ParameterList>,
   const Teuchos::RCP<Teuchos::ParameterList>&
 };
+
+// Turn off the exception handling
+%exception;

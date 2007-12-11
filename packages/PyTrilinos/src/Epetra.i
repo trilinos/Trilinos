@@ -119,3 +119,6 @@ using std::string;
 %include "Epetra_Vectors.i"           // Vectors and MultiVectors
 %include "Epetra_Graphs.i"            // Graph classes
 %include "Epetra_Operators.i"         // Operator and matrix classes
+
+// Turn off the exception handling
+%exception;

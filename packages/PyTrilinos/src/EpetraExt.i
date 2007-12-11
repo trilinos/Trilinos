@@ -303,3 +303,6 @@ namespace EpetraExt {
     }
   }
 %}
+
+// Turn off the exception handling
+%exception;

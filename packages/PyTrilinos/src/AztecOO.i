@@ -170,3 +170,6 @@ __version__ = AztecOO_Version().split()[2]
 %aztecoo_return_array(AztecOO, GetAllAztecParams,  double, NPY_DOUBLE, AZ_PARAMS_SIZE )
 %aztecoo_return_array(AztecOO, GetAztecStatus,     double, NPY_DOUBLE, AZ_STATUS_SIZE )
 %include "AztecOO.h"
+
+// Turn off the exception handling
+%exception;

@@ -137,6 +137,10 @@ __version__ = TriUtils_Version().split()[2]
 ////////////////////////////////////////////
 // Trilinos_Util_CrsMatrixGallery support //
 ////////////////////////////////////////////
-%ignore Trilinos_Util::CrsMatrixGallery::operator<<(ostream&,
-						    const Trilinos_Util::CrsMatrixGallery&);
+%ignore
+Trilinos_Util::CrsMatrixGallery::operator<<(ostream&,
+					    const Trilinos_Util::CrsMatrixGallery&);
 %include "Trilinos_Util_CrsMatrixGallery.h"
+
+// Turn off the exception handling
+%exception;

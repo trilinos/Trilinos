@@ -536,3 +536,6 @@ def ClassName(*args):
 %anasazi_factory(LOBPCG                  )
 %anasazi_factory(LOBPCGSolMgr            )
 %anasazi_factory(Eigensolution           )
+
+// Turn off the exception handling
+%exception;

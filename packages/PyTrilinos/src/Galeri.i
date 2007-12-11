@@ -171,3 +171,6 @@ __version__ = Galeri_Version().split()[2]
 // Galeri_ReadHB support //
 ///////////////////////////
 %include "Galeri_ReadHB.h"
+
+// Turn off the exception handling
+%exception;

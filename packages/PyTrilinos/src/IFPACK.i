@@ -231,3 +231,6 @@ __version__ = Version().split()[2]
 %ignore Ifpack_Amesos::Condest() const;
 %rename(Amesos) Ifpack_Amesos;
 %include "Ifpack_Amesos.h"
+
+// Turn off the exception handling
+%exception;

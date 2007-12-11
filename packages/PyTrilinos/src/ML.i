@@ -476,3 +476,6 @@ Init()
 import atexit
 atexit.register(Finalize)
 %}
+
+// Turn off the exception handling
+%exception;

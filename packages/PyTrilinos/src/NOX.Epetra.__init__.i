@@ -304,3 +304,6 @@ namespace NOX {
 // NOX.Epetra.LinearSystemAztecOO support //
 ////////////////////////////////////////////
 %include "NOX_Epetra_LinearSystem_AztecOO.H"
+
+// Turn off the exception handling
+%exception;

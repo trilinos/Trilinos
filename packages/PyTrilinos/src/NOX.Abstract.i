@@ -120,3 +120,6 @@ NOX.Abstract provides the following user-level classes:
 /////////////////////////////////
 %rename(_print) NOX::Abstract::Vector::print;
 %include "NOX_Abstract_Vector.H"
+
+// Turn off the exception handling
+%exception;

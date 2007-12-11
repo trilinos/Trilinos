@@ -266,3 +266,6 @@ exAmesos_Factory.py.
 %rename(Dscpack) Amesos_Dscpack;
 %include "Amesos_Dscpack.h"
 #endif
+
+// Turn off the exception handling
+%exception;

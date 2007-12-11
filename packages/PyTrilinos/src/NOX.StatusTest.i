@@ -168,3 +168,6 @@ namespace NOX {
 // NOX_StatusTest_FiniteValue support //
 ////////////////////////////////////////
 %include "NOX_StatusTest_FiniteValue.H"
+
+// Turn off the exception handling
+%exception;
