@@ -89,7 +89,7 @@ static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
   int, int, int, int, int, int, int, int, MPI_Op, MPI_Datatype,
   int, int *, struct rcb_tree *, int *, int,
-  double *, double *, float *, double *, int, double);
+  double *, double *, float *, double *, int, int, double);
 static void compute_RCB_box(struct rcb_box *, int, struct Dot_Struct *, int *,
   MPI_Op, MPI_Datatype, MPI_Comm, int, int, int, int);
 
@@ -1017,7 +1017,7 @@ static int rcb_fn(
                recompute_box,
                box_op, box_type, average_cuts, 
                counters, treept, dim_spec, level,
-               coord, wgts, part_sizes, wgtscale, rcb->Num_Dim,
+               coord, wgts, part_sizes, wgtscale, rcb->Num_Dim, pivot_choice,
                max_aspect_ratio);
     ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
@@ -1418,6 +1418,7 @@ static int serial_rcb(
   double *wgtscale,          /* Array of size wgtflag that gives the
                                 scaling factors for each weight dimension. */
   int ndim,                  /* number of geometric dimensions */
+  int pivot_choice,
   double max_aspect_ratio 
 )
 {
@@ -1519,17 +1520,33 @@ static int serial_rcb(
   
       if (wgtflag <= 1){
         /* Call find_median with Tflops_Special == 0; avoids communication */
-        if (!Zoltan_RB_find_median(
-               0, coord, wgts, dotmark, dotnum, proc, 
-               fractionlo[0], MPI_COMM_SELF, &valuehalf, 
-               first_guess, &(counters[0]),
-               1, 1, 0, num_parts,
-               wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
-               weight[0], weightlo, weighthi,
-               dotlist, rectilinear_blocks, average_cuts)) {
-          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
-          ierr = ZOLTAN_FATAL;
-          goto End;
+        if (pivot_choice == PIVOT_CHOICE_ORDERED){
+          if (!Zoltan_RB_find_median(
+                 0, coord, wgts, dotmark, dotnum, proc, 
+                 fractionlo[0], MPI_COMM_SELF, &valuehalf, 
+                 first_guess, &(counters[0]),
+                 1, 1, 0, num_parts,
+                 wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+                 weight[0], weightlo, weighthi,
+                 dotlist, rectilinear_blocks, average_cuts)) {
+            ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+            ierr = ZOLTAN_FATAL;
+            goto End;
+          }
+        }
+        else{  
+          if (!Zoltan_RB_find_median_randomized(
+                 0, coord, wgts, dotmark, dotnum, proc, 
+                 fractionlo[0], MPI_COMM_SELF, &valuehalf, 
+                 first_guess, &(counters[0]),
+                 1, 1, 0, num_parts,
+                 wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
+                 weight[0], weightlo, weighthi,
+                 dotlist, rectilinear_blocks, average_cuts, pivot_choice)) {
+            ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
+            ierr = ZOLTAN_FATAL;
+            goto End;
+          }
         }
       }
       else { 
@@ -1637,7 +1654,7 @@ static int serial_rcb(
                         recompute_box,
                         box_op, box_type, average_cuts, 
                         counters, treept, dim_spec, level,
-                        coord, wgts, part_sizes, wgtscale, ndim,
+                        coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,
                         max_aspect_ratio);
       if (ierr < 0) {
         goto End;
@@ -1658,7 +1675,7 @@ static int serial_rcb(
                         recompute_box,
                         box_op, box_type, average_cuts,
                         counters, treept, dim_spec, level,
-                        coord, wgts, part_sizes, wgtscale, ndim,
+                        coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,
                         max_aspect_ratio);
       if (ierr < 0) {
         goto End;
