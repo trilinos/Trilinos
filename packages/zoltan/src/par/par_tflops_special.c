@@ -221,6 +221,65 @@ void Zoltan_RB_max_double(
    if (count>1)
       ZOLTAN_FREE(&tmp);
 }
+/*
+ * I don't have time to write a fan out.  Root sends a double
+ * to every other process.
+ * TODO write this for real.
+ */
+void Zoltan_RB_bcast_double(
+   double   *x,               /* double to be broadcast */
+   int      proclower,        /* real rank of smallest processor in partition */
+   int      rootrank,         /* rank in partition to send the double */
+   int      rank,             /* my rank in partition */
+   int      nprocs,           /* number of processors in partition */
+   MPI_Comm comm
+)
+{
+   int tag = 32280; 
+   int i;
+   MPI_Status status;
+
+   if (rank != rootrank){
+     MPI_Recv(x, 1, MPI_DOUBLE, proclower + rootrank, tag, comm, &status);
+   }
+   else{
+     for (i=0; i<nprocs; i++){
+       if (i == rootrank) continue;
+       MPI_Send(x, 1, MPI_DOUBLE, proclower + i, tag, comm);
+     }
+   }
+}
+/*
+ * I don't have time to write a fan in.  Everyone sends their double
+ * to the root node.
+ * TODO write this for real.
+ */
+void Zoltan_RB_gather_double(
+   double   x,                /* doubles to be gathered */
+   double   *v,               /* array size nprocs allocated on root */
+   int      proclower,        /* real rank of smallest processor in partition */
+   int      rootrank,         /* rank in partition to receive the doubles */
+   int      rank,             /* my rank in partition */
+   int      nprocs,           /* number of processors in partition */
+   MPI_Comm comm
+)
+{
+   int tag = 32180; 
+   int i;
+   MPI_Status status;
+
+   if (rank != rootrank){
+     /* send double to rootrank */
+     MPI_Send(&x, 1, MPI_DOUBLE, proclower+rootrank, tag + rank, comm);
+   }
+   else{
+     for (i=0; i<nprocs; i++, tag++){
+       if (i == rootrank) continue;
+       MPI_Recv(v+i, 1, MPI_DOUBLE, proclower + i, tag, comm, &status);
+     }
+     v[rootrank] = x;
+   }
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

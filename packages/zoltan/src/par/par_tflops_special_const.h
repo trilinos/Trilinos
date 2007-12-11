@@ -27,6 +27,9 @@ extern void Zoltan_RB_scan_double(double *, double *, int, MPI_Comm, int, int, i
 extern void Zoltan_RB_sum_double(double *, int, int, int, int, MPI_Comm);
 extern void Zoltan_RB_max_double(double *, int, int, int, int, MPI_Comm);
 
+extern void Zoltan_RB_bcast_double(double *, int, int, int, int, MPI_Comm comm);
+extern void Zoltan_RB_gather_double( double, double *, int, int, int, int, MPI_Comm comm);
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
