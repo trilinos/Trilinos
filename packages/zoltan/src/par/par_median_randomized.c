@@ -493,12 +493,15 @@ int Zoltan_RB_find_median_randomized(
         else{
           dot = invalidDot;
         }
-        if (pivot_choice == PIVOT_CHOICE_MEDIAN_OF_RANDOM)
+        if (pivot_choice == PIVOT_CHOICE_MEDIAN_OF_RANDOM){
           tmp_half = random_median_candidate(local_comm, dot, invalidDot,
                        Tflops_Special, proclower, rank, num_procs);
-        else 
+
+        }
+        else {
           tmp_half = random_candidate(local_comm, dot, invalidDot,
                        Tflops_Special, proclower, rank, num_procs);
+        }
       }
 
       /* initialize local median data structure */
@@ -534,7 +537,7 @@ int Zoltan_RB_find_median_randomized(
         global[0] = mylo;
         global[1] = mymed;
         global[2] = myhi;
-        Zoltan_RB_sum_double(global, 3, proclower, rank, nprocs, local_comm);
+        Zoltan_RB_sum_double(global, 3, proclower, rank, num_procs, local_comm);
       }
       else {
         local[0] = mylo;
@@ -584,7 +587,14 @@ int Zoltan_RB_find_median_randomized(
         diff1 = targetlo - (leftTotal + totalmed);
         diff2 = targetlo - leftTotal;
 
-        MPI_Allreduce(&countmed, &ndots, 1, MPI_INT, MPI_SUM, local_comm);
+        if (Tflops_Special){
+          local[0] = (double)countmed;
+          Zoltan_RB_sum_double(local, 1, proclower, rank, num_procs, local_comm);
+          ndots = (int)local[0];
+        }
+        else{
+          MPI_Allreduce(&countmed, &ndots, 1, MPI_INT, MPI_SUM, local_comm);
+        }
 
         if ((ndots == 1) ||         /* there's only one element with median value */
             (rectilinear_blocks)){  /* all median elements have to stay together */
