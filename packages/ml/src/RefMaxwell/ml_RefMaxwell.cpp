@@ -179,7 +179,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   mode=List_.get("refmaxwell: mode","additive");
   print_hierarchy= List_.get("print hierarchy",false);  
   int vb_level=List_.get("ML output",0);
-  if(vb_level >= 11) {very_verbose_=true;verbose_=true;}
+  if(vb_level >= 15) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
   aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  

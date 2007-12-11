@@ -106,7 +106,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
   if(OutputLevel == -47) OutputLevel = List_.get("output", 1);
-  if(OutputLevel>=11) very_verbose_=verbose_=true;
+  if(OutputLevel>=15) very_verbose_=verbose_=true;
   if(OutputLevel > 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;  
   int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
