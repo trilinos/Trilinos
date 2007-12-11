@@ -1026,7 +1026,7 @@ int Zoltan_RB_check_geom_output(
 
 void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
                  int dotnum, float *part_sizes,
-                 double *timers, int *counters, int stats,
+                 double *timers, int *counters, int firstIter, int stats,
                  int *reuse_count, void *rcbbox_arg, int reuse)
 
 {
@@ -1093,7 +1093,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
+      printf(" Median iter: ave = %g, min = %d, max = %d, first = %d\n",ave,min,max,firstIter);
     MPI_Barrier(zz->Communicator);
     if (stats > 1)  
       printf("    Proc %d median count = %d\n",proc,counters[0]);

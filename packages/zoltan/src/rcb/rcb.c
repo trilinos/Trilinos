@@ -411,6 +411,7 @@ static int rcb_fn(
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
+  int firstCutIter=-1;
 
   /* MPI data types and user functions */
 
@@ -815,6 +816,7 @@ static int rcb_fn(
             goto End;
           }
         }
+        if (firstCutIter < 0) firstCutIter = counters[0];
       }
       else { 
         if (Zoltan_RB_find_bisector(
@@ -1048,7 +1050,7 @@ static int rcb_fn(
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
     Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum, part_sizes,
-                timers,counters,stats,reuse_count,rcbbox,reuse);
+                timers,counters,firstCutIter,stats,reuse_count,rcbbox,reuse);
 
   /* update calling routine parameters */
   
