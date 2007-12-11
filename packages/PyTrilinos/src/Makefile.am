@@ -112,7 +112,6 @@ all-local: package
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_OPTS = -I$(top_srcdir)/doc/Doxygen
 if HAVE_MPI
 SWIG_OPTS += -DHAVE_MPI
 endif

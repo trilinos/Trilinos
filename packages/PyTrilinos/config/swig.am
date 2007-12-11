@@ -48,14 +48,14 @@ include $(DEPFILES)
 CLEANFILES = $(DEPDIR)/*.Pi
 
 # Define the SWIGCOMPILE macro
-SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_OPTS)
+SWIG_INC = -I$(top_srcdir)/doc/Doxygen `python $(top_builddir)/util/pkg_info.py -i $<`
+SWIG_OPTS =
+SWIG_OUTDIR = -outdir `python $(top_builddir)/util/pkg_info.py -o $<`
+SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_INC) $(SWIG_OPTS) $(SWIG_OUTDIR)
 
 # Wrapper and proxy targets
 %_wrap.cpp: $(srcdir)/%.i
-	if $(SWIGCOMPILE) `python $(top_builddir)/util/pkg_info.py -i $<` -outdir \
-	`python $(top_builddir)/util/pkg_info.py -o $<` -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
-	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; \
-	else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
+	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
 swigclean:
 	rm -f $(srcdir)/*_wrap.cpp $(WRAPPERS) 

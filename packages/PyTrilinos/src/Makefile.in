@@ -100,6 +100,8 @@ target_triplet = @target@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/PyTrilinos_config.h.in $(srcdir)/pyfragments.swg.in \
 	$(top_srcdir)/config/swig.am
+
+# Include swig rules
 @HAVE_MPI_TRUE@am__append_1 = -DHAVE_MPI
 @HAVE_PYTRILINOS_EPETRAEXT_HDF5_TRUE@@HAVE_PYTRILINOS_EPETRAEXT_TRUE@am__append_2 = -DHAVE_EPETRAEXT_HDF5
 @HAVE_PYTRILINOS_AZTECOO_TEUCHOS_TRUE@@HAVE_PYTRILINOS_AZTECOO_TRUE@am__append_3 = -DHAVE_AZTECOO_TEUCHOS 
@@ -318,11 +320,10 @@ DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null; ls $(DEPDIR)/dummy)
 CLEANFILES = $(DEPDIR)/*.Pi $(PROXIES) $(WRAPPERS) $(DIR_HDRS)
 
 # Define the SWIGCOMPILE macro
-SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_OPTS)
-
-# Include swig rules
-SWIG_OPTS = -I$(top_srcdir)/doc/Doxygen $(am__append_1) \
-	$(am__append_2) $(am__append_3)
+SWIG_INC = -I$(top_srcdir)/doc/Doxygen `python $(top_builddir)/util/pkg_info.py -i $<`
+SWIG_OPTS = $(am__append_1) $(am__append_2) $(am__append_3)
+SWIG_OUTDIR = -outdir `python $(top_builddir)/util/pkg_info.py -o $<`
+SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_INC) $(SWIG_OPTS) $(SWIG_OUTDIR)
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_INTERFACES = Teuchos.i
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
 @HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_INTERFACES = Epetra.i
@@ -582,10 +583,7 @@ include $(DEPFILES)
 
 # Wrapper and proxy targets
 %_wrap.cpp: $(srcdir)/%.i
-	if $(SWIGCOMPILE) `python $(top_builddir)/util/pkg_info.py -i $<` -outdir \
-	`python $(top_builddir)/util/pkg_info.py -o $<` -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
-	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; \
-	else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
+	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
 swigclean:
 	rm -f $(srcdir)/*_wrap.cpp $(WRAPPERS) 

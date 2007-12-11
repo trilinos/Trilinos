@@ -84,6 +84,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Teuchos includes
+#include "Teuchos_XMLObject.hpp"
 #include "Teuchos_PythonParameter.h"
 
 // Epetra includes
@@ -148,17 +149,11 @@ example subdirectory of the PyTrilinos package:
 //   HDF5.ReadMap(str) -> Epetra.Map
 //
 // These translations are made possible by the following macro:
-//
 %define %epetraext_read_method(ClassName)
 Epetra_ ## ClassName * Read ## ClassName(std::string name)
 {
   Epetra_ ## ClassName * obj = NULL;
-  try {
-    self->Read(name, obj);
-  } catch(std::logic_error e) {
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-    return NULL;
-  }
+  self->Read(name, obj);
   return obj;
 }
 %enddef
@@ -173,6 +168,20 @@ Epetra_ ## ClassName * Read ## ClassName(std::string name)
 // Include EpetraExt documentation
 %include "EpetraExt_dox.i"    // Doxygen-generated documentation
 %include "EpetraExt_doc.i"    // Manually written documentation
+
+// General exception handling
+%include "exception.i"
+%exception {
+  try {
+    $action
+  } catch(std::logic_error & e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  } catch(Teuchos::EmptyXMLError & e) {
+    SWIG_exception(SWIG_ValueError, e.what());
+  } catch(...) {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception caught");
+  }
+}
 
 ///////////////////////////////
 // EpetraExt_Version support //
@@ -196,7 +205,7 @@ namespace EpetraExt {
     %epetraext_read_method(CrsGraph   )
     %epetraext_read_method(CrsMatrix  )
     %epetraext_read_method(IntVector  )
-  }    // HDF5
+  } // HDF5
 #endif
 }
 
@@ -211,7 +220,7 @@ namespace EpetraExt {
     %epetraext_read_method(MultiVector)
     %epetraext_read_method(CrsGraph   )
     %epetraext_read_method(CrsMatrix  )
-  }    // XMLReader
+  } // XMLReader
 }
 
 /////////////////////////////////
@@ -230,44 +239,44 @@ namespace EpetraExt {
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+///////////////////////////////////
+// EpetraExt_MapColoring support //
+///////////////////////////////////
 %include "EpetraExt_MapColoring.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+////////////////////////////////////////
+// EpetraExt_MapColoringIndex support //
+////////////////////////////////////////
 %include "EpetraExt_MapColoringIndex.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+/////////////////////////////////////
+// EpetraExt_MultiVectorIn support //
+/////////////////////////////////////
 %include "EpetraExt_MultiVectorIn.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+//////////////////////////////////////
+// EpetraExt_MultiVectorOut support //
+//////////////////////////////////////
 %include "EpetraExt_MultiVectorOut.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+///////////////////////////////////
+// EpetraExt_CrsMatrixIn support //
+///////////////////////////////////
 %include "EpetraExt_CrsMatrixIn.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+////////////////////////////////////
+// EpetraExt_RowMatrixOut support //
+////////////////////////////////////
 %include "EpetraExt_RowMatrixOut.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+//////////////////////////////////
+// EpetraExt_BlockMapIn support //
+//////////////////////////////////
 %include "EpetraExt_BlockMapIn.h"
 
-///////////////////////////////
-// EpetraExt_Version support //
-///////////////////////////////
+///////////////////////////////////
+// EpetraExt_BlockMapOut support //
+///////////////////////////////////
 %include "EpetraExt_BlockMapOut.h"
 
 ////////////////////////////////////////////
