@@ -45,20 +45,12 @@ extern "C" {
 #define PIVOT_CHOICE_RANDOM 3
 
 
-/* Data structure for parallel find median routine */
-
-struct median {
-  double    totallo;    /* weight of elements less than median */
-  double    totalhi;    /* weight of elements greater than median */
-  double    totalmed;   /* weight of elements equal to median */
-};
-
+#ifdef PROFILE_THIS
 static struct Zoltan_Timer *timer;
 static int timerNum;
 static int myProc=-1;
 static char debugText[64];
-static int loopCount;
-
+#endif
 
 /*
 ** First change: tmp_half is the median of a random value found
@@ -79,21 +71,32 @@ static double serial_find_median(double *dots, double *wgts, int dotnum);
  * Maybe this is overkill and we should just call random_candidate() below.
  */
 
-static double random_median_candidate(MPI_Comm comm, double dot, double invalidDot)
+static double random_median_candidate(MPI_Comm comm, double dot, double invalidDot,
+         int Tflops_Special, int proclower, int relativeRank, int nprocs)
 {
 int rank, size, i, ndots;
 double candidate;
 double *values=NULL;
 
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  if (Tflops_Special) {
+    rank = relativeRank;
+    size = nprocs;
+  }
+  else{
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+  }
 
   values = (double *)ZOLTAN_MALLOC(size * sizeof(double));
 
-  if (rank==0){
-
+  if (Tflops_Special) {
+    Zoltan_RB_gather_double(dot, values, proclower, 0, relativeRank, nprocs, comm);
+  }
+  else{
     MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
+  }
 
+  if (rank==0){
     for (i=0, ndots=0; i<size; i++){
       if (values[i] != invalidDot){
         values[ndots++] = values[i];
@@ -102,19 +105,16 @@ double *values=NULL;
 
     candidate = serial_find_median(values, NULL, ndots);
   }
-  else{
-    MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
-  }
 
   ZOLTAN_FREE(&values);
 
-  MPI_Bcast(&candidate, 1, MPI_DOUBLE, 0, comm);
+  if (Tflops_Special)
+    Zoltan_RB_bcast_double(&candidate, proclower, 0, relativeRank, nprocs, comm);
+  else
+    MPI_Bcast(&candidate, 1, MPI_DOUBLE, 0, comm);
 
   return candidate;
 }
-/* Overkill? If we just want a random value from the remaining,
- * why not pick any one?
- */
 static double serial_find_median(double *dots, double *wgts, int dotnum)
 {
 int lb, ub, idx, i;
@@ -233,21 +233,32 @@ int tempInt;
 }
 /* If random_median_candidate is overkill, just... */
 static int candidate_choice=0;
-static double random_candidate(MPI_Comm comm, double dot, double invalidDot)
+static double random_candidate(MPI_Comm comm, double dot, double invalidDot,
+                int Tflops_Special, int proclower, int relativeRank, int nprocs)
 {
 int rank, size, i, ndots, offset, c2, c3;
 double candidate;
 double *values=NULL;
 
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  if (Tflops_Special) {
+    rank = relativeRank;
+    size = nprocs;
+  }
+  else{
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+  }
 
   values = (double *)ZOLTAN_MALLOC(size * sizeof(double));
 
-  if (rank==0){
-
+  if (Tflops_Special) {
+    Zoltan_RB_gather_double(dot, values, proclower, 0, relativeRank, nprocs, comm);
+  }
+  else{
     MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
+  }
 
+  if (rank==0){
     for (i=0, ndots=0; i<size; i++){
       if (values[i] != invalidDot){
         values[ndots++] = values[i];
@@ -270,13 +281,13 @@ double *values=NULL;
       candidate = values[candidate_choice];
     }
   }
-  else{
-    MPI_Gather(&dot, 1, MPI_DOUBLE, values, 1, MPI_DOUBLE, 0, comm);
-  }
 
   ZOLTAN_FREE(&values);
 
-  MPI_Bcast(&candidate, 1, MPI_DOUBLE, 0, comm);
+ if (Tflops_Special)
+    Zoltan_RB_bcast_double(&candidate, proclower, 0, relativeRank, nprocs, comm);
+  else
+    MPI_Bcast(&candidate, 1, MPI_DOUBLE, 0, comm);
 
   return candidate;
 }
@@ -365,8 +376,10 @@ int Zoltan_RB_find_median_randomized(
 )
 {
 /* Local declarations. */
-  struct median med, medme;          /* median data */
 
+  double  mylo, mymed, myhi;
+  double  totallo, totalmed, totalhi;
+  double  local[3], global[3];
   double  wtmax, wtsum, wtupto;
   double  tolerance;                 /* largest single weight of a dot */
   double  targetlo, targethi;        /* desired wt in lower half */
@@ -384,28 +397,17 @@ int Zoltan_RB_find_median_randomized(
   int     left=0, middle=2, right=1;   
   int     leftTotal, rightTotal;
 
-  /* MPI data types and user functions */
-
-  MPI_Op            med_op;
-  MPI_Datatype      med_type;
-  MPI_User_function Zoltan_RB_median_merge2;
-
+#ifdef PROFILE_THIS
   if (myProc < 0) myProc = proc;
-  sprintf(debugText,"(%d - %d)",proclower,proclower+num_procs-1);
-  timer = Zoltan_Timer_Create(ZOLTAN_TIME_WALL);
-  timerNum = Zoltan_Timer_Init(timer, 0, debugText);
-  Zoltan_Timer_Start(timer, timerNum, local_comm, __FILE__, __LINE__);
-  loopCount = 0;
+  if (num_procs > 1){
+    sprintf(debugText,"(%d - %d)",proclower,proclower+num_procs-1);
+    timer = Zoltan_Timer_Create(ZOLTAN_TIME_WALL);
+    timerNum = Zoltan_Timer_Init(timer, 0, debugText);
+    Zoltan_Timer_Start(timer, timerNum, local_comm, __FILE__, __LINE__);
+  }
+#endif
 
   /**************************** BEGIN EXECUTION ******************************/
-
-  /* create MPI data and function types for box and median */
-
-  MPI_Type_contiguous(sizeof(struct median),MPI_CHAR,&med_type);
-  MPI_Type_commit(&med_type);
-
-  if (!Tflops_Special)
-     MPI_Op_create(&Zoltan_RB_median_merge2,1,&med_op);
 
   /*
    * intialize the dotlist array
@@ -429,7 +431,6 @@ int Zoltan_RB_find_median_randomized(
   if (Tflops_Special) {
     rank = proc - proclower;
     if (wgtflag) {
-
       /* find tolerance (max of wtmax) */
       tolerance = wtmax;
       Zoltan_RB_max_double(&tolerance, 1, proclower, rank, num_procs, local_comm);
@@ -438,6 +439,7 @@ int Zoltan_RB_find_median_randomized(
       tolerance = 1.0;   /* if user did not supply weights, all are 1.0 */
   }
   else {
+    rank = proc;
     if (wgtflag)
       MPI_Allreduce(&wtmax,&tolerance,1,MPI_DOUBLE,MPI_MAX,local_comm);
     else
@@ -477,8 +479,6 @@ int Zoltan_RB_find_median_randomized(
                                              serial partitioning. */
     while (1) {
 
-      loopCount++;
-
       /* globally choose a quick random bisector value from active dots */
     
       if (first_guess){
@@ -487,20 +487,23 @@ int Zoltan_RB_find_median_randomized(
       }
       else {
         if (numlist > 0){
-          dot = dots[dotlist[numlist >> 1]];
+          i = med3(dots, dotlist[0], dotlist[numlist-1], dotlist[numlist >> 1]);
+          dot = dots[i];
         }
         else{
           dot = invalidDot;
         }
         if (pivot_choice == PIVOT_CHOICE_MEDIAN_OF_RANDOM)
-          tmp_half = random_median_candidate(local_comm, dot, invalidDot);
+          tmp_half = random_median_candidate(local_comm, dot, invalidDot,
+                       Tflops_Special, proclower, rank, num_procs);
         else 
-          tmp_half = random_candidate(local_comm, dot, invalidDot);
+          tmp_half = random_candidate(local_comm, dot, invalidDot,
+                       Tflops_Special, proclower, rank, num_procs);
       }
 
       /* initialize local median data structure */
 
-      medme.totallo = medme.totalmed = medme.totalhi = 0.0;
+      mylo = mymed = myhi = 0.0;
       countmed = 0;
       indexmed = -1;
 
@@ -510,41 +513,45 @@ int Zoltan_RB_find_median_randomized(
       for (j = 0; j < numlist; j++) {
         i = dotlist[j];
         if (dots[i] < tmp_half) { 
-          medme.totallo += wgts[i];
+          mylo += wgts[i];
           dotmark[i] = left;
         }
         else if (dots[i] == tmp_half) {
-          medme.totalmed += wgts[i];
+          mymed += wgts[i];
           countmed++;
           dotmark[i] = middle;
           if (indexmed < 0) indexmed = j;
         }
         else{
-          medme.totalhi += wgts[i];
+          myhi += wgts[i];
           dotmark[i] = right;
         }
       }
 
-      med.totallo = med.totalmed = med.totalhi = 0.0;
-
-      /* combine median data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
+
       if (Tflops_Special) {
-         i = 1;
-         Zoltan_RB_reduce(num_procs, rank, proc, (void *) &medme, (void *) &med,
-                          sizeof(medme), &i, med_type, local_comm, 
-                          Zoltan_RB_median_merge2);
+        global[0] = mylo;
+        global[1] = mymed;
+        global[2] = myhi;
+        Zoltan_RB_sum_double(global, 3, proclower, rank, nprocs, local_comm);
       }
       else {
-        
-         MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
+        local[0] = mylo;
+        local[1] = mymed;
+        local[2] = myhi;
+        global[0] = global[1] = global[2] = 0.0;
+        MPI_Allreduce(local, global, 3, MPI_DOUBLE, MPI_SUM, local_comm);
       }
+      totallo = global[0];
+      totalmed = global[1];
+      totalhi = global[2];
 
-      leftTotal = weightlo + med.totallo;
-      rightTotal = weighthi + med.totalhi;
+      leftTotal = weightlo + totallo;
+      rightTotal = weighthi + totalhi;
 
-      if (leftTotal + med.totalmed < targetlo){  /* left half too small */
-        weightlo = leftTotal + med.totalmed;
+      if (leftTotal + totalmed < targetlo){  /* left half too small */
+        weightlo = leftTotal + totalmed;
         if (indexmed >= 0){
           /* tmp_half elements go in the left half */
           mark_median(dotlist, dotmark, indexmed, countmed, dots, tmp_half, left);
@@ -558,7 +565,7 @@ int Zoltan_RB_find_median_randomized(
         markactive = right;
       }
       else if (leftTotal > targetlo){          /* left half is too large */
-        weighthi = rightTotal + med.totalmed;
+        weighthi = rightTotal + totalmed;
         if (indexmed >= 0){
           /* tmp_half elements go in the right half */
           mark_median(dotlist, dotmark, indexmed, countmed, dots, tmp_half, right);
@@ -574,7 +581,7 @@ int Zoltan_RB_find_median_randomized(
         weightlo = leftTotal;
         weighthi = rightTotal;
 
-        diff1 = targetlo - (leftTotal + med.totalmed);
+        diff1 = targetlo - (leftTotal + totalmed);
         diff2 = targetlo - leftTotal;
 
         MPI_Allreduce(&countmed, &ndots, 1, MPI_INT, MPI_SUM, local_comm);
@@ -586,69 +593,71 @@ int Zoltan_RB_find_median_randomized(
             if (indexmed >= 0){
               mark_median(dotlist, dotmark, indexmed, countmed, dots, tmp_half, left);
             }
-            weightlo += med.totalmed;
+            weightlo += totalmed;
           }
           else{
             if (indexmed >= 0){
               mark_median(dotlist, dotmark, indexmed, countmed, dots, tmp_half, right);
             }
-            weighthi += med.totalmed;
+            weighthi += totalmed;
           }
         }
         else{ /* divide median elements between left & right for best balance */
 
           if (Tflops_Special){
-            Zoltan_RB_scan_double(&medme.totalmed, &wtupto, 1, local_comm,
-                                  proc, rank, num_procs);
+            Zoltan_RB_scan_double(&mymed, &wtupto, 1, local_comm, proc, rank, num_procs);
           }
           else{
-            MPI_Scan(&medme.totalmed, &wtupto, 1, MPI_DOUBLE, MPI_SUM, local_comm);
+            MPI_Scan(&mymed, &wtupto, 1, MPI_DOUBLE, MPI_SUM, local_comm);
           }
-          medme.totallo = medme.totalhi = 0;
-          med.totallo = med.totalhi = 0;
+          mylo = myhi = 0;
 
           if (indexmed >= 0){
 
-            if (leftTotal + wtupto - medme.totalmed >= targetlo - tolerance){
+            if (leftTotal + wtupto - mymed >= targetlo - tolerance){
               /* all my median elements can go on the right side */
               mark_median(dotlist, dotmark, indexmed, countmed, dots, tmp_half, right);
-              medme.totalhi = medme.totalmed;
+              myhi = mymed;
             }
             else if (leftTotal + wtupto <= targetlo + tolerance){
               /* all my median elements can go on the left side */
               mark_median(dotlist, dotmark, indexmed, countmed, dots, tmp_half, left);
-              medme.totallo = medme.totalmed;
+              mylo = mymed;
             }
             else {
               /* my median elements are split between left and right sides */
               j = indexmed;
-              wtsum = leftTotal + wtupto - medme.totalmed;
+              wtsum = leftTotal + wtupto - mymed;
               k = 0;
               for (i=0; i<countmed; i++){
                 j = mark_median(dotlist, dotmark, j, 1, dots, tmp_half, left);
-                medme.totallo += wgts[dotlist[j-1]];
+                mylo += wgts[dotlist[j-1]];
                 k++;
-                if (wtsum + medme.totallo >= targetlo - tolerance){
+                if (wtsum + mylo >= targetlo - tolerance){
                   break;
                 }
               }
               for (i=0; i < countmed-k; i++){
                 j = mark_median(dotlist, dotmark, j, 1, dots, tmp_half, right);
-                medme.totalhi += wgts[dotlist[j-1]];
+                myhi += wgts[dotlist[j-1]];
               }
             }
           }
+
           if (Tflops_Special) {
-             i = 1;
-             Zoltan_RB_reduce(num_procs, rank, proc, (void *) &medme, (void *) &med,
-                              sizeof(medme), &i, med_type, local_comm, 
-                              Zoltan_RB_median_merge2);
+            global[0] = mylo;
+            global[1] = myhi;
+            Zoltan_RB_sum_double(global, 2, proclower, rank, nprocs, local_comm);
           }
           else {
-             MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
+            local[0] = mylo;
+            local[1] = myhi;
+            global[0] = global[1] = 0.0;
+            MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, local_comm);
           }
-          weightlo += med.totallo;
-          weighthi += med.totalhi;
+
+          weightlo += global[0];
+          weighthi += global[1];
         }
         break;
       }
@@ -683,32 +692,35 @@ int Zoltan_RB_find_median_randomized(
   *wgtlo = weightlo;
   *wgthi = weighthi;
 
-  MPI_Type_free(&med_type);
-  if (!Tflops_Special)
-     MPI_Op_free(&med_op);
-
-  Zoltan_Timer_Stop(timer, timerNum, local_comm, __FILE__, __LINE__);
-  Zoltan_Timer_Print(timer, timerNum, 0, local_comm, stdout);
-  Zoltan_Timer_Destroy(&timer);
+#ifdef PROFILE_THIS
+  if (num_procs > 1){
+    Zoltan_Timer_Stop(timer, timerNum, local_comm, __FILE__, __LINE__);
+    Zoltan_Timer_Print(timer, timerNum, 0, local_comm, stdout);
+    Zoltan_Timer_Destroy(&timer);
+  }
   if (proclower==myProc)
-    printf("%s loop count %d interval length %d median (%lf - %lf) %lf\n",
-    debugText, loopCount,dotnum,
-    valuemin, valuemax, *valuehalf);
+    if (counter)
+      printf("%s loop count %d interval length %d median (%lf - %lf) %lf\n",
+        debugText, *counter,dotnum, valuemin, valuemax, *valuehalf);
+    else
+      printf("%s interval length %d median (%lf - %lf) %lf\n",
+        debugText, dotnum, valuemin, valuemax, *valuehalf);
   fflush(stdout);
   MPI_Barrier(local_comm);
+#endif
 
   return 1;
 }
 void Zoltan_RB_median_merge2(void *in, void *inout, int *len, MPI_Datatype *dptr)
 {
-  struct median *med1,*med2;
+  double *med1,*med2;
 
-  med1 = (struct median *) in;
-  med2 = (struct median *) inout;
+  med1 = (double *) in;
+  med2 = (double *) inout;
 
-  med2->totallo += med1->totallo;
-  med2->totalhi += med1->totalhi;
-  med2->totalmed += med1->totalmed;
+  med2[0] += med1[0];
+  med2[1] += med1[1];
+  med2[2] += med1[2];
 }
 
 

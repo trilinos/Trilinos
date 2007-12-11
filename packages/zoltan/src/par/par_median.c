@@ -53,11 +53,12 @@ struct median {          /* median cut info */
 /*****************************************************************************/
 /*****************************************************************************/
 
+#if PROFILE_THIS
 static struct Zoltan_Timer *timer;
 static int timerNum;
 static int myProc=-1;
 static char debugText[64];
-static int loopCount;
+#endif
 
 int Zoltan_RB_find_median(
   int Tflops_Special,   /* Flag indicating whether Tflops_Special handling 
@@ -116,12 +117,13 @@ int Zoltan_RB_find_median(
 
 /***************************** BEGIN EXECUTION ******************************/
 
+#if PROFILE_THIS
   if (myProc < 0) myProc = proc;
   sprintf(debugText,"(%d - %d)",proclower,proclower+num_procs-1);
   timer = Zoltan_Timer_Create(ZOLTAN_TIME_WALL);
   timerNum = Zoltan_Timer_Init(timer, 0, debugText);
   Zoltan_Timer_Start(timer, timerNum, local_comm, __FILE__, __LINE__);
-  loopCount = 0;
+#endif
 
   /* create MPI data and function types for box and median */
 
@@ -203,7 +205,6 @@ int Zoltan_RB_find_median(
                                              serial partitioning. */
     while (1) {
 
-      loopCount++;
     /* choose bisector value */
     /* use old value on 1st iteration if old cut dimension is the same */
     /* on 2nd option: could push valuehalf towards geometric center 
@@ -470,15 +471,20 @@ int Zoltan_RB_find_median(
   if (!Tflops_Special)
      MPI_Op_free(&med_op);
 
+#ifdef PROFILE_THIS
   Zoltan_Timer_Stop(timer, timerNum, local_comm, __FILE__, __LINE__);
   Zoltan_Timer_Print(timer, timerNum, 0, local_comm, stdout);
   Zoltan_Timer_Destroy(&timer);
   if (proclower==myProc)
-    printf("%s loop count %d interval length %d median (%lf - %lf) %lf\n",
-    debugText, loopCount,dotnum,
-    valuemin, valuemax, *valuehalf);
+    if (counter)
+      printf("%s loop count %d interval length %d median (%lf - %lf) %lf\n",
+      debugText, *counter,dotnum, valuemin, valuemax, *valuehalf);
+    else
+      printf("%s interval length %d median (%lf - %lf) %lf\n",
+      debugText, dotnum, valuemin, valuemax, *valuehalf);
   fflush(stdout);
   MPI_Barrier(local_comm);
+#endif
 
   return 1;
 }
