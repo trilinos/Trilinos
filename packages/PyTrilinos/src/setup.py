@@ -90,7 +90,7 @@ try:
     import dl
     dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
     del dl
-except SystemError:
+except SystemError, ImportError:
     dlopenflags = 258
 import sys
 sys.setdlopenflags(dlopenflags)
