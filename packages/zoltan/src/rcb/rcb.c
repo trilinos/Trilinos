@@ -70,10 +70,15 @@ extern "C" {
  *   the somewhat random value from a small random selection of pivots.
  *   Choice of potential pivot is faster than "MEDIAN_OF_RANDOM" because
  *   we don't find the median of the small random selection of pivots.
+ * PIVOT_CHOICE_AVG_OF_RANDOM: To reduce time in while loop, get rid
+ *   of the MPI_Gather and MPI_Bcast in random_candidate or random_median_candidate
+ *   by having each process contribute a random dot from its right and left half
+ *   in the Allreduce, and we use the average of those dots for the next pivot.
  */
-#define PIVOT_CHOICE_ORDERED 1                
+#define PIVOT_CHOICE_ORDERED 1
 #define PIVOT_CHOICE_MEDIAN_OF_RANDOM 2
 #define PIVOT_CHOICE_RANDOM 3
+#define PIVOT_CHOICE_AVG_OF_RANDOM 4
 
 /*****************************************************************************/
 /* function prototypes */
