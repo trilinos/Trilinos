@@ -157,7 +157,7 @@ public:
 
   //! Constructor with a given Space, and user-provided array of values.
   MultiVector(const Space& VectorSpace, 
-              vector<Teuchos::RefCountPtr<DoubleVector> > RCPValues)
+              std::vector<Teuchos::RefCountPtr<DoubleVector> > RCPValues)
   {
     StackPush();
 
@@ -267,7 +267,7 @@ public:
 
     CheckVector(v);
 
-    vector<Teuchos::RefCountPtr<DoubleVector> > NewList;
+    std::vector<Teuchos::RefCountPtr<DoubleVector> > NewList;
 
     for (int i = 0 ; i < GetNumVectors() ; ++i) {
       if (i != v)
@@ -801,12 +801,12 @@ public:
 
     CheckVector(v);
 
-    vector<double> tmp(GetMyLength());
+    std::vector<double> tmp(GetMyLength());
     for (int i = 0 ; i < GetMyLength() ; ++i)
       tmp[i] = (*this)(i, v);
 
     if (IsIncreasing)
-      sort(tmp.begin(), tmp.end(), greater<double>());
+      sort(tmp.begin(), tmp.end(), std::greater<double>());
     else
       sort(tmp.begin(), tmp.end());
 
@@ -960,7 +960,7 @@ private:
   }
 
   //! Pointer to locally own values.
-  vector<Teuchos::RefCountPtr<DoubleVector> > RCPValues_;
+  std::vector<Teuchos::RefCountPtr<DoubleVector> > RCPValues_;
   //! Data layout.
   Space VectorSpace_;
   //! Number of vectors.

@@ -19,8 +19,6 @@
 #include "MLAPI_Operator.h"
 #include "Teuchos_RefCountPtr.hpp"
 
-using namespace std;
-
 namespace Teuchos {
   class List;
 }

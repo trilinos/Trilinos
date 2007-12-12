@@ -376,13 +376,13 @@ private:
   //! Fine-level matrix.
   Operator FineMatrix_;
   //! Contains the hierarchy of operators.
-  vector<Operator> A_;
+  std::vector<Operator> A_;
   //! Contains the hierarchy of restriction operators.
-  vector<Operator> R_;
+  std::vector<Operator> R_;
   //! Contains the hierarchy of prolongator operators.
-  vector<Operator> P_;
+  std::vector<Operator> P_;
   //! Contains the hierarchy of inverse operators.
-  vector<InverseOperator> S_;
+  std::vector<InverseOperator> S_;
   //! Contains a copy of the input list.
   Teuchos::ParameterList List_;
   //! \c true if the hierarchy has been successfully computed, \c false otherwise.

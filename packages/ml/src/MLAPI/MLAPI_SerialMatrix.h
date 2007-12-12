@@ -336,8 +336,8 @@ private:
   int NumMyDiagonals_;
   int NumMyNonzeros_;
 
-  mutable map<int,double>::iterator where_;
-  mutable vector<map<int,double> > ptr_;
+  mutable std::map<int,double>::iterator where_;
+  mutable std::vector<std::map<int,double> > ptr_;
 
   Teuchos::RefCountPtr<Epetra_Map> RowMap_;
   Teuchos::RefCountPtr<Epetra_Map> ColMap_;
@@ -374,8 +374,8 @@ public:
   std::ostream& Print(std::ostream& os, const bool verbose = true) const
   {
     int Length = Matrix_->MaxNumEntries();
-    vector<double> Values(Length);
-    vector<int>    Indices(Length);
+    std::vector<double> Values(Length);
+    std::vector<int>    Indices(Length);
 
     os << endl;
     os << "*** MLAPI::SerialMatrix ***" << endl;

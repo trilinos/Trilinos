@@ -13,8 +13,6 @@
 \date Last updated on Feb-05.
 */
 
-using namespace std;
-
 namespace Teuchos {
   class ParameterList;
 }

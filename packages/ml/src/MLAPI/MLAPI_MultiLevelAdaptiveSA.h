@@ -901,13 +901,13 @@ private:
   //! Fine-level matrix.
   Operator FineMatrix_;
   //! Contains the hierarchy of operators.
-  vector<Operator> A_;
+  std::vector<Operator> A_;
   //! Contains the hierarchy of restriction operators.
-  vector<Operator> R_;
+  std::vector<Operator> R_;
   //! Contains the hierarchy of prolongator operators.
-  vector<Operator> P_;
+  std::vector<Operator> P_;
   //! Contains the hierarchy of inverse operators.
-  vector<InverseOperator> S_;
+  std::vector<InverseOperator> S_;
   Teuchos::ParameterList List_;
   //! Contains the current null space
   MultiVector NullSpace_;

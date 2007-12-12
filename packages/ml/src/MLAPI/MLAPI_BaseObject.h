@@ -12,7 +12,6 @@
 */
 
 #include <iostream>
-using namespace std;
 #include "MLAPI_Workspace.h"
 
 namespace MLAPI {

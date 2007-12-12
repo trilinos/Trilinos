@@ -25,8 +25,6 @@
 #include "MLAPI_Workspace.h"
 #include "MLAPI_Operator_Box.h"
 
-using namespace std;
-
 namespace MLAPI {
 
 /*!
@@ -427,8 +425,8 @@ public:
       return;
     }
 
-    vector<double> dtemp;
-    vector<int> GlobalElements;
+    std::vector<double> dtemp;
+    std::vector<int> GlobalElements;
 
     int Nrows = GetML_Operator()->getrow->Nrows;
     int Nghosts;

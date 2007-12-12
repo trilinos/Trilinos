@@ -15,8 +15,10 @@
 #include "Epetra_FECrsMatrix.h"
 #include <iomanip>
 
-std::ostream& MLAPI::DistributedMatrix::
-Print(std::ostream& os, const bool verbose) const
+using namespace std;
+
+ostream& MLAPI::DistributedMatrix::
+Print(ostream& os, const bool verbose) const
 {
   int Length = MaxNumEntries();
   vector<double> Values(Length);

@@ -324,9 +324,9 @@ private:
     return(*this);
   }
 
-  mutable vector<int>    rows_;
-  mutable vector<int>    cols_;
-  mutable vector<double> vals_;
+  mutable std::vector<int>    rows_;
+  mutable std::vector<int>    cols_;
+  mutable std::vector<double> vals_;
 
   Epetra_FECrsMatrix* Matrix_;
   Space ColSpace_;
