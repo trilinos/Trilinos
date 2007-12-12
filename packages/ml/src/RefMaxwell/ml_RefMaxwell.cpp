@@ -328,7 +328,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
  
   /* Setup the Edge Smoother */
   //  if(mode=="additive")
-    SetEdgeSmoother(List_);
+  SetEdgeSmoother(List_);
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[6]));
@@ -443,16 +443,13 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   int node_sweeps=List.get("subsmoother: node sweeps",2);  
   int output=List.get("ML output",0);
 
-  //#define ALWAYS_USE_HIPTMAIR
-#ifndef ALWAYS_USE_HIPTMAIR
-  if(mode=="additive"){
-#endif
+  if(smoother == "Hiptmair"){
     /* Setup Teuchos Lists - Hiptmair */
     Teuchos::ParameterList PreList;
     PreList.set("coarse: type",smoother);
-    PreList.set("coarse: sweeps",smoother_sweeps);
-    PreList.set("coarse: edge sweeps",edge_sweeps);
-    PreList.set("coarse: node sweeps",node_sweeps);
+    PreList.set("coarse: sweeps",1);
+    PreList.set("coarse: edge sweeps",smoother_sweeps*edge_sweeps);
+    PreList.set("coarse: node sweeps",smoother_sweeps*node_sweeps);
     PreList.set("coarse: subsmoother type",List.get("subsmoother: type","symmetric Gauss-Seidel"));  
     PreList.set("coarse: Chebyshev alpha",List.get("subsmoother: Chebyshev alpha",30.0));
     PreList.set("coarse: MLS alpha",List.get("subsmoother: MLS alpha",30.0));
@@ -465,14 +462,13 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("coarse: pre or post","pre");
     PreList.set("smoother: pre or post","pre");
     PreList.set("zero starting solution", true);
+    PreList.set("ML label","(1,1) block fine pre-smoother");    
+    PreList.set("ML output",output);
     PostList.set("coarse: pre or post","post");
     PostList.set("smoother: pre or post","post"); 
     PostList.set("zero starting solution", false);
-
-    PreList.set("ML output",output);
-    PostList.set("ML output",output);
-    PreList.set("ML label","(1,1) block fine pre-smoother");
     PostList.set("ML label","(1,1) block fine post-smoother");
+    PostList.set("ML output",output);
     
     if(HasOnlyDirichletNodes){
       if(PreList.get("coarse: type","dummy") == "Hiptmair"){
@@ -487,32 +483,32 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
       PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,*D0_Matrix_,*TMT_Matrix_,PreList,true,true);
       PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,*D0_Matrix_,*TMT_Matrix_,PostList,true,true);
     }/*end if*/
-#ifndef ALWAYS_USE_HIPTMAIR  
   }/*end if*/
   else{
     /* Setup Teuchos Lists - Chebyshev / SGS */
     Teuchos::ParameterList PreList;
-    PreList.set("coarse: type",List.get("subsmoother: type","symmetric Gauss-Seidel"));
-    PreList.set("coarse: sweeps",List.get("smoother: sweeps",2)*List.get("subsmoother: edge sweeps",2));
-    PreList.set("coarse: Chebyshev alpha",List.get("subsmoother: Chebyshev alpha",30.0));
-    PreList.set("coarse: MLS alpha",List.get("subsmoother: MLS alpha",30.0));
-    PreList.set("coarse: damping factor",List.get("subsmoother: SGS damping factor",1.0));  
+    PreList.set("coarse: type",List.get("smoother: type","symmetric Gauss-Seidel"));
+    PreList.set("coarse: sweeps",List.get("smoother: sweeps",2));
+    PreList.set("coarse: Chebyshev alpha",List.get("smoother: Chebyshev alpha",30.0));
+    PreList.set("coarse: MLS alpha",List.get("smoother: MLS alpha",30.0));
+    PreList.set("coarse: damping factor",List.get("smoother: SGS damping factor",1.0));  
     PreList.set("PDE equations",1);
-    PreList.set("max levels",1);
+    PreList.set("max levels",1);    
 
     Teuchos::ParameterList PostList(PreList);
     PreList.set("coarse: pre or post","pre");
     PreList.set("smoother: pre or post","pre");
     PreList.set("zero starting solution", false);
+    PreList.set("ML label","(1,1) block fine pre-smoother");
+    PreList.set("ML output",output);
     PostList.set("coarse: pre or post","post");
     PostList.set("smoother: pre or post","post"); 
     PostList.set("zero starting solution", false);
-    PreList.set("ML label","(1,1) block fine pre-smoother");
     PostList.set("ML label","(1,1) block fine post-smoother");
+    PostList.set("ML output",output);
     PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
     PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,PostList);    
   }/*end else*/
-#endif
 
   /* Smoother info output */
   if(verbose_ && !Comm_->MyPID()) {
