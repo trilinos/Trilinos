@@ -39,10 +39,16 @@ extern "C" {
  *   the somewhat random value from a small random selection of pivots.
  *   Choice of potential pivot is faster than "MEDIAN_OF_RANDOM" because
  *   we don't find the median of the small random selection of pivots.
+ *
+ * PIVOT_CHOICE_AVG_OF_RANDOM: To reduce time in while loop, get rid
+ *   of the MPI_Gather and MPI_Bcast in random_candidate or random_median_candidate
+ *   by having each process contribute a random dot from its right and left half
+ *   in the Allreduce, and we use the average of those dots for the next pivot.
  */
 #define PIVOT_CHOICE_ORDERED 1
 #define PIVOT_CHOICE_MEDIAN_OF_RANDOM 2
 #define PIVOT_CHOICE_RANDOM 3
+#define PIVOT_CHOICE_AVG_OF_RANDOM 4
 
 
 #ifdef PROFILE_THIS
@@ -379,7 +385,8 @@ int Zoltan_RB_find_median_randomized(
 
   double  mylo, mymed, myhi;
   double  totallo, totalmed, totalhi;
-  double  local[3], global[3];
+  double  anyLoDot, anyHiDot, avgAnyDot;
+  double  local[7], global[7];
   double  wtmax, wtsum, wtupto;
   double  tolerance;                 /* largest single weight of a dot */
   double  targetlo, targethi;        /* desired wt in lower half */
@@ -396,6 +403,8 @@ int Zoltan_RB_find_median_randomized(
   int     countmed;        /* how many elements I have equal to the median */
   int     left=0, middle=2, right=1;   
   int     leftTotal, rightTotal;
+  int     numLoDots, numHiDots;
+  int     loMin, loMid, loMax, hiMin, hiMid, hiMax;
 
 #ifdef PROFILE_THIS
   if (myProc < 0) myProc = proc;
@@ -472,6 +481,8 @@ int Zoltan_RB_find_median_randomized(
           all dots <= valuehalf are marked with 0 in dotmark
           all dots >= valuehalf are marked with 1 in dotmark */
 
+  avgAnyDot = invalidDot;
+
   if (!Tflops_Special || num_procs > 1) { /* don't need to go thru if only
                                              one proc with Tflops_Special. 
                                              Input argument Tflops_Special 
@@ -498,9 +509,36 @@ int Zoltan_RB_find_median_randomized(
                        Tflops_Special, proclower, rank, num_procs);
 
         }
-        else {
+        else if (pivot_choice == PIVOT_CHOICE_RANDOM){
           tmp_half = random_candidate(local_comm, dot, invalidDot,
                        Tflops_Special, proclower, rank, num_procs);
+        }
+        else if (pivot_choice == PIVOT_CHOICE_AVG_OF_RANDOM){
+          if (avgAnyDot == invalidDot){  /* first time only */
+            if (dot == invalidDot){
+              numLoDots = 0;
+              anyLoDot = 0.0;
+            }
+            else{
+              numLoDots = 1;
+              anyLoDot = dot;
+            }
+
+            local[0] = (double)numLoDots;
+            local[1] = anyLoDot;
+
+            if (Tflops_Special){ 
+              Zoltan_RB_sum_double(local, 2, proclower, rank, num_procs, local_comm);
+              global[0] = local[0];
+              global[1] = local[1];
+            }
+            else{
+              global[0] = global[1] = 0.0;
+              MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, local_comm);
+            }
+            avgAnyDot = global[1] / global[0];
+          }
+          tmp_half = avgAnyDot;
         }
       }
 
@@ -513,38 +551,128 @@ int Zoltan_RB_find_median_randomized(
       /* mark all active dots on one side or other of bisector or at bisector */
       /* count number of dots equal to bisector */
 
-      for (j = 0; j < numlist; j++) {
-        i = dotlist[j];
-        if (dots[i] < tmp_half) { 
-          mylo += wgts[i];
-          dotmark[i] = left;
+      if (pivot_choice == PIVOT_CHOICE_AVG_OF_RANDOM){
+        loMin = hiMin = loMid = hiMid = numlist;
+        loMax = hiMax = -1;
+
+        for (j = 0; j < numlist; j++) {
+          i = dotlist[j];
+          if (dots[i] < tmp_half) { 
+            mylo += wgts[i];
+            dotmark[i] = left;
+            if ( (j > loMin) && (j < loMax)){
+              loMid = j;
+            }
+            else {
+              if (j < loMin) loMin = j;
+              if (j > loMax) loMax = j;
+            }
+          }
+          else if (dots[i] == tmp_half) {
+            mymed += wgts[i];
+            countmed++;
+            dotmark[i] = middle;
+            if (indexmed < 0) indexmed = j;
+          }
+          else{
+            myhi += wgts[i];
+            dotmark[i] = right;
+            if ( (j > hiMin) && (j < hiMax)){
+              hiMid = j;
+            }
+            else {
+              if (j < hiMin) hiMin = j;
+              if (j > hiMax) hiMax = j;
+            }
+          }
         }
-        else if (dots[i] == tmp_half) {
-          mymed += wgts[i];
-          countmed++;
-          dotmark[i] = middle;
-          if (indexmed < 0) indexmed = j;
+        anyLoDot = anyHiDot = 0.0;
+        numLoDots = numHiDots = 0;
+        if (loMid < numlist){
+          k = med3(dots, dotlist[loMin], dotlist[loMid], dotlist[loMax]);
+          anyLoDot = dots[k];  /* median of any three dots on the left */
+          numLoDots = 1;
         }
-        else{
-          myhi += wgts[i];
-          dotmark[i] = right;
+        else if (loMin < numlist){  /* only have one or two dots */
+          anyLoDot = dots[dotlist[loMin]];
+          numLoDots = 1;
+        }
+        if (hiMid < numlist){
+          k = med3(dots, dotlist[hiMin], dotlist[hiMid], dotlist[hiMax]);
+          anyHiDot = dots[k];  /* median of any three dots on the right */
+          numHiDots = 1;
+        }
+        else if (hiMin < numlist){  /* only have one or two dots */
+          anyHiDot = dots[dotlist[hiMin]];
+          numHiDots = 1;
         }
       }
+      else{
+        for (j = 0; j < numlist; j++) {
+          i = dotlist[j];
+          if (dots[i] < tmp_half) { 
+            mylo += wgts[i];
+            dotmark[i] = left;
+          }
+          else if (dots[i] == tmp_half) {
+            mymed += wgts[i];
+            countmed++;
+            dotmark[i] = middle;
+            if (indexmed < 0) indexmed = j;
+          }
+          else{
+            myhi += wgts[i];
+            dotmark[i] = right;
+          }
+        }
+      }
+
 
       if (counter != NULL) (*counter)++;
 
-      if (Tflops_Special) {
-        global[0] = mylo;
-        global[1] = mymed;
-        global[2] = myhi;
-        Zoltan_RB_sum_double(global, 3, proclower, rank, num_procs, local_comm);
+      if (pivot_choice == PIVOT_CHOICE_AVG_OF_RANDOM){
+        if (Tflops_Special) {
+          global[0] = mylo;
+          global[1] = mymed;
+          global[2] = myhi;
+          global[3] = (double)numLoDots;
+          global[4] = anyLoDot;
+          global[5] = (double)numHiDots;
+          global[6] = anyHiDot;
+          Zoltan_RB_sum_double(global, 7, proclower, rank, num_procs, local_comm);
+        }
+        else {
+          local[0] = mylo;
+          local[1] = mymed;
+          local[2] = myhi;
+          local[3] = (double)numLoDots;
+          local[4] = anyLoDot;
+          local[5] = (double)numHiDots;
+          local[6] = anyHiDot;
+
+          global[0] = global[1] = global[2] = 0.0;
+          global[3] = global[4] = global[5] = global[6] = 0.0;
+          MPI_Allreduce(local, global, 7, MPI_DOUBLE, MPI_SUM, local_comm);
+        }
+        numLoDots = (int)global[3];
+        anyLoDot  = global[4];     /* actually sum of sample dots on left */
+        numHiDots = (int)global[5];
+        anyHiDot  = global[6];     /* actually sum of sample dots on right */
       }
-      else {
-        local[0] = mylo;
-        local[1] = mymed;
-        local[2] = myhi;
-        global[0] = global[1] = global[2] = 0.0;
-        MPI_Allreduce(local, global, 3, MPI_DOUBLE, MPI_SUM, local_comm);
+      else{
+        if (Tflops_Special) {
+          global[0] = mylo;
+          global[1] = mymed;
+          global[2] = myhi;
+          Zoltan_RB_sum_double(global, 3, proclower, rank, num_procs, local_comm);
+        }
+        else {
+          local[0] = mylo;
+          local[1] = mymed;
+          local[2] = myhi;
+          global[0] = global[1] = global[2] = 0.0;
+          MPI_Allreduce(local, global, 3, MPI_DOUBLE, MPI_SUM, local_comm);
+        }
       }
       totallo = global[0];
       totalmed = global[1];
@@ -566,6 +694,9 @@ int Zoltan_RB_find_median_randomized(
         }
         /* median value is in the right half */
         markactive = right;
+        if (pivot_choice == PIVOT_CHOICE_AVG_OF_RANDOM){
+          avgAnyDot = anyHiDot / numHiDots; /* starting point for next iteration */
+        }
       }
       else if (leftTotal > targetlo){          /* left half is too large */
         weighthi = rightTotal + totalmed;
@@ -579,6 +710,9 @@ int Zoltan_RB_find_median_randomized(
         }
         /* median value is in the left half */
         markactive = left;
+        if (pivot_choice == PIVOT_CHOICE_AVG_OF_RANDOM){
+          avgAnyDot = anyLoDot / numLoDots; /* starting point for next iteration */
+        }
       }
       else{                                     /* median is tmp_half */
         weightlo = leftTotal;
