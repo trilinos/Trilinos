@@ -335,7 +335,7 @@ smoother (see Section \ref{multigrid options}).
 This section is intended for the impatient user.
 It's assumed that you've already have a local copy of
 \trilinos\footnote{Please refer to the web page {\tt
-  http://software.sandia.gov/trilinos} to know how to obtain a copy of
+  http://trilinos.sandia.gov} to know how to obtain a copy of
     \trilinos.}.
 Using the instructions here, your build of \trilinos~will have the following
 libraries: \aztecoo, \epetra, \epetraext, \ifpack, \loca, \ML, \newpackage,
@@ -664,7 +664,7 @@ Here is an example configure line, where \metis, \parmetis, \zoltan, and
 More details about the installation of \trilinos~can be found at the
 \trilinos~web site,
 \begin{verbatim}
-http://software.sandia.gov/Trilinos 
+http://trilinos.sandia.gov
 \end{verbatim}
 and \cite[Chapter 1]{Trilinos-Tutorial}.
 
@@ -965,8 +965,8 @@ and a double vector \verb!params!. Those can be defined as follows:
   MLList.set("smoother: Aztec options", options);
   MLList.set("smoother: Aztec params", params);
 \end{verbatim}
-The last two commands set the \teuchos\ reference-counted pointers to
-{\tt options} and {\tt params} in the parameter list.
+The last two commands set the \teuchos\ reference-counted pointers,
+{\tt options} and {\tt params}, in the parameter list.
 %\footnote{Only the {\sl pointer} is copied in the parameter list, not the
 %array itself. Therefore, {\tt options} and {\tt params} should not go out of
 %scope before the destruction of the preconditioner.}.
@@ -1520,11 +1520,11 @@ Default: {\tt false}.  }
 \choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
 one of the following values: {\tt pre, post, both}. Default: {\tt both}.}
 
-\choicebox{\tt smoother: Aztec options $\star$}{[{\tt int*}] \teuchos\
+\choicebox{\tt smoother: Aztec options $\star$}{[{\tt RCP<vector<int>>}] \teuchos\
 reference-counted pointer to {\sc Aztec}'s options vector (only for {\tt Aztec}
   smoother) .}
 
-\choicebox{\tt smoother: Aztec params $\star$}{[{\tt double*}] \teuchos\
+\choicebox{\tt smoother: Aztec params $\star$}{[{\tt RCP<vector<double>>}] \teuchos\
 reference-counted pointer to {\sc Aztec}'s params vector (only for {\tt Aztec}
   smoother) .}
 
