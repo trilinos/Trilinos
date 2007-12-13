@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ $TRILINOS_HOME ]; then
   echo "TRILINOS_HOME has already been set!"
@@ -18,3 +18,10 @@ echo "Generating main teuchos doxygen documentation pages ..."
 echo
 
 doxygen Doxyfile
+
+echo
+echo "Generating RefCountPtrBeginnersGuildeSAND.pdf file ..."
+echo
+
+pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
+cp ../../../doc/RefCountPtr/beginners/RefCountPtrBeginnersGuideSAND.pdf html/.

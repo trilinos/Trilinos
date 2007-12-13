@@ -29,6 +29,13 @@ pushd ../../../doc/Thyra/overview; make pdf ; popd
 cp ../../../doc/Thyra/overview/ThyraOverview.pdf ../src/support/operator_vector/doc/html/.
 
 echo
+echo "Generating RefCountPtrBeginnersGuilde.pdf file ..."
+echo
+
+pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
+cp ../../../doc/RefCountPtrBeginnersGuide/.pdf ../src/support/operator_vector/doc/html/.
+
+echo
 echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/fundamental ..."
 echo
 

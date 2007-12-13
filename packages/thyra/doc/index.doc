@@ -295,9 +295,9 @@ All of the code in the %Thyra and related packages almost exclusively use the
 <tt>Teuchos::RCP</tt> to handle dynamically allocated memory with
 object-oriented programming.  %Thyra also rigorously uses the idioms described
 in <a
-href="http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf">this
+href="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">this
 report</a> for passing object to and from functions that involve
-<tt>Teuchos::RCP</tt> .
+<tt>Teuchos::RCP</tt>.
 
 <li><b>Error (exception) handling</b>
 
@@ -459,7 +459,7 @@ This paper describes the basic principles that go into the design of the %Thyra
 Operator/Vector interface layer (and therefore also for the rest of %Thyra).
 
 <li><b><a
-href="http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf">
+href="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">
 Teuchos::RCP Beginner's Guide : An Introduction to the
 Trilinos Smart Reference-Counted Pointer Class for (Almost) Automatic
 Dynamic Memory Management in C++ [PDF]</a></b>

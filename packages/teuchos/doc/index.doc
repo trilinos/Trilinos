@@ -101,7 +101,9 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   <li> Teuchos::RCP: Reference-counted smart pointer class for managing
   dynamically allocated memory to single object that is safe under multiple
-  inheritance.  This is only for persisting relationships.
+  inheritance.  This is only for persisting relationships.  See <a
+  href="RefCountPtrBeginnersGuideSAND.pdf">this
+  report</a>
 
   <li> Teuchos::ArrayRCP:  Reference-counted pointer for managing dynamically
   allocated array memory.  This is a general replacement for a raw C++ pointer

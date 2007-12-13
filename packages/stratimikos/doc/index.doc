@@ -1,11 +1,12 @@
 /*! \mainpage Stratimikos: Thyra-based strategies for linear solvers
 
 The package Stratimikos contains a unified set of Thyra-based wrappers to
-linear solver and preconditioner capabilities in Trilinos.  The name
-Stratimikos was created from the Greek words "stratigiki" and "grammikos"
-which which mean "strategy" and "linear" in English.  The word "stratimikos"
-has no real meaning in itself.  The Stratimikos package is also a place where
-unified testing of linear solvers and preconditioners can be performed.
+linear solver and preconditioner capabilities in Trilinos.  The word
+"stratimikos" has no real meaning in itself; it was created from the Greek
+words "stratigiki" and "grammikos" which which mean "strategy" and "linear" in
+English.  The Stratimikos package is also a place where unified testing of
+linear solvers and preconditioners can be performed.  Given these object, you
+can solve individual linear systems (see \ref stratimikos_examples_sec "examples").
 
 Currently, Stratimikos is really just the single class
 <tt>Stratimikos::DefaultLinearSolverBuilder</tt> which provides uniform access
@@ -17,14 +18,15 @@ linear solver and preconditioner factories are returned as
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and
 <tt>Thyra::PreconditionerFactoryBase</tt> objects respectively.
 
-The interface is parameter-list driven. An example parameter list in XML form
-that selects AztecOO and Ifpack is shown below:
+The class <tt>Stratimikos::DefaultLinearSolverBuilder</tt> is parameter-list
+driven. An example parameter list in XML form that selects AztecOO and Ifpack
+is shown below:
 
 \verbinclude _aztecoo.ifpack.xml
 
 The parameter <tt>"Linear Solver Type"</tt> selects the linear solver type
 (currently supported are "Amesos", "AztecOO", and "Belos").  The parameter
-<tt>""Preconditioner Type"</tt> selects the preconditioner type (currently
+<tt>"Preconditioner Type"</tt> selects the preconditioner type (currently
 supported are "None", "ML", and "Ifpack").
 
 Many other example XML input files (e.g. <tt>*.xml</tt>) can be found in the

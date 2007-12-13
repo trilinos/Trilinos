@@ -59,9 +59,10 @@ namespace Teuchos {
 /** \brief Smart reference counting pointer class for automatic garbage
   collection.
   
-For a carefully written discussion about what this class is and basic
-details on how to use it see the
-<A HREF="http://software.sandia.gov/Trilinos/RCPBeginnersGuideSAND.pdf">beginners guide</A>.
+For a carefully written discussion about what this class is and basic details
+on how to use it see the <A
+HREF="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">beginners
+guide</A>.
 
 <b>Quickstart for <tt>RCP</tt></b>
  
