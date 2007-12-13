@@ -210,13 +210,13 @@ EXTRA_DIST = definition setpath.src \
 	     testEpetra_SerialDense.src testEpetra_Util.src \
 	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
 	     testGaleri_Maps.src testIFPACK.src testML_Preconditioner.src \
-	     testNOX_StatusTest.src testTeuchos.src \
+	     testNOX_StatusTest.src testTeuchos.src testTeuchos_Comm.src \
 	     testTeuchos_ParameterList.src testTeuchos_ScalarTraits.src \
 	     testThyra.src testTriUtils.src
 
 MAINTAINERCLEANFILES = Makefile.in
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos.py testTeuchos_ParameterList.py \
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@	        testTeuchos_ScalarTraits.py
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos.py testTeuchos_Comm.py \
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@	        testTeuchos_ParameterList.py testTeuchos_ScalarTraits.py
 
 
 # if HAVE_PYTRILINOS_THYRA

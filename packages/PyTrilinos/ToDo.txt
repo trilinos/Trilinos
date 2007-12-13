@@ -3,24 +3,25 @@ PyTrilinos To Do List
 =====================
 
 * General
-  - Implement general exception handling
-  - Alter swig invocation (more options in variables)
   - Port to cygwin (2251)
   - Automatic -fPIC for shared library builds (3311)
   - Developers Manual
+  - Remove run-tests, run-examples make targets
 
 * Teuchos
   - Exception raising/catching failures (3610, 3628)
   - Teuchos::RCP ref count synchronization
   - Add communicators support (integrated with Epetra) (3628)
+  - malloc warnings under MPI
   - exTeuchos.py in parallel
   - Unit tests
   - Examples
 
 * Epetra
   - Exception raising/catching failures (3617, 3628)
-  - More sophisticated call of MPI_Init() (3628)
+  - malloc warnings under MPI
   - Examples
+  - Epetra_NumPy* classes constructor refactor
 
 * EpetraExt
   - exEpetraExt_IO_XML.py in parallel? (3742)
