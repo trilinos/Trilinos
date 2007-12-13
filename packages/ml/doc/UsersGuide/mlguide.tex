@@ -954,19 +954,22 @@ function as a smoother. All \Aztec~preconditioning options can be used
 as \ML~smoothers.  {\sc Aztec} requires an integer vector \verb!options!
 and a double vector \verb!params!. Those can be defined as follows:
 \begin{verbatim}
-  int options[AZ_OPTIONS_SIZE];
-  double params[AZ_PARAMS_SIZE];
+  Teuchos::RCP<vector<int>> options = rcp(new vector<int>(AZ_OPTIONS_SIZE));
+  Teuchos::RCP<vector<double>> params = rcp(new vector<double>(AZ_PARAMS_SIZE));
   AZ_defaults(options,params);
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_icc;
+  AZ_defaults(&(*options)[0],&(*params)[0]);
+  (*options)[AZ_precond] = AZ_dom_decomp;
+  (*options)[AZ_subdomain_solve] = AZ_icc;
+
+
   MLList.set("smoother: Aztec options", options);
   MLList.set("smoother: Aztec params", params);
 \end{verbatim}
-The last two commands set the pointer to {\tt options} and {\tt params}
-in the parameter list\footnote{Only the {\sl pointer} is copied in the
-  parameter list, not the array itself. Therefore, {\tt options} and
-  {\tt params} should not go out of scope before the destruction of the
-  preconditioner.}.
+The last two commands set the \teuchos\ reference-counted pointers to
+{\tt options} and {\tt params} in the parameter list.
+%\footnote{Only the {\sl pointer} is copied in the parameter list, not the
+%array itself. Therefore, {\tt options} and {\tt params} should not go out of
+%scope before the destruction of the preconditioner.}.
 
 The \ML\ preconditioner is created as in the previous example,
 \begin{verbatim}
@@ -1084,7 +1087,8 @@ smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
 approximate solutions with \aztecoo~(with {\tt smoothers: sweeps}
 iterations as smoothers. 
 The \aztecoo~vectors \verb!options! and {\tt params} can be set using
-{\tt smoother: Aztec options} and {\tt smoother: Aztec params}. \\
+{\tt smoother: Aztec options} and {\tt smoother: Aztec params}.
+See \S\ref{parameter list ex. 2} for an example of this.\\
 \verb!Chebyshev! & Use Chebyshev smoother. The polynomial order is specified by {\tt
   \tt smoother: sweeps }. The smoother will damp errors between $\rho$ and $\rho/$alpha
   where $\rho$ is the spectral radius of $diag(A)^{-1} A$ and alpha is specified
@@ -1516,12 +1520,12 @@ Default: {\tt false}.  }
 \choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
 one of the following values: {\tt pre, post, both}. Default: {\tt both}.}
 
-\choicebox{\tt smoother: Aztec options $\star$}{[{\tt int*}] Pointer to {\sc Aztec}'s
-options vector (only for {\tt Aztec}
+\choicebox{\tt smoother: Aztec options $\star$}{[{\tt int*}] \teuchos\
+reference-counted pointer to {\sc Aztec}'s options vector (only for {\tt Aztec}
   smoother) .}
 
-\choicebox{\tt smoother: Aztec params $\star$}{[{\tt double*}] Pointer to {\sc Aztec}'s
-params vector (only for {\tt Aztec}
+\choicebox{\tt smoother: Aztec params $\star$}{[{\tt double*}] \teuchos\
+reference-counted pointer to {\sc Aztec}'s params vector (only for {\tt Aztec}
   smoother) .}
 
 \choicebox{\tt smoother: Aztec as solver $\star$}{[{\tt bool}] If {\tt true}, {\tt smoother: sweeps} iterations of {\sc Aztec}
@@ -1896,33 +1900,41 @@ default values in a given parameter list as follows:
 \begin{verbatim}
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults(ProblemType, MLList);
-\end{verbatim}
-or as
-\begin{verbatim}
+
   Teuchos::ParameterList MLList;
-  ML_Epetra::SetDefaults(ProblemType, MLList);
+  ML_Epetra::SetDefaults(ProblemType, MLList, options, params);
+
+  Teuchos::ParameterList MLList;
+  ML_Epetra::SetDefaults(ProblemType, MLList, options, params, true);
 \end{verbatim}
+%
+In the second usage, {\tt options} and {\tt params} are vectors that control
+the \Aztec\ smoother.  In the third usage, the boolean argument {\tt true}
+permits {\tt SetDefaults} to override any previously set parameters.
 
 For {\tt DD} and {\tt DD-ML}, the default smoother is {\tt Aztec},
 with an incomplete factorization ILUT, and minimal overlap. 
-Memory for the two {\sc Aztec} vectors is allocated using {\tt new}, and the
-user is responsible to free this memory, for instance as follows:
-\begin{verbatim}
-int* options;
-options = MLList.get("smoother: Aztec options", options);
-double* params;
-params = MLList.get("smoother: Aztec params", params);
-.
-.
-.
-// Make sure solve is completed before deleting options & params!!
-delete [] options;
-delete [] params;
-\end{verbatim}
-The rational behind this is that the parameter list stores a {\sl pointer} to those
-vectors, not the content itself. (As a general rule, the vectors stored in the
-parameter list should not
-be prematurely destroyed or permitted to go out of scope.)
+Memory for the two {\sc Aztec} vectors, {\tt options} and {\tt params},
+is allocated using \teuchos\
+reference-counted pointers, and so will be freed automatically.
+% {\tt new}, and the
+%user is responsible to free this memory, for instance as follows:
+%\begin{verbatim}
+%int* options;
+%options = MLList.get("smoother: Aztec options", options);
+%double* params;
+%params = MLList.get("smoother: Aztec params", params);
+%.
+%.
+%.
+%// Make sure solve is completed before deleting options & params!!
+%delete [] options;
+%delete [] params;
+%\end{verbatim}
+%The rational behind this is that the parameter list stores a {\sl pointer} to those
+%vectors, not the content itself. (As a general rule, the vectors stored in the
+%parameter list should not
+%be prematurely destroyed or permitted to go out of scope.)
 %
 
 %%% ============================ %%%
