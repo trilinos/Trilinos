@@ -81,7 +81,11 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 /* All three of these machines use a simple uppercase mangling of Fortran names */
 
-/* if F77_FUNC is defined undefine it because we want to redefine */
+/* if F77_BLAS_MANGLE is defined undefine it because we want to redefine */
+
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
+#endif
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -91,7 +95,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #undef F77_FUNC_
 #endif
 
-
+#define F77_BLAS_MANGLE(lcase,UCASE) UCASE
 #define F77_FUNC(lcase,UCASE) UCASE
 #define F77_FUNC_(lcase,UCASE) UCASE
 
@@ -100,11 +104,14 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define PREFIX
 #define Epetra_fcd const char * 
 
-/* Use autoconf's definition of F77_FUNC 
+/* Use autoconf's definition of F77_BLAS_MANGLE 
    unless using old make system */
 
 #ifdef TRILINOS_NO_CONFIG_H
 
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
+#endif
 #ifdef F77_FUNC
 #undef F77_FUNC
 #endif
@@ -113,9 +120,11 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase
 #define F77_FUNC(lcase,UCASE) lcase
 #define F77_FUNC_(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #define F77_FUNC_(lcase,UCASE) lcase ## __
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
@@ -126,20 +135,20 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef CRAY_T3X /* Double declarations already done for the Cray */
 
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define DASUM_F77   F77_BLAS_MANGLE(dasum,DASUM)
+#define DAXPY_F77   F77_BLAS_MANGLE(daxpy,DAXPY)
+#define DCOPY_F77   F77_BLAS_MANGLE(dcopy,DCOPY)
+#define DDOT_F77    F77_BLAS_MANGLE(ddot,DDOT)
+#define DNRM2_F77   F77_BLAS_MANGLE(dnrm2,DNRM2)
+#define DSCAL_F77   F77_BLAS_MANGLE(dscal,DSCAL)
+#define IDAMAX_F77  F77_BLAS_MANGLE(idamax,IDAMAX)
+#define DGEMV_F77   F77_BLAS_MANGLE(dgemv,DGEMV)
+#define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
+#define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
+#define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
+#define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
+#define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
 #if defined(__GNUC__) || defined(_WIN32) /* standard Epetra implementation */ 
 
@@ -164,21 +173,21 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 /* The following defines are good for all platforms */
 
 
-#define SSCAL_F77   F77_FUNC(sscal,SSCAL)
-#define SCOPY_F77   F77_FUNC(scopy,SCOPY)
-#define SAXPY_F77   F77_FUNC(saxpy,SAXPY)
-#define SDOT_F77    F77_FUNC(sdot,SDOT)
-#define SNRM2_F77   F77_FUNC(snrm2,SNRM2)
-#define SASUM_F77   F77_FUNC(sasum,SASUM)
-#define ISAMAX_F77  F77_FUNC(isamax,ISAMAX)
+#define SSCAL_F77   F77_BLAS_MANGLE(sscal,SSCAL)
+#define SCOPY_F77   F77_BLAS_MANGLE(scopy,SCOPY)
+#define SAXPY_F77   F77_BLAS_MANGLE(saxpy,SAXPY)
+#define SDOT_F77    F77_BLAS_MANGLE(sdot,SDOT)
+#define SNRM2_F77   F77_BLAS_MANGLE(snrm2,SNRM2)
+#define SASUM_F77   F77_BLAS_MANGLE(sasum,SASUM)
+#define ISAMAX_F77  F77_BLAS_MANGLE(isamax,ISAMAX)
 
-#define SGEMV_F77   F77_FUNC(sgemv,SGEMV)
-#define SGER_F77    F77_FUNC(sger,SGER)
-#define STRMV_F77   F77_FUNC(strmv,STRMV)
-#define SGEMM_F77   F77_FUNC(sgemm,SGEMM)
-#define SSYMM_F77   F77_FUNC(ssymm,SSYMM)
-#define STRMM_F77   F77_FUNC(strmm,STRMM)
-#define STRSM_F77   F77_FUNC(strsm,STRSM)
+#define SGEMV_F77   F77_BLAS_MANGLE(sgemv,SGEMV)
+#define SGER_F77    F77_BLAS_MANGLE(sger,SGER)
+#define STRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
+#define SGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
+#define SSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
+#define STRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
+#define STRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
     
 /* Explicitly define each F77 name for all BLAS kernels */
 

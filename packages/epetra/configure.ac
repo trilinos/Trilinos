@@ -108,6 +108,13 @@ dnl AC_REVISION($Revision$)
 TAC_ARG_CONFIG_MPI
 
 # ------------------------------------------------------------------------
+# Check if Fortran is enabled or not
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
+
+# ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
@@ -255,7 +262,8 @@ TAC_ARG_WITH_INCDIRS
 
 TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
 AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
+# Define F77_FUNC that will be used to link with Fortran subroutines found in
+# Trilinos source code
 AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
@@ -273,8 +281,8 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 # find or choose to supply valid blas and lapack libraries
 
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+  TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+  TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if

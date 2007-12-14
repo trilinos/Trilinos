@@ -108,11 +108,11 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 /* The remainder of this block is for T3X, CXML and MKL */
 
-#ifdef F77_FUNC
-#undef F77_FUNC
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
 #endif
 
-#define F77_FUNC(lcase,UCASE) UCASE
+#define F77_BLAS_MANGLE(lcase,UCASE) UCASE
 
 #else
 /* Not defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL) */
@@ -120,19 +120,19 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define Epetra_fcd const char *
 #define PREFIX
 
-/* Use autoconf's definition of F77_FUNC
+/* Use autoconf's definition of F77_BLAS_MANGLE
    unless using old make system */
 
 #ifdef TRILINOS_NO_CONFIG_H
 
-#ifdef F77_FUNC
-#undef F77_FUNC
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) lcase
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) lcase ## _
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 
 #endif /* TRILINOS_NO_CONFIG_H */
@@ -140,53 +140,53 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef CRAY_T3X
 
-#define DGECON_F77  F77_FUNC(dgecon,DGECON)
-#define DGEEQU_F77  F77_FUNC(dgeequ,DGEEQU)
-#define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
-#define DGEEVX_F77  F77_FUNC(dgeevx,DGEEVX)
-#define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
-#define DGELS_F77   F77_FUNC(dgels,DGELS)
-#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
-#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
-#define DGERFS_F77  F77_FUNC(dgerfs,DGERFS)
-#define DGESDD_F77  F77_FUNC(dgesdd,DGESDD)
-#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
-#define DGESV_F77   F77_FUNC(dgesv,DGESV)
-#define DGESVX_F77  F77_FUNC(dgesvx,DGESVX)
-#define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
-#define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
-#define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
-#define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
-#define DGGEV_F77   F77_FUNC(dggev,DGGEV)
-#define DGGLSE_F77  F77_FUNC(dgglse,DGGLSE)
-#define DGGSVD_F77  F77_FUNC(dggsvd,DGGSVD)
-#define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
-#define DLAIC1_F77  F77_FUNC(dlaic1,DLAIC1)
-#define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
-#define DLARFT_F77  F77_FUNC(dlarft,DLARFT)
-#define DLASWP_F77  F77_FUNC(dlaswp,DLASWP)
-#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
-#define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
-#define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
-#define DPOCON_F77  F77_FUNC(dpocon,DPOCON)
-#define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
-#define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
-#define DPOSV_F77   F77_FUNC(dposv,DPOSV)
-#define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
-#define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
-#define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
-#define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
-#define DSPEV_F77   F77_FUNC(dspev,DSPEV)
-#define DSPGV_F77   F77_FUNC(dspgv,DSPGV)
-#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
-#define DSYEVD_F77   F77_FUNC(dsyevd,DSYEVD)
-#define DSYEV_F77   F77_FUNC(dsyev,DSYEV)
-#define DSYEVR_F77  F77_FUNC(dsyevr,DSYEVR)
-#define DSYEVX_F77  F77_FUNC(dsyevx,DSYEVX)
-#define DSYGV_F77   F77_FUNC(dsygv,DSYGV)
-#define DSYGVX_F77  F77_FUNC(dsygvx,DSYGVX)
-#define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
-#define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
+#define DGECON_F77  F77_BLAS_MANGLE(dgecon,DGECON)
+#define DGEEQU_F77  F77_BLAS_MANGLE(dgeequ,DGEEQU)
+#define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
+#define DGEEVX_F77  F77_BLAS_MANGLE(dgeevx,DGEEVX)
+#define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
+#define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGELSS_F77  F77_BLAS_MANGLE(dgelss,DGELSS)
+#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
+#define DGERFS_F77  F77_BLAS_MANGLE(dgerfs,DGERFS)
+#define DGESDD_F77  F77_BLAS_MANGLE(dgesdd,DGESDD)
+#define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
+#define DGESV_F77   F77_BLAS_MANGLE(dgesv,DGESV)
+#define DGESVX_F77  F77_BLAS_MANGLE(dgesvx,DGESVX)
+#define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
+#define DGEQRF_F77  F77_BLAS_MANGLE(dgeqrf,DGEQRF)
+#define DGETRI_F77  F77_BLAS_MANGLE(dgetri,DGETRI)
+#define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
+#define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
+#define DGGLSE_F77  F77_BLAS_MANGLE(dgglse,DGGLSE)
+#define DGGSVD_F77  F77_BLAS_MANGLE(dggsvd,DGGSVD)
+#define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
+#define DLAIC1_F77  F77_BLAS_MANGLE(dlaic1,DLAIC1)
+#define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
+#define DLARFT_F77  F77_BLAS_MANGLE(dlarft,DLARFT)
+#define DLASWP_F77  F77_BLAS_MANGLE(dlaswp,DLASWP)
+#define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
+#define DORGHR_F77  F77_BLAS_MANGLE(dorghr,DORGHR)
+#define DORMHR_F77  F77_BLAS_MANGLE(dormhr,DORMHR)
+#define DPOCON_F77  F77_BLAS_MANGLE(dpocon,DPOCON)
+#define DPOEQU_F77  F77_BLAS_MANGLE(dpoequ,DPOEQU)
+#define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
+#define DPOSV_F77   F77_BLAS_MANGLE(dposv,DPOSV)
+#define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
+#define DPOTRF_F77  F77_BLAS_MANGLE(dpotrf,DPOTRF)
+#define DPOTRI_F77  F77_BLAS_MANGLE(dpotri,DPOTRI)
+#define DPOTRS_F77  F77_BLAS_MANGLE(dpotrs,DPOTRS)
+#define DSPEV_F77   F77_BLAS_MANGLE(dspev,DSPEV)
+#define DSPGV_F77   F77_BLAS_MANGLE(dspgv,DSPGV)
+#define DSTEV_F77   F77_BLAS_MANGLE(dstev,DSTEV)
+#define DSYEVD_F77   F77_BLAS_MANGLE(dsyevd,DSYEVD)
+#define DSYEV_F77   F77_BLAS_MANGLE(dsyev,DSYEV)
+#define DSYEVR_F77  F77_BLAS_MANGLE(dsyevr,DSYEVR)
+#define DSYEVX_F77  F77_BLAS_MANGLE(dsyevx,DSYEVX)
+#define DSYGV_F77   F77_BLAS_MANGLE(dsygv,DSYGV)
+#define DSYGVX_F77  F77_BLAS_MANGLE(dsygvx,DSYGVX)
+#define DTREVC_F77  F77_BLAS_MANGLE(dtrevc,DTREVC)
+#define DTREXC_F77  F77_BLAS_MANGLE(dtrexc,DTREXC)
 
 /* End of defines for double precision when not on a T3X */
 
@@ -194,51 +194,51 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 /* The following defines are good for all platforms */
 
-#define SGECON_F77  F77_FUNC(sgecon,SGECON)
-#define SGEEQU_F77  F77_FUNC(sgeequ,SGEEQU)
-#define SGEEV_F77   F77_FUNC(sgeev,SGEEV)
-#define SGEEVX_F77  F77_FUNC(sgeevx,SGEEVX)
-#define SGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
-#define SGELS_F77   F77_FUNC(sgels,SGELS)
-#define SGELSS_F77  F77_FUNC(sgelss,SGELSS)
-#define SGEQPF_F77  F77_FUNC(sgeqpf,SGEQPF)
-#define SGERFS_F77  F77_FUNC(sgerfs,SGERFS)
-#define SGESDD_F77  F77_FUNC(sgesdd,SGESDD)
-#define SGESVD_F77  F77_FUNC(sgesvd,SGESVD)
-#define SGESV_F77   F77_FUNC(sgesv,SGESV)
-#define SGESVX_F77  F77_FUNC(sgesvx,SGESVX)
-#define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
-#define SGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
-#define SGETRI_F77  F77_FUNC(sgetri,SGETRI)
-#define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
-#define SGGEV_F77   F77_FUNC(sggev,SGGEV)
-#define SGGLSE_F77  F77_FUNC(sgglse,SGGLSE)
-#define SGGSVD_F77  F77_FUNC(sggsvd,SGGSVD)
-#define SHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
-#define SLAMCH_F77  F77_FUNC(slamch,SLAMCH)
-#define SLARFT_F77  F77_FUNC(slarft,SLARFT)
-#define SORGQR_F77  F77_FUNC(sorgqr,SORGQR)
-#define SORGHR_F77  F77_FUNC(sorghr,SORGHR)
-#define SORMHR_F77  F77_FUNC(sormhr,SORMHR)
-#define SPOCON_F77  F77_FUNC(spocon,SPOCON)
-#define SPOEQU_F77  F77_FUNC(spoequ,SPOEQU)
-#define SPORFS_F77  F77_FUNC(sporfs,SPORFS)
-#define SPOSV_F77   F77_FUNC(sposv,SPOSV)
-#define SPOSVX_F77  F77_FUNC(sposvx,SPOSVX)
-#define SPOTRF_F77  F77_FUNC(spotrf,SPOTRF)
-#define SPOTRI_F77  F77_FUNC(spotri,SPOTRI)
-#define SPOTRS_F77  F77_FUNC(spotrs,SPOTRS)
-#define SSPEV_F77   F77_FUNC(sspev,SSPEV)
-#define SSPGV_F77   F77_FUNC(sspgv,SSPGV)
-#define SSTEV_F77   F77_FUNC(sstev,SSTEV)
-#define SSYEVD_F77   F77_FUNC(ssyevd,SSYEVD)
-#define SSYEV_F77   F77_FUNC(ssyev,SSYEV)
-#define SSYEVR_F77  F77_FUNC(ssyevr,SSYEVR)
-#define SSYEVX_F77  F77_FUNC(ssyevx,SSYEVX)
-#define SSYGV_F77   F77_FUNC(ssygv,SSYGV)
-#define SSYGVX_F77  F77_FUNC(ssygvx,SSYGVX)
-#define STREVC_F77  F77_FUNC(strevc,STREVC)
-#define STREXC_F77  F77_FUNC(strexc,STREXC)
+#define SGECON_F77  F77_BLAS_MANGLE(sgecon,SGECON)
+#define SGEEQU_F77  F77_BLAS_MANGLE(sgeequ,SGEEQU)
+#define SGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
+#define SGEEVX_F77  F77_BLAS_MANGLE(sgeevx,SGEEVX)
+#define SGEHRD_F77  F77_BLAS_MANGLE(sgehrd,SGEHRD)
+#define SGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
+#define SGELSS_F77  F77_BLAS_MANGLE(sgelss,SGELSS)
+#define SGEQPF_F77  F77_BLAS_MANGLE(sgeqpf,SGEQPF)
+#define SGERFS_F77  F77_BLAS_MANGLE(sgerfs,SGERFS)
+#define SGESDD_F77  F77_BLAS_MANGLE(sgesdd,SGESDD)
+#define SGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
+#define SGESV_F77   F77_BLAS_MANGLE(sgesv,SGESV)
+#define SGESVX_F77  F77_BLAS_MANGLE(sgesvx,SGESVX)
+#define SGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
+#define SGEQRF_F77  F77_BLAS_MANGLE(sgeqrf,SGEQRF)
+#define SGETRI_F77  F77_BLAS_MANGLE(sgetri,SGETRI)
+#define SGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
+#define SGGEV_F77   F77_BLAS_MANGLE(sggev,SGGEV)
+#define SGGLSE_F77  F77_BLAS_MANGLE(sgglse,SGGLSE)
+#define SGGSVD_F77  F77_BLAS_MANGLE(sggsvd,SGGSVD)
+#define SHSEQR_F77  F77_BLAS_MANGLE(shseqr,SHSEQR)
+#define SLAMCH_F77  F77_BLAS_MANGLE(slamch,SLAMCH)
+#define SLARFT_F77  F77_BLAS_MANGLE(slarft,SLARFT)
+#define SORGQR_F77  F77_BLAS_MANGLE(sorgqr,SORGQR)
+#define SORGHR_F77  F77_BLAS_MANGLE(sorghr,SORGHR)
+#define SORMHR_F77  F77_BLAS_MANGLE(sormhr,SORMHR)
+#define SPOCON_F77  F77_BLAS_MANGLE(spocon,SPOCON)
+#define SPOEQU_F77  F77_BLAS_MANGLE(spoequ,SPOEQU)
+#define SPORFS_F77  F77_BLAS_MANGLE(sporfs,SPORFS)
+#define SPOSV_F77   F77_BLAS_MANGLE(sposv,SPOSV)
+#define SPOSVX_F77  F77_BLAS_MANGLE(sposvx,SPOSVX)
+#define SPOTRF_F77  F77_BLAS_MANGLE(spotrf,SPOTRF)
+#define SPOTRI_F77  F77_BLAS_MANGLE(spotri,SPOTRI)
+#define SPOTRS_F77  F77_BLAS_MANGLE(spotrs,SPOTRS)
+#define SSPEV_F77   F77_BLAS_MANGLE(sspev,SSPEV)
+#define SSPGV_F77   F77_BLAS_MANGLE(sspgv,SSPGV)
+#define SSTEV_F77   F77_BLAS_MANGLE(sstev,SSTEV)
+#define SSYEVD_F77   F77_BLAS_MANGLE(ssyevd,SSYEVD)
+#define SSYEV_F77   F77_BLAS_MANGLE(ssyev,SSYEV)
+#define SSYEVR_F77  F77_BLAS_MANGLE(ssyevr,SSYEVR)
+#define SSYEVX_F77  F77_BLAS_MANGLE(ssyevx,SSYEVX)
+#define SSYGV_F77   F77_BLAS_MANGLE(ssygv,SSYGV)
+#define SSYGVX_F77  F77_BLAS_MANGLE(ssygvx,SSYGVX)
+#define STREVC_F77  F77_BLAS_MANGLE(strevc,STREVC)
+#define STREXC_F77  F77_BLAS_MANGLE(strexc,STREXC)
 
 #ifdef __cplusplus
 extern "C" {
