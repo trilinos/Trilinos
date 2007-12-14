@@ -1,5 +1,8 @@
 /* src/Epetra_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define the Fortran name mangling to be used for the BLAS */
+#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #cmakedefine F77_DUMMY_MAIN

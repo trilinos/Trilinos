@@ -10,6 +10,8 @@ OPTION(TRILINOS_ENABLE_EPETRA "Build the epetra package." ON)
 OPTION(TRILINOS_ENABLE_RBGEN "Build the rbgen package." ON)
 OPTION(TRILINOS_ENABLE_TEUCHOS "Build the teuchos package." ON)
 OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
+OPTION(TRILINOS_INSTALL_BLAS "Include BLAS library in installations / packages." OFF)
+OPTION(TRILINOS_INSTALL_LAPACK "Include LAPACK library in installations / packages." OFF)
 
 # Setup global requirements ...
 FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
@@ -56,32 +58,44 @@ ENDIF(TRILINOS_ENABLE_MPI)
 IF(CYGWIN)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## __")
+	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
 ENDIF(CYGWIN)
 
 IF(WIN32)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) NAME")
+	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
 ENDIF(WIN32)
 
 IF(UNIX AND NOT APPLE)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## _")
+	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
 ENDIF(UNIX AND NOT APPLE)
 
 IF(APPLE)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## __")
+	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
 ENDIF(APPLE)
 
 # Setup testing ...
 INCLUDE(CTest)
 
-# Setup some common installation paths ...
+# Handle some common installation stuff ...
 
 # This is the path where packages should install their header files.
 SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${TRILINOS_VERSION}")
 # This is the path where packages should install their header configuration files ...
 SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${TRILINOS_VERSION}/include")
+
+IF(TRILINOS_INSTALL_BLAS)
+  INSTALL(FILES ${TRILINOS_BLAS_LIBRARY} DESTINATION lib)
+ENDIF(TRILINOS_INSTALL_BLAS)
+
+IF(TRILINOS_INSTALL_LAPACK)
+  INSTALL(FILES ${TRILINOS_LAPACK_LIBRARY} DESTINATION lib)
+ENDIF(TRILINOS_INSTALL_LAPACK)
 
 # Setup individual packages ...
 ADD_SUBDIRECTORY(packages)
