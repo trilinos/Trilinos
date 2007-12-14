@@ -76,6 +76,13 @@ ENDIF(APPLE)
 # Setup testing ...
 INCLUDE(CTest)
 
+# Setup some common installation paths ...
+
+# This is the path where packages should install their header files.
+SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${TRILINOS_VERSION}")
+# This is the path where packages should install their header configuration files ...
+SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${TRILINOS_VERSION}/include")
+
 # Setup individual packages ...
 ADD_SUBDIRECTORY(packages)
 
