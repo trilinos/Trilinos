@@ -248,37 +248,61 @@ atexit.register(Finalize)
 #include "Epetra_MpiComm.h"
 #include "Epetra_MpiDistributor.h"
 
-PyObject* Init_Argv(PyObject *args) {
+PyObject* Init_Argv(PyObject *args)
+{
+  // Check if MPI is already initialized
   int ierr = 0;
   MPI_Initialized(&ierr);
   if (ierr) return Py_BuildValue("");
 
-  int i, error, myid, size;
-  int argc = 0;
-  char **argv;
-  /* Reconstruct C-commandline */
-  argc = PyList_Size(args); //Number of commandline arguments
-  argv = (char**) malloc((argc+1)*sizeof(char*));
-  for (i=0; i<argc; i++) argv[i] = PyString_AsString(PyList_GetItem(args, i));
-  argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
-  error = MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if (error) {
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    PyErr_SetString(PyExc_RuntimeError, "MPI initialization error");
-    return NULL;
+  // Reconstruct the command-line arguments
+  int    argc  = 0;
+  char **argv  = 0;
+  if (!PySequence_Check(args))
+  {
+    PyErr_SetString(PyExc_TypeError, "Init_Argv argument must be a sequence");
+    goto fail;
   }
+  argc = PySequence_Size(args);
+  argv = new char*[argc+1];
+  for (int i=0; i<argc; ++i)
+  {
+    PyObject * item = PySequence_GetItem(args, i);
+    if (!PyString_Check(item))
+    {
+      PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
+      goto fail;
+    }
+    argv[i] = PyString_AsString(item);
+  }
+  argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
+
+  //Initialize MPI
+  ierr = MPI_Init(&argc, &argv);
+  if (ierr)
+  {
+    PyErr_Format(PyExc_RuntimeError, "MPI initialization error %d", ierr);
+    goto fail;
+  }
+  delete [] argv;
   return Py_BuildValue("");
+ fail:
+  if (argv) delete [] argv;
+  return NULL;
 }
 
-PyObject* Finalize() {
-  int error, myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  // FIXME: add if finalized!
-  error = MPI_Finalize();
-  if (error) {
-    PyErr_SetString(PyExc_RuntimeError, "MPI Finalize error");
+PyObject* Finalize()
+{
+  // Check if MPI has already been finalized
+  int ierr = 0;
+  MPI_Finalized(&ierr);
+  if (ierr) return Py_BuildValue("");
+
+  // Finalize MPI
+  ierr = MPI_Finalize();
+  if (ierr)
+  {
+    PyErr_Format(PyExc_RuntimeError, "MPI finalization error %d", ierr);
     return NULL;
   }
   return Py_BuildValue("");
