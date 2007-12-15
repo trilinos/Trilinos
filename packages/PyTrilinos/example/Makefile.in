@@ -210,10 +210,9 @@ EXTRA_DIST = setpath.src gre__115.mx \
 	     exMLAPI_Smoother.src exNOX_1Dfem.src exTeuchos.src exThyra.src
 
 MAINTAINERCLEANFILES = Makefile.in
-@HAVE_MPI_FALSE@@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = exTeuchos.py
 
 # Teuchos examples
-@HAVE_MPI_TRUE@@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = 
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = exTeuchos.py
 
 # # Thyra examples
 # if HAVE_PYTRILINOS_THYRA

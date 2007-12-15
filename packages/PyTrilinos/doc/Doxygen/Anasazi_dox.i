@@ -228,7 +228,9 @@ C++ includes: AnasaziBasicOrthoManager.hpp ";
 %feature("docstring")  Anasazi::BasicOrthoManager::BasicOrthoManager "Anasazi::BasicOrthoManager< ScalarType, MV, OP
 >::BasicOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null,
 typename Teuchos::ScalarTraits< ScalarType >::magnitudeType
-kappa=1.5625)
+kappa=1.41421356, typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType eps=0.0, typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType tol=0.20)
 
 Constructor specifying re-orthogonalization tolerance. ";
 
@@ -238,27 +240,16 @@ Constructor specifying re-orthogonalization tolerance. ";
 
 Destructor. ";
 
-/*  Accessor routines  */
-
-%feature("docstring")  Anasazi::BasicOrthoManager::setKappa "void
-Anasazi::BasicOrthoManager< ScalarType, MV, OP >::setKappa(typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType kappa)
-
-Set parameter for re-orthogonalization threshold. ";
-
-%feature("docstring")  Anasazi::BasicOrthoManager::getKappa "Teuchos::ScalarTraits<ScalarType>::magnitudeType
-Anasazi::BasicOrthoManager< ScalarType, MV, OP >::getKappa() const
-
-Return parameter for re-orthogonalization threshold. ";
-
 /*  Methods implementing Anasazi::MatOrthoManager  */
 
 %feature("docstring")  Anasazi::BasicOrthoManager::projectMat "void
 Anasazi::BasicOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
-Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array< Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > >
-C=Teuchos::tuple(Teuchos::null), Teuchos::Array< Teuchos::RCP< const
-MV > > Q=Teuchos::tuple(Teuchos::null)) const
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null)), Teuchos::RCP< MV > MX=Teuchos::null,
+Teuchos::Array< Teuchos::RCP< const MV > >
+MQ=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
 
 Given a list of mutually orthogonal and internally orthonormal bases
 Q, this method projects a multivector X onto the space orthogonal to
@@ -297,9 +288,8 @@ orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
 
 %feature("docstring")  Anasazi::BasicOrthoManager::normalizeMat "int
 Anasazi::BasicOrthoManager< ScalarType, MV, OP >::normalizeMat(MV &X,
-Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > >
-B=Teuchos::tuple(Teuchos::null)) const
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null) const
 
 This method takes a multivector X and attempts to compute an
 orthonormal basis for $colspan(X)$, with respect to innerProd().
@@ -353,12 +343,14 @@ returned X and rows in the returned B are valid. ";
 %feature("docstring")
 Anasazi::BasicOrthoManager::projectAndNormalizeMat "int
 Anasazi::BasicOrthoManager< ScalarType, MV, OP
->::projectAndNormalizeMat(MV &X, Teuchos::RCP< MV > MX=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
-ScalarType > > > C=Teuchos::tuple(Teuchos::null), Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > B=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< const MV > >
-Q=Teuchos::tuple(Teuchos::null)) const
+>::projectAndNormalizeMat(MV &X, Teuchos::Array< Teuchos::RCP< const
+MV > > Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix<
+int, ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array<
+Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
+>(Teuchos::null))) const
 
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
@@ -436,11 +428,25 @@ The method has the option of exploiting a caller-provided MX. ";
 
 %feature("docstring")  Anasazi::BasicOrthoManager::orthogErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::BasicOrthoManager< ScalarType, MV, OP >::orthogErrorMat(const
-MV &X1, Teuchos::RCP< const MV > MX1, const MV &X2) const
+MV &X1, const MV &X2, Teuchos::RCP< const MV > MX1, Teuchos::RCP<
+const MV > MX2) const
 
 This method computes the error in orthogonality of two multivectors,
 measured as the Frobenius norm of innerProd(X,Y). The method has the
 option of exploiting a caller-provided MX. ";
+
+/*  Accessor routines  */
+
+%feature("docstring")  Anasazi::BasicOrthoManager::setKappa "void
+Anasazi::BasicOrthoManager< ScalarType, MV, OP >::setKappa(typename
+Teuchos::ScalarTraits< ScalarType >::magnitudeType kappa)
+
+Set parameter for re-orthogonalization threshold. ";
+
+%feature("docstring")  Anasazi::BasicOrthoManager::getKappa "Teuchos::ScalarTraits<ScalarType>::magnitudeType
+Anasazi::BasicOrthoManager< ScalarType, MV, OP >::getKappa() const
+
+Return parameter for re-orthogonalization threshold. ";
 
 
 // File: classAnasazi_1_1BasicOutputManager.xml
@@ -2378,7 +2384,7 @@ Returns the current UseTranspose setting [always false for this
 operator]. ";
 
 %feature("docstring")  Anasazi::EpetraGenOp::SetUseTranspose "int
-Anasazi::EpetraGenOp::SetUseTranspose(bool UseTranspose)
+Anasazi::EpetraGenOp::SetUseTranspose(bool UseTranspose_in)
 
 If set true, the transpose of this operator will be applied [not
 functional for this operator]. ";
@@ -2426,7 +2432,7 @@ C++ includes: AnasaziEpetraAdapter.hpp ";
 
 /*  Constructors/Destructors  */
 
-%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap &Map,
+%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap &Map_in,
 const int numvecs)
 
 Basic EpetraMultiVec constructor.
@@ -2445,7 +2451,7 @@ Pointer to an EpetraMultiVec ";
 
 Copy constructor. ";
 
-%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap &Map,
+%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap &Map_in,
 double *array, const int numvecs, const int stride=0)
 
 Create multi-vector with values from two dimensional array.
@@ -2564,7 +2570,7 @@ A^T(*this)$. ";
 
 %feature("docstring")  Anasazi::EpetraMultiVec::MvDot "void
 Anasazi::EpetraMultiVec::MvDot(const MultiVec< double > &A,
-std::vector< double > *b) const
+std::vector< double > &b) const
 
 Compute a vector b where the components are the individual dot-
 products, i.e. $ b[i] = A[i]^H(this[i])$ where A[i] is the i-th column
@@ -2583,7 +2589,7 @@ Scale each element of the i-th vector in *this with alpha[i]. ";
 /*  Norm method  */
 
 %feature("docstring")  Anasazi::EpetraMultiVec::MvNorm "void
-Anasazi::EpetraMultiVec::MvNorm(std::vector< double > *normvec) const
+Anasazi::EpetraMultiVec::MvNorm(std::vector< double > &normvec) const
 
 Compute the 2-norm of each individual vector of *this. Upon return,
 normvec[i] holds the 2-norm of the i-th vector of *this. ";
@@ -2778,7 +2784,7 @@ Returns the current UseTranspose setting [always false for this
 operator]. ";
 
 %feature("docstring")  Anasazi::EpetraSymOp::SetUseTranspose "int
-Anasazi::EpetraSymOp::SetUseTranspose(bool UseTranspose)
+Anasazi::EpetraSymOp::SetUseTranspose(bool UseTranspose_in)
 
 If set true, the transpose of this operator will be applied [not
 functional for this operator]. ";
@@ -2883,6 +2889,227 @@ Apply method.
 This method will apply $(WA)^T*WA$ to X, returning Y. ";
 
 
+// File: classAnasazi_1_1GenOrthoManager.xml
+%feature("docstring") Anasazi::GenOrthoManager "
+
+This class provides an interface for orthogonalization managers to
+provide oblique projectors of the form: \\\\[ P_{X,Y} S = S - X
+\\\\langle Y, X \\\\rangle^{-1} \\\\langle Y, S \\\\rangle\\\\ . \\\\]
+Such a projector modifies the input in the range on $X$ in order to
+make the output orthogonal to the range of $Y$.
+
+Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+
+C++ includes: AnasaziGenOrthoManager.hpp ";
+
+/*  Constructor/Destructor  */
+
+%feature("docstring")  Anasazi::GenOrthoManager::GenOrthoManager "Anasazi::GenOrthoManager< ScalarType, MV, OP
+>::GenOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null)
+
+Default constructor. ";
+
+%feature("docstring")  Anasazi::GenOrthoManager::~GenOrthoManager "virtual Anasazi::GenOrthoManager< ScalarType, MV, OP
+>::~GenOrthoManager()
+
+Destructor. ";
+
+/*  Orthogonalization methods  */
+
+%feature("docstring")  Anasazi::GenOrthoManager::projectGen "virtual
+void Anasazi::GenOrthoManager< ScalarType, MV, OP >::projectGen(MV &S,
+Teuchos::Array< Teuchos::RCP< const MV > > X, Teuchos::Array<
+Teuchos::RCP< const MV > > Y, bool isBiOrtho, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null)), Teuchos::RCP< MV > MS=Teuchos::null,
+Teuchos::Array< Teuchos::RCP< const MV > >
+MX=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null)),
+Teuchos::Array< Teuchos::RCP< const MV > >
+MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const =0
+
+Applies a series of generic projectors.
+
+Given a list of bases X[i] and Y[i] (a projection pair), this method
+takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
+= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
+\\\\rangle\\\\ . \\\\] This operation projects S onto the space
+orthogonal to the Y[i], along the range of the X[i]. The inner product
+specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$ is given by
+innerProd().
+
+The call is equivalent to the call  The method also returns the
+coefficients C[i] associated with each projection pair, so that \\\\[
+S_{in} = S_{out} + \\\\sum_i X[i] C[i] \\\\] and therefore \\\\[ C[i]
+= \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
+\\\\rangle\\\\ . \\\\]
+
+Lastly, for reasons of efficiency, the user must specify whether the
+projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
+whether $\\\\langle Y[i], X[i] \\\\rangle = I$. In the case that the
+bases are specified to be biorthogonal, the inverse $\\\\langle Y, X
+\\\\rangle^{-1}$ will not be computed. Furthermore, the user may
+optionally specifiy the image of S and the projection pairs under the
+inner product operator getOp().
+
+Parameters:
+-----------
+
+S:  [in/out] The multivector to be modified.  On output, the columns
+of S will be orthogonal to each Y[i], satisfying \\\\[ \\\\langle
+Y[i], S_{out} \\\\rangle = 0 \\\\] Also, \\\\[ S_{in} = S_{out} +
+\\\\sum_i X[i] C[i] \\\\]
+
+X:  [in] Multivectors for bases under which $S_{in}$ is modified.
+
+Y:  [in] Multivectors for bases to which $S_{out}$ should be
+orthogonal.
+
+isBiortho:  [in] A flag specifying whether the bases X[i] and Y[i] are
+biorthonormal, i.e,. whether $\\\\langle Y[i], X[i]\\\\rangle == I$.
+
+C:  [out] Coefficients for reconstructing $S_{in}$ via the bases X[i].
+If C[i] is a non-null pointer and C[i] matches the dimensions of S and
+X[i], then the coefficients computed during the orthogonalization
+routine will be stored in the matrix C[i].  If C[i] points to a
+Teuchos::SerialDenseMatrix with size inconsistent with S and  X[i],
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+C.size() < i or C[i] is a null pointer, the caller will not have
+access to the computed coefficients C[i].
+
+MS:  [in/out] If specified by the user, on input MS is required to be
+the image of S under the operator getOp(). On output, MS will be
+updated to reflect the changes in S.
+
+MX:  [in] If specified by the user, MX[i] is required to be the image
+of X[i] under the operator getOp().
+
+MY:  [in] If specified by the user, MY[i] is required to be the image
+of Y[i] under the operator getOp().
+
+If X[i] != Teuchos::null or Y[i] != Teuchos::null, then X[i] and Y[i]
+are required to have the same number of columns, and each should have
+the same number of rows as S.
+
+For any i != j, $\\\\langle Y[i], X[j] \\\\rangle == 0$.
+
+If biOrtho == true, $\\\\langle Y[i], X[i]\\\\rangle == I$
+
+Otherwise, if biOrtho == false, then $\\\\langle Y[i], X[i]\\\\rangle$
+should be Hermitian positive-definite.
+
+If X[i] and Y[i] have $xc_i$ columns and S has $sc$ columns, then C[i]
+if specified must be $xc_i \\\\times sc$. ";
+
+%feature("docstring")
+Anasazi::GenOrthoManager::projectAndNormalizeGen "virtual int
+Anasazi::GenOrthoManager< ScalarType, MV, OP
+>::projectAndNormalizeGen(MV &S, Teuchos::Array< Teuchos::RCP< const
+MV > > X, Teuchos::Array< Teuchos::RCP< const MV > > Y, bool
+isBiOrtho, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix<
+int, ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MS=Teuchos::null, Teuchos::Array<
+Teuchos::RCP< const MV > > MX=Teuchos::tuple(Teuchos::RCP< const MV
+>(Teuchos::null)), Teuchos::Array< Teuchos::RCP< const MV > >
+MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const =0
+
+Applies a series of generic projectors and returns an orthonormal
+basis for the residual data.
+
+Given a list of bases X[i] and Y[i] (a projection pair), this method
+takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
+= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
+\\\\rangle\\\\ . \\\\] These operation project S onto the space
+orthogonal to the range of the Y[i], along the range of X[i]. The
+inner product specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$
+is given by innerProd().
+
+The method returns in S an orthonormal basis for the residual \\\\[
+\\\\left( \\\\prod_{i} P_{X[i],Y[i]} \\\\right) S_{in} = S_{out} B\\\\
+, \\\\] where B contains the (not necessarily triangular) coefficients
+of the residual with respect to the new basis.
+
+The method also returns the coefficients C[i] and B associated with
+each projection pair, so that \\\\[ S_{in} = S_{out} B + \\\\sum_i
+X[i] C[i] \\\\] and \\\\[ C[i] = \\\\langle Y[i], X[i] \\\\rangle^{-1}
+\\\\langle Y[i], S \\\\rangle\\\\ . \\\\]
+
+Lastly, for reasons of efficiency, the user must specify whether the
+projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
+whether $\\\\langle Y[i], X[i] \\\\rangle = I$. Furthermore, the user
+may optionally specifiy the image of S and the projection pairs under
+the inner product operator getOp().
+
+Parameters:
+-----------
+
+S:  [in/out] The multivector to be modified.  On output, the columns
+of S will be orthogonal to each Y[i], satisfying \\\\[ \\\\langle
+Y[i], S_{out} \\\\rangle = 0 \\\\] Also, \\\\[ S_{in}(1:m,1:n) =
+S_{out}(1:m,1:rank) B(1:rank,1:n) + \\\\sum_i X[i] C[i]\\\\ , \\\\]
+where m is the number of rows in S, n is the number of columns in S,
+and rank is the value returned from the method.
+
+X:  [in] Multivectors for bases under which $S_{in}$ is modified.
+
+Y:  [in] Multivectors for bases to which $S_{out}$ should be
+orthogonal.
+
+isBiortho:  [in] A flag specifying whether the bases X[i] and Y[i] are
+biorthonormal, i.e,. whether $\\\\langle Y[i], X[i]\\\\rangle == I$.
+
+C:  [out] Coefficients for reconstructing $S_{in}$ via the bases X[i].
+If C[i] is a non-null pointer and C[i] matches the dimensions of X and
+Q[i], then the coefficients computed during the orthogonalization
+routine will be stored in the matrix C[i].  If C[i] points to a
+Teuchos::SerialDenseMatrix with size inconsistent with S and  X[i],
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+C.size() < i or C[i] is a null pointer, the caller will not have
+access to the computed coefficients C[i].
+
+B:  [out] The coefficients of the original S with respect to the
+computed basis. If B is a non-null pointer and B matches the
+dimensions of B, then the coefficients computed during the
+orthogonalization routine will be stored in B, similar to calling If B
+points to a Teuchos::SerialDenseMatrix with size inconsistent with S,
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+B is null, the caller will not have access to the computed
+coefficients.
+
+MS:  [in/out] If specified by the user, on input MS is required to be
+the image of S under the operator getOp(). On output, MS will be
+updated to reflect the changes in S.
+
+MX:  [in] If specified by the user, MX[i] is required to be the image
+of X[i] under the operator getOp().
+
+MY:  [in] If specified by the user, MY[i] is required to be the image
+of Y[i] under the operator getOp().
+
+The matrix B is not necessarily triangular (as in a QR factorization);
+see the documentation of specific orthogonalization managers.
+
+If X[i] != Teuchos::null or Y[i] != Teuchos::null, then X[i] and Y[i]
+are required to have the same number of columns, and each should have
+the same number of rows as S.
+
+For any i != j, $\\\\langle Y[i], X[j] \\\\rangle == 0$.
+
+If biOrtho == true, $\\\\langle Y[i], X[i]\\\\rangle == I$
+
+Otherwise, if biOrtho == false, then $\\\\langle Y[i], X[i]\\\\rangle$
+should be Hermitian positive-definite.
+
+If X[i] and Y[i] have $xc_i$ columns and S has $sc$ columns, then C[i]
+if specified must be $xc_i \\\\times sc$.
+
+If S has $sc$ columns, then B if specified must be $sc \\\\times sc $.
+
+Rank of the basis computed by this method. ";
+
+
 // File: classAnasazi_1_1HelperTraits.xml
 %feature("docstring") Anasazi::HelperTraits "
 
@@ -2893,6 +3120,312 @@ An adapter for this traits class must exist for the ScalarType. If
 not, this class will produce a compile-time error.
 
 C++ includes: AnasaziHelperTraits.hpp ";
+
+
+// File: classAnasazi_1_1ICGSOrthoManager.xml
+%feature("docstring") Anasazi::ICGSOrthoManager "
+
+An implementation of the Anasazi::GenOrthoManager that performs
+orthogonalization using iterated classical Gram- Schmidt.
+
+Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+
+C++ includes: AnasaziICGSOrthoManager.hpp ";
+
+/*  Constructor/Destructor  */
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::ICGSOrthoManager "Anasazi::ICGSOrthoManager< ScalarType, MV, OP
+>::ICGSOrthoManager(Teuchos::RCP< const OP > Op=Teuchos::null, int
+numIters=2, typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType eps=0.0, typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType tol=0.20)
+
+Constructor specifying the operator defining the inner product as well
+as the number of orthogonalization iterations. ";
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::~ICGSOrthoManager "Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::~ICGSOrthoManager()
+
+Destructor. ";
+
+/*  Methods implementing Anasazi::GenOrthoManager  */
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::projectGen "void
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::projectGen(MV &S,
+Teuchos::Array< Teuchos::RCP< const MV > > X, Teuchos::Array<
+Teuchos::RCP< const MV > > Y, bool isBiOrtho, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null)), Teuchos::RCP< MV > MS=Teuchos::null,
+Teuchos::Array< Teuchos::RCP< const MV > >
+MX=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null)),
+Teuchos::Array< Teuchos::RCP< const MV > >
+MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
+
+Applies a series of generic projectors.
+
+Given a list of bases X[i] and Y[i] (a projection pair), this method
+takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
+= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
+\\\\rangle\\\\ . \\\\] This operation projects S onto the space
+orthogonal to the Y[i], along the range of the X[i]. The inner product
+specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$ is given by
+innerProd().
+
+The call is equivalent to the call  The method also returns the
+coefficients C[i] associated with each projection pair, so that \\\\[
+S_{in} = S_{out} + \\\\sum_i X[i] C[i] \\\\] and therefore \\\\[ C[i]
+= \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
+\\\\rangle\\\\ . \\\\]
+
+Lastly, for reasons of efficiency, the user must specify whether the
+projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
+whether $\\\\langle Y[i], X[i] \\\\rangle = I$. In the case that the
+bases are specified to be biorthogonal, the inverse $\\\\langle Y, X
+\\\\rangle^{-1}$ will not be computed. Furthermore, the user may
+optionally specifiy the image of S and the projection pairs under the
+inner product operator getOp().
+
+projectGen() is implemented to apply the projectors via an iterated
+Classical Gram-Schmidt, where the iteration is performed getNumIters()
+number of times.
+
+Parameters:
+-----------
+
+S:  [in/out] The multivector to be modified.  On output, the columns
+of S will be orthogonal to each Y[i], satisfying \\\\[ \\\\langle
+Y[i], S_{out} \\\\rangle = 0 \\\\] Also, \\\\[ S_{in} = S_{out} +
+\\\\sum_i X[i] C[i] \\\\]
+
+X:  [in] Multivectors for bases under which $S_{in}$ is modified.
+
+Y:  [in] Multivectors for bases to which $S_{out}$ should be
+orthogonal.
+
+isBiortho:  [in] A flag specifying whether the bases X[i] and Y[i] are
+biorthonormal, i.e,. whether $\\\\langle Y[i], X[i]\\\\rangle == I$.
+
+C:  [out] Coefficients for reconstructing $S_{in}$ via the bases X[i].
+If C[i] is a non-null pointer and C[i] matches the dimensions of S and
+X[i], then the coefficients computed during the orthogonalization
+routine will be stored in the matrix C[i].  If C[i] points to a
+Teuchos::SerialDenseMatrix with size inconsistent with S and  X[i],
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+C.size() < i or C[i] is a null pointer, the caller will not have
+access to the computed coefficients C[i].
+
+MS:  [in/out] If specified by the user, on input MS is required to be
+the image of S under the operator getOp(). On output, MS will be
+updated to reflect the changes in S.
+
+MX:  [in] If specified by the user, on MX[i] is required to be the
+image of X[i] under the operator getOp().
+
+MY:  [in] If specified by the user, on MY[i] is required to be the
+image of Y[i] under the operator getOp().
+
+If X[i] != Teuchos::null or Y[i] != Teuchos::null, then X[i] and Y[i]
+are required to have the same number of columns, and each should have
+the same number of rows as S.
+
+For any i != j, $\\\\langle Y[i], X[j] \\\\rangle == 0$.
+
+If biOrtho == true, $\\\\langle Y[i], X[i]\\\\rangle == I$
+
+Otherwise, if biOrtho == false, then $\\\\langle Y[i], X[i]\\\\rangle$
+should be Hermitian positive-definite.
+
+If X[i] and Y[i] have $xc_i$ columns and S has $sc$ columns, then C[i]
+if specified must be $xc_i \\\\times sc$. ";
+
+%feature("docstring")
+Anasazi::ICGSOrthoManager::projectAndNormalizeGen "int
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP
+>::projectAndNormalizeGen(MV &S, Teuchos::Array< Teuchos::RCP< const
+MV > > X, Teuchos::Array< Teuchos::RCP< const MV > > Y, bool
+isBiOrtho, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix<
+int, ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MS=Teuchos::null, Teuchos::Array<
+Teuchos::RCP< const MV > > MX=Teuchos::tuple(Teuchos::RCP< const MV
+>(Teuchos::null)), Teuchos::Array< Teuchos::RCP< const MV > >
+MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
+
+Applies a series of generic projectors and returns an orthonormal
+basis for the residual data.
+
+Given a list of bases X[i] and Y[i] (a projection pair), this method
+takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
+= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
+\\\\rangle\\\\ . \\\\] These operation project S onto the space
+orthogonal to the range of the Y[i], along the range of X[i]. The
+inner product specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$
+is given by innerProd().
+
+The method returns in S an orthonormal basis for the residual \\\\[
+\\\\left( \\\\prod_{i} P_{X[i],Y[i]} \\\\right) S_{in} = S_{out} B\\\\
+, \\\\] where B contains the (not necessarily triangular) coefficients
+of the residual with respect to the new basis.
+
+The method also returns the coefficients C[i] and B associated with
+each projection pair, so that \\\\[ S_{in} = S_{out} B + \\\\sum_i
+X[i] C[i] \\\\] and \\\\[ C[i] = \\\\langle Y[i], X[i] \\\\rangle^{-1}
+\\\\langle Y[i], S \\\\rangle\\\\ . \\\\]
+
+Lastly, for reasons of efficiency, the user must specify whether the
+projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
+whether $\\\\langle Y[i], X[i] \\\\rangle = I$. Furthermore, the user
+may optionally specifiy the image of S and the projection pairs under
+the inner product operator getOp().
+
+Parameters:
+-----------
+
+S:  [in/out] The multivector to be modified.  On output, the columns
+of S will be orthogonal to each Y[i], satisfying \\\\[ \\\\langle
+Y[i], S_{out} \\\\rangle = 0 \\\\] Also, \\\\[ S_{in}(1:m,1:n) =
+S_{out}(1:m,1:rank) B(1:rank,1:n) + \\\\sum_i X[i] C[i]\\\\ , \\\\]
+where m is the number of rows in S, n is the number of columns in S,
+and rank is the value returned from the method.
+
+X:  [in] Multivectors for bases under which $S_{in}$ is modified.
+
+Y:  [in] Multivectors for bases to which $S_{out}$ should be
+orthogonal.
+
+isBiortho:  [in] A flag specifying whether the bases X[i] and Y[i] are
+biorthonormal, i.e,. whether $\\\\langle Y[i], X[i]\\\\rangle == I$.
+
+C:  [out] Coefficients for reconstructing $S_{in}$ via the bases X[i].
+If C[i] is a non-null pointer and C[i] matches the dimensions of X and
+Q[i], then the coefficients computed during the orthogonalization
+routine will be stored in the matrix C[i].  If C[i] points to a
+Teuchos::SerialDenseMatrix with size inconsistent with S and  X[i],
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+C.size() < i or C[i] is a null pointer, the caller will not have
+access to the computed coefficients C[i].
+
+B:  [out] The coefficients of the original S with respect to the
+computed basis. If B is a non-null pointer and B matches the
+dimensions of B, then the coefficients computed during the
+orthogonalization routine will be stored in B, similar to calling If B
+points to a Teuchos::SerialDenseMatrix with size inconsistent with S,
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+B is null, the caller will not have access to the computed
+coefficients.  The normalization uses classical Gram-Schmidt
+iteration, so that B is an upper triangular matrix with positive
+diagonal elements.
+
+MS:  [in/out] If specified by the user, on input MS is required to be
+the image of S under the operator getOp(). On output, MS will be
+updated to reflect the changes in S.
+
+MX:  [in] If specified by the user, on MX[i] is required to be the
+image of X[i] under the operator getOp().
+
+MY:  [in] If specified by the user, on MY[i] is required to be the
+image of Y[i] under the operator getOp().
+
+If X[i] != Teuchos::null or Y[i] != Teuchos::null, then X[i] and Y[i]
+are required to have the same number of columns, and each should have
+the same number of rows as S.
+
+For any i != j, $\\\\langle Y[i], X[j] \\\\rangle == 0$.
+
+If biOrtho == true, $\\\\langle Y[i], X[i]\\\\rangle == I$
+
+Otherwise, if biOrtho == false, then $\\\\langle Y[i], X[i]\\\\rangle$
+should be Hermitian positive-definite.
+
+If X[i] and Y[i] have $xc_i$ columns and S has $sc$ columns, then C[i]
+if specified must be $xc_i \\\\times sc$.
+
+If S has $sc$ columns, then B if specified must be $sc \\\\times sc $.
+
+Rank of the basis computed by this method. ";
+
+/*  Methods implementing Anasazi::MatOrthoManager  */
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::projectMat "void
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null)), Teuchos::RCP< MV > MX=Teuchos::null,
+Teuchos::Array< Teuchos::RCP< const MV > >
+MQ=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
+
+Given a list of mutually orthogonal and internally orthonormal bases
+Q, this method projects a multivector X onto the space orthogonal to
+the individual Q[i], optionally returning the coefficients of X for
+the individual Q[i]. All of this is done with respect to the inner
+product innerProd().
+
+This method calls projectGen() as follows: See projectGen() for
+argument requirements. ";
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::normalizeMat "int
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::normalizeMat(MV &X,
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null) const
+
+This method takes a multivector X and attempts to compute an
+orthonormal basis for $colspan(X)$, with respect to innerProd().
+
+This method calls projectAndNormalizeGen() as follows: See
+projectAndNormalizeGen() for argument requirements. ";
+
+%feature("docstring")
+Anasazi::ICGSOrthoManager::projectAndNormalizeMat "int
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP
+>::projectAndNormalizeMat(MV &X, Teuchos::Array< Teuchos::RCP< const
+MV > > Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix<
+int, ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array<
+Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
+>(Teuchos::null))) const
+
+Given a set of bases Q[i] and a multivector X, this method computes an
+orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
+
+This method calls projectAndNormalizeGen() as follows: See
+projectAndNormalizeGen() for argument requirements. ";
+
+/*  Error methods  */
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::orthonormErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP
+>::orthonormErrorMat(const MV &X, Teuchos::RCP< const MV >
+MX=Teuchos::null) const
+
+This method computes the error in orthonormality of a multivector,
+measured as the Frobenius norm of the difference innerProd(X,Y) - I.
+The method has the option of exploiting a caller-provided MX. ";
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::orthogErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::orthogErrorMat(const
+MV &X1, const MV &X2, Teuchos::RCP< const MV > MX1, Teuchos::RCP<
+const MV > MX2) const
+
+This method computes the error in orthogonality of two multivectors,
+measured as the Frobenius norm of innerProd(X,Y). The method has the
+option of exploiting a caller-provided MX. ";
+
+/*  Accessor routines  */
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::setNumIters "void
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::setNumIters(int
+numIters)
+
+Set parameter for re-orthogonalization threshold. ";
+
+%feature("docstring")  Anasazi::ICGSOrthoManager::getNumIters "int
+Anasazi::ICGSOrthoManager< ScalarType, MV, OP >::getNumIters() const
+
+Return parameter for re-orthogonalization threshold. ";
 
 
 // File: classAnasazi_1_1LOBPCG.xml
@@ -3551,7 +4084,7 @@ based inner products.
 This class extends Anasazi::OrthoManager by providing extra calling
 arguments to orthogonalization routines, to reduce the cost of
 applying the inner product in cases where the user already has the
-image of the source multivector under the inner product matrix.
+image of target multivectors under the inner product matrix.
 
 A concrete implementation of this class is necessary. The user can
 create their own implementation if those supplied are not suitable for
@@ -3609,62 +4142,109 @@ See getOpCounter() for more details. ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::innerProdMat "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::innerProdMat(const MV
-&X, const MV &Y, Teuchos::RCP< const MV > MY,
-Teuchos::SerialDenseMatrix< int, ScalarType > &Z) const
+&X, const MV &Y, Teuchos::SerialDenseMatrix< int, ScalarType > &Z,
+Teuchos::RCP< const MV > MX=Teuchos::null, Teuchos::RCP< const MV >
+MY=Teuchos::null) const
 
 Provides a matrix-based inner product.
 
 Provides the inner product \\\\[ \\\\langle x, y \\\\rangle = x^H M y
-\\\\] Optionally allows the provision of $M y$. See
+\\\\] Optionally allows the provision of $M y$ and/or $M x$. See
 OrthoManager::innerProd() for more details. ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::normMat "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::normMat(const MV &X,
-Teuchos::RCP< const MV > MX, std::vector< typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType > *normvec) const
+std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > &normvec, Teuchos::RCP< const MV >
+MX=Teuchos::null) const
 
 Provides the norm induced by the matrix-based inner product.
 
-Provides the norm: \\\\[ \\\\|x\\\\|_M = \\\\sqrt{x^T H y} \\\\]
+Provides the norm: \\\\[ \\\\|x\\\\|_M = \\\\sqrt{x^H M y} \\\\]
 Optionally allows the provision of $M x$. See OrthoManager::norm() for
 more details. ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::projectMat "virtual
 void Anasazi::MatOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
-Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array< Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > >
-C=Teuchos::tuple(Teuchos::null), Teuchos::Array< Teuchos::RCP< const
-MV > > Q=Teuchos::tuple(Teuchos::null)) const =0
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null)), Teuchos::RCP< MV > MX=Teuchos::null,
+Teuchos::Array< Teuchos::RCP< const MV > >
+MQ=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const =0
 
 Provides matrix-based projection method.
 
-This method optionally allows the provision of $M X$. See
-OrthoManager::project() for more details. ";
+This method optionally allows the provision of $M X$ and/or the $M
+Q[i]$. See OrthoManager::project() for more details.
+
+Parameters:
+-----------
+
+X:  Q:  C:  [in/out] As in OrthoManager::project()
+
+MX:  [in/out] If specified by the user, on input MX is required to be
+the image of X under the operator getOp(). On output, MX will be
+updated to reflect the changes in X.
+
+MQ:  [in] If specified by the user, on MQ[i] is required to be the
+image of Q[i] under the operator getOp(). ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::normalizeMat "virtual int Anasazi::MatOrthoManager< ScalarType, MV, OP
->::normalizeMat(MV &X, Teuchos::RCP< MV > MX=Teuchos::null,
-Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
-B=Teuchos::null) const =0
+>::normalizeMat(MV &X, Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > > B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null)
+const =0
 
 Provides matrix-based orthonormalization method.
 
 This method optionally allows the provision of $M X$. See
-orthoManager::normalize() for more details. ";
+orthoManager::normalize() for more details.
+
+Parameters:
+-----------
+
+X:  B:  [in/out] As in OrthoManager::normalize()
+
+MX:  [in/out] If specified by the user, on input MX is required to be
+the image of X under the operator getOp(). On output, MX will be
+updated to reflect the changes in X.
+
+Rank of the basis computed by this method, less than or equal to the
+number of columns in X. This specifies how many columns in the
+returned X and MX and rows in the returned B are valid. ";
 
 %feature("docstring")
 Anasazi::MatOrthoManager::projectAndNormalizeMat "virtual int
 Anasazi::MatOrthoManager< ScalarType, MV, OP
->::projectAndNormalizeMat(MV &X, Teuchos::RCP< MV > MX=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
-ScalarType > > > C=Teuchos::tuple(Teuchos::null), Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > B=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< const MV > >
-Q=Teuchos::tuple(Teuchos::null)) const =0
+>::projectAndNormalizeMat(MV &X, Teuchos::Array< Teuchos::RCP< const
+MV > > Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix<
+int, ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array<
+Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
+>(Teuchos::null))) const =0
 
 Provides matrix-based projection/orthonormalization method.
 
-This method optionally allows the provision of $M X$. See
-orthoManager::projectAndNormalize() for more details. ";
+This method optionally allows the provision of $M X$ and/or the $M
+Q[i]$. See orthoManager::projectAndNormalize() for more details.
+
+Parameters:
+-----------
+
+X:  Q:  C:  B:  [in/out] As in OrthoManager::projectAndNormalize()
+
+MX:  [in/out] If specified by the user, on input MX is required to be
+the image of X under the operator getOp(). On output, MX will be
+updated to reflect the changes in X.
+
+MQ:  [in] If specified by the user, on MQ[i] is required to be the
+image of Q[i] under the operator getOp().
+
+Rank of the basis computed by this method, less than or equal to the
+number of columns in X. This specifies how many columns in the
+returned X and MX and rows in the returned B are valid. ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::orthonormErrorMat "virtual Teuchos::ScalarTraits<ScalarType>::magnitudeType
 Anasazi::MatOrthoManager< ScalarType, MV, OP
@@ -3678,12 +4258,13 @@ MX. ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::orthogErrorMat "virtual Teuchos::ScalarTraits<ScalarType>::magnitudeType
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::orthogErrorMat(const
-MV &X1, Teuchos::RCP< const MV > MX1, const MV &X2) const =0
+MV &X, const MV &Y, Teuchos::RCP< const MV > MX=Teuchos::null,
+Teuchos::RCP< const MV > MY=Teuchos::null) const =0
 
 This method computes the error in orthogonality of two multivectors.
 
-This method optionally allows optionally exploits a caller-provided
-MX. ";
+This method optionally allows optionally exploits a caller-provided MX
+and/or MY. ";
 
 /*  Methods implementing Anasazi::OrthoManager  */
 
@@ -3698,7 +4279,7 @@ This method calls ";
 %feature("docstring")  Anasazi::MatOrthoManager::norm "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::norm(const MV &X,
 std::vector< typename Teuchos::ScalarTraits< ScalarType
->::magnitudeType > *normvec) const
+>::magnitudeType > &normvec) const
 
 Implements the interface OrthoManager::norm().
 
@@ -3706,9 +4287,10 @@ This method calls ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::project "void
 Anasazi::MatOrthoManager< ScalarType, MV, OP >::project(MV &X,
-Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
-ScalarType > > > C=Teuchos::tuple(Teuchos::null), Teuchos::Array<
-Teuchos::RCP< const MV > > Q=Teuchos::tuple(Teuchos::null)) const
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null))) const
 
 Implements the interface OrthoManager::project().
 
@@ -3724,12 +4306,12 @@ Implements the interface OrthoManager::normalize().
 This method calls ";
 
 %feature("docstring")  Anasazi::MatOrthoManager::projectAndNormalize "int Anasazi::MatOrthoManager< ScalarType, MV, OP
->::projectAndNormalize(MV &X, Teuchos::Array< Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > >
-C=Teuchos::tuple(Teuchos::null), Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > B=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< const MV > >
-Q=Teuchos::tuple(Teuchos::null)) const
+>::projectAndNormalize(MV &X, Teuchos::Array< Teuchos::RCP< const MV >
+> Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null) const
 
 Implements the interface OrthoManager::projectAndNormalize().
 
@@ -3854,7 +4436,7 @@ A^T * ( *this). ";
 
 %feature("docstring")  Anasazi::MultiVec::MvDot "virtual void
 Anasazi::MultiVec< ScalarType >::MvDot(const MultiVec< ScalarType >
-&A, std::vector< ScalarType > *b) const =0
+&A, std::vector< ScalarType > &b) const =0
 
 Compute a vector b where the components are the individual dot-
 products, i.e. b[i] = A[i]^H* this[i] where A[i] is the i-th column of
@@ -3864,7 +4446,7 @@ A. ";
 
 %feature("docstring")  Anasazi::MultiVec::MvNorm "virtual void
 Anasazi::MultiVec< ScalarType >::MvNorm(std::vector< typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType > *normvec) const
+Teuchos::ScalarTraits< ScalarType >::magnitudeType > &normvec) const
 =0
 
 Compute the 2-norm of each individual vector of *this. Upon return,
@@ -4011,7 +4593,7 @@ Compute a dense matrix B through the matrix-matrix multiply $
 
 %feature("docstring")  Anasazi::MultiVecTraits::MvDot "static void
 Anasazi::MultiVecTraits< ScalarType, MV >::MvDot(const MV &mv, const
-MV &A, std::vector< ScalarType > *b)
+MV &A, std::vector< ScalarType > &b)
 
 Compute a vector b where the components are the individual dot-
 products of the i-th columns of A and mv, i.e. $b[i] = A[i]^Hmv[i]$.
@@ -4034,7 +4616,7 @@ Scale each element of the i-th vector in mv with alpha[i]. ";
 %feature("docstring")  Anasazi::MultiVecTraits::MvNorm "static void
 Anasazi::MultiVecTraits< ScalarType, MV >::MvNorm(const MV &mv,
 std::vector< typename Teuchos::ScalarTraits< ScalarType
->::magnitudeType > *normvec)
+>::magnitudeType > &normvec)
 
 Compute the 2-norm of each individual vector of mv. Upon return,
 normvec[i] holds the value of $||mv_i||_2$, the i-th column of mv. ";
@@ -4191,8 +4773,8 @@ Compute a dense matrix B through the matrix-matrix multiply $
 
 %feature("docstring")  Anasazi::MultiVecTraits< double,
 Epetra_MultiVector >::MvDot " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvDot(const Epetra_MultiVector &mv,
-const Epetra_MultiVector &A, std::vector< double > *b)
+double, Epetra_MultiVector >::MvDot(const Epetra_MultiVector &A, const
+Epetra_MultiVector &B, std::vector< double > &b)
 
 Compute a vector b where the components are the individual dot-
 products of the i-th columns of A and mv, i.e. $b[i] = A[i]^Tmv[i]$.
@@ -4203,7 +4785,7 @@ products of the i-th columns of A and mv, i.e. $b[i] = A[i]^Tmv[i]$.
 %feature("docstring")  Anasazi::MultiVecTraits< double,
 Epetra_MultiVector >::MvNorm " static void Anasazi::MultiVecTraits<
 double, Epetra_MultiVector >::MvNorm(const Epetra_MultiVector &mv,
-std::vector< double > *normvec)
+std::vector< double > &normvec)
 
 Compute the 2-norm of each individual vector of mv. Upon return,
 normvec[i] holds the value of $||mv_i||_2$, the i-th column of mv. ";
@@ -4374,7 +4956,7 @@ Compute a dense matrix B through the matrix-matrix multiply $
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::MvDot " static void Anasazi::MultiVecTraits<
 ScalarType, MultiVec< ScalarType > >::MvDot(const MultiVec< ScalarType
-> &mv, const MultiVec< ScalarType > &A, std::vector< ScalarType > *b)
+> &mv, const MultiVec< ScalarType > &A, std::vector< ScalarType > &b)
 
 Compute a vector b where the components are the individual dot-
 products of the i-th columns of A and mv, i.e. $b[i] = A[i]^H mv[i]$.
@@ -4400,7 +4982,7 @@ Scale each element of the i-th vector in *this with alpha[i]. ";
 ScalarType > >::MvNorm " static void Anasazi::MultiVecTraits<
 ScalarType, MultiVec< ScalarType > >::MvNorm(const MultiVec<
 ScalarType > &mv, std::vector< typename Teuchos::ScalarTraits<
-ScalarType >::magnitudeType > *normvec)
+ScalarType >::magnitudeType > &normvec)
 
 Compute the 2-norm of each individual vector of mv. Upon return,
 normvec[i] holds the value of $||mv_i||_2$, the i-th column of mv. ";
@@ -4613,7 +5195,7 @@ Z(i,j) = \\\\langle X[i], Y[i] \\\\rangle \\\\] ";
 %feature("docstring")  Anasazi::OrthoManager::norm "virtual void
 Anasazi::OrthoManager< ScalarType, MV >::norm(const MV &X,
 std::vector< typename Teuchos::ScalarTraits< ScalarType
->::magnitudeType > *normvec) const =0
+>::magnitudeType > &normvec) const =0
 
 Provides the norm induced by innerProd().
 
@@ -4625,13 +5207,16 @@ Parameters:
 -----------
 
 normvec:  [out] Vector of norms, whose i-th entry corresponds to the
-i-th column of X ";
+i-th column of X
+
+normvec.size() == GetNumberVecs(X) ";
 
 %feature("docstring")  Anasazi::OrthoManager::project "virtual void
 Anasazi::OrthoManager< ScalarType, MV >::project(MV &X,
-Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
-ScalarType > > > C=Teuchos::tuple(Teuchos::null), Teuchos::Array<
-Teuchos::RCP< const MV > > Q=Teuchos::tuple(Teuchos::null)) const =0
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null))) const =0
 
 Given a list of mutually orthogonal and internally orthonormal bases
 Q, this method projects a multivector X onto the space orthogonal to
@@ -4645,23 +5230,24 @@ Parameters:
 -----------
 
 X:  [in/out] The multivector to be modified.  On output, the columns
-of X will be orthogonal to each Q[i], satisfying \\\\[ X_{out} =
-X_{in} - \\\\sum_i Q[i] \\\\langle Q[i], X_{in} \\\\rangle \\\\]
+of X will be orthogonal to each Q[i], satisfying \\\\[ \\\\langle
+Q[i], X_{out} \\\\rangle = 0 \\\\] Also, \\\\[ X_{out} = X_{in} -
+\\\\sum_i Q[i] \\\\langle Q[i], X_{in} \\\\rangle \\\\]
+
+Q:  [in] A list of multivector bases specifying the subspaces to be
+orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
+\\\\rangle = I \\\\quad\\\\textrm{if}\\\\quad i=j \\\\] and \\\\[
+\\\\langle Q[i], Q[j] \\\\rangle = 0 \\\\quad\\\\textrm{if}\\\\quad i
+\\\\neq j\\\\ . \\\\]
 
 C:  [out] The coefficients of X in the bases Q[i]. If C[i] is a non-
 null pointer and C[i] matches the dimensions of X and Q[i], then the
 coefficients computed during the orthogonalization routine will be
 stored in the matrix C[i], similar to calling If C[i] points to a
 Teuchos::SerialDenseMatrix with size inconsistent with X and  Q[i],
-then a std::invalid_argument exception will be thrown. Otherwise, if
+then a std::invalid_argument exception will be thrown.  Otherwise, if
 C.size() < i or C[i] is a null pointer, the caller will not have
-access to the computed coefficients.
-
-Q:  [in] A list of multivector bases specifying the subspaces to be
-orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
-\\\\rangle = I \\\\quad\\\\textrm{if}\\\\quad i=j \\\\] and \\\\[
-\\\\langle Q[i], Q[j] \\\\rangle = 0 \\\\quad\\\\textrm{if}\\\\quad i
-\\\\neq j\\\\ . \\\\] ";
+access to the computed coefficients. ";
 
 %feature("docstring")  Anasazi::OrthoManager::normalize "virtual int
 Anasazi::OrthoManager< ScalarType, MV >::normalize(MV &X,
@@ -4683,16 +5269,18 @@ Parameters:
 X:  [in/out] The multivector to be modified.  On output, the first
 rank columns of X satisfy \\\\[ \\\\langle X[i], X[j] \\\\rangle =
 \\\\delta_{ij}\\\\ . \\\\] Also, \\\\[ X_{in}(1:m,1:n) =
-X_{out}(1:m,1:rank) B(1:rank,1:n) \\\\] where m is the number of rows
-in X and n is the number of columns in X.
+X_{out}(1:m,1:rank) B(1:rank,1:n)\\\\ , \\\\] where m is the number of
+rows in X and n is the number of columns in X.
 
 B:  [out] The coefficients of the original X with respect to the
 computed basis. If B is a non-null pointer and B matches the
 dimensions of B, then the coefficients computed during the
 orthogonalization routine will be stored in B, similar to calling If B
 points to a Teuchos::SerialDenseMatrix with size inconsistent with X,
-then a std::invalid_argument exception will be thrown. Otherwise, if B
-is null, the caller will not have access to the computed coefficients.
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+B is null, the caller will not have access to the computed
+coefficients.
+
 This matrix is not necessarily triangular (as in a QR factorization);
 see the documentation of specific orthogonalization managers.
 
@@ -4701,12 +5289,12 @@ number of columns in X. This specifies how many columns in the
 returned X and rows in the returned B are valid. ";
 
 %feature("docstring")  Anasazi::OrthoManager::projectAndNormalize "virtual int Anasazi::OrthoManager< ScalarType, MV
->::projectAndNormalize(MV &X, Teuchos::Array< Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > >
-C=Teuchos::tuple(Teuchos::null), Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > B=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< const MV > >
-Q=Teuchos::tuple(Teuchos::null)) const =0
+>::projectAndNormalize(MV &X, Teuchos::Array< Teuchos::RCP< const MV >
+> Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null) const =0
 
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
@@ -4735,12 +5323,18 @@ Also, \\\\[ X_{in}(1:m,1:n) = X_{out}(1:m,1:rank) B(1:rank,1:n) +
 \\\\sum_i Q[i] C[i] \\\\] where m is the number of rows in X and n is
 the number of columns in X.
 
+Q:  [in] A list of multivector bases specifying the subspaces to be
+orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
+\\\\rangle = I \\\\quad\\\\textrm{if}\\\\quad i=j \\\\] and \\\\[
+\\\\langle Q[i], Q[j] \\\\rangle = 0 \\\\quad\\\\textrm{if}\\\\quad i
+\\\\neq j\\\\ . \\\\]
+
 C:  [out] The coefficients of X in the Q[i]. If C[i] is a non-null
 pointer and C[i] matches the dimensions of X and Q[i], then the
 coefficients computed during the orthogonalization routine will be
 stored in the matrix C[i], similar to calling If C[i] points to a
 Teuchos::SerialDenseMatrix with size inconsistent with X and  Q[i],
-then a std::invalid_argument exception will be thrown. Otherwise, if
+then a std::invalid_argument exception will be thrown.  Otherwise, if
 C.size() < i or C[i] is a null pointer, the caller will not have
 access to the computed coefficients.
 
@@ -4749,16 +5343,12 @@ computed basis. If B is a non-null pointer and B matches the
 dimensions of B, then the coefficients computed during the
 orthogonalization routine will be stored in B, similar to calling If B
 points to a Teuchos::SerialDenseMatrix with size inconsistent with X,
-then a std::invalid_argument exception will be thrown. Otherwise, if B
-is null, the caller will not have access to the computed coefficients.
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+B is null, the caller will not have access to the computed
+coefficients.
+
 This matrix is not necessarily triangular (as in a QR factorization);
 see the documentation of specific orthogonalization managers.
-
-Q:  [in] A list of multivector bases specifying the subspaces to be
-orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
-\\\\rangle = I \\\\quad\\\\textrm{if}\\\\quad i=j \\\\] and \\\\[
-\\\\langle Q[i], Q[j] \\\\rangle = 0 \\\\quad\\\\textrm{if}\\\\quad i
-\\\\neq j\\\\ . \\\\]
 
 Rank of the basis computed by this method, less than or equal to the
 number of columns in X. This specifies how many columns in the
@@ -4774,7 +5364,7 @@ const =0
 This method computes the error in orthonormality of a multivector.
 
 This method return some measure of $\\\\| \\\\langle X, X \\\\rangle -
-I \\\\| $. See the documentation of specific orthogonalization
+I \\\\| $.  See the documentation of specific orthogonalization
 managers. ";
 
 %feature("docstring")  Anasazi::OrthoManager::orthogError "virtual
@@ -4785,7 +5375,7 @@ const MV &X2) const =0
 This method computes the error in orthogonality of two multivectors.
 
 This method return some measure of $\\\\| \\\\langle X1, X2 \\\\rangle
-- 0 \\\\| $. See the documentation of specific orthogonalization
+\\\\| $.  See the documentation of specific orthogonalization
 managers. ";
 
 
@@ -6065,10 +6655,12 @@ Destructor. ";
 
 %feature("docstring")  Anasazi::SVQBOrthoManager::projectMat "void
 Anasazi::SVQBOrthoManager< ScalarType, MV, OP >::projectMat(MV &X,
-Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array< Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > >
-C=Teuchos::tuple(Teuchos::null), Teuchos::Array< Teuchos::RCP< const
-MV > > Q=Teuchos::tuple(Teuchos::null)) const
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null)), Teuchos::RCP< MV > MX=Teuchos::null,
+Teuchos::Array< Teuchos::RCP< const MV > >
+MQ=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
 
 Given a list of mutually orthogonal and internally orthonormal bases
 Q, this method projects a multivector X onto the space orthogonal to
@@ -6107,9 +6699,8 @@ orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
 
 %feature("docstring")  Anasazi::SVQBOrthoManager::normalizeMat "int
 Anasazi::SVQBOrthoManager< ScalarType, MV, OP >::normalizeMat(MV &X,
-Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > >
-B=Teuchos::tuple(Teuchos::null)) const
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null) const
 
 This method takes a multivector X and attempts to compute an
 orthonormal basis for $colspan(X)$, with respect to innerProd().
@@ -6160,12 +6751,14 @@ returned X and rows in the returned B are valid. ";
 %feature("docstring")
 Anasazi::SVQBOrthoManager::projectAndNormalizeMat "int
 Anasazi::SVQBOrthoManager< ScalarType, MV, OP
->::projectAndNormalizeMat(MV &X, Teuchos::RCP< MV > MX=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
-ScalarType > > > C=Teuchos::tuple(Teuchos::null), Teuchos::RCP<
-Teuchos::SerialDenseMatrix< int, ScalarType > > B=Teuchos::null,
-Teuchos::Array< Teuchos::RCP< const MV > >
-Q=Teuchos::tuple(Teuchos::null)) const
+>::projectAndNormalizeMat(MV &X, Teuchos::Array< Teuchos::RCP< const
+MV > > Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix<
+int, ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null, Teuchos::Array<
+Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
+>(Teuchos::null))) const
 
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
@@ -6242,7 +6835,8 @@ The method has the option of exploiting a caller-provided MX. ";
 
 %feature("docstring")  Anasazi::SVQBOrthoManager::orthogErrorMat "Teuchos::ScalarTraits< ScalarType >::magnitudeType
 Anasazi::SVQBOrthoManager< ScalarType, MV, OP >::orthogErrorMat(const
-MV &X1, Teuchos::RCP< const MV > MX1, const MV &X2) const
+MV &X, const MV &Y, Teuchos::RCP< const MV > MX=Teuchos::null,
+Teuchos::RCP< const MV > MY=Teuchos::null) const
 
 This method computes the error in orthogonality of two multivectors,
 measured as the Frobenius norm of innerProd(X,Y). The method has the
@@ -6367,7 +6961,13 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziEpetraAdapter_8hpp.xml
 
 
+// File: AnasaziGenOrthoManager_8hpp.xml
+
+
 // File: AnasaziHelperTraits_8hpp.xml
+
+
+// File: AnasaziICGSOrthoManager_8hpp.xml
 
 
 // File: AnasaziLOBPCG_8hpp.xml

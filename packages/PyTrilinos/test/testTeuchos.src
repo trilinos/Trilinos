@@ -352,7 +352,9 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(TeuchosInputSourceTestCase))
     suite.addTest(unittest.makeSuite(TeuchosTimeTestCase))
 
-    iAmRoot = True
+    # Create a communicator
+    comm    = Teuchos.DefaultComm.getComm()
+    iAmRoot = comm.getRank() == 0
 
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
@@ -361,6 +363,7 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = len(result.errors) + len(result.failures)
+    errsPlusFails = comm.reduceAll(Teuchos.REDUCE_SUM,
+                                   len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

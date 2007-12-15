@@ -86,7 +86,7 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_Version.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
 #include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_Time.hpp"
 
 // Local includes
@@ -152,6 +152,7 @@ using Teuchos::RCP;
 %import "Teuchos_RCPDecl.hpp"
 
 // Teuchos includes
+%include "Teuchos_Traits.i"
 %include "Teuchos_Comm.i"
 %include "Teuchos_ParameterList.i"
 %include "Teuchos_XML.i"
@@ -162,26 +163,6 @@ using Teuchos::RCP;
 %include "Teuchos_Version.hpp"
 %pythoncode %{
 __version__ = Teuchos_Version().split()[2]
-%}
-
-///////////////////////////////////
-// Teuchos::ScalarTraits support //
-///////////////////////////////////
-%include "Teuchos_ScalarTraits.hpp"
-%template(ScalarTraitsFloat ) Teuchos::ScalarTraits< float  >;
-%template(ScalarTraitsDouble) Teuchos::ScalarTraits< double >;
-%pythoncode %{
-def ScalarTraits(scalarType):
-    """
-    ScalarTraits(str scalarType) -> ScalarTraits<...>
-
-    The scalarType argument is for specifying the type of scalar for
-    which traits are requested.  Limited NumPy-style type
-    specification is supported: 'f' for float and 'd' for double.
-    """
-    if scalarType == 'f': return ScalarTraitsFloat()
-    if scalarType == 'd': return ScalarTraitsDouble()
-    raise NotImplementedError, "ScalarTraits for " + repr(scalarType) + " not supported"
 %}
 
 ///////////////////////////

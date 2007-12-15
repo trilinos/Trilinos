@@ -6637,34 +6637,42 @@ Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete=true) ";
 %feature("docstring") Epetra_FEVector "
 
 Epetra Finite-Element Vector. This class inherits Epetra_MultiVector
-and thus provides all Epetra_MultiVector functionality, with one
-restriction: currently an Epetra_FEVector only has 1 internal vector.
+and thus provides all Epetra_MultiVector functionality.
 
 The added functionality provided by Epetra_FEVector is the ability to
 perform finite-element style vector assembly. It accepts sub-vector
 contributions, such as those that would come from element-load
-vectors, etc., and these sub-vectors need not be wholly locally owned.
-In other words, the user can assemble overlapping data (e.g.,
-corresponding to shared finite-element nodes). When the user is
+vectors, etc., and these sub-vectors need not be owned by the local
+processor. In other words, the user can assemble overlapping data
+(e.g., corresponding to shared finite-element nodes). When the user is
 finished assembling their vector data, they then call the method
 Epetra_FEVector::GlobalAssemble() which gathers the overlapping data
 (all non-local data that was input on each processor) into the data-
 distribution specified by the map that the Epetra_FEVector is
 constructed with.
 
-Note: At the current time (Sept 6, 2002) the methods in this
-implementation assume that there is only 1 point associated with each
-map element. This limitation will be removed in the near future.
-
 C++ includes: Epetra_FEVector.h ";
 
-%feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap &Map, bool
-ignoreNonLocalEntries=false)
+%feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap &Map, int
+numVectors=1, bool ignoreNonLocalEntries=false)
 
 Constructor that requires a map specifying a non-overlapping data
-layout. The methods SumIntoGlobalValues() and ReplaceGlobalValues()
-will accept any global IDs, and GlobalAssemble() will move any non-
-local data onto the appropriate owning processors. ";
+layout.
+
+Parameters:
+-----------
+
+Map:  Map describing a non-overlapping distribution for the underlying
+Epetra_MultiVector that this Epetra_FEVector will be funnelling data
+into.
+
+numVectors:  Optional argument, default value is 1. (See the
+documentation for Epetra_MultiVector for the meaning of this argument.
+
+ignoreNonLocalEntries:  Optional argument, default value is false.
+Under certain special circumstances it is desirable to have non-local
+contributions ignored rather than saving them for the GlobalAssemble
+step. ";
 
 %feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector &source)
 
@@ -6676,14 +6684,14 @@ Destructor ";
 
 %feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
 Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int *GIDs,
-const double *values)
+const double *values, int vectorIndex=0)
 
 Accumulate values into the vector, adding them to any values that
 already exist for the specified indices. ";
 
 %feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
 Epetra_FEVector::SumIntoGlobalValues(const Epetra_IntSerialDenseVector
-&GIDs, const Epetra_SerialDenseVector &values)
+&GIDs, const Epetra_SerialDenseVector &values, int vectorIndex=0)
 
 Accumulate values into the vector, adding them to any values that
 already exist for the specified GIDs.
@@ -6699,14 +6707,14 @@ accompanying list of GIDs. ";
 
 %feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
 Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int *GIDs,
-const double *values)
+const double *values, int vectorIndex=0)
 
 Copy values into the vector overwriting any values that already exist
 for the specified indices. ";
 
 %feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
 Epetra_FEVector::ReplaceGlobalValues(const Epetra_IntSerialDenseVector
-&GIDs, const Epetra_SerialDenseVector &values)
+&GIDs, const Epetra_SerialDenseVector &values, int vectorIndex=0)
 
 Copy values into the vector, replacing any values that already exist
 for the specified GIDs.
@@ -6722,11 +6730,11 @@ accompanying list of GIDs. ";
 
 %feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
 Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int *GIDs,
-const int *numValuesPerID, const double *values) ";
+const int *numValuesPerID, const double *values, int vectorIndex=0) ";
 
 %feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
 Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int *GIDs,
-const int *numValuesPerID, const double *values) ";
+const int *numValuesPerID, const double *values, int vectorIndex=0) ";
 
 %feature("docstring")  Epetra_FEVector::GlobalAssemble "int
 Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode=Add)
@@ -18880,13 +18888,16 @@ would be maintained.
 
 offset Location in list at which item was found. -1 if not found. ";
 
+%feature("docstring")  Epetra_Util_insert_empty_positions "int
+Epetra_Util_insert_empty_positions(T *&array, int &usedLength, int
+&allocatedLength, int insertOffset, int numPositions, int
+allocChunkSize=32) ";
+
 %feature("docstring")  Epetra_Util_insert "int Epetra_Util_insert(T
 item, int offset, T *&list, int &usedLength, int &allocatedLength, int
 allocChunkSize=32)
 
-Function to insert an item in a list, at a specified offset. error-
-code 0 if successful, -1 if input parameters seem unreasonable (offset
-> usedLength, offset<0, etc).
+Function to insert an item in a list, at a specified offset.
 
 Parameters:
 -----------

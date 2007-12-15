@@ -68,24 +68,25 @@ else:
 
 ##########################################################################
 
-class TeuchosPyCommTestCase(unittest.TestCase):
-    "TestCase class for PyComm communicator objects"
+class TeuchosDefaultCommTestCase(unittest.TestCase):
+    "TestCase class for DefaultComm communicator objects"
 
     def setUp(self):
-        self.comm  = Teuchos.PyComm()
-        if self.comm.getSize() == 1:
+        self.comm  = Teuchos.DefaultComm.getComm()
+        if ('MpiComm' in dir(Teuchos)):
+            self.commType = "MPI"
+            self.output   = "Teuchos::MpiComm<long>{size=%d,rank=%d" % \
+                            (self.comm.getSize(), self.comm.getRank())
+        else:
             self.commType = "Serial"
             self.output   = "Teuchos::SerialComm<long int>"
-        else:
-            self.commType = "MPI"
-            self.output   = "Teuchos::MpiComm<long int>"
         self.comm.barrier()
 
     def tearDown(self):
         self.comm.barrier()
 
     def testGetRank(self):
-        "Test Teuchos.PyComm getRank method"
+        "Test Teuchos.DefaultComm getRank method"
         pid = self.comm.getRank()
         self.assert_(pid < self.comm.getSize())
         if self.commType == "Serial":
@@ -94,7 +95,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assert_(pid >= 0)
 
     def testGetSize(self):
-        "Test Teuchos.PyComm getSize method"
+        "Test Teuchos.DefaultComm getSize method"
         n = self.comm.getSize()
         if self.commType == "Serial":
             self.assertEqual(n, 1)
@@ -102,21 +103,22 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assert_(n > 0)
 
     def testStr(self):
-        "Test Teuchos.PyComm __str__ method"
-        self.assertEqual(str(self.comm), self.output)
+        "Test Teuchos.DefaultComm __str__ method"
+        n = len(self.output)
+        self.assertEqual(str(self.comm)[:n], self.output)
 
     def testBroadcastBadArg(self):
-        "Test Teuchos.PyComm broadcast method with bad argument"
+        "Test Teuchos.DefaultComm broadcast method with bad argument"
         self.assertRaises(TypeError, self.comm.broadcast, 0, None)
 
     def testBroadcastNoncontiguous(self):
-        "Test Teuchos.PyComm broadcast method with noncontiguous array"
+        "Test Teuchos.DefaultComm broadcast method with noncontiguous array"
         baseArray = zeros((5,5),'d')
         myArray   = baseArray[1:3,1:3]  # Noncontiguous array
         self.assertRaises(TypeError, self.comm.broadcast, 0, myArray)
 
     def testBroadcastInt(self):
-        "Test Teuchos.PyComm broadcast method for ints"
+        "Test Teuchos.DefaultComm broadcast method for ints"
         rootVals = array([5,0,4,1,3,2],'i')
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -127,7 +129,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(myVals[i], rootVals[i])
 
     def testBroadcastInt2D(self):
-        "Test Teuchos.PyComm broadcast method for 2D int array"
+        "Test Teuchos.DefaultComm broadcast method for 2D int array"
         rootVals = array([[5,0],[4,1]],'i')
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -139,7 +141,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(myVals[i,j], rootVals[i,j])
 
     def testBroadcastLong(self):
-        "Test Teuchos.PyComm broadcast method for longs"
+        "Test Teuchos.DefaultComm broadcast method for longs"
         rootVals = array([5,0,4,1,3,2])
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -150,7 +152,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(myVals[i], rootVals[i])
 
     def testBroadcastLong2D(self):
-        "Test Teuchos.PyComm broadcast method for 2D long array"
+        "Test Teuchos.DefaultComm broadcast method for 2D long array"
         rootVals = array([[5,0],[4,1]])
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -162,7 +164,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(myVals[i,j], rootVals[i,j])
 
     def testBroadcastFloat(self):
-        "Test Teuchos.PyComm broadcast method for floats"
+        "Test Teuchos.DefaultComm broadcast method for floats"
         rootVals = array([5,0,4,1,3,2],dtype='f')
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -173,7 +175,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(myVals[i], rootVals[i])
 
     def testBroadcastFloat2D(self):
-        "Test Teuchos.PyComm broadcast method for 2D float array"
+        "Test Teuchos.DefaultComm broadcast method for 2D float array"
         rootVals = array([[5,0],[4,1]],'f')
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -185,7 +187,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(myVals[i,j], rootVals[i,j])
 
     def testBroadcastDouble(self):
-        "Test Teuchos.PyComm broadcast method for doubles"
+        "Test Teuchos.DefaultComm broadcast method for doubles"
         rootVals = array([5,0,4,1,3,2],dtype='d')
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -196,7 +198,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(myVals[i], rootVals[i])
 
     def testBroadcastDouble2D(self):
-        "Test Teuchos.PyComm broadcast method for 2D double array"
+        "Test Teuchos.DefaultComm broadcast method for 2D double array"
         rootVals = array([[5,0],[4,1]],'d')
         if self.comm.getRank() == 0:
             myVals = array(rootVals)
@@ -208,7 +210,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(myVals[i,j], rootVals[i,j])
 
     def testGatherAllInt(self):
-        "Test Teuchos.PyComm gatherAll method for ints"
+        "Test Teuchos.DefaultComm gatherAll method for ints"
         myPID      = self.comm.getRank()
         length     = 4*self.comm.getSize()
         globalVals = arange(length, dtype='i')
@@ -219,7 +221,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(allVals[i], globalVals[i])
 
     def testGatherAllInt2D(self):
-        "Test Teuchos.PyComm gatherAll method for 2D int array"
+        "Test Teuchos.DefaultComm gatherAll method for 2D int array"
         myPID      = self.comm.getRank()
         numProc    = self.comm.getSize()
         globalVals = zeros((numProc,2,2),'i')
@@ -233,7 +235,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                     self.assertEquals(allVals[p,i,j], globalVals[p,i,j])
 
     def testGatherAllIntNoncontiguous(self):
-        "Test Teuchos.PyComm gatherAll method with noncontiguous int array"
+        "Test Teuchos.DefaultComm gatherAll method with noncontiguous int array"
         baseArray = arange(20,dtype='i')
         baseArray.shape = (4,5)
         myArray   = baseArray[1:3,1:4] # Noncontiguous
@@ -244,7 +246,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.failUnless((allArray[p,:,:] == myArray).all())
 
     def testGatherAllLong(self):
-        "Test Teuchos.PyComm gatherAll method for longs"
+        "Test Teuchos.DefaultComm gatherAll method for longs"
         myPID      = self.comm.getRank()
         length     = 4*self.comm.getSize()
         globalVals = arange(length, dtype='i')
@@ -255,7 +257,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(allVals[i], globalVals[i])
 
     def testGatherAllLong2D(self):
-        "Test Teuchos.PyComm gatherAll method for 2D long array"
+        "Test Teuchos.DefaultComm gatherAll method for 2D long array"
         myPID      = self.comm.getRank()
         numProc    = self.comm.getSize()
         globalVals = zeros((numProc,2,2),'i')
@@ -269,7 +271,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                     self.assertEquals(allVals[p,i,j], globalVals[p,i,j])
 
     def testGatherAllLongNoncontiguous(self):
-        "Test Teuchos.PyComm gatherAll method with noncontiguous long array"
+        "Test Teuchos.DefaultComm gatherAll method with noncontiguous long array"
         baseArray = arange(20)
         baseArray.shape = (4,5)
         myArray   = baseArray[1:3,1:4] # Noncontiguous
@@ -280,7 +282,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.failUnless((allArray[p,:,:] == myArray).all())
 
     def testGatherAllFloat(self):
-        "Test Teuchos.PyComm gatherAll method for floats"
+        "Test Teuchos.DefaultComm gatherAll method for floats"
         myPID      = self.comm.getRank()
         length     = 4*self.comm.getSize()
         globalVals = arange(length, dtype='f')
@@ -291,7 +293,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(allVals[i], globalVals[i])
 
     def testGatherAllFloat2D(self):
-        "Test Teuchos.PyComm gatherAll method for 2D float array"
+        "Test Teuchos.DefaultComm gatherAll method for 2D float array"
         myPID      = self.comm.getRank()
         numProc    = self.comm.getSize()
         globalVals = zeros((numProc,2,2),'f')
@@ -305,7 +307,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                     self.assertEquals(allVals[p,i,j], globalVals[p,i,j])
 
     def testGatherAllFloatNoncontiguous(self):
-        "Test Teuchos.PyComm gatherAll method with noncontiguous float array"
+        "Test Teuchos.DefaultComm gatherAll method with noncontiguous float array"
         baseArray = arange(20,dtype='f')
         baseArray.shape = (5,4)
         myArray   = baseArray[1:4,1:3] # Noncontiguous
@@ -316,7 +318,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.failUnless((allArray[i,:,:] == myArray).all())
 
     def testGatherAllDouble(self):
-        "Test Teuchos.PyComm gatherAll method for doubles"
+        "Test Teuchos.DefaultComm gatherAll method for doubles"
         myPID      = self.comm.getRank()
         length     = 4*self.comm.getSize()
         globalVals = arange(length, dtype='d')
@@ -327,7 +329,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(allVals[i], globalVals[i])
 
     def testGatherAllDouble2D(self):
-        "Test Teuchos.PyComm gatherAll method for 2D double array"
+        "Test Teuchos.DefaultComm gatherAll method for 2D double array"
         myPID      = self.comm.getRank()
         numProc    = self.comm.getSize()
         globalVals = zeros((numProc,2,2),'d')
@@ -341,7 +343,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                     self.assertEquals(allVals[p,i,j], globalVals[p,i,j])
 
     def testGatherAllDoubleNoncontiguous(self):
-        "Test Teuchos.PyComm gatherAll method with noncontiguous double array"
+        "Test Teuchos.DefaultComm gatherAll method with noncontiguous double array"
         baseArray = arange(20,dtype='d')
         baseArray.shape = (5,4)
         myArray   = baseArray[1:4,1:3] # Noncontiguous
@@ -352,7 +354,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.failUnless((allArray[i,:,:] == myArray).all())
 
     def testSumAllInt(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for ints"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for ints"
         numProc     = self.comm.getSize()
         partialSums = arange(3,dtype='i')
         globalSums  = self.comm.reduceAll(Teuchos.REDUCE_SUM, partialSums)
@@ -360,7 +362,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalSums[i], numProc*partialSums[i])
 
     def testSumAllInt2D(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for 2D int array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for 2D int array"
         numProc     = self.comm.getSize()
         partialSums = arange(12,dtype='i')
         partialSums.shape = (3,4)
@@ -370,7 +372,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllIntNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method with noncontiguous int array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method with noncontiguous int array"
         numProc     = self.comm.getSize()
         baseArray   = arange(15,dtype='i')
         baseArray.shape = (3,5)
@@ -381,7 +383,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllLong(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for longs"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for longs"
         numProc     = self.comm.getSize()
         partialSums = arange(3)
         globalSums  = self.comm.reduceAll(Teuchos.REDUCE_SUM, partialSums)
@@ -389,7 +391,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalSums[i], numProc*partialSums[i])
 
     def testSumAllLong2D(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for 2D long array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for 2D long array"
         numProc     = self.comm.getSize()
         partialSums = arange(12)
         partialSums.shape = (3,4)
@@ -399,7 +401,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllLongNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method with noncontiguous long array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method with noncontiguous long array"
         numProc     = self.comm.getSize()
         baseArray   = arange(15)
         baseArray.shape = (3,5)
@@ -410,7 +412,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllFloat(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for floats"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for floats"
         numProc     = self.comm.getSize()
         partialSums = arange(4,dtype='f')
         globalSums  = self.comm.reduceAll(Teuchos.REDUCE_SUM, partialSums)
@@ -418,7 +420,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalSums[i], numProc*partialSums[i])
 
     def testSumAllFloat2D(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for 2D float array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for 2D float array"
         numProc     = self.comm.getSize()
         partialSums = arange(15,dtype='f')
         partialSums.shape = (5,3)
@@ -428,7 +430,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllFloatNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method with noncontiguous float array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method with noncontiguous float array"
         numProc     = self.comm.getSize()
         baseArray   = arange(20,dtype='f')
         baseArray.shape = (5,4)
@@ -439,7 +441,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllDouble(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for doubles"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for doubles"
         numProc     = self.comm.getSize()
         partialSums = arange(4,dtype='d')
         globalSums  = self.comm.reduceAll(Teuchos.REDUCE_SUM, partialSums)
@@ -447,7 +449,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalSums[i], numProc*partialSums[i])
 
     def testSumAllDouble2D(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method for 2D double array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method for 2D double array"
         numProc     = self.comm.getSize()
         partialSums = arange(15,dtype='d')
         partialSums.shape = (5,3)
@@ -457,7 +459,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testSumAllDoubleNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (SUM) method with noncontiguous double array"
+        "Test Teuchos.DefaultComm reduceAll (SUM) method with noncontiguous double array"
         numProc     = self.comm.getSize()
         baseArray   = arange(20,dtype='d')
         baseArray.shape = (5,4)
@@ -468,7 +470,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalSums[i,j], numProc*partialSums[i,j])
 
     def testMaxAllInt(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for ints"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for ints"
         numProc     = self.comm.getSize()
         baseArray   = arange(5,dtype='i')
         partialMaxs = array(baseArray) * (self.comm.getRank()+1)
@@ -477,7 +479,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMaxs[i], numProc*baseArray[i])
 
     def testMaxAllInt2D(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for 2D int array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for 2D int array"
         numProc     = self.comm.getSize()
         baseArray   = arange(9,dtype='i')
         baseArray.shape = (3,3)
@@ -488,7 +490,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseArray[i,j])
 
     def testMaxAllIntNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method with noncontiguous int array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method with noncontiguous int array"
         numProc     = self.comm.getSize()
         baseArray   = arange(25,dtype='i')
         baseArray.shape = (5,5)
@@ -500,7 +502,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseMaxs[i,j])
 
     def testMaxAllLong(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for longs"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for longs"
         numProc     = self.comm.getSize()
         baseArray   = arange(5)
         partialMaxs = array(baseArray) * (self.comm.getRank()+1)
@@ -509,7 +511,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMaxs[i], numProc*baseArray[i])
 
     def testMaxAllLong2D(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for 2D long array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for 2D long array"
         numProc     = self.comm.getSize()
         baseArray   = arange(9)
         baseArray.shape = (3,3)
@@ -520,7 +522,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseArray[i,j])
 
     def testMaxAllLongNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method with noncontiguous long array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method with noncontiguous long array"
         numProc     = self.comm.getSize()
         baseArray   = arange(25)
         baseArray.shape = (5,5)
@@ -532,7 +534,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseMaxs[i,j])
 
     def testMaxAllFloat(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for floats"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for floats"
         numProc     = self.comm.getSize()
         baseArray   = arange(6,dtype='f')
         partialMaxs = array(baseArray) * (self.comm.getRank()+1)
@@ -541,7 +543,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMaxs[i], numProc*baseArray[i])
 
     def testMaxAllFloat2D(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for 2D float array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for 2D float array"
         numProc     = self.comm.getSize()
         baseArray   = arange(16,dtype='f')
         baseArray.shape = (4,4)
@@ -552,7 +554,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseArray[i,j])
 
     def testMaxAllFloatNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method with noncontiguous float array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method with noncontiguous float array"
         numProc     = self.comm.getSize()
         baseArray   = arange(20,dtype='f')
         baseArray.shape = (4,5)
@@ -564,7 +566,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseMaxs[i,j])
 
     def testMaxAllDouble(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for doubles"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for doubles"
         numProc     = self.comm.getSize()
         baseArray   = arange(6,dtype='d')
         partialMaxs = array(baseArray) * (self.comm.getRank()+1)
@@ -573,7 +575,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMaxs[i], numProc*baseArray[i])
 
     def testMaxAllDouble2D(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method for 2D double array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method for 2D double array"
         numProc     = self.comm.getSize()
         baseArray   = arange(16,dtype='d')
         baseArray.shape = (4,4)
@@ -584,7 +586,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseArray[i,j])
 
     def testMaxAllDoubleNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MAX) method with noncontiguous double array"
+        "Test Teuchos.DefaultComm reduceAll (MAX) method with noncontiguous double array"
         numProc     = self.comm.getSize()
         baseArray   = arange(20,dtype='d')
         baseArray.shape = (4,5)
@@ -596,7 +598,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMaxs[i,j], numProc*baseMaxs[i,j])
 
     def testMinAllInt(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for ints"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for ints"
         baseArray   = arange(5,dtype='i')
         partialMins = array(baseArray) * (self.comm.getRank()+1)
         globalMins  = self.comm.reduceAll(Teuchos.REDUCE_MIN, partialMins)
@@ -604,7 +606,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMins[i], baseArray[i])
 
     def testMinAllInt2D(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for 2D int array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for 2D int array"
         baseArray    = arange(18,dtype="i")
         baseArray.shape = (3,6)
         partialMins = baseArray * (self.comm.getRank()+1)
@@ -614,7 +616,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllIntNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method with noncontiguous int array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method with noncontiguous int array"
         baseArray   = arange(24,dtype='i')
         baseArray.shape = (4,6)
         baseArray    = baseArray[1:3,1:5]  # Noncontiguous
@@ -625,7 +627,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllLong(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for longs"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for longs"
         baseArray   = arange(5)
         partialMins = array(baseArray) * (self.comm.getRank()+1)
         globalMins  = self.comm.reduceAll(Teuchos.REDUCE_MIN, partialMins)
@@ -633,7 +635,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMins[i], baseArray[i])
 
     def testMinAllLong2D(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for 2D long array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for 2D long array"
         baseArray    = arange(18)
         baseArray.shape = (3,6)
         partialMins = baseArray * (self.comm.getRank()+1)
@@ -643,7 +645,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllLongNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method with noncontiguous long array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method with noncontiguous long array"
         baseArray   = arange(24)
         baseArray.shape = (4,6)
         baseArray    = baseArray[1:3,1:5]  # Noncontiguous
@@ -654,7 +656,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllFloat(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for floats"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for floats"
         baseArray   = arange(4,dtype='f')
         partialMins = array(baseArray) * (self.comm.getRank()+1)
         globalMins  = self.comm.reduceAll(Teuchos.REDUCE_MIN, partialMins)
@@ -662,7 +664,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMins[i], baseArray[i])
 
     def testMinAllFloat2D(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for 2D float array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for 2D float array"
         baseArray    = arange(30,dtype='f')
         baseArray.shape = (6,5)
         partialMins = baseArray * (self.comm.getRank()+1)
@@ -672,7 +674,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllFloatNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method with noncontiguous float array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method with noncontiguous float array"
         baseArray   = arange(36,dtype='f')
         baseArray.shape = (6,6)
         baseArray    = baseArray[1:4,1:4]  # Noncontiguous
@@ -683,7 +685,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllDouble(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for doubles"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for doubles"
         baseArray   = arange(4,dtype='d')
         partialMins = array(baseArray) * (self.comm.getRank()+1)
         globalMins  = self.comm.reduceAll(Teuchos.REDUCE_MIN, partialMins)
@@ -691,7 +693,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(globalMins[i], baseArray[i])
 
     def testMinAllDouble2D(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method for 2D double array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method for 2D double array"
         baseArray    = arange(30,dtype='d')
         baseArray.shape = (6,5)
         partialMins = baseArray * (self.comm.getRank()+1)
@@ -701,7 +703,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testMinAllDoubleNoncontiguous(self):
-        "Test Teuchos.PyComm reduceAll (MIN) method with noncontiguous double array"
+        "Test Teuchos.DefaultComm reduceAll (MIN) method with noncontiguous double array"
         baseArray   = arange(36,dtype='d')
         baseArray.shape = (6,6)
         baseArray    = baseArray[1:4,1:4]  # Noncontiguous
@@ -712,7 +714,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(globalMins[i,j], baseArray[i,j])
 
     def testScanSumInt(self):
-        "Test Teuchos.PyComm scan (SUM) method for ints"
+        "Test Teuchos.DefaultComm scan (SUM) method for ints"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(3,dtype='i')
         scanSums = self.comm.scan(Teuchos.REDUCE_SUM, myVals)
@@ -720,7 +722,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(scanSums[i], myPIN*myVals[i])
 
     def testScanSumInt2D(self):
-        "Test Teuchos.PyComm scan (SUM) method for 2D int array"
+        "Test Teuchos.DefaultComm scan (SUM) method for 2D int array"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(12,dtype='i')
         myVals.shape = (3,4)
@@ -730,7 +732,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumIntNoncontiguous(self):
-        "Test Teuchos.PyComm scan (SUM) method with noncontiguous int array"
+        "Test Teuchos.DefaultComm scan (SUM) method with noncontiguous int array"
         myPIN    = self.comm.getRank() + 1
         baseArray = arange(15,dtype='i')
         baseArray.shape = (3,5)
@@ -741,7 +743,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumLong(self):
-        "Test Teuchos.PyComm scan (SUM) method for longs"
+        "Test Teuchos.DefaultComm scan (SUM) method for longs"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(3)
         scanSums = self.comm.scan(Teuchos.REDUCE_SUM, myVals)
@@ -749,7 +751,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(scanSums[i], myPIN*myVals[i])
 
     def testScanSumLong2D(self):
-        "Test Teuchos.PyComm scan (SUM) method for 2D long array"
+        "Test Teuchos.DefaultComm scan (SUM) method for 2D long array"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(12)
         myVals.shape = (3,4)
@@ -759,7 +761,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumLongNoncontiguous(self):
-        "Test Teuchos.PyComm scan (SUM) method with noncontiguous long array"
+        "Test Teuchos.DefaultComm scan (SUM) method with noncontiguous long array"
         myPIN    = self.comm.getRank() + 1
         baseArray = arange(15)
         baseArray.shape = (3,5)
@@ -770,7 +772,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumFloat(self):
-        "Test Teuchos.PyComm scan (SUM) method for floats"
+        "Test Teuchos.DefaultComm scan (SUM) method for floats"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(4,dtype='f')
         scanSums = self.comm.scan(Teuchos.REDUCE_SUM, myVals)
@@ -778,7 +780,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(scanSums[i], myPIN*myVals[i])
 
     def testScanSumFloat2D(self):
-        "Test Teuchos.PyComm scan (SUM) method for 2D float array"
+        "Test Teuchos.DefaultComm scan (SUM) method for 2D float array"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(15,dtype='f')
         myVals.shape = (5,3)
@@ -788,7 +790,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumFloatNoncontiguous(self):
-        "Test Teuchos.PyComm scan (SUM) method with noncontiguous float array"
+        "Test Teuchos.DefaultComm scan (SUM) method with noncontiguous float array"
         myPIN    = self.comm.getRank() + 1
         baseArray = arange(20,dtype='f')
         baseArray.shape = (5,4)
@@ -799,7 +801,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumDouble(self):
-        "Test Teuchos.PyComm scan (SUM) method for doubles"
+        "Test Teuchos.DefaultComm scan (SUM) method for doubles"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(4,dtype='d')
         scanSums = self.comm.scan(Teuchos.REDUCE_SUM, myVals)
@@ -807,7 +809,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
             self.assertEquals(scanSums[i], myPIN*myVals[i])
 
     def testScanSumDouble2D(self):
-        "Test Teuchos.PyComm scan (SUM) method for 2D double array"
+        "Test Teuchos.DefaultComm scan (SUM) method for 2D double array"
         myPIN    = self.comm.getRank() + 1
         myVals   = arange(15,dtype='d')
         myVals.shape = (5,3)
@@ -817,7 +819,7 @@ class TeuchosPyCommTestCase(unittest.TestCase):
                 self.assertEquals(scanSums[i,j], myPIN*myVals[i,j])
 
     def testScanSumDoubleNoncontiguous(self):
-        "Test Teuchos.PyComm scan (SUM) method with noncontiguous double array"
+        "Test Teuchos.DefaultComm scan (SUM) method with noncontiguous double array"
         myPIN    = self.comm.getRank() + 1
         baseArray = arange(20,dtype='d')
         baseArray.shape = (5,4)
@@ -829,17 +831,15 @@ class TeuchosPyCommTestCase(unittest.TestCase):
 
 ##########################################################################
 
-class TeuchosPyCommHelpersTestCase(unittest.TestCase):
-    "TestCase class for PyComm communicator helpers"
+class TeuchosDefaultCommHelpersTestCase(unittest.TestCase):
+    "TestCase class for DefaultComm communicator helpers"
 
     def setUp(self):
-        self.comm  = Teuchos.PyComm()
+        self.comm  = Teuchos.DefaultComm.getComm()
         if self.comm.getSize() == 1:
             self.commType = "Serial"
-            self.output   = "Teuchos::SerialComm<long int>"
         else:
             self.commType = "MPI"
-            self.output   = "Teuchos::MpiComm<long int>"
         Teuchos.barrier(self.comm)
 
     def tearDown(self):
@@ -1592,11 +1592,11 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(TeuchosPyCommTestCase       ))
-    suite.addTest(unittest.makeSuite(TeuchosPyCommHelpersTestCase))
+    suite.addTest(unittest.makeSuite(TeuchosDefaultCommTestCase       ))
+    suite.addTest(unittest.makeSuite(TeuchosDefaultCommHelpersTestCase))
 
     # Create a communicator
-    comm    = Teuchos.PyComm()
+    comm    = Teuchos.DefaultComm.getComm()
     iAmRoot = comm.getRank() == 0
 
     # Run the test suite
@@ -1608,5 +1608,5 @@ if __name__ == "__main__":
     # Exit with a code that indicates the total number of errors and failures
     errsPlusFails = comm.reduceAll(Teuchos.REDUCE_SUM,
                                    len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print >>sys.stderr, "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

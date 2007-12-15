@@ -1185,7 +1185,7 @@ Returns true if the matrix shape is one that KLU can handle. KLU only
 works with square matrices. ";
 
 %feature("docstring")  Amesos_Klu::SetUseTranspose "int
-Amesos_Klu::SetUseTranspose(bool UseTranspose)
+Amesos_Klu::SetUseTranspose(bool UseTranspose_in)
 
 SetUseTranpose(true) is more efficient in Amesos_Klu.
 
@@ -1398,7 +1398,7 @@ on symmetric matrices whould return false for non-symmetric matrices.
 ";
 
 %feature("docstring")  Amesos_Lapack::SetUseTranspose "int
-Amesos_Lapack::SetUseTranspose(bool UseTranspose)
+Amesos_Lapack::SetUseTranspose(bool UseTranspose_in)
 
 If set true, X will be set to the solution of AT X = B (not A X = B).
 
@@ -2227,7 +2227,7 @@ Returns true if the matrix shape is one that PARAKLETE can handle.
 PARAKLETE only works with square matrices. ";
 
 %feature("docstring")  Amesos_Paraklete::SetUseTranspose "int
-Amesos_Paraklete::SetUseTranspose(bool UseTranspose)
+Amesos_Paraklete::SetUseTranspose(bool UseTranspose_in)
 
 SetUseTranpose().
 
@@ -3393,7 +3393,8 @@ Marzio Sala, SNL 9214
 
 C++ includes: Amesos_TestRowMatrix.h ";
 
-%feature("docstring")  Amesos_TestRowMatrix::Amesos_TestRowMatrix "Amesos_TestRowMatrix::Amesos_TestRowMatrix(Epetra_RowMatrix *Matrix)
+%feature("docstring")  Amesos_TestRowMatrix::Amesos_TestRowMatrix "Amesos_TestRowMatrix::Amesos_TestRowMatrix(Epetra_RowMatrix
+*Matrix_in)
 
 Constructor. ";
 
@@ -3604,7 +3605,7 @@ Returns the Epetra_Import object that contains the import operations
 for distributed operations. ";
 
 %feature("docstring")  Amesos_TestRowMatrix::SetUseTranspose "int
-Amesos_TestRowMatrix::SetUseTranspose(bool UseTranspose)
+Amesos_TestRowMatrix::SetUseTranspose(bool UseTranspose_in)
 
 Sets use transpose (not implemented). ";
 
@@ -3847,7 +3848,7 @@ Returns true if the matrix shape is one that UMFPACK can handle.
 UMFPACK only works with square matrices. ";
 
 %feature("docstring")  Amesos_Umfpack::SetUseTranspose "int
-Amesos_Umfpack::SetUseTranspose(bool UseTranspose)
+Amesos_Umfpack::SetUseTranspose(bool UseTranspose_in)
 
 If set true, X will be set to the solution of AT X = B (not A X = B).
 

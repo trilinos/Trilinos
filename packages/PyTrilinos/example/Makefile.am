@@ -56,11 +56,7 @@ MAINTAINERCLEANFILES = Makefile.in
 
 # Teuchos examples
 if HAVE_PYTRILINOS_TEUCHOS
-if HAVE_MPI
-TEUCHOS_EXAMPLES = 
-else
 TEUCHOS_EXAMPLES = exTeuchos.py
-endif
 endif
 
 # # Thyra examples

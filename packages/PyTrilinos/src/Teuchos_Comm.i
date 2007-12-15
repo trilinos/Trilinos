@@ -39,6 +39,10 @@
 #include "Teuchos_CommHelpers.hpp"
 %}
 
+// Create python interfaces to MPI initialization and finalization
+PyObject* Init_Argv(PyObject *args);
+PyObject* Finalize();
+
 /////////////////////////////////////
 // Teuchos::VerbosityLevel support //
 /////////////////////////////////////
@@ -70,101 +74,190 @@
 ///////////////////////////
 %extend Teuchos::Comm
 {
-  PyObject * broadcast(int rootRank, PyObject * buffer) const
+
+  PyObject * broadcast(int rootRank, PyObject * bcastObj) const
   {
-    PyArrayObject * bufferArray = obj_to_array_no_conversion(buffer, NPY_NOTYPE);
-    if (!bufferArray || !require_contiguous(bufferArray)) return NULL;
-    Ordinal bytes = static_cast<Ordinal>(PyArray_NBYTES(bufferArray));
-    char * bufferVals = (char*) array_data(bufferArray);
-    self->broadcast(rootRank, bytes, bufferVals);
+    PyArrayObject * bcastArray = obj_to_array_no_conversion(bcastObj, NPY_NOTYPE);
+    if (!bcastArray || !require_contiguous(bcastArray)) return NULL;
+    Ordinal bytes = static_cast<Ordinal>(PyArray_NBYTES(bcastArray));
+    char * bcastBuffer = (char*) array_data(bcastArray);
+    self->broadcast(rootRank, bytes, bcastBuffer);
     return Py_BuildValue("");
   }
-  PyObject * gatherAll(PyObject * sendBuffer) const
+
+  PyObject * gatherAll(PyObject * sendObj) const
   {
-    int     is_new_object  = 0;
-    Ordinal sendBytes      = 0;
-    Ordinal recvBytes      = 0;
-    int     recvNd         = 0;
-    int     type           = 0;
-    char *  sendBufferVals = NULL;
-    char *  recvBufferVals = NULL;
-    PyArrayObject * recvBufferArray = NULL;
-    PyArrayObject * sendBufferArray =
-      obj_to_array_contiguous_allow_conversion(sendBuffer, NPY_NOTYPE, &is_new_object);
-    if (!sendBufferArray) goto fail;
-    sendBytes = static_cast<Ordinal>(PyArray_NBYTES(sendBufferArray));
+    int     is_new_object = 0;
+    Ordinal sendBytes     = 0;
+    Ordinal recvBytes     = 0;
+    int     recvNd        = 0;
+    int     type          = 0;
+    char *  sendBuffer    = NULL;
+    char *  recvBuffer    = NULL;
+    PyArrayObject * recvArray = NULL;
+    PyArrayObject * sendArray =
+      obj_to_array_contiguous_allow_conversion(sendObj, NPY_NOTYPE, &is_new_object);
+    if (!sendArray) goto fail;
+    sendBytes = static_cast<Ordinal>(PyArray_NBYTES(sendArray));
     recvBytes = sendBytes * self->getSize();
-    recvNd    = array_numdims(sendBufferArray) + 1;
-    type      = array_type(sendBufferArray);
+    recvNd    = array_numdims(sendArray) + 1;
+    type      = array_type(sendArray);
     { // Scope this to make recvDims temporary
       npy_intp * recvDims = new npy_intp[recvNd];
       recvDims[0] = self->getSize();
-      for (int i=1; i<recvNd; ++i) recvDims[i] = array_size(sendBufferArray,i-1);
-      recvBufferArray = (PyArrayObject*) PyArray_SimpleNew(recvNd, recvDims, type);
-      if (!recvBufferArray) goto fail;
+      for (int i=1; i<recvNd; ++i) recvDims[i] = array_size(sendArray,i-1);
+      recvArray = (PyArrayObject*) PyArray_SimpleNew(recvNd, recvDims, type);
+      if (!recvArray) goto fail;
       delete [] recvDims;
     }
-    sendBufferVals = (char*) array_data(sendBufferArray);
-    recvBufferVals = (char*) array_data(recvBufferArray);
-    self->gatherAll(sendBytes, sendBufferVals, recvBytes, recvBufferVals);
-    if (is_new_object && sendBufferArray) Py_DECREF(sendBufferArray);
-    return PyArray_Return(recvBufferArray);
+    sendBuffer = (char*) array_data(sendArray);
+    recvBuffer = (char*) array_data(recvArray);
+    self->gatherAll(sendBytes, sendBuffer, recvBytes, recvBuffer);
+    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    return PyArray_Return(recvArray);
   fail:
-    if (is_new_object && sendBufferArray) Py_DECREF(sendBufferArray);
+    if (is_new_object && sendArray) Py_DECREF(sendArray);
     return NULL;
   }
-  PyObject * reduceAll(Teuchos::EReductionType reductOp, PyObject * sendBuffer) const
+
+  PyObject * reduceAll(Teuchos::EReductionType reductOp, PyObject * sendObj) const
   {
     int     is_new_object = 0;
-    Ordinal bytes         = 0;
+    Ordinal count         = 0;
     int     type          = 0;
-    char * sendBufferVals    = NULL;
-    char * globalReductsVals = NULL;
-    PyArrayObject * globalReductsArray = NULL;
-    PyArrayObject * sendBufferArray    =
-      obj_to_array_contiguous_allow_conversion(sendBuffer, NPY_NOTYPE, &is_new_object);
-    if (!sendBufferArray) goto fail;
-    bytes = static_cast<Ordinal>(PyArray_NBYTES(sendBufferArray));
-    type  = array_type(sendBufferArray);
-    globalReductsArray = (PyArrayObject*)
-      PyArray_SimpleNew(array_numdims(sendBufferArray),
-			array_dimensions(sendBufferArray), type);
-    PyArray_FILLWBYTE(globalReductsArray, 0);
-    sendBufferVals    = (char*) array_data(sendBufferArray);
-    globalReductsVals = (char*) array_data(globalReductsArray);
-    Teuchos::reduceAll(*self, reductOp, bytes, sendBufferVals, globalReductsVals);
-    if (is_new_object && sendBufferArray) Py_DECREF(sendBufferArray);
-    return PyArray_Return(globalReductsArray);
+    void *  sendBuffer    = NULL;
+    void *  globalReducts = NULL;
+    PyArrayObject * globalArray = NULL;
+    PyArrayObject * sendArray   =
+      obj_to_array_contiguous_allow_conversion(sendObj, NPY_NOTYPE, &is_new_object);
+    if (!sendArray) goto fail;
+    count = static_cast<Ordinal>(PyArray_SIZE(sendArray));
+    type  = array_type(sendArray);
+    globalArray = (PyArrayObject*)
+      PyArray_SimpleNew(array_numdims(sendArray),
+			array_dimensions(sendArray), type);
+    PyArray_FILLWBYTE(globalArray, 0);
+    sendBuffer    = array_data(sendArray);
+    globalReducts = array_data(globalArray);
+    switch (type)
+    {
+    case NPY_BYTE:
+      Teuchos::reduceAll(*self, reductOp, count, (char*)sendBuffer,
+			 (char*)globalReducts); break;
+    case NPY_UBYTE:
+      Teuchos::reduceAll(*self, reductOp, count, (unsigned char*)sendBuffer,
+			 (unsigned char*)globalReducts); break;
+    case NPY_SHORT:
+      Teuchos::reduceAll(*self, reductOp, count, (short*)sendBuffer,
+			 (short*)globalReducts); break;
+    case NPY_USHORT:
+      Teuchos::reduceAll(*self, reductOp, count, (unsigned short*)sendBuffer,
+			 (unsigned short*)globalReducts); break;
+    case NPY_INT:
+      Teuchos::reduceAll(*self, reductOp, count, (int*)sendBuffer,
+			 (int*)globalReducts); break;
+    case NPY_UINT:
+      Teuchos::reduceAll(*self, reductOp, count, (unsigned int*)sendBuffer,
+			 (unsigned int*)globalReducts); break;
+    case NPY_LONG:
+      Teuchos::reduceAll(*self, reductOp, count, (long*)sendBuffer,
+			 (long*)globalReducts); break;
+    case NPY_ULONG:
+      Teuchos::reduceAll(*self, reductOp, count, (unsigned long*)sendBuffer,
+			 (unsigned long*)globalReducts); break;
+    case NPY_LONGLONG:
+      Teuchos::reduceAll(*self, reductOp, count, (long long*)sendBuffer,
+			 (long long*)globalReducts); break;
+    case NPY_ULONGLONG:
+      Teuchos::reduceAll(*self, reductOp, count, (unsigned long long*)sendBuffer,
+			 (unsigned long long*)globalReducts); break;
+    case NPY_FLOAT:
+      Teuchos::reduceAll(*self, reductOp, count, (float*)sendBuffer,
+			 (float*)globalReducts); break;
+    case NPY_DOUBLE:
+      Teuchos::reduceAll(*self, reductOp, count, (double*)sendBuffer,
+			 (double*)globalReducts); break;
+    default:
+      PyErr_SetString(PyExc_TypeError, "reduceAll() for unsupported NumPy type");
+      goto fail;
+    }
+    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    return PyArray_Return(globalArray);
   fail:
-    if (is_new_object && sendBufferArray) Py_DECREF(sendBufferArray);
+    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    Py_XDECREF(globalArray);
     return NULL;
   }
-  PyObject * scan(Teuchos::EReductionType reductOp, PyObject * sendBuffer) const
+
+  PyObject * scan(Teuchos::EReductionType reductOp, PyObject * sendObj) const
   {
     int     is_new_object = 0;
-    Ordinal bytes         = 0;
+    Ordinal count         = 0;
     int     type          = 0;
-    char * sendBufferVals  = NULL;
-    char * scanReductsVals = NULL;
-    PyArrayObject * scanReductsArray = NULL;
-    PyArrayObject * sendBufferArray  =
-      obj_to_array_contiguous_allow_conversion(sendBuffer, NPY_NOTYPE, &is_new_object);
-    if (!sendBufferArray) goto fail;
-    bytes = static_cast<Ordinal>(PyArray_NBYTES(sendBufferArray));
-    type  = array_type(sendBufferArray);
-    scanReductsArray = (PyArrayObject*)
-      PyArray_SimpleNew(array_numdims(sendBufferArray),
-			array_dimensions(sendBufferArray), type);
-    PyArray_FILLWBYTE(scanReductsArray, 0);
-    sendBufferVals    = (char*) array_data(sendBufferArray);
-    scanReductsVals = (char*) array_data(scanReductsArray);
-    Teuchos::scan(*self, reductOp, bytes, sendBufferVals, scanReductsVals);
-    if (is_new_object && sendBufferArray) Py_DECREF(sendBufferArray);
-    return PyArray_Return(scanReductsArray);
+    void *  sendBuffer    = NULL;
+    void *  scanReducts   = NULL;
+    PyArrayObject * scanArray = NULL;
+    PyArrayObject * sendArray =
+      obj_to_array_contiguous_allow_conversion(sendObj, NPY_NOTYPE, &is_new_object);
+    if (!sendArray) goto fail;
+    count = static_cast<Ordinal>(PyArray_SIZE(sendArray));
+    type  = array_type(sendArray);
+    scanArray = (PyArrayObject*)
+      PyArray_SimpleNew(array_numdims(sendArray),
+			array_dimensions(sendArray), type);
+    PyArray_FILLWBYTE(scanArray, 0);
+    sendBuffer  = array_data(sendArray);
+    scanReducts = array_data(scanArray);
+    switch (type)
+    {
+    case NPY_BYTE:
+      Teuchos::scan(*self, reductOp, count, (char*)sendBuffer,
+		    (char*)scanReducts); break;
+    case NPY_UBYTE:
+      Teuchos::scan(*self, reductOp, count, (unsigned char*)sendBuffer,
+		    (unsigned char*)scanReducts); break;
+    case NPY_SHORT:
+      Teuchos::scan(*self, reductOp, count, (short*)sendBuffer,
+		    (short*)scanReducts); break;
+    case NPY_USHORT:
+      Teuchos::scan(*self, reductOp, count, (unsigned short*)sendBuffer,
+		    (unsigned short*)scanReducts); break;
+    case NPY_INT:
+      Teuchos::scan(*self, reductOp, count, (int*)sendBuffer,
+		    (int*)scanReducts); break;
+    case NPY_UINT:
+      Teuchos::scan(*self, reductOp, count, (unsigned int*)sendBuffer,
+		    (unsigned int*)scanReducts); break;
+    case NPY_LONG:
+      Teuchos::scan(*self, reductOp, count, (long*)sendBuffer,
+		    (long*)scanReducts); break;
+    case NPY_ULONG:
+      Teuchos::scan(*self, reductOp, count, (unsigned long*)sendBuffer,
+		    (unsigned long*)scanReducts); break;
+    case NPY_LONGLONG:
+      Teuchos::scan(*self, reductOp, count, (long long*)sendBuffer,
+		    (long long*)scanReducts); break;
+    case NPY_ULONGLONG:
+      Teuchos::scan(*self, reductOp, count, (unsigned long long*)sendBuffer,
+		    (unsigned long long*)scanReducts); break;
+    case NPY_FLOAT:
+      Teuchos::scan(*self, reductOp, count, (float*)sendBuffer,
+		    (float*)scanReducts); break;
+    case NPY_DOUBLE:
+      Teuchos::scan(*self, reductOp, count, (double*)sendBuffer,
+		    (double*)scanReducts); break;
+    default:
+      PyErr_SetString(PyExc_TypeError, "scan() for unsupported NumPy type");
+      goto fail;
+    }
+    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    return PyArray_Return(scanArray);
   fail:
-    if (is_new_object && sendBufferArray) Py_DECREF(sendBufferArray);
+    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    Py_XDECREF(scanArray);
     return NULL;
   }
+
   std::string __str__() const
   {
     return self->description();
@@ -191,7 +284,6 @@ Comm = Comm_long
 %template(SerialComm_long) Teuchos::SerialComm<long>;
 %pythoncode %{
 SerialComm = SerialComm_long
-PyComm = SerialComm
 %}
 
 //////////////////////////////////
@@ -239,3 +331,150 @@ def scan(comm, reductOp, buffer):
   return comm.scan(reductOp, buffer)
 %}
 
+// MPI-related Python code.  This will be inserted directly into the
+// python module
+%pythoncode %{
+# Call MPI_Init if appropriate
+import sys
+Init_Argv(sys.argv)
+del sys
+
+# Arrange for MPI_Finalize to be called at exit, if appropriate
+import atexit
+atexit.register(Finalize)
+%}
+
+////////////////////////////////////////////////////////////////////////////////
+// The following code is implemented if HAVE_MPI is defined
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_MPI
+%{
+#include "mpi.h"
+#include "Teuchos_OpaqueWrapper.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+
+PyObject* Init_Argv(PyObject *args)
+{
+  // Check if MPI is already initialized
+  int ierr = 0;
+  MPI_Initialized(&ierr);
+  if (ierr) return Py_BuildValue("");
+
+  // Reconstruct the command-line arguments
+  int    argc  = 0;
+  char **argv  = 0;
+  if (!PySequence_Check(args))
+  {
+    PyErr_SetString(PyExc_TypeError, "Init_Argv argument must be a sequence");
+    goto fail;
+  }
+  argc = PySequence_Size(args);
+  argv = new char*[argc+1];
+  for (int i=0; i<argc; ++i)
+  {
+    PyObject * item = PySequence_GetItem(args, i);
+    if (!PyString_Check(item))
+    {
+      PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
+      goto fail;
+    }
+    argv[i] = PyString_AsString(item);
+  }
+  argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
+
+  //Initialize MPI
+  ierr = MPI_Init(&argc, &argv);
+  if (ierr)
+  {
+    PyErr_Format(PyExc_RuntimeError, "MPI initialization error %d", ierr);
+    goto fail;
+  }
+  delete [] argv;
+  return Py_BuildValue("");
+ fail:
+  if (argv) delete [] argv;
+  return NULL;
+}
+
+PyObject* Finalize()
+{
+  // Check if MPI has already been finalized
+  int ierr = 0;
+  MPI_Finalized(&ierr);
+  if (ierr) return Py_BuildValue("");
+
+  // Finalize MPI
+  ierr = MPI_Finalize();
+  if (ierr)
+  {
+    PyErr_Format(PyExc_RuntimeError, "MPI finalization error %d", ierr);
+    return NULL;
+  }
+  return Py_BuildValue("");
+}
+%}
+
+//////////////////////////////
+// Teuchos::MpiComm support //
+//////////////////////////////
+%extend Teuchos::MpiComm
+{
+  MpiComm()
+  {
+    return new Teuchos::MpiComm<Ordinal>
+      (Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_WORLD));
+  }
+}
+%ignore Teuchos::MpiComm::MpiComm;
+%ignore Teuchos::MpiComm::getRawMpiComm;
+%ignore Teuchos::MpiComm::broadcast;
+%ignore Teuchos::MpiComm::gatherAll;
+%ignore Teuchos::MpiComm::reduceAll;
+%ignore Teuchos::MpiComm::scan;
+%include "Teuchos_DefaultMpiComm.hpp"
+%template(MpiComm_long) Teuchos::MpiComm<long>;
+%pythoncode %{
+MpiComm = MpiComm_long
+%}
+
+///////////////////////////////////////////
+// Teuchos.DefaultComm support under MPI //
+///////////////////////////////////////////
+%pythoncode %{
+class DefaultComm:
+    __defaultComm = MpiComm()
+    @classmethod
+    def getComm(cls):
+        "Return the default global communicator"
+        return cls.__defaultComm
+%}
+
+////////////////////////////////////////////////////////////////////////////////
+// The following code is implemented if HAVE_MPI is not defined
+////////////////////////////////////////////////////////////////////////////////
+
+#else
+
+%{
+PyObject* Init_Argv(PyObject *args) {
+  return Py_BuildValue("");
+}
+
+PyObject* Finalize() {
+  return Py_BuildValue("");
+}
+%}
+
+/////////////////////////////////////////////
+// Teuchos.DefaultComm support without MPI //
+/////////////////////////////////////////////
+%pythoncode %{
+class DefaultComm:
+    __defaultComm = SerialComm()
+    @classmethod
+    def getComm(cls):
+        "Return the default global communicator"
+        return cls.__defaultComm
+%}
+#endif

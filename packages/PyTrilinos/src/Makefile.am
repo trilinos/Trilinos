@@ -46,11 +46,11 @@ EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_doc.i Epetra_Base.i \
 	     LOCA.TimeDependent.i ML.i MLAPI_PyMatrix.h NOX.__init__.i \
 	     NOX_doc.i NOX.Abstract.i NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     Teuchos.i Teuchos_doc.i Teuchos_Comm.i Teuchos_Epetra.i \
-	     Teuchos_ParameterList.i Teuchos_XML.i Teuchos_PythonParameter.cpp \
-	     Teuchos_PythonParameter.h Thyra.i TriUtils.i UserArray.patch \
-	     NumPyImporter.h numpy.i pyfragments.swg.in numpy_include.h \
-	     setup.py scripts/ParamConvert.py
+	     Teuchos.i Teuchos_doc.i Teuchos_Traits.i Teuchos_Comm.i \
+	     Teuchos_Epetra.i Teuchos_ParameterList.i Teuchos_XML.i \
+	     Teuchos_PythonParameter.cpp Teuchos_PythonParameter.h Thyra.i \
+	     TriUtils.i UserArray.patch NumPyImporter.h numpy.i \
+	     pyfragments.swg.in numpy_include.h setup.py scripts/ParamConvert.py
 
 # Configuration macros
 @HAVE_MPI_TRUE@HAVE_MPI = 1

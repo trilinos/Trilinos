@@ -69,15 +69,16 @@ else:
 
 ################################################################################
 
-def main():
+def main(iAmRoot):
 
     # Create a ParameterList in the C++ way:
     pList = Teuchos.ParameterList()
     pList.set("maxiters", 100)
     pList.set("tol", 1.0e-6)
     pList.set("precond", "ILUT")
-    print
-    print pList
+    if iAmRoot:
+        print
+        print pList
 
     # The isType() method is disabled.  In its place is a type() method that
     # returns a python type object:
@@ -98,9 +99,10 @@ def main():
     assert("precond"  in pList)
 
     # These additional methods include special methods that enable iteration:
-    print
+    if iAmRoot: print
     for name in pList:
-        print name, ":", pList[name]
+        if iAmRoot:
+            print name, ":", pList[name]
 
     # PyTrilinos as a whole has been designed to accept python dictionaries
     # where ParameterLists are expected.  For example, there is an overloaded
@@ -121,8 +123,9 @@ def main():
     assert(isinstance(d, dict))
     del d["maxiters"]    # Deletion is not supported by ParameterList
     pList2 = Teuchos.ParameterList(d)  # New constructor that accepts a dictionary
-    print
-    print pList2
+    if iAmRoot:
+        print
+        print pList2
 
     # The len() operator returns the number of top-level parameters:
     assert(len(pList) == len(pList2)+1)
@@ -141,28 +144,45 @@ def main():
     # XMLObjects support the __str__() method
     assert(isinstance(xmlObj1, Teuchos.XMLObject))
     assert(isinstance(xmlObj2, Teuchos.XMLObject))
-    print
-    print xmlObj2
+    if iAmRoot:
+        print
+        print xmlObj2
 
     # Write the XMLObject to disk, read it back and check it:
-    open("params.xml","w").write(xmlObj2.toString())
-    source  = Teuchos.FileInputSource("params.xml")
-    xmlObj3 = source.getObject()
-    reader  = Teuchos.XMLParameterListReader()
-    pList3  = reader.toParameterList(xmlObj3)
-    assert(pList3 == pList2)
+    if iAmRoot:
+        open("params.xml","w").write(xmlObj2.toString())
+        source  = Teuchos.FileInputSource("params.xml")
+        xmlObj3 = source.getObject()
+        reader  = Teuchos.XMLParameterListReader()
+        pList3  = reader.toParameterList(xmlObj3)
+        assert(pList3 == pList2)
 
 ################################################################################
 
 if __name__ == "__main__":
 
-    print "******************"
-    print "** exTeuchos.py **"
-    print "******************"
+    # Obtain the default communicator
+    comm    = Teuchos.DefaultComm.getComm()
+    iAmRoot = comm.getRank() == 0
 
+    if iAmRoot:
+        print "******************"
+        print "** exTeuchos.py **"
+        print "******************"
+
+    # Run the test and catch any errors
     try:
-        main()
-        print "End Result: TEST PASSED"
-
+        main(iAmRoot)
+        errors = 0
     except Exception, e:
         print e
+        errors = 1
+
+    # Sum the errors, report the status and exit
+    totalErrors = comm.reduceAll(Teuchos.REDUCE_SUM, errors)
+    if iAmRoot:
+        if errors == 0:
+            print "End Result: TEST PASSED"
+        else:
+            print "End Result: TEST FAILED"
+    sys.exit(errors)
