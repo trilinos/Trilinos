@@ -52,6 +52,9 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#ifdef TEUCHOS_DEBUG
+#  include <Teuchos_FancyOStream.hpp>
+#endif
 
 
 /** \example BlockDavidson/BlockDavidsonEpetraEx.cpp
@@ -373,6 +376,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   const int nev = problem_->getNEV();
 
+#ifdef TEUCHOS_DEBUG
+    Teuchos::RCP<Teuchos::FancyOStream>
+      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+    out->setShowAllFrontMatter(false).setShowProcRank(true);
+    *out << "Entering Anasazi::BlockDavidsonSolMgr::solve()\n";
+#endif
 
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -592,16 +601,44 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         int curdim = state.curDim;
         int newdim = numRestartBlocks_*blockSize_;
 
+#       ifdef TEUCHOS_DEBUG
+        {
+          std::vector<Value<ScalarType> > ritzvalues = bd_solver->getRitzValues();
+          *out << "Ritz values from solver:\n";
+          for (unsigned int i=0; i<ritzvalues.size(); i++) {
+            *out << ritzvalues[i].realpart << " ";
+          }
+          *out << "\n";
+        }
+#       endif
+
         //
         // compute eigenvectors of the projected problem
         Teuchos::SerialDenseMatrix<int,ScalarType> S(curdim,curdim);
         std::vector<MagnitudeType> theta(curdim);
         int rank = curdim;
+	{
+          std::stringstream os;
+	  os << "KK before HEEV...\n"
+	     << *state.KK << "\n";
+	  *out << os.str();
+	}
         int info = msutils::directSolver(curdim,*state.KK,Teuchos::null,S,theta,rank,10);
         TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
             "Anasazi::BlockDavidsonSolMgr::solve(): error calling SolverUtils::directSolver.");       // this should never happen
         TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,
             "Anasazi::BlockDavidsonSolMgr::solve(): direct solve did not compute all eigenvectors."); // this should never happen
+
+#       ifdef TEUCHOS_DEBUG
+        {
+          std::stringstream os;
+          *out << "Ritz values from heev(KK):\n";
+	  for (unsigned int i=0; i<theta.size(); i++) *out << theta[i] << " ";
+          os << "\nRitz vectors from heev(KK):\n" 
+               << S << "\n";
+          *out << os.str();
+        }
+#       endif
 
         // 
         // sort the eigenvalues (so that we can order the eigenvectors)
@@ -612,9 +649,27 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // apply the same ordering to the primitive ritz vectors
           msutils::permuteVectors(order,S);
         }
+#       ifdef TEUCHOS_DEBUG
+        {
+          std::stringstream os;
+          *out << "Ritz values from heev(KK) after sorting:\n";
+          std::copy(theta.begin(), theta.end(), std::ostream_iterator<ScalarType>(*out, " "));
+          os << "\nRitz vectors from heev(KK) after sorting:\n" 
+               << S << "\n";
+          *out << os.str();
+        }
+#       endif
         //
         // select the significant primitive ritz vectors
         Teuchos::SerialDenseMatrix<int,ScalarType> Sr(Teuchos::View,S,curdim,newdim);
+#       ifdef TEUCHOS_DEBUG
+        {
+          std::stringstream os;
+          os << "Significant primitive Ritz vectors:\n"
+               << Sr << "\n";
+          *out << os.str();
+        }
+#       endif
         //
         // generate newKK = Sr'*KKold*Sr
         Teuchos::SerialDenseMatrix<int,ScalarType> newKK(newdim,newdim);
@@ -637,6 +692,14 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             }
           }
         }
+#       ifdef TEUCHOS_DEBUG
+	{
+          std::stringstream os;
+          os << "Sr'*KK*Sr:\n"
+               << newKK << "\n";
+	  *out << os.str();
+	}
+#       endif
 
         // prepare new state
         BlockDavidsonState<ScalarType,MV> rstate;
@@ -651,9 +714,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         rstate.KX = state.KX;
         rstate.MX = state.MX;
         rstate.R  = state.R;
-        rstate.T  = Teuchos::rcp( new std::vector<MagnitudeType>(&theta[0],&theta[newdim]) );
+        rstate.T  = Teuchos::rcp( new std::vector<MagnitudeType>(theta.begin(),theta.begin()+newdim) );
 
         if (inSituRestart_ == true) {
+#         ifdef TEUCHOS_DEBUG
+            *out << "Beginning in-situ restart...\n";
+#         endif
           //
           // get non-const pointer to solver's basis so we can work in situ
           Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(state.V);
@@ -692,6 +758,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           rstate.V = solverbasis;
         }
         else { // inSituRestart == false)
+#         ifdef TEUCHOS_DEBUG
+            *out << "Beginning ex-situ restart...\n";
+#         endif
           // newV = oldV*Sr, explicitly. workspace is in workMV
           std::vector<int> curind(curdim), newind(newdim);
           for (int i=0; i<curdim; i++) curind[i] = i;
@@ -759,6 +828,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         if (printer->isVerbosity(Debug)) {
           printer->print(Debug,"Locking vectors: ");
           for (unsigned int i=0; i<lockind.size(); i++) {printer->stream(Debug) << " " << lockind[i];}
+          printer->print(Debug,"\n");
+	  printer->print(Debug,"Not locking vectors: ");
+          for (unsigned int i=0; i<unlockind.size(); i++) {printer->stream(Debug) << " " << unlockind[i];}
           printer->print(Debug,"\n");
         }
 
