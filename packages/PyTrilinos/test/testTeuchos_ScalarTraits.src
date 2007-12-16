@@ -72,6 +72,11 @@ class TeuchosScalarTraitsFloatTestCase(unittest.TestCase):
 
     def setUp(self):
         self.traits = Teuchos.ScalarTraitsFloat()
+        self.comm   = Teuchos.DefaultComm.getComm()
+        self.comm.barrier()
+
+    def tearDown(self):
+        self.comm.barrier()
 
     def testConstructor(self):
         "Test Teuchos.ScalarTraitsFloat constructor"
@@ -195,6 +200,11 @@ class TeuchosScalarTraitsDoubleTestCase(unittest.TestCase):
 
     def setUp(self):
         self.traits = Teuchos.ScalarTraitsDouble()
+        self.comm   = Teuchos.DefaultComm.getComm()
+        self.comm.barrier()
+
+    def tearDown(self):
+        self.comm.barrier()
 
     def testConstructor(self):
         "Test Teuchos.ScalarTraitsDouble constructor"
@@ -319,6 +329,13 @@ class TeuchosScalarTraitsDoubleTestCase(unittest.TestCase):
 
 class TeuchosScalarTraitsTestCase(unittest.TestCase):
     "TestCase class for Teuchos ScalarTraits factory"
+
+    def setUp(self):
+        self.comm = Teuchos.DefaultComm.getComm()
+        self.comm.barrier()
+
+    def tearDown(self):
+        self.comm.barrier()
 
     def testFloat(self):
         "Test Teuchos.ScalarTraits factory for float"

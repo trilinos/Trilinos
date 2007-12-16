@@ -246,16 +246,22 @@ class TeuchosInputSourceTestCase(unittest.TestCase):
     "TestCase class for Teuchos module XML InputSource classes"
 
     def setUp(self):
+        self.comm   = Teuchos.DefaultComm.getComm()
         self.params = {"precon" : "ILU",
                        "maxits" : 100,
                        "tol"    : 1.0e-6,
                        "poly"   : {"a" : 1.0, "b" : -0.75}
                        }
-        self.file   = "params.xml"
+        self.file   = "params%d.xml" % self.comm.getRank()
+        self.comm.barrier()
+
+    def tearDown(self):
+        self.comm.barrier()
 
     def testFileInputSource(self):
         "Test Teuchos FileInputSource class"
-        open(self.file,"w").write(str(Teuchos.XMLParameterListWriter().toXML(self.params)))
+        open(self.file,"w").write(
+            str(Teuchos.XMLParameterListWriter().toXML(self.params)))
         source = Teuchos.FileInputSource(self.file)
         xmlObj = source.getObject()
         pList  = Teuchos.XMLParameterListReader().toParameterList(xmlObj)
@@ -268,7 +274,8 @@ class TeuchosInputSourceTestCase(unittest.TestCase):
 
     def testStringInputSource(self):
         "Test Teuchos StringInputSource class"
-        open(self.file,"w").write(str(Teuchos.XMLParameterListWriter().toXML(self.params)))
+        open(self.file,"w").write(
+            str(Teuchos.XMLParameterListWriter().toXML(self.params)))
         source = Teuchos.StringInputSource(open(self.file).read())
         xmlObj = source.getObject()
         pList  = Teuchos.XMLParameterListReader().toParameterList(xmlObj)

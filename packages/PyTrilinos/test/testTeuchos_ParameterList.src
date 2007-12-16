@@ -70,6 +70,7 @@ class ParameterListTestCase(unittest.TestCase):
     "TestCase class for Teuchos.ParameterList"
 
     def setUp(self):
+        self.comm  = Teuchos.DefaultComm.getComm()
         self.plist = Teuchos.ParameterList()
         self.name  = "Solver Params"
         self.dict  = {"b" : False,
@@ -78,6 +79,11 @@ class ParameterListTestCase(unittest.TestCase):
                       "d" : {"a":1, "b":2},
                       "s" : "Sandia"
                       }
+        self.fName = "testParameterList%d.dat" % self.comm.getRank()
+        self.comm.barrier()
+
+    def tearDown(self):
+        self.comm.barrier()
 
     def testConstructor0(self):
         "Test Teuchos.ParameterList default constructor"
@@ -273,11 +279,10 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testPrint0(self):
         "Test Teuchos.ParameterList _print method for empty list"
-        fName = "testParameterList.dat"
-        f = open(fName, "w")
+        f = open(self.fName, "w")
         self.plist._print(f)
         f.close()
-        self.assertEqual(open(fName,"r").read(), "[empty list]\n")
+        self.assertEqual(open(self.fName,"r").read(), "[empty list]\n")
 
     def testPrint1(self):
         "Test Teuchos.ParameterList _print method for non-empty list"
@@ -285,11 +290,10 @@ class ParameterListTestCase(unittest.TestCase):
         values = [100      , 1e-6      ]
         for i in range(len(names)):
             self.plist.set(names[i], values[i])
-        fName = "testParameterList.dat"
-        f = open(fName, "w")
+        f = open(self.fName, "w")
         self.plist._print(f)
         f.close()
-        lines = open(fName,"r").readlines()
+        lines = open(self.fName,"r").readlines()
         for i in range(len(lines)):
             self.assertEqual(lines[i], "%s = %g   [unused]\n" % (names[i], values[i]))
 
@@ -299,11 +303,10 @@ class ParameterListTestCase(unittest.TestCase):
         values = [100      , 1e-6      ]
         for i in range(len(names)):
             self.plist.set(names[i], values[i])
-        fName = "testParameterList.dat"
-        f = open(fName, "w")
+        f = open(self.fName, "w")
         self.plist._print(f,2)
         f.close()
-        lines = open(fName,"r").readlines()
+        lines = open(self.fName,"r").readlines()
         for i in range(len(lines)):
             self.assertEqual(lines[i].strip(), "%s = %g   [unused]" %
                              (names[i], values[i]))
@@ -315,11 +318,10 @@ class ParameterListTestCase(unittest.TestCase):
         types  = ["int"    ,"double"   ]
         for i in range(len(names)):
             self.plist.set(names[i], values[i])
-        fName = "testParameterList.dat"
-        f = open(fName, "w")
+        f = open(self.fName, "w")
         self.plist._print(f,2,True)
         f.close()
-        lines = open(fName,"r").readlines()
+        lines = open(self.fName,"r").readlines()
         for i in range(len(lines)):
             self.assertEqual(lines[i].strip(), "%s : %s = %g   [unused]" %
                              (names[i], types[i], values[i]))
@@ -330,11 +332,10 @@ class ParameterListTestCase(unittest.TestCase):
         values = ["Hello", "World", "Albuquerque"]
         for i in range(len(names)):
             self.plist.set(names[i], values[i])
-        fName = "testParameterList.dat"
-        f = open(fName,"w")
+        f = open(self.fName,"w")
         self.plist.unused(f)
         f.close()
-        lines = open(fName,"r").readlines()
+        lines = open(self.fName,"r").readlines()
         for i in range(len(lines)):
             self.assertEqual(lines[i],
                              'WARNING: Parameter "%s" %s   [unused] is unused\n' %
