@@ -617,12 +617,14 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         Teuchos::SerialDenseMatrix<int,ScalarType> S(curdim,curdim);
         std::vector<MagnitudeType> theta(curdim);
         int rank = curdim;
-	{
+#       ifdef TEUCHOS_DEBUG
+        {
           std::stringstream os;
-	  os << "KK before HEEV...\n"
-	     << *state.KK << "\n";
-	  *out << os.str();
-	}
+          os << "KK before HEEV...\n"
+                  << *state.KK << "\n";
+          *out << os.str();
+        }
+#       endif
         int info = msutils::directSolver(curdim,*state.KK,Teuchos::null,S,theta,rank,10);
         TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
             "Anasazi::BlockDavidsonSolMgr::solve(): error calling SolverUtils::directSolver.");       // this should never happen
@@ -633,7 +635,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         {
           std::stringstream os;
           *out << "Ritz values from heev(KK):\n";
-	  for (unsigned int i=0; i<theta.size(); i++) *out << theta[i] << " ";
+          for (unsigned int i=0; i<theta.size(); i++) *out << theta[i] << " ";
           os << "\nRitz vectors from heev(KK):\n" 
                << S << "\n";
           *out << os.str();
@@ -693,12 +695,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           }
         }
 #       ifdef TEUCHOS_DEBUG
-	{
-          std::stringstream os;
-          os << "Sr'*KK*Sr:\n"
-               << newKK << "\n";
-	  *out << os.str();
-	}
+        {
+                std::stringstream os;
+                os << "Sr'*KK*Sr:\n"
+                        << newKK << "\n";
+                *out << os.str();
+        }
 #       endif
 
         // prepare new state
@@ -829,7 +831,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           printer->print(Debug,"Locking vectors: ");
           for (unsigned int i=0; i<lockind.size(); i++) {printer->stream(Debug) << " " << lockind[i];}
           printer->print(Debug,"\n");
-	  printer->print(Debug,"Not locking vectors: ");
+          printer->print(Debug,"Not locking vectors: ");
           for (unsigned int i=0; i<unlockind.size(); i++) {printer->stream(Debug) << " " << unlockind[i];}
           printer->print(Debug,"\n");
         }
