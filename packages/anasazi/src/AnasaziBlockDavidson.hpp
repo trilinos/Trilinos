@@ -213,6 +213,16 @@ namespace Anasazi {
      * although this must be done with caution, as the validity of the
      * user input will not be checked.
      *
+     * Only the first <tt>newstate.curDim</tt> columns of <tt>newstate.V</tt>
+     * and <tt>newstate.KK</tt> and the first <tt>newstate.curDim</tt> rows of 
+     * <tt>newstate.KK</tt> will be used.
+     *
+     * If <tt>newstate.V == getState().V</tt>, then the data is not copied. The
+     * same holds for <tt>newstate.KK</tt>, <tt>newstate.X</tt>,
+     * <tt>newstate.KX</tt>, <tt>newstate.MX</tt>, and <tt>newstate.R</tt> Only the
+     * upper triangular half of <tt>newstate.KK</tt> is used to initialize the
+     * state of the solver.
+     *
      * \post 
      * <li>isInitialized() == \c true (see post-conditions of isInitialize())
      *
@@ -929,13 +939,13 @@ namespace Anasazi {
       // put data in V
       std::vector<int> nevind(curDim_);
       for (int i=0; i<curDim_; ++i) nevind[i] = i;
-      lclV = MVT::CloneView(*V_,nevind);
       if (newstate.V != V_) {
         if (curDim_ < MVT::GetNumberVecs(*newstate.V)) {
           newstate.V = MVT::CloneView(*newstate.V,nevind);
         }
-        MVT::MvAddMv(ZERO,*newstate.V,ONE,*newstate.V,*lclV);
+        MVT::SetBlock(*newstate.V,nevind,*V_);
       }
+      lclV = MVT::CloneView(*V_,nevind);
 
       // put data into KK_
       lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
@@ -947,7 +957,7 @@ namespace Anasazi {
       }
       //
       // make lclKK Hermitian in memory (copy the upper half to the lower half)
-      for (int j=0; j<curDim_; ++j) {
+      for (int j=0; j<curDim_-1; ++j) {
         for (int i=j+1; i<curDim_; ++i) {
           (*lclKK)(i,j) = SCT::conjugate((*lclKK)(j,i));
         }
@@ -1209,7 +1219,6 @@ namespace Anasazi {
     else if (om_->isVerbosity(IterationDetails)) {
       currentStatus( om_->stream(IterationDetails) );
     }
-
   }
 
 

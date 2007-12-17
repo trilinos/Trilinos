@@ -688,7 +688,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
                              "Anasazi::BlockDavidsonSolMgr::solve(): Logic error calling SerialDenseMatrix::multiply.");
           // make it Hermitian in memory
-          for (int j=0; j<newdim; ++j) {
+          for (int j=0; j<newdim-1; ++j) {
             for (int i=j+1; i<newdim; ++i) {
               newKK(i,j) = SCT::conjugate(newKK(j,i));
             }
