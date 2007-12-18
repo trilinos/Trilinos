@@ -3,7 +3,8 @@ RST2HTML = rst2html.py
 RFLAGS = --generator --time --no-xml-declaration
 
 # Web pages that need to be made
-WEB_PAGES = AddingModules.html BuildSystem.html ExceptionHandling.html
+WEB_PAGES = AddingModules.html BuildSystem.html Documentation.html \
+	    ExceptionHandling.html
 
 # List all of the subdirectories here for recursive make
 SUBDIRS = 
