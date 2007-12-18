@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
   // Construct a Map with NumElements and index base of 0
   Epetra_Map Map(NumElements, 0, Comm);
 
-
   // Create x and b vectors
   Epetra_Vector x(Map);
   Epetra_Vector b(Map);

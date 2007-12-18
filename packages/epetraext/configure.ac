@@ -491,17 +491,18 @@ AC_CONFIG_FILES([
 		Makefile
 		Makefile.export.epetraext
 		src/Makefile
-		test/Makefile
 		test/BTF/Makefile
 		test/Composite/Makefile
-		test/Matlab/Makefile
+		test/FortranCppInterface/Makefile
+		test/Makefile
 		test/MapColoring/Makefile
+		test/Matlab/Makefile
 		test/MatrixMatrix/Makefile
 		test/Overlap/Makefile
 		test/Permutation/Makefile
 		test/SingletonFilter/Makefile
-		test/Transpose/Makefile
 		test/SymmRCM/Makefile
+		test/Transpose/Makefile
 		test/View/Makefile
 		test/Zoltan/Makefile
 		test/inout/Makefile
