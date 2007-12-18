@@ -228,7 +228,7 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_pliris_tests" != "Xno")
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -241,7 +241,7 @@ TAC_ARG_WITH_INCDIRS
 
 # #np# - Yet another opportunity to remove code if you aren't
 # using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
+# Define F77_FUNC that will be used to link with Fortran subroutines.
 AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
@@ -272,14 +272,6 @@ if test "X$ac_cv_header_malloc_h" != "Xyes"; then
  #  AC_MSG_ERROR([malloc function not working, needed by Pliris.])
  #fi
 fi
-
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
-
-dnl Check for user-specified names for BLAS lib
-TAC_ARG_WITH_BLASLIB
-
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if
