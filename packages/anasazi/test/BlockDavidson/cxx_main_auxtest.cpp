@@ -86,11 +86,15 @@ int main(int argc, char *argv[])
   bool debug = false;
   string filename("mhd1280b.cua");
   string which("LM");
+  bool printOnAllProcs = false;
+  string outputfn = "";
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("allprint","oneprint",&printOnAllProcs,"Print output on all processors.");
+  cmdp.setOption("outputfn",&outputfn,"File template for printing, ""%d"" substitues for processor rank, blank implies standard out.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -158,7 +162,8 @@ int main(int argc, char *argv[])
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
-
+  MyPL.set( "Output on all processors", printOnAllProcs);
+  MyPL.set( "Output filename template", outputfn);
 
   try {
 

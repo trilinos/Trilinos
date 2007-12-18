@@ -62,7 +62,9 @@ namespace Anasazi {
       //@{ 
 
       //! Default constructor
-      BasicOutputManager( int vb = Anasazi::Errors, Teuchos::RCP<ostream> os = Teuchos::rcp(&std::cout,false) );
+      BasicOutputManager(int vb = Anasazi::Errors, 
+                         Teuchos::RCP<ostream> os = Teuchos::rcp(&std::cout,false),
+                         int printingRank = 0);
 
       //! Destructor.
       virtual ~BasicOutputManager() {};
@@ -115,8 +117,9 @@ namespace Anasazi {
   };
 
   template<class ScalarType>
-  BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RCP<ostream> os)
+  BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RCP<ostream> os, int printingRank)
   : OutputManager<ScalarType>(vb), myOS_(os) {
+    // print only on proc 0
     int MyPID;
 #ifdef HAVE_MPI
     // Initialize MPI
@@ -127,8 +130,8 @@ namespace Anasazi {
 #else 
     MyPID = 0;
 #endif
-    iPrint_ = (MyPID == 0);
-  } 
+    iPrint_ = (MyPID == printingRank);
+  }
 
   template<class ScalarType>
   void BasicOutputManager<ScalarType>::setOStream( Teuchos::RCP<ostream> os ) { 

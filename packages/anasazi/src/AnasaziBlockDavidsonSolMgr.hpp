@@ -55,6 +55,10 @@
 #ifdef TEUCHOS_DEBUG
 #  include <Teuchos_FancyOStream.hpp>
 #endif
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 
 
 /** \example BlockDavidson/BlockDavidsonEpetraEx.cpp
@@ -215,7 +219,6 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   bool relconvtol_, rellocktol_;
   int blockSize_, numBlocks_;
   int maxLocked_;
-  int verbosity_;
   int lockQuorum_;
   bool inSituRestart_;
   int numRestartBlocks_;
@@ -224,6 +227,8 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
+  
+  Teuchos::RCP<BasicOutputManager<ScalarType> > printer_;
 };
 
 
@@ -243,7 +248,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   blockSize_(0),
   numBlocks_(0),
   maxLocked_(0),
-  verbosity_(Anasazi::Errors),
   lockQuorum_(1),
   inSituRestart_(false),
   numRestartBlocks_(1),
@@ -255,7 +259,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
   TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
   TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
-
 
   std::string strtmp;
 
@@ -283,7 +286,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
     TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::BlockDavidsonSolMgr: Invalid Convergence Norm.");
   }
-
   
   // locking tolerance
   useLocking_ = pl.get("Use Locking",useLocking_);
@@ -340,15 +342,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
                        "Anasazi::BlockDavidsonSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
 
-  // verbosity level
-  if (pl.isParameter("Verbosity")) {
-    if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
-      verbosity_ = pl.get("Verbosity", verbosity_);
-    } else {
-      verbosity_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
-    }
-  }
-
   // restart size
   numRestartBlocks_ = pl.get("Num Restart Blocks",numRestartBlocks_);
   TEST_FOR_EXCEPTION(numRestartBlocks_ <= 0, std::invalid_argument,
@@ -364,6 +357,66 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
       inSituRestart_ = (bool)Teuchos::getParameter<int>(pl,"In Situ Restarting");
     }
   }
+
+  // output stream
+  std::string fntemplate = "";
+  bool allProcs = false;
+  if (pl.isParameter("Output on all processors")) {
+    if (Teuchos::isParameterType<bool>(pl,"Output on all processors")) {
+      allProcs = pl.get("Output on all processors",allProcs);
+    } else {
+      allProcs = (bool)Teuchos::getParameter<int>(pl,"Output on all processors");
+    }
+  }
+  fntemplate = pl.get("Output filename template",fntemplate);
+  int MyPID;
+# ifdef HAVE_MPI
+    // Initialize MPI
+    int mpiStarted = 0;
+    MPI_Initialized(&mpiStarted);
+    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+    else MyPID=0;
+# else 
+    MyPID = 0;
+# endif
+  if (fntemplate != "") {
+    std::ostringstream MyPIDstr;
+    MyPIDstr << MyPID;
+    // replace %d in fntemplate with MyPID
+    int pos, start=0;
+    while ( (pos = fntemplate.find("%d",start)) != -1 ) {
+      fntemplate.replace(pos,2,MyPIDstr.str());
+      start = pos+2;
+    }
+  }
+  Teuchos::RCP<ostream> osp;
+  if (fntemplate != "") {
+    osp = Teuchos::rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
+    if (!*osp) {
+      osp = Teuchos::rcp(&std::cout,false);
+      std::cout << "Anasazi::BlockDavidsonSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
+    }
+  }
+  else {
+    osp = Teuchos::rcp(&std::cout,false);
+  }
+  // Output manager
+  int verbosity = Anasazi::Errors;
+  if (pl.isParameter("Verbosity")) {
+    if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
+      verbosity = pl.get("Verbosity", verbosity);
+    } else {
+      verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+    }
+  }
+  if (allProcs) {
+    // print on all procs
+    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,MyPID) );
+  }
+  else {
+    // print only on proc 0
+    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,0) );
+  }
 }
 
 
@@ -378,19 +431,14 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
 #ifdef TEUCHOS_DEBUG
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcp(&printer_->stream(Debug),false));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::BlockDavidsonSolMgr::solve()\n";
 #endif
 
-
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
   Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
-
-  //////////////////////////////////////////////////////////////////////////////////////
-  // Output manager
-  Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
@@ -425,11 +473,11 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
   // printing StatusTest
   Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest;
-  if ( printer->isVerbosity(Debug) ) {
-    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed+Failed+Undefined ) );
+  if ( printer_->isVerbosity(Debug) ) {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_,combotest,1,Passed+Failed+Undefined ) );
   }
   else {
-    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_,combotest,1,Passed ) );
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -452,7 +500,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockDavidson solver
   Teuchos::RCP<BlockDavidson<ScalarType,MV,OP> > bd_solver 
-    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
+    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(problem_,sorter,printer_,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
   Teuchos::RCP< const MV > probauxvecs = problem_->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
@@ -595,7 +643,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         }
         numRestarts++;
 
-        printer->stream(IterationDetails) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
+        printer_->stream(IterationDetails) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
 
         BlockDavidsonState<ScalarType,MV> state = bd_solver->getState();
         int curdim = state.curDim;
@@ -733,7 +781,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           lapack.GEQRF(curdim,newdim,Sr.values(),Sr.stride(),&tau[0],&work[0],work.size(),&geqrf_info);
           TEST_FOR_EXCEPTION(geqrf_info != 0,std::logic_error,
                              "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
-          if (printer->isVerbosity(Debug)) {
+          if (printer_->isVerbosity(Debug)) {
             Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,Sr,newdim,newdim);
             for (int j=0; j<newdim; j++) {
               R(j,j) = SCT::magnitude(R(j,j)) - 1.0;
@@ -741,7 +789,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
                 R(i,j) = ZERO;
               }
             }
-            printer->stream(Debug) << "||Triangular factor of Sr - I||: " << R.normFrobenius() << std::endl;
+            printer_->stream(Debug) << "||Triangular factor of Sr - I||: " << R.normFrobenius() << std::endl;
           }
           // 
           // perform implicit oldV*Sr
@@ -827,13 +875,13 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
         //
         // debug printing
-        if (printer->isVerbosity(Debug)) {
-          printer->print(Debug,"Locking vectors: ");
-          for (unsigned int i=0; i<lockind.size(); i++) {printer->stream(Debug) << " " << lockind[i];}
-          printer->print(Debug,"\n");
-          printer->print(Debug,"Not locking vectors: ");
-          for (unsigned int i=0; i<unlockind.size(); i++) {printer->stream(Debug) << " " << unlockind[i];}
-          printer->print(Debug,"\n");
+        if (printer_->isVerbosity(Debug)) {
+          printer_->print(Debug,"Locking vectors: ");
+          for (unsigned int i=0; i<lockind.size(); i++) {printer_->stream(Debug) << " " << lockind[i];}
+          printer_->print(Debug,"\n");
+          printer_->print(Debug,"Not locking vectors: ");
+          for (unsigned int i=0; i<unlockind.size(); i++) {printer_->stream(Debug) << " " << unlockind[i];}
+          printer_->print(Debug,"\n");
         }
 
         //
@@ -894,7 +942,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           lapack.GEQRF(curdim,numUnlocked,copySu.values(),copySu.stride(),&tau[0],&work[0],work.size(),&info);
           TEST_FOR_EXCEPTION(info != 0,std::logic_error,
                              "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
-          if (printer->isVerbosity(Debug)) {
+          if (printer_->isVerbosity(Debug)) {
             Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,copySu,numUnlocked,numUnlocked);
             for (int j=0; j<numUnlocked; j++) {
               R(j,j) = SCT::magnitude(R(j,j)) - 1.0;
@@ -902,7 +950,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
                 R(i,j) = ZERO;
               }
             }
-            printer->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << std::endl;
+            printer_->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << std::endl;
           }
           // 
           // perform implicit oldV*Su
@@ -1089,7 +1137,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       }
     }
     catch (AnasaziError err) {
-      printer->stream(Errors) 
+      printer_->stream(Errors) 
         << "Anasazi::BlockDavidsonSolMgr::solve() caught unexpected exception from Anasazi::BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << std::endl
         << err.what() << std::endl
         << "Anasazi::BlockDavidsonSolMgr::solve() returning Unconverged with no solutions." << std::endl;
@@ -1175,13 +1223,13 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   }
 
   // print final summary
-  bd_solver->currentStatus(printer->stream(FinalSummary));
+  bd_solver->currentStatus(printer_->stream(FinalSummary));
 
   // print timing information
-  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+  Teuchos::TimeMonitor::summarize(printer_->stream(TimingDetails));
 
   problem_->setSolution(sol);
-  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
+  printer_->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockDavidsonSolMgr::solve() 
