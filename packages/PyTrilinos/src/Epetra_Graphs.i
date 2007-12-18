@@ -38,10 +38,12 @@
 ////////////////////////
 
 // Begin argout typemap collection for (int & NumIndices, int *& Indices)
-%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int *& Indices) {
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int *& Indices)
+{
   $1 = ($input != 0);
 }
-%typemap(in,numinputs=0) (int & NumIndices, int *& Indices) { }
+%typemap(in,numinputs=0) (int & NumIndices, int *& Indices)
+{ }
 %typemap(argout)         (int & NumIndices, int *& Indices)
 {
   Py_XDECREF($result);
@@ -72,19 +74,21 @@
 %rename(CrsGraph) Epetra_CrsGraph;
 %apply (int DIM1, int* IN_ARRAY1) {(int NumRows,    const int * NumIndicesPerRow)};
 %apply (int DIM1, int* IN_ARRAY1) {(int NumIndices, int       * Indices         )};
-%extend Epetra_CrsGraph {
-
+%extend Epetra_CrsGraph
+{
   Epetra_CrsGraph(Epetra_DataAccess       CV,
 		  const Epetra_BlockMap & RowMap,
 		  int                     NumRows,
 		  const int             * NumIndicesPerRow,
-		  bool                    StaticProfile=false) {
-    if (NumRows != RowMap.NumMyElements()) {
-	PyErr_Format(PyExc_ValueError,
-		     "Row map has %d elements, NumIndicesPerRow has %d",
-		     RowMap.NumMyElements(), NumRows);
-	return NULL;
-      }
+		  bool                    StaticProfile=false)
+  {
+    if (NumRows != RowMap.NumMyElements())
+    {
+      PyErr_Format(PyExc_ValueError,
+		   "Row map has %d elements, NumIndicesPerRow has %d",
+		   RowMap.NumMyElements(), NumRows);
+      return NULL;
+    }
     return new Epetra_CrsGraph(CV, RowMap, NumIndicesPerRow, StaticProfile);
   }
 
@@ -93,17 +97,20 @@
 		  const Epetra_BlockMap & ColMap,
 		  int                     NumRows,
 		  const int             * NumIndicesPerRow,
-		  bool                    StaticProfile=false) {
-    if (NumRows != RowMap.NumMyElements()) {
-	PyErr_Format(PyExc_ValueError,
-		     "Row map has %d elements, NumIndicesPerRow has %d",
-		     RowMap.NumMyElements(), NumRows);
-	return NULL;
-      }
+		  bool                    StaticProfile=false)
+  {
+    if (NumRows != RowMap.NumMyElements())
+    {
+      PyErr_Format(PyExc_ValueError,
+		   "Row map has %d elements, NumIndicesPerRow has %d",
+		   RowMap.NumMyElements(), NumRows);
+      return NULL;
+    }
     return new Epetra_CrsGraph(CV, RowMap, ColMap, NumIndicesPerRow, StaticProfile);
   }
 
-  PyObject * ExtractGlobalRowCopy(int globalRow) const {
+  PyObject * ExtractGlobalRowCopy(int globalRow) const
+  {
     int        lrid          = 0;
     int        numIndices    = 0;
     int        result        = 0;
@@ -112,7 +119,8 @@
     PyObject * indicesArray  = NULL;
 
     lrid = self->LRID(globalRow);
-    if (lrid == -1) {
+    if (lrid == -1)
+    {
       PyErr_Format(PyExc_ValueError, "Invalid global row index = %d", globalRow);
       goto fail;
     }
@@ -120,7 +128,8 @@
     indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT);
     indices       = (int*) array_data(indicesArray);
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numIndices, indices);
-    if (result == -2) {
+    if (result == -2)
+    {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
       goto fail;
     }
@@ -130,18 +139,21 @@
     return NULL;
   }
 
-  int * __getitem__(int i) {
+  int * __getitem__(int i)
+  {
     return self->operator[](i);
   }
 
-  PyObject * ExtractMyRowCopy(int localRow) const {
+  PyObject * ExtractMyRowCopy(int localRow) const
+  {
     int        numIndices    = 0;
     int        result        = 0;
     intp       dimensions[ ] = { 0 };
     int      * indices       = NULL;
     PyObject * indicesArray  = NULL;
 
-    if (localRow < 0 || localRow >= self->NumMyRows()) {
+    if (localRow < 0 || localRow >= self->NumMyRows())
+    {
       PyErr_Format(PyExc_ValueError, "Invalid local row index = %d", localRow);
       goto fail;
     }
@@ -149,7 +161,8 @@
     indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT);
     indices       = (int*) array_data(indicesArray);
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numIndices, indices);
-    if (result == -2) {
+    if (result == -2)
+    {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
       goto fail;
     }
@@ -159,7 +172,8 @@
     return NULL;
   }
 
-  int * __getitem__(int i) {
+  int * __getitem__(int i)
+  {
     return self->operator[](i);
   }
 }

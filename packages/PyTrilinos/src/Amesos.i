@@ -157,11 +157,13 @@ exAmesos_Factory.py.
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -177,12 +179,14 @@ exAmesos_Factory.py.
 %include "Amesos_BaseSolver.h"
 %extend Amesos_BaseSolver 
 {
-  std::string __str__() {
+  std::string __str__()
+  {
     std::stringstream os;
     os << "*** Amesos_BaseSolver ***";
     return os.str();
   }
-  void __del__() {
+  void __del__()
+  {
     delete self;
   }
 }

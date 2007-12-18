@@ -41,6 +41,8 @@ numerical by nature.  The python version of the Teuchos package
 supports the following classes:
 
     * SerialComm              - Serial communicator
+    * MpiComm                 - MPI communicator
+    * DefaultComm             - Default communicator facility
     * ParameterList           - List of arbitrarily-typed values,
                                 keyed by strings
     * XMLObject               - Object-oriented interface to XML
@@ -127,17 +129,23 @@ using Teuchos::RCP;
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+  }
+  catch(Teuchos::Exceptions::InvalidParameterType & e)
+  {
     SWIG_exception(SWIG_TypeError, e.what());
-  } catch(Teuchos::Exceptions::InvalidParameter & e) {
+  }
+  catch(Teuchos::Exceptions::InvalidParameter & e)
+  {
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -161,7 +169,8 @@ using Teuchos::RCP;
 // Teuchos::Teuchos_Version support //
 //////////////////////////////////////
 %include "Teuchos_Version.hpp"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = Teuchos_Version().split()[2]
 %}
 
@@ -180,15 +189,21 @@ __version__ = Teuchos_Version().split()[2]
 (void* argp = 0, int res = 0)
 {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-  if (!SWIG_IsOK(res)) {
+  if (!SWIG_IsOK(res))
+  {
     res = SWIG_ConvertPtr($input, &argp, $descriptor(Type*), %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
+    if (!SWIG_IsOK(res))
+    {
       %argument_fail(res, "$type", $symname, $argnum);
     }
-    if (!argp) { %argument_nullref("$type", $symname, $argnum); }
+    if (!argp)
+    {
+      %argument_nullref("$type", $symname, $argnum);
+    }
     $1 = new $*ltype ( %reinterpret_cast( argp, Type* ), false );
   }
-  else {
+  else
+  {
     if (!argp) { %argument_nullref("$type", $symname, $argnum); }
     $1 = %reinterpret_cast(argp, $ltype);
   }
@@ -197,7 +212,8 @@ __version__ = Teuchos_Version().split()[2]
 %typecheck(1200) const SWIGTYPE & SMARTPOINTER
 {
   static void * argp = 0;
-  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
+  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags))
+    ? 1 : 0;
   if (!$1)
     $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Type *),
 					 %convertptr_flags)) ? 1 : 0;
@@ -239,26 +255,26 @@ __version__ = Teuchos_Version().split()[2]
   void                  *  argp         = NULL;
   static swig_type_info *  swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
   if (PyDict_Check($input))
+  {
+    params = Teuchos::pyDictToNewParameterList($input);
+    if (!params)
     {
-      params = Teuchos::pyDictToNewParameterList($input);
-      if (!params)
-	{
-	  PyErr_SetString(PyExc_TypeError,
-			  "Python dictionary cannot be converted to ParameterList");
-	  SWIG_fail;
-	}
+      PyErr_SetString(PyExc_TypeError,
+		      "Python dictionary cannot be converted to ParameterList");
+      SWIG_fail;
     }
+  }
   else
+  {
+    res = SWIG_ConvertPtr($input, &argp, swig_TPL_ptr, 0);
+    if (!SWIG_IsOK(res))
     {
-      res = SWIG_ConvertPtr($input, &argp, swig_TPL_ptr, 0);
-      if (!SWIG_IsOK(res))
-	{
-	  PyErr_SetString(PyExc_TypeError,
-			  "Argument $argnum cannot be converted to ParameterList");
-	  SWIG_fail;
-	}
-      params = reinterpret_cast< Teuchos::ParameterList * >(argp);
+      PyErr_SetString(PyExc_TypeError,
+		      "Argument $argnum cannot be converted to ParameterList");
+      SWIG_fail;
     }
+    params = reinterpret_cast< Teuchos::ParameterList * >(argp);
+  }
   $1 = new Teuchos::RCP<Teuchos::ParameterList> (params, false);
 }
 %typemap(freearg) RCP<Teuchos::ParameterList>

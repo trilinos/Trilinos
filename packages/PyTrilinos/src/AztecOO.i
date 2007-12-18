@@ -124,24 +124,30 @@ example subdirectory of the PyTrilinos package:
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  } catch(int errCode) {
+  }
+  catch(int errCode)
+  {
     PyErr_Format(PyExc_RuntimeError, "Error code = %d\nSee stderr for details",
 		 errCode);
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
 
 // Macro for methods that return C arrays
 %define %aztecoo_return_array(className,methodName,type,typeName,length)
-%extend className {
-  PyObject * methodName() const {
+%extend className
+{
+  PyObject * methodName() const
+  {
     intp dims[ ] = { (intp) length };
     return PyArray_SimpleNewFromData(1, dims, typeName, (void*)self->methodName());
   }
@@ -158,7 +164,8 @@ example subdirectory of the PyTrilinos package:
 // AztecOO Version support //
 /////////////////////////////
 %include "AztecOO_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = AztecOO_Version().split()[2]
 %}
 

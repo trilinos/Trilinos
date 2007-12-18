@@ -34,8 +34,8 @@
 
 #include "Epetra_SerialDenseMatrix.h"
 
-class Epetra_NumPySerialDenseMatrix : public Epetra_SerialDenseMatrix {
-
+class Epetra_NumPySerialDenseMatrix : public Epetra_SerialDenseMatrix
+{
 public:
 
   // Constructors

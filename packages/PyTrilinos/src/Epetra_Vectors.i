@@ -53,7 +53,10 @@
 //////////////////////////////
 // Epetra_IntVector support //
 //////////////////////////////
-%inline {struct IntVector{ };}
+%inline
+{
+  struct IntVector{ };
+}
 %include "Epetra_IntVector.h"
 
 ////////////////////////////////
@@ -74,7 +77,10 @@
 %ignore Epetra_MultiVector::MeanValue(double*) const;
 %ignore Epetra_MultiVector::ResetView(double **);
 %ignore Epetra_MultiVector::Pointers() const;
-%inline {struct MultiVector{ };}
+%inline
+{
+  struct MultiVector{ };
+}
 %include "Epetra_MultiVector.h"
 
 ///////////////////////////
@@ -91,7 +97,10 @@
 %ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);
 %ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);
 %ignore Epetra_Vector::ResetView(double *);
-%inline {struct Vector{ };}
+%inline
+{
+  struct Vector{ };
+}
 %include "Epetra_Vector.h"
 
 /////////////////////////////
@@ -99,7 +108,10 @@
 /////////////////////////////
 %ignore Epetra_FEVector::ReplaceGlobalValues(int,int*,double*);
 %ignore Epetra_FEVector::SumIntoGlobalValues(int,int*,double*);
-%inline {struct FEVector{ };}
+%inline
+{
+  struct FEVector{ };
+}
 %include "Epetra_FEVector.h"
 
 ///////////////////////////////////
@@ -108,7 +120,8 @@
 %rename(NumPyIntVector) Epetra_NumPyIntVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyIntVector)
 %include "Epetra_NumPyIntVector.h"
-%pythoncode %{
+%pythoncode
+%{
 class IntVector(UserArray,NumPyIntVector):
     """
     Epetra.IntVector: A class for constructing and using dense integer vectors
@@ -233,7 +246,8 @@ _Epetra.NumPyIntVector_swigregister(IntVector)
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyMultiVector)
 %include "Epetra_NumPyMultiVector.h"
-%pythoncode %{
+%pythoncode
+%{
 class MultiVector(UserArray,NumPyMultiVector):
     """
     Epetra.MultiVector: A class for constructing and using dense multi- vectors,
@@ -399,7 +413,8 @@ _Epetra.NumPyMultiVector_swigregister(MultiVector)
 %rename(NumPyVector) Epetra_NumPyVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyVector)
 %include "Epetra_NumPyVector.h"
-%pythoncode %{
+%pythoncode
+%{
 class Vector(UserArray,NumPyVector):
     """
     Epetra.Vector: A class for constructing and using dense vectors on a
@@ -533,7 +548,8 @@ _Epetra.NumPyVector_swigregister(Vector)
 %rename(NumPyFEVector) Epetra_NumPyFEVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyFEVector)
 %include "Epetra_NumPyFEVector.h"
-%pythoncode %{
+%pythoncode
+%{
 class FEVector(UserArray,NumPyFEVector):
     """
     Epetra Finite-Element Vector. This class inherits Epetra.MultiVector and

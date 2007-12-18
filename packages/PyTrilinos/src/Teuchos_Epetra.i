@@ -62,16 +62,20 @@ using Teuchos::RCP;
 
 // Define the macro that defines the typemap
 %define %teuchos_rcp_epetra_array_typemaps(ClassName)
-%typemap(out) RCP<Epetra_##ClassName> {
+%typemap(out) RCP<Epetra_##ClassName>
+{
   if (Teuchos::is_null($1)) $result = Py_BuildValue("");
-  else {
+  else
+  {
     Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
     $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   }
 }
-%typemap(varout) RCP<Epetra_##ClassName> {
+%typemap(varout) RCP<Epetra_##ClassName>
+{
   if (Teuchos::is_null($1)) $result = Py_BuildValue("");
-  else {
+  else
+  {
     Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
     $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   }

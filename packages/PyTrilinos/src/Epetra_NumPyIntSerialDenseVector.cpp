@@ -37,24 +37,30 @@ PyArrayObject * Epetra_NumPyIntSerialDenseVector::tmp_array = NULL;
 int * Epetra_NumPyIntSerialDenseVector::getArray(PyObject * pyObject)
 {
   // If tmp_array is NULL, build a PyArrayObject from the pyObject
-  if (tmp_array == NULL) {
+  if (tmp_array == NULL)
+  {
     // If pyObject is an int, build an array of that length
-    if PyInt_Check(pyObject) {
+    if (PyInt_Check(pyObject))
+    {
       intp dimensions[ ] = {(intp) PyInt_AsLong(pyObject)};
       tmp_array = (PyArrayObject*) PyArray_SimpleNew(1,dimensions,'i');
-      if (tmp_array == NULL) {
+      if (tmp_array == NULL)
+      {
 	dimensions[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
       }
 
     // Else try to build a contiguous PyArrayObject from the pyObject
-    } else {
+    }
+    else
+    {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
     }
   }
 
   // If this fails, build a single vector with zero length
-  if (!tmp_array) {
+  if (!tmp_array)
+  {
     intp dimensions[ ] = { 0 };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
   }
@@ -65,13 +71,17 @@ int * Epetra_NumPyIntSerialDenseVector::getArray(PyObject * pyObject)
 // =============================================================================
 void Epetra_NumPyIntSerialDenseVector::setArray()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     array     = tmp_array;
     tmp_array = NULL;
-  } else {
+  }
+  else
+  {
     intp dimensions[ ] = {Length()};
-    array = (PyArrayObject*) PyArray_SimpleNewFromData(1,dimensions,'i',
-						       (void*)Epetra_IntSerialDenseVector::Values());
+    array = (PyArrayObject*)
+      PyArray_SimpleNewFromData(1,dimensions,'i',
+				(void*)Epetra_IntSerialDenseVector::Values());
   }
 }
 
@@ -84,7 +94,8 @@ int Epetra_NumPyIntSerialDenseVector::getVectorSize(PyObject * pyObject)
 
 void Epetra_NumPyIntSerialDenseVector::cleanup()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     Py_DECREF(tmp_array);
     tmp_array = NULL;
   }
@@ -125,18 +136,23 @@ Epetra_NumPyIntSerialDenseVector::Epetra_NumPyIntSerialDenseVector(const Epetra_
 
 // Destructor
 // =============================================================================
-Epetra_NumPyIntSerialDenseVector::~Epetra_NumPyIntSerialDenseVector() {
+Epetra_NumPyIntSerialDenseVector::~Epetra_NumPyIntSerialDenseVector()
+{
   Py_XDECREF(array);
 }
 
 // Methods
 // =============================================================================
-int Epetra_NumPyIntSerialDenseVector::Size(int length) {
+int Epetra_NumPyIntSerialDenseVector::Size(int length)
+{
   // Call the base-class method
   int result = Epetra_IntSerialDenseVector::Size(length);
-  if (result) {
+  if (result)
+  {
     PyErr_Format(PyExc_RuntimeError, "Size() method failed with code %d", result);
-  } else {
+  }
+  else
+  {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_IntSerialDenseVector data
   }
@@ -144,12 +160,16 @@ int Epetra_NumPyIntSerialDenseVector::Size(int length) {
 }
 
 // =============================================================================
-int Epetra_NumPyIntSerialDenseVector::Resize(int length) {
+int Epetra_NumPyIntSerialDenseVector::Resize(int length)
+{
   // Call the base-class method
   int result = Epetra_IntSerialDenseVector::Resize(length);
-  if (result) {
+  if (result)
+  {
     PyErr_Format(PyExc_RuntimeError, "Resize() method failed with code %d", result);
-  } else {
+  }
+  else
+  {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_IntSerialDenseVector data
   }
@@ -157,7 +177,8 @@ int Epetra_NumPyIntSerialDenseVector::Resize(int length) {
 }
 
 // =============================================================================
-PyObject * Epetra_NumPyIntSerialDenseVector::Values() const {
+PyObject * Epetra_NumPyIntSerialDenseVector::Values() const
+{
   Py_INCREF(array);
   return PyArray_Return(array);
 }

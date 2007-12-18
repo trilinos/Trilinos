@@ -37,8 +37,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_FEVector.h"
 
-class Epetra_NumPyFEVector : public Epetra_FEVector {
-
+class Epetra_NumPyFEVector : public Epetra_FEVector
+{
 public:
 
   // Constructors

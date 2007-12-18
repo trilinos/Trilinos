@@ -116,17 +116,23 @@ using namespace NOX::Epetra;
 %include "exception.i"
 %exception
 {
-  try {
+  try
+  {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+  }
+  catch(Teuchos::Exceptions::InvalidParameterType & e)
+  {
     SWIG_exception(SWIG_TypeError, e.what());
-  } catch(Teuchos::Exceptions::InvalidParameter & e) {
+  }
+  catch(Teuchos::Exceptions::InvalidParameter & e)
+  {
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -161,44 +167,61 @@ using namespace NOX::Epetra;
 
 // Make Epetra_Vector and NOX::Epetra::Vector input arguments
 // interchangeable
-%typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0) {
+%typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0)
+{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-  if (!SWIG_IsOK(res)) {
+  if (!SWIG_IsOK(res))
+  {
     res = SWIG_ConvertPtr($input, &argp, $descriptor(Epetra_Vector*), %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
+    if (!SWIG_IsOK(res))
+    {
       %argument_fail(res, "$type", $symname, $argnum);
     }
-    if (!argp) { %argument_nullref("$type", $symname, $argnum); }
+    if (!argp)
+    {
+      %argument_nullref("$type", $symname, $argnum);
+    }
     $1 = new NOX::Epetra::Vector(*%reinterpret_cast( argp, Epetra_Vector*));
-  } else {
+  }
+  else
+  {
     $1 = %reinterpret_cast(argp, NOX::Epetra::Vector*);
   }
 }
-%typecheck(1190) NOX::Epetra::Vector & {
+%typecheck(1190) NOX::Epetra::Vector &
+{
   static void * argp = 0;
-  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
+  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags))
+    ? 1 : 0;
   if (!$1)
     $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Epetra_Vector*),
                                          %convertptr_flags)) ? 1 : 0;
 }
-%typemap(freearg) NOX::Epetra::Vector {
+%typemap(freearg) NOX::Epetra::Vector
+{
   if ($1 != NULL) delete $1;
 }
 
 // Convert NOX::Abstract::Vector return arguments to Epetra.Vectors
-%typemap(out) NOX::Abstract::Vector & {
+%typemap(out) NOX::Abstract::Vector &
+{
   NOX::Epetra::Vector * nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
-  if (nevResult == NULL) {
+  if (nevResult == NULL)
+  {
     // If we can't upcast, then return the NOX::Abstract::Vector
     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
-  } else {
-    Epetra_NumPyVector * enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
+  }
+  else
+  {
+    Epetra_NumPyVector * enpvResult = 
+      new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
     $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
   }
 }
 
 // Convert Epetra_Vector return arguments to Epetra.Vectors
-%typemap(out) Epetra_Vector & {
+%typemap(out) Epetra_Vector &
+{
   Epetra_NumPyVector * enpvResult = new Epetra_NumPyVector(View, *$1, 0);
   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
 }
@@ -236,46 +259,50 @@ using namespace NOX::Epetra;
 /////////////////////////////////////////////////
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
-namespace NOX {
-  namespace Epetra {
-    %extend FiniteDifferenceColoring {
-      FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
-			       Interface::Required & i,
-			       const NOX::Epetra::Vector & initialGuess,
-			       Epetra_CrsGraph & rawGraph,
-			       bool parallelColoring = false,
-			       bool distance1 = false,
-			       double beta = 1.0e-6, double alpha = 1.0e-4) {
-	// Wrap the interface and CRS graph in reference counters
-	RCP<Interface::Required> i_ptr     = rcp(&i,        false);
-	RCP<Epetra_CrsGraph>     graph_ptr = rcp(&rawGraph, false);
-	// Construct the coloring algorithm functor and generate the color map
-	EpetraExt::CrsGraph_MapColoring *mapColor =
-	  new EpetraExt::CrsGraph_MapColoring();
-	RCP<Epetra_MapColoring> colorMap = rcp(&(*mapColor)(rawGraph));
-	// Construct the color index functor and generate the column indexes
-	EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
-	  new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-	RCP<std::vector<Epetra_IntVector> > columns =
-	  rcp(&(*mapColorIndex)(rawGraph));
-	// Construct the FiniteDifferenceColoring object
-	FiniteDifferenceColoring *fdc = new FiniteDifferenceColoring(printingParams,
-								     i_ptr,
-								     initialGuess,
-								     graph_ptr,
-								     colorMap, columns,
-								     parallelColoring,
-								     distance1, beta,
-								     alpha);
-	// Delete the temporary functors
-	delete mapColor;
-	delete mapColorIndex;
-	// Return the pointer to FiniteDifferenceColoring object
-	return fdc;
-      }
-    }
-    %ignore FiniteDifferenceColoring::FiniteDifferenceColoring;
+namespace NOX
+{
+namespace Epetra
+{
+%extend FiniteDifferenceColoring
+{
+  FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
+			   Interface::Required & i,
+			   const NOX::Epetra::Vector & initialGuess,
+			   Epetra_CrsGraph & rawGraph,
+			   bool parallelColoring = false,
+			   bool distance1 = false,
+			   double beta = 1.0e-6, double alpha = 1.0e-4)
+  {
+    // Wrap the interface and CRS graph in reference counters
+    RCP<Interface::Required> i_ptr     = rcp(&i,        false);
+    RCP<Epetra_CrsGraph>     graph_ptr = rcp(&rawGraph, false);
+    // Construct the coloring algorithm functor and generate the color map
+    EpetraExt::CrsGraph_MapColoring *mapColor =
+      new EpetraExt::CrsGraph_MapColoring();
+    RCP<Epetra_MapColoring> colorMap = rcp(&(*mapColor)(rawGraph));
+    // Construct the color index functor and generate the column indexes
+    EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
+      new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
+    RCP<std::vector<Epetra_IntVector> > columns =
+      rcp(&(*mapColorIndex)(rawGraph));
+    // Construct the FiniteDifferenceColoring object
+    FiniteDifferenceColoring *fdc = new FiniteDifferenceColoring(printingParams,
+								 i_ptr,
+								 initialGuess,
+								 graph_ptr,
+								 colorMap, columns,
+								 parallelColoring,
+								 distance1, beta,
+								 alpha);
+    // Delete the temporary functors
+    delete mapColor;
+    delete mapColorIndex;
+    // Return the pointer to FiniteDifferenceColoring object
+    return fdc;
   }
+}
+%ignore FiniteDifferenceColoring::FiniteDifferenceColoring;
+}
 }
 %include "NOX_Epetra_FiniteDifferenceColoring.H"
 

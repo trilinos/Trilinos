@@ -50,7 +50,10 @@
 %}
 
 //Teuchos imports
-namespace Teuchos { class any; }
+namespace Teuchos
+{
+class any;
+}
 %import "Teuchos_ParameterEntry.hpp"
 %import "Teuchos_PythonParameter.h"
 
@@ -61,7 +64,8 @@ namespace Teuchos { class any; }
 {
   /******************************************************************/
   // Dictionary constructor
-  ParameterList(PyObject * dict, string name = string("ANONYMOUS")) {
+  ParameterList(PyObject * dict, string name = string("ANONYMOUS"))
+  {
     Teuchos::ParameterList * plist =
       Teuchos::pyDictToNewParameterList(dict, Teuchos::raiseError);
     if (plist == NULL) goto fail;
@@ -74,8 +78,10 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Set method: accept only python objects as values
-  PyObject * set(const string &name, PyObject *value) {
-    if (!setPythonParameter(*self,name,value)) {
+  PyObject * set(const string &name, PyObject *value)
+  {
+    if (!setPythonParameter(*self,name,value))
+    {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
@@ -86,8 +92,10 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // SetParameters method, overloaded to accept a python dictionary
-  ParameterList & setParameters(PyObject * dict) {
-    if (!updateParameterListWithPyDict(dict,*self)) {
+  ParameterList & setParameters(PyObject * dict)
+  {
+    if (!updateParameterListWithPyDict(dict,*self))
+    {
       PyErr_SetString(PyExc_ValueError,
 		      "ParameterList has values of unsupported type");
     }
@@ -96,16 +104,20 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Get method: return entries as python objects
-  PyObject * get(const string &name, PyObject * default_value=NULL) const {
+  PyObject * get(const string &name, PyObject * default_value=NULL) const
+  {
     PyObject * value = getPythonParameter(*self, name);
     // Type not supported
-    if (value == NULL) {
+    if (value == NULL)
+    {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
     // Name not found
-    else if (value == Py_None) {
-      if (default_value == NULL) {
+    else if (value == Py_None)
+    {
+      if (default_value == NULL)
+      {
 	PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
 	goto fail;
       }
@@ -124,21 +136,26 @@ namespace Teuchos { class any; }
   // Print method: change name from "print" to "_print" because
   // "print" is a python keyword
   PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
-		    bool showFlags=true) {
+		    bool showFlags=true)
+  {
     PyObject * returnObject = pf;
     // No arguments
-    if (pf==NULL) {
+    if (pf==NULL)
+    {
       self->print(std::cout,indent,showTypes,showFlags);
       returnObject = Py_None;
     }
     // Given non-file pf argument
-    else {
-      if (!PyFile_Check(pf)) {
+    else
+    {
+      if (!PyFile_Check(pf))
+      {
 	PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
 	goto fail;
       }
       // Given file pf argument
-      else {
+      else
+      {
 	std::FILE *f = PyFile_AsFile(pf);
 	Teuchos::FILEstream buffer(f);
 	std::ostream os(&buffer);
@@ -153,19 +170,24 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Unused method: take python file objects rather than ostreams
-  PyObject * unused(PyObject * pf=NULL) {
+  PyObject * unused(PyObject * pf=NULL)
+  {
     // No arguments
-    if (pf==NULL) {
+    if (pf==NULL)
+    {
       self->unused(std::cout);
     }
     // Given non-file pf argument
-    else {
-      if (!PyFile_Check(pf)) {
+    else
+    {
+      if (!PyFile_Check(pf))
+      {
 	PyErr_SetString(PyExc_IOError, "unused() method expects a file object");
 	goto fail;
       }
       // Given file pf argument
-      else {
+      else
+      {
 	std::FILE *f = PyFile_AsFile(pf);
 	Teuchos::FILEstream buffer(f);
 	std::ostream os(&buffer);
@@ -180,15 +202,18 @@ namespace Teuchos { class any; }
   /******************************************************************/
   // Type method: return python type of requested parameter.  Replaces
   // templated C++ isType() methods.
-  PyObject * type(const std::string & name) {
+  PyObject * type(const std::string & name)
+  {
     PyObject * value = getPythonParameter(*self,name);
     // Type not supported
-    if (value == NULL) {
+    if (value == NULL)
+    {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
     // Name not found
-    else if (value == Py_None) {
+    else if (value == Py_None)
+    {
       PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
       goto fail;
     }
@@ -205,7 +230,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Comparison operators
-  int __cmp__(PyObject * obj) const {
+  int __cmp__(PyObject * obj) const
+  {
     PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     int result = 0;
     if (dict == NULL) goto fail;
@@ -217,7 +243,8 @@ namespace Teuchos { class any; }
     return -2;
   }
 
-  int __cmp__(const ParameterList & plist) const {
+  int __cmp__(const ParameterList & plist) const
+  {
     PyObject * dict1 = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * dict2 = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
     int result = 0;
@@ -235,7 +262,8 @@ namespace Teuchos { class any; }
     
   /******************************************************************/
   // Contains operator
-  int __contains__(const std::string & name) const {
+  int __contains__(const std::string & name) const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * keys   = 0;
     PyObject * keyStr = 0;
@@ -257,7 +285,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Equals operators
-  PyObject * __eq__(PyObject * obj) const {
+  PyObject * __eq__(PyObject * obj) const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -268,7 +297,8 @@ namespace Teuchos { class any; }
     return NULL;
   }
 
-  PyObject * __eq__(const ParameterList & plist) const {
+  PyObject * __eq__(const ParameterList & plist) const
+  {
     PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
     PyObject * result = 0;
@@ -286,7 +316,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // GetItem operator
-  PyObject * __getitem__(const std::string & name) const {
+  PyObject * __getitem__(const std::string & name) const
+  {
     // I'm using SWIG's mangling scheme here
     // return Teuchos_ParameterList_get__SWIG_0(self,name);
     return Teuchos_ParameterList_get(self,name);
@@ -294,7 +325,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // __iter__ method
-  PyObject * __iter__() const {
+  PyObject * __iter__() const
+  {
     PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * iter = 0;
     if (dict == NULL) goto fail;
@@ -307,7 +339,8 @@ namespace Teuchos { class any; }
   
   /******************************************************************/
   // Length operator
-  int __len__() const {
+  int __len__() const
+  {
     PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     int len = 0;
     if (dict == NULL) goto fail;
@@ -320,7 +353,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Not equals operators
-  PyObject * __ne__(PyObject * obj) const {
+  PyObject * __ne__(PyObject * obj) const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -331,7 +365,8 @@ namespace Teuchos { class any; }
     return NULL;
   }
 
-  PyObject * __ne__(const ParameterList & plist) const {
+  PyObject * __ne__(const ParameterList & plist) const
+  {
     PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
     PyObject * result = 0;
@@ -349,14 +384,16 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // SetItem operator
-  void __setitem__(const std::string & name, PyObject * value) {
+  void __setitem__(const std::string & name, PyObject * value)
+  {
     // I'm using SWIG's mangling scheme here
     Teuchos_ParameterList_set(self,name,value);
   }
 
   /******************************************************************/
   // String representation method
-  PyObject * __repr__() const {
+  PyObject * __repr__() const
+  {
     std::string reprStr;
     PyObject * dict    = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * dictStr = 0;
@@ -377,7 +414,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // String conversion method
-  PyObject * __str__() const {
+  PyObject * __str__() const
+  {
     PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * str  = 0;
     if (dict == NULL) goto fail;
@@ -390,7 +428,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Has_key method
-  int has_key(const std::string & name) const {
+  int has_key(const std::string & name) const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * keys   = 0;
     PyObject * keyStr = 0;
@@ -411,7 +450,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Items method
-  PyObject * items() const {
+  PyObject * items() const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -424,7 +464,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Iteritems method
-  PyObject * iteritems() const {
+  PyObject * iteritems() const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -437,7 +478,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Iterkeys method
-  PyObject * iterkeys() const {
+  PyObject * iterkeys() const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -450,7 +492,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Itervalues method
-  PyObject * itervalues() const {
+  PyObject * itervalues() const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -463,7 +506,8 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Keys method
-  PyObject * keys() const {
+  PyObject * keys() const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -476,20 +520,23 @@ namespace Teuchos { class any; }
 
   /******************************************************************/
   // Update methods
-  void update(PyObject * dict, bool strict=true) {
+  void update(PyObject * dict, bool strict=true)
+  {
     Teuchos::ResponseToIllegalParameters flag;
     if (strict) flag = Teuchos::raiseError;
     else        flag = Teuchos::storeNames;
     updateParameterListWithPyDict(dict,*self,flag);
   }
 
-  void update(const ParameterList & plist) {
+  void update(const ParameterList & plist)
+  {
     self->setParameters(plist);
   }
 
   /******************************************************************/
   // Values method
-  PyObject * values() const {
+  PyObject * values() const
+  {
     PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -503,7 +550,8 @@ namespace Teuchos { class any; }
   /******************************************************************/
   // AsDict method: return a dictionary equivalent to the
   // ParameterList
-  PyObject * asDict() const {
+  PyObject * asDict() const
+  {
     return Teuchos::parameterListToNewPyDict(*self,Teuchos::storeNames);
   }
 }    // %extend ParameterList
@@ -528,14 +576,17 @@ namespace Teuchos { class any; }
 Teuchos::ParameterList &
 (void *argp=0, int res=0, bool cleanup=false)
 {
-  if (PyDict_Check($input)) {
+  if (PyDict_Check($input))
+  {
     $1 = Teuchos::pyDictToNewParameterList($input);
     if ($1 == NULL) SWIG_fail;
     cleanup = true;
   }
-  else {
+  else
+  {
     res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
+    if (!SWIG_IsOK(res))
+    {
       %argument_fail(res, "$type", $symname, $argnum);
     }
     $1 = %reinterpret_cast(argp, $ltype);
@@ -564,8 +615,8 @@ Teuchos::ParameterList &
 %ignore Teuchos::ParameterListAcceptor::unsetParameterList();
 %ignore Teuchos::ParameterListAcceptor::getParameterList() const;
 %ignore Teuchos::ParameterListAcceptor::getValidParameters() const;
-%extend Teuchos::ParameterListAcceptor {
-
+%extend Teuchos::ParameterListAcceptor
+{
   // The ParameterListAcceptor Class has the following virtual
   // functions with default implementations: getParameterList() const;
   // and getValidParameters() const.  These both return RCP<const
@@ -573,12 +624,14 @@ Teuchos::ParameterList &
   // typemaps for RCP< > and for ParameterList, but combinations of
   // the two must be handled in a "brute force" manner.
 
-  const Teuchos::ParameterList * getParameterList() const {
+  const Teuchos::ParameterList * getParameterList() const
+  {
     RCP<const Teuchos::ParameterList> p_plist = self->getParameterList();
     return p_plist.get();
   }
 
-  const Teuchos::ParameterList * getValidParameters() const {
+  const Teuchos::ParameterList * getValidParameters() const
+  {
     RCP<const Teuchos::ParameterList> p_plist = self->getValidParameters();
     return p_plist.get();
   }

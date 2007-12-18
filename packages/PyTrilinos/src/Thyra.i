@@ -76,8 +76,9 @@ using Teuchos::RCP;
 // C++ STL support.
 %include "stl.i"
 
-namespace std {
-  class logic_error;
+namespace std
+{
+class logic_error;
 }
 
 // Thyra interface imports and includes
@@ -116,7 +117,8 @@ namespace std {
 %ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::ConstSubMultiVectorView<type> &raw_mv) const;
 
 %feature("pythonappend") RCP<Thyra::VectorBase<type> >::
-  RCP<Thyra::VectorBase<type> > {print "Hello World!"}
+  RCP<Thyra::VectorBase<type> >
+{print "Hello World!"}
 
 // Teuchos templates
 %template (HandleableVectorSpaceBase_ ## type) Teuchos::Handleable<Thyra::VectorSpaceBase<type> >;
@@ -147,7 +149,8 @@ namespace std {
 
 
 // Python code.
-// %pythoncode {
+// %pythoncode
+// {
 // def createMember(arg):
 //     rcpvb = createMember_double(arg)
 //     d     = rcpvb.__deref__()

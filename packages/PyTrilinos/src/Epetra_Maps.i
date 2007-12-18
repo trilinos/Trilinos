@@ -72,16 +72,18 @@
 %rename(BlockMap) Epetra_BlockMap;
 %apply (int DIM1, int * IN_ARRAY1) {(int NumMyElements, const int * MyGlobalElements)};
 %apply (int DIM1, int * IN_ARRAY1) {(int NumElements,   const int * ElementSizeList )};
-%extend Epetra_BlockMap {
-
+%extend Epetra_BlockMap
+{
   Epetra_BlockMap(int                 NumGlobalElements,
 		  int                 NumMyElements,
 		  const int         * MyGlobalElements,
 		  int                 NumElements,
 		  const int         * ElementSizeList,
 		  int                 IndexBase,
-		  const Epetra_Comm & Comm              ) {
-    if (NumMyElements != NumElements) {
+		  const Epetra_Comm & Comm              )
+  {
+    if (NumMyElements != NumElements)
+    {
       PyErr_Format(PyExc_ValueError,
 		   "MyGlobalElements and ElementSizeList must have same lengths\n"
 		   "Lengths = %d, %d", NumMyElements, NumElements);
@@ -91,7 +93,8 @@
 			       ElementSizeList, IndexBase, Comm);
   }
 
-  PyObject * RemoteIDList(PyObject * GIDList) {
+  PyObject * RemoteIDList(PyObject * GIDList)
+  {
     intp            numIDs[1];
     int             result;
     int           * GIDData   = NULL;
@@ -119,7 +122,8 @@
     LIDData  = (int*) array_data(LIDArray);
     sizeData = (int*) array_data(sizeArray);
     result   = self->RemoteIDList(numIDs[0],GIDData,PIDData,LIDData,sizeData);
-    if (result != 0) {
+    if (result != 0)
+    {
       PyErr_Format(PyExc_RuntimeError,"Bad RemoteIDList return code = %d", result);
       goto fail;
     }
@@ -135,12 +139,14 @@
     return NULL;
   }
 
-  PyObject * FindLocalElementID(int pointID) {
+  PyObject * FindLocalElementID(int pointID)
+  {
     int result;
     int elementID;
     int elementOffset;
     result = self->FindLocalElementID(pointID,elementID,elementOffset);
-    if (result != 0) {
+    if (result != 0)
+    {
       PyErr_Format(PyExc_RuntimeError,"Bad FindLocalElementID return code = %d", result);
       goto fail;
     }
@@ -150,7 +156,8 @@
     return NULL;
   }
 
-  PyObject * MyGlobalElements() {
+  PyObject * MyGlobalElements()
+  {
     intp       numEls[1];
     int        result;
     int      * geData  = NULL;
@@ -160,7 +167,8 @@
     if (geArray == NULL) goto fail;
     geData = (int*) array_data(geArray);
     result = self->MyGlobalElements(geData);
-    if (result != 0) {
+    if (result != 0)
+    {
       PyErr_Format(PyExc_RuntimeError,"Bad MyGlobalElements return code = %d", result);
       goto fail;
     }
@@ -171,7 +179,8 @@
     return NULL;
   }
 
-  PyObject * FirstPointInElementList() {
+  PyObject * FirstPointInElementList()
+  {
     intp       numEls[1];
     int      * result;
     int      * fpeData  = NULL;
@@ -188,7 +197,8 @@
     return NULL;
   }
 
-  PyObject * ElementSizeList() {
+  PyObject * ElementSizeList()
+  {
     intp       numEls[1];
     int        result;
     int      * eslData  = NULL;
@@ -198,7 +208,8 @@
     if (eslArray == NULL) goto fail;
     eslData = (int*) array_data(eslArray);
     result = self->ElementSizeList(eslData);
-    if (result != 0) {
+    if (result != 0)
+    {
       PyErr_Format(PyExc_RuntimeError,"Bad ElementSizeList return code = %d", result);
       goto fail;
     }
@@ -209,7 +220,8 @@
     return NULL;
   }
 
-  PyObject * PointToElementList() {
+  PyObject * PointToElementList()
+  {
     intp       numPts[1];
     int        result;
     int      * pteData  = NULL;
@@ -219,7 +231,8 @@
     if (pteArray == NULL) goto fail;
     pteData = (int*) array_data(pteArray);
     result = self->PointToElementList(pteData);
-    if (result != 0) {
+    if (result != 0)
+    {
       PyErr_Format(PyExc_RuntimeError,"Bad PointToElementList return code = %d", result);
       goto fail;
     }
@@ -264,26 +277,28 @@
 
 // Import/Export extensions are done with a couple of nested macros
 %define %epetra_mover_method(methodName, numMethod)
-  PyObject * methodName() {
-    intp       numIDs[ ]   = { self->numMethod() };
-    int      * ids         = NULL;
-    int      * returnData  = NULL;
-    PyObject * returnArray = PyArray_SimpleNew(1,numIDs,NPY_INT);
-    if (returnArray == NULL) goto fail;
-    ids        = self->methodName();
-    returnData = (int*) array_data(returnArray);
-    for (int i=0; i<numIDs[0]; i++) returnData[i] = ids[i];
-    return PyArray_Return((PyArrayObject*)returnArray);
+PyObject * methodName()
+{
+  intp       numIDs[ ]   = { self->numMethod() };
+  int      * ids         = NULL;
+  int      * returnData  = NULL;
+  PyObject * returnArray = PyArray_SimpleNew(1,numIDs,NPY_INT);
+  if (returnArray == NULL) goto fail;
+  ids        = self->methodName();
+  returnData = (int*) array_data(returnArray);
+  for (int i=0; i<numIDs[0]; i++) returnData[i] = ids[i];
+  return PyArray_Return((PyArrayObject*)returnArray);
   fail:
-    return NULL;
-  }
+  return NULL;
+}
 %enddef
 
 %define %epetra_mover_class(type)
-%extend Epetra_ ## type {
+%extend Epetra_ ## type
+{
   %epetra_mover_method(PermuteFromLIDs,	NumPermuteIDs)
-  %epetra_mover_method(PermuteToLIDs,  	NumPermuteIDs)
-  %epetra_mover_method(RemoteLIDs,     	NumRemoteIDs )
+  %epetra_mover_method(PermuteToLIDs,   NumPermuteIDs)
+  %epetra_mover_method(RemoteLIDs,      NumRemoteIDs )
   %epetra_mover_method(ExportLIDs,     	NumExportIDs )
   %epetra_mover_method(ExportPIDs,     	NumExportIDs )
 }

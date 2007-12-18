@@ -106,11 +106,13 @@ NOX.StatusTest provides the following user-level classes:
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
   }
 }
@@ -121,17 +123,21 @@ NOX.StatusTest provides the following user-level classes:
 %teuchos_rcp_typemaps(NOX::StatusTest::Generic)
 %rename(StatusTest_None) NOX::StatusTest::None;
 %include "NOX_StatusTest_Generic.H"
-namespace NOX {
-  namespace StatusTest {
-    %extend Generic {
-      std::string __str__() {
-	std::stringstream os;
-	self->print(os);                  // Put the output in os
-	std::string s = os.str();              // Extract the string from os
-	return s.substr(0,s.length()-1);  // Return the string minus trailing \n
-      }
-    }
+namespace NOX
+{
+namespace StatusTest
+{
+%extend Generic
+{
+  std::string __str__()
+  {
+    std::stringstream os;
+    self->print(os);                  // Put the output in os
+    std::string s = os.str();              // Extract the string from os
+    return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
+}
+}
 }
 
 //////////////////////////////////

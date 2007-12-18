@@ -114,7 +114,8 @@ linear algebra package Komplex:
 ////////////////////////////
 %rename(Version) Ifpack_Version;
 %include "Ifpack_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = Version().split()[2]
 %}
 
@@ -134,8 +135,10 @@ __version__ = Version().split()[2]
 %ignore Ifpack_Preconditioner::Condest() const;
 %rename(Preconditioner) Ifpack_Preconditioner;
 %include "Ifpack_Preconditioner.h"
-%extend Ifpack_Preconditioner {
-  std::string __str__() {
+%extend Ifpack_Preconditioner
+{
+  std::string __str__()
+  {
     std::stringstream os;
     os << *self;
     return os.str();

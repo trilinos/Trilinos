@@ -50,49 +50,54 @@ PyObject* Finalize();
 // Several of the Epetra_Comm methods require the same coding pattern
 // for their wrappers and can be collapsed into a macro
 %define %epetra_comm_reduce_method(methodName)
-  PyObject* methodName(PyObject* partialObj) {
-    int is_new_object, type, count, result;
-    PyObject* globalObj = NULL;
-    PyArrayObject* partialArray;
-    partialArray= obj_to_array_contiguous_allow_conversion(partialObj, NPY_NOTYPE,
-							   &is_new_object);
-    if (!partialArray) goto fail;
-    type      = array_type(partialArray);
-    count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
-				  array_dimensions(partialArray), type);
-    PyArray_FILLWBYTE(globalObj, 0);
-    if (type == NPY_INT) {
-      int* partialVals = (int*) array_data(partialArray);
-      int* globalVals  = (int*) array_data(globalObj);
-      result = self->methodName(partialVals,globalVals,count);
-    }
-    else if (type == NPY_LONG) {
-      long* partialVals = (long*) array_data(partialArray);
-      long* globalVals  = (long*) array_data(globalObj);
-      result = self->methodName(partialVals,globalVals,count);
-    }
-    else if (type == NPY_DOUBLE) {
-      double* partialVals = (double*) array_data(partialArray);
-      double* globalVals  = (double*) array_data(globalObj);
-      result = self->methodName(partialVals,globalVals,count);
-    }
-    else {
-      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
-		   typecode_string(type));
-      goto fail;
-    }
-    if (result) {
-      PyErr_Format(PyExc_RuntimeError, "methodName returned error code %d", result);
-      goto fail;
-    }
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return PyArray_Return((PyArrayObject*)globalObj);
-  fail:
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    Py_XDECREF(globalObj);
-    return NULL;
+PyObject* methodName(PyObject* partialObj)
+{
+  int is_new_object, type, count, result;
+  PyObject* globalObj = NULL;
+  PyArrayObject* partialArray;
+  partialArray= obj_to_array_contiguous_allow_conversion(partialObj, NPY_NOTYPE,
+							 &is_new_object);
+  if (!partialArray) goto fail;
+  type      = array_type(partialArray);
+  count     = PyArray_SIZE(partialArray);
+  globalObj = PyArray_SimpleNew(array_numdims(partialArray),
+				array_dimensions(partialArray), type);
+  PyArray_FILLWBYTE(globalObj, 0);
+  if (type == NPY_INT) {
+    int* partialVals = (int*) array_data(partialArray);
+    int* globalVals  = (int*) array_data(globalObj);
+    result = self->methodName(partialVals,globalVals,count);
   }
+  else if (type == NPY_LONG)
+  {
+    long* partialVals = (long*) array_data(partialArray);
+    long* globalVals  = (long*) array_data(globalObj);
+    result = self->methodName(partialVals,globalVals,count);
+  }
+  else if (type == NPY_DOUBLE)
+  {
+    double* partialVals = (double*) array_data(partialArray);
+    double* globalVals  = (double*) array_data(globalObj);
+    result = self->methodName(partialVals,globalVals,count);
+  }
+  else
+  {
+    PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
+		 typecode_string(type));
+    goto fail;
+  }
+  if (result)
+  {
+    PyErr_Format(PyExc_RuntimeError, "methodName returned error code %d", result);
+    goto fail;
+  }
+  if (is_new_object && partialArray) Py_DECREF(partialArray);
+  return PyArray_Return((PyArrayObject*)globalObj);
+  fail:
+  if (is_new_object && partialArray) Py_DECREF(partialArray);
+  Py_XDECREF(globalObj);
+  return NULL;
+}
 %enddef
 
 // Many of the communicator methods take C arrays as input or output
@@ -108,33 +113,39 @@ PyObject* Finalize();
 // arrays are moved from the argument list to being returned by the
 // method.
 
-%extend Epetra_Comm {
-
-  PyObject* Broadcast(PyObject* myObj, int root) {
+%extend Epetra_Comm
+{
+  PyObject* Broadcast(PyObject* myObj, int root)
+  {
     int count, type, result;
     PyArrayObject* myArray = NULL;
     myArray = obj_to_array_no_conversion(myObj, NPY_NOTYPE);
     if (!myArray || !require_contiguous(myArray)) goto fail;
     count = PyArray_SIZE(myArray);
     type  = array_type(myArray);
-    if (type == NPY_INT) {
+    if (type == NPY_INT)
+    {
       int* myVals = (int*) array_data(myArray);
       result = self->Broadcast(myVals,count,root);
     }
-    else if (type == NPY_LONG) {
+    else if (type == NPY_LONG)
+    {
       long* myVals = (long*) array_data(myArray);
       result = self->Broadcast(myVals,count,root);
     }
-    else if (type == NPY_DOUBLE) {
+    else if (type == NPY_DOUBLE)
+    {
       double* myVals = (double*) array_data(myArray);
       result = self->Broadcast(myVals,count,root);
     }
-    else {
+    else
+    {
       PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
-    if (result) {
+    if (result)
+    {
       PyErr_Format(PyExc_RuntimeError, "Broadcast returned error code %d", result);
       goto fail;
     }
@@ -143,7 +154,8 @@ PyObject* Finalize();
     return NULL;
   }
 
-  PyObject* GatherAll(PyObject* myObj) {
+  PyObject* GatherAll(PyObject* myObj)
+  {
     int is_new_object, type, myCount, allND, result;
     PyObject* allObj = NULL;
     PyArrayObject* myArray;
@@ -161,27 +173,32 @@ PyObject* Finalize();
       delete [] allDims;
     }
     if (!allObj) goto fail;
-    if (type == NPY_INT) {
+    if (type == NPY_INT)
+    {
       int* myVals  = (int*) array_data(myArray);
       int* allVals = (int*) array_data(allObj);
       result = self->GatherAll(myVals,allVals,myCount);
     }
-    else if (type == NPY_LONG) {
+    else if (type == NPY_LONG)
+    {
       long* myVals  = (long*) array_data(myArray);
       long* allVals = (long*) array_data(allObj);
       result = self->GatherAll(myVals,allVals,myCount);
     }
-    else if (type == NPY_DOUBLE) {
+    else if (type == NPY_DOUBLE)
+    {
       double* myVals  = (double*) array_data(myArray);
       double* allVals = (double*) array_data(allObj);
       result = self->GatherAll(myVals,allVals,myCount);
     }
-    else {
+    else
+    {
       PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
 		   typecode_string(type));
       goto fail;
     }
-    if (result) {
+    if (result)
+    {
       PyErr_Format(PyExc_RuntimeError, "GatherAll returned error code %d", result);
       goto fail;
     }
@@ -227,7 +244,8 @@ PyObject* Finalize();
 
 
 // Python code.  This will be inserted directly into the python module
-%pythoncode %{
+%pythoncode
+%{
 # Call MPI_Init if appropriate
 import sys
 Init_Argv(sys.argv)
@@ -313,7 +331,10 @@ PyObject* Finalize()
 // constant in order to suppress a memory leak warning we are getting
 // under swig 1.3.28.  (And with luck, I have actually fixed a memory
 // leak ;-)
-%inline {extern const MPI_Comm CommWorld = (MPI_COMM_WORLD);}
+%inline
+{
+  extern const MPI_Comm CommWorld = (MPI_COMM_WORLD);
+}
 
 ////////////////////////////
 // Epetra_MpiComm support //
@@ -330,7 +351,8 @@ PyObject* Finalize()
 /////////////////////////////////////
 // Epetra.PyComm support under MPI //
 /////////////////////////////////////
-%pythoncode %{
+%pythoncode
+%{
 def PyComm():
   "PyComm() -> Epetra.MpiComm(MPI_COMM_WORLD)"
   return MpiComm(cvar.CommWorld);
@@ -343,11 +365,13 @@ def PyComm():
 #else
 
 %{
-PyObject* Init_Argv(PyObject *args) {
+PyObject* Init_Argv(PyObject *args)
+{
   return Py_BuildValue("");
 }
 
-PyObject* Finalize() {
+PyObject* Finalize()
+{
   return Py_BuildValue("");
 }
 %}
@@ -355,7 +379,8 @@ PyObject* Finalize() {
 ///////////////////////////////////////
 // Epetra.PyComm support without MPI //
 ///////////////////////////////////////
-%pythoncode %{
+%pythoncode
+%{
 def PyComm():
   "PyComm() -> Epetra.SerialComm"
   return SerialComm();

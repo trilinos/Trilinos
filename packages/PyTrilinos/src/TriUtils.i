@@ -110,11 +110,13 @@ example subdirectory of the PyTrilinos package:
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -124,7 +126,8 @@ example subdirectory of the PyTrilinos package:
 ///////////////////////////////////
 %rename (TriUtils_Version) Triutils_Version;
 %include "Trilinos_Util_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = TriUtils_Version().split()[2]
 %}
 

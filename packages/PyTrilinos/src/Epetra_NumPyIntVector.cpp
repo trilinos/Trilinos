@@ -42,11 +42,13 @@ Epetra_Map              * Epetra_NumPyIntVector::tmp_map     = NULL             
 int * Epetra_NumPyIntVector::getArray(PyObject * pyObject)
 {
   // Try to build a contiguous PyArrayObject from the pyObject
-  if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
+  if (!tmp_array)
+    tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
   
   // If this fails, build a vector with length zero to prevent a Bus
   // Error
-  if (!tmp_array) {
+  if (!tmp_array)
+  {
     intp dimensions[ ] = { 0 };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
   }
@@ -59,39 +61,49 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
 				      PyObject * pyObject)
 {
   // Only build the tmp_array if it does not already exist
-  if (!tmp_array) {
-
+  if (!tmp_array)
+  {
     // Default dimensions
     intp defaultDims[ ] = { blockMap.NumMyPoints() };
 
     // PyObject argument is a bool
-    if PyBool_Check(pyObject) {
+    if (PyBool_Check(pyObject))
+    {
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
-      if (tmp_array == NULL) {
+      if (tmp_array == NULL)
+      {
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
       }
 
-    // PyObject argument is not a bool ... try to build a contiguous PyArrayObject from it
-    } else {
+    // PyObject argument is not a bool ... try to build a contiguous
+    // PyArrayObject from it
+    }
+    else
+    {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
 
       // If this fails, build a single vector with zero length
-      if (tmp_array == NULL) {
+      if (tmp_array == NULL)
+      {
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
 
       // If the contiguous PyArrayObject built successfully, make sure
       // it has the correct number of dimensions
-      } else {
+      }
+      else
+      {
 	int  nd = tmp_array->nd;
 	intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
-	if (arraySize != defaultDims[0]) {
+	if (arraySize != defaultDims[0])
+	{
 	  PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
 									PyArray_INT);
 	  int           * myData  = (int *) myArray->data;
 	  int           * tmpData = (int *) tmp_array->data;
-	  for (int i=0; i<defaultDims[0]; i++) {
+	  for (int i=0; i<defaultDims[0]; i++)
+	  {
 	    myData[i] = tmpData[i];
 	  }
 	  Py_XDECREF(tmp_array);
@@ -107,7 +119,8 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
 Epetra_Map & Epetra_NumPyIntVector::getMap(PyObject * pyObject)
 {
   if (!tmp_array) getArray(pyObject);
-  if (!tmp_map) {
+  if (!tmp_map)
+  {
     const int totalLength = PyArray_Size((PyObject *)tmp_array);
     tmp_map = new Epetra_Map(totalLength,0,defaultComm);
   }
@@ -117,11 +130,13 @@ Epetra_Map & Epetra_NumPyIntVector::getMap(PyObject * pyObject)
 // =============================================================================
 void Epetra_NumPyIntVector::cleanup()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     Py_DECREF(tmp_array);
     tmp_array = NULL;
   }
-  if (tmp_map) {
+  if (tmp_map)
+  {
     delete tmp_map;
     tmp_map = NULL;
   }

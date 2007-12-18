@@ -151,14 +151,19 @@ example subdirectory of the PyTrilinos package:
 %import "Epetra.i"
 
 // General exception handling
-%exception {
-  try {
+%exception
+{
+  try
+  {
     $action
-  } catch(Teuchos::EmptyXMLError & e) {
+  }
+  catch(Teuchos::EmptyXMLError & e)
+  {
     SWIG_exception(SWIG_ValueError, e.what());
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -192,7 +197,8 @@ Epetra_ ## ClassName * Read ## ClassName(std::string name)
 // EpetraExt_Version support //
 ///////////////////////////////
 %include "EpetraExt_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = EpetraExt_Version().split()[2]
 %}
 
@@ -201,9 +207,11 @@ __version__ = EpetraExt_Version().split()[2]
 ////////////////////////////
 %ignore EpetraExt::HDF5::Read;
 %include "EpetraExt_HDF5.h"
-namespace EpetraExt {
+namespace EpetraExt
+{
 #ifdef HAVE_EPETRAEXT_HDF5
-  %extend HDF5 {
+  %extend HDF5
+  {
     %epetraext_read_method(BlockMap   )
     %epetraext_read_method(Map        )
     %epetraext_read_method(MultiVector)
@@ -219,8 +227,10 @@ namespace EpetraExt {
 /////////////////////////////////
 %ignore EpetraExt::XMLReader::Read;
 %include "EpetraExt_XMLReader.h"
-namespace EpetraExt {
-  %extend XMLReader {
+namespace EpetraExt
+{
+  %extend XMLReader
+  {
     %epetraext_read_method(Map        )
     %epetraext_read_method(MultiVector)
     %epetraext_read_method(CrsGraph   )
@@ -287,13 +297,17 @@ namespace EpetraExt {
 ////////////////////////////////////////////
 // EpetraExt.Add() and Multiply() support //
 ////////////////////////////////////////////
-%inline %{
-  namespace EpetraExt {
+%inline
+%{
+  namespace EpetraExt
+  {
     int Add(Epetra_CrsMatrix& A, const bool flag, const double ValA,
-            Epetra_CrsMatrix& B, const double ValB) {
+            Epetra_CrsMatrix& B, const double ValB)
+    {
       EpetraExt::MatrixMatrix M;
       return(M.Add(A, flag, ValA, B, ValB));
     }
+
     int Multiply(const Epetra_CrsMatrix& A, bool transposeA, 
                  const Epetra_CrsMatrix& B, bool transposeB, 
                  Epetra_CrsMatrix& C)

@@ -61,12 +61,12 @@
 		 int NumIndices)
   {
     if (NumValues != NumIndices)
-      {
-	PyErr_Format(PyExc_ValueError,
-		     "Values length %d not equal to Indices length %d", 
-		     NumValues, NumIndices);
-	return -1;
-      }
+    {
+      PyErr_Format(PyExc_ValueError,
+		   "Values length %d not equal to Indices length %d", 
+		   NumValues, NumIndices);
+      return -1;
+    }
     return self->methodName(Row, NumValues, Values, Indices);
   }
 
@@ -97,23 +97,22 @@
 
     if(numValEntries != numColEntries || numValEntries != numRowEntries ||
        numRowEntries != numColEntries)
-      {
-	PyErr_Format(PyExc_ValueError, 
-		     "lengths of Rows, Cols, Values not equal: %d, %d, %d", 
-		     numRowEntries, numColEntries, numValEntries);
-	goto fail;
-      }
+    {
+      PyErr_Format(PyExc_ValueError, 
+		   "lengths of Rows, Cols, Values not equal: %d, %d, %d", 
+		   numRowEntries, numColEntries, numValEntries);
+      goto fail;
+    }
 
     for(int i = 0 ; i < numValEntries ; ++i)
-      {
-	double Value = ((double*)valArray->data)[i];
-	int Row = ((int*)rowArray->data)[i];
-	int Col = ((int*)colArray->data)[i];
+    {
+      double Value = ((double*)valArray->data)[i];
+      int Row = ((int*)rowArray->data)[i];
+      int Col = ((int*)colArray->data)[i];
 
-	result = self->methodName(Row, 1, &Value, &Col);
-	if(result < 0)
-	  goto fail;
-      }
+      result = self->methodName(Row, 1, &Value, &Col);
+      if(result < 0) goto fail;
+    }
     Py_DECREF(valArray);
     Py_DECREF(rowArray);
     Py_DECREF(colArray);
@@ -139,19 +138,19 @@
   {
     // Check for column map
     if (!self->HaveColMap())
-      {
-	PyErr_SetString(PyExc_RuntimeError,
-			"methodName" " cannot be called on " "className"
-			" that does not have a column map");
-	return -2;
-      }
+    {
+      PyErr_SetString(PyExc_RuntimeError,
+		      "methodName" " cannot be called on " "className"
+		      " that does not have a column map");
+      return -2;
+    }
     if (NumValues != NumIndices)
-      {
-	PyErr_Format(PyExc_ValueError,
-		     "Values length %d not equal to Indices length %d", 
-		     NumValues, NumIndices);
-	return -1;
-      }
+    {
+      PyErr_Format(PyExc_ValueError,
+		   "Values length %d not equal to Indices length %d", 
+		   NumValues, NumIndices);
+      return -1;
+    }
     return self->methodName(Row, NumValues, Values, Indices);
   }
 
@@ -165,7 +164,8 @@
     PyArrayObject * colArray = NULL;
     PyArrayObject * valArray = NULL;
 
-    if (!self->HaveColMap()) {
+    if (!self->HaveColMap())
+    {
       PyErr_SetString(PyExc_RuntimeError, "methodName" " cannot be called on"
 		      "className" " that does not have a column map");
       goto fail;
@@ -188,23 +188,22 @@
 
     if(numValEntries != numColEntries || numValEntries != numRowEntries || 
        numRowEntries != numColEntries)
-      {
-	PyErr_Format(PyExc_ValueError, 
-		     "lengths of Rows, Cols, Values not equal: %d, %d, %d", 
-		     numRowEntries, numColEntries, numValEntries);
-	goto fail;
-      }
+    {
+      PyErr_Format(PyExc_ValueError, 
+		   "lengths of Rows, Cols, Values not equal: %d, %d, %d", 
+		   numRowEntries, numColEntries, numValEntries);
+      goto fail;
+    }
 
     for(int i = 0 ; i < numValEntries ; ++i)
-      {
-	double Value = ((double*)valArray->data)[i];
-	int Row = ((int*)rowArray->data)[i];
-	int Col = ((int*)colArray->data)[i];
+    {
+      double Value = ((double*)valArray->data)[i];
+      int Row = ((int*)rowArray->data)[i];
+      int Col = ((int*)colArray->data)[i];
 
-	result = self->methodName(Row, 1, &Value, &Col);
-	if(result < 0)
-	  goto fail;
-      }
+      result = self->methodName(Row, 1, &Value, &Col);
+      if(result < 0) goto fail;
+    }
     Py_DECREF(valArray);
     Py_DECREF(rowArray);
     Py_DECREF(colArray);
@@ -248,15 +247,18 @@
 // (bracket) operators (__setitem__ and __getitem__).  NumEntries,
 // even though it is a scalar in C++, must be accessed as
 // NumEntries[0].
-%typemap(directorin) int &NumEntries %{
+%typemap(directorin) int &NumEntries
+%{
   intp dims$argnum[ ] = { (intp) 1 };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_INT, (void*)&$1_name);
 %}
-%typemap(directorin) double *Values %{
+%typemap(directorin) double *Values
+%{
   intp dims$argnum[ ] = { (intp) Length };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_DOUBLE, (void*)$1_name);
 %}
-%typemap(directorin) int *Indices %{
+%typemap(directorin) int *Indices
+%{
   intp dims$argnum[ ] = { (intp) Length };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_INT, (void*)$1_name);
 %}
@@ -270,7 +272,8 @@
 %rename(BasicRowMatrix) Epetra_BasicRowMatrix;
 %ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,const double*&,int&,int&) const;
 // Typemap for double * & Value
-%typemap(directorin) double *&Value %{
+%typemap(directorin) double *&Value
+%{
   intp dims$argnum[ ] = { (intp) 1 };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_DOUBLE, (void*)$1_name);
 %}
@@ -310,8 +313,10 @@
 		   const Epetra_Map  & RowMap,
 		   const int         * NumEntriesPerRow,
 		   int                 NumRows,
-		   bool                StaticProfile=false) {
-    if (NumRows != RowMap.NumMyElements()) {
+		   bool                StaticProfile=false)
+  {
+    if (NumRows != RowMap.NumMyElements())
+    {
       PyErr_Format(PyExc_ValueError,
 		   "RowMap has %d rows and NumEntriesPerRow has %d elements",
 		   RowMap.NumMyElements(), NumRows);
@@ -328,8 +333,10 @@
 		   const Epetra_Map  & ColMap,
 		   const int         * NumEntriesPerRow,
 		   int                 NumRows,
-		   bool                StaticProfile=false) {
-    if (NumRows != RowMap.NumMyElements()) {
+		   bool                StaticProfile=false)
+  {
+    if (NumRows != RowMap.NumMyElements())
+    {
       PyErr_Format(PyExc_ValueError,
 		   "RowMap has %d rows and NumEntriesPerRow has %d elements",
 		   RowMap.NumMyElements(), NumRows);
@@ -338,7 +345,8 @@
     return new Epetra_CrsMatrix(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile);
   }
 
-  PyObject * ExtractGlobalRowCopy(int globalRow) const {
+  PyObject * ExtractGlobalRowCopy(int globalRow) const
+  {
     int        lrid          = 0;
     int        numEntries    = 0;
     int        result        = 0;
@@ -349,7 +357,8 @@
     PyObject * indicesArray  = NULL;
 
     lrid = self->LRID(globalRow);
-    if (lrid == -1) {
+    if (lrid == -1)
+    {
       PyErr_Format(PyExc_ValueError, "Invalid global row index = %d", globalRow);
       goto fail;
     }
@@ -360,7 +369,8 @@
     indices       = (int   *) array_data(indicesArray);
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numEntries,
 					       values, indices);
-    if (result == -2) {
+    if (result == -2)
+    {
       PyErr_SetString(PyExc_RuntimeError, "Matrix not completed");
       goto fail;
     }
@@ -371,7 +381,8 @@
     return NULL;
   }
 
-  PyObject * ExtractMyRowCopy(int localRow) const {
+  PyObject * ExtractMyRowCopy(int localRow) const
+  {
     int        numEntries    = 0;
     int        result        = 0;
     intp       dimensions[ ] = { 0 };
@@ -380,7 +391,8 @@
     PyObject * valuesArray   = NULL;
     PyObject * indicesArray  = NULL;
 
-    if (localRow < 0 || localRow >= self->NumMyRows()) {
+    if (localRow < 0 || localRow >= self->NumMyRows())
+    {
       PyErr_Format(PyExc_ValueError, "Invalid local row index = %d", localRow);
       goto fail;
     }
@@ -391,7 +403,8 @@
     indices       = (int   *) array_data(indicesArray);
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numEntries,
 					   values, indices);
-    if (result == -2) {
+    if (result == -2)
+    {
       PyErr_SetString(PyExc_RuntimeError, "Matrix not completed");
       goto fail;
     }
@@ -402,7 +415,8 @@
     return NULL;
   }
 
-  PyObject * __setitem__(PyObject* args, double val) {
+  PyObject * __setitem__(PyObject* args, double val)
+  {
     PyObject * rowObj = NULL;
     PyObject * colObj = NULL;
     int row           = 0;
@@ -410,7 +424,8 @@
     if (!(PyArg_ParseTuple(args, "OO:Epetra_CrsMatrix___setitem__",
 			   &rowObj, &colObj)      &&
 	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &row)) &&
-	  SWIG_IsOK(SWIG_AsVal_int(colObj, &col))    )) {
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &col))    ))
+    {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
       return NULL;
     }
@@ -419,7 +434,8 @@
     return Py_BuildValue("");
   }
 
-  PyObject* __getitem__(PyObject* args) const {
+  PyObject* __getitem__(PyObject* args) const
+  {
     int        grid          = 0;
     int        lrid          = 0;
     int        gcid          = 0;
@@ -437,7 +453,8 @@
 
     // If the argument is an integer, get the global row ID, construct
     // a return PyArray, and obtain the data pointer
-    if (SWIG_IsOK(SWIG_AsVal_int(args, &grid))) {
+    if (SWIG_IsOK(SWIG_AsVal_int(args, &grid)))
+    {
       dimensions[0] = self->NumMyCols();
       returnObj = PyArray_SimpleNew(1,dimensions,NPY_DOUBLE);
       if (returnObj == NULL) goto fail;
@@ -447,45 +464,60 @@
 
       // If the matrix is FillComplete()-ed, obtain the local row data
       // and copy it into the data buffer
-      if (self->Filled()) {
+      if (self->Filled())
+      {
 	lrid = self->LRID(grid);
-	if (lrid == -1) {
+	if (lrid == -1)
+	{
 	  PyErr_Format(PyExc_IndexError, "Global row index %d not on processor",
 		       grid);
 	  goto fail;
 	}
 	error = self->ExtractMyRowView(lrid, numEntries, values, indices);
-	if (error) {
+	if (error)
+	{
 	  PyErr_Format(PyExc_RuntimeError, "ExtractMyRowView error code %d", error);
 	  goto fail;
 	}
-	for (int i=0; i<numEntries; ++i) {
+	for (int i=0; i<numEntries; ++i)
+	{
 	  lcid = indices[i];
 	  data[lcid] = values[i];
 	}
 
       // If the matrix is not FillComplete()-ed, raise an exception
-      } else {
-	if (self->Comm().NumProc() > 1) {
+      }
+      else
+      {
+	if (self->Comm().NumProc() > 1)
+	{
 	  PyErr_SetString(PyExc_IndexError,
 			  "__getitem__ cannot be called with single "
 			  "index unless CrsMatrix has been filled");
 	  goto fail;
-	} else {
+	}
+	else
+	{
 	  error = self->ExtractGlobalRowView(grid, numEntries, values, indices);
-	  if (error) {
-	    if (error == -1) {
+	  if (error)
+	  {
+	    if (error == -1)
+	    {
 	      PyErr_Format(PyExc_IndexError, "Global row %d not on processor", grid);
-	    } else {
+	    }
+	    else
+	    {
 	      PyErr_Format(PyExc_RuntimeError, "ExtractGlobalRowView error code %d",
 			   error);
 	    }
 	    goto fail;
 	  }
-	  for (int i=0; i<numEntries; ++i) {
+	  for (int i=0; i<numEntries; ++i)
+	  {
 	    gcid = indices[i];
 	    lcid = self->LCID(gcid);
-	    if (lcid == -1) {
+	    if (lcid == -1)
+	    {
 	      PyErr_Format(PyExc_IndexError,
 			   "Global column index %d not on processor", gcid);
 	      goto fail;
@@ -496,31 +528,39 @@
       }
 
     // If the arguments are two integers, obtain a single result value
-    } else if (PyArg_ParseTuple(args, "OO:Epetra_CrsMatrix___getitem__",
+    }
+    else if (PyArg_ParseTuple(args, "OO:Epetra_CrsMatrix___getitem__",
 				&rowObj, &colObj)       &&
 	       SWIG_IsOK(SWIG_AsVal_int(rowObj, &grid)) &&
-	       SWIG_IsOK(SWIG_AsVal_int(colObj, &gcid))   ) {
+	       SWIG_IsOK(SWIG_AsVal_int(colObj, &gcid))   )
+    {
       lrid = self->LRID(grid);
-      if (lrid == -1) {
+      if (lrid == -1)
+      {
 	PyErr_Format(PyExc_IndexError, "Global row %d not on processor", grid);
 	goto fail;
       }
       lcid = self->LCID(gcid);
-      if (lcid == -1) {
+      if (lcid == -1)
+      {
 	PyErr_Format(PyExc_IndexError, "Global column %d not on processor", gcid);
 	goto fail;
       }
 
       // If the matrix is FillComplete()-ed, obtain the local row data
       // and column data
-      if (self->Filled()) {
+      if (self->Filled())
+      {
 	error = self->ExtractMyRowView(lrid, numEntries, values, indices);
-	if (error) {
+	if (error)
+	{
 	  PyErr_Format(PyExc_RuntimeError, "ExtractMyRowView error code %d", error);
 	  goto fail;
 	}
-	for (int i=0; i<numEntries; ++i) {
-	  if (indices[i] == lcid) {
+	for (int i=0; i<numEntries; ++i)
+	{
+	  if (indices[i] == lcid)
+	  {
 	    result = values[i];
 	    break;
 	  }
@@ -528,22 +568,29 @@
 
       // If the matrix is not FillComplete()-ed, obtain the local row data
       // and column data
-      } else {
+      }
+      else
+      {
 	error = self->ExtractGlobalRowView(grid, numEntries, values, indices);
-	if (error) {
+	if (error)
+	{
 	  PyErr_Format(PyExc_RuntimeError, "ExtractGlobalRowView error code %d",
 		       error);
 	  goto fail;
 	}
-	for (int i=0; i<numEntries; ++i) {
-	  if (indices[i] == gcid) {
+	for (int i=0; i<numEntries; ++i)
+	{
+	  if (indices[i] == gcid)
+	  {
 	    result = values[i];
 	    break;
 	  }
 	}
       }
       returnObj = PyFloat_FromDouble(result);
-    } else {
+    }
+    else
+    {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
       goto fail;
     }
@@ -575,7 +622,8 @@
 // Epetra_FECrsMatrix support //
 ////////////////////////////////
 %rename(FECrsMatrix) Epetra_FECrsMatrix;
-%extend Epetra_FECrsMatrix {
+%extend Epetra_FECrsMatrix
+{
   void __setitem__(PyObject* args, double val) 
   {
     int row = 0;
@@ -630,7 +678,8 @@
                                     Values.Values());
   }
 
-  int InsertGlobalValue(int i, int j, double val) {
+  int InsertGlobalValue(int i, int j, double val)
+  {
     double val2 = val;
     int j2 = j;
     return self->InsertGlobalValues(1, &i, 1, &j2, &val2);
@@ -650,16 +699,18 @@
 %rename(VbrMatrix) Epetra_VbrMatrix;
 %apply (int * IN_ARRAY1, int DIM1) {(int * NumBlockEntriesPerRow, int NumRows)};
 %apply (int DIM1, int * IN_ARRAY1) {(int NumBlockEntries, int * BlockIndices)};
-%extend Epetra_VbrMatrix {
-
+%extend Epetra_VbrMatrix
+{
   // Add NumRows to the constructor argument list, so that I can use
   // an appropriate numpy.i typemap, and also check the length of
   // NumBlockEntriesPerRow
   Epetra_VbrMatrix(Epetra_DataAccess 	   CV,
 		   const Epetra_BlockMap & RowMap,
 		   int                   * NumBlockEntriesPerRow,
-		   int                     NumRows) {
-    if (NumRows != RowMap.NumMyElements()) {
+		   int                     NumRows)
+  {
+    if (NumRows != RowMap.NumMyElements())
+    {
       PyErr_Format(PyExc_ValueError,
 		   "RowMap has %d rows and NumBlockEntriesPerRow has %d elements",
 		   RowMap.NumMyElements(), NumRows);
@@ -675,8 +726,10 @@
 		   const Epetra_BlockMap & RowMap,
 		   const Epetra_BlockMap & ColMap,
 		   int                   * NumBlockEntriesPerRow,
-		   int                     NumRows) {
-    if (NumRows != RowMap.NumMyElements()) {
+		   int                     NumRows)
+  {
+    if (NumRows != RowMap.NumMyElements())
+    {
       PyErr_Format(PyExc_ValueError,
 		   "RowMap has %d rows and NumBlockEntriesPerRow has %d elements",
 		   RowMap.NumMyElements(), NumRows);

@@ -85,11 +85,13 @@ NOX.Abstract provides the following user-level classes:
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
   }
 }

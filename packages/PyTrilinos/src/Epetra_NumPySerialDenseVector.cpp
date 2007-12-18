@@ -37,24 +37,30 @@ PyArrayObject * Epetra_NumPySerialDenseVector::tmp_array = NULL;
 double * Epetra_NumPySerialDenseVector::getArray(PyObject * pyObject)
 {
   // If tmp_array is NULL, build a PyArrayObject from the pyObject
-  if (tmp_array == NULL) {
+  if (tmp_array == NULL)
+  {
     // If pyObject is an int, build an array of that length
-    if PyInt_Check(pyObject) {
+    if (PyInt_Check(pyObject))
+    {
       intp dimensions[ ] = {(intp) PyInt_AsLong(pyObject)};
       tmp_array = (PyArrayObject*) PyArray_SimpleNew(1,dimensions,'d');
-      if (tmp_array == NULL) {
+      if (tmp_array == NULL)
+      {
 	dimensions[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
       }
 
     // Else try to build a contiguous PyArrayObject from the pyObject
-    } else {
+    }
+    else
+    {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
     }
   }
 
   // If this fails, build a single vector with zero length
-  if (!tmp_array) {
+  if (!tmp_array)
+  {
     intp dimensions[ ] = { 0 };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
   }
@@ -65,13 +71,17 @@ double * Epetra_NumPySerialDenseVector::getArray(PyObject * pyObject)
 // =============================================================================
 void Epetra_NumPySerialDenseVector::setArray()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     array     = tmp_array;
     tmp_array = NULL;
-  } else {
+  }
+  else
+  {
     intp dimensions[ ] = {Length()};
-    array = (PyArrayObject*) PyArray_SimpleNewFromData(1,dimensions,'d',
-						       (void*)Epetra_SerialDenseVector::Values());
+    array = (PyArrayObject*)
+      PyArray_SimpleNewFromData(1,dimensions,'d',
+				(void*)Epetra_SerialDenseVector::Values());
   }
 }
 
@@ -85,7 +95,8 @@ int Epetra_NumPySerialDenseVector::getVectorSize(PyObject * pyObject)
 // =============================================================================
 void Epetra_NumPySerialDenseVector::cleanup()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     Py_DECREF(tmp_array);
     tmp_array = NULL;
   }
@@ -126,18 +137,23 @@ Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(const Epetra_Serial
 
 // Destructor
 // =============================================================================
-Epetra_NumPySerialDenseVector::~Epetra_NumPySerialDenseVector() {
+Epetra_NumPySerialDenseVector::~Epetra_NumPySerialDenseVector()
+{
   Py_XDECREF(array);
 }
 
 // Methods
 // =============================================================================
-int Epetra_NumPySerialDenseVector::Size(int length) {
+int Epetra_NumPySerialDenseVector::Size(int length)
+{
   // Call the base-class method
   int result = Epetra_SerialDenseVector::Size(length);
-  if (result) {
+  if (result)
+  {
     PyErr_Format(PyExc_RuntimeError, "Size() method failed with code %d", result);
-  } else {
+  }
+  else
+  {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_SerialDenseVector data
   }
@@ -145,12 +161,16 @@ int Epetra_NumPySerialDenseVector::Size(int length) {
 }
 
 // =============================================================================
-int Epetra_NumPySerialDenseVector::Resize(int length) {
+int Epetra_NumPySerialDenseVector::Resize(int length)
+{
   // Call the base-class method
   int result = Epetra_SerialDenseVector::Resize(length);
-  if (result) {
+  if (result)
+  {
     PyErr_Format(PyExc_RuntimeError, "Resize() method failed with code %d", result);
-  } else {
+  }
+  else
+  {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_SerialDenseVector data
   }
@@ -158,7 +178,8 @@ int Epetra_NumPySerialDenseVector::Resize(int length) {
 }
 
 // =============================================================================
-PyObject * Epetra_NumPySerialDenseVector::Values() const {
+PyObject * Epetra_NumPySerialDenseVector::Values() const
+{
   Py_INCREF(array);
   return PyArray_Return(array);
 }

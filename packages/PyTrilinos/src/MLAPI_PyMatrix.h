@@ -42,7 +42,6 @@ using namespace MLAPI;
 
 class PyMatrix : public MLAPI::Operator
 {
-
 public:
   //@{ \name Constructors and destructors.
 

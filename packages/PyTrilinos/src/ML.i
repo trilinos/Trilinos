@@ -114,7 +114,8 @@ example subdirectory of the PyTrilinos package:
 MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
                                 const MLAPI::MultiVector& ThisNS,
                                 MLAPI::MultiVector& NextNS,
-                                PyObject* obj) {   
+                                PyObject* obj)
+{   
   Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
   MLAPI::Operator Ptent;
   MLAPI::GetPtent(A, *List, ThisNS, Ptent, NextNS);
@@ -124,7 +125,8 @@ MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
 
 bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
              const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
-             PyObject* obj) {
+             PyObject* obj)
+{
   Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
   if (List == NULL) return(false);
   Krylov(A, LHS, RHS, Prec, *List);
@@ -155,11 +157,13 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
   }
 }
@@ -173,26 +177,28 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 // ml_MultiLevelPreconditioner support //
 /////////////////////////////////////////
 %include "ml_MultiLevelPreconditioner.h"
-namespace ML_Epetra {
-  %extend MultiLevelPreconditioner {
-    // This is for MatrixPortal
-    int SetParameterListAndNullSpace(PyObject* obj,
-				     Epetra_MultiVector& NullSpace) {
-      Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
-      if (List == NULL) List = new Teuchos::ParameterList();
-      // WARNING: THIS IS DELICATE, NULLSPACE SHOULD NOT DISAPPEAR
-      // otherwise the pointer here stored will vanish. This function should
-      // be used only through the MatrixPortal
-      double* NullSpacePtr = (double*)NullSpace.Values();
-      int NullSpaceDim = NullSpace.NumVectors();
-      List->set("null space: type", "pre-computed");
-      List->set("null space: vectors", NullSpacePtr);
-      List->set("null space: dimension", NullSpaceDim);
-      self->SetParameterList(*List);
-      delete List;
-      return(0);
-    }
+namespace ML_Epetra
+{
+%extend MultiLevelPreconditioner
+{
+  // This is for MatrixPortal
+  int SetParameterListAndNullSpace(PyObject* obj,
+				   Epetra_MultiVector& NullSpace) {
+    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    if (List == NULL) List = new Teuchos::ParameterList();
+    // WARNING: THIS IS DELICATE, NULLSPACE SHOULD NOT DISAPPEAR
+    // otherwise the pointer here stored will vanish. This function should
+    // be used only through the MatrixPortal
+    double* NullSpacePtr = (double*)NullSpace.Values();
+    int NullSpaceDim = NullSpace.NumVectors();
+    List->set("null space: type", "pre-computed");
+    List->set("null space: vectors", NullSpacePtr);
+    List->set("null space: dimension", NullSpaceDim);
+    self->SetParameterList(*List);
+    delete List;
+    return(0);
   }
+}
 }
 
 /////////////////////////////
@@ -204,17 +210,20 @@ namespace ML_Epetra {
 // MLAPI_BaseObject support //
 //////////////////////////////
 %include "MLAPI_BaseObject.h"
-namespace MLAPI {
-  %extend BaseObject {
-    // Define the __str__() method, used by the python str() operator
-    // on any object given to the python print command.
-    std::string __str__() {
-      std::stringstream os;
-      self->Print(os);                  // Put the output in os
-      std::string s = os.str();         // Extract the string from os
-      return s.substr(0,s.length()-1);  // Return the string minus trailing \n
-    }
+namespace MLAPI
+{
+%extend BaseObject
+{
+  // Define the __str__() method, used by the python str() operator
+  // on any object given to the python print command.
+  std::string __str__()
+  {
+    std::stringstream os;
+    self->Print(os);                  // Put the output in os
+    std::string s = os.str();         // Extract the string from os
+    return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
+}
 }
 
 //////////////////////////////
@@ -238,74 +247,88 @@ namespace MLAPI {
 // MLAPI_Space support //
 /////////////////////////
 %include "MLAPI_Space.h"
-namespace MLAPI {
-  %extend Space {
-    PyObject*  GetMyGlobalElements() {
-      int n = self->GetNumMyElements();
-      if (n <= 0)
-	goto fail;
-      PyObject* MyGlobalElements_Python,* item;
-      MyGlobalElements_Python = PyList_New(n);
-      for (int i = 0 ; i < n ; ++i) {
-	item = PyInt_FromLong((*self)(i));
-	PyList_SetItem(MyGlobalElements_Python, i, item);
-      }
-      return(MyGlobalElements_Python);
-    fail:
-      Py_INCREF(Py_None);
-      return Py_None;
+namespace MLAPI
+{
+%extend Space
+{
+  PyObject*  GetMyGlobalElements()
+  {
+    int n = self->GetNumMyElements();
+    if (n <= 0)
+      goto fail;
+    PyObject* MyGlobalElements_Python,* item;
+    MyGlobalElements_Python = PyList_New(n);
+    for (int i = 0 ; i < n ; ++i)
+    {
+      item = PyInt_FromLong((*self)(i));
+      PyList_SetItem(MyGlobalElements_Python, i, item);
     }
+    return(MyGlobalElements_Python);
+  fail:
+    Py_INCREF(Py_None);
+    return Py_None;
   }
+}
 }
 
 ///////////////////////////////
 // MLAPI_MultiVector support //
 ///////////////////////////////
 %include "MLAPI_MultiVector.h"
-namespace MLAPI {
-  %extend MultiVector {
-    MultiVector __add__(MultiVector& rhs) {
-      MultiVector res = *self + rhs;
-      return(res);
-    }
-    MultiVector __sub__(MultiVector& rhs) {
-      return(*self - rhs);
-    }
-    double __mul__(MultiVector& rhs) {
-      return(*self * rhs);
-    }
-    MultiVector __mul__(double rhs) {
-      return(*self * rhs);
-    }
-    PyObject * __setitem__(PyObject* args, double value) {
-      PyObject * rowObj = NULL;
-      PyObject * colObj = NULL;
-      int Row, Col;
-      if (!(PyArg_ParseTuple(args, "OO:MLAPI_MultiVector___setitem__",
-			     &rowObj, &colObj)      &&
-	    SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
-	    SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))   )) {
-	PyErr_SetString(PyExc_IndexError, "Invalid index");
-	return NULL;
-      }
-      (*self)(Row, Col) = value;
-      return Py_BuildValue("");
-    }
-    PyObject * __getitem__(PyObject* args) {
-      PyObject * rowObj = NULL;
-      PyObject * colObj = NULL;
-      int Row           = 0;
-      int Col           = 0;
-      if (!(PyArg_ParseTuple(args, "OO:MLAPI_MultiVector___getitem__",
-			     &rowObj, &colObj)      &&
-	    SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
-	    SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    )) {
-	PyErr_SetString(PyExc_IndexError, "Invalid index");
-	return NULL;
-      }
-      return SWIG_From_double((*self)(Row, Col));
-    }
+namespace MLAPI
+{
+%extend MultiVector
+{
+  MultiVector __add__(MultiVector& rhs)
+  {
+    MultiVector res = *self + rhs;
+    return(res);
   }
+  MultiVector __sub__(MultiVector& rhs)
+  {
+    return(*self - rhs);
+  }
+  double __mul__(MultiVector& rhs)
+  {
+    return(*self * rhs);
+  }
+  MultiVector __mul__(double rhs)
+  {
+    return(*self * rhs);
+  }
+  PyObject * __setitem__(PyObject* args, double value)
+  {
+    PyObject * rowObj = NULL;
+    PyObject * colObj = NULL;
+    int Row, Col;
+    if (!(PyArg_ParseTuple(args, "OO:MLAPI_MultiVector___setitem__",
+			   &rowObj, &colObj)      &&
+	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))   ))
+    {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return NULL;
+    }
+    (*self)(Row, Col) = value;
+    return Py_BuildValue("");
+  }
+  PyObject * __getitem__(PyObject* args)
+  {
+    PyObject * rowObj = NULL;
+    PyObject * colObj = NULL;
+    int Row           = 0;
+    int Col           = 0;
+    if (!(PyArg_ParseTuple(args, "OO:MLAPI_MultiVector___getitem__",
+			   &rowObj, &colObj)      &&
+	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    ))
+    {
+      PyErr_SetString(PyExc_IndexError, "Invalid index");
+      return NULL;
+    }
+    return SWIG_From_double((*self)(Row, Col));
+  }
+}
 }
 
 /////////////////////////////////////
@@ -317,62 +340,78 @@ namespace MLAPI {
 // MLAPI_Operator support //
 ////////////////////////////
 %include "MLAPI_Operator.h"
-namespace MLAPI {
-  %extend Operator {
-    PyObject* __getitem__(PyObject* args) {
-      PyObject * rowObj = NULL;
-      PyObject * colObj = NULL;
-      int Row           = 0;
-      int Col           = 0;
-      Epetra_RowMatrix* Matrix = self->GetRCPRowMatrix().get();
-      if (SWIG_IsOK(SWIG_AsVal_int(args, &Row))) {
-	return Epetra_RowMatrix_GetEntries(*Matrix, Row);
-      }
-      else if (PyArg_ParseTuple(args, "OO:MLAPI_Operator___getitem__",
-				&rowObj, &colObj)      &&
-	       SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
-	       SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    ) {
-	return Epetra_RowMatrix_GetEntry(*Matrix, Row, Col);
-      }
-      else {
-	PyErr_SetString(PyExc_IndexError, "Input argument not supported");
-	return NULL;
-      }
+namespace MLAPI
+{
+%extend Operator
+{
+  PyObject* __getitem__(PyObject* args)
+  {
+    PyObject * rowObj = NULL;
+    PyObject * colObj = NULL;
+    int Row           = 0;
+    int Col           = 0;
+    Epetra_RowMatrix* Matrix = self->GetRCPRowMatrix().get();
+    if (SWIG_IsOK(SWIG_AsVal_int(args, &Row)))
+    {
+      return Epetra_RowMatrix_GetEntries(*Matrix, Row);
     }
-    MultiVector __mul__(MultiVector& rhs) {
-      return(*self * rhs);
+    else if (PyArg_ParseTuple(args, "OO:MLAPI_Operator___getitem__",
+			      &rowObj, &colObj)      &&
+	     SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
+	     SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    )
+    {
+      return Epetra_RowMatrix_GetEntry(*Matrix, Row, Col);
     }
-    Operator __add__(Operator& rhs) {
-      return(*self + rhs);
-    }
-    Operator __sub__(Operator& rhs) {
-      return(*self - rhs);
-    }
-    Operator __mul__(Operator& rhs) {
-      if (self == &rhs)
-	return(*self * Duplicate(rhs));
-      else
-	return(*self * rhs);
-    }
-    Operator __mul__(double rhs) {
-      return(*self * rhs);
-    }
-    Operator __div__(double rhs) {
-      return(*self * (1.0 / rhs));
+    else
+    {
+      PyErr_SetString(PyExc_IndexError, "Input argument not supported");
+      return NULL;
     }
   }
+  MultiVector __mul__(MultiVector& rhs)
+  {
+    return(*self * rhs);
+  }
+  Operator __add__(Operator& rhs)
+  {
+    return(*self + rhs);
+  }
+  Operator __sub__(Operator& rhs)
+  {
+    return(*self - rhs);
+  }
+  Operator __mul__(Operator& rhs)
+  {
+    if (self == &rhs)
+      return(*self * Duplicate(rhs));
+    else
+      return(*self * rhs);
+  }
+  Operator __mul__(double rhs)
+  {
+    return(*self * rhs);
+  }
+  Operator __div__(double rhs)
+  {
+    return(*self * (1.0 / rhs));
+  }
+}
 }
 
 ///////////////////////////////////
 // MLAPI_InverseOperator support //
 ///////////////////////////////////
 %include "MLAPI_InverseOperator.h"
-namespace MLAPI {
-  %extend InverseOperator {
-    MultiVector __mul__(MultiVector& rhs) {
+namespace MLAPI
+{
+  %extend InverseOperator
+  {
+    MultiVector __mul__(MultiVector& rhs)
+    {
       return(*self * rhs);
     }
-    bool Reshape(const Operator& Op, const std::string Type, PyObject* obj) {
+    bool Reshape(const Operator& Op, const std::string Type, PyObject* obj)
+    {
       Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
       if (List == NULL) return(false);
       else
@@ -424,7 +463,8 @@ namespace MLAPI {
 %include "MLAPI_PyMatrix.h"
 %extend PyMatrix
 {
-  PyObject * __setitem__(PyObject* args, double val) {
+  PyObject * __setitem__(PyObject* args, double val)
+  {
     PyObject * rowObj = NULL;
     PyObject * colObj = NULL;
     int Row           = 0;
@@ -432,28 +472,33 @@ namespace MLAPI {
     if (!(PyArg_ParseTuple(args, "OO:PyMatrix___setitem__",
 			   &rowObj, &colObj)      &&
 	  SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
-	  SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))   )) {
+	  SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))   ))
+    {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
       return NULL;
     }
     self->SetElement(Row, Col, val);
     return Py_BuildValue("");
   }
-  PyObject* __getitem__(PyObject* args) {
+  PyObject* __getitem__(PyObject* args)
+  {
     PyObject * rowObj = NULL;
     PyObject * colObj = NULL;
     int Row           = 0;
     int Col           = 0;
-    if (SWIG_IsOK(SWIG_AsVal_int(args, &Row))) {
+    if (SWIG_IsOK(SWIG_AsVal_int(args, &Row)))
+    {
       return Epetra_RowMatrix_GetEntries(*(self->GetMatrix()), Row);
     }
     else if (PyArg_ParseTuple(args, "OO:PyMatrix___getitem__",
 			      &rowObj, &colObj)      &&
 	     SWIG_IsOK(SWIG_AsVal_int(rowObj, &Row)) &&
-	     SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    ) {
+	     SWIG_IsOK(SWIG_AsVal_int(colObj, &Col))    )
+    {
       return Epetra_RowMatrix_GetEntry(*(self->GetMatrix()), Row, Col);
     }
-    else {
+    else
+    {
       PyErr_SetString(PyExc_IndexError, "Input argument not supported");
       return NULL;
     }
@@ -468,7 +513,8 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
              const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
              PyObject* obj);
 
-%pythoncode %{
+%pythoncode
+%{
 # Call MPI_Init if appropriate
 Init()
 

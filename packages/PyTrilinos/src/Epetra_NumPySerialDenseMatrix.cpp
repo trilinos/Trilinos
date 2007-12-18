@@ -40,30 +40,40 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
   // If tmp_array is NULL, build a PyArrayObject from the pyObject
   // (and, possibly, int)
   tmp_bool = true;
-  if (!tmp_array) {
+  if (!tmp_array)
+  {
     // If pyObject is a bool, then emulate a bool constructor
-    if (PyBool_Check(pyObject)) {
+    if (PyBool_Check(pyObject))
+    {
       tmp_bool = (bool) PyInt_AsLong(pyObject);
       intp dimensions[ ] = {0,0};
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
     // If pyObject is an int, then emulate an int-int constructor
-    } else {
-      if (PyInt_Check(pyObject)) {
+    }
+    else
+    {
+      if (PyInt_Check(pyObject))
+      {
 	int  numRows = (int) PyInt_AsLong(pyObject);
 	intp dimensions[ ] = {numRows, numCols};
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
       // If pyObject is not a bool nor an int, try to build a
       // contiguous 2D PyArrayObject from the pyObject
-      } else {
-	PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_DOUBLE); // This function returns a
-	                                                               // borrowed ptr: no DECREF
-	tmp_array = (PyArrayObject *) PyArray_FromAny(pyObject, dtype, 2, 2, FARRAY_FLAGS, NULL);
+      }
+      else
+      {
+	// This function returns a borrowed ptr: no DECREF
+	PyArray_Descr * dtype = 
+	  PyArray_DescrFromType(PyArray_DOUBLE);
+	tmp_array = (PyArrayObject *) PyArray_FromAny(pyObject, dtype, 2, 2,
+						      FARRAY_FLAGS, NULL);
 	tmp_bool  = (bool) numCols;
       }
     }
   }
   // If no array has been correctly constructed, build a zero-by-zero matrix
-  if (!tmp_array) {
+  if (!tmp_array)
+  {
     intp dimensions[ ] = { 0, 0 };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(2, dimensions, PyArray_DOUBLE);
   }
@@ -74,18 +84,23 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
 // =============================================================================
 void Epetra_NumPySerialDenseMatrix::setArray(bool copy)
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     array     = tmp_array;
     tmp_array = NULL;
-  } else {
+  }
+  else
+  {
     intp     dimensions[ ] = { M(), N() };
     double * data          = NULL;
     if (!copy) data        = Epetra_SerialDenseMatrix::A();
-    PyArray_Descr * dtype  = PyArray_DescrFromType(PyArray_DOUBLE); // This NumPy function returns a
-                                                                    // borrowed pointer: no DECREF
-    array = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dimensions, NULL,
+    // This NumPy function returns a borrowed pointer: no DECREF
+    PyArray_Descr * dtype  = PyArray_DescrFromType(PyArray_DOUBLE);
+    array = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, dtype, 2,
+						  dimensions, NULL,
 						  (void*)data, FARRAY_FLAGS, NULL);
-    if (copy) {
+    if (copy)
+    {
       double * oldData = Epetra_SerialDenseMatrix::A();
       double * newData = (double*) array->data;
       int      size    = dimensions[0] * dimensions[1];
@@ -118,7 +133,8 @@ bool Epetra_NumPySerialDenseMatrix::getBool(PyObject * pyObject, int set_object_
 // =============================================================================
 void Epetra_NumPySerialDenseMatrix::cleanup()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     Py_DECREF(tmp_array);
     tmp_array = NULL;
   }
@@ -166,23 +182,29 @@ Epetra_NumPySerialDenseMatrix::Epetra_NumPySerialDenseMatrix(const Epetra_Serial
 
 // Destructor
 // =============================================================================
-Epetra_NumPySerialDenseMatrix::~Epetra_NumPySerialDenseMatrix() {
+Epetra_NumPySerialDenseMatrix::~Epetra_NumPySerialDenseMatrix()
+{
   Py_XDECREF(array);
 }
 
 // Methods
 // =============================================================================
-double Epetra_NumPySerialDenseMatrix::operator() (int rowIndex, int colIndex) {
+double Epetra_NumPySerialDenseMatrix::operator() (int rowIndex, int colIndex)
+{
   return double(Epetra_SerialDenseMatrix::operator()(rowIndex, colIndex));
 }
 
 // =============================================================================
-int Epetra_NumPySerialDenseMatrix::Shape(int numRows, int numCols) {
+int Epetra_NumPySerialDenseMatrix::Shape(int numRows, int numCols)
+{
   // Call the base-class method
   int result = Epetra_SerialDenseMatrix::Shape(numRows, numCols);
-  if (result) {
+  if (result)
+  {
     PyErr_Format(PyExc_ValueError, "Shape() method failed with code %d", result);
-  } else {
+  }
+  else
+  {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_SerialDenseMatrix data
   }
@@ -190,12 +212,16 @@ int Epetra_NumPySerialDenseMatrix::Shape(int numRows, int numCols) {
 }
 
 // =============================================================================
-int Epetra_NumPySerialDenseMatrix::Reshape(int numRows, int numCols) {
+int Epetra_NumPySerialDenseMatrix::Reshape(int numRows, int numCols)
+{
   // Call the base-class method
   int result = Epetra_SerialDenseMatrix::Reshape(numRows,numCols);
-  if (result) {
+  if (result)
+  {
     PyErr_Format(PyExc_ValueError, "Reshape() method failed with code %d", result);
-  } else {
+  }
+  else
+  {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_SerialDenseMatrix data
   }
@@ -203,7 +229,8 @@ int Epetra_NumPySerialDenseMatrix::Reshape(int numRows, int numCols) {
 }
 
 // =============================================================================
-PyObject * Epetra_NumPySerialDenseMatrix::A() {
+PyObject * Epetra_NumPySerialDenseMatrix::A()
+{
   Py_INCREF(array);
   return PyArray_Return(array);
 }

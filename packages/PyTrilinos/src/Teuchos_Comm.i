@@ -269,7 +269,8 @@ PyObject* Finalize();
 %ignore Teuchos::Comm::scan;
 %include "Teuchos_Comm.hpp"
 %template(Comm_long) Teuchos::Comm<long>;
-%pythoncode %{
+%pythoncode
+%{
 Comm = Comm_long
 %}
 
@@ -282,7 +283,8 @@ Comm = Comm_long
 %ignore Teuchos::SerialComm::scan;
 %include "Teuchos_DefaultSerialComm.hpp"
 %template(SerialComm_long) Teuchos::SerialComm<long>;
-%pythoncode %{
+%pythoncode
+%{
 SerialComm = SerialComm_long
 %}
 
@@ -294,7 +296,8 @@ SerialComm = SerialComm_long
 %template(rank_long   ) Teuchos::rank<long>;
 %template(size_long   ) Teuchos::size<long>;
 %template(barrier_long) Teuchos::barrier<long>;
-%pythoncode %{
+%pythoncode
+%{
 rank    = rank_long
 size    = size_long
 barrier = barrier_long
@@ -333,7 +336,8 @@ def scan(comm, reductOp, buffer):
 
 // MPI-related Python code.  This will be inserted directly into the
 // python module
-%pythoncode %{
+%pythoncode
+%{
 # Call MPI_Init if appropriate
 import sys
 Init_Argv(sys.argv)
@@ -434,14 +438,16 @@ PyObject* Finalize()
 %ignore Teuchos::MpiComm::scan;
 %include "Teuchos_DefaultMpiComm.hpp"
 %template(MpiComm_long) Teuchos::MpiComm<long>;
-%pythoncode %{
+%pythoncode
+%{
 MpiComm = MpiComm_long
 %}
 
 ///////////////////////////////////////////
 // Teuchos.DefaultComm support under MPI //
 ///////////////////////////////////////////
-%pythoncode %{
+%pythoncode
+%{
 class DefaultComm:
     __defaultComm = MpiComm()
     @classmethod
@@ -457,11 +463,13 @@ class DefaultComm:
 #else
 
 %{
-PyObject* Init_Argv(PyObject *args) {
+PyObject* Init_Argv(PyObject *args)
+{
   return Py_BuildValue("");
 }
 
-PyObject* Finalize() {
+PyObject* Finalize()
+{
   return Py_BuildValue("");
 }
 %}
@@ -469,7 +477,8 @@ PyObject* Finalize() {
 /////////////////////////////////////////////
 // Teuchos.DefaultComm support without MPI //
 /////////////////////////////////////////////
-%pythoncode %{
+%pythoncode
+%{
 class DefaultComm:
     __defaultComm = SerialComm()
     @classmethod

@@ -44,11 +44,13 @@ Epetra_Map              * Epetra_NumPyFEVector::tmp_map     = NULL              
 double * Epetra_NumPyFEVector::getArray(PyObject * pyObject)
 {
   // Try to build a contiguous PyArrayObject from the pyObject
-  if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
+  if (!tmp_array)
+    tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
   
   // If this fails, build a vector with length zero to prevent a Bus
   // Error
-  if (!tmp_array) {
+  if (!tmp_array)
+  {
     intp dimensions[ ] = { 0 };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
   }
@@ -61,45 +63,56 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
 					PyObject * pyObject)
 {
   // Only build the tmp_array if it does not already exist
-  if (!tmp_array) {
-
+  if (!tmp_array)
+  {
     // Default dimensions
     intp defaultDims[ ] = { blockMap.NumMyPoints() };
 
     // PyObject argument is a bool
-    if PyBool_Check(pyObject) {
+    if (PyBool_Check(pyObject))
+    {
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
-      if (tmp_array == NULL) {
+      if (tmp_array == NULL)
+      {
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
       }
-      else {
-	if (pyObject == Py_True) {     // bool zeroOut is True
+      else
+      {
+	if (pyObject == Py_True)     // bool zeroOut is True
+	{
 	  double * data = (double*) tmp_array->data;
 	  for (int i=0; i<defaultDims[0]; ++i) data[i] = 0.0;
 	}
       }
 
     // PyObject argument is not an bool ... try to build a contiguous PyArrayObject from it
-    } else {
+    }
+    else
+    {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
 
       // If this fails, build a single vector with all zeros
-      if (!tmp_array) {
+      if (!tmp_array)
+      {
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
 
       // If the contiguous PyArrayObject built successfully, make sure
       // it has the correct number of dimensions
-      } else {
+      }
+      else
+      {
 	int  nd = tmp_array->nd;
 	intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
-	if (arraySize != defaultDims[0]) {
+	if (arraySize != defaultDims[0])
+	{
 	  PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
 									PyArray_DOUBLE);
 	  double        * myData  = (double *) myArray->data;
 	  double        * tmpData = (double *) tmp_array->data;
-	  for (int i=0; i<defaultDims[0]; i++) {
+	  for (int i=0; i<defaultDims[0]; i++)
+	  {
 	    myData[i] = tmpData[i];
 	  }
 	  Py_XDECREF(tmp_array);
@@ -115,7 +128,8 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
 Epetra_Map & Epetra_NumPyFEVector::getMap(PyObject * pyObject)
 {
   if (!tmp_array) getArray(pyObject);
-  if (!tmp_map) {
+  if (!tmp_map)
+  {
     const int totalLength = PyArray_Size((PyObject *)tmp_array);
     tmp_map = new Epetra_Map(totalLength,0,defaultComm);
   }
@@ -132,11 +146,13 @@ int Epetra_NumPyFEVector::getVectorSize(PyObject * pyObject)
 // =============================================================================
 void Epetra_NumPyFEVector::cleanup()
 {
-  if (tmp_array) {
+  if (tmp_array)
+  {
     Py_DECREF(tmp_array);
     tmp_array = NULL;
   }
-  if (tmp_map) {
+  if (tmp_map)
+  {
     delete tmp_map;
     tmp_map = NULL;
   }
@@ -196,10 +212,12 @@ PyObject * Epetra_NumPyFEVector::ExtractView() const
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::Dot(const Epetra_FEVector & A) const {
+double Epetra_NumPyFEVector::Dot(const Epetra_FEVector & A) const
+{
   double result[1];
   int status = Epetra_MultiVector::Dot(A, result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
     goto fail;
   }
@@ -210,10 +228,12 @@ double Epetra_NumPyFEVector::Dot(const Epetra_FEVector & A) const {
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::Norm1() const {
+double Epetra_NumPyFEVector::Norm1() const
+{
   double result[1];
   int status = Epetra_MultiVector::Norm1(result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "Norm1 returned error code %d", status);
     goto fail;
   }
@@ -224,10 +244,12 @@ double Epetra_NumPyFEVector::Norm1() const {
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::Norm2() const {
+double Epetra_NumPyFEVector::Norm2() const
+{
   double result[1];
   int status = Epetra_MultiVector::Norm2(result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "Norm2 returned error code %d", status);
     goto fail;
   }
@@ -238,10 +260,12 @@ double Epetra_NumPyFEVector::Norm2() const {
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::NormInf() const {
+double Epetra_NumPyFEVector::NormInf() const
+{
   double result[1];
   int status = Epetra_MultiVector::NormInf(result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "NormInf returned error code %d", status);
     goto fail;
   }
@@ -252,10 +276,12 @@ double Epetra_NumPyFEVector::NormInf() const {
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::NormWeighted(const Epetra_FEVector & weights) const {
+double Epetra_NumPyFEVector::NormWeighted(const Epetra_FEVector & weights) const
+{
   double result[1];
   int status = Epetra_MultiVector::NormWeighted(weights,result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "NormWeighted returned error code %d", status);
     goto fail;
   }
@@ -266,10 +292,12 @@ double Epetra_NumPyFEVector::NormWeighted(const Epetra_FEVector & weights) const
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::MinValue() const {
+double Epetra_NumPyFEVector::MinValue() const
+{
   double result[1];
   int status = Epetra_MultiVector::MinValue(result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "MinValue returned error code %d", status);
     goto fail;
   }
@@ -280,10 +308,12 @@ double Epetra_NumPyFEVector::MinValue() const {
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::MaxValue() const {
+double Epetra_NumPyFEVector::MaxValue() const
+{
   double result[1];
   int status = Epetra_MultiVector::MaxValue(result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "MaxValue returned error code %d", status);
     goto fail;
   }
@@ -294,10 +324,12 @@ double Epetra_NumPyFEVector::MaxValue() const {
 }
 
 // =============================================================================
-double Epetra_NumPyFEVector::MeanValue() const {
+double Epetra_NumPyFEVector::MeanValue() const
+{
   double result[1];
   int status = Epetra_MultiVector::MeanValue(result);
-  if (status) {
+  if (status)
+  {
     PyErr_Format(PyExc_RuntimeError, "MeanValue returned error code %d", status);
     goto fail;
   }
@@ -308,7 +340,8 @@ double Epetra_NumPyFEVector::MeanValue() const {
 }
 
 // =============================================================================
-int Epetra_NumPyFEVector::ReplaceGlobalValues(PyObject * indices, PyObject * values) {
+int Epetra_NumPyFEVector::ReplaceGlobalValues(PyObject * indices, PyObject * values)
+{
   PyArrayObject * myValues  = NULL;
   PyArrayObject * myIndices = NULL;
   int lenValues;
@@ -320,8 +353,10 @@ int Epetra_NumPyFEVector::ReplaceGlobalValues(PyObject * indices, PyObject * val
   if (!myIndices) goto fail;
   lenValues  = (int) PyArray_MultiplyList(myValues->dimensions,  myValues->nd );
   lenIndices = (int) PyArray_MultiplyList(myIndices->dimensions, myIndices->nd);
-  if (lenValues != lenIndices) {
-    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+  if (lenValues != lenIndices)
+  {
+    PyErr_Format(PyExc_ValueError,
+		 "Sequence lengths are %d and %d, but must be of same length",
 		 lenValues, lenIndices);
     goto fail;
   }
@@ -338,7 +373,8 @@ int Epetra_NumPyFEVector::ReplaceGlobalValues(PyObject * indices, PyObject * val
 }
 
 // =============================================================================
-int Epetra_NumPyFEVector::SumIntoGlobalValues(PyObject * indices, PyObject * values) {
+int Epetra_NumPyFEVector::SumIntoGlobalValues(PyObject * indices, PyObject * values)
+{
   PyArrayObject * myValues  = NULL;
   PyArrayObject * myIndices = NULL;
   int lenValues;
@@ -350,8 +386,10 @@ int Epetra_NumPyFEVector::SumIntoGlobalValues(PyObject * indices, PyObject * val
   if (!myIndices) goto fail;
   lenValues  = (int) PyArray_MultiplyList(myValues->dimensions,  myValues->nd );
   lenIndices = (int) PyArray_MultiplyList(myIndices->dimensions, myIndices->nd);
-  if (lenValues != lenIndices) {
-    PyErr_Format(PyExc_ValueError, "Sequence lengths are %d and %d, but must be of same length",
+  if (lenValues != lenIndices)
+  {
+    PyErr_Format(PyExc_ValueError,
+		 "Sequence lengths are %d and %d, but must be of same length",
 		 lenValues, lenIndices);
     goto fail;
   }

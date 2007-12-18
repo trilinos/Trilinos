@@ -40,7 +40,8 @@
 
 // Helper functions for Epetra_RowMatrix
 PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
-				       int GlobalRow) {
+				       int GlobalRow)
+{
   int        myRow        = 0;
   int        numEntries   = 0;
   npy_intp   dims[1]      = { 0 };
@@ -51,13 +52,15 @@ PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
   int        ierr         = 0;
 
   // Require Matrix be FillCompleted
-  if (!Matrix.Filled()) {
+  if (!Matrix.Filled())
+  {
     PyErr_SetString(PyExc_RuntimeError, "Matrix not FillCompleted");
     goto fail;
   }
   // Obtain the local row index from the global row index
   myRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
-  if (Matrix.NumMyRowEntries(myRow, numEntries)) {
+  if (Matrix.NumMyRowEntries(myRow, numEntries))
+  {
     PyErr_Format(PyExc_ValueError, "Illegal global row index: %d", GlobalRow);
     goto fail;
   }
@@ -71,7 +74,8 @@ PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
   values  = (double*) array_data(valuesArray );
   //Extract the row data
   ierr = Matrix.ExtractMyRowCopy(myRow, (int)dims[0], numEntries, values, indices);
-  if (ierr != 0) {
+  if (ierr != 0)
+  {
     PyErr_Format(PyExc_RuntimeError, "ExtractMyRowCopy() returned %d error code", ierr);
     goto fail;
   }
@@ -87,7 +91,8 @@ PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
 }
 
 PyObject* Epetra_RowMatrix_GetEntry(const Epetra_RowMatrix& Matrix,
-				    int GlobalRow, int GlobalCol) {
+				    int GlobalRow, int GlobalCol)
+{
   int        myRow        = 0;
   int        myCol        = 0;
   int        numEntries   = 0;
@@ -100,19 +105,22 @@ PyObject* Epetra_RowMatrix_GetEntry(const Epetra_RowMatrix& Matrix,
   double     value        = 0.0;
 
   // Require Matrix be FillCompleted
-  if (!Matrix.Filled()) {
+  if (!Matrix.Filled())
+  {
     PyErr_SetString(PyExc_RuntimeError, "Matrix not FillCompleted");
     goto fail;
   }
   // Obtain the local row index from the global row index
   myRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
-  if (Matrix.NumMyRowEntries(myRow, numEntries)) {
+  if (Matrix.NumMyRowEntries(myRow, numEntries))
+  {
     PyErr_Format(PyExc_ValueError, "Illegal global row index: %d", GlobalRow);
     goto fail;
   }
   // Obtain the local col index from the global col index
   myCol = Matrix.RowMatrixColMap().LID(GlobalCol);
-  if (myCol < 0) {
+  if (myCol < 0)
+  {
     PyErr_Format(PyExc_ValueError, "Illegal global col index: %d", GlobalCol);
     goto fail;
   }
@@ -126,13 +134,16 @@ PyObject* Epetra_RowMatrix_GetEntry(const Epetra_RowMatrix& Matrix,
   values  = (double*) array_data(valuesArray );
   //Extract the row data
   ierr = Matrix.ExtractMyRowCopy(myRow, (int)dims[0], numEntries, values, indices);
-  if (ierr != 0) {
+  if (ierr != 0)
+  {
     PyErr_Format(PyExc_RuntimeError, "ExtractMyRowCopy() returned %d error code", ierr);
     goto fail;
   }
   // Search for the requested Matrix entry
-  for (int i = 0 ; i < numEntries ; ++i) {
-    if (indices[i] == myCol) {
+  for (int i = 0 ; i < numEntries ; ++i)
+  {
+    if (indices[i] == myCol)
+    {
       value = values[i];
       break;
     }

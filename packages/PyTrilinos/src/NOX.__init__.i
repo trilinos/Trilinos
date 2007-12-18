@@ -111,7 +111,8 @@ script in the example subdirectory of the PyTrilinos package:
 // The Teuchos.py file that this %import will try to import in python
 // will be one directory up from this python module.  So we need to
 // add the parent directory to the search path.
-%pythoncode{
+%pythoncode
+{
 import os.path, sys
 currentDir,dummy = os.path.split(__file__)
 sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
@@ -124,7 +125,8 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 // NOX Version support //
 /////////////////////////
 %include "NOX_Version.H"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = version().split()[2]
 %}
 
@@ -142,7 +144,8 @@ __version__ = version().split()[2]
 %import "NOX.StatusTest.i"
 
 // Python code for the NOX module
-%pythoncode %{
+%pythoncode
+%{
 try:
     import Epetra
 except ImportError, e:

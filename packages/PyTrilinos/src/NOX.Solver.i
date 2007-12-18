@@ -110,17 +110,23 @@ using Teuchos::RCP;
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+  }
+  catch(Teuchos::Exceptions::InvalidParameterType & e)
+  {
     SWIG_exception(SWIG_TypeError, e.what());
-  } catch(Teuchos::Exceptions::InvalidParameter & e) {
+  }
+  catch(Teuchos::Exceptions::InvalidParameter & e)
+  {
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -161,7 +167,7 @@ using Teuchos::RCP;
 %rename (buildSolver) myBuildSolver;
 // NOX::Solver::buildSolver in NOX_Solver_Factory.H returns a
 // Teuchos::RCP<NOX::Solver::Generic>.  As far as I can tell, SWIG
-// cannot properly upcast the NOX::Solver::Generic object wrapped
+// cannot properly downcast the NOX::Solver::Generic object wrapped
 // within the Teuchos::RCP<> in order to, say, call its solve()
 // method.  Therefore, I write my own wrapper around buildSolver()
 // that does this upcasting explicitly and returns a python wrapper
@@ -186,7 +192,7 @@ using Teuchos::RCP;
     Teuchos::RCP<NOX::Solver::Generic> rcp_solver =
       NOX::Solver::buildSolver(grp, tests, params);
     Teuchos::Ptr<NOX::Solver::Generic> solver_ptr = rcp_solver.release();
-    // Try to upcast to a derived class
+    // Try to downcast to a derived class
     {
       NOX::Solver::LineSearchBased * result =
 	reinterpret_cast<NOX::Solver::LineSearchBased*>(solver_ptr.get());

@@ -37,12 +37,13 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 
-class Epetra_NumPyMultiVector : public Epetra_MultiVector {
-
+class Epetra_NumPyMultiVector : public Epetra_MultiVector
+{
 public:
 
   // Constructors
-  Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, int numVectors, bool zeroOut=true);
+  Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, int numVectors,
+			  bool zeroOut=true);
   Epetra_NumPyMultiVector(const Epetra_MultiVector & source);
   Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
   Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_NumPyMultiVector & source,

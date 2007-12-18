@@ -45,12 +45,16 @@
 // Teuchos::XMLObject support //
 ////////////////////////////////
 %ignore Teuchos::XMLObject::XMLObject(XMLObjectImplem*);
-%extend Teuchos::XMLObject {
-  std::string __str__() const {
-    try {
+%extend Teuchos::XMLObject
+{
+  std::string __str__() const
+  {
+    try
+    {
       return self->toString();
     }
-    catch(std::logic_error e) {
+    catch(std::logic_error e)
+    {
       return std::string("");
     }
   }

@@ -34,8 +34,8 @@
 
 #include "Epetra_IntSerialDenseVector.h"
 
-class Epetra_NumPyIntSerialDenseVector : public Epetra_IntSerialDenseVector {
-
+class Epetra_NumPyIntSerialDenseVector : public Epetra_IntSerialDenseVector
+{
 public:
 
   // Constructors

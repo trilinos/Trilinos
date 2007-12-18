@@ -52,7 +52,8 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 %}
 
 // NumPy support
-%pythoncode %{
+%pythoncode
+%{
 # Much of the Epetra module is compatible with the numpy module
 import numpy
 
@@ -91,15 +92,19 @@ except ImportError:
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  } catch(int errCode) {
+  }
+  catch(int errCode)
+  {
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -107,17 +112,24 @@ except ImportError:
 // Define macro for handling exceptions thrown by Epetra_NumPy*
 // constructors
 %define %epetra_numpy_ctor_exception(className)
-%exception className::className {
-  try {
+%exception className::className
+{
+  try
+  {
     $action
-    if (PyErr_Occurred()) {
+    if (PyErr_Occurred())
+    {
       className::cleanup();
       SWIG_fail;
     }
-  } catch (int errCode) {
+  }
+  catch (int errCode)
+  {
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
-  } catch(...) {
+  }
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
@@ -138,8 +150,10 @@ except ImportError:
 // a 1D array of ints to returning a NumPy array
 %define %epetra_intarray1d_output_method(className,methodName,dimMethod)
 %ignore className::methodName() const;
-%extend className {
-  PyObject * methodName() {
+%extend className
+{
+  PyObject * methodName()
+  {
     int * result = self->methodName();
     if (result == NULL) return Py_BuildValue("");
     int * data   = NULL;
@@ -161,8 +175,10 @@ except ImportError:
 // a 1D array of doubles to returning a NumPy array
 %define %epetra_array1d_output_method(className,methodName,dimMethod)
 %ignore className::methodName() const;
-%extend className {
-  PyObject * methodName() {
+%extend className
+{
+  PyObject * methodName()
+  {
     double * result = self->methodName();
     if (result == NULL) return Py_BuildValue("");
     double * data   = NULL;
@@ -184,8 +200,10 @@ except ImportError:
 // a 2D array of doubles to returning a NumPy array
 %define %epetra_array2d_output_method(className,methodName,dimMethod1,dimMethod2)
 %ignore className::methodName() const;
-%extend className {
-  PyObject * methodName() {
+%extend className
+{
+  PyObject * methodName()
+  {
     double * result = self->methodName();
     if (result == NULL) return Py_BuildValue("");
     double * data   = NULL;
@@ -209,26 +227,31 @@ except ImportError:
 // magic in the python code to convert the Epetra_NumPy*Matrix or
 // Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
 %define %epetra_array_typemaps(ClassName)
-%typemap(out) Epetra_##ClassName * {
+%typemap(out) Epetra_##ClassName *
+{
   if ($1 == NULL) $result = Py_BuildValue("");
-  else {
+  else
+  {
     Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
     $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   }
 }
 %apply (Epetra_##ClassName *) {Epetra_##ClassName &}
 
-%typemap(in,numinputs=0) Epetra_##ClassName *& (Epetra_##ClassName * _object) {
+%typemap(in,numinputs=0) Epetra_##ClassName *& (Epetra_##ClassName * _object)
+{
   $1 = &_object;
 }
-%typemap(argout) Epetra_##ClassName *& {
+%typemap(argout) Epetra_##ClassName *&
+{
   PyObject * obj;
   Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(**$1);
   obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 
-%typemap(directorin) Epetra_##ClassName & %{
+%typemap(directorin) Epetra_##ClassName &
+%{
   Epetra_NumPy##ClassName npa$argnum = Epetra_NumPy##ClassName(View,$1_name);
   $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPy##ClassName*), 0);
 %}
@@ -238,10 +261,12 @@ except ImportError:
 // to an object, into a return argument (which might be placed into a
 // tuple, if there are more than one).
 %define %epetra_argout_typemaps(ClassName)
-%typemap(in,numinputs=0) ClassName *& (ClassName * _object) {
+%typemap(in,numinputs=0) ClassName *& (ClassName * _object)
+{
   $1 = &_object;
 }
-%typemap(argout) ClassName *& {
+%typemap(argout) ClassName *&
+{
   PyObject * obj = SWIG_NewPointerObj((void*)(*$1), $descriptor(ClassName*), 1);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
@@ -252,7 +277,8 @@ except ImportError:
 ////////////////////////////
 %rename(Version) Epetra_Version;
 %include "Epetra_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = Version().split()[2]
 %}
 
@@ -270,10 +296,12 @@ __version__ = Version().split()[2]
 // Epetra_Object support //
 ///////////////////////////
 %rename(Object) Epetra_Object;
-%extend Epetra_Object {
+%extend Epetra_Object
+{
   // The __str__() method is used by the python str() operator on any
   // object given to the python print command.
-  std::string __str__() {
+  std::string __str__()
+  {
     std::stringstream os;
     self->Print(os);             // Put the output in os
     std::string s = os.str();    // Extract the string from os
@@ -286,13 +314,20 @@ __version__ = Version().split()[2]
   // replaced by a Print() method here that takes a python file object
   // as its optional argument.  If no argument is given, then output
   // is to standard out.
-  void Print(PyObject*pf=NULL) const {
-    if (pf == NULL) {
+  void Print(PyObject*pf=NULL) const
+  {
+    if (pf == NULL)
+    {
       self->Print(std::cout);
-    } else {
-      if (!PyFile_Check(pf)) {
+    }
+    else
+    {
+      if (!PyFile_Check(pf))
+      {
 	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-      } else {
+      }
+      else
+      {
 	std::FILE * f = PyFile_AsFile(pf);
 	Teuchos::FILEstream buffer(f);
 	std::ostream os(&buffer);
@@ -364,13 +399,15 @@ __version__ = Version().split()[2]
 %ignore Epetra_MapColoring::ColorLIDList(int) const;
 %ignore Epetra_MapColoring::ElementColors() const;
 %apply (int DIM1, int* IN_ARRAY1) {(int numColors, int* elementColors)};
-%extend Epetra_MapColoring {
-
+%extend Epetra_MapColoring
+{
   Epetra_MapColoring(const Epetra_BlockMap & map,
 		     int numColors, int* elementColors,
-		     const int defaultColor=0) {
+		     const int defaultColor=0)
+  {
     Epetra_MapColoring * mapColoring;
-    if (numColors != map.NumMyElements()) {
+    if (numColors != map.NumMyElements())
+    {
       PyErr_Format(PyExc_ValueError,
 		   "Epetra.BlockMap has %d elements, while elementColors has %d",
 		   map.NumMyElements(), numColors);
@@ -382,15 +419,18 @@ __version__ = Version().split()[2]
     return NULL;
   }
 
-  int __getitem__(int i) {
+  int __getitem__(int i)
+  {
     return self->operator[](i);
   }
 
-  void __setitem__(int i, int color) {
+  void __setitem__(int i, int color)
+  {
     self->operator[](i) = color;
   }
 
-  PyObject * ListOfColors() {
+  PyObject * ListOfColors()
+  {
     int      * list    = self->ListOfColors();
     intp       dims[ ] = { self->NumColors() };
     int      * data;
@@ -404,7 +444,8 @@ __version__ = Version().split()[2]
     return NULL;
   }
 
-  PyObject * ColorLIDList(int color) {
+  PyObject * ColorLIDList(int color)
+  {
     int      * list    = self->ColorLIDList(color);
     intp       dims[ ] = { self->NumElementsWithColor(color) };
     int      * data;
@@ -418,7 +459,8 @@ __version__ = Version().split()[2]
     return NULL;
   }
 
-  PyObject * ElementColors() {
+  PyObject * ElementColors()
+  {
     int      * list    = self->ElementColors();
     intp       dims[ ] = { self->Map().NumMyElements() };
     int      * data;

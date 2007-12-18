@@ -186,11 +186,13 @@ package:
 // General exception handling
 %exception
 {
-  try {
+  try
+  {
     $action
   }
   SWIG_CATCH_STDEXCEPT
-  catch(...) {
+  catch(...)
+  {
     SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
   }
 }
@@ -221,7 +223,8 @@ package:
   npy_intp dims[1] = { $1.size() };
   PyObject * array = PyArray_SimpleNew(1, dims, NumPyType);
   ScalarType * data = (ScalarType*) array_data(array);
-  for (npy_intp i=0; i<dims[0]; ++i) {
+  for (npy_intp i=0; i<dims[0]; ++i)
+  {
     data[2*i  ] = $1[i].realpart;
     data[2*i+1] = $1[i].imagpart;
   }
@@ -235,21 +238,26 @@ package:
 // Anasazi Version support //
 /////////////////////////////
 %include "AnasaziVersion.cpp"
-%pythoncode %{
+%pythoncode
+%{
 __version__ = Anasazi_Version().split()[2]
 %}
 
 ///////////////////////////
 // Anasazi Types support //
 ///////////////////////////
-%extend Anasazi::Eigensolution {
-  std::vector< Anasazi::Value< ScalarType > > Evals() {
+%extend Anasazi::Eigensolution
+{
+  std::vector< Anasazi::Value< ScalarType > > Evals()
+  {
     return self->Evals;
   }
-  MV & Evecs() {
+  MV & Evecs()
+  {
     return *(self->Evecs);
   }
-  MV & Espace() {
+  MV & Espace()
+  {
     return *(self->Espace);
   }
 }
@@ -257,8 +265,10 @@ __version__ = Anasazi_Version().split()[2]
 %ignore Anasazi::Eigensolution::Evecs;
 %ignore Anasazi::Eigensolution::Espace;
 %include "AnasaziTypes.hpp"
-%extend Anasazi::Value {
-  std::string __str__() {
+%extend Anasazi::Value
+{
+  std::string __str__()
+  {
     std::stringstream output;
     output << self->realpart << "+" << self->imagpart << "j";
     return output.str();
@@ -484,7 +494,8 @@ Anasazi::MultiVecTraits< double,
 // Generic python interface //
 //////////////////////////////
 %define %anasazi_scalartype_factory(ClassName)
-%pythoncode %{
+%pythoncode
+%{
 def ClassName(*args):
     """
     Factory function for class ClassName.  Currently, this returns a python
@@ -495,7 +506,8 @@ def ClassName(*args):
 %enddef
 
 %define %anasazi_factory(ClassName)
-%pythoncode %{
+%pythoncode
+%{
 def ClassName(*args):
     """
     Factory function for class ClassName.  Currently, this returns a python

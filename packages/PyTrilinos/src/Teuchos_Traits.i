@@ -37,40 +37,39 @@
 //     unsigned long, long long, unsigned long long
 namespace Teuchos
 {
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,unsigned char>
-    : public DirectSerializationTraits<Ordinal,unsigned char>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,short>
-    : public DirectSerializationTraits<Ordinal,short>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,unsigned short>
-    : public DirectSerializationTraits<Ordinal,unsigned short>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,unsigned int>
-    : public DirectSerializationTraits<Ordinal,unsigned int>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,long>
-    : public DirectSerializationTraits<Ordinal,long>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,unsigned long>
-    : public DirectSerializationTraits<Ordinal,unsigned long>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,long long>
-    : public DirectSerializationTraits<Ordinal,long long>
-  {};
-  template<typename Ordinal>
-  class SerializationTraits<Ordinal,unsigned long long>
-    : public DirectSerializationTraits<Ordinal,unsigned long long>
-  {};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned char>
+  : public DirectSerializationTraits<Ordinal,unsigned char>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,short>
+  : public DirectSerializationTraits<Ordinal,short>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned short>
+  : public DirectSerializationTraits<Ordinal,unsigned short>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned int>
+  : public DirectSerializationTraits<Ordinal,unsigned int>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,long>
+  : public DirectSerializationTraits<Ordinal,long>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned long>
+  : public DirectSerializationTraits<Ordinal,unsigned long>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,long long>
+  : public DirectSerializationTraits<Ordinal,long long>
+{};
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned long long>
+  : public DirectSerializationTraits<Ordinal,unsigned long long>
+{};
 }
-
 %}
 
 ///////////////////////////////////
@@ -78,230 +77,231 @@ namespace Teuchos
 ///////////////////////////////////
 %include "Teuchos_ScalarTraits.hpp"
 // Specialization of ScalarTraits<> for type long
-%inline %{
+%inline 
+%{
 namespace Teuchos
 {
-  // Type unsigned char
-  template<>
-  struct ScalarTraits<unsigned char>
-  {
-    typedef unsigned char magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(unsigned char a)
-    { return static_cast<unsigned char>(std::fabs(static_cast<double>(a))); }
-    static inline unsigned char zero()  { return 0; }
-    static inline unsigned char one()   { return 1; }
-    static inline unsigned char conjugate(unsigned char x) { return x; }
-    static inline unsigned char real(unsigned char x) { return x; }
-    static inline unsigned char imag(unsigned char x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type unsigned char
+template<>
+struct ScalarTraits<unsigned char>
+{
+  typedef unsigned char magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(unsigned char a)
+  { return static_cast<unsigned char>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned char zero()  { return 0; }
+  static inline unsigned char one()   { return 1; }
+  static inline unsigned char conjugate(unsigned char x) { return x; }
+  static inline unsigned char real(unsigned char x) { return x; }
+  static inline unsigned char imag(unsigned char x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline unsigned char random() { return std::rand(); }
-    static inline std::string name() { return "unsigned char"; }
-    static inline unsigned char squareroot(unsigned char x)
-    { return (unsigned char) std::sqrt((double) x); }
-    static inline unsigned char pow(unsigned char x, unsigned char y)
-    { return (unsigned char) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline unsigned char random() { return std::rand(); }
+  static inline std::string name() { return "unsigned char"; }
+  static inline unsigned char squareroot(unsigned char x)
+  { return (unsigned char) std::sqrt((double) x); }
+  static inline unsigned char pow(unsigned char x, unsigned char y)
+  { return (unsigned char) std::pow((double)x,(double)y); }
+};
 
-  // Type short
-  template<>
-  struct ScalarTraits<short>
-  {
-    typedef short magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(short a)
-    { return static_cast<short>(std::fabs(static_cast<double>(a))); }
-    static inline short zero()  { return 0; }
-    static inline short one()   { return 1; }
-    static inline short conjugate(short x) { return x; }
-    static inline short real(short x) { return x; }
-    static inline short imag(short x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type short
+template<>
+struct ScalarTraits<short>
+{
+  typedef short magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(short a)
+  { return static_cast<short>(std::fabs(static_cast<double>(a))); }
+  static inline short zero()  { return 0; }
+  static inline short one()   { return 1; }
+  static inline short conjugate(short x) { return x; }
+  static inline short real(short x) { return x; }
+  static inline short imag(short x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline short random() { return (-1 + 2*rand()); }
-    static inline std::string name() { return "short"; }
-    static inline short squareroot(short x) { return (short) std::sqrt((double) x); }
-    static inline short pow(short x, short y)
-    { return (short) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline short random() { return (-1 + 2*rand()); }
+  static inline std::string name() { return "short"; }
+  static inline short squareroot(short x) { return (short) std::sqrt((double) x); }
+  static inline short pow(short x, short y)
+  { return (short) std::pow((double)x,(double)y); }
+};
 
-  // Type unsigned short
-  template<>
-  struct ScalarTraits<unsigned short>
-  {
-    typedef unsigned short magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(unsigned short a)
-    { return static_cast<unsigned short>(std::fabs(static_cast<double>(a))); }
-    static inline unsigned short zero()  { return 0; }
-    static inline unsigned short one()   { return 1; }
-    static inline unsigned short conjugate(unsigned short x) { return x; }
-    static inline unsigned short real(unsigned short x) { return x; }
-    static inline unsigned short imag(unsigned short x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type unsigned short
+template<>
+struct ScalarTraits<unsigned short>
+{
+  typedef unsigned short magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(unsigned short a)
+  { return static_cast<unsigned short>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned short zero()  { return 0; }
+  static inline unsigned short one()   { return 1; }
+  static inline unsigned short conjugate(unsigned short x) { return x; }
+  static inline unsigned short real(unsigned short x) { return x; }
+  static inline unsigned short imag(unsigned short x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline unsigned short random() { return std::rand(); }
-    static inline std::string name() { return "unsigned short"; }
-    static inline unsigned short squareroot(unsigned short x)
-    { return (unsigned short) std::sqrt((double) x); }
-    static inline unsigned short pow(unsigned short x, unsigned short y)
-    { return (unsigned short) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline unsigned short random() { return std::rand(); }
+  static inline std::string name() { return "unsigned short"; }
+  static inline unsigned short squareroot(unsigned short x)
+  { return (unsigned short) std::sqrt((double) x); }
+  static inline unsigned short pow(unsigned short x, unsigned short y)
+  { return (unsigned short) std::pow((double)x,(double)y); }
+};
 
-  // Type unsigned int
-  template<>
-  struct ScalarTraits<unsigned int>
-  {
-    typedef unsigned int magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(unsigned int a)
-    { return static_cast<unsigned int>(std::fabs(static_cast<double>(a))); }
-    static inline unsigned int zero()  { return 0; }
-    static inline unsigned int one()   { return 1; }
-    static inline unsigned int conjugate(unsigned int x) { return x; }
-    static inline unsigned int real(unsigned int x) { return x; }
-    static inline unsigned int imag(unsigned int x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type unsigned int
+template<>
+struct ScalarTraits<unsigned int>
+{
+  typedef unsigned int magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(unsigned int a)
+  { return static_cast<unsigned int>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned int zero()  { return 0; }
+  static inline unsigned int one()   { return 1; }
+  static inline unsigned int conjugate(unsigned int x) { return x; }
+  static inline unsigned int real(unsigned int x) { return x; }
+  static inline unsigned int imag(unsigned int x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline unsigned int random() { return std::rand(); }
-    static inline std::string name() { return "unsigned int"; }
-    static inline unsigned int squareroot(unsigned int x)
-    { return (unsigned int) std::sqrt((double) x); }
-    static inline unsigned int pow(unsigned int x, unsigned int y)
-    { return (unsigned int) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline unsigned int random() { return std::rand(); }
+  static inline std::string name() { return "unsigned int"; }
+  static inline unsigned int squareroot(unsigned int x)
+  { return (unsigned int) std::sqrt((double) x); }
+  static inline unsigned int pow(unsigned int x, unsigned int y)
+  { return (unsigned int) std::pow((double)x,(double)y); }
+};
 
-  // Type long
-  template<>
-  struct ScalarTraits<long>
-  {
-    typedef long magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(long a)
-    { return static_cast<long>(std::fabs(static_cast<double>(a))); }
-    static inline long zero()  { return 0; }
-    static inline long one()   { return 1; }
-    static inline long conjugate(long x) { return x; }
-    static inline long real(long x) { return x; }
-    static inline long imag(long x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type long
+template<>
+struct ScalarTraits<long>
+{
+  typedef long magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(long a)
+  { return static_cast<long>(std::fabs(static_cast<double>(a))); }
+  static inline long zero()  { return 0; }
+  static inline long one()   { return 1; }
+  static inline long conjugate(long x) { return x; }
+  static inline long real(long x) { return x; }
+  static inline long imag(long x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline long random() { return (-1 + 2*rand()); }
-    static inline std::string name() { return "long"; }
-    static inline long squareroot(long x) { return (long) std::sqrt((double) x); }
-    static inline long pow(long x, long y)
-    { return (long) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline long random() { return (-1 + 2*rand()); }
+  static inline std::string name() { return "long"; }
+  static inline long squareroot(long x) { return (long) std::sqrt((double) x); }
+  static inline long pow(long x, long y)
+  { return (long) std::pow((double)x,(double)y); }
+};
 
-  // Type unsigned long
-  template<>
-  struct ScalarTraits<unsigned long>
-  {
-    typedef unsigned long magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(unsigned long a)
-    { return static_cast<unsigned long>(std::fabs(static_cast<double>(a))); }
-    static inline unsigned long zero()  { return 0; }
-    static inline unsigned long one()   { return 1; }
-    static inline unsigned long conjugate(unsigned long x) { return x; }
-    static inline unsigned long real(unsigned long x) { return x; }
-    static inline unsigned long imag(unsigned long x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type unsigned long
+template<>
+struct ScalarTraits<unsigned long>
+{
+  typedef unsigned long magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(unsigned long a)
+  { return static_cast<unsigned long>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned long zero()  { return 0; }
+  static inline unsigned long one()   { return 1; }
+  static inline unsigned long conjugate(unsigned long x) { return x; }
+  static inline unsigned long real(unsigned long x) { return x; }
+  static inline unsigned long imag(unsigned long x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline unsigned long random() { return std::rand(); }
-    static inline std::string name() { return "unsigned long"; }
-    static inline unsigned long squareroot(unsigned long x)
-    { return (unsigned long) std::sqrt((double) x); }
-    static inline unsigned long pow(unsigned long x, unsigned long y)
-    { return (unsigned long) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline unsigned long random() { return std::rand(); }
+  static inline std::string name() { return "unsigned long"; }
+  static inline unsigned long squareroot(unsigned long x)
+  { return (unsigned long) std::sqrt((double) x); }
+  static inline unsigned long pow(unsigned long x, unsigned long y)
+  { return (unsigned long) std::pow((double)x,(double)y); }
+};
 
-  // Type long long
-  template<>
-  struct ScalarTraits<long long>
-  {
-    typedef long long magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(long long a)
-    { return static_cast<long long>(std::fabs(static_cast<double>(a))); }
-    static inline long long zero()  { return 0; }
-    static inline long long one()   { return 1; }
-    static inline long long conjugate(long long x) { return x; }
-    static inline long long real(long long x) { return x; }
-    static inline long long imag(long long x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type long long
+template<>
+struct ScalarTraits<long long>
+{
+  typedef long long magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(long long a)
+  { return static_cast<long long>(std::fabs(static_cast<double>(a))); }
+  static inline long long zero()  { return 0; }
+  static inline long long one()   { return 1; }
+  static inline long long conjugate(long long x) { return x; }
+  static inline long long real(long long x) { return x; }
+  static inline long long imag(long long x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline long long random() { return (-1 + 2*rand()); }
-    static inline std::string name() { return "long long"; }
-    static inline long long squareroot(long long x)
-    { return (long long) std::sqrt((double) x); }
-    static inline long long pow(long long x, long long y)
-    { return (long long) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline long long random() { return (-1 + 2*rand()); }
+  static inline std::string name() { return "long long"; }
+  static inline long long squareroot(long long x)
+  { return (long long) std::sqrt((double) x); }
+  static inline long long pow(long long x, long long y)
+  { return (long long) std::pow((double)x,(double)y); }
+};
 
-  // Type unsigned long long
-  template<>
-  struct ScalarTraits<unsigned long long>
-  {
-    typedef unsigned long long magnitudeType;
-    static const bool isComplex = false;
-    static const bool isComparable = true;
-    static const bool hasMachineParameters = false;
-    static inline magnitudeType magnitude(unsigned long long a)
-    { return static_cast<unsigned long long>(std::fabs(static_cast<double>(a))); }
-    static inline unsigned long long zero()  { return 0; }
-    static inline unsigned long long one()   { return 1; }
-    static inline unsigned long long conjugate(unsigned long long x) { return x; }
-    static inline unsigned long long real(unsigned long long x) { return x; }
-    static inline unsigned long long imag(unsigned long long x) { return 0; }
-    static inline void seedrandom(unsigned int s) { std::srand(s); 
+// Type unsigned long long
+template<>
+struct ScalarTraits<unsigned long long>
+{
+  typedef unsigned long long magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline magnitudeType magnitude(unsigned long long a)
+  { return static_cast<unsigned long long>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned long long zero()  { return 0; }
+  static inline unsigned long long one()   { return 1; }
+  static inline unsigned long long conjugate(unsigned long long x) { return x; }
+  static inline unsigned long long real(unsigned long long x) { return x; }
+  static inline unsigned long long imag(unsigned long long x) { return 0; }
+  static inline void seedrandom(unsigned int s) { std::srand(s); 
 #ifdef __APPLE__
-      random(); // throw away first random number to address bug 3655
+    random(); // throw away first random number to address bug 3655
 #endif
-    }
-    static inline unsigned long long random() { return std::rand(); }
-    static inline std::string name() { return "unsigned long long"; }
-    static inline unsigned long long squareroot(unsigned long long x)
-    { return (unsigned long long) std::sqrt((double) x); }
-    static inline unsigned long long pow(unsigned long long x, unsigned long long y)
-    { return (unsigned long long) std::pow((double)x,(double)y); }
-  };
+  }
+  static inline unsigned long long random() { return std::rand(); }
+  static inline std::string name() { return "unsigned long long"; }
+  static inline unsigned long long squareroot(unsigned long long x)
+  { return (unsigned long long) std::sqrt((double) x); }
+  static inline unsigned long long pow(unsigned long long x, unsigned long long y)
+  { return (unsigned long long) std::pow((double)x,(double)y); }
+};
 
 }
 %}
@@ -317,7 +317,8 @@ namespace Teuchos
 %template(ScalarTraitsUlongLong) Teuchos::ScalarTraits< unsigned long long >;
 %template(ScalarTraitsFloat    ) Teuchos::ScalarTraits< float              >;
 %template(ScalarTraitsDouble   ) Teuchos::ScalarTraits< double             >;
-%pythoncode %{
+%pythoncode
+%{
 def ScalarTraits(scalarType):
     """
     ScalarTraits(str scalarType) -> ScalarTraits<...>
@@ -382,7 +383,8 @@ def ScalarTraits(scalarType):
 %teuchos_serialtraits_for_type(unsigned long long, UlongLong)
 %teuchos_serialtraits_for_type(float             , Float    )
 %teuchos_serialtraits_for_type(double            , Double   )
-%pythoncode %{
+%pythoncode
+%{
 def DirectSerializationTraits(scalarType):
     """
     DirectSerializationTraits(str scalarType) -> DirectSerializationTraits<...>
