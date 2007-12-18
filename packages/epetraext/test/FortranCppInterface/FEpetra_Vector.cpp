@@ -67,10 +67,7 @@ void FEpetra_Vector_Update(
   )
 {
   FEpetra::getVector(vectorID)->Update(
-    alpha,
-    *tableOfVectors()[vector2ID],
-    beta
-    );
+    alpha, *FEpetra::getVector(vector2ID), beta );
 }
 
 
