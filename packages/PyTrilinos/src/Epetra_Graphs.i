@@ -58,6 +58,114 @@
 /////////////////////////////
 // Epetra_CrsGraph support //
 /////////////////////////////
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, int numIndicesPerRow,
+    bool staticProfile=False) -> CrsGraph
+
+  Constructor with implicit column map and constant indices per row.
+  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - Map describing distribution of rows across processors
+    numIndicesPerRow  - Integer number of indices per row
+    staticProfile     - Static profile flag")
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess, const Epetra_BlockMap&,
+				 int, bool);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, PySequence
+    numIndicesPerRow, bool staticProfile=False) -> CrsGraph
+
+  Constructor with implicit column map and variable indices per row.
+  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - Map describing distribution of rows across processors
+    numIndicesPerRow  - Sequence of integers representing the number of indices
+                        per row
+    staticProfile     - Static profile flag")
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess, const Epetra_BlockMap&,
+				 int, const int*, bool);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, BlockMap colMap,
+    int numIndicesPerRow, bool staticProfile=False) -> CrsGraph
+
+  Constructor with specified column map and constant indices per row.
+  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - Map describing distribution of rows across processors
+    colMap            - Map describing distribution of columns across processors
+    numIndicesPerRow  - Integer number of indices per row
+    staticProfile     - Static profile flag")
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess, const Epetra_BlockMap&,
+				 const Epetra_BlockMap&, int, bool);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, BlockMap colMap,
+    PySequence numIndicesPerRow, bool staticProfile=False) -> CrsGraph
+
+  Constructor with specified column map and variable indices per row.
+  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - Map describing distribution of rows across processors
+    colMap            - Map describing distribution of columns across processors
+    numIndicesPerRow  - Sequence of integers representing the number of indices
+                        per row
+    staticProfile     - Static profile flag")
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess, const Epetra_BlockMap&,
+				 const Epetra_BlockMap&, int, const int*, bool);
+%feature("autodoc",
+"
+__init__(self, CrsGraph graph) -> CrsGraph
+
+  Copy constructor.  Arguments:
+
+    graph - Source graph for copy constructor")
+Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph&);
+%feature("autodoc",
+"InsertGlobalIndices(self, int globalRow, PySequence indices) -> int
+
+Insert a sequence of global indices into the set of nonzero columns
+for the specified global row.  Argument indices can be a numpy array
+of integers or any python sequence that can be converted to a numpy
+array of integers.  The integers represent global IDs that are to be
+inserted into the graph.  An integer error/warning code is returned.
+")
+Epetra_CrsGraph::InsertGlobalIndices;
+%feature("autodoc",
+"RemoveGlobalIndices(self, int globalRow, PySequence indices) -> int
+
+Remove a sequence of global indices from the set of nonzero columns
+for the specified global row.  Argument indices can be a numpy array
+of integers or any python sequence that can be converted to a numpy
+array of integers.  The integers represent global IDs that are to be
+removed from the graph.  An integer error/warning code is returned.
+")
+Epetra_CrsGraph::RemoveGlobalIndices(int, int, int*);
+%feature("autodoc",
+"InsertMyIndices(self, int localRow, PySequence indices) -> int
+
+Insert a sequence of local indices into the set of nonzero columns for
+the specified local row.  Argument indices can be a numpy array of
+integers or any python sequence that can be converted to a numpy array
+of integers.  The integers represent local IDs that are to be inserted
+into the graph.  An integer error/warning code is returned.
+")
+Epetra_CrsGraph::InsertMyIndices;
+%feature("autodoc",
+"RemoveMyIndices(self, int localRow, PySequence indices) -> int
+
+Remove a sequence of local indices from the set of nonzero columns for
+the specified local row.  Argument indices can be a numpy array of
+integers or any python sequence that can be converted to a numpy array
+of integers.  The integers represent local IDs that are to be removed
+from the graph.  An integer error/warning code is returned.
+")
+Epetra_CrsGraph::RemoveMyIndices(int, int, int*);
 %ignore Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess,
 					 const Epetra_BlockMap &,
 					 const int *,

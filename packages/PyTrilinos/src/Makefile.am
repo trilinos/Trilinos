@@ -26,7 +26,7 @@
 # ************************************************************************
 # @HEADER
 
-EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_doc.i Epetra_Base.i \
+EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_Base.i \
 	     Epetra_Comm.i Epetra_Graphs.i Epetra_Maps.i Epetra_Operators.i \
 	     Epetra_SerialDense.i Epetra_Vectors.i \
 	     Epetra_NumPyIntSerialDenseMatrix.cpp \
@@ -39,14 +39,14 @@ EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_doc.i Epetra_Base.i \
 	     Epetra_NumPyMultiVector.cpp Epetra_NumPyMultiVector.h \
 	     Epetra_NumPyVector.cpp Epetra_NumPyVector.h \
 	     Epetra_NumPyFEVector.cpp Epetra_NumPyFEVector.h \
-	     Epetra_RowMatrix_Utils.i EpetraExt.i EpetraExt_doc.i Galeri.i \
-	     Galeri_doc.i IFPACK.i Komplex.i LOCA.__init__.i LOCA.Abstract.i \
+	     Epetra_RowMatrix_Utils.i EpetraExt.i Galeri.i \
+	     IFPACK.i Komplex.i LOCA.__init__.i LOCA.Abstract.i \
 	     LOCA.Bifurcation.i LOCA.Continuation.i LOCA.Epetra.i \
 	     LOCA.Homotopy.i LOCA.LAPACK.i LOCA.MultiContinuation.i \
 	     LOCA.TimeDependent.i ML.i MLAPI_PyMatrix.h NOX.__init__.i \
-	     NOX_doc.i NOX.Abstract.i NOX.Epetra.__init__.i \
+	     NOX.Abstract.i NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     Teuchos.i Teuchos_doc.i Teuchos_Traits.i Teuchos_Comm.i \
+	     Teuchos.i Teuchos_Traits.i Teuchos_Comm.i \
 	     Teuchos_Epetra.i Teuchos_ParameterList.i Teuchos_XML.i \
 	     Teuchos_PythonParameter.cpp Teuchos_PythonParameter.h Thyra.i \
 	     TriUtils.i UserArray.patch NumPyImporter.h numpy.i \

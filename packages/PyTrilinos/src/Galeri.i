@@ -117,8 +117,7 @@ example subdirectory of the PyTrilinos package:
 %feature("autodoc", "1");
 
 // Include Galeri documentation
-%include "Galeri_dox.i"    // Doxygen-generated documentation
-%include "Galeri_doc.i"    // Manually-written documentation
+%include "Galeri_dox.i"
 
 // Typemap support for STL
 %include "stl.i"
@@ -173,6 +172,16 @@ __version__ = Galeri_Version().split()[2]
 ///////////////////////////
 // Galeri_ReadHB support //
 ///////////////////////////
+%feature("autodoc",
+"ReadHB(str filename, Epetra.Comm comm) -> (Epetra.Map map, Epetra.CrsMatrix A,
+                                           Epetra.Vector x, Epetra.Vector b,
+                                           Epetra.Vector exact)
+
+Given an HB filename and an Epetra communicator, return a tuple of
+Epetra objects generated from the problem described in the file.  This
+tuple contains an Epetra.Map, Epetra.CrsMatrix, and Epetra.Vectors for
+the solution, right-hand side and the exact solution.")
+Galeri::ReadHB;
 %include "Galeri_ReadHB.h"
 
 // Turn off the exception handling

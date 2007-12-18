@@ -111,8 +111,7 @@ using Teuchos::RCP;
 %feature("compactdefaultargs");
 
 // Include Teuchos documentation
-%include "Teuchos_dox.i"    // Doxygen-generated documentation
-%include "Teuchos_doc.i"    // Manually written documentation
+%include "Teuchos_dox.i"
 
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers

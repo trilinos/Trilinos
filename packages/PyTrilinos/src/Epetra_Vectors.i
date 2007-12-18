@@ -117,6 +117,15 @@
 ///////////////////////////////////
 // Epetra_NumPyIntVector support //
 ///////////////////////////////////
+%feature("docstring")
+Epetra_NumPyIntVector::ExtractCopy
+"Return a numpy.ndarray that is a copy of the IntVector."
+%feature("docstring")
+Epetra_NumPyIntVector::ExtractView
+"Return a numpy.ndarray that is a view of the IntVector."
+%feature("docstring")
+Epetra_NumPyIntVector::Values
+"Return a numpy.ndarray that is a view of the IntVector."
 %rename(NumPyIntVector) Epetra_NumPyIntVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyIntVector)
 %include "Epetra_NumPyIntVector.h"
@@ -243,6 +252,36 @@ _Epetra.NumPyIntVector_swigregister(IntVector)
 /////////////////////////////////////
 // Epetra_NumPyMultiVector support //
 /////////////////////////////////////
+%feature("docstring")
+Epetra_NumPyMultiVector::ExtractCopy
+"Return a numpy.ndarray that is a copy of the MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::ExtractView
+"Return a numpy.ndarray that is a view of the MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::Dot
+"Return a numpy.ndarray of the dot products of the MultiVector and a."
+%feature("docstring")
+Epetra_NumPyMultiVector::Norm1
+"Return a numpy.ndarray of the L-1 norms of MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::Norm2
+"Return a numpy.ndarray of the the L-2 norms of MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::NormInf
+"Return a numpy.ndarray of the L-infinity norms of MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::NormWeighted
+"Return a numpy.ndarray of the weighted norms of MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::MinValue
+"Return a numpy.ndarray of the minimum values in MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::MaxValue
+"Return a numpy.ndarray of the maximum values in MultiVector."
+%feature("docstring")
+Epetra_NumPyMultiVector::MeanValue
+"Return a numpy.ndarray of the mean values of the MultiVector."
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyMultiVector)
 %include "Epetra_NumPyMultiVector.h"
@@ -410,6 +449,48 @@ _Epetra.NumPyMultiVector_swigregister(MultiVector)
 ////////////////////////////////
 // Epetra_NumPyVector support //
 ////////////////////////////////
+%feature("docstring")
+Epetra_NumPyVector::ExtractCopy
+"Return a numpy.ndarray that is a copy of the Vector."
+%feature("docstring")
+Epetra_NumPyVector::ExtractView
+"Return a numpy.ndarray that is a view of the Vector."
+%feature("docstring")
+Epetra_NumPyVector::Dot
+"Return the dot product of the Vector and a."
+%feature("docstring")
+Epetra_NumPyVector::Norm1
+"Return the L-1 norm of Vector."
+%feature("docstring")
+Epetra_NumPyVector::Norm2
+"Return the the L-2 norm of Vector."
+%feature("docstring")
+Epetra_NumPyVector::NormInf
+"Return the L-infinity norm of Vector."
+%feature("docstring")
+Epetra_NumPyVector::NormWeighted
+"Return the weighted norm of Vector."
+%feature("docstring")
+Epetra_NumPyVector::MinValue
+"Return the minimum values in Vector."
+%feature("docstring")
+Epetra_NumPyVector::MaxValue
+"Return the maximum values in Vector."
+%feature("docstring")
+Epetra_NumPyVector::MeanValue
+"Return the mean value of the Vector."
+%feature("docstring")
+Epetra_NumPyVector::ReplaceGlobalValues
+"Replace global values at specified index (and offset)"
+%feature("docstring")
+Epetra_NumPyVector::ReplaceMyValues
+"Replace local values at specified index (and offset)"
+%feature("docstring")
+Epetra_NumPyVector::SumIntoGlobalValues
+"Sum into global values at specified indices (and offset)"
+%feature("docstring")
+Epetra_NumPyVector::SumIntoMyValues
+"Sum into local values at specified indices (and offset)"
 %rename(NumPyVector) Epetra_NumPyVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyVector)
 %include "Epetra_NumPyVector.h"
@@ -545,6 +626,42 @@ _Epetra.NumPyVector_swigregister(Vector)
 ////////////////////////////////
 // Epetra_NumPyFEVector support //
 ////////////////////////////////
+%feature("docstring")
+Epetra_NumPyFEVector::ExtractCopy
+"Return a numpy.ndarray that is a copy of the FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::ExtractView
+"Return a numpy.ndarray that is a view of the FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::Dot
+"Return the dot product of the FEVector and a."
+%feature("docstring")
+Epetra_NumPyFEVector::Norm1
+"Return the L-1 norm of FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::Norm2
+"Return the the L-2 norm of FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::NormInf
+"Return the L-infinity norm of FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::NormWeighted
+"Return the weighted norm of FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::MinValue
+"Return the minimum values in FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::MaxValue
+"Return the maximum values in FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::MeanValue
+"Return the mean value of the FEVector."
+%feature("docstring")
+Epetra_NumPyFEVector::ReplaceGlobalValues
+"Replace global values at specified index (and offset)"
+%feature("docstring")
+Epetra_NumPyFEVector::SumIntoGlobalValues
+"Sum into global values at specified indices (and offset)"
 %rename(NumPyFEVector) Epetra_NumPyFEVector;
 %epetra_numpy_ctor_exception(Epetra_NumPyFEVector)
 %include "Epetra_NumPyFEVector.h"

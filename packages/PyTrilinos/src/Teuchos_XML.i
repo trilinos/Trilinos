@@ -44,6 +44,21 @@
 ////////////////////////////////
 // Teuchos::XMLObject support //
 ////////////////////////////////
+%feature("docstring")
+Teuchos::XMLObject
+"Representation of an XML data tree."
+%feature("docstring")
+Teuchos::XMLObject::XMLObject
+"The constructor that takes an ``XMLObjectImplem*`` argument has been
+removed.  The ``XMLObjectImplem`` class is hidden from the python
+user."
+%feature("docstring")
+Teuchos::XMLObject::__str__
+"The ``__str__()`` method is provided so that it is possible to
+``print`` an ``XMLObject`` object.  It returns the same string as the
+``toString()`` method, but if ``toString()`` raises an exception (such
+as when the ``XMLObject`` is empty), the ``__str__()`` method returns
+the empty string."
 %ignore Teuchos::XMLObject::XMLObject(XMLObjectImplem*);
 %extend Teuchos::XMLObject
 {

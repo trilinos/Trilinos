@@ -55,7 +55,131 @@
 /////////////////////////////
 // Epetra_BlockMap support //
 /////////////////////////////
-%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,const int*,int,const Epetra_Comm&);
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, int elementSize, int indexBase,
+     Comm comm) -> BlockMap
+
+BlockMap constructor with implicit local elements and constant element
+size.  Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     elementSize        - The number of degrees of freedom associated
+                          with every element.
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_BlockMap::Epetra_BlockMap(int, int, int, const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, int numMyElements, int elementSize,
+     int indexBase, Comm comm) -> BlockMap
+
+BlockMap constructor with specified number of local elements and
+constant element size.  Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     numMyElements      - Number of local elements on this processor.
+     elementSize        - The number of degrees of freedom associated
+                          with every element.
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_BlockMap::Epetra_BlockMap(int, int, int, int, const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, PySequence myGlobalElements,
+     int elementSize, int indexBase, Comm comm) -> BlockMap
+
+BlockMap constructor with specified list of local elements and
+constant element size.  Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     myGlobalElements   - A sequence of integers specifying the global
+                          element indexes on this processor.
+     elementSize        - The number of degrees of freedom associated
+                          with every element.
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_BlockMap::Epetra_BlockMap(int, int, const int*, int, int,
+				 const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, PySequence myGlobalElements,
+     PySequence elementsSizes, int indexBase, Comm comm) -> BlockMap
+
+BlockMap constructor with specified list of local elements and
+specified list of element sizes.  Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     myGlobalElements   - A sequence of integers specifying the global
+                          element indexes on this processor.
+     elementSizes       - A sequence of integers specifying the number of
+                          degrees of freedom associated with each element
+                          on this processor.
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_BlockMap::Epetra_BlockMap(int, int, const int*, int, const int*, int,
+				 const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, BlockMap map) -> BlockMap
+
+BlockMap copy constructor.")
+Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap &);
+%feature("docstring")
+Epetra_BlockMap::RemoteIDList
+"``GIDList`` is a sequence of integer global IDs, and the return
+argument is the three-tuple ``(PIDList, LIDList, sizeList)``, which
+are ``numpy.ndarray`` objects of integers representing the processor
+IDs, local IDs and element sizes, respectively."
+%feature("docstring")
+Epetra_BlockMap::FindLocalElementID
+"Returns a tuple containing the local ID of the element that contains
+the given local pointID, and the offset of the point in that element."
+%feature("docstring")
+Epetra_BlockMap::MyGlobalElements
+"Returns a numpy array of integers specifying the list of global IDs on
+the processor."
+%feature("docstring")
+Epetra_BlockMap::FirstPointInElementList
+"Returns a numpy array of integer first local point numbers for all of
+the local elements."
+%feature("docstring")
+Epetra_BlockMap::ElementSizeList
+"Returns a numpy array of integer sizes for each local element."
+%feature("docstring")
+Epetra_BlockMap::PointToElementList
+"Returns a numpy array of integers such that for each local point, it
+indicates the local element ID that the point belongs to."
+%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,const int*,int,
+					 const Epetra_Comm&);
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*) const;
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*,int*) const;
 %ignore Epetra_BlockMap::FindLocalElementID(int,int&,int&) const;
@@ -249,6 +373,71 @@
 ////////////////////////
 // Epetra_Map support //
 ////////////////////////
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, int indexBase, Comm comm) -> Map
+
+Map constructor with implicit number of elements per processor.
+Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_Map::Epetra_Map(int, int, const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, int numMyElements, int indexBase,
+     Comm comm) -> Map
+
+Map constructor with specified number of elements per processor.
+Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     numMyElements      - Number of local elements on this processor.
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_Map::Epetra_Map(int, int, int, const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, int numGlobalElements, PySequence myGlobalElements,
+     int indexBase, Comm comm) -> Map
+
+Map constructor with specified list of global element IDs for each
+processor.  Arguments are:
+
+     numGlobalElements  - Total number of elements over all processors.
+                          Specify -1 to have the constructor compute
+                          the number of global elements
+     myGlobalElements   - A sequence of integers specifying the global
+                          element indexes on this processor.
+     indexBase          - The base integer value for indexed array
+                          references.  Typically this is 0 for C/C++ and 1
+                          for Fortran, but it can be set to any integer
+                          value.
+     comm               - The Epetra.Comm communicator. This communicator
+                          can in turn be queried for processor rank and
+                          size information.")
+Epetra_Map::Epetra_Map(int, int, const int*, int, const Epetra_Comm &);
+%feature("autodoc",
+"
+__init__(self, Map map) -> Map
+
+Map copy constructor.")
+Epetra_Map::Epetra_Map(const Epetra_Map &);
 %rename(Map) Epetra_Map;
 %include "Epetra_Map.h"
 %clear (int NumMyElements, const int * MyGlobalElements);

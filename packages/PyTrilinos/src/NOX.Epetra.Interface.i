@@ -81,8 +81,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 %ignore *::operator=;
 
 // Include NOX documentation
-%include "NOX_dox.i"    // Doxygen-generated documentation
-%include "NOX_doc.i"    // Manually written documentation
+%include "NOX_dox.i"
 
 // STL support
 %include "stl.i"
@@ -113,6 +112,28 @@ NOX.Epetra.Interface provides the following user-level classes:
 ///////////////////////////////////////////
 // NOX_Epetra_Interface_Required support //
 ///////////////////////////////////////////
+%feature("autodoc",
+"computeF(self, Epetra.Vector x, Epetra.Vector F, FillType flag) -> bool
+
+  Virtual method in C++ that is intended to be overridden by user.
+  This method defines the nonlinear function to be solved.  Arguments
+  x and F will be provided as numpy-hybrid Epetra.Vector objects.
+  Return True if the computation is successful.
+
+  It is strongly recommended that computeF() not raise any exceptions,
+  accidental or otherwise.  This can be prevented by wrapping your
+  algorithm in a try block:
+
+    try:
+      # Your code here...
+    except Exception, e:
+      print 'Python exception raised in computeF():'
+      print e
+      return False
+
+  By returning False, you tell NOX that computeF() was unsuccessful.
+")
+NOX::Epetra::Interface::Required::computeF;
 %feature("director") NOX::Epetra::Interface::Required;
 %include "NOX_Epetra_Interface_Required.H"
 

@@ -46,6 +46,49 @@ PyObject* Finalize();
 /////////////////////////
 // Epetra_Comm support //
 /////////////////////////
+%feature("autodoc",
+"Broadcast(self, numpy.ndarray myObj, int root)
+
+Argument myObj must be a numpy array, so that the Broadcast can be
+performed in-place.  Its scalar data type must be int, long or double.
+In C++, this routine has an integer error return code.  In python, a
+non-zero return code is converted to an exception.")
+Epetra_Comm::Broadcast;
+%feature("docstring")
+Epetra_Comm::GatherAll
+"Argument myObj can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type must be int, long or
+double.  The return argument is a numpy array of the same type.  In
+C++, this routine has an integer error return code.  In python, a
+non-zero return code is converted to an exception."
+%feature("docstring")
+Epetra_Comm::SumAll
+"Argument myObj can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type must be int, long or
+double.  The return argument is a numpy array of the same type.  In
+C++, this routine has an integer error return code.  In python, a
+non-zero return code is converted to an exception."
+%feature("docstring")
+Epetra_Comm::MaxAll
+"Argument myObj can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type must be int, long or
+double.  The return argument is a numpy array of the same type.  In
+C++, this routine has an integer error return code.  In python, a
+non-zero return code is converted to an exception."
+%feature("docstring")
+Epetra_Comm::MinAll
+"Argument myObj can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type must be int, long or
+double.  The return argument is a numpy array of the same type.  In
+C++, this routine has an integer error return code.  In python, a
+non-zero return code is converted to an exception."
+%feature("docstring")
+Epetra_Comm::ScanSum
+"Argument myObj can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type must be int, long or
+double.  The return argument is a numpy array of the same type.  In
+C++, this routine has an integer error return code.  In python, a
+non-zero return code is converted to an exception."
 %rename(Comm) Epetra_Comm;
 // Several of the Epetra_Comm methods require the same coding pattern
 // for their wrappers and can be collapsed into a macro

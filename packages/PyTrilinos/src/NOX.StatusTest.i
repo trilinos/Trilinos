@@ -85,8 +85,7 @@ NOX.StatusTest provides the following user-level classes:
 %feature("autodoc", "1");
 
 // Include NOX documentation
-%include "NOX_dox.i"    // Doxygen-generated documentation
-%include "NOX_doc.i"    // Manually written documentation
+%include "NOX_dox.i"
 
 // SWIG library includes
 %include "stl.i"

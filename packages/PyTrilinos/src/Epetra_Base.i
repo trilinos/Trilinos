@@ -295,6 +295,27 @@ __version__ = Version().split()[2]
 ///////////////////////////
 // Epetra_Object support //
 ///////////////////////////
+%feature("docstring")
+Epetra_Object
+"The base Epetra class.
+    
+The Epetra_Object class provides capabilities common to all Epetra
+objects, such as a label that identifies an object instance, constant
+definitions, enum types.  In C++, it supports a ``Print()`` method
+that takes an output stream as an argument.  In the python
+implementation for this and all derived classes, this method takes an
+optional file object argument whose default value is standard out."
+%feature("docstring")
+Epetra_Object::__str__
+"Returns the results of ``Print()`` in a string, so that
+the ``print`` command will work on ``Epetra`` objects.  The
+``Print()`` methods are designed to run correctly in parallel, so do
+not execute ``print`` on an Epetra object conditionally on the
+processor number.  For example, do not do
+
+  ``if comm.MyPID() == 0: print epetra_obj``
+
+or it will hang your code."
 %rename(Object) Epetra_Object;
 %extend Epetra_Object
 {
@@ -385,6 +406,30 @@ __version__ = Version().split()[2]
 /////////////////////////
 // Epetra_Util support //
 /////////////////////////
+%feature("docstring")
+Epetra_Util
+"Epetra Util Wrapper Class.
+
+The Epetra.Util class is a collection of useful functions that cut
+across a broad set of other classes.  A random number generator is
+provided, along with methods to set and retrieve the random-number
+seed.
+
+The random number generator is a multiplicative linear congruential
+generator, with multiplier 16807 and modulus 2^31 - 1. It is based on
+the algorithm described in 'Random Number Generators: Good Ones Are
+Hard To Find', S. K. Park and K. W. Miller, Communications of the ACM,
+vol. 31, no. 10, pp. 1192-1201.
+
+The C++ Sort() method is not supported in python.
+
+A static function is provided for creating a new Epetra.Map object
+with 1-to-1 ownership of entries from an existing map which may have
+entries that appear on multiple processors.
+
+Epetra.Util is a serial interface only.  This is appropriate since the
+standard utilities are only specified for serial execution (or shared
+memory parallel)."
 %ignore Epetra_Util::Sort;
 %rename(Util) Epetra_Util;
 %include "Epetra_Util.h"

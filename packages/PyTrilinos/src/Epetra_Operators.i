@@ -220,6 +220,85 @@
 /////////////////////////////
 // Epetra_Operator support //
 /////////////////////////////
+%feature("docstring")
+Epetra_Operator
+"
+For cross-language polymorphism to work in python, you must call this
+constructor::
+
+    from PyTrilinos import Epetra
+    class MyOperator(Epetra.Operator):
+        def __init__(self):
+            Epetra.Operator.__init__(self)
+
+Other than that, the Epetra.Operator class is much more forgiving than
+its C++ counterpart.  Often, you can override just the Label() and
+Apply() methods.
+"
+%feature("autodoc",
+"Apply(self, MultiVector x, MultiVector y) -> int
+
+In C++, the Apply() method is pure virtual, thus intended to be
+overridden by derived classes.  In python, cross-language polymorphism
+is supported, and you are expected to derive classes from this base
+class and redefine the Apply() method.  C++ code (e.g., AztecOO
+solvers) can call back to your Apply() method as needed.  You must
+support two arguments, labeled here MultiVector x and MultiVector y.
+These will be converted from Epetra_MultiVector C++ objects to
+numpy-hybrid Epetra.MultiVector objects before they are passed to you.
+Thus, it is legal to use slice indexing and other numpy features to
+compute y from x.
+
+If application of your operator is successful, return 0; else return
+some non-zero error code.
+
+It is strongly suggested that you prevent Apply() from raising any
+exceptions.  Accidental errors can be prevented by wrapping your code
+in a try block:
+
+    try:
+        # Your code goes here...
+    except Exception, e:
+        print 'A python exception was raised by method Apply:'
+        print e
+        return -1
+
+By returning a -1, you inform the calling routine that Apply() was
+unsuccessful.
+")
+Epetra_Operator::Apply;
+%feature("autodoc",
+"ApplyInverse(self, MultiVector x, MultiVector y) -> int
+
+In C++, the ApplyInverse() method is pure virtual, thus intended to be
+overridden by derived classes.  In python, cross-language polymorphism
+is supported, and you are expected to derive classes from this base
+class and redefine the ApplyInverse() method.  C++ code (e.g., AztecOO
+solvers) can call back to your ApplyInverse() method as needed.  You
+must support two arguments, labeled here MultiVector x and MultiVector
+y.  These will be converted from Epetra_MultiVector C++ objects to
+numpy-hybrid Epetra.MultiVector objects before they are passed to you.
+Thus, it is legal to use slice indexing and other numpy features to
+compute y from x.
+
+If application of your operator is successful, return 0; else return
+some non-zero error code.
+
+It is strongly suggested that you prevent ApplyInverse() from raising
+any exceptions.  Accidental errors can be prevented by wrapping your
+code in a try block:
+
+    try:
+        # Your code goes here...
+    except Exception, e:
+        print 'A python exception was raised by method ApplyInverse:'
+        print e
+        return -1
+
+By returning a -1, you inform the calling routine that ApplyInverse()
+was unsuccessful.
+")
+Epetra_Operator::ApplyInverse;
 %warnfilter(473)     Epetra_Operator;
 %feature("director") Epetra_Operator;
 %rename(Operator)    Epetra_Operator;
@@ -236,6 +315,84 @@
 //////////////////////////////
 // Epetra_RowMatrix support //
 //////////////////////////////
+%feature("autodoc",
+"NumMyRowEntries(int myRow, numpy.ndarray numEntries) -> int
+
+In C++, numEntries in an int&.  In python, it is provided to you as a
+numpy array of length one so that you can set its value in-place using
+numEntries[0] = ....")
+Epetra_RowMatrix::NumMyRowEntries;
+%feature("autodoc",
+"ExtractMyRowCopy(int myRow, int length, numpy.ndarray numEntries,
+    numpy.ndarray values, numpy.ndarray indices) -> int
+
+In C++, numEntries in an int&.  In python, it is provided to you as a
+numpy array of length one so that you can set its value in-place using
+numEntries[0] = ....
+
+Arguments values and indices are double* and int*, respectively, in
+C++.  In python, these are provided to you as numpy arrays of the
+given length, so that you may alter their entries in-place.")
+Epetra_RowMatrix::ExtractMyRowCopy;
+%feature("autodoc",
+"ExtractDiagonalCopy(Vector diagonal) -> int
+
+Argument diagonal is provided to you as a numpy-hybrid Epetra.Vector,
+giving you access to the numpy interface in addition to the
+Epetra_Vector C++ interface.")
+Epetra_RowMatrix::ExtractDiagonalCopy;
+%feature("autodoc",
+"Multiply(bool useTranspose, MultiVector x, MultiVector y) -> int
+
+In C++, arguments x and y are Epetra_MultiVectors.  In python, they
+are provided to you as numpy-hybrid Epetra.MultiVectors, giving you
+access to the numpy interface in addition to the Epetra_MultiVector
+C++ interface.")
+Epetra_RowMatrix::Multiply;
+%feature("autodoc",
+"Solve((bool upper, bool trans, bool unitDiagonal, MultiVector x,
+    MultiVector y) -> int
+
+In C++, arguments x and y are Epetra_MultiVectors.  In python, they
+are provided to you as numpy-hybrid Epetra.MultiVectors, giving you
+access to the numpy interface in addition to the Epetra_MultiVector
+C++ interface.")
+Epetra_RowMatrix::Solve;
+%feature("autodoc",
+"InvRowSum(Vector x) -> int
+
+Argument x is provided to you as a numpy-hybrid Epetra.Vector, giving
+you access to the numpy interface in addition to the Epetra_Vector C++
+interface.")
+Epetra_RowMatrix::InvRowSum;
+%feature("autodoc",
+"LeftScale(Vector x) -> int
+
+Argument x is provided to you as a numpy-hybrid Epetra.Vector, giving
+you access to the numpy interface in addition to the Epetra_Vector C++
+interface.")
+Epetra_RowMatrix::LeftScale;
+%feature("autodoc",
+"InvColSums(Vector x) -> int
+
+Argument x is provided to you as a numpy-hybrid Epetra.Vector, giving
+you access to the numpy interface in addition to the Epetra_Vector C++
+interface.")
+Epetra_RowMatrix::InvColSums;
+%feature("autodoc",
+"InvRowSums(Vector x) -> int
+
+Argument x is provided to you as a numpy-hybrid Epetra.Vector, giving
+you access to the numpy interface in addition to the Epetra_Vector C++
+interface.")
+Epetra_RowMatrix::InvRowSums;
+%feature("autodoc",
+"RightScale(Vector x) -> int
+
+Argument x is provided to you as a numpy-hybrid Epetra.Vector, giving
+you access to the numpy interface in addition to the Epetra_Vector C++
+interface.")
+Epetra_RowMatrix::RightScale;
 %include "Epetra_RowMatrix_Utils.i"
 %warnfilter(473)     Epetra_RowMatrix;
 %feature("director") Epetra_RowMatrix;
@@ -296,6 +453,306 @@
 //////////////////////////////
 // Epetra_CrsMatrix support //
 //////////////////////////////
+%feature("autodoc",
+"__init__(self, Epetra_DataAccess CV, Map rowMap, int numEntriesPerRow, 
+    bool staticProfile=False) -> CrsMatrix
+
+  CrsMatrix constructor with implicit column map and constant number
+  of entries per row.  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - describes distribution of rows across processors
+    numEntriesPerRow  - constant number of entries per row
+    staticProfile     - static profile flag
+"
+)
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess, const Epetra_Map&, int,
+				   bool);
+%feature("autodoc",
+"__init__(self, Epetra_DataAccess CV, Map rowMap, PySequence numEntriesPerRow, 
+    bool staticProfile=False) -> CrsMatrix
+
+  CrsMatrix constructor with implicit column map and variable number
+  of entries per row.  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - describes distribution of rows across processors
+    numEntriesPerRow  - variable number of entries per row
+    staticProfile     - static profile flag
+"
+)
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess, const Epetra_Map&,
+				   const int*, int, bool);
+%feature("autodoc",
+"__init__(self, Epetra_DataAccess CV, Map rowMap, Map colMap, int numEntriesPerRow, 
+    bool staticProfile=False) -> CrsMatrix
+
+  CrsMatrix constructor with specified column map and constant number
+  of entries per row.  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - describes distribution of rows across processors
+    colMap            - describes distribution of columns across processors
+    numEntriesPerRow  - constant number of entries per row
+    staticProfile     - static profile flag
+"
+)
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess, const Epetra_Map&,
+				   const Epetra_Map&, int, bool);
+%feature("autodoc",
+"__init__(self, Epetra_DataAccess CV, Map rowMap, Map colMap, PySequence
+    numEntriesPerRow, bool staticProfile=False) -> CrsMatrix
+
+  CrsMatrix constructor with specified column map and variable number
+  of entries per row.  Arguments:
+
+    CV                - Epetra.Copy or Epetra.View
+    rowMap            - describes distribution of rows across processors
+    colMap            - describes distribution of columns across processors
+    numEntriesPerRow  - variable number of entries per row
+    staticProfile     - static profile flag
+"
+)
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess, const Epetra_Map&,
+				   const Epetra_Map&, const int*, int, bool);
+%feature("autodoc",
+"__init__(self, Epetra_DataAccess CV, CrsGraph graph) -> CrsMatrix
+
+  CrsMatrix constructor with CrsGraph.  Arguments:
+
+    CV     - Epetra.Copy or Epetra.View
+    graph  - CrsGraph describing structure of matrix
+"
+)
+Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess, const Epetra_CrsGraph&);
+%feature("autodoc",
+"__init__(self, CrsMatrix matrix) -> CrsMatrix
+
+  CrsMatrix copy constructor.  Argument:
+
+    matrix  - source CrsMatrix
+"
+)
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix&);
+%feature("autodoc",
+"ExtractGlobalRowCopy(self, int globalRow) -> (numpy.ndarray,numpy.ndarray)
+
+  Returns a two-tuple of numpy arrays of the same size; the first is
+  an array of integers that represent the nonzero columns on the
+  matrix; the second is an array of doubles that represent the values
+  of the matrix entries.  The input argument is a global row index."
+)
+Epetra_CrsMatrix::ExtractGlobalRowCopy;
+%feature("autodoc",
+"ExtractMyRowCopy(self, int myRow) -> (numpy.ndarray,numpy.ndarray)
+
+  Returns a two-tuple of numpy arrays of the same size; the first is
+  an array of integers that represent the nonzero columns on the
+  matrix; the second is an array of doubles that represent the values
+  of the matrix entries.  The input argument is a local row index."
+)
+Epetra_CrsMatrix::ExtractMyRowCopy;
+%feature("autodoc",
+"InsertGlobalValues(self, int globalRow, PySequence values, PySequence
+    indices) -> int
+
+  Arguments:
+
+    globalRow - global row index
+    values    - a sequence of doubles that represent the values to insert
+    indices   - a sequence of integers that represent the indices to insert
+")
+Epetra_CrsMatrix::InsertGlobalValues(int,double*,int,int*,int);
+%feature("autodoc",
+"InsertGlobalValues(self, PySequence rows, PySequence cols, PySequence
+    values) -> int
+
+  Arguments:
+
+    rows    - a sequence of integers that represent the row indices to insert
+    cols    - a sequence of integers that represent the column indices to
+              insert
+    values  - a sequence of doubles that represent the values to insert
+")
+Epetra_CrsMatrix::InsertGlobalValues(PyObject*,PyObject*,PyObject*);
+%feature("autodoc",
+"InsertMyValues(self, int myRow, PySequence values, PySequence indices) -> int
+
+  Arguments:
+
+    myRow     - local row index
+    values    - a sequence of doubles that represent the values to insert
+    indices   - a sequence of integers that represent the indices to insert
+")
+Epetra_CrsMatrix::InsertMyValues(int,double*,int,int*,int);
+%feature("autodoc",
+"InsertMyValues(self, PySequence rows, PySequence cols, PySequence
+    values) -> int
+
+  Arguments:
+
+    rows    - a sequence of integers that represent the row indices to insert
+    cols    - a sequence of integers that represent the column indices to
+              insert
+    values  - a sequence of doubles that represent the values to insert
+")
+Epetra_CrsMatrix::InsertMyValues(PyObject*,PyObject*,PyObject*);
+%feature("autodoc",
+"ReplaceGlobalValues(self, int globalRow, PySequence values, PySequence
+    indices) -> int
+
+  Arguments:
+
+    globalRow - global row index
+    values    - a sequence of doubles that represent the values to replace
+    indices   - a sequence of integers that represent the indices to replace
+")
+Epetra_CrsMatrix::ReplaceGlobalValues(int,double*,int,int*,int);
+%feature("autodoc",
+"ReplaceGlobalValues(self, PySequence rows, PySequence cols, PySequence
+    values) -> int
+
+  Arguments:
+
+    rows    - a sequence of integers that represent the row indices to replace
+    cols    - a sequence of integers that represent the column indices to
+              replace
+    values  - a sequence of doubles that represent the values to replace
+")
+Epetra_CrsMatrix::ReplaceGlobalValues(PyObject*,PyObject*,PyObject*);
+%feature("autodoc",
+"ReplaceMyValues(self, int myRow, PySequence values, PySequence indices) -> int
+
+  Arguments:
+
+    myRow     - local row index
+    values    - a sequence of doubles that represent the values to replace
+    indices   - a sequence of integers that represent the indices to replace
+")
+Epetra_CrsMatrix::ReplaceMyValues(int,double*,int,int*,int);
+%feature("autodoc",
+"ReplaceMyValues(self, PySequence rows, PySequence cols, PySequence
+    values) -> int
+
+  Arguments:
+
+    rows    - a sequence of integers that represent the row indices to replace
+    cols    - a sequence of integers that represent the column indices to
+              replace
+    values  - a sequence of doubles that represent the values to replace
+")
+Epetra_CrsMatrix::ReplaceMyValues(PyObject*,PyObject*,PyObject*);
+%feature("autodoc",
+"SumIntoGlobalValues(self, int globalRow, PySequence values, PySequence
+    indices) -> int
+
+  Arguments:
+
+    globalRow - global row index
+    values    - a sequence of doubles that represent the values to sum into
+    indices   - a sequence of integers that represent the indices to sum into
+")
+Epetra_CrsMatrix::SumIntoGlobalValues(int,double*,int,int*,int);
+%feature("autodoc",
+"SumIntoGlobalValues(self, PySequence rows, PySequence cols, PySequence
+    values) -> int
+
+  Arguments:
+
+    rows    - a sequence of integers that represent the row indices to sum into
+    cols    - a sequence of integers that represent the column indices to
+              sum into
+    values  - a sequence of doubles that represent the values to sum into
+")
+Epetra_CrsMatrix::SumIntoGlobalValues(PyObject*,PyObject*,PyObject*);
+%feature("autodoc",
+"SumIntoMyValues(self, int myRow, PySequence values, PySequence indices) -> int
+
+  Arguments:
+
+    myRow     - local row index
+    values    - a sequence of doubles that represent the values to sum into
+    indices   - a sequence of integers that represent the indices to sum into
+")
+Epetra_CrsMatrix::SumIntoMyValues(int,double*,int,int*,int);
+%feature("autodoc",
+"SumIntoMyValues(self, PySequence rows, PySequence cols, PySequence
+    values) -> int
+
+  Arguments:
+
+    rows    - a sequence of integers that represent the row indices to sum into
+    cols    - a sequence of integers that represent the column indices to
+              sum into
+    values  - a sequence of doubles that represent the values to sum into
+")
+Epetra_CrsMatrix::SumIntoValues(PyObject*,PyObject*,PyObject*);
+%feature("autodoc",
+"__setitem__(self, PyTuple index, double val)
+
+The __setitem__() method is called when square-bracket indexing is
+used to set a value of the matrix.  For example, the last line of::
+
+    comm = Epetra.SerialComm()
+    m = Epetra.CrsMatrix(9,0,comm)
+    m[0,0] = 3.14
+
+calls::
+
+    m.__setitem__((0,0), 3.14)
+
+Thus, argument 'index' is a tuple filled with whatever indices you
+give the square-bracket operator when setting.  For __setitem__(),
+this raises an IndexError unless 'index' is a two-tuple of integers.
+Argument 'val' must be convertible to a double.  Under the covers,
+__setitem__() calls ReplaceGlobalValues() or InsertGlobalValues() as
+necessary, so the indices are expected to be global IDs.  Note that if
+you use __setitem__() to insert a new matrix element, you will need to
+call FillComplete() again, whether or not you have called it before.
+")
+Epetra_CrsMatrix::__setitem__;
+%feature("autodoc",
+"
+__getitem__(self, PyTuple index) -> double
+__getitem__(self, int row) -> numpy.ndarray
+
+The __getitem__() method is called when square-bracket indexing is
+used to get a value from the matrix.  For example, the last two lines
+of::
+
+    comm = Epetra.SerialComm()
+    m = Epetra.CrsMatrix(9,0,comm)
+    m.InsertGlobalValues(0, [0.0, 1.0, 2.0], [0,1,2])
+    diag = m[0,0]
+    row  = m[0]
+
+call::
+
+    m.__getitem__((0,0))
+    m.__getitem__(0)
+
+The __getitem__() method behaves according to the following table:
+
+                    FillComplete()    #    
+    Index               called      procs  Return value
+    --------------  --------------  -----  ---------------------------
+    single integer       true        any   numpy array of doubles
+    single integer       false        1    numpy array of doubles
+    single integer       false       >1    raise IndexError
+    two integers         either      any   double
+
+You should provide global IDs as the integer indices if FillComplete()
+has been called.  If not, you should provide local IDs.  If you
+reference a matrix element that is off-processor, __getitem__() will
+raise an IndexError.
+
+Under the covers, __getitem__() will call ExtractGlobalRowView() if
+FillComplete() has been called, or ExtractMyRowView() if it has not.
+If either of these return a non-zero return code, this is converted to
+a python RuntimeError.  The resulting data is copied to the output
+array.
+")
+Epetra_CrsMatrix::__getitem__;
 %rename(CrsMatrix) Epetra_CrsMatrix;
 %epetra_global_row_method(Epetra_CrsMatrix, InsertGlobalValues )
 %epetra_global_row_method(Epetra_CrsMatrix, ReplaceGlobalValues)
@@ -696,6 +1153,70 @@
 //////////////////////////////
 // Epetra_VbrMatrix support //
 //////////////////////////////
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, int
+    numBlockEntriesPerRow) -> VbrMatrix
+
+  VbrMatrix constructor with implicit column map and constant number
+  of block entries per row.
+")
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess,
+			           const Epetra_BlockMap&,
+				   int);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, PySequence
+    numBlockEntriesPerRow) -> VbrMatrix
+
+  VbrMatrix constructor with implicit column map and variable number
+  of block entries per row.
+
+")
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess,
+				   const Epetra_BlockMap&,
+				   int*, int);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, BlockMap colMap,
+    int numBlockEntriesPerRow) -> VbrMatrix
+
+  VbrMatrix constructor with specified column map and constant number
+  of block entries per row.
+
+")
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess,
+			           const Epetra_BlockMap&,
+			           const Epetra_BlockMap&,
+				   int);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, BlockMap rowMap, BlockMap colMap,
+    PySequence numBlockEntriesPerRow) -> VbrMatrix
+
+  VbrMatrix constructor with specified column map and variable number
+  of block entries per row.
+
+")
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess,
+				   const Epetra_BlockMap&,
+				   const Epetra_BlockMap&,
+				   int*, int);
+%feature("autodoc",
+"
+__init__(self, Epetra_DataAccess CV, CrsGraph graph) -> VbrMatrix
+
+  CrsGraph constructor.
+")
+Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess,
+				   const Epetra_CrsGraph&);
+%feature("autodoc",
+"
+__init__(self, VbrMatrix matrix) -> VbrMatrix
+
+  Copy constructor.
+")
+Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 %rename(VbrMatrix) Epetra_VbrMatrix;
 %apply (int * IN_ARRAY1, int DIM1) {(int * NumBlockEntriesPerRow, int NumRows)};
 %apply (int DIM1, int * IN_ARRAY1) {(int NumBlockEntries, int * BlockIndices)};

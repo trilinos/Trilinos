@@ -140,8 +140,7 @@ example subdirectory of the PyTrilinos package:
 %feature("autodoc", "1");
 
 // Include EpetraExt documentation
-%include "EpetraExt_dox.i"    // Doxygen-generated documentation
-%include "EpetraExt_doc.i"    // Manually written documentation
+%include "EpetraExt_dox.i"
 
 // C++ STL support
 %include "stl.i"
@@ -205,6 +204,39 @@ __version__ = EpetraExt_Version().split()[2]
 ////////////////////////////
 // EpetraExt_HDF5 support //
 ////////////////////////////
+%feature("docstring")
+EpetraExt::HDF5::ReadBlockMap
+"
+Return a BlockMap read from an HDF5 file specified by filename 'name'.
+"
+%feature("docstring")
+EpetraExt::HDF5::ReadMap
+"
+Return a Map read from an HDF5 file specified by filename 'name'.
+"
+%feature("docstring")
+EpetraExt::HDF5::ReadIntVector
+"
+Return an IntVector read from an HDF5 file specified by filename
+'name'.
+"
+%feature("docstring")
+EpetraExt::HDF5::ReadMultiVector
+"
+Return a MultiVector read from an HDF5 file specified by filename
+'name'.
+"
+%feature("docstring")
+EpetraExt::HDF5::ReadCrsGraph
+"
+Return a CrsGraph read from an HDF5 file specified by filename 'name'.
+"
+%feature("docstring")
+EpetraExt::HDF5::ReadCrsMatrix
+"
+Return a CrsMatrix read from an HDF5 file specified by filename
+'name'.
+"
 %ignore EpetraExt::HDF5::Read;
 %include "EpetraExt_HDF5.h"
 namespace EpetraExt
@@ -225,6 +257,27 @@ namespace EpetraExt
 /////////////////////////////////
 // EpetraExt_XMLReader support //
 /////////////////////////////////
+%feature("docstring")
+EpetraExt::XMLReader::ReadMap
+"
+Return a Map read from an XML file specified by filename 'name'.
+"
+%feature("docstring")
+EpetraExt::XMLReader::ReadMultiVector
+"
+Return a MultiVector read from an XML file specified by filename
+'name'.
+"
+%feature("docstring")
+EpetraExt::XMLReader::ReadCrsGraph
+"
+Return a CrsGraph read from an XML file specified by filename 'name'.
+"
+%feature("docstring")
+EpetraExt::XMLReader::ReadCrsMatrix
+"
+Return a CrsMatrix read from an XML file specified by filename 'name'.
+"
 %ignore EpetraExt::XMLReader::Read;
 %include "EpetraExt_XMLReader.h"
 namespace EpetraExt
@@ -249,10 +302,12 @@ namespace EpetraExt
 %include "EpetraExt_Transform.h"
 %template () std::vector<Epetra_IntVector>;
 %template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
-							       std::allocator<Epetra_IntVector> > >;
+%template () EpetraExt::Transform<Epetra_CrsGraph,
+				  std::vector<Epetra_IntVector,
+					      std::allocator<Epetra_IntVector> > >;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
+%template () EpetraExt::StructuralTransform<Epetra_CrsGraph,
+					    std::vector<Epetra_IntVector> >;
 
 ///////////////////////////////////
 // EpetraExt_MapColoring support //
@@ -267,6 +322,12 @@ namespace EpetraExt
 /////////////////////////////////////
 // EpetraExt_MultiVectorIn support //
 /////////////////////////////////////
+%feature("autodoc",
+"MatrixMarketFileToMultiVector(str filename, Epetra.BlockMap) ->
+    Epetra.MultiVector
+
+Return a MultiVector read from a matix market file.")
+EpetraExt::MatrixMarketFileToMultiVector;
 %include "EpetraExt_MultiVectorIn.h"
 
 //////////////////////////////////////
@@ -277,6 +338,18 @@ namespace EpetraExt
 ///////////////////////////////////
 // EpetraExt_CrsMatrixIn support //
 ///////////////////////////////////
+%feature("autodoc",
+"MatlabFileToCrsMatrix(str filename, Epetra.Comm) -> Epetra.CrsMatrix
+
+Return a CrsMatrix read from a matlab file.")
+EpetraExt::MatlabFileToCrsMatrix;
+%feature("autodoc",
+"MatrixMarketFileToCrsMatrix(str filename, Epetra.Map rowMap, Epetra.Map
+    colMap=None, Epetra.Map rangeMap=None, Epetra.Map domainMap=None) ->
+    Epetra.CrsMatrix
+
+Return a CrsMatrix read from a matrix market file.")
+EpetraExt::MatrixMarketFileToCrsMatrix;
 %include "EpetraExt_CrsMatrixIn.h"
 
 ////////////////////////////////////
@@ -287,6 +360,25 @@ namespace EpetraExt
 //////////////////////////////////
 // EpetraExt_BlockMapIn support //
 //////////////////////////////////
+%feature("autodoc",
+"MatrixMarketFileToBlockMap(str filename, Epetra.Comm) -> Epetra.BlockMap
+
+Return a BlockMap read from a matrix market file.")
+EpetraExt::MatrixMarketFileToBlockMap;
+%feature("autodoc",
+"MatrixMarketFileToBlockMaps(str filename, Epetra.Comm) ->
+    (Epetra.BlockMap rowMap, Epetra.BlockMap colMap, Epetra.BlockMap rangeMap,
+     Epetra.BlockMap domainMap)
+
+Return a tuple of BlockMaps read from a matrix market file.  The
+BlockMaps, listed in order, are the row map, the column map, the range
+map and the domain map.")
+EpetraExt::MatrixMarketFileToBlockMaps;
+%feature("autodoc",
+"MatrixMarketFileToMap(str filename, Epetra.Comm) -> Epetra.Map
+
+Return a Map read from a matrix market file.")
+EpetraExt::MatrixMarketFileToMap;
 %include "EpetraExt_BlockMapIn.h"
 
 ///////////////////////////////////
@@ -297,6 +389,22 @@ namespace EpetraExt
 ////////////////////////////////////////////
 // EpetraExt.Add() and Multiply() support //
 ////////////////////////////////////////////
+%feature("autodoc",
+"Add(Epetra.CrsMatrix A, bool flag, float valA, Epetra.CrsMatrix B,
+    float valB) -> int
+
+Compute B <- valA * A + valB * B.  If flag is True, use the transpose
+of A.  B must either have the structure of A+B or not yet have
+FillComplete() called on it.")
+EpetraExt::Add;
+%feature("autodoc",
+"Multiply(Epetra.CrsMatrix A, bool transposeA, Epetra.CrsMatrix B, bool
+    transposeB, Epetra.CrsMatrix C) -> int
+
+Compute C <- A * B, where transposeA and transposeB control the
+transposition of A and B respectively.  C must have the structure of A
+* B, or not yet have FillComplete() called on it.")
+EpetraExt::Multiply;
 %inline
 %{
   namespace EpetraExt

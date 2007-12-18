@@ -138,8 +138,7 @@ using namespace NOX::Epetra;
 }
 
 // Include NOX documentation
-%include "NOX_dox.i"    // Doxygen-generated documentation
-%include "NOX_doc.i"    // Manually written documentation
+%include "NOX_dox.i"
 
 // General ignore directives
 %ignore *::print(ostream &);

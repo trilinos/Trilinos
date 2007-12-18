@@ -101,8 +101,7 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 %feature("compactdefaultargs");
 
 // Include Epetra documentation
-%include "Epetra_dox.i"    // Doxygen-generated documentation
-%include "Epetra_doc.i"    // Manually-written documentation
+%include "Epetra_dox.i"
 
 // SWIG library includes
 using std::string;

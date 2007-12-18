@@ -3,31 +3,44 @@ PyTrilinos To Do List
 =====================
 
 * General
-  - Port to cygwin (2251)
   - Automatic -fPIC for shared library builds (3311)
   - Developers Manual
   - Remove run-tests, run-examples make targets
-  - Change open-bracket formatting in all code
+  - After *_doc.i files have been removed, update Developers Guide
+    section on documentation
+  - Can I get PyTrilinos to configure and build if Teuchos is
+    disabled?
+  - Port to cygwin (2251)
 
 * Teuchos
+  - Move SWIG documentation directives from Teucho_doc.i into the
+    main SWIG interface file
+  - Docstrings for new Comm and Traits classes
   - Exception raising/catching failures (3610, 3628)
-  - Teuchos::RCP ref count synchronization
+  - Teuchos::RCP/python-ref-count synchronization
   - Unit tests
   - Examples
 
 * Epetra
+  - Move SWIG documentation directives from Epetra_doc.i into the
+    main SWIG interface file
   - Exception raising/catching failures (3617, 3628)
   - Examples
   - Epetra_NumPy* classes constructor refactor
 
 * EpetraExt
+  - Move SWIG documentation directives from EpetraExt_doc.i into the
+    main SWIG interface file
   - exEpetraExt_IO_XML.py in parallel? (3742)
   - Other classes
   - Unit tests
   - Examples
 
+* Galeri
+  - Move SWIG documentation directives from Galeri_doc.i into the
+    main SWIG interface file
+
 * AztecOO
-  - exAztecOO_RowMatrix.py
   - exAztecOO_Operator.py, exAztecOO_RowMatrix.py and
     exAztecOO_BasicRowMatrix.py in parallel
   - Unit tests
@@ -43,6 +56,8 @@ PyTrilinos To Do List
   - Refactor
 
 * NOX
+  - Move SWIG documentation directives from NOX_doc.i into the
+    main SWIG interface files
   - exNOX_1Dfem.py in parallel (3614)
   - Pure numpy interface
   - Unit tests
