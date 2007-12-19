@@ -79,6 +79,11 @@ IF(APPLE)
 	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
 ENDIF(APPLE)
 
+# Setup platform-specific compiler options ...
+IF(WIN32)
+	ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+ENDIF(WIN32)
+
 # Setup testing ...
 INCLUDE(CTest)
 
