@@ -29,680 +29,694 @@
 
 
 /** \file   Intrepid_MultiCellDef.hpp
-    \brief  Definition file for the Intrepid::MultiCell class.
-    \author Created by P. Bochev, D. Ridzal, and D. Day.
+\brief  Definition file for the Intrepid::MultiCell class.
+\author Created by P. Bochev, D. Ridzal, and D. Day.
 */
 
 #include "Intrepid_CellTemplates.hpp"
 
 namespace Intrepid {
-
-template<class Scalar>
-const char* MultiCell<Scalar>::cell_type_names[] = {
-"Node",
-"Edge",
-"Tri",
-"Quad",
-"Tet",
-"Hex",
-"Pyramid",
-"Prism",
-"Polygon",
-"Polyhedron",
-"CellSet",
-"Max_Canonical_Type",
-"Polygon1",
-"Polygon2",
-"Polygon3",
-"Polygon4",
-"Polygon5",
-"Polyhedron1",
-"Polyhedron2",
-"Polyhedron3",
-"Polyhedron4",
-"Polyhedron5",
-"Max_Custom_Type"
-};
-
-template<class Scalar>
-MultiCell<Scalar>::MultiCell(const int      num_cells_,
-                             const int      ambient_dimension_,
-                             const CellType my_cell_type_,
-                             const Scalar*  node_coords_) :
-// initializations
-num_cells(num_cells_),
-ambient_dimension(ambient_dimension_),
-my_cell_type(my_cell_type_) 
-{
-  // By default, the Mcell does not compute its pullback information (if pullback is applicable)
-  pullback_status = UNDEFINED;
   
-  // This constructor does not accept orientation data
-  orients_status = UNDEFINED;                             
+  template<class Scalar>
+  const char* MultiCell<Scalar>::cellNames_[] = {
+    "Node",
+    "Edge",
+    "Tri",
+    "Quad",
+    "Tet",
+    "Hex",
+    "Pyramid",
+    "Pentagon",
+    "Hexagon",
+    "Heptagon",
+    "Octagon",
+    "Nonagon",
+    "Decagon",
+    "TriPrism",
+    "PentaPrism",
+    "HexaPrism",
+    "Max_Canonical_Cell",
+    "Poly0",
+    "Poly1",
+    "Poly2",
+    "Poly3",
+    "Poly4",
+    "Poly5",
+    "Poly6",
+    "Poly7",
+    "Poly8",
+    "Poly9",
+    "Max_Cell_Types"
+  };
   
-  int nnodes_per_cell = this->getNumNodes(my_cell_type);
-  // allocate a chunk of memory first, creating a zero vector of Point vectors
-  Point<Scalar> tmp_point(ambient_dimension);
-  std::vector< Point<Scalar> > tmp_point_vec(nnodes_per_cell, tmp_point);
-  node_coords.assign(num_cells, tmp_point_vec);
-  // fill in the coordinate info
-  for (int i=0; i<num_cells; i++) {
-    for (int j=0; j<nnodes_per_cell; j++) {
-      // do some pointer arithmetic
-      Point<Scalar> workpoint(node_coords_+(i*nnodes_per_cell+j)*ambient_dimension, ambient_dimension);
-      node_coords[i][j] = workpoint;
-    }
-  }
-  
-  int num_edges = this->getNumSubcells(my_cell_type, 1);
-  // allocate a zero vector of 'short' vectors
-  std::vector<short> tmp_edge_vec(num_edges);
-  edge_orients.assign(num_cells, tmp_edge_vec);
-  
-  int num_faces = this->getNumSubcells(my_cell_type, 2);
-  // allocate a zero vector of 'short' vectors
-  std::vector<short> tmp_face_vec(num_faces);
-  face_orients.assign(num_cells, tmp_face_vec);
-}
-
-template<class Scalar>
-MultiCell<Scalar>::MultiCell(const int      num_cells_,
-                             const int      ambient_dimension_,
-                             const CellType my_cell_type_,
-                             const Scalar*  node_coords_,
-                             const short*   edge_orients_,
-                             const short*   face_orients_) :
-// intializations
-num_cells(num_cells_),
-ambient_dimension(ambient_dimension_),
-my_cell_type(my_cell_type_) 
-{
-  // By default, the Mcell does not compute its pullback information (if pullback is applicable)
-  pullback_status = UNDEFINED;
-  
-  // This constructor accepts orientation data
-  orients_status = DEFINED;                             
-  
-  int nnodes_per_cell = this->getNumNodes(my_cell_type);
-  // allocate a chunk of memory first, creating a zero vector of Point vectors
-  Point<Scalar> tmp_point(ambient_dimension);
-  std::vector< Point<Scalar> > tmp_point_vec(nnodes_per_cell, tmp_point);
-  node_coords.assign(num_cells, tmp_point_vec);
-  // fill in the coordinate info
-  for (int i=0; i<num_cells; i++) {
-    for (int j=0; j<nnodes_per_cell; j++) {
-      // do some pointer arithmetic
-      Point<Scalar> workpoint(node_coords_+(i*nnodes_per_cell+j)*ambient_dimension, ambient_dimension);
-      node_coords[i][j] = workpoint;
-    }
-  }
-  
-  // edge orientations
-  int num_edges = this->getNumSubcells(my_cell_type, 1);
-  // allocate a zero vector of 'short' vectors
-  std::vector<short> tmp_edge_vec(num_edges);
-  edge_orients.assign(num_cells, tmp_edge_vec);
-  // fill in the orientation info
-  for (int i=0; i<num_cells; i++) {
-    edge_orients[i].assign(edge_orients_+i*num_edges, edge_orients_+(i+1)*num_edges);
-  }
-
-  // face orientations
-  int num_faces = this->getNumSubcells(my_cell_type, 2);
-  // allocate a zero vector of 'short' vectors
-  std::vector<short> tmp_face_vec(num_faces);
-  face_orients.assign(num_cells, tmp_face_vec);
-  // fill in the orientation info
-  for (int i=0; i<num_cells; i++) {
-    face_orients[i].assign(face_orients_+i*num_faces, face_orients_+(i+1)*num_faces);
-  }
-}
-
-template<class Scalar>
-void MultiCell<Scalar>::setConnMapCustom(const CellType        cell_type_,
-                                         const ConnMapTemplate conn_map_template_[]) {
-  assert((cell_type_ > MAXCANONICAL) && (cell_type_ < MAXTYPE)); // can only write to a custom template
-  // define connectivity map of the new cell type
-  conn_map_custom[cell_type_-MAXCANONICAL-1][0] = conn_map_template_[0];
-  conn_map_custom[cell_type_-MAXCANONICAL-1][1] = conn_map_template_[1];
-  conn_map_custom[cell_type_-MAXCANONICAL-1][2] = conn_map_template_[2];
-}
-
-
-template<class Scalar>
-void MultiCell<Scalar>::printMyInfo(std::ostream & out) const {
-  out.setf(std::ios_base::scientific, std::ios_base::floatfield);
-  out.precision(6);
-  
-  out  << "\n>>>>>>>>>> MultiCell info: \n\n"; 
-  out << std::left;
-  out << std::setw(30) << "\t Generating cell type:" << this -> getMyName() << "\n";
-  out << std::setw(30) << "\t Pullback status:" << this -> getPullbackInfo() <<"\n";
-  out << std::setw(30) << "\t Orientation status:" << StatusNames[orients_status] <<"\n";
-  out << std::setw(30) << "\t Number of cells:" << num_cells << "\n\n";
-  out << "Nodes:\n";
-  int nnodes_per_cell = this->getMyNumNodes();
-  for (int i=0; i < num_cells; i++) {
-    for (int j=0; j < nnodes_per_cell; j++) {
-      out << node_coords[i][j] << "\n";
-    }
-    out << std::setw(16) << "END CELL" << "\n";
-  }
-  out << "Edge template:\n";
-  int nedges_per_cell = this->getNumSubcells(my_cell_type, 1);
-  for (int i=0; i < nedges_per_cell; i++) {
-    std::vector<int> tmpnodes;
-    this->getSubcellNodes(my_cell_type, 1, i, tmpnodes);
-    out << "  " << std::setw(3) << i << " -> {" <<  tmpnodes[0] << ", " << tmpnodes[1] << "}" << "\n";
-  }
-  out << "Edge orientations:\n";
-  for (int i=0; i < num_cells; i++) {
-    for (int j=0; j < nedges_per_cell; j++) {
-      out << std::setw(5) << edge_orients[i][j];
-    }
-    out << "\n";
-  }
-  out << "Face template:\n";
-  int nfaces_per_cell = this->getNumSubcells(my_cell_type, 2);
-  for (int i=0; i < nfaces_per_cell; i++) {
-    std::vector<int> tmpnodes;
-    CellType tmptype = this->getSubcellType(my_cell_type, 2, i);
-    this->getSubcellNodes(my_cell_type, 2, i, tmpnodes);
-    out << "    " << i << " -> " << std::setw(12) << getName(tmptype) << ": ";
-    for (int j=0; j < this->getNumNodes(tmptype); j++) {
-      out << std::setw(4) << tmpnodes[j];
-    }
-    out << "\n";
-  }
-  out << "Face orientations:\n";
-  for (int i=0; i < num_cells; i++) {
-    for (int j=0; j < nfaces_per_cell; j++) {
-      out << std::setw(5) << face_orients[i][j];
-    }
-    out << "\n";
-  }
-  out << "<<<<<<<<<< END MULTICELL INFO \n";
-
-}
-
-template<class Scalar>
-void MultiCell<Scalar>::setPullback() {
-  // First check if pullback was already set
-  if(pullback_status == DEFINED) return; 
-  // make sure there's enough room to hold all pullbacks to avoid resizing of the vector
-  pullback.resize(num_cells);
-  for(int cell_id = 0; cell_id < num_cells; cell_id++){
-    this -> getPullback(cell_id,pullback[cell_id]);
-  }
-  pullback_status = DEFINED;
-}
-
-template<class Scalar>
-void MultiCell<Scalar>::getPullback(const int cell_id_, PullbackTemplate<Scalar>& pullback_) const{
-  
-  // First check if the pullback has been computed ans set in this instance. If so,
-  // copy from the private member (cant's send back non-const reference to private data)
-  if(pullback_status == DEFINED) {
-    pullback_ = pullback[cell_id_];
-    return;
-  }
-  
-  switch(my_cell_type) {
-    case EDGE: {
-      if(ambient_dimension != 1){
-        std::cerr<<"MultiCell::getPullback error: \n"
-                   "\t cell dimension does not match ambient dimension\n";
-        exit(1);
-      }
-      Scalar v0 = this->getPoint(cell_id_,0)[0];
-      Scalar v1 = this->getPoint(cell_id_,1)[0];
+  template<class Scalar>
+    MultiCell<Scalar>::MultiCell(const int      numCells,
+                                 const int      ambientDim,
+                                 const ECell    generatingCellType,
+                                 const Scalar*  vertices) :
+    // initializations
+    numCells_(numCells),
+    ambientDim_(ambientDim),
+    myCellType_(generatingCellType) 
+  {
+      // By default, the ctor never computes the charts of the cells
+      atlasStatus_ = STATUS_UNDEFINED;
       
-      pullback_.cell_type     = my_cell_type;
-      pullback_.cell_id       = cell_id_;
-      pullback_.pullback_type = AFFINE;
-      pullback_.F[0][0] = (v1 - v0)/2.0;
-      pullback_.F[0][1] = (v1 + v0)/2.0;
-      break;
-    }
-    case TRI:
-      if(ambient_dimension != 2){
-        std::cerr<<"MultiCell::getPullback error: \n"
-        "\t cell dimension does not match ambient dimension\n";
-        exit(1);
-      }
-      pullback_.cell_type     = my_cell_type;        
-      pullback_.cell_id       = cell_id_;
-      pullback_.pullback_type = AFFINE;
-      for(int dim=0; dim < ambient_dimension; dim++){
-        Scalar v0 = this->getPoint(cell_id_,0)[dim];
-        Scalar v1 = this->getPoint(cell_id_,1)[dim];
-        Scalar v2 = this->getPoint(cell_id_,2)[dim];
+      // This constructor does not accept edge/face signs data and their status is undefined
+      edgeSignsStatus_ = STATUS_UNDEFINED;                             
+      faceSignsStatus_ = STATUS_UNDEFINED;                             
+      
+      int numNodesPerCell = this->getMyNumNodes();
+      
+      // allocate a chunk of memory first, creating a zero array of Point arrays
+      Point<Scalar> tempPoint(ambientDim_);
+      Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
+      vertices_.assign(numCells_, tempPointArray);
+      
+      // fill in the coordinate info
+      for (int i=0; i<numCells_; i++) {
+        for (int j=0; j<numNodesPerCell; j++) {
           
-        pullback_.F[dim][0] = (-v0 + v1);                     // x coefficient
-        pullback_.F[dim][1] = (-v0 + v2);                     // y coefficient
-        pullback_.F[dim][2] =   v0;                           // free term
-      }
-      break;
-    case QUAD:
-      if(ambient_dimension != 2){
-        std::cerr<<"MultiCell::getPullback error: \n"
-        "\t cell dimension does not match ambient dimension\n";
-        exit(1);
-      }
-      pullback_.cell_type     = my_cell_type;                
-      pullback_.cell_id       = cell_id_;
-      pullback_.pullback_type = NON_AFFINE;
-      for(int dim=0; dim < ambient_dimension; dim++){
-        Scalar v0 = this->getPoint(cell_id_,0)[dim];
-        Scalar v1 = this->getPoint(cell_id_,1)[dim];
-        Scalar v2 = this->getPoint(cell_id_,2)[dim];
-        Scalar v3 = this->getPoint(cell_id_,3)[dim];
-          
-        pullback_.F[dim][0] = ( v0 - v1 + v2 - v3)/4.0;            // xy coefficient
-        pullback_.F[dim][1] = (-v0 + v1 + v2 - v3)/4.0;            // x  coefficient
-        pullback_.F[dim][2] = (-v0 - v1 + v2 + v3)/4.0;            // y  coefficient
-        pullback_.F[dim][3] = ( v0 + v1 + v2 + v3)/4.0;            // free term
-      }
-      break;
-    case TET:
-      if(ambient_dimension != 3){
-        std::cerr<<"MultiCell::getPullback error: \n"
-        "\t cell dimension does not match ambient dimension\n";
-        exit(1);
-      }
-      pullback_.cell_type     = my_cell_type;        
-      pullback_.cell_id       = cell_id_;
-      pullback_.pullback_type = AFFINE;
-      for(int dim=0; dim < ambient_dimension; dim++){
-        Scalar v0 = this->getPoint(cell_id_,0)[dim];
-        Scalar v1 = this->getPoint(cell_id_,1)[dim];
-        Scalar v2 = this->getPoint(cell_id_,2)[dim];
-        Scalar v3 = this->getPoint(cell_id_,3)[dim];
-        
-        pullback_.F[dim][0] = (-v0 + v1);                          // x coefficient
-        pullback_.F[dim][1] = (-v0 + v2);                          // y coefficient
-        pullback_.F[dim][2] = (-v0 + v3);                          // z coefficient
-        pullback_.F[dim][3] = (-v0 + v3);                          // free term
-      }
-      break;
-    case HEX:
-      if(ambient_dimension != 3){
-        std::cerr<<"MultiCell::getPullback error: \n"
-        "\t cell dimension does not match ambient dimension\n";
-        exit(1);
-      }
-      pullback_.cell_type     = my_cell_type;        
-      pullback_.cell_id       = cell_id_;
-      pullback_.pullback_type = NON_AFFINE;
-      for(int dim=0; dim < ambient_dimension; dim++){
-        Scalar v0 = this->getPoint(cell_id_,0)[dim];
-        Scalar v1 = this->getPoint(cell_id_,1)[dim];
-        Scalar v2 = this->getPoint(cell_id_,2)[dim];
-        Scalar v3 = this->getPoint(cell_id_,3)[dim];
-        
-        Scalar v4 = this->getPoint(cell_id_,4)[dim];
-        Scalar v5 = this->getPoint(cell_id_,5)[dim];
-        Scalar v6 = this->getPoint(cell_id_,6)[dim];
-        Scalar v7 = this->getPoint(cell_id_,7)[dim];
-
-        pullback_.F[dim][0] = (-v0 + v1 - v2 + v3 + v4 - v5 + v6 - v7)/8.0;   // xyz
-        pullback_.F[dim][1] = ( v0 - v1 + v2 - v3 + v4 - v5 + v6 - v7)/8.0;   // xy
-        pullback_.F[dim][2] = ( v0 - v1 - v2 + v3 - v4 + v5 + v6 - v7)/8.0;   // xz
-        pullback_.F[dim][3] = ( v0 + v1 - v2 - v3 - v4 - v5 + v6 + v7)/8.0;   // yz
-        pullback_.F[dim][4] = (-v0 + v1 + v2 - v3 - v4 + v5 + v6 - v7)/8.0;   // x
-        pullback_.F[dim][5] = (-v0 - v1 + v2 + v3 - v4 - v5 + v6 + v7)/8.0;   // y
-        pullback_.F[dim][6] = (-v0 - v1 - v2 - v3 + v4 + v5 + v6 + v7)/8.0;   // z
-        pullback_.F[dim][7] = ( v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7)/8.0;   // free term
-      }
-      break;
-    case PRISM:
-    case PYRAMID:
-      if(ambient_dimension != 3){
-        std::cerr<<"MultiCell::getPullback error: \n"
-        "\t cell dimension does not match ambient dimension\n";
-        exit(1);
-      }
-      std::cout << " Pullback method not implemented...\n";
-      exit(1);
-      break;
-    default:
-      std::cerr<<"MultiCell::getPullback error: pullback not defined for this cell type \n";
-      exit(1);
-      break;
-  }
-}
-
-
-
-template<class Scalar>
-LinearMap<Scalar> MultiCell<Scalar>::Jacobian(
-  const int                cell_id_,
-  const Point<Scalar>&     argument_) const{
-  //
-  if(pullback_status == DEFINED){                 // First check if pullback was precomputed
-    return this -> Jacobian(cell_id_, argument_, pullback[cell_id_]);
-  }
-  else{                                           // If not, compute the pullback on the fly
-    PullbackTemplate<Scalar> temp_pullback;
-    this -> getPullback(cell_id_,temp_pullback);
-    return this -> Jacobian(cell_id_,argument_,temp_pullback);
-  }
-  
-}
-
-
-
-template<class Scalar>
-LinearMap<Scalar> MultiCell<Scalar>::Jacobian(
-  const int                        cell_id_,
-  const Point<Scalar>&             argument_,
-  const PullbackTemplate<Scalar>&  pullback_) const{
-  //
-  // for now, TET and TRI cells have only AFFINE pullbacks implemented
-  // First make sure that the pullback corresponds to the cell with cell_id, and
-  // that the PointType is REFERENCE if the pullback is not affine! For an
-  // affine pullback the Jacobian is constant and the Point argument_ is never
-  // used. However, for non-affine pullbacks, the Jacobian is actually evaluated
-  // at the argument_ which must be inside the reference cell. 
-  //
-  if(pullback_.cell_id != cell_id_){
-    std::cerr << "Multicell::Jacobian error: \n"
-    "\t Cell id does not match the cell id of the pullback\n";
-    exit(1);
-  }
-  if(pullback_.pullback_type == NON_AFFINE && \
-     argument_.getType()     == AMBIENT){
-    std::cerr << "Multicell::Jacobian error: \n"
-    "\t Admissible Point type is REFERENCE, while the argument is AMBIENT type/n";
-    exit(1);
-  }
-  //
-  // Temp storage for the linear map coefficients by row for the LinearMap ctor.
-  //
-  Scalar DF[9];                                   
-  switch(my_cell_type) {                         
-    case EDGE:  // the EDGE pullback is always affine
-      DF[0] = pullback_.F[0][0];                    
-      break;
-    case TRI:
-    case TET:
-      for(int row = 0; row < ambient_dimension; row++){
-        for(int col = 0; col < ambient_dimension; col++){
-          DF[col + row*ambient_dimension] = pullback_.F[row][col]; 
+          // do some pointer arithmetic
+          Point<Scalar> workPoint(vertices + (i*numNodesPerCell+j)*ambientDim_, ambientDim_);
+          vertices_[i][j] = workPoint;
         }
       }
-      break;
-      // For QUAD and HEX rows contain grad of row-th coordinate function evaluated at argument_
-      //
-    case QUAD:                                     
-      for(int row = 0; row < ambient_dimension; row++){
-        DF[0 + row*ambient_dimension] = pullback_.F[row][0]*argument_[1] + pullback_.F[row][1];
-        DF[1 + row*ambient_dimension] = pullback_.F[row][0]*argument_[0] + pullback_.F[row][2];
-      }
-      break;
-    case HEX:
-      for(int row = 0; row < ambient_dimension; row++){
-        DF[0 + row*ambient_dimension] = \
-          pullback_.F[row][0]*argument_[1]*argument_[2]+\
-          pullback_.F[row][1]*argument_[1]+pullback_.F[row][2]*argument_[2]+pullback_.F[row][4];
-        //
-        DF[1 + row*ambient_dimension] = \
-          pullback_.F[row][0]*argument_[0]*argument_[2]+ \
-          pullback_.F[row][1]*argument_[0]+pullback_.F[row][3]*argument_[2]+pullback_.F[row][5];
-        //
-        DF[2 + row*ambient_dimension] = \
-          pullback_.F[row][0]*argument_[0]*argument_[1]+ \
-          pullback_.F[row][2]*argument_[0]+pullback_.F[row][3]*argument_[1]+pullback_.F[row][6];
-      }
-      break;
-    default:
-      std::cerr << "Multicell::Jacobian error: not implemented\n";
-      exit(1);
+      
+      // allocate a zero array of 'short' arrays for the edge signs
+      int numEdgesPerCell = this -> getMyNumSubcells(1);
+      Teuchos::Array<short> tempEdgeArray(numEdgesPerCell);
+      edgeSigns_.assign(numCells_, tempEdgeArray);
+      
+      // allocate a zero array of 'short' arrays for the face signs
+      int numFacesPerCell = this -> getMyNumSubcells(2);
+      Teuchos::Array<short> tempFaceArray(numFacesPerCell);
+      faceSigns_.assign(numCells_, tempFaceArray);
   }
-  LinearMap<Scalar> DF_temp(DF,ambient_dimension);
-  return DF_temp;
-}
-
-
-
-template<class Scalar>
-Point<Scalar> MultiCell<Scalar>::Pullback(
-  const int            cell_id_, 
-  const Point<Scalar>& preimage_) const{
-  //
-  if(pullback_status == DEFINED){                 // First check if pullback was precomputed
-    return this -> Pullback(cell_id_, preimage_, pullback[cell_id_]);
-  }
-  else{                                           // If not, compute the pullback on the fly
-    PullbackTemplate<Scalar> temp_pullback;
-    this -> getPullback(cell_id_,temp_pullback);
-    return this -> Pullback(cell_id_,preimage_,temp_pullback);
-  }
-}
-
-
-template<class Scalar>
-Point<Scalar> MultiCell<Scalar>::Pullback(
-  const int                       cell_id_, 
-  const Point<Scalar>&            preimage_,
-  const PullbackTemplate<Scalar>& pullback_) const {
-  //
-  // First make sure that the pullback corresponds to the cell with cell_id, and
-  // that the argument PointType = REFERENCE
-  //
-  if(pullback_.cell_id != cell_id_){
-    std::cerr << " Multicell::Pullback error: \n"
-    "\t Cell id does not match the cell id of the pullback\n";
-    exit(1);
-  }
-  if(preimage_.getType() != REFERENCE){
-    std::cerr <<  " Multicell::Pullback error: \n"
-    "\t Admissible Point type is REFERENCE but argument has AMBIENT type.\n";
-    exit(1);
-  }
-  Scalar x[3];                                    
-  switch(my_cell_type){
-    case EDGE:
-      if(!(-1.0 <= preimage_[0] && preimage_[0] <= 1.0)) {
-        std::cerr<< " Multicell::Pullback error: \n"
-        " \t The specified 1D Point argument is not in the reference EDGE cell\n";
-        exit(1);
-      }            
-      x[0] = pullback_.F[0][0]*preimage_[0] + pullback_.F[0][1];
-      break;
-    case TRI:
-      if(!((preimage_[0] >= 0) && \
-           (preimage_[1] >= 0) && \
-           (preimage_[0] + preimage_[1] <= 1))) {
-        std::cerr<< " Multicell::Pullback error: \n"
-        " \t The specified 2D Point argument is not in the reference TRI cell\n";
-        exit(1);
-      }      
-      for(int dim = 0;dim < ambient_dimension; dim++){
-        x[dim] = \
-        pullback_.F[dim][0]*preimage_[0] + \
-        pullback_.F[dim][1]*preimage_[1] + \
-        pullback_.F[dim][2];
-      }
-      break;
-    case QUAD:
-      if(!((-1.0 <= preimage_[0] && preimage_[0] <= 1.0) && \
-           (-1.0 <= preimage_[1] && preimage_[1] <= 1.0))) {
-        std::cerr<< " Multicell::Pullback error: \n"
-        " \t The specified 2D Point argument is not in the reference QUAD cell\n";
-        exit(1);
-      }
-      for(int dim = 0; dim < ambient_dimension; dim++){
-        x[dim] = \
-        pullback_.F[dim][0]*preimage_[0]*preimage_[1] +\
-        pullback_.F[dim][1]*preimage_[0] +\
-        pullback_.F[dim][2]*preimage_[1] +\
-        pullback_.F[dim][3];
-      }
-      break;
-    case TET:
-      if(!((preimage_[0] >= 0) && \
-           (preimage_[1] >= 0) && \
-           (preimage_[2] >= 0) && \
-           (preimage_[0] + preimage_[1] + preimage_[2] <= 1))) {
-        std::cerr<< " Multicell::Pullback error: \n"
-        " \t The specified 3D Point argument is not in the reference TET cell\n";
-        exit(1);
-      }      
-      for(int dim = 0; dim < ambient_dimension; dim++){
-        x[dim] = \
-        pullback_.F[dim][0]*preimage_[0] + \
-        pullback_.F[dim][1]*preimage_[1] + \
-        pullback_.F[dim][2]*preimage_[2] + \
-        pullback_.F[dim][3];
-      }
-      break;
-    case HEX:
-      if(!((-1.0 <= preimage_[0] && preimage_[0] <= 1.0) && \
-           (-1.0 <= preimage_[1] && preimage_[1] <= 1.0) && \
-           (-1.0 <= preimage_[2] && preimage_[2] <= 1.0))) {
-        std::cerr<< " Multicell::Pullback error: \n"
-        " \t The specified 3D Point argument is not in the reference HEX cell\n";
-        exit(1);
-      }
-      for(int dim = 0; dim < ambient_dimension; dim++){
-        x[dim] = \
-        pullback_.F[dim][0]*preimage_[0]*preimage_[1]*preimage_[2]+\
-        pullback_.F[dim][1]*preimage_[0]*preimage_[1] + \
-        pullback_.F[dim][2]*preimage_[0]*preimage_[2] + \
-        pullback_.F[dim][3]*preimage_[1]*preimage_[2] + \
-        pullback_.F[dim][4]*preimage_[0] + \
-        pullback_.F[dim][5]*preimage_[1] + \
-        pullback_.F[dim][6]*preimage_[2] + \
-        pullback_.F[dim][7]; 
-      }
-      break;
-    case PRISM:
-    case PYRAMID:
-      std::cout<<"Not Implemented \n";
-      exit(1);
-      break;
-    default:
-      std::cerr<<"MultiCell::Pullback error: unexpected cell type\n";
-      exit(1);
-  }
-  // The return point is in AMBIENT space, set its type accordingly:
-  Point<Scalar> temp_point(x,ambient_dimension,AMBIENT);
-  return temp_point;
-}
-
-
-template<class Scalar>
-Point<Scalar> MultiCell<Scalar>::InversePullback(
-  const int            cell_id_, 
-  const Point<Scalar>& image_) const{
-  //
-  if(pullback_status == DEFINED){                 
-    // First check if pullback was precomputed
-    return this -> InversePullback(cell_id_, image_, pullback[cell_id_]);
-  }
-  else{                                           
-    // If not, compute the pullback on the fly
-    PullbackTemplate<Scalar> temp_pullback;
-    this -> getPullback(cell_id_,temp_pullback);
-    return this -> InversePullback(cell_id_,image_,temp_pullback);
-  }
-}
-
-
-template<class Scalar>
-Point<Scalar> MultiCell<Scalar>::InversePullback(
-  const int                       cell_id_, 
-  const Point<Scalar>&            image_,
-  const PullbackTemplate<Scalar>& pullback_) const {
-  //
-  // First make sure that the pullback corresponds to the cell with cell_id
-  // and that the point type is AMBIENT:
-  //
-  if(pullback_.cell_id != cell_id_){
-    std::cerr << " Multicell::InversePullback error: \n"
-    "\t Cell id does not match the cell id of the pullback.\n";
-    exit(1);
-  }
-  if(image_.getType() != AMBIENT){
-    std::cerr <<  " Multicell::InversePullback error: \n"
-    "\t Admissible Point type is AMBIENT, argument has REFERENCE type.\n";
-    exit(1);
-  }
-  //
-  // Temp storage for the preimage point with the right dimension, do not set type yet
-  //
-  Point<Scalar> preimage(ambient_dimension);            
-  LinearMap<Scalar> A(ambient_dimension);
-  Scalar temp[3];                                         
-  switch(my_cell_type){
-    case EDGE:  // Always affine!
-      temp[0] = (image_[0] - pullback_.F[0][1])/pullback_.F[0][0];
-      preimage.setData(temp,ambient_dimension);
-      preimage.setType(REFERENCE);
-      if( preimage.inRefCell(EDGE) == FAILURE) {
-        std::cerr<< " Local_0Form::InversePullback error: \n"
-        " \t The 1D Point argument is not in the specified EDGE cell\n";
-        exit(1);
-      }
-        return preimage;
-      break;
-    case TRI:
-    case TET:
-      //
-      // For TRI and TET the affine pullback has the form x = A*x_ref + b and
-      // the InversePullback is: preimage = A^{-1}*(image - b). The coefficients 
-      // of b are in F[*][ambient_dimension] and A can be obtained by using the 
-      // Jacobian method of MultiCell class with any Point argument - it will 
-      // not be used because the Jacobian is a constant. Note that for a 
-      // non-affine pullback, Jacobian requires point whose PointType = REFERENCE. 
-      //
-      switch(pullback_.pullback_type){                      
-        case AFFINE:                                           
-          for(int dim = 0; dim < ambient_dimension; dim++){  
-            temp[dim] = pullback_.F[dim][ambient_dimension];             
-          }                                                  
-          preimage.setData(temp,ambient_dimension); 
-          // Compute the preimage:
-          preimage = ((this -> Jacobian(cell_id_,image_,pullback_)).\
-                        getInverse())*(image_ - preimage);
-          // The PointType of the preimage is REFERENCE:
-          preimage.setType(REFERENCE);
-          // If preimage is not in the reference cell, the specified image was not in the specified cell!
-          if( preimage.inRefCell(TRI) == FAILURE) {
-            std::cerr<< " Local_0Form::InversePullback error: \n"
-            " \t The 2D Point argument is not in the specified TRI cell\n";
-            exit(1);
+  
+  
+  template<class Scalar>
+    MultiCell<Scalar>::MultiCell(const int      numCells,
+                                 const int      ambientDim,
+                                 const ECell    generatingCellType,
+                                 const Scalar*  vertices,
+                                 const short*   subcellSigns,
+                                 const int      subcellDim) :
+    // intializations
+    numCells_(numCells),
+    ambientDim_(ambientDim),
+    myCellType_(generatingCellType) 
+  {
+      // By default, the ctor never computes the charts of the cells
+      atlasStatus_ = STATUS_UNDEFINED;
+      
+      // This constructor accepts edge OR face signs, depending on what subcellDim is:
+      switch(subcellDim){ 
+        case 1: {          
+          // Allocate space and fill edge orientations
+          int numEdgesPerCell = this -> getMyNumSubcells(1);
+          Teuchos::Array<short> tempEdgeArray(numEdgesPerCell);
+          edgeSigns_.assign(numCells_, tempEdgeArray);
+          
+          // fill in the orientation info
+          for (int i=0; i<numCells_; i++) {
+            edgeSigns_[i].assign(subcellSigns+i*numEdgesPerCell, subcellSigns+(i+1)*numEdgesPerCell);
           }
-          return preimage;
+          edgeSignsStatus_ = STATUS_DEFINED; 
+          faceSignsStatus_ = STATUS_UNDEFINED; 
           break;
-        case NON_AFFINE:
-          std::cerr << "MultiCell::InversePullback error: method not implemented\n";
+        }
+        case 2: {
+          // Allocate space and fill face orientations
+          int numFacesPerCell = this -> getMyNumSubcells(2);
+          Teuchos::Array<short> tempFaceArray(numFacesPerCell);
+          faceSigns_.assign(numCells_, tempFaceArray);
+          
+          // fill in the orientation info
+          for (int i=0; i<numCells_; i++) {
+            faceSigns_[i].assign(subcellSigns+i*numFacesPerCell, subcellSigns+(i+1)*numFacesPerCell);
+          }
+          faceSignsStatus_ = STATUS_DEFINED; 
+          edgeSignsStatus_ = STATUS_UNDEFINED; 
+          break;
+        }
+        default:
+          std::cerr << "MultiCell ctor error: invalid subcell dimension for setting edge or face signs";
+          exit(1);
+      }
+      
+      // allocate a chunk of memory first, creating a zero vector of Point vectors
+      int numNodesPerCell = this->getNumNodes(myCellType_);
+      Point<Scalar> tempPoint(ambientDim_);
+      Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
+      vertices_.assign(numCells_, tempPointArray);
+      
+      // fill in the coordinate info
+      for (int i=0; i<numCells_; i++) {
+        for (int j=0; j<numNodesPerCell; j++) {
+          
+          // do some pointer arithmetic
+          Point<Scalar> workPoint(vertices+(i*numNodesPerCell+j)*ambientDim_, ambientDim_);
+          vertices_[i][j] = workPoint;
+        }
+      }      
+  }
+  
+  
+  template<class Scalar>
+    MultiCell<Scalar>::MultiCell(const int      numCells,
+                                 const int      ambientDim,
+                                 const ECell    generatingCellType,
+                                 const Scalar*  vertices,
+                                 const short*   edgeSigns,
+                                 const short*   faceSigns) :
+    // intializations
+    numCells_(numCells),
+    ambientDim_(ambientDim),
+    myCellType_(generatingCellType) 
+  {
+      // By default, the ctor never computes the charts of the cells
+      atlasStatus_ = STATUS_UNDEFINED;
+      
+      // allocate a chunk of memory first, creating a zero vector of Point vectors
+      int numNodesPerCell = this->getNumNodes(myCellType_);
+      Point<Scalar> tempPoint(ambientDim_);
+      Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
+      vertices_.assign(numCells_, tempPointArray);
+      
+      // fill in the coordinate info
+      for (int i=0; i<numCells_; i++) {
+        for (int j=0; j<numNodesPerCell; j++) {
+          
+          // do some pointer arithmetic
+          Point<Scalar> workPoint(vertices+(i*numNodesPerCell+j)*ambientDim_, ambientDim_);
+          vertices_[i][j] = workPoint;
+        }
+      }
+      
+      // This constructor accepts edge and face signs: Allocate space and fill edge orientations
+      int numEdgesPerCell = this -> getMyNumSubcells(1);
+      Teuchos::Array<short> tempEdgeArray(numEdgesPerCell);
+      edgeSigns_.assign(numCells_, tempEdgeArray);
+      
+      // fill in the orientation info
+      for (int i=0; i<numCells_; i++) {
+        edgeSigns_[i].assign(edgeSigns+i*numEdgesPerCell, edgeSigns+(i+1)*numEdgesPerCell);
+      }
+      edgeSignsStatus_ = STATUS_DEFINED;                             
+      
+      
+      // Allocate space and fill face orientations
+      int numFacesPerCell = this -> getMyNumSubcells(2);
+      Teuchos::Array<short> tempFaceArray(numFacesPerCell);
+      faceSigns_.assign(numCells_, tempFaceArray);
+      
+      // fill in the orientation info
+      for (int i=0; i<numCells_; i++) {
+        faceSigns_[i].assign(faceSigns+i*numFacesPerCell, faceSigns+(i+1)*numFacesPerCell);
+      }
+      faceSignsStatus_ = STATUS_DEFINED;                             
+  }
+  
+
+  template<class Scalar>
+    void MultiCell<Scalar>::setConnMapCustom(const ECell           customCellType,
+                                             const ConnMapTemplate customCellTemplate[]) {
+      
+      // Can only write to a custom template
+      assert((customCellType > CELL_CANONICAL_MAX) && (customCellType < CELL_MAX)); 
+      
+      // define connectivity map of the new cell type
+      connMapCustom_[customCellType - CELL_CANONICAL_MAX - 1][0] = customCellTemplate[0];
+      connMapCustom_[customCellType - CELL_CANONICAL_MAX - 1][1] = customCellTemplate[1];
+      connMapCustom_[customCellType - CELL_CANONICAL_MAX - 1][2] = customCellTemplate[2];
+    }
+
+  
+  template<class Scalar>
+    void MultiCell<Scalar>::setAtlas() {
+      
+      // First check if <var>atlas_<var> was already set
+      if(atlasStatus_ == STATUS_DEFINED) return; 
+      
+      // make sure there's enough room to hold all charts to avoid resizing of the vector
+      atlas_.resize(numCells_);
+      
+      // Loop over all cells in the MultiCell, compute their charts and store them in the <var>atlas_<var>
+      for(int cellID = 0; cellID < numCells_; cellID++){
+        switch(myCellType_) {
+          case CELL_EDGE: {
+            if(ambientDim_ != 1){
+              std::cerr<<"MultiCell::getAtlas error: \n"
+              "\t cell dimension does not match ambient dimension\n";
+              exit(1);
+            }
+            Scalar v0 = this -> getVertex(cellID,0)[0];
+            Scalar v1 = this -> getVertex(cellID,1)[0];
+            
+            atlas_[cellID].refCellType_    = myCellType_;
+            atlas_[cellID].mapping_[0][0]  = (v1 - v0)/2.0;
+            atlas_[cellID].mapping_[0][1]  = (v1 + v0)/2.0;
+            atlas_[cellID].mappingType_    = MAPPING_AFFINE;
+            break;
+          }
+          case CELL_TRI:
+            if(ambientDim_ != 2){
+              std::cerr<<"MultiCell::getAtlas error: \n"
+              "\t cell dimension does not match ambient dimension\n";
+              exit(1);
+            }
+            atlas_[cellID].refCellType_     = myCellType_;        
+            for(int dim=0; dim < ambientDim_; dim++){
+              Scalar v0 = this -> getVertex(cellID,0)[dim];
+              Scalar v1 = this -> getVertex(cellID,1)[dim];
+              Scalar v2 = this -> getVertex(cellID,2)[dim];
+              
+              atlas_[cellID].mapping_[dim][0] = (-v0 + v1);                     // x coefficient
+              atlas_[cellID].mapping_[dim][1] = (-v0 + v2);                     // y coefficient
+              atlas_[cellID].mapping_[dim][2] =   v0;                           // free term
+            }
+            atlas_[cellID].mappingType_ = MAPPING_AFFINE;
+            break;
+          case CELL_QUAD:
+            if(ambientDim_ != 2){
+              std::cerr<<"MultiCell::getAtlas error: \n"
+              "\t cell dimension does not match ambient dimension\n";
+              exit(1);
+            }
+            atlas_[cellID].refCellType_     = myCellType_;                
+            for(int dim=0; dim < ambientDim_; dim++){
+              Scalar v0 = this->getVertex(cellID,0)[dim];
+              Scalar v1 = this->getVertex(cellID,1)[dim];
+              Scalar v2 = this->getVertex(cellID,2)[dim];
+              Scalar v3 = this->getVertex(cellID,3)[dim];
+              
+              atlas_[cellID].mapping_[dim][0] = ( v0 - v1 + v2 - v3)/4.0;            // xy coefficient
+              atlas_[cellID].mapping_[dim][1] = (-v0 + v1 + v2 - v3)/4.0;            // x  coefficient
+              atlas_[cellID].mapping_[dim][2] = (-v0 - v1 + v2 + v3)/4.0;            // y  coefficient
+              atlas_[cellID].mapping_[dim][3] = ( v0 + v1 + v2 + v3)/4.0;            // free term
+            }
+            atlas_[cellID].mappingType_ = MAPPING_NON_AFFINE;
+            break;
+          case CELL_TET:
+            if(ambientDim_ != 3){
+              std::cerr<<"MultiCell::getAtlas error: \n"
+              "\t cell dimension does not match ambient dimension\n";
+              exit(1);
+            }
+            atlas_[cellID].refCellType_ = myCellType_;        
+            for(int dim=0; dim < ambientDim_; dim++){
+              Scalar v0 = this->getVertex(cellID,0)[dim];
+              Scalar v1 = this->getVertex(cellID,1)[dim];
+              Scalar v2 = this->getVertex(cellID,2)[dim];
+              Scalar v3 = this->getVertex(cellID,3)[dim];
+              
+              atlas_[cellID].mapping_[dim][0] = (-v0 + v1);                          // x coefficient
+              atlas_[cellID].mapping_[dim][1] = (-v0 + v2);                          // y coefficient
+              atlas_[cellID].mapping_[dim][2] = (-v0 + v3);                          // z coefficient
+              atlas_[cellID].mapping_[dim][3] = (-v0 + v3);                          // free term
+            }
+            atlas_[cellID].mappingType_ = MAPPING_AFFINE;
+            break;
+          case CELL_HEX:
+            if(ambientDim_ != 3){
+              std::cerr<<"MultiCell::getAtlas error: \n"
+              "\t cell dimension does not match ambient dimension\n";
+              exit(1);
+            }
+            atlas_[cellID].refCellType_ = myCellType_;        
+            for(int dim=0; dim < ambientDim_; dim++){
+              Scalar v0 = this->getVertex(cellID,0)[dim];
+              Scalar v1 = this->getVertex(cellID,1)[dim];
+              Scalar v2 = this->getVertex(cellID,2)[dim];
+              Scalar v3 = this->getVertex(cellID,3)[dim];
+              
+              Scalar v4 = this->getVertex(cellID,4)[dim];
+              Scalar v5 = this->getVertex(cellID,5)[dim];
+              Scalar v6 = this->getVertex(cellID,6)[dim];
+              Scalar v7 = this->getVertex(cellID,7)[dim];
+              
+              atlas_[cellID].mapping_[dim][0] = (-v0 + v1 - v2 + v3 + v4 - v5 + v6 - v7)/8.0;   // xyz
+              atlas_[cellID].mapping_[dim][1] = ( v0 - v1 + v2 - v3 + v4 - v5 + v6 - v7)/8.0;   // xy
+              atlas_[cellID].mapping_[dim][2] = ( v0 - v1 - v2 + v3 - v4 + v5 + v6 - v7)/8.0;   // xz
+              atlas_[cellID].mapping_[dim][3] = ( v0 + v1 - v2 - v3 - v4 - v5 + v6 + v7)/8.0;   // yz
+              atlas_[cellID].mapping_[dim][4] = (-v0 + v1 + v2 - v3 - v4 + v5 + v6 - v7)/8.0;   // x
+              atlas_[cellID].mapping_[dim][5] = (-v0 - v1 + v2 + v3 - v4 - v5 + v6 + v7)/8.0;   // y
+              atlas_[cellID].mapping_[dim][6] = (-v0 - v1 - v2 - v3 + v4 + v5 + v6 + v7)/8.0;   // z
+              atlas_[cellID].mapping_[dim][7] = ( v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7)/8.0;   // free term
+            }
+            atlas_[cellID].mappingType_ = MAPPING_NON_AFFINE;
+            break;
+          case CELL_TRIPRISM:
+          case CELL_PYRAMID:
+            if(ambientDim_ != 3){
+              std::cerr<<"MultiCell::getAtlas error: \n"
+              "\t cell dimension does not match ambient dimension\n";
+              exit(1);
+            }
+            std::cout << " Pullback method not implemented...\n";
+            exit(1);
+            break;
+          default:
+            std::cerr<<"MultiCell::getAtlas error: atlas_ not available for this cell type \n";
+            exit(1);
+            break;
+        }
+      }
+      atlasStatus_ = STATUS_DEFINED;
+    }
+  
+  template<class Scalar>
+    const ChartTemplate<Scalar>& MultiCell<Scalar>::getChart(const int cellID) const{
+      if(atlasStatus_ == STATUS_DEFINED) {
+        return atlas_[cellID]; 
+      }
+      else {
+        std::cerr<<"MultiCell::getChart error: \n"
+        "\t cell Atlas has not been defined\n";
+        exit(1);
+      }
+    }
+
+  
+  template<class Scalar>
+    Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID, const Point<Scalar>& refPoint) const{
+      //
+      // For now, TET and TRI cells have only MAPPING_AFFINE charts implemented.
+      // First make sure that the PointType is FRAME_REFERENCE if the chart is not affine! For an
+      // affine chart the Jacobian is constant and refPoint is never used. For non-affine charts, 
+      // the Jacobian is non-constant and must be evaluated at the refPoint. 
+      //
+      if(atlas_[cellID].mappingType_ == MAPPING_NON_AFFINE && refPoint.getType() == FRAME_PHYSICAL){
+        std::cerr << "MultiCell::Jacobian error: \n"
+        "\t Admissible frame type for refPoint is FRAME_REFERENCE, but refPoint has FRAME_PHYSICAL /n";
+        exit(1);
+      }
+      
+      // Check if refPoint is indeed inside its reference cell - disable for efficiency.
+      if(refPoint.inclusion(myCellType_) != FAIL_CODE_SUCCESS) {
+        std::cerr << "MultiCell::Jacobian error: \n"
+        "\t RefPoint has FRAME_REFERENCE type but is not inside its reference cell /n";
+        exit(1);
+      }
+      
+      // Temp storage for the Matrix coefficients by row
+      Scalar DF[9];                                   
+      switch(myCellType_) {    
+        
+        // the EDGE chart is always affine
+        case CELL_EDGE:  
+          DF[0] = atlas_[cellID].mapping_[0][0];                    
+          break;
+          
+        // TRI and TET charts are affine and can be computed by the same loop
+        case CELL_TRI:
+        case CELL_TET:
+          for(int row = 0; row < ambientDim_; row++){
+            for(int col = 0; col < ambientDim_; col++){
+              DF[col + row*ambientDim_] = atlas_[cellID].mapping_[row][col]; 
+            }
+          }
+          break;
+          
+        // For QUAD and HEX rows contain grad of row-th coordinate function evaluated at refPoint
+        case CELL_QUAD:                                     
+          for(int row = 0; row < ambientDim_; row++){
+            DF[0 + row*ambientDim_] = \
+              atlas_[cellID].mapping_[row][0]*refPoint[1] + \
+              atlas_[cellID].mapping_[row][1];
+            DF[1 + row*ambientDim_] = \
+              atlas_[cellID].mapping_[row][0]*refPoint[0] + \
+              atlas_[cellID].mapping_[row][2];
+          }
+          break;
+        case CELL_HEX:
+          for(int row = 0; row < ambientDim_; row++){
+            DF[0 + row*ambientDim_] = \
+              atlas_[cellID].mapping_[row][0]*refPoint[1]*refPoint[2] + \
+              atlas_[cellID].mapping_[row][1]*refPoint[1] + \
+              atlas_[cellID].mapping_[row][2]*refPoint[2] + \
+              atlas_[cellID].mapping_[row][4];
+            //
+            DF[1 + row*ambientDim_] = \
+              atlas_[cellID].mapping_[row][0]*refPoint[0]*refPoint[2] + \
+              atlas_[cellID].mapping_[row][1]*refPoint[0] + \
+              atlas_[cellID].mapping_[row][3]*refPoint[2] + \
+              atlas_[cellID].mapping_[row][5];
+            //
+            DF[2 + row*ambientDim_] = \
+              atlas_[cellID].mapping_[row][0]*refPoint[0]*refPoint[1] + \
+              atlas_[cellID].mapping_[row][2]*refPoint[0] + \
+              atlas_[cellID].mapping_[row][3]*refPoint[1] + \
+              atlas_[cellID].mapping_[row][6];
+          }
+          break;
+        default:
+          std::cerr << "MultiCell::Jacobian error: not implemented\n";
+          exit(1);
+      }
+      Matrix<Scalar> DF_temp(DF,ambientDim_);
+      return DF_temp;
+    }
+  
+  
+  template<class Scalar>
+    Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID, const Point<Scalar>&  refPoint) const {
+
+      // Check if refPoint has the correct frame kind - disable for efficiency
+      if(refPoint.frameKind() != FRAME_REFERENCE){
+        std::cerr <<  " Multicell::mapToPhysicalCell error: \n"
+        "\t Admissible Point type is REFERENCE but argument has PHYSICAL type.\n";
+        exit(1);
+      }
+      
+      // Check if refPoint is indeed inside its reference cell - disable for efficiency.
+      if(refPoint.inclusion(myCellType_) != FAIL_CODE_SUCCESS) {
+        std::cerr << "MultiCell::mapToPhysicalCell error: \n"
+        "\t RefPoint has FRAME_REFERENCE type but is not inside its reference cell /n";
+        exit(1);
+      }
+      
+      // Temp array for the image of refPoint
+      Scalar physCoords[3];                                    
+      switch(myCellType_){
+        case CELL_EDGE:
+          physCoords[0] = \
+            atlas_[cellID].mapping_[0][0]*refPoint[0] +\
+            atlas_[cellID].mapping_[0][1];
+          break;
+        case CELL_TRI:
+          for(int dim = 0;dim < ambientDim_; dim++){
+            physCoords[dim] = \
+              atlas_[cellID].mapping_[dim][0]*refPoint[0] + \
+              atlas_[cellID].mapping_[dim][1]*refPoint[1] + \
+              atlas_[cellID].mapping_[dim][2];
+          }
+          break;
+        case CELL_QUAD:
+          for(int dim = 0; dim < ambientDim_; dim++){
+            physCoords[dim] = \
+              atlas_[cellID].mapping_[dim][0]*refPoint[0]*refPoint[1] + \
+              atlas_[cellID].mapping_[dim][1]*refPoint[0] + \
+              atlas_[cellID].mapping_[dim][2]*refPoint[1] + \
+              atlas_[cellID].mapping_[dim][3];
+          }
+          break;
+        case CELL_TET:
+          for(int dim = 0; dim < ambientDim_; dim++){
+            physCoords[dim] = \
+              atlas_[cellID].mapping_[dim][0]*refPoint[0] + \
+              atlas_[cellID].mapping_[dim][1]*refPoint[1] + \
+              atlas_[cellID].mapping_[dim][2]*refPoint[2] + \
+              atlas_[cellID].mapping_[dim][3];
+          }
+          break;
+        case CELL_HEX:
+          for(int dim = 0; dim < ambientDim_; dim++){
+            physCoords[dim] = \
+              atlas_[cellID].mapping_[dim][0]*refPoint[0]*refPoint[1]*refPoint[2]+\
+              atlas_[cellID].mapping_[dim][1]*refPoint[0]*refPoint[1] + \
+              atlas_[cellID].mapping_[dim][2]*refPoint[0]*refPoint[2] + \
+              atlas_[cellID].mapping_[dim][3]*refPoint[1]*refPoint[2] + \
+              atlas_[cellID].mapping_[dim][4]*refPoint[0] + \
+              atlas_[cellID].mapping_[dim][5]*refPoint[1] + \
+              atlas_[cellID].mapping_[dim][6]*refPoint[2] + \
+              atlas_[cellID].mapping_[dim][7]; 
+          }
+          break;
+        case CELL_TRIPRISM:
+        case CELL_PYRAMID:
+          std::cout<<"Not Implemented \n";
           exit(1);
           break;
         default:
-          std::cerr << "MultiCell::InversePullback error: unexpected pullback type\n";
+          std::cerr<<"MultiCell::mapToPhysicallCell error: unexpected cell type\n";
           exit(1);
-          break;          
       }
-      break;
-    case QUAD:
-    case HEX:
-    case PRISM:
-    case PYRAMID:
-      std::cerr << "MultiCell::InversePullback error: method not implemented\n";
-      exit(1);
-      break;
-    default:
-      std::cerr << "MultiCell::InversePullback error: unexpected cell type \n";
-      exit(1);
-  }
-}
-template<class Scalar>
-std::ostream& operator << (std::ostream& os,
-                           const MultiCell<Scalar>& base) {
-  base.printMyInfo(os);
-  return os;
-}
+      
+      // The return point is in PHYSICAL space, set its type accordingly:
+      Point<Scalar> physPoint(physCoords,ambientDim_,FRAME_PHYSICAL);
+      return physPoint;
+    }
+  
+  
+  template<class Scalar>
+    Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const {
 
+      // First make sure that the point frame is FRAME_PHYSICAL:
+      if(physPoint.getFrameKind() != FRAME_PHYSICAL){
+        std::cerr <<  " MultiCell::mapToReferenceCell error: \n"
+        "\t Admissible Point frame is FRAME_PHYSICAL, argument has FRAME_REFERENCE frame.\n";
+        exit(1);
+      }
+      
+      // Temp storage for the refPoint point with the right dimension, do not set type yet
+      Point<Scalar> refPoint(ambientDim_);            
+      Matrix<Scalar> A(ambientDim_);
+      
+      Scalar temp[3];                                         
+      switch(myCellType_){
+        
+        // Always affine!
+        case CELL_EDGE:  
+          temp[0] = \
+            (physPoint[0] - atlas_[cellID].mapping_[0][1])/atlas_[cellID].mapping_[0][0];
+          refPoint.setCoordinates(temp,ambientDim_);
+          refPoint.setFrameKind(FRAME_REFERENCE);
+          break;
+        case CELL_TRI:
+        case CELL_TET:
+          
+          // For TRI and TET the affine chart is x = A*x_ref + b and the mapToReferenceCell is: 
+          // refPoint = A^{-1}*(image - b). The coefficients of b are in mapping[*][ambientDim_] 
+          // and A can be obtained by using the jacobian method of MultiCell class with any Point 
+          // argument - it will not be used because the Jacobian is a constant. Note that for a 
+          // non-affine charts, jacobian requires point whose PointType = REFERENCE. 
+          switch(atlas_[cellID].mappingType_){                      
+            case MAPPING_AFFINE:                                           
+              for(int dim = 0; dim < ambientDim_; dim++){  
+                temp[dim] = atlas_[cellID].mapping_[dim][ambientDim_];             
+              }                       
+              
+              // refPoint initialized to "b"
+              refPoint.setCoordinates(temp,ambientDim_); 
+              
+              // Compute A^{-1}*(physPoint - b):
+              refPoint = ((this -> jacobian(cellID,refPoint)).getInverse())*(physPoint - refPoint);
+              
+              // The PointType of the refPoint is REFERENCE:
+              refPoint.setFrameKind(FRAME_REFERENCE);                
+              break;
+            case MAPPING_NON_AFFINE:
+              std::cerr << "MultiCell::mapToReferenceCell error: method not implemented\n";
+              exit(1);
+              break;
+            default:
+              std::cerr << "MultiCell::mapToReferenceCell error: unexpected atlas_ type\n";
+              exit(1);
+              break;          
+          }
+          break;
+        case CELL_QUAD:
+        case CELL_HEX:
+        case CELL_TRIPRISM:
+        case CELL_PYRAMID:
+          std::cerr << "MultiCell::mapToReferenceCell error: method not implemented\n";
+          exit(1);
+          break;
+        default:
+          std::cerr << "MultiCell::mapToReferenceCell error: unexpected cell type \n";
+          exit(1);
+      }
+      
+      // Check if the computed Point is indeed indisde the reference cell
+      if( refPoint.inclusion(myCellType_) == FAIL_CODE_ERROR) {
+        std::cerr<< " MultiCell::mapToReferenceCell error: \n"
+        " \t Computed reference point is outside its reference cell\n";
+        exit(1);
+      }
+      
+      // Otherwise, return the point
+      return refPoint;
+    }
+
+  
+  template<class Scalar>
+    void MultiCell<Scalar>::printMyInfo(std::ostream & out) const {
+      out.setf(std::ios_base::scientific, std::ios_base::floatfield);
+      out.precision(6);
+      
+      out  << "\n>>>>>>>>>> MultiCell info: \n\n"; 
+      out << std::left;
+      out << std::setw(30) << "\t Generating cell type:" << this -> getMyCellName() << "\n";
+      out << std::setw(30) << "\t Atlas status:"         << StatusNames[atlasStatus_]    <<"\n";
+      out << std::setw(30) << "\t Edge signs status:"    << StatusNames[edgeSignsStatus_] <<"\n";
+      out << std::setw(30) << "\t Face signs status:"    << StatusNames[faceSignsStatus_] <<"\n";
+      out << std::setw(30) << "\t Number of cells:"      << numCells_ << "\n\n";
+      out << "Cell vertices:\n\n";
+      
+      // Print the vertices of all cells in the MultiCell
+      int numNodesPerCell = this -> getMyNumNodes();
+      for (int i=0; i < numCells_; i++) {
+        out << std::setw(16) << "CELL ID = " << i << "\n";
+        for (int j=0; j < numNodesPerCell; j++) {
+          out << vertices_[i][j] << "\n";
+        }
+      }
+      
+      // Print edge connectivities
+      out << "Edge template:\n";
+      int numEdgesPerCell = this -> getMyNumSubcells(1);
+      for (int i=0; i < numEdgesPerCell; i++) {
+        Teuchos::Array<int> tempNodes;
+        this -> getMySubcellNodeIDs(1, i, tempNodes);
+        out << "  " << std::setw(3) << i << " -> {" <<  tempNodes[0] << ", " << tempNodes[1] << "}" << "\n";
+      }
+      
+      // Print edge signs only if they are defined!
+      if(edgeSignsStatus_ ==STATUS_DEFINED) {
+        out << "Edge signs:\n";
+        for (int i=0; i < numCells_; i++) {
+          for (int j=0; j < numEdgesPerCell; j++) {
+            out << std::setw(5) << edgeSigns_[i][j];
+          }
+          out << "\n";
+        }
+      }
+      
+      // Print face connectivities
+      out << "Face template:\n";
+      int numFacesPerCell = this->getMyNumSubcells(2);
+      for (int i=0; i < numFacesPerCell; i++) {
+        Teuchos::Array<int> tempNodes;
+        ECell tempType = this -> getMySubcellType(2, i);
+        this -> getMySubcellNodeIDs(2, i, tempNodes);
+        out << "    " << i << " -> " << std::setw(12) << getCellName(tempType) << ": ";
+        for (int j=0; j < this->getNumNodes(tempType); j++) {
+          out << std::setw(4) << tempNodes[j];
+        }
+        out << "\n";
+      }
+      
+      // Print face signs only if they are defined
+      if(faceSignsStatus_ == STATUS_DEFINED) {
+        out << "Face signs:\n";
+        for (int i=0; i < numCells_; i++) {
+          for (int j=0; j < numFacesPerCell; j++) {
+            out << std::setw(5) << faceSigns_[i][j];
+          }
+          out << "\n";
+        }
+      }
+      out << "<<<<<<<<<< END MULTICELL INFO \n";
+      
+    } // end printMyInfo
+  
+  
+  template<class Scalar>
+    std::ostream& operator << (std::ostream& os, const MultiCell<Scalar>& base) {
+      base.printMyInfo(os);
+      return os;
+    }
+  
 } // namespace Intrepid

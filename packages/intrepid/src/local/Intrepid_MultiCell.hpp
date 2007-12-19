@@ -27,616 +27,529 @@
 // ************************************************************************
 // @HEADER
 
-
 /** \file   Intrepid_MultiCell.hpp
-    \brief  Header file for the Intrepid::MultiCell class.
-    \author Created by P. Bochev, D. Ridzal, and D. Day.
+\brief  Header file for the Intrepid::MultiCell class.
+\author Created by P. Bochev and D. Ridzal.
 */
-
 
 #ifndef INTREPID_MULTICELL_HPP
 #define INTREPID_MULTICELL_HPP
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_RealSpace.hpp"
-
+#include "Teuchos_Array.hpp"
 
 namespace Intrepid {
-
-/** \class Intrepid::MultiCell
-    \brief A MultiCell (batch or group of cells) object is used to communicate
-           cell information from a (global) mesh object to a (local)
-           interpolation/reconstruction operator.
-
-    \todo  Carefully define all terms (cell, canonical cell, subcell, dimension,
-           orientation), and describe the Intrepid::MultiCell interface. Also
-           discuss creation of custom cell shapes.
-*/
-template<class Scalar>
-class MultiCell {
+  
+  /** \class Intrepid::MultiCell
+  \brief A MultiCell (batch or group of cells) object is used to communicate cell information from a 
+  (global) mesh object to a (local) interpolation/reconstruction operator. A MultiCell object allows
+  the user to aggregate cells that use the exact same reconstruction operator into groups. This may
+  imrpove performance when computing local operators for the cells in the batch.
+  
+  \todo  Carefully define all terms (cell, canonical cell, subcell, dimension, orientation), and 
+  describe the Intrepid::MultiCell interface. Also discuss creation of custom cell shapes.
+  */
+  
+  template<class Scalar>
+  class MultiCell {
 private:
-
-  /** \brief Stores connectivity and other information about the canonical cell templates.
-  */
-  static const ConnMapTemplate conn_map_canonical[MAXCANONICAL][3];
-
-  /** \brief Stores connectivity and other information about user-defined cell templates.
-  */
-  static ConnMapTemplate conn_map_custom[MAXTYPE-MAXCANONICAL-1][3];
-
-  /** \brief Names of canonical cell templates.
-  */
-  static const char *cell_type_names[];
-
-  /** \brief Number of cells in the multicell.
-  */
-  int num_cells;
-
-  /** \brief Ambient dimension of the multicell.
-  */
-  int ambient_dimension;
-
-  /** \brief Type of the multicell.
-  */
-  CellType my_cell_type;
-
-  /** \brief Node coordinates.
-  */
-  std::vector< std::vector< Point<Scalar> > >  node_coords;
-
-  /** \brief Edge orientations.
-  */
-  std::vector< std::vector<short> > edge_orients;
-
-  /** \brief Face orientations.
-  */
-  std::vector< std::vector<short> > face_orients;
-
-  /** \brief Array of pullback structs for each cell of the multicell. 
-    Can be used to precompute and store pullback coefficients for each cell
-    */
-  std::vector< PullbackTemplate<Scalar> >  pullback;
-  
-  /** \brief Set to UNDEFINED by the ctor, indicates whether or not setPullbackMethod was applied
-    to this instance
-    */
-  StatusType pullback_status;
-  
-  /** \brief UNDEFINED if MultiCell was constructed without providing orientation data
-   */
-  StatusType orients_status;
-
-  /** \brief Disable default constructor.
-  */
-  MultiCell();
-
+    
+    /** \brief Stores all canonical cell templates (see Intrepid_CellTemplates.hpp for their definition)
+      */
+    static const ConnMapTemplate connMapCanonical_[CELL_CANONICAL_MAX][3];
+    
+    
+    /** \brief Provides storage for user-defined connectivity templates.
+      */
+    static ConnMapTemplate connMapCustom_[CELL_MAX - CELL_CANONICAL_MAX - 1][3];
+    
+    
+    /** \brief Names of canonical and custom cell templates (corresponds to the enumeration in ECell)
+      */
+    static const char *cellNames_[];
+    
+    
+    /** \brief Number of cells in the multicell.
+      */
+    int numCells_;
+    
+    
+    /** \brief Dimension of the ambient space. Can be different from the topological dimension of 
+      the generating cell type. For example, a MultiCell can be defined using a QUAD as a generating
+      cell to represent a set of faces of HEX cells. In this case, the ambient dimension should be 
+      set to 3 - the same as the topological dimension of the parent cell type (HEX).
+      */
+    int ambientDim_;
+    
+    
+    /** \brief Type of the generating cell.
+      */
+    ECell myCellType_;
+    
+    
+    /** \brief Two-dimensional array whose leading dimension equals the number of cells in the MultiCell
+      and the number of columns equals the number of vertices of the generating cell type. The i-th  
+      row  stores the vertices of the i-th cell as Point objects, i.e., vertices[i][j] is the j-th   
+      vertex of the i-th cell in the MultiCell.
+      */
+    Teuchos::Array< Teuchos::Array< Point<Scalar> > >  vertices_;
+    
+    
+    /** \brief Two-dimensional array whose leading dimension equals the number of cells in the MultiCell
+      and the number of columns equals the number of edges (1-subcells) of the generating cell type. 
+      The i-th row stores the signs of the edges of the i-th cell, i.e., edgeSigns_[i][j] is the sign
+       of the j-th edge of the i-th cell. Edge signs are defined as follows:
+      
+      \verbatim
+        edgeSigns_[i][j] = +1 if local edge direction coincides with the global edge direction
+        edgeSigns_[i][j] = -1 if local edge direction is opposite to the global edge direction
+      \endverbatim
+      
+      Local edge direction is defined by the vertex order in the cell template of the generating cell 
+      type. For example, local directions of the edges in a QUAD cell are defined by the order of 
+      their vertex pairs {{0,1}, {1,2}, {2,3}, {3,0}}, i.e., direction of edge 0 is from vertex 0 to
+      vertex 1; direction of edge 1 is  from vertex 1 to vertex 2 and so on. Setting edge signs is
+      user's responsibility because the MultiCell is not aware of the global mesh structures and 
+      orientation choices in the user code.
+      */
+    Teuchos::Array< Teuchos::Array<short> > edgeSigns_;
+    
+    
+    /** \brief STATUS_UNDEFINED if MultiCell was constructed without providing edge sign data.
+      */
+    EStatus edgeSignsStatus_;
+    
+    
+    /** \brief Two-dimensional array whose leading dimension equals the number of cells in the MultiCell
+      and the number of columns equals the number of faces (2-subcells) of the generating cell type. 
+      The i-th row stores the signs of the faces of the i-th cell, i.e., faceSigns_[i][j] is the sign of 
+      the j-th face of the i-th cell. Face signs are defined as follows:
+      
+      \verbatim
+      faceSigns_[i][j] = +1 if local unit normal coincides with the global unit normal
+      faceSigns_[i][j] = -1 if local unit normal coincides with the global unit normal
+      \endverbatim
+      
+      Local unit normals are defined using the right hand rule and the vertex order of the faces
+      in the cell template of the generating cell type.  For example, the local unit normals of the
+      faces in a PYRAMID are defined by the order of their vertices in the PYRAMID cell template:
+      {{0,3,2,1}, {0,1,4}, {1,2,4}, {2,3,4}, {3,0,4}} and application of the right hand rule, i.e., 
+      local orientation on all faces is provided by the outer unit normal. Setting face signs is
+      user's responsibility because the MultiCell is not aware of the global mesh structures and 
+      orientation choices in the user code.
+      */
+    Teuchos::Array< Teuchos::Array<short> > faceSigns_;
+    
+    
+    /** \brief STATUS_UNDEFINED if MultiCell was constructed without providing face sign data
+      */
+    EStatus faceSignsStatus_;
+    
+    
+    /** \brief A one-dimensional array of charts, i.e., mappings between the cells in the MultiCell 
+      and their standard reference cell. Can be initialized if and only if the generating cell type
+      has a chart, i.e., it is one of CELL_EDGE, CELL_QUAD, CELL_TRI, CELL_TET, CELL_HEX, CELL_PYRAMID, 
+      or CELL_TRIPRISM. By default, <var>atlas_<var> is not initialized by the ctor because not all
+      reconstruction methods require this information. 
+      */
+    Teuchos::Array< ChartTemplate<Scalar> >  atlas_;
+    
+    
+    /** \brief Default value is STATUS_UNDEFINED. Changed to STATUS_DEFINED by Intrepid::setAtlas()
+      */
+    EStatus atlasStatus_;
+    
+    
+    /** \brief Disable default constructor.
+      */
+    MultiCell();
+    
 public:
-
-  /** \brief Use this constructor if subcell orientations are immaterial or will be computed by Intrepid.
-
-      \param num_cells_ [in]          - Number of cells in this multicell.
-      \param ambient_dimension_ [in]  - Ambient dimension, i.e. dimension of a geometric point.
-      \param cell_type_ [in]          - Generating cell type: can be a canonical (TET, HEX, etc.). or a custom,
-                                        i.e. user-defined type.
-      \param node_coords_ [in]        - Physical coordinates of nodes (points) for all cells of the
-                                        multicell. Should be specified in the interleaved format, e.g.
-                                        for a two-cell multicell consisting of cells \f$A\f$ and \f$B\f$, the order is:\n
-                                        \f$\{x^A_1, y^A_1, z^A_1, x^A_2, y^A_2, z^A_2, ..., x^A_n, y^A_n, z^A_n,
-                                             x^B_1, y^B_1, z^B_1, x^B_2, y^B_2, z^B_2, ..., x^B_n, y^B_n, z^B_n\}\f$,\n
+      
+      /** \brief Use this constructor if subcell signs are not needed by reconstruction interface.
+      
+      \param numCells [in]            - Number of cells in this multicell.
+      \param ambientDim [in]          - Dimension of the ambient space where the cells are located.
+      \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
+                                        or a custom, i.e. user-defined type.
+      \param vertices [in]            - Physical coordinates of the vertices for all cells of the
+                                        multicell, in an interleaved format, e.g., for a 
+                                        two-cell multicell consisting of cells \f$A\f$ and \f$B\f$, 
+                                        the order is:\n
+      
+      \f$\{x^A_1, y^A_1, z^A_1, x^A_2, y^A_2, z^A_2, ..., x^A_n, y^A_n, z^A_n,
+        x^B_1, y^B_1, z^B_1, x^B_2, y^B_2, z^B_2, ..., x^B_n, y^B_n, z^B_n\}\f$,\n
+      
                                         where \f$n\f$ is the number of nodes (points) in the cell.
-  */
-  MultiCell(const int      num_cells_,
-            const int      ambient_dimension_,
-            const CellType cell_type_,
-            const Scalar*  node_coords_);
-
-  /** \brief Use this constructor if the interpolation/reconstruction interface needs
-             subcell orientations.
-
-      \param num_cells_ [in]          - Number of cells in this multicell.
-      \param ambient_dimension_ [in]  - Ambient dimension, i.e. dimension of a geometric point.
-      \param cell_type_ [in]          - Generating cell type: can be a canonical (TET, HEX, etc.). or a custom,
-                                        i.e. user-defined type.
-      \param node_coords_ [in]        - Physical coordinates of nodes (points) for all cells of the
-                                        multicell. Should be specified in the interleaved format, e.g.
-                                        for a two-cell multicell consisting of cells \f$A\f$ and \f$B\f$, the input
-                                        sequence is:\n
-                                        \f$\{x^A_1, y^A_1, z^A_1, x^A_2, y^A_2, z^A_2, ..., x^A_n, y^A_n, z^A_n,
-                                             x^B_1, y^B_1, z^B_1, x^B_2, y^B_2, z^B_2, ..., x^B_n, y^B_n, z^B_n\}\f$,\n
-                                        where \f$n\f$ is the number of nodes (points) in the cell.
-      \param edge_orients_ [in]       - Edge orientations, per each cell. For a two-cell multicell consisting of cells
-                                        \f$A\f$ and \f$B\f$, the input sequence is:\n
-                                        \f$\{o^A_1, o^A_2, ..., o^A_m, o^B_1, o^B_2, ..., o^B_m\}\f$,\n
-                                         where \f$m\f$ is the number of edges per cell, and \f$o^X_j \in \{1,-1,0\}\f$.
-      \param face_orients_ [in]       - Face orientations, per each cell. For a two-cell multicell consisting of cells
-                                        \f$A\f$ and \f$B\f$, the input sequence is:\n
-                                        \f$\{o^A_1, o^A_2, ..., o^A_m, o^B_1, o^B_2, ..., o^B_m\}\f$,\n
-                                         where \f$m\f$ is the number of faces per cell, and \f$o^X_j \in \{1,-1,0\}\f$.
-										 
-      \warning Constructor does not check consistency of the orientations in <var>edge_orient</var>
-               and <var>face_orient</var>. It is responsibility of the user to ensure that the orientation values
-               corresponding to the same edge or face are always the same.
-  */
-  MultiCell(const int      num_cells_,
-            const int      ambient_dimension_,
-            const CellType cell_type_,
-            const Scalar*  node_coords_,
-            const short*   edge_orients_,
-            const short*   face_orients_);
-
-  /** \brief A static function (can be called without prior object instantiation)
-             that sets the definition of a custom cell type inside the static data
-             member <var>conn_map_custom</var>.
-
-      \param cell_type_ [in]         - Cell type: must be a custom type.
-      \param conn_map_template_ [in] - An array of 3 (three) ConnMapTemplate objects.
-                                       See detailed explanation below.
-
-             The <var>conn_map_template_</var> variable contains the topological information about
-             the custom cell template. For example, the <var>conn_map_template_</var> for a prism with
-             a triangular base would look as follows:
-  \verbatim
-  conn_map_template[3] =
-  {   // prism with triangular base (wedge)
-    { // prism->1cell                        DEFINITIONS:
-      3,                                     ----> topological dimension of the cell
-      9,                                     ----> number of subcells that are 1-cells 
-      {2,2,2,2,2,2,2,2,2},                   ----> number of nodes per subcell
-      {EDGE,EDGE,EDGE,EDGE,
-       EDGE,EDGE,EDGE,EDGE,EDGE},            ----> canonical or custom types of subcells
-      {{0,1}, {1,2}, {2,0}, {0,3},
-       {1,4}, {2,5}, {3,4}, {4,5}, {5,3}}    ----> local node connectivities for each subcell
-    },
-    { // prism->2cell                        MORE CONCRETELY:
-      3,                                     ----> a prism is a 3D object
-      5,                                     ----> a wedge prism contains five faces
-      {4,4,4,3,3},                           ----> number of nodes per face
-      {QUAD,QUAD,QUAD,
-       TRI,TRI},                             ----> the faces are three quads and two triangles
-      {{0,1,4,3}, {1,2,5,4}, {2,0,3,5},
-       {0,1,2}, {3,4,5}}                     ----> local node connectivities for each face
-    },
-    { // prism->3cell                        MORE CONCRETELY:
-      3,                                     ----> again, a prism is a 3D object
-      1,                                     ----> a prism consists of one 3-cell
-      {6},                                   ----> a prism has six nodes
-      {PRISM},                               ----> the only 3-cell is ... a prism
-      {{0,1,2,3,4,5}}                        ----> local node numbers
-    }
-  };  // end prism
-  \endverbatim 
-  */
-  static void setConnMapCustom(const CellType        cell_type_,
-                               const ConnMapTemplate conn_map_template_[]);
-
-
-  //-------------------------------------------------------------------------------------//
-  //       Accessors operating on the multicell instance -> using my_cell_type           //
-  //-------------------------------------------------------------------------------------//
-
-  /** \brief Returns ambient dimension of this multicell instance
-  */
-  int getMyAmbientDimension() const;
-
-
-  /** \brief Returns the cell type of this multicell instance.
-  */
-  CellType getMyType() const;
-
-
-  /** \brief Returns the cell name of this multicell instance.
-  */
-  const char* getMyName() const;
-
-
-  /** \brief Returns topological dimension of the generating cell type.
-  */
-  int getMyTopoDimension() const;
-
-
-  /** \brief Returns number of nodes of the generating cell for this instance of multicell.
-  */
-  int getMyNumNodes() const;
-
-
-  /** \brief Returns number of subcells of a particular dimension for the generating cell of this multicell instance.
-
-      \param target_dim_ [in] - target dimension       
-  */
-  int getMyNumSubcells(const int target_dim_) const;
-
-
-  /** \brief Returns type of subcell of a particular dimension, based on its index, for the generating cell.
-
-      \param target_dim_    [in] - target dimension       
-      \param subcell_index_ [in] - index of the desired subcell \n
-                                   (remember: they are implicitly indexed in the cell template, starting with 0)       
-  */
-  CellType getMySubcellType(const int target_dim_,
-                            const int subcell_index_) const;
-
-
-  /** \brief Returns nodes of subcell of a particular dimension, based on its index, for the generating cell.
-
-      \param target_dim_        [in]  - target dimension       
-      \param subcell_index_     [in]  - index of the desired subcell \n
-                                       (remember: they are implicitly indexed in the cell template, starting with 0)
-      \param subcell_node_conn_ [out] - node connectivities of the desired subcell
-  */
-  void getMySubcellNodes(const int target_dim_,
-                         const int subcell_index_,
-                         std::vector<int> & subcell_node_conn_) const;
-
-
-  /** \brief Returns orientations of 1 or 2 subcells of a specified cell 
+      */
+      MultiCell(const int      numCells,
+                const int      ambientDim,
+                const ECell    generatingCellType,
+                const Scalar*  vertices);
     
-    \param cell_ID             [in]  - target cell ID 
-    \param subcell_dim         [in]  - dimension of the subcells whose orientations we want
-    \param subcell_orient      [out] - array with the orientation values for the subcells
+    
+    /** \brief Use this constructor if the reconstruction interface needs edge OR face signs.
+      
+      \param numCells   [in]          - Number of cells in this multicell.
+      \param ambientDim [in]          - Dimension of the ambient space where the cells are located.
+      \param generatingCellType[in]   - Generating cell type: can be a canonical (TET, HEX, etc.). 
+                                        or a custom, i.e. user-defined type.
+      \param vertices   [in]          - Physical coordinates of the vertices for all cells of the
+                                        multicell in an interleaved format (see above).      
+      \param subcellSigns[in]         - Edge or face signs, per each cell. For a two-cell multicell  
+                                        consisting of cells \f$A\f$ and \f$B\f$, the input sequence is:\n
+      
+      \f$\{o^A_1, o^A_2, ..., o^A_m, o^B_1, o^B_2, ..., o^B_m\}\f$,\n
+      
+                                        where \f$m\f$ is the number of edges/faces per cell, and 
+                                        \f$o^X_j \in \{1,-1,0\}\f$.
+      
+      \param subcellDim [in]         - dimension of the subcell type for which signs are provided (1 or 2)
+      
+      \warning Constructor cannot check correctness of the signs in <var>subcellSigns</var> because 
+      MultiCell does not have access to global mesh data. The user is responsible for setting the
+      correct subcell signs.
+      */
+    MultiCell(const int      numCells,
+              const int      ambientDim,
+              const ECell    generatingCellType,
+              const Scalar*  vertices,
+              const short*   subcellSigns,
+              const int      subcellDim);
+    
+    
+    /** \brief Use this constructor if the reconstruction interface needs edge AND face signs
+      
+      \param numCells   [in]          - Number of cells in this multicell.
+      \param ambientDim [in]          - Dimension of the ambient space where the cells are located.
+      \param generatingCellType[in]   - Generating cell type: can be a canonical (TET, HEX, etc.). 
+                                        or a custom, i.e. user-defined type.
+      \param vertices   [in]          - Physical coordinates of the vertices for all cells of the
+                                        multicell in an interleaved format (see above).
+      \param edgeSigns [in]           - Edge signs, per each cell. For a two-cell multicell consisting
+                                        of cells \f$A\f$ and \f$B\f$, the input sequence is:\n
+      
+      \f$\{o^A_1, o^A_2, ..., o^A_m, o^B_1, o^B_2, ..., o^B_m\}\f$,\n
+      
+                                        where \f$m\f$ is the number of edges per cell, and 
+                                        \f$o^X_j \in \{1,-1,0\}\f$.
+      
+      \param faceSigns [in]           - Face signs, per each cell. For a two-cell multicell consisting 
+                                      of cells \f$A\f$ and \f$B\f$, the input sequence is:\n
+      
+      \f$\{o^A_1, o^A_2, ..., o^A_m, o^B_1, o^B_2, ..., o^B_m\}\f$,\n
+      
+                                        where \f$m\f$ is the number of faces per cell, and 
+                                        \f$o^X_j \in \{1,-1,0\}\f$.
+      
+      \warning Constructor cannot check correctness of the signs in <var>edgeSigns</var> and 
+      <var>faceSigns<var> because MultiCell does not have access to global mesh data. The user is 
+      responsible for setting the correct edge and face signs.
+      */
+    MultiCell(const int      numCells,
+              const int      ambientDim,
+              const ECell    generatingCellType,
+              const Scalar*  vertices,
+              const short*   edgeSigns,
+              const short*   faceSigns);
+    
+    
+    /** \brief A static function (can be called without prior object instantiation) to set the 
+      definition of a custom cell type inside the static data member <var>connMapCustom_</var>.
+      
+      \param customCellType [in]      - Cell type: must be a custom type (POLY0 - POLY9).
+      \param customCellTemplate [in]  - An array of 3 (three) ConnMapTemplate structs.
+      
+      See detailed explanation below.
+      
+      The <var>customCellTemplate_</var> should contain valid topological information about a user 
+      defined cell. For example, the <var>customCellTemplate_</var> for a prism with a triangular
+      base would look as follows:
+      \verbatim
+      customMapTemplate[3] =
+        {   // prism with triangular base (wedge)
+          { // triprism->1cell                        DEFINITIONS:
+            3,                                    ----> topological dimension of the cell
+            9,                                    ----> number of subcells that are 1-cells 
+            {2,2,2,2,2,2,2,2,2},                  ----> number of nodes per subcell
+            {CELL_EDGE,CELL_EDGE,CELL_EDGE,CELL_EDGE,CELL_EDGE,CELL_EDGE,
+             CELL_EDGE,CELL_EDGE,CELL_EDGE},      ----> canonical or custom types of subcells
+            {{0,1}, {1,2}, {2,0}, {0,3},
+            {1,4}, {2,5}, {3,4}, {4,5}, {5,3}}    ----> local node connectivities for each subcell
+          },
+          { // triprism->2cell                        MORE CONCRETELY:
+            3,                                    ----> a prism is a 3D object
+            5,                                    ----> a wedge prism contains five faces
+            {4,4,4,3,3},                          ----> number of nodes per face
+            {CELL_QUAD,CELL_QUAD,CELL_QUAD,       ----> the faces are three quads and two triangles
+             CELL_TRI,CELL_TRI},           
+            {{0,1,4,3}, {1,2,5,4}, {2,0,3,5},
+            {0,1,2}, {3,4,5}}                     ----> local node connectivities for each face
+          },
+          { // triprism->3cell                        MORE CONCRETELY:
+            3,                                    ----> again, a prism is a 3D object
+            1,                                    ----> a prism consists of one 3-cell
+            {6},                                  ----> a prism has six nodes
+            {CELL_TRIPRISM},                      ----> the only 3-cell is ... a prism
+            {{0,1,2,3,4,5}}                       ----> local node numbers
+          }
+        };  // end prism
+    \endverbatim 
+      */
+    static void setConnMapCustom(const ECell customCellType, 
+                                 const ConnMapTemplate customCellTemplate[]);
+    
+    
+    //--------------------------------------------------------------------------------------------//
+    //                      Accessors operating on a specific MultiCell instance                  //
+    //--------------------------------------------------------------------------------------------//
+    
+    
+    /** \brief Returns the ambient dimension of the MultiCell object.
+      */
+    int getMyAmbientDim() const;
+    
+    
+    /** \brief Returns the type of the generating cell of the MultiCell object.
+      */
+    ECell getMyCellType() const;
+    
+    
+    /** \brief Returns the name of the generating cell of the MultiCell object.
+      */
+    const char* getMyCellName() const;
+    
+    
+    /** \brief Returns the topological dimension of the generating cell of the MultiCell object.
+      */
+    int getMyTopologicalDim() const;
+    
+    
+    /** \brief Returns the number of nodes of the generating cell of the MultiCell object.
+      */
+    int getMyNumNodes() const;
+    
+    
+    /** \brief Returns number of subcells of specified dimension for the generating cell of the MultiCell object.
+      \param subcellDim [in] - dimension of the subcells whose number we want to find      
+      */
+    int getMyNumSubcells(const int subcellDim) const;
+    
+    
+    /** \brief Returns the subcell type of a particular dimension, based on its local ID, for the 
+      generating cell (remember: subcells are implicitly indexed in the cell template, starting with 0).
+      
+        \param subcellDim [in] - dimension of the target subcell    
+        \param subcellID  [in] - local subcell ID  \n
+      
+      For example, if the generating cell type is CELL_PYRAMID, then
+      
+      \verbatim
+        getMySubcellType(2,0) = CELL_QUAD because the first 2-subcell in the template is the base
+        getMySubcellType(2,1) = CELL_TRI because the second 2-subcell is a triangular side face, etc.
+      \endverbatim
+      
+      */
+    ECell getMySubcellType(const int subcellDim,
+                           const int subcellId) const;
+    
+    
+    /** \brief Returns local node IDs of a subcell of a particular dimension, based on its local ID, for the 
+      generating cell (remember: subcells are implicitly indexed in the cell template, starting with 0).
+      
+      \param subcellDim     [in]  - dimension of the target subcell    
+      \param subcellID      [in]  - local subcell ID 
+      \param subcellNodeIDs [out] - ordered list of the local node IDs that are vertices of the subcell 
+
+      For example, if the generating cell type is CELL_PYRAMID, then
+
+      \verbatim
+        getMySubcellNodeIDs(2,0,subcellNodeIDs) loads {0,3,2,1} into subcellNodeIDs, 
+        (the nodes of the first 2-subcell (face) of the pyramid in the cell template.)
+      
+        getMySubcellNodeIDs(1,2,subcellNodeIDs) loads {2,3} into subcellNodeIDs. 
+        (the nodes of the third 1-subcell (edge) of the pyramid in the cell template), etc.
+      \endverbatim
+      */
+    void getMySubcellNodeIDs(const int subcellDim,
+                             const int subcellID,
+                             Teuchos::Array<int> & subcellNodeIDs) const;
+    
+    
+    /** \brief Returns reference to the data member that holds the signs of 1 or 2 subcells of the 
+      specified cell in the MultiCell (remember, the cells stored in the MultiCell are implicitely 
+      indexed by the order in which they were provided by the user).
+
+        \param cellID            [in]  - cell ID relative to the MultiCell object
+        \param subcellDim        [in]  - dimension of the subcells whose orientations we want
+*/
+    const Teuchos::Array<short> & getMySubcellSigns(const int cellID,
+                                                    const int subcellDim) const;
+    
+    
+    /** \brief Returns the coordinates of a vertex as a Point object.
+      
+        \param cellID   [in]  - cell ID relative to the multicell
+        \param vertexID [in]  - vertex ID relative to the generating cell template       
+      */
+    const Point<Scalar> & getVertex(const int cellID,
+                                    const int vertexID) const;
+    
+    
+    /** \brief Returns the coordinates of all vertices in a cell as a vector of Point objects.
+      
+        \param cellID  [in]  - cell ID relative to the MultiCell.
+      */
+    const Teuchos::Array< Point<Scalar> > & getCell(const int cellID) const;
+    
+    
+    /** \brief Overloaded [] operator; returns the vertices of the cell with the specified
+      cellID (relative to the MultiCell). NOTE: this allows us to use the [][] operator as well.
+      
+      \param cellID  [in]  - cell ID relative to the MultiCell.
+      */
+    const Teuchos::Array< Point<Scalar> > & operator [] (const int cellID) const;
+    
+    
+    //-------------------------------------------------------------------------------------//
+    //     Static member functions: can be called without prior MultiCell instantiation    //
+    //-------------------------------------------------------------------------------------//
+    
+    /** \brief Returns cell type based on its name.
+      
+        \param cellName [in] - the name of the cell defined in <var>cellNames_<var>
+      */
+    static ECell getCellType(const char* cellName);
+    
+    
+    /** \brief Returns cell name based on its type. 
+      
+        \param cellType [in] - target cell type 
+      */
+    static const char* getCellName(const ECell cellType);
+    
+    
+    /** \brief Returns topological dimension of a cell type.
+      
+        \param cellType [in] - target cell type 
+      */
+    static int getTopologicalDim(const ECell cellType);
+    
+    
+    /** \brief Returns number of nodes per cell for a specified cell type.
+
+        \param cellType [in] - target cell type 
+      */
+    static int getNumNodes(const ECell cellType);
+    
+    
+    /** \brief Returns number of subcells of a particular dimension for a given cell type.
+      
+      \param parentCellType   [in] - parent cell type
+      \param subcellDim       [in] - dimension of the subcells whose number we want to get 
+      */
+    static int getNumSubcells(const ECell parentCellType, 
+                              const int   subcellDim);
+    
+    
+    /** \brief Returns type of subcell of a particular dimension, based on its index, for a given cell type.
+      
+      \param parentCellType   [in] - parent cell type
+      \param subcellDim       [in] - dimension of the subcell whose type we want to get        
+      \param subcellID        [in] - local ID of the desired subcell relative to the parent cell \n
+      (remember: subcells are implicitly indexed in the cell template, starting with 0)       
+      */
+    static ECell getSubcellType(const ECell parentCellType,
+                                const int subcellDim,
+                                const int subcellID);
+    
+    
+    /** \brief Returns node IDs of subcell of a particular dimension, based on its index, for a given cell type.
+      
+      \param parentCellType   [in]  - parent cell type
+      \param subcellDim       [in]  - dimension of the subcells whose type we want to get        
+      \param subcellID        [in]  - local ID of the desired subcell, relative to the parent cell \n
+      (remember: they are implicitly indexed in the cell template, starting with 0)
+      \param subcellNodeIDs   [out] - ordered list of local node IDs of the desired subcell
+      */
+    static void getSubcellNodeIDs(const ECell parentCellType,
+                                  const int subcellDim,
+                                  const int subcellID,
+                                  Teuchos::Array<int> & subcellNodeIDs);
+    
+    
+    //-------------------------------------------------------------------------------------//
+    //                         Charts and atlas                                            //
+    //-------------------------------------------------------------------------------------//
+    
+
+    /** \brief Computes charts for all cells in the MultiCell and stores them in <var>atlas_<var>.
+      The chart defines the mapping that takes a reference cell to an ambient space cell.
+      Admissible generating cell types for this method are EDGE, TRI, QUAD, TET, HEX, PRISM, PYRAMID.
+      */
+    void setAtlas();
+
+    /** \brief Returns the status of the <var>atlas_<var> data member (DEFINED or UNDEFINED)
+      */
+    EStatus getAtlasStatus() const;
+    
+    
+    /** \brief Returns the status of the <var>atlas_<var> data member as a string.
+      */
+    const char* getAtlasStatusName() const;
+    
+    
+    /** \brief Returns reference to <var>atlas_<var> that contains the chart of the specified cell  
+      
+      \param cellID    [in]   - cell ID relative to the MultiCell
     */
-  void getMyOrientations(const int cell_ID,
-                         const int subcell_dim,
-                         std::vector<short> & subcell_orient) const;
-  
-  //-------------------------------------------------------------------------------------//
-  //                Accessors operating on any cell type specified by type_              //
-  //-------------------------------------------------------------------------------------//
-
-  /** \brief Returns cell type based on its name.
-  */
-  static CellType getType(const char* name_);
-
-
-  /** \brief Returns cell name based on its type. This is a static function, i.e.
-             it can be accessed without object instantiation.
-  */
-  static const char* getName(const CellType type_);
-
-
-  /** \brief Returns topological dimension of a cell type.
-  */
-  static int getTopoDimension(const CellType type_);
-
-
-  /** \brief Returns number of nodes per cell for a specified cell type.
-  */
-  static int getNumNodes(const CellType type_);
-
-
-  /** \brief Returns number of subcells of a particular dimension for a given cell type.
-
-      \param type_       [in] - source cell type
-      \param target_dim_ [in] - target dimension
-  */
-  static int getNumSubcells(const CellType type_, 
-                            const int target_dim_);
-
-
-  /** \brief Returns type of subcell of a particular dimension, based on its index, for a given cell type.
-
-      \param type_          [in] - source cell type
-      \param target_dim_    [in] - target dimension       
-      \param subcell_index_ [in] - index of the desired subcell \n
-                                   (remember: they are implicitly indexed in the cell template, starting with 0)       
-  */
-  static CellType getSubcellType(const CellType type_,
-                                 const int target_dim_,
-                                 const int subcell_index_);
-
-
-  /** \brief Returns nodes of subcell of a particular dimension, based on its index, for a given cell type.
-
-      \param type_              [in]  - source cell type
-      \param target_dim_        [in]  - target dimension       
-      \param subcell_index_     [in]  - index of the desired subcell \n
-                                       (remember: they are implicitly indexed in the cell template, starting with 0)
-      \param subcell_node_conn_ [out] - node connectivities of the desired subcell
-  */
-  static void getSubcellNodes(const CellType type_,
-                              const int target_dim_,
-                              const int subcell_index_,
-                              std::vector<int> & subcell_node_conn_);
-
-
-  /** \brief Returns the coordinates of a node as a Point object.
-
-      \param cell_id_  [in]  - cell ID within this multicell
-      \param point_id_ [in]  - local point ID within the cell       
-  */
-  const Point<Scalar> & getPoint(const int cell_id_,
-                                 const int point_id_) const;
-  
-  
-  /** \brief Returns the coordinates of all nodes in a cell as a vector of Point objects.
-
-      \param cell_id_  [in]  - cell ID within this multicell
-  */
-  const std::vector< Point<Scalar> > & getCell(const int cell_id_) const;
-
-
-  /** \brief   Overloaded [] operator; NOTE: this allows us to use
-               the [][] operator as well.
-  */
-  const std::vector< Point<Scalar> > & operator [] (const int cell_id_) const;
-
-  //-------------------------------------------------------------------------------------//
-  //               Pullback and other stuff..                                            //
-  //-------------------------------------------------------------------------------------//
-  
-  /** \brief Returns the coefficients of the pullback for the cell with cell_id
+    const ChartTemplate<Scalar> & getChart(const int cellID) const;
     
-    \param cell_id_  [in]  - cell ID within this multicell
     
-    Pullback is defined for canonical cells that have a standard (reference) cell. It is
-    a function R^n -> R^n, where n=ambient_dimension, that maps the standard cell to
-    a cell of the same type in the physical space. Therefore, to define the pullback, 
-    the cell dimension must match the ambient dimension. For example, it is OK to ask
-    for the pullback of a TRI cell if ambient_dimension = 2, but we cannot get a pullback
-    for a TRI cell if the ambient_dimension = 3. In this case, the TRI cell is a subcell
-    of a higher dimensional cell (e.g. a TET) and its pullback can be obtained by restricting
-    the pullback of its parent cell. 
-    
-    This function computes the standard pullbacks of canonical cells, i.e., the 
-    pullback is a polynomial function. Pullback coefficients are stored in a 
-    Pullback struct. Definition of coefficients and the storage convention is
-    as folloows: (vij denotes the j-th coordinate of the i-th vertex, except  
-    in 1D where we simply write vi)
-    ----------------------------------------------------------------------------
+    /** \brief Returns Matrix object containing the Jacobian matrix of the chart mapping for the
+      specified cell, evaluated at a point in the reference frame. 
+      \warning Not to be confused with the Jacobian determinant, the determinant of this matrix.
+       
+       \param cellID [in]     - cell ID relative to the MultiCell
+       \param refPoint [in]   - point in the reference frame where Jacobian is evaluated
+      */
+    Matrix<Scalar> jacobian(const int cellID, const Point<Scalar>& refPoint) const;
 
-    EDGE:  
-      F: [-1,1] -> [v0,v1]
-    
-      F0(x) = x*(v1-v0)/2 + (v1+v0)/2
-    
-    Storage:  
-    
-      F[0][0] -> (v1-v0)/2 
-      F[0][1] -> (v1+v0)/2
-    ----------------------------------------------------------------------------
-    TRI:    
-      F: [(0,0),(1,0),(0,1)] -> [v0,v1,v2]
-    
-      F0(x,y) = (-v00 + v10)*x + (-v00 + v20)*y + v00
-      F1(x,y) = (-v01 + v11)*x + (-v01 + v21)*y + v01
-    
-    Storage:  F[i][j]; i=0,1 is the coordinate function index:
-    
-      F[i][0] -> (-v0i + v1i)                x coefficient
-      F[i][1] -> (-v0i + v2i)                y coefficient
-      F[i][2] ->   v0i                       free term
-    ----------------------------------------------------------------------------
-    QUAD:
-      F: [(-1,-1),(1,-1),(1,1),(-1,1)] -> [v0,v1,v2,v3]
-    
-      F0(x,y) = xy*( v00 - v10 + v20 - v30)/4 + 
-                x* (-v00 + v10 + v20 - v30)/4 + 
-                y* (-v00 - v10 + v20 + v30)/4 + 
-                   ( v00 + v10 + v20 + v30)/4
-      F1(x,y) = xy*( v01 - v11 + v21 - v31)/4 + 
-                x* (-v01 + v11 + v21 - v31)/4 + 
-                y* (-v01 - v11 + v21 + v31)/4 + 
-                   ( v01 + v11 + v21 + v31)/4
-    
-      Storage:  F[i][j]; i=0,1 is the coordinate function index:
-    
-        F[i][0] -> ( v0i - v1i + v2i - v3i)/4      xy coefficient
-        F[i][1] -> (-v0i + v1i + v2i - v3i)/4      x  coefficient
-        F[i][2] -> (-v0i + v1i + v2i - v3i)/4      y  coefficient
-        F[i][3] -> ( v0i + v1i + v2i + v3i)/4      free term
-    ----------------------------------------------------------------------------
-    TET:
-      F:[(0,0,0),(1,0,0),(0,1,0),(0,0,1)] -> [v0,v1,v2,v3]
-    
-      F0(x,y,z) = x*(-v00 + v10) + y*(-v00 + v20) + z*(-v00 + v30) + v00
-      F1(x,y,z) = x*(-v01 + v11) + y*(-v01 + v21) + z*(-v01 + v31) + v01
-      F2(x,y,z) = x*(-v02 + v12) + y*(-v02 + v22) + z*(-v02 + v32) + v02
-    
-    Storage:  F[i][j]; i=0,1,2 is the coordinate function index:
-    
-      F[i][0] -> (-v0i + v1i)                x coefficient
-      F[i][1] -> (-v0i + v2i)                y coefficient
-      F[i][2] -> (-v0i + v3i)                z coefficient
-      F[i][3] -> (-v0i + v3i)                free term
-    ----------------------------------------------------------------------------
-    HEX: 
-      F:[(-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1) 
-         (-1,-1, 1),(1,-1, 1),(1,1, 1),(-1,1, 1)] -> [v0,v1,v2,v3,v4,v5,v6,v7]
-     
-      Fi(x,y,z) = xyz*(-v0i + v1i - v2i + v3i + v4i - v5i + v6i - v7i)/8 +
-                   xy*( v0i - v1i + v2i - v3i + v4i - v5i + v6i - v7i)/8 +
-                   xz*( v0i - v1i - v2i + v3i - v4i + v5i + v6i - v7i)/8 +
-                   yz*( v0i + v1i - v2i - v3i - v4i - v5i + v6i + v7i)/8 +
-                    x*(-v0i + v1i + v2i - v3i - v4i + v5i + v6i - v7i)/8 +
-                    y*(-v0i - v1i + v2i + v3i - v4i - v5i + v6i + v7i)/8 +
-                    z*(-v0i - v1i - v2i - v3i + v4i + v5i + v6i + v7i)/8 +
-    		              ( v0i + v1i + v2i + v3i + v4i + v5i + v6i + v7i)/8
-    
-    Storage: F[i][j]; i=0,1,2 is the coordinate function index:
-    
-      F[i][0] -> (-v0i + v1i - v2i + v3i + v4i - v5i + v6i - v7i)/8
-      F[i][1] -> ( v0i - v1i + v2i - v3i + v4i - v5i + v6i - v7i)/8
-      F[i][2] -> ( v0i - v1i - v2i + v3i - v4i + v5i + v6i - v7i)/8
-      F[i][3] -> ( v0i + v1i - v2i - v3i - v4i - v5i + v6i + v7i)/8
-      F[i][4] -> (-v0i + v1i + v2i - v3i - v4i + v5i + v6i - v7i)/8
-      F[i][5] -> (-v0i - v1i + v2i + v3i - v4i - v5i + v6i + v7i)/8
-      F[i][6] -> (-v0i - v1i - v2i - v3i + v4i + v5i + v6i + v7i)/8
-      F[i][7] -> ( v0i + v1i + v2i + v3i + v4i + v5i + v6i + v7i)/8	
-        
-    ----------------------------------------------------------------------------
-    PRISM: 
-    ----------------------------------------------------------------------------
-    PYRAMID: 
+    /**\brief Computes the image of a reference point in the specified physical cell (relative to the
+      MultiCell) using the mapping from the chart of that point. Result is returned as a Point 
+      object with FRAME_PHYSICAL type
 
-    ----------------------------------------------------------------------------
-    ----------------------------------------------------------------------------
-    */
+        \param cellID [in]    -  cell ID relative to the MultiCell
+        \param refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type.
+      */
+    Point<Scalar> mapToPhysicalCell(const int cellID, const Point<Scalar>& refPoint) const;
 
-  /** \brief Computes the standard pullback coefficients for the given cell 
-    and stores them in pullback privite member. Can only be used with canonical cell
-    shapes (EDGE, TRI, QUAD, TET, HEX, PRISM, PYRAMID). 
-    */
-  void setPullback();
-  
-  
-  /** \brief Returns the status of the pullback data member (DEFINED or UNDEFINED)
-    */
-  StatusType getPullbackStatus() const;
-  
-  
-  /** \brief Returns the status of the pullback data member (defined or 
-    undefined) as a string
-    */
-  const char* getPullbackInfo() const;
-  
-  
-  /** \brief Computes the  pullback coefficients for the given cell.
-    Can only be used with canonical cell shapes (EDGE, TRI, QUAD, TET, HEX,
-    PRISM, PYRAMID). In Intrepid, pullback is defined as the map that takes a 
-    reference cell to a specific ambient space cell.
+    /**\brief Computes the image of a reference point in the specified physical cell (relative to the
+      MultiCell) using the mapping from the chart of that point. Result is returned as a Point 
+      object with FRAME_PHYSICAL type
+
+        \param cellID [in]    -  cell ID relative to the MultiCell
+        \param refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type.
+*/
+    Point<Scalar> mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const;
     
-    \param cell_id_    [in] - The number of the cell in the MultiCell instance
-    \param pullback_   [in] - struct defining the pullback for this cell 
     
-    */
-  void getPullback(const int                  cell_id_, 
-                   PullbackTemplate<Scalar>&  pullback_) const;
-  
-  
-  /** \brief Evaluates the Jacobian of the pullback using a given pullback 
-    template. The Point argument must have PointType = REFERENCE.
-    This method provides the basic functionality needed for the next method.
-    Can only be used with canonical cell shapes (EDGE, TRI, QUAD, TET, HEX,
-    PRISM, PYRAMID). 
+    /** \brief Prints multicell info to <var>os</var> stream.
+      */
+    void printMyInfo(std::ostream& os) const;
     
-    In Intrepid the Jacobian of a pullback is a matrix function whose rows
-    are the transposed gradients of the coordinate functions of the pullback. 
-    For example, in 2D the Jacobian is DF = { {F0_x, F0_y},{F1_x,F1_y}}.
-
-    \param cell_id_    [in] - The number of the cell in the MultiCell instance
-    \param argument_   [in] - Point in its reference cell with REFERENCE type
-    \param pullback_   [in] - struct defining the pullback for this cell 
-    
-    */
-  LinearMap<Scalar> Jacobian(const int                        cell_id_,
-                             const Point<Scalar>&             argument_,
-                             const PullbackTemplate<Scalar>&  pullback_) const;
-
-  
-  /** \brief Evaluates the Jacobian of the pullback for the given cell and point.
-    The Point argument must have PointType = REFERENCE. This method will work 
-     with or without precomputed pullbacks:
-    
-    1) if setPullback method has been used and pullback_status = DEFINED,
-       the method uses pullback data from the pullback private data member.
-
-    2) if pullback_status == UNDEFINED, the method calls getPullback to 
-       compute the pullback coefficients on the fly. This is inefficient
-       if done inside a loop.
-
-    \param cell_id_    [in] - The number of the cell in the MultiCell instance
-    \param argument_   [in] - Point in its reference cell with REFERENCE type
-
-*/  
-  LinearMap<Scalar> Jacobian(const int            cell_id_,
-                             const Point<Scalar>& argument_) const;
-  
-  
-  /** \brief Finds the image of a point from the reference cell in the 
-    ambient cell with the specified cell_id. Since pullback maps REFERENCE
-    points to AMBIENT points, the argument must have PointType = REFERENCE.
-    The return point has PointType = AMBIENT.
-    
-    The method does check if the preimage_ is inside the reference 
-    cell. This method provides the basic pullback functionality used by
-    the next pullback method. 
-    
-    \param cell_id_    [in] - The number of the cell in the MultiCell instance
-    \param preimage_   [in] - Point in its reference cell with REFERENCE type
-    \param pullback_   [in] - struct defining the pullback for the cell 
-    
-    */  
-  Point<Scalar> Pullback(const int                       cell_id_, 
-                         const Point<Scalar>&            preimage_,
-                         const PullbackTemplate<Scalar>& pullback_) const;
-                                              
-  
-  /** \brief Finds the image of a point from the reference cell in the 
-    ambient cell with the specified cell_id. Since pullback maps REFERENCE
-    points to AMBIENT points, the argument must have PointType = REFERENCE.
-    The return point has PointType = AMBIENT.
-    
-    The method does check if preimage_ is inside the reference 
-    cell. This method works with or without precomputed pullbacks:
-    
-    1) if setPullback method has been used and pullback_status = DEFINED,
-       the method uses pullback data from the pullback private data member
-
-    2) if pullback_status == UNDEFINED, the method calls getPullback to 
-       compute the pullback coefficients on the fly. This is inefficient
-       if done inside a loop.
-
-    \param cell_id_    [in] - The number of the cell in the MultiCell instance
-    \param preimage_   [in] - Point in its reference cell with REFERENCE type
-
-    */
-  Point<Scalar> Pullback(const int             cell_id_, 
-                         const Point<Scalar>&  preimage_) const;
-    
-  
-  /** \brief Finds the preimage of a point from the ambient cell with the 
-    given cell_id in its reference cell. Reverses the action of Pullback methods. 
-    Since inverse of a pullback maps AMBIENT points to REFERENCE points, the 
-    argument must have PointType = AMBIENT. The return point has 
-    PointType = REFERENCE. If the PullBack type is NON_AFFINE this method uses 
-    Newton iteration and can be expensive. It is used by the next pullback method. 
-    
-    \param cell_id_    [in] - The number of the ambient cell in the MultiCell instance
-    \param image_      [in] - Point in the ambient cell with AMBIENT type
-    \param pullback_   [in] - struct defining the pullback for this cell 
-        
-    */  
-  Point<Scalar> InversePullback(const int                       cell_id_, 
-                                const Point<Scalar>&            image_,
-                                const PullbackTemplate<Scalar>& pullback_) const;
-  
-  
-  /**  \brief Finds the preimage of a point from the ambient  cell with the
-    given cell_id in its reference cell. Reverses the action of Pullback methods. 
-    Since inverse of a pullback maps AMBIENT points to REFERENCE points, the 
-    argument must have PointType = AMBIENT. The return point has 
-    PointType = REFERENCE. This method calls the previous InversePullback method
-    and works with or without precomputed pullbacks:
-    
-    1) if setPullback method has been used and pullback_status = DEFINED,
-       the method uses pullback data from the pullback private data member
-
-    2) if pullback_status == UNDEFINED, the method calls getPullback to 
-       compute the pullback coefficients on the fly. This is inefficient
-       if done inside a loop.
-
-    \param cell_id_    [in] - The number of the cell in the MultiCell instance
-    \param image_      [in] - Point in the ambient cell with AMBIENT type
-    \param pullback_   [in] - struct defining the pullback for this cell 
-
-    */  
-  Point<Scalar> InversePullback(const int               cell_id_, 
-                                const Point<Scalar>&    image_) const;
-  
-
-  /** \brief Prints multicell info to <var>os</var> stream.
-  */
-  void printMyInfo(std::ostream& os) const;
-
 }; // class MultiCell
 
 /** \relates Intrepid::MultiCell
-    \brief   Overloaded << operator.
-*/
+  \brief   Overloaded << operator.
+  */
 template<class Scalar>
 std::ostream& operator << (std::ostream& os,
                            const MultiCell<Scalar>& base);
 
 } // namespace Intrepid
+
 
 // include (templated) inline functions
 #include "Intrepid_MultiCell.icpp"
@@ -645,3 +558,115 @@ std::ostream& operator << (std::ostream& os,
 #include "Intrepid_MultiCellDef.hpp"
 
 #endif
+
+//==============================================================================
+//    D O X Y G E N        D O C U M E N T A T I O N:   P A G E S             //   
+//==============================================================================
+/*!
+\page chart_atlas Charts and atlasses in Intrepid
+ 
+ \param cellID  [in]  - cell ID within this multicell
+ 
+ Pullback is defined for canonical cells that have a standard (reference) cell. It is
+ a function R^n -> R^n, where n=ambient_dimension, that maps the standard cell to
+ a cell of the same type in the physical space. Therefore, to define the chart, 
+ the cell dimension must match the ambient dimension. For example, it is OK to ask
+ for the chart of a TRI cell if ambient_dimension = 2, but we cannot get a chart
+ for a TRI cell if the ambient_dimension = 3. In this case, the TRI cell is a subcell
+ of a higher dimensional cell (e.g. a TET) and its chart can be obtained by restricting
+ the chart of its parent cell. 
+ 
+ This function computes the standard charts of canonical cells, i.e., the 
+ chart is a polynomial function. Pullback coefficients are stored in a 
+ Pullback struct. Definition of coefficients and the storage convention is
+ as folloows: (vij denotes the j-th coordinate of the i-th vertex, except  
+               in 1D where we simply write vi)
+ ----------------------------------------------------------------------------
+ 
+ EDGE:  
+ F: [-1,1] -> [v0,v1]
+ 
+ F0(x) = x*(v1-v0)/2 + (v1+v0)/2
+ 
+ Storage:  
+ 
+ F[0][0] -> (v1-v0)/2 
+ F[0][1] -> (v1+v0)/2
+ ----------------------------------------------------------------------------
+ TRI:    
+ F: [(0,0),(1,0),(0,1)] -> [v0,v1,v2]
+ 
+ F0(x,y) = (-v00 + v10)*x + (-v00 + v20)*y + v00
+ F1(x,y) = (-v01 + v11)*x + (-v01 + v21)*y + v01
+ 
+ Storage:  F[i][j]; i=0,1 is the coordinate function index:
+ 
+ F[i][0] -> (-v0i + v1i)                x coefficient
+ F[i][1] -> (-v0i + v2i)                y coefficient
+ F[i][2] ->   v0i                       free term
+ ----------------------------------------------------------------------------
+ QUAD:
+ F: [(-1,-1),(1,-1),(1,1),(-1,1)] -> [v0,v1,v2,v3]
+ 
+ F0(x,y) = xy*( v00 - v10 + v20 - v30)/4 + 
+ x* (-v00 + v10 + v20 - v30)/4 + 
+ y* (-v00 - v10 + v20 + v30)/4 + 
+ ( v00 + v10 + v20 + v30)/4
+ F1(x,y) = xy*( v01 - v11 + v21 - v31)/4 + 
+ x* (-v01 + v11 + v21 - v31)/4 + 
+ y* (-v01 - v11 + v21 + v31)/4 + 
+ ( v01 + v11 + v21 + v31)/4
+ 
+ Storage:  F[i][j]; i=0,1 is the coordinate function index:
+ 
+ F[i][0] -> ( v0i - v1i + v2i - v3i)/4      xy coefficient
+ F[i][1] -> (-v0i + v1i + v2i - v3i)/4      x  coefficient
+ F[i][2] -> (-v0i + v1i + v2i - v3i)/4      y  coefficient
+ F[i][3] -> ( v0i + v1i + v2i + v3i)/4      free term
+ ----------------------------------------------------------------------------
+ TET:
+ F:[(0,0,0),(1,0,0),(0,1,0),(0,0,1)] -> [v0,v1,v2,v3]
+ 
+ F0(x,y,z) = x*(-v00 + v10) + y*(-v00 + v20) + z*(-v00 + v30) + v00
+ F1(x,y,z) = x*(-v01 + v11) + y*(-v01 + v21) + z*(-v01 + v31) + v01
+ F2(x,y,z) = x*(-v02 + v12) + y*(-v02 + v22) + z*(-v02 + v32) + v02
+ 
+ Storage:  F[i][j]; i=0,1,2 is the coordinate function index:
+ 
+ F[i][0] -> (-v0i + v1i)                x coefficient
+ F[i][1] -> (-v0i + v2i)                y coefficient
+ F[i][2] -> (-v0i + v3i)                z coefficient
+ F[i][3] -> (-v0i + v3i)                free term
+ ----------------------------------------------------------------------------
+ HEX: 
+ F:[(-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1) 
+   (-1,-1, 1),(1,-1, 1),(1,1, 1),(-1,1, 1)] -> [v0,v1,v2,v3,v4,v5,v6,v7]
+ 
+ Fi(x,y,z) = xyz*(-v0i + v1i - v2i + v3i + v4i - v5i + v6i - v7i)/8 +
+ xy*( v0i - v1i + v2i - v3i + v4i - v5i + v6i - v7i)/8 +
+ xz*( v0i - v1i - v2i + v3i - v4i + v5i + v6i - v7i)/8 +
+ yz*( v0i + v1i - v2i - v3i - v4i - v5i + v6i + v7i)/8 +
+ x*(-v0i + v1i + v2i - v3i - v4i + v5i + v6i - v7i)/8 +
+ y*(-v0i - v1i + v2i + v3i - v4i - v5i + v6i + v7i)/8 +
+ z*(-v0i - v1i - v2i - v3i + v4i + v5i + v6i + v7i)/8 +
+ ( v0i + v1i + v2i + v3i + v4i + v5i + v6i + v7i)/8
+ 
+ Storage: F[i][j]; i=0,1,2 is the coordinate function index:
+ 
+ F[i][0] -> (-v0i + v1i - v2i + v3i + v4i - v5i + v6i - v7i)/8
+ F[i][1] -> ( v0i - v1i + v2i - v3i + v4i - v5i + v6i - v7i)/8
+ F[i][2] -> ( v0i - v1i - v2i + v3i - v4i + v5i + v6i - v7i)/8
+ F[i][3] -> ( v0i + v1i - v2i - v3i - v4i - v5i + v6i + v7i)/8
+ F[i][4] -> (-v0i + v1i + v2i - v3i - v4i + v5i + v6i - v7i)/8
+ F[i][5] -> (-v0i - v1i + v2i + v3i - v4i - v5i + v6i + v7i)/8
+ F[i][6] -> (-v0i - v1i - v2i - v3i + v4i + v5i + v6i + v7i)/8
+ F[i][7] -> ( v0i + v1i + v2i + v3i + v4i + v5i + v6i + v7i)/8	
+ 
+ ----------------------------------------------------------------------------
+ PRISM: 
+ ----------------------------------------------------------------------------
+ PYRAMID: 
+ 
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ */
