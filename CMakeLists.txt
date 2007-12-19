@@ -10,8 +10,8 @@ OPTION(TRILINOS_ENABLE_EPETRA "Build the epetra package." ON)
 OPTION(TRILINOS_ENABLE_RBGEN "Build the rbgen package." ON)
 OPTION(TRILINOS_ENABLE_TEUCHOS "Build the teuchos package." ON)
 OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
-OPTION(TRILINOS_INSTALL_BLAS "Include BLAS library in installations / packages." OFF)
-OPTION(TRILINOS_INSTALL_LAPACK "Include LAPACK library in installations / packages." OFF)
+#OPTION(TRILINOS_INSTALL_BLAS "Include BLAS library in installations / packages." OFF)
+#OPTION(TRILINOS_INSTALL_LAPACK "Include LAPACK library in installations / packages." OFF)
 
 # Setup global requirements ...
 FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
@@ -94,13 +94,20 @@ SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${TRILINOS_VERSION}")
 # This is the path where packages should install their header configuration files ...
 SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${TRILINOS_VERSION}/include")
 
-IF(TRILINOS_INSTALL_BLAS)
-  INSTALL(FILES ${TRILINOS_BLAS_LIBRARY} DESTINATION lib)
-ENDIF(TRILINOS_INSTALL_BLAS)
+# Disable these two because they're problematic.  The issue is that the procedure
+# to install these libraries correctly changes radically based on platform and
+# whether the libraries are static or shared.
+# 
+# While cmake knows how to install the target it builds, it doesn't know anything
+# about these external libraries - they're just files to cmake!
 
-IF(TRILINOS_INSTALL_LAPACK)
-  INSTALL(FILES ${TRILINOS_LAPACK_LIBRARY} DESTINATION lib)
-ENDIF(TRILINOS_INSTALL_LAPACK)
+#IF(TRILINOS_INSTALL_BLAS)
+#  INSTALL(FILES ${TRILINOS_BLAS_LIBRARY} DESTINATION lib)
+#ENDIF(TRILINOS_INSTALL_BLAS)
+
+#IF(TRILINOS_INSTALL_LAPACK)
+#  INSTALL(FILES ${TRILINOS_LAPACK_LIBRARY} DESTINATION lib)
+#ENDIF(TRILINOS_INSTALL_LAPACK)
 
 # Setup individual packages ...
 ADD_SUBDIRECTORY(packages)
