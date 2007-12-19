@@ -72,9 +72,46 @@ PyObject* Finalize();
 ///////////////////////////
 // Teuchos::Comm support //
 ///////////////////////////
+%feature("autodoc",
+"broadcast(self, int rootRank, numpy.ndarray buffer)
+
+Broadcast the contents of buffer from processor rootRank to all of the
+other processors.  Argument buffer must be a numpy array, so that the
+broadcast can be performed in-place.  Its scalar data type can be any
+numerical type supported by numpy.")
+Teuchos::Comm::broadcast;
+%feature("autodoc",
+"gatherAll(self, buffer) -> numpy.ndarray
+
+Gather the contents of buffer to all of the processors.  Argument
+buffer can be a numpy array or any sequence that can be converted to a
+numpy array.  Its scalar data type can be any numerical type supported
+by numpy.  The return argument is a numpy array of the same type.")
+Teuchos::Comm::gatherAll;
+%feature("autodoc",
+"reduceAll(EReductionType reductOp, buffer) -> numpy.ndarray
+
+Reduce the contents of buffer according to the operation designated by
+reductOp on all of the processors.  Argument reductOp can be
+Teuchos.REDUCE_SUM, Teuchos.REDUCE_MAX, or Teuchos.REDUCE_MIN.
+Argument buffer can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type can be any numerical
+type supported by numpy.  The return argument is a numpy array of the
+same type.")
+Teuchos::Comm::reduceAll;
+%feature("autodoc",
+"scan(EReductionType reductOp, buffer) -> numpy.ndarray
+
+Return the scan of the contents of buffer according to the operation
+designated by reductOp on each of the processors.  Argument reductOp
+can be Teuchos.REDUCE_SUM, Teuchos.REDUCE_MAX, or Teuchos.REDUCE_MIN.
+Argument buffer can be a numpy array or any sequence that can be
+converted to a numpy array.  Its scalar data type can be any numerical
+type supported by numpy.  The return argument is a numpy array of the
+same type.")
+Teuchos::Comm::reduceAll;
 %extend Teuchos::Comm
 {
-
   PyObject * broadcast(int rootRank, PyObject * bcastObj) const
   {
     PyArrayObject * bcastArray = obj_to_array_no_conversion(bcastObj, NPY_NOTYPE);
@@ -304,32 +341,52 @@ barrier = barrier_long
 
 def broadcast(comm, rootRank, buffer):
   """
-  broadcast(Teuchos.Comm comm, int rootRank, numpy.ndarray buffer)
+  broadcast(Comm comm, int rootRank, numpy.ndarray buffer)
 
-  Broadcast the contents of buffer from processor rootRank to all of the other
-  processors.
+  Broadcast the contents of buffer from processor rootRank to all of
+  the other processors.  Argument buffer must be a numpy array, so
+  that the broadcast can be performed in-place.  Its scalar data type
+  can be any numerical type supported by numpy.
   """
   comm.broadcast(rootRank, buffer)
 
 def gatherAll(comm, buffer):
   """
-  gatherAll(Teuchos.Comm comm, buffer) -> numpy.ndarray
+  gatherAll(Comm comm, buffer) -> numpy.ndarray
 
-  Gather the contents of buffer to all of the processors.
+  Gather the contents of buffer to all of the processors.  Argument
+  buffer can be a numpy array or any sequence that can be converted to
+  a numpy array.  Its scalar data type can be any numerical type
+  supported by numpy.  The return argument is a numpy array of the
+  same type.
   """
   return comm.gatherAll(buffer)
 
 def reduceAll(comm, reductOp, buffer):
   """
-  Reduce the contents of buffer according to the operation designated by
-  reductOp on all of the processors.
+  reduceAll(Comm comm, EReductionType reductOp, buffer) -> numpy.ndarray
+
+  Reduce the contents of buffer according to the operation designated
+  by reductOp on all of the processors.  Argument reductOp can be
+  Teuchos.REDUCE_SUM, Teuchos.REDUCE_MAX, or Teuchos.REDUCE_MIN.
+  Argument buffer can be a numpy array or any sequence that can be
+  converted to a numpy array.  Its scalar data type can be any
+  numerical type supported by numpy.  The return argument is a numpy
+  array of the same type.
   """
   return comm.reduceAll(reductOp, buffer)
 
 def scan(comm, reductOp, buffer):
   """
+  scan(Comm comm, EReductionType reductOp, buffer) -> numpy.ndarray
+
   Return the scan of the contents of buffer according to the operation
-  designated by reductOp on each of the processors.
+  designated by reductOp on each of the processors.  Argument reductOp
+  can be Teuchos.REDUCE_SUM, Teuchos.REDUCE_MAX, or
+  Teuchos.REDUCE_MIN.  Argument buffer can be a numpy array or any
+  sequence that can be converted to a numpy array.  Its scalar data
+  type can be any numerical type supported by numpy.  The return
+  argument is a numpy array of the same type.
   """
   return comm.scan(reductOp, buffer)
 %}
@@ -449,6 +506,7 @@ MpiComm = MpiComm_long
 %pythoncode
 %{
 class DefaultComm:
+    "Encapsulate the default global communicator"
     __defaultComm = MpiComm()
     @classmethod
     def getComm(cls):
@@ -480,6 +538,7 @@ PyObject* Finalize()
 %pythoncode
 %{
 class DefaultComm:
+    "Encapsulate the default global communicator"
     __defaultComm = SerialComm()
     @classmethod
     def getComm(cls):
