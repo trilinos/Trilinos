@@ -57,7 +57,15 @@ doc/Doxygen/AztecOO_dox.i  	  doc/Doxygen/Galeri_dox.i       \
 doc/Doxygen/Amesos_dox.i   	  doc/Doxygen/IFPACK_dox.i       \
 doc/Doxygen/Anasazi_dox.i  	  doc/Doxygen/ML_dox.i           \
 doc/Doxygen/NOX_dox.i             doc/build_docs                 \
-doc/DoxyfileWeb
+doc/DoxyfileWeb                            \
+doc/DevelopersGuide/AddingModules.txt      \
+doc/DevelopersGuide/AddingModules.html     \
+doc/DevelopersGuide/BuildSystem.txt        \
+doc/DevelopersGuide/BuildSystem.html       \
+doc/DevelopersGuide/Documentation.txt      \
+doc/DevelopersGuide/Documentation.html     \
+doc/DevelopersGuide/ExceptionHandling.txt  \
+doc/DevelopersGuide/ExceptionHandling.html \
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
@@ -183,48 +191,6 @@ runtests-mpi :
 	--mpi-go=$(TRILINOS_MPI_GO) \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=$(TRILINOS_TEST_CATEGORY) \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=PyTrilinos
-
-if HAVE_MPI
-PYTRILINOS_CHECK_COMM=mpi
-else
-PYTRILINOS_CHECK_COMM=serial
-endif
-
-run-examples:
-	@echo
-	@echo "=================================="
-	@echo "Running the PyTrilinos examples..."
-	@echo "=================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(PYTRILINOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=PyTrilinos_Examples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=PyTrilinos
-
-run-tests:
-	@echo
-	@echo "==============================="
-	@echo "Running the PyTrilinos tests..."
-	@echo "==============================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(PYTRILINOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=PyTrilinos_Tests \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=PyTrilinos

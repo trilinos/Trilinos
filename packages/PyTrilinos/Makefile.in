@@ -247,18 +247,6 @@ ACLOCAL_AMFLAGS = -I config
 #np# because users should not have to bootstrap.  We distribute them with
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
-EXTRA_DIST = \
-config/replace-install-prefix.pl  config/strip_dup_incl_paths.pl \
-config/string-replace.pl          config/strip_dup_libs.pl       \
-config/token-replace.pl           INSTALL                        \
-doc/Doxygen/Teuchos_dox.i  	  doc/Doxygen/Epetra_dox.i       \
-doc/Doxygen/TriUtils_dox.i 	  doc/Doxygen/EpetraExt_dox.i    \
-doc/Doxygen/AztecOO_dox.i  	  doc/Doxygen/Galeri_dox.i       \
-doc/Doxygen/Amesos_dox.i   	  doc/Doxygen/IFPACK_dox.i       \
-doc/Doxygen/Anasazi_dox.i  	  doc/Doxygen/ML_dox.i           \
-doc/Doxygen/NOX_dox.i             doc/build_docs                 \
-doc/DoxyfileWeb
-
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
@@ -284,8 +272,6 @@ SUBDIRS = shared $(SRC_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_TEST_CATEGORY = INSTALL
-@HAVE_MPI_FALSE@PYTRILINOS_CHECK_COMM = serial
-@HAVE_MPI_TRUE@PYTRILINOS_CHECK_COMM = mpi
 all: all-recursive
 
 .SUFFIXES:
@@ -789,42 +775,6 @@ runtests-mpi :
 	--mpi-go=$(TRILINOS_MPI_GO) \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=$(TRILINOS_TEST_CATEGORY) \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=PyTrilinos
-
-run-examples:
-	@echo
-	@echo "=================================="
-	@echo "Running the PyTrilinos examples..."
-	@echo "=================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(PYTRILINOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=PyTrilinos_Examples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=PyTrilinos
-
-run-tests:
-	@echo
-	@echo "==============================="
-	@echo "Running the PyTrilinos tests..."
-	@echo "==============================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(PYTRILINOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=PyTrilinos_Tests \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=PyTrilinos
