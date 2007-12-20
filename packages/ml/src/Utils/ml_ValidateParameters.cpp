@@ -30,9 +30,9 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int d
   }
   catch(...) {
     std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
-#   ifdef HAVE_MPI
+#ifdef HAVE_MPI
     MPI_Finalize();
-#   endif
+#endif
     exit(EXIT_FAILURE);
   }
   try{
@@ -105,7 +105,6 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("smoother: sweeps",2,"Number of smoothing sweeps",PL,intParam);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<std::string>("pre","post","both"),PL);
-
   RCP<std::vector<int> > options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
   RCP<std::vector<double> > params = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
   PL->set("smoother: Aztec options",options);
@@ -220,10 +219,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL,intParam);
 
   /* Hightly experimental */
-  PL->set("aggregation: respect materials",false);
-  PL->set("aggregation: material type",(int*)0); 
-
-
+  setIntParameter("repartition: estimated iterations",0,"Estimated number of iterations",PL,intParam);
+  setStringToIntegralParameter<int>("repartition: Zoltan type","RCB","Type of repartitioner to use",tuple<std::string>("RCB","hypergraph","fast hypergraph"),PL);
 
   return PL;
 }
@@ -250,9 +247,9 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   }
   catch(...) {
     std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
-#   ifdef HAVE_MPI
+#ifdef HAVE_MPI
     MPI_Finalize();
-#   endif
+#endif
     exit(EXIT_FAILURE);
   }
   try{
