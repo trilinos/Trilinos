@@ -28,115 +28,194 @@
 // @HEADER
 
 /** \file
-\brief  Test of the Matrix class.
+\brief  Example of the Matrix class.
 \author Created by P. Bochev and D. Ridzal
 */
-
 #include "Intrepid_RealSpace.hpp"
 
 using namespace std;
 using namespace Intrepid;
 
-
 int main(int argc, char *argv[]) {
-
-  cout << "\nTEST 1: class Matrix in 3D\n\n";
-
+  cout \
+  << "===============================================================================\n" \
+  << "|                                                                             |\n" \
+  << "|                      Example use of the Matrix class                        |\n" \
+  << "|                                                                             |\n" \
+  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+  << "|                                                                             |\n" \
+  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+  << "|                                                                             |\n" \
+  << "===============================================================================\n" \
+  << "| EXAMPLE 1: class Matrix in 3D                                               |\n"\
+  << "===============================================================================\n\n";
+  
+  // Matrix objects can be created from square or flat lists of data, arranged by row. If
   double mat3[3][3] = {{1,2,3},{4,5,7},{7,8,10}};
+  double arr3[]     = { 1,2,3,  4,5,7,  7,8,10};
+  // then Matrix objects created from these lists correspond to the same 3-by-3 matrix:
+  //          | 1 2 3 |
+  //          | 4 5 6 |
+  //          | 7 8 9 |
+  //
+  cout << "Created Matrix my_3D_Matrix from a 3-by-3 array of numbers:";
+  Matrix<double> my_3D_Matrix(&mat3[0][0],3);
+  cout << my_3D_Matrix << endl;
 
-  cout << "Created linear map lmap3\n";
-  Matrix<double> lmap3(&mat3[0][0],3);
-  cout << lmap3 << endl;
+  cout << "Created Matrix my_other_3D_Matrix from a 1-by-9 array with the same numbers:";
+  Matrix<double> my_other_3D_Matrix(arr3,3);
+  cout << my_3D_Matrix << endl;
+  
+  cout << "Compute the transpose of my_3D_Matrix:";
+  cout << my_3D_Matrix.getTranspose() << endl;
 
-  cout << "Compute the transpose of lmap3\n";
-  cout << lmap3.getTranspose() << endl;
+  cout << "Transpose my_3D_Matrix (in place -- mutator):";
+  my_3D_Matrix.transpose();
+  cout << my_3D_Matrix << endl;
 
-  cout << "Transpose lmap3 (in place -- mutator)\n";
-  lmap3.Transpose();
-  cout << lmap3 << endl;
-
-  cout << "Computing: lmap3 * lmap3\n";
-  Matrix<double> prod3 = lmap3 * lmap3;
+  cout << "Computing: my_3D_Matrix * my_other_3D_Matrix:";
+  Matrix<double> prod3 = my_3D_Matrix * my_other_3D_Matrix;
   cout << prod3 << endl;
 
-  cout << "Compute the inverse of lmap3\n";
-  cout << lmap3.getInverse() << endl;
+  cout << "Compute the inverse of my_3D_Matrix:";
+  cout << my_3D_Matrix.getInverse() << endl;
 
-  cout << "Invert lmap3 (in place -- mutator)\n";
-  lmap3.Invert();
-  cout << lmap3 << endl;
+  cout << "Invert my_3D_Matrix (in place -- mutator):";
+  my_3D_Matrix.invert();
+  cout << my_3D_Matrix << endl;
+  cout << "\t Determinant of the inverted matrix = " << my_3D_Matrix.det() << "\n\n";
 
-  cout << "Invert lmap3 again (in place -- mutator)\n";
-  lmap3.Invert();
-  cout << lmap3 << endl;
+  cout << "Invert my_3D_Matrix again (in place -- mutator):";
+  my_3D_Matrix.invert();
+  cout << my_3D_Matrix << endl;
+  cout << "\t Determinant of the inverted matrix = " << my_3D_Matrix.det() << "\n\n";
 
-  cout << "\nEND TEST 1: class Matrix in 3D\n\n";
+  // Norms of matrices
+  cout << "Computing norms of my_3D_Matrix: " << endl;
+  cout << "\t First     matrix norm (max column sum) = " << my_3D_Matrix.norm(NORM_ONE) << endl;
+  cout << "\t Infinity  matrix norm (max row    sum) = " << my_3D_Matrix.norm(NORM_INF) << endl;
+  cout << "\t Frobenius matrix norm                  = " << my_3D_Matrix.norm(NORM_FRO) << "\n\n";
+  
+  
+  // Extraction of rows and columns as Point objects (they are indexed from 0!)
+  cout << "Get first row of my_3D_Matrix as a Point object:\n";
+  Point<double> my_1st_Row = my_3D_Matrix.getRow(0);
+  cout << my_1st_Row << "\n\n";
 
+  cout << "Get third column of my_3D_Matrix as a Point object:\n";
+  Point<double> my_3rd_Column  = my_3D_Matrix.getColumn(2);
+  cout << my_3rd_Column << "\n\n";
+    
+  // Changing data in an existing matrix object
+  double my_New_3D_Data[] = {1,1,1,2,2,2,3,3,3};
+  cout << "Changing data in an existing matrix (my_3D_Matrix):";
+  my_3D_Matrix.setElements(my_New_3D_Data,3);
+  cout << my_3D_Matrix << endl;
 
-  cout << "\nTEST 2: class Matrix in 2D\n\n";
+  cout << "\n" \
+  << "===============================================================================\n" \
+  << "| EXAMPLE 1a: overloaded operators for Matrix objects                         |\n"\
+  << "===============================================================================\n\n";
+  
+  Matrix<double> first_3D_Matrix(&mat3[0][0],3);
+  Matrix<double> second_3D_Matrix(arr3,3);
+  Matrix<double> result(3);
 
+  // Subtraction
+  cout << "Subtract two matrices holding the same coefficients:";
+  result = first_3D_Matrix - second_3D_Matrix;
+  cout << result << "\n\n";
+  
+  // Addition
+  cout << "Add two matrices holding the same coefficients:"; 
+    result = first_3D_Matrix + second_3D_Matrix;
+  cout << result << "\n\n";
+  
+  // Scalar multiplication
+  cout << "Multiply my_3D_Matrix by 10: ";
+  cout << 10.0*my_3D_Matrix << endl;
+
+  // Matrix times Point
+  cout << "Multiply my_3D_Matrix by a Point that is its first row:\n";
+  cout << my_3D_Matrix*my_3D_Matrix.getRow(0) << "\n\n";
+
+  // Point times Matrix
+  cout << "Multiply Point that is first column of my_3D_Matrix by the matrix:\n";
+  cout << my_3D_Matrix.getColumn(0)*my_3D_Matrix << endl;
+  
+  
+  cout << "\n" \
+  << "===============================================================================\n" \
+  << "| EXAMPLE 2: class Matrix in 2D                                                |\n"\
+  << "===============================================================================\n\n";
+  
+  // A flat list of matrix data arranged by row
   double mat2[] = {1,2,4,6};
 
-  cout << "Created linear map lmap2\n";
-  Matrix<double> lmap2(mat2,2);
-  cout << lmap2 << endl;
+  // Uisng constructor that takes flat list of elements arranged by row and matrix dimension
+  cout << "Created Matrix my_2D_Matrix:";
+  Matrix<double> my_2D_Matrix(mat2,2);
+  cout << my_2D_Matrix << endl;
 
-  cout << "Compute the transpose of lmap2\n";
-  cout << lmap2.getTranspose() << endl;
+  cout << "Compute the transpose of my_2D_Matrix:";
+  cout << my_2D_Matrix.getTranspose() << endl;
 
-  cout << "Transpose lmap2 (in place -- mutator)\n";
-  lmap2.Transpose();
-  cout << lmap2 << endl;
+  cout << "Transpose my_2D_Matrix (in place -- mutator):";
+  my_2D_Matrix.transpose();
+  cout << my_2D_Matrix << endl;
 
-  cout << "Computing: lmap2 * lmap2\n";
-  Matrix<double> prod2 = lmap2 * lmap2;
+  cout << "Computing: my_2D_Matrix * my_2D_Matrix:";
+  Matrix<double> prod2 = my_2D_Matrix * my_2D_Matrix;
   cout << prod2 << endl;
 
-  cout << "Compute the inverse of lmap2\n";
-  cout << lmap2.getInverse() << endl;
+  cout << "Compute the inverse of my_2D_Matrix:";
+  cout << my_2D_Matrix.getInverse() << endl;
 
-  cout << "Invert lmap2 (in place -- mutator)\n";
-  lmap2.Invert();
-  cout << lmap2 << endl;
+  cout << "Invert my_2D_Matrix (in place -- mutator):";
+  my_2D_Matrix.invert();
+  cout << my_2D_Matrix << endl;
 
-  cout << "Invert lmap2 again (in place -- mutator)\n";
-  lmap2.Invert();
-  cout << lmap2 << endl;
+  cout << "Invert my_2D_Matrix again (in place -- mutator):";
+  my_2D_Matrix.invert();
+  cout << my_2D_Matrix << endl;
 
-  cout << "\nEND TEST 2: class Matrix in 2D\n\n";
-
-
-  cout << "\nTEST 3: class Matrix in 1D\n\n";
-
+  cout << "\n" \
+  << "===============================================================================\n" \
+  << "| EXAMPLE 3: class Matrix in 1D                                                |\n"\
+  << "===============================================================================\n\n";
+  
   double mat1 = 4;
 
-  cout << "Created linear map lmap1\n";
-  Matrix<double> lmap1(&mat1,1);
-  cout << lmap1 << endl;
+  cout << "Created Matrix my_1D_Matrix:";
+  Matrix<double> my_1D_Matrix(&mat1,1);
+  cout << my_1D_Matrix << endl;
 
-  cout << "Compute the transpose of lmap1\n";
-  cout << lmap1.getTranspose() << endl;
+  cout << "Compute the transpose of my_1D_Matrix:";
+  cout << my_1D_Matrix.getTranspose() << endl;
 
-  cout << "Transpose lmap1 (in place -- mutator)\n";
-  lmap1.Transpose();
-  cout << lmap1 << endl;
+  cout << "Transpose my_1D_Matrix (in place -- mutator):";
+  my_1D_Matrix.transpose();
+  cout << my_1D_Matrix << endl;
 
-  cout << "Computing: lmap1 * lmap1\n";
-  Matrix<double> prod1 = lmap1 * lmap1;
+  cout << "Computing: my_1D_Matrix * my_1D_Matrix:";
+  Matrix<double> prod1 = my_1D_Matrix * my_1D_Matrix;
   cout << prod1 << endl;
 
-  cout << "Compute the inverse of lmap1\n";
-  cout << lmap1.getInverse() << endl;
+  cout << "Compute the inverse of my_1D_Matrix:";
+  cout << my_1D_Matrix.getInverse() << endl;
 
-  cout << "Invert lmap1 (in place -- mutator)\n";
-  lmap1.Invert();
-  cout << lmap1 << endl;
+  cout << "Invert my_1D_Matrix (in place -- mutator):";
+  my_1D_Matrix.invert();
+  cout << my_1D_Matrix << endl;
 
-  cout << "Invert lmap1 again (in place -- mutator)\n";
-  lmap1.Invert();
-  cout << lmap1 << endl;
+  cout << "Invert my_1D_Matrix again (in place -- mutator):";
+  my_1D_Matrix.invert();
+  cout << my_1D_Matrix << endl;
 
-  cout << "\nEND TEST 3: class Matrix in 1D\n\n";
-
+  
+  
+  
   return 0;
 }

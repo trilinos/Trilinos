@@ -68,11 +68,16 @@ noinst_PROGRAMS = test_01$(EXEEXT) test_02$(EXEEXT)
 subdir = test/RealSpace
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
+	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
+	$(top_srcdir)/config/ac_cxx_mutable.m4 \
+	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
+	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
+	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
+	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -89,12 +94,14 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_test_01_OBJECTS = test_01-test_01.$(OBJEXT)
 test_01_OBJECTS = $(am_test_01_OBJECTS)
-test_01_DEPENDENCIES = $(top_builddir)/src/libintrepid.a
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(INTREPID_TEST_LIBS))
 test_01_LINK = $(CXXLD) $(test_01_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_test_02_OBJECTS = test_02-test_02.$(OBJEXT)
 test_02_OBJECTS = $(am_test_02_OBJECTS)
-test_02_DEPENDENCIES = $(top_builddir)/src/libintrepid.a
 test_02_LINK = $(CXXLD) $(test_02_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -221,12 +228,27 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(INTREPID_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(INTREPID_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(INTREPID_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_TEST_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
+# Dependencies used when rebuilding tests without building everything from scratch.
+test_01_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+test_02_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 test_01_SOURCES = test_01.cpp
-test_01_LDADD = $(top_builddir)/src/libintrepid.a
-test_01_CXXFLAGS = -I$(top_srcdir)/src/ -I$(top_srcdir)/src/local -I$(srcdir)
+test_01_LDADD = $(EXPORT_LIBS)
+test_01_CXXFLAGS = -I$(srcdir)
 test_02_SOURCES = test_02.cpp
-test_02_LDADD = $(top_builddir)/src/libintrepid.a
-test_02_CXXFLAGS = -I$(top_srcdir)/src/ -I$(top_srcdir)/src/local -I$(srcdir)
+test_02_LDADD = $(EXPORT_LIBS)
+test_02_CXXFLAGS = -I$(srcdir)
 all: all-am
 
 .SUFFIXES:
@@ -495,6 +517,8 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+include $(top_builddir)/Makefile.export.intrepid
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

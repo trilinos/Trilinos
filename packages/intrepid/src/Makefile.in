@@ -67,11 +67,16 @@ subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Intrepid_config.h.in \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
+	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
+	$(top_srcdir)/config/ac_cxx_mutable.m4 \
+	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
+	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
+	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
+	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -97,7 +102,6 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libintrepid_a_AR = $(AR) $(ARFLAGS)
 libintrepid_a_LIBADD =
 am__objects_1 = Intrepid_Version.$(OBJEXT)
 am_libintrepid_a_OBJECTS = $(am__objects_1)
@@ -248,29 +252,42 @@ lib_LIBRARIES = libintrepid.a
 INTREPID_ALL_H = \
   $(srcdir)/Intrepid_ConfigDefs.hpp
 
+INTREPID_COMMON_H = \
+  $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
+  $(srcdir)/common/Intrepid_RealSpace.hpp \
+  $(srcdir)/common/Intrepid_Types.hpp
+
 INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CellTemplates.hpp \
-  $(srcdir)/local/Intrepid_RealSpaceDef.hpp \
-  $(srcdir)/local/Intrepid_RealSpace.hpp \
   $(srcdir)/local/Intrepid_MultiCellDef.hpp \
   $(srcdir)/local/Intrepid_MultiCell.hpp \
-  $(srcdir)/local/Intrepid_MultiCell.icpp \
-  $(srcdir)/local/Intrepid_Types.hpp
+  $(srcdir)/local/Intrepid_MultiCell.icpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp
 
-
-# include $(top_builddir)/Makefile.export.intrepid
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(INTREPID_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # The list of source files.
 libintrepid_a_SOURCES = \
   $(INTREPID_ALL_C)
 
+@USE_ALTERNATE_AR_FALSE@libintrepid_a_AR = $(AR) cru
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libintrepid_a_AR = $(ALTERNATE_AR)
 
 # The list of header files which are to be installed
 include_HEADERS = \
   $(INTREPID_ALL_H) \
+  $(INTREPID_COMMON_H) \
   $(INTREPID_LOCAL_H)
 
 
@@ -722,6 +739,13 @@ all-local:
 	@echo ""
 	@echo "Trilinos package Intrepid subdirectory src built successfully."
 	@echo ""
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+# List locations of include files within Trilinos but
+# outside of Intrepid.
+include $(top_builddir)/Makefile.export.intrepid
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

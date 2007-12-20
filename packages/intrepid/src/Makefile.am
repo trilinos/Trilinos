@@ -42,27 +42,55 @@ lib_LIBRARIES = libintrepid.a
 INTREPID_ALL_H = \
   $(srcdir)/Intrepid_ConfigDefs.hpp
 
+INTREPID_COMMON_H = \
+  $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
+  $(srcdir)/common/Intrepid_RealSpace.hpp \
+  $(srcdir)/common/Intrepid_Types.hpp
+
 INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CellTemplates.hpp \
-  $(srcdir)/local/Intrepid_RealSpaceDef.hpp \
-  $(srcdir)/local/Intrepid_RealSpace.hpp \
   $(srcdir)/local/Intrepid_MultiCellDef.hpp \
   $(srcdir)/local/Intrepid_MultiCell.hpp \
-  $(srcdir)/local/Intrepid_MultiCell.icpp \
-  $(srcdir)/local/Intrepid_Types.hpp
+  $(srcdir)/local/Intrepid_MultiCell.icpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp
 
-# include $(top_builddir)/Makefile.export.intrepid
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+# List locations of include files within Trilinos but
+# outside of Intrepid.
+include $(top_builddir)/Makefile.export.intrepid
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_INCLUDES))
+else
+EXPORT_INCLUDES = $(INTREPID_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # The list of source files.
 libintrepid_a_SOURCES = \
   $(INTREPID_ALL_C)
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+if USE_ALTERNATE_AR
+libintrepid_a_AR = $(ALTERNATE_AR)
+else
+libintrepid_a_AR = $(AR) cru
+endif
   
 # The list of header files which are to be installed
 include_HEADERS = \
   $(INTREPID_ALL_H) \
+  $(INTREPID_COMMON_H) \
   $(INTREPID_LOCAL_H)
 
 # All Intrepid headers are now installed in the same directory

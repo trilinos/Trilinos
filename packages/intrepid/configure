@@ -578,7 +578,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='intrepid 1.0'
 PACKAGE_BUGREPORT='pbboche@sandia.gov,dridzal@sandia.gov'
 
-ac_unique_file="/src/local/Intrepid_MultiCell.hpp"
+ac_unique_file="src/local/Intrepid_MultiCell.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -723,10 +723,6 @@ USE_ALTERNATE_AR_TRUE
 USE_ALTERNATE_AR_FALSE
 ALTERNATE_AR
 CXXCPP
-GREP
-EGREP
-BUILD_INTREPID_MOAB_TRUE
-BUILD_INTREPID_MOAB_FALSE
 USING_EXPORT_MAKEFILES_TRUE
 USING_EXPORT_MAKEFILES_FALSE
 PERL_EXE
@@ -735,6 +731,8 @@ USING_PERL_TRUE
 USING_PERL_FALSE
 USING_GNUMAKE_TRUE
 USING_GNUMAKE_FALSE
+GREP
+EGREP
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1344,7 +1342,6 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-intrepid-moab  Enable MOAB interface support. (default is no)
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -1352,22 +1349,18 @@ Optional Features:
                           executable>. Note that the export makefiles are
                           always created and used in the build directory, but
                           will not be installable without this option to
-                          change the paths. (default is no)
+                          change the paths. (default is yes)
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
 
-  --enable-new_package-tests
-                          Make New_Package tests buildable with 'make tests'
+  --enable-intrepid-tests Make Intrepid tests buildable with 'make tests'
                           (default is yes if --disable-tests is not specified)
   --enable-examples       Make examples for all Trilinos packages buildable
                           with 'make examples' (default is yes)
-  --enable-new_package-examples
-                          Make New_Package examples buildable with 'make
+  --enable-intrepid-examples
+                          Make Intrepid examples buildable with 'make
                           examples' (default is yes if --disable-examples is
                           not specified)
-  --enable-libcheck       Check for some third-party libraries including BLAS
-                          and LAPACK. (Cannot be disabled unless tests and
-                          examples are also disabled.) (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4401,7 +4394,7 @@ else
 fi
 
 
-# no need for fortran  AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+# no need to check for fortran AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ranlib; ac_word=$2
@@ -5008,9 +5001,211 @@ fi
 
 # ------------------------------------------------------------------------
 # Default compiler for header checks.
+# Not needed if building within Trilinos.
 # ------------------------------------------------------------------------
 #
 # AC_LANG_CPLUSPLUS
+
+
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+
+# Check whether --enable-export-makefiles was given.
+if test "${enable_export_makefiles+set}" = set; then
+  enableval=$enable_export_makefiles; ac_cv_use_export_makefiles=$enableval
+else
+  ac_cv_use_export_makefiles=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
+echo $ECHO_N "checking whether to build export makefiles... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_export_makefiles" != "Xno"; then
+
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EXPORT_MAKEFILES
+_ACEOF
+
+
+else
+
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
+
+ if test X${ac_cv_use_export_makefiles} = Xyes; then
+  USING_EXPORT_MAKEFILES_TRUE=
+  USING_EXPORT_MAKEFILES_FALSE='#'
+else
+  USING_EXPORT_MAKEFILES_TRUE='#'
+  USING_EXPORT_MAKEFILES_FALSE=
+fi
+
+
+# Check for perl to run scripts (Required dependency)
+
+
+
+# Check whether --with-perl was given.
+if test "${with_perl+set}" = set; then
+  withval=$with_perl;
+{ echo "$as_me:$LINENO: checking for user supplied perl executable" >&5
+echo $ECHO_N "checking for user supplied perl executable... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: result: ${withval}" >&5
+echo "${ECHO_T}${withval}" >&6; }
+USER_SPECIFIED_PERL=yes
+PERL_EXE="${withval}"
+
+else
+
+USER_SPECIFIED_PERL=no
+
+fi
+
+
+if test "X${USER_SPECIFIED_PERL}" = "Xyes"; then
+  as_ac_File=`echo "ac_cv_file_${PERL_EXE}" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for ${PERL_EXE}" >&5
+echo $ECHO_N "checking for ${PERL_EXE}... $ECHO_C" >&6; }
+if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${PERL_EXE}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+ac_res=`eval echo '${'$as_ac_File'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HAVE_PERL=yes
+else
+  HAVE_PERL=no
+fi
+
+  PERL_EXE=${PERL_EXE}
+
+else
+  # Extract the first word of "perl", so it can be a program name with args.
+set dummy perl; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_HAVE_PERL+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$HAVE_PERL"; then
+  ac_cv_prog_HAVE_PERL="$HAVE_PERL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_PERL="yes"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_PERL" && ac_cv_prog_HAVE_PERL="no"
+fi
+fi
+HAVE_PERL=$ac_cv_prog_HAVE_PERL
+if test -n "$HAVE_PERL"; then
+  { echo "$as_me:$LINENO: result: $HAVE_PERL" >&5
+echo "${ECHO_T}$HAVE_PERL" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  PERL_EXE=perl
+
+fi
+ if test X${HAVE_PERL} = Xyes; then
+  USING_PERL_TRUE=
+  USING_PERL_FALSE='#'
+else
+  USING_PERL_TRUE='#'
+  USING_PERL_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_export_makefiles" != "Xno"; then
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&5
+echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+# Check for using gnumake to clean up link lines via
+# gnumake's "shell" command. Optional dependency.
+
+
+
+
+# Check whether --with-gnumake was given.
+if test "${with_gnumake+set}" = set; then
+  withval=$with_gnumake; ac_cv_use_gnumake=$withval
+else
+  ac_cv_use_gnumake=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether gnumake specific code should be enabled" >&5
+echo $ECHO_N "checking whether gnumake specific code should be enabled... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_gnumake" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GNUMAKE
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+ if test "X$ac_cv_use_gnumake" = "Xyes"; then
+  USING_GNUMAKE_TRUE=
+  USING_GNUMAKE_FALSE='#'
+else
+  USING_GNUMAKE_TRUE='#'
+  USING_GNUMAKE_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_gnumake" != "Xno"; then
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+  { { echo "$as_me:$LINENO: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
+echo "$as_me: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
 
 
 
@@ -6793,251 +6988,529 @@ echo "$as_me: error: Cannot find iomanip or iomanip.h.  Intrepid requires at lea
 fi
 
 
-
-# Check whether --enable-intrepid-moab was given.
-if test "${enable_intrepid_moab+set}" = set; then
-  enableval=$enable_intrepid_moab; ac_cv_use_intrepid_moab=$enableval
+# ------------------------------------------------------------------------
+# Checks for compiler characteristics
+# ------------------------------------------------------------------------
+{ echo "$as_me:$LINENO: checking whether the compiler implements namespaces" >&5
+echo $ECHO_N "checking whether the compiler implements namespaces... $ECHO_C" >&6; }
+if test "${ac_cv_cxx_namespaces+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_cv_use_intrepid_moab=no
+
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+namespace Outer { namespace Inner { int i = 0; }}
+int
+main ()
+{
+using namespace Outer::Inner; return i;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_namespaces=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_namespaces=no
 fi
 
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-{ echo "$as_me:$LINENO: checking whether to use intrepid-moab" >&5
-echo $ECHO_N "checking whether to use intrepid-moab... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_intrepid_moab" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_namespaces" >&5
+echo "${ECHO_T}$ac_cv_cxx_namespaces" >&6; }
+if test "$ac_cv_cxx_namespaces" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_INTREPID_MOAB
+#define HAVE_NAMESPACES
 _ACEOF
 
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_intrepid_moab" != "Xno"; then
-  BUILD_INTREPID_MOAB_TRUE=
-  BUILD_INTREPID_MOAB_FALSE='#'
+{ echo "$as_me:$LINENO: checking whether the compiler supports Standard Template Library" >&5
+echo $ECHO_N "checking whether the compiler supports Standard Template Library... $ECHO_C" >&6; }
+if test "${ac_cv_cxx_have_stl+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  BUILD_INTREPID_MOAB_TRUE='#'
-  BUILD_INTREPID_MOAB_FALSE=
+
+
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <list>
+#include <deque>
+#ifdef HAVE_NAMESPACES
+using namespace std;
+#endif
+int
+main ()
+{
+list<int> x; x.push_back(5);
+list<int>::iterator iter = x.begin(); if (iter != x.end()) ++iter; return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_have_stl=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_have_stl=no
 fi
 
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-# TAC_ARG_ENABLE_FEATURE_SUB( intrepid, trilinos, [Enable Trilinos interface support.],
-#                 INTREPID_TRILINOS, no)
-# AM_CONDITIONAL(BUILD_INTREPID_TRILINOS, [test "X$ac_cv_use_intrepid_trilinos" != "Xno"])
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_have_stl" >&5
+echo "${ECHO_T}$ac_cv_cxx_have_stl" >&6; }
+if test "$ac_cv_cxx_have_stl" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STL
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether the compiler recognizes bool as a built-in type" >&5
+echo $ECHO_N "checking whether the compiler recognizes bool as a built-in type... $ECHO_C" >&6; }
+if test "${ac_cv_cxx_bool+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int f(int  x){return 1;}
+int f(char x){return 1;}
+int f(bool x){return 1;}
+
+int
+main ()
+{
+bool b = true; return f(b);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_bool=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_bool=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_bool" >&5
+echo "${ECHO_T}$ac_cv_cxx_bool" >&6; }
+if test "$ac_cv_cxx_bool" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOL
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether the compiler supports the mutable keyword" >&5
+echo $ECHO_N "checking whether the compiler supports the mutable keyword... $ECHO_C" >&6; }
+if test "${ac_cv_cxx_mutable+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+class A { mutable int i;
+          public:
+          int f (int n) const { i = n; return i; }
+        };
+
+int
+main ()
+{
+A a; return a.f (1);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_mutable=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_mutable=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_mutable" >&5
+echo "${ECHO_T}$ac_cv_cxx_mutable" >&6; }
+if test "$ac_cv_cxx_mutable" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MUTABLE
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether the compiler accepts the new for scoping rules" >&5
+echo $ECHO_N "checking whether the compiler accepts the new for scoping rules... $ECHO_C" >&6; }
+if test "${ac_cv_cxx_new_for_scoping+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  int z = 0;
+  for (int i = 0; i < 10; ++i)
+    z = z + i;
+  for (int i = 0; i < 10; ++i)
+    z = z - i;
+  return z;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_new_for_scoping=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_new_for_scoping=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_new_for_scoping" >&5
+echo "${ECHO_T}$ac_cv_cxx_new_for_scoping" >&6; }
+if test "$ac_cv_cxx_new_for_scoping" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NEW_FOR_SCOPING
+_ACEOF
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether the compiler recognizes std::sprintf as supported IO function" >&5
+echo $ECHO_N "checking whether the compiler recognizes std::sprintf as supported IO function... $ECHO_C" >&6; }
+if test "${ac_cv_cxx_std_sprintf+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <cstdio>
+#include <string>
+
+int
+main ()
+{
+
+     int x = 100;
+     char s[100];
+     std::sprintf(s, "%d", x);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_std_sprintf1=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_std_sprintf1=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <string>
+
+int
+main ()
+{
+
+     int x = 100;
+     char s[100];
+     std::sprintf(s, "%d", x);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_cxx_std_sprintf2=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_cxx_std_sprintf2=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+if (test "$ac_cv_cxx_std_sprintf1" = yes || test "$ac_cv_cxx_std_sprintf2" = yes); then
+ ac_cv_cxx_std_sprintf=yes
+else
+ ac_cv_cxx_std_sprintf=no
+fi
+ ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_std_sprintf" >&5
+echo "${ECHO_T}$ac_cv_cxx_std_sprintf" >&6; }
+if test "$ac_cv_cxx_std_sprintf" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STD_SPRINTF
+_ACEOF
+
+fi
+
 
 
 # ------------------------------------------------------------------------
-# Checks for Makefile.export related systems
+# External (3rd party) dependencies.
 # ------------------------------------------------------------------------
-
-# Check whether --enable-export-makefiles was given.
-if test "${enable_export_makefiles+set}" = set; then
-  enableval=$enable_export_makefiles; ac_cv_use_export_makefiles=$enableval
-else
-  ac_cv_use_export_makefiles=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
-echo $ECHO_N "checking whether to build export makefiles... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_export_makefiles" != "Xno"; then
-
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EXPORT_MAKEFILES
-_ACEOF
-
-
-else
-
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-fi
-
- if test X${ac_cv_use_export_makefiles} = Xyes; then
-  USING_EXPORT_MAKEFILES_TRUE=
-  USING_EXPORT_MAKEFILES_FALSE='#'
-else
-  USING_EXPORT_MAKEFILES_TRUE='#'
-  USING_EXPORT_MAKEFILES_FALSE=
-fi
-
-
-# Check for perl to run scripts (Required dependency)
-
-
-
-# Check whether --with-perl was given.
-if test "${with_perl+set}" = set; then
-  withval=$with_perl;
-{ echo "$as_me:$LINENO: checking for user supplied perl executable" >&5
-echo $ECHO_N "checking for user supplied perl executable... $ECHO_C" >&6; }
-{ echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-USER_SPECIFIED_PERL=yes
-PERL_EXE="${withval}"
-
-else
-
-USER_SPECIFIED_PERL=no
-
-fi
-
-
-if test "X${USER_SPECIFIED_PERL}" = "Xyes"; then
-  as_ac_File=`echo "ac_cv_file_${PERL_EXE}" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for ${PERL_EXE}" >&5
-echo $ECHO_N "checking for ${PERL_EXE}... $ECHO_C" >&6; }
-if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${PERL_EXE}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-ac_res=`eval echo '${'$as_ac_File'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-  HAVE_PERL=yes
-else
-  HAVE_PERL=no
-fi
-
-  PERL_EXE=${PERL_EXE}
-
-else
-  # Extract the first word of "perl", so it can be a program name with args.
-set dummy perl; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_HAVE_PERL+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$HAVE_PERL"; then
-  ac_cv_prog_HAVE_PERL="$HAVE_PERL" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_HAVE_PERL="yes"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_prog_HAVE_PERL" && ac_cv_prog_HAVE_PERL="no"
-fi
-fi
-HAVE_PERL=$ac_cv_prog_HAVE_PERL
-if test -n "$HAVE_PERL"; then
-  { echo "$as_me:$LINENO: result: $HAVE_PERL" >&5
-echo "${ECHO_T}$HAVE_PERL" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-  PERL_EXE=perl
-
-fi
- if test X${HAVE_PERL} = Xyes; then
-  USING_PERL_TRUE=
-  USING_PERL_FALSE='#'
-else
-  USING_PERL_TRUE='#'
-  USING_PERL_FALSE=
-fi
-
-
-
-if test "X$HAVE_PERL" != "Xyes" &&
-   test "X$ac_cv_use_export_makefiles" != "Xno"; then
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&5
-echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-# Check for using gnumake to clean up link lines via
-# gnumake's "shell" command. Optional dependency.
-
-
-
-
-# Check whether --with-gnumake was given.
-if test "${with_gnumake+set}" = set; then
-  withval=$with_gnumake; ac_cv_use_gnumake=$withval
-else
-  ac_cv_use_gnumake=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether gnumake specific code should be enabled" >&5
-echo $ECHO_N "checking whether gnumake specific code should be enabled... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_gnumake" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GNUMAKE
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
- if test "X$ac_cv_use_gnumake" = "Xyes"; then
-  USING_GNUMAKE_TRUE=
-  USING_GNUMAKE_FALSE='#'
-else
-  USING_GNUMAKE_TRUE='#'
-  USING_GNUMAKE_FALSE=
-fi
-
-
-
-if test "X$HAVE_PERL" != "Xyes" &&
-   test "X$ac_cv_use_gnumake" != "Xno"; then
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-  { { echo "$as_me:$LINENO: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
-echo "$as_me: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-
-
-
+#TAC_ARG_ENABLE_FEATURE_SUB( intrepid, moab, [Enable MOAB interface support.],
+#                INTREPID_MOAB, no)
+#AM_CONDITIONAL(BUILD_INTREPID_MOAB, [test "X$ac_cv_use_intrepid_moab" != "Xno"])
 
 #if test "X$ac_cv_use_intrepid_moab" != "Xno"; then
-#  TODO:  Change to MOAB and Trilinos.
+#  TODO:  Change to MOAB.
 #
 #  Check for ARPREC headers.
 #
@@ -7069,7 +7542,6 @@ fi
 #                 echo "-----"
 #                 AC_MSG_ERROR(ARPREC test cannot link)])
 #     AC_LANG_RESTORE
-
 #fi
 
 # ------------------------------------------------------------------------
@@ -7114,23 +7586,23 @@ else
 fi
 
 
-# Check whether --enable-new_package-tests was given.
-if test "${enable_new_package_tests+set}" = set; then
-  enableval=$enable_new_package_tests; ac_cv_use_new_package_tests=$enableval
+# Check whether --enable-intrepid-tests was given.
+if test "${enable_intrepid_tests+set}" = set; then
+  enableval=$enable_intrepid_tests; ac_cv_use_intrepid_tests=$enableval
 else
-  ac_cv_use_new_package_tests=${ac_cv_use_tests}
+  ac_cv_use_intrepid_tests=${ac_cv_use_tests}
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to use new_package-tests" >&5
-echo $ECHO_N "checking whether to use new_package-tests... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to use intrepid-tests" >&5
+echo $ECHO_N "checking whether to use intrepid-tests... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_new_package_tests" != "Xno"; then
+if test "X$ac_cv_use_intrepid_tests" != "Xno"; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NEW_PACKAGE_TESTS
+#define HAVE_INTREPID_TESTS
 _ACEOF
 
 else
@@ -7138,7 +7610,7 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_new_package_tests" != "Xno"; then
+ if test "X$ac_cv_use_intrepid_tests" != "Xno"; then
   BUILD_TESTS_TRUE=
   BUILD_TESTS_FALSE='#'
 else
@@ -7181,18 +7653,18 @@ else
 fi
 
 
-# Check whether --enable-new_package-examples was given.
-if test "${enable_new_package_examples+set}" = set; then
-  enableval=$enable_new_package_examples; ac_cv_use_new_package_examples=$enableval
+# Check whether --enable-intrepid-examples was given.
+if test "${enable_intrepid_examples+set}" = set; then
+  enableval=$enable_intrepid_examples; ac_cv_use_intrepid_examples=$enableval
 else
-  ac_cv_use_new_package_examples=${ac_cv_use_examples}
+  ac_cv_use_intrepid_examples=${ac_cv_use_examples}
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to use new_package-examples" >&5
-echo $ECHO_N "checking whether to use new_package-examples... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to use intrepid-examples" >&5
+echo $ECHO_N "checking whether to use intrepid-examples... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_new_package_examples" != "Xno"; then
+if test "X$ac_cv_use_intrepid_examples" != "Xno"; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 
@@ -7205,7 +7677,7 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_new_package_examples" != "Xno"; then
+ if test "X$ac_cv_use_intrepid_examples" != "Xno"; then
   BUILD_EXAMPLES_TRUE=
   BUILD_EXAMPLES_FALSE='#'
 else
@@ -7234,33 +7706,6 @@ else
   SUB_EXAMPLE_TRUE='#'
   SUB_EXAMPLE_FALSE=
 fi
-
-
-
-# Check whether --enable-libcheck was given.
-if test "${enable_libcheck+set}" = set; then
-  enableval=$enable_libcheck; ac_cv_use_libcheck=$enableval
-else
-  ac_cv_use_libcheck=yes
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use libcheck" >&5
-echo $ECHO_N "checking whether to use libcheck... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_libcheck" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBCHECK
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
 
 
 
@@ -7321,7 +7766,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/RealSpace/Makefile test/MultiCell/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/RealSpace/Makefile test/MultiCell/Makefile example/RealSpace/Makefile example/MultiCell/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -7466,13 +7911,6 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_INTREPID_MOAB_TRUE}" && test -z "${BUILD_INTREPID_MOAB_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_INTREPID_MOAB\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_INTREPID_MOAB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7995,10 +8433,14 @@ do
     "src/Intrepid_config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/Intrepid_config.h:src/Intrepid_config.h.in" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "Makefile.export.intrepid") CONFIG_FILES="$CONFIG_FILES Makefile.export.intrepid" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+    "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
     "test/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES test/RealSpace/Makefile" ;;
     "test/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES test/MultiCell/Makefile" ;;
+    "example/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES example/RealSpace/Makefile" ;;
+    "example/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES example/MultiCell/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -8210,10 +8652,6 @@ USE_ALTERNATE_AR_TRUE!$USE_ALTERNATE_AR_TRUE$ac_delim
 USE_ALTERNATE_AR_FALSE!$USE_ALTERNATE_AR_FALSE$ac_delim
 ALTERNATE_AR!$ALTERNATE_AR$ac_delim
 CXXCPP!$CXXCPP$ac_delim
-GREP!$GREP$ac_delim
-EGREP!$EGREP$ac_delim
-BUILD_INTREPID_MOAB_TRUE!$BUILD_INTREPID_MOAB_TRUE$ac_delim
-BUILD_INTREPID_MOAB_FALSE!$BUILD_INTREPID_MOAB_FALSE$ac_delim
 USING_EXPORT_MAKEFILES_TRUE!$USING_EXPORT_MAKEFILES_TRUE$ac_delim
 USING_EXPORT_MAKEFILES_FALSE!$USING_EXPORT_MAKEFILES_FALSE$ac_delim
 PERL_EXE!$PERL_EXE$ac_delim
@@ -8222,6 +8660,8 @@ USING_PERL_TRUE!$USING_PERL_TRUE$ac_delim
 USING_PERL_FALSE!$USING_PERL_FALSE$ac_delim
 USING_GNUMAKE_TRUE!$USING_GNUMAKE_TRUE$ac_delim
 USING_GNUMAKE_FALSE!$USING_GNUMAKE_FALSE$ac_delim
+GREP!$GREP$ac_delim
+EGREP!$EGREP$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -8235,7 +8675,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 34; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 32; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8834,6 +9274,6 @@ if test "$no_create" != yes; then
 fi
 
 
-echo "----------------------------------------"
+echo "------------------------------------------"
 echo "Finished Running Intrepid Configure Script"
-echo "----------------------------------------"
+echo "------------------------------------------"

@@ -46,7 +46,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 # ------------------------------------------------------------------------
 #
-AC_CONFIG_SRCDIR(/src/local/Intrepid_MultiCell.hpp)
+AC_CONFIG_SRCDIR([src/local/Intrepid_MultiCell.hpp])
 
 
 
@@ -131,7 +131,7 @@ TAC_ARG_CONFIG_MPI
 #
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-# no need for fortran  AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+# no need to check for fortran AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 
@@ -165,10 +165,16 @@ TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
 # Default compiler for header checks.
+# Not needed if building within Trilinos.
 # ------------------------------------------------------------------------
 #
 # AC_LANG_CPLUSPLUS
 
+
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 
 # ------------------------------------------------------------------------
@@ -222,25 +228,26 @@ if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" !=
 fi
 
 
-TAC_ARG_ENABLE_FEATURE_SUB( intrepid, moab, [Enable MOAB interface support.],
-                INTREPID_MOAB, no)
-AM_CONDITIONAL(BUILD_INTREPID_MOAB, [test "X$ac_cv_use_intrepid_moab" != "Xno"])
-
-
-# TAC_ARG_ENABLE_FEATURE_SUB( intrepid, trilinos, [Enable Trilinos interface support.],
-#                 INTREPID_TRILINOS, no)
-# AM_CONDITIONAL(BUILD_INTREPID_TRILINOS, [test "X$ac_cv_use_intrepid_trilinos" != "Xno"])
+# ------------------------------------------------------------------------
+# Checks for compiler characteristics
+# ------------------------------------------------------------------------
+AC_CXX_NAMESPACES
+AC_CXX_HAVE_STL
+AC_CXX_BOOL
+AC_CXX_MUTABLE
+AC_CXX_NEW_FOR_SCOPING
+AC_CXX_STD_SPRINTF
 
 
 # ------------------------------------------------------------------------
-# Checks for Makefile.export related systems
+# External (3rd party) dependencies.
 # ------------------------------------------------------------------------
-TAC_ARG_ENABLE_EXPORT_MAKEFILES(no)
-
-
+#TAC_ARG_ENABLE_FEATURE_SUB( intrepid, moab, [Enable MOAB interface support.],
+#                INTREPID_MOAB, no)
+#AM_CONDITIONAL(BUILD_INTREPID_MOAB, [test "X$ac_cv_use_intrepid_moab" != "Xno"])
 
 #if test "X$ac_cv_use_intrepid_moab" != "Xno"; then
-#  TODO:  Change to MOAB and Trilinos.
+#  TODO:  Change to MOAB.
 #
 #  Check for ARPREC headers.
 #
@@ -272,7 +279,6 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(no)
 #                 echo "-----"
 #                 AC_MSG_ERROR(ARPREC test cannot link)])
 #     AC_LANG_RESTORE
-
 #fi
 
 # ------------------------------------------------------------------------
@@ -284,12 +290,12 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(no)
 #  #np# - option(s) that does (do) not apply.
 
 TAC_ARG_ENABLE_FEATURE(tests, [Make tests for all Trilinos packages buildable with 'make tests'], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( new_package, tests, [Make New_Package tests buildable with 'make tests'], NEW_PACKAGE_TESTS)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_new_package_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( intrepid, tests, [Make Intrepid tests buildable with 'make tests'], INTREPID_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_intrepid_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Make examples for all Trilinos packages buildable with 'make examples'], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( new_package, examples, [Make New_Package examples buildable with 'make examples'], NEW_PACKAGE_EXAMPLES)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_new_package_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( intrepid, examples, [Make Intrepid examples buildable with 'make examples'], NEW_PACKAGE_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_intrepid_examples" != "Xno")
 
 #We now build tests and examples through separate make targets, rather than
 #during "make".  We still need to conditionally include the test and example
@@ -298,9 +304,6 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_new_package_examples" != "Xno")
 #tarball.
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
-
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
-
 
 
 # ------------------------------------------------------------------------
@@ -328,14 +331,18 @@ AC_SUBST(ac_aux_dir)
 #
 AC_CONFIG_FILES([
   Makefile
+  Makefile.export.intrepid
   src/Makefile
   test/Makefile
+  example/Makefile
   test/RealSpace/Makefile
   test/MultiCell/Makefile
+  example/RealSpace/Makefile
+  example/MultiCell/Makefile
 ])
 
 AC_OUTPUT()
 
-echo "----------------------------------------"
+echo "------------------------------------------"
 echo "Finished Running Intrepid Configure Script"
-echo "----------------------------------------"
+echo "------------------------------------------"

@@ -3,6 +3,9 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* define if bool is a built-in type */
+#undef HAVE_BOOL
+
 /* Define to 1 if you have the <cassert> header file. */
 #undef HAVE_CASSERT
 
@@ -24,8 +27,8 @@
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
-/* Define if want to build intrepid-moab */
-#undef HAVE_INTREPID_MOAB
+/* Define if want to build intrepid-tests */
+#undef HAVE_INTREPID_TESTS
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -42,9 +45,6 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
-/* Define if want to build libcheck */
-#undef HAVE_LIBCHECK
-
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 
@@ -54,11 +54,17 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
-/* Define if want to build new_package-examples */
-#undef HAVE_NEW_PACKAGE_EXAMPLES
+/* define if the compiler supports the mutable keyword */
+#undef HAVE_MUTABLE
 
-/* Define if want to build new_package-tests */
-#undef HAVE_NEW_PACKAGE_TESTS
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
+/* define if the compiler accepts the new for scoping rules */
+#undef HAVE_NEW_FOR_SCOPING
+
+/* Define if want to build intrepid-examples */
+#undef HAVE_NEW_PACKAGE_EXAMPLES
 
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
@@ -74,6 +80,12 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* define if std::sprintf is supported */
+#undef HAVE_STD_SPRINTF
+
+/* define if the compiler supports Standard Template Library */
+#undef HAVE_STL
 
 /* Define to 1 if you have the <string> header file. */
 #undef HAVE_STRING
