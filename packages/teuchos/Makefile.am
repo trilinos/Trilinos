@@ -50,7 +50,21 @@ EXTRA_DIST = bootstrap \
 	config/replace-install-prefix.pl config/string-replace.pl \
         config/token-replace.pl doc/build_docs browser/doc/Doxyfile \
         doc/Doxyfile.options browser/doc/index.doc \
-        doc/groups.doc doc/Doxyfile doc/index.doc
+        doc/groups.doc doc/Doxyfile doc/index.doc \
+	refactoring/add-semicolon-after-composition-members-macros-20061116.sh \
+	refactoring/change-_DEBUG-to-TEUCHOS_DEBUG-20060620.sh \
+	refactoring/change-_DEBUG-to-TEUCHOS_DEBUG-20060620.token-list \
+	refactoring/change-describe-to-description-20050620.sh \
+	refactoring/change-describe-to-description-20050620.string-list \
+	refactoring/change-RefCountPtr-to-RCP-20070619.sh \
+	refactoring/change-RefCountPtr-to-RCP-20070619.token-list \
+	refactoring/replace-assert-with-TEST_FOR_EXCEPT.sh \
+	refactoring/replace-OSTab-operator-20061110.sh \
+	refactoring/replace-typeid-name-with-typeName-20061112.sh \
+	refactoring/standard-C-CXX-header-upgrade.20070628.string-list \
+	refactoring/standard-C-CXX-header-upgrade.20070628.token-list \
+	refactoring/standard-C-CXX-header-upgrade-all-files.20070628.sh \
+	refactoring/standard-C-CXX-header-upgrade-single-file.20070628.sh
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 

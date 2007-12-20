@@ -87,7 +87,27 @@ EXTRA_DIST = \
 	config/makeall \
 	sampleScripts/cygwin_icl.pl sampleScripts/stratus_ar.pl \
 	doc/Tutorial/README RELEASE_NOTES \
-	doc/build_docs.pl
+	doc/build_docs.pl \
+	commonTools/refactoring/copy-files-list.pl \
+	commonTools/refactoring/source_tree_stats.pl \
+	commonTools/refactoring/c++-to-c-comments \
+	commonTools/refactoring/string-replace-list.pl \
+	commonTools/refactoring/string-replace-list-r \
+	commonTools/refactoring/fix-dos-text-file.pl \
+	commonTools/refactoring/string-replace.pl \
+	commonTools/refactoring/fix-dos-text-file-r \
+	commonTools/refactoring/string-replace-r \
+	commonTools/refactoring/fix-doxygen-documentation.pl \
+	commonTools/refactoring/token-replace-list.pl \
+	commonTools/refactoring/fix-doxygen-documentation-r \
+	commonTools/refactoring/token-replace-list-r \
+	commonTools/refactoring/README \
+	commonTools/refactoring/token-replace.pl \
+	commonTools/refactoring/replace-tabs-with-spaces.pl \
+	commonTools/refactoring/token-replace-r \
+	commonTools/refactoring/replace-tabs-with-spaces-r \
+	commonTools/refactoring/update-copyright-header.pl \
+	commonTools/refactoring/source_file_stats.py
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -117,9 +137,10 @@ install-exec-hook:
 	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(exec_prefix)/include/.
 
 uninstall-hook:
-	rm -f  $(exec_prefix)/include/Trilinos_version.h
+	rm -f $(exec_prefix)/include/Trilinos_version.h
 	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl
 	rm -f $(exec_prefix)/include/strip_dup_libs.pl
+
 
 #
 # The below targets allow you to use the new
