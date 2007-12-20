@@ -79,6 +79,10 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
+	$(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/acx_blas.m4 \
+	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
@@ -92,6 +96,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
+	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -135,6 +140,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -154,6 +160,7 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 GREP = @GREP@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
@@ -161,6 +168,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -182,12 +190,22 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
+PYTHON = @PYTHON@
+PYTHON_CSPEC = @PYTHON_CSPEC@
+PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
+PYTHON_LSPEC = @PYTHON_LSPEC@
+PYTHON_PREFIX = @PYTHON_PREFIX@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
+WITH_SWIG = @WITH_SWIG@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@

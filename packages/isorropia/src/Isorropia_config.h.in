@@ -14,6 +14,9 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define if you have a BLAS library. */
+#undef HAVE_BLAS
+
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
@@ -38,6 +41,9 @@
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
 /* Define to 1 if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
 
@@ -49,6 +55,15 @@
 
 /* Define if want to build isorropia-zoltan */
 #undef HAVE_ISORROPIA_ZOLTAN
+
+/* Define if you have LAPACK library. */
+#undef HAVE_LAPACK
+
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
 
 /* define if we want to use MPI */
 #undef HAVE_MPI
@@ -65,17 +80,38 @@
 /* Define to 1 if you have the <set> header file. */
 #undef HAVE_SET
 
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
 /* define if std::sprintf is supported */
 #undef HAVE_STD_SPRINTF
 
 /* define if the compiler supports Standard Template Library */
 #undef HAVE_STL
 
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
 
 /* Define to 1 if you have the <vector> header file. */
 #undef HAVE_VECTOR

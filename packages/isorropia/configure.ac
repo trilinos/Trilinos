@@ -221,8 +221,12 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_isorropia_examples" != "Xno" ||
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-#Currently there are no libraries to check for for isorropia
-#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
+# ------------------------------------------------------------------------
+# Enable optional python wrappers
+# ------------------------------------------------------------------------
+TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
@@ -242,14 +246,18 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines.
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
 AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
-#if test "X$ac_cv_use_isorropia_tests" != "Xno" || test "X$ac_cv_use_isorropia_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_isorropia_tests" != "Xno" || test "X$ac_cv_use_isorropia_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-#fi
+# find or choose to supply valid blas and lapack libraries
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
