@@ -30,7 +30,7 @@
 
 #include <az_aztec.h>
 
-#include <cfei-aztec.h>
+#include "cfei_aztec.h"
 
 #include <fei_Aztec_Map.hpp>
 #include <fei_Aztec_Vector.hpp>

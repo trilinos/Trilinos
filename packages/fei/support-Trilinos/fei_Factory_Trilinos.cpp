@@ -6,9 +6,9 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include "fei_trilinos_macros.hpp"
 #include <fei_Factory_Trilinos.hpp>
 
-#include <fei_macros.hpp>
 #include <fei_Exception.hpp>
 #include <fei_VectorReducer.hpp>
 #include <fei_MatrixReducer.hpp>

@@ -167,43 +167,6 @@ int snl_fei::PointBlockMap::getBlkEqnInfo(int blkEqn, int& ptEqn, int& blkSize)
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::PointBlockMap::getBlkEqnInfo(fei::ctg_set<int>& blkEqns,
-					  feiArray<int>& ptEqns,
-					  feiArray<int>& blkSizes,
-					  int* work)
-{
-  if (ptEqns.length() != blkEqns.size() || blkEqns.size() != blkSizes.length()) {
-    return(-1);
-  }
-  
-  int* ptEqnsPtr = ptEqns.dataPtr();
-  int* blkSizesPtr = blkSizes.dataPtr();
-
-  fei::ctg_set<int>::const_iterator
-    iter = blkEqns.begin(),
-    iter_end = blkEqns.end();
-
-  if (ptEqualBlk_ == true) {
-    int offset = 0;
-    for(; iter !=iter_end; ++iter) {
-      blkSizesPtr[offset] = 1;
-      ptEqnsPtr[offset++] = *iter;
-    }
-
-    return(0);
-  }
-
-  int i=0, err;
-  for(; iter != iter_end; ++iter) {
-    err = getBlkEqnInfo(*iter, ptEqnsPtr[i], blkSizesPtr[i]);
-    if (err != 0) return(err);
-    ++i;
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
 int snl_fei::PointBlockMap::getPtEqnInfo(int ptEqn,
 					 int& blkEqn,
 					 int& blkOffset)

@@ -559,7 +559,7 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
 
   if (fieldSize <= 0) ERReturn(-1);
 
-  work_indices_.resize(fieldSize*2);
+  work_indices_.reserve(fieldSize*2);
   int* indicesPtr = &work_indices_[0];
   int i;
 
@@ -595,7 +595,7 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
 
   if (fieldSize <= 0) ERReturn(-1);
 
-  work_data2D_.resize(fieldSize);
+  work_data2D_.reserve(fieldSize);
 
   const double** data2DPtr = &work_data2D_[0];
   int i;
@@ -652,7 +652,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
     int numIDs = pattern->getNumIDs();
 
     const int* numIndicesPerID = pattern->getNumIndicesPerID();
-    work_indices_.resize(numIDs);
+    work_indices_.reserve(numIDs);
     int i, *nodeNumbers = &work_indices_[0];
 
     for(i=0; i<numIDs; ++i) {
@@ -859,7 +859,7 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
     myvalues = &work_data2D_[0];
   }
 
-  work_ints_.resize(numRows);
+  work_ints_.reserve(numRows);
 
   if (haveBlockMatrix()) {
     return( giveToBlockMatrix(numRows, rows, numCols, cols,
@@ -1207,8 +1207,8 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
       int row = indices_owned[i];
       CHK_ERR( getRowLength(row, rowLength) );
 
-      work_indices_.resize(rowLength);
-      work_data1D_.resize(rowLength);
+      work_indices_.reserve(rowLength);
+      work_data1D_.reserve(rowLength);
 
       int* indPtr = &work_indices_[0];
       double* coefPtr = &work_data1D_[0];
@@ -1290,8 +1290,8 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
       int row = indices_owned[i];
       CHK_ERR( getRowLength(row, rowLength) );
 
-      work_indices_.resize(rowLength);
-      work_data1D_.resize(rowLength);
+      work_indices_.reserve(rowLength);
+      work_data1D_.reserve(rowLength);
 
       int* indPtr = &work_indices_[0];
       double* coefPtr = &work_data1D_[0];

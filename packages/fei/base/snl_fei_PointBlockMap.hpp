@@ -29,10 +29,10 @@ namespace snl_fei {
     /** Destructor */
     virtual ~PointBlockMap();
 
-   /** Indicate to this object that point-equations are equal to block-equations
-       which means that all block-equation sizes are 1 and all mappings are
-       trivial. This will cause the internal mapping arrays to be emptied, to
-       save memory.
+   /** Indicate to this object that point-equations are equal to
+       block-equations which means that all block-equation sizes are 1 and
+       all mappings are trivial. This will cause the internal mapping objects
+       to be emptied, to save memory, and all lookup queries will be instant.
    */
    void setPtEqualBlk();
 
@@ -41,23 +41,24 @@ namespace snl_fei {
    bool ptEqualBlk() { return( ptEqualBlk_ ); }
 
    /** Establish the mapping blkEqn => ptEqn. I.e., insert ptEqn and blkEqn 
-       into internal sorted arrays, and establish a correspondence between them.
-       This function returns an error if 'setPtEqualBlk' has been called but
+       into internal structures, and establish a correspondence between them.
+       This function returns an error if 'setPtEqualBlk' has been called and
        ptEqn != blkEqn.
    */
    int setEqn(int ptEqn, int blkEqn);
 
    /** Establish the mapping blkEqn => ptEqn. I.e., insert ptEqn and blkEqn 
-       into internal sorted arrays, and establish a correspondence between them,
+       into internal structures, and establish a correspondence between them,
        also setting the associated block-size.
-       This function returns an error if 'setPtEqualBlk' has been called but
+       This function returns an error if 'setPtEqualBlk' has been called and
        ptEqn != blkEqn.
    */
    int setEqn(int ptEqn, int blkEqn, int blkSize);
 
    /** Store the specified size corresponding to the specified block-equation.
     Note that blkEqn must already have appeared in a call to 'setEqn', in order
-   to establish it in a mapping. Otherwise, an error (-1) is returned.*/
+   to establish it in a mapping. Otherwise, an error (-1) is returned.
+   */
    int setBlkEqnSize(int blkEqn, int size);
 
    /** Given a blkEqn, return the corresponding size. */
@@ -71,8 +72,8 @@ namespace snl_fei {
     */
    void setMaxBlkEqnSize(int sz) { maxSize_ = sz; }
 
-   /** Given a point-equation, return the corresponding block-equation. Note
-       that if eqn does not correspond to a block-equation, then -1 is
+   /** Given a point-equation, return the corresponding block-equation.
+       If eqn does not correspond to a block-equation, then -1 is
        returned.
        A return-value of -1 always indicates a not-found or not-valid error.
    */
@@ -80,7 +81,7 @@ namespace snl_fei {
 
    /** Given a block-equation, return the corresponding point-equation (the
        first of the point-equations that correspond to that block-equation).
-       Note that if blkEqn does not correspond to a point-equation, then -1 is
+       If blkEqn does not correspond to a point-equation, then -1 is
        returned.
    */
    int blkEqnToPtEqn(int blkEqn);
@@ -91,12 +92,6 @@ namespace snl_fei {
        @return -1 if block-equation not found, 0 if no error
    */
    int getBlkEqnInfo(int blkEqn, int& ptEqn, int& blkSize);
-
-   /** set/array version of getBlkEqnInfo */
-   int getBlkEqnInfo(fei::ctg_set<int>& blkEqns,
-		     feiArray<int>& ptEqns,
-		     feiArray<int>& blkSizes,
-		     int* work);
 
    /** Given a point-equation, query for the corresponding block-equation and
        the offset of this point-equation into the block-equation.
@@ -149,3 +144,4 @@ namespace snl_fei {
   };//class PointBlockMap
 }//namespace snl_fei
 #endif // _snl_fei_PointBlockMap_hpp_
+

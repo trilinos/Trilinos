@@ -10,7 +10,7 @@
 #include <fei_SharedPtr.hpp>
 #include <fei_mpi.h>
 
-#include <cfei-petsc.h>
+#include <cfei_petsc.h>
 
 #include <fei_Data.hpp>
 #include <fei_LinearSystemCore.hpp>

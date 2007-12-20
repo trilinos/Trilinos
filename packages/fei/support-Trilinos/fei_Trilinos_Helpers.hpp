@@ -9,8 +9,8 @@
 #ifndef _fei_Trilinos_Helpers_hpp_
 #define _fei_Trilinos_Helpers_hpp_
 
-#include <fei_macros.hpp>
-#include <fei_fwd.hpp>
+#include "fei_trilinos_macros.hpp"
+#include "fei_fwd.hpp"
 
 #include <fei_Include_Trilinos.hpp>
 

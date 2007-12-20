@@ -324,6 +324,11 @@ int test_misc::serialtest2()
     throw fei::Exception("failed test 1");
   }
 
+  int* lwrbnd = snl_fei::lowerBound(&list[0], &list[0]+list.size(), item);
+  if (lwrbnd != &list[0]) {
+    throw fei::Exception("failed test 1.1");
+  }
+
   item = 1;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
@@ -343,6 +348,11 @@ int test_misc::serialtest2()
 
   if (lowerbound != 3) {
     throw fei::Exception("failed test 4");
+  }
+
+  lwrbnd = snl_fei::lowerBound(&list[0], &list[0]+list.size(), item);
+  if (lwrbnd-&list[0] != 3) {
+    throw fei::Exception("failed test 4.1");
   }
 
   item = 9;
@@ -366,7 +376,7 @@ int test_misc::serialtest2()
     throw fei::Exception("failed test 7");
   }
 
-  lowerbound = snl_fei::lowerBound<int>(item, 0, 0);
+  lowerbound = snl_fei::lowerBound<int>(item, (int*)0, (int)0);
 
   if (lowerbound != 0) {
     throw fei::Exception("failed test 8");

@@ -9,7 +9,7 @@
 #ifndef _fei_Factory_Trilinos_hpp_
 #define _fei_Factory_Trilinos_hpp_
 
-#include <fei_macros.hpp>
+#include "fei_trilinos_macros.hpp"
 
 #include <fei_Include_Trilinos.hpp>
 

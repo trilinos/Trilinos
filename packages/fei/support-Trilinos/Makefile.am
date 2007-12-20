@@ -32,10 +32,8 @@ CORE_H = \
 	$(top_srcdir)/support-Trilinos/fei_Aztec_LinSysCore.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Aztec_Map.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Aztec_Vector.hpp \
-	$(top_srcdir)/support-Trilinos/cfei-aztec.h \
 	$(top_srcdir)/support-Trilinos/cfei_aztec.h \
 	$(top_srcdir)/support-Trilinos/fei_Factory_Trilinos.hpp \
-	$(top_srcdir)/support-Trilinos/fei-aztec.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Include_Trilinos.hpp \
 	$(top_srcdir)/support-Trilinos/fei_LinProbMgr_EpetraBasic.hpp \
 	$(top_srcdir)/support-Trilinos/fei_MatrixTraits_Epetra.hpp \

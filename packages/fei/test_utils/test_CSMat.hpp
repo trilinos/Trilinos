@@ -1,6 +1,3 @@
-#ifndef _cfei_dash_aztec_h_
-#define _cfei_dash_aztec_h_
-
 /*--------------------------------------------------------------------*/
 /*    Copyright 2005 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
@@ -9,23 +6,39 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#ifndef _test_CSMat_hpp_
+#define _test_CSMat_hpp_
+
 #include <fei_macros.hpp>
 
-#ifndef FEI_SER
+#include <fei_defs.h>
 
-#define AZ_MPI AZ_MPI
-#ifndef MPI
-#define MPI MPI
-#endif
-#ifndef PLL
-#define PLL PLL
-#endif
+#include <test_utils/tester.hpp>
 
-#include <mpi.h>
+#include <test_utils/testData.hpp>
 
-#endif
+/** Unit-tester for CSRMat, CSVec
+*/
+class test_CSMat : public tester {
+ public:
+  test_CSMat(MPI_Comm comm);
+  virtual ~test_CSMat();
 
-#include <cfei_aztec.h>
+  const char* getName()
+    {
+      static const char name[] = "CSRMat, CSVec";
+      return((const char*)name);
+    }
 
-#endif /*_cfei_dash_aztec_h_*/
+  int runtests();
 
+  int test1();
+
+  int test2();
+
+  int test3();
+
+  int test4();
+};
+
+#endif // _test_CSMat_hpp_

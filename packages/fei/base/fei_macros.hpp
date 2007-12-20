@@ -113,7 +113,7 @@
 //see fei_iostream.hpp
 #endif
 
-#ifndef HAVE_MPI
+#ifdef HAVE_NO_MPI
 #define FEI_SER
 //if FEI_SER is defined, don't try to include <mpi.h>
 #endif

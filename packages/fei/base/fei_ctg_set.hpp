@@ -12,14 +12,27 @@
 
 #include <fei_macros.hpp>
 
-#include <feiArray.hpp>
+#include <vector>
 #include <snl_fei_ArrayUtils.hpp>
 
 #define Set_end_val -99999999
 
 namespace fei {
-/** A specialized container that mimics std::set in many ways. This set can
-only be used for integer types (such as short, int, long). */
+
+/** A specialized container that mimics std::set in many ways.
+  This set can only be used for integer types (such as short, int, long).
+
+  This container is optimized for inserting/storing indices that have
+  significant contiguous sections or ranges.
+
+  Data is stored in an array in pairs, where each pair represents a
+  contiguous range. The first item in a pair is the beginning of the range,
+  and the second item in a pair is one greater than the end of the range.
+  Example:
+    Assume the data to be stored is 0, 1, 2, 3, 6, 7, 8, which forms two
+    contiguous ranges 0 - 3 and 6 - 8. This container will store this data
+    in an array like this: 0, 4, 6, 9.
+*/
 template<typename T>
 class ctg_set {
   public:
@@ -32,7 +45,7 @@ class ctg_set {
     : data_(src.data_), dataptr_(0), len_(src.len_),
       highwatermark_(src.highwatermark_), alloc_incr_(src.alloc_incr_)
     {
-      if (data_.length()>0) {
+      if (len_>0) {
         dataptr_ = &data_[0];
       }
     }
@@ -128,7 +141,7 @@ class ctg_set {
   const_iterator begin() const
     {
       T val = Set_end_val;
-      if (data_.length()>0) {
+      if (len_>0) {
 	val = data_[0];
       }
       return(const_iterator(this, val, 0));
@@ -186,7 +199,7 @@ class ctg_set {
     }
     if (len_ < 1) {
       highwatermark_ = alloc_incr_;
-      data_.resize(highwatermark_);
+      data_.reserve(highwatermark_);
       dataptr_ = &data_[0];
       dataptr_[0] = item;
       dataptr_[1] = item+1;
@@ -275,7 +288,7 @@ class ctg_set {
 	    len_ += 2;
 	    if (len_ > highwatermark_) {
 	      highwatermark_ += alloc_incr_;
-	      data_.resize(highwatermark_);
+	      data_.reserve(highwatermark_);
 	      dataptr_ = &data_[0];
 	    }
 	    if (nmove > 0) {
@@ -300,7 +313,7 @@ class ctg_set {
     len_ += 2;
     if (len_ > highwatermark_) {
       highwatermark_ += alloc_incr_;
-      data_.resize(highwatermark_);
+      data_.reserve(highwatermark_);
       dataptr_ = &data_[0];
     }
     dataptr_[insertPoint] = item;
@@ -313,11 +326,11 @@ class ctg_set {
   void insert2(const T& item)
   {
     if (len_ > highwatermark_) {
-      FEI_COUT << "error"<<FEI_ENDL;
+      FEI_COUT << "fei::ctg_set internal error"<<FEI_ENDL;
     }
     if (len_ < 1) {
       highwatermark_ = alloc_incr_;
-      data_.resize(highwatermark_);
+      data_.reserve(highwatermark_);
       dataptr_ = &data_[0];
       dataptr_[0] = item;
       dataptr_[1] = item+1;
@@ -333,105 +346,83 @@ class ctg_set {
       //less than item.
       //The possibilities are:
       //
-      //1. dataptr_[insertPoint] equals item, so:
+      //1. insertPoint is an even number:
+      //   dataptr_[insertPoint] is the start of an existing range.
+      //   diff = dataptr_[insertPoint] - item;
+      //   switch(diff) {
+      //    case 0 : //  item in range, so return
+      //    case 1 : //  item just below range, so expand range and return
+      //    default: //  insert new range for item
+      //   }
       //
-      //     if (insertPoint is an even number) {
-      //       return since item is present
-      //     }
-      //     else {
-      //       expand the range below item to include item
-      //       (by incrementing dataptr_[insertPoint])
-      //       check whether dataptr_[insertPoint] == dataptr_[insertPoint+1]
-      //       if so, merge the range at insertPoint-1 with the
-      //       range at insertPoint+1
-      //       return
-      //     }
-      //
-      //2. dataptr_[insertPoint] is greater than item, so:
-      //
-      //     if (insertPoint is an even number) {
-      //       if (item == dataptr_[insertPoint]-1) {
-      //         expand the range at insertPoint to include item, by
-      //         simply decrementing dataptr_[insertPoint]
-      //       }
-      //       else {
-      //         insert a new range at insertPoint
-      //       }
-      //     }
-      //     else {
-      //       return since item is already present in the range at
-      //       dataptr_[insertPoint-1]
-      //     }
+      //2. insertPoint is an odd number:
+      //   dataptr_[insertPoint] is the end of an existing range
+      //   diff = dataptr_[insertPoint] - item;
+      //   switch(diff) {
+      //    case 0 : {
+      //      // item just above range, so expand range
+      //      // check whether range should be merged with range above
+      //    }
+      //    default: // item in range, so return
+      //   }
       //
 
-      if (dataptr_[insertPoint] == item) {
-	if (insertPoint%2 == 0) {
-	  //insertPoint is an even number, so return since item is present
-	  return;
-	}
+      if (insertPoint%2==0) {
+        switch(dataptr_[insertPoint]-item) {
+          case 0: break; //item in range
+          case 1: {//expand range downwards
+            --dataptr_[insertPoint];
+            break;
+          }
+          default: {// insert new range for item
+            //insert a new range at insertPoint
+            int nmove = len_-insertPoint;
+            len_ += 2;
+            if (len_ > highwatermark_) {
+              highwatermark_ += alloc_incr_;
+              data_.reserve(highwatermark_);
+              dataptr_ = &data_[0];
+            }
 
-	//Since insertPoint is an odd number, item lies just outside an existing
-	//range so we simply need to add item to the range by incrementing
-	//data_[insertPoint].
-	++dataptr_[insertPoint];
+            T* dest = dataptr_+insertPoint+2;
+            T* src = dest - 2;
+            memmove(dest, src, nmove*sizeof(T));
 
-	//now check whether this newly expanded range should be merged
-	//with the range above it
-	if (insertPoint < len_-1) {
-	  if (dataptr_[insertPoint] == dataptr_[insertPoint+1]) {
-	    dataptr_[insertPoint] = dataptr_[insertPoint+2];
-	    len_ -= 2;
-	    int nmove=len_-insertPoint-1;
-	    if (nmove > 0) {
-	      T* dest = dataptr_+insertPoint+1;
-	      T* src =  dest+2;
-	      memmove(dest, src, nmove*sizeof(T));
-	    }
-	  }
-	}
-
-	return;
+            dataptr_[insertPoint] = item;
+            dataptr_[insertPoint+1] = item+1;
+          }
+        }
       }
-      else {
-	//dataptr_[insertPoint] is greater than item.
+      else {//insertPoint is odd number
+        if (dataptr_[insertPoint] == item) {
+          // item just above range, so expand range
+          ++dataptr_[insertPoint];
 
-	if (insertPoint%2 == 0) {
-	  if (item == dataptr_[insertPoint]-1) {
-	    --dataptr_[insertPoint];
-	    return;
-	  }
-	  else {
-	    //insert a new range at insertPoint
-	    int nmove = len_-insertPoint;
-	    len_ += 2;
-	    if (len_ > highwatermark_) {
-	      highwatermark_ += alloc_incr_;
-	      data_.resize(highwatermark_);
-	      dataptr_ = &data_[0];
-	    }
-	    if (nmove > 0) {
-	      T* dest = dataptr_+insertPoint+2;
-	      T* src = dest - 2;
-	      memmove(dest, src, nmove*sizeof(T));
-	    }
-	    dataptr_[insertPoint] = item;
-	    dataptr_[insertPoint+1] = item+1;
-
-	    return;
-	  }
-	}
-	else {
-	  return;
-	}
+          // check whether range should be merged with range above
+          if (insertPoint < len_-1 &&
+              dataptr_[insertPoint] == dataptr_[insertPoint+1]) {
+            dataptr_[insertPoint] = dataptr_[insertPoint+2];
+            len_ -= 2;
+            int nmove=len_-insertPoint-1;
+            if (nmove > 0) {
+              T* dest = dataptr_+insertPoint+1;
+              T* src =  dest+2;
+              memmove(dest, src, nmove*sizeof(T));
+            }
+          }
+        }//end if (dataptr_[insertPoint]==item)...
+        //     else do nothing, item is already in existing range
       }
-    }
+
+      return;
+    } // end if (insertPoint < len_)...
 
     //If we get to here, insertPoint >= len_, meaning we need to append
     //a new range.
     len_ += 2;
     if (len_ > highwatermark_) {
       highwatermark_ += alloc_incr_;
-      data_.resize(highwatermark_);
+      data_.reserve(highwatermark_);
       dataptr_ = &data_[0];
     }
     dataptr_[insertPoint] = item;
@@ -523,7 +514,7 @@ class ctg_set {
 
  private:
   friend class const_iterator;
-  feiArray<T> data_;
+  std::vector<T> data_;
   T* dataptr_;
   int len_;
   int highwatermark_;

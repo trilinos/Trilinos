@@ -67,7 +67,7 @@ EqnComm::getOwnerProc(int eqn) const
 //  int proc = iter - globalOffsets_.begin() - 1;
 //  if (*iter==eqn) ++proc;
   int proc = 0;
-  for(unsigned p=0; p<globalOffsets_.size(); ++p) {
+  for(unsigned p=1; p<globalOffsets_.size(); ++p) {
     if (eqn < globalOffsets_[p]) {
       proc = p-1;
       break;

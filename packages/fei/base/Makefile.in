@@ -88,24 +88,26 @@ AR = ar
 ARFLAGS = cru
 libfei_base_a_DEPENDENCIES =
 am__objects_1 = fei_BCManager.$(OBJEXT) fei_BCRecord.$(OBJEXT) \
-	fei_BlockDescriptor.$(OBJEXT) cfei.$(OBJEXT) \
-	fei_EqnBuffer.$(OBJEXT) fei_EqnCommMgr.$(OBJEXT) \
-	fei_FEDataFilter.$(OBJEXT) FEI_Implementation.$(OBJEXT) \
-	fei_ostream_ops.$(OBJEXT) fei_EqnComm.$(OBJEXT) \
-	fei_Exception.$(OBJEXT) fei_Factory.$(OBJEXT) \
-	fei_LinearSystem.$(OBJEXT) fei_LogFile.$(OBJEXT) \
-	fei_Logger.$(OBJEXT) fei_LogManager.$(OBJEXT) \
-	fei_Matrix_core.$(OBJEXT) fei_Matrix_Local.$(OBJEXT) \
-	fei_Vector_Local.$(OBJEXT) fei_MatrixReducer.$(OBJEXT) \
-	fei_MatrixGraph_Impl2.$(OBJEXT) fei_Param.$(OBJEXT) \
-	fei_ParameterSet.$(OBJEXT) fei_Reducer.$(OBJEXT) \
-	fei_utils.$(OBJEXT) fei_VectorSpace.$(OBJEXT) \
-	fei_Vector_core.$(OBJEXT) fei_VectorReducer.$(OBJEXT) \
-	fei_Filter.$(OBJEXT) fei_LibraryWrapper.$(OBJEXT) \
-	fei_LinSysCoreFilter.$(OBJEXT) fei_NodeCommMgr.$(OBJEXT) \
-	fei_NodeDatabase.$(OBJEXT) fei_NodeDescriptor.$(OBJEXT) \
-	fei_PatternDescriptor.$(OBJEXT) fei_ProcEqns.$(OBJEXT) \
-	snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
+	fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
+	fei_CSVec.$(OBJEXT) cfei.$(OBJEXT) fei_EqnBuffer.$(OBJEXT) \
+	fei_EqnCommMgr.$(OBJEXT) fei_FEDataFilter.$(OBJEXT) \
+	FEI_Implementation.$(OBJEXT) fei_ostream_ops.$(OBJEXT) \
+	fei_EqnComm.$(OBJEXT) fei_Exception.$(OBJEXT) \
+	fei_Factory.$(OBJEXT) fei_FillableMat.$(OBJEXT) \
+	fei_FillableVec.$(OBJEXT) fei_LinearSystem.$(OBJEXT) \
+	fei_LogFile.$(OBJEXT) fei_Logger.$(OBJEXT) \
+	fei_LogManager.$(OBJEXT) fei_Matrix_core.$(OBJEXT) \
+	fei_Matrix_Local.$(OBJEXT) fei_Vector_Local.$(OBJEXT) \
+	fei_MatrixReducer.$(OBJEXT) fei_MatrixGraph_Impl2.$(OBJEXT) \
+	fei_Param.$(OBJEXT) fei_ParameterSet.$(OBJEXT) \
+	fei_Pool.$(OBJEXT) fei_Pool_alloc.$(OBJEXT) \
+	fei_Reducer.$(OBJEXT) fei_utils.$(OBJEXT) \
+	fei_VectorSpace.$(OBJEXT) fei_Vector_core.$(OBJEXT) \
+	fei_VectorReducer.$(OBJEXT) fei_Filter.$(OBJEXT) \
+	fei_LibraryWrapper.$(OBJEXT) fei_LinSysCoreFilter.$(OBJEXT) \
+	fei_NodeCommMgr.$(OBJEXT) fei_NodeDatabase.$(OBJEXT) \
+	fei_NodeDescriptor.$(OBJEXT) fei_PatternDescriptor.$(OBJEXT) \
+	fei_ProcEqns.$(OBJEXT) snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
 	snl_fei_Broker_FEData.$(OBJEXT) \
 	snl_fei_Broker_LinSysCore.$(OBJEXT) fei_CommCore.$(OBJEXT) \
 	fei_CommUtilsBase.$(OBJEXT) fei_ConnectivityBlock.$(OBJEXT) \
@@ -248,6 +250,8 @@ CORE_H = \
 	$(top_srcdir)/base/fei_BCManager.hpp \
 	$(top_srcdir)/base/fei_BCRecord.hpp \
 	$(top_srcdir)/base/fei_BlockDescriptor.hpp \
+	$(top_srcdir)/base/fei_CSRMat.hpp \
+	$(top_srcdir)/base/fei_CSVec.hpp \
 	$(top_srcdir)/base/cfei.h \
 	$(top_srcdir)/base/fei_ConnectivityTable.hpp \
 	$(top_srcdir)/base/fei_EqnBuffer.hpp \
@@ -262,6 +266,8 @@ CORE_H = \
 	$(top_srcdir)/base/fei_EqnComm.hpp \
 	$(top_srcdir)/base/fei_Exception.hpp \
 	$(top_srcdir)/base/fei_Factory.hpp \
+	$(top_srcdir)/base/fei_FillableMat.hpp \
+	$(top_srcdir)/base/fei_FillableVec.hpp \
 	$(top_srcdir)/base/FEI_Implementation.hpp \
 	$(top_srcdir)/base/fei_IndexTable.hpp \
 	$(top_srcdir)/base/fei_iosfwd.hpp \
@@ -278,6 +284,8 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Matrix_core.hpp \
 	$(top_srcdir)/base/fei_Matrix_Impl.hpp \
 	$(top_srcdir)/base/fei_Matrix_Local.hpp \
+	$(top_srcdir)/base/fei_Pool.hpp \
+	$(top_srcdir)/base/fei_Pool_alloc.hpp \
 	$(top_srcdir)/base/fei_Vector_Local.hpp \
 	$(top_srcdir)/base/fei_MatrixReducer.hpp \
 	$(top_srcdir)/base/fei_MatrixGraph.hpp \
@@ -372,6 +380,8 @@ CORE = \
 	$(srcdir)/fei_BCManager.cpp \
 	$(srcdir)/fei_BCRecord.cpp \
 	$(srcdir)/fei_BlockDescriptor.cpp \
+	$(srcdir)/fei_CSRMat.cpp \
+	$(srcdir)/fei_CSVec.cpp \
 	$(srcdir)/cfei.cpp \
 	$(srcdir)/fei_EqnBuffer.cpp \
 	$(srcdir)/fei_EqnCommMgr.cpp \
@@ -381,6 +391,8 @@ CORE = \
 	$(srcdir)/fei_EqnComm.cpp \
 	$(srcdir)/fei_Exception.cpp \
 	$(srcdir)/fei_Factory.cpp \
+	$(srcdir)/fei_FillableMat.cpp \
+	$(srcdir)/fei_FillableVec.cpp \
 	$(srcdir)/fei_LinearSystem.cpp \
 	$(srcdir)/fei_LogFile.cpp \
 	$(srcdir)/fei_Logger.cpp \
@@ -392,6 +404,8 @@ CORE = \
 	$(srcdir)/fei_MatrixGraph_Impl2.cpp \
 	$(srcdir)/fei_Param.cpp \
 	$(srcdir)/fei_ParameterSet.cpp \
+	$(srcdir)/fei_Pool.cpp \
+	$(srcdir)/fei_Pool_alloc.cpp \
 	$(srcdir)/fei_Reducer.cpp \
 	$(srcdir)/fei_utils.cpp \
 	$(srcdir)/fei_VectorSpace.cpp \
@@ -556,6 +570,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_BCManager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_BCRecord.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_BlockDescriptor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CSRMat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CSVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CommCore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CommUtilsBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ConnectivityBlock.Po@am__quote@
@@ -567,6 +583,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_FEI_Impl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_FieldMask.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_FillableMat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_FillableVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_GraphReducer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Graph_Impl.Po@am__quote@
@@ -588,6 +606,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ParameterSet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Pattern.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_PatternDescriptor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Pool.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Pool_alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ProcEqns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Record.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Reducer.Po@am__quote@
@@ -669,6 +689,34 @@ fei_BlockDescriptor.obj: $(srcdir)/fei_BlockDescriptor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_BlockDescriptor.cpp' object='fei_BlockDescriptor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_BlockDescriptor.obj `if test -f '$(srcdir)/fei_BlockDescriptor.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_BlockDescriptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_BlockDescriptor.cpp'; fi`
+
+fei_CSRMat.o: $(srcdir)/fei_CSRMat.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_CSRMat.o -MD -MP -MF $(DEPDIR)/fei_CSRMat.Tpo -c -o fei_CSRMat.o `test -f '$(srcdir)/fei_CSRMat.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_CSRMat.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_CSRMat.Tpo $(DEPDIR)/fei_CSRMat.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_CSRMat.cpp' object='fei_CSRMat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_CSRMat.o `test -f '$(srcdir)/fei_CSRMat.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_CSRMat.cpp
+
+fei_CSRMat.obj: $(srcdir)/fei_CSRMat.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_CSRMat.obj -MD -MP -MF $(DEPDIR)/fei_CSRMat.Tpo -c -o fei_CSRMat.obj `if test -f '$(srcdir)/fei_CSRMat.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_CSRMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_CSRMat.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_CSRMat.Tpo $(DEPDIR)/fei_CSRMat.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_CSRMat.cpp' object='fei_CSRMat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_CSRMat.obj `if test -f '$(srcdir)/fei_CSRMat.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_CSRMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_CSRMat.cpp'; fi`
+
+fei_CSVec.o: $(srcdir)/fei_CSVec.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_CSVec.o -MD -MP -MF $(DEPDIR)/fei_CSVec.Tpo -c -o fei_CSVec.o `test -f '$(srcdir)/fei_CSVec.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_CSVec.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_CSVec.Tpo $(DEPDIR)/fei_CSVec.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_CSVec.cpp' object='fei_CSVec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_CSVec.o `test -f '$(srcdir)/fei_CSVec.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_CSVec.cpp
+
+fei_CSVec.obj: $(srcdir)/fei_CSVec.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_CSVec.obj -MD -MP -MF $(DEPDIR)/fei_CSVec.Tpo -c -o fei_CSVec.obj `if test -f '$(srcdir)/fei_CSVec.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_CSVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_CSVec.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_CSVec.Tpo $(DEPDIR)/fei_CSVec.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_CSVec.cpp' object='fei_CSVec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_CSVec.obj `if test -f '$(srcdir)/fei_CSVec.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_CSVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_CSVec.cpp'; fi`
 
 cfei.o: $(srcdir)/cfei.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cfei.o -MD -MP -MF $(DEPDIR)/cfei.Tpo -c -o cfei.o `test -f '$(srcdir)/cfei.cpp' || echo '$(srcdir)/'`$(srcdir)/cfei.cpp
@@ -795,6 +843,34 @@ fei_Factory.obj: $(srcdir)/fei_Factory.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Factory.cpp' object='fei_Factory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Factory.obj `if test -f '$(srcdir)/fei_Factory.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Factory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Factory.cpp'; fi`
+
+fei_FillableMat.o: $(srcdir)/fei_FillableMat.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_FillableMat.o -MD -MP -MF $(DEPDIR)/fei_FillableMat.Tpo -c -o fei_FillableMat.o `test -f '$(srcdir)/fei_FillableMat.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_FillableMat.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_FillableMat.Tpo $(DEPDIR)/fei_FillableMat.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_FillableMat.cpp' object='fei_FillableMat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_FillableMat.o `test -f '$(srcdir)/fei_FillableMat.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_FillableMat.cpp
+
+fei_FillableMat.obj: $(srcdir)/fei_FillableMat.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_FillableMat.obj -MD -MP -MF $(DEPDIR)/fei_FillableMat.Tpo -c -o fei_FillableMat.obj `if test -f '$(srcdir)/fei_FillableMat.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_FillableMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_FillableMat.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_FillableMat.Tpo $(DEPDIR)/fei_FillableMat.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_FillableMat.cpp' object='fei_FillableMat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_FillableMat.obj `if test -f '$(srcdir)/fei_FillableMat.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_FillableMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_FillableMat.cpp'; fi`
+
+fei_FillableVec.o: $(srcdir)/fei_FillableVec.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_FillableVec.o -MD -MP -MF $(DEPDIR)/fei_FillableVec.Tpo -c -o fei_FillableVec.o `test -f '$(srcdir)/fei_FillableVec.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_FillableVec.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_FillableVec.Tpo $(DEPDIR)/fei_FillableVec.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_FillableVec.cpp' object='fei_FillableVec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_FillableVec.o `test -f '$(srcdir)/fei_FillableVec.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_FillableVec.cpp
+
+fei_FillableVec.obj: $(srcdir)/fei_FillableVec.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_FillableVec.obj -MD -MP -MF $(DEPDIR)/fei_FillableVec.Tpo -c -o fei_FillableVec.obj `if test -f '$(srcdir)/fei_FillableVec.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_FillableVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_FillableVec.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_FillableVec.Tpo $(DEPDIR)/fei_FillableVec.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_FillableVec.cpp' object='fei_FillableVec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_FillableVec.obj `if test -f '$(srcdir)/fei_FillableVec.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_FillableVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_FillableVec.cpp'; fi`
 
 fei_LinearSystem.o: $(srcdir)/fei_LinearSystem.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_LinearSystem.o -MD -MP -MF $(DEPDIR)/fei_LinearSystem.Tpo -c -o fei_LinearSystem.o `test -f '$(srcdir)/fei_LinearSystem.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_LinearSystem.cpp
@@ -949,6 +1025,34 @@ fei_ParameterSet.obj: $(srcdir)/fei_ParameterSet.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_ParameterSet.cpp' object='fei_ParameterSet.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_ParameterSet.obj `if test -f '$(srcdir)/fei_ParameterSet.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_ParameterSet.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_ParameterSet.cpp'; fi`
+
+fei_Pool.o: $(srcdir)/fei_Pool.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_Pool.o -MD -MP -MF $(DEPDIR)/fei_Pool.Tpo -c -o fei_Pool.o `test -f '$(srcdir)/fei_Pool.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_Pool.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_Pool.Tpo $(DEPDIR)/fei_Pool.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Pool.cpp' object='fei_Pool.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Pool.o `test -f '$(srcdir)/fei_Pool.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_Pool.cpp
+
+fei_Pool.obj: $(srcdir)/fei_Pool.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_Pool.obj -MD -MP -MF $(DEPDIR)/fei_Pool.Tpo -c -o fei_Pool.obj `if test -f '$(srcdir)/fei_Pool.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Pool.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Pool.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_Pool.Tpo $(DEPDIR)/fei_Pool.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Pool.cpp' object='fei_Pool.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Pool.obj `if test -f '$(srcdir)/fei_Pool.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Pool.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Pool.cpp'; fi`
+
+fei_Pool_alloc.o: $(srcdir)/fei_Pool_alloc.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_Pool_alloc.o -MD -MP -MF $(DEPDIR)/fei_Pool_alloc.Tpo -c -o fei_Pool_alloc.o `test -f '$(srcdir)/fei_Pool_alloc.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_Pool_alloc.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_Pool_alloc.Tpo $(DEPDIR)/fei_Pool_alloc.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Pool_alloc.cpp' object='fei_Pool_alloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Pool_alloc.o `test -f '$(srcdir)/fei_Pool_alloc.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_Pool_alloc.cpp
+
+fei_Pool_alloc.obj: $(srcdir)/fei_Pool_alloc.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_Pool_alloc.obj -MD -MP -MF $(DEPDIR)/fei_Pool_alloc.Tpo -c -o fei_Pool_alloc.obj `if test -f '$(srcdir)/fei_Pool_alloc.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Pool_alloc.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Pool_alloc.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_Pool_alloc.Tpo $(DEPDIR)/fei_Pool_alloc.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Pool_alloc.cpp' object='fei_Pool_alloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Pool_alloc.obj `if test -f '$(srcdir)/fei_Pool_alloc.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Pool_alloc.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Pool_alloc.cpp'; fi`
 
 fei_Reducer.o: $(srcdir)/fei_Reducer.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_Reducer.o -MD -MP -MF $(DEPDIR)/fei_Reducer.Tpo -c -o fei_Reducer.o `test -f '$(srcdir)/fei_Reducer.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_Reducer.cpp

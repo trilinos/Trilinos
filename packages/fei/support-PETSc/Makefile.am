@@ -27,8 +27,6 @@ DEFAULT_INCLUDES = -I$(top_srcdir)/interface -I$(top_srcdir) -I$(top_builddir) $
 
 CORE_H = \
 	$(top_srcdir)/support-PETSc/cfei_petsc.h \
-	$(top_srcdir)/support-PETSc/cfei-petsc.h \
-	$(top_srcdir)/support-PETSc/fei-petsc.hpp \
 	$(top_srcdir)/support-PETSc/fei_PETSc_LinSysCore.hpp
 
 CORE = \

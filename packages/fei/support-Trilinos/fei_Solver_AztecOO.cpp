@@ -6,7 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <fei_macros.hpp>
+#include "fei_trilinos_macros.hpp"
 
 //fei_Include_Trilinos.h includes the actual Trilinos headers (epetra, aztecoo, ...)
 #include <fei_Include_Trilinos.hpp>

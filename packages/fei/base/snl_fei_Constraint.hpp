@@ -248,11 +248,10 @@ inline snl_fei::Constraint<fei::Record*,fei::record_lessthan>::Constraint(int id
     vspace->initSolutionEntries(fieldIDs[i], 1, idTypes[i], 1, &(IDs[i]));
     rec = recordCollection->getRecordWithID(IDs[i]);
 
-    if (isSlave) rec->hasSlaveDof(true);
-
     unsigned fieldSize = vspace->getFieldSize(fieldIDs[i]);
 
     if (isSlave && i == offsetOfSlave) {
+      rec->hasSlaveDof(true);
       setSlave(rec);
       setSlaveFieldID(fieldIDs[i]);
       setOffsetIntoSlaveField(offsetIntoSlaveField);

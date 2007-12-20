@@ -156,17 +156,10 @@ namespace snl_fei {
 		 const T* list,
 		 int len)
   {
-    //The correctness of this function is tested in fei/test_utils/test_misc.cpp,
-    //in test_misc::serialtest2().
+    //The correctness of this function is tested in
+    // fei/test_utils/test_misc.cpp, in test_misc::serialtest2().
 
-    if (len < 2) {
-      if (len > 0) {
-	if (list[0] < item) {
-	  return(1);
-	}
-      }
-      return(0);
-    }
+    if (len < 1) return 0;
 
     unsigned start = 0;
     unsigned end = len - 1;
@@ -186,6 +179,36 @@ namespace snl_fei {
     }
 
     return(start);
+  }
+
+  /** Lower bound finds the first entry in list that is not less than item.
+      A binary search is used, and list is assumed to be sorted.
+   */
+  template<typename T, class Ran>
+  Ran lowerBound(Ran list, Ran list_end, const T& item)
+  {
+    //The correctness of this function is tested in
+    // fei/test_utils/test_misc.cpp, in test_misc::serialtest2().
+
+    --list_end;
+
+    unsigned incr = (list_end-list)>>1;
+    while(incr > 0) {
+      Ran mid = list + incr;
+      if (*mid < item) list = mid;
+      else list_end = mid;
+      incr = (list_end-list)>>1;
+    }
+
+    if (*list_end < item) {
+      return(list_end+1);
+    }
+
+    if (*list < item) {
+      return(list_end);
+    }
+
+    return(list);
   }
 
   /** Binary search of a list that's assumed to be sorted.

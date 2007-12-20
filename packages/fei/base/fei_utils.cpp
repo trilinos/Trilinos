@@ -97,7 +97,7 @@ void fei::utils::getConnectivityArrays(fei::MatrixGraph& matrixGraph,
     num_elems += cblk->getConnectivityIDs().size();
 
     fei::Pattern* pattern = cblk->getRowPattern();
-    num_nodes += pattern->getNumIDs();
+    num_nodes += num_elems*pattern->getNumIDs();
   }
 
   nodes.resize(num_nodes);

@@ -32,6 +32,8 @@ CORE_H = \
 	$(top_srcdir)/base/fei_BCManager.hpp \
 	$(top_srcdir)/base/fei_BCRecord.hpp \
 	$(top_srcdir)/base/fei_BlockDescriptor.hpp \
+	$(top_srcdir)/base/fei_CSRMat.hpp \
+	$(top_srcdir)/base/fei_CSVec.hpp \
 	$(top_srcdir)/base/cfei.h \
 	$(top_srcdir)/base/fei_ConnectivityTable.hpp \
 	$(top_srcdir)/base/fei_EqnBuffer.hpp \
@@ -46,6 +48,8 @@ CORE_H = \
 	$(top_srcdir)/base/fei_EqnComm.hpp \
 	$(top_srcdir)/base/fei_Exception.hpp \
 	$(top_srcdir)/base/fei_Factory.hpp \
+	$(top_srcdir)/base/fei_FillableMat.hpp \
+	$(top_srcdir)/base/fei_FillableVec.hpp \
 	$(top_srcdir)/base/FEI_Implementation.hpp \
 	$(top_srcdir)/base/fei_IndexTable.hpp \
 	$(top_srcdir)/base/fei_iosfwd.hpp \
@@ -62,6 +66,8 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Matrix_core.hpp \
 	$(top_srcdir)/base/fei_Matrix_Impl.hpp \
 	$(top_srcdir)/base/fei_Matrix_Local.hpp \
+	$(top_srcdir)/base/fei_Pool.hpp \
+	$(top_srcdir)/base/fei_Pool_alloc.hpp \
 	$(top_srcdir)/base/fei_Vector_Local.hpp \
 	$(top_srcdir)/base/fei_MatrixReducer.hpp \
 	$(top_srcdir)/base/fei_MatrixGraph.hpp \
@@ -156,6 +162,8 @@ CORE = \
 	$(srcdir)/fei_BCManager.cpp \
 	$(srcdir)/fei_BCRecord.cpp \
 	$(srcdir)/fei_BlockDescriptor.cpp \
+	$(srcdir)/fei_CSRMat.cpp \
+	$(srcdir)/fei_CSVec.cpp \
 	$(srcdir)/cfei.cpp \
 	$(srcdir)/fei_EqnBuffer.cpp \
 	$(srcdir)/fei_EqnCommMgr.cpp \
@@ -165,6 +173,8 @@ CORE = \
 	$(srcdir)/fei_EqnComm.cpp \
 	$(srcdir)/fei_Exception.cpp \
 	$(srcdir)/fei_Factory.cpp \
+	$(srcdir)/fei_FillableMat.cpp \
+	$(srcdir)/fei_FillableVec.cpp \
 	$(srcdir)/fei_LinearSystem.cpp \
 	$(srcdir)/fei_LogFile.cpp \
 	$(srcdir)/fei_Logger.cpp \
@@ -176,6 +186,8 @@ CORE = \
 	$(srcdir)/fei_MatrixGraph_Impl2.cpp \
 	$(srcdir)/fei_Param.cpp \
 	$(srcdir)/fei_ParameterSet.cpp \
+	$(srcdir)/fei_Pool.cpp \
+	$(srcdir)/fei_Pool_alloc.cpp \
 	$(srcdir)/fei_Reducer.cpp \
 	$(srcdir)/fei_utils.cpp \
 	$(srcdir)/fei_VectorSpace.cpp \

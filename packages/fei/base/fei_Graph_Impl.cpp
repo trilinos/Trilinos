@@ -76,9 +76,8 @@ int fei::Graph_Impl::addSymmetricIndices(int numIndices, int* indices,
   }
 
   bool all_local = true;
-  int i;
   if (numProcs_ > 1) {
-    for(i=0; i<numIndices; ++i) {
+    for(int i=0; i<numIndices; ++i) {
       if (indices[i] < 0) {
 	return(-1);
       }
@@ -101,7 +100,7 @@ int fei::Graph_Impl::addSymmetricIndices(int numIndices, int* indices,
 				  numIndices, indices);
   }
   else {
-    for(i=0; i<numIndices; ++i) {
+    for(int i=0; i<numIndices; ++i) {
       if (indices[i] >= firstLocalRow_ && indices[i] <= lastLocalRow_) {
 	  localGraphData_->addIndices(indices[i], numIndices, indices);
       }
