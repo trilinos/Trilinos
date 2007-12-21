@@ -509,26 +509,28 @@ public:
                             const Point<Scalar>& refPoint,
                             const double threshold = INTREPID_THRESHOLD) const;
 
-    /**\brief Computes the image of a reference point in the specified physical cell (relative to the
-      MultiCell) using the mapping from the chart of that point. Result is returned as a Point 
-      object with FRAME_PHYSICAL type
-
+    /**\brief  Maps a point from a reference cell to a target physical cell (relative to
+      the MultiCell). The status of <var>atlas_<var> must be STATUS_DEFINED for this method
+      to work because it uses the reference-to-physical mapping defined in the cell's chart. 
+      Result is returned as a Point object with FRAME_PHYSICAL.
+      
         \param cellID [in]    - cell ID relative to the MultiCell
         \param refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type.
-        \param threshold [in] - Sets the "tightness" in the inclusion test carried out inside the method.
+        \param threshold [in] - "Tightness" of the inclusion test carried out inside the method.
       */
     Point<Scalar> mapToPhysicalCell(const int cellID, 
                                     const Point<Scalar>& refPoint,
                                     const double threshold = INTREPID_THRESHOLD) const;
 
-    /**\brief Computes the image of a reference point in the specified physical cell (relative to the
-      MultiCell) using the mapping from the chart of that point. Result is returned as a Point 
-      object with FRAME_PHYSICAL type
+    /**\brief Maps a point from a physical cell, relative to the MultiCell, to its reference 
+      cell. The status of <var>atlas_<var> must be STATUS_DEFINED for this method to work
+      because it uses Newton's method to invert the reference-to-physical mapping defined
+      in the cell's chart.  Result is returned as a Point object with FRAME_PHYSICAL.
 
         \param cellID [in]    -  cell ID relative to the MultiCell
         \param refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type.
 */
-    Point<Scalar> mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const;
+    Point<Scalar> mapToReferenceCell(const int cellID, const Point<Scalar>& physPoint) const;
     
     //-------------------------------------------------------------------------------------//
     //                               Inclusion tests                                       //

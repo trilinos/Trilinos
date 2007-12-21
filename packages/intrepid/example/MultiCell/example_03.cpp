@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|                   Example use of the MultiCell class                        |\n" \
   << "|                                                                             |\n" \
-  << "|  1) Working with cell types that have reference cells                       |\n" \
+  << "|  1) Working with cell types that have reference cells: setting the atlas    |\n" \
+  << "|  2) Mapping points to and from the reference cell                           |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
   << "|    each one of the physical cells that comprise the MultiCell object        |\n"\
   << "===============================================================================\n";
  
-  // Define vertex data for 3 CELL_TRI cells
+  // Define vertex data for 4 CELL_TRI cells
   double triNodes[] = {
     // triangle 0
     0.5, 2.0,
@@ -72,7 +73,11 @@ int main(int argc, char *argv[]) {
     // triangle 2
     0.0, 0.0,
     1.0, 1.0,
-    0.0, 1.0
+    0.0, 1.0,
+    // triangle 3
+    1.0, 1.0,
+    2.5, 1.5,
+    0.5, 2.0
   };
   
   // Define vertex data for 2 CELL_QUAD cells
@@ -101,8 +106,8 @@ int main(int argc, char *argv[]) {
     2.00, 2.00,  1.25,
     1.00, 2.00,  1.00};
   
-  // MultiCell holding 3 traingle cells
-  MultiCell<double> triMcell(3,CELL_TRI, triNodes);
+  // MultiCell holding 4 traingle cells
+  MultiCell<double> triMcell(4,CELL_TRI, triNodes);
   cout << triMcell << endl;
   
   // MultiCell holding 2 quadrilateral cells
@@ -138,20 +143,30 @@ int main(int argc, char *argv[]) {
   tri_v0 = triMcell.mapToPhysicalCell(0,ref_tri_v0);
   tri_v1 = triMcell.mapToPhysicalCell(0,ref_tri_v1);
   tri_v2 = triMcell.mapToPhysicalCell(0,ref_tri_v2);
-  
-  cout << "\t (0,0) maps to " << tri_v0 << endl;
-  cout << "\t (1,0) maps to " << tri_v1 << endl;
-  cout << "\t (0,1) maps to " << tri_v2 << endl;
+  //
+  cout << "\t" << ref_tri_v0 << " maps to " << tri_v0 << endl;
+  cout << "\t" << ref_tri_v1 << " maps to " << tri_v1 << endl;
+  cout << "\t" << ref_tri_v2 << " maps to " << tri_v2 << endl;
 
+  // Inverting the map: physical vertices to reference vertices
+  cout << "\nInverting the map: physical vertices to reference vertices:\n";
+  ref_tri_v0 = triMcell.mapToReferenceCell(0,tri_v0);
+  ref_tri_v1 = triMcell.mapToReferenceCell(0,tri_v1);
+  ref_tri_v2 = triMcell.mapToReferenceCell(0,tri_v2);
+  //
+  cout << "\t" << tri_v0 << " maps to " << ref_tri_v0 << endl;
+  cout << "\t" << tri_v1 << " maps to " << ref_tri_v1 << endl;
+  cout << "\t" << tri_v2 << " maps to " << ref_tri_v2 << endl;
+  
   // Mapping reference triangle vertices to the third cell in triMcell
   cout << "\nMapping reference triangle vertices to the third cell in triMcell:\n";
   tri_v0 = triMcell.mapToPhysicalCell(2,ref_tri_v0);
   tri_v1 = triMcell.mapToPhysicalCell(2,ref_tri_v1);
   tri_v2 = triMcell.mapToPhysicalCell(2,ref_tri_v2);
-  
-  cout << "\t (0,0) maps to " << tri_v0 << endl;
-  cout << "\t (1,0) maps to " << tri_v1 << endl;
-  cout << "\t (0,1) maps to " << tri_v2 << endl;
+  //
+  cout << "\t" << ref_tri_v0 << " maps to " << tri_v0 << endl;
+  cout << "\t" << ref_tri_v1 << " maps to " << tri_v1 << endl;
+  cout << "\t" << ref_tri_v2 << " maps to " << tri_v2 << endl;
   
   cout << "\n" \
     << "===============================================================================\n"\
@@ -161,15 +176,22 @@ int main(int argc, char *argv[]) {
   // Using charts with quadMcell: we will map the center of the reference quad cell
   Point<double> ref_quad_center(0.0,0.0,FRAME_REFERENCE), quad_center(2);
   
-  // Mapping the center of the reference quad to the first quad in quadMcell:
-  cout << "\nMapping the center of the reference quad to the first quad in quadMcell:\n";
+  // Mapping the center of the reference quad to the first quad in quadMcell and back:
+  cout << "\nMapping the center of the reference quad to the first quad in quadMcell and back:\n";
   quad_center = quadMcell.mapToPhysicalCell(0,ref_quad_center);
-  cout << "\t (0,0) maps to " << quad_center << endl;
-
-  // Mapping the center of the reference quad to the second quad in quadMcell:
-  cout << "\nMapping the center of the reference quad to the second quad in quadMcell:\n";
+  cout << "\t " << ref_quad_center << " maps to " << quad_center << endl;
+  //
+  ref_quad_center = quadMcell.mapToReferenceCell(0,quad_center);
+  cout << "\t " << quad_center << " maps to " << ref_quad_center << endl;
+  
+  // Mapping the center of the reference quad to the second quad in quadMcell and back:
+  cout << "\nMapping the center of the reference quad to the second quad in quadMcell and back:\n";
   quad_center = quadMcell.mapToPhysicalCell(1,ref_quad_center);
-  cout << "\t (0,0) maps to " << quad_center << endl;
+  cout << "\t " << ref_quad_center << " maps to " << quad_center << endl;
+  //
+  ref_quad_center = quadMcell.mapToReferenceCell(1,quad_center);
+  cout << "\t " << quad_center << " maps to " << ref_quad_center << endl;
+
   
   cout << "\n" \
     << "===============================================================================\n"\
@@ -199,15 +221,15 @@ int main(int argc, char *argv[]) {
   hex_v6 = hexMcell.mapToPhysicalCell(0,ref_hex_v6);
   hex_v7 = hexMcell.mapToPhysicalCell(0,ref_hex_v7);
   
-  cout << "\t (-1,-1,-1) maps to " << hex_v0 << endl;
-  cout << "\t ( 1,-1,-1) maps to " << hex_v1 << endl;
-  cout << "\t ( 1, 1,-1) maps to " << hex_v2 << endl;
-  cout << "\t (-1, 1,-1) maps to " << hex_v3 << endl;
+  cout << "\t" << ref_hex_v0 << " maps to " << hex_v0 << endl;
+  cout << "\t" << ref_hex_v1 << " maps to " << hex_v1 << endl;
+  cout << "\t" << ref_hex_v2 << " maps to " << hex_v2 << endl;
+  cout << "\t" << ref_hex_v3 << " maps to " << hex_v3 << endl;
   
-  cout << "\t (-1,-1, 1) maps to " << hex_v4 << endl;
-  cout << "\t ( 1,-1, 1) maps to " << hex_v5 << endl;
-  cout << "\t ( 1, 1, 1) maps to " << hex_v6 << endl;
-  cout << "\t (-1, 1, 1) maps to " << hex_v7 << endl;
+  cout << "\t" << ref_hex_v4 << " maps to " << hex_v4 << endl;
+  cout << "\t" << ref_hex_v5 << " maps to " << hex_v5 << endl;
+  cout << "\t" << ref_hex_v6 << " maps to " << hex_v6 << endl;
+  cout << "\t" << ref_hex_v7 << " maps to " << hex_v7 << endl;
   
   // Mapping physical hex vertices back to the reference cell!
   cout << "\nMapping physical hex vertices back to the reference cell:\n";

@@ -544,7 +544,7 @@ namespace Intrepid {
         "\t Admissible Point type is REFERENCE but argument has PHYSICAL type.\n";
       }
       
-      // Check if refPoint is indeed inside its reference cell - disable for efficiency.
+      // Check if refPoint is inside its reference cell - disable for efficiency.
       if(insideReferenceCell(myCellType_, refPoint,threshold) != FAIL_CODE_SUCCESS) {
         std::cerr << "MultiCell::mapToPhysicalCell warning: \n"
         "\t refPoint has FRAME_REFERENCE type but is not inside its reference cell \n";
@@ -615,143 +615,72 @@ namespace Intrepid {
   
   template<class Scalar>
     Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const {
-
-      // First make sure that the point frame is FRAME_PHYSICAL:
+      
+      // Warn if the coordinate frame of physPoint argument is not FRAME_PHYSICAL:
       if(physPoint.getFrameKind() != FRAME_PHYSICAL){
         std::cerr <<  " MultiCell::mapToReferenceCell warning: \n"
         "\t Admissible Point frame is FRAME_PHYSICAL, argument has FRAME_REFERENCE frame.\n";
       }
       
-      // Temp storage for the refPoint point with the right dimension, do not set type yet
-      Point<Scalar> refPoint(ambientDim_);            
-      Matrix<Scalar> A(ambientDim_);
-      
-      Scalar temp[3];                                         
-      switch(myCellType_){
-        
-        // Always affine!
-        case CELL_EDGE:  
-          temp[0] = \
-            (physPoint[0] - atlas_[cellID].mapping_[0][1])/atlas_[cellID].mapping_[0][0];
-          refPoint.setCoordinates(temp,ambientDim_);
-          refPoint.setFrameKind(FRAME_REFERENCE);
-          break;
-        case CELL_TRI:
-        case CELL_TET:
-          
-          // For TRI and TET the affine chart is x = A*x_ref + b and the mapToReferenceCell is: 
-          // refPoint = A^{-1}*(image - b). The coefficients of b are in mapping[*][ambientDim_] 
-          // and A can be obtained by using the jacobian method of MultiCell class with any Point 
-          // argument - it will not be used because the Jacobian is a constant. Note that for a 
-          // non-affine charts, jacobian requires point whose PointType = REFERENCE. 
-          switch(atlas_[cellID].mappingType_){                      
-            case MAPPING_AFFINE:                                           
-              for(int dim = 0; dim < ambientDim_; dim++){  
-                temp[dim] = atlas_[cellID].mapping_[dim][ambientDim_];             
-              }                       
-              
-              // refPoint initialized to "b"
-              refPoint.setCoordinates(temp,ambientDim_); 
-              
-              // Compute A^{-1}*(physPoint - b):
-              refPoint = ((this -> jacobian(cellID,refPoint)).getInverse())*(physPoint - refPoint);
-              
-              // The PointType of the refPoint is REFERENCE:
-              refPoint.setFrameKind(FRAME_REFERENCE);                
-              break;
-            case MAPPING_NON_AFFINE:
-              std::cerr << "MultiCell::mapToReferenceCell error: method not implemented\n";
-              exit(1);
-              break;
-            default:
-              std::cerr << "MultiCell::mapToReferenceCell error: unexpected atlas_ type\n";
-              exit(1);
-              break;          
-          }
-          break;
-        case CELL_HEX: {
-          
-          // Initialize old (xOld) and new (refPoint) Newton iterates. Must have FRAME_REFERENCE type
-          Point<Scalar> xOld(0.0,0.0,0.0,FRAME_REFERENCE);         
-          refPoint = xOld;                                         
-          
-          // Newton method to compute the inverse of the mapping between reference and physicall HEX
-          for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter)	{	
-            
-            // First iterates may fail the inclusion tests using the tighter INTREPID_THRESHOLD value.
-            // Define a dynamic threshold value that rapidly decreases as the itretaion count grows:
-            double threshold = std::max( (1.0 + 0.5 * exp(-(double)iter)), INTREPID_THRESHOLD);	
-            
-            // Compute Jacobian matrix at old iterate and invert in place. Use dynamic threshold!
-            Matrix<Scalar> jacobianMatrix = this -> jacobian(cellID, xOld,threshold);		
-            jacobianMatrix.invert();
-            
-            // The Newton step. Use dynamic threshold in mapToPhysicalCell to avoid warnings
-            refPoint = xOld + jacobianMatrix*(physPoint - this -> mapToPhysicalCell(cellID,xOld,threshold));
-            
-            // Compute Euclidean distance (error) between old and new iterates: |xOld - refPoint|
-            Scalar error = refPoint.distance(xOld);		
-            
-            // If refPoint is not inside this cube, Newton is likely diverging, terminate
-            if(insideReferenceCell(myCellType_,refPoint,threshold) == FAIL_CODE_NOT_IN_REF_CELL) {							
-              std::cerr << "MultiCell::mapToPhysicalCell error: method failed to converge\n";
-              exit(1);
-            }		
-            
-            // If error tolerance was met, Newton converged. 
-            if (error < INTREPID_TOL) {		
-              
-              // Check for inclusion in the reference HEX but use the looser INTREPID_TOL threshold
-              if(insideReferenceCell(CELL_HEX,refPoint,INTREPID_TOL) == FAIL_CODE_NOT_IN_REF_CELL) {
-                std::cerr << " MultiCell::mapToReferenceCell warning: for " << physPoint;
-                std::cerr << "the method converged to a Point outside the reference element: "
-                << refPoint << std::endl;
-              }
-              break;
-            }
-            
-            // Check if iterations limit exhausted
-            if( iter > INTREPID_MAX_NEWTON - 5) {
-            std::cerr << " MultiCell::mapToReferenceCell warning: for " << physPoint
-              << " method failed to converge to desired tolerance within " << INTREPID_MAX_NEWTON
-              << " iterations\n";
-              break;
-            }
-            
-            // initialize next Newton step
-            xOld = refPoint;	
-          };
-          break;
-        }
-        case CELL_QUAD:
-        case CELL_TRIPRISM:
-        case CELL_PYRAMID:
-          std::cerr << "MultiCell::mapToReferenceCell error: method not implemented\n";
-          exit(1);
-          break;
-        default:
-          std::cerr << "MultiCell::mapToReferenceCell error: unexpected cell type \n";
-          exit(1);
-      }
-      
-      // Check if the computed Point is indeed indisde the reference cell
-      if( insideReferenceCell(myCellType_, refPoint) == FAIL_CODE_ERROR) {
-        std::cerr<< " MultiCell::mapToReferenceCell error: \n"
-        " \t Computed reference point is outside its reference cell\n";
+      // This method cannot work if <var>atlas_<var> is undefined. Check its status.
+      if(atlasStatus_ == STATUS_UNDEFINED) {
+        std::cerr << " MultiCell::mapToReferenceCell error: \n"
+        "\t The atlas of this MultiCell is undefined.\n";
         exit(1);
       }
       
-      // Otherwise, return the point
+      // Initialize old (xOld=0) and new (refPoint) Newton iterates. Must be FRAME_REFERENCE type
+      Point<Scalar> xOld(ambientDim_,FRAME_REFERENCE);         
+      Point<Scalar> refPoint = xOld;                                         
+      
+      // Newton method to compute the inverse of the mapping between reference and physicall HEX
+      for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter)	{	
+        
+        // First iterates may fail the inclusion tests using the tighter INTREPID_THRESHOLD value.
+        // Define a dynamic threshold value that decreases as the itretaion count grows:
+        double threshold = std::max( (1.0 + 0.5 * exp(-(double)iter)), INTREPID_THRESHOLD);	
+        
+        // Compute Jacobian matrix at old iterate and invert in place. Use dynamic threshold!
+        Matrix<Scalar> jacobian_inv = this -> jacobian(cellID, xOld, threshold);	
+        jacobian_inv.invert();
+        
+        // The Newton step. Use dynamic threshold in mapToPhysicalCell to avoid warnings
+        refPoint = xOld + jacobian_inv*(physPoint - this -> mapToPhysicalCell(cellID,xOld,threshold));
+        
+        // Compute Euclidean distance (error) between old and new iterates: |xOld - refPoint|
+        Scalar error = refPoint.distance(xOld);	
+        
+        // Check convergence and whether the max number of iterations has been exceeded 
+        if (error < INTREPID_TOL) {		          
+          break;
+        } 
+        else if ( iter > INTREPID_MAX_NEWTON - 5) {
+          std::cerr << " MultiCell::mapToReferenceCell warning: for " << physPoint
+          << " method failed to converge to desired tolerance within " << INTREPID_MAX_NEWTON
+          << " iterations\n";
+          break;
+        }
+          
+          // initialize next Newton step
+          xOld = refPoint;	
+      }
+      
+      // Warn if the computed Point is not inside its reference cell. Disable for efficiency.
+      // Uses the "looser" INTREPID_TOL instead of the default INTREPID_THRESHOLD.
+      if( insideReferenceCell(myCellType_, refPoint,INTREPID_TOL) == FAIL_CODE_ERROR) {
+        std::cerr<< " MultiCell::mapToReferenceCell warning: \n"
+        " \t Computed reference point is outside its reference cell\n";
+      }
       return refPoint;
     }
-
   
+    
   template<class Scalar>
     void MultiCell<Scalar>::printMyInfo(std::ostream & out) const {
       out.setf(std::ios_base::scientific, std::ios_base::floatfield);
       out.precision(6);
       
-      out  << "\n>>>>>>>>>> MultiCell info: \n\n"; 
+      out  << "\n============================= MultiCell info: =============================\n\n"; 
       out << std::left;
       out << std::setw(30) << "\t Generating cell type:" << this -> getMyCellName() << "\n";
       out << std::setw(30) << "\t Atlas status:"         << StatusNames[atlasStatus_]    <<"\n";
@@ -813,8 +742,7 @@ namespace Intrepid {
           out << "\n";
         }
       }
-      out << "<<<<<<<<<< END MULTICELL INFO \n";
-      
+      out  << "\n=========================== End MultiCell info: ===========================\n"; 
     } // end printMyInfo
   
   
