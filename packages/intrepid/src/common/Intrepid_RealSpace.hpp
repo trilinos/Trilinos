@@ -151,11 +151,6 @@ public:
       */
     void setFrameKind(const EFrame newFrameKind);
     
-    /** \brief Tests for inclusion of the Point in the specified reference cell. Frame kind must be
-      FRAME_REFERENCE. For definition of reference cells see Intrepid_CellTemplates.hpp
-      */
-    EFailCode inclusion(const ECell cellType) const;
-        
     /** \brief Returns Euclidian distance from <var>*this</var> to <var>endPoint</var>.
       */
     Scalar distance(const Point& endPoint) const;

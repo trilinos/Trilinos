@@ -42,6 +42,10 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|                      Example use of the Matrix class                        |\n" \
   << "|                                                                             |\n" \
+  << "|   1) Creating Matrix objects and accessing their elements                   |\n" \
+  << "|   2) Matrix operations, inverse, transpose, norms and determinant           |\n" \
+  << "|   3) Matrix - Point operations                                              |\n" \
+  << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
   << "|                                                                             |\n" \

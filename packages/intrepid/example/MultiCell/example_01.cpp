@@ -42,7 +42,9 @@ int main(int argc, char *argv[]) {
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
   << "|                   Example use of the MultiCell class                        |\n" \
-  << "|              Creating MultiCells and accessing their data                   |\n" \
+  << "|                                                                             |\n" \
+  << "|     1) Creating MultiCells and accessing their data                         |\n" \
+  << "|     2) testing points for inclusion in reference and physical cells         |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -75,8 +77,7 @@ int main(int argc, char *argv[]) {
    // Invoke a ctor that takes an array of subcell signs and the dimension of the subcell
    MultiCell<double> triMcell(
       3,                            // number of cells (triangles) in the multicell instance
-      2,                            // ambient dimension
-      CELL_TRI,                     // type of cells forming the multicell
+      CELL_TRI,                     // generating cell type
       triNodes,                     // array with interleaved node coordinates
       triEdgeSigns,                 // array with edge signs
       1);                           // dimension of the subcells for which sign data is provided
@@ -170,7 +171,6 @@ int main(int argc, char *argv[]) {
    
    // Use the ctor that takes both edge AND face sign data
    MultiCell<double> prismMcell(2,                // number of cells (prisms) in the multicell 
-                                3,                // ambient dimension
                                 CELL_TRIPRISM,    // generating cell type
                                 prismnodes,       // list of node coordinates
                                 prismEdgeSigns,   // list of edge signs
@@ -208,6 +208,120 @@ int main(int argc, char *argv[]) {
    for(int i=0; i<prismMcell.getMyNumSubcells(0); i++){
      cout << "prismMcell[1]["<< i <<"] = " << prismMcell[1][i] << "\n";
    }
-  
+   
+   cout << "\n" \
+     << "===============================================================================\n"\
+     << "| EXAMPLE 3: Using inclusion test methods in MultiCell                             |\n"\
+     << "===============================================================================\n";
+   
+   //The static member function insideReferenceCell can be used without a MultiCell instantiation
+   cout << "\nUsing static member insideReferenceCell to check if a Point is inside a reference cell: " << endl;
+   
+   // Points below illustrate using constructors that take 1,2 or 3 point coordinates 
+   // and the user sets the frame kind explicitely to override the default (FRAME_PHYSICAL).
+   
+   // 1D point that is close to the right endpoint of the reference edge cell
+   Point<double> p_in_edge(1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+   
+   // 2D point that is close to the top right corner of the reference quad cell
+   Point<double> p_in_quad(1.0,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+   
+   // 2D point that is close to the midpoint of the slanted edge of the reference tri cell
+   Point<double> p_in_tri(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,FRAME_REFERENCE);
+   
+   // 3D point that is close to 0th vertex of the reference hex cell
+   Point<double> p_in_hex(1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+   
+   // 3D point that is close to the slanted face of the reference tet cell
+   Point<double> p_in_tet(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,FRAME_REFERENCE);
+   
+   // 3D point close to the top face of the reference prism 
+   Point<double> p_in_prism(0.5,0.25,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+   
+   // 3D point close to the top of the reference pyramid
+   Point<double> p_in_pyramid(-INTREPID_EPSILON,INTREPID_EPSILON,(1.0-INTREPID_EPSILON),FRAME_REFERENCE);
+   
+   // Check if the points are in their respective reference cells
+   EFailCode in_edge    = MultiCell<double>::insideReferenceCell(CELL_EDGE, p_in_edge);   
+   EFailCode in_tri     = MultiCell<double>::insideReferenceCell(CELL_TRI, p_in_tri);
+   EFailCode in_quad    = MultiCell<double>::insideReferenceCell(CELL_QUAD, p_in_quad);
+   EFailCode in_tet     = MultiCell<double>::insideReferenceCell(CELL_TET, p_in_tet);
+   EFailCode in_hex     = MultiCell<double>::insideReferenceCell(CELL_HEX, p_in_hex);
+   EFailCode in_prism   = MultiCell<double>::insideReferenceCell(CELL_TRIPRISM, p_in_prism);
+   EFailCode in_pyramid = MultiCell<double>::insideReferenceCell(CELL_PYRAMID, p_in_pyramid);
+   //
+   if(in_edge == FAIL_CODE_SUCCESS) {
+     cout <<  p_in_edge << " is inside reference edge " << endl;
+   }
+   if(in_tri == FAIL_CODE_SUCCESS) {
+     cout << p_in_tri << " is inside reference triangle " << endl;
+   }
+   if(in_quad == FAIL_CODE_SUCCESS) {
+     cout << p_in_quad << " is inside reference quad " << endl;
+   }
+   if(in_tet == FAIL_CODE_SUCCESS) {
+     cout << p_in_tet << " is inside reference tet " << endl;
+   }
+   if(in_hex == FAIL_CODE_SUCCESS) {
+     cout << p_in_hex << " is inside reference hex " << endl;
+   }
+   if(in_prism == FAIL_CODE_SUCCESS) {
+     cout << p_in_prism << " is inside reference prism " << endl;
+   }
+   if(in_pyramid == FAIL_CODE_SUCCESS) {
+     cout << p_in_pyramid << " is inside reference pyramid " << endl;
+   }
+   
+   // Now make 1,2 and 3D points with very small coefficients, but larger than threshold
+   double small = 2.0*INTREPID_THRESHOLD;
+   Point<double> p_eps_1D(small,FRAME_REFERENCE);
+   Point<double> p_eps_2D(small,small,FRAME_REFERENCE);
+   Point<double> p_eps_3D(small,small,small,FRAME_REFERENCE);
+   
+   // Add these points to the good reference points above:
+   cout << "\nAdding small perturbations to these points..." << endl;
+   p_in_edge    += p_eps_1D;
+   p_in_tri     += p_eps_2D;
+   p_in_quad    += p_eps_2D;
+   p_in_tet     += p_eps_3D;
+   p_in_hex     += p_eps_3D;
+   p_in_prism   += p_eps_3D;
+   p_in_pyramid += p_eps_3D;
+   
+   // Now check again if the points are in their respective reference cells.
+   cout << "\nChecking if the perturbed Points belongs to reference cell: " << endl;
+   in_edge    = MultiCell<double>::insideReferenceCell(CELL_EDGE, p_in_edge);
+   in_tri     = MultiCell<double>::insideReferenceCell(CELL_TRI, p_in_tri);
+   in_quad    = MultiCell<double>::insideReferenceCell(CELL_QUAD, p_in_quad);
+   in_tet     = MultiCell<double>::insideReferenceCell(CELL_TET, p_in_tet);
+   in_hex     = MultiCell<double>::insideReferenceCell(CELL_HEX, p_in_hex);
+   in_prism   = MultiCell<double>::insideReferenceCell(CELL_TRIPRISM, p_in_prism);
+   in_pyramid = MultiCell<double>::insideReferenceCell(CELL_PYRAMID, p_in_pyramid);
+   
+   //
+   if(in_edge == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout <<  p_in_edge << " is NOT inside reference edge " << endl;
+   }
+   if(in_tri == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout << p_in_tri << " is NOT inside reference triangle " << endl;
+   }
+   if(in_quad == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout << p_in_quad << " is NOT inside reference quad " << endl;
+   }
+   if(in_tet == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout << p_in_tet << " is NOT inside reference tet " << endl;
+   }
+   if(in_hex == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout << p_in_hex << " is NOT inside reference hex " << endl;
+   }
+   if(in_prism == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout << p_in_prism << " is NOT inside reference prism " << endl;
+   }
+   if(in_pyramid == FAIL_CODE_NOT_IN_REF_CELL) {
+     cout << p_in_pyramid << " is NOT inside reference pyramid " << endl;
+   }
+   cout << "You may need at least 16 digits to see the added pertirbation!" << endl;
+   
+   
   return 0;
 }

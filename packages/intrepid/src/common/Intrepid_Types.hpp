@@ -70,17 +70,26 @@ EDGE, TRI, TET, PRISM, PYRAMID, QUAD, HEX cells.
 */
 #define INTREPID_MAX_MAPPING_COEFF 8
 
+/** \def INTREPID_MAX_NEWTON 
+\brief Maximum number of Newton iterations to use when inverting non-affine maps between reference
+and physical elements
+*/
+#define INTREPID_MAX_NEWTON 15
+
 namespace Intrepid {
   
   /* 
   Define global platform-dependent constants for various reference cell inclusion tests
    */
-  static const double INTREPID_EPSILON=std::abs(Teuchos::ScalarTraits<double>::eps());
-  static const double INTREPID_THRESHOLD = 5.0 * INTREPID_EPSILON;
-  static const double INTREPID_MINUS_ONE = -1.0 - INTREPID_THRESHOLD;
-  static const double INTREPID_PLUS_ONE  =  1.0 + INTREPID_THRESHOLD;
-  static const double INTREPID_ZERO_MINUS = - INTREPID_THRESHOLD;
-  static const double INTREPID_ZERO_PLUS  =   INTREPID_THRESHOLD;
+  static const double INTREPID_EPSILON   = std::abs(Teuchos::ScalarTraits<double>::eps());
+    
+  // Used in tests for inclusion of a Point in a reference cell
+  static const double INTREPID_THRESHOLD = 10.0 * INTREPID_EPSILON;
+  
+  // Used as tolerance in e.g. Newton's method to invert non-affine mappings
+  static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
+
+
   
   /** \enum  Intrepid::EStatus
   \brief To indicate the status of an object.
@@ -179,7 +188,11 @@ namespace Intrepid {
   /** \enum  Intrepid::ECell
     \brief Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
     provides a cell template. A fixed number of enumerations is provided for user-defined cells.
-    For summary of polygon types and names see
+    For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html
+    \warning: the order of the enumeration must be exactly the same as the order of the cell
+    templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
+    order of two enumerations is changed, the order of the associated cell template definitions in that 
+    file also must be changed!
     */
   enum ECell{
     CELL_NODE = 0,       // 0-simplex, i.e. node
@@ -195,7 +208,7 @@ namespace Intrepid {
     CELL_OCTAGON,        // polygon with 8 sides
     CELL_NONAGON,        // polygon with 9 sides
     CELL_DECAGON,        // polygon with 10 sides
-    CELL_TRIPRISM,       // prismatic polyhedron with a triangle base
+    CELL_TRIPRISM,       // prismatic cell with a triangle base
     CELL_PENTAPRISM,     // prismatic polyhedron with a pentagon base
     CELL_HEXAPRISM,      // prismatic polyhedron with a hexagon base
     CELL_CANONICAL_MAX,  // used as the maximum number of canonical types (current value = 16)

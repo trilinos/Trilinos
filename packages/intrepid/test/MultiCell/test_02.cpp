@@ -47,7 +47,8 @@ int main(int argc, char *argv[]) {
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
   << "|                   Example use of the MultiCell class                        |\n" \
-  << "|               Creating and saving custom cell templates                     |\n" \
+  << "|                                                                             |\n" \
+  << "|  1) Creating and saving custom cell templates                                |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]) {
                       20.1, 20.2, 20.3,
                       10.1, 10.2, 10.3};
 
-  MultiCell<double> beehive(2, 3, HONEYCOMB, hivenodes);
+  MultiCell<double> beehive(2, HONEYCOMB, hivenodes);
 
   cout << beehive << endl;
 

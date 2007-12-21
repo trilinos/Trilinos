@@ -41,10 +41,10 @@ namespace Intrepid {
   const char* MultiCell<Scalar>::cellNames_[] = {
     "Node",
     "Edge",
-    "Tri",
-    "Quad",
-    "Tet",
-    "Hex",
+    "Triangle",
+    "Quadrilateral",
+    "Tetrahedron",
+    "Hexahedron",
     "Pyramid",
     "Pentagon",
     "Hexagon",
@@ -71,14 +71,15 @@ namespace Intrepid {
   
   template<class Scalar>
     MultiCell<Scalar>::MultiCell(const int      numCells,
-                                 const int      ambientDim,
                                  const ECell    generatingCellType,
                                  const Scalar*  vertices) :
     // initializations
     numCells_(numCells),
-    ambientDim_(ambientDim),
     myCellType_(generatingCellType) 
   {
+      // Ambient dimension is always equal to the topological dimension of the generating cell
+      ambientDim_ = getTopologicalDim(generatingCellType);
+      
       // By default, the ctor never computes the charts of the cells
       atlasStatus_ = STATUS_UNDEFINED;
       
@@ -86,7 +87,7 @@ namespace Intrepid {
       edgeSignsStatus_ = STATUS_UNDEFINED;                             
       faceSignsStatus_ = STATUS_UNDEFINED;                             
       
-      int numNodesPerCell = this->getMyNumNodes();
+      int numNodesPerCell = this -> getMyNumNodes();
       
       // allocate a chunk of memory first, creating a zero array of Point arrays
       Point<Scalar> tempPoint(ambientDim_);
@@ -117,16 +118,17 @@ namespace Intrepid {
   
   template<class Scalar>
     MultiCell<Scalar>::MultiCell(const int      numCells,
-                                 const int      ambientDim,
                                  const ECell    generatingCellType,
                                  const Scalar*  vertices,
                                  const short*   subcellSigns,
                                  const int      subcellDim) :
     // intializations
     numCells_(numCells),
-    ambientDim_(ambientDim),
     myCellType_(generatingCellType) 
   {
+      // Ambient dimension is always equal to the topological dimension of the generating cell
+      ambientDim_ = getTopologicalDim(generatingCellType);
+
       // By default, the ctor never computes the charts of the cells
       atlasStatus_ = STATUS_UNDEFINED;
       
@@ -166,7 +168,7 @@ namespace Intrepid {
       }
       
       // allocate a chunk of memory first, creating a zero vector of Point vectors
-      int numNodesPerCell = this->getNumNodes(myCellType_);
+      int numNodesPerCell = this -> getNumNodes(myCellType_);
       Point<Scalar> tempPoint(ambientDim_);
       Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
       vertices_.assign(numCells_, tempPointArray);
@@ -185,21 +187,22 @@ namespace Intrepid {
   
   template<class Scalar>
     MultiCell<Scalar>::MultiCell(const int      numCells,
-                                 const int      ambientDim,
                                  const ECell    generatingCellType,
                                  const Scalar*  vertices,
                                  const short*   edgeSigns,
                                  const short*   faceSigns) :
     // intializations
     numCells_(numCells),
-    ambientDim_(ambientDim),
     myCellType_(generatingCellType) 
   {
+      // Ambient dimension is always equal to the topological dimension of the generating cell
+      ambientDim_ = getTopologicalDim(generatingCellType);
+
       // By default, the ctor never computes the charts of the cells
       atlasStatus_ = STATUS_UNDEFINED;
       
       // allocate a chunk of memory first, creating a zero vector of Point vectors
-      int numNodesPerCell = this->getNumNodes(myCellType_);
+      int numNodesPerCell = this -> getNumNodes(myCellType_);
       Point<Scalar> tempPoint(ambientDim_);
       Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
       vertices_.assign(numCells_, tempPointArray);
@@ -254,23 +257,102 @@ namespace Intrepid {
 
   
   template<class Scalar>
+    EFailCode MultiCell<Scalar>::insideReferenceCell(const ECell cellType, 
+                                                     const Point<Scalar>& refPoint,
+                                                     const double threshold) {
+      
+      // First make sure the Point is in FRAME_REFERENCE
+      if(refPoint.getFrameKind() != FRAME_REFERENCE) {
+        std::cerr<<"MultiCell::insideReferenceCell error: \n"
+        "\t Point frame is not of FRAME_REFERENCE kind\n";
+        exit(1);
+      }
+      
+      // Then, check if Point and cell dimensions coincide
+      if(refPoint.getDim() != MultiCell<Scalar>::getTopologicalDim(cellType) ) {
+        std::cerr<<"MultiCell::insideReferenceCell error: \n"
+        "\t Point dimension is not the same as the cell dimension\n";
+        exit(1);
+      }
+      EFailCode code = FAIL_CODE_SUCCESS;
+      
+      // Use <var>threshold<var> to set reference element bounds for the tests
+      double minus_one = -1.0 - threshold;
+      double plus_one  =  1.0 + threshold;
+      double minus_zero = - threshold;
+      double plus_zero  =   threshold;
+      
+      
+      switch(cellType) {
+        case CELL_EDGE:
+          if( !(minus_one <= refPoint[0] && refPoint[0] <= plus_one)) \
+            code = FAIL_CODE_NOT_IN_REF_CELL;
+          break;
+        case CELL_TRI:{
+          Scalar distance = std::max( std::max( -refPoint[0], -refPoint[1] ), refPoint[0] + refPoint[1] - 1 );
+          if( distance > threshold ) code = FAIL_CODE_NOT_IN_REF_CELL;
+          break;
+        }
+        case CELL_QUAD:
+          if(!((minus_one <= refPoint[0] && refPoint[0] <= plus_one) && \
+               (minus_one <= refPoint[1] && refPoint[1] <= plus_one)))  \
+                 code = FAIL_CODE_NOT_IN_REF_CELL;   
+          break;
+        case CELL_TET:{
+          Scalar distance = std::max(  std::max(-refPoint[0],-refPoint[1]), std::max(-refPoint[2],refPoint[0] + refPoint[1] + refPoint[2] - 1)  );
+          if( distance > threshold ) code = FAIL_CODE_NOT_IN_REF_CELL;
+          break;
+        }
+        case CELL_HEX:
+          if(!((minus_one <= refPoint[0] && refPoint[0] <= plus_one) && \
+               (minus_one <= refPoint[1] && refPoint[1] <= plus_one) && \
+               (minus_one <= refPoint[2] && refPoint[2] <= plus_one)))  \
+                 code = FAIL_CODE_NOT_IN_REF_CELL;
+          break;
+        case CELL_TRIPRISM: {
+          // The base of the reference prism is the same as the reference triangle. Thus,
+          // to check if the point is inside we apply the tri test to the first two 
+          // coordinates and test the third coordinate to be between 
+          Scalar distance = std::max( std::max( -refPoint[0], -refPoint[1] ), refPoint[0] + refPoint[1] - 1 );
+          if( distance > threshold  || \
+              refPoint[2] < minus_zero || refPoint[2] > plus_one) \
+                code = FAIL_CODE_NOT_IN_REF_CELL;
+          break;
+        }
+        case CELL_PYRAMID:{
+          // The base of the reference pyramid is the same as the reference quad cell.
+          // Thus, a horizontal plane through a point P(x,y,z) inside the pyramid intersects
+          // it at a quad that equals the base quad scaled by (1-z). Therefore, to check if
+          // P(x,y,z) is inside the pyramid we check if (x,y) is inside [-1+z,1-z]^2
+          Scalar left  = minus_one + refPoint[2];
+          Scalar right = plus_one  - refPoint[2];
+          if(!((left <= refPoint[0] && refPoint[0] <= right) && \
+               (left <= refPoint[1] && refPoint[1] <= right)))  \
+                 code = FAIL_CODE_NOT_IN_REF_CELL;  
+          break;
+        }
+        default:
+          std::cerr<< "MultiCell::inclusion error: invalid cell type \n";
+          exit(1);
+      }
+      
+      return code;
+    }
+  
+
+  template<class Scalar>
     void MultiCell<Scalar>::setAtlas() {
       
       // First check if <var>atlas_<var> was already set
       if(atlasStatus_ == STATUS_DEFINED) return; 
       
-      // make sure there's enough room to hold all charts to avoid resizing of the vector
+      // make sure there's enough room to hold all charts to avoid resizing of the array
       atlas_.resize(numCells_);
       
       // Loop over all cells in the MultiCell, compute their charts and store them in the <var>atlas_<var>
       for(int cellID = 0; cellID < numCells_; cellID++){
         switch(myCellType_) {
           case CELL_EDGE: {
-            if(ambientDim_ != 1){
-              std::cerr<<"MultiCell::getAtlas error: \n"
-              "\t cell dimension does not match ambient dimension\n";
-              exit(1);
-            }
             Scalar v0 = this -> getVertex(cellID,0)[0];
             Scalar v1 = this -> getVertex(cellID,1)[0];
             
@@ -281,11 +363,6 @@ namespace Intrepid {
             break;
           }
           case CELL_TRI:
-            if(ambientDim_ != 2){
-              std::cerr<<"MultiCell::getAtlas error: \n"
-              "\t cell dimension does not match ambient dimension\n";
-              exit(1);
-            }
             atlas_[cellID].refCellType_     = myCellType_;        
             for(int dim=0; dim < ambientDim_; dim++){
               Scalar v0 = this -> getVertex(cellID,0)[dim];
@@ -299,17 +376,12 @@ namespace Intrepid {
             atlas_[cellID].mappingType_ = MAPPING_AFFINE;
             break;
           case CELL_QUAD:
-            if(ambientDim_ != 2){
-              std::cerr<<"MultiCell::getAtlas error: \n"
-              "\t cell dimension does not match ambient dimension\n";
-              exit(1);
-            }
             atlas_[cellID].refCellType_     = myCellType_;                
             for(int dim=0; dim < ambientDim_; dim++){
-              Scalar v0 = this->getVertex(cellID,0)[dim];
-              Scalar v1 = this->getVertex(cellID,1)[dim];
-              Scalar v2 = this->getVertex(cellID,2)[dim];
-              Scalar v3 = this->getVertex(cellID,3)[dim];
+              Scalar v0 = this -> getVertex(cellID,0)[dim];
+              Scalar v1 = this -> getVertex(cellID,1)[dim];
+              Scalar v2 = this -> getVertex(cellID,2)[dim];
+              Scalar v3 = this -> getVertex(cellID,3)[dim];
               
               atlas_[cellID].mapping_[dim][0] = ( v0 - v1 + v2 - v3)/4.0;            // xy coefficient
               atlas_[cellID].mapping_[dim][1] = (-v0 + v1 + v2 - v3)/4.0;            // x  coefficient
@@ -319,17 +391,12 @@ namespace Intrepid {
             atlas_[cellID].mappingType_ = MAPPING_NON_AFFINE;
             break;
           case CELL_TET:
-            if(ambientDim_ != 3){
-              std::cerr<<"MultiCell::getAtlas error: \n"
-              "\t cell dimension does not match ambient dimension\n";
-              exit(1);
-            }
             atlas_[cellID].refCellType_ = myCellType_;        
             for(int dim=0; dim < ambientDim_; dim++){
-              Scalar v0 = this->getVertex(cellID,0)[dim];
-              Scalar v1 = this->getVertex(cellID,1)[dim];
-              Scalar v2 = this->getVertex(cellID,2)[dim];
-              Scalar v3 = this->getVertex(cellID,3)[dim];
+              Scalar v0 = this -> getVertex(cellID,0)[dim];
+              Scalar v1 = this -> getVertex(cellID,1)[dim];
+              Scalar v2 = this -> getVertex(cellID,2)[dim];
+              Scalar v3 = this -> getVertex(cellID,3)[dim];
               
               atlas_[cellID].mapping_[dim][0] = (-v0 + v1);                          // x coefficient
               atlas_[cellID].mapping_[dim][1] = (-v0 + v2);                          // y coefficient
@@ -339,22 +406,17 @@ namespace Intrepid {
             atlas_[cellID].mappingType_ = MAPPING_AFFINE;
             break;
           case CELL_HEX:
-            if(ambientDim_ != 3){
-              std::cerr<<"MultiCell::getAtlas error: \n"
-              "\t cell dimension does not match ambient dimension\n";
-              exit(1);
-            }
             atlas_[cellID].refCellType_ = myCellType_;        
             for(int dim=0; dim < ambientDim_; dim++){
-              Scalar v0 = this->getVertex(cellID,0)[dim];
-              Scalar v1 = this->getVertex(cellID,1)[dim];
-              Scalar v2 = this->getVertex(cellID,2)[dim];
-              Scalar v3 = this->getVertex(cellID,3)[dim];
+              Scalar v0 = this -> getVertex(cellID,0)[dim];
+              Scalar v1 = this -> getVertex(cellID,1)[dim];
+              Scalar v2 = this -> getVertex(cellID,2)[dim];
+              Scalar v3 = this -> getVertex(cellID,3)[dim];
               
-              Scalar v4 = this->getVertex(cellID,4)[dim];
-              Scalar v5 = this->getVertex(cellID,5)[dim];
-              Scalar v6 = this->getVertex(cellID,6)[dim];
-              Scalar v7 = this->getVertex(cellID,7)[dim];
+              Scalar v4 = this -> getVertex(cellID,4)[dim];
+              Scalar v5 = this -> getVertex(cellID,5)[dim];
+              Scalar v6 = this -> getVertex(cellID,6)[dim];
+              Scalar v7 = this -> getVertex(cellID,7)[dim];
               
               atlas_[cellID].mapping_[dim][0] = (-v0 + v1 - v2 + v3 + v4 - v5 + v6 - v7)/8.0;   // xyz
               atlas_[cellID].mapping_[dim][1] = ( v0 - v1 + v2 - v3 + v4 - v5 + v6 - v7)/8.0;   // xy
@@ -369,11 +431,6 @@ namespace Intrepid {
             break;
           case CELL_TRIPRISM:
           case CELL_PYRAMID:
-            if(ambientDim_ != 3){
-              std::cerr<<"MultiCell::getAtlas error: \n"
-              "\t cell dimension does not match ambient dimension\n";
-              exit(1);
-            }
             std::cout << " Pullback method not implemented...\n";
             exit(1);
             break;
@@ -400,24 +457,20 @@ namespace Intrepid {
 
   
   template<class Scalar>
-    Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID, const Point<Scalar>& refPoint) const{
-      //
-      // For now, TET and TRI cells have only MAPPING_AFFINE charts implemented.
-      // First make sure that the PointType is FRAME_REFERENCE if the chart is not affine! For an
-      // affine chart the Jacobian is constant and refPoint is never used. For non-affine charts, 
-      // the Jacobian is non-constant and must be evaluated at the refPoint. 
-      //
-      if(atlas_[cellID].mappingType_ == MAPPING_NON_AFFINE && refPoint.getType() == FRAME_PHYSICAL){
-        std::cerr << "MultiCell::Jacobian error: \n"
+    Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID, 
+                                               const Point<Scalar>& refPoint,
+                                               double threshold) const{
+
+      // Check if the PointType is in the FRAME_REFERENCE frame
+      if(refPoint.getFrameKind() == FRAME_PHYSICAL){
+        std::cerr << "MultiCell::Jacobian warning: \n"
         "\t Admissible frame type for refPoint is FRAME_REFERENCE, but refPoint has FRAME_PHYSICAL /n";
-        exit(1);
       }
       
       // Check if refPoint is indeed inside its reference cell - disable for efficiency.
-      if(refPoint.inclusion(myCellType_) != FAIL_CODE_SUCCESS) {
-        std::cerr << "MultiCell::Jacobian error: \n"
-        "\t RefPoint has FRAME_REFERENCE type but is not inside its reference cell /n";
-        exit(1);
+      if(insideReferenceCell(myCellType_, refPoint, threshold) != FAIL_CODE_SUCCESS) {
+        std::cerr << "MultiCell::Jacobian warning: \n"
+        "\t refPoint has FRAME_REFERENCE type but is not inside its reference cell \n";
       }
       
       // Temp storage for the Matrix coefficients by row
@@ -481,20 +534,20 @@ namespace Intrepid {
   
   
   template<class Scalar>
-    Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID, const Point<Scalar>&  refPoint) const {
+    Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID, 
+                                                       const Point<Scalar>&  refPoint,
+                                                       const double threshold) const {
 
       // Check if refPoint has the correct frame kind - disable for efficiency
-      if(refPoint.frameKind() != FRAME_REFERENCE){
-        std::cerr <<  " Multicell::mapToPhysicalCell error: \n"
+      if(refPoint.getFrameKind() != FRAME_REFERENCE){
+        std::cerr <<  " Multicell::mapToPhysicalCell warning: \n"
         "\t Admissible Point type is REFERENCE but argument has PHYSICAL type.\n";
-        exit(1);
       }
       
       // Check if refPoint is indeed inside its reference cell - disable for efficiency.
-      if(refPoint.inclusion(myCellType_) != FAIL_CODE_SUCCESS) {
-        std::cerr << "MultiCell::mapToPhysicalCell error: \n"
-        "\t RefPoint has FRAME_REFERENCE type but is not inside its reference cell /n";
-        exit(1);
+      if(insideReferenceCell(myCellType_, refPoint,threshold) != FAIL_CODE_SUCCESS) {
+        std::cerr << "MultiCell::mapToPhysicalCell warning: \n"
+        "\t refPoint has FRAME_REFERENCE type but is not inside its reference cell \n";
       }
       
       // Temp array for the image of refPoint
@@ -565,9 +618,8 @@ namespace Intrepid {
 
       // First make sure that the point frame is FRAME_PHYSICAL:
       if(physPoint.getFrameKind() != FRAME_PHYSICAL){
-        std::cerr <<  " MultiCell::mapToReferenceCell error: \n"
+        std::cerr <<  " MultiCell::mapToReferenceCell warning: \n"
         "\t Admissible Point frame is FRAME_PHYSICAL, argument has FRAME_REFERENCE frame.\n";
-        exit(1);
       }
       
       // Temp storage for the refPoint point with the right dimension, do not set type yet
@@ -617,8 +669,61 @@ namespace Intrepid {
               break;          
           }
           break;
+        case CELL_HEX: {
+          
+          // Initialize old (xOld) and new (refPoint) Newton iterates. Must have FRAME_REFERENCE type
+          Point<Scalar> xOld(0.0,0.0,0.0,FRAME_REFERENCE);         
+          refPoint = xOld;                                         
+          
+          // Newton method to compute the inverse of the mapping between reference and physicall HEX
+          for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter)	{	
+            
+            // First iterates may fail the inclusion tests using the tighter INTREPID_THRESHOLD value.
+            // Define a dynamic threshold value that rapidly decreases as the itretaion count grows:
+            double threshold = std::max( (1.0 + 0.5 * exp(-(double)iter)), INTREPID_THRESHOLD);	
+            
+            // Compute Jacobian matrix at old iterate and invert in place. Use dynamic threshold!
+            Matrix<Scalar> jacobianMatrix = this -> jacobian(cellID, xOld,threshold);		
+            jacobianMatrix.invert();
+            
+            // The Newton step. Use dynamic threshold in mapToPhysicalCell to avoid warnings
+            refPoint = xOld + jacobianMatrix*(physPoint - this -> mapToPhysicalCell(cellID,xOld,threshold));
+            
+            // Compute Euclidean distance (error) between old and new iterates: |xOld - refPoint|
+            Scalar error = refPoint.distance(xOld);		
+            
+            // If refPoint is not inside this cube, Newton is likely diverging, terminate
+            if(insideReferenceCell(myCellType_,refPoint,threshold) == FAIL_CODE_NOT_IN_REF_CELL) {							
+              std::cerr << "MultiCell::mapToPhysicalCell error: method failed to converge\n";
+              exit(1);
+            }		
+            
+            // If error tolerance was met, Newton converged. 
+            if (error < INTREPID_TOL) {		
+              
+              // Check for inclusion in the reference HEX but use the looser INTREPID_TOL threshold
+              if(insideReferenceCell(CELL_HEX,refPoint,INTREPID_TOL) == FAIL_CODE_NOT_IN_REF_CELL) {
+                std::cerr << " MultiCell::mapToReferenceCell warning: for " << physPoint;
+                std::cerr << "the method converged to a Point outside the reference element: "
+                << refPoint << std::endl;
+              }
+              break;
+            }
+            
+            // Check if iterations limit exhausted
+            if( iter > INTREPID_MAX_NEWTON - 5) {
+            std::cerr << " MultiCell::mapToReferenceCell warning: for " << physPoint
+              << " method failed to converge to desired tolerance within " << INTREPID_MAX_NEWTON
+              << " iterations\n";
+              break;
+            }
+            
+            // initialize next Newton step
+            xOld = refPoint;	
+          };
+          break;
+        }
         case CELL_QUAD:
-        case CELL_HEX:
         case CELL_TRIPRISM:
         case CELL_PYRAMID:
           std::cerr << "MultiCell::mapToReferenceCell error: method not implemented\n";
@@ -630,7 +735,7 @@ namespace Intrepid {
       }
       
       // Check if the computed Point is indeed indisde the reference cell
-      if( refPoint.inclusion(myCellType_) == FAIL_CODE_ERROR) {
+      if( insideReferenceCell(myCellType_, refPoint) == FAIL_CODE_ERROR) {
         std::cerr<< " MultiCell::mapToReferenceCell error: \n"
         " \t Computed reference point is outside its reference cell\n";
         exit(1);
@@ -686,13 +791,13 @@ namespace Intrepid {
       
       // Print face connectivities
       out << "Face template:\n";
-      int numFacesPerCell = this->getMyNumSubcells(2);
+      int numFacesPerCell = this -> getMyNumSubcells(2);
       for (int i=0; i < numFacesPerCell; i++) {
         Teuchos::Array<int> tempNodes;
         ECell tempType = this -> getMySubcellType(2, i);
         this -> getMySubcellNodeIDs(2, i, tempNodes);
         out << "    " << i << " -> " << std::setw(12) << getCellName(tempType) << ": ";
-        for (int j=0; j < this->getNumNodes(tempType); j++) {
+        for (int j=0; j < this -> getNumNodes(tempType); j++) {
           out << std::setw(4) << tempNodes[j];
         }
         out << "\n";

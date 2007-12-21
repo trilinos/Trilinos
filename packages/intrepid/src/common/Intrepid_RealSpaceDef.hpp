@@ -133,67 +133,6 @@ namespace Intrepid {
     frameKind_ = newFrameKind;
   }
   
-  template<class Scalar>
-  EFailCode Point<Scalar>::inclusion(const ECell cellType) const{
-    //
-    // For definition of reference cells see Intrepid_CellTemplates.hpp
-    //
-    EFailCode code = FAIL_CODE_SUCCESS;
-    if(frameKind_ != FRAME_REFERENCE) code = FAIL_CODE_ERROR;
-    switch(cellType) {
-      case CELL_EDGE:
-        if( !(INTREPID_MINUS_ONE <= data_[0] && data_[0] <= INTREPID_PLUS_ONE)) \
-          code = FAIL_CODE_NOT_IN_REF_CELL;
-        break;
-      case CELL_TRI:{
-        Scalar distance = std::max( std::max( -data_[0], -data_[1] ), data_[0] + data_[1] - 1 );
-        if( distance > INTREPID_THRESHOLD ) code = FAIL_CODE_NOT_IN_REF_CELL;
-        break;
-      }
-      case CELL_QUAD:
-        if(!((INTREPID_MINUS_ONE <= data_[0] && data_[0] <= INTREPID_PLUS_ONE) && \
-             (INTREPID_MINUS_ONE <= data_[1] && data_[1] <= INTREPID_PLUS_ONE)))  \
-               code = FAIL_CODE_ERROR;   
-        break;
-      case CELL_TET:{
-        Scalar distance = std::max(  std::max(-data_[0],-data_[1]), std::max(-data_[2],data_[0] + data_[1] + data_[2] - 1)  );
-        if( distance > INTREPID_THRESHOLD ) code = FAIL_CODE_NOT_IN_REF_CELL;
-        break;
-      }
-      case CELL_HEX:
-        if(!((INTREPID_MINUS_ONE <= data_[0] && data_[0] <= INTREPID_PLUS_ONE) && \
-             (INTREPID_MINUS_ONE <= data_[1] && data_[1] <= INTREPID_PLUS_ONE) && \
-             (INTREPID_MINUS_ONE <= data_[2] && data_[2] <= INTREPID_PLUS_ONE)))  \
-               code = FAIL_CODE_ERROR;
-        break;
-      case CELL_TRIPRISM: {
-        // The base of the reference prism is the same as the reference triangle. Thus,
-        // to check if the point is inside we apply the tri test to the first two 
-        // coordinates and test the third coordinate to be between 
-        Scalar distance = std::max( std::max( -data_[0], -data_[1] ), data_[0] + data_[1] - 1 );
-        if( distance > INTREPID_THRESHOLD  || \
-            data_[2] < INTREPID_ZERO_MINUS || data_[2] > INTREPID_PLUS_ONE) \
-              code = FAIL_CODE_NOT_IN_REF_CELL;
-        break;
-      }
-      case CELL_PYRAMID:{
-        // The base of the reference pyramid is the same as the reference quad cell.
-        // Thus, a horizontal plane through a point P(x,y,z) inside the pyramid intersects
-        // it at a quad that equals the base quad scaled by (1-z). Therefore, to check if
-        // P(x,y,z) is inside the pyramid we check if (x,y) is inside [-1+z,1-z]^2
-        Scalar left  = INTREPID_MINUS_ONE + data_[2];
-        Scalar right = INTREPID_PLUS_ONE  - data_[2];
-        if(!((left <= data_[0] && data_[0] <= right) && \
-             (left <= data_[1] && data_[1] <= right)))  \
-               code = FAIL_CODE_NOT_IN_REF_CELL;  
-        break;
-      }
-      default:
-        std::cerr<< "Point::inclusion error: invalid cell type \n";
-        exit(1);
-    }
-    return code;
-  }
   
   template<class Scalar>
   Scalar Point<Scalar>::distance(const Point& endPoint) const {

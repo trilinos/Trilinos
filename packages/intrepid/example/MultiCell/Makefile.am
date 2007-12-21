@@ -44,13 +44,16 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = example_01 example_02
+noinst_PROGRAMS = example_01 example_02 example_03
 
 # Dependencies used when rebuilding examples without building everything from scratch.
 example_01_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 example_02_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+example_03_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -61,3 +64,7 @@ example_01_CXXFLAGS = -I$(srcdir)
 example_02_SOURCES = example_02.cpp
 example_02_LDADD = $(EXPORT_LIBS)
 example_02_CXXFLAGS = -I$(srcdir)
+
+example_03_SOURCES = example_03.cpp
+example_03_LDADD = $(EXPORT_LIBS)
+example_03_CXXFLAGS = -I$(srcdir)

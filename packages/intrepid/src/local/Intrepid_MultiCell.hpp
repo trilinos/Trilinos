@@ -75,10 +75,7 @@ private:
     int numCells_;
     
     
-    /** \brief Dimension of the ambient space. Can be different from the topological dimension of 
-      the generating cell type. For example, a MultiCell can be defined using a QUAD as a generating
-      cell to represent a set of faces of HEX cells. In this case, the ambient dimension should be 
-      set to 3 - the same as the topological dimension of the parent cell type (HEX).
+    /** \brief Dimension of the ambient space. Equals the topological dimension of the generating cell.
       */
     int ambientDim_;
     
@@ -170,7 +167,6 @@ public:
       /** \brief Use this constructor if subcell signs are not needed by reconstruction interface.
       
       \param numCells [in]            - Number of cells in this multicell.
-      \param ambientDim [in]          - Dimension of the ambient space where the cells are located.
       \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
                                         or a custom, i.e. user-defined type.
       \param vertices [in]            - Physical coordinates of the vertices for all cells of the
@@ -184,7 +180,6 @@ public:
                                         where \f$n\f$ is the number of nodes (points) in the cell.
       */
       MultiCell(const int      numCells,
-                const int      ambientDim,
                 const ECell    generatingCellType,
                 const Scalar*  vertices);
     
@@ -192,7 +187,6 @@ public:
     /** \brief Use this constructor if the reconstruction interface needs edge OR face signs.
       
       \param numCells   [in]          - Number of cells in this multicell.
-      \param ambientDim [in]          - Dimension of the ambient space where the cells are located.
       \param generatingCellType[in]   - Generating cell type: can be a canonical (TET, HEX, etc.). 
                                         or a custom, i.e. user-defined type.
       \param vertices   [in]          - Physical coordinates of the vertices for all cells of the
@@ -212,7 +206,6 @@ public:
       correct subcell signs.
       */
     MultiCell(const int      numCells,
-              const int      ambientDim,
               const ECell    generatingCellType,
               const Scalar*  vertices,
               const short*   subcellSigns,
@@ -222,7 +215,6 @@ public:
     /** \brief Use this constructor if the reconstruction interface needs edge AND face signs
       
       \param numCells   [in]          - Number of cells in this multicell.
-      \param ambientDim [in]          - Dimension of the ambient space where the cells are located.
       \param generatingCellType[in]   - Generating cell type: can be a canonical (TET, HEX, etc.). 
                                         or a custom, i.e. user-defined type.
       \param vertices   [in]          - Physical coordinates of the vertices for all cells of the
@@ -248,7 +240,6 @@ public:
       responsible for setting the correct edge and face signs.
       */
     MultiCell(const int      numCells,
-              const int      ambientDim,
               const ECell    generatingCellType,
               const Scalar*  vertices,
               const short*   edgeSigns,
@@ -413,7 +404,7 @@ public:
     
     
     //-------------------------------------------------------------------------------------//
-    //     Static member functions: can be called without prior MultiCell instantiation    //
+    //   Static accessor functions: can be called without prior MultiCell instantiation    //
     //-------------------------------------------------------------------------------------//
     
     /** \brief Returns cell type based on its name.
@@ -465,7 +456,8 @@ public:
                                 const int subcellID);
     
     
-    /** \brief Returns node IDs of subcell of a particular dimension, based on its index, for a given cell type.
+    /** \brief Returns node IDs of subcell of a particular dimension, based on its index, 
+      for a given cell type.
       
       \param parentCellType   [in]  - parent cell type
       \param subcellDim       [in]  - dimension of the subcells whose type we want to get        
@@ -478,12 +470,10 @@ public:
                                   const int subcellID,
                                   Teuchos::Array<int> & subcellNodeIDs);
     
-    
     //-------------------------------------------------------------------------------------//
     //                         Charts and atlas                                            //
     //-------------------------------------------------------------------------------------//
     
-
     /** \brief Computes charts for all cells in the MultiCell and stores them in <var>atlas_<var>.
       The chart defines the mapping that takes a reference cell to an ambient space cell.
       Admissible generating cell types for this method are EDGE, TRI, QUAD, TET, HEX, PRISM, PYRAMID.
@@ -513,17 +503,23 @@ public:
        
        \param cellID [in]     - cell ID relative to the MultiCell
        \param refPoint [in]   - point in the reference frame where Jacobian is evaluated
+       \param threshold [in]  - Sets the "tightness" in the inclusion test carried out inside the method.
       */
-    Matrix<Scalar> jacobian(const int cellID, const Point<Scalar>& refPoint) const;
+    Matrix<Scalar> jacobian(const int cellID, 
+                            const Point<Scalar>& refPoint,
+                            const double threshold = INTREPID_THRESHOLD) const;
 
     /**\brief Computes the image of a reference point in the specified physical cell (relative to the
       MultiCell) using the mapping from the chart of that point. Result is returned as a Point 
       object with FRAME_PHYSICAL type
 
-        \param cellID [in]    -  cell ID relative to the MultiCell
+        \param cellID [in]    - cell ID relative to the MultiCell
         \param refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type.
+        \param threshold [in] - Sets the "tightness" in the inclusion test carried out inside the method.
       */
-    Point<Scalar> mapToPhysicalCell(const int cellID, const Point<Scalar>& refPoint) const;
+    Point<Scalar> mapToPhysicalCell(const int cellID, 
+                                    const Point<Scalar>& refPoint,
+                                    const double threshold = INTREPID_THRESHOLD) const;
 
     /**\brief Computes the image of a reference point in the specified physical cell (relative to the
       MultiCell) using the mapping from the chart of that point. Result is returned as a Point 
@@ -534,22 +530,56 @@ public:
 */
     Point<Scalar> mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const;
     
+    //-------------------------------------------------------------------------------------//
+    //                               Inclusion tests                                       //
+    //-------------------------------------------------------------------------------------//
+    
+    /** \brief Checks if the Point argument belongs to the reference cell of the specified
+      type. Valid cell type range is CELL_EDGE to CELL_TRIPRISM, i.e., cell types that have
+      reference cells. Dimension of the Point argument must match the cell dimension and
+      its coordinate frame must be of FRAME_REFERENCE kind. This is a static function, i.e.,
+      it can be called without instantiation of a MultiCell object.
+      
+      \param cellType [in]  - cell type that has reference cell to be tested against
+      \param refPoint [in]  - Point in FRAME_REFERENCE coordinates that is being tested
+      \param threshold[in]  - Sets the "tightness" of the inclusion test.
+      */
+    static EFailCode insideReferenceCell(const ECell cellType, 
+                                         const Point<Scalar>& refPoint,
+                                         const double threshold = INTREPID_THRESHOLD);
+    
+    /** \brief Checks if the Point argument belongs to the cell with the specified cellID
+      (relative to the MultiCell). Dimension of the Point argument must match the cell 
+      dimension and its coordinate frame must be of FRAME_PHYSICAL kind. This method checks
+      inclusion in physical space and so it requires a properly instantiated MultiCell
+      object that holds valid vertex data for at least one cell. 
+      
+      \warning Inclusion tests for cells without reference cells, or whose charts are 
+      non-affine can be slow!
+      
+      \param cellType [in]  - cell type that has reference cell to be tested against
+      \param refPoint [in]  - Point in FRAME_REFERENCE coordinates that is being tested
+      */
+    EFailCode insidePhysicalCell(const int cellID, 
+                                 const Point<Scalar>& physPoint,
+                                 const double threshold = INTREPID_THRESHOLD) const;
+    
+    //-------------------------------------------------------------------------------------//
+    //                                     Debugging                                       //
+    //-------------------------------------------------------------------------------------//    
     
     /** \brief Prints multicell info to <var>os</var> stream.
       */
     void printMyInfo(std::ostream& os) const;
     
-}; // class MultiCell
-
-/** \relates Intrepid::MultiCell
-  \brief   Overloaded << operator.
+  }; // class MultiCell
+  
+/** \relates Intrepid::MultiCell \brief   Overloaded << operator.
   */
 template<class Scalar>
-std::ostream& operator << (std::ostream& os,
-                           const MultiCell<Scalar>& base);
+std::ostream& operator << (std::ostream& os, const MultiCell<Scalar>& base);
 
 } // namespace Intrepid
-
 
 // include (templated) inline functions
 #include "Intrepid_MultiCell.icpp"
