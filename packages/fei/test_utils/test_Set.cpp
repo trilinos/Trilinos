@@ -225,30 +225,23 @@ int test_Set::test2()
     return(-4);
   }
 
+  set_test2(sset2);
+
   fei::ctg_set<int> sset3;
 
-  sset3.insert2(5);
-  sset3.insert2(8);
-  sset3.insert2(3);
-  sset3.insert2(0);
-  sset3.insert2(4);
   sset3.insert2(1);
+  sset3.insert2(3);
+  sset3.insert2(6);
+  sset3.insert2(8);
+  sset3.insert2(0);
   sset3.insert2(2);
-
-  fei::ctg_set<int>::const_iterator
-    ss3_iter = sset3.begin(),
-    ss3_end = sset3.end();
-
-  i=0;
-  for(; ss3_iter != ss3_end; ++ss3_iter) {
-    if (*ss3_iter != i && *ss3_iter != 8) {
-      return(-1);
-    }
-    ++i;
-  }
+  sset3.insert2(9);
+  sset3.insert2(11);
+  sset3.insert2(4);
+  sset3.insert2(10);
 
   int size3 = sset3.size();
-  if (size3 != 7) {
+  if (size3 != 10) {
     return(-1);
   }
 
@@ -258,7 +251,7 @@ int test_Set::test2()
   }
 
   ++ss3_iter4;
-  if (*ss3_iter4 != 5) {
+  if (*ss3_iter4 != 6) {
     return(-3);
   }
 

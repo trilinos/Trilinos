@@ -18,7 +18,7 @@
 
 #include <fei_Factory_Trilinos.hpp>
 #ifdef HAVE_AZTECOO
-#include <fei-aztec.hpp>
+#include <fei_Aztec_LinSysCore.hpp>
 #endif
 
 #ifdef FEI_HAVE_FETI
@@ -26,7 +26,7 @@
 #endif
 
 #ifdef FEI_HAVE_PETSC
-#include <fei-petsc.hpp>
+#include <fei_PETSc_LinSysCore.hpp>
 #endif
 
 #ifdef FEI_HAVE_PROMETHEUS

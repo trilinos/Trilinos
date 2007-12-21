@@ -222,8 +222,6 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 
   fei::FillableMat fc;
 
-  static const double fei_eps = std::numeric_limits<double>::epsilon();
-
   std::vector<double> row_coefs;
 
   int jbeg = *Arowoffs++;

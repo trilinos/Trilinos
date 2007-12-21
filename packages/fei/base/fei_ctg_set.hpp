@@ -46,7 +46,9 @@ class ctg_set {
       highwatermark_(src.highwatermark_), alloc_incr_(src.alloc_incr_)
     {
       if (len_>0) {
+        data_.reserve(highwatermark_);
         dataptr_ = &data_[0];
+        for(int i=0; i<len_; ++i) dataptr_[i] = src.dataptr_[i];
       }
     }
 
