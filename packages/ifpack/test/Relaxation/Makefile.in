@@ -71,8 +71,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
-	$(top_srcdir)/config/acx_blas.m4 \
-	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
@@ -81,10 +79,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
-	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
@@ -121,7 +117,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -148,7 +143,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -232,8 +226,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
+@HAVE_IFPACK_GALERI_FALSE@EXAMPLE_LIBS = $(IFPACK_LIBS)
+@HAVE_IFPACK_GALERI_TRUE@EXAMPLE_LIBS = $(IFPACK_LIBS)      $(GALERI_LIBS)
+@HAVE_IFPACK_GALERI_FALSE@EXAMPLE_INCLUDES = $(IFPACK_INCLUDES)
+@HAVE_IFPACK_GALERI_TRUE@EXAMPLE_INCLUDES = $(IFPACK_INCLUDES)  $(GALERI_INCLUDES)
 @HAVE_IFPACK_AMESOS_TRUE@@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@TestRelaxation_SOURCES = $(srcdir)/cxx_main.cpp
 @HAVE_IFPACK_AMESOS_TRUE@@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@TestRelaxation_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 @HAVE_IFPACK_AMESOS_TRUE@@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@TestRelaxation_CXXFLAGS = $(EXAMPLE_INCLUDES)
@@ -489,7 +485,9 @@ uninstall-am:
 	uninstall-am
 
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ifpack
+
+@HAVE_IFPACK_GALERI_TRUE@include $(top_builddir)/../galeri/Makefile.export.galeri
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

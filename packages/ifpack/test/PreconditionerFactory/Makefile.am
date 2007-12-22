@@ -26,14 +26,21 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ifpack
 
-EXAMPLE_LIBS     = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
+if HAVE_IFPACK_GALERI
+include $(top_builddir)/../galeri/Makefile.export.galeri
+EXAMPLE_LIBS     = $(IFPACK_LIBS)      $(GALERI_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_INCLUDES)  $(GALERI_INCLUDES)
+else
+EXAMPLE_LIBS     = $(IFPACK_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_INCLUDES)
+endif
 
 EXEEXT = .exe
 
 if HAVE_IFPACK_GALERI
+if HAVE_IFPACK_AZTECOO
 
 noinst_PROGRAMS = TestPreconditionerFactory
 
@@ -42,4 +49,5 @@ TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 TestPreconditionerFactory_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestPreconditionerFactory_LDADD        = $(EXAMPLE_LIBS)
 
+endif
 endif

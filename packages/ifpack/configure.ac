@@ -289,7 +289,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_ifpack_examples" != "Xno")
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -300,7 +300,7 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
+# Define F77_FUNC that will be used to link with Fortran subroutines.
 AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
@@ -314,14 +314,6 @@ if test "X$ac_cv_use_ifpack_tests" != "Xno" || test "X$ac_cv_use_ifpack_examples
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-dnl Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_BLASLIB
-TAC_ARG_WITH_LAPACKLIB
-
-# find or choose to supply valid blas and lapack libraries
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if
@@ -390,7 +382,6 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
-                Makefile.export
                 Makefile.export.ifpack
 		src/Makefile
 		example/Makefile
