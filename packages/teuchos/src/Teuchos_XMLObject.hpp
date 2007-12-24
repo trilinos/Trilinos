@@ -80,18 +80,16 @@ public:
   //@{
 
   //! Return the tag of the current node
-  const std::string& getTag() const {return ptr_->getTag();}
+  const std::string& getTag() const;
 
   //! Find out if the current node has an attribute of the specified name
-  bool hasAttribute(const std::string& name) const 
-    {return ptr_->hasAttribute(name);}
+  bool hasAttribute(const std::string& name) const;
 
   //! Return the value of the attribute with the specified name
-  const std::string& getAttribute(const std::string& name) const 
-    {return ptr_->getAttribute(name);}
+  const std::string& getAttribute(const std::string& name) const;
 
   //! Get an attribute, throwing an std::exception if it is not found
-  const std::string& getRequired(const std::string& name) const ;
+  const std::string& getRequired(const std::string& name) const;
 
   //! Get a required attribute, returning it as a double
   double getRequiredDouble(const std::string& name) const 
@@ -111,33 +109,31 @@ public:
                         const std::string& defaultValue) const ;
 
   //! Return the number of child nodes owned by this node
-  int numChildren() const {return ptr_->numChildren();}
+  int numChildren() const;
 
   //! Return the i-th child node 
-  const XMLObject& getChild(int i) const {return ptr_->getChild(i);}
+  const XMLObject& getChild(int i) const;
 
   //! Return the number of lines of character content stored in this node 
-  int numContentLines() const {return ptr_->numContentLines();}
+  int numContentLines() const;
 
   //! Return the i-th line of character content stored in this node
-  const std::string& getContentLine(int i) const {return ptr_->getContentLine(i);}
+  const std::string& getContentLine(int i) const;
 
   //! Represent this node and its children as a std::string
-  std::string toString() const {return ptr_->toString();}
+  std::string toString() const;
 
   //! Print this node and its children to stream with the given indentation
-  void print(std::ostream& os, int indent) const
-    {ptr_->print(os, indent);}
-
+  void print(std::ostream& os, int indent) const;
 
   //! Write the header for this object to a std::string
-  std::string header() const {return ptr_->header();}
+  std::string header() const;
 
   //! Write the header for this object to a std::string
-  std::string terminatedHeader() const {return ptr_->terminatedHeader();}
+  std::string terminatedHeader() const;
 
   //! Write the footer for this object to a std::string
-  std::string footer() const {return ptr_->footer();}
+  std::string footer() const;
 
   //! Find out if a node is empty
   bool isEmpty() const { return ptr_.get()==0;}
@@ -150,8 +146,7 @@ public:
   //@{
 
   //! Add an attribute to the current node's atribute list
-  void addAttribute(const std::string& name, const std::string& value)
-    {ptr_->addAttribute(name, value);}
+  void addAttribute(const std::string& name, const std::string& value);
 			
   //! Add a double as an attribute
   void addDouble(const std::string& name, double val)
@@ -166,14 +161,12 @@ public:
     {addAttribute(name, Teuchos::toString(val));}
 			
   //! Add a child node to the node
-  void addChild(const XMLObject& child)
-    {ptr_->addChild(child);}
+  void addChild(const XMLObject& child);
 
   //! Add a line of character content
-  void addContent(const std::string& contentLine)
-    {ptr_->addContent(contentLine);}
+  void addContent(const std::string& contentLine);
   //@}
-	
+
 private:
   RCP<XMLObjectImplem> ptr_;
 };
@@ -198,4 +191,3 @@ inline std::string toString(const XMLObject& xml)
 } // namespace Teuchos
 
 #endif
-
