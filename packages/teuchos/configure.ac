@@ -108,6 +108,12 @@ AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
+# Check if Fortran is enabled or not
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+
+# ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 
@@ -122,7 +128,9 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+fi
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -161,7 +169,9 @@ AM_CONDITIONAL(USING_PERL, test X${HAVE_PERL} = Xyes)
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+if test "X$ac_cv_use_fortran" != "Xno"; then
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+fi
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -274,33 +284,6 @@ AC_LANG_RESTORE
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# #np# newp_swahili is an example of a package feature which requires both
-# a cpp #define command and one or more source or header files  - ie 
-# conditional compilation which requires a change to the makefile.
-# If configure is called with "--enable-newp_swahili", it will place 
-# a #define HAVE_NEWP_SWAHILI in Teuchos_config.h and add source 
-# and header files as specified in Makefile.am 
-#
-# To add an option to your package, you will need to modify this file
-# (i.e. configure.ac), and src/Makefile.am.  A bootstrap is also required.
-# Look for SWAHILI in both files listed above.
-#
-# TAC_ARG_ENABLE_OPTION performs several tasks, including:
-#   1)  Setting a help string
-#   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use in Teuchos_config.h)
-#
-# AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
-# ------------------------------------------------------------------------
-#
-#TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
-#AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
-#
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
 #
 #  #np# - These options are specific to Epetra and are left only as examples.
 #         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
@@ -313,15 +296,6 @@ AC_LANG_RESTORE
 #                   WARNING_MESSAGES, no)
 #TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
 #                   FORMAT_IO, yes)
-
-#  #np# - These are specific to Epetra and are left only as examples.
-#         If uncommented, the following line would define HAVE_ZOLTAN in
-#         the (package)_config.h file.  Developers should use a more
-#         specific name such as 'new_package-zoltan', rather than 'zoltan'.
-# TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
-# TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
-# TAC_ARG_WITH_PACKAGE(esi, [Enable ESI interface support], ESI, yes)
-# TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
 
 # ------------------------------------------------------------------------
 # Check to see if array boundschecking has been enabled
@@ -365,8 +339,6 @@ AM_CONDITIONAL(HAVE_TEUCHOS_BLASFLOAT, [test "X$ac_cv_use_teuchos_blasfloat" != 
 
 if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 
-#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
-#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
 #
 #  Check for ARPREC headers.
 #
@@ -587,10 +559,10 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, demangle,
 # Checks for libraries
 # ------------------------------------------------------------------------
 
-# #np# - Yet another opportunity to remove code if you aren't
-# using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
+# Define F77_FUNC that will be used to link with Fortran subroutines.
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_F77_WRAPPERS
+fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -615,16 +587,12 @@ AC_CHECK_FUNCS([pow sqrt])
 ### The configure.ac file for epetra (Trilinos/packages/epetra) if blas and
 ### or Lapack are needed.
 
-ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics
-# ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
 # Checks for Makefile.export related systems
@@ -636,7 +604,9 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
+#if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_F77_LIBRARY_LDFLAGS
+#fi
 
 #  ----------------------------------------------------
 #  Needs this because Dec handles templates differently
@@ -665,14 +635,6 @@ else
 fi
 
 AC_SUBST(TRILINOS_TEMPLATE_OBJS)
-
-# ------------------------------------------------------------------------
-# Checks for library functions
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for system services
-# ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
 # Get the absolute path to the build directory.  

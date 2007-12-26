@@ -154,4 +154,10 @@ const int Teuchos_DefaultTracebackMode = 1; /* Default value for traceback behav
 #define TEUCHOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
 #define TEUCHOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
+#ifndef HAVE_FORTRAN_SUPPORT
+#ifndef FORTRAN_DISABLED
+#define FORTRAN_DISABLED
+#endif
+#endif
+
 #endif /* TEUCHOS_CONFIGDEFS_HPP */

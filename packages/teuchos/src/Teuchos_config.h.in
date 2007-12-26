@@ -1,5 +1,8 @@
 /* src/Teuchos_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define the Fortran name mangling to be used for the BLAS */
+#undef F77_BLAS_MANGLE
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef F77_DUMMY_MAIN
@@ -52,6 +55,9 @@
 
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
+
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
 
 /* Define to 1 if you have the <fpu_control.h> header file. */
 #undef HAVE_FPU_CONTROL_H
