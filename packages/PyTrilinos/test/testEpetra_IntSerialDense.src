@@ -77,7 +77,6 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
         self.array = [[4, 3, 2, 1],
                       [3, 4, 3, 2],
                       [2, 3, 4, 3]]
-        self.serial = not hasattr(Epetra, "MpiComm")
 
     def tearDown(self):
         self.comm.Barrier()
@@ -99,13 +98,11 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
 
     def testConstructor02(self):
         "Test Epetra.IntSerialDenseMatrix (int,int) constructor, negative rows"
-        #if self.serial:
         self.assertRaises(Epetra.Error, Epetra.IntSerialDenseMatrix,
                           -self.rows, self.cols)
 
     def testConstructor03(self):
         "Test Epetra.IntSerialDenseMatrix (int,int) constructor, negative columns"
-        #if self.serial:
         self.assertRaises(Epetra.Error, Epetra.IntSerialDenseMatrix,
                           self.rows, -self.cols)
 

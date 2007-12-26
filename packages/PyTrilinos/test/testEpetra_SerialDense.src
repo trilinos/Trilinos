@@ -78,7 +78,6 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         self.array  = [[0.1, 2.3, 4.5, 6.7],
                       [6.7, 8.9, 0.1, 2.3],
                       [2.3, 4.5, 6.7, 8.9]]
-        self.serial = not hasattr(Epetra, "MpiComm")
         # Query whether Copy objects are actually Copy objects.  For older
         # versions of SWIG, they are View objects, but newer versions of SWIG
         # get it right
@@ -117,13 +116,11 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
 
     def testConstructor03(self):
         "Test Epetra.SerialDenseMatrix (int,int) constructor, negative rows"
-        #if self.serial:
         self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
                           -self.rows, self.cols)
 
     def testConstructor04(self):
         "Test Epetra.SerialDenseMatrix (int,int) constructor, negative columns"
-        #if self.serial:
         self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
                           self.rows, -self.cols)
 

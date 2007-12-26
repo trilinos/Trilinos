@@ -109,7 +109,6 @@ class EpetraBlockMapTestCase(unittest.TestCase):
                                                 self.indexBase,
                                                 self.comm)
 
-        self.serial           = not hasattr(Epetra, "MpiComm")
         self.comm.Barrier()
 
     def tearDown(self):
@@ -123,14 +122,12 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor02(self):
         "Test Epetra.BlockMap uniform constructor, negative global size"
-        #if (self.serial):
         size = -2 * self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 1, 0,
                           self.comm)
 
     def testConstructor03(self):
         "Test Epetra.BlockMap uniform constructor, zero element size"
-        #if (self.serial):
         size = 2 * self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 0, 0,
                           self.comm)
@@ -144,20 +141,17 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor05(self):
         "Test Epetra.BlockMap nonuniform constructor, negative global size"
-        #if (self.serial):
         size = -2 * self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 2, 1, 0,
                           self.comm)
 
     def testConstructor06(self):
         "Test Epetra.BlockMap nonuniform constructor, negative num my elements"
-        #if (self.serial):
         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
                           -2, 1, 0, self.comm)
 
     def testConstructor07(self):
         "Test Epetra.BlockMap nonuniform constructor, negative element size"
-        #if (self.serial):
         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
                           self.numMyEl, -1, 0, self.comm)
 
@@ -177,14 +171,12 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor10(self):
         "Test Epetra.BlockMap nonuniform, arbitrary constructor, negative global size"
-        #if (self.serial):
         size = -2 * self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, size,
                           self.myGlobalEls, 1, 0, self.comm)
 
     def testConstructor11(self):
         "Test Epetra.BlockMap nonuniform, arbitrary constructor, negative element size"
-        #if (self.serial):
         size = -2 * self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
                           self.myGlobalEls, -2, 0, self.comm)
@@ -218,7 +210,6 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor15(self):
         "Test Epetra.BlockMap uniform linear constructor, negative local size"
-        #if (self.serial):
         size = self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, size, -1, 1, 0,
                           self.comm)
