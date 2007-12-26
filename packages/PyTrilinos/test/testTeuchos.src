@@ -99,10 +99,11 @@ class TeuchosXMLTestCase(unittest.TestCase):
         xmlCpy = xmlObj.deepCopy()
         self.assertEquals(xmlCpy.getTag(), xmlObj.getTag())
 
-    #def testXMLObjectDeepCopyEmpty(self):
-    #    "Test Teuchos XMLObject deepCopy() method, empty"
-    #    xmlObj = Teuchos.XMLObject()
-    #    self.assertRaises(RuntimeError, xmlObj.deepCopy)
+    def testXMLObjectDeepCopyEmpty(self):
+        "Test Teuchos XMLObject deepCopy() method, empty"
+        xmlObj = Teuchos.XMLObject()
+        xmlCopy = xmlObj.deepCopy()
+        self.assertEquals(type(xmlCopy), Teuchos.XMLObject)
 
     def testXMLObjectGetTag(self):
         "Test Teuchos XMLObject getTag() method"
@@ -110,15 +111,15 @@ class TeuchosXMLTestCase(unittest.TestCase):
         xmlObj = Teuchos.XMLObject(tag)
         self.assertEquals(xmlObj.getTag(), tag)
 
-    #def testXMLObjectGetTagEmpty(self):
-    #    "Test Teuchos XMLObject getTag() method, empty"
-    #    xmlObj = Teuchos.XMLObject()
-    #    self.assertRaises(RuntimeError, xmlObj.getTag)
+    def testXMLObjectGetTagEmpty(self):
+        "Test Teuchos XMLObject getTag() method, empty"
+        xmlObj = Teuchos.XMLObject()
+        self.assertRaises(RuntimeError, xmlObj.getTag)
 
-    #def testXMLObjectAddAttributeBad(self):
-    #    "Test Teuchos XMLObject addAttribute() method, no tag"
-    #    xmlObj = Teuchos.XMLObject()
-    #    self.assertRaises(RuntimeError, xmlObj.addAttribute, "date", "today")
+    def testXMLObjectAddAttributeBad(self):
+        "Test Teuchos XMLObject addAttribute() method, no tag"
+        xmlObj = Teuchos.XMLObject()
+        self.assertRaises(RuntimeError, xmlObj.addAttribute, "date", "today")
 
     def testXMLObjectAttribute(self):
         "Test Teuchos XMLObject add/get attribute() methods"
@@ -126,10 +127,10 @@ class TeuchosXMLTestCase(unittest.TestCase):
         xmlObj.addAttribute("date","today")
         self.assertEquals(xmlObj.getAttribute("date"), "today")
 
-    #def testXMLObjectBadAttribute(self):
-    #    "Test Teuchos XMLObject getAttribute() method, nonexistent"
-    #    xmlObj = Teuchos.XMLObject()
-    #    self.assertRaises(RuntimeError, xmlObj.getAttribute, "date")
+    def testXMLObjectBadAttribute(self):
+        "Test Teuchos XMLObject getAttribute() method, nonexistent"
+        xmlObj = Teuchos.XMLObject()
+        self.assertRaises(RuntimeError, xmlObj.getAttribute, "date")
 
     def testXMLObjectHasAttribute(self):
         "Test Teuchos XMLObject hasAttribute() methods"
@@ -199,10 +200,10 @@ class TeuchosXMLTestCase(unittest.TestCase):
         for i in range(len(poem)):
             self.assertEquals(p.getContentLine(i), poem[i])
 
-    #def testXMLObjectToStringEmpty(self):
-    #    "Test Teuchos XMLObject toString() method, empty"
-    #    xmlObj = Teuchos.XMLObject()
-    #    self.assertRaises(RuntimeError, xmlObj.toString)
+    def testXMLObjectToStringEmpty(self):
+        "Test Teuchos XMLObject toString() method, empty"
+        xmlObj = Teuchos.XMLObject()
+        self.assertRaises(RuntimeError, xmlObj.toString)
 
     def testXMLObjectHeader(self):
         "Test Teuchos XMLObject header() method"

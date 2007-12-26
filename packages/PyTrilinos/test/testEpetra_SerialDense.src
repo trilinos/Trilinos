@@ -117,15 +117,15 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
 
     def testConstructor03(self):
         "Test Epetra.SerialDenseMatrix (int,int) constructor, negative rows"
-        if self.serial:
-            self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
-                              -self.rows, self.cols)
+        #if self.serial:
+        self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
+                          -self.rows, self.cols)
 
     def testConstructor04(self):
         "Test Epetra.SerialDenseMatrix (int,int) constructor, negative columns"
-        if self.serial:
-            self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
-                              self.rows, -self.cols)
+        #if self.serial:
+        self.assertRaises(Epetra.Error, Epetra.SerialDenseMatrix,
+                          self.rows, -self.cols)
 
     def testConstructor05(self):
         "Test Epetra.SerialDenseMatrix (int,int,bool) constructor"
