@@ -44,27 +44,20 @@ double * Epetra_NumPySerialDenseVector::getArray(PyObject * pyObject)
     {
       intp dimensions[ ] = {(intp) PyInt_AsLong(pyObject)};
       tmp_array = (PyArrayObject*) PyArray_SimpleNew(1,dimensions,'d');
-      if (tmp_array == NULL)
-      {
-	dimensions[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
-      }
-
-    // Else try to build a contiguous PyArrayObject from the pyObject
     }
+    // Else try to build a contiguous PyArrayObject from the pyObject
     else
     {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
     }
   }
 
-  // If this fails, build a single vector with zero length
+  // If these fail, clean up and throw a PythonException
   if (!tmp_array)
   {
-    intp dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
+    cleanup();
+    throw PythonException();
   }
-
   return (double*)(tmp_array->data);
 }
 
@@ -82,6 +75,11 @@ void Epetra_NumPySerialDenseVector::setArray()
     array = (PyArrayObject*)
       PyArray_SimpleNewFromData(1,dimensions,'d',
 				(void*)Epetra_SerialDenseVector::Values());
+    if (!array)
+    {
+      cleanup();
+      throw PythonException();
+    }
   }
 }
 
@@ -104,7 +102,7 @@ void Epetra_NumPySerialDenseVector::cleanup()
 
 // Constructors
 // =============================================================================
-Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector():
+Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector() :
   Epetra_SerialDenseVector()
 {
   // Synchronize the PyArrayObject with the Epetra_SerialDenseVector
@@ -112,7 +110,7 @@ Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector():
 }
 
 // =============================================================================
-Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(int length):
+Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(int length) :
   Epetra_SerialDenseVector(length)
 {
   // Synchronize the PyArrayObject with the Epetra_SerialDenseVector
@@ -120,7 +118,7 @@ Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(int length):
 }
 
 // =============================================================================
-Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(PyObject * pyObject):
+Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(PyObject * pyObject) :
   Epetra_SerialDenseVector(View, getArray(pyObject), getVectorSize(pyObject))
 {
   // Synchronize the PyArrayObject with the Epetra_SerialDenseVector
@@ -128,7 +126,8 @@ Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(PyObject * pyObject
 }
 
 // =============================================================================
-Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(const Epetra_SerialDenseVector & src):
+Epetra_NumPySerialDenseVector::Epetra_NumPySerialDenseVector(
+  const Epetra_SerialDenseVector & src) :
   Epetra_SerialDenseVector(src)
 {
   // Synchronize the PyArrayObject with the Epetra_SerialDenseVector

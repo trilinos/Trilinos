@@ -46,6 +46,7 @@ EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_Base.i \
 	     LOCA.TimeDependent.i ML.i MLAPI_PyMatrix.h NOX.__init__.i \
 	     NOX.Abstract.i NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
+	     PythonException.cpp PythonException.h \
 	     Teuchos.i Teuchos_Traits.i Teuchos_Comm.i \
 	     Teuchos_Epetra.i Teuchos_ParameterList.i Teuchos_XML.i \
 	     Teuchos_PythonParameter.cpp Teuchos_PythonParameter.h Thyra.i \

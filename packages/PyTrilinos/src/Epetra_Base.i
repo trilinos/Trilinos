@@ -29,6 +29,9 @@
 // @HEADER
 
 %{
+// PyTrilinos includes
+#include "PythonException.h"
+
 // Epetra includes
 #include "Epetra_Version.h"
 #include "Epetra_CombineMode.h"
@@ -97,6 +100,11 @@ except ImportError:
     $action
     if (PyErr_Occurred()) SWIG_fail;
   }
+  catch(PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
   catch(int errCode)
   {
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
@@ -108,32 +116,6 @@ except ImportError:
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// Define macro for handling exceptions thrown by Epetra_NumPy*
-// constructors
-%define %epetra_numpy_ctor_exception(className)
-%exception className::className
-{
-  try
-  {
-    $action
-    if (PyErr_Occurred())
-    {
-      className::cleanup();
-      SWIG_fail;
-    }
-  }
-  catch (int errCode)
-  {
-    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
-    SWIG_fail;
-  }
-  catch(...)
-  {
-    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
-  }
-}
-%enddef
 
 // General ignore directives
 %ignore *::operator=;                // Not overrideable in python

@@ -127,7 +127,6 @@ Epetra_NumPyIntVector::ExtractView
 Epetra_NumPyIntVector::Values
 "Return a numpy.ndarray that is a view of the IntVector."
 %rename(NumPyIntVector) Epetra_NumPyIntVector;
-%epetra_numpy_ctor_exception(Epetra_NumPyIntVector)
 %include "Epetra_NumPyIntVector.h"
 %pythoncode
 %{
@@ -283,7 +282,6 @@ Epetra_NumPyMultiVector::MaxValue
 Epetra_NumPyMultiVector::MeanValue
 "Return a numpy.ndarray of the mean values of the MultiVector."
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
-%epetra_numpy_ctor_exception(Epetra_NumPyMultiVector)
 %include "Epetra_NumPyMultiVector.h"
 %pythoncode
 %{
@@ -492,7 +490,6 @@ Epetra_NumPyVector::SumIntoGlobalValues
 Epetra_NumPyVector::SumIntoMyValues
 "Sum into local values at specified indices (and offset)"
 %rename(NumPyVector) Epetra_NumPyVector;
-%epetra_numpy_ctor_exception(Epetra_NumPyVector)
 %include "Epetra_NumPyVector.h"
 %pythoncode
 %{
@@ -663,7 +660,6 @@ Epetra_NumPyFEVector::ReplaceGlobalValues
 Epetra_NumPyFEVector::SumIntoGlobalValues
 "Sum into global values at specified indices (and offset)"
 %rename(NumPyFEVector) Epetra_NumPyFEVector;
-%epetra_numpy_ctor_exception(Epetra_NumPyFEVector)
 %include "Epetra_NumPyFEVector.h"
 %pythoncode
 %{

@@ -47,12 +47,11 @@ double * Epetra_NumPyVector::getArray(PyObject * pyObject)
   if (!tmp_array)
     tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
   
-  // If this fails, build a vector with length zero to prevent a Bus
-  // Error
+  // If this fails, clean up and throw a PythonException
   if (!tmp_array)
   {
-    intp dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
+    cleanup();
+    throw PythonException();
   }
 
   return (double*)(tmp_array->data);
@@ -74,8 +73,8 @@ double * Epetra_NumPyVector::getArray(const Epetra_BlockMap & blockMap,
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
       if (tmp_array == NULL)
       {
-	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
+	cleanup();
+	throw PythonException();
       }
       else
       {
@@ -93,15 +92,14 @@ double * Epetra_NumPyVector::getArray(const Epetra_BlockMap & blockMap,
     {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
 
-      // If this fails, build a single vector with all zeros
+      // If this fails, clean up and throw a PythonException
       if (!tmp_array)
       {
-	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
-
+	cleanup();
+	throw PythonException();
+      }
       // If the contiguous PyArrayObject built successfully, make sure
       // it has the correct number of dimensions
-      }
       else
       {
 	int  nd = tmp_array->nd;
@@ -172,6 +170,11 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool ze
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
 						      (void *)v);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
@@ -187,6 +190,11 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_Vector & source):
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
 						      (void *)v);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 }
 
 // =============================================================================
@@ -216,6 +224,11 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV,
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
 						      (void *)v);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 }
 
 // =============================================================================
@@ -233,6 +246,11 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV,
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
 						      (void *)v);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 }
 
 // =============================================================================

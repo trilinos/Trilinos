@@ -158,7 +158,6 @@
 // Epetra_NumPyIntSerialDenseMatrix support //
 //////////////////////////////////////////////
 %rename(NumPyIntSerialDenseMatrix) Epetra_NumPyIntSerialDenseMatrix;
-%epetra_numpy_ctor_exception(Epetra_NumPyIntSerialDenseMatrix)
 %include "Epetra_NumPyIntSerialDenseMatrix.h"
 %pythoncode
 %{
@@ -239,7 +238,6 @@ _Epetra.NumPyIntSerialDenseMatrix_swigregister(IntSerialDenseMatrix)
 // Epetra_NumPyIntSerialDenseVector support //
 //////////////////////////////////////////////
 %rename(NumPyIntSerialDenseVector) Epetra_NumPyIntSerialDenseVector;
-%epetra_numpy_ctor_exception(Epetra_NumPyIntSerialDenseVector)
 %include "Epetra_NumPyIntSerialDenseVector.h"
 %pythoncode
 %{
@@ -312,7 +310,6 @@ _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 // Epetra_NumPySerialDenseMatrix support //
 ///////////////////////////////////////////
 %rename(NumPySerialDenseMatrix) Epetra_NumPySerialDenseMatrix;
-%epetra_numpy_ctor_exception(Epetra_NumPySerialDenseMatrix)
 %include "Epetra_NumPySerialDenseMatrix.h"
 %pythoncode
 %{
@@ -393,7 +390,6 @@ _Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 // Epetra_NumPySerialDenseVector support //
 ///////////////////////////////////////////
 %rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
-%epetra_numpy_ctor_exception(Epetra_NumPySerialDenseVector)
 %include "Epetra_NumPySerialDenseVector.h"
 %pythoncode
 %{

@@ -45,11 +45,11 @@ int * Epetra_NumPyIntSerialDenseMatrix::getArray(PyObject * pyObject)
 						  FARRAY_FLAGS, NULL);
   }
 
-  // If this fails, build a single matrix with zero length
+  // If this fails, clean up and throw a PythonException
   if (!tmp_array)
   {
-    intp dimensions[ ] = { 0, 0 };
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(2, dimensions, PyArray_INT);
+    cleanup();
+    throw PythonException();
   }
 
   return (int*)(tmp_array->data);
@@ -73,6 +73,11 @@ void Epetra_NumPyIntSerialDenseMatrix::setArray(bool copy)
     array = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, dtype, 2,
 						  dimensions, NULL,
 						  (void*)data, FARRAY_FLAGS, NULL);
+    if (!array)
+    {
+      cleanup();
+      throw PythonException();
+    }
     if (copy)
     {
       int * oldData = Epetra_IntSerialDenseMatrix::A();
@@ -134,7 +139,8 @@ Epetra_NumPyIntSerialDenseMatrix::Epetra_NumPyIntSerialDenseMatrix(PyObject * py
 }
 
 // =============================================================================
-Epetra_NumPyIntSerialDenseMatrix::Epetra_NumPyIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix & src):
+Epetra_NumPyIntSerialDenseMatrix::Epetra_NumPyIntSerialDenseMatrix(
+  const Epetra_IntSerialDenseMatrix & src):
   Epetra_IntSerialDenseMatrix(src)
 {
   // Synchronize the PyArrayObject with the Epetra_IntSerialDenseMatrix

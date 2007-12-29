@@ -32,6 +32,7 @@
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
 
+#include "PythonException.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"

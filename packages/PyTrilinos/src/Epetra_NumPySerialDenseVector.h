@@ -32,6 +32,7 @@
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
 
+#include "PythonException.h"
 #include "Epetra_SerialDenseVector.h"
 
 class Epetra_NumPySerialDenseVector : public Epetra_SerialDenseVector

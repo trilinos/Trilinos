@@ -51,8 +51,8 @@ double * Epetra_NumPyFEVector::getArray(PyObject * pyObject)
   // Error
   if (!tmp_array)
   {
-    intp dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
+    cleanup();
+    throw PythonException();
   }
 
   return (double*)(tmp_array->data);
@@ -74,8 +74,8 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
       if (tmp_array == NULL)
       {
-	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
+	cleanup();
+	throw PythonException();
       }
       else
       {
@@ -85,30 +85,34 @@ double * Epetra_NumPyFEVector::getArray(const Epetra_BlockMap & blockMap,
 	  for (int i=0; i<defaultDims[0]; ++i) data[i] = 0.0;
 	}
       }
-
-    // PyObject argument is not an bool ... try to build a contiguous PyArrayObject from it
     }
+    // PyObject argument is not an bool ... try to build a contiguous
+    // PyArrayObject from it
     else
     {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
 
-      // If this fails, build a single vector with all zeros
+      // If this fails, clean up and throw a PythonException
       if (!tmp_array)
       {
-	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
-
+	cleanup();
+	throw PythonException();
+      }
       // If the contiguous PyArrayObject built successfully, make sure
       // it has the correct number of dimensions
-      }
       else
       {
 	int  nd = tmp_array->nd;
 	intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
 	if (arraySize != defaultDims[0])
 	{
-	  PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
-									PyArray_DOUBLE);
+	  PyArrayObject * myArray = 
+	    (PyArrayObject *) PyArray_SimpleNew(1, defaultDims, PyArray_DOUBLE);
+	  if (!myArray)
+	  {
+	    cleanup();
+	    throw PythonException();
+	  }
 	  double        * myData  = (double *) myArray->data;
 	  double        * tmpData = (double *) tmp_array->data;
 	  for (int i=0; i<defaultDims[0]; i++)
@@ -173,6 +177,11 @@ Epetra_NumPyFEVector::Epetra_NumPyFEVector(const Epetra_BlockMap & blockMap,
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
 						      (void *)v[0]);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
@@ -188,6 +197,11 @@ Epetra_NumPyFEVector::Epetra_NumPyFEVector(const Epetra_FEVector & source):
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
 						      (void *)v[0]);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 }
 
 // =============================================================================

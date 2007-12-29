@@ -45,14 +45,12 @@ int * Epetra_NumPyIntVector::getArray(PyObject * pyObject)
   if (!tmp_array)
     tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
   
-  // If this fails, build a vector with length zero to prevent a Bus
-  // Error
+  // If this fails, clean up and throw a PythonException
   if (!tmp_array)
   {
-    intp dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
+    cleanup();
+    throw PythonException();
   }
-
   return (int*)(tmp_array->data);
 }
 
@@ -70,46 +68,39 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
     if (PyBool_Check(pyObject))
     {
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
-      if (tmp_array == NULL)
-      {
-	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
-      }
-
+    }
     // PyObject argument is not a bool ... try to build a contiguous
     // PyArrayObject from it
-    }
     else
     {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
-
-      // If this fails, build a single vector with zero length
-      if (tmp_array == NULL)
+    }
+    // If any PyArray factory functions fail, clean up and throw a
+    // PythonException
+    if (!tmp_array)
+    {
+      cleanup();
+      throw PythonException();
+    }
+    int  nd = tmp_array->nd;
+    intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
+    if (arraySize != defaultDims[0])
+    {
+      PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
+								    PyArray_INT);
+      if (!myArray)
       {
-	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
-
-      // If the contiguous PyArrayObject built successfully, make sure
-      // it has the correct number of dimensions
+	cleanup();
+	throw PythonException();
       }
-      else
+      int           * myData  = (int *) myArray->data;
+      int           * tmpData = (int *) tmp_array->data;
+      for (int i=0; i<defaultDims[0]; i++)
       {
-	int  nd = tmp_array->nd;
-	intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
-	if (arraySize != defaultDims[0])
-	{
-	  PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
-									PyArray_INT);
-	  int           * myData  = (int *) myArray->data;
-	  int           * tmpData = (int *) tmp_array->data;
-	  for (int i=0; i<defaultDims[0]; i++)
-	  {
-	    myData[i] = tmpData[i];
-	  }
-	  Py_XDECREF(tmp_array);
-	  tmp_array = myArray;
-	}
+	myData[i] = tmpData[i];
       }
+      Py_XDECREF(tmp_array);
+      tmp_array = myArray;
     }
   }
   return (int*)(tmp_array->data);
@@ -146,7 +137,8 @@ void Epetra_NumPyIntVector::cleanup()
 
 // Constructors
 // =============================================================================
-Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap, bool zeroOut):
+Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap,
+					     bool zeroOut):
   Epetra_IntVector(blockMap, zeroOut)
 {
   // Create the array object
@@ -155,7 +147,11 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap, b
   Epetra_IntVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_INT,
 						      (void *)v);
-
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
 }
@@ -170,6 +166,11 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_IntVector & source):
   Epetra_IntVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_INT,
 						      (void *)v);
+  if (!array)
+  {
+    cleanup();
+    throw PythonException();
+  }
 }
 
 // =============================================================================
