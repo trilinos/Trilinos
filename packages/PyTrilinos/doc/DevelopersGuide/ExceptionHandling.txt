@@ -10,9 +10,12 @@ Trilinos header file ``%include`` directives::
     %include "exception.i"
     %exception
     {
-      try {
+      try
+      {
         $action
-      } catch(...) {
+      }
+      catch(...)
+      {
         SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
       }
     }
@@ -36,17 +39,19 @@ converted to type ``UnknownError`` with a nearly meaningless error
 message.  Realistically, we need to convert a wider range of
 exceptions to more meaningful python exception types, and produce more
 useful error messages.  SWIG also provides a macro for treating most
-standard exceptions, converting them to appropriate python exceptions
-and extracting their error message from their ``what()`` method.
-Simply change the ``%exception`` directive to::
+standard C++ exceptions, converting them to appropriate python
+exceptions and extracting their error message from their ``what()``
+method.  Simply change the ``%exception`` directive to::
 
     %exception
     {
-      try {
+      try
+      {
         $action
       }
       SWIG_CATCH_STDEXCEPT
-      catch(...) {
+      catch(...)
+      {
         SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
       }
     }
@@ -63,17 +68,23 @@ Teuchos exception handler::
 
     %exception
     {
-      try {
+      try
+      {
         $action
         if (PyErr_Occurred()) SWIG_fail;
-      } catch(Teuchos::Exceptions::InvalidParameterType & e) {
+      }
+      catch(Teuchos::Exceptions::InvalidParameterType & e)
+      {
         SWIG_exception(SWIG_TypeError, e.what());
-      } catch(Teuchos::Exceptions::InvalidParameter & e) {
+      }
+      catch(Teuchos::Exceptions::InvalidParameter & e)
+      {
         PyErr_SetString(PyExc_KeyError, e.what());
         SWIG_fail;
       }
       SWIG_CATCH_STDEXCEPT
-      catch(...) {
+      catch(...)
+      {
         SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
       }
     }

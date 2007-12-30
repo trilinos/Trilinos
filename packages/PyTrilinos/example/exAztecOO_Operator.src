@@ -37,7 +37,7 @@
 # vector, but has no structure -- that is, there is no "row" or "graph".
 # Basically, an Epetra_Operator is defined by two methods: Apply() and
 # ApplyInverse().  In this case, the operator represents a 1D Laplacian on a
-# structure grid.  The linear system is solved using AztecOO and no
+# structured grid.  The linear system is solved using AztecOO and no
 # preconditioning (since algebraic preconditioners are hard to define for pure
 # Operator classes).
 #
@@ -55,6 +55,8 @@ parser.add_option("-t", "--testharness", action="store_true",
                   help="test local build modules; prevent loading system-installed modules")
 parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
+parser.add_option("-n", type="int", dest="nodes", default=100,
+                  help="number of nodes [default 100]")
 options,args = parser.parse_args()
 if options.testharness:
     import setpath
@@ -89,24 +91,35 @@ class Laplace1D_Operator(Epetra.Operator):
             self.__comm = Epetra.PyComm()
         else:
             self.__comm = comm
-        # Default indexes
+        # Create the range map
+        self.__map = Epetra.Map(n,0,self.__comm)
+        # Range indexes
         self.__y0 =  1
         self.__y1 = -1
-        # Create the range map
-        self.__rangeMap = Epetra.Map(n,0,self.__comm)
-        # Create the domain map
-        myIndexes = list(self.__rangeMap.MyGlobalElements())
         if self.__comm.MyPID() > 0:
-            self.__y0 = None    # Equivalent to index 0
-            myIndexes.insert(0,myIndexes[0]-1)
+            self.__y0 = None
         if self.__comm.MyPID() < self.__comm.NumProc()-1:
-            self.__y1 = None    # Equivalent to last index
-            myIndexes.append(myIndexes[-1]+1)
-        self.__domainMap = Epetra.Map(-1, myIndexes, 0, self.__comm)
+            self.__y1 = None
+        # Build the Import object
+        self.buildImporter()
         # Store a label for the operator
         self.__label = "1D Laplace Operator"
         # Transpose flag
         self.__useTranspose = False
+
+    def buildImporter(self):
+        "Build the Import object for parallel communication"
+        myPID   = self.__comm.MyPID()
+        numProc = self.__comm.NumProc()
+        map     = self.__map
+        myGIDs  = map.MyGlobalElements()
+        importGIDs = list(map.MyGlobalElements())
+        if myPID > 0:
+            importGIDs.insert(0,myGIDs[ 0]-1)
+        if myPID < numProc-1:
+            importGIDs.append(myGIDs[-1]+1)
+        self.__importMap = Epetra.Map(-1, importGIDs, 0, self.__comm)
+        self.__importer  = Epetra.Import(self.__importMap, map)
 
     def __str__(self):
         "Return the operator's label"
@@ -118,11 +131,11 @@ class Laplace1D_Operator(Epetra.Operator):
 
     def OperatorDomainMap(self):
         "Required implementation of Epetra.Operator class"
-        return self.__domainMap
+        return self.__map
 
     def OperatorRangeMap(self):
         "Required implementation of Epetra.Operator class"
-        return self.__rangeMap
+        return self.__map
 
     def Comm(self):
         "Required implementation of Epetra.Operator class"
@@ -135,12 +148,15 @@ class Laplace1D_Operator(Epetra.Operator):
         operator.
         """
         try:
+            # Import the off-processor values
+            xImp = Epetra.MultiVector(self.__importMap, x.NumVectors())
+            xImp.Import(x, self.__importer, Epetra.Insert)
             # Apply operator to interior points
-            y[:,self.__y0:self.__y1] = 2.0 * x[:,1:-1] - x[:,:-2] - x[:,2:]
-            # Apply left boundary condition
+            y[:,self.__y0:self.__y1] = 2.0 * xImp[:,1:-1] - xImp[:,:-2] - \
+                                       xImp[:,2:]
+            # Apply boundary conditions
             if self.__comm.MyPID() == 0:
                 y[:,:1] = x[:,:1]
-            # Apply right boundary condition
             if self.__comm.MyPID() == self.__comm.NumProc() - 1:
                 y[:,-1:] = x[:,-1:]
             # NB: For the boundary calculations, I wanted to use
@@ -148,9 +164,9 @@ class Laplace1D_Operator(Epetra.Operator):
             #     y[:, 0] = x[:, 0]
             #     y[:,-1] = x[:,-1]
             #
-            # but this raised a ValueError: Object too deep for desired array on
-            # beowulf, which was running numpy 0.9.8 at the time.  The simpler
-            # notation in the comment above works for newer versions of numpy.
+            # but this raised a ValueError: Object too deep for desired array
+            # under numpy 0.9.8.  The simpler notation in the comment above
+            # works for newer versions of numpy.
 
         except Exception, e:
             print e
@@ -183,7 +199,7 @@ class Laplace1D_Operator(Epetra.Operator):
 def main():
 
     # Problem initialization
-    n     = 100
+    n     = options.nodes
     bc0   = 0.0
     bc1   = 1.0
     tol   = 1.0e-5
@@ -192,7 +208,7 @@ def main():
 
     # Create solution and RHS vectors
     x = Epetra.Vector(lap1d.OperatorDomainMap())
-    b = Epetra.Vector(lap1d.OperatorRangeMap() )
+    b = Epetra.Vector(lap1d.OperatorRangeMap())
 
     # Initialize vectors: x will be a straight line between its boundary values,
     # and b=1, with its boundary values equal to x on the boundaries

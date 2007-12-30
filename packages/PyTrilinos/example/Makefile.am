@@ -90,13 +90,12 @@ endif
 if HAVE_PYTRILINOS_AZTECOO
 if HAVE_PYTRILINOS_EPETRA
 if HAVE_PYTRILINOS_GALERI
-AZTECOO_EX1 = exAztecOO.py
+AZTECOO_EX1 = exAztecOO.py exAztecOO_Operator.py
 endif
 if HAVE_MPI
 AZTECOO_EX2 = 
 else
-AZTECOO_EX2 = exAztecOO_Operator.py exAztecOO_RowMatrix.py \
-	      exAztecOO_BasicRowMatrix.py
+AZTECOO_EX2 = exAztecOO_RowMatrix.py exAztecOO_BasicRowMatrix.py
 endif
 AZTECOO_EXAMPLES = $(AZTECOO_EX1) $(AZTECOO_EX2)
 endif
