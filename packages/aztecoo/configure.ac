@@ -336,7 +336,7 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
+# Define F77_FUNC that will be used to link with Fortran subroutines.
 AC_F77_WRAPPERS
 
 # For now we will consider AztecOO to be dependent on Triutils,
@@ -367,14 +367,10 @@ AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 
 AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 
-# Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_LAPACKLIB
-TAC_ARG_WITH_BLASLIB
-
 # find or choose to supply valid blas and lapack libraries
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+  TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+  TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.

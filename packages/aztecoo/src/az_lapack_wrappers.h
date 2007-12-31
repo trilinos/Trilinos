@@ -34,21 +34,21 @@
 
 #if defined(CRAY_T3X)
 
-#define DGETRF_F77  F77_FUNC(sgetrf,SGETRF)
-#define DGETRS_F77  F77_FUNC(sgetrs,SGETRS)
-#define DPOTRF_F77  F77_FUNC(spotrf,SPOTRF)
-#define DGETRI_F77  F77_FUNC(sgetri,SGETRI)
-#define DSTEBZ_F77  F77_FUNC(sstebz,SSTEBZ)
-#define DGEEV_F77   F77_FUNC(sgeev,SGEEV)
+#define DGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
+#define DGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
+#define DPOTRF_F77  F77_BLAS_MANGLE(spotrf,SPOTRF)
+#define DGETRI_F77  F77_BLAS_MANGLE(sgetri,SGETRI)
+#define DSTEBZ_F77  F77_BLAS_MANGLE(sstebz,SSTEBZ)
+#define DGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
 
 #else
 
-#define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
-#define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
-#define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
-#define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
-#define DSTEBZ_F77  F77_FUNC(dstebz,DSTEBZ)
-#define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
+#define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
+#define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
+#define DPOTRF_F77  F77_BLAS_MANGLE(dpotrf,DPOTRF)
+#define DGETRI_F77  F77_BLAS_MANGLE(dgetri,DGETRI)
+#define DSTEBZ_F77  F77_BLAS_MANGLE(dstebz,DSTEBZ)
+#define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 
 #endif
 
