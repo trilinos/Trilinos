@@ -26,7 +26,7 @@
 # ************************************************************************
 # @HEADER
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.galeri
 
 EXEEXT = .exe
 
