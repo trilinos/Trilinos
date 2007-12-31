@@ -58,6 +58,8 @@ parser.add_option("-t", "--testharness", action="store_true",
                   help="test local build modules; prevent loading system-installed modules")
 parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
+parser.add_option("-n", type="int", dest="nodes", default=100,
+                  help="number of nodes [default 100]")
 options,args = parser.parse_args()
 if options.testharness:
     import setpath
@@ -98,14 +100,21 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
         # Create the row map
         self.__rowMap = Epetra.Map(n, 0, self.__comm)
         # Create the col map
-        myIndexes = list(self.__rowMap.MyGlobalElements())
-        if self.__comm.MyPID() > 0:
-            self.__y0 = None    # Equivalent to index 0
-            myIndexes.insert(0,myIndexes[0]-1)
+        colIndexes = list(self.__rowMap.MyGlobalElements())
         if self.__comm.MyPID() < self.__comm.NumProc()-1:
             self.__y1 = None    # Equivalent to last index
-            myIndexes.append(myIndexes[-1]+1)
-        self.__colMap = Epetra.Map(-1, myIndexes, 0, self.__comm)
+            colIndexes.append(colIndexes[-1]+1)
+        if self.__comm.MyPID() > 0:
+            self.__y0 = None    # Equivalent to index 0
+            colIndexes.append(colIndexes[0]-1)
+        self.__colMap = Epetra.Map(-1, colIndexes, 0, self.__comm)
+        # Create the import object
+        self.__importer = Epetra.Import(self.__colMap, self.__rowMap)
+        # Create the ordered column map and importer
+        colIndexes.sort()
+        self.__orderedColMap   = Epetra.Map(-1, colIndexes, 0, self.__comm)
+        self.__orderedImporter = Epetra.Import(self.__orderedColMap,
+                                               self.__rowMap)
         # Store a label for the row matrix
         self.__label = "1D Laplace Row Matrix"
         # Store the matrix properties
@@ -155,7 +164,7 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
 
     def OperatorDomainMap(self):
         "Required implementation of Epetra.Operator class"
-        return self.__colMap
+        return self.__rowMap
 
     def OperatorRangeMap(self):
         "Required implementation of Epetra.Operator class"
@@ -213,12 +222,18 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
     def Multiply(self, UseTranspose, x, y):
         "Required implementation of Epetra.RowMatrix class"
         try:
+            # Import the off-processor values
+            if not x.Map().SameAs(self.__rowMap):
+                print "Vector x must be distributed via the matrix row map"
+                return -1
+            xImp = Epetra.MultiVector(self.__orderedColMap, x.NumVectors())
+            xImp.Import(x, self.__orderedImporter, Epetra.Insert)
             # Apply operator to interior points
-            y[:,self.__y0:self.__y1] = 2.0 * x[:,1:-1] - x[:,:-2] - x[:,2:]
-            # Apply left boundary condition
+            y[:,self.__y0:self.__y1] = 2.0 * xImp[:,1:-1] - xImp[:,:-2] - \
+                                       xImp[:,2:]
+            # Apply left boundary conditions
             if self.__comm.MyPID() == 0:
                 y[:,:1] = x[:,:1]
-            # Apply right boundary condition
             if self.__comm.MyPID() == self.__comm.NumProc() - 1:
                 y[:,-1:] = x[:,-1:]
             # NB: For the boundary calculations, I wanted to use
@@ -229,6 +244,7 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
             # but this raised a ValueError: Object too deep for desired array on
             # beowulf, which was running numpy 0.9.8 at the time.  The simpler
             # notation in the comment above works for newer versions of numpy.
+
         except Exception, e:
             print e
             return -1
@@ -313,23 +329,24 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
 
     def RowMatrixImporter(self):
         "Required implementation of Epetra.RowMatrix class"
-        return Epetra.Import(self.__rowMap, self.__colMap)
+        return self.__importer
 
 ################################################################################
 
 def main():
 
     # Problem initialization
-    n     = 100
-    bc0   = 0.0
-    bc1   = 1.0
-    tol   = 1.0e-5
-    comm  = Epetra.PyComm()
-    lap1d = Laplace1D_Matrix(n, comm)
+    n       = options.nodes
+    bc0     = 0.0
+    bc1     = 1.0
+    tol     = 1.0e-5
+    comm    = Epetra.PyComm()
+    iAmRoot = (comm.MyPID() == 0)
+    lap1d   = Laplace1D_Matrix(n, comm)
 
     # Create solution and RHS vectors
-    x = Epetra.Vector(lap1d.RowMatrixColMap())
-    b = Epetra.Vector(lap1d.RowMatrixRowMap())
+    x = Epetra.Vector(lap1d.OperatorDomainMap())
+    b = Epetra.Vector(lap1d.OperatorRangeMap())
 
     # Initialize vectors: x will be a straight line between its boundary values,
     # and b=1, with its boundary values equal to x on the boundaries
@@ -349,7 +366,7 @@ def main():
 
     # Solve the problem
     solver.Iterate(5*n, tol)
-    if comm.MyPID() == 0:
+    if iAmRoot:
         if solver.ScaledResidual() < tol: print "End Result: TEST PASSED"
         else:                             print "End Result: TEST FAILED"
 
