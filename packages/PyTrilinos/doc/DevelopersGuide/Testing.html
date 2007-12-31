@@ -291,10 +291,10 @@ ul.auto-toc {
 <body>
 <div class="document" id="testing">
 <h1 class="title">Testing</h1>
-<p>There are two directories in the PyTrilinos package that provide test
-scripts, <tt class="docutils literal"><span class="pre">example</span></tt> and <tt class="docutils literal"><span class="pre">test</span></tt>.  Generally speaking, unit tests go
-in the <tt class="docutils literal"><span class="pre">test</span></tt> directory and &quot;descriptive&quot; example scripts go in
-<tt class="docutils literal"><span class="pre">example</span></tt>.</p>
+<p>There are two directories in the PyTrilinos package that provide
+python scripts for testing PyTrilinos, <tt class="docutils literal"><span class="pre">example</span></tt> and <tt class="docutils literal"><span class="pre">test</span></tt>.
+Generally speaking, unit tests go in the <tt class="docutils literal"><span class="pre">test</span></tt> directory and
+descriptive or demonstrative example scripts go in <tt class="docutils literal"><span class="pre">example</span></tt>.</p>
 <div class="section">
 <h1><a id="naming-conventions" name="naming-conventions">Naming Conventions</a></h1>
 <p>Unit tests scripts shall begin with <tt class="docutils literal"><span class="pre">test</span></tt>, followed by the package
@@ -339,6 +339,26 @@ be conditionally enabled based on the value of
 of the package.</p>
 </div>
 <div class="section">
+<h1><a id="running-all-tests" name="running-all-tests">Running All Tests</a></h1>
+<p>To run all of the enabled tests, first make sure they are all
+up-to-date:</p>
+<pre class="literal-block">
+$ cd BUILD/packages/PyTrilinos
+$ make tests examples
+</pre>
+<p>Then you can use the test harness <tt class="docutils literal"><span class="pre">make</span></tt> target to run all of the
+tests:</p>
+<pre class="literal-block">
+$ make runtests-serial
+</pre>
+<p>or:</p>
+<pre class="literal-block">
+$ make runtests-mpi
+</pre>
+<p>The results of all of the tests can be found in
+<tt class="docutils literal"><span class="pre">test/runtests-results</span></tt> directory.</p>
+</div>
+<div class="section">
 <h1><a id="test-script-conventions" name="test-script-conventions">Test Script Conventions</a></h1>
 <p>All test scripts shall use the <tt class="docutils literal"><span class="pre">optparse</span></tt> module to parse command
 line options and support the following options:</p>
@@ -360,7 +380,7 @@ directly:</p>
 import Teuchos
 import Epetra
 </pre>
-<p>while system-installed modules are imported thus:</p>
+<p>while system-installed modules are imported like this:</p>
 <pre class="literal-block">
 from PyTrilinos import Teuchos
 from PyTrilinos import Epetra
@@ -385,23 +405,28 @@ which tests pass and which do not, especially in parallel.</p>
 </div>
 <div class="section">
 <h1><a id="unit-tests" name="unit-tests">Unit Tests</a></h1>
-<p>Unit tests are based on the <tt class="docutils literal"><span class="pre">unittest</span></tt> module.  Test case classes
-inherit from <tt class="docutils literal"><span class="pre">unittest.TestCase</span></tt>.  Individual tests are implemented
-as methods of these classes that begin with <tt class="docutils literal"><span class="pre">test</span></tt>.  See the python
-documentation for details.</p>
-<p>One test script can have one or more <tt class="docutils literal"><span class="pre">TestCase</span></tt> classes.  Each
-should be added to a <tt class="docutils literal"><span class="pre">unittest.TestSuite</span></tt>.</p>
+<p>Unit tests are based on the <tt class="docutils literal"><span class="pre">unittest</span></tt> python library module.  Test
+case classes inherit from <tt class="docutils literal"><span class="pre">unittest.TestCase</span></tt>.  Individual tests are
+implemented as methods of these classes that begin with <tt class="docutils literal"><span class="pre">test</span></tt>.  See
+the python documentation (<a class="reference" href="http://www.python.org">http://www.python.org</a>) for details.</p>
+<p>Each unit test script can have one or more <tt class="docutils literal"><span class="pre">TestCase</span></tt> classes.  In
+<tt class="docutils literal"><span class="pre">main()</span></tt>, each test case class should be added to a
+<tt class="docutils literal"><span class="pre">unittest.TestSuite</span></tt> object named <tt class="docutils literal"><span class="pre">suite</span></tt>.</p>
 <p>Unit tests shall print, from processor 0, a header with a message such
 as &quot;Testing Epetra.Object&quot; with a line of asterisks above and below
-the message.</p>
-<p>For a suite of test cases called <tt class="docutils literal"><span class="pre">suite</span></tt>, the tests should be run
-with:</p>
+the message:</p>
+<pre class="literal-block">
+*********************
+Testing Epetra.Object
+*********************
+</pre>
+<p>The suite of tests should be run with:</p>
 <pre class="literal-block">
 verbosity = options.verbosity * int(iAmRoot)
 result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 </pre>
 <p>and the success should be determined and output via (for the case of
-an Epetra communnicator):</p>
+an Epetra communicator):</p>
 <pre class="literal-block">
 errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
 if errsPlusFails == 0 and iAmRoot: print &quot;End Result: TEST PASSED&quot;
@@ -420,7 +445,7 @@ with unit test output whenever possible.</p>
 </div>
 <div class="footer">
 <hr class="footer" />
-Generated on: 2007-12-31 05:37 UTC.
+Generated on: 2007-12-31 15:45 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

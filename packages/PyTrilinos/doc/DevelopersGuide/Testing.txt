@@ -1,10 +1,10 @@
 Testing
 =======
 
-There are two directories in the PyTrilinos package that provide test
-scripts, ``example`` and ``test``.  Generally speaking, unit tests go
-in the ``test`` directory and "descriptive" example scripts go in
-``example``.
+There are two directories in the PyTrilinos package that provide
+python scripts for testing PyTrilinos, ``example`` and ``test``.
+Generally speaking, unit tests go in the ``test`` directory and
+descriptive or demonstrative example scripts go in ``example``.
 
 Naming Conventions
 ------------------
@@ -53,6 +53,27 @@ be conditionally enabled based on the value of
 ``HAVE_PYTRILINOS_PACKAGE``, where ``PACKAGE`` is replaced by the name
 of the package.
 
+Running All Tests
+-----------------
+
+To run all of the enabled tests, first make sure they are all
+up-to-date::
+
+    $ cd BUILD/packages/PyTrilinos
+    $ make tests examples
+
+Then you can use the test harness ``make`` target to run all of the
+tests::
+
+    $ make runtests-serial
+
+or::
+
+    $ make runtests-mpi
+
+The results of all of the tests can be found in
+``test/runtests-results`` directory.
+
 Test Script Conventions
 -----------------------
 
@@ -77,7 +98,7 @@ directly::
     import Teuchos
     import Epetra
 
-while system-installed modules are imported thus::
+while system-installed modules are imported like this::
 
     from PyTrilinos import Teuchos
     from PyTrilinos import Epetra
@@ -105,26 +126,30 @@ which tests pass and which do not, especially in parallel.
 Unit Tests
 ----------
 
-Unit tests are based on the ``unittest`` module.  Test case classes
-inherit from ``unittest.TestCase``.  Individual tests are implemented
-as methods of these classes that begin with ``test``.  See the python
-documentation for details.
+Unit tests are based on the ``unittest`` python library module.  Test
+case classes inherit from ``unittest.TestCase``.  Individual tests are
+implemented as methods of these classes that begin with ``test``.  See
+the python documentation (http://www.python.org) for details.
 
-One test script can have one or more ``TestCase`` classes.  Each
-should be added to a ``unittest.TestSuite``.
+Each unit test script can have one or more ``TestCase`` classes.  In
+``main()``, each test case class should be added to a
+``unittest.TestSuite`` object named ``suite``.
 
 Unit tests shall print, from processor 0, a header with a message such
 as "Testing Epetra.Object" with a line of asterisks above and below
-the message.
+the message::
 
-For a suite of test cases called ``suite``, the tests should be run
-with::
+    *********************
+    Testing Epetra.Object
+    *********************
+
+The suite of tests should be run with::
 
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
 and the success should be determined and output via (for the case of
-an Epetra communnicator)::
+an Epetra communicator)::
 
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
