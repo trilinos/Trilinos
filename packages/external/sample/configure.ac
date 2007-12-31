@@ -170,7 +170,7 @@ AC_PREREQ(2.61)
 
 # #np# - Yet another opportunity to remove code if you aren't
 # using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
+# Define F77_FUNC that will be used to link with Fortran subroutines.
 #AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
@@ -180,11 +180,6 @@ AC_PREREQ(2.61)
 #  #np# These lines can be removed if the math lib is not needed.
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-dnl Check for user-specified names for BLAS lib
-#TAC_ARG_WITH_BLASLIB
-
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
 #fi
 # end of the list of libraries that don't need to be checked for if

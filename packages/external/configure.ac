@@ -166,11 +166,6 @@ AC_PREREQ(2.61)
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-dnl Check for user-specified names for BLAS lib
-#TAC_ARG_WITH_BLASLIB
-
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-
 #fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
