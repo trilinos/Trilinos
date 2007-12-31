@@ -4,7 +4,7 @@ RFLAGS = --generator --time --no-xml-declaration
 
 # Web pages that need to be made
 WEB_PAGES = AddingModules.html BuildSystem.html Documentation.html \
-	    ExceptionHandling.html
+	    ExceptionHandling.html Testing.html
 
 # List all of the subdirectories here for recursive make
 SUBDIRS = 
