@@ -332,7 +332,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, ml, AMESOS_ML, HAVE_AMESOS_ML, yes, [Enab
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, galeri, AMESOS_GALERI, HAVE_AMESOS_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some Amesos examples to construct the linear system.], [Enable Galeri support. Galeri, a Trilinos package, is used in some Amesos examples to construct the linear system. Can be overridden with --disable-amesos-galeri.])
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -343,34 +343,12 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
+# Define F77_FUNC that will be used to link with Fortran subroutines.
 AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for libraries
-# ------------------------------------------------------------------------
-
-# If tests, examples and libcheck are disabled, we don't have to check
-# for these libraries.
-if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-
-dnl Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_BLASLIB
-# ------------------------------  ABC
-TAC_ARG_WITH_LAPACKLIB
-# ------------------------------  ABCD
-
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
-# ------------------------------  ABCDE
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
-
-fi
-# end of the list of libraries that don't need to be checked for if
-# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for addons
@@ -465,17 +443,6 @@ AC_LANG_PUSH([C])
 # AC_LANG([C])
 
 # Fix libraries 
-
-# Put LIBS before BLAS_LIBS instead of after because 3PL's tend to need to
-# link to the BLAS (ex UMFPACK), and any other libs needed to link to the BLAS
-# should be included in the --with-blas value.
-LIBS="${LIBS} ${BLAS_LIBS} ${FLIBS}"
-# TAC_ARG_CONFIG_MPI takes care of this.  TAC_ARG_CHECK_MPI makes sure that
-# this is taken care of before this point.  This was also causing a problem
-# on Atlantis because of the spaces on either side of LIBS.
-# if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-#   LIBS = "${LIBS} ${MPI_LIBS}"
-# fi
 
 #  =====  #
 #  K L U  #

@@ -17,7 +17,7 @@ _AMESOS_INCLUDES = \
   -I@abs_top_srcdir@/src/UFsparse/UFconfig \
   -I@abs_top_builddir@/src
 
-_AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lamesos $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+_AMESOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lamesos @LIBS@ $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS)
 
 @USING_GNUMAKE_TRUE@AMESOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_AMESOS_INCLUDES))
 @USING_GNUMAKE_TRUE@AMESOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_AMESOS_LIBS))
