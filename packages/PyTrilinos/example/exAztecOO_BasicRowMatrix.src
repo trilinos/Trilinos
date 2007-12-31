@@ -58,6 +58,8 @@ parser.add_option("-t", "--testharness", action="store_true",
                   help="test local build modules; prevent loading system-installed modules")
 parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
+parser.add_option("-n", type="int", dest="nodes", default=100,
+                  help="number of nodes [default 100]")
 options,args = parser.parse_args()
 if options.testharness:
     import setpath
@@ -95,16 +97,16 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
         # Default indexes
         self.__y0 =  1
         self.__y1 = -1
-        # Create and store the row and column maps
+        # Create the row map
         rowMap = Epetra.Map(n, 0, self.Comm())
-        myIndexes = list(rowMap.MyGlobalElements())
-        if self.Comm().MyPID() > 0:
-            self.__y0 = None    # Equivalent to index 0
-            myIndexes.insert(0,myIndexes[0]-1)
+        colIndexes = list(rowMap.MyGlobalElements())
         if self.Comm().MyPID() < self.Comm().NumProc()-1:
             self.__y1 = None    # Equivalent to last index
-            myIndexes.append(myIndexes[-1]+1)
-        colMap = Epetra.Map(-1, myIndexes, 0, self.Comm())
+            colIndexes.append(colIndexes[-1]+1)
+        if self.Comm().MyPID() > 0:
+            self.__y0 = None    # Equivalent to index 0
+            colIndexes.append(colIndexes[0]-1)
+        colMap = Epetra.Map(-1, colIndexes, 0, self.Comm())
         self.SetMaps(rowMap, colMap)
         # Store a label for the row matrix
         self.__label = "1D Laplace Basic Row Matrix"
@@ -202,7 +204,7 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
 def main():
 
     # Problem initialization
-    n     = 100
+    n     = options.nodes
     bc0   = 0.0
     bc1   = 1.0
     tol   = 1.0e-5
@@ -210,8 +212,8 @@ def main():
     lap1d = Laplace1D_Matrix(n, comm)
 
     # Create solution and RHS vectors
-    x = Epetra.Vector(lap1d.RowMatrixColMap())
-    b = Epetra.Vector(lap1d.RowMatrixRowMap())
+    x = Epetra.Vector(lap1d.OperatorDomainMap())
+    b = Epetra.Vector(lap1d.OperatorRangeMap())
 
     # Initialize vectors: x will be a straight line between its boundary values,
     # and b=1, with its boundary values equal to x on the boundaries

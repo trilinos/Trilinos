@@ -24,7 +24,7 @@ PyTrilinos To Do List
   - Examples
 
 * AztecOO
-  - exAztecOO_RowMatrix.py and exAztecOO_BasicRowMatrix.py in parallel
+  - exAztecOO_BasicRowMatrix.py in parallel
   - Unit tests
   - Examples
 
