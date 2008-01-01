@@ -639,8 +639,6 @@ TAC_ARG_WITH_INCDIRS
 # ------------------------------------------------------------------------
 # Checks for basic libraries for examples and/or lapack support
 # ------------------------------------------------------------------------
-TAC_ARG_WITH_BLASLIB
-TAC_ARG_WITH_LAPACKLIB
 
 # Define F77_FUNC - used for correctly munging Fortran function calls
 if test X${ADDON_lapack} = Xyes || test X${REQUIRE_LIB_CHECK} = Xyes || test X${BUILD_LIBLOCA} = Xyes; then
@@ -660,10 +658,10 @@ if test X${REQUIRE_LIB_CHECK} = Xyes || test X${ac_cv_use_libcheck} = Xyes; then
   LIBS=" ${FLIBS} ${LIBS}"
 
   # Find valid BLAS
-  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
+  TAC_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
 
   # Find valid LAPACK
-  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
+  TAC_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
 
   # Find valid LAPACK DGGEV function
   ACX_DGGEV
