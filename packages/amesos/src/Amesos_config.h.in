@@ -6,6 +6,9 @@
 /* Using pre July 2005 Superlu */
 #undef AMESOS_SUPERLU_PRE_JULY2005
 
+/* Define the Fortran name mangling to be used for the BLAS */
+#undef F77_BLAS_MANGLE
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef F77_DUMMY_MAIN
@@ -87,6 +90,9 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define if you have a BLAS library. */
+#undef HAVE_BLAS
+
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
@@ -128,6 +134,9 @@
 
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
+
+/* Define if you have LAPACK library. */
+#undef HAVE_LAPACK
 
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
