@@ -40,8 +40,7 @@ noinst_PROGRAMS = ml_nox_1Delasticity_example$(EXEEXT)
 subdir = examples/ml/NonlinML
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
-	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -93,7 +92,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@

@@ -72,8 +72,7 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
-	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -125,7 +124,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
