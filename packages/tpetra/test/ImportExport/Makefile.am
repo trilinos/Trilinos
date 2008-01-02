@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.tpetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = ImportExport_test
@@ -37,13 +39,7 @@ ImportExport_test_DEPENDENCIES = \
 	$(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-ImportExport_test_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src
+ImportExport_test_CXXFLAGS = $(TPETRA_INCLUDES)
 
-ImportExport_test_LDADD = \
-	$(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(FLIBS)
+ImportExport_test_LDADD = $(TPETRA_LIBS)
 

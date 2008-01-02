@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.tpetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = Vector_test
@@ -35,10 +37,7 @@ Vector_test_SOURCES = $(srcdir)/cxx_main.cpp
 Vector_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-Vector_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src
+Vector_test_CXXFLAGS = $(TPETRA_INCLUDES)
 
-Vector_test_LDADD = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+Vector_test_LDADD = $(TPETRA_LIBS)
 

@@ -72,8 +72,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_new_count_syntax.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
-	$(top_srcdir)/config/acx_blas.m4 \
-	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
@@ -96,7 +94,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_BlockElementSpace_test_OBJECTS =  \
 	BlockElementSpace_test-cxx_main.$(OBJEXT)
 BlockElementSpace_test_OBJECTS = $(am_BlockElementSpace_test_OBJECTS)
-am__DEPENDENCIES_1 =
 BlockElementSpace_test_LINK = $(CXXLD) \
 	$(BlockElementSpace_test_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -120,7 +117,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -147,7 +143,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -234,13 +229,8 @@ BlockElementSpace_test_SOURCES = $(srcdir)/cxx_main.cpp
 BlockElementSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockElementSpace_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src
-
-BlockElementSpace_test_LDADD = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(FLIBS)
-
+BlockElementSpace_test_CXXFLAGS = $(TPETRA_INCLUDES)
+BlockElementSpace_test_LDADD = $(TPETRA_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -491,6 +481,8 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+include $(top_builddir)/Makefile.export.tpetra
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.tpetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = CisMatrix_test
@@ -38,16 +40,7 @@ CisMatrix_test_DEPENDENCIES = \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../kokkos/src/libkokkos.a 
 
-CisMatrix_test_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_srcdir)/../kokkos/src \
-	-I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../kokkos/src
+CisMatrix_test_CXXFLAGS = $(TPETRA_INCLUDES)
 
-CisMatrix_test_LDADD = \
-	$(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../kokkos/src/libkokkos.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+CisMatrix_test_LDADD = $(TPETRA_LIBS)
 

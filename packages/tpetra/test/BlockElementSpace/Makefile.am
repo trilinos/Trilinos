@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.tpetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = BlockElementSpace_test
@@ -35,9 +37,6 @@ BlockElementSpace_test_SOURCES = $(srcdir)/cxx_main.cpp
 BlockElementSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockElementSpace_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src
+BlockElementSpace_test_CXXFLAGS = $(TPETRA_INCLUDES)
 
-BlockElementSpace_test_LDADD = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(FLIBS)
+BlockElementSpace_test_LDADD = $(TPETRA_LIBS)

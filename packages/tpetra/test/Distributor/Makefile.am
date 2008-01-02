@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.tpetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = Distributor_test
@@ -35,10 +37,7 @@ Distributor_test_SOURCES = $(srcdir)/cxx_main.cpp
 Distributor_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-Distributor_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src
+Distributor_test_CXXFLAGS = $(TPETRA_INCLUDES)
 
-Distributor_test_LDADD = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(FLIBS)
+Distributor_test_LDADD = $(TPETRA_LIBS)
 
