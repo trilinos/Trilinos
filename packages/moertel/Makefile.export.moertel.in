@@ -17,7 +17,7 @@ _MOERTEL_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src \
 			$(AMESOS_INCLUDES)
 			
 _MOERTEL_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -lmoertel \
-			$(ML_LIBS) $(AMESOS_LIBS) $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
+			$(ML_LIBS) $(AMESOS_LIBS) $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS)
 
 @USING_GNUMAKE_TRUE@MOERTEL_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_MOERTEL_INCLUDES))
 @USING_GNUMAKE_TRUE@MOERTEL_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_MOERTEL_LIBS))

@@ -110,7 +110,7 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -121,7 +121,7 @@ AC_PROG_RANLIB
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -188,7 +188,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_moertel_examples" != "Xno")
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 TAC_ARG_ENABLE_FEATURE(galeri, [Build examples that depend on galeri], GALERI, no)
 AM_CONDITIONAL(BUILD_GALERI, test "X$ac_cv_use_galeri" != "Xno")
@@ -209,8 +209,8 @@ TAC_ARG_WITH_INCDIRS
 
 # #np# - Yet another opportunity to remove code if you aren't
 # using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
-AC_F77_WRAPPERS
+# Define F77_FUNC that will be used to link with Fortran subroutines.
+#AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -230,14 +230,6 @@ dnl Replace `main' with a function in -lm:
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
-
-dnl Check for user-specified names for BLAS lib
-#TAC_ARG_WITH_BLASLIB
-
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-
 #fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
@@ -247,7 +239,7 @@ dnl Check for user-specified names for BLAS lib
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-AC_F77_LIBRARY_LDFLAGS
+#AC_F77_LIBRARY_LDFLAGS
 
 
 # ------------------------------------------------------------------------
