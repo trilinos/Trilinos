@@ -15698,6 +15698,11 @@ echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldf
 fi
 
 
+ # Put LIBS before BLAS_LIBS instead of after because 3PL's tend to need to
+ # link to the BLAS (ex UMFPACK), and any other libs needed to link to the BLAS
+ # should be included in the --with-blas value.
+LIBS="${LIBS} ${BLAS_LIBS} ${FLIBS}"
+
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.

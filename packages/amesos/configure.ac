@@ -361,6 +361,11 @@ if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples
   TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
   TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
 
+ # Put LIBS before BLAS_LIBS instead of after because 3PL's tend to need to
+ # link to the BLAS (ex UMFPACK), and any other libs needed to link to the BLAS
+ # should be included in the --with-blas value.
+LIBS="${LIBS} ${BLAS_LIBS} ${FLIBS}"
+
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
