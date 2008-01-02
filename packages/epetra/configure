@@ -4447,6 +4447,7 @@ else
 fi
 
 
+if test "X$ac_cv_use_fortran" != "Xno"; then
 ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -4707,6 +4708,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+fi
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ranlib; ac_word=$2
@@ -4878,6 +4880,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+if test "X$ac_cv_use_fortran" != "Xno"; then
 
 { echo "$as_me:$LINENO: checking whether additional FFLAGS flags should be added" >&5
 echo $ECHO_N "checking whether additional FFLAGS flags should be added... $ECHO_C" >&6; }
@@ -4896,6 +4899,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+fi
 
 { echo "$as_me:$LINENO: checking whether additional libraries are needed" >&5
 echo $ECHO_N "checking whether additional libraries are needed... $ECHO_C" >&6; }
@@ -7763,6 +7767,7 @@ fi
 
 # Define F77_FUNC that will be used to link with Fortran subroutines found in
 # Trilinos source code
+if test "X$ac_cv_use_fortran" != "Xno"; then
 
 ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -8590,6 +8595,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+fi
 
 # ------------------------------------------------------------------------
 # Checks for libraries

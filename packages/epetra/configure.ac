@@ -120,7 +120,9 @@ AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+fi
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -144,7 +146,9 @@ fi
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+if test "X$ac_cv_use_fortran" != "Xno"; then
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+fi
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -264,7 +268,9 @@ TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
 AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
 # Define F77_FUNC that will be used to link with Fortran subroutines found in
 # Trilinos source code
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_F77_WRAPPERS
+fi
 
 # ------------------------------------------------------------------------
 # Checks for libraries

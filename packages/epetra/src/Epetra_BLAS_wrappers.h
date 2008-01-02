@@ -150,6 +150,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
 #define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
+#ifndef FORTRAN_DISABLED
+
 #if defined(__GNUC__) || defined(_WIN32) /* standard Epetra implementation */ 
 
 #define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
@@ -165,6 +167,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_DCRSSM_F77   F77_FUNC(epetra_dcrssm,EPETRA_DCRSSM) 
 #endif /* __GNUC__ */ 
 
+#endif /* FORTRAN_DISABLED */
 
 /* End of defines for double precision when not on a T3X */
 
