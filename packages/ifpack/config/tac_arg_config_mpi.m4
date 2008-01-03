@@ -16,7 +16,9 @@ dnl Autoconf and Automake, and HAVE_MPI will be defined in the
 dnl generated config.h file
 dnl
 dnl
-dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl @author Mike Heroux <maherou@sandia.gov>
+dnl Modified 12/26/2007 by Jim Willenbring to skip the Fortran compiler
+dnl check if Fortran is disabled.
 dnl
 AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
@@ -160,6 +162,8 @@ if test -n "${MPI_CC}"; then
   fi
 fi
 
+if test "X$ac_cv_use_fortran" != "Xno"; then
+
 if test -n "${MPI_F77}"; then
   if test -f ${MPI_F77}; then
     MPI_F77_EXISTS=yes
@@ -179,4 +183,6 @@ if test -n "${MPI_F77}"; then
     AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
   fi
 fi
+
+fi dnl ac_cv_use_fortran
 ])
