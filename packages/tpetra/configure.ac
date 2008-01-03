@@ -109,7 +109,7 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -118,7 +118,7 @@ AC_PROG_RANLIB
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -299,7 +299,7 @@ fi
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-AC_F77_LIBRARY_LDFLAGS
+#AC_F77_LIBRARY_LDFLAGS
 
 # ------------------------------------------------------------------------
 # Checks for library functions
