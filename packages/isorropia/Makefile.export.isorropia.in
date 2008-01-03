@@ -11,8 +11,7 @@ _ISORROPIA_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                    $(EPETRAEXT_INCLUDES) $(TEUCHOS_INCLUDES) 
 
 _ISORROPIA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lisorropia \
-	       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) \
-               @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@
+	       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS)
 
 @USING_GNUMAKE_TRUE@ISORROPIA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ISORROPIA_INCLUDES))
 @USING_GNUMAKE_TRUE@ISORROPIA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_ISORROPIA_LIBS))
