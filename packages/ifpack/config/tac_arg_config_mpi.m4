@@ -18,7 +18,7 @@ dnl
 dnl
 dnl @author Mike Heroux <maherou@sandia.gov>
 dnl Modified 12/26/2007 by Jim Willenbring to skip the Fortran compiler
-dnl check if Fortran is disabled.
+dnl check if Fortran is not enabled.
 dnl
 AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
@@ -162,7 +162,7 @@ if test -n "${MPI_CC}"; then
   fi
 fi
 
-if test "X$ac_cv_use_fortran" != "Xno"; then
+if test "X$ac_cv_use_fortran" = "Xyes"; then
 
 if test -n "${MPI_F77}"; then
   if test -f ${MPI_F77}; then
