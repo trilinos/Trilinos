@@ -115,7 +115,7 @@ TAC_ARG_CONFIG_MPI
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
 BASE_CXX=${CXX}
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -133,7 +133,7 @@ TAC_ARG_ENABLE_COMPILER_OPTIONS
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -221,7 +221,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_isorropia_examples" != "Xno" ||
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
@@ -246,23 +246,19 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
-AC_F77_WRAPPERS
+# Define F77_FUNC that will be used to link with Fortran subroutines.
+#AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
-if test "X$ac_cv_use_isorropia_tests" != "Xno" || test "X$ac_cv_use_isorropia_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+#if test "X$ac_cv_use_isorropia_tests" != "Xno" || test "X$ac_cv_use_isorropia_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-# find or choose to supply valid blas and lapack libraries
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
-fi
+#fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
 # Determine libraries needed for linking with Fortran
-AC_F77_LIBRARY_LDFLAGS
+#AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
 if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
