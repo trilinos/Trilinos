@@ -109,6 +109,15 @@ TAC_ARG_CONFIG_MPI
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------                                                                          
 TAC_ARG_CONFIG_MPI
+
+# ------------------------------------------------------------------------
+# Check if Fortran is enabled or not
+# ------------------------------------------------------------------------
+
+#TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+TAC_ARG_ENABLE_OPTION(fortran90, [enable Fortran 90 support (automatically enables Fortran support)], FORTRAN90_SUPPORT, no)
+AM_CONDITIONAL(FORTRAN90_DISABLED, [test "X$ac_cv_use_fortran90" != "Xyes"])
+#AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes" && test "X$ac_cv_use_fortran90" != "Xyes"])
                                                                           
 # ------------------------------------------------------------------------
 # Checks for programs
@@ -116,7 +125,12 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+if test "X$ac_cv_use_fortran90" != "Xno"; then
+ AC_PROG_FC(gfortran f90 xlf90 f95)
+fi
+#elif test "X$ac_cv_use_fortran" != "Xno"; then
+ AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+#fi
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -134,6 +148,9 @@ TAC_ARG_ENABLE_COMPILER_OPTIONS
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+if test "X$ac_cv_use_fortran90" != "Xno"; then
+ TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
+fi
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
