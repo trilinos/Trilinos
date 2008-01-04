@@ -181,7 +181,9 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
         C++, but must be accessed as NumEntries[0] in python.
         """
         try:
-            globalRow = self.RowMatrixRowMap().GID(MyRow)
+            rowMap    = self.RowMatrixRowMap()
+            colMap    = self.RowMatrixColMap()
+            globalRow = rowMap.GID(MyRow)
             if globalRow == 0 or globalRow == self.__size-1:
                 if (Length < 1):
                     return -1
@@ -193,7 +195,9 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
                     return -1
                 NumEntries[0] = 3
                 Values[:3]    = [   -1.0,   2.0,    -1.0]
-                Indices[:3]   = [MyRow-1, MyRow, MyRow+1]
+                Indices[:3]   = [colMap.LID(globalRow-1),
+                                 colMap.LID(globalRow  ),
+                                 colMap.LID(globalRow+1)]
             return 0
         except Exception, e:
             print e
