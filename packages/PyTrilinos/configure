@@ -4555,6 +4555,8 @@ echo "$as_me: error: MPI C compiler (${MPI_CC}) not found." >&2;}
   fi
 fi
 
+if test "X$ac_cv_use_fortran" = "Xyes"; then
+
 if test -n "${MPI_F77}"; then
   if test -f ${MPI_F77}; then
     MPI_F77_EXISTS=yes
@@ -4614,6 +4616,7 @@ echo "$as_me: error: MPI Fortran 77 compiler (${MPI_F77}) not found." >&2;}
   fi
 fi
 
+fi
 
 # ------------------------------------------------------------------------
 # MPI link check
