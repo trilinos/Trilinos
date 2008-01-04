@@ -1384,8 +1384,6 @@ Optional Packages:
                           prepend to CXXFLAGS
   --with-cflags           additional CFLAGS flags to be added: will prepend
                           to CFLAGS
-  --with-fflags           additional FFLAGS flags to be added: will prepend
-                          to FFLAGS
   --with-libs             List additional libraries here. For example,
                           --with-libs=-lsuperlu or
                           --with-libs=/path/libsuperlu.a
@@ -2963,6 +2961,8 @@ echo "$as_me: error: MPI C compiler (${MPI_CC}) not found." >&2;}
   fi
 fi
 
+if test "X$ac_cv_use_fortran" = "Xyes"; then
+
 if test -n "${MPI_F77}"; then
   if test -f ${MPI_F77}; then
     MPI_F77_EXISTS=yes
@@ -3022,6 +3022,7 @@ echo "$as_me: error: MPI Fortran 77 compiler (${MPI_F77}) not found." >&2;}
   fi
 fi
 
+fi
 
 
 
@@ -4553,24 +4554,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-
-{ echo "$as_me:$LINENO: checking whether additional FFLAGS flags should be added" >&5
-echo $ECHO_N "checking whether additional FFLAGS flags should be added... $ECHO_C" >&6; }
-
-# Check whether --with-fflags was given.
-if test "${with_fflags+set}" = set; then
-  withval=$with_fflags;
-FFLAGS="${withval} ${FFLAGS}"
-{ echo "$as_me:$LINENO: result: FFLAGS = ${FFLAGS}" >&5
-echo "${ECHO_T}FFLAGS = ${FFLAGS}" >&6; }
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-fi
-
-
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 
 { echo "$as_me:$LINENO: checking whether additional libraries are needed" >&5
 echo $ECHO_N "checking whether additional libraries are needed... $ECHO_C" >&6; }
