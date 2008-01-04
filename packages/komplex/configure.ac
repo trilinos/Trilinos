@@ -117,7 +117,7 @@ fi
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
 BASE_CXX=${CXX}
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TAC_ARG_ENABLE_COMPILER_OPTIONS
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -238,10 +238,10 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 
 # Define F77_FUNC that will be used to link with Fortran subroutines
-AC_F77_WRAPPERS
+#AC_F77_WRAPPERS
 
 # Determine libraries needed for linking with Fortran
-AC_F77_LIBRARY_LDFLAGS
+#AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
 dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
