@@ -82,35 +82,24 @@ AC_PREREQ(2.61)
 
 TAC_ARG_CONFIG_MPI
 
-#   - can eliminate compiler checks below if your package does not use the
-#         language corresponding to the check.  Please note that if you use
-#	  F77_FUNC to determine Fortran name mangling, you should not remove
-#	  the Fortran compiler check or the check for Fortran flags.  Doing
-#	  so will prevent the detection of the proper name mangling in some
-#	  cases.
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
-#  - You can pull flag checks for languages not used in package.  Please 
-#	  note that if you use F77_FUNC to determine Fortran name mangling, 
-#	  you should not remove the Fortran compiler check or the check for 
-#	  Fortran flags.  Doing so will prevent the detection of the proper 
-#	  name mangling in some cases.
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
 
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -257,7 +246,7 @@ TAC_ARG_WITH_INCDIRS
 # #np# - Yet another opportunity to remove code if you aren't
 # using Fortran
 # Define F77_FUNC that will be used to link with Fortran subroutines.
-AC_F77_WRAPPERS
+#AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -310,7 +299,7 @@ fi
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-AC_F77_LIBRARY_LDFLAGS
+#AC_F77_LIBRARY_LDFLAGS
 
 #AC_MSG_CHECKING([for template-specific object files to be linked])if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
 # AC_MSG_RESULT(none)
