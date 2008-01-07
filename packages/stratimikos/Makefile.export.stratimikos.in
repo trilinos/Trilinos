@@ -62,7 +62,7 @@ _STRATIMIKOS_LIBS = \
   $(STRATIMIKOS_ML_LIBS) \
   $(BELOS_LIBS) \
   $(THYRA_LIBS) \
-  @LIBS@ @FLIBS@ 
+  @LIBS@
 
 @USING_GNUMAKE_TRUE@STRATIMIKOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_STRATIMIKOS_INCLUDES))
 @USING_GNUMAKE_TRUE@STRATIMIKOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_STRATIMIKOS_LIBS))
