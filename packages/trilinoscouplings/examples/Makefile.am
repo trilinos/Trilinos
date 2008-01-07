@@ -33,11 +33,6 @@ all-local:
 	echo "Trilinos package trilinoscouplings subdirectory examples built successfully."
 	@echo ""
 
-if BUILD_EPETRAEXT_ISORROPIA
-EPETRAEXT_SUBDIR = epetraext
-else
-EPETRAEXT_SUBDIR =
-endif
 
 if BUILD_NOX_ML
 ML_SUBDIR = ml/NonlinML
@@ -45,6 +40,6 @@ else
 ML_SUBDIR = 
 endif
 
-SUBDIRS = $(ML_SUBDIR) $(EPETRAEXT_SUBDIR)
+SUBDIRS = epetraext $(ML_SUBDIR) 
 
 EXTRA_DIST = 

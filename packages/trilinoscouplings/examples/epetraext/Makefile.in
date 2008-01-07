@@ -36,7 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = epetraext_isorropia_lptrans_example$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = examples/epetraext
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -58,7 +58,15 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/TrilinosCouplings_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_EPETRAEXT_ISORROPIA_TRUE@am__EXEEXT_1 = epetraext_isorropia_lptrans_example$(EXEEXT)
+@BUILD_EPETRAEXT_AMESOS_TRUE@am__EXEEXT_2 = epetraext_amesosbtf_graphtrans_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_epetraext_amesosbtf_graphtrans_example_OBJECTS = epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.$(OBJEXT)
+epetraext_amesosbtf_graphtrans_example_OBJECTS =  \
+	$(am_epetraext_amesosbtf_graphtrans_example_OBJECTS)
+epetraext_amesosbtf_graphtrans_example_LINK = $(CXXLD) \
+	$(epetraext_amesosbtf_graphtrans_example_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_epetraext_isorropia_lptrans_example_OBJECTS = epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.$(OBJEXT)
 epetraext_isorropia_lptrans_example_OBJECTS =  \
 	$(am_epetraext_isorropia_lptrans_example_OBJECTS)
@@ -73,8 +81,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(epetraext_isorropia_lptrans_example_SOURCES)
-DIST_SOURCES = $(epetraext_isorropia_lptrans_example_SOURCES)
+SOURCES = $(epetraext_amesosbtf_graphtrans_example_SOURCES) \
+	$(epetraext_isorropia_lptrans_example_SOURCES)
+DIST_SOURCES = $(epetraext_amesosbtf_graphtrans_example_SOURCES) \
+	$(epetraext_isorropia_lptrans_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -189,10 +199,20 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@BUILD_EPETRAEXT_ISORROPIA_FALSE@ISORROPIA_EX = 
+
+# List the names of all exe's in this directory here
+@BUILD_EPETRAEXT_ISORROPIA_TRUE@ISORROPIA_EX = epetraext_isorropia_lptrans_example
+@BUILD_EPETRAEXT_AMESOS_FALSE@AMESOS_EX = 
+@BUILD_EPETRAEXT_AMESOS_TRUE@AMESOS_EX = epetraext_amesosbtf_graphtrans_example
 epetraext_isorropia_lptrans_example_SOURCES = $(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp 
 epetraext_isorropia_lptrans_example_CXXFLAGS = $(TRILINOSCOUPLINGS_INCLUDES)
 epetraext_isorropia_lptrans_example_LDADD = $(TRILINOSCOUPLINGS_LIBS)
 epetraext_isorropia_lptrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)
+epetraext_amesosbtf_graphtrans_example_SOURCES = $(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp 
+epetraext_amesosbtf_graphtrans_example_CXXFLAGS = $(TRILINOSCOUPLINGS_INCLUDES)
+epetraext_amesosbtf_graphtrans_example_LDADD = $(TRILINOSCOUPLINGS_LIBS)
+epetraext_amesosbtf_graphtrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -229,6 +249,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+epetraext_amesosbtf_graphtrans_example$(EXEEXT): $(epetraext_amesosbtf_graphtrans_example_OBJECTS) $(epetraext_amesosbtf_graphtrans_example_DEPENDENCIES) 
+	@rm -f epetraext_amesosbtf_graphtrans_example$(EXEEXT)
+	$(epetraext_amesosbtf_graphtrans_example_LINK) $(epetraext_amesosbtf_graphtrans_example_OBJECTS) $(epetraext_amesosbtf_graphtrans_example_LDADD) $(LIBS)
 epetraext_isorropia_lptrans_example$(EXEEXT): $(epetraext_isorropia_lptrans_example_OBJECTS) $(epetraext_isorropia_lptrans_example_DEPENDENCIES) 
 	@rm -f epetraext_isorropia_lptrans_example$(EXEEXT)
 	$(epetraext_isorropia_lptrans_example_LINK) $(epetraext_isorropia_lptrans_example_OBJECTS) $(epetraext_isorropia_lptrans_example_LDADD) $(LIBS)
@@ -239,6 +262,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Po@am__quote@
 
 .cpp.o:
@@ -254,6 +278,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.o: $(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_amesosbtf_graphtrans_example_CXXFLAGS) $(CXXFLAGS) -MT epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.o -MD -MP -MF $(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Tpo -c -o epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.o `test -f '$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Tpo $(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp' object='epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_amesosbtf_graphtrans_example_CXXFLAGS) $(CXXFLAGS) -c -o epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.o `test -f '$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp
+
+epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.obj: $(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_amesosbtf_graphtrans_example_CXXFLAGS) $(CXXFLAGS) -MT epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.obj -MD -MP -MF $(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Tpo -c -o epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.obj `if test -f '$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Tpo $(DEPDIR)/epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp' object='epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_amesosbtf_graphtrans_example_CXXFLAGS) $(CXXFLAGS) -c -o epetraext_amesosbtf_graphtrans_example-EpetraExt_AmesosBTF_GraphTrans_Ex.obj `if test -f '$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_AmesosBTF_GraphTrans_Ex.cpp'; fi`
 
 epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o: $(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(epetraext_isorropia_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o -MD -MP -MF $(DEPDIR)/epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.Tpo -c -o epetraext_isorropia_lptrans_example-EpetraExt_Isorropia_LPTrans_Ex.o `test -f '$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_Isorropia_LPTrans_Ex.cpp

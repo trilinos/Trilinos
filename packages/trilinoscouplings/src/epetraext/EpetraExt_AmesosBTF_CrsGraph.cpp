@@ -56,13 +56,9 @@ operator()( OriginalTypeRef orig )
   if( orig.IndicesAreGlobal() )
   { cout << "FAIL for Global Indices!\n"; abort(); }
 
-  // Create the transformed graph for the CCS format
-  CrsGraph_Transpose transposeTransform;
-  Epetra_CrsGraph & transGraph = transposeTransform( orig );
-
   // Extract the CCS information
-  int n = transGraph.NumMyRows();
-  int nnz = transGraph.NumMyNonzeros();
+  int n = orig.NumMyRows();
+  int nnz = orig.NumMyNonzeros();
 
   vector<int> Ap(n+1,0);  // column pointers
   vector<int> Ai(nnz);    // row indices
@@ -70,7 +66,7 @@ operator()( OriginalTypeRef orig )
   for( int i = 0; i < n; ++i )
   {
     int * tmpP = &Ai[Ap[i]];
-    transGraph.ExtractMyRowCopy( i, nnz-Ap[i], cnt, tmpP );
+    orig.ExtractMyRowCopy( i, nnz-Ap[i], cnt, tmpP );
     Ap[i+1] = Ap[i] + cnt;
   }
 
@@ -102,9 +98,24 @@ operator()( OriginalTypeRef orig )
   vector<int> colperm(n);
   vector<int> blkPtr(n+1);
 
+  // NOTE:  The permutations are sent in backwards since the matrix is transposed.
+  // On output, rowperm and colperm are the row and column permutations of A, where 
+  // i = BTF_UNFLIP(rowperm[k]) if row i of A is the kth row of P*A*Q, and j = colperm[k] 
+  // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
+  // (k,k)th entry in P*A*Q is structurally zero.
+
   numBlocks = btf_order( n, &Ap[0], &Ai[0], maxWork, &workPerf,
-			 &rowperm[0], &colperm[0], &blkPtr[0], 
+			 &colperm[0], &rowperm[0], &blkPtr[0], 
 			 &numMatch, &work[0] );
+
+  // Reverse ordering of permutation to get upper triangular
+  vector<int> rowperm_t( n );
+  vector<int> colperm_t( n );
+  for( int i = 0; i < n; ++i )
+  {
+    rowperm_t[i] = BTF_UNFLIP(rowperm[(n-1)-i]);
+    colperm_t[i] = colperm[(n-1)-i];
+  }
 
 #ifdef BTF_VERBOSE
   cout << "-----------------------------------------\n";
@@ -112,53 +123,38 @@ operator()( OriginalTypeRef orig )
   cout << "-----------------------------------------\n";
   cout << "Num Blocks: " << numBlocks << endl;
   cout << "Num NNZ Diags: " << numMatch << endl;
-  cout << "RowPerm and ColPerm\n";
+  cout << "RowPerm and ColPerm \n";
   for( int i = 0; i<n; ++i )
-    cout << rowperm[i] << "\t" << colperm[i] << endl;
+    cout << rowperm_t[i] << "\t" << colperm_t[i] << endl;
   cout << "-----------------------------------------\n";
 #endif
-
-  //convert rowperm to OLD->NEW
-  //reverse ordering of permutation to get upper triangular
-  vector<int> rowperm_t( n );
-  vector<int> colperm_t( n );
-  for( int i = 0; i < n; ++i )
-  {
-//    rowperm_t[ rowperm[i] ] = n-i;
-//    colperm[i] = n-colperm[i];
-    rowperm_t[i] = rowperm[(n-1)-i];
-    colperm_t[i] = colperm[(n-1)-i];
-  }
 
   //Generate New Domain and Range Maps
   //for now, assume they start out as identical
   const Epetra_BlockMap & OldMap = orig.RowMap();
-  vector<int> myElements( n );
-  OldMap.MyGlobalElements( &myElements[0] );
-
   vector<int> newDomainElements( n );
   vector<int> newRangeElements( n );
   for( int i = 0; i < n; ++i )
   {
-    newDomainElements[ i ] = myElements[ rowperm_t[i] ];
-    newRangeElements[ i ] = myElements[ colperm_t[i] ];
-cout << i << "\t" << rowperm_t[i] << "\t" << colperm[i] << "\t" << myElements[i] << endl;
+    newRangeElements[ i ] = rowperm_t[i];
+    newDomainElements[ i ] = colperm_t[i];
   }
 
-  NewRowMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newDomainElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
-  NewDomainMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
+  NewRowMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
+  NewDomainMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newDomainElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
 
 #ifdef BTF_VERBOSE
   cout << "New Row Map\n";
-  cout << *RowMap << endl;
+  cout << *NewRowMap_ << endl;
   cout << "New Domain Map\n";
-  cout << *DomainMap << endl;
+  cout << *NewDomainMap_ << endl;
 #endif
 
   //Generate New Graph
   NewGraph_ = Teuchos::rcp( new Epetra_CrsGraph( Copy, *NewRowMap_, 0 ) );
   Epetra_Import Importer( *NewRowMap_, OldMap );
   NewGraph_->Import( orig, Importer, Insert );
+  NewGraph_->FillComplete();
   NewGraph_->FillComplete( *NewDomainMap_, *NewRowMap_ );
 
 #ifdef BTF_VERBOSE
