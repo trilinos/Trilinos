@@ -52,7 +52,7 @@ _THYRA_LIBS = \
   $(THYRA_TPETRA_LIBS) \
   $(THYRA_EPETRA_LIBS) \
   -L@abs_top_builddir@/src -lthyra \
-  $(RTOP_LIBS) @LIBS@ @FLIBS@ 
+  $(RTOP_LIBS) @LIBS@
 
 @USING_GNUMAKE_TRUE@THYRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_THYRA_INCLUDES))
 @USING_GNUMAKE_TRUE@THYRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_THYRA_LIBS))
