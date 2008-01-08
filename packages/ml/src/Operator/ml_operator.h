@@ -160,7 +160,6 @@ struct ML_Operator_Struct {
                           - ML_TYPE_VBR_MATRIX
                           By using this, we can same some wrapping, at least
                           for the finest-level operator.
-
                         */
 };
 
@@ -221,7 +220,7 @@ extern "C" {
 
 extern int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
                           int *pnode_part, ML_Partitioner which_partitioner, 
-		          double *x_coord, double *y_coord, double *z_coord);
+		          double *x_coord, double *y_coord, double *z_coord,int num_PDE_eqns);
 
 extern ML_Operator *ML_Operator_Create(ML_Comm *comm);
 extern int ML_Operator_Destroy(ML_Operator **);

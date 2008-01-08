@@ -11,6 +11,7 @@
 #include "ml_agg_Zoltan.h"
 #if defined(HAVE_ML_ZOLTAN) && defined(HAVE_MPI)
 #include "zoltan.h"
+#include "ml_viz_stats.h"
 #endif
 
 /* ******************************************************************** */
@@ -449,7 +450,7 @@ extern "C" {
 
 int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
                          int *pnode_part, ML_Partitioner which_partitioner, 
-			 double *x_coord, double *y_coord, double *z_coord)
+			 double *x_coord, double *y_coord, double *z_coord,int num_PDE_eqns)
 {
 #ifndef METIS
 #define idxtype int
@@ -482,8 +483,9 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 #endif
 #ifdef HAVE_ML_ZOLTAN
   float ZoltanVersion;
+  ML_Aggregate_Viz_Stats * grid_info;
+  grid_info = (ML_Aggregate_Viz_Stats *) matrix->to->Grid->Grid;
 #endif
-
   nprocs = matrix->comm->ML_nprocs;
   myid   = matrix->comm->ML_mypid;
 
@@ -695,7 +697,12 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
         printf("Repartitioning using Zoltan %3.2f\n",ZoltanVersion);
       }
     if (ML_DecomposeGraph_with_Zoltan(matrix, *nblks, pnode_part, NULL,
-				      x_coord, y_coord, z_coord, matrix->to->levelnum) < 0)
+				      x_coord, y_coord, z_coord, matrix->to->levelnum,
+                                      grid_info->zoltan_type,
+                                      grid_info->zoltan_estimated_its,
+                                      grid_info->smoothing_steps,
+                                      num_PDE_eqns
+                                      ) < 0)
       for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;
 #endif
     break;
