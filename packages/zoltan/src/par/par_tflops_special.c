@@ -222,12 +222,13 @@ void Zoltan_RB_max_double(
       ZOLTAN_FREE(&tmp);
 }
 /*
- * I don't have time to write a fan out.  Root sends a double
+ * I don't have time to write a fan out.  Root sends doubles
  * to every other process.
  * TODO write this for real.
  */
-void Zoltan_RB_bcast_double(
-   double   *x,               /* double to be broadcast */
+void Zoltan_RB_bcast_doubles(
+   double   *x,               /* doubles to be broadcast */
+   int      num_doubles,
    int      proclower,        /* real rank of smallest processor in partition */
    int      rootrank,         /* rank in partition to send the double */
    int      rank,             /* my rank in partition */
@@ -240,12 +241,12 @@ void Zoltan_RB_bcast_double(
    MPI_Status status;
 
    if (rank != rootrank){
-     MPI_Recv(x, 1, MPI_DOUBLE, proclower + rootrank, tag, comm, &status);
+     MPI_Recv(x, num_doubles, MPI_DOUBLE, proclower + rootrank, tag, comm, &status);
    }
    else{
      for (i=0; i<nprocs; i++){
        if (i == rootrank) continue;
-       MPI_Send(x, 1, MPI_DOUBLE, proclower + i, tag, comm);
+       MPI_Send(x, num_doubles, MPI_DOUBLE, proclower + i, tag, comm);
      }
    }
 }

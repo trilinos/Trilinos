@@ -279,7 +279,6 @@ static int rib_fn(
   int rectilinear_blocks = 0; /* parameter for find_median (not used by rib) */
   int fp;                     /* first partition assigned to this proc. */
   int np;                     /* number of parts assigned to this proc. */
-  int firstCutIter=-1;
 
   /* MPI data types and user functions */
 
@@ -496,8 +495,6 @@ static int rib_fn(
       goto End;
     }
   
-    if (firstCutIter < 0) firstCutIter = counters[0];
-
     if (set)    /* set weight for current partition */
       for (j=0; j<wgtflag; j++) weight[j] = weighthi[j];
     else
@@ -655,8 +652,7 @@ static int rib_fn(
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME))
     Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, 
-                part_sizes, timers, counters, firstCutIter,
-                stats, NULL, NULL, FALSE);
+                part_sizes, timers, counters, stats, NULL, NULL, FALSE);
 
   /* update calling routine parameters */
 

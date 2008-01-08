@@ -60,25 +60,32 @@ extern "C" {
 #define RCB_DEFAULT_OVERALLOC 1.2
 #define RCB_DEFAULT_REUSE FALSE
 
-/* PIVOT_CHOICE_ORDERED: call Zoltan_RB_find_median which walks through
- *   potential medians (pivots) in order by numeric value.
- * PIVOT_CHOICE_MEDIAN_OF_RANDOM: call Zoltan_RB_find_median_randomized,
- *   which makes a somewhat random choice of potential pivot, by trying
- *   the median value of a small random selection of pivots.
- * PIVOT_CHOICE_RANDOM: call Zoltan_RB_find_median_randomized,
- *   which makes a very random choice of potential pivot, by trying
- *   the somewhat random value from a small random selection of pivots.
- *   Choice of potential pivot is faster than "MEDIAN_OF_RANDOM" because
- *   we don't find the median of the small random selection of pivots.
- * PIVOT_CHOICE_AVG_OF_RANDOM: To reduce time in while loop, get rid
- *   of the MPI_Gather and MPI_Bcast in random_candidate or random_median_candidate
- *   by having each process contribute a random dot from its right and left half
- *   in the Allreduce, and we use the average of those dots for the next pivot.
+/* The median of an array of floating point values is found by iterating 
+ * through candidates.  We have two methods for choosing candidates:
+ *
+ *   BISECTION - Candidate within region [L, R] is value closest to (L+R)/2
+ *
+ *   RANDOM - First candidate is the median of the collection of local
+ *     medians on each process.  Then we do binary search through the
+ *     remaining local medians.  If median is still not found, each process
+ *     supplies a candidate chosen "randomly" from its values in the
+ *     region of interest, and we do a binary search through these.  Repeat
+ *     this last step with narrowed region until median is found.
+ *
+ * BISECTION works very well if the geometry is symmetric, because the initial
+ *  guess is very close to the true median.  
+ *
+ * RANDOM attempts to do less communication at the expense of more local
+ *  computation, and is a good choice when running on large numbers of
+ *  processors, unless the geometry is very symmetric.
+ *
+ * For a given size of array, the number of iterations required by BISECTION
+ * to find the median can vary greatly, from remarkably few to remarkably many,
+ * just due to the layout of the values.  In contrast, the number of iterations
+ * required by RANDOM on same-sized arrays varies much less.
  */
-#define PIVOT_CHOICE_ORDERED 1
-#define PIVOT_CHOICE_MEDIAN_OF_RANDOM 2
-#define PIVOT_CHOICE_RANDOM 3
-#define PIVOT_CHOICE_AVG_OF_RANDOM 4
+#define PIVOT_CHOICE_BISECTION 1
+#define PIVOT_CHOICE_RANDOM    2
 
 /*****************************************************************************/
 /* function prototypes */
@@ -114,7 +121,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
                   { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
                   { "AVERAGE_CUTS", NULL, "INT", 0 },
-                  { "PIVOT_CHOICE", NULL, "INT", 0 },
+                  { "RANDOM_PIVOTS", NULL, "INT", 0 },
                   { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
                   { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
                   { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
@@ -227,7 +234,7 @@ int Zoltan_RCB(
                               (void *) &ddummy);
     Zoltan_Bind_Param(RCB_params, "AVERAGE_CUTS",
                               (void *) &average_cuts);
-    Zoltan_Bind_Param(RCB_params, "PIVOT_CHOICE",
+    Zoltan_Bind_Param(RCB_params, "RANDOM_PIVOTS",
                               (void *) &pivot_choice);
 
     /* Set default values. */
@@ -248,7 +255,7 @@ int Zoltan_RCB(
     final_output = 0;
     ddummy = 0.0;
     average_cuts = 0;
-    pivot_choice = PIVOT_CHOICE_ORDERED;
+    pivot_choice = 0;
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
@@ -257,6 +264,12 @@ int Zoltan_RCB(
     *num_import = -1;
     *num_export = -1;  /* We don't compute the export map. */
 
+    if (pivot_choice == 0){
+      pivot_choice = PIVOT_CHOICE_BISECTION;
+    }
+    else{
+      pivot_choice = PIVOT_CHOICE_RANDOM;
+    }
 
     if (final_output && (stats < 1)){
       /* FINAL_OUTPUT is a graph/phg param, corresponds to our OUTPUT_LEVEL 1 */
@@ -267,7 +280,8 @@ int Zoltan_RCB(
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
                  rectilinear_blocks, obj_wgt_comp, mcnorm, 
-                 max_aspect_ratio, recompute_box, average_cuts, pivot_choice, part_sizes);
+                 max_aspect_ratio, recompute_box, average_cuts, pivot_choice,
+                 part_sizes);
 
     return(ierr);
 }
@@ -313,7 +327,7 @@ static int rcb_fn(
                                    partition sets at each level of recursion */
   int average_cuts,             /* Flag forcing median line to be drawn halfway
                                    between two closest objects. */
-  int pivot_choice,
+  int pivot_choice, 
   float *part_sizes             /* Input: Array of size 
                                    zz->LB.Num_Global_Parts * wgtflag 
                                    containing the percentage of work 
@@ -353,15 +367,17 @@ static int rcb_fn(
 				      1 = time before median iterations
 				      2 = time in median iterations
 				      3 = communication time */
-  int     counters[7];              /* diagnostic counts
-			              0 = # of median iterations
+  int     counters[9];              /* diagnostic counts
+			              0 = # of non-serial median iterations on each proc
 				      1 = # of dots sent
 				      2 = # of dots received
 				      3 = most dots this proc ever owns
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
-				      6 = # of reallocs of dot array */
-  int     reuse_count[7];           /* counter (as above) for reuse to record
+				      6 = # of reallocs of dot array 
+                                      7 = sum of median iterations for all non-serial cuts
+			              8 = # of serial median iterations on each proc */
+  int     reuse_count[8];           /* counter (as above) for reuse to record
                                        the number of dots premoved */
   int     i,j;                      /* local variables */
   int     use_ids;                  /* When true, global and local IDs will be
@@ -416,7 +432,6 @@ static int rcb_fn(
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
-  int firstCutIter=-1;
 
   /* MPI data types and user functions */
 
@@ -495,7 +510,9 @@ static int rcb_fn(
   counters[4] = dotmax;
   counters[5] = 0;
   counters[6] = 0;
-  for (i = 0; i < 7; i++) reuse_count[i] = 0;
+  counters[7] = 0;
+  counters[8] = 0;
+  for (i = 0; i < 9; i++) reuse_count[i] = 0;
 
   /* create mark and list arrays for dots */
 
@@ -795,7 +812,7 @@ static int rcb_fn(
         time2 = Zoltan_Time(zz->Timer);
   
       if (wgtflag <= 1){
-        if (pivot_choice == PIVOT_CHOICE_ORDERED){
+        if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(
                zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
                fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
@@ -815,13 +832,12 @@ static int rcb_fn(
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
-               dotlist, rectilinear_blocks, average_cuts, pivot_choice)) {
+               dotlist, rectilinear_blocks, average_cuts)) {
             ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median_randomized.");
             ierr = ZOLTAN_FATAL;
             goto End;
           }
         }
-        if (firstCutIter < 0) firstCutIter = counters[0];
       }
       else { 
         if (Zoltan_RB_find_bisector(
@@ -1024,7 +1040,7 @@ static int rcb_fn(
                recompute_box,
                box_op, box_type, average_cuts, 
                counters, treept, dim_spec, level,
-               coord, wgts, part_sizes, wgtscale, rcb->Num_Dim, pivot_choice,
+               coord, wgts, part_sizes, wgtscale, rcb->Num_Dim, pivot_choice, 
                max_aspect_ratio);
     ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
@@ -1055,7 +1071,7 @@ static int rcb_fn(
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
     Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum, part_sizes,
-                timers,counters,firstCutIter,stats,reuse_count,rcbbox,reuse);
+                timers,counters,stats,reuse_count,rcbbox,reuse);
 
   /* update calling routine parameters */
   
@@ -1425,7 +1441,7 @@ static int serial_rcb(
   double *wgtscale,          /* Array of size wgtflag that gives the
                                 scaling factors for each weight dimension. */
   int ndim,                  /* number of geometric dimensions */
-  int pivot_choice,
+  int pivot_choice, 
   double max_aspect_ratio 
 )
 {
@@ -1527,12 +1543,12 @@ static int serial_rcb(
   
       if (wgtflag <= 1){
         /* Call find_median with Tflops_Special == 0; avoids communication */
-        if (pivot_choice == PIVOT_CHOICE_ORDERED){
+        if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(
                  0, coord, wgts, dotmark, dotnum, proc, 
                  fractionlo[0], MPI_COMM_SELF, &valuehalf, 
                  first_guess, &(counters[0]),
-                 1, 1, 0, num_parts,
+                 zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                  weight[0], weightlo, weighthi,
                  dotlist, rectilinear_blocks, average_cuts)) {
@@ -1546,10 +1562,10 @@ static int serial_rcb(
                  0, coord, wgts, dotmark, dotnum, proc, 
                  fractionlo[0], MPI_COMM_SELF, &valuehalf, 
                  first_guess, &(counters[0]),
-                 1, 1, 0, num_parts,
+                 zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                  weight[0], weightlo, weighthi,
-                 dotlist, rectilinear_blocks, average_cuts, pivot_choice)) {
+                 dotlist, rectilinear_blocks, average_cuts)) {
             ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_median.");
             ierr = ZOLTAN_FATAL;
             goto End;
@@ -1562,7 +1578,7 @@ static int serial_rcb(
              zz, 0, coord, wgts, dotmark, dotnum, 
              wgtflag, mcnorm, fractionlo, MPI_COMM_SELF, 
              &valuehalf, first_guess, counters,
-             1, 0, num_parts, 
+             1, zz->Proc, num_parts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi, &norm_max,
              dotlist, rectilinear_blocks, average_cuts)
@@ -1661,7 +1677,7 @@ static int serial_rcb(
                         recompute_box,
                         box_op, box_type, average_cuts, 
                         counters, treept, dim_spec, level,
-                        coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,
+                        coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,   
                         max_aspect_ratio);
       if (ierr < 0) {
         goto End;

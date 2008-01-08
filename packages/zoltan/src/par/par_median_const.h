@@ -28,12 +28,11 @@ extern int Zoltan_RB_find_median(int, double *, double *, int *,
   int, int, int, double, double, double,
   double *, double *, int *, int, int);
 
-
 extern int Zoltan_RB_find_median_randomized(int, double *, double *, int *,
   int, int, double, MPI_Comm,
   double *, int, int *, int, int,
   int, int, int, double, double, double,
-  double *, double *, int *, int, int, int);
+  double *, double *, int *, int, int);
 
 /* Prototype for function used with TFLOPS_SPECIAL */
 extern void Zoltan_RB_reduce(int, int, int, void*, void*,

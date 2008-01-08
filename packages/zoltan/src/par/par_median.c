@@ -28,6 +28,9 @@ extern "C" {
 #include "zoltan_timer.h"
 
 #define TINY   1.0e-6
+/*
+#define WATCH_MEDIAN_FIND
+*/
 
 /* Data structure for parallel find median routine */
 
@@ -52,13 +55,6 @@ struct median {          /* median cut info */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-
-#if PROFILE_THIS
-static struct Zoltan_Timer *timer;
-static int timerNum;
-static int myProc=-1;
-static char debugText[64];
-#endif
 
 int Zoltan_RB_find_median(
   int Tflops_Special,   /* Flag indicating whether Tflops_Special handling 
@@ -107,6 +103,27 @@ int Zoltan_RB_find_median(
   int     breakflag;                 /* for breaking out of median iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank=0;                    /* rank in partition (Tflops_Special) */
+  int     loopCount=0;
+  int     *iterationSum = NULL;       /* Sum of iterations reqd for each non-serial cut */
+  int     *serialIterations = NULL;   /* Sum on each process of iterations when num_procs=1 */
+
+#ifdef WATCH_MEDIAN_FIND
+  char debugText[64];
+  double initmin, initmax;
+  if (first_guess)
+    sprintf(debugText,"(%d - %d) first guess %lf ",proclower,proclower+num_procs-1,*valuehalf);
+  else
+    sprintf(debugText,"(%d - %d) ",proclower,proclower+num_procs-1);
+  initmin = valuemin;
+  initmax = valuemax;
+#endif
+
+  rank = proc - proclower;
+
+  if (counter){
+    iterationSum = counter + 7;
+    serialIterations = counter + 8;
+  }
 
   /* MPI data types and user functions */
 
@@ -116,14 +133,6 @@ int Zoltan_RB_find_median(
 
 
 /***************************** BEGIN EXECUTION ******************************/
-
-#if PROFILE_THIS
-  if (myProc < 0) myProc = proc;
-  sprintf(debugText,"(%d - %d)",proclower,proclower+num_procs-1);
-  timer = Zoltan_Timer_Create(ZOLTAN_TIME_WALL);
-  timerNum = Zoltan_Timer_Init(timer, 0, debugText);
-  Zoltan_Timer_Start(timer, timerNum, local_comm, __FILE__, __LINE__);
-#endif
 
   /* create MPI data and function types for box and median */
 
@@ -153,7 +162,6 @@ int Zoltan_RB_find_median(
   }
 
   if (Tflops_Special) {
-    rank = proc - proclower;
     if (wgtflag) {
 
       /* find tolerance (max of wtmax) */
@@ -274,8 +282,24 @@ int Zoltan_RB_find_median(
       med.countlo = med.counthi = 0;
       med.proclo = med.prochi = proc;
 
+      loopCount++;
+
       /* combine median data struct across current subset of procs */
-      if (counter != NULL) (*counter)++;
+
+      if (counter != NULL){
+        if (num_procs > 1){
+          /* Total iterations on each process (excluding serial)  */
+          (*counter)++;        
+        
+          /* Total iterations for each cut (excluding serial calculations) */
+          if (rank==0) (*iterationSum)++;
+        }
+        else{
+          /* Total iterations on each process for serial median find */
+          (*serialIterations)++;
+        }
+      }
+
       if (Tflops_Special) {
          i = 1;
          Zoltan_RB_reduce(num_procs, rank, proc, (void *) &medme, (void *) &med,
@@ -471,19 +495,11 @@ int Zoltan_RB_find_median(
   if (!Tflops_Special)
      MPI_Op_free(&med_op);
 
-#ifdef PROFILE_THIS
-  Zoltan_Timer_Stop(timer, timerNum, local_comm, __FILE__, __LINE__);
-  Zoltan_Timer_Print(timer, timerNum, 0, local_comm, stdout);
-  Zoltan_Timer_Destroy(&timer);
-  if (proclower==myProc)
-    if (counter)
-      printf("%s loop count %d interval length %d median (%lf - %lf) %lf\n",
-      debugText, *counter,dotnum, valuemin, valuemax, *valuehalf);
-    else
-      printf("%s interval length %d median (%lf - %lf) %lf\n",
-      debugText, dotnum, valuemin, valuemax, *valuehalf);
-  fflush(stdout);
-  MPI_Barrier(local_comm);
+#ifdef WATCH_MEDIAN_FIND
+  if ((num_procs>1) && (rank==0)){
+    fprintf(stderr,"%s loop count %d interval size %d median (%lf - %lf) %lf\n",
+      debugText, loopCount,dotnum, initmin, initmax, *valuehalf);
+  }
 #endif
 
   return 1;

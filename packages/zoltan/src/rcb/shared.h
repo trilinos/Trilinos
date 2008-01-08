@@ -73,7 +73,7 @@ extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, float *,
   int, int, int, int, void *);
 
 extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , 
-                            float *, double *, int *, int, int, int *, void *, int);
+                            float *, double *, int *, int, int *, void *, int);
 
 extern int Zoltan_RB_Use_IDs(ZZ *);
 
