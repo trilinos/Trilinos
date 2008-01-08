@@ -469,6 +469,13 @@ static int rcb_fn(
     wgtflag = RB_MAX_WGTS;
   }
 
+  if ((wgtflag > 1) && (pivot_choice == PIVOT_CHOICE_RANDOM)){
+    /* If RANDOM turns out to be wanted for wgtflag>1, we can implement it */
+    ZOLTAN_PRINT_WARN(proc, yo, 
+      "random_pivots turned off because it is not implemented for multiple weights");
+    pivot_choice = PIVOT_CHOICE_BISECTION;
+  }
+
   /* 
    * Determine whether to store, manipulate, and communicate global and 
    * local IDs.
