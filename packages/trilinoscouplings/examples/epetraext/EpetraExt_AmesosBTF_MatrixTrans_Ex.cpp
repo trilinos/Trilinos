@@ -42,10 +42,7 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_LinearProblem.h"
-#include "EpetraExt_AmesosBTF_CrsGraph.h"
-#include "EpetraExt_LPTrans_From_GraphTrans.h"
-#include "EpetraExt_Reindex_LinearProblem.h"
+#include "EpetraExt_AmesosBTF_CrsMatrix.h"
 
 int main(int argc, char *argv[]) {
 
@@ -116,21 +113,7 @@ int main(int argc, char *argv[]) {
   Graph.InsertGlobalIndices( 2, 1, &index[0] );
 
   Graph.FillComplete();
-  if (verbose) {
-    cout << "***************** PERFORMING BTF TRANSFORM ON CRS_GRAPH *****************" <<endl<<endl;
-    cout << "CrsGraph *before* BTF transform: " << endl << endl;
-    cout << Graph << endl;
-  }
 
-  EpetraExt::AmesosBTF_CrsGraph BTFTrans( verbose );
-  Epetra_CrsGraph & NewBTFGraph = BTFTrans( Graph );
-
-  if (verbose) {
-    cout << "CrsGraph *after* BTF transform: " << endl << endl;
-    cout << NewBTFGraph << endl;
-  }
-	
-  // Use BTF graph transformation to solve linear system.
   // Create an Epetra::CrsMatrix
   Epetra_CrsMatrix Matrix( Copy, Graph );
   double value[2];
@@ -143,54 +126,22 @@ int main(int argc, char *argv[]) {
   Matrix.ReplaceMyValues( 2, 1, &value[0], &index[0] );
   Matrix.FillComplete();
 
-  // Create the solution and right-hand side vectors.
-  Epetra_MultiVector RHS( Map, 1 ), LHS( Map, 1 );
-  LHS.PutScalar( 0.0 );
-  RHS.ReplaceMyValue( 0, 0, 3.0 );
-  RHS.ReplaceMyValue( 1, 0, 4.5 );
-  RHS.ReplaceMyValue( 2, 0, 1.0 );
-  Epetra_LinearProblem problem( &Matrix, &LHS, &RHS );
+  EpetraExt::AmesosBTF_CrsMatrix BTFTrans( 0.0, verbose );
+  Epetra_CrsMatrix & NewMatrix = BTFTrans( Matrix );
 
   if (verbose) {
-    cout << "*************** PERFORMING BTF TRANSFORM ON LINEAR_PROBLEM **************" <<endl<<endl;
+    cout << "*************** PERFORMING BTF TRANSFORM ON CRS_MATRIX **************" <<endl<<endl;
     cout << "CrsMatrix *before* BTF transform: " << endl << endl;
     cout << Matrix << endl;
-    cout << "MultiVector RHS *before* BTF transform: " << endl << endl;
-    RHS.Print( cout );
   }
 
-  // Create the linear problem transform.
-  EpetraExt::LinearProblem_GraphTrans * LPTrans =
-        new EpetraExt::LinearProblem_GraphTrans(
-        *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(&BTFTrans)) );
-  Epetra_LinearProblem* tProblem = &((*LPTrans)( problem ));
-  LPTrans->fwd();
+  BTFTrans.fwd();
 
   if (verbose) {
     cout << "CrsMatrix *after* BTF transform: " << endl << endl;
-    dynamic_cast<Epetra_CrsMatrix*>(tProblem->GetMatrix())->Print( cout );
-    cout << "MultiVector RHS *after* BTF transform: " << endl << endl;
-    tProblem->GetRHS()->Print( cout );
+    cout << NewMatrix << endl;
   }
 
-  if (verbose) {
-    cout << endl << "*************** PERFORMING REINDEXING ON LINEAR_PROBLEM **************" <<endl<<endl;
-  }
-  EpetraExt::ViewTransform<Epetra_LinearProblem> * ReIdx_LPTrans =
-        new EpetraExt::LinearProblem_Reindex( 0 );
-
-  Epetra_LinearProblem* tProblem2 = &((*ReIdx_LPTrans)( *tProblem ));
-  ReIdx_LPTrans->fwd();
-
-  if (verbose) {
-    cout << endl << "CrsMatrix *after* BTF transform *and* reindexing: " << endl << endl;
-    dynamic_cast<Epetra_CrsMatrix*>(tProblem2->GetMatrix())->Print( cout );
-    cout << endl <<"Column Map *before* reindexing: " << endl << endl;
-    cout << dynamic_cast<Epetra_CrsMatrix*>(tProblem->GetMatrix())->ColMap() << endl;
-    cout << "Column Map *after* reindexing: " << endl << endl;
-    cout << dynamic_cast<Epetra_CrsMatrix*>(tProblem2->GetMatrix())->ColMap() << endl;
-  }
-  
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif

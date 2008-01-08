@@ -15,7 +15,7 @@ ISORROPIA_EX =
 endif
 
 if BUILD_EPETRAEXT_AMESOS
-AMESOS_EX = epetraext_amesosbtf_graphtrans_example
+AMESOS_EX = epetraext_amesosbtf_graphtrans_example epetraext_amesosbtf_matrixtrans_example
 else
 AMESOS_EX =
 endif
@@ -31,3 +31,8 @@ epetraext_amesosbtf_graphtrans_example_SOURCES      = $(srcdir)/EpetraExt_Amesos
 epetraext_amesosbtf_graphtrans_example_CXXFLAGS     = $(TRILINOSCOUPLINGS_INCLUDES)
 epetraext_amesosbtf_graphtrans_example_LDADD        = $(TRILINOSCOUPLINGS_LIBS)
 epetraext_amesosbtf_graphtrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)
+
+epetraext_amesosbtf_matrixtrans_example_SOURCES      = $(srcdir)/EpetraExt_AmesosBTF_MatrixTrans_Ex.cpp 
+epetraext_amesosbtf_matrixtrans_example_CXXFLAGS     = $(TRILINOSCOUPLINGS_INCLUDES)
+epetraext_amesosbtf_matrixtrans_example_LDADD        = $(TRILINOSCOUPLINGS_LIBS)
+epetraext_amesosbtf_matrixtrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)

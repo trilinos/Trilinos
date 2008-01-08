@@ -25,10 +25,10 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-#include <EpetraExt_AmesosBTF_CrsGraph.h>
+#include <EpetraExt_AmesosBTF_CrsMatrix.h>
 
 #include <Epetra_Import.h>
+#include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
 
@@ -39,48 +39,75 @@ using std::vector;
 
 namespace EpetraExt {
 
-AmesosBTF_CrsGraph::
-~AmesosBTF_CrsGraph()
+AmesosBTF_CrsMatrix::
+~AmesosBTF_CrsMatrix()
 {
 }
 
-AmesosBTF_CrsGraph::NewTypeRef
-AmesosBTF_CrsGraph::
+AmesosBTF_CrsMatrix::NewTypeRef
+AmesosBTF_CrsMatrix::
 operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
+  const Epetra_BlockMap & OldRowMap = orig.RowMap();
+  const Epetra_BlockMap & OldColMap = orig.ColMap();
 
   if( orig.RowMap().DistributedGlobal() )
   { cout << "FAIL for Global!\n"; abort(); }
   if( orig.IndicesAreGlobal() )
   { cout << "FAIL for Global Indices!\n"; abort(); }
 
-  // Extract the CCS information
   int n = orig.NumMyRows();
   int nnz = orig.NumMyNonzeros();
 
-  vector<int> Ap(n+1,0);  // column pointers
-  vector<int> Ai(nnz);    // row indices
-  int cnt;
-  for( int i = 0; i < n; ++i )
+  if( verbose_ )
   {
-    int * tmpP = &Ai[Ap[i]];
-    orig.ExtractMyRowCopy( i, nnz-Ap[i], cnt, tmpP );
-    Ap[i+1] = Ap[i] + cnt;
+    cout << "Orig Matrix:\n";
+    cout << orig << endl;
   }
 
-  if (verbose_) 
+  // Create std CRS format (without elements above the threshold)
+  vector<int> ia(n+1,0);
+  int maxEntries = orig.MaxNumEntries();
+  vector<int> ja_tmp(maxEntries);
+  vector<double> jva_tmp(maxEntries);
+  vector<int> ja(nnz);
+  int cnt;
+
+  Epetra_CrsGraph strippedGraph( Copy, OldRowMap, OldColMap, 0 );
+
+  for( int i = 0; i < n; ++i )
+  {
+    orig.ExtractMyRowCopy( i, maxEntries, cnt, &jva_tmp[0], &ja_tmp[0] );
+    ia[i+1] = ia[i];
+    for( int j = 0; j < cnt; ++j )
+      if( fabs(jva_tmp[j]) > threshold_ )
+        ja[ ia[i+1]++ ] = ja_tmp[j];
+
+    int new_cnt = ia[i+1] - ia[i];
+    strippedGraph.InsertMyIndices( i, new_cnt, &ja[ ia[i] ] );
+  }
+  nnz = ia[n];
+  strippedGraph.FillComplete();
+
+  if( verbose_ )
+  {
+    cout << "Stripped Graph\n";
+    cout << strippedGraph;
+  }
+
+  if( verbose_ )
   {
     cout << "-----------------------------------------\n";
-    cout << "CRS Format Graph\n";
+    cout << "CRS Format Graph (stripped) \n";
     cout << "-----------------------------------------\n";
     for( int i = 0; i < n; ++i )
-      {
-	cout << Ap[i] << " - " << Ap[i+1] << " : ";
-	for( int j = Ap[i]; j<Ap[i+1]; ++j )
-	  cout << " " << Ai[j];
-	cout << endl;
-      }
+    {
+      cout << ia[i] << " - " << ia[i+1] << " : ";
+      for( int j = ia[i]; j<ia[i+1]; ++j )
+        cout << " " << ja[j];
+      cout << endl;
+    }
     cout << "-----------------------------------------\n";
   }
 
@@ -104,7 +131,7 @@ operator()( OriginalTypeRef orig )
   // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
   // (k,k)th entry in P*A*Q is structurally zero.
 
-  numBlocks = btf_order( n, &Ap[0], &Ai[0], maxWork, &workPerf,
+  numBlocks = btf_order( n, &ia[0], &ja[0], maxWork, &workPerf,
 			 &colperm[0], &rowperm[0], &blkPtr[0], 
 			 &numMatch, &work[0] );
 
@@ -117,8 +144,7 @@ operator()( OriginalTypeRef orig )
     colperm_t[i] = colperm[(n-1)-i];
   }
 
-  if (verbose_) 
-  {
+  if( verbose_ ) {
     cout << "-----------------------------------------\n";
     cout << "BTF Output (n = " << n << ")\n";
     cout << "-----------------------------------------\n";
@@ -130,21 +156,24 @@ operator()( OriginalTypeRef orig )
     cout << "-----------------------------------------\n";
   }
 
+
   //Generate New Domain and Range Maps
   //for now, assume they start out as identical
-  const Epetra_BlockMap & OldMap = orig.RowMap();
+  vector<int> myElements( n );
+  OldRowMap.MyGlobalElements( &myElements[0] );
+
   vector<int> newDomainElements( n );
   vector<int> newRangeElements( n );
   for( int i = 0; i < n; ++i )
   {
-    newRangeElements[ i ] = rowperm_t[i];
-    newDomainElements[ i ] = colperm_t[i];
+    newRangeElements[ i ] = myElements[ rowperm_t[i] ];
+    newDomainElements[ i ] = myElements[ colperm_t[i] ];
   }
 
-  NewRowMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
-  NewColMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newDomainElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
+  NewRowMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newRangeElements[0], OldRowMap.IndexBase(), OldRowMap.Comm() ) );
+  NewColMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newDomainElements[0], OldColMap.IndexBase(), OldColMap.Comm() ) );
 
-  if (verbose_) 
+  if( verbose_ )
   {
     cout << "New Row Map\n";
     cout << *NewRowMap_ << endl;
@@ -154,19 +183,43 @@ operator()( OriginalTypeRef orig )
 
   //Generate New Graph
   NewGraph_ = Teuchos::rcp( new Epetra_CrsGraph( Copy, *NewRowMap_, *NewColMap_, 0 ) );
-  Epetra_Import Importer( *NewRowMap_, OldMap );
-  NewGraph_->Import( orig, Importer, Insert );
+  Importer_ = Teuchos::rcp( new Epetra_Import( *NewRowMap_, OldRowMap ) );
+  NewGraph_->Import( strippedGraph, *Importer_, Insert );
   NewGraph_->FillComplete();
 
-  if (verbose_) 
+  if( verbose_ )
   {
-    cout << "New CrsGraph\n";
-    cout << *NewGraph_ << endl;
+    cout << "NewGraph\n";
+    cout << *NewGraph_;
   }
 
-  newObj_ = &*NewGraph_;
+  NewMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *NewGraph_ ) );
+  NewMatrix_->Import( orig, *Importer_, Insert );
+  NewMatrix_->FillComplete();
 
-  return *NewGraph_;
+  if( verbose_ )
+  {
+    cout << "New CrsMatrix\n";
+    cout << *NewMatrix_ << endl;
+  }
+
+  newObj_ = &*NewMatrix_;
+
+  return *NewMatrix_;
+}
+
+bool
+AmesosBTF_CrsMatrix::
+fwd()
+{
+  NewMatrix_->Import( *origObj_, *Importer_, Insert );
+}
+
+bool
+AmesosBTF_CrsMatrix::
+rvs()
+{
+  origObj_->Export( *NewMatrix_, *Importer_, Insert );
 }
 
 } //namespace EpetraExt

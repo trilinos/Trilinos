@@ -110,7 +110,8 @@ am__libtrilinoscouplings_a_SOURCES_DIST =  \
 	$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp \
 	$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp \
 	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.cpp \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
 am__objects_1 =
 am__objects_2 = Ifpack_ML.$(OBJEXT)
 @BUILD_IFPACK_ML_TRUE@am__objects_3 = $(am__objects_2)
@@ -123,7 +124,8 @@ am__objects_4 = nlnml_prepostoperator.$(OBJEXT) \
 @BUILD_NOX_ML_TRUE@am__objects_5 = $(am__objects_4)
 am__objects_6 = EpetraExt_Isorropia_CrsGraph.$(OBJEXT)
 @BUILD_EPETRAEXT_ISORROPIA_TRUE@am__objects_7 = $(am__objects_6)
-am__objects_8 = EpetraExt_AmesosBTF_CrsGraph.$(OBJEXT)
+am__objects_8 = EpetraExt_AmesosBTF_CrsGraph.$(OBJEXT) \
+	EpetraExt_AmesosBTF_CrsMatrix.$(OBJEXT)
 @BUILD_EPETRAEXT_AMESOS_TRUE@am__objects_9 = $(am__objects_8)
 am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
 	$(am__objects_3) $(am__objects_5) $(am__objects_7) \
@@ -156,7 +158,8 @@ am__include_HEADERS_DIST = $(srcdir)/TrilinosCouplings_ConfigDefs.h \
 	$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H \
 	$(srcdir)/ml/NonlinML/nlnml_prepostoperator.H \
 	$(srcdir)/epetraext/EpetraExt_Isorropia_CrsGraph.h \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -363,10 +366,12 @@ EXTRA_EPETRAEXT_ISORROPIA = \
 @BUILD_EPETRAEXT_ISORROPIA_TRUE@	$(EXTRA_EPETRAEXT_ISORROPIA)
 
 EXTRA_EPETRAEXT_AMESOS_H = \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h
 
 EXTRA_EPETRAEXT_AMESOS = \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
 
 @BUILD_EPETRAEXT_AMESOS_FALSE@EPETRAEXT_AMESOS_H = 
 @BUILD_EPETRAEXT_AMESOS_TRUE@EPETRAEXT_AMESOS_H = \
@@ -562,6 +567,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_AmesosBTF_CrsGraph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Isorropia_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ML.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Po@am__quote@
@@ -725,6 +731,20 @@ EpetraExt_AmesosBTF_CrsGraph.obj: $(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGra
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp' object='EpetraExt_AmesosBTF_CrsGraph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_AmesosBTF_CrsGraph.obj `if test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp'; fi`
+
+EpetraExt_AmesosBTF_CrsMatrix.o: $(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_AmesosBTF_CrsMatrix.o -MD -MP -MF $(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Tpo -c -o EpetraExt_AmesosBTF_CrsMatrix.o `test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Tpo $(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp' object='EpetraExt_AmesosBTF_CrsMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_AmesosBTF_CrsMatrix.o `test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
+
+EpetraExt_AmesosBTF_CrsMatrix.obj: $(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_AmesosBTF_CrsMatrix.obj -MD -MP -MF $(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Tpo -c -o EpetraExt_AmesosBTF_CrsMatrix.obj `if test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Tpo $(DEPDIR)/EpetraExt_AmesosBTF_CrsMatrix.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp' object='EpetraExt_AmesosBTF_CrsMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_AmesosBTF_CrsMatrix.obj `if test -f '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

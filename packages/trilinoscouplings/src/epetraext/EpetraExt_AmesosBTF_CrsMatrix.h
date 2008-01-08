@@ -25,66 +25,64 @@
 // 
 // ***********************************************************************
 //@HEADER
-//                                                                                                    
-#ifndef EpetraExt_AMESOS_BTF_CRSGRAPH_H
-#define EpetraExt_AMESOS_BTF_CRSGRAPH_H
+
+#ifndef EpetraExt_AMESOS_BTF_CRSMATRIX_H
+#define EpetraExt_AMESOS_BTF_CRSMATRIX_H
 
 #include <EpetraExt_Transform.h>
 #include <Teuchos_RCP.hpp>
 
+class Epetra_CrsMatrix;
 class Epetra_CrsGraph;
 class Epetra_Map;
+class Epetra_Import;
 
 namespace EpetraExt {
 
 ///
-/** Block Triangular Factorization (Reordering) of Epetra_CrsGraph
+/** Block Triangular Factorization (Reordering) of Epetra_CrsMatrix
  *
  * Uses Tim Davis' BTF algorithm to find a block upper triangular
- * ordering form a Epetra_CrsGraph.
+ * ordering form a Epetra_CrsMatrix.
  */
 
-class AmesosBTF_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
+class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
 
  public:
 
-  ///
-  /** Destructor
-   */
-  ~AmesosBTF_CrsGraph();
+  ~AmesosBTF_CrsMatrix();
 
-  ///
-  /** Default Constructor
-   */
-  AmesosBTF_CrsGraph( bool verbose = false )
-    : verbose_(verbose)
-    {}
-    
-  ///
-  /** Construction of BTF ordered Epetra_CrsGraph from <tt>orig</tt> object.
-   *
-   * Preconditions:<ul>
-   * </ul>
-   *
-   * Invariants:<ul>
-   * </ul>
-   *
-   * Postconditions:<ul>
-   * </ul>
-   *
-   */
+  AmesosBTF_CrsMatrix( double thres = 0.0,
+                 bool verbose = false )
+  : NewRowMap_(0),
+    NewColMap_(0),
+    NewMatrix_(0),
+    NewGraph_(0),
+    Importer_(0),
+    threshold_(thres),
+    verbose_(verbose)
+  {}
+
   NewTypeRef operator()( OriginalTypeRef orig );
+
+  bool fwd();
+  bool rvs();
 
  private:
 
   Teuchos::RCP<Epetra_Map> NewRowMap_;
   Teuchos::RCP<Epetra_Map> NewColMap_;
   
+  Teuchos::RCP<Epetra_CrsMatrix> NewMatrix_;
   Teuchos::RCP<Epetra_CrsGraph> NewGraph_;
+
+  Teuchos::RCP<Epetra_Import> Importer_;
+
+  const double threshold_;
 
   const bool verbose_;
 };
 
 } //namespace EpetraExt
 
-#endif //EpetraExt_AMESOS_BTF_CRSGRAPH_H
+#endif //EpetraExt_AMESOS_BTF_CRSMATRIX_H
