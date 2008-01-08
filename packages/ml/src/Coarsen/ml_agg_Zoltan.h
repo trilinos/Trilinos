@@ -34,7 +34,7 @@ extern "C" {
 				  int graph_decomposition[],
 				  double bdry_nodes[],
 				  double [], double [], double [],
-				  int);
+				  int,int,int,int,int);
   
 #ifndef ML_CPP
 #ifdef __cplusplus

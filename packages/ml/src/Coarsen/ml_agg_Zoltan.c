@@ -78,6 +78,11 @@ ZOLTAN_NUM_EDGES_MULTI_FN ML_get_num_edges_multi;
 ZOLTAN_EDGE_LIST_MULTI_FN ML_get_edge_list_multi;
 #endif
 
+/* Hypergraph functions */
+ZOLTAN_HG_SIZE_CS_FN ML_zoltan_hg_size_cs_fn;
+ZOLTAN_HG_CS_FN ML_zoltan_hg_cs_fn;
+ZOLTAN_OBJ_SIZE_MULTI_FN ML_zoltan_obj_size_multi_fn;
+
 /* "...crappy code..."
  *
  * I use a bunch of static variables, with suffix `MLZ':
@@ -98,24 +103,52 @@ static int MLZ_offset;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
+static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_type, int zoltan_estimated_its,
+                        int smoothing_steps, int rows_per_amalgamated_row)
 {
-
   /* Fix the output level */
   char str[80];
   if (ML_Get_PrintLevel() > 9) strcpy(str,"1");
-  else strcpy(str,"0");
-    
+  else strcpy(str,"0");   
   if (Zoltan_Set_Param(zz, "DEBUG_LEVEL", str) == ZOLTAN_FATAL) {
     printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
   }
-  /* Set the load-balance method */
-  /* You can change "RCB" to any Zoltan method below. */
 
-  if (Zoltan_Set_Param(zz, "LB_METHOD", "RCB") == ZOLTAN_FATAL) {
+  //  zoltan_type=ML_ZOLTAN_TYPE_HYPERGRAPH;/*HAQ*/
+  
+  /* Set the load-balance method */
+  if(zoltan_type == ML_ZOLTAN_TYPE_RCB) strcpy(str,"RCB");
+  else if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH) strcpy(str,"hypergraph");
+  else if(zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH) strcpy(str,"fast_hypergraph");  
+  else {
+    printf("fatal(1) no valid zoltan type set\n");
+    return 0;
+  }
+
+  if(!A->comm->ML_mypid) printf("ML-ZOLTAN: Using repartition method %s\n",str);
+  
+
+  if (Zoltan_Set_Param(zz, "LB_METHOD", str) == ZOLTAN_FATAL) {
     printf("fatal(1)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
+  }  
+
+  /* Hypergraph parameters */
+  if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
+    /* Set the repartitioning flag */
+    if (Zoltan_Set_Param(zz, "LB_APPROACH", "repartition") == ZOLTAN_FATAL) {
+      printf("fatal(1)  error returned from Zoltan_Set_Param(LB_APPROACH)\n");
+      return 0;
+    }  
+
+    /* Set the repartitioning multiplier (aka alpha) */    
+    sprintf(str,"%d",zoltan_estimated_its*rows_per_amalgamated_row*(smoothing_steps+1)*sizeof(double));
+    if (Zoltan_Set_Param(zz, "PHG_REPART_MULTIPLIER",str) == ZOLTAN_FATAL) {
+      printf("fatal(1)  error returned from Zoltan_Set_Param(PHG_REPART_MULTIPLIER)\n");
+      return 0;
+    }
+
   }
 
   /*
@@ -167,6 +200,27 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
   }
 #endif /* USE_GRAPH */
 
+  /* Hypergraph Functions */
+  if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
+    if(Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_CS_FN_TYPE,
+                      (void (*)()) ML_zoltan_hg_size_cs_fn,
+                      (void *) A) == ZOLTAN_FATAL) {
+      printf("fatal(8)  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if(Zoltan_Set_Fn(zz, ZOLTAN_HG_CS_FN_TYPE,
+                      (void (*)()) ML_zoltan_hg_cs_fn,
+                      (void *) A) == ZOLTAN_FATAL) {
+      printf("fatal(9)  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if(Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
+                     (void (*)()) ML_zoltan_obj_size_multi_fn,
+                     (void *) A) == ZOLTAN_FATAL) {
+      printf("fatal(10)  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }       
+  }  
   return(1);
 }
 
@@ -365,6 +419,99 @@ void ML_get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
     }
   }
 }
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *format, int *ierr){
+  ML_Operator* A; 
+  *ierr = ZOLTAN_OK;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  A = (ML_Operator*) data;
+  *num_lists = A->outvec_leng;  /* Local # of rows     */
+  *num_pins  = A->N_nonzeros;   /* Local # of nonzeros */
+  *format    = ZOLTAN_COMPRESSED_EDGE;
+}
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int num_pins, int format, ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr){
+  ML_Operator* A;
+  struct ML_CSR_MSRdata * CSR_Data;
+  int *indices;
+  double *values;
+  int i,N,maxnz,rv,rowlength,rowtotal=0;
+  
+  *ierr = ZOLTAN_OK;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  
+  A = (ML_Operator*) data;
+  N= A->outvec_leng;
+
+  /* Use getrow to pull all the data over */
+  values =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
+  for(i=0;i<N;i++) {
+    vtxedge_ptr[i]=rowtotal;
+    rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,&pin_GID[rowtotal],values,&rowlength);
+    if(rv==0) {printf("CMS: Out of space in getrow i=%d/%d",i,N);*ierr=ZOLTAN_FATAL;}
+    rowtotal+=rowlength;
+  }
+  /* Note: vtxedge_ptr does not have the extra "N+1" element that regular CSR
+     matrices have. */
+  
+  /* Reindex to global IDs - this allocates memory*/
+  ML_create_unique_col_id(A->outvec_leng,&indices,A->getrow->pre_comm,&maxnz,A->comm);
+  for(i=0;i<num_pins;i++) pin_GID[i]=indices[pin_GID[i]];    
+
+  ML_free(values);
+  ML_free(indices);
+  fflush(stdout);
+}
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_entries,int num_ids,
+                                 ZOLTAN_ID_PTR global_ids,ZOLTAN_ID_PTR local_ids,int *sizes,int *ierr){
+  ML_Operator* A;
+  struct ML_CSR_MSRdata * CSR_Data;
+  int *indices;
+  double *values;
+  int i,N,maxnz,rowlength;
+  
+  *ierr = ZOLTAN_OK;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  
+  A = (ML_Operator*) data;
+  N=A->outvec_leng;
+
+  /* NTS: There has got to be a better way to get row lengths than calling
+     getrow -
+     FIX: case out and use the MSR/CSR code accordingly*/
+  indices =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
+  values  =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
+  for(i=0;i<N;i++) {
+    (*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
+    sizes[i]=rowlength*(sizeof(double)+sizeof(int)); // add its cost here
+  }
+  ML_free(indices);
+  ML_free(values);
+}
+
+
 #endif
 
 /* ======================================================================== */
@@ -395,8 +542,9 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 				  int graph_decomposition[],
 				  double bdry_nodes[], double old_x[], 
 				  double old_y[], double old_z[],
-				  int current_level)
-{
+				  int current_level,
+                                  int zoltan_type, int zoltan_estimated_its,
+                                  int smoothing_steps, int rows_per_amalgamated_row){
 
   int i, Nrows;
 #if defined(HAVE_ML_ZOLTAN) && defined(HAVE_MPI)
@@ -493,7 +641,8 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   /*
    *  Set up Zoltan query functions for our Matrix data structure.
    */
-  if (!setup_zoltan(zz, Amatrix)) {
+  if (!setup_zoltan(zz, Amatrix,zoltan_type, zoltan_estimated_its,
+                    smoothing_steps, rows_per_amalgamated_row)){
     printf("fatal(12) Error returned from setup_zoltan\n");
     goto End;
   }
@@ -881,7 +1030,8 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      fprintf(stderr,
              "*ML*ERR* null y pointer!\n"
              "*ML*ERR* (file %s, line %d)\n",
-             __FILE__, __LINE__);
+             __FILE__, __LINE__);  int repart_multiplier;
+
      exit(EXIT_FAILURE);
    }
    if (N_dimensions == 3 && old_z == NULL)
@@ -914,7 +1064,11 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				   starting_decomposition,
 				   starting_amalg_bdry,
 				   old_x, old_y, old_z,
-				   ml_ag->cur_level);
+				   ml_ag->cur_level,
+                                   grid_info->zoltan_type,
+                                   grid_info->zoltan_estimated_its,
+                                   grid_info->smoothing_steps,
+                                   nullspace_dim);
    
    /* From now on the code should not change because of Zoltan
     * until the next Zoltan comment (marked with `RAY')... */

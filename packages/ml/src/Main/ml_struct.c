@@ -192,7 +192,11 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
       sprintf(str,"PreS_%d",i); ML_Smoother_Set_Label( &(pre_smoother[i]),str);
       sprintf(str,"PostS_%d",i);ML_Smoother_Set_Label( &(post_smoother[i]),str);
       sprintf(str,"Solve_%d",i);ML_CSolve_Set_Label(&(csolve[i]),str);
-  }
+
+
+
+
+   }
   ML_random_init();
   return 0;
 }
@@ -5729,7 +5733,7 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
  
    ML_Operator_BlockPartition(&(ml->Amat[level]), ml->Amat[level].outvec_leng,
 			      nblocks, *block_list, ML_USEMETIS, NULL,
-			      NULL, NULL);
+			      NULL, NULL,1);
    return 0;
 }
 

@@ -24,6 +24,10 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
   int MaxNodesPerAgg;
   void *Amatrix;  /* void * so that I do not have to include
 		     ml_operator.h */
+  /* Stuff for Zoltan */
+  int zoltan_type;
+  int zoltan_estimated_its; 
+  int smoothing_steps;
   
 } ML_Aggregate_Viz_Stats;
 /*ms*/

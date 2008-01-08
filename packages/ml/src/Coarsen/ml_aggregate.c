@@ -1684,9 +1684,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
    if (num_PDE_eqns != 1)
      ML_Operator_AmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
-
    ML_Operator_BlockPartition(mat, mat->outvec_leng, &the_length,
-			      block_list,which_partitioner,xcoord,ycoord,zcoord);
+			      block_list,which_partitioner,xcoord,ycoord,zcoord,num_PDE_eqns);
    if (num_PDE_eqns != 1)
      ML_Operator_UnAmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
 
@@ -2135,6 +2134,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   StartTimer(&t0);
 
+  
   if (ML_Repartition_Status(ml) == ML_FALSE)
     return NULL;
 
@@ -2189,7 +2189,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     printf("Repartitioning (level %d): max #rows (global) that fits on one proc = %d\n",coarse,ml->PutOnSingleProc_repartition);
     printf("Repartitioning (level %d): #proc to use in repartitioning = %d\n",coarse,Nprocs_ToUse);
   }
-
+  
   grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[coarse].Grid;
   which_partitioner = ML_Repartition_Get_Partitioner(ml);
   /* no coordinates supplied */
@@ -2230,10 +2230,11 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      the permutation matrices. */
   if (ReturnPerm == ML_TRUE) UseImplicitTranspose = ML_FALSE;
   else UseImplicitTranspose = ML_TRUE;
+
   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
                  Amatrix->num_PDEs, Nprocs_ToUse, 
                  xcoord, ycoord, zcoord, UseImplicitTranspose,
-                 which_partitioner);
+                                 which_partitioner);
 
   if (status == 0)
   {

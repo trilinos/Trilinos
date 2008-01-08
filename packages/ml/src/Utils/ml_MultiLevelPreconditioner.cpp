@@ -95,7 +95,7 @@
 #endif
 
 #include "ml_ifpack_wrap.h"
-
+#include "ml_viz_stats.h"
 using namespace Teuchos;
 using namespace std;
 
@@ -1256,6 +1256,31 @@ agg_->keep_P_tentative = 1;
   
   ML_CHK_ERR(SetupCoordinates());
 
+  // ====================================================================== //
+  // Additional stuff for Zoltan repartitioning                             //
+  // ====================================================================== //    
+  if(List_.get("repartition: enable",0)) {
+    std::string Repartitioner = List_.get("repartition: partitioner","Zoltan");
+    if(Repartitioner=="Zoltan"){
+     int zoltan_estimated_its=List_.get("repartition: estimated iterations",40);
+     string zoltan_type=List_.get("repartition: Zoltan type","RCB");
+     int smoother_steps = List_.get("smoother: sweeps", 2);
+     if (List_.get("smoother: pre or post","post") == "pre or post") smoother_steps*=2;
+
+     int int_zoltan_type;
+     if(zoltan_type=="RCB")                  int_zoltan_type = ML_ZOLTAN_TYPE_RCB;
+     else if(zoltan_type=="hypergraph")      int_zoltan_type = ML_ZOLTAN_TYPE_HYPERGRAPH; 
+     else if(zoltan_type=="fast hypergraph") int_zoltan_type = ML_ZOLTAN_TYPE_FAST_HYPERGRAPH;        
+     for(int i=0;i<ml_->ML_num_levels;i++){
+       ML_Aggregate_Viz_Stats * grid_info =(ML_Aggregate_Viz_Stats *)ml_->Grid[i].Grid;
+       grid_info->zoltan_type          = int_zoltan_type;
+       grid_info->zoltan_estimated_its = zoltan_estimated_its;
+       grid_info->smoothing_steps      = smoother_steps;
+     }      
+    }    
+  }
+
+  
   // ====================================================================== //
   // pick up coarsening strategy. METIS and ParMETIS requires additional    //
   // lines, as we have to set the number of aggregates                      //
