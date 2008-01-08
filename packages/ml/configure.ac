@@ -714,7 +714,8 @@ AC_CONFIG_FILES([
         test/Miscellaneous/Makefile
         test/RefMaxwell/Makefile
         test/Scalability/Makefile
-		test/Zoltan/Makefile
+	test/Zoltan/Makefile
+	test/Zoltan_hypergraph/Makefile
         matlab/Makefile
                 ])
 
