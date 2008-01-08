@@ -49,7 +49,6 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
       MatrixFree                         \
       Scalability                        \
       RefMaxwell                         \
-      Multimaterial                      \
       Miscellaneous	                 \
       Zoltan                             \
       Zoltan_hypergraph                  
