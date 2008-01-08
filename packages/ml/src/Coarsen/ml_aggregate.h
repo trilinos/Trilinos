@@ -31,6 +31,8 @@
 /*ms*/
 
 /*cms*/
+#define ML_AGG_ANY_MATERIAL -1
+
 #define ML_ZOLTAN_TYPE_RCB               1
 #define ML_ZOLTAN_TYPE_HYPERGRAPH        2
 #define ML_ZOLTAN_TYPE_FAST_HYPERGRAPH   3
@@ -106,10 +108,6 @@ typedef struct ML_Aggregate_Struct
   double minimizing_energy_droptol;    
   double   *old_RowOmegas;
 
-/*cms*/
-  int zoltan_type;                    /**<  type of repartitioner to use   */
-  int zoltan_estimated_its;           /**<  estimatd # its for weighting   */
-  
 } ML_Aggregate;
 
 /* ************************************************************************* */
