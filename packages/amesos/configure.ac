@@ -117,6 +117,15 @@ dnl committing.
 dnl AC_REVISION($Revision$) 
 
 # ------------------------------------------------------------------------
+# Check if Fortran is enabled or not
+# ------------------------------------------------------------------------
+#F77_FUNC currently must be defined for the interfaces listed below.  In
+#the future we could consider checking for these libraries and defining
+#function macros like we now do for BLAS and LAPACK instead of using
+#F77_FUNC.
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support (required for Scalapack, MUMPS, MC64 and Pardiso interfaces)], FORTRAN_SUPPORT, yes)
+
+# ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 
@@ -129,7 +138,9 @@ TAC_ARG_CONFIG_MPI
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
 BASE_CXX=${CXX}
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+fi
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -148,7 +159,9 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 # No C or Fortran code needs to be compiled at this time
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+if test "X$ac_cv_use_fortran" != "Xno"; then
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+fi
 TAC_ARG_WITH_LIBS(libs, LIBS)
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -343,8 +356,10 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
+# Define F77_FUNC that will be used to link with Fortran subroutines.
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_F77_WRAPPERS
+fi
 
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
@@ -775,7 +790,9 @@ AC_LANG_POP
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_F77_LIBRARY_LDFLAGS
+fi
 
 # -- DEC CXX --
 # MS # Add the following 21-Apr-04
