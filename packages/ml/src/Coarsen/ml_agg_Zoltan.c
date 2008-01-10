@@ -79,9 +79,11 @@ ZOLTAN_EDGE_LIST_MULTI_FN ML_get_edge_list_multi;
 #endif
 
 /* Hypergraph functions */
+#ifdef ML_ZOLTAN_THREE
 ZOLTAN_HG_SIZE_CS_FN ML_zoltan_hg_size_cs_fn;
 ZOLTAN_HG_CS_FN ML_zoltan_hg_cs_fn;
 ZOLTAN_OBJ_SIZE_MULTI_FN ML_zoltan_obj_size_multi_fn;
+#endif
 
 /* "...crappy code..."
  *
@@ -119,12 +121,17 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   
   /* Set the load-balance method */
   if(zoltan_type == ML_ZOLTAN_TYPE_RCB) strcpy(str,"RCB");
+#ifdef ML_ZOLTAN_THREE  
   else if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH) strcpy(str,"hypergraph");
   else if(zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH) strcpy(str,"fast_hypergraph");  
   else {
     printf("fatal(1) no valid zoltan type set\n");
     return 0;
   }
+#else
+  strcpy(str,"RCB");
+#endif
+  
 
   if(!A->comm->ML_mypid) printf("ML-ZOLTAN: Using repartition method %s\n",str);
   
@@ -135,6 +142,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   }  
 
   /* Hypergraph parameters */
+#ifdef ML_ZOLTAN_THREE
   if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
     /* Set the repartitioning flag */
     if (Zoltan_Set_Param(zz, "LB_APPROACH", "repartition") == ZOLTAN_FATAL) {
@@ -150,7 +158,8 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
     }
 
   }
-
+#endif
+  
   /*
    * Set the callback functions
    */
@@ -201,6 +210,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
 #endif /* USE_GRAPH */
 
   /* Hypergraph Functions */
+#ifdef ML_ZOLTAN_THREE
   if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
     if(Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_CS_FN_TYPE,
                       (void (*)()) ML_zoltan_hg_size_cs_fn,
@@ -220,7 +230,8 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
       printf("fatal(10)  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }       
-  }  
+  }
+#endif
   return(1);
 }
 
@@ -423,6 +434,7 @@ void ML_get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+#ifdef ML_ZOLTAN_THREE  
 void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *format, int *ierr){
   ML_Operator* A; 
   *ierr = ZOLTAN_OK;
@@ -510,7 +522,7 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
   ML_free(indices);
   ML_free(values);
 }
-
+#endif
 
 #endif
 

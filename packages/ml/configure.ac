@@ -446,6 +446,9 @@ if test "X${HAVE_PKG_MPI}" != "Xyes"; then
    fi
 fi
 AM_CONDITIONAL(ML_USING_ZOLTAN, test "X$ac_cv_use_ml_zoltan" = "Xyes")
+
+TAC_ARG_WITH_PACKAGE(ml_zoltan3, [Enable Zoltan 3.0 support. This option requires that MPI and --enable-zoltan.], ML_ZOLTAN_THREE, no)
+
 #
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages

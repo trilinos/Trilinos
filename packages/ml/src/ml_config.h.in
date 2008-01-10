@@ -168,6 +168,9 @@
 /* Define if want to build with ml_zoltan enabled */
 #undef HAVE_ML_ZOLTAN
 
+/* Define if want to build with ml_zoltan3 enabled */
+#undef HAVE_ML_ZOLTAN_THREE
+
 /* define if we want to use MPI */
 #undef HAVE_MPI
 

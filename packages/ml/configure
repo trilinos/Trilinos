@@ -1606,6 +1606,8 @@ Optional Packages:
   --with-ml_zoltan        Enable Zoltan support. This option requires that MPI
                           be enabled. See notes for --with-ml_metis. (default
                           is no)
+  --with-ml_zoltan3       Enable Zoltan 3.0 support. This option requires that
+                          MPI and --enable-zoltan. (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -8869,6 +8871,34 @@ else
   ML_USING_ZOLTAN_TRUE='#'
   ML_USING_ZOLTAN_FALSE=
 fi
+
+
+
+
+# Check whether --with-ml_zoltan3 was given.
+if test "${with_ml_zoltan3+set}" = set; then
+  withval=$with_ml_zoltan3; ac_cv_use_ml_zoltan3=$withval
+else
+  ac_cv_use_ml_zoltan3=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use ml_zoltan3" >&5
+echo $ECHO_N "checking whether to use ml_zoltan3... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_ml_zoltan3" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_ZOLTAN_THREE
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
 
 #
 # ------------------------------------------------------------------------
