@@ -31,6 +31,7 @@
 
 #include <EpetraExt_Transform.h>
 #include <Teuchos_RCP.hpp>
+#include <vector>
 
 class Epetra_CrsMatrix;
 class Epetra_CrsGraph;
@@ -42,7 +43,7 @@ namespace EpetraExt {
 ///
 /** Block Triangular Factorization (Reordering) of Epetra_CrsMatrix
  *
- * Uses Tim Davis' BTF algorithm to find a block upper triangular
+ * Uses Tim Davis' BTF algorithm to find a block lower or upper triangular
  * ordering form a Epetra_CrsMatrix.
  */
 
@@ -52,14 +53,11 @@ class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
 
   ~AmesosBTF_CrsMatrix();
 
-  AmesosBTF_CrsMatrix( double thres = 0.0,
+  AmesosBTF_CrsMatrix( double thres = 0.0, bool upperTri = false,
                  bool verbose = false )
-  : NewRowMap_(0),
-    NewColMap_(0),
-    NewMatrix_(0),
-    NewGraph_(0),
-    Importer_(0),
+  : numBlocks_(0), 
     threshold_(thres),
+    upperTri_(upperTri),
     verbose_(verbose)
   {}
 
@@ -67,6 +65,11 @@ class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
 
   bool fwd();
   bool rvs();
+
+  Teuchos::RCP<Epetra_Import> Importer() { return Importer_; }
+  std::vector<int> RowPerm() { return rowPerm_; }
+  std::vector<int> ColPerm() { return colPerm_; }
+  std::vector<int> BlockPtr() { return blockPtr_; }
 
  private:
 
@@ -78,9 +81,14 @@ class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
 
   Teuchos::RCP<Epetra_Import> Importer_;
 
+  std::vector<int> rowPerm_, colPerm_, blockPtr_;
+
+  int numBlocks_;
+
   const double threshold_;
 
-  const bool verbose_;
+  const bool upperTri_, verbose_;
+
 };
 
 } //namespace EpetraExt

@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     cout << Graph << endl;
   }
 
-  EpetraExt::AmesosBTF_CrsGraph BTFTrans( verbose );
+  EpetraExt::AmesosBTF_CrsGraph BTFTrans( true, verbose );
   Epetra_CrsGraph & NewBTFGraph = BTFTrans( Graph );
 
   if (verbose) {

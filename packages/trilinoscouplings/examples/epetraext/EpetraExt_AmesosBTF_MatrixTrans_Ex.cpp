@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   Matrix.ReplaceMyValues( 2, 1, &value[0], &index[0] );
   Matrix.FillComplete();
 
-  EpetraExt::AmesosBTF_CrsMatrix BTFTrans( 0.0, verbose );
+  EpetraExt::AmesosBTF_CrsMatrix BTFTrans( 0.0, true, verbose );
   Epetra_CrsMatrix & NewMatrix = BTFTrans( Matrix );
 
   if (verbose) {

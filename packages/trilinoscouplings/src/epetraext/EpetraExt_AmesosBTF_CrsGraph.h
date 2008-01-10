@@ -31,6 +31,7 @@
 
 #include <EpetraExt_Transform.h>
 #include <Teuchos_RCP.hpp>
+#include <vector>
 
 class Epetra_CrsGraph;
 class Epetra_Map;
@@ -40,7 +41,7 @@ namespace EpetraExt {
 ///
 /** Block Triangular Factorization (Reordering) of Epetra_CrsGraph
  *
- * Uses Tim Davis' BTF algorithm to find a block upper triangular
+ * Uses Tim Davis' BTF algorithm to find a block lower or upper triangular
  * ordering form a Epetra_CrsGraph.
  */
 
@@ -56,8 +57,10 @@ class AmesosBTF_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
   ///
   /** Default Constructor
    */
-  AmesosBTF_CrsGraph( bool verbose = false )
-    : verbose_(verbose)
+  AmesosBTF_CrsGraph( bool upperTri = false, bool verbose = false )
+    : numBlocks_(0),
+      upperTri_(upperTri),
+      verbose_(verbose)
     {}
     
   ///
@@ -75,6 +78,10 @@ class AmesosBTF_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
    */
   NewTypeRef operator()( OriginalTypeRef orig );
 
+  std::vector<int> RowPerm() { return rowPerm_; }
+  std::vector<int> ColPerm() { return colPerm_; }
+  std::vector<int> BlockPtr() { return blkPtr_; }
+
  private:
 
   Teuchos::RCP<Epetra_Map> NewRowMap_;
@@ -82,7 +89,11 @@ class AmesosBTF_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
   
   Teuchos::RCP<Epetra_CrsGraph> NewGraph_;
 
-  const bool verbose_;
+  std::vector<int> rowPerm_, colPerm_, blkPtr_;
+
+  int numBlocks_;
+
+  const bool upperTri_, verbose_;
 };
 
 } //namespace EpetraExt

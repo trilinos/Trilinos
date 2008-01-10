@@ -34,7 +34,6 @@
 
 #include <btf.h>
 
-#include <vector>
 using std::vector;
 
 namespace EpetraExt {
@@ -85,7 +84,6 @@ operator()( OriginalTypeRef orig )
   }
 
   // Transformation information
-  int numBlocks = 0;      // number of blocks found.
   int numMatch = 0;       // number of nonzeros on diagonal after permutation.
   double maxWork =  0.0;  // no limit on how much work to perform in max-trans.
   double workPerf = 0.0;  // how much work was performed in max-trans.
@@ -104,17 +102,28 @@ operator()( OriginalTypeRef orig )
   // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
   // (k,k)th entry in P*A*Q is structurally zero.
 
-  numBlocks = btf_order( n, &Ap[0], &Ai[0], maxWork, &workPerf,
-			 &colperm[0], &rowperm[0], &blkPtr[0], 
-			 &numMatch, &work[0] );
+  numBlocks_ = btf_order( n, &Ap[0], &Ai[0], maxWork, &workPerf,
+			  &colperm[0], &rowperm[0], &blkPtr[0], 
+			  &numMatch, &work[0] );
 
-  // Reverse ordering of permutation to get upper triangular form
-  vector<int> rowperm_t( n );
-  vector<int> colperm_t( n );
-  for( int i = 0; i < n; ++i )
-  {
-    rowperm_t[i] = BTF_UNFLIP(rowperm[(n-1)-i]);
-    colperm_t[i] = colperm[(n-1)-i];
+  // Reverse ordering of permutation to get upper triangular form, if necessary
+  rowPerm_.resize( n );
+  colPerm_.resize( n );
+  blkPtr_.resize( numBlocks_+1 );
+  if (upperTri_) {
+    for( int i = 0; i < n; ++i )
+    {
+      rowPerm_[i] = BTF_UNFLIP(rowperm[(n-1)-i]);
+      colPerm_[i] = colperm[(n-1)-i];
+    }
+    for( int i = 0; i < numBlocks_+1; ++i )
+      blkPtr_[i] = n - blkPtr[numBlocks_-i];
+  }
+  else {
+    colPerm_ = colperm;
+    blkPtr_ = blkPtr;
+    for( int i = 0; i < n; ++i )
+      rowPerm_[i] = BTF_UNFLIP(rowperm[i]);
   }
 
   if (verbose_) 
@@ -122,11 +131,11 @@ operator()( OriginalTypeRef orig )
     cout << "-----------------------------------------\n";
     cout << "BTF Output (n = " << n << ")\n";
     cout << "-----------------------------------------\n";
-    cout << "Num Blocks: " << numBlocks << endl;
+    cout << "Num Blocks: " << numBlocks_ << endl;
     cout << "Num NNZ Diags: " << numMatch << endl;
     cout << "RowPerm and ColPerm \n";
     for( int i = 0; i<n; ++i )
-      cout << rowperm_t[i] << "\t" << colperm_t[i] << endl;
+      cout << rowPerm_[i] << "\t" << colPerm_[i] << endl;
     cout << "-----------------------------------------\n";
   }
 
@@ -137,8 +146,8 @@ operator()( OriginalTypeRef orig )
   vector<int> newRangeElements( n );
   for( int i = 0; i < n; ++i )
   {
-    newRangeElements[ i ] = rowperm_t[i];
-    newDomainElements[ i ] = colperm_t[i];
+    newRangeElements[ i ] = rowPerm_[i];
+    newDomainElements[ i ] = colPerm_[i];
   }
 
   NewRowMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() ) );
