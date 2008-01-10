@@ -300,7 +300,7 @@ int BCManager::consolidateBCs()
 
       int size = bc->getFieldSize();
 
-      double fei_eps = std::numeric_limits<double>::epsilon();
+      double fei_eps = 1.e-49;
       for(int k=0; k<size; k++) {
 	if (std::abs(lastBC_alpha[k]) > fei_eps &&
             std::abs(lastBC_beta[k]) < fei_eps) {

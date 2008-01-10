@@ -7,11 +7,9 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
-
-#include <limits>
-#include <cmath>
-
 #include <fei_utils.hpp>
+
+#include <cmath>
 
 #include <snl_fei_CommUtils.hpp>
 #include <snl_fei_LinearSystem_General.hpp>
@@ -20,7 +18,6 @@
 #include <fei_VectorSpace.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_SparseRowGraph.hpp>
-#include <fei_ParameterSet.hpp>
 #include <snl_fei_Constraint.hpp>
 #include <fei_Record.hpp>
 #include <fei_utils.hpp>
@@ -41,7 +38,6 @@ snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGr
     matrixGraph_(matrixGraph),
     bcManager_(NULL),
     essBCvalues_(NULL),
-    allEssBCs_(NULL),
     resolveConflictRequested_(false),
     bcs_trump_slaves_(false),
     explicitBCenforcement_(false),
@@ -81,7 +77,6 @@ snl_fei::LinearSystem_General::~LinearSystem_General()
   delete bcManager_;
 
   delete essBCvalues_;
-  delete allEssBCs_;
 
   for(unsigned i=0; i<attributeNames_.size(); ++i) {
     delete [] attributeNames_[i];
@@ -92,50 +87,66 @@ snl_fei::LinearSystem_General::~LinearSystem_General()
 int snl_fei::LinearSystem_General::parameters(int numParams,
 				   const char* const* paramStrings)
 {
-  std::vector<std::string> stdstrings;
-  fei::utils::char_ptrs_to_strings(numParams, paramStrings, stdstrings);
-  fei::ParameterSet paramset;
-  fei::utils::parse_strings(stdstrings, " ", paramset);
+  if (numParams == 0 || paramStrings == NULL) return(0);
 
-  return( parameters(paramset) );
+  const char* param = snl_fei::getParam("name", numParams, paramStrings);
+  if (param != NULL) {
+    if (strlen(param) < 6) ERReturn(-1);
+
+    setName(&(param[5]));
+  }
+
+  param = snl_fei::getParam("resolveConflict",numParams,paramStrings);
+  if (param != NULL){
+    resolveConflictRequested_ = true;
+  }
+
+  param = snl_fei::getParam("BCS_TRUMP_SLAVE_CONSTRAINTS",
+                            numParams,paramStrings);
+  if (param != NULL) {
+    bcs_trump_slaves_ = true;
+  }
+
+  param = snl_fei::getParam("EXPLICIT_BC_ENFORCEMENT",numParams,paramStrings);
+  if (param != NULL){
+    explicitBCenforcement_ = true;
+  }
+
+  param = snl_fei::getParam("BC_ENFORCEMENT_NO_COLUMN_MOD",numParams,paramStrings);
+  if (param != NULL){
+    BCenforcement_no_column_mod_ = true;
+  }
+
+  if (matrix_.get() != NULL) {
+    fei::Matrix* matptr = matrix_.get();
+    fei::MatrixReducer* matred = dynamic_cast<fei::MatrixReducer*>(matptr);
+    if (matred != NULL) {
+      matptr = matred->getTargetMatrix().get();
+    }
+    fei::Matrix_Impl<LinearSystemCore>* lscmatrix =
+      dynamic_cast<fei::Matrix_Impl<LinearSystemCore>*>(matptr);
+    if (lscmatrix != NULL) {
+      lscmatrix->getMatrix()->parameters(numParams, (char**)paramStrings);
+    }
+  }
+
+  return(0);
 }
 
 //----------------------------------------------------------------------------
 int snl_fei::LinearSystem_General::parameters(const fei::ParameterSet& params)
 {
-  const fei::Param* param = 0;
-  fei::Param::ParamType ptype = fei::Param::BAD_TYPE;
+  int numParams = 0;
+  const char** paramStrings = NULL;
+  std::vector<std::string> stdstrings;
+  fei::utils::convert_ParameterSet_to_strings(&params, stdstrings);
+  fei::utils::strings_to_char_ptrs(stdstrings, numParams, paramStrings);
 
-  param = params.get("name");
-  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
-  if (ptype == fei::Param::STRING) {
-    std::string name = param->getStringValue();
-    setName(name.c_str());
-  }
+  int err = parameters(numParams, paramStrings);
 
-  params.getBoolParamValue("resolveConflict", resolveConflictRequested_);
+  delete [] paramStrings;
 
-  params.getBoolParamValue("BCS_TRUMP_SLAVE_CONSTRAINTS", bcs_trump_slaves_);
-
-  params.getBoolParamValue("EXPLICIT_BC_ENFORCEMENT", explicitBCenforcement_);
-
-  params.getBoolParamValue("BC_ENFORCEMENT_NO_COLUMN_MOD", BCenforcement_no_column_mod_);
-
-  if (matrix_.get() != NULL) {
-    LinearSystemCore* linsyscore =
-      fei::utils::get_LinearSystemCore(matrix_.get());
-    if (linsyscore != NULL) {
-      std::vector<std::string> stdstrings;
-      fei::utils::convert_ParameterSet_to_strings(&params, stdstrings);
-      int numParams = 0;
-      const char** paramStrings = NULL;
-      fei::utils::strings_to_char_ptrs(stdstrings, numParams, paramStrings);
-      linsyscore->parameters(numParams, (char**)paramStrings);
-      delete [] paramStrings;
-    }
-  }
-
-  return(0);
+  return(err);
 }
 
 //----------------------------------------------------------------------------
@@ -182,12 +193,6 @@ int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
     return(-1);
   }
   return(0);
-}
-
-//----------------------------------------------------------------------------
-BCManager* snl_fei::LinearSystem_General::get_BCManager()
-{
-  return( bcManager_ );
 }
 
 //----------------------------------------------------------------------------
@@ -372,7 +377,7 @@ void snl_fei::LinearSystem_General::getConstrainedEqns(std::vector<int>& crEqns)
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::LinearSystem_General::fill_EssBCValues()
+int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 {
   int numLocalBCs = bcManager_->getNumBCs();
   int globalNumBCs = 0;
@@ -406,7 +411,7 @@ int snl_fei::LinearSystem_General::fill_EssBCValues()
 
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();
 
-  CHK_ERR( bcManager_->finalizeBCEqns(*vecSpace, bcEqns_mat, bcs_trump_slaves_));
+  CHK_ERR( bcManager_->finalizeBCEqns(*vecSpace, bcEqns_mat, bcs_trump_slaves_) );
 
   if (resolveConflictRequested_) {
     fei::SharedPtr<SSMat> ssmat = bcEqns->getMatrix();
@@ -425,13 +430,13 @@ int snl_fei::LinearSystem_General::fill_EssBCValues()
   CHK_ERR( bcEqns->gatherFromOverlap(false) );
 
   CHK_ERR( snl_fei::separateBCEqns( *(bcEqns->getMatrix()),
-                                    essEqns, essAlpha, essGamma,
-                                    otherEqns, otherAlpha, otherBeta, otherGamma) );
+				    essEqns, essAlpha, essGamma,
+				    otherEqns, otherAlpha, otherBeta, otherGamma) );
 
   if (otherEqns.length() > 0) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "snl_fei::LinearSystem_General::implementBCs: ERROR, unexpected "
-          << "'otherEqns', (meaning non-dirichlet or non-essential BCs).";
+	  << "'otherEqns', (meaning non-dirichlet or non-essential BCs).";
     throw fei::Exception(osstr.str());
   }
 
@@ -460,34 +465,6 @@ int snl_fei::LinearSystem_General::fill_EssBCValues()
     }
   }
 
-  allEssBCs_ = new SSVec;
-  if (!BCenforcement_no_column_mod_) {
-    snl_fei::globalUnion(commUtilsInt_->getCommunicator(),
-                         *essBCvalues_, *allEssBCs_);
-
-    if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
-      FEI_OSTREAM& os = *output_stream_;
-      os << "  implementBCs, essEqns.length(): "<<essEqns.length()
-         << ", allEssBCs_->length(): " << allEssBCs_->length()<<FEI_ENDL;
-    }
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
-int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
-{
-  fill_EssBCValues();
-
-  if (essBCvalues_ == NULL) {
-    return(0);
-  }
-
-  if (!applyBCs) {
-    return(0);
-  }
-
   //If the underlying matrix is a LinearSystemCore instance, then this
   //function will return 0, and we're done. A non-zero return-code means
   //we should continue and enforce the BCs assuming a general matrix.
@@ -497,12 +474,24 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
     return(0);
   }
 
+  SSVec allEssBCs;
+  if (!BCenforcement_no_column_mod_) {
+    snl_fei::globalUnion(commUtilsInt_->getCommunicator(),
+                         *essBCvalues_, allEssBCs);
+
+    if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+      FEI_OSTREAM& os = *output_stream_;
+      os << "  implementBCs, essEqns.length(): "<<essEqns.length()
+         << ", allEssBCs.length(): " << allEssBCs.length()<<FEI_ENDL;
+    }
+  }
+
   if (essBCvalues_->length() > 0) {
     enforceEssentialBC_step_1(*essBCvalues_);
   }
 
-  if (!BCenforcement_no_column_mod_ && allEssBCs_->length() > 0) {
-    enforceEssentialBC_step_2(*allEssBCs_);
+  if (!BCenforcement_no_column_mod_ && allEssBCs.length() > 0) {
+    enforceEssentialBC_step_2(allEssBCs);
   }
 
   return(0);
@@ -814,8 +803,7 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(SSVec& essBCs)
       }
     }
 
-    double fei_eps = std::numeric_limits<double>::epsilon();
-
+    const double fei_eps = 1.e-49;
     if (std::abs(value) > fei_eps) {
       rhs_->sumIn(1, &i, &value);
 

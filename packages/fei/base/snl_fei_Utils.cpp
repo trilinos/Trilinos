@@ -512,7 +512,7 @@ int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
   feiArray<SSVec*>& bcEqns  = bcEqnBuf.getRows();
   int numBCEqns = bcEqns.length();
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_eps = 1.e-49;
 
   for(int i=0; i<numBCEqns; i++){
     feiArray<double>& bcCoefs = bcEqns[i]->coefs();
@@ -590,7 +590,7 @@ int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
   double* coefPtr = &(coefs[0]);
   int* indicesPtr = &(indices[0]);
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_eps = 1.e-49;
 
   std::vector<int> cr_indices;
   std::map<int,Constraint<fei::Record*,fei::record_lessthan>*>& lagrangeConstraints =

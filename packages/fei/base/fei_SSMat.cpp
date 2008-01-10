@@ -333,7 +333,8 @@ int SSMat::matMat(SSMat& inMat, SSMat& result, bool storeResultZeros)
   SSVec** rowsPtr = rows_->dataPtr();
   int* rowNumbersPtr = rowNumbers_->dataPtr();
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  //double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_eps = 1.e-49;
 
   //loop down the rows of 'this' matrix
   for(int i=0; i<rowNumbers_->length(); i++) {
@@ -583,9 +584,9 @@ int SSMat::matTransVec(SSVec& inVec, SSVec& result)
       int col = indPtr[j];
       double coef = coefPtr[j] * inVecCoef;
 
-      index = snl_fei::binarySearch(col, resultIndicesPtr,
+      int thisindex = snl_fei::binarySearch(col, resultIndicesPtr,
                                         resultIndLen, insertPoint);
-      if (index >= 0) resultCoefsPtr[index] += coef;
+      if (thisindex >= 0) resultCoefsPtr[thisindex] += coef;
       else {
 	resultIndices.insert(col, insertPoint);
 	resultCoefs.insert(coef, insertPoint);

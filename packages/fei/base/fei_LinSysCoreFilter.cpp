@@ -1791,7 +1791,7 @@ int LinSysCoreFilter::resolveConflictingCRs(EqnBuffer& bcEqns)
   indices[1] = 1;
   indices[2] = 2;
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_eps = 1.e-49;
 
   while(cr_iter != cr_end) {
     ConstraintType& multCR = *((*cr_iter).second);

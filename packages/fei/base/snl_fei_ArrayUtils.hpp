@@ -427,7 +427,7 @@ namespace snl_fei {
         std::lower_bound(list.begin(), list.end(), item);
 
       if (iter == list.end() || *iter != item) {
-        list.insert(iter, item);
+        iter = list.insert(iter, item);
       }
 
       return( iter - list.begin() );

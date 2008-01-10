@@ -532,6 +532,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<"assembleReducedMatrix(fei::Matrix)"<<FEI_ENDL;
     if (output_level_ >= fei::FULL_LOGS) {
+      os << dbgprefix_<<"Kid:"<<FEI_ENDL<<Kid_;
       os << dbgprefix_<<"Kdi:"<<FEI_ENDL<<Kdi_;
     }
   }
@@ -1149,7 +1150,7 @@ Reducer::copyOutVectorValues(int numValues,
       int index = globalIndices[offsets[ii]];
       int idx = snl_fei::binarySearch(index, indices, len);
       if (idx < 0) {
-        throw fei::Exception("slave index not found in tmpVec1_.");
+        continue;
       }
 
       values[offsets[ii]] = coefs[idx];

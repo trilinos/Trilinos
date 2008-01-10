@@ -15,9 +15,9 @@
 #include <vector>
 #include <snl_fei_ArrayUtils.hpp>
 
-#define Set_end_val -99999999
-
 namespace fei {
+
+const int Set_end_val = -99999999;
 
 /** A specialized container that mimics std::set in many ways.
   This set can only be used for integer types (such as short, int, long).
@@ -38,22 +38,21 @@ class ctg_set {
   public:
   /** constructor */
   ctg_set(int alloc_incr=32)
-    : data_(), dataptr_(0), len_(0), highwatermark_(0), alloc_incr_(alloc_incr) {}
+    : dataptr_(0), len_(0), highwatermark_(0), alloc_incr_(alloc_incr) {}
 
   /** constructor */
   ctg_set(const ctg_set<T>& src)
-    : data_(src.data_), dataptr_(0), len_(src.len_),
+    : dataptr_(0), len_(src.len_),
       highwatermark_(src.highwatermark_), alloc_incr_(src.alloc_incr_)
     {
       if (len_>0) {
-        data_.reserve(highwatermark_);
-        dataptr_ = &data_[0];
+        expand_dataptr(highwatermark_);
         for(int i=0; i<len_; ++i) dataptr_[i] = src.dataptr_[i];
       }
     }
 
   /** destructor */
-  virtual ~ctg_set(){}
+  virtual ~ctg_set(){clear();}
 
   /** alias for template parameter */
   typedef T key_type;
@@ -144,7 +143,7 @@ class ctg_set {
     {
       T val = Set_end_val;
       if (len_>0) {
-	val = data_[0];
+	val = dataptr_[0];
       }
       return(const_iterator(this, val, 0));
     }
@@ -155,10 +154,9 @@ class ctg_set {
   /** assignment operator= */
   ctg_set<T>& operator=(const ctg_set<T>& src)
     {
-      data_ = src.data_;
-      dataptr_ = &data_[0];
-      len_ = src.len_;
       highwatermark_ = src.highwatermark_;
+      expand_dataptr(highwatermark_);
+      len_ = src.len_;
 
       return(*this);
     }
@@ -183,7 +181,7 @@ class ctg_set {
    */
   int clear()
   {
-    data_.resize(0);
+    delete [] dataptr_;
     dataptr_ = 0;
     len_ = 0;
     highwatermark_ = 0;
@@ -201,8 +199,7 @@ class ctg_set {
     }
     if (len_ < 1) {
       highwatermark_ = alloc_incr_;
-      data_.reserve(highwatermark_);
-      dataptr_ = &data_[0];
+      expand_dataptr(highwatermark_);
       dataptr_[0] = item;
       dataptr_[1] = item+1;
       len_ = 2;
@@ -256,7 +253,7 @@ class ctg_set {
 
 	//Since insertPoint is an odd number, item lies just outside an existing
 	//range so we simply need to add item to the range by incrementing
-	//data_[insertPoint].
+	//dataptr_[insertPoint].
 	++dataptr_[insertPoint];
 
 	//now check whether this newly expanded range should be merged
@@ -290,8 +287,7 @@ class ctg_set {
 	    len_ += 2;
 	    if (len_ > highwatermark_) {
 	      highwatermark_ += alloc_incr_;
-	      data_.reserve(highwatermark_);
-	      dataptr_ = &data_[0];
+	      expand_dataptr(highwatermark_);
 	    }
 	    if (nmove > 0) {
 	      T* dest = dataptr_+insertPoint+2;
@@ -315,8 +311,7 @@ class ctg_set {
     len_ += 2;
     if (len_ > highwatermark_) {
       highwatermark_ += alloc_incr_;
-      data_.reserve(highwatermark_);
-      dataptr_ = &data_[0];
+      expand_dataptr(highwatermark_);
     }
     dataptr_[insertPoint] = item;
     dataptr_[insertPoint+1] = item+1;
@@ -332,8 +327,7 @@ class ctg_set {
     }
     if (len_ < 1) {
       highwatermark_ = alloc_incr_;
-      data_.reserve(highwatermark_);
-      dataptr_ = &data_[0];
+      expand_dataptr(highwatermark_);
       dataptr_[0] = item;
       dataptr_[1] = item+1;
       len_ = 2;
@@ -382,8 +376,7 @@ class ctg_set {
             len_ += 2;
             if (len_ > highwatermark_) {
               highwatermark_ += alloc_incr_;
-              data_.reserve(highwatermark_);
-              dataptr_ = &data_[0];
+              expand_dataptr(highwatermark_);
             }
 
             T* dest = dataptr_+insertPoint+2;
@@ -424,8 +417,7 @@ class ctg_set {
     len_ += 2;
     if (len_ > highwatermark_) {
       highwatermark_ += alloc_incr_;
-      data_.reserve(highwatermark_);
-      dataptr_ = &data_[0];
+      expand_dataptr(highwatermark_);
     }
     dataptr_[insertPoint] = item;
     dataptr_[insertPoint+1] = item+1;
@@ -447,13 +439,6 @@ class ctg_set {
       if (len_ < 1) {
 	return(const_iterator(0, Set_end_val, 0));
       }
-
-//       typename std::vector<T>::iterator data_begin = data_.begin();
-//       typename std::vector<T>::iterator pos =
-// 	std::lower_bound(data_begin, data_.end(), item);
-
-//       int index = *pos == item ? pos-data_begin : -1;
-//       int insertPoint = index < 0 ? pos-data_begin : -1;
 
       int insertPoint = -1;
       int index = snl_fei::binarySearch(item, dataptr_, len_, insertPoint);
@@ -515,8 +500,16 @@ class ctg_set {
     }
 
  private:
+  void expand_dataptr(int newlen)
+  {
+    T* newptr = new T[newlen];
+    for(int i=0; i<len_; ++i) newptr[i] = dataptr_[i];
+//    memset(newptr+len_, 0, sizeof(T)*(newlen-len_));
+    delete [] dataptr_;
+    dataptr_ = newptr;
+  }
+
   friend class const_iterator;
-  std::vector<T> data_;
   T* dataptr_;
   int len_;
   int highwatermark_;

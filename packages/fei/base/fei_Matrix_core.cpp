@@ -269,8 +269,8 @@ fei::Matrix_core::copyTransposeToWorkArrays(int numRows, int numCols,
   //copy the transpose of 'values' into work-arrays.
 
   int arrayLen = numCols*numRows;
-  work_1D.resize(arrayLen);
-  work_2D.resize(numCols);
+  work_1D.assign(arrayLen,0.0);
+  work_2D.assign(numCols,(const double*)NULL);
 
   const double** dataPtr = &work_2D[0];
   double* data1DPtr = &work_1D[0];

@@ -140,7 +140,7 @@ int SSVec::addEntries_sortedInput(int numEntries,
   int indicesLen = indices_->length();
   int start = 0, end = indices_->length()-1;
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_eps = 1.e-49;
 
   if (indicesLen < 1) {
     coefs_->reAllocate(numEntries);

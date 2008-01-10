@@ -1388,7 +1388,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
       }
     }
 
-    double fei_eps = std::numeric_limits<double>::epsilon();
+    double fei_eps = 1.e-49;
 
     offset = 0;
     for(unsigned jj=0; jj<masterEqns.size(); ++jj) {
@@ -1475,7 +1475,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
     (*output_stream_) << *D_;
   }
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_eps = 1.e-49;
 
   g_nonzero_ = false;
   for(int j=0; j<g_->length(); ++j) {
@@ -2043,12 +2043,13 @@ int fei::MatrixGraph_Impl2::addBlockToGraph_multiField_symmetric(fei::Graph* gra
     if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
       FEI_OSTREAM& os = *output_stream_;
 
-      unsigned offset = 0;
+      unsigned thisoffset = 0;
       for(int ii=0; ii<numIDs; ++ii) {
-        os << dbgprefix_<<"scatterIndices: ID=" <<records[ii]->getID()<<": ";
+        int ID = records[ii]->getID();
+        os << dbgprefix_<<"scatterIndices: ID=" <<ID<<": ";
         int num = records[ii]->getFieldMask()->getNumIndices();
         for(int jj=0; jj<num; ++jj) {
-          os << indicesPtr[offset++] << " ";
+          os << indicesPtr[thisoffset++] << " ";
         }
         os << FEI_ENDL;
       }

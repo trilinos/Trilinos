@@ -3856,7 +3856,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
       CHK_ERR( getEqnNumbers( mNodeID, FEI_NODE, mFieldID,
 			      mfSize, eqns.dataPtr()));
 
-      double fei_eps = std::numeric_limits<double>::epsilon();
+      double fei_eps = 1.e-49;
 
       for(int k=0; k<mfSize; k++) {
 	if (std::abs(mWeightsRef[mwOffset++]) > fei_eps) {

@@ -9,32 +9,31 @@
 #ifndef _fei_Matrix_Impl_hpp_
 #define _fei_Matrix_Impl_hpp_
 
-#include "fei_iosfwd.hpp"
-#include "fei_sstream.hpp"
+#include <snl_fei_fwd.hpp>
+#include <fei_mpi.h>
+#include <feiArray.hpp>
+#include <fei_defs.h>
+#include "fei_iostream.hpp"
 #include "fei_fstream.hpp"
-#include "fei_mpi.h"
-#include "feiArray.hpp"
-#include "fei_defs.h"
+#include "fei_sstream.hpp"
 
-#include "snl_fei_MatrixTraits.hpp"
-#include "snl_fei_MatrixTraits_LinProbMgr.hpp"
-#include "snl_fei_MatrixTraits_LinSysCore.hpp"
-#include "snl_fei_MatrixTraits_FEData.hpp"
-#include "snl_fei_MatrixTraits_SSMat.hpp"
+#include <snl_fei_MatrixTraits.hpp>
+#include <snl_fei_MatrixTraits_LinProbMgr.hpp>
+#include <snl_fei_MatrixTraits_LinSysCore.hpp>
+#include <snl_fei_MatrixTraits_FEData.hpp>
+#include <snl_fei_MatrixTraits_SSMat.hpp>
 
-#include "snl_fei_FEMatrixTraits.hpp"
-#include "snl_fei_FEMatrixTraits_FED.hpp"
-#include "snl_fei_BlockMatrixTraits.hpp"
-#include "fei_Matrix.hpp"
-#include "fei_MatrixGraph.hpp"
-#include "fei_Matrix_core.hpp"
-#include "snl_fei_Utils.hpp"
-
-#include <map>
+#include <snl_fei_FEMatrixTraits.hpp>
+#include <snl_fei_FEMatrixTraits_FED.hpp>
+#include <snl_fei_BlockMatrixTraits.hpp>
+#include <fei_Matrix.hpp>
+#include <fei_MatrixGraph.hpp>
+#include <fei_Matrix_core.hpp>
+#include <snl_fei_Utils.hpp>
 
 #undef fei_file
 #define fei_file "fei_Matrix_Impl.hpp"
-#include "fei_ErrMacros.hpp"
+#include <fei_ErrMacros.hpp>
 
 namespace fei {
 
@@ -559,7 +558,7 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
 
   if (fieldSize <= 0) ERReturn(-1);
 
-  work_indices_.reserve(fieldSize*2);
+  work_indices_.resize(fieldSize*2);
   int* indicesPtr = &work_indices_[0];
   int i;
 
@@ -595,11 +594,10 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
 
   if (fieldSize <= 0) ERReturn(-1);
 
-  work_data2D_.reserve(fieldSize);
+  work_data2D_.resize(fieldSize);
 
   const double** data2DPtr = &work_data2D_[0];
-  int i;
-  for(i=0; i<fieldSize; ++i) {
+  for(int i=0; i<fieldSize; ++i) {
     data2DPtr[i] = &(data[i*fieldSize]);
   }
 
@@ -652,7 +650,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
     int numIDs = pattern->getNumIDs();
 
     const int* numIndicesPerID = pattern->getNumIndicesPerID();
-    work_indices_.reserve(numIDs);
+    work_indices_.resize(numIDs);
     int i, *nodeNumbers = &work_indices_[0];
 
     for(i=0; i<numIDs; ++i) {
@@ -859,7 +857,7 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
     myvalues = &work_data2D_[0];
   }
 
-  work_ints_.reserve(numRows);
+  work_ints_.resize(numRows);
 
   if (haveBlockMatrix()) {
     return( giveToBlockMatrix(numRows, rows, numCols, cols,
@@ -949,8 +947,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
   int i, j;
 
   if (sumInto) {
-    std::vector<int> temp((numRows+numCols)*2);
-    int* tempPtr = &temp[0];
+    feiArray<int> temp((numRows+numCols)*2);
+    int* tempPtr = temp.dataPtr();
     int* blkRows = tempPtr;
     int* blkRowOffsets = tempPtr+numRows;
     int* blkCols = blkRowOffsets+numRows;
@@ -960,68 +958,59 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 			    blkRows, blkRowOffsets,
 			    blkCols, blkColOffsets) );
 
-    std::vector<int> blockRows, blockRowSizes;
-    std::vector<int> blockCols, blockColSizes;
+    feiArray<int> blockRows, blockRowSizes;
+    feiArray<int> blockCols, blockColSizes;
+    for(i=0; i<numRows; ++i) snl_fei::sortedListInsert(blkRows[i], blockRows);
+    for(i=0; i<numCols; ++i) snl_fei::sortedListInsert(blkCols[i], blockCols);
 
     int rowSizeTotal = 0, colSizeTotal = 0;
 
-    i=0;
-    while(i<numRows) {
-      int size = pointBlockMap->getBlkEqnSize(blkRows[i]);
-      blockRows.push_back(blkRows[i]);
-      blockRowSizes.push_back(size);
-      i += size;
+    for(i=0; i<blockRows.length(); ++i) {
+      int size = pointBlockMap->getBlkEqnSize(blockRows[i]);
+      blockRowSizes.append(size);
+      rowSizeTotal += size;
     }
-    rowSizeTotal = i;
-
-    i=0;
-    while(i<numCols) {
-      int size = pointBlockMap->getBlkEqnSize(blkCols[i]);
-      blockCols.push_back(blkCols[i]);
-      blockColSizes.push_back(size);
-      i += size;
+    for(i=0; i<blockCols.length(); ++i) {
+      int size = pointBlockMap->getBlkEqnSize(blockCols[i]);
+      blockColSizes.append(size);
+      colSizeTotal += size;
     }
-    colSizeTotal = i;
+    feiArray<double> coefs_1d(rowSizeTotal*colSizeTotal);
+    double* coefs1dPtr = coefs_1d.dataPtr();
+    coefs_1d = 0.0;
+    feiArray<double*> coefs_2d(blockRows.length()*blockCols.length());
+    double** coefs2dPtr = coefs_2d.dataPtr();
 
-    std::vector<double> coefs_1d(rowSizeTotal*colSizeTotal, 0.0);
-    double* coefs1dPtr = &coefs_1d[0];
-    std::vector<double*> coefs_2d(blockRows.size()*blockCols.size());
-    double** coefs2dPtr = &coefs_2d[0];
-
-    int offset = 0;
-    int row_offset = 0;
-    for(i=0; i<(int)blockRows.size(); ++i) {
-      int col_offset = 0;
-      for(j=0; j<(int)blockCols.size(); ++j) {
-        for(int jj=0; jj<blockColSizes[j]; ++jj) {
-          for(int ii=0; ii<blockRowSizes[i]; ++ii) {
-            coefs1dPtr[offset++] = values[row_offset+ii][col_offset+jj];
-          }
-        }
-        col_offset += blockColSizes[j];
-      }
-      row_offset += blockRowSizes[i];
-    }
-
-    offset = 0;
     int blkCounter = 0;
-    for(i=0; i<(int)blockRows.size(); ++i) {
-      for(j=0; j<(int)blockCols.size(); ++j) {
+    int offset = 0;
+    for(i=0; i<blockRows.length(); ++i) {
+      for(j=0; j<blockCols.length(); ++j) {
 	coefs2dPtr[blkCounter++] = &(coefs1dPtr[offset]);
 	offset += blockRowSizes[i]*blockColSizes[j];
       }
     }
 
-    for(i=0; i<(int)blockRows.size(); ++i) {
+    for(i=0; i<numRows; ++i) {
+      int rowind = snl_fei::binarySearch(blkRows[i], blockRows);
+      int rowsize = blockRowSizes[rowind];
+
+      for(j=0; j<numCols; ++j) {
+	int colind = snl_fei::binarySearch(blkCols[j], blockCols);
+	int pos = blkColOffsets[j]*rowsize + blkRowOffsets[i];
+
+	coefs2dPtr[rowind*blockCols.length()+colind][pos] += values[i][j];
+      }
+    }
+
+    for(i=0; i<blockRows.length(); ++i) {
       CHK_ERR( giveToUnderlyingBlockMatrix(blockRows[i],
 					   blockRowSizes[i],
-					   blockCols.size(),
-					   &blockCols[0],
-					   &blockColSizes[0],
-					   &blockColSizes[0],
+					   blockCols.length(),
+					   blockCols.dataPtr(),
+					   blockColSizes.dataPtr(),
+					   blockColSizes.dataPtr(),
 					   coefs2dPtr,
 					   true) );
-      coefs2dPtr += blockCols.size();
     }
 
     return(0);
@@ -1056,17 +1045,19 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::getRowLength(matrix_.get(), blockRow,
 						blockRowLength) );
 
-    std::vector<int> blkCols(blockRowLength);
-    int* blkCols_ptr = &blkCols[0];
-    std::vector<int> blkColDims(blockRowLength);
-    int* blkColDims_ptr = &blkColDims[0];
-    std::vector<double> coefs_1D(blockRowLength*coefBlkLen, 0.0);
-    double* coefs_1D_ptr = &coefs_1D[0];
-    int coefsLen = coefs_1D.size();
-    std::vector<double*> coefs_2D(blockRowLength);
-    double** coefs_2D_ptr = &coefs_2D[0];
+    feiArray<int> blkCols(blockRowLength);
+    int* blkCols_ptr = blkCols.dataPtr();
+    feiArray<int> blkColDims(blockRowLength);
+    int* blkColDims_ptr = blkColDims.dataPtr();
+    feiArray<double> coefs_1D(blockRowLength*coefBlkLen);
+    double* coefs_1D_ptr = coefs_1D.dataPtr();
+    int coefsLen = coefs_1D.length();
+    feiArray<double*> coefs_2D(blockRowLength);
+    double** coefs_2D_ptr = coefs_2D.dataPtr();
 
-    std::vector<int> LDAs(blockRowLength, blockRowSize);
+    feiArray<int> LDAs(blockRowLength);
+    LDAs = blockRowSize;
+    coefs_1D = 0.0;
 
     int checkRowLen = 0;
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::copyOutRow(matrix_.get(),
@@ -1105,7 +1096,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     //Now put the block-row back into the matrix
     CHK_ERR( giveToUnderlyingBlockMatrix(blockRow, blockRowSize,
 					 blockRowLength, blkCols_ptr,
-					 &LDAs[0],
+					 LDAs.dataPtr(),
 					 blkColDims_ptr,
 					 coefs_2D_ptr,
 					 false) );
@@ -1167,10 +1158,10 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
     globalNumCols = cspace->getGlobalNumIndices();
   }
 
-  std::vector<int> indices_owned(localNumRows);
+  feiArray<int> indices_owned(localNumRows);
   int i, chkNum, localNNZ = 0;
-  int* rowsPtr = &indices_owned[0];
-  CHK_ERR( vspace->getIndices_Owned(localNumRows, rowsPtr, chkNum));
+  CHK_ERR( vspace->getIndices_Owned(localNumRows, indices_owned.dataPtr(), chkNum));
+  int* rowsPtr = indices_owned.dataPtr();
   for(i=0; i<localNumRows; ++i) {
     int len;
     CHK_ERR( getRowLength(rowsPtr[i], len) );
@@ -1203,24 +1194,23 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
 
     int rowLength;
 
-    for(unsigned i=0; i<indices_owned.size(); ++i) {
-      int row = indices_owned[i];
-      CHK_ERR( getRowLength(row, rowLength) );
+    for(int i=firstLocalOffset(); i<=lastLocalOffset(); ++i) {
+      CHK_ERR( getRowLength(i, rowLength) );
 
-      work_indices_.reserve(rowLength);
-      work_data1D_.reserve(rowLength);
+      work_indices_.resize(rowLength);
+      work_data1D_.resize(rowLength);
 
       int* indPtr = &work_indices_[0];
       double* coefPtr = &work_data1D_[0];
 
-      CHK_ERR( copyOutRow(row, rowLength, coefPtr, indPtr) );
+      CHK_ERR( copyOutRow(i, rowLength, coefPtr, indPtr) );
 
       for(int j=0; j<rowLength; ++j) {
         if (matrixMarketFormat) {
-          ofs << row+1 <<" "<<indPtr[j]+1<<" "<<coefPtr[j]<<FEI_ENDL;
+          ofs << i+1 <<" "<<indPtr[j]+1<<" "<<coefPtr[j]<<FEI_ENDL;
         }
         else {
-          ofs << row <<" "<<indPtr[j]<<" "<<coefPtr[j]<<FEI_ENDL;
+          ofs << i <<" "<<indPtr[j]<<" "<<coefPtr[j]<<FEI_ENDL;
         }
       }
     }
@@ -1255,10 +1245,10 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
 
   int globalNNZ = 0;
   int localNumRows = vspace->getNumIndices_Owned();
-  std::vector<int> indices_owned(localNumRows);
+  feiArray<int> indices_owned(localNumRows);
   int i, chkNum, localNNZ = 0;
-  int* rowsPtr = &indices_owned[0];
-  CHK_ERR( vspace->getIndices_Owned(localNumRows, rowsPtr, chkNum));
+  CHK_ERR( vspace->getIndices_Owned(localNumRows, indices_owned.dataPtr(), chkNum));
+  int* rowsPtr = indices_owned.dataPtr();
   for(i=0; i<localNumRows; ++i) {
     int len;
     CHK_ERR( getRowLength(rowsPtr[i], len) );
@@ -1286,20 +1276,19 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
 
     int rowLength;
 
-    for(unsigned i=0; i<indices_owned.size(); ++i) {
-      int row = indices_owned[i];
-      CHK_ERR( getRowLength(row, rowLength) );
+    for(int i=firstLocalOffset(); i<=lastLocalOffset(); ++i) {
+      CHK_ERR( getRowLength(i, rowLength) );
 
-      work_indices_.reserve(rowLength);
-      work_data1D_.reserve(rowLength);
+      work_indices_.resize(rowLength);
+      work_data1D_.resize(rowLength);
 
       int* indPtr = &work_indices_[0];
       double* coefPtr = &work_data1D_[0];
 
-      CHK_ERR( copyOutRow(row, rowLength, coefPtr, indPtr) );
+      CHK_ERR( copyOutRow(i, rowLength, coefPtr, indPtr) );
 
       for(int j=0; j<rowLength; ++j) {
-	ostrm << row << " " << indPtr[j] << " " << coefPtr[j] << FEI_ENDL;
+	ostrm << i << " " << indPtr[j] << " " << coefPtr[j] << FEI_ENDL;
       }
     }
   }
