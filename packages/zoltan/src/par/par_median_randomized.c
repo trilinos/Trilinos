@@ -32,9 +32,7 @@ extern "C" {
 #define HIPART 1
 #define MEDPART 3
 
-/*
 #define WATCH_MEDIAN_FIND
-*/
 
 typedef struct _commStruct{
   int Tflops_Special;
@@ -148,8 +146,10 @@ int Zoltan_RB_find_median_randomized(
     sprintf(debugText,"(%d - %d) ",proclower,proclower+num_procs-1);
 #endif
  
-  if (counter)
+  if (counter){
     iterationSum = counter + 7;
+    serialIterations = counter + 8;
+  }
 
   loopCount=0;
   msgBuf = NULL;
