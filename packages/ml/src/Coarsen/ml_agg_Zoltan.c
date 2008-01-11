@@ -116,8 +116,6 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
     printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
   }
-
-  //  zoltan_type=ML_ZOLTAN_TYPE_HYPERGRAPH;/*HAQ*/
   
   /* Set the load-balance method */
   if(zoltan_type == ML_ZOLTAN_TYPE_RCB) strcpy(str,"RCB");
@@ -266,7 +264,6 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
   int i;
 
   /* sets the number of partitions */
-
   char value[80];
   sprintf(value,"%d",N_parts);
   Zoltan_Set_Param(zz,"num_global_partitions", value);
@@ -514,7 +511,7 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
 
   /* Get the row lengths --- use special purpose code for MSR matrices,
      just call the getrow routine for everything else */
-  if(A->getrow->func_ptr== MSR_getrows){
+  if(A->getrow->func_ptr==MSR_getrows){
     input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(A);
     for(i=0;i<N;i++) 
       sizes[i] = (input_matrix->columns[i+1] - input_matrix->columns[i] + 1)* (sizeof(double)+sizeof(int));
