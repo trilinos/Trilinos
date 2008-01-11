@@ -22,6 +22,7 @@ extern "C" {
 #include "zz_const.h"
 #include "shared.h"
 #include "par_bisect_const.h"
+#include "par_median_const.h"
 #include "par_tflops_special_const.h"
 #include "par_average_const.h"
 
@@ -102,7 +103,6 @@ int Zoltan_RB_find_bisector(
   MPI_Comm local_comm,  /* MPI communicator on which to find bisector        */
   double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
-  int *counter,         /* returned for stats, # of bisector interations     */
   int num_procs,        /* Number of procs in partition (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in partition (Tflops_Special)*/
   int num_parts,        /* Number of partitions in set (Tflops_Special)      */
@@ -119,6 +119,7 @@ int Zoltan_RB_find_bisector(
 {
 /* Local declarations. */
   char    yo[] = "Zoltan_find_bisector";
+  int loopCount = 0;
 
 #if (RB_MAX_WGTS <= 1)
 
@@ -364,8 +365,9 @@ int Zoltan_RB_find_bisector(
       localsum[j] += wgts[i*nwgts+j];
   }
 
+  rank = proc - proclower;
+
   if (Tflops_Special) {
-     rank = proc - proclower;
      tmp = (double *) ZOLTAN_MALLOC(nprocs*sizeof(double));
      if (!tmp) {
         ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
@@ -575,7 +577,9 @@ int Zoltan_RB_find_bisector(
         med->wtlo[j] = 0.;
         med->wthi[j] = 0.;
       }
-      if (counter != NULL) (*counter)++;
+
+      loopCount++;
+
       if (Tflops_Special) {
          i = 1;
          Zoltan_reduce_bisector(num_procs, rank, proc, 1, medme, med, &i, 
@@ -993,6 +997,8 @@ End:
     MPI_Type_free(&med_type);
     MPI_Op_free(&med_op);
   }
+
+  par_median_accumulate_counts(nprocs, num_procs, rank, loopCount);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 

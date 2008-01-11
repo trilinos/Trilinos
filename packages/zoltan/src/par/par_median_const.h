@@ -24,13 +24,13 @@ extern "C" {
 
 extern int Zoltan_RB_find_median(int, double *, double *, int *,
   int, int, double, MPI_Comm,
-  double *, int, int *, int, int,
+  double *, int, int, int,
   int, int, int, double, double, double,
   double *, double *, int *, int, int);
 
 extern int Zoltan_RB_find_median_randomized(int, double *, double *, int *,
   int, int, double, MPI_Comm,
-  double *, int, int *, int, int,
+  double *, int, int, int,
   int, int, int, double, double, double,
   double *, double *, int *, int, int);
 
@@ -39,6 +39,8 @@ extern void Zoltan_RB_reduce(int, int, int, void*, void*,
                              int, int*, MPI_Datatype, MPI_Comm, 
                              MPI_User_function);
 
+extern void par_median_accumulate_counts(int nprocs, int num_procs, int rank, int count);
+extern void par_median_print_counts(MPI_Comm comm, int print_proc);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

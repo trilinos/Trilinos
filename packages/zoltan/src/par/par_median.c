@@ -28,9 +28,8 @@ extern "C" {
 #include "zoltan_timer.h"
 
 #define TINY   1.0e-6
-/*
-#define WATCH_MEDIAN_FIND
-*/
+
+/*#define WATCH_MEDIAN_FIND*/
 
 /* Data structure for parallel find median routine */
 
@@ -72,7 +71,6 @@ int Zoltan_RB_find_median(
   MPI_Comm local_comm,  /* MPI communicator on which to find median          */
   double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
-  int *counter,         /* returned for stats, # of median interations       */
   int nprocs,           /* Total number of processors (Tflops_Special)       */
   int num_procs,        /* Number of procs in set (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in set (Tflops_Special)*/
@@ -104,8 +102,6 @@ int Zoltan_RB_find_median(
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank=0;                    /* rank in partition (Tflops_Special) */
   int     loopCount=0;
-  int     *iterationSum = NULL;       /* Sum of iterations reqd for each non-serial cut */
-  int     *serialIterations = NULL;   /* Sum on each process of iterations when num_procs=1 */
 
 #ifdef WATCH_MEDIAN_FIND
   char debugText[64];
@@ -119,11 +115,6 @@ int Zoltan_RB_find_median(
 #endif
 
   rank = proc - proclower;
-
-  if (counter){
-    iterationSum = counter + 7;
-    serialIterations = counter + 8;
-  }
 
   /* MPI data types and user functions */
 
@@ -283,22 +274,6 @@ int Zoltan_RB_find_median(
       med.proclo = med.prochi = proc;
 
       loopCount++;
-
-      /* combine median data struct across current subset of procs */
-
-      if (counter != NULL){
-        if (num_procs > 1){
-          /* Total iterations on each process (excluding serial)  */
-          (*counter)++;        
-        
-          /* Total iterations for each cut (excluding serial calculations) */
-          if (rank==0) (*iterationSum)++;
-        }
-        else{
-          /* Total iterations on each process for serial median find */
-          (*serialIterations)++;
-        }
-      }
 
       if (Tflops_Special) {
          i = 1;
@@ -501,6 +476,8 @@ int Zoltan_RB_find_median(
       debugText, loopCount,dotnum, initmin, initmax, *valuehalf);
   }
 #endif
+
+  par_median_accumulate_counts(nprocs, num_procs, rank, loopCount);
 
   return 1;
 }

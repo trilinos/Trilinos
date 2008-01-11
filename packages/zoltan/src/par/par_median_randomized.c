@@ -32,7 +32,7 @@ extern "C" {
 #define HIPART 1
 #define MEDPART 3
 
-#define WATCH_MEDIAN_FIND
+/*#define WATCH_MEDIAN_FIND*/
 
 typedef struct _commStruct{
   int Tflops_Special;
@@ -95,9 +95,8 @@ int Zoltan_RB_find_median_randomized(
   int proc,             /* this proc number (rank)                           */
   double fractionlo,    /* fraction of weight that should be in bottom half  */
   MPI_Comm local_comm,  /* MPI communicator on which to find median          */
-  double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
+  double *valuehalf,    /* on entry - first guess , on exit - median         */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
-  int *counter,         /* returned for stats, # of median interations       */
   int nprocs,           /* Total number of processors (Tflops_Special)       */
   int num_procs,        /* Number of procs in set (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in set (Tflops_Special)*/
@@ -126,10 +125,6 @@ int Zoltan_RB_find_median_randomized(
   int     i, numlist, ndots, ierr;
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank=0;                    /* rank in partition (Tflops_Special) */
-  int     *iterationSum = NULL;       /* Sum of iterations reqd for each non-serial cut */
-  int     *serialIterations = NULL;   /* Sum on each process of iterations when num_procs=1 */
-
-
   int     found_median;
   int     left, right, middle;
   int     loopCount;
@@ -146,11 +141,6 @@ int Zoltan_RB_find_median_randomized(
     sprintf(debugText,"(%d - %d) ",proclower,proclower+num_procs-1);
 #endif
  
-  if (counter){
-    iterationSum = counter + 7;
-    serialIterations = counter + 8;
-  }
-
   loopCount=0;
   msgBuf = NULL;
   ierr = return_ok;
@@ -421,21 +411,7 @@ int Zoltan_RB_find_median_randomized(
   }
 #endif
 
-
-  if (counter != NULL){
-    if (num_procs > 1){
-      /* Total iterations on each process (excluding serial)  */
-      (*counter) += loopCount;
-
-      /* Total iterations for each cut (excluding serial calculations) */
-      if (rank==0) (*iterationSum) += loopCount;
-    }
-    else{
-      /* Total iterations on each process for serial median find */
-      (*serialIterations) += loopCount;
-    }
-  }
-
+  par_median_accumulate_counts(nprocs, num_procs, rank, loopCount);
 
 End:
 
@@ -1023,6 +999,163 @@ double *dotCopy = NULL;
   return median;
 }
 
+/*
+** Statistics
+*/
+
+/* MAXLENGTH is 2^(DEPTHMAX-1) */
+#define DEPTHMAX 5
+#define MAXLENGTH 16 
+
+static int depthCount = 0;
+static int serialIterations=0;
+static int parallelIterations=0;
+static int levelCount[DEPTHMAX+1];
+static int levelValues[DEPTHMAX][MAXLENGTH];
+
+void par_median_accumulate_counts(int nprocs,      /* number processes in application */
+                       int num_procs,   /* number processes in calculation */
+                       int rank,        /* my rank in num_procs (0 through num_procs-1) */
+                       int count)       /* number of iterations to find median */
+{
+int i;
+
+  if (nprocs == 1){
+    serialIterations += count;
+    return;
+  }
+
+  if (nprocs == num_procs){    /* first time through */
+    depthCount = 0;
+    serialIterations = 0;
+    parallelIterations = 0;
+    for (i=0; i<DEPTHMAX+1; i++){
+      levelCount[i] = 0;
+    }
+  }
+
+  if (num_procs == 1){
+    serialIterations += count;
+  }
+  else{
+    parallelIterations += count;
+    if (rank == 0){
+      if (depthCount < DEPTHMAX){
+        levelCount[depthCount] = count;
+      }
+      else{
+        levelCount[DEPTHMAX] += count;
+      }
+    }
+    depthCount++;  
+  }
+}
+
+void par_median_print_counts(MPI_Comm comm, int print_proc)
+{
+int rank, size, yesno;
+int i, j, tag;
+int serialMin=0, serialMax=0, serialSum=0;
+int parMin=0, parMax=0, parSum=0;
+int remainingParSum=0;
+float min, max, sum;
+int recvNum[DEPTHMAX];
+MPI_Status status;
+
+  for (i=0; i<DEPTHMAX; i++){
+    if (levelCount[i] > 0) yesno = 1;
+    else yesno = 0;
+    recvNum[i] = 0;
+
+    MPI_Reduce(&yesno, recvNum+i, 1, MPI_INT, MPI_SUM, print_proc, comm);
+  }
+
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  if (size == 1){
+    printf(" Median find iteration counts:\n");
+    printf("   Serial iterations per process: avg %f min %d max %d\n",
+                      (float)serialIterations,serialIterations,serialIterations);
+    serialIterations = 0;
+    return;
+  }
+
+  MPI_Reduce(&serialIterations, &serialMin, 1, MPI_INT, MPI_MIN, print_proc, comm);
+  MPI_Reduce(&serialIterations, &serialMax, 1, MPI_INT, MPI_MAX, print_proc, comm);
+  MPI_Reduce(&serialIterations, &serialSum, 1, MPI_INT, MPI_SUM, print_proc, comm);
+
+  MPI_Reduce(&parallelIterations, &parMin, 1, MPI_INT, MPI_MIN, print_proc, comm);
+  MPI_Reduce(&parallelIterations, &parMax, 1, MPI_INT, MPI_MAX, print_proc, comm);
+  MPI_Reduce(&parallelIterations, &parSum, 1, MPI_INT, MPI_SUM, print_proc, comm);
+
+  /* Get the iteration count from the rank 0 process of each parallel median find 
+   * calculation.
+   */
+  if (print_proc == rank){
+    for (i=0,tag=1; i<DEPTHMAX; i++, tag*=2){
+      for (j=0; j < recvNum[i]; j++){
+        if ((j == 0) && (levelCount[i] > 0)){
+          levelValues[i][0] = levelCount[i];
+        }
+        else{
+          MPI_Recv(levelValues[i] + j, 1, MPI_INT, MPI_ANY_SOURCE, tag, comm, &status);
+        }
+      }
+    }
+  }
+  else{
+    for (i=0, tag=1; i<DEPTHMAX; i++, tag *= 2){
+      if (levelCount[i] > 0){
+        MPI_Send(levelCount + i, 1, MPI_INT, print_proc, tag, comm);
+      }
+    }
+  }
+
+  /* The sum of the iterations for the rest of the levels */
+  MPI_Reduce(levelCount + DEPTHMAX, &remainingParSum, 1, MPI_INT, MPI_SUM, print_proc, comm);
+
+  if (print_proc == rank){
+    printf(" Median find iteration counts:\n");
+
+    printf("   Serial iterations per process: avg %f min %d max %d\n",
+                      ((float)serialSum / (float)size), serialMin, serialMax );
+
+    printf("   Parallel iterations:\n");
+
+    printf("     Per process: avg %f min %d max %d\n",
+                      ((float)parSum / (float)size), parMin, parMax );
+
+    for (i=0; i < DEPTHMAX; i++){
+      for (j=0; j<recvNum[i]; j++)
+        remainingParSum += levelValues[i][j];
+    }
+    printf("     Total for all parallel cuts: %d\n",remainingParSum);
+    printf("     Detail of first cuts:\n");
+
+    for (i=0; i < DEPTHMAX; i++){
+      if (recvNum[i] == 0) break;
+      sum=0.0;
+      min = max = (float)levelValues[i][0];
+      for (j=0; j < recvNum[i]; j++){
+        sum += (float)levelValues[i][j];
+        if ((j > 0) && (levelValues[i][j] < min))
+          min = (float)levelValues[i][j];
+        else if ((j > 0) && (levelValues[i][j] > max))
+          max = (float)levelValues[i][j];
+      }
+      printf("       Level %d cut count: avg %f variance %f actual: ",
+                     i+1, sum/(float)recvNum[i], (max-min)/max);
+      for (j=0; j < recvNum[i]; j++){
+        printf("%d ",levelValues[i][j]);
+      }
+      printf("\n");
+    }
+
+    fflush(stdout);
+  }
+  MPI_Barrier(comm);
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

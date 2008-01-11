@@ -25,7 +25,7 @@ extern "C" {
 
 extern int Zoltan_RB_find_bisector(ZZ *, int, double *, double *, 
   int *, int, int, int, double *, MPI_Comm,
-  double *, int, int *, int, int, int, double, double, 
+  double *, int, int, int, int, double, double, 
   double *, double *, double *, double *, int *, int, int);
 
 /* Note: MAX_BISECT_WGTS should be >= RB_MAX_WEIGHTS in RCB. */
