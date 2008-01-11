@@ -9,6 +9,7 @@
 
 #include "fei_CSRMat.hpp"
 #include "snl_fei_ArrayUtils.hpp"
+#include <limits>
 #include <cmath>
 
 namespace fei {

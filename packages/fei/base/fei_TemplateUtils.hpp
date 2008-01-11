@@ -52,17 +52,18 @@ namespace fei {
 	std::vector<int>& tmpInt = commUtilsBase.commCore_->tmpIntData_;
 	tmpInt.assign(numProcs, 0);
 
-	size_t len = sendbuf.size();
+	int len = (int)sendbuf.size();
 	int* tmpBuf = &tmpInt[0];
 
 	recvLengths.resize(numProcs);
+        int* recvLenPtr = &recvLengths[0];
 
-	CHK_MPI( MPI_Allgather(&len, 1, MPI_INT, &recvLengths[0], 1, MPI_INT, comm) );
+	CHK_MPI( MPI_Allgather(&len, 1, MPI_INT, recvLenPtr, 1, MPI_INT, comm) );
 
 	int displ = 0;
 	for(int i=0; i<numProcs; i++) {
 	  tmpBuf[i] = displ;
-	  displ += recvLengths[i];
+	  displ += recvLenPtr[i];
 	}
 
 	if (displ == 0) {

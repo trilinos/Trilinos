@@ -43,6 +43,7 @@
 #else
 #error "must have <iostream> or <iostream.h>
 #endif
+//endif for ifdef FEI_HAVE_IOSTREAM
 
 #ifdef FEI_HAVE_IOMANIP
 #include <iomanip>
@@ -74,6 +75,9 @@
 #endif
 
 #endif
+//endif for ifdef FEI_HAVE_STD_IOS_FMTFLAGS
 
 #endif
+//endif for ifndef _fei_iostream_hpp_
+
 

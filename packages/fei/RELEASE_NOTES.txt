@@ -366,7 +366,7 @@ July 7 2005: version 2.14.00
   - Couple other minor tweaks related to building against Trilinos, with some
     packages being missing or disabled.
 
- ??? ?? ???? version 2.22.00
+ Jan 10 2008 version 2.22.00
   - Fix bug in enforcement of remote ess BCs, when slave constraints are
     present. (This bug was encountered by a parallel adaptive aria case.)
   - Fix bug related to element-dofs, where solution values could come out
@@ -376,7 +376,9 @@ July 7 2005: version 2.14.00
     which simply accumulate subdomain matrices and vectors without assembling
     them into global objects with uniquely owned rows.
   - fei_eps ("arbitrary small number") used to be 1.e-49, has now been
-    replaced with std::numeric_limits<double>::epsilon().
+    replaced with std::numeric_limits<double>::epsilon() in a couple of places.
+    Replacing all occurrences seemed to cause some numerical diffs, which will
+    be further investigated in a future release.
   - fix a memory leak which occurred during fei::MatrixGraph_Impl2::initComplete
     (during the SSVec::operator= assignment operator).
   - Significant progress towards removing the feiArray template, replacing it
@@ -395,4 +397,7 @@ July 7 2005: version 2.14.00
     Trilinos uses a CVS repository, so we will lose code-history from the
     FEI subversion repository. But the FEI subversion repository will not be
     immediately deleted, so previous versions can still be retrieved if needed.
+  - Fixed constraint-relation bug whereby fei was incorrectly identifying all
+    nodes in a slave-constraint as slave nodes. Only one of the nodes in the
+    constraint is a slave, the rest are master-nodes.
 

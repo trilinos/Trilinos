@@ -52,18 +52,7 @@ endif
 SUBDIRS=base $(TRILINOS_DIR) $(PETSC_DIR) $(TESTS)
 
 EXTRA_DIST = \
-	RELEASE_NOTES.txt \
-	feibuild feitest feitest_clean \
-	$(top_srcdir)/sample_configs/pathscale_ser_nosolver \
-	$(top_srcdir)/sample_configs/linux32_dbg_mpi \
-	$(top_srcdir)/sample_configs/linux32_dbg_mpi_purify \
-	$(top_srcdir)/sample_configs/linux32_opt_mpi \
-	$(top_srcdir)/sample_configs/redstorm_opt_mpi \
-	$(top_srcdir)/sample_configs/sierra_gcc343_dbg \
-	$(top_srcdir)/sample_configs/sierra_gcc343_opt \
-	$(top_srcdir)/sample_configs/sierra_sun10_opt \
-	$(top_srcdir)/rtest/utest/base/feitest.args \
-	$(top_srcdir)/rtest/utest/base/feitest.procs
+	RELEASE_NOTES.txt
 
 ##
 ## The dist-hook target below gets run when 'make dist' is used,

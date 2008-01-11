@@ -42,11 +42,12 @@ class ctg_set {
 
   /** constructor */
   ctg_set(const ctg_set<T>& src)
-    : dataptr_(0), len_(src.len_),
+    : dataptr_(0), len_(0),
       highwatermark_(src.highwatermark_), alloc_incr_(src.alloc_incr_)
     {
-      if (len_>0) {
+      if (highwatermark_>0) {
         expand_dataptr(highwatermark_);
+        len_ = src.len_;
         for(int i=0; i<len_; ++i) dataptr_[i] = src.dataptr_[i];
       }
     }
