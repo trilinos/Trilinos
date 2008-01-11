@@ -79,7 +79,7 @@ ZOLTAN_EDGE_LIST_MULTI_FN ML_get_edge_list_multi;
 #endif
 
 /* Hypergraph functions */
-#ifdef ML_ZOLTAN_THREE
+#ifdef HAVE_ML_ZOLTAN_THREE
 ZOLTAN_HG_SIZE_CS_FN ML_zoltan_hg_size_cs_fn;
 ZOLTAN_HG_CS_FN ML_zoltan_hg_cs_fn;
 ZOLTAN_OBJ_SIZE_MULTI_FN ML_zoltan_obj_size_multi_fn;
@@ -121,7 +121,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   
   /* Set the load-balance method */
   if(zoltan_type == ML_ZOLTAN_TYPE_RCB) strcpy(str,"RCB");
-#ifdef ML_ZOLTAN_THREE  
+#ifdef HAVE_ML_ZOLTAN_THREE  
   else if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH) strcpy(str,"hypergraph");
   else if(zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH) strcpy(str,"fast_hypergraph");  
   else {
@@ -129,6 +129,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
     return 0;
   }
 #else
+  if(!A->comm->ML_mypid) printf("ML-Zoltan: Zoltan 3.0 support not enabled\n");
   strcpy(str,"RCB");
 #endif
   
@@ -142,7 +143,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   }  
 
   /* Hypergraph parameters */
-#ifdef ML_ZOLTAN_THREE
+#ifdef HAVE_ML_ZOLTAN_THREE
   if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
     /* Set the repartitioning flag */
     if (Zoltan_Set_Param(zz, "LB_APPROACH", "repartition") == ZOLTAN_FATAL) {
@@ -210,7 +211,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
 #endif /* USE_GRAPH */
 
   /* Hypergraph Functions */
-#ifdef ML_ZOLTAN_THREE
+#ifdef HAVE_ML_ZOLTAN_THREE
   if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
     if(Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_CS_FN_TYPE,
                       (void (*)()) ML_zoltan_hg_size_cs_fn,
@@ -434,7 +435,7 @@ void ML_get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#ifdef ML_ZOLTAN_THREE  
+#ifdef HAVE_ML_ZOLTAN_THREE  
 void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *format, int *ierr){
   ML_Operator* A; 
   *ierr = ZOLTAN_OK;
@@ -500,6 +501,7 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
   int *indices;
   double *values;
   int i,N,maxnz,rowlength;
+  struct ML_CSR_MSRdata *input_matrix;
   
   *ierr = ZOLTAN_OK;
   if (data == NULL) {
@@ -510,17 +512,23 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
   A = (ML_Operator*) data;
   N=A->outvec_leng;
 
-  /* NTS: There has got to be a better way to get row lengths than calling
-     getrow -
-     FIX: case out and use the MSR/CSR code accordingly*/
-  indices =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
-  values  =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
-  for(i=0;i<N;i++) {
-    (*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
-    sizes[i]=rowlength*(sizeof(double)+sizeof(int)); // add its cost here
+  /* Get the row lengths --- use special purpose code for MSR matrices,
+     just call the getrow routine for everything else */
+  if(A->getrow->func_ptr== MSR_getrows){
+    input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(A);
+    for(i=0;i<N;i++) 
+      sizes[i] = (input_matrix->columns[i+1] - input_matrix->columns[i] + 1)* (sizeof(double)+sizeof(int));
   }
-  ML_free(indices);
-  ML_free(values);
+  else{
+    indices =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
+    values  =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
+    for(i=0;i<N;i++) {
+      (*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
+      sizes[i]=rowlength*(sizeof(double)+sizeof(int)); // add its cost here
+    }
+    ML_free(indices);
+    ML_free(values);
+  }
 }
 #endif
 
