@@ -138,7 +138,7 @@ public:
       */
     const char* getFrameName() const;
     
-    /** \brief Returns const reference to data member containg the Point coordinates.
+    /** \brief Returns const reference to data member containing the Point coordinates.
       */
     const Teuchos::Array<Scalar> & getCoordinates() const;
     

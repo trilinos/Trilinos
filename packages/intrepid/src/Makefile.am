@@ -49,6 +49,9 @@ INTREPID_COMMON_H = \
 
 INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CellTemplates.hpp \
+  $(srcdir)/local/Intrepid_CubatureDirectDef.hpp \
+  $(srcdir)/local/Intrepid_CubatureDirect.hpp \
+  $(srcdir)/local/Intrepid_Cubature.hpp \
   $(srcdir)/local/Intrepid_MultiCellDef.hpp \
   $(srcdir)/local/Intrepid_MultiCell.hpp \
   $(srcdir)/local/Intrepid_MultiCell.icpp

@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
    if(in_pyramid == FAIL_CODE_NOT_IN_REF_CELL) {
      cout << p_in_pyramid << " is NOT inside reference pyramid " << endl;
    }
-   cout << "You may need at least 16 digits to see the added pertirbation!" << endl;
+   cout << "You may need at least 16 digits to see the added perturbation!" << endl;
    
    
   return 0;

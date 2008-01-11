@@ -38,6 +38,6 @@ DISABLED =
 ## Subdirectories.
 ## #######################################################################
 #
-SUBDIRS = MultiCell RealSpace
+SUBDIRS = Cubature MultiCell RealSpace
 
 # EXTRA_DIST = definition

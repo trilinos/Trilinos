@@ -218,7 +218,7 @@ top_srcdir = @top_srcdir@
 DISABLED = 
 
 #
-SUBDIRS = MultiCell RealSpace
+SUBDIRS = Cubature MultiCell RealSpace
 all: all-recursive
 
 .SUFFIXES:

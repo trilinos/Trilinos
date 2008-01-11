@@ -28,8 +28,8 @@
 // @HEADER
 
 /** \file
-\brief  Contains definitions of custom data types in Intrepid.
-\author Created by P. Bochev and D. Ridzal
+  \brief  Contains definitions of custom data types in Intrepid.
+  \author Created by P. Bochev and D. Ridzal.
 */
 
 #ifndef INTREPID_INTREPID_TYPES_HPP
@@ -39,40 +39,64 @@
 
 
 /** \def   INTREPID_MAX_ADJ_CELLS
-\brief The maximum number of 1,2, or 3-cells adjacent to any base 0,1,2, or 3-cell.
+  \brief The maximum number of 1,2, or 3-cells adjacent to any base 0,1,2, or 3-cell.
 */
 #define INTREPID_MAX_ADJ_CELLS  24
 
 /** \def   INTREPID_MAX_CELL_NODES
-\brief The maximum number of (topological) nodes in a cell.
+  \brief The maximum number of (topological) nodes in a cell.
 */
 #define INTREPID_MAX_CELL_NODES 32
 
 /** \def   INTREPID_MAX_ORDER
-\brief The maximum reconstruction order.
+  \brief The maximum reconstruction order.
 */
 #define INTREPID_MAX_ORDER 10
 
 /** \def   INTREPID_MAX_INTEGRATION_POINTS
-\brief The maximum number of integration points.
+  \brief The maximum number of integration points for direct cubature rules.
 */
 #define INTREPID_MAX_INTEGRATION_POINTS 1001
 
+/** \def   INTREPID_MAX_CUBATURE_DEGREE_EDGE
+  \brief The maximum degree of the polynomial that can be integrated exactly by
+         a direct edge rule.
+*/
+#define INTREPID_MAX_CUBATURE_DEGREE_EDGE 20
+
+/** \def   INTREPID_MAX_CUBATURE_DEGREE_TRI
+  \brief The maximum degree of the polynomial that can be integrated exactly by
+         a direct triangle rule.
+*/
+#define INTREPID_MAX_CUBATURE_DEGREE_TRI 20
+
+/** \def   INTREPID_MAX_CUBATURE_DEGREE_TET
+  \brief The maximum degree of the polynomial that can be integrated exactly by
+         a direct tetrahedron rule.
+*/
+#define INTREPID_MAX_CUBATURE_DEGREE_TET 20
+
+/** \def   INTREPID_MAX_CUBATURE_DEGREE_PYRAMID
+  \brief The maximum degree of the polynomial that can be integrated exactly by
+         a direct pyramid rule.
+*/
+#define INTREPID_MAX_CUBATURE_DEGREE_PYRAMID 4
+
 /** \def   INTREPID_MAX_DIMENSION
-\brief The maximum ambient space dimension.
+  \brief The maximum ambient space dimension.
 */
 #define INTREPID_MAX_DIMENSION 3
 
 /** \def   INTREPID_MAX_MAPPING_COEFF
-\brief The maximum allowed number of coefficients in polynomial mappings that take reference cells
-to their ambient space images. The current setting allows to accomodate standard mappings for 
-EDGE, TRI, TET, PRISM, PYRAMID, QUAD, HEX cells. 
+  \brief  The maximum allowed number of coefficients in polynomial mappings that take reference cells
+          to their ambient space images. The current setting allows to accomodate standard mappings for 
+          EDGE, TRI, TET, PRISM, PYRAMID, QUAD, HEX cells. 
 */
 #define INTREPID_MAX_MAPPING_COEFF 8
 
 /** \def INTREPID_MAX_NEWTON 
-\brief Maximum number of Newton iterations to use when inverting non-affine maps between reference
-and physical elements
+  \brief Maximum number of Newton iterations to use when inverting non-affine maps between reference
+         and physical elements
 */
 #define INTREPID_MAX_NEWTON 15
 
@@ -80,7 +104,7 @@ namespace Intrepid {
   
   /* 
   Define global platform-dependent constants for various reference cell inclusion tests
-   */
+  */
   static const double INTREPID_EPSILON   = std::abs(Teuchos::ScalarTraits<double>::eps());
     
   // Used in tests for inclusion of a Point in a reference cell
@@ -92,7 +116,7 @@ namespace Intrepid {
 
   
   /** \enum  Intrepid::EStatus
-  \brief To indicate the status of an object.
+    \brief To indicate the status of an object.
   */
   enum EStatus{
     STATUS_UNDEFINED=0,
@@ -108,7 +132,7 @@ namespace Intrepid {
   
   /** \enum Intrepid::EFrame
     \brief Enumeration of coordinate frames (reference/ambient) for geometrical entities (cells, points)
-    */
+  */
   enum EFrame{
     FRAME_PHYSICAL=0,
     FRAME_REFERENCE
@@ -121,7 +145,7 @@ namespace Intrepid {
   
   /** \enum Intrepid::ECoordinates
     \brief Enumeration of coordinate systems for geometrical entities (cells, points)
-    */
+  */
   enum ECoordinates{
     COORDINATES_CARTESIAN=0,
     COORDINATES_POLAR,
@@ -142,7 +166,7 @@ namespace Intrepid {
   
   /** \enum Intrepid::ENorm
     \brief Enumeration of norm norm types for vectors and functions
-   */
+  */
   enum ENorm{
     NORM_ONE = 0,
     NORM_TWO,
@@ -160,7 +184,7 @@ namespace Intrepid {
   
   /** \enum Intrepid::EOperator
     \brief Enumeration of operators (differential and other) available in Intrepid
-    */
+  */
   enum EOperator{
     OPERATOR_MASS = 0,
     OPERATOR_GRAD,
@@ -186,14 +210,14 @@ namespace Intrepid {
   */
   
   /** \enum  Intrepid::ECell
-    \brief Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
-    provides a cell template. A fixed number of enumerations is provided for user-defined cells.
-    For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html
-    \warning: the order of the enumeration must be exactly the same as the order of the cell
-    templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
-    order of two enumerations is changed, the order of the associated cell template definitions in that 
-    file also must be changed!
-    */
+    \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
+             provides a cell template. A fixed number of enumerations is provided for user-defined cells.
+             For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html
+    \warning The order of the enumeration must be exactly the same as the order of the cell
+             templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
+             order of two enumerations is changed, the order of the associated cell template definitions in that 
+             file also must be changed!
+  */
   enum ECell{
     CELL_NODE = 0,       // 0-simplex, i.e. node
     CELL_EDGE,           // 1-simplex, i.e. edge
@@ -248,9 +272,10 @@ namespace Intrepid {
   
   /** \struct Intrepid::ConnMapTemplate
     \brief  Relational (with respect to a 1, 2, or 3-cell) connectivity map template for an arbitrary 
-    MultiCell.  Three of ConnMapTemplate objects are involved in fully describing the topological 
-    connectivity information of a cell. For example, the topological definition of a prism with a 
-    triangular base looks as the following 3-array of ConnMapTemplate objects:
+            MultiCell.  Three of ConnMapTemplate objects are involved in fully describing the topological 
+            connectivity information of a cell. For example, the topological definition of a prism with a 
+            triangular base looks as the following 3-array of ConnMapTemplate objects:
+ 
     \verbatim
     conn_map_template[3] =
   { // prism with triangular base (wedge)
@@ -281,10 +306,10 @@ namespace Intrepid {
       {{0,1,2,3,4,5}}                      ----> local node numbers
      }
   };  // end prism
-  \endverbatim
-    
+    \endverbatim
+
     Also see data member documentation.
-    */
+  */
   struct ConnMapTemplate {
     /** \brief Topological dimension of this cell.
     */
@@ -309,7 +334,7 @@ namespace Intrepid {
   
   /** \enum Intrepid::EMapping
     \brief Enumeration of the admissible mappings in Intrepid
-    */
+  */
   enum EMapping {
     MAPPING_AFFINE = 0,
     MAPPING_NON_AFFINE,
@@ -327,9 +352,9 @@ namespace Intrepid {
   
   /** \struct Intrepid::ChartTemplate
     \brief A struct to store information about the reference cell shape and the polynomial mapping
-    that takes this cell to its ambient space image. The name chart alludes to the mathematical notion
-    of a chart as a pair {K,F} consisting of an open set and a one-to-one mapping.
-    */
+           that takes this cell to its ambient space image. The name chart alludes to the mathematical
+           notion of a chart as a pair {K,F} consisting of an open set and a one-to-one mapping.
+  */
   template <class Scalar>
     struct ChartTemplate {
       ECell          refCellType_;
@@ -338,27 +363,27 @@ namespace Intrepid {
     };
   
   /** \struct Intrepid::CanonicalDofTemplate
-    \brief  Array of shorts giving the number of DOF per k-dimensional subcell for the available Intrepid
-    reconstruction operators. 
-    */
+    \brief Array of shorts giving the number of DOF per k-dimensional subcell for the available Intrepid
+           reconstruction operators. 
+  */
   struct CanonicalDofTemplate {    // For use with uniform DoF allocations, i.e.,
     short numDofPerSubcell_[4];     // number of DoFs per k-subcell is same for every k-subcell
   };
   
   /** \struct Intrepid::LocalDofTag
     \brief A data type that allows to associate a local dofId (assigned using Intrepid's canonical 
-                                                               local dof order) with a global dofId. For a fixed local dof, the data is:
-    tag[0] - dimension of the subcell associated with the local dof
-    tag[1] - the local id of the subcell (defined in file Intrepid_CellTemplates)
-    tag[2] - the order of the dof relative to the subcell (if more than 1 per subcell)
-    */
+           local dof order) with a global dofId. For a fixed local dof, the data is:
+           \li tag[0] - dimension of the subcell associated with the local dof
+           \li tag[1] - the local id of the subcell (defined in file Intrepid_CellTemplates)
+           \li tag[2] - the order of the dof relative to the subcell (if more than 1 per subcell)
+  */
   struct LocalDofTag {
     short tag_[3];
   };
   
   /** \enum  Intrepid::CubatureType
-    \brief Enumeration of the admissible cubature rules in Intrepid
-    */
+    \brief Enumerates canonical (default) cubature rules in Intrepid.
+  */
   enum ECubature
   {
     //
@@ -436,37 +461,25 @@ namespace Intrepid {
     //
     // 3D cubatures on the reference PYRAMID
     //
-    CUBATURE_PYRAMID_0,   // 1-point cubature
+    CUBATURE_PYRAMID_0,
     CUBATURE_PYRAMID_1,
     CUBATURE_PYRAMID_2,
     CUBATURE_PYRAMID_3,
     CUBATURE_PYRAMID_4,
-    //
-    // 3D cubatures on the reference PRISM
-    //
-    CUBATURE_PRISM_0,     // 1-point cubature
-    CUBATURE_PRISM_1,
-    CUBATURE_PRISM_2,
-    CUBATURE_PRISM_3,
-    CUBATURE_PRISM_4,
-    //
-    // cubature rule for polygons and polyhedrons - always equivalent to 1-point rule.
-    //
-    CUBATURE_POLY,
     CUBATURE_MAX         // Maximum number of integration rules in Intrepid
   };
   
   
   /** \struct Intrepid::CubatureTemplate
     \brief  Template for the cubature rules used by Intrepid. Cubature template consists of cubature 
-    points and cubature weights. Intrepid provides a collection of cubature templates for the 
-    canonical cell shapes. The templates are defined in reference coordinates using a standard 
-    reference cell for each canonical cell type. Cubature points are always specified by a triple
-    of (X,Y,Z) coordinates even if the cell dimension is less than 3. The unused dimensions should
-    be padded by zeroes.
+            points and cubature weights. Intrepid provides a collection of cubature templates for the 
+            canonical cell shapes. The templates are defined in reference coordinates using a standard 
+            reference cell for each canonical cell type. Cubature points are always specified by a triple
+            of (X,Y,Z) coordinates even if the cell dimension is less than 3. The unused dimensions should
+            be padded by zeroes.
     
-    For example, a set of Gauss rules on [-1,1]  (the reference EDGE cell) looks as 
-    the following array of CubatureTemplate objects:
+            For example, a set of Gauss rules on [-1,1]  (the reference CELL_EDGE cell) looks as 
+            the following array of CubatureTemplate objects:
     
     \verbatim
     cubature_rule[4] =
@@ -503,7 +516,7 @@ namespace Intrepid {
     
   };  // end Gauss
     \endverbatim
-      
+
       Also see data member documentation.
   */
   struct CubatureTemplate {
@@ -517,22 +530,22 @@ namespace Intrepid {
     ECell             cellType_;
     
     /** \brief Number of cubature points stored in the template.
-      */  
+    */  
     int               numPoints_;
     
-    /** \brief Array with the (X,Y,Z) coordinates of the cubature points
-      */
+    /** \brief Array with the (X,Y,Z) coordinates of the cubature points.
+    */
     double            points_[INTREPID_MAX_INTEGRATION_POINTS][INTREPID_MAX_DIMENSION];
     
     /** \brief Array with the associated cubature weights.
-      */
+    */
     double            weights_[INTREPID_MAX_INTEGRATION_POINTS];
     
   };
   
   /** \enum  Intrepid::EReconstruction
-    \brief Enumeration of the admissible reconstructions in Intrepid
-    */
+    \brief Enumeration of the admissible reconstructions in Intrepid.
+  */
   enum EReconstruction
   {
     RECONSTRUCTION_FEM = 0,
@@ -553,7 +566,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::EForm_0_Flavor
     \brief Enumeration of the available reconstruction flavors for 0-forms.
-    */
+  */
   enum EForm_0_Flavor
   {
     FORM_0_FLAVOR_LAGRANGE = 0,
@@ -567,7 +580,7 @@ namespace Intrepid {
  
   /** \enum  Intrepid::EForm_1_Flavor
     \brief Enumeration of the available reconstruction flavors for 1-forms.
-    */
+  */
   enum EForm_1_Flavor
   {
     FORM_1_FLAVOR_TYPE_A = 0,             // Nedelec 1st kind
@@ -582,7 +595,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::EForm_2_Flavor
     \brief Enumeration of the available reconstruction flavors for 2-forms.
-    */
+  */
   enum EForm_2_Flavor
   {
     FORM_2_FLAVOR_TYPE_A = 0,             // Raviart-Thomas 
@@ -597,7 +610,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::EForm_0_Flavor
     \brief Enumeration of the available reconstruction flavors for 3-forms.
-    */
+  */
   enum EForm_3_Flavor
   {
     FORM_3_FLAVOR_LAGRANGE = 0,
@@ -611,7 +624,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::EFailCode
     \brief Enumeration of failure codes in Intrepid.
-    */
+  */
   enum EFailCode
   {
     FAIL_CODE_SUCCESS = 0,
@@ -631,7 +644,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::ETagType
     \brief Enumeration of the admissible tag types in the Intrepid mesh manager.
-    */
+  */
   enum ETagType
   {
     TAG_TYPE_BIT = 0,
@@ -643,7 +656,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::EDataType
     \brief Enumeration of the admissible data types in the Intrepid mesh manager.
-    */
+  */
   enum EDataType
   {
     DATA_TYPE_OPAQUE = 0,
@@ -655,7 +668,7 @@ namespace Intrepid {
   
   /** \enum  Intrepid::EStorage
     \brief Enumeration of the admissible storage modes used to encode information in Intrepid.
-    */
+  */
   enum EStorage
   {
     STORAGE_INTERLEAVED=0,
@@ -664,22 +677,22 @@ namespace Intrepid {
   
   /** \enum  Intrepid::ESetOp
     \brief Enumeration of the set operations in the Intrepid mesh manager.
-    */
+  */
   enum ESetOp
   {
     SET_OP_INTERSECT = 0,
     SET_OP_UNION
   };
   
-    /** \typedef Intrepid::CellHandle
-    \brief   CellHandle is a 32-bit integer handle.
-    */
+  /** \typedef Intrepid::CellHandle
+    \brief CellHandle is a 32-bit integer handle.
+  */
   typedef unsigned int CellHandle;
   
   /** \typedef Intrepid::Tag
-    \brief   A Tag can be anything, so we define it as a void**.
-    */
+    \brief A Tag can be anything, so we define it as a void**.
+  */
   typedef void** Tag;
   
-  } //namespace Intrepid
+} //namespace Intrepid
 #endif
