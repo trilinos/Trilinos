@@ -400,4 +400,6 @@ July 7 2005: version 2.14.00
   - Fixed constraint-relation bug whereby fei was incorrectly identifying all
     nodes in a slave-constraint as slave nodes. Only one of the nodes in the
     constraint is a slave, the rest are master-nodes.
+  - To get a copy of fei which matches what Sierra has for version 2.22, do a
+    cvs checkout data 4:30pm on 1/11/2008.
 
