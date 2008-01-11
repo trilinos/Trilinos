@@ -57,7 +57,7 @@ double v1, v2;
 
 static int med3(double *, int, int, int);
 static int mark_median(int *, int *, int, int, double *, double, int);
-static int reorder_list(double *, int, int, int *);
+static int reorder_list(double *, int, int* , int *);
 static void sample_partition(int, int *, double *, double, int, double *);
 static int test_candidate(int *, int *, double *, int *, double *, double, int, 
    double, double, double, commStruct *, double *, double *, int *, int *);
@@ -456,6 +456,9 @@ int count=0;
   }
   return j+1;
 }
+static double tempVal;
+static int tempInt;
+
 #define exchange(a, b) {   \
   tempVal = vals[a];    \
   vals[a] = vals[b];       \
@@ -465,36 +468,82 @@ int count=0;
   idxList[a] = idxList[b]; \
   idxList[b] = tempInt; } }
 
-static int reorder_list(double *vals, int len, int pivotIdx, int *idxList)
+static int move_all_p(double *vals, int len, double p, int *idxList)
 {
-int l, r, i, j;
-double p = vals[pivotIdx];
-double tempVal;
-int tempInt;
+int i, next_p;
 
-  i = l = 0;
-  j = r = len-1;
+  /* vals[0] = p
+   * vals[i] >= p for i > 0
+   * Rewrite the vals array so all the p values are to the left
+   * return the number of values equal to p
+   */
 
-  /* error here */
-  exchange(l, pivotIdx);
-  if (vals[r] >= p){
-    exchange(r, l);
+  next_p = 1;
+
+  for (i=1; i<len; i++){
+    if (vals[i] == p){
+      if (i > next_p){
+        exchange(i, next_p)
+      }
+      next_p++;
+    }
+  }
+  return next_p;
+}
+/* Rearrange the list vals around the value p = vals[pivotIdx].
+ *
+ * Rearrange vals and find "j" and "count" such that:
+ *   vals[i] < p for i < j
+ *   vals[j+i] = p for i >= 0 and i < count
+ *   vals[i] > p for i >= j+count
+ *
+ * Set pivotIdx to "j", the first value equal to p.
+ * Return count, the number of values equal to p.
+ */
+ 
+static int reorder_list(double *vals, int len, int *pivotIdx, int *idxList)
+{
+int i, j, right;
+int pidx, count;
+double p;
+
+  pidx = *pivotIdx;
+  p = vals[pidx];
+
+  i = 0;
+  j = right = len-1;
+
+  exchange(0, pidx);
+  if (vals[right] >= p){
+    exchange(right, 0);
   }
   while (i < j){
     exchange(i, j);
     while (vals[++i] < p);
-    while ( (j > l) && (vals[--j] >= p));
+    while ( (j > 0) && (vals[--j] >= p));
   }
 
-  if (vals[l] == p){
-    exchange(l, j);
+  if (vals[0] == p){
+    exchange(0, j);
   }
   else{
     j++;
-    exchange(j, r);
+    exchange(j, right);
   }
 
-  return (j-l);
+  /* "j" is the location of the first value equal to p .
+   * all values to the right are greater than or equal to p.
+   * put all the "p" values together.
+   */
+
+  if (idxList)
+    count = move_all_p(vals+j, len-j, p, idxList+j);
+  else
+    count = move_all_p(vals+j, len-j, p, NULL);
+
+  *pivotIdx = j;
+
+  return count;
 }
 
 /* Get any three dots from list of active dots.  May not be unique. */
@@ -907,7 +956,7 @@ int num_procs = comm->num_procs;
 /* Doesn't rewrite dots array.  Takes array of active dots. */
 static double serial_find_median2(double *dots, double *wgts, int *dotidx, int dotnum, int *count)
 {
-int lb, ub, idx, i;
+int lb, ub, idx, i, pivotIdx, numPivots;
 int *widx=NULL;
 double median=-1, lowBal=0.0, upBal=0.0;
 double pivotBal, w1, w2;
@@ -941,33 +990,38 @@ double *dotCopy = NULL;
     idx = med3(dotCopy, lb, ub, (lb+ub) >> 1);
 
     /* rearrange list around pivot, get index of pivot */
+    pivotIdx = idx - lb;
     if (widx){
-      idx = reorder_list(dotCopy+lb, ub-lb+1, idx-lb, widx+lb);
+      numPivots = reorder_list(dotCopy+lb, ub-lb+1, &pivotIdx, widx+lb);
     }
     else{
-      idx = reorder_list(dotCopy+lb, ub-lb+1, idx-lb, NULL);
+      numPivots = reorder_list(dotCopy+lb, ub-lb+1, &pivotIdx, NULL);
     }
 
-    idx += lb;   /* relative to dotCopy[0] */
+    idx = pivotIdx + lb;   /* relative to dotCopy[0] */
 
     /* sum the weights in both halves */
 
     if (wgts){
       w1 = lowBal;
       w2 = upBal;
+      pivotBal = 0.0;
+
       for (i=lb; i<idx; i++){
         w1 += wgts[widx[i]];
       }
-      for (i=idx+1; i<=ub; i++){
+      for (i=idx; i < idx+numPivots; i++){
+        pivotBal += wgts[widx[i]];
+      }
+      for (i=idx+numPivots; i<=ub; i++){
         w2 += wgts[widx[i]];
       }
-      pivotBal = wgts[widx[idx]];
     }
     else{
       /* weights are all 1.0 */
       w1 = idx;
-      pivotBal = 1.0;
-      w2 = dotnum - idx - 1;
+      pivotBal = (double)numPivots;
+      w2 = dotnum - w1 - pivotBal;
     }
 
     if (w1 >= (pivotBal + w2)){
@@ -981,7 +1035,7 @@ double *dotCopy = NULL;
       break;
     }
     else{
-      lb = idx + 1;
+      lb = idx + numPivots;
       if (wgts){
         lowBal = w1 + pivotBal;
       }
