@@ -29,134 +29,104 @@
 
 
 /** \file
-\brief  Example of the CubatureDirect class.
+\brief  Unit test (CubatureDirect,CubatureTensor): correctness of volume
+        computations for reference cells.
 \author Created by P. Bochev and D. Ridzal.
 */
 
 #include "Intrepid_CubatureDirect.hpp"
+#include "Intrepid_CubatureTensor.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RCP.hpp"
 
-using namespace std;
 using namespace Intrepid;
 
-
 /*
-  Prints points and weights of a direct cubature rule to std::cout.
+  Computes volume of a given reference cell.
 */
-void printInfo(ECell cellType, int cubDegree) {
+double computeRefVolume(ECell cellType, int cubDegree) {
 
   CubatureDirect<double> dCub;
-
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
-
-  int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
-
-  Teuchos::Array< Point<double> > cubPoints;
-  Teuchos::Array<double> cubWeights;
-
-  Point<double> tempPoint(ambientDim);
-  cubPoints.assign(numCubPoints,tempPoint);
-  cubWeights.assign(numCubPoints,0.0);
-
-  dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
-
-  cout << "Cell type:      " << MultiCell<double>::getCellName(cellType) << "\n";
-  cout << "Degree:         " << cubDegree << "\n";
-  cout << "Cubature name:  " << dCub.getName(cellType, cubDegree) << "\n";
-  cout << "Num. of points: " << numCubPoints << "\n";
-  cout << "Cubature points:\n";
-  for (int i=0; i<numCubPoints; i++) {
-    cout << cubPoints[i] << endl;
-  }
-  cout << "Cubature weights:\n";
-  for (int i=0; i<numCubPoints; i++) {
-    cout << "  " << cubWeights[i] << endl;
-  }
-
-  cout << "\n";
-}
-
-
-
-/*
-  Computes volume of a given reference cell (compatible w/ direct cubature).
-*/
-double computeSimplexVolume(ECell cellType, int cubDegree) {
-
-  CubatureDirect<double> dCub;
-
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
-
-  int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
-
-  Teuchos::Array< Point<double> > cubPoints;
-  Teuchos::Array<double> cubWeights;
-
-  Point<double> tempPoint(ambientDim);
-  cubPoints.assign(numCubPoints,tempPoint);
-  cubWeights.assign(numCubPoints,0.0);
-
-  dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
-
+  CubatureTensor<double> tCub;
   double vol = 0.0;
-  for (int i=0; i<numCubPoints; i++)
-    vol += cubWeights[i];
+
+  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+
+  switch (cellType) {
+
+    case CELL_EDGE:
+    case CELL_TRI:
+    case CELL_TET: {
+        int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
+
+        Teuchos::Array< Point<double> > cubPoints;
+        Teuchos::Array<double> cubWeights;
+
+        Point<double> tempPoint(ambientDim);
+        cubPoints.assign(numCubPoints,tempPoint);
+        cubWeights.assign(numCubPoints,0.0);
+
+        dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+
+        for (int i=0; i<numCubPoints; i++) {
+          vol += cubWeights[i];
+        }
+      }
+      break;
+
+    case CELL_QUAD:
+    case CELL_HEX:
+    case CELL_TRIPRISM: {
+        int numCubPoints = tCub.getNumPoints(cellType, cubDegree);
+
+        Teuchos::Array< Point<double> > cubPoints;
+        Teuchos::Array<double> cubWeights;
+
+        Point<double> tempPoint(ambientDim);
+        cubPoints.assign(numCubPoints,tempPoint);
+        cubWeights.assign(numCubPoints,0.0);
+
+        tCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+
+        for (int i=0; i<numCubPoints; i++) {
+          vol += cubWeights[i];
+        }
+      }
+      break;
+
+    default:
+      TEST_FOR_EXCEPTION((cellType != CELL_EDGE) && (cellType != CELL_TRI) && (cellType != CELL_TET) &&
+                         (cellType != CELL_QUAD) && (cellType != CELL_HEX) && (cellType != CELL_TRIPRISM),
+                          std::invalid_argument,
+                          ">>> ERROR (CubatureDirect): Invalid cell type.");
+  } // end switch
 
   return vol;
 }
-
-
-/*
-  'Inverted cup' function evaluation.
-    in 1D, for point p(x)    : 1-x^2
-    in 2D, for point p(x,y)  : 1-x^2-y^2
-    in 3D, for point p(x,y,z): 1-x^2-y^2-z^2
-*/
-double computeCupFunction(Point<double> p) {
-  double val = 1.0;
-  for (int i=0; i<p.getDim(); i++) {
-    val -= p.getCoordinates()[i]*p.getCoordinates()[i];
-  } 
-  return val;
-}
-
-
-/*
-  Compute integral of the inverted cup function over reference cells.
-*/
-double computeIntegral(ECell cellType, int cubDegree) {
-
-  CubatureDirect<double> dCub;
-
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
-
-  int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
-
-  Teuchos::Array< Point<double> > cubPoints;
-  Teuchos::Array<double> cubWeights;
-
-  Point<double> tempPoint(ambientDim);
-  cubPoints.assign(numCubPoints,tempPoint);
-  cubWeights.assign(numCubPoints,0.0);
-
-  dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
-
-  double vol = 0.0;
-  for (int i=0; i<numCubPoints; i++)
-    vol += computeCupFunction(cubPoints[i])*cubWeights[i];
-
-  return vol;
-}
-
 
 
 int main(int argc, char *argv[]) {
-  cout \
+
+  // This little trick lets us print to std::cout only if
+  // a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+
+  // Save the format state of the original std::cout.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
+ 
+  *outStream \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
-  << "|               Example use of the CubatureDirect class                       |\n" \
+  << "|                  Unit Test (CubatureDirect,CubatureTensor)                  |\n" \
   << "|                                                                             |\n" \
-  << "|     1) Creating direct cubature rules and extracting point and weight data  |\n" \
-  << "|     2) Integrating functions over simplices                                 |\n" \
+  << "|     1) Computing volumes of reference cells                                 |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -165,65 +135,80 @@ int main(int argc, char *argv[]) {
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
   << "===============================================================================\n"\
-  << "| EXAMPLE 1: object creation, point & weight data extraction                  |\n"\
+  << "| TEST 1: volume computations                                                 |\n"\
   << "===============================================================================\n";
 
-  try {
-    ECell cellType = CELL_EDGE;
-    int cubDegree  = 0;
-    printInfo(cellType, cubDegree);
+  int errorFlag  = 0;
+  double testVol = 0.0;
+  double tol     = 100.0 * INTREPID_TOL;
 
-    cellType = CELL_EDGE;
-    cubDegree  = INTREPID_MAX_CUBATURE_DEGREE_EDGE;
-    printInfo(cellType, cubDegree);
+  // list of analytic volume values, listed in the enumerated reference cell order up to CELL_HEXAPRISM
+  double volumeList[] = {0.0, 2.0, 1.0/2.0, 4.0, 1.0/6.0, 8.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0};
 
-    cellType = CELL_TRI;
-    cubDegree  = 13;
-    printInfo(cellType, cubDegree);
-
-    cellType = CELL_TET;
-    cubDegree  = 5;
-    printInfo(cellType, cubDegree);
-  }
-  catch (std::logic_error err) {
-    cout << err.what() << "\n";
-  };
-
-  cout \
-  << "===============================================================================\n"\
-  << "| EXAMPLE 2: integration of functions over simplices                          |\n"\
-  << "===============================================================================\n";
-
-  cout << "\nSimplex volumes:\n";
+  *outStream << "\nReference cell volumes:\n";
 
   try {
-    cout << "EDGE volume w/ lowest  degree rule --> " << computeSimplexVolume(CELL_EDGE, 0) << '\n';
-    cout << "EDGE volume w/ highest degree rule --> " << computeSimplexVolume(CELL_EDGE, INTREPID_MAX_CUBATURE_DEGREE_EDGE) << '\n';
-    cout << "TRI  volume w/ lowest  degree rule --> " << computeSimplexVolume(CELL_TRI, 0) << '\n';
-    cout << "TRI  volume w/ highest degree rule --> " << computeSimplexVolume(CELL_TRI, INTREPID_MAX_CUBATURE_DEGREE_TRI) << '\n';
-    cout << "TET  volume w/ lowest  degree rule --> " << computeSimplexVolume(CELL_TET, 0) << '\n';
-    cout << "TET  volume w/ highest degree rule --> " << computeSimplexVolume(CELL_TET, INTREPID_MAX_CUBATURE_DEGREE_TET) << '\n';
+    for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_EDGE; deg++) {
+      testVol = computeRefVolume(CELL_EDGE, deg);
+      *outStream << std::setw(24) << "EDGE volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_EDGE]) << '\n';
+      if (std::abs(testVol - volumeList[CELL_EDGE]) > tol)
+        errorFlag = 1;
+    }
+    *outStream << std::endl;
+    for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_EDGE; deg++) {
+      testVol = computeRefVolume(CELL_QUAD, deg);
+      *outStream << std::setw(24) << "QUAD volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_QUAD]) << '\n';
+      if (std::abs(testVol - volumeList[CELL_QUAD]) > tol)
+        errorFlag = 1;
+    }
+    *outStream << std::endl;
+    for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_TRI; deg++) {
+      testVol = computeRefVolume(CELL_TRI, deg);
+      *outStream << std::setw(24) << "TRI volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TRI]) << '\n';
+      if (std::abs(testVol - volumeList[CELL_TRI]) > tol)
+        errorFlag = 1;
+    }
+    *outStream << std::endl;
+    for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_TET; deg++) {
+      testVol = computeRefVolume(CELL_TET, deg);
+      *outStream << std::setw(24) << "TET volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TET]) << '\n';
+      if (std::abs(testVol - volumeList[CELL_TET]) > tol)
+        errorFlag = 1;
+    }
+    *outStream << std::endl;
+    for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_EDGE; deg++) {
+      testVol = computeRefVolume(CELL_HEX, deg);
+      *outStream << std::setw(24) << "HEX volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_HEX]) << '\n';
+      if (std::abs(testVol - volumeList[CELL_HEX]) > tol)
+        errorFlag = 1;
+    }
+    *outStream << std::endl;
+    for (int deg=0; deg<std::min(INTREPID_MAX_CUBATURE_DEGREE_EDGE,INTREPID_MAX_CUBATURE_DEGREE_TRI); deg++) {
+      testVol = computeRefVolume(CELL_TRIPRISM, deg);
+      *outStream << std::setw(24) << "TRIPRISM volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TRIPRISM]) << '\n';
+      if (std::abs(testVol - volumeList[CELL_TRIPRISM]) > tol)
+        errorFlag = 1;
+    }
   }
   catch (std::logic_error err) {
-    cout << err.what() << "\n";
+    *outStream << err.what() << "\n";
+    errorFlag = 2;
   };
 
-  cout << "\n1D, 2D, and 3D integrals of functions 1-x^2, 1-x^2-y^2, and 1-x^2-y^2-y^2, respectively:\n";
 
-  try {
-    cout << "EDGE integral w/ 1st     degree rule --> " << computeIntegral(CELL_EDGE, 1) << '\n';
-    cout << "EDGE integral w/ 2nd     degree rule --> " << computeIntegral(CELL_EDGE, 2) << '\n';
-    cout << "EDGE integral w/ highest degree rule --> " << computeIntegral(CELL_EDGE, INTREPID_MAX_CUBATURE_DEGREE_EDGE) << '\n';
-    cout << "TRI  integral w/ 1st     degree rule --> " << computeIntegral(CELL_TRI, 1) << '\n';
-    cout << "TRI  integral w/ 2nd     degree rule --> " << computeIntegral(CELL_TRI, 2) << '\n';
-    cout << "TRI  integral w/ highest degree rule --> " << computeIntegral(CELL_TRI, INTREPID_MAX_CUBATURE_DEGREE_TRI) << '\n';
-    cout << "TET  integral w/ 1st     degree rule --> " << computeIntegral(CELL_TET, 1) << '\n';
-    cout << "TET  integral w/ 2nd     degree rule --> " << computeIntegral(CELL_TET, 2) << '\n';
-    cout << "TET  integral w/ highest degree rule --> " << computeIntegral(CELL_TET, INTREPID_MAX_CUBATURE_DEGREE_TET) << '\n';
-  }
-  catch (std::logic_error err) {
-    cout << err.what() << "\n";
-  };
+  if (errorFlag > 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
 
-  return 0;
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
+
+  return errorFlag;
 }
