@@ -115,7 +115,7 @@ example subdirectory of the PyTrilinos package:
 
 %}
 
-// Standard excepion handling
+// Standard exception handling
 %include "exception.i"
 
 // Auto-documentation feature
@@ -130,11 +130,23 @@ example subdirectory of the PyTrilinos package:
 %import "Epetra.i"
 
 // General exception handling
+%feature("director:except")
+{
+  if ($error != NULL)
+  {
+    throw Swig::DirectorMethodException();
+  }
+}
+
 %exception
 {
   try
   {
     $action
+  }
+  catch(Swig::DirectorException &e)
+  {
+    SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
   catch(...)

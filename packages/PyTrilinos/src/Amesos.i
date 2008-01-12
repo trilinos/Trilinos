@@ -155,11 +155,23 @@ exAmesos_Factory.py.
 %import "Epetra.i"
 
 // General exception handling
+%feature("director:except")
+{
+  if ($error != NULL)
+  {
+    throw Swig::DirectorMethodException();
+  }
+}
+
 %exception
 {
   try
   {
     $action
+  }
+  catch(Swig::DirectorException &e)
+  {
+    SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
   catch(...)

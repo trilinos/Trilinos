@@ -250,9 +250,8 @@ __version__ = Teuchos_Version().split()[2]
 %typemap(in) RCP<Teuchos::ParameterList>
 (Teuchos::ParameterList * params = NULL)
 {
-  int                      res          = 0;
-  void                  *  argp         = NULL;
-  static swig_type_info *  swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
+  int    res  = 0;
+  void * argp = NULL;
   if (PyDict_Check($input))
   {
     params = Teuchos::pyDictToNewParameterList($input);
@@ -265,7 +264,7 @@ __version__ = Teuchos_Version().split()[2]
   }
   else
   {
-    res = SWIG_ConvertPtr($input, &argp, swig_TPL_ptr, 0);
+    res = SWIG_ConvertPtr($input, &argp, $descriptor(Teuchos::ParameterList*), 0);
     if (!SWIG_IsOK(res))
     {
       PyErr_SetString(PyExc_TypeError,

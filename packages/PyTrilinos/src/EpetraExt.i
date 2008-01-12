@@ -150,6 +150,14 @@ example subdirectory of the PyTrilinos package:
 %import "Epetra.i"
 
 // General exception handling
+%feature("director:except")
+{
+  if ($error != NULL)
+  {
+    throw Swig::DirectorMethodException();
+  }
+}
+
 %exception
 {
   try
@@ -159,6 +167,10 @@ example subdirectory of the PyTrilinos package:
   catch(Teuchos::EmptyXMLError & e)
   {
     SWIG_exception(SWIG_ValueError, e.what());
+  }
+  catch(Swig::DirectorException &e)
+  {
+    SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
   catch(...)

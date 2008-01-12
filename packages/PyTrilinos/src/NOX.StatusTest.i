@@ -132,7 +132,7 @@ namespace StatusTest
   {
     std::stringstream os;
     self->print(os);                  // Put the output in os
-    std::string s = os.str();              // Extract the string from os
+    std::string s = os.str();         // Extract the string from os
     return s.substr(0,s.length()-1);  // Return the string minus trailing \n
   }
 }

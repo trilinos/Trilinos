@@ -107,6 +107,14 @@ using Teuchos::RCP;
 %import "NOX.StatusTest.i"
 
 // General exception handling
+%feature("director:except")
+{
+  if ($error != NULL)
+  {
+    throw Swig::DirectorMethodException();
+  }
+}
+
 %exception
 {
   try
@@ -121,6 +129,10 @@ using Teuchos::RCP;
   catch(Teuchos::Exceptions::InvalidParameter & e)
   {
     PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
+  catch(Swig::DirectorException &e)
+  {
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT

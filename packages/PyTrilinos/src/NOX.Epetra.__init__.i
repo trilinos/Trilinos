@@ -114,6 +114,15 @@ using namespace NOX::Epetra;
 
 // General exception handling
 %include "exception.i"
+
+%feature("director:except")
+{
+  if ($error != NULL)
+  {
+    throw Swig::DirectorMethodException();
+  }
+}
+
 %exception
 {
   try
@@ -128,6 +137,10 @@ using namespace NOX::Epetra;
   catch(Teuchos::Exceptions::InvalidParameter & e)
   {
     PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
+  catch(Swig::DirectorException &e)
+  {
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
