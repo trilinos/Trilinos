@@ -682,6 +682,33 @@ All of the options below are disabled by default.
   counts.}  Timing and flop counts are printed when the associated
 object is destroyed.
 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Linking to \ML}
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:configure:linkingToML}
+
+The most typical usage of \ML\ is as a solver or preconditioner within an
+application.  \ML\ provides an easy facility for ensuring that the proper
+header and library files are available for compilation and linking.
+The \ML\ build directory contains the file {\tt Makefile.export.ml}.  (If
+Trilinos has been installed, this file will be in the
+installation directory.)  {\tt Makefile.export.ml} should be included in
+application Makefiles, {\tt Makefile.export.ml} defines two macros, {\tt
+ML\_LIBS} and {\tt ML\_INCLUDES}, that contain all of \ML's library and
+include dependencies, respectively.  Additionally, the macro {\tt
+HAVE\_CONFIG\_H} {\bf must} be defined.  Here is an example of how to build an
+sample code that used \ML\ has a third-party library:
+
+\begin{verbatim}
+include ${ROOT_OF_TRILINOS_BUILD}/packages/ml/Makefile.export.ml
+
+flowCode.exe: flowCode.o
+    g++ -o flowCode.exe flowCode.o ${ML_LIBS}
+
+flowCode.o: flowCode.cpp
+    g++ -c -DHAVE_CONFIG_H ${ML_INCLUDES} flowCode.c
+\end{verbatim}
+
 %%%
 %%%
 %%%
