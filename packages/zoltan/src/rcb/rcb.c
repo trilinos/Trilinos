@@ -367,17 +367,15 @@ static int rcb_fn(
 				      1 = time before median iterations
 				      2 = time in median iterations
 				      3 = communication time */
-  int     counters[9];              /* diagnostic counts
-			              0 = # of non-serial median iterations on each proc
+  int     counters[7];              /* diagnostic counts
+			              0 = unused
 				      1 = # of dots sent
 				      2 = # of dots received
 				      3 = most dots this proc ever owns
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
-				      6 = # of reallocs of dot array 
-                                      7 = sum of median iterations for all non-serial cuts
-			              8 = # of serial median iterations on each proc */
-  int     reuse_count[8];           /* counter (as above) for reuse to record
+				      6 = # of reallocs of dot array  */
+  int     reuse_count[7];           /* counter (as above) for reuse to record
                                        the number of dots premoved */
   int     i,j;                      /* local variables */
   int     use_ids;                  /* When true, global and local IDs will be
@@ -517,9 +515,7 @@ static int rcb_fn(
   counters[4] = dotmax;
   counters[5] = 0;
   counters[6] = 0;
-  counters[7] = 0;
-  counters[8] = 0;
-  for (i = 0; i < 9; i++) reuse_count[i] = 0;
+  for (i = 0; i < 7; i++) reuse_count[i] = 0;
 
   /* create mark and list arrays for dots */
 
@@ -822,7 +818,7 @@ static int rcb_fn(
         if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(
                zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-               fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
+               fraclo[0], local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
@@ -835,7 +831,7 @@ static int rcb_fn(
         else{
           if (!Zoltan_RB_find_median_randomized(
                zz->Tflops_Special, coord, wgts, dotmark, dotnum, proc, 
-               fraclo[0], local_comm, &valuehalf, first_guess, &(counters[0]),
+               fraclo[0], local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
@@ -850,7 +846,7 @@ static int rcb_fn(
         if (Zoltan_RB_find_bisector(
                zz, zz->Tflops_Special, coord, wgts, dotmark, dotnum, 
                wgtflag, mcnorm, fraclo, local_comm, 
-               &valuehalf, first_guess, counters,
+               &valuehalf, first_guess,
                old_nprocs, proclower, old_nparts, 
                rcbbox->lo[dim], rcbbox->hi[dim], 
                weight, weightlo, weighthi, &norm_max,
@@ -1076,9 +1072,10 @@ static int rcb_fn(
     }
   }
 
-  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
     Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum, part_sizes,
                 timers,counters,stats,reuse_count,rcbbox,reuse);
+  }
 
   /* update calling routine parameters */
   
@@ -1554,8 +1551,7 @@ static int serial_rcb(
           if (!Zoltan_RB_find_median(
                  0, coord, wgts, dotmark, dotnum, proc, 
                  fractionlo[0], MPI_COMM_SELF, &valuehalf, 
-                 first_guess, &(counters[0]),
-                 zz->Num_Proc, 1, zz->Proc, num_parts,
+                 first_guess, zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                  weight[0], weightlo, weighthi,
                  dotlist, rectilinear_blocks, average_cuts)) {
@@ -1568,7 +1564,7 @@ static int serial_rcb(
           if (!Zoltan_RB_find_median_randomized(
                  0, coord, wgts, dotmark, dotnum, proc, 
                  fractionlo[0], MPI_COMM_SELF, &valuehalf, 
-                 first_guess, &(counters[0]),
+                 first_guess,
                  zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                  weight[0], weightlo, weighthi,
@@ -1584,7 +1580,7 @@ static int serial_rcb(
         if (Zoltan_RB_find_bisector(
              zz, 0, coord, wgts, dotmark, dotnum, 
              wgtflag, mcnorm, fractionlo, MPI_COMM_SELF, 
-             &valuehalf, first_guess, counters,
+             &valuehalf, first_guess, 
              1, zz->Proc, num_parts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi, &norm_max,

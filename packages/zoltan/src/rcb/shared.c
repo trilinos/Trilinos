@@ -21,6 +21,7 @@ extern "C" {
 #include "zz_const.h"
 #include "rcb.h"
 #include "rib.h"
+#include "par_median_const.h"
 #include "all_allo_const.h"
 #include "create_proc_list_const.h"
 
@@ -1088,33 +1089,6 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
   
     /* counter info */
   
-    MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
-    ave = ((double) sum)/nprocs;
-    if (proc == print_proc) 
-      printf(" Non serial iterations per process: ave = %g, min = %d, max = %d\n",ave,min,max);
-    MPI_Barrier(zz->Communicator);
-    if (stats > 1)  
-      printf("    Proc %d non-serial iterations = %d\n",proc,counters[0]);
-    MPI_Barrier(zz->Communicator);
-
-    MPI_Allreduce(&counters[8],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[8],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[8],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
-    ave = ((double) sum)/nprocs;
-    if (proc == print_proc) 
-      printf(" Serial iterations per process: ave = %g, min = %d, max = %d\n",ave,min,max);
-    MPI_Barrier(zz->Communicator);
-    if (stats > 1)  
-      printf("    Proc %d serial iterations = %d\n",proc,counters[8]);
-    MPI_Barrier(zz->Communicator);
-
-    MPI_Allreduce(&counters[7],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    if (proc == print_proc) 
-      printf(" Total iterations to make non-serial cuts: %d\n",sum);
-    MPI_Barrier(zz->Communicator);
-  
     MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
     MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
     MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
@@ -1198,6 +1172,8 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
       printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
+
+    par_median_print_counts(zz->Communicator, print_proc);
   }
 
   /* timer info */

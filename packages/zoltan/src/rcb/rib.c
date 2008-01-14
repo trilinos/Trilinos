@@ -55,7 +55,7 @@ static int compute_rib_direction(ZZ *, int, int, double *, double *,
   MPI_Comm, int, int, int);
 static int serial_rib(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   int, double, int, int, int *, int *, int, int, int, int, int, int, int,
-  int *, struct rib_tree *, double *, double *, float *);
+  struct rib_tree *, double *, double *, float *);
 
 /*---------------------------------------------------------------------------*/
 /*  Parameters structure for RIB method.  Used in  */
@@ -241,7 +241,7 @@ static int rib_fn(
                                  2 = time in median iterations
                                  3 = communication time */
   int     counters[7];        /* diagnostic counts
-                                 0 = # of median iterations
+                                 0 = unused
                                  1 = # of dots sent
                                  2 = # of dots received
                                  3 = most dots this proc ever owns
@@ -486,7 +486,7 @@ static int rib_fn(
     if (!Zoltan_RB_find_median(
                    zz->Tflops_Special, value, wgts, dotmark, dotnum, proc, 
                    fractionlo, local_comm, &valuehalf, first_guess,
-                   &(counters[0]), nprocs, old_nprocs, proclower, old_nparts,
+                   nprocs, old_nprocs, proclower, old_nparts,
                    wgtflag, valuelo, valuehi, weight[0], weightlo,
                    weighthi, dotlist, rectilinear_blocks, average_cuts)) {
       ZOLTAN_PRINT_ERROR(proc, yo,
@@ -622,7 +622,7 @@ static int rib_fn(
                       &(dindx[0]), &(tmpdindx[0]), partlower,
                       proc, wgtflag, stats, gen_tree,
                       rectilinear_blocks, average_cuts,
-                      counters, treept, value, wgts, part_sizes);
+                      treept, value, wgts, part_sizes);
     ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rib");
@@ -969,7 +969,6 @@ static int serial_rib(
   int rectilinear_blocks,    /* parameter for find_median (not used by rib) */
   int average_cuts,          /* (0) don't (1) compute the cut to be the
                                 average of the closest dots. */
-  int counters[],            /* diagnostic counts */
   struct rib_tree *treept,   /* tree of RCB cuts */
   double *value,              /* temp array for median_find; rotated coords */
   double *wgts,              /* temp array for median_find */
@@ -1015,8 +1014,8 @@ int i;
     }
 
     if (!Zoltan_RB_find_median(0, value, wgts, dotmark, dotnum, proc, 
-                               fractionlo, MPI_COMM_SELF, &valuehalf, 0,
-                               &(counters[0]), 1, 1, proc, num_parts,
+                               fractionlo, MPI_COMM_SELF, &valuehalf, 
+                               0, zz->Num_Proc, 1, proc, num_parts,
                                wgtflag, valuelo, valuehi, weight, &weightlo,
                                &weighthi, dotlist, rectilinear_blocks, 
                                average_cuts)) {
@@ -1058,7 +1057,7 @@ int i;
                         &(dindx[0]), &(tmpdindx[0]), partlower,
                         proc, wgtflag, stats, gen_tree, 
                         rectilinear_blocks, average_cuts,
-                        counters, treept, value, wgts, part_sizes);
+                        treept, value, wgts, part_sizes);
       if (ierr < 0) {
         goto End;
       }
@@ -1073,7 +1072,7 @@ int i;
                         &(dindx[set1]), &(tmpdindx[set1]), partmid,
                         proc, wgtflag, stats, gen_tree,
                         rectilinear_blocks, average_cuts,
-                        counters, treept, value, wgts, part_sizes);
+                        treept, value, wgts, part_sizes);
       if (ierr < 0) {
         goto End;
       }
