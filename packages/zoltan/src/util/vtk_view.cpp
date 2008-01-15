@@ -332,7 +332,8 @@ int main(int argc, char **argv)
       return 1;
     }
   }
-  else if (fname_opts.file_type == CHACO_FILE){
+  else if ((fname_opts.file_type == CHACO_FILE) ||
+           (fname_opts.file_type == NO_FILE_TRIANGLES)){
 
     // The chaco base name is in fname_opts.pexo_fname, but if we
     // are to read the zdrive output files, we need to know how many
@@ -365,6 +366,7 @@ int main(int argc, char **argv)
     if (Proc == 0){
       cout << "Please specify either \"File Type = NemesisI\"";
       cout << " or \"File Type = Chaco\"" << endl;
+      cout << " or \"File Type = random-triangles \"" << endl;
       cout << "in parameter file" << endl;
     }
     return 1;
@@ -673,7 +675,7 @@ prm->ResetCameraClippingRange(renderer);
 }
 static int read_mesh(vtkUnstructuredGrid *ug)
 {
-  if (fname_opts.file_type == CHACO_FILE){
+  if ((fname_opts.file_type == CHACO_FILE) || (fname_opts.file_type == NO_FILE_TRIANGLES)){
     // Process 0 reads in chaco file, request VTK reader to add
     // element ID array.
 
@@ -777,7 +779,7 @@ static int create_field_array(vtkUnstructuredGrid *ug,
     // requires reading the zdrive output files.  We name the
     // resulting element or point array "Partition".
 
-    if (fname_opts.file_type == CHACO_FILE){
+    if ((fname_opts.file_type == CHACO_FILE) || (fname_opts.file_type == NO_FILE_TRIANGLES)){
       strcpy(pa, "Partition");
     }
     else{
@@ -968,6 +970,7 @@ int read_broadcast_input_options(int &argc, char **argv)
     }
   
     if (input_ok && 
+        (fname_opts.file_type != NO_FILE_TRIANGLES ) &&  /* zdrive generated a chaco file */
         (fname_opts.file_type != CHACO_FILE) &&
         (fname_opts.file_type != NEMESIS_FILE)){
       cout << "vtk_view can only read chaco or exodusII/Nemesis files." << endl;
@@ -1634,7 +1637,7 @@ static int check_partition_numbers(vtkUnstructuredGrid *ug)
 {
   vtkIntArray *ids = NULL;
 
-  if (fname_opts.file_type == CHACO_FILE){
+  if ((fname_opts.file_type == CHACO_FILE) || (fname_opts.file_type == NO_FILE_TRIANGLES)){
     ids = vtkIntArray::SafeDownCast(ug->GetPointData()->GetArray("Partition"));
   }
   else{
@@ -1663,7 +1666,7 @@ int assign_partition_numbers(vtkUnstructuredGrid *ug)
   int nfiles, extra, noextra;
   int *procs, *hasCells;
 
-  if (fname_opts.file_type == CHACO_FILE){
+  if ((fname_opts.file_type == CHACO_FILE) || (fname_opts.file_type == NO_FILE_TRIANGLES)){
     // zdrive treats the Chaco file vertices as the "elements" to be partitioned.
     pointArray = 1;
   }
@@ -1887,7 +1890,7 @@ static char *captionText(char *pnm, char *cnm)
 
   if (zdriveCount == 0){
     used = snprintf(buf1, LINELEN, "%s: %s\n",
-      (fname_opts.file_type == CHACO_FILE ? "Chaco" : "Exodus/Nemesis"),
+      (fname_opts.file_type != NEMESIS_FILE ? "Chaco" : "Exodus/Nemesis"),
       fname_opts.pexo_fname);
 
     if (used <= lenleft){
@@ -1911,7 +1914,7 @@ static char *captionText(char *pnm, char *cnm)
     // We had zdrive output files.  Display pertinent info about zdrive run
 
     int dtype = fname_opts.init_dist_type;
-    if ((fname_opts.file_type == CHACO_FILE) && (dtype != INITIAL_FILE)) {
+    if ((fname_opts.file_type != NEMESIS_FILE) && (dtype != INITIAL_FILE)) {
       snprintf(buf1, LINELEN, "Chaco: %s, %s initial distribution, %s",
         fname_opts.pexo_fname, 
         (dtype == INITIAL_LINEAR ? 
@@ -1921,7 +1924,7 @@ static char *captionText(char *pnm, char *cnm)
     }
     else{
       snprintf(buf1, LINELEN, "%s: %s, %s",
-        (fname_opts.file_type == CHACO_FILE ? "Chaco" : "Exodus/Nemesis"),
+        (fname_opts.file_type != NEMESIS_FILE ? "Chaco" : "Exodus/Nemesis"),
         fname_opts.pexo_fname, 
         prob_opts.method);
     }
