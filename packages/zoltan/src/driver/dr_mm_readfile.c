@@ -392,10 +392,10 @@ int error = 0;  /* flag to indicate status */
     if (N == M){                   /* Square matrix */
       int sum;
       int *cnt = NULL;
-      start = NULL;   /* index of start of vertices' edge lists */
       int *adj = NULL;     /* list of adjacent vertices */
       float *vwgts = NULL;     /* vertex weights for diagonal entries */
       float *ewgts = NULL;     /* edge weights for off-diagonals */
+      start = NULL;   /* index of start of vertices' edge lists */
      
       /* Assume symmetric matrix. Always create weights, but they are 
          only used if user sets Zoltan parameter obj_weight_dim=1. */

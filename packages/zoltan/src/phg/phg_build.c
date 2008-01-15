@@ -290,7 +290,7 @@ int Zoltan_PHG_Fill_Hypergraph(
 
 char *yo = "Zoltan_PHG_Fill_Hypergraph";
 
-ZOLTAN_COMM_OBJ *plan;
+ZOLTAN_COMM_OBJ *plan=NULL;
 
 int i, j, w, cnt, dim, rc;
 int msg_tag = 30000;
@@ -420,6 +420,13 @@ int nRepartEdge = 0, nRepartVtx = 0;
     method_repart = (!strcasecmp(temphgp->hgraph_method, "REPART") ||
                    !strcasecmp(temphgp->hgraph_method, "FAST_REPART"));
 
+    if (temphgp->globalcomm.row_comm != MPI_COMM_NULL)
+      MPI_Comm_free(&(temphgp->globalcomm.row_comm));
+    if (temphgp->globalcomm.col_comm != MPI_COMM_NULL)
+      MPI_Comm_free(&(temphgp->globalcomm.col_comm));
+    if (temphgp->globalcomm.Communicator != MPI_COMM_NULL)
+      MPI_Comm_free(&(temphgp->globalcomm.Communicator));
+
     ZOLTAN_FREE(&temphgp);
 
     zoltan_lb_eval = 1;
@@ -448,6 +455,15 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
+    goto End;
+  }
+
+  MPI_Allreduce(&(zhg->nObj), &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
+
+  if (i < 1){
+    if (zz->Proc == 0){
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "No objects to partition on any process")
+    }
     goto End;
   }
 
@@ -1450,23 +1466,16 @@ int nRepartEdge = 0, nRepartVtx = 0;
     zz->Obj_Weight_Dim +   /* 0 or more application supplied weights*/
     add_vweight;           /* 0 or 1 additional calculated weights */
 
-  if (phg->VtxWeightDim > 1){
+  if (phg->VtxWeightDim > 1) {
     /*
      * For now, only one weight per vertex will be used.  We will
      * still save multiple weights, because in the future we may
      * be able to use them.
      */
-    if (zz->Proc == 0){
+    if (zz->Proc == 0) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Too many vertex weights.");
-      if (add_vweight){
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-         "Both application supplied *and* ADD_OBJ_WEIGHT "
-         "calculated vertex weights were provided.");
-      }
-      else{
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, 
          "Multiple weights per vertex were supplied.");
-      }
       ZOLTAN_PRINT_WARN(zz->Proc, yo, 
         "Only the first application supplied weight per vertex will be used.");
     }

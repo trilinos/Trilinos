@@ -158,6 +158,13 @@ int Zoltan_HSFC(
    if (err)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Error in Zoltan_Get_Obj_List.");
 
+   MPI_Allreduce(&ndots, &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
+   if (i < 1){
+     if (zz->Proc == 0)
+       ZOLTAN_PRINT_WARN(zz->Proc, yo, "No objects to partition")
+     *num_export = 0;
+     goto EndReporting;
+   }
 
    /* allocate storage for dots and their corresponding gids, lids, weights */
    if (ndots > 0) {
@@ -554,6 +561,8 @@ int Zoltan_HSFC(
          ++(*num_export);
       }
 
+EndReporting:
+
    if (!zz->LB.Return_Lists)
       *num_export = -1;
    else if (*num_export > 0) {
@@ -596,7 +605,6 @@ int Zoltan_HSFC(
          }
       }
     ZOLTAN_TRACE_DETAIL (zz, yo, "Filled in export information");
-
 
    /* DEBUG: print useful information */
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL  &&  zz->Proc == 0)

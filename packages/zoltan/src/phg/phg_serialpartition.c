@@ -315,7 +315,8 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
       /* Decide if candidate is in the top tier or not. */
       /* Our objective is a combination of cuts and balance */
 
-      bal = Zoltan_PHG_Compute_Balance(zz, shg, part_sizes, numPart, new_part); 
+      bal = Zoltan_PHG_Compute_Balance(zz, shg, part_sizes, 0, 
+                                       numPart, new_part); 
       cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, new_part, numPart, &ierr);
       
       /* Use ratio-cut as our objective. There are many other options! */
@@ -465,6 +466,7 @@ static int seq_part (
 {
   int i, j, pnumber;
   int vwgtdim = hg->VtxWeightDim;
+  int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
   double weight_sum = 0.0, part_sum, old_sum, cutoff;
   double psize_sum = 0.0;
   double *fixed_wgts = NULL;
@@ -512,7 +514,7 @@ static int seq_part (
   /* Sum up all the target partition weights. */
   /* Only use first vweight for now. */
   for (i=0; i<p; i++)
-    psize_sum += part_sizes[i*vwgtdim];
+    psize_sum += part_sizes[i*part_dim];
 
   pnumber = 0; /* Assign next vertex to partition no. pnumber */
   part_sum = (fixed_wgts ? fixed_wgts[0] : 0.); /* Weight of fixed vertices */
@@ -544,8 +546,8 @@ static int seq_part (
         if (part[j] == pnumber)
           part_sum += hg->vwgt[j*vwgtdim];
         /* Update cutoff. */
-        psize_sum -= part_sizes[pnumber-1];
-        cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
+        psize_sum -= part_sizes[(pnumber-1)*part_dim];
+        cutoff = weight_sum*part_sizes[pnumber*part_dim]/psize_sum;
       }
     }
     if (hgp->output_level >= PHG_DEBUG_PRINT)
@@ -664,6 +666,7 @@ static int greedy_grow_part (
   int *cut[2];
   double *gain = NULL;
   int vwgtdim = hg->VtxWeightDim;
+  int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
   double weight_sum, part_sum;
   double cutoff;
   double psize_sum= 0.0;
@@ -725,8 +728,8 @@ static int greedy_grow_part (
   }
 
   /* Set cutoff for growing partition (1) */
-  psize_sum = part_sizes[0] + part_sizes[1];
-  cutoff = weight_sum*part_sizes[1]/psize_sum;
+  psize_sum = part_sizes[0] + part_sizes[part_dim];
+  cutoff = weight_sum*part_sizes[part_dim]/psize_sum;
 
   if (hgp->output_level >= PHG_DEBUG_ALL)
     printf("Debug: Starting new greedy growing at vertex %d, part=%2d\n", start_vtx, p);

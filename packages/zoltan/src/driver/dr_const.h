@@ -226,6 +226,7 @@ struct Test_Flags {
   int Multi_Callbacks;      /* Exercises list-based callback functions. */
   int Graph_Callbacks;      /* Register and test graph callbacks */
   int Hypergraph_Callbacks; /* Register and test hypergraph callbacks */
+  int No_Global_Objects;    /* Test case where there are no objects on any process */
   int Gen_Files;            /* Exercise output file generation. */
   int Null_Lists;           /* Exercises null import or export lists to
                                Zoltan_Migrate. */

@@ -104,7 +104,9 @@ CC			= gcc34  -Wall -Werror-implicit-function-declaration
 CPPC			= g++34  -Wall -Werror-implicit-function-declaration
 PURE_CC                 = purify -best-effort -follow-child-processes=yes \
                           -cache-dir=/tmp/purify \
-                          -chain-length=20
+                          -chain-length=20 
+#	  -windows=no -append-logfile=yes -logfile=./purify.output.%v.%p
+#For directing purify output to files, do above.
 
 DBG_FLAGS		= -g -Wall
 OPT_FLAGS		= -O2 
@@ -112,8 +114,10 @@ CFLAGS 			= $(DBG_FLAGS)
 
 F90			= gfortran
 
-MPI_INCPATH	= $(shell /opt/lam/bin/mpicc --showme:compile)
-MPI_LIB		= $(shell /opt/lam/bin/mpicc --showme:link)
+#MPI_INCPATH	= $(shell /opt/lam/bin/mpicc --showme:compile)
+#MPI_LIB		= $(shell /opt/lam/bin/mpicc --showme:link)
+MPI_INCPATH	= $(shell /opt/lam714-gcc346-pure/bin/mpicc --showme:compile)
+MPI_LIB		= $(shell /opt/lam714-gcc346-pure/bin/mpicc --showme:link)
 MPI_LIBPATH	= 
 
 # Some users have needed these libraries.  If your linker can't find getarg or

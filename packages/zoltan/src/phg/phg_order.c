@@ -50,11 +50,24 @@ int Zoltan_PHG_Vertex_Visit_Order(
       /* linear (natural) vertex visit order */
       break;
 
-    case 2: 
+    case 2:
+    {
       /* increasing vertex weight */
-      /* EBEB: This will not work with multidimensional weights! */
-      Zoltan_quicksort_pointer_inc_float (order, hg->vwgt, 0, hg->nVtx-1);
+      float *tmpvwgt;
+
+      if (hg->VtxWeightDim == 1)
+        tmpvwgt = hg->vwgt;
+      else {
+        /* Sort based on first component of multidimensional weight */
+        tmpvwgt = (float *) ZOLTAN_MALLOC(hg->nVtx * sizeof(float));
+        for (i = 0; i < hg->nVtx; i++)
+          tmpvwgt[i] = hg->vwgt[i*hg->VtxWeightDim];
+      } 
+      
+      Zoltan_quicksort_pointer_inc_float (order, tmpvwgt, 0, hg->nVtx-1);
+      if (tmpvwgt != hg->vwgt) ZOLTAN_FREE(&tmpvwgt);
       break;
+    }
 
     case 3: 
       /* increasing vertex degree */

@@ -144,6 +144,8 @@ static int split_comm(HierPartParams *hpp) {
 
   MPI_Group_translate_ranks(orig_group, hpp->origzz->Num_Proc, origranks, 
 			    hier_group, hpp->hier_ranks_of_orig);
+  MPI_Group_free(&orig_group);
+  MPI_Group_free(&hier_group);
 
   ZOLTAN_FREE(&origranks);
   
@@ -282,7 +284,8 @@ int Zoltan_Hier(
   int **exp_procs,      /* list of processors to export to */
   int **exp_to_part     /* list of partitions to which exported objects are
                            assigned. */
-) {
+) 
+{
   int ierr = ZOLTAN_OK;   /* error flag for initialization checks */
   HierPartParams hpp;     /* hierarchical partitioning parameters,
 			     mainly things that will be needed in the 
@@ -831,8 +834,8 @@ End:
   }
 
   if (hpp.dd) Zoltan_DD_Destroy(&hpp.dd);
-  if (hpp.hierzz) Zoltan_Destroy(&hpp.hierzz);
 
+  if (hpp.hierzz) Zoltan_Destroy(&hpp.hierzz);
   if (hpp.hier_comm != MPI_COMM_NULL) MPI_Comm_free(&hpp.hier_comm);
 
   ZOLTAN_TRACE_EXIT(zz, yo);

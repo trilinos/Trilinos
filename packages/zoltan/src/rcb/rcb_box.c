@@ -97,6 +97,10 @@ int                i, ierr = ZOLTAN_OK;
 
   if (treept[0].right_leaf > 0)
     compute_box(zz, part, treept, treept[0].right_leaf, &box);
+  else{
+    box.lo[0] = box.lo[1] = box.lo[2] = 0;
+    box.hi[0] = box.hi[1] = box.hi[2] = 0;
+  }
 
   *ndim = rcb->Num_Dim;
 

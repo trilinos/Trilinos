@@ -35,7 +35,7 @@ static int split_hypergraph(int *pins[2], HGraph*, HGraph*, PHGPartParams*,
 static int rdivide_and_prepsend(int, int, Partition, ZZ *, HGraph *,
                                 PHGPartParams *, int, int *, int *, int *,
                                 int *, int *, int);
-static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2],
+static float balanceTol(PHGPartParams *hgp, int part_dim, int pno, float *ratios,
                         float tot, float pw);
 
 /* Recursively divides both the problem and the processes (if enabled)
@@ -61,8 +61,9 @@ int Zoltan_PHG_rdivide(
   int nVtx = hg->nVtx, gnVtx = hg->dist_x[hgc->nProc_x]; 
   double leftw=0.0, rightw=0.0;
   float  bal_tol = hgp->bal_tol;
-  float  bisec_part_sizes[2]={0.0,0.0};   /* Target partition sizes; dimension is 2 
+  float  *bisec_part_sizes=NULL;   /* Target partition sizes; dimension is 2*hg->VtxWeightDim  
                                         because we are doing bisection */
+  int part_dim = hg->VtxWeightDim ? hg->VtxWeightDim : 1;
   static int timer_rdivide=-1;      /* Timers; declared static to accumulate */
   static int timer_before=-1;       /* times over multiple runs.  */
   static int timer_after=-1;        /* Tricky to get right because of the */
@@ -116,12 +117,20 @@ int Zoltan_PHG_rdivide(
     part[i] = final[i];
 
   /* bipartition current hypergraph with appropriate split ratio */
+  if (!(bisec_part_sizes = (float *) ZOLTAN_MALLOC(2*part_dim*sizeof(float))))
+      MEMORY_ERROR;
   mid = (lo+hi)/2;
-  bisec_part_sizes[0] = bisec_part_sizes[1] = 0.;
-  for (i = lo; i <= mid; i++)  bisec_part_sizes[0] += hgp->part_sizes[i];
-  for (i = lo; i <= hi;  i++)  bisec_part_sizes[1] += hgp->part_sizes[i];
-  bisec_part_sizes[0] = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
-  bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
+  for (i=0; i<2*part_dim; ++i) bisec_part_sizes[i] = 0.;
+  for (i = lo; i <= mid; ++i)
+      for (j=0; j<part_dim; ++j)
+          bisec_part_sizes[j] += hgp->part_sizes[i*part_dim+j];
+  for (i = lo; i <= hi;  ++i)
+      for (j=0; j<part_dim; ++j)
+          bisec_part_sizes[part_dim+j] += hgp->part_sizes[i*part_dim+j];
+  for (j=0; j<part_dim; ++j) {
+      bisec_part_sizes[j] = (float) ((double) bisec_part_sizes[j] / (double) bisec_part_sizes[part_dim+j]);
+      bisec_part_sizes[part_dim+j] = 1. - bisec_part_sizes[j];
+  }
 
 
 /*  uprintf(hgc, "RDIVIDE: [%d, %d] mid=%d  target sizes: [%.3lf, %.3lf]\n", lo, hi, mid, bisec_part_sizes[0], bisec_part_sizes[1]);  */
@@ -237,7 +246,7 @@ int Zoltan_PHG_rdivide(
   if (left || right) {
       double ltotw=0, totw=0.0, imbal, targetw0;
       for (i=0; i<hg->nVtx; ++i)
-          ltotw += hg->vwgt[i];
+          ltotw += hg->vwgt[i*hg->VtxWeightDim];
       MPI_Allreduce(&ltotw, &totw, 1, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
       targetw0=totw*bisec_part_sizes[0];
       imbal = (targetw0==0.0) ? 0.0 : fabs(leftw-targetw0)/targetw0;      
@@ -348,7 +357,7 @@ int Zoltan_PHG_rdivide(
           float save_bal_tol=hgp->bal_tol;
 
           /* I'm on the left part so I should partition newleft */
-          hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes,
+          hgp->bal_tol = balanceTol(hgp, part_dim, 0, bisec_part_sizes,
                                     leftw+rightw, leftw);
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Left: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
@@ -370,7 +379,7 @@ int Zoltan_PHG_rdivide(
           float save_bal_tol=hgp->bal_tol;
 
           /* I'm on the right part so I should partition newright */
-          hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes,
+          hgp->bal_tol = balanceTol(hgp, part_dim, 1, bisec_part_sizes,
                                     leftw+rightw, rightw);
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Right: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
@@ -443,7 +452,7 @@ int Zoltan_PHG_rdivide(
       if (left) {
           float save_bal_tol=hgp->bal_tol;
           
-          hgp->bal_tol = balanceTol(hgp, 0, bisec_part_sizes,
+          hgp->bal_tol = balanceTol(hgp, part_dim, 0, bisec_part_sizes,
                                     leftw+rightw, leftw);
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Left: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
@@ -466,7 +475,7 @@ int Zoltan_PHG_rdivide(
       if (right) {
           float save_bal_tol=hgp->bal_tol;
           
-          hgp->bal_tol = balanceTol(hgp, 1, bisec_part_sizes,
+          hgp->bal_tol = balanceTol(hgp, part_dim, 1, bisec_part_sizes,
                                     leftw+rightw, rightw);
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Right: H(%d, %d, %d) OldI: %.2lf NewI: %.2lf\n",
@@ -494,8 +503,9 @@ End:
   if (level>0)
       Zoltan_HG_HGraph_Free(hg);
     
-  Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, 
-                    &left, &right, &proclist, &sendbuf, &recvbuf);
+  Zoltan_Multifree (__FILE__, __LINE__, 9, &pins[0], &lpins[0], &part, 
+                    &left, &right, &proclist, &sendbuf, &recvbuf, 
+                    &bisec_part_sizes);
 
   if (do_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hgc->Communicator);
@@ -684,10 +694,11 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
 }
 
 
-static float balanceTol(PHGPartParams *hgp, int pno, float ratios[2],
+/* UVCUVC: CHECK currently only uses 1st weight */
+static float balanceTol(PHGPartParams *hgp, int part_dim, int pno, float *ratios,
                         float tot, float pw)
 {
-    float ntol=(pw==0.0) ? 0.0 : (tot*hgp->bal_tol*ratios[pno])/pw;
+    float ntol=(pw==0.0) ? 0.0 : (tot*hgp->bal_tol*ratios[part_dim*pno])/pw;
     
 /*    printf("%s: TW=%.1lf pw=%.1lf (%.3lf) old_tol=%.2f  part_s=(%.3f, %.3f) and new tol=%.2f\n", (pno==0) ? "LEFT" : "RIGHT", tot, pw, pw/tot, hgp->bal_tol, ratios[0], ratios[1], ntol);*/
     return ntol;

@@ -661,7 +661,9 @@ int idx;
    * Compute size of one element's data.
    */
 
-  size = sizeof(ELEM_INFO);
+  /* 152 is hardcoded size of ELEM_INFO for 64-bit archs;
+   * Need it to make 32-bit and 64-bit repartitioning results match. */
+  size = (sizeof(ELEM_INFO) > 152 ? sizeof(ELEM_INFO) : 152);
  
   /* Add space to correct alignment so casts work in (un)packing. */
   size = Zoltan_Align(size);

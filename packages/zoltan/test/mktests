@@ -19,6 +19,7 @@
 
 setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb:
 
+set zdrive="$1"
 set rundir=`/bin/pwd`
 set arch=`(cd .. ; /bin/ls -1 | grep '^Obj_' | sed -e 's/Obj_//g')`
 set tname="zoltan.tests"
@@ -30,7 +31,14 @@ foreach d (*)
   set last=""
 
   if (! -e $d/$tname) then
-    foreach f (`ls -1 $d | grep 'zdrive\.inp\.'`)
+    echo $zdrive
+    if ($zdrive != "zfdrive") then 
+      set fileset = (`ls -1 $d | grep 'zdrive\.inp\.'`)
+    else
+      # KDD  Exclude some tests that zfdrive cannot handle.
+      set fileset = (`ls -1 $d | grep 'zdrive\.inp\.' | egrep -v 'oneproc|cyclic|rcb-lock|rcb-reuse|partlocal6|partlocal7'`)
+    endif
+    foreach f ($fileset)
       set suf=`echo $f | sed 's/.*zdrive\.inp\.//g'`
       if ("$last" != "$d") then
 	echo -n "$tname"
@@ -61,7 +69,8 @@ foreach d (*)
   endif
 
   foreach a ($arch)
-    set zdrive=`(cd ../Obj_$a; /bin/ls -1 | grep 'drive$' | head -1)`
+#   KDD:  zdrive is now passed as an argument to mktests.
+#   set zdrive=`(cd ../Obj_$a; /bin/ls -1 | grep 'drive$' | head -1)`
     if (! -e $d/$a-$d-nightly.study.xml && -e $d/$tname) then
       set last="$d"
       echo -n " $a-$d-nightly.study.xml"

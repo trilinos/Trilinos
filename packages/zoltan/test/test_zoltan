@@ -227,6 +227,7 @@ if (! $?run ) then
       breaksw
     case linux64lam:
     case linux64lampure:
+    case linux64lamcov:
       set run = "/opt/lam/bin/mpirun -np"
       breaksw
     case qed:
@@ -315,8 +316,11 @@ if (! $found) then
 endif
 
 # Initially, only the most basic methods are active
-set ch_methods = ( block block-partless block-partmore \
-                   random random-partless random-partmore)
+set ch_methods = ( )
+if (! $yes_serial) then
+  set ch_methods = ( $ch_methods block block-partless block-partmore \
+                     random random-partless random-partmore)
+endif
 set nem_methods = ( )
 if (! $yes_fortran) then
   set ch_methods = ( $ch_methods block-oneproc random-oneproc )
@@ -390,9 +394,11 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if (! $no_hier) then
-    set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
-      hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
-      hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+    if (! $yes_serial) then
+      set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
+        hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
+        hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+    endif
   endif
   if (! $no_parmetis) then
     if ( $pmversion == 2) then
@@ -413,6 +419,7 @@ if ( $yes_fortran ) then
             # These tests do not run correctly in serial, due to assumption
             # in ParMETIS that at least two processors are used.
             set ch_methods = ( $ch_methods \
+              partkway-v$pmversion.addobjwgt \
               adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
               adaptive-partlocal2-v$pmversion )
           endif
@@ -425,7 +432,7 @@ if ( $yes_fortran ) then
   endif
   if (! $no_hg) then
     if (! $old_interface) then
-      set ch_methods = ( $ch_methods phg )
+      set ch_methods = ( $ch_methods phg phg.addobjwgt)
     endif
   endif
 else
@@ -574,6 +581,7 @@ else
           # These tests do not run correctly in serial, due to assumption
           # in ParMETIS that at least two processors are used.
           set ch_methods = ( $ch_methods \
+            partkway-v$pmversion.addobjwgt \
             adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
             adaptive-partlocal2-v$pmversion )
         endif
@@ -601,17 +609,19 @@ else
   endif
   if (! $no_hg) then
     if (! $old_interface) then
-      set ch_methods = ( $ch_methods phg phg-oneproc )
+      set ch_methods = ( $ch_methods phg phg-oneproc phg.addobjwgt )
       set ch_methods = ( $ch_methods graph graph-partition \
                                      graph-refine graph-repartition)
     endif
   endif
   if (! $no_hier) then
-    set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
-      hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
-      hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
-    set nem_methods = ( $nem_methods hier-parmetis3-hsfc hier-parmetis3-rcb \
-      hier-rcb3-hsfc hier-rcb3-parmetis )
+    if (! $yes_serial) then
+      set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
+        hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
+        hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+      set nem_methods = ( $nem_methods hier-parmetis3-hsfc hier-parmetis3-rcb \
+        hier-rcb3-hsfc hier-rcb3-parmetis )
+    endif
   endif
   if ( $yes_drum ) then
     set ch_methods = ( $ch_methods hsfc-drum )

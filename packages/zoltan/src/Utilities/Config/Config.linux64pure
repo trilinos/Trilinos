@@ -104,7 +104,9 @@ CC			= gcc34  -Wall -Werror-implicit-function-declaration
 CPPC			= g++34  -Wall -Werror-implicit-function-declaration
 PURE_CC                 = purify -best-effort -follow-child-processes=yes \
                           -cache-dir=/tmp/purify \
-                          -chain-length=20
+                          -chain-length=20 
+#         -windows=no -append-logfile=yes -logfile=./purify.output.%v.%p
+
 
 DBG_FLAGS		= -g -Wall
 OPT_FLAGS		= -O2 
@@ -121,7 +123,7 @@ MPI_LIBPATH	=
 #MPI_LIB = -lg2c
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
-PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3 
+PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3_1_debug
 PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib

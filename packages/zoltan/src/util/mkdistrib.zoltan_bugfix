@@ -26,6 +26,7 @@ find . -name '.cvsignore' -exec rm -f {} \;
 # Remove stuff we don't want to share.
 cd Zoltan; /bin/rm -rf docs/internal; cd ..
 cd Zoltan; /bin/rm -rf test/nem*; cd ..
+cd Zoltan; /bin/rm -rf test/th; cd ..
 cd ParMETIS3_1; /bin/rm -rf Graphs; cd ..
 #
 # Build zoltan script.

@@ -750,10 +750,10 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Zoltan_Generate_Files(zz, fname, 1, 1, 1, 1);
     }
   
-    if (Test.Drops)
+    if (Test.Drops && !Test.No_Global_Objects)
       test_drops(Proc, mesh, pio_info, zz);
 
-    if (Test.RCB_Box && !(strcasecmp(prob->method, "RCB"))) {
+    if (Test.RCB_Box && !(strcasecmp(prob->method, "RCB")) && !Test.No_Global_Objects) {
       double xmin, ymin, zmin;
       double xmax, ymax, zmax;
       int ndim;
@@ -775,16 +775,15 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Only do ordering if this was specified in the driver input file */
       /* NOTE: This part of the code is not modified to recognize
                blanked vertices. */
+      int *order = NULL;		/* Ordering vector(s) */
+      ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
+      ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
 
       if (Test.Dynamic_Graph && !Proc){
         printf("ORDERING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
         printf("Turn off \"test dynamic graph\".\n");
       }
       
-      int *order = NULL;		/* Ordering vector(s) */
-      ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
-      ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
-
       order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
       order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
       order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
@@ -834,14 +833,13 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   if (Driver_Action & 4) {
       int *color = NULL;          /* Color vector */
+      ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
+      ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
 
       if (Test.Dynamic_Graph && !Proc){
         printf("COLORING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
         printf("Turn off \"test dynamic graph\".\n");
       }
-
-      ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
-      ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
 
       color = (int *) malloc (mesh->num_elems * sizeof(int));
       gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
@@ -1192,9 +1190,13 @@ MESH_INFO_PTR mesh;
     *ierr = ZOLTAN_FATAL;
     return 0;
   }
-  mesh = (MESH_INFO_PTR) data;
 
   *ierr = ZOLTAN_OK; /* set error code */
+
+  /* testing boundary case where there are no objects at all */
+  if (Test.No_Global_Objects) return 0;
+
+  mesh = (MESH_INFO_PTR) data;
 
   STOP_CALLBACK_TIMER;
 
@@ -1997,15 +1999,22 @@ void get_hg_size_compressed_pin_storage(
      return;
   }
 
+  *ierr = ZOLTAN_OK;
+
   mesh = (MESH_INFO_PTR) data;
+
+  /* testing boundary case where there are no objects at all */
+  if (Test.No_Global_Objects) {
+    *num_lists = *num_pins = 0;
+    *format = mesh->format;
+    return;
+  }
 
   *num_lists = mesh->nhedges;
   *format = mesh->format;
   *num_pins = mesh->hindex[mesh->nhedges];
 
   STOP_CALLBACK_TIMER;
-
-  *ierr = ZOLTAN_OK;
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -2245,13 +2254,17 @@ int i, cnt;
   }
   mesh = (MESH_INFO_PTR) data;
 
+  *ierr = ZOLTAN_OK; 
+
+  if (Test.No_Global_Objects) {
+    return 0;
+  }
+
   for (cnt=0, i = 0; i < mesh->num_elems; i++){
     if (mesh->blank && mesh->blank[i]) continue;
     if (mesh->elements[i].fixed_part != -1) 
       cnt++;
   }
-
-  *ierr = ZOLTAN_OK; /* set error code */
 
   STOP_CALLBACK_TIMER;
 

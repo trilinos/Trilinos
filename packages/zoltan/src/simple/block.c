@@ -65,8 +65,16 @@ int Zoltan_Block(
 
   /* No import lists computed. */
   *num_import = -1;
+  *export_global_ids = *export_local_ids = NULL;
+  *export_procs = *export_to_part = NULL;
 
   /* Get list of local objects. */
+  if (zz->Obj_Weight_Dim > 1) {
+    ierr = ZOLTAN_FATAL;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                      "OBJ_WEIGHT_DIM > 1 not supported by LB_METHOD BLOCK.");
+    goto End;
+  }
   wtflag = (zz->Obj_Weight_Dim>0 ? 1 : 0);
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, wtflag,
                              &wgts, &parts);
@@ -89,8 +97,6 @@ int Zoltan_Block(
   (*num_export) = count;
 
   /* Allocate export lists. */
-  *export_global_ids = *export_local_ids = NULL;
-  *export_procs = *export_to_part = NULL;
   if ((*num_export) > 0) {
     if (!Zoltan_Special_Malloc(zz, (void **)export_global_ids, (*num_export),
                                ZOLTAN_SPECIAL_MALLOC_GID)
@@ -148,7 +154,9 @@ static void block_part(ZZ *zz, int num_obj, int wtflag, float *wgts,
             float *part_sizes, int *newparts)
 {
   int i, part;
-  double wtsum, scansum[zz->Num_Proc+1];
+  double wtsum, *scansum;
+
+  scansum = (double *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(double));
 
   /* Sum up local object weights. */
   if (wtflag){
@@ -185,4 +193,5 @@ static void block_part(ZZ *zz, int num_obj, int wtflag, float *wgts,
     newparts[i] = part;
     wtsum += (wtflag? wgts[i] : 1.0);
   }
+  ZOLTAN_FREE(&scansum);
 }

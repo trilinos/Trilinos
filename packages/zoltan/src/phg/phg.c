@@ -184,7 +184,7 @@ End:
 #endif
  
 
-double detailed_balance_info(
+static double detailed_balance_info(
   ZZ *zz,
   HGraph *hg,
   float *part_sizes,
@@ -196,6 +196,7 @@ double detailed_balance_info(
   double *lsize_w, *size_w, max_imbal, tot_w;
   char *yo = "Zoltan_PHG_Compute_Balance";
   PHGComm *hgc=NULL;
+  int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
   
   if (!hg || !hg->comm || !hg->comm->row_comm)  {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to compute balance");
@@ -211,7 +212,7 @@ double detailed_balance_info(
   
   if (hg->vwgt)
     for (i = 0; i < hg->nVtx; i++)
-      lsize_w[part[i]] += hg->vwgt[i];
+      lsize_w[part[i]] += hg->vwgt[i*hg->VtxWeightDim];
   else
     for (i = 0; i < hg->nVtx; i++)
       lsize_w[part[i]]++;
@@ -224,15 +225,19 @@ double detailed_balance_info(
   if (tot_w) {
       if (!zz->Proc)
           uprintf(hgc, "PNO\tActual\tTarget\timbal\n");
-      for (i = 0; i < p; i++)
-          if (part_sizes[i]) {
-              double ib= (size_w[i]-part_sizes[i]*tot_w)/(part_sizes[i]*tot_w);
+      for (i = 0; i < p; i++) {
+          float this_part_size = part_sizes[i*part_dim];
+          if (this_part_size) {
+              double ib=(size_w[i]-this_part_size*tot_w)/(this_part_size*tot_w);
               if (!zz->Proc)
-                  uprintf(hgc, "%d\t%.1lf\t%.1lf\t%.3lf\n", i, size_w[i], part_sizes[i]*tot_w, 1.0+ib);
+                  uprintf(hgc, "%d\t%.1lf\t%.1lf\t%.3lf\n",
+                          i, size_w[i], this_part_size*tot_w, 1.0+ib);
               if (ib>max_imbal)
                   max_imbal = ib;
           } else if (!zz->Proc)
-              uprintf(hgc, "%d\t%.1lf\t%.1lf\tN/A\n", i, size_w[i], part_sizes[i]*tot_w);
+              uprintf(hgc, "%d\t%.1lf\t%.1lf\tN/A\n", 
+                      i, size_w[i], this_part_size*tot_w);
+      }
       if (!zz->Proc)
           uprintf(hgc, "Max Imbal = %.3lf\n", 1.0+max_imbal);
   }
@@ -323,6 +328,12 @@ int **exp_to_part )         /* list of partitions to which exported objs
   err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &parts, &hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
+    goto End;
+  }
+
+  if (zoltan_hg->GnObj == 0){
+    /* degenerate case - no objects to partition */
+    hgp.final_output = 0;
     goto End;
   }
 
@@ -450,7 +461,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
                   hg->info, hg->nVtx, hg->nEdge, hg->nPins,
                   hgp.convert_str, hgp.redm_str, 
                   hgp.coarsepartition_str, hgp.refinement_str, p,
-                  Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, p, parts),
+                  Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, 0,
+                                             p, parts),
                   Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
             
         if (err != ZOLTAN_OK)  {
@@ -540,7 +552,7 @@ End:
 
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
       /* Processor participated in partitioning */
-      bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes,
+      bal = Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, 0,
                                        zz->LB.Num_Global_Parts, parts);
       cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
                                       zz->LB.Num_Global_Parts, &err);
@@ -629,6 +641,10 @@ End:
     MPI_Comm_free(&(hgp.globalcomm.col_comm));
   if (hgp.globalcomm.Communicator != MPI_COMM_NULL)
     MPI_Comm_free(&(hgp.globalcomm.Communicator));
+
+  /* Free part_sizes if created new due to ADD_OBJ_WEIGHT */
+  if (hgp.part_sizes != part_sizes)
+    ZOLTAN_FREE(&hgp.part_sizes);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
@@ -785,7 +801,6 @@ int Zoltan_PHG_Initialize_Params(
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
   hgp->refinement_quality = 1;
-  hgp->part_sizes = part_sizes;
   hgp->RandomizeInitDist = 0;
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
@@ -804,21 +819,42 @@ int Zoltan_PHG_Initialize_Params(
   usePrimeComm = 0;
 
   /* Parse add_obj_weight parameter */
-  if (!strcasecmp(add_obj_weight, "none")){
+
+  if (!strcasecmp(add_obj_weight, "none")) {
     hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
-  } else if (!strcasecmp(add_obj_weight, "vertices")){
-    hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT;
-  } else if (!strcasecmp(add_obj_weight, "unit")){
-    hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT;
-  } else if (!strcasecmp(add_obj_weight, "vertex degree")){
-    hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
-  } else if (!strcasecmp(add_obj_weight, "nonzeros")){
-    hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
-  } else if (!strcasecmp(add_obj_weight, "pins")){
-    hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
-  } else{
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid ADD_OBJ_WEIGHT parameter.\n");
-    err = ZOLTAN_WARN;
+    hgp->part_sizes = part_sizes;
+  }
+  else if (zz->Obj_Weight_Dim > 0) {
+    /* Do not add_obj_weight until multiconstraint PHG is implemented */
+    ZOLTAN_PRINT_WARN(zz->Proc, yo,
+     "Both application supplied *and* ADD_OBJ_WEIGHT "
+     "calculated vertex weights were provided.");
+    ZOLTAN_PRINT_WARN(zz->Proc, yo,
+      "Only the first application supplied weight per vertex will be used.");
+    hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
+    hgp->part_sizes = part_sizes;
+  } 
+  else {
+    if (!strcasecmp(add_obj_weight, "vertices")){
+      hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT;
+    } else if (!strcasecmp(add_obj_weight, "unit")){
+      hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT;
+    } else if (!strcasecmp(add_obj_weight, "vertex degree")){
+      hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
+    } else if (!strcasecmp(add_obj_weight, "nonzeros")){
+      hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
+    } else if (!strcasecmp(add_obj_weight, "pins")){
+      hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
+    } else{
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid ADD_OBJ_WEIGHT parameter.\n");
+      err = ZOLTAN_WARN;
+    }
+    /* Set hgp->part_sizes to new array of part_sizes with added obj weight. */
+    if (part_sizes)
+      err = Zoltan_LB_Add_Part_Sizes_Weight(zz, 
+                          (zz->Obj_Weight_Dim ? zz->Obj_Weight_Dim : 1), 
+                          zz->Obj_Weight_Dim+1, 
+                          part_sizes, &(hgp->part_sizes));
   }
 
   if ((zz->Obj_Weight_Dim==0) &&      /* no application supplied weights */

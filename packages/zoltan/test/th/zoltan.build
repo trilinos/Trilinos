@@ -83,7 +83,7 @@ else
   echo "Zoltan.build:  mktests ..."
   if (! $?bigtest) then
     # create the test data, xml files, factor files
-    ( cd test ; csh -f mktests >& $dir/mktest.out )
+    ( cd test ; csh -f mktests "$zdrive" >& $dir/mktest.out )
   else if ($bigtestdir != "") then
     ( cd $bigtestdir ; csh -f mktests >& $dir/mktest.out )
   endif

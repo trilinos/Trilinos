@@ -156,6 +156,7 @@ double cutsize_beforepass, best_cutsize, *gain = 0;
 HEAP   heap[2];
 int    steplimit;
 char   *yo="serial_fm2";
+int    part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
 #ifdef HANDLE_ISOLATED_VERTICES    
  int    isocnt=0;
 #endif
@@ -179,7 +180,7 @@ int    best_imbalance, imbalance;
   part_weight[1] = 0.0;
   if (hg->vwgt)  {
      for (i = 0; i < hg->nVtx; i++)
-        part_weight[part[i]] += hg->vwgt[i];
+        part_weight[part[i]] += hg->vwgt[i*hg->VtxWeightDim];
      total_weight = part_weight[0] + part_weight[1];
   }
   else  {
@@ -188,7 +189,7 @@ int    best_imbalance, imbalance;
         part_weight[part[i]] += 1.0;
   }
   max_weight[0] = total_weight * bal_tol * part_sizes[0];
-  max_weight[1] = total_weight * bal_tol * part_sizes[1];
+  max_weight[1] = total_weight * bal_tol * part_sizes[part_dim];
 
 #ifdef _DEBUG
   tw0 = total_weight * part_sizes[0];
@@ -225,7 +226,8 @@ int    best_imbalance, imbalance;
       if (!hgp->UseFixedVtx || hg->fixed_part[i]<0) {
 #ifdef HANDLE_ISOLATED_VERTICES          
           if (hg->vindex[i+1]==hg->vindex[i]) { /* isolated vertex */
-              part_weight[part[i]] -= hg->vwgt ? hg->vwgt[i] : 1.0;
+              part_weight[part[i]] -= (hg->vwgt ? hg->vwgt[i*hg->VtxWeightDim] 
+                                                : 1.0);
               part[i] = -(part[i]+1); /* remove those vertices from that part*/
               ++isocnt;
           } else
@@ -300,8 +302,10 @@ int    best_imbalance, imbalance;
         }
 #endif
         
-        part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
-        part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
+        part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex*hg->VtxWeightDim] 
+                                       : 1.0);
+        part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex*hg->VtxWeightDim] 
+                                       : 1.0);
 
         error = MAX (part_weight[0]-max_weight[0],part_weight[1]-max_weight[1]);
         imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
@@ -331,8 +335,10 @@ int    best_imbalance, imbalance;
 
         Zoltan_HG_move_vertex (hg, vertex, sour, dest, part, pins, gain, heap);
 
-        part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
-        part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
+        part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex*hg->VtxWeightDim] 
+                                       : 1.0);
+        part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex*hg->VtxWeightDim] 
+                                       : 1.0);
         Zoltan_Heap_Input(&heap[dest], vertex, gain[vertex]);
         locked[vertex] = 0;
      }
@@ -365,7 +371,8 @@ int    best_imbalance, imbalance;
           if (!hgp->UseFixedVtx || hg->fixed_part[i]<0) {
               if (hg->vindex[i+1]==hg->vindex[i])  { /* go over isolated vertices */
                   int npno = (part_weight[0] <  targetw0) ? 0 : 1;
-                  part_weight[npno] += hg->vwgt ? hg->vwgt[i] : 1.0;                
+                  part_weight[npno] += (hg->vwgt ? hg->vwgt[i*hg->VtxWeightDim] 
+                                                 : 1.0);                
                   part[i] = npno;
               }
           }
@@ -402,10 +409,10 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part,
     
     mark[v] = 1;  /* mark as moved */
     part[v] = vto;
-    weights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
-    weights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
-    lweights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
-    lweights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
+    weights[pno] -= (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
+    weights[vto] += (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
+    lweights[pno] -= (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
+    lweights[vto] += (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
 
     for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
         int n = hg->vedge[j];
@@ -476,8 +483,8 @@ static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part,
     int   pno=part[v], vto=1-pno, j;
     
     part[v] = vto;
-    lweights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
-    lweights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
+    lweights[pno] -= (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
+    lweights[vto] += (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
 
     for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
         int n = hg->vedge[j];
@@ -510,6 +517,7 @@ static int refine_fm2 (ZZ *zz,
         best_limbal, imbal, limbal;
     HEAP   heap[2];
     char   *yo="refine_fm2";
+    int    part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
 #ifdef HANDLE_ISOLATED_VERTICES    
     int    isocnt=hg->nVtx; /* only root uses isocnt, isolated vertices
                                are kept at the end of moves array */
@@ -590,8 +598,10 @@ static int refine_fm2 (ZZ *zz,
     lweights[0] = lweights[1] = 0.0;
     if (hg->vwgt) 
         for (i = 0; i < hg->nVtx; i++) {
-            lweights[part[i]] += hg->vwgt[i];
-            minvw = (minvw > hg->vwgt[i]) ? hg->vwgt[i] : minvw;
+            lweights[part[i]] += hg->vwgt[i*hg->VtxWeightDim];
+            minvw = (minvw > hg->vwgt[i*hg->VtxWeightDim]) 
+                  ? hg->vwgt[i*hg->VtxWeightDim] 
+                  : minvw;
         }
     else {
         minvw = 1.0;
@@ -604,7 +614,7 @@ static int refine_fm2 (ZZ *zz,
     targetw0 = total_weight * part_sizes[0]; /* global target weight for part 0 */
 
     max_weight[0] = total_weight * bal_tol * part_sizes[0];
-    max_weight[1] = total_weight * bal_tol * part_sizes[1]; /* should be (1 - part_sizes[0]) */
+    max_weight[1] = total_weight * bal_tol * part_sizes[part_dim]; /* should be (1 - part_sizes[0]) */
 
 
     if (weights[0]==0.0) {
@@ -807,7 +817,7 @@ static int refine_fm2 (ZZ *zz,
             lwadjust[0] = lwadjust[1] = 0.0;
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
                 int   u=moves[i], pno=-part[u]-1;
-                float w=hg->vwgt ? hg->vwgt[u] : 1.0;
+                float w=(hg->vwgt ? hg->vwgt[u*hg->VtxWeightDim] : 1.0);
 
                 if (pno<0 || pno>1)
                     errexit("heeeey pno=%d", pno);
@@ -853,7 +863,7 @@ static int refine_fm2 (ZZ *zz,
                    Note that the mark array is also used in the move/update 
                    routine so don't remove it! */
                 ++mark[v];
-                if (lweights[to]+((hg->vwgt)? hg->vwgt[v] : 1.0) > lmax_weight[to]) {
+                if (lweights[to]+((hg->vwgt)?hg->vwgt[v*hg->VtxWeightDim]:1.0) > lmax_weight[to]) {
 #ifdef _DEBUG2                    
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d [%4.0lf, %4.0lf] NF\n", uMe(hgc), movecnt, v, gain[v], from, weights[0], weights[1]);
 #endif
@@ -972,7 +982,7 @@ static int refine_fm2 (ZZ *zz,
             
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
                 int u = moves[i], npno;
-                float w=hg->vwgt ? hg->vwgt[u] : 1.0;
+                float w=(hg->vwgt ? hg->vwgt[u*hg->VtxWeightDim] : 1.0);
 
                 npno = (lweights[0] < ltargetw0) ? 0 : 1;
                 lweights[npno] += w;

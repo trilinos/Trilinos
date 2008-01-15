@@ -623,7 +623,6 @@ integer(Zoltan_INT) :: lid
   size = Zoltan_Align(size)
   size = size + num_nodes * Mesh%num_dims * SIZE_OF_FLOAT
   
-print *, elem_gid(gid), 'SIZE', size
   migrate_elem_size = size
 end function migrate_elem_size
 

@@ -49,6 +49,7 @@ int Zoltan_Scatter_Graph(
   idxtype **adjwgt,
   float   **xyz,
   int     ndims,		/* # dimensions of xyz geometry data */
+  int     vwgt_dim,
   ZZ      *zz,
   ZOLTAN_COMM_OBJ **plan
 )
@@ -62,7 +63,7 @@ int Zoltan_Scatter_Graph(
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
   int use_graph;	/* do we use graph data, or only the geometry? */
   int use_vsize;	/* do we use the vsize array? */
-  int vwgt_dim= zz->Obj_Weight_Dim, ewgt_dim= zz->Edge_Weight_Dim;
+  int ewgt_dim= zz->Edge_Weight_Dim;
   ZOLTAN_COMM_OBJ *plan2;
 
   ZOLTAN_TRACE_ENTER(zz, yo);

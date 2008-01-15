@@ -361,7 +361,7 @@ static int rcb_fn(
   int     first_guess;              /* flag if first guess for median search */
   int     allocflag;                /* have to re-allocate space */
   double  time1,time2,time3,time4;  /* timers */
-  double  timestart,timestop;       /* timers */
+  double  timestart=0,timestop=0;   /* timers */
   double  timers[4]={0.,0.,0.,0.};  /* diagnostic timers 
 			              0 = start-up time before recursion
 				      1 = time before median iterations
@@ -388,8 +388,8 @@ static int rcb_fn(
   struct rcb_tree *treept = NULL;   /* tree of RCB cuts - only single cut on 
                                        exit */
 
-  double start_time, end_time;
-  double lb_time[2];
+  double start_time=0, end_time=0;
+  double lb_time[2]={0,0};
   int    tfs_disregard_results = 0; /* added for Tflops_Special; all procs
                                        must enter Zoltan_RB_find_bisector
                                        when Tflops_Special==1.  This flag
@@ -419,8 +419,8 @@ static int rcb_fn(
   int one_cut_dir= 0;               /* try only one cut direction */
   int level;                        /* recursion level of RCB for preset_dir */
   int *dim_spec = NULL;             /* specified direction for preset_dir */
-  int fp;                           /* first partition assigned to this proc */
-  int np;                           /* number of parts assigned to this proc */
+  int fp=0;                         /* first partition assigned to this proc */
+  int np=0;                         /* number of parts assigned to this proc */
   int wgtdim;                       /* max(wgtflag,1) */
   int breakflag;                    /* flag for exiting loop */
   int *dotmark0 = NULL;             /* temp dotmark array */
@@ -516,6 +516,18 @@ static int rcb_fn(
   counters[5] = 0;
   counters[6] = 0;
   for (i = 0; i < 7; i++) reuse_count[i] = 0;
+
+  MPI_Allreduce(&dotnum, &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
+
+  if (i == 0){
+    if (proc == 0){
+      ZOLTAN_PRINT_WARN(proc, yo, "RCB partitioning called with no objects");
+    }
+    rcbbox->lo[0] = rcbbox->lo[1] = rcbbox->lo[2] = 0;
+    rcbbox->hi[0] = rcbbox->hi[1] = rcbbox->hi[2] = 0;
+    timestart = timestop = 0;
+    goto EndReporting;
+  }
 
   /* create mark and list arrays for dots */
 
@@ -1072,10 +1084,11 @@ static int rcb_fn(
     }
   }
 
-  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
-    Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum, part_sizes,
+EndReporting:
+
+  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+    Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum,part_sizes,
                 timers,counters,stats,reuse_count,rcbbox,reuse);
-  }
 
   /* update calling routine parameters */
   

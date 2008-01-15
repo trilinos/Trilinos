@@ -1,0 +1,7 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partkway
+Zoltan Parameters	= add_obj_weight=pins
+Zoltan Parameters	= final_output=1
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0

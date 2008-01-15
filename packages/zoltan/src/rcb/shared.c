@@ -939,8 +939,8 @@ int Zoltan_RB_check_geom_output(
   ZZ *zz, 
   struct Dot_Struct *dotpt,
   float *part_sizes,
-  int fp,               /* first partition on processor */
   int np,               /* number of partitions on processor */
+  int fp,               /* first partition on processor */
   int dotnum,
   int dotorig,
   void *rcbbox_arg)
@@ -949,12 +949,13 @@ int Zoltan_RB_check_geom_output(
 
   char *yo = "Zoltan_RB_check_geom_output";
   char msg[256];
-  int i,iflag,proc,nprocs,input[2],total[2];
+  int dd,i,iflag,proc,nprocs,input[2],total[2];
   double *wtsum,tolerance;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
   int ierr = ZOLTAN_OK;
   int ngp = zz->LB.Num_Global_Parts;
   double *wtpp = NULL;
+  int wtdim = (zz->Obj_Weight_Dim > 0 ? zz->Obj_Weight_Dim : 1);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   MPI_Comm_rank(zz->Communicator,&proc);
@@ -976,24 +977,28 @@ int Zoltan_RB_check_geom_output(
   
   /* check that result is within Imbalance_Tol of partition size target */
 
-  wtpp = (double *) ZOLTAN_CALLOC(2*(1+ngp),sizeof(double));
-  for (i = 0; i < dotnum; i++) {
-    wtpp[ngp] += dotpt[i].Weight[0];
-    wtpp[dotpt[i].Part] += dotpt[i].Weight[0];
-  }
-  wtsum = wtpp + (1+ngp);
+  wtpp = (double *) ZOLTAN_MALLOC(2*(1+ngp)*sizeof(double));
+  for (dd = 0; dd < wtdim; dd++) {
+    memset(wtpp, 0, 2*(1+ngp)*sizeof(double));
+    for (i = 0; i < dotnum; i++) {
+      wtpp[ngp] += dotpt[i].Weight[dd];
+      wtpp[dotpt[i].Part] += dotpt[i].Weight[dd];
+    }
+    wtsum = wtpp + (1+ngp);
 
-  MPI_Allreduce(wtpp, wtsum, ngp+1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(wtpp, wtsum, ngp+1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
-  for (i = fp; i < fp + np; i++) {
-    tolerance = part_sizes[i] * wtsum[ngp] * zz->LB.Imbalance_Tol[0];
-    if (wtsum[i] > tolerance) {
-      if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) {
-        sprintf(msg, "Weight of partition %d = %f > tolerance %f.", 
-                      i, wtsum[i], tolerance);
-        ZOLTAN_PRINT_WARN(proc, yo, msg);
+    for (i = fp; i < fp + np; i++) {
+      tolerance = part_sizes[i*wtdim+dd]*wtsum[ngp]*zz->LB.Imbalance_Tol[dd];
+      if (wtsum[i] > tolerance) {
+        if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) {
+          sprintf(msg, 
+                  "Weight of partition %d = %f > tolerance %f for weight %d.", 
+                  i, wtsum[i], tolerance, dd);
+          ZOLTAN_PRINT_WARN(proc, yo, msg);
+        }
+        ierr = ZOLTAN_WARN;
       }
-      ierr = ZOLTAN_WARN;
     }
   }
 

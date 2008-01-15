@@ -88,7 +88,7 @@ static int Zoltan_ParMetis_Shared(
 #if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
 
-static int Compute_Bal(ZZ *, int, float *, int *, double *);
+static int Compute_Bal(ZZ *, int, idxtype *, int, int *, double *);
 static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
 static int Compute_NetCut(ZZ *, int, int *, int *, int *);
 static int Compute_ConCut(ZZ *, int, int *, int *, int *);
@@ -570,7 +570,7 @@ int Zoltan_Jostle(
 
 static int Zoltan_ParMetis_Jostle(
   ZZ *zz,               /* Zoltan structure */
-  float *part_sizes,    /* partition sizes */
+  float *input_part_sizes,    /* partition sizes */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
@@ -608,6 +608,7 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
   static int timer_pj = -1;
+  float *part_sizes = input_part_sizes;
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
@@ -631,7 +632,7 @@ static int Zoltan_ParMetis_Jostle(
   int nnodes;
   int network[4] = {0, 1, 1, 1};
 #endif
-  char add_obj[MAX_PARAM_STRING_LEN+1];
+  char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -705,12 +706,12 @@ static int Zoltan_ParMetis_Jostle(
   scatter = 1;              /* default */
   final_output = 0;         /* default */
   use_timers = 0;           /* default */
-  strcpy(add_obj, "NONE");  /* default */
+  strcpy(add_obj_weight, "NONE");  /* default */
   Zoltan_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
   Zoltan_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
   Zoltan_Bind_Param(Graph_params, "FINAL_OUTPUT", (void *) &final_output);
   Zoltan_Bind_Param(Graph_params, "USE_TIMERS", (void *) &use_timers);
-  Zoltan_Bind_Param(Graph_params, "ADD_OBJ_WEIGHT", (void *) add_obj);
+  Zoltan_Bind_Param(Graph_params, "ADD_OBJ_WEIGHT", (void *) add_obj_weight);
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
                        zz->Debug_Proc);
 
@@ -882,16 +883,16 @@ static int Zoltan_ParMetis_Jostle(
     }
 
     /* Add a vertex weight? */
-    if (strcasecmp(add_obj, "NONE")){
+    if (strcasecmp(add_obj_weight, "NONE")){
       int add_type = 0;
       vwgt_new = (idxtype *)ZOLTAN_MALLOC((obj_wgt_dim+1)*num_obj
                           * sizeof(idxtype));
-      if ((!strcasecmp(add_obj, "UNIT")) || (!strcasecmp(add_obj, "VERTICES"))){
+      if ((!strcasecmp(add_obj_weight, "UNIT")) || (!strcasecmp(add_obj_weight, "VERTICES"))){
         add_type = 1;
       }
-      else if ((!strcasecmp(add_obj, "VERTEX DEGREE")) || 
-           (!strcasecmp(add_obj, "PINS")) || 
-           (!strcasecmp(add_obj, "NONZEROS"))){
+      else if ((!strcasecmp(add_obj_weight, "VERTEX DEGREE")) || 
+           (!strcasecmp(add_obj_weight, "PINS")) || 
+           (!strcasecmp(add_obj_weight, "NONZEROS"))){
         add_type = 2;
       }
       else {
@@ -900,6 +901,11 @@ static int Zoltan_ParMetis_Jostle(
         add_type = 0;
       }
       if (add_type){
+        /* update part_sizes array */
+        ierr = Zoltan_LB_Add_Part_Sizes_Weight(zz, 
+                                              (obj_wgt_dim ? obj_wgt_dim : 1),
+                                              obj_wgt_dim+1,
+                                              input_part_sizes, &part_sizes);
         /* Add implicit weights in new array */
         for (i=0; i<num_obj; i++){
           /* First copy old weights */
@@ -990,7 +996,7 @@ static int Zoltan_ParMetis_Jostle(
 #define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */  
 
 #ifdef PARMETIS31_ALWAYS_FREES_VSIZE
-    if (!strcmp(alg, "ADAPTIVEREPART") && (zz->Num_Proc > 1))
+    if (!strcmp(alg, "ADAPTIVEREPART") && (zz->Num_Proc > 1) && (!obj_wgt_dim))
       /* ParMETIS will free this memory; use malloc to allocate so
          ZOLTAN_MALLOC counters don't show an error. */
       vsize = (idxtype *) malloc(num_obj*sizeof(idxtype));
@@ -1069,7 +1075,7 @@ static int Zoltan_ParMetis_Jostle(
 
   if (scatter){
     ierr = Zoltan_Scatter_Graph(&vtxdist, &xadj, &adjncy, &vwgt, &vsize,
-              &adjwgt, &xyz, ndims, zz, &comm_plan);
+              &adjwgt, &xyz, ndims, obj_wgt_dim,zz, &comm_plan);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Scatter_Graph returned error.");
     }
@@ -1533,7 +1539,7 @@ End:
     double move = 0.0, gmove =0.0;   /* migration cost */
     double repart; /* total repartitioning cost; cutl x multiplier + move */
     int *adjpart = NULL;
-    int vdim = MAX(zz->Obj_Weight_Dim,1);
+    int vdim = MAX(obj_wgt_dim,1);
     int edim = MAX(zz->Edge_Weight_Dim,1);
 
 /* #define UVC_DORUK_COMP_OBJSIZE */
@@ -1550,11 +1556,11 @@ End:
       }
     }
 
-    if (zz->Obj_Weight_Dim < FOMAXDIM && zz->Edge_Weight_Dim < FOMAXDIM) {
+    if (obj_wgt_dim < FOMAXDIM && zz->Edge_Weight_Dim < FOMAXDIM) {
 
       adjpart = (int *) ZOLTAN_MALLOC(xadj[num_obj] * sizeof(int));
 
-      Compute_Bal(zz, num_obj, float_vwgt, part, bal);
+      Compute_Bal(zz, num_obj, vwgt, obj_wgt_dim, part, bal);
       Compute_Adjpart(zz, num_obj, vtxdist, xadj, adjncy, adjproc, 
                       part, adjpart);
       Compute_EdgeCut(zz, num_obj, xadj, ewgts, part, adjpart, cute);
@@ -1660,7 +1666,7 @@ End:
   if (imb_tols)  ZOLTAN_FREE(&imb_tols);
 
   if (vsize)   {
-    if (strcmp(alg, "ADAPTIVEREPART") || (zz->Num_Proc == 1))
+    if (strcmp(alg, "ADAPTIVEREPART") || (zz->Num_Proc == 1) || obj_wgt_dim)
       /* it is not adaptive repart; so free it */
       ZOLTAN_FREE(&vsize);
 #ifndef PARMETIS31_ALWAYS_FREES_VSIZE
@@ -1678,6 +1684,10 @@ End:
     ZOLTAN_FREE(&local_ids);
     ZOLTAN_FREE(&global_ids);
   }
+
+  /* If reallocated part_sizes for ADD_OBJ_WEIGHT, free it now. */
+  if (part_sizes != input_part_sizes)
+    ZOLTAN_FREE(&part_sizes);
 
   /* Always free these arrays */
   ZOLTAN_FREE(&vtxdist);
@@ -1941,7 +1951,8 @@ char *val)                      /* value of variable */
 static int Compute_Bal(
   ZZ *zz,
   int nvtx,
-  float *vwgts,
+  idxtype *vwgts,
+  int obj_wgt_dim,
   int *parts,
   double *bal
 )
@@ -1950,7 +1961,7 @@ static int Compute_Bal(
  * Compute the load balance of the computed partition.
  */
 int i, j;
-int dim = MAX(zz->Obj_Weight_Dim, 1);
+int dim = MAX(obj_wgt_dim, 1);
 int size;
 float *sum = NULL, *gsum = NULL;
 float *tot = NULL, *max = NULL;

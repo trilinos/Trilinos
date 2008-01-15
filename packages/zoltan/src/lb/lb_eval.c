@@ -298,6 +298,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     ZOLTAN_FREE(&max_arr);
 
+    if (nparts < 1){
+      ZOLTAN_FREE(&nobj_arr);
+      ZOLTAN_FREE(&max_arr);
+      goto End;
+    }
+
     /* Allocate space. */
     all_arr = (int *)  ZOLTAN_CALLOC(2*NUM_STATS*nparts, sizeof(int));
     vwgt_arr = (float *) ZOLTAN_CALLOC(2*nparts*(vwgt_dim +
@@ -316,7 +322,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     vwgt_arr_glob = vwgt_arr + nparts * vwgt_dim;
     cutwgt_arr = vwgt_arr_glob + nparts * vwgt_dim;
     cutwgt_arr_glob = cutwgt_arr + nparts*(zz->Edge_Weight_Dim);
-
   }
 
   /* Compute object weight sums */
@@ -580,6 +585,16 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
+    /* KDDKDD This location of Zoltan_LB_Get_Part_Sizes is not correct in
+     * KDDKDD in the case where add_obj_weight is true.  For add_obj_weight,
+     * KDDKDD we copy the zero-th entry of part_sizes for each part to the
+     * KDDKDD appropriate entry for the add_obj_weight size.  With this
+     * KDDKDD call here, we get uniform part_sizes for the add_obj_weight 
+     * KDDKDD weight, which may result in different part_sizes than those
+     * KDDKDD used to compute the partition.
+     * KDDKDD Since we plan to rewrite LB_Eval, I would rather wait until
+     * KDDKDD the rewrite to fix this capability.  See bugzilla bug 3747.
+     */
     Zoltan_LB_Get_Part_Sizes(zz, nparts, obj_wgt_dim, part_sizes);
 
     /* Allreduce data w.r.t. partitions onto all procs. */

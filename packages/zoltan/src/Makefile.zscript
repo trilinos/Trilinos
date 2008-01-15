@@ -17,8 +17,8 @@ include ./Utilities/Config/Config.$(ZOLTAN_ARCH)
 ZTARGET = zdrive
 LIB_NAME = libzoltan.a
 LIB_TARGET = zoltan
-SUBDIRS	= driver ch zz all lb par rcb oct parmetis params timer ha reftree hsfc phg coloring
-UTIL_SUBDIRS = Memory Communication DDirectory
+SUBDIRS	= driver ch zz all lb par rcb oct parmetis params timer ha reftree hsfc phg coloring simple
+UTIL_SUBDIRS = Memory Communication DDirectory Timer shared
 ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 
 zoltan:	

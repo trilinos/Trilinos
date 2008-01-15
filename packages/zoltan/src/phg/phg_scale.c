@@ -199,19 +199,23 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   else if (hgp->vtx_scaling==3){  /* scale by sqrt vertex weights */
     if (hg->vwgt)
       for (i=0; i<hg->nVtx; i++)  {
-         if (hg->vwgt[i] == 0)
+         /* KDD Note:  Scaling by only first weight */
+         if (hg->vwgt[i*hg->VtxWeightDim] == 0)
             hgp->vtx_scal[i] = 1.0;
          else      
-             hgp->vtx_scal[i] = 1. / sqrt((double)hg->vwgt[i]);
+            /* KDD Note:  Scaling by only first weight */
+            hgp->vtx_scal[i] = 1. / sqrt((double)hg->vwgt[i*hg->VtxWeightDim]);
       }
   }
   else if (hgp->vtx_scaling==4){  /* scale by vertex weights */
     if (hg->vwgt)
       for (i=0; i<hg->nVtx; i++)  {
-         if (hg->vwgt[i] == 0)
+         /* KDD Note:  Scaling by only first weight */
+         if (hg->vwgt[i*hg->VtxWeightDim] == 0)
             hgp->vtx_scal[i] = 1.0;
          else            
-            hgp->vtx_scal[i] = 1. / hg->vwgt[i];
+            /* KDD Note:  Scaling by only first weight */
+            hgp->vtx_scal[i] = 1. / hg->vwgt[i*hg->VtxWeightDim];
       }
   }
 

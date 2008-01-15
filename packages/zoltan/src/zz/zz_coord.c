@@ -693,6 +693,12 @@ double val, min[3], max[3], *c, tmp;
 int Tflops_Special, proc, nprocs, proclower;
 MPI_Comm local_comm;
 
+  Tflops_Special = zz->Tflops_Special;
+  proc = zz->Proc;
+  nprocs = zz->Num_Proc;
+  proclower = 0;
+  local_comm = zz->Communicator;
+
   if (aa){
     /* special case - eigenvectors are axis aligned */
 
@@ -707,6 +713,13 @@ MPI_Comm local_comm;
       }
     }
 
+    for (i=0; i<dim; i++){
+      tmp = max[i];
+      MPI_Allreduce(&tmp, max + i, 1, MPI_DOUBLE, MPI_MAX, local_comm);
+      tmp = min[i];
+      MPI_Allreduce(&tmp, min + i, 1, MPI_DOUBLE, MPI_MIN, local_comm);
+    }
+
     for (j=0; j<dim; j++){
       /* distance along the j'th eigenvector */
       d[j] = max[order[j]] - min[order[j]];
@@ -714,12 +727,6 @@ MPI_Comm local_comm;
     
     return;
   }
-
-  Tflops_Special = zz->Tflops_Special;
-  proc = zz->Proc;
-  nprocs = zz->Num_Proc;
-  proclower = 0;
-  local_comm = zz->Communicator;
 
   for (i=0; i<dim; i++){
     for (j=0, c=coords; j<num_obj; j++, c+=dim){

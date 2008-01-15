@@ -676,6 +676,10 @@ zscript:
 	@for iii in $(HIER_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hier/$$iii >> zoltan_script; \
 	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/simple'" >> zoltan_script
+	@for iii in $(SIMPLE_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../simple/$$iii >> zoltan_script; \
+	 done;
 	@echo "echo Zoltan:  Linking $(LIB_NAME)" >> zoltan_script
 	@echo '$$AR' $(LIB_NAME) $(ZOLTAN_OBJ) $(FOBJ_FILES) >> zoltan_script
 	@echo '$$RANLIB' $(LIB_NAME) >> zoltan_script

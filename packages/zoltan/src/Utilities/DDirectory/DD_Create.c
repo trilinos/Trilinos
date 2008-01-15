@@ -94,14 +94,14 @@ int Zoltan_DD_Create (
    (*dd)->max_id_length    = (num_gid > num_lid) ? num_gid : num_lid;
 
    /* frequently used dynamic allocation computed sizes */
-   size = (num_gid + num_lid + user_length) * sizeof(ZOLTAN_ID_PTR);
+   size = (num_gid + num_lid + user_length) * sizeof(ZOLTAN_ID_TYPE);
    (*dd)->node_size       = size + sizeof(DD_Node);
    (*dd)->update_msg_size = size + sizeof(DD_Update_Msg);
 
-   size = num_gid * sizeof(ZOLTAN_ID_PTR);
+   size = num_gid * sizeof(ZOLTAN_ID_TYPE);
    (*dd)->remove_msg_size = size + sizeof(DD_Remove_Msg);
 
-   size = (user_length + (*dd)->max_id_length) * sizeof(ZOLTAN_ID_PTR);
+   size = (user_length + (*dd)->max_id_length) * sizeof(ZOLTAN_ID_TYPE);
    (*dd)->find_msg_size   = size + sizeof(DD_Find_Msg);
 
    /* force alignment */

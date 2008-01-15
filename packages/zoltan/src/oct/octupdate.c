@@ -135,7 +135,12 @@ int error = FALSE;            /* error flag                                 */
 
   /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
   oct_wgtflag = (zz->Obj_Weight_Dim > 0);
-
+  if (zz->Obj_Weight_Dim > 1) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+            "OBJ_WEIGHT_DIM > 1 not yet implemented in OCTPART.  "
+            "Try a different LB_METHOD.");
+    error = TRUE;
+  }
   /* Initialization in case of early exit */
   *num_import = -1;  /* We don't compute any import data */
   *num_export = -1;

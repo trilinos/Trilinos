@@ -260,7 +260,7 @@ static int rib_fn(
   struct rib_tree *treept = NULL; /* tree of cuts - single cut on exit*/
 
   double start_time, end_time;
-  double lb_time[2];
+  double lb_time[2]={0,0};
   int tfs[2], tmp_tfs[2];     /* added for Tflops_Special; max number
                                  of procs and parts over all processors
                                  in each iteration (while loop) of
@@ -277,8 +277,8 @@ static int rib_fn(
                                  better efficiency (don't necessarily
                                  have to realloc for each find_median).*/
   int rectilinear_blocks = 0; /* parameter for find_median (not used by rib) */
-  int fp;                     /* first partition assigned to this proc. */
-  int np;                     /* number of parts assigned to this proc. */
+  int fp=0;                     /* first partition assigned to this proc. */
+  int np=0;                     /* number of parts assigned to this proc. */
 
   /* MPI data types and user functions */
 
@@ -338,6 +338,17 @@ static int rib_fn(
   counters[4] = dotmax;
   counters[5] = 0;
   counters[6] = 0;
+
+  MPI_Allreduce(&dotnum, &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
+
+  if (i == 0){
+    if (proc == 0){
+      ZOLTAN_PRINT_WARN(proc, yo, "RIB partitioning called with no objects");
+    }
+    timestart = timestop = 0;
+    goto EndReporting;
+  }
+
 
   /* create mark and list arrays for dots */
 
@@ -649,6 +660,8 @@ static int rib_fn(
       goto End;
     }
   }
+
+EndReporting:
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME))
     Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, 

@@ -510,7 +510,8 @@ Refine:
 		hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, 
 		hgp->redm_str,
 		hgp->coarsepartition_str, hgp->refinement_str, p,
-		Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, vcycle->Part),
+		Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, 0, p, 
+                                           vcycle->Part),
 		Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p, &err));
 
       if (hgp->output_level >= PHG_DEBUG_PLOT)
@@ -587,9 +588,9 @@ Refine:
 	  ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project,
 			    hgc->Communicator);
       } else {
+	int *sendbuf = NULL, size;
 	refine = 0;
 	/* ints local and partition numbers */
-	int *sendbuf = NULL, size;
 	if (finer->vlno) {
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
@@ -848,6 +849,7 @@ double Zoltan_PHG_Compute_Balance (
   ZZ *zz,
   HGraph *hg,
   float *part_sizes,
+  int wgtidx,/* compute balance w.r.t. this component of vwgt and part_sizes */
   int p,
   Partition part
 )
@@ -855,6 +857,7 @@ double Zoltan_PHG_Compute_Balance (
   int i;
   double *lsize_w, *size_w, max_imbal, tot_w;
   char *yo = "Zoltan_PHG_Compute_Balance";
+  int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
   
   if (!hg || !hg->comm || !hg->comm->row_comm)  {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to compute balance");
@@ -869,7 +872,7 @@ double Zoltan_PHG_Compute_Balance (
   
   if (hg->vwgt)
     for (i = 0; i < hg->nVtx; i++)
-      lsize_w[part[i]] += hg->vwgt[i];
+      lsize_w[part[i]] += hg->vwgt[i*hg->VtxWeightDim+wgtidx];
   else
     for (i = 0; i < hg->nVtx; i++)
       lsize_w[part[i]]++;
@@ -880,12 +883,14 @@ double Zoltan_PHG_Compute_Balance (
   for (i = 0; i < p; i++) 
       tot_w += size_w[i];
   if (tot_w) {
-      for (i = 0; i < p; i++)
-          if (part_sizes[i]) {
-              double ib= (size_w[i]-part_sizes[i]*tot_w)/(part_sizes[i]*tot_w);
+      for (i = 0; i < p; i++) {
+          float this_part_size = part_sizes[i*part_dim+wgtidx];
+          if (this_part_size) {
+              double ib=(size_w[i]-this_part_size*tot_w)/(this_part_size*tot_w);
               if (ib>max_imbal)
                   max_imbal = ib;
           }
+      }
   }
 
   ZOLTAN_FREE (&lsize_w);

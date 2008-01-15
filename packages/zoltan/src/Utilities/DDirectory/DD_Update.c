@@ -107,12 +107,22 @@ int Zoltan_DD_Update (
       ptr->owner          = dd->my_proc;
 
       ZOLTAN_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length);
-      if (lid)
-         ZOLTAN_SET_ID (dd->lid_length, ptr->gid + dd->gid_length, lid
-          + i * dd->lid_length);
-      if (user)
-         ZOLTAN_SET_ID (dd->user_data_length, ptr->gid + (dd->gid_length
-          + dd->lid_length), user + i * dd->user_data_length);
+      if (lid) {
+         ZOLTAN_SET_ID(dd->lid_length, ptr->gid + dd->gid_length,
+                       lid + i * dd->lid_length);
+      }
+      else {
+         memset(ptr->gid + dd->gid_length, 0, dd->lid_length);
+      }
+      if (user) {
+         ZOLTAN_SET_ID(dd->user_data_length,
+                       ptr->gid + (dd->gid_length + dd->lid_length), 
+                       user + i * dd->user_data_length);
+      }
+      else {
+         memset(ptr->gid + (dd->gid_length + dd->lid_length), 0, 
+                dd->user_data_length);
+      }
    }
 
    if (dd->debug_level > 6)
@@ -260,15 +270,24 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
          ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL);
       return ZOLTAN_MEMERR;
    }
-
    ZOLTAN_SET_ID (dd->gid_length, (*ptr)->gid, gid);
-   if (lid)
-      ZOLTAN_SET_ID (dd->lid_length,       (*ptr)->gid + dd->gid_length, lid);
-   if (user)
-      ZOLTAN_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
-       + dd->lid_length), user);
-   if (partition != -1)
-      (*ptr)->partition = partition;
+
+   if (lid) {
+      ZOLTAN_SET_ID(dd->lid_length,(*ptr)->gid + dd->gid_length, lid);
+   }
+   else  {
+      memset((*ptr)->gid + dd->gid_length, 0,
+             dd->lid_length*sizeof(ZOLTAN_ID_TYPE));
+   }
+   if (user) {
+      ZOLTAN_SET_ID(dd->user_data_length,
+                    (*ptr)->gid + (dd->gid_length + dd->lid_length), user);
+   }
+   else {
+      memset((*ptr)->gid + (dd->gid_length+dd->lid_length), 0,
+             dd->user_data_length*sizeof(ZOLTAN_ID_TYPE));
+   }
+   (*ptr)->partition = partition ;
 
    (*ptr)->next     = NULL;
    (*ptr)->owner    = owner;

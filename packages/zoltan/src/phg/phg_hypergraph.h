@@ -22,36 +22,6 @@ extern "C" {
 #endif
 
 /********************************************************************
- * A seldom-used graph data structure.
- ********************************************************************/
-    
-typedef struct {
-   int info;    /* depth of V-cycle for this hypergraph; initially 0 */
-   int nVtx;    /* number of vertices, |V| */
-   int nEdge;   /* Size of neigh array; 2|E| */
-   int nDim;    /* Number of dimensions for a vertex's coordinate */
-   int VtxWeightDim;  /* number of weight dimensions for a vertex */
-   int EdgeWeightDim;    /* number of weight dimensions for an edge */
-   int redl;             /* Working Reduction limit. */
-
-   int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
-                     Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
-                     processor n.   KDD:  temporary; may change later. */
-
-   /* physical coordinates of each vertex, optional */
-   double *coor; /*  |V| long by CoordinateDim */
-
-   /* arrays with vertex and edge weights */
-   float *vwgt;  /* weights of vertices, |V| long by VtxWeightDim */
-   float *ewgt;  /* weights of hypergraph edges, 2|E| long by EdgeWeightDim */
-
-   /* arrays to look up the neighbors of a vertex */
-   int *nindex;  /* length |V|+1 index to neigh, last is 2|E| */
-   int *neigh;   /* length 2|E|, list of neighbors for each vertex */
-   } Graph;
-
-
-/********************************************************************
  * Hypergraph data structure.  Supports both serial hypergraph and 
  * 2D data distribution (where each block is, in fact, a serial 
  * hypergraph).
@@ -208,9 +178,6 @@ typedef int *LevelMap;  /* length |V|, mapping of fine vtxs onto coarse vtxs */
 typedef int *Partition; /* length |V|, partition ID for each vertex */
 
 
-extern void Zoltan_HG_Graph_Init  (Graph*);
-extern int Zoltan_HG_Graph_Free   (Graph*);
-
 /* Hypergraph utilities */
 extern void Zoltan_HG_HGraph_Init (HGraph*);
 extern int Zoltan_HG_HGraph_Free  (HGraph*);
@@ -219,8 +186,6 @@ extern void Zoltan_HG_Mirror(int, int*, int*, int, int*, int*);
 
 extern int Zoltan_HG_Info         (ZZ*, HGraph*);
 extern int Zoltan_HG_Check        (ZZ*, HGraph*);
-extern int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
-extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
 extern void Zoltan_HG_Print(ZZ*, HGraph*, Partition, FILE*, char*);
 extern void Zoltan_HG_HGraph_Print(ZZ *zz, ZHG *, HGraph *, Partition, FILE *fp);
     

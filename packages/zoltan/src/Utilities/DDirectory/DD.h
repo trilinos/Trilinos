@@ -86,7 +86,6 @@ struct Zoltan_DD_Struct {
    int update_msg_size;    /* Total allocation for DD_UPDATE_MSG     */
    int remove_msg_size;    /* Total allocation for DD_REMOVE_MSG     */
    int debug_level;        /* Determines actions to multiple updates */
-   int ddcount;            /* number of items in dictionary          */
 
    unsigned int (*hash)(ZOLTAN_ID_PTR, int, unsigned int);
    void (*cleanup) (void);
@@ -94,11 +93,6 @@ struct Zoltan_DD_Struct {
    MPI_Comm comm;          /* Dup of original MPI Comm (KDD)         */
    DD_Node *table[1];      /* Hash table, heads of the link lists    */
 };
-
-
-
-
-
 
 
 /*************** DD Communication Messages *********************/
