@@ -245,16 +245,22 @@ int read_cmd_file (
         pio_info->file_type      = NEMESIS_FILE;
         pio_info->init_dist_type = INITIAL_FILE;
       }
-      else if (strcmp(value, "random") == 0)  {
+      else if ((strcmp(value, "random-triangles") == 0) || (strcmp(value, "random") == 0))  {
         /* No input file; generate random coordinates. */
-        pio_info->file_type       = NO_FILE;
+        if (strcmp(value, "random-triangles") == 0){
+          pio_info->file_type = NO_FILE_TRIANGLES;
+          strcpy(pio_info->pexo_fname, "random-triangles");
+        }
+        else{
+          pio_info->file_type       = NO_FILE_POINTS;
+          strcpy(pio_info->pexo_fname, "random");
+        }
         pio_info->init_dist_type  = INITIAL_LINEAR;
         pio_info->init_dist_procs = -1;
 
         pio_info->init_size     = 100;       /* default */
         pio_info->init_dim      = 3;         /* default */
         pio_info->init_vwgt_dim = 1;     /* default */
-        strcpy(pio_info->pexo_fname, "random");
 
         pline = line;
         while (pline+n < pmax && 
@@ -666,7 +672,8 @@ void brdcst_cmd_info (
 
   switch (pio_info->file_type) {
   case CHACO_FILE:
-  case NO_FILE:
+  case NO_FILE_POINTS:
+  case NO_FILE_TRIANGLES:
     mesh->data_type = ZOLTAN_GRAPH;
     break;
   case NEMESIS_FILE:

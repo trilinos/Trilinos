@@ -26,12 +26,13 @@ extern "C" {
 #endif
 
 /* define the input file types */
-#define NO_FILE           0
-#define NEMESIS_FILE      1
-#define CHACO_FILE        2
-#define HYPERGRAPH_FILE   3
-#define MATRIXMARKET_FILE 4
-#define MATRIXMARKET_PLUS_FILE 5
+#define NO_FILE_POINTS    0
+#define NO_FILE_TRIANGLES 1
+#define NEMESIS_FILE      2
+#define CHACO_FILE        3
+#define HYPERGRAPH_FILE   4
+#define MATRIXMARKET_FILE 5
+#define MATRIXMARKET_PLUS_FILE 6
 
 /* define matrix_obj options */
 #define ROWS            0
@@ -81,11 +82,11 @@ struct Parallel_IO
                                   should be initially distributed.     */
   int     init_dist_procs;     /* How many procs to use in 
                                   the initial distribution.            */
-  int     init_size;           /* For NO_FILE (random) input, the 
+  int     init_size;           /* For NO_FILE_* (random) input, the 
                                   no. of objects to be created. */
-  int     init_dim;            /* For NO_FILE (random) input, the 
+  int     init_dim;            /* For NO_FILE_* (random) input, the 
                                   dimension of the problem (1, 2, or 3D) */
-  int     init_vwgt_dim;       /* For NO_FILE (random) input, the 
+  int     init_vwgt_dim;       /* For NO_FILE_* (random) input, the 
                                   no. of weights per object.           */
   int     matrix_obj;          /* What are the objects to be balanced
                                   for a sparse matrix? (ROWS, COLUMNS) */
@@ -193,6 +194,14 @@ extern int read_mm_file(
 );
 
 extern int read_mtxplus_file(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+);
+
+extern int create_random_triangles(
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,

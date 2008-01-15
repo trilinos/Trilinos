@@ -450,9 +450,15 @@ static int read_mesh(
     }
   }
 #endif
-  else if (pio_info->file_type == NO_FILE) {
+  else if (pio_info->file_type == NO_FILE_POINTS) {
     if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from create_random_input\n");
+        return 0;
+    }
+  }
+  else if (pio_info->file_type == NO_FILE_TRIANGLES) {
+    if (!create_random_triangles(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from create_random_triangles\n");
         return 0;
     }
   }

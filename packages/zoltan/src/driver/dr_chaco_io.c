@@ -32,10 +32,11 @@
 extern "C" {
 #endif
 
-
 #ifndef MAX_STR_LENGTH
 #define MAX_STR_LENGTH 80
 #endif
+
+#define MESS_UP_POINTS
 
 /****************************************************************************/
 /****************************************************************************/
@@ -114,6 +115,55 @@ int read_chaco_file(int Proc,
         return 0;
       }
     }
+
+#ifdef MESS_UP_POINTS
+/* Try to create a geometry that isn't nicely symmetric */
+{
+int i, j;
+double min[3], max[3], a[3], b[3];
+min[0] = max[0] = x[0];
+if (ndim > 1){
+  min[1] = max[1] = y[0];
+  if (ndim > 2)
+    min[2] = max[2] = z[0];
+}
+for (i=1; i<nvtxs; i++) {
+  if (x[i] < min[0]) min[0] = x[i];
+  else if (x[i] > max[0]) max[0] = x[i];
+  if (ndim > 1){
+    if (y[i] < min[1]) min[1] = y[i];
+    else if (y[i] > max[1]) max[1] = y[i];
+    if (ndim > 2){
+      if (z[i] < min[2]) min[2] = z[i];
+      else if (z[i] > max[2]) max[2] = z[i];
+    }
+  }
+}
+for (i=0; i<ndim; i++)  /* point inside but near edge of geometry */
+  a[i] = ((max[i] - min[i]) * .1) + min[i];
+
+for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
+  if (i%3 == 0) continue;
+  b[0] = x[i];
+  if (ndim > 1){
+    b[1] = y[i];
+    if (ndim > 2){
+      b[2] = z[i];
+    }
+  }
+  for (j=0; j<ndim; j++){
+    b[j] = a[j] + ((b[j] - a[j])*.1);
+  }
+  x[i] = b[0];
+  if (ndim > 1){
+    y[i] = b[1];
+    if (ndim > 2){
+      z[i] = b[2];
+    }
+  }
+}
+}
+#endif
 
     /* Read Chaco assignment file, if requested */
     if (pio_info->init_dist_type == INITIAL_FILE) {
