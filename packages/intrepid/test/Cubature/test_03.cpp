@@ -30,7 +30,7 @@
 
 /** \file
 \brief  Unit test (CubatureDirect,CubatureTensor): correctness of
-        integration of monomials for 1D reference cells.
+        integration of monomials for 2D reference cells.
 \author Created by P. Bochev and D. Ridzal.
 */
 
@@ -63,38 +63,45 @@ double computeMonomial(Point<double> p, int xDeg, int yDeg=0, int zDeg=0) {
 /*
   Computes integrals of monomials over a given reference cell.
 */
-double computeIntegral(ECell cellType, int cubDegree, int polyDegree) {
+double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg) {
 
+  Teuchos::RCP< Cubature<double> > myCub;  
   CubatureDirect<double> dCub;
+  CubatureTensor<double> tCub;
   double val = 0.0;
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
   switch (cellType) {
 
-    case CELL_EDGE: {
-        int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
+    case CELL_TRI:
+        myCub = Teuchos::rcp(&dCub, false);
+      break;
 
-        Teuchos::Array< Point<double> > cubPoints;
-        Teuchos::Array<double> cubWeights;
-
-        Point<double> tempPoint(ambientDim);
-        cubPoints.assign(numCubPoints,tempPoint);
-        cubWeights.assign(numCubPoints,0.0);
-
-        dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
-
-        for (int i=0; i<numCubPoints; i++) {
-          val += computeMonomial(cubPoints[i], polyDegree)*cubWeights[i];
-        }
-      }
+    case CELL_QUAD:
+        myCub = Teuchos::rcp(&tCub, false);
       break;
 
     default:
-      TEST_FOR_EXCEPTION((cellType != CELL_EDGE),
+      TEST_FOR_EXCEPTION((cellType != CELL_TRI) && (cellType != CELL_QUAD),
                           std::invalid_argument,
-                          ">>> ERROR (Unit Test -- Cubature -- 1D Monomial): Invalid cell type.");
+                          ">>> ERROR (Unit Test -- Cubature -- 2D Monomial): Invalid cell type.");
   } // end switch
+
+  int numCubPoints = myCub->getNumPoints(cellType, cubDegree);
+
+  Teuchos::Array< Point<double> > cubPoints;
+  Teuchos::Array<double> cubWeights;
+
+  Point<double> tempPoint(ambientDim);
+  cubPoints.assign(numCubPoints,tempPoint);
+  cubWeights.assign(numCubPoints,0.0);
+
+  myCub->getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+
+  for (int i=0; i<numCubPoints; i++) {
+    val += computeMonomial(cubPoints[i], xDeg, yDeg)*cubWeights[i];
+  }
 
   return val;
 }
@@ -121,7 +128,7 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|                 Unit Test (CubatureDirect,CubatureTensor)                   |\n" \
   << "|                                                                             |\n" \
-  << "|     1) Computing integrals of monomials on reference cells in 1D            |\n" \
+  << "|     1) Computing integrals of monomials on reference cells in 2D            |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -130,59 +137,81 @@ int main(int argc, char *argv[]) {
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
   << "===============================================================================\n"\
-  << "| TEST 1: integrals of monomials in 1D                                        |\n"\
+  << "| TEST 1: integrals of monomials in 2D                                        |\n"\
   << "===============================================================================\n";
 
+  // >>> ASSUMPTION: max polynomial degree integrated exactly is the same for
+  // >>>             quads (i.e. edges) and triangles !!!
   // internal variables:
   int                                      errorFlag = 0;
+  int                                      polyCt = 0;
+  int                                      offset = 0;
   Teuchos::Array< Teuchos::Array<double> > testInt;
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+01 * INTREPID_TOL;
-  testInt.assign(INTREPID_MAX_CUBATURE_DEGREE_EDGE+1, tmparray);
-  analyticInt.assign(INTREPID_MAX_CUBATURE_DEGREE_EDGE+1, tmparray);
+  double                                   reltol = 1.0e+03 * INTREPID_TOL;
+  int                                      numPoly = (INTREPID_MAX_CUBATURE_DEGREE_EDGE+1)*
+                                                     (INTREPID_MAX_CUBATURE_DEGREE_EDGE+2)/2;
+  testInt.assign(numPoly, tmparray);
+  analyticInt.assign(numPoly, tmparray);
 
-  // open file with analytic values
+  // get names of files with analytic values
   std::string basedir = "./data";
-  std::stringstream namestream;
-  std::string filename;
-  namestream <<  basedir << "/EDGE_integrals" << ".dat";
-  namestream >> filename;
-  std::ifstream filecompare(&filename[0]);
+  std::stringstream namestream[2];
+  std::string filename[2];
+  namestream[0] << basedir << "/TRI_integrals" << ".dat";
+  namestream[0] >> filename[0];
+  namestream[1] << basedir << "/QUAD_integrals" << ".dat";
+  namestream[1] >> filename[1];
 
-  *outStream << "\nIntegrals of monomials on a reference " << MultiCell<double>::getCellName(CELL_EDGE) << ":\n";
+  ECell testType[] = {CELL_TRI, CELL_QUAD};
 
   // compute and compare integrals
   try {
-    // compute integrals
-    for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
-      testInt[cubDeg].resize(cubDeg+1);
-      for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
-        testInt[cubDeg][polyDeg] = computeIntegral(CELL_EDGE, cubDeg, polyDeg);
-      }
-    }
-    // get analytic values
-    if (filecompare.is_open()) {
-      getAnalytic(analyticInt, filecompare);
-      // close file
-      filecompare.close();
-    }
-    // perform comparison
-    for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
-      for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
-        double abstol = ( analyticInt[polyDeg][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyDeg][0]) );
-        double absdiff = std::fabs(analyticInt[polyDeg][0] - testInt[cubDeg][polyDeg]);
-        *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
-                   << "x^" << std::setw(2) << std::left << polyDeg <<  ":" << "   "
-                   << std::scientific << std::setprecision(16) << testInt[cubDeg][polyDeg] << "   " << analyticInt[polyDeg][0] << "   "
-                   << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
-        if (absdiff > abstol) {
-          errorFlag++;
-          *outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+    for (int cellCt=0; cellCt < 2; cellCt++) {
+      *outStream << "\nIntegrals of monomials on a reference " << MultiCell<double>::getCellName(testType[cellCt]) << ":\n";
+      std::ifstream filecompare(&filename[cellCt][0]);
+      // compute integrals
+      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
+        polyCt = 0;
+        testInt[cubDeg].resize((cubDeg+1)*(cubDeg+2)/2);
+        for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
+          for (int yDeg=0; yDeg <= cubDeg-xDeg; yDeg++) {
+            testInt[cubDeg][polyCt] = computeIntegral(testType[cellCt], cubDeg, xDeg, yDeg);
+            polyCt++; 
+          }
         }
       }
+      // get analytic values
+      if (filecompare.is_open()) {
+        getAnalytic(analyticInt, filecompare);
+        // close file
+        filecompare.close();
+      }
+      // perform comparison
+      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
+        polyCt = 0;
+        offset = 0;
+        for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
+          for (int yDeg=0; yDeg <= cubDeg-xDeg; yDeg++) {
+            double abstol = ( analyticInt[polyCt+offset][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyCt+offset][0]) );
+            double absdiff = std::fabs(analyticInt[polyCt+offset][0] - testInt[cubDeg][polyCt]);
+            *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
+                       << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg << ":" << "   "
+                       << std::scientific << std::setprecision(16) << testInt[cubDeg][polyCt] << "   " << analyticInt[polyCt+offset][0] << "   "
+                       << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+            if (absdiff > abstol) {
+              errorFlag++;
+              *outStream << std::right << std::setw(111) << "^^^^---FAILURE!\n";
+            }
+            polyCt++;
+          }
+          offset = offset + INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg;
+        }
+        *outStream << "\n";
+      }
       *outStream << "\n";
-    } // end for cubDeg
+    }  // end for cellCt
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

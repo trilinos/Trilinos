@@ -114,9 +114,9 @@ void CubatureTensor<Scalar>::getCubature(int &                            numCub
                            ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
         //
         // Find the digits d[0]-d[dim-1] of the point_id as a base numTriPoints,numEdgePoints
-        // number. The value of digit d[0] gives the 1D Gauss point to use for
+        // number. The value of digit d[1] gives the 1D Gauss point to use for
         // the 1st spatial coordinate of the tensor product cubature point.
-        // The value of digit d[1] gives the 2D Triangle point to use for the
+        // The value of digit d[0] gives the 2D Triangle point to use for the
         // 2nd and 3rd spatial coordinates.
         // Cubature weights are computed as products of weights of lower-dimensional
         // rules.
@@ -129,9 +129,9 @@ void CubatureTensor<Scalar>::getCubature(int &                            numCub
         for(int point_id = 0; point_id < numCubPoints; point_id++){
           d[0] = point_id / numTriPoints;
           d[1] = point_id % numTriPoints;
-          x[0]                  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].points_[d[0]][0];
-          x[1]                  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].points_[d[1]][0];
-          x[2]                  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].points_[d[1]][1];
+          x[0]                  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].points_[d[1]][0];
+          x[1]                  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].points_[d[1]][1];
+          x[2]                  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].points_[d[0]][0];
           cubWeights[point_id]  = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].weights_[d[0]] *
                                   (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].weights_[d[1]];
           cubPoints[point_id].setCoordinates(x,3);

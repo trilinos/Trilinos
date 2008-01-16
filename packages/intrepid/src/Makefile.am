@@ -45,7 +45,8 @@ INTREPID_ALL_H = \
 INTREPID_COMMON_H = \
   $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
   $(srcdir)/common/Intrepid_RealSpace.hpp \
-  $(srcdir)/common/Intrepid_Types.hpp
+  $(srcdir)/common/Intrepid_Types.hpp \
+  $(srcdir)/common/Intrepid_Utils.hpp
 
 INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CellTemplates.hpp \

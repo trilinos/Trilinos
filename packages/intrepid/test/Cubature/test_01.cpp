@@ -46,6 +46,7 @@ using namespace Intrepid;
 */
 double computeRefVolume(ECell cellType, int cubDegree) {
 
+  Teuchos::RCP< Cubature<double> > myCub;
   CubatureDirect<double> dCub;
   CubatureTensor<double> tCub;
   double vol = 0.0;
@@ -56,50 +57,36 @@ double computeRefVolume(ECell cellType, int cubDegree) {
 
     case CELL_EDGE:
     case CELL_TRI:
-    case CELL_TET: {
-        int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
-
-        Teuchos::Array< Point<double> > cubPoints;
-        Teuchos::Array<double> cubWeights;
-
-        Point<double> tempPoint(ambientDim);
-        cubPoints.assign(numCubPoints,tempPoint);
-        cubWeights.assign(numCubPoints,0.0);
-
-        dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
-
-        for (int i=0; i<numCubPoints; i++) {
-          vol += cubWeights[i];
-        }
-      }
+    case CELL_TET:
+        myCub = Teuchos::rcp(&dCub, false);
       break;
 
     case CELL_QUAD:
     case CELL_HEX:
-    case CELL_TRIPRISM: {
-        int numCubPoints = tCub.getNumPoints(cellType, cubDegree);
-
-        Teuchos::Array< Point<double> > cubPoints;
-        Teuchos::Array<double> cubWeights;
-
-        Point<double> tempPoint(ambientDim);
-        cubPoints.assign(numCubPoints,tempPoint);
-        cubWeights.assign(numCubPoints,0.0);
-
-        tCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
-
-        for (int i=0; i<numCubPoints; i++) {
-          vol += cubWeights[i];
-        }
-      }
+    case CELL_TRIPRISM:
+        myCub = Teuchos::rcp(&tCub, false);
       break;
 
     default:
       TEST_FOR_EXCEPTION((cellType != CELL_EDGE) && (cellType != CELL_TRI) && (cellType != CELL_TET) &&
                          (cellType != CELL_QUAD) && (cellType != CELL_HEX) && (cellType != CELL_TRIPRISM),
                           std::invalid_argument,
-                          ">>> ERROR (CubatureDirect): Invalid cell type.");
+                          ">>> ERROR (Unit Test -- Cubature -- Volume): Invalid cell type.");
   } // end switch
+
+  int numCubPoints = myCub->getNumPoints(cellType, cubDegree);
+
+  Teuchos::Array< Point<double> > cubPoints;
+  Teuchos::Array<double> cubWeights;
+
+  Point<double> tempPoint(ambientDim);
+  cubPoints.assign(numCubPoints,tempPoint);
+  cubWeights.assign(numCubPoints,0.0);
+
+  myCub->getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+
+  for (int i=0; i<numCubPoints; i++)
+    vol += cubWeights[i];
 
   return vol;
 }
@@ -151,58 +138,70 @@ int main(int argc, char *argv[]) {
     for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_EDGE; deg++) {
       testVol = computeRefVolume(CELL_EDGE, deg);
       *outStream << std::setw(24) << "EDGE volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_EDGE]) << '\n';
-      if (std::abs(testVol - volumeList[CELL_EDGE]) > tol)
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_EDGE]) << "\n";
+      if (std::abs(testVol - volumeList[CELL_EDGE]) > tol) {
         errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
     }
     *outStream << std::endl;
     for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_EDGE; deg++) {
       testVol = computeRefVolume(CELL_QUAD, deg);
       *outStream << std::setw(24) << "QUAD volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_QUAD]) << '\n';
-      if (std::abs(testVol - volumeList[CELL_QUAD]) > tol)
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_QUAD]) << "\n";
+      if (std::abs(testVol - volumeList[CELL_QUAD]) > tol) {
         errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
     }
     *outStream << std::endl;
     for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_TRI; deg++) {
       testVol = computeRefVolume(CELL_TRI, deg);
       *outStream << std::setw(24) << "TRI volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TRI]) << '\n';
-      if (std::abs(testVol - volumeList[CELL_TRI]) > tol)
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TRI]) << "\n";
+      if (std::abs(testVol - volumeList[CELL_TRI]) > tol) {
         errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
     }
     *outStream << std::endl;
     for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_TET; deg++) {
       testVol = computeRefVolume(CELL_TET, deg);
       *outStream << std::setw(24) << "TET volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TET]) << '\n';
-      if (std::abs(testVol - volumeList[CELL_TET]) > tol)
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TET]) << "\n";
+      if (std::abs(testVol - volumeList[CELL_TET]) > tol) {
         errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
     }
     *outStream << std::endl;
     for (int deg=0; deg<INTREPID_MAX_CUBATURE_DEGREE_EDGE; deg++) {
       testVol = computeRefVolume(CELL_HEX, deg);
       *outStream << std::setw(24) << "HEX volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_HEX]) << '\n';
-      if (std::abs(testVol - volumeList[CELL_HEX]) > tol)
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_HEX]) << "\n";
+      if (std::abs(testVol - volumeList[CELL_HEX]) > tol) {
         errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
     }
     *outStream << std::endl;
     for (int deg=0; deg<std::min(INTREPID_MAX_CUBATURE_DEGREE_EDGE,INTREPID_MAX_CUBATURE_DEGREE_TRI); deg++) {
       testVol = computeRefVolume(CELL_TRIPRISM, deg);
       *outStream << std::setw(24) << "TRIPRISM volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TRIPRISM]) << '\n';
-      if (std::abs(testVol - volumeList[CELL_TRIPRISM]) > tol)
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[CELL_TRIPRISM]) << "\n";
+      if (std::abs(testVol - volumeList[CELL_TRIPRISM]) > tol) {
         errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
     }
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
-    errorFlag = 2;
+    errorFlag = -1;
   };
 
 
-  if (errorFlag > 0)
+  if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
