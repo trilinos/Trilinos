@@ -503,7 +503,8 @@ The contributors to the %Thyra package, or related packages, in alphabetical
 order, are:
 
 <ul>
-<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer, MOOCHO lead developer
+<li> Roscoe Bartlett (rabartl@sandia.gov) <a href="http://www.cs.sandia.gov/~rabartl">[website]</a>:
+     %Thyra lead developer, MOOCHO lead developer
 <li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer
 <li> Michael Heroux (maherou@sandia.gov): Trilinos lead, Epetra and AztecOO lead developer
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer
