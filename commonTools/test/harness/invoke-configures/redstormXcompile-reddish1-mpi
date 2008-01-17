@@ -11,6 +11,7 @@ module load PrgEnv-pgi-xc;
 --enable-epetra \
 --enable-epetraext \
 --enable-ifpack \
+--enable-intrepid \
 --enable-loca \
 --enable-nox \
 --enable-new_package \

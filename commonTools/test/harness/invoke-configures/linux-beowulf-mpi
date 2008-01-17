@@ -35,6 +35,7 @@ FFLAGS=-O3 \
 --enable-external \
 --enable-galeri \
 --enable-ifpack \
+--enable-intrepid \
 --enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
