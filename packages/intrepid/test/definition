@@ -1,0 +1,11 @@
+#
+# This group defines the standard set of Intrepid's tests.
+#
+
+(FRAMEWORK, INSTALL) {
+    DIRS = Cubature;
+    ARGS = PrintItAll;
+    DESCEND_DIRS = YES;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL;
+}

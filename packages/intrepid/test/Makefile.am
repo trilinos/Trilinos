@@ -40,4 +40,4 @@ DISABLED =
 #
 SUBDIRS = Cubature MultiCell RealSpace
 
-# EXTRA_DIST = definition
+EXTRA_DIST = definition
