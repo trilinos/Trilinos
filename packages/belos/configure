@@ -747,6 +747,8 @@ BUILD_TRIUTILS_TRUE
 BUILD_TRIUTILS_FALSE
 BUILD_IFPACK_TRUE
 BUILD_IFPACK_FALSE
+BUILD_ML_TRUE
+BUILD_ML_FALSE
 BUILD_EPETRAEXT_TRUE
 BUILD_EPETRAEXT_FALSE
 ac_aux_dir
@@ -1380,6 +1382,9 @@ Optional Features:
   --enable-ifpack         Build tests that use Ifpack.
   --enable-belos-ifpack   Build tests that use Ifpack. Can be overridden with
                           --disable-belos-ifpack.
+  --enable-ml             Build the tests that use Ml.
+  --enable-belos-ml       Build the tests that use ML. Can override with
+                          --disable-belos-ml.
   --enable-epetraext      Build tests that use EpetraExt.
   --enable-belos-epetraext
                           Build tests that use EpetraExt. Can be overridden
@@ -7884,7 +7889,7 @@ fi
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
 # Required: Epetra, Teuchos, Triutils
-# Optional: Ifpack, TSFCore
+# Optional: Ifpack, TSFCore, ML
 # ------------------------------------------------------------------------
 
 
@@ -8018,6 +8023,57 @@ fi
 else
   BUILD_IFPACK_TRUE='#'
   BUILD_IFPACK_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-ml was given.
+if test "${enable_ml+set}" = set; then
+  enableval=$enable_ml; ac_cv_implicit_use_ml=$enableval
+else
+  ac_cv_implicit_use_ml=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_belos_using_ml_default=$ac_cv_implicit_use_ml
+else
+  ac_cv_belos_using_ml_default=no
+fi
+
+# Check whether --enable-belos-ml was given.
+if test "${enable_belos_ml+set}" = set; then
+  enableval=$enable_belos_ml; ac_cv_use_ml=$enableval
+else
+  ac_cv_use_ml=$ac_cv_belos_using_ml_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional ml dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional ml dependent code in belos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_ml" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_ML 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_ml" = "Xyes"; then
+  BUILD_ML_TRUE=
+  BUILD_ML_FALSE='#'
+else
+  BUILD_ML_TRUE='#'
+  BUILD_ML_FALSE=
 fi
 
 
@@ -8367,7 +8423,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/MVOPTester/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile example/PCPG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/PCPG/Makefile test/MVOPTester/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8582,6 +8638,13 @@ if test -z "${BUILD_IFPACK_TRUE}" && test -z "${BUILD_IFPACK_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_ML_TRUE}" && test -z "${BUILD_ML_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9068,10 +9131,12 @@ do
     "example/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockGmres/Makefile" ;;
     "example/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockCG/Makefile" ;;
     "example/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES example/GCRODR/Makefile" ;;
+    "example/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES example/PCPG/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
     "test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
     "test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES test/GCRODR/Makefile" ;;
+    "test/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES test/PCPG/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9308,6 +9373,8 @@ BUILD_TRIUTILS_TRUE!$BUILD_TRIUTILS_TRUE$ac_delim
 BUILD_TRIUTILS_FALSE!$BUILD_TRIUTILS_FALSE$ac_delim
 BUILD_IFPACK_TRUE!$BUILD_IFPACK_TRUE$ac_delim
 BUILD_IFPACK_FALSE!$BUILD_IFPACK_FALSE$ac_delim
+BUILD_ML_TRUE!$BUILD_ML_TRUE$ac_delim
+BUILD_ML_FALSE!$BUILD_ML_FALSE$ac_delim
 BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
 BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
@@ -9315,7 +9382,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

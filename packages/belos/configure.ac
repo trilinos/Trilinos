@@ -239,7 +239,7 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
 # Required: Epetra, Teuchos, Triutils
-# Optional: Ifpack, TSFCore
+# Optional: Ifpack, TSFCore, ML
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
@@ -248,6 +248,8 @@ AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xn
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ml, BELOS_ML, BUILD_ML, yes, [Build the tests that use ML. Can override with --disable-belos-ml.], [Build the tests that use Ml.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build tests that use EpetraExt. Can be overridden with --disable-belos-epetraext.], [Build tests that use EpetraExt.])
 
@@ -346,10 +348,12 @@ AC_CONFIG_FILES([
 		example/BlockGmres/Makefile
 		example/BlockCG/Makefile
 		example/GCRODR/Makefile
+		example/PCPG/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
 		test/GCRODR/Makefile
+		test/PCPG/Makefile
 		test/MVOPTester/Makefile
 		])
 
