@@ -1378,8 +1378,9 @@ Optional Features:
                           (default is yes if --disable-examples is not
                           specified)
   --enable-libcheck       Check for some third-party libraries including BLAS
-                          and LAPACK. (Cannot be disabled unless tests and
-                          examples are also disabled.) (default is yes)
+                          and LAPACK. Cannot be disabled unless tests and
+                          examples are also disabled. Cannot be disabled when
+                          fortran is disabled. (default is yes)
   --enable-teuchos-abc    Enable array bounds checking (default is no)
   --enable-teuchos-complex
                           Enable Teuchos complex code (default is yes)
@@ -15796,6 +15797,68 @@ echo "$as_me: error: Cannot find lapack library, specify a path using --with-lap
    { (exit 1); exit 1; }; }
 fi
 
+
+else
+
+  if test "X$ac_cv_use_fortran" != "Xno"; then
+  # If we don't check for BLAS above, we will use F77_FUNC as the name mangling
+  # for the BLAS and LAPACK.  This is what we used before we allowed the BLAS
+  # and LAPACK to use different name mangling than the compiler.
+  ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+case $ac_cv_f77_mangling in
+  upper*) ac_val="DGEMM" ;;
+  lower*) ac_val="dgemm" ;;
+  *)      ac_val="unknown" ;;
+esac
+case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
+
+dgemm="$ac_val"
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    if test "X$dgemm" = "Xdgemm_"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) name ## _
+_ACEOF
+
+    else
+      if test "X$dgemm" = "Xdgemm"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) name
+_ACEOF
+
+      else
+        if test "X$dgemm" = "XDGEMM"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) NAME
+_ACEOF
+
+        else
+          if test "X$dgemm" = "XDGEMM_"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) NAME ## _
+_ACEOF
+
+          else
+            { { echo "$as_me:$LINENO: error: Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option." >&5
+echo "$as_me: error: Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option." >&2;}
+   { (exit 1); exit 1; }; }
+          fi
+        fi
+      fi
+    fi
+  fi
 
 fi
 # end of the list of libraries that don't need to be checked for if
