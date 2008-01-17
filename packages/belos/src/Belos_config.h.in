@@ -12,6 +12,9 @@
 /* Define if want to build with belos enabled */
 #undef HAVE_BELOS_IFPACK
 
+/* Define if want to build with belos enabled */
+#undef HAVE_BELOS_ML
+
 /* Define if want to build belos-tests */
 #undef HAVE_BELOS_TESTS
 

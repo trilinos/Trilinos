@@ -27,6 +27,8 @@ CORE_H = \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
 	$(srcdir)/BelosEpetraOperator.h \
+	$(srcdir)/BelosPCPGIter.hpp \
+	$(srcdir)/BelosPCPGSolMgr.hpp \
 	$(srcdir)/BelosGCRODRIter.hpp \
 	$(srcdir)/BelosGCRODRSolMgr.hpp \
         $(srcdir)/BelosGmresIteration.hpp \
