@@ -40,7 +40,7 @@ gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-prec_gcrodr_hb_ DEPENDENCIES = \
+prec_gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \

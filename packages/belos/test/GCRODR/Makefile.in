@@ -84,7 +84,6 @@ gcrodr_hb_LINK = $(CXXLD) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) \
 am_prec_gcrodr_hb_OBJECTS =  \
 	prec_gcrodr_hb-test_prec_gcrodr_hb.$(OBJEXT)
 prec_gcrodr_hb_OBJECTS = $(am_prec_gcrodr_hb_OBJECTS)
-prec_gcrodr_hb_DEPENDENCIES = $(am__DEPENDENCIES_2)
 prec_gcrodr_hb_LINK = $(CXXLD) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -230,6 +229,12 @@ Dummy_SOURCES = Dummy
 gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp 
 prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp 
 gcrodr_hb_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+prec_gcrodr_hb_DEPENDENCIES = \
+			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
@@ -511,12 +516,6 @@ include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp $(top_srcdir)/example/GCRODR/sherman5.hb sherman5.hb
-
-prec_gcrodr_hb_ DEPENDENCIES = \
-			$(top_builddir)/../ifpack/src/libifpack.a \
-			$(top_builddir)/../epetraext/src/libepetraext.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
