@@ -174,43 +174,39 @@ RUN (beowulf-n15-coverage) {
 
 ###############################################################################
 #
-# herouxsmp nightly serial
+# exetazo nightly serial
 #
 ###############################################################################
 
-RUN (herouxsmp-nightly-serial) {
-    
+RUN (exetazo-serial) {
+
     BUILD-LABEL         = default;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
-    INVOKE-CONFIGURE    = linux-herouxsmp;
-    MAKE-COMMAND        = make -j2;
+    INVOKE-CONFIGURE    = linux-exetazo-serial;
+    MAKE-COMMAND        = make -j4;
     TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
 
 }
 
 ###############################################################################
 #
-# herouxsmp nightly mpi
+# exetazo nightly mpi
 #
 ###############################################################################
 
-RUN (herouxsmp-nightly-mpi) {
-    
+RUN (exetazo-mpi) {
+
     BUILD-LABEL         = default;
     BUILD-DIR           = MPI;
     COMM                = mpi;
-    INVOKE-CONFIGURE    = linux-herouxsmp-mpi;
-    MAKE-COMMAND        = make -j2;
+    INVOKE-CONFIGURE    = linux-exetazo-mpi;
+    MAKE-COMMAND        = make -j4;
     TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 4;
-    MPI-START           = lamboot;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    MAX-PROC            = 8;
+    MPI-GO              = /usr/alt/bin/mpiexec -np ;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
 
 }
 
