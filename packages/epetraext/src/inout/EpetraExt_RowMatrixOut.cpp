@@ -89,7 +89,7 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
   const Epetra_Comm & comm = map.Comm();
   int numProc = comm.NumProc();
 
-  if (numProc==1)
+  if (numProc==1 || !A.Map().DistributedGlobal())
     writeRowMatrix(handle, A);
   else {
     int numRows = map.NumMyElements();
