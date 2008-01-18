@@ -146,7 +146,13 @@ endif
 #  #np# - @echo "intrepid does not have any tests yet"
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building intrepid tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building intrepid tests."
+	@echo ""
 else
 tests:
 	@echo "intrepid tests were disabled at configure time"
@@ -154,7 +160,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building intrepid examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building intrepid examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
