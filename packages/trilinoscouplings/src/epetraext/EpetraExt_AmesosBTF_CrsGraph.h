@@ -81,6 +81,7 @@ class AmesosBTF_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
   std::vector<int> RowPerm() { return rowPerm_; }
   std::vector<int> ColPerm() { return colPerm_; }
   std::vector<int> BlockPtr() { return blkPtr_; }
+  int NumBlocks() { return numBlocks_; }
 
  private:
 

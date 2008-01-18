@@ -31,6 +31,7 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
+#include <Epetra_Comm.h>
 
 #include <btf.h>
 
@@ -50,15 +51,26 @@ operator()( OriginalTypeRef orig )
   origObj_ = &orig;
   const Epetra_BlockMap & OldRowMap = orig.RowMap();
   const Epetra_BlockMap & OldColMap = orig.ColMap();
-
-  if( orig.RowMap().DistributedGlobal() )
-  { cout << "FAIL for Global!\n"; abort(); }
-  if( orig.IndicesAreGlobal() )
-  { cout << "FAIL for Global Indices!\n"; abort(); }
-
+  
+  // Check if the matrix is on one processor.
+  int myMatProc = -1, matProc = -1;
+  int myPID = orig.Comm().MyPID();
+  for (int proc=0; proc<orig.Comm().NumProc(); proc++) 
+  {
+    if (orig.NumGlobalNonzeros() == orig.NumMyNonzeros())
+      myMatProc = myPID;
+  }
+  orig.Comm().MaxAll( &myMatProc, &matProc, 1 );
+  
+  if( orig.RowMap().DistributedGlobal() && matProc == -1)
+    { cout << "FAIL for Global!\n"; abort(); }
+  if( orig.IndicesAreGlobal() && matProc == -1)
+    { cout << "FAIL for Global Indices!\n"; abort(); }
+ 
+  int nGlobal = orig.NumGlobalRows(); 
   int n = orig.NumMyRows();
   int nnz = orig.NumMyNonzeros();
-
+  
   if( verbose_ )
   {
     cout << "Orig Matrix:\n";
@@ -88,94 +100,109 @@ operator()( OriginalTypeRef orig )
   }
   nnz = ia[n];
   strippedGraph.FillComplete();
-
+  
   if( verbose_ )
   {
     cout << "Stripped Graph\n";
     cout << strippedGraph;
   }
 
-  if( verbose_ )
-  {
-    cout << "-----------------------------------------\n";
-    cout << "CRS Format Graph (stripped) \n";
-    cout << "-----------------------------------------\n";
-    for( int i = 0; i < n; ++i )
-    {
-      cout << ia[i] << " - " << ia[i+1] << " : ";
-      for( int j = ia[i]; j<ia[i+1]; ++j )
-        cout << " " << ja[j];
-      cout << endl;
+  // Compute the BTF permutation only on the processor that has the graph.
+  if ( matProc == myPID ) {
+    
+    if( verbose_ )
+      {
+	cout << "-----------------------------------------\n";
+	cout << "CRS Format Graph (stripped) \n";
+	cout << "-----------------------------------------\n";
+	for( int i = 0; i < n; ++i )
+	  {
+	    cout << ia[i] << " - " << ia[i+1] << " : ";
+	    for( int j = ia[i]; j<ia[i+1]; ++j )
+	      cout << " " << ja[j];
+	    cout << endl;
+	  }
+	cout << "-----------------------------------------\n";
+      }
+    
+    // Transformation information
+    int numBlocks = 0;      // number of blocks found.
+    int numMatch = 0;       // number of nonzeros on diagonal after permutation.
+    double maxWork =  0.0;  // no limit on how much work to perform in max-trans.
+    double workPerf = 0.0;  // how much work was performed in max-trans.
+    
+    // Create a work vector for the BTF code.
+    vector<int> work(5*n);
+    
+    // Storage for the row and column permutations.
+    vector<int> rowperm(n);
+    vector<int> colperm(n);
+    vector<int> blockptr(n+1);
+    
+    // NOTE:  The permutations are sent in backwards since the matrix is transposed.
+    // On output, rowperm and colperm are the row and column permutations of A, where 
+    // i = BTF_UNFLIP(rowperm[k]) if row i of A is the kth row of P*A*Q, and j = colperm[k] 
+    // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
+    // (k,k)th entry in P*A*Q is structurally zero.
+    
+    numBlocks_ = btf_order( n, &ia[0], &ja[0], maxWork, &workPerf,
+			    &colperm[0], &rowperm[0], &blockptr[0], 
+			    &numMatch, &work[0] );
+    
+    // Reverse ordering of permutation to get upper triangular form, if necessary.
+    rowPerm_.resize( n );
+    colPerm_.resize( n ); 
+    blockptr.resize( numBlocks_+1 );
+    blockPtr_.resize( numBlocks_+1 );
+    if (upperTri_) {
+      for( int i = 0; i < n; ++i )
+	{
+	  rowPerm_[i] = BTF_UNFLIP(rowperm[(n-1)-i]);
+	  colPerm_[i] = colperm[(n-1)-i];
+	}
+      for( int i = 0; i < numBlocks_+1; ++i ) 
+	{
+	  blockPtr_[i] = n - blockptr[numBlocks_-i];
+	}
     }
-    cout << "-----------------------------------------\n";
+    else {
+      colPerm_ = colperm;
+      blockPtr_ = blockptr;
+      for( int i = 0; i < n; ++i )
+	{
+	  rowPerm_[i] = BTF_UNFLIP(rowperm[i]);
+	}
+    }
+    
+    if( verbose_ ) {
+      cout << "-----------------------------------------\n";
+      cout << "BTF Output (n = " << n << ")\n";
+      cout << "-----------------------------------------\n";
+      cout << "Num Blocks: " << numBlocks_ << endl;
+      cout << "Num NNZ Diags: " << numMatch << endl;
+      cout << "RowPerm and ColPerm \n";
+      for( int i = 0; i<n; ++i )
+	cout << rowPerm_[i] << "\t" << colPerm_[i] << endl;
+      cout << "-----------------------------------------\n";
+    }  
   }
 
-  // Transformation information
-  int numBlocks = 0;      // number of blocks found.
-  int numMatch = 0;       // number of nonzeros on diagonal after permutation.
-  double maxWork =  0.0;  // no limit on how much work to perform in max-trans.
-  double workPerf = 0.0;  // how much work was performed in max-trans.
+  // Broadcast the BTF permutation information to all processors.
+  rowPerm_.resize( nGlobal );
+  colPerm_.resize( nGlobal );
 
-  // Create a work vector for the BTF code.
-  vector<int> work(5*n);
+  orig.Comm().Broadcast(&rowPerm_[0], nGlobal, matProc);
+  orig.Comm().Broadcast(&colPerm_[0], nGlobal, matProc);
+  orig.Comm().Broadcast(&numBlocks_, 1, matProc);
 
-  // Storage for the row and column permutations.
-  vector<int> rowperm(n);
-  vector<int> colperm(n);
-  vector<int> blockptr(n+1);
-
-  // NOTE:  The permutations are sent in backwards since the matrix is transposed.
-  // On output, rowperm and colperm are the row and column permutations of A, where 
-  // i = BTF_UNFLIP(rowperm[k]) if row i of A is the kth row of P*A*Q, and j = colperm[k] 
-  // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
-  // (k,k)th entry in P*A*Q is structurally zero.
-
-  numBlocks_ = btf_order( n, &ia[0], &ja[0], maxWork, &workPerf,
-			  &colperm[0], &rowperm[0], &blockptr[0], 
-			  &numMatch, &work[0] );
-
-  // Reverse ordering of permutation to get upper triangular form, if necessary.
-  rowPerm_.resize( n );
-  colPerm_.resize( n ); 
   blockPtr_.resize( numBlocks_+1 );
-  if (upperTri_) {
-    for( int i = 0; i < n; ++i )
-    {
-      rowPerm_[i] = BTF_UNFLIP(rowperm[(n-1)-i]);
-      colPerm_[i] = colperm[(n-1)-i];
-    }
-    for( int i = 0; i < numBlocks_+1; ++i ) 
-    {
-      blockPtr_[i] = n - blockptr[numBlocks_-i];
-    }
-  }
-  else {
-    colPerm_ = colperm;
-    blockPtr_ = blockptr;
-    for( int i = 0; i < n; ++i )
-    {
-      rowPerm_[i] = BTF_UNFLIP(rowperm[i]);
-    }
-  }
-
-  if( verbose_ ) {
-    cout << "-----------------------------------------\n";
-    cout << "BTF Output (n = " << n << ")\n";
-    cout << "-----------------------------------------\n";
-    cout << "Num Blocks: " << numBlocks_ << endl;
-    cout << "Num NNZ Diags: " << numMatch << endl;
-    cout << "RowPerm and ColPerm \n";
-    for( int i = 0; i<n; ++i )
-      cout << rowPerm_[i] << "\t" << colPerm_[i] << endl;
-    cout << "-----------------------------------------\n";
-  }
-
-
+  orig.Comm().Broadcast(&blockPtr_[0], numBlocks_+1, matProc);
+  
   //Generate New Domain and Range Maps
   //for now, assume they start out as identical
   vector<int> myElements( n );
   OldRowMap.MyGlobalElements( &myElements[0] );
-
+  
   vector<int> newDomainElements( n );
   vector<int> newRangeElements( n );
   for( int i = 0; i < n; ++i )
@@ -184,8 +211,8 @@ operator()( OriginalTypeRef orig )
     newDomainElements[ i ] = myElements[ colPerm_[i] ];
   }
 
-  NewRowMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newRangeElements[0], OldRowMap.IndexBase(), OldRowMap.Comm() ) );
-  NewColMap_ = Teuchos::rcp( new Epetra_Map( n, n, &newDomainElements[0], OldColMap.IndexBase(), OldColMap.Comm() ) );
+  NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, n, &newRangeElements[0], OldRowMap.IndexBase(), OldRowMap.Comm() ) );
+  NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, n, &newDomainElements[0], OldColMap.IndexBase(), OldColMap.Comm() ) );
 
   if( verbose_ )
   {

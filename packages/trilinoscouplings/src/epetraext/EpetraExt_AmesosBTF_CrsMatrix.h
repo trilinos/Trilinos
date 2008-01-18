@@ -70,6 +70,7 @@ class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
   std::vector<int> RowPerm() { return rowPerm_; }
   std::vector<int> ColPerm() { return colPerm_; }
   std::vector<int> BlockPtr() { return blockPtr_; }
+  int NumBlocks() { return numBlocks_; }
 
  private:
 
