@@ -735,6 +735,8 @@ USING_GNUMAKE_TRUE
 USING_GNUMAKE_FALSE
 ENABLE_SACADO_TEUCHOS_TRUE
 ENABLE_SACADO_TEUCHOS_FALSE
+ENABLE_SACADO_STOKHOS_TRUE
+ENABLE_SACADO_STOKHOS_FALSE
 BUILD_PARAMLIB_TRUE
 BUILD_PARAMLIB_FALSE
 BUILD_NESTED_FAD_TRUE
@@ -1373,6 +1375,9 @@ Optional Features:
   --enable-teuchos        Build in Teuchos support in Sacado. Can be
                           overridden with --disable-sacado-teuchos.
   --enable-sacado-teuchos Build in Teuchos support in Sacado.
+  --enable-stokhos        Build in Stokhos support in Sacado. Can be
+                          overridden with --disable-sacado-stokhos.
+  --enable-sacado-stokhos Build in Stokhos support in Sacado.
   --enable-sacado-paramlib
                           Enable building Sacado parameter library (default is
                           yes except on Sun platform)
@@ -5888,6 +5893,58 @@ fi
 
 
 
+
+
+# Check whether --enable-stokhos was given.
+if test "${enable_stokhos+set}" = set; then
+  enableval=$enable_stokhos; ac_cv_implicit_use_stokhos=$enableval
+else
+  ac_cv_implicit_use_stokhos=no
+fi
+
+
+if test "Xyes
+  " != "Xno"; then
+  ac_cv_sacado_using_stokhos_default=$ac_cv_implicit_use_stokhos
+else
+  ac_cv_sacado_using_stokhos_default=no
+fi
+
+# Check whether --enable-sacado-stokhos was given.
+if test "${enable_sacado_stokhos+set}" = set; then
+  enableval=$enable_sacado_stokhos; ac_cv_use_stokhos=$enableval
+else
+  ac_cv_use_stokhos=$ac_cv_sacado_using_stokhos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional stokhos dependent code in sacado" >&5
+echo $ECHO_N "checking whether to build optional stokhos dependent code in sacado... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_stokhos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SACADO_STOKHOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_stokhos" = "Xyes"; then
+  ENABLE_SACADO_STOKHOS_TRUE=
+  ENABLE_SACADO_STOKHOS_FALSE='#'
+else
+  ENABLE_SACADO_STOKHOS_TRUE='#'
+  ENABLE_SACADO_STOKHOS_FALSE=
+fi
+
+
+
+
 # Check for --[en|dis]able-sacado-paramlib
 case "${target_os}" in
   solaris*)
@@ -6948,6 +7005,13 @@ echo "$as_me: error: conditional \"ENABLE_SACADO_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ENABLE_SACADO_STOKHOS_TRUE}" && test -z "${ENABLE_SACADO_STOKHOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_SACADO_STOKHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_SACADO_STOKHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_PARAMLIB_TRUE}" && test -z "${BUILD_PARAMLIB_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_PARAMLIB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -7707,6 +7771,8 @@ USING_GNUMAKE_TRUE!$USING_GNUMAKE_TRUE$ac_delim
 USING_GNUMAKE_FALSE!$USING_GNUMAKE_FALSE$ac_delim
 ENABLE_SACADO_TEUCHOS_TRUE!$ENABLE_SACADO_TEUCHOS_TRUE$ac_delim
 ENABLE_SACADO_TEUCHOS_FALSE!$ENABLE_SACADO_TEUCHOS_FALSE$ac_delim
+ENABLE_SACADO_STOKHOS_TRUE!$ENABLE_SACADO_STOKHOS_TRUE$ac_delim
+ENABLE_SACADO_STOKHOS_FALSE!$ENABLE_SACADO_STOKHOS_FALSE$ac_delim
 BUILD_PARAMLIB_TRUE!$BUILD_PARAMLIB_TRUE$ac_delim
 BUILD_PARAMLIB_FALSE!$BUILD_PARAMLIB_FALSE$ac_delim
 BUILD_NESTED_FAD_TRUE!$BUILD_NESTED_FAD_TRUE$ac_delim
@@ -7736,7 +7802,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

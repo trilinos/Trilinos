@@ -30,6 +30,7 @@
 # @HEADER
 
 @ENABLE_SACADO_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+@ENABLE_SACADO_STOKHOS_TRUE@include @abs_top_builddir@/../stokhos/Makefile.export.stokhos
 
 _SACADO_INCLUDES = \
 	-I@abs_top_srcdir@/src \
@@ -37,9 +38,10 @@ _SACADO_INCLUDES = \
 	-I@abs_top_srcdir@/src/parameter \
 	-I@abs_top_srcdir@/src/template \
 	-I@abs_top_builddir@/src \
+	$(STOKHOS_INCLUDES) \
 	$(TEUCHOS_INCLUDES)
 
-_SACADO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lsacado $(TEUCHOS_LIBS)
+_SACADO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lsacado $(STOKHOS_LIBS) $(TEUCHOS_LIBS)
 
 @USING_GNUMAKE_TRUE@SACADO_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_SACADO_INCLUDES))
 @USING_GNUMAKE_TRUE@SACADO_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_SACADO_LIBS))

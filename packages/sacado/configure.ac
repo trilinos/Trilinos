@@ -166,6 +166,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   ,[Build in Teuchos support in Sacado.]
   ,[Build in Teuchos support in Sacado.  Can be overridden with --disable-sacado-teuchos.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  sacado, stokhos, SACADO_STOKHOS, ENABLE_SACADO_STOKHOS, yes
+  ,[Build in Stokhos support in Sacado.]
+  ,[Build in Stokhos support in Sacado.  Can be overridden with --disable-sacado-stokhos.])
+
 # Check for --[en|dis]able-sacado-paramlib
 case "${target_os}" in
   solaris*)

@@ -64,6 +64,10 @@ namespace Sacado {							\
   namespace PCE {							\
     template <typename T> class Hermite;				\
     template <typename T> Hermite<T> OP (const Hermite<T>&);		\
+									\
+    template <typename T> class UnivariateHermite;			\
+    template <typename T>						\
+    UnivariateHermite<T> OP (const UnivariateHermite<T>&);		\
   }									\
 									\
   namespace FlopCounterPack {						\
@@ -173,6 +177,27 @@ namespace Sacado {							\
 					const Taylor<T>&);		\
     template <typename T> Taylor<T> OP (const Taylor<T>&,		\
 					const T&);			\
+  }									\
+									\
+  namespace PCE {							\
+    template <typename T> class Hermite;				\
+    template <typename T> Hermite<T> OP (const Hermite<T>&,		\
+					 const Hermite<T>&);		\
+    template <typename T> Hermite<T> OP (const T&,			\
+					 const Hermite<T>&);		\
+    template <typename T> Hermite<T> OP (const Hermite<T>&,		\
+					 const T&);			\
+    									\
+    template <typename T> class UnivariateHermite;			\
+    template <typename T>						\
+    UnivariateHermite<T> OP (const UnivariateHermite<T>&,		\
+			     const UnivariateHermite<T>&);		\
+    template <typename T>						\
+    UnivariateHermite<T> OP (const T&,					\
+			     const UnivariateHermite<T>&);		\
+    template <typename T>						\
+    UnivariateHermite<T> OP (const UnivariateHermite<T>&,		\
+			     const T&);					\
   }									\
 									\
   namespace FlopCounterPack {						\

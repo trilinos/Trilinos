@@ -44,6 +44,7 @@
 
 #include "Sacado.hpp"
 #include "Sacado_PCE_Hermite.hpp"
+#include "Sacado_PCE_UnivariateHermite.hpp"
 
 // The function to differentiate
 template <typename ScalarT>
@@ -83,6 +84,21 @@ int main(int argc, char **argv)
     std::cout.precision(12);
     std::cout << "u (taylor basis) = " << ut << std::endl;
     std::cout << "v (taylor basis) = " << vt << std::endl;
+
+#ifdef HAVE_SACADO_STOKHOS
+    Sacado::PCE::UnivariateHermite<double>::initExpansion(d);
+    Sacado::PCE::UnivariateHermite<double> ue(d);
+    for (unsigned int i=0; i<=d; i++)
+      ue.fastAccessCoeff(i) = u.coeff(i);
+
+    Sacado::PCE::UnivariateHermite<double> we = std::log(ue);
+    Sacado::PCE::UnivariateHermite<double> ve = 1.0/(we*we + 1.0);
+
+    std::cout << "ue (hermite basis) = " << ue << std::endl;
+    std::cout << "ue (standard basis) = " << ue.toStandardBasis() << std::endl;
+    std::cout << "ve (hermite basis) = " << ve << std::endl;
+    std::cout << "ve (standard basis) = " << ve.toStandardBasis() << std::endl;
+#endif
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

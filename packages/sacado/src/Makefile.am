@@ -161,6 +161,15 @@ endif
 
 endif
 
+if ENABLE_SACADO_STOKHOS
+
+SACADO_SG_H = \
+	$(srcdir)/pce/Sacado_PCE_UnivariateHermite.hpp \
+	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteTraits.hpp
+
+endif
+
 SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
@@ -203,6 +212,7 @@ SACADO_H = \
 	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H) \
 	$(SACADO_PCE_H) \
+	$(SACADO_SG_H) \
 	$(SACADO_PARAMETER_H) \
 	$(SACADO_SFC_H) \
 	$(SACADO_UTIL_H)
