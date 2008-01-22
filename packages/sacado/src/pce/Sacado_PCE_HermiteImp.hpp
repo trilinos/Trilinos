@@ -197,6 +197,18 @@ initWorkspace(unsigned int d)
 }
 
 template <typename T> 
+StandardPoly<T>
+Hermite<T>::
+toStandardBasis() const
+{
+  const typename Hermite<T>::ws_type::tp_type& Cijk = 
+    Hermite<T>::workspace.getTripleProduct();
+  const typename Hermite<T>::ws_type::tp_type::basis_type& basis = 
+    Cijk.getBasis();
+  return basis.toStandardBasis(th->coeff_, th->deg_+1);
+}
+
+template <typename T> 
 Hermite<T>& 
 Hermite<T>::
 operator=(const T& val) 

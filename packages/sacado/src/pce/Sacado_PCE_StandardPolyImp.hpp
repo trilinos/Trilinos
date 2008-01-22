@@ -201,6 +201,71 @@ multiply(const T& alpha,
 template <typename T>
 void
 Sacado::PCE::StandardPoly<T>::
+add(const T& alpha, 
+    const Sacado::PCE::StandardPoly<T>& a,
+    const T& gamma)
+{
+  const unsigned int d = this->degree();
+  const unsigned int da = a.degree();
+
+  if (da >= d)
+    for (unsigned int i=0; i<=d; i++)
+      coeffs[i] = alpha*a.coeffs[i] + gamma*coeffs[i];
+  else {
+    for (unsigned int i=0; i<=da; i++)
+      coeffs[i] = alpha*a.coeffs[i] + gamma*coeffs[i];
+    for (unsigned int i=da+1; i<=d; i++)
+      coeffs[i] = gamma*coeffs[i];
+  }
+}
+
+template <typename T>
+void
+Sacado::PCE::StandardPoly<T>::
+add(const T& alpha, 
+    const Sacado::PCE::StandardPoly<T>& a,
+    const T& beta,
+    const Sacado::PCE::StandardPoly<T>& b, 
+    const T& gamma)
+{
+  const unsigned int d = this->degree();
+  const unsigned int da = a.degree();
+  const unsigned int db = b.degree();
+
+  if (da >= d && db >= d)
+    for (unsigned int i=0; i<=d; i++)
+      coeffs[i] = alpha*a.coeffs[i] + beta*b.coeffs[i] + gamma*coeffs[i];
+  else if (da < d) {
+    for (unsigned int i=0; i<=da; i++)
+      coeffs[i] = alpha*a.coeffs[i] + beta*b.coeffs[i] + gamma*coeffs[i];
+    if (db <= d) {
+      for (unsigned int i=da+1; i<=db; i++)
+	coeffs[i] = beta*b.coeffs[i] + gamma*coeffs[i];
+      for (unsigned int i=db+1; i<=d; i++)
+	coeffs[i] = gamma*coeffs[i];
+    }
+    else
+      for (unsigned int i=da+1; i<=d; i++)
+	coeffs[i] = beta*b.coeffs[i] + gamma*coeffs[i];
+  }
+  else {
+    for (unsigned int i=0; i<=db; i++)
+      coeffs[i] = alpha*a.coeffs[i] + beta*b.coeffs[i] + gamma*coeffs[i];
+    if (da <= d) {
+      for (unsigned int i=db+1; i<=da; i++)
+	coeffs[i] = alpha*a.coeffs[i] + gamma*coeffs[i];
+      for (unsigned int i=da+1; i<=d; i++)
+	coeffs[i] = gamma*coeffs[i];
+    }
+    else
+      for (unsigned int i=db+1; i<=d; i++)
+	coeffs[i] = alpha*a.coeffs[i] + gamma*coeffs[i];
+  }
+}
+
+template <typename T>
+void
+Sacado::PCE::StandardPoly<T>::
 print(std::ostream& os) const
 {
   os << "[";

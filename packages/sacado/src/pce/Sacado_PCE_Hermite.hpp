@@ -117,6 +117,9 @@ namespace Sacado {
        */
       static void initWorkspace(unsigned int d);
 
+      //! Write coefficients in standard basis
+      StandardPoly<T> toStandardBasis() const;
+
       /*!
        * @name Assignment operators
        */
