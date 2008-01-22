@@ -87,6 +87,12 @@ namespace Sacado {
 
     //! Dereference
     T* operator -> () const { return rep; }
+
+    //! Dereference
+    const T& operator * () const { return *rep; }
+
+    //! Dereference
+    T& operator * () { return *rep; }
     
   private:
 
