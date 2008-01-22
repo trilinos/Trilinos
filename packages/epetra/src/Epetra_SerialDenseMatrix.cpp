@@ -364,7 +364,7 @@ double Epetra_SerialDenseMatrix::NormOne() const {
       for (i=0; i<M_; i++) sum += std::abs(*ptr++);
       anorm = EPETRA_MAX(anorm, sum);
     }
-    UpdateFlops(N_*N_);
+    UpdateFlops((double)N_*(double)N_);
     return(anorm);
 }
 //=============================================================================
@@ -386,7 +386,7 @@ double Epetra_SerialDenseMatrix::NormInf() const {
       }
       anorm = EPETRA_MAX(anorm, sum);
     }
-    UpdateFlops(N_*N_);
+    UpdateFlops((double)N_*(double)N_);
     return(anorm);
 }
 //=============================================================================
@@ -399,7 +399,7 @@ int Epetra_SerialDenseMatrix::Scale(double ScalarA) {
     ptr = A_ + j*LDA_;
     for (i=0; i<M_; i++) { *ptr = ScalarA * (*ptr); ptr++; }
   }
-  UpdateFlops(N_*N_);
+  UpdateFlops((double)N_*(double)N_);
   return(0);
   
 }
@@ -431,7 +431,7 @@ int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarA
   nflops *= A_ncols;
   if (ScalarAB != 1.0) nflops += M_*N_;
   if (ScalarThis != 0.0) nflops += M_*N_;
-  UpdateFlops(nflops);
+  UpdateFlops((double)nflops);
 
   return(0);
 }
@@ -500,7 +500,7 @@ int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB,
   nflops *= A.N();
   if (ScalarAB != 1.0) nflops += M_*N_;
   if (ScalarThis != 0.0) nflops += M_*N_;
-  UpdateFlops(nflops);
+  UpdateFlops((double)nflops);
 
   return(0);
 }
