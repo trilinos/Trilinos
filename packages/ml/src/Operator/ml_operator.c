@@ -791,7 +791,6 @@ int ML_Operator_ComputeNumNzs(ML_Operator *matrix)
    }
    ML_free(val);
    ML_free(bindx);
-   matrix->N_nonzeros = Nnz;
    return Nnz;
 }
 
