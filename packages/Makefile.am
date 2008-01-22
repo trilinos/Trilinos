@@ -178,6 +178,10 @@ if BUILD_SACADO
 SACADO_SUBDIR = sacado
 endif
 
+if BUILD_STOKHOS
+STOKHOS_SUBDIR = stokhos
+endif
+
 if BUILD_TEUCHOS
 TEUCHOS_SUBDIR = teuchos
 endif
@@ -252,6 +256,7 @@ PACKAGE_NAMES = \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(FEI_SUBDIR)        \
+	$(STOKHOS_SUBDIR)       \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(RYTHMOS_SUBDIR)      \

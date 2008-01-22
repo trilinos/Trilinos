@@ -96,6 +96,9 @@
 /* Define if want to build shared */
 #undef HAVE_SHARED
 
+/* Define if want to build stokhos */
+#undef HAVE_STOKHOS
+
 /* Define if want to build stratimikos */
 #undef HAVE_STRATIMIKOS
 

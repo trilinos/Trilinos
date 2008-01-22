@@ -101,6 +101,8 @@ TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos, a transient integration package]
 
 TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado, an automatic differentation package], SACADO, no)
 
+TAC_ARG_ENABLE_FEATURE(stokhos, [Build stokhos, an intrusive stochastic Galerkin package], STOKHOS, no)
+
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos, a tools package], TEUCHOS, no)
 
 TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOp, a vector reduction/transformation operator package], RTOP, no)
@@ -146,6 +148,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_sacado" != "Xno" ||
+	test "X$ac_cv_use_stokhos" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
@@ -442,6 +445,17 @@ else
   BUILD_ML=no
 fi
 AM_CONDITIONAL(BUILD_ML, test "X$BUILD_ML" != "Xno")
+
+if test "X$ac_cv_use_stokhos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/stokhos])
+  BUILD_STOKHOS=yes
+  if test "X$ac_cv_use_stokhos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-stokhos"
+  fi
+else
+  BUILD_STOKHOS=no
+fi
+AM_CONDITIONAL(BUILD_STOKHOS, test "X$BUILD_STOKHOS" != "Xno")
 
 if test "X$ac_cv_use_sacado" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/sacado])
