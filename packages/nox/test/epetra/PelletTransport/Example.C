@@ -117,7 +117,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  cout << log(10) << endl;
+  cout << log(10.0) << endl;
 
   // Initialize MPI
 #ifdef HAVE_MPI
