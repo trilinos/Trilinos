@@ -109,6 +109,10 @@ THIRD_PARTY_INCPATH =
 # link ParMETIS into zdrive.
 ifdef PARMETIS_LIBPATH
   GDEFINES     += -DZOLTAN_PARMETIS
+  ifdef SCOTCH_LIBPATH
+    THIRD_PARTY_LIBS += -lptscotchparmetis -lptscotch -lscotch -lscotcherrcom -lcommon
+    THIRD_PARTY_LIBPATH += $(SCOTCH_LIBPATH)
+  endif	
   THIRD_PARTY_LIBS += -lparmetis -lmetis
   THIRD_PARTY_LIBPATH += $(PARMETIS_LIBPATH)
   THIRD_PARTY_INCPATH += $(PARMETIS_INCPATH)
