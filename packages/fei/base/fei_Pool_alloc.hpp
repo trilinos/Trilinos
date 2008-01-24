@@ -70,8 +70,14 @@ class fei_Pool_alloc {
   pointer allocate(size_type n, const void* hint = NULL);
   void deallocate(pointer p, size_type n);
 
+  template<typename U> void construct(U* p, const U& val)
+  { new(p) U(val); }
+
   void construct(pointer p, const T& val)
   { new(p) T(val); }
+
+  template<typename U> void destroy(U* p)
+  { p->~U(); }
 
   void destroy(pointer p)
   { p->~T(); }

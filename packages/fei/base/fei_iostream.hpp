@@ -41,7 +41,7 @@
 #define FEI_CERR cerr
 #define FEI_ENDL endl
 #else
-#error "must have <iostream> or <iostream.h>
+#error "must have <iostream> or <iostream.h>"
 #endif
 //endif for ifdef FEI_HAVE_IOSTREAM
 

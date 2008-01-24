@@ -298,7 +298,7 @@ int fei::Graph_Impl::getLocalRowLength(int row)
 //----------------------------------------------------------------------------
 int fei::Graph_Impl::getNumLocalRows()
 {
-  int numLocalRows = numLocalRows = localGraphData_->getMap().size();
+  int numLocalRows = localGraphData_->getMap().size();
 
   return(numLocalRows);
 }

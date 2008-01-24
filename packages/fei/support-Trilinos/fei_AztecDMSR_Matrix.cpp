@@ -569,7 +569,8 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     row = rows[i];
     if (!inUpdate(row, localRow)) {
       FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
-	 << " not in local update set." << FEI_ENDL;
+         << " not in local update set [" << update_[0] << " ... "
+         << update_[N_update_-1] << "]." << FEI_ENDL;
       return(-1);
     }
 
@@ -606,17 +607,17 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
       incol = incols[inoffset];
 
       if (incol == row) {
-	val[localRow] += coefs_i[indirect[inoffset++]];
-	continue;
+        val[localRow] += coefs_i[indirect[inoffset++]];
+        continue;
       }
 
       while(tmp_array_[rowOffset] != incol) {
-	++rowOffset;
-	if (rowOffset >= rowLength) {
-	  FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
+        ++rowOffset;
+        if (rowOffset >= rowLength) {
+          FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
              << incol << " not found in row " << row << FEI_ENDL;
           return(-1); 
-	}
+        }
       }
 
       rowCoefs[rowOffset++] += coefs_i[indirect[inoffset++]];
