@@ -185,7 +185,8 @@ SUB_VPATH	= ../include ../Utilities/shared \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree ../hier ../matrix \
 		  ../Utilities/Communication ../Utilities/Memory \
-                  ../Utilities/DDirectory ../Utilities/Timer
+                  ../Utilities/DDirectory ../Utilities/Timer \
+		  ../postprocessing/ordering
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb \
 		  -I../coloring -I../simple -I../oct  \
@@ -198,7 +199,7 @@ SUBINCPATH	= -I../include -I../Utilities/shared \
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
 		  coloring oct phg simple util \
                   hsfc parmetis params hier matrix \
-		  timer ha  reftree include
+		  timer ha  reftree include postprocessing/ordering
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory Utilities/Timer
 
@@ -375,6 +376,17 @@ ZCPPDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
 ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
 
+
+#Tool for computing ordering quality
+ifdef SCOTCH_LIBPATH
+OPP_CSRC	= mm_input.c order_eval.c
+OPP_INC		= mm_input.h order_eval.h
+OPP_OBJ		= $(OPP_CSRC:.c=.o)
+OPP_LIBS	= $(SCOTCH_LIBPATH) -lscotch -lscotcherrcom -lcommon -lrt
+OPP_INCLUDEPATH = $(SCOTCH_INCPATH)
+endif
+
+
 VIEW_OBJ        = vtk_view.o dr_input.o  dr_err.o
 WRITE_OBJ        = vtk_write.o dr_input.o  dr_err.o
 
@@ -504,6 +516,24 @@ zoltan:
 	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; 		\
 	then cp -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
 	fi
+
+
+ifdef SCOTCH_LIBPATH
+order_eval:
+	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cd $(ZOLTAN_OBJ_DIR); 			\
+	$(MAKE) order_eval                      \
+	"ZTARGET=order_eval"			\
+	"CC=$(CCOMP)" 				\
+	"VPATH=$(ZOLTAN_VPATH)"			\
+	"DEFS=$(OPP_INCLUDEPATH)"		\
+	"OBJ_FILES=$(OPP_OBJ)"			\
+	"MAIN_OBJ=$(OPP_OBJ)" 			\
+	"LNK_LIBS=$(OPP_LIBS)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
+endif
 
 vtk_view:
 	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
