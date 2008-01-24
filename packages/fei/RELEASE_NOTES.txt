@@ -403,7 +403,7 @@ July 7 2005: version 2.14.00
   - To get a copy of fei which matches what Sierra has for version 2.22, do a
     cvs checkout data 4:30pm on 1/11/2008.
 
- ??? ?? ???? minor version 2.22.01
+ Jan 28 2008 minor version 2.22.01
   - add a missing end-quote for line 44 of fei_iostream.hpp. This was causing a
     compile error on just one platform surprisingly (intel 8.1).
   - fixed a compile error that only showed up on Mac OS X, where fei_Pool_alloc.hpp
