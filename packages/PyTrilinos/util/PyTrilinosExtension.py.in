@@ -88,6 +88,10 @@ def makePyTrilinosExtensions(moduleName):
     define_macros.append(("HAVE_CONFIG_H","1"))
     if int(numpyVersion.split(".")[0]) > 0:
         define_macros.append(("NUMPY_NOPREFIX","1"))
+    if vars["ENABLE_TEUCHOS"] == "true":
+        define_macros.append(("HAVE_TEUCHOS","1"))
+    if vars["ENABLE_EPETRA"] == "true":
+        define_macros.append(("HAVE_EPETRA","1"))
     if moduleName == "ML":
         define_macros.append(("MLAPI_LC","1"))
 

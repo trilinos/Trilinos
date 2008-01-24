@@ -3,6 +3,8 @@ PyTrilinos To Do List
 =====================
 
 * General
+  - Any package with Directors should get %feature("director:except") ...
+    and catch(Swig::DirectorException &e) ...
   - Automatic -fPIC for shared library builds (3311)
   - Developers Manual
   - Can I get PyTrilinos to configure and build if Teuchos is
@@ -24,7 +26,6 @@ PyTrilinos To Do List
   - Examples
 
 * AztecOO
-  - exAztecOO_BasicRowMatrix.py in parallel
   - Unit tests
   - Examples
 

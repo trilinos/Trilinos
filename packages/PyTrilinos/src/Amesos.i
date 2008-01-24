@@ -74,6 +74,7 @@ exAmesos_Factory.py.
 #include "Amesos_ConfigDefs.h"
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #include "Epetra_Object.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_Comm.h"
@@ -89,12 +90,13 @@ exAmesos_Factory.py.
 #include "Epetra_LinearProblem.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_FEVbrMatrix.h"
+#endif
 
 // Teuchos includes
+#ifdef HAVE_TEUCHOS
 #include "Teuchos_RefCountPtrDecl.hpp"
-
-// Teuchos Python utility code
 #include "Teuchos_PythonParameter.h"
+#endif
 
 // Amesos includes
 #include "Amesos.h"
@@ -132,9 +134,11 @@ exAmesos_Factory.py.
 
 // Local includes
 #include "NumPyImporter.h"
+#ifdef HAVE_EPETRA
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 %}
 
@@ -151,8 +155,12 @@ exAmesos_Factory.py.
 %include "stl.i"
 
 // External Trilinos packages
+#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
+#endif
+#ifdef HAVE_EPETRA
 %import "Epetra.i"
+#endif
 
 // General exception handling
 %feature("director:except")

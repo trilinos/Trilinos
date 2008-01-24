@@ -52,6 +52,7 @@ linear algebra package Komplex:
 #include "PyTrilinos_config.h"
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
@@ -71,9 +72,12 @@ linear algebra package Komplex:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 // Teuchos Python utility code
+#ifdef HAVE_TEUCHOS
 #include "Teuchos_PythonParameter.h"
+#endif
 
 // IFPACK includes
 #include "Ifpack.h"
@@ -93,9 +97,13 @@ linear algebra package Komplex:
 %feature("autodoc", "1");
 
 // External Trilinos modules
+#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
+#endif
+#ifdef HAVE_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
+#endif
 
 //////////////////////////////////
 // IFPACK configuration support //

@@ -84,9 +84,12 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Teuchos includes
+#ifdef HAVE_TEUCHOS
 #include "Teuchos_PythonParameter.h"
+#endif
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -105,34 +108,12 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 // ML includes
 #include "ml_MultiLevelPreconditioner.h"
 #include "MLAPI.h"
 #include "MLAPI_PyMatrix.h"
-
-MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
-                                const MLAPI::MultiVector& ThisNS,
-                                MLAPI::MultiVector& NextNS,
-                                PyObject* obj)
-{   
-  Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
-  MLAPI::Operator Ptent;
-  MLAPI::GetPtent(A, *List, ThisNS, Ptent, NextNS);
-  delete List;
-  return(Ptent);
-}
-
-bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
-             const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
-             PyObject* obj)
-{
-  Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
-  if (List == NULL) return(false);
-  Krylov(A, LHS, RHS, Prec, *List);
-  delete List;
-  return(true);
-}
 
 %}
 
@@ -150,9 +131,13 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 %ignore *::operator[];
 
 // External Trilinos package imports
+#ifdef HAVE_TEUCHOS
+%import "Teuchos.i"
+#endif
+#ifdef HAVE_EPETRA
 %include "Epetra_RowMatrix_Utils.i"
-%import  "Teuchos.i"
 %import  "Epetra.i"
+#endif
 
 // General exception handling
 %feature("director:except")
@@ -189,6 +174,8 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 // ml_MultiLevelPreconditioner support //
 /////////////////////////////////////////
 %include "ml_MultiLevelPreconditioner.h"
+#ifdef HAVE_TEUCHOS
+#ifdef HAVE_EPETRA
 namespace ML_Epetra
 {
 %extend MultiLevelPreconditioner
@@ -212,6 +199,8 @@ namespace ML_Epetra
   }
 }
 }
+#endif
+#endif
 
 /////////////////////////////
 // MLAPI_Workspace support //
@@ -352,6 +341,7 @@ namespace MLAPI
 // MLAPI_Operator support //
 ////////////////////////////
 %include "MLAPI_Operator.h"
+#ifdef HAVE_EPETRA
 namespace MLAPI
 {
 %extend Operator
@@ -409,11 +399,13 @@ namespace MLAPI
   }
 }
 }
+#endif
 
 ///////////////////////////////////
 // MLAPI_InverseOperator support //
 ///////////////////////////////////
 %include "MLAPI_InverseOperator.h"
+#ifdef HAVE_TEUCHOS
 namespace MLAPI
 {
   %extend InverseOperator
@@ -433,6 +425,7 @@ namespace MLAPI
     }
   }
 }
+#endif
 
 //////////////////////////////////
 // MLAPI_Operator_Utils support //
@@ -442,7 +435,9 @@ namespace MLAPI
 //////////////////////////////////////
 // MLAPI_EpetraBaseOperator support //
 //////////////////////////////////////
+#ifdef HAVE_EPETRA
 %include "MLAPI_EpetraBaseOperator.h"
+#endif
 
 //////////////////////////
 // MLAPI_Krylov support //
@@ -472,6 +467,7 @@ namespace MLAPI
 ////////////////////////////
 // MLAPI_PyMatrix support //
 ////////////////////////////
+#ifdef HAVE_EPETRA
 %include "MLAPI_PyMatrix.h"
 %extend PyMatrix
 {
@@ -516,14 +512,35 @@ namespace MLAPI
     }
   }
 }
+#endif
 
-MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
-                                const MLAPI::MultiVector& ThisNS,
-                                MLAPI::MultiVector& NextNS,
-                                PyObject* obj);
-bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
-             const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
-             PyObject* obj);
+#ifdef HAVE_TEUCHOS
+%inline
+{
+  MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
+				  const MLAPI::MultiVector& ThisNS,
+				  MLAPI::MultiVector& NextNS,
+				  PyObject* obj)
+  {
+    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    MLAPI::Operator Ptent;
+    MLAPI::GetPtent(A, *List, ThisNS, Ptent, NextNS);
+    delete List;
+    return(Ptent);
+  }
+
+  bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
+	       const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
+	       PyObject* obj)
+  {
+    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    if (List == NULL) return(false);
+    Krylov(A, LHS, RHS, Prec, *List);
+    delete List;
+    return(true);
+  }
+}
+#endif
 
 %pythoncode
 %{

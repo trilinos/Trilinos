@@ -73,6 +73,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
@@ -97,9 +98,12 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 // Teuchos includes
+#ifdef HAVE_TEUCHOS
 #include "Teuchos_PythonParameter.h"
+#endif
 
 // Galeri includes
 #include "Galeri_Version.h"
@@ -123,8 +127,12 @@ example subdirectory of the PyTrilinos package:
 %include "stl.i"
 
 // Trilinos package imports
+#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
+#endif
+#ifdef HAVE_EPETRA
 %import "Epetra.i"
+#endif
 
 // General exception handling
 %feature("director:except")
@@ -184,6 +192,7 @@ __version__ = Galeri_Version().split()[2]
 ///////////////////////////
 // Galeri_ReadHB support //
 ///////////////////////////
+#ifdef HAVE_EPETRA
 %feature("autodoc",
 "ReadHB(str filename, Epetra.Comm comm) -> (Epetra.Map map, Epetra.CrsMatrix A,
                                            Epetra.Vector x, Epetra.Vector b,
@@ -195,6 +204,7 @@ tuple contains an Epetra.Map, Epetra.CrsMatrix, and Epetra.Vectors for
 the solution, right-hand side and the exact solution.")
 Galeri::ReadHB;
 %include "Galeri_ReadHB.h"
+#endif
 
 // Turn off the exception handling
 %exception;

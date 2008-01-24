@@ -91,12 +91,13 @@ package:
 #include "NumPyImporter.h"
 
 // Teuchos includes
+#ifdef HAVE_TEUCHOS
 #include "Teuchos_ScalarTraits.hpp"
-
-// Teuchos/python include
 #include "Teuchos_PythonParameter.h"
+#endif
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
@@ -132,6 +133,7 @@ package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 // Anasazi includes
 #include "AnasaziVersion.cpp"
@@ -159,7 +161,9 @@ package:
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
+#ifdef HAVE_EPETRA
 #include "AnasaziEpetraAdapter.hpp"
+#endif
 
 %}
 
@@ -181,7 +185,17 @@ package:
 
 // Support for other Trilinos packages
 %include "numpy.i"
+#ifdef HAVE_TEUCHOS
+#ifdef HAVE_EPETRA
 %include "Teuchos_Epetra.i"
+#else
+%include "Teuchos.i"
+#endif
+#else
+#ifdef HAVE_EPETRA
+%include "Epetra.i"
+#endif
+#endif
 
 // General exception handling
 %feature("director:except")
@@ -213,15 +227,19 @@ package:
 // Support these classes, encapsulated in a //
 // Teuchos::RCP<...>, as function arguments //
 //////////////////////////////////////////////
+#ifdef HAVE_TEUCHOS
+%teuchos_rcp_typemaps(Anasazi::MultiVec< double >)
+%teuchos_rcp_typemaps(Anasazi::OutputManager< double >)
+#ifdef HAVE_EPETRA
 %teuchos_rcp_typemaps(Epetra_MultiVector)
 %teuchos_rcp_typemaps(Epetra_Operator)
-%teuchos_rcp_typemaps(Anasazi::MultiVec< double >)
 %teuchos_rcp_typemaps(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)
 %teuchos_rcp_typemaps(Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >)
-%teuchos_rcp_typemaps(Anasazi::OutputManager< double >)
 %teuchos_rcp_typemaps(Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
 %teuchos_rcp_typemaps(Anasazi::OrthoManager< double, Epetra_MultiVector >)
 %teuchos_rcp_typemaps(Anasazi::MatOrthoManager< double, Epetra_MultiVector >)
+#endif
+#endif
 
 /////////////////////////////////////////////////////////////////////////
 // Anasazi returns eigenvalues in a std::vector< Anasazi::Value<       //
@@ -442,6 +460,7 @@ namespace std { struct ostream; }
 ///////////////////////////////////
 // Anasazi EpetraAdapter support //
 ///////////////////////////////////
+#ifdef HAVE_EPETRA
 %include "AnasaziEpetraAdapter.hpp"
 %ignore
 Anasazi::MultiVecTraits< double,
@@ -495,6 +514,7 @@ Anasazi::MultiVecTraits< double,
   Anasazi::LOBPCGSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
 %template(EigensolutionEpetra)
   Anasazi::Eigensolution< double, Epetra_MultiVector >;
+#endif
 
 /////////////////////////
 // std::vector support //

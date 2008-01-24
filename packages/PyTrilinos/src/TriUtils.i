@@ -68,6 +68,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
@@ -85,6 +86,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 // Trilinos utility includes
 #include "Trilinos_Util_CrsMatrixGallery.h"
@@ -105,7 +107,9 @@ example subdirectory of the PyTrilinos package:
 %ignore *::operator<< ;
 
 // Epetra interface includes
+#ifdef HAVE_EPETRA
 %import "Epetra.i"
+#endif
 
 // General exception handling
 %feature("director:except")
@@ -147,8 +151,10 @@ __version__ = TriUtils_Version().split()[2]
 /////////////////////////////////////////
 // Trilinos_Util_ReadHb2Epetra support //
 /////////////////////////////////////////
+#ifdef HAVE_EPETRA
 %rename (ReadHB) Trilinos_Util_ReadHb2Epetra;
 %include "Trilinos_Util_ReadHb2Epetra.cpp"
+#endif
 
 ////////////////////////////////////////////
 // Trilinos_Util_CrsMatrixGallery support //

@@ -69,6 +69,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Epetra includes
+#ifdef HAVE_EPETRA
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_FEVector.h"
@@ -87,6 +88,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#endif
 
 // AztecOO includes
 #include "AztecOO.h"
@@ -116,7 +118,9 @@ example subdirectory of the PyTrilinos package:
 %include "exception.i"
 
 // External Trilinos interface imports
+#ifdef HAVE_EPETRA
 %import "Epetra.i"
+#endif
 #ifdef HAVE_AZTECOO_TEUCHOS
 %import "Teuchos.i"
 #endif

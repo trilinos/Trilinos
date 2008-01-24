@@ -130,6 +130,7 @@ if HAVE_PYTRILINOS_TEUCHOS
 include $(top_builddir)/../teuchos/Makefile.export.teuchos
 TEUCHOS_INTERFACES = Teuchos.i
 TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
+SWIG_OPTS += -DHAVE_TEUCHOS
 endif
 
 # # Thyra
@@ -144,6 +145,7 @@ if HAVE_PYTRILINOS_EPETRA
 include $(top_builddir)/../epetra/Makefile.export.epetra
 EPETRA_INTERFACES = Epetra.i
 EPETRA_PROXIES = PyTrilinos/Epetra.py
+SWIG_OPTS += -DHAVE_EPETRA
 endif
 
 # TriUtils
