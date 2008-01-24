@@ -1037,6 +1037,54 @@ carefully, as a change to \verb!List! may modify the behavior of
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% table of aggregation options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{table}[tbh]
+%\begin{center}
+%\begin{tabular}{ | p{4cm} | p{10cm} | }
+%\hline
+%\verb!Uncoupled! & Attempts to construct
+%aggregates of optimal size ($3^d$ nodes in $d$ dimensions).
+%Each process works independently, and aggregates cannot span processes.\\
+%\verb!Coupled! & As \verb!Uncoupled!, but aggregates can span processes (deprecated).\\
+%\verb!MIS! & Uses a maximal independent set technique to define the
+%aggregates. Aggregates can span
+%processes. May provide better quality aggregates than either \verb!Coupled! or
+%\verb!uncoupled!.
+%Computationally more expensive than either because it requires
+%matrix-matrix product. \\
+%\verb!Uncoupled-MIS! & Uses \verb!Uncoupled! for all levels until there is $1$
+%aggregate per processor,  then switches over to \verb!MIS!.
+%The coarsening scheme on a given level cannot be specified with this option.\\
+%\verb!METIS! & Use a graph partitioning algorithm to creates the
+%aggregates, working process-wise. The number of nodes in each aggregate
+%is specified with the option {\tt aggregation: nodes per
+%  aggregate}. Requires \ML\ to be configured with {\tt
+%  --with-ml\_metis}. \\
+%\verb!ParMETIS! & As \verb!METIS!, but partition the global
+%graph. Requires {\tt --with-ml\_parmetis2x} or {\tt --with-ml\_parmetis3x}. Aggregates can span
+%arbitrary number of processes. Global number of aggregates can be
+%specified with the option {\tt aggregation: global number}. \\
+%\verb!VBMETIS! & As \verb!METIS!, but capable of handling matrices with a non 
+%constant nodal block size.
+%The appearing maximum number of degrees of freedom per nodal block is specified
+%in {\tt PDE equations}. Additional information on the layout of variable nodal blocks 
+%is required and specified using the arguments 
+%{\tt aggregation: nblocks}, 
+%{\tt aggregation: length blocks}, 
+%{\tt aggregation: blocks}, and 
+%{\tt aggregation: block\_pde}.
+%Also, a user specified null space has to be provided using
+%{\tt null space: vectors}.
+%The number of nodes in each aggregate
+%is specified with the option {\tt aggregation: nodes per
+%  aggregate}. 
+%  Requires \ML\ to be configured with {\tt
+%  --with-ml\_metis}. \\
+%\hline
+%\end{tabular}
+%\caption{ML\_Epetra::MultiLevelPreconditioner: Available coarsening schemes.}
+%\label{tab:ml:aggr}
+%\end{center}
+%\end{table}
 \begin{table}[tbh]
 \begin{center}
 \begin{tabular}{ | p{4cm} | p{10cm} | }
@@ -1044,41 +1092,40 @@ carefully, as a change to \verb!List! may modify the behavior of
 \verb!Uncoupled! & Attempts to construct
 aggregates of optimal size ($3^d$ nodes in $d$ dimensions).
 Each process works independently, and aggregates cannot span processes.\\
-\verb!Coupled! & As \verb!Uncoupled!, but aggregates can span processes (deprecated).\\
-\verb!MIS! & Uses a maximal independent set technique to define the
-aggregates. Aggregates can span
-processes. May provide better quality aggregates than either \verb!Coupled! or
-\verb!uncoupled!.
-Computationally more expensive than either because it requires
-matrix-matrix product. \\
+%\verb!Coupled! & As \verb!Uncoupled!, but aggregates can span processes (deprecated).\\
+\verb!MIS! & Uses maximal independent set technique \cite{supercomputing}
+to define aggregates. Aggregates can span
+processes. May provide better quality aggregates than
+% either \verb!Coupled! or \verb!uncoupled!.
+%Computationally more expensive than either because it requires
+\verb!uncoupled!, but computationally more expensive because it
+requires matrix-matrix product. \\
+%
 \verb!Uncoupled-MIS! & Uses \verb!Uncoupled! for all levels until there is $1$
-aggregate per processor,  then switches over to \verb!MIS!.
-The coarsening scheme on a given level cannot be specified with this option.\\
-\verb!METIS! & Use a graph partitioning algorithm to creates the
-aggregates, working process-wise. The number of nodes in each aggregate
-is specified with the option {\tt aggregation: nodes per
-  aggregate}. Requires \ML\ to be configured with {\tt
-  --with-ml\_metis}. \\
-\verb!ParMETIS! & As \verb!METIS!, but partition the global
+aggregate per processor,  then switches over to \verb!MIS!.\\
+%
+\verb!METIS! & Use graph partitioning algorithm to create
+aggregates, working process-wise. Number of nodes in each aggregate
+is specified with option {\tt aggregation: nodes per aggregate}.
+Requires {\tt --with-ml\_metis}.\\
+\verb!ParMETIS! & As \verb!METIS!, but partition global
 graph. Requires {\tt --with-ml\_parmetis2x} or {\tt --with-ml\_parmetis3x}. Aggregates can span
-arbitrary number of processes. Global number of aggregates can be
-specified with the option {\tt aggregation: global number}. \\
-\verb!VBMETIS! & As \verb!METIS!, but capable of handling matrices with a non 
-constant nodal block size.
+arbitrary number of processes. Specify global number of aggregates
+with {\tt aggregation: global number}. \\
+\verb!VBMETIS! & As \verb!METIS!, but for matrices with nonconstant
+nodal block size.
 The appearing maximum number of degrees of freedom per nodal block is specified
-in {\tt PDE equations}. Additional information on the layout of variable nodal blocks 
-is required and specified using the arguments 
-{\tt aggregation: nblocks}, 
-{\tt aggregation: length blocks}, 
-{\tt aggregation: blocks}, and 
+in {\tt PDE equations}. Additional information on layout of variable nodal blocks 
+is required via
+{\tt aggregation: nblocks},
+{\tt aggregation: length blocks},
+{\tt aggregation: blocks}, and
 {\tt aggregation: block\_pde}.
-Also, a user specified null space has to be provided using
+User-specified null space must be provided using
 {\tt null space: vectors}.
-The number of nodes in each aggregate
-is specified with the option {\tt aggregation: nodes per
-  aggregate}. 
-  Requires \ML\ to be configured with {\tt
-  --with-ml\_metis}. \\
+Number of nodes in each aggregate
+is specified with {\tt aggregation: nodes per aggregate}.
+Requires {\tt --with-ml\_metis}.\\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Available coarsening schemes.}
@@ -1089,44 +1136,97 @@ is specified with the option {\tt aggregation: nodes per
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% table of smoothing options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{table}[tbh]
+%\begin{center}
+%\begin{tabular}{ | p{4.5cm} | p{10cm} | }
+%\hline
+%\verb!Jacobi! & Point-Jacobi. Damping factor is specified using
+%{\tt smoother: damping factor}, and the number of sweeps with {\tt
+%  smoother: sweeps} \\ 
+%\verb!Gauss-Seidel! & Point Gauss-Seidel.  Damping factor is specified using
+%{\tt smoother: damping factor}, and the number of sweeps with {\tt
+% smoother: sweeps}.  For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available. \\
+%\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's internal
+%version.\\
+%\verb!symmetric Gauss-Seidel! & Point symmetric Gauss-Seidel.  Damping factor is specified using
+%{\tt smoother: damping factor}, and the number of sweeps with {\tt
+% smoother: sweeps}.
+%For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available. \\
+%\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
+%internal version.\\
+%\verb!Aztec! & Use \aztecoo's built-in preconditioning functions as
+%smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
+%approximate solutions with \aztecoo~(with {\tt smoothers: sweeps}
+%iterations as smoothers. 
+%The \aztecoo~vectors \verb!options! and {\tt params} can be set using
+%{\tt smoother: Aztec options} and {\tt smoother: Aztec params}.
+%See \S\ref{parameter list ex. 2} for an example of this.\\
+%\verb!Chebyshev! & Use Chebyshev smoother. The polynomial order is specified by {\tt
+%  \tt smoother: sweeps }. The smoother will damp errors between $\rho$ and $\rho/$alpha
+%  where $\rho$ is the spectral radius of $diag(A)^{-1} A$ and alpha is specified
+%  via {\tt smoother: Chebyshev alpha}.\\ 
+%\verb!user-defined! & User-defined smoothing function.  The function must conform to
+%the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
+% double *outvec)}. The number of sweeps is controlled via {\tt smoother: sweeps}. See
+%{\tt ml/examples/BasicExamples/ml\_user\_smoothing.cpp}.\\
+%\hline
+%\end{tabular}
+%\caption{ML\_Epetra::MultiLevelPreconditioner: Commonly used smoothers.} 
+%\label{tab:ml:smoother}
+%\end{center}
+%\end{table}
 \begin{table}[tbh]
 \begin{center}
 \begin{tabular}{ | p{4.5cm} | p{10cm} | }
 \hline
-\verb!Jacobi! & Point-Jacobi. Damping factor is specified using
-{\tt smoother: damping factor}, and the number of sweeps with {\tt
-  smoother: sweeps} \\ 
-\verb!Gauss-Seidel! & Point Gauss-Seidel.  Damping factor is specified using
-{\tt smoother: damping factor}, and the number of sweeps with {\tt
- smoother: sweeps}.  For matrices of type Epetra\_CrsMatrix, the \ifpack\
-implementation is automatically used, if available. \\
-\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's internal
-version.\\
-\verb!symmetric Gauss-Seidel! & Point symmetric Gauss-Seidel.  Damping factor is specified using
-{\tt smoother: damping factor}, and the number of sweeps with {\tt
- smoother: sweeps}.
-For matrices of type Epetra\_CrsMatrix, the \ifpack\
-implementation is automatically used, if available. \\
-\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
-internal version.\\
-\verb!Aztec! & Use \aztecoo's built-in preconditioning functions as
-smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
-approximate solutions with \aztecoo~(with {\tt smoothers: sweeps}
-iterations as smoothers. 
-The \aztecoo~vectors \verb!options! and {\tt params} can be set using
-{\tt smoother: Aztec options} and {\tt smoother: Aztec params}.
-See \S\ref{parameter list ex. 2} for an example of this.\\
-\verb!Chebyshev! & Use Chebyshev smoother. The polynomial order is specified by {\tt
-  \tt smoother: sweeps }. The smoother will damp errors between $\rho$ and $\rho/$alpha
-  where $\rho$ is the spectral radius of $diag(A)^{-1} A$ and alpha is specified
+\verb!Jacobi!                    & Point-Jacobi.
+Specify damping factor with {\tt smoother: damping factor}.\\
+%
+\verb!Gauss-Seidel!              & Point Gauss-Seidel.
+Specify damping factor with {\tt smoother: damping factor}.\\
+%
+\verb!symmetric Gauss-Seidel!    & Point symmetric Gauss-Seidel.
+Specify damping factor with {\tt smoother: damping factor}.\\
+%
+\verb!Chebyshev!                 & Use Chebyshev smoother. Specify polynomial order
+by {\tt \tt smoother: sweeps }. Smoother will damp errors between $\rho$ and
+$\rho/\alpha$, where $\rho$ is spectral radius of $diag(A)^{-1} A$ and $\alpha$ is specified
   via {\tt smoother: Chebyshev alpha}.\\ 
-\verb!user-defined! & User-defined smoothing function.  The function must conform to
-the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
- double *outvec)}. The number of sweeps is controlled via {\tt smoother: sweeps}. See
-{\tt ml/examples/BasicExamples/ml\_user\_smoothing.cpp}.\\
+%
+%\verb!ML Gauss-Seidel! & Same as \verb!Gauss-Seidel!, but forces the use of ML's internal
+%version.\\
+%For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available. \\
+%
+%\verb!ML symmetric Gauss-Seidel! & Same as \verb!symmetric Gauss-Seidel!, but forces the use of ML's
+%internal version.\\
+%
+\verb!IC!, \verb!ILU!,
+\verb!ICT!, \verb!ILUT!          & Local (processor-based) incomplete
+factorization methods from \ifpack.  See Ifpack manual
+\cite{Ifpack-Ref-Guide} for a complete description of
+these methods.  See \S\ref{smoothing parameters} for associated
+\ML\ parameter list options.\\
+%
+\verb!Aztec!                     & Use \aztecoo's built-in preconditioners as
+smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
+an \aztecoo\ Krylov method as smoother.
+\aztecoo~vectors \verb!options! and {\tt params} can be set using
+{\tt smoother: Aztec options} and {\tt smoother: Aztec params}.
+See \S\ref{parameter list ex. 2} for an example.\\
+%
+\verb!user-defined!              & User-defined smoothing function with
+prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
+ double *outvec)}.  See \ML\ example {\tt ml\_user\_smoothing.cpp}.\\
 \hline
 \end{tabular}
-\caption{ML\_Epetra::MultiLevelPreconditioner: Commonly used smoothers.} 
+\caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used smoothers.
+Unless otherwise noted, number of sweeps is specified with {\tt smoother: sweeps}.
+In {\tt Gauss-Seidel} and {\tt symmetric Gauss-Seidel},
+\ifpack\ implementation is automatically used (if available)
+for matrices of type Epetra\_CrsMatrix.}
 \label{tab:ml:smoother}
 \end{center}
 \end{table}
@@ -1134,28 +1234,75 @@ the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% table of coarse solver options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{table}[tbh]
+%\begin{center}
+%\begin{tabular}{ | p{4.5cm} | p{10cm} | }
+%\hline
+%\verb!Jacobi! & Use {\tt coarse: sweeps} steps of Jacobi (with damping
+%parameter {\tt coarse: damping parameter}) as a solver. \\
+%\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel (with
+%damping parameter {\tt coarse: damping parameter}) as a solver.
+%For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available. \\
+%\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's
+%internal version.\\
+%\verb!symmetric Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of symmetric
+%Gauss-Seidel (with damping parameter {\tt coarse: damping parameter}) as a
+% solver.  For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available. \\
+%\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
+%internal version.\\
+%\verb!Chebyshev! & Use degree {\tt coarse: sweeps} Chebyshev polynomial
+%             as a solver. \\
+%\verb!Hiptmair! & Use {\tt coarse: sweeps} steps of two-stage Hiptmair
+%             smoothing taking {\tt coarse: node sweeps} 
+%             (or {\tt coarse: edge sweeps}) iterations with method
+%             {\tt coarse: subsmoother type} to solve the nodal (or edge) subproblem.\\
+%\verb!Amesos-KLU! & Use \klu\ through \amesos. Coarse grid problem is shipped to
+% proc 0, solved, and solution is broadcast \\
+%\verb!Amesos-Superlu! & Use \superlu, version $3.0$, through \amesos. \\
+%\verb!Amesos-UMFPACK! & Use \umfpack\ through \amesos. Coarse grid problem is shipped to
+% proc 0, solved, and solution is broadcasted. \\
+%\verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
+%\verb!Amesos-MUMPS! & Use double precision version of \mumps~through
+%\amesos. \\
+%\verb!user-defined! & User-defined smoothing function.  The function must conform to
+%the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
+% double *outvec)}. The number of sweeps is controlled via {\tt coarse: sweeps}. See
+%{\tt ml/examples/BasicExamples/ml\_user\_smoothing.cpp}.\\
+%\verb!SuperLU! & Use \ML\ interface to \superlu (deprecated). \\
+%\hline
+%\end{tabular}
+%\caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
+%matrix solvers. Note: Amesos solvers requires 
+%  \ML\ to be configured with {\tt with-ml\_amesos}, and Amesos to be
+%  properly configured to support the specified solver.}
+%\label{tab:ml:coarse}
+%\end{center}
+%\end{table}
 \begin{table}[tbh]
 \begin{center}
 \begin{tabular}{ | p{4.5cm} | p{10cm} | }
 \hline
-\verb!Jacobi! & Use {\tt coarse: sweeps} steps of Jacobi (with damping
-parameter {\tt coarse: damping parameter}) as a solver. \\
-\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel (with
-damping parameter {\tt coarse: damping parameter}) as a solver.
-For matrices of type Epetra\_CrsMatrix, the \ifpack\
-implementation is automatically used, if available. \\
-\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's
-internal version.\\
-\verb!symmetric Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of symmetric
-Gauss-Seidel (with damping parameter {\tt coarse: damping parameter}) as a
- solver.  For matrices of type Epetra\_CrsMatrix, the \ifpack\
-implementation is automatically used, if available. \\
-\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
-internal version.\\
+\verb!Jacobi! & Point Jacobi. Specify damping with
+{\tt coarse: damping factor}.\\
+%
+\verb!Gauss-Seidel! & Point Gauss-Seidel. Specify
+damping with {\tt coarse: damping factor}.\\
+%For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available. \\
+%\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's
+%internal version.\\
+%
+\verb!symmetric Gauss-Seidel! & Symmetric point Gauss-Seidel.
+Specify damping with {\tt coarse: damping factor}.\\
+%For matrices of type Epetra\_CrsMatrix, the \ifpack\
+%implementation is automatically used, if available.\\
+%\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
+%internal version.\\
 \verb!Chebyshev! & Use degree {\tt coarse: sweeps} Chebyshev polynomial
              as a solver. \\
-\verb!Hiptmair! & Use {\tt coarse: sweeps} steps of two-stage Hiptmair
-             smoothing taking {\tt coarse: node sweeps} 
+\verb!Hiptmair! & Two-stage Hiptmair smoother. Take {\tt coarse: node sweeps} 
              (or {\tt coarse: edge sweeps}) iterations with method
              {\tt coarse: subsmoother type} to solve the nodal (or edge) subproblem.\\
 \verb!Amesos-KLU! & Use \klu\ through \amesos. Coarse grid problem is shipped to
@@ -1166,17 +1313,22 @@ internal version.\\
 \verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
-\verb!user-defined! & User-defined smoothing function.  The function must conform to
-the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
- double *outvec)}. The number of sweeps is controlled via {\tt coarse: sweeps}. See
-{\tt ml/examples/BasicExamples/ml\_user\_smoothing.cpp}.\\
+\verb!user-defined! & User-defined smoothing function with prototype
+{\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
+ double *outvec)}.  See \ML\ example {\tt ml\_user\_smoothing.cpp}.\\
 \verb!SuperLU! & Use \ML\ interface to \superlu (deprecated). \\
 \hline
 \end{tabular}
-\caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
-matrix solvers. Note: Amesos solvers requires 
-  \ML\ to be configured with {\tt with-ml\_amesos}, and Amesos to be
-  properly configured to support the specified solver.}
+\caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used coarse
+matrix solvers.
+Unless otherwise noted, number of sweeps is specified with {\tt coarse: sweeps}.
+To use Amesos solvers, 
+\ML\ must be configured with {\tt with-ml\_amesos}, and Amesos must
+be properly configured.
+In {\tt Gauss-Seidel} and {\tt symmetric Gauss-Seidel},
+\ifpack\ implementation is automatically used (if available)
+for matrices of type Epetra\_CrsMatrix.
+}
 \label{tab:ml:coarse}
 \end{center}
 \end{table}
@@ -1338,6 +1490,16 @@ If the finest level is 0 and there are 5 levels,
 {\tt METIS} for level 1 and {\tt MIS} for level 3.
 Parameters that can be set differently on individual levels are denoted
 with the symbol $\star$ (this symbol is not part of the parameter name).
+
+% template for parameter list entry
+%   \choicebox{\tt}
+%   {
+%   %type
+%   [{\tt}]
+%   %description
+%   %default value
+%   Default: {\tt}.
+%   }
 
 %-----------------------------%
 \subsubsection{General Options}
@@ -1559,6 +1721,37 @@ reference-counted pointer to {\sc Aztec}'s params vector (only for {\tt Aztec}
   solvers will be used as smoothers. If false, only the {\sc Aztec}'s
   preconditioner function will be used as smoother (only for {\tt Aztec}
   smoother). Default: {\tt false}.}
+
+\choicebox{\tt smoother: ifpack level-of-fill $\star$}
+{
+[{\tt double}]
+Specifies fill-level for \ifpack\ incomplete factorization methods.  \ML\ will
+internally interpret this as an integer where appropriate.
+Default: {\tt 0.0}.
+}
+
+\choicebox{\tt smoother: ifpack overlap $\star$}
+{
+[{\tt int}]
+Specifies subdomain overlap if \ifpack\ smoothers are used.
+Default: {\tt 1}.
+}
+
+\choicebox{\tt smoother: ifpack relative threshold $\star$}
+{
+[{\tt double}]
+Specifies relative threshold for perturbing matrix diagonal.
+See \cite{Ifpack-Ref-Guide} for details.
+Default: {\tt $1.0$}.
+}
+
+\choicebox{\tt smoother: ifpack absolute threshold $\star$}
+{
+[{\tt double}]
+Specifies absolute threshold for perturbing matrix diagonal.
+See \cite{Ifpack-Ref-Guide} for details.
+Default: {\tt $0.0$}.
+}
 
 \choicebox{\tt smoother: Chebyshev alpha $\star$}{[{\tt double}] 
 {\tt Chebyshev} smoother will damps errors between $\rho$ and $\rho/$alpha
