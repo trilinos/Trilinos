@@ -12,7 +12,7 @@ RUN (beowulf-nightly-serial) {
     INVOKE-CONFIGURE    = linux-beowulf;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    SSG-USERNAME        = jmwille;
 
 }
 
@@ -30,12 +30,12 @@ RUN (beowulf-nightly-mpi) {
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 12;
-    MPI-START           = lamboot /home/mnphenow/.lamhosts;
+    MPI-START           = lamboot;
     MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
     MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    SSG-USERNAME        = jmwille;
 
 }
 
@@ -53,7 +53,7 @@ RUN (beowulf-nightly-tarball-create) {
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf-tarball-create;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    SSG-USERNAME        = jmwille;
 
 }
 
@@ -71,12 +71,12 @@ RUN (beowulf-nightly-tarball-test) {
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 12;
-    MPI-START           = lamboot /home/mnphenow/.lamhosts;
+    MPI-START           = lamboot;
     MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
     MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    SSG-USERNAME        = jmwille;
 
 }
 
@@ -95,7 +95,7 @@ RUN (beowulf-coverage) {
    #TEST-CATEGORY       = COVERAGE; # set up later
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    SSG-USERNAME        = jmwille;
 
 }
 
@@ -392,8 +392,8 @@ RUN (s858352-nightly-serial) {
     COMM                = serial;
     INVOKE-CONFIGURE    = darwin-s858352;
     TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    TTR-DIR             = /Users/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
 
 }
 
@@ -412,8 +412,8 @@ RUN (s858352-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 4;
     MPI-GO              = mpirun -x DYLD_LIBRARY_PATH -np ;
-    TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
+    TTR-DIR             = /Users/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
 
 }
 
