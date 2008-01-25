@@ -41,14 +41,55 @@ void CubatureDirect<Scalar>::getCubature(int &                            numCub
                                          const ECell                      cellType,
                                          const int                        degree) const {
 
-  EFrame cubPointFrame = FRAME_REFERENCE;
+  //EFrame cubPointFrame = FRAME_REFERENCE;
 
   int cubatureIndex = getIndex(cellType, degree);
 
   numCubPoints = cubature_data_[cubatureIndex].numPoints_;
 
-  Scalar x[3];
   int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType);
+
+  Point<Scalar> tempPoint(cellDim);
+  cubPoints.assign(numCubPoints,tempPoint);
+  cubWeights.assign(numCubPoints,0.0);
+
+  getCubature(cubPoints, cubWeights, cellType, degree);
+
+  //Scalar x[3];
+
+  /*for (int pointId = 0; pointId < numCubPoints; pointId++) {
+    for (int dim = 0; dim < cellDim; dim++) {
+      x[dim] = cubature_data_[cubatureIndex].points_[pointId][dim];
+    }
+    cubWeights[pointId] = cubature_data_[cubatureIndex].weights_[pointId];
+    cubPoints[pointId].setCoordinates(x,cellDim);
+    cubPoints[pointId].setFrameKind(cubPointFrame);
+  }*/
+  
+} // end getCubature
+
+
+
+template <class Scalar>
+void CubatureDirect<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
+                                         Teuchos::Array<Scalar>&          cubWeights,
+                                         const ECell                      cellType,
+                                         const int                        degree) const {
+
+  EFrame cubPointFrame = FRAME_REFERENCE;
+
+  int cubatureIndex = getIndex(cellType, degree);
+
+  int numCubPoints = cubature_data_[cubatureIndex].numPoints_;
+
+  // check size of cubPoints and cubWeights
+  TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints ) || ( (int)cubWeights.size() < numCubPoints ) ),
+                      std::out_of_range,
+                      ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
+
+  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType);
+
+  Scalar x[3];
 
   for (int pointId = 0; pointId < numCubPoints; pointId++) {
     for (int dim = 0; dim < cellDim; dim++) {

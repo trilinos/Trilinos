@@ -49,6 +49,8 @@ test_01 \
 test_02 \
 test_03 \
 test_04 \
+test_05 \
+test_06 \
 Dummy
 
 # Dependencies used when rebuilding tests without building everything from scratch.
@@ -62,6 +64,12 @@ test_03_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 test_04_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+test_05_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+test_06_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -80,6 +88,14 @@ test_03_CXXFLAGS = -I$(srcdir)
 test_04_SOURCES = test_04.cpp
 test_04_LDADD = $(EXPORT_LIBS)
 test_04_CXXFLAGS = -I$(srcdir)
+
+test_05_SOURCES = test_05.cpp
+test_05_LDADD = $(EXPORT_LIBS)
+test_05_CXXFLAGS = -I$(srcdir)
+
+test_06_SOURCES = test_06.cpp
+test_06_LDADD = $(EXPORT_LIBS)
+test_06_CXXFLAGS = -I$(srcdir)
 
 Dummy_SOURCES = Dummy
 Dummy$(EXEEXT): $(srcdir)/Dummy

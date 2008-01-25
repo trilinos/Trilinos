@@ -97,7 +97,7 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  myCub->getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  myCub->getCubature(cubPoints, cubWeights, cellType, cubDegree);
 
   for (int i=0; i<numCubPoints; i++) {
     val += computeMonomial(cubPoints[i], xDeg, yDeg)*cubWeights[i];

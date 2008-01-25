@@ -82,7 +82,7 @@ double computeIntegral(ECell cellType, int cubDegree, int polyDegree) {
         cubPoints.assign(numCubPoints,tempPoint);
         cubWeights.assign(numCubPoints,0.0);
 
-        dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+        dCub.getCubature(cubPoints, cubWeights, cellType, cubDegree);
 
         for (int i=0; i<numCubPoints; i++) {
           val += computeMonomial(cubPoints[i], polyDegree)*cubWeights[i];

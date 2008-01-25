@@ -83,7 +83,7 @@ double computeRefVolume(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  myCub->getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  myCub->getCubature(cubPoints, cubWeights, cellType, cubDegree);
 
   for (int i=0; i<numCubPoints; i++)
     vol += cubWeights[i];

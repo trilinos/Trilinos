@@ -39,6 +39,8 @@
 #include "Intrepid_Utils.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 using namespace Intrepid;
 
@@ -63,12 +65,11 @@ double computeMonomial(Point<double> p, int xDeg, int yDeg=0, int zDeg=0) {
 /*
   Computes integrals of monomials over a given reference cell.
 */
-double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zDeg) {
+void computeIntegral(Teuchos::Array<double>& testIntFixDeg, ECell cellType, int cubDegree) {
 
   Teuchos::RCP< Cubature<double> > myCub;  
   CubatureDirect<double> dCub;
   CubatureTensor<double> tCub;
-  double val = 0.0;
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
@@ -93,9 +94,11 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zD
   } // end switch
 
   int numCubPoints = myCub->getNumPoints(cellType, cubDegree);
+  int numPolys     = (cubDegree+1)*(cubDegree+2)*(cubDegree+3)/6;
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
+  Teuchos::SerialDenseMatrix<int, double> functValues(numPolys, numCubPoints);
 
   Point<double> tempPoint(ambientDim);
   cubPoints.assign(numCubPoints,tempPoint);
@@ -103,11 +106,24 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zD
 
   myCub->getCubature(cubPoints, cubWeights, cellType, cubDegree);
 
-  for (int i=0; i<numCubPoints; i++) {
-    val += computeMonomial(cubPoints[i], xDeg, yDeg, zDeg)*cubWeights[i];
+  int polyCt = 0;
+  for (int xDeg=0; xDeg <= cubDegree; xDeg++) {
+    for (int yDeg=0; yDeg <= cubDegree-xDeg; yDeg++) {
+      for (int zDeg=0; zDeg <= cubDegree-xDeg-yDeg; zDeg++) {
+        for (int i=0; i<numCubPoints; i++) {
+          functValues(polyCt,i) = computeMonomial(cubPoints[i], xDeg, yDeg, zDeg);
+        }
+        polyCt++;
+      }
+    }
   }
 
-  return val;
+  Teuchos::BLAS<int, double> myblas;
+  int inc = 1;
+  double alpha = 1.0;
+  double beta  = 0.0;
+  myblas.GEMV(Teuchos::NO_TRANS, numPolys, numCubPoints, alpha, functValues.values(), numPolys,
+              &cubWeights[0], inc, beta, &testIntFixDeg[0], inc);
 }
 
 
@@ -133,7 +149,7 @@ int main(int argc, char *argv[]) {
   << "|                 Unit Test (CubatureDirect,CubatureTensor)                   |\n" \
   << "|                                                                             |\n" \
   << "|     1) Computing integrals of monomials on reference cells in 3D            |\n" \
-  << "|                - no BLAS, i.e. standard addition loops -                    |\n" \
+  << "|                         - using Level 2 BLAS -                              |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -142,7 +158,7 @@ int main(int argc, char *argv[]) {
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
   << "===============================================================================\n"\
-  << "| TEST 1: integrals of monomials in 3D (non-BLAS version)                     |\n"\
+  << "| TEST 1: integrals of monomials in 3D (Level 2 BLAS version)                 |\n"\
   << "===============================================================================\n";
 
   // >>> ASSUMPTION: max polynomial degree integrated exactly is the same for
@@ -184,16 +200,9 @@ int main(int argc, char *argv[]) {
       std::ifstream filecompare(&filename[cellCt][0]);
       // compute integrals
       for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
-        polyCt = 0;
-        testInt[cubDeg].resize((cubDeg+1)*(cubDeg+2)*(cubDeg+3)/6);
-        for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
-          for (int yDeg=0; yDeg <= cubDeg-xDeg; yDeg++) {
-            for (int zDeg=0; zDeg <= cubDeg-xDeg-yDeg; zDeg++) {
-              testInt[cubDeg][polyCt] = computeIntegral(testType[cellCt], cubDeg, xDeg, yDeg, zDeg);
-              polyCt++; 
-            }
-          }
-        }
+        int numMonomials = (cubDeg+1)*(cubDeg+2)*(cubDeg+3)/6; 
+        testInt[cubDeg].resize(numMonomials);
+        computeIntegral(testInt[cubDeg], testType[cellCt], cubDeg);
       }
       // get analytic values
       if (filecompare.is_open()) {
