@@ -164,13 +164,16 @@
 
   int methodName(PyObject* Rows, PyObject* Cols, PyObject* Values)
   {
-    int numValEntries;
     int numRowEntries;
     int numColEntries;
+    int numValEntries;
     int result=0;
     PyArrayObject * rowArray = NULL;
     PyArrayObject * colArray = NULL;
     PyArrayObject * valArray = NULL;
+    int newRows = 0;
+    int newCols = 0;
+    int newVals = 0;
 
     if (!self->HaveColMap())
     {
@@ -179,21 +182,22 @@
       goto fail;
     }
 
-    // Create the array of values
-    valArray = (PyArrayObject*) PyArray_ContiguousFromObject(Values,'d',0,0);
-    if (valArray == NULL) goto fail;
-    numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
-
     // Create the array of rows
-    rowArray = (PyArrayObject*) PyArray_ContiguousFromObject(Rows,'i',0,0);
+    rowArray = obj_to_array_allow_conversion(Rows,PyArray_INT,&newRows);
     if (rowArray == NULL) goto fail;
     numRowEntries = (int) PyArray_MultiplyList(rowArray->dimensions,rowArray->nd);
 
     // Create the array of cols
-    colArray = (PyArrayObject*) PyArray_ContiguousFromObject(Cols,'i',0,0);
+    colArray = obj_to_array_allow_conversion(Cols,PyArray_INT,&newCols);
     if (colArray == NULL) goto fail;
     numColEntries = (int) PyArray_MultiplyList(colArray->dimensions,colArray->nd);
 
+    // Create the array of values
+    valArray = obj_to_array_allow_conversion(Values,PyArray_DOUBLE,&newVals);
+    if (valArray == NULL) goto fail;
+    numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+
+    // Error checking
     if(numValEntries != numColEntries || numValEntries != numRowEntries || 
        numRowEntries != numColEntries)
     {
@@ -203,6 +207,8 @@
       goto fail;
     }
 
+    // Loop over the (row,col) pairs, assigning the corresponding
+    // value to the matrix
     for(int i = 0 ; i < numValEntries ; ++i)
     {
       double Value = ((double*)valArray->data)[i];
@@ -212,14 +218,14 @@
       result = self->methodName(Row, 1, &Value, &Col);
       if(result < 0) goto fail;
     }
-    Py_DECREF(valArray);
-    Py_DECREF(rowArray);
-    Py_DECREF(colArray);
+    if (newRows) Py_DECREF(rowArray);
+    if (newCols) Py_DECREF(colArray);
+    if (newVals) Py_DECREF(valArray);
     return result;
   fail:
-    Py_XDECREF(valArray);
-    Py_XDECREF(rowArray);
-    Py_XDECREF(colArray);
+    if (newRows) Py_XDECREF(rowArray);
+    if (newCols) Py_XDECREF(colArray);
+    if (newVals) Py_XDECREF(valArray);
     return -1;
   }
 }
