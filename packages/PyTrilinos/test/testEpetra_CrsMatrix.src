@@ -262,8 +262,8 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
             for i in range(len(values)):
                 self.assertEqual(values[i],refValues[i])
 
-    def testInsertGlobalValues(self):
-        "Test Epetra.CrsMatrix InsertGlobalValues method"
+    def testInsertGlobalValues1(self):
+        "Test Epetra.CrsMatrix InsertGlobalValues method, single row"
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         self.fillMatrixGlobal(crsm)  # This calls crsm.InsertGlobalValues()
         n = self.size
@@ -272,6 +272,23 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
             if grid in (0,n-1): numEntries = 2
             else:               numEntries = 3
             self.assertEqual(crsm.NumGlobalEntries(grid), numEntries)
+
+    def testInsertGlobalValues2(self):
+        "Test Epetra.CrsMatrix InsertGlobalValues method, multiple rows"
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 1)
+        #e0   = self.rowMap.MyGlobalElements()[ 0]
+        #e1   = self.rowMap.MyGlobalElements()[-1] + 1
+        #rows = array(range(e0, e1))
+        #cols = array(range(e0, e1))
+        rows = self.rowMap.MyGlobalElements()
+        cols = self.rowMap.MyGlobalElements()
+        vals = zeros( (self.rowMap.NumMyElements(),) )
+        vals[:] = pi
+        crsm.InsertGlobalValues(rows,cols,vals)
+        crsm.FillComplete()
+        for lrid in range(crsm.NumMyRows()):
+            grid = crsm.GRID(lrid)
+            self.assertEqual(crsm[grid,grid], pi)
 
     def testInsertGlobalValuesBad1(self):
         "Test Epetra.CrsMatrix InsertGlobalValues method for bad values"
