@@ -178,7 +178,7 @@ void update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorBase<Sca
 /** \brief alpha[j-1]*beta*U(j) + V(j) - > V(j), for j = 0 ... U.domain()->dim()-1
  */
 template<class Scalar>
-void update( Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V );
+void update( const Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V );
 
 /** \brief U(j) + alpha[j-1]*beta*V(j) - > V(j), for j = 0 ... U.domain()->dim()-1
  */

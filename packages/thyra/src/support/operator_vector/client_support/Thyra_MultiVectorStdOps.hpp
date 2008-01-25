@@ -219,7 +219,7 @@ void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorB
 }
 
 template<class Scalar>
-void Thyra::update( Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
+void Thyra::update( const Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
