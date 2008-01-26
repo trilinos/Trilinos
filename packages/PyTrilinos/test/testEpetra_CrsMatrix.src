@@ -282,7 +282,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         #cols = array(range(e0, e1))
         rows = self.rowMap.MyGlobalElements()
         cols = self.rowMap.MyGlobalElements()
-        vals = zeros( (self.rowMap.NumMyElements(),) )
+        vals = zeros( (self.rowMap.NumMyElements(),), dtype=float )
         vals[:] = pi
         crsm.InsertGlobalValues(rows,cols,vals)
         crsm.FillComplete()
