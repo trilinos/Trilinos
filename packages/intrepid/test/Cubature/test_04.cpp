@@ -205,17 +205,19 @@ int main(int argc, char *argv[]) {
       for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
         polyCt = 0;
         offset = 0;
+        int oldErrorFlag = errorFlag;
         for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
           for (int yDeg=0; yDeg <= cubDeg-xDeg; yDeg++) {
             for (int zDeg=0; zDeg <= cubDeg-xDeg-yDeg; zDeg++) {
               double abstol = ( analyticInt[polyCt+offset][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyCt+offset][0]) );
               double absdiff = std::fabs(analyticInt[polyCt+offset][0] - testInt[cubDeg][polyCt]);
-              *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
-                         << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
-                         << " * z^" << std::setw(2) << zDeg << ":" << "   "
-                         << std::scientific << std::setprecision(16) << testInt[cubDeg][polyCt] << "   " << analyticInt[polyCt+offset][0] << "   "
-                         << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
               if (absdiff > abstol) {
+                *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
+                           << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
+                           << " * z^" << std::setw(2) << zDeg << ":" << "   "
+                           << std::scientific << std::setprecision(16)
+                           << testInt[cubDeg][polyCt] << "   " << analyticInt[polyCt+offset][0] << "   "
+                           << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
                 errorFlag++;
                 *outStream << std::right << std::setw(118) << "^^^^---FAILURE!\n";
               }
@@ -225,7 +227,11 @@ int main(int argc, char *argv[]) {
           }
           offset = offset + (INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg)*(INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg + 1)/2;
         }
-        *outStream << "\n";
+        *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg;
+        if (errorFlag == oldErrorFlag)
+         *outStream << " passed.\n";
+        else
+         *outStream << " failed.\n";
       }
       *outStream << "\n";
     }  // end for cellCt

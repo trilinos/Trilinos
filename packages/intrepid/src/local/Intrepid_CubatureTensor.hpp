@@ -28,8 +28,8 @@
 // @HEADER
 
 /** \file   Intrepid_CubatureTensor.hpp
-\brief  Header file for the Intrepid::CubatureTensor class.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Header file for the Intrepid::CubatureTensor class.
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #ifndef INTREPID_CUBATURE_TENSOR_HPP

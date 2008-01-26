@@ -28,8 +28,8 @@
 // @HEADER
 
 /** \file   Intrepid_CubatureDirectDef.hpp
-\brief  Definition file for the Intrepid::CubatureDirect class.
-\author Created by P. Bochev, D. Ridzal, and D. Day.
+    \brief  Definition file for the Intrepid::CubatureDirect class.
+    \author Created by P. Bochev, D. Ridzal, and D. Day.
 */
 
 namespace Intrepid {
@@ -41,8 +41,6 @@ void CubatureDirect<Scalar>::getCubature(int &                            numCub
                                          const ECell                      cellType,
                                          const int                        degree) const {
 
-  //EFrame cubPointFrame = FRAME_REFERENCE;
-
   int cubatureIndex = getIndex(cellType, degree);
 
   numCubPoints = cubature_data_[cubatureIndex].numPoints_;
@@ -51,21 +49,9 @@ void CubatureDirect<Scalar>::getCubature(int &                            numCub
 
   Point<Scalar> tempPoint(cellDim);
   cubPoints.assign(numCubPoints,tempPoint);
-  cubWeights.assign(numCubPoints,0.0);
+  cubWeights.assign(numCubPoints,(Scalar)0);
 
   getCubature(cubPoints, cubWeights, cellType, degree);
-
-  //Scalar x[3];
-
-  /*for (int pointId = 0; pointId < numCubPoints; pointId++) {
-    for (int dim = 0; dim < cellDim; dim++) {
-      x[dim] = cubature_data_[cubatureIndex].points_[pointId][dim];
-    }
-    cubWeights[pointId] = cubature_data_[cubatureIndex].weights_[pointId];
-    cubPoints[pointId].setCoordinates(x,cellDim);
-    cubPoints[pointId].setFrameKind(cubPointFrame);
-  }*/
-  
 } // end getCubature
 
 
@@ -99,7 +85,6 @@ void CubatureDirect<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
     cubPoints[pointId].setCoordinates(x,cellDim);
     cubPoints[pointId].setFrameKind(cubPointFrame);
   }
-  
 } // end getCubature
 
 
@@ -156,7 +141,6 @@ int CubatureDirect<Scalar>::getIndex(const ECell cellType,
   }
 
   return cubatureIndex;
-
 } // end getIndex
 
 

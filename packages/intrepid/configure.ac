@@ -297,13 +297,23 @@ TAC_ARG_ENABLE_FEATURE(examples, [Make examples for all Trilinos packages builda
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( intrepid, examples, [Make Intrepid examples buildable with 'make examples'], NEW_PACKAGE_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_intrepid_examples" != "Xno")
 
-#We now build tests and examples through separate make targets, rather than
-#during "make".  We still need to conditionally include the test and example
-#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
-#defined, so that the tests and examples are included in the distribution
-#tarball.
+# We now build tests and examples through separate make targets, rather than
+# during "make".  We still need to conditionally include the test and example
+# in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+# defined, so that the tests and examples are included in the distribution
+# tarball.
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
+
+
+# ------------------------------------------------------------------------
+# Check to see if the intrepid debug mode has been enabled. In this mode,
+# the basic 1-3D linear algebra constructors and operations are
+# boundschecked. Other low-level checks are also enabled.
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( intrepid, debug, [Enable intrepid debug mode],
+                INTREPID_DEBUG, no)
+
 
 
 # ------------------------------------------------------------------------

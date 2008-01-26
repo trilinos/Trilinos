@@ -33,18 +33,34 @@
 */
 
 #include "Intrepid_RealSpace.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RCP.hpp"
 
 using namespace std;
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
-  cout \
+
+  // This little trick lets us print to std::cout only if
+  // a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+
+  // Save the format state of the original std::cout.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
+
+  *outStream \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
-  << "|                       Example use of the Point class                        |\n" \
+  << "|                              Unit Test (Point)                              |\n" \
   << "|                                                                             |\n" \
-  << "|    1) Creating Point objects in 1D, 2D and 3D                               |\n" \
-  << "|    2) Arithmetic, norm and distance operations on Points                    |\n" \
+  << "|     1) Point creation, math operations                                      |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -52,18 +68,41 @@ int main(int argc, char *argv[]) {
   << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
-  << "===============================================================================\n\n";
+  << "===============================================================================\n"\
+  << "| TEST 1: point creation, math operations                                     |\n"\
+  << "===============================================================================\n";
+
+  int errorFlag = 0;
   
-  cout.precision(16);
-  cout \
-    << "\tThis machine's epsilon from Teuchos =" << INTREPID_EPSILON <<endl \
-    << "\tINTREPID_THRESHOLD = " << INTREPID_THRESHOLD << endl \
-    << "===============================================================================\n"\
-    << "| EXAMPLE 1: class Point in 3D                                                |\n"\
-    << "===============================================================================\n\n";
   // Create arrays of coefficients
   double vec[]  = {1.0, 2.0, 3.0};
   double vec2[] = {-4.0, -1.0, 10.0};
+
+  try{
+    Point<double> p01(1);
+    Point<double> p02(2);
+    Point<double> p03(3);
+    Point<double> p04(vec, 1);
+    Point<double> p05(vec, 2);
+    Point<double> p06(vec, 3);
+    p06.setCoordinates(vec2, 3);
+    p06.distance(p03);
+    p06[2];
+    p06 = p03;
+    p06 += p03;
+    p06 ^= p03;
+    p06 -= p03;
+    p06 ^ p06;
+    p06 - p06;
+    p06 + p06;
+    p06 * p06;
+    p06[0] * p06;
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1;
+  };
+  
   
   // Using constructor that takes pointer, dimension and uses default for the frame kind.
   Point<double> p1(vec, 3);

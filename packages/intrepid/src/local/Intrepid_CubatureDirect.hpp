@@ -28,8 +28,8 @@
 // @HEADER
 
 /** \file   Intrepid_CubatureDirect.hpp
-\brief  Header file for the Intrepid::CubatureDirect class.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Header file for the Intrepid::CubatureDirect class.
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #ifndef INTREPID_CUBATURE_DIRECT_HPP

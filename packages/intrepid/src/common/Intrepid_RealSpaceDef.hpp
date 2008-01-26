@@ -27,220 +27,287 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-\brief Definition file for utility classes providing basic linear algebra functionality.
-\author Created by P. Bochev, D. Ridzal, and D. Day.
+/** \file   Intrepid_RealSpaceDef.hpp
+    \brief  Definition file for utility classes providing basic linear algebra functionality.
+    \author Created by P. Bochev, D. Ridzal, and D. Day.
 */
-
-#include <Teuchos_Array.hpp>
 
 
 namespace Intrepid {
-  //===========================================================================//
-  //                                                                           //
-  //              Member function definitions of the class Point.              //
-  //                                                                           //
-  //===========================================================================//
-  template<class Scalar>
-  Point<Scalar>::Point(const Point<Scalar>& right) {
-    data_.resize(right.getDim());
-    data_ = right.data_;
-    frameKind_ = right.frameKind_;
-  }
-  
-  template<class Scalar>
-  Point<Scalar>::Point(const int dim,
-                       const EFrame frameKind): frameKind_(frameKind) {
-    assert(0 < dim && dim <= INTREPID_MAX_DIMENSION);
-    data_.assign(dim, (Scalar)0);
-  }
 
-  template<class Scalar>
-  Point<Scalar>::Point(const Scalar x,
-                       const EFrame frameKind) : frameKind_(frameKind) {
-    data_.resize(1);
-    data_[0] = x;
-  }
-  
-  template<class Scalar>
-  Point<Scalar>::Point(const Scalar x, 
-                       const Scalar y, 
-                       const EFrame frameKind) : frameKind_(frameKind)  {
-    data_.resize(2);
-    data_[0] = x;
-    data_[1] = y;
-  }
-  
-  template<class Scalar>
-  Point<Scalar>::Point(const int x, 
-                       const int y, 
-                       const EFrame frameKind) : frameKind_(frameKind)  {
-    data_.resize(2);
-    data_[0] = (Scalar)x;
-    data_[1] = (Scalar)y;
-  }
-  
-  template<class Scalar>
-  Point<Scalar>::Point(const Scalar x, 
-                       const Scalar y, 
-                       const Scalar z, 
-                       const EFrame frameKind) : frameKind_(frameKind)  {
-    data_.resize(3);
-    data_[0] = x;
-    data_[1] = y;
-    data_[2] = z;
-  }
-  
-  template<class Scalar>
-  Point<Scalar>::Point(const Scalar* dataPtr, 
-                       const int dim, 
-                       const EFrame frameKind) : frameKind_(frameKind)  {
-    assert(0 < dim && dim <= INTREPID_MAX_DIMENSION);
-    data_.assign(dataPtr, dataPtr + dim);
-  }
-  
-  template<class Scalar>
-  inline int Point<Scalar>::getDim() const {
-    return data_.size();
-  }
-  
-  template<class Scalar>
-  inline EFrame Point<Scalar>::getFrameKind() const {
-    return frameKind_;
-  }
-  
-  template<class Scalar>
-  inline const char* Point<Scalar>::getFrameName() const {
-    return FrameNames[frameKind_];
-  }
+//===========================================================================//
+//                                                                           //
+//              Member function definitions of the class Point.              //
+//                                                                           //
+//===========================================================================//
 
-  template<class Scalar>
-  inline const Teuchos::Array<Scalar> & Point<Scalar>::getCoordinates() const {
-    return data_;
+template<class Scalar>
+Point<Scalar>::Point(const Point<Scalar>& right) {
+  data_.resize(right.getDim());
+  data_ = right.data_;
+  frameKind_ = right.frameKind_;
+}
+  
+template<class Scalar>
+Point<Scalar>::Point(const int dim,
+                     const EFrame frameKind): frameKind_(frameKind) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (dim < 1) || (dim > INTREPID_MAX_DIMENSION) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid dim argument.");
+#endif
+  data_.assign(dim, (Scalar)0);
+}
+
+template<class Scalar>
+Point<Scalar>::Point(const Scalar x,
+                     const EFrame frameKind) : frameKind_(frameKind) {
+  data_.resize(1);
+  data_[0] = x;
+}
+  
+template<class Scalar>
+Point<Scalar>::Point(const Scalar x, 
+                     const Scalar y, 
+                     const EFrame frameKind) : frameKind_(frameKind)  {
+  data_.resize(2);
+  data_[0] = x;
+  data_[1] = y;
+}
+  
+template<class Scalar>
+Point<Scalar>::Point(const int x, 
+                     const int y, 
+                     const EFrame frameKind) : frameKind_(frameKind)  {
+  data_.resize(2);
+  data_[0] = (Scalar)x;
+  data_[1] = (Scalar)y;
+}
+  
+template<class Scalar>
+Point<Scalar>::Point(const Scalar x, 
+                     const Scalar y, 
+                     const Scalar z, 
+                     const EFrame frameKind) : frameKind_(frameKind)  {
+  data_.resize(3);
+  data_[0] = x;
+  data_[1] = y;
+  data_[2] = z;
+}
+  
+template<class Scalar>
+Point<Scalar>::Point(const Scalar* dataPtr, 
+                     const int dim, 
+                     const EFrame frameKind) : frameKind_(frameKind)  {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (dim < 1) || (dim > INTREPID_MAX_DIMENSION) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid dim argument.");
+#endif
+  data_.assign(dataPtr, dataPtr + dim);
+}
+  
+template<class Scalar>
+inline int Point<Scalar>::getDim() const {
+  return data_.size();
+}
+  
+template<class Scalar>
+inline EFrame Point<Scalar>::getFrameKind() const {
+  return frameKind_;
+}
+  
+template<class Scalar>
+inline const char* Point<Scalar>::getFrameName() const {
+  return FrameNames[frameKind_];
+}
+
+template<class Scalar>
+inline const Teuchos::Array<Scalar> & Point<Scalar>::getCoordinates() const {
+  return data_;
+}
+  
+template<class Scalar>
+inline void Point<Scalar>::setCoordinates(const Scalar* dataPtr, 
+                                          const int targetDim) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this->getDim() != targetDim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid targetDim argument.");
+#endif
+  for(int dim = 0; dim < targetDim; dim++){
+    data_[dim] = dataPtr[dim];
   }
+}
   
-  template<class Scalar>
-  inline void Point<Scalar>::setCoordinates(const Scalar* dataPtr, 
-                                     const int targetDim) {
-    assert(this -> getDim() == targetDim);
-    for(int dim = 0; dim < targetDim; dim++){
-      data_[dim] = dataPtr[dim];
-    }
+template<class Scalar>
+inline void Point<Scalar>::setFrameKind(const EFrame newFrameKind) {
+  frameKind_ = newFrameKind;
+}
+  
+  
+template<class Scalar>
+Scalar Point<Scalar>::distance(const Point& endPoint) const {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this->getDim() != endPoint.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid endPoint dimension.");
+#endif
+  Scalar temp = (Scalar)0.0;
+  for(unsigned int i = 0; i < data_.size(); i++) 
+  {
+    Scalar diff = data_[i] - endPoint.data_[i];
+    temp += diff*diff; 
   }
+  return (Scalar)std::sqrt(temp);
+}
   
-  template<class Scalar>
-  inline void Point<Scalar>::setFrameKind(const EFrame newFrameKind) {
-    frameKind_ = newFrameKind;
+template<class Scalar>
+Scalar Point<Scalar>::norm(ENorm normType) const{
+  Scalar temp = (Scalar)0;
+  switch(normType) {
+    case NORM_TWO:
+      for(int i = 0; i < this -> getDim(); i++){
+        temp += data_[i]*data_[i]; 
+      }
+      temp = std::sqrt(temp);
+      break;
+    case NORM_INF:
+      temp = std::abs(data_[0]);
+      for(int i = 1; i < this -> getDim(); i++){
+        Scalar absData = std::abs(data_[i]);
+        if (temp < absData) temp = absData; 
+      }
+      break;
+    case NORM_ONE:
+      for(int i = 0; i < this ->getDim(); i++){
+        temp += std::abs(data_[i]); 
+      }
+      break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Point): Invalid argument normType.");
+#endif
+     ;
   }
+  return temp;
+}
   
+template<class Scalar>
+const Scalar & Point<Scalar>::operator [] (const int coordinateId) const {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (coordinateId < 0) || (coordinateId >= this->getDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid coordinateId argument.");
+#endif
+  return data_[coordinateId];
+}
   
-  template<class Scalar>
-  Scalar Point<Scalar>::distance(const Point& endPoint) const {
-    assert (data_.size() == endPoint.data_.size());
-    Scalar temp = (Scalar)0.0;
-    for(unsigned int i = 0; i < data_.size(); i++) 
-    {
-      Scalar diff = data_[i] - endPoint.data_[i];
-      temp += diff*diff; 
-    }
-    return (Scalar)std::sqrt(temp);
-  }
-  
-  template<class Scalar>
-  Scalar Point<Scalar>::norm(ENorm normType) const{
-    Scalar temp = (Scalar)0.0;
-    switch(normType) {
-      case NORM_TWO:
-        for(int i = 0; i < this -> getDim(); i++){
-          temp += data_[i]*data_[i]; 
-        }
-          return std::sqrt(temp);
-        break;
-      case NORM_INF:
-        temp = std::abs(data_[0]);
-        for(int i = 1; i < this -> getDim(); i++){
-          Scalar absData = std::abs(data_[i]);
-          if (temp < absData) temp = absData; 
-        }
-        return temp;
-        break;
-      case NORM_ONE:
-        for(int i = 0; i < this ->getDim(); i++){
-          temp += std::abs(data_[i]); 
-        }
-        return temp;
-        break;
-      default:
-        return 0;
-    }
-  }
-  
-  template<class Scalar>
-  const Scalar & Point<Scalar>::operator [] (const int coordinateId) const {
-    return data_[coordinateId];
-  }
-  
-  template<class Scalar>
-  inline Point<Scalar> & Point<Scalar>::operator = (const Point<Scalar>& right)
+template<class Scalar>
+inline Point<Scalar> & Point<Scalar>::operator = (const Point<Scalar>& right)
 {
-    assert(this != &right);            // check for self-assignment
-    assert(getDim()==right.getDim());  // dimensions must match    
-    data_ = right.data_;
-    frameKind_ = right.frameKind_;      // changes point type of left!
-    return *this;
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid right-hand side to '='. Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( this->getDim() != right.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid dimension of right-hand side argument to '='.");
+#endif
+  data_ = right.data_;
+  frameKind_ = right.frameKind_;      // changes point type of left!
+  return *this;
 }
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator += (const Point<Scalar>& right)
 {
-  assert(this != &right);  // check for self-assignment
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid right-hand side to '+='. Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( this->getDim() != right.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid dimension of right-hand side argument to '+='.");
+#endif
   switch (getDim()) {      // does not change point type of left!
     case 3:
       data_[0] += right.data_[0];
       data_[1] += right.data_[1];
       data_[2] += right.data_[2];
-      return *this;
+      break;
     case 2:
       data_[0] += right.data_[0];
       data_[1] += right.data_[1];
-      return *this;
-    default: // case 1
+      break;
+    case 1:
       data_[0] += right.data_[0];
-      return *this;
+      break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Point): Invalid point dimension.");
+#endif
+      ;
   }
+  return *this;
 }
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator ^= (const Point<Scalar>& right)
 {                                       // Does not change frameKind_!
-  assert(this != &right);               // check for self-assignment
-  assert(getDim()==3);                  // cross product only in 3D
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid right-hand side to '^='. Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( (this->getDim() != 3) || (right.getDim() != 3) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid dimension of operands. Cross product defined only in 3D.");
+#endif
   Teuchos::Array<Scalar> tmp(3);
   tmp[0] = data_[1]*right.data_[2]-data_[2]*right.data_[1];
   tmp[1] = data_[2]*right.data_[0]-data_[0]*right.data_[2];
   tmp[2] = data_[0]*right.data_[1]-data_[1]*right.data_[0];
-  data_   = tmp;
+  data_  = tmp;
   return *this;
 }
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator -= (const Point<Scalar>& right)
 {                                         // Does not change frameKind_!
-  assert(this != &right);                 // check for self-assignment
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ( this == &right ),
+                        std::invalid_argument,
+                        ">>> ERROR (Point): Invalid right-hand side to '-='. Self-assignment prohibited.");
+    TEST_FOR_EXCEPTION( ( this->getDim() != right.getDim() ),
+                        std::invalid_argument,
+                        ">>> ERROR (Point): Invalid dimension of right-hand side argument to '-='.");
+#endif
   switch (getDim()) {
     case 3:
       data_[0] -= right.data_[0];
       data_[1] -= right.data_[1];
       data_[2] -= right.data_[2];
-      return *this;
+      break;
     case 2:
       data_[0] -= right.data_[0];
       data_[1] -= right.data_[1];
-      return *this;
-    default: // case 1
+      break;
+    case 1:
       data_[0] -= right.data_[0];
-      return *this;
+      break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Point): Invalid point dimension.");
+#endif
+      ;
   }
+  return *this;
 }
 
 template<class Scalar>
@@ -251,16 +318,25 @@ inline Point<Scalar> & Point<Scalar>::operator *= (const Scalar left)
       data_[0] *= left;
       data_[1] *= left;
       data_[2] *= left;
-      return *this;
+      break;
     case 2:
       data_[0] *= left;
       data_[1] *= left;
-      return *this;
-    default: // case 1
+      break;
+    case 1:
       data_[0] *= left;
-      return *this;
+      break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Point): Invalid point dimension.");
+#endif
+      ;
   }
+  return *this;
 }
+
 //===========================================================================//
 //                                                                           //
 //           END of member definitions; START friends and related            //
@@ -297,26 +373,42 @@ const Point<Scalar> operator * (const Scalar left, const Point<Scalar>& right) {
 
 template<class Scalar>
 const Scalar operator * (const Point<Scalar>& left, const Point<Scalar>& right) {
-  assert(left.getDim()==right.getDim());
-  Scalar result;
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( left.getDim() != right.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Nonmatching dimensions. Points must be of the same size.");
+#endif
+  Scalar result = (Scalar)0;
   switch (left.getDim()) {
     case 3:
       result = left.getCoordinates()[0]*right.getCoordinates()[0] +
       left.getCoordinates()[1]*right.getCoordinates()[1] +
       left.getCoordinates()[2]*right.getCoordinates()[2];
-      return result;
+      break;
     case 2:
       result = left.getCoordinates()[0]*right.getCoordinates()[0] +
       left.getCoordinates()[1]*right.getCoordinates()[1];
-      return result;
-    default: // case 1
+      break;
+    case 1:
       result = left.getCoordinates()[0]*right.getCoordinates()[0];
-      return result;
+      break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (left.getDim() != 1) && (left.getDim() != 2) && (left.getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Point): Invalid point dimension.");
+#endif
+      ;
   }
+  return result;
 }
 
 template<class Scalar>
 std::ostream& operator << (std::ostream& os, const Point<Scalar>& point) {
+  // Save the format state of the original ostream os.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(os);  
+
   os.setf(std::ios_base::scientific, std::ios_base::floatfield);
   os.setf(std::ios_base::right);
   os.precision(4);
@@ -326,7 +418,11 @@ std::ostream& operator << (std::ostream& os, const Point<Scalar>& point) {
   for (int j=0; j < dim; j++) {
     os << std::setw(12) << point.getCoordinates()[j];
   }
-  std::cout << ")";
+  os << ")";
+
+  // reset format state of os
+  os.copyfmt(oldFormatState);
+
   return os;
 }
 

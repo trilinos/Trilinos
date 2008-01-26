@@ -27,9 +27,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-\brief Header file for classes providing basic linear algebra functionality in 1D, 2D and 3D
-\author Created by P. Bochev, D. Ridzal, and D. Day.
+/** \file   Intrepid_RealSpace.hpp
+    \brief  Header file for classes providing basic linear algebra functionality in 1D, 2D and 3D.
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #ifndef INTREPID_REALSPACE_HPP
@@ -38,13 +38,16 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Intrepid {
   
   /** \class Intrepid::Point
-  \brief Implementation of a point in 1,2, and 3D Euclidean space with Caretsian coordinates. 
+  \brief Implementation of a point in 1-, 2-, and 3-dimensional Euclidean space with Cartesian coordinates. 
+
   Provides basic vector space operations. A Point object stores the Cartesian coordinates
-  and the frame kind (physical or reference) of the point. The frame kind is enumerated type EFrame
+  and the frame kind (physical or reference) of the point. The frame kind is of the enumerated type EFrame
   defined in Intrepid::Intrepid_Types. The default frame is FRAME_PHYSICAL which means that the Point
   instance represents a point in the "physical" space. FRAME_REFERENCE indicates that the point is
   in a "reference" cell, i.e., one of the standard cells used in FEM reconstructions. 
@@ -59,9 +62,9 @@ namespace Intrepid {
   
   I/O operators are also overloaded, and may be useful for debugging.  
   */
-  template<class Scalar>
-  class Point {
-private:
+template<class Scalar>
+class Point {
+  private:
     
     /** \brief Array with coordinates of the point
     */
@@ -71,160 +74,165 @@ private:
     */
     EFrame frameKind_;
     
-public:
+  public:
       
-      /** \brief Default destructor.
-      */
-      ~Point() {};
+    /** \brief Default destructor.
+    */
+    ~Point() {};
     
     /** \brief Default constructor.
-      */
+    */
     Point() {
       data_.resize(0); 
       frameKind_ = FRAME_PHYSICAL;
     };
     
     /** \brief Copy constructor.
-      */
+    */
     Point(const Point& right);
     
     /** \brief Create a 1-3D Point (vector) and initialize by zero.
-      */
+    */
     Point(const int dim, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Create a 1D Point based on one Scalar coordinate.
-      */
+    */
     Point(const Scalar x, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Create a 2D Point based on two Scalar coordinates.
-      */
+    */
     Point(const Scalar x, 
           const Scalar y, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
-    /** \brief Create a 2D Point based on two int coordinates. This constructor helps to avoid 
-      undesired behavior when the user specifies two int coordinates. Without this constructor, the 
-      first int coordinate is interpreted as a pointer and the wrong ctor, based on a Scalar pointer 
-      and dimension, is invoked.
-      */
+    /** \brief Create a 2D Point based on two int coordinates.
+
+        This constructor helps to avoid undesired behavior when the user specifies
+        two int coordinates. Without this constructor, the first int coordinate is interpreted
+        as a pointer and the wrong ctor, based on a Scalar pointer and dimension, is invoked.
+    */
     Point(const int x, 
           const int y, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Create a 3D Point based on three Scalar coordinates.
-      */
+    */
     Point(const Scalar x, 
           const Scalar y, 
           const Scalar z, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Create a 1-3D Point based on a Scalar pointer and dimension.
-      */
+    */
     Point(const Scalar* dataPtr, 
           const int dim, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Return dimension of the Point.
-      */
+    */
     int getDim() const;
     
     /** \brief Returns the frame kind (reference or physical) of a Point
-      */
+    */
     EFrame getFrameKind() const;
     
     /** \brief Returns a string with the name of the frame kind.
-      */
+    */
     const char* getFrameName() const;
     
     /** \brief Returns const reference to data member containing the Point coordinates.
-      */
+    */
     const Teuchos::Array<Scalar> & getCoordinates() const;
     
     /** \brief Load 1-3D Point with new coordinate data, do not change its frame kind.
-      */
+    */
     void setCoordinates(const Scalar* dataPtr,
                         const int dim);
     
     /** \brief Changes the frame kind (PHYSICAL or REFERENCE) of the Point instance.
-      */
+    */
     void setFrameKind(const EFrame newFrameKind);
     
     /** \brief Returns Euclidian distance from <var>*this</var> to <var>endPoint</var>.
-      */
+    */
     Scalar distance(const Point& endPoint) const;
     
     /** \brief Returns the norm (1,2 or infinity) of the Point.
-      */
+    */
     Scalar norm(ENorm normType) const;
     
     /** \brief   Overloaded [] operator.
-      */
+    */
     const Scalar & operator [] (const int coordinateId) const;
     
     /** \brief Assignment operator <var>*this = right</var>.
-      */
+    */
     Point& operator  = (const Point& right);
     
     /** \brief Cross (vector) product <var>*this = *this</var> X <var>right</var>.
-      */
+    */
     Point& operator ^= (const Point& right);
     
     /** \brief Addition <var>*this = *this + right</var>.
-      */
+    */
     Point& operator += (const Point& right);
     
     /** \brief Subtraction <var>*this = *this - right</var>.
-      */
+    */
     Point& operator -= (const Point& right);
     
     /** \brief Scalar multiplication <var>*this = left</var> * <var>(*this)</var>.
-      */
+    */
     Point& operator *= (const Scalar left);
-  }; // class Point
+}; // end class Point
   
-  /** \relates Point
-  Cross product.
-  */
-  template<class Scalar>
-    const Point<Scalar> operator ^ (const Point<Scalar>& left, const Point<Scalar>& right);
+/////////////////// Function declarations related to class Point:
+
+/** \relates Point
+    Cross product.
+*/
+template<class Scalar>
+const Point<Scalar> operator ^ (const Point<Scalar>& left, const Point<Scalar>& right);
   
-  /** \relates Point
+/** \relates Point
     Addition.
-    */
-  template<class Scalar>
-    const Point<Scalar> operator + (const Point<Scalar>& left, const Point<Scalar>& right);
+*/
+template<class Scalar>
+const Point<Scalar> operator + (const Point<Scalar>& left, const Point<Scalar>& right);
   
-  /** \relates Point
+/** \relates Point
     Subtraction.
-    */
-  template<class Scalar>
-    const Point<Scalar> operator - (const Point<Scalar>& left, const Point<Scalar>& right);
+*/
+template<class Scalar>
+const Point<Scalar> operator - (const Point<Scalar>& left, const Point<Scalar>& right);
   
-  /** \relates Point
+/** \relates Point
     Scalar multiplication.
-    */
-  template<class Scalar>
-    const Point<Scalar> operator * (const Scalar left, const Point<Scalar>& right);
+*/
+template<class Scalar>
+const Point<Scalar> operator * (const Scalar left, const Point<Scalar>& right);
   
-  /** \relates Point
+/** \relates Point
     Dot product.
-    */
-  template<class Scalar>
-    const Scalar operator * (const Point<Scalar>& left, const Point<Scalar>& right);
+*/
+template<class Scalar>
+const Scalar operator * (const Point<Scalar>& left, const Point<Scalar>& right);
   
-  /** \relates Point
+/** \relates Point
     Outputs a formated stream representing a Point. For debugging purposes.
-    */
-  template<class Scalar>
-    std::ostream& operator << (std::ostream& os, const Point<Scalar>& point);
-  // end function declarations related to class Point
+*/
+template<class Scalar>
+  std::ostream& operator << (std::ostream& os, const Point<Scalar>& point);
+
+////////////////// end function declarations related to class Point
   
   
-  /** \class Intrepid::Matrix
-    \brief Implementation of a matrix in 1, 2, and 3D Euclidean space. Provides methods and 
-    overloaded operators for basic matrix algebra:
+/** \class Intrepid::Matrix
+    \brief Implementation of a matrix in 1-, 2-, and 3-dimensional Euclidean space.
+
+    Provides methods and overloaded operators for basic matrix algebra:
     
     \arg getElement extracts an entry
     \arg getColumn extracts a column as a Point object
@@ -234,13 +242,14 @@ public:
     \arg * product of a Matrix and a Point (left Matrix multiply) 
     \arg * product of two Matrix objects
     \arg etc.
-    */
-  template<class Scalar>
-    class Matrix{
-private:
+*/
+template<class Scalar>
+class Matrix{
+  private:
       //std::vector< std::vector<Scalar> > elements_;
       Teuchos::Array< Teuchos::Array<Scalar> > elements_;
-public:
+
+  public:
       
       /** \brief Default destructor.
       */
@@ -251,135 +260,157 @@ public:
       Matrix() {elements_.resize(0);};
       
       /** \brief Copy constructor.
-        */
+      */
       Matrix(const Matrix& right);
       
       /** \brief Create <var>dim</var>-by-<var>dim</var> zero matrix.
-        */
+      */
       Matrix(const int dim);
       
       /** \brief Create <var>dim</var>-by-<var>dim</var> matrix, and fill it with Scalars  
-        referenced by <var>dataPtr</var>. It is assumed that the Scalars are ordered by 
-        row, i.e., if dim = 3, dataPtr contains
-                                                    | a b c |
-        (a, b, c, d ,e, f, g, h, i), then  Matrix = | d e f |
-                                                    | g h i |
-        */
+                 referenced by <var>dataPtr</var>.
+
+          It is assumed that the Scalars are ordered by row, i.e., for dim = 3, if <var>dataPtr</var> contains
+          \code
+          (a, b, c, d ,e, f, g, h, i),
+          \endcode
+          then
+          \code
+                   | a b c |
+          Matrix = | d e f |
+                   | g h i |
+          \endcode
+      */
       Matrix(const Scalar* dataPtr, const int dim);
       
       
-      /** \brief Fills an existing <var>dim</var>-by-<var>dim</var> matrix with Scalars referenced 
-        by <var>dataPtr</var>. It is assumed that the scalars are ordered by row.
-        */
+      /** \brief Fills an existing <var>dim</var>-by-<var>dim</var> matrix with Scalars
+                 referenced by <var>dataPtr</var>.
+
+          It is assumed that the Scalars are ordered by row, i.e., for dim = 3, if <var>dataPtr</var> contains
+          \code
+          (a, b, c, d ,e, f, g, h, i),
+          \endcode
+          then
+          \code
+                   | a b c |
+          Matrix = | d e f |
+                   | g h i |
+          \endcode
+      */
       void setElements(const Scalar* dataPtr, const int dim);
       
       /** \brief Return matrix dimension.
-        */
+      */
       int getDim() const;
       
-      /** \brief Return Scalar element in <var>rowID</var>-th row,  <var>colID</var>-th column.
-        */
+      /** \brief Return Scalar element in <var>rowID</var>-th row, <var>colID</var>-th column.
+      */
       Scalar getElement(int rowID, int colID) const;
       
       /** \brief Return <var>colID</var>-th column as Point.
-        */
+      */
       Point<Scalar> getColumn(int colID) const;
       
       /** \brief Return <var>rowID</var>-th row as Point.
-        */
+      */
       Point<Scalar> getRow(int rowID) const;
             
       /** \brief Returns transposed matrix.
-        */
+      */
       Matrix getTranspose() const;
       
       /** \brief Returns inverse matrix.
-        */
+      */
       Matrix getInverse() const;
       
       /** \brief In-place transpose. This is a mutator, i.e. it will change the data of <var>*this</var>.
-        */
+      */
       void transpose(); // mutator
 
       /** \brief Compute determinant.
-        */
+      */
       Scalar det() const;
       
-      /** \brief Returns 1, Infinity or Frobenius norm of the Matrix object.
-        */
+      /** \brief Returns 1-, Infinity- or Frobenius norm of the Matrix object.
+      */
       Scalar norm(ENorm normType) const;
       
       
       /** \brief In-place inverse. This is a mutator, i.e. it will change the data of <var>*this</var>.
-        */
+      */
       void invert(); // mutator
       
       /** \brief Assignment operator <var>*this = right</var>.
-        */
+      */
       Matrix& operator = (const Matrix& right);
       
       /** \brief Addition <var>*this = *this + right</var>.
-        */
+      */
       Matrix& operator += (const Matrix& right);
       
       /** \brief Subtraction <var>*this = *this - right</var>.
-        */
+      */
       Matrix& operator -= (const Matrix& right);
       
       /** \brief Scalar multiplication <var>*this = left</var> * <var>(*this)</var>.
-        */
+      */
       Matrix& operator *= (const Scalar left);
       
     }; // class Matrix
 
-  /** \relates Matrix
+
+/////////////////// Function declarations related to class Matrix:
+
+/** \relates Matrix
     Overloaded matrix addition.
-    */
-  template<class Scalar>
-    const Matrix<Scalar> operator + (const Matrix<Scalar>& left, 
-                                     const Matrix<Scalar>& right);
+*/
+template<class Scalar>
+const Matrix<Scalar> operator + (const Matrix<Scalar>& left, 
+                                 const Matrix<Scalar>& right);
 
-  /** \relates Matrix
+/** \relates Matrix
     Overloaded matrix subtraction.
-    */
-  template<class Scalar>
-    const Matrix<Scalar> operator - (const Matrix<Scalar>& left, 
-                                     const Matrix<Scalar>& right);
+*/
+template<class Scalar>
+const Matrix<Scalar> operator - (const Matrix<Scalar>& left, 
+                                 const Matrix<Scalar>& right);
   
-  /** \relates Matrix
+/** \relates Matrix
     Overloaded scalar-matrix multiplication.
-    */
-  template<class Scalar>
-    const Matrix<Scalar> operator * (const Scalar sca, const Matrix<Scalar>& mat);
+*/
+template<class Scalar>
+const Matrix<Scalar> operator * (const Scalar sca, const Matrix<Scalar>& mat);
 
-  /** \relates Matrix
+/** \relates Matrix
     Overloaded matrix-vector multiplication. Matrix is multiplied on the right by a Point
     object thought of as a column vector.
-    */
-  template<class Scalar>
-    const Point<Scalar> operator * (const Matrix<Scalar>& mat, const Point<Scalar>& vec);
+*/
+template<class Scalar>
+const Point<Scalar> operator * (const Matrix<Scalar>& mat, const Point<Scalar>& vec);
 
-  /** \relates Matrix
+/** \relates Matrix
     Overloaded vector-matrix multiplication. Matrix is multiplied on the left by a Point
     object thought of as a row vector.
-    */
-  template<class Scalar>
-    const Point<Scalar> operator * (const Point<Scalar>& vec, const Matrix<Scalar>& mat);
+*/
+template<class Scalar>
+const Point<Scalar> operator * (const Point<Scalar>& vec, const Matrix<Scalar>& mat);
   
-  /** \relates Matrix
+/** \relates Matrix
     Overloaded matrix-matrix multiplication.
-    */
-  template<class Scalar>
-    const Matrix<Scalar> operator * (const Matrix<Scalar>& lmat, const Matrix<Scalar>& rmat);
+*/
+template<class Scalar>
+const Matrix<Scalar> operator * (const Matrix<Scalar>& lmat, const Matrix<Scalar>& rmat);
   
-  /** \relates Matrix
+/** \relates Matrix
     Outputs a formated stream representing a Matrix (matrix). For debugging purposes.
-    */
-  template<class Scalar>
-    std::ostream& operator << (std::ostream& os, const Matrix<Scalar>& matrix);
-  // end function declarations related to class Matrix
+*/
+template<class Scalar>
+std::ostream& operator << (std::ostream& os, const Matrix<Scalar>& matrix);
+
+///////////// end function declarations related to class Matrix
   
-}  // namespace Intrepid
+} // end namespace Intrepid
 
 // include templated definitions
 #include <Intrepid_RealSpaceDef.hpp>
