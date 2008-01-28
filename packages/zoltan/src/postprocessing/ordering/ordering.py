@@ -44,6 +44,15 @@ def opcextract(filename, procnbr, algorithm):
         return {'%sNNZ' % algorithm: 0, '%sOPC' % algorithm: 0}
 
 
+# Extracts timing results from parmetis output
+
+def extracttime(string):
+    val = re.search("Partitioner Library time[\s:]*Max[\s:]*([\d\.e]*)", string)
+    if (val == None):
+        return 0
+    return float(val.group(1))
+
+
 # Computes the ordering and launchs evaluation of quality.
 
 def computeordering(filename, procnbr, verbose):
@@ -53,6 +62,7 @@ def computeordering(filename, procnbr, verbose):
         if (verbose == True):
             print "Running ordering with %s ..." % key
         output = commands.getoutput("mpirun -np %d %s | tee %s/%s-%s-%d.%s" % (procnbr, executable[key], logdir, key, filename, procnbr, time.strftime("%Y%m%d%H%m%S")))
+        results.update({"%sTIME" % key: extracttime(output)})
         output = commands.getoutput("%s -n %d -o %s/%s-%d.%s %s" % (orderfile, procnbr, resultdir, filename, procnbr, key, currentfilename))
 
     if (verbose == True):
@@ -195,6 +205,7 @@ def main(argv=None):
 
     displayresults(procmin, procmax, results, "NNZ")
     displayresults(procmin, procmax, results, "OPC")
+    displayresults(procmin, procmax, results, "TIME")
 
 if __name__ == "__main__":
     main()
