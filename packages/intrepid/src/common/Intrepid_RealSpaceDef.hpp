@@ -411,12 +411,12 @@ std::ostream& operator << (std::ostream& os, const Point<Scalar>& point) {
 
   os.setf(std::ios_base::scientific, std::ios_base::floatfield);
   os.setf(std::ios_base::right);
-  os.precision(4);
+  int myprec = os.precision();
   
   int dim = point.getDim();
   os << "  " <<  dim << "D "<< point.getFrameName() <<" Point (";
   for (int j=0; j < dim; j++) {
-    os << std::setw(12) << point.getCoordinates()[j];
+    os << std::setw(myprec+8) << point.getCoordinates()[j];
   }
   os << ")";
 

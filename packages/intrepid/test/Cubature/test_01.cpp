@@ -51,8 +51,6 @@ double computeRefVolume(ECell cellType, int cubDegree) {
   CubatureTensor<double> tCub;
   double vol = 0.0;
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
-
   switch (cellType) {
 
     case CELL_EDGE:
@@ -74,16 +72,12 @@ double computeRefVolume(ECell cellType, int cubDegree) {
                           ">>> ERROR (Unit Test -- Cubature -- Volume): Invalid cell type.");
   } // end switch
 
-  int numCubPoints = myCub->getNumPoints(cellType, cubDegree);
+  int numCubPoints = 0;
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
 
-  Point<double> tempPoint(ambientDim);
-  cubPoints.assign(numCubPoints,tempPoint);
-  cubWeights.assign(numCubPoints,0.0);
-
-  myCub->getCubature(cubPoints, cubWeights, cellType, cubDegree);
+  myCub->getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
 
   for (int i=0; i<numCubPoints; i++)
     vol += cubWeights[i];
