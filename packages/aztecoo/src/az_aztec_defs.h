@@ -167,7 +167,6 @@
 #include <malloc.h> */
 #endif /*ndef HAVE_CONFIG_H*/
 
-
 #ifndef __AZTECH__
 #ifdef AZTEC_MPI
 #include <mpi.h>
@@ -716,5 +715,15 @@
 #define AZ_get_matvec_data(Amat) ((Amat)->matvec_data)
 #define AZ_get_getrow_data(Amat) ((Amat)->getrow_data)
 #define AZ_get_precond_data(precond) ((precond)->precond_data)
+
+/* We compile a few files conditionally based on whether or not Fortran
+   support is enabled.  This definition selects whether to use the C or
+   Fortran version of the subroutines defined in those files.
+*/
+#ifndef HAVE_FORTRAN_SUPPORT
+#ifndef FORTRAN_DISABLED
+#define FORTRAN_DISABLED
+#endif
+#endif
 
 #endif

@@ -102,6 +102,13 @@ dnl committing.
 dnl AC_REVISION($Revision$)
 
 # ------------------------------------------------------------------------
+# Check if Fortran is enabled or not
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
+
+# ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 
@@ -113,16 +120,10 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-BASE_CXX=${CXX}
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+fi
 AC_PROG_RANLIB
-
-# ------------------------------------------------------------------------
-# Checks for --enable-debug, --enable-optimize, --enable-profile, --enable-purify
-# Changes flags and compiler names accordingly
-# ------------------------------------------------------------------------
-
-TAC_ARG_ENABLE_COMPILER_OPTIONS
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -132,7 +133,9 @@ TAC_ARG_ENABLE_COMPILER_OPTIONS
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+if test "X$ac_cv_use_fortran" != "Xno"; then
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+fi
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -336,8 +339,11 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines.
+# Define F77_FUNC that will be used to link with Fortran subroutines found in
+# Trilinos source code
+if test "X$ac_cv_use_fortran" != "Xno"; then
 AC_F77_WRAPPERS
+fi
 
 # For now we will consider AztecOO to be dependent on Triutils,
 # even though it is really only the examples.
@@ -371,6 +377,33 @@ AC_CHECK_FUNCS([floor pow sqrt strchr uname])
   TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
   TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+else
+
+  if test "X$ac_cv_use_fortran" != "Xno"; then
+  # If we don't check for BLAS above, we will use F77_FUNC as the name mangling
+  # for the BLAS and LAPACK.  This is what we used before we allowed the BLAS
+  # and LAPACK to use different name mangling than the compiler.
+  AC_F77_FUNC(dgemm)
+    if test "X$dgemm" = "Xdgemm_"; then
+      AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name ## _], [Define the Fortran name mangling to be used for the BLAS])
+    else
+      if test "X$dgemm" = "Xdgemm"; then
+        AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name], [Define the Fortran name mangling to be used for the BLAS])
+      else
+        if test "X$dgemm" = "XDGEMM"; then
+          AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME], [Define the Fortran name mangling to be used for the BLAS])
+        else
+          if test "X$dgemm" = "XDGEMM_"; then
+             AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME ## _], [Define the Fortran name mangling to be used for the BLAS])
+          else
+            AC_MSG_ERROR([[Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option.]])
+          fi
+        fi
+      fi
+    fi
+  fi
+
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.

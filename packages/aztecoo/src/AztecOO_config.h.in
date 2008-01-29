@@ -80,6 +80,9 @@
 /* Define to 1 if you have the `floor' function. */
 #undef HAVE_FLOOR
 
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 

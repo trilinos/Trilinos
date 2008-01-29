@@ -58,7 +58,13 @@
 #include <float.h>
 #include "az_aztec.h"
 
-extern int AZ_using_fortran;
+/* After disabling the wrappers in az_fortran_wrap.c, this is always set to
+   false.  I kept the value around, rather than ripping out code ifdef'ed to
+   AZ_using_fortran = AZ_TRUE because it might be useful for the new Fortran
+   wrappers that are being developed. JW
+*/
+/*extern int AZ_using_fortran;*/
+int AZ_using_fortran = AZ_FALSE;
 
 /******************************************************************************/
 /******************************************************************************/

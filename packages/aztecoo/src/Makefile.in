@@ -77,10 +77,10 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
-	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
@@ -120,9 +120,8 @@ am__libaztecoo_a_SOURCES_DIST = $(srcdir)/az_comm.c \
 	$(srcdir)/az_flop_cnt.c $(srcdir)/az_ilu_util.c \
 	$(srcdir)/az_interface.c $(srcdir)/az_matrix_util.c \
 	$(srcdir)/az_pad_utils.c $(srcdir)/az_tools.c \
-	$(srcdir)/az_f_util.f $(srcdir)/az_util.c \
-	$(srcdir)/md_timer_generic.c $(srcdir)/md_wrap_scalar_c.c \
-	$(srcdir)/az_fortran_wrap.c $(srcdir)/az_bilu.c \
+	$(srcdir)/az_util.c $(srcdir)/md_timer_generic.c \
+	$(srcdir)/md_wrap_scalar_c.c $(srcdir)/az_bilu.c \
 	$(srcdir)/az_cg.c $(srcdir)/az_cgs.c $(srcdir)/az_cgstab.c \
 	$(srcdir)/az_converge.c $(srcdir)/az_dd_overlap.c \
 	$(srcdir)/az_dgemv2.c $(srcdir)/az_dgemv3.c \
@@ -135,9 +134,11 @@ am__libaztecoo_a_SOURCES_DIST = $(srcdir)/az_comm.c \
 	$(srcdir)/az_cg_condnum.c $(srcdir)/az_gmres_condnum.c \
 	$(srcdir)/az_colperm.c $(srcdir)/az_matvec_mult.c \
 	$(srcdir)/az_old_matvec_mult.c $(srcdir)/az_precond.c \
-	$(srcdir)/az_reorder.f $(srcdir)/az_scaling.c \
-	$(srcdir)/az_solve.c $(srcdir)/az_sort.c \
-	$(srcdir)/md_timer_mpi.c $(srcdir)/md_wrap_mpi_c.c
+	$(srcdir)/az_scaling.c $(srcdir)/az_solve.c \
+	$(srcdir)/az_sort.c $(srcdir)/md_timer_mpi.c \
+	$(srcdir)/md_wrap_mpi_c.c $(srcdir)/az_reorder.f \
+	$(srcdir)/az_f_util.f $(srcdir)/az_c_reorder.c \
+	$(srcdir)/az_c_util.c
 am__objects_1 = az_comm.$(OBJEXT)
 am__objects_2 = AztecOO.$(OBJEXT) AztecOO_string_maps.$(OBJEXT) \
 	AztecOO_Operator.$(OBJEXT) Epetra_MsrMatrix.$(OBJEXT) \
@@ -150,12 +151,11 @@ am__objects_2 = AztecOO.$(OBJEXT) AztecOO_string_maps.$(OBJEXT) \
 am__objects_3 = az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
 	az_ilu_util.$(OBJEXT) az_interface.$(OBJEXT) \
 	az_matrix_util.$(OBJEXT) az_pad_utils.$(OBJEXT) \
-	az_tools.$(OBJEXT) az_f_util.$(OBJEXT) az_util.$(OBJEXT)
+	az_tools.$(OBJEXT) az_util.$(OBJEXT)
 am__objects_4 =
 am__objects_5 = md_timer_generic.$(OBJEXT) md_wrap_scalar_c.$(OBJEXT)
 @HAVE_MPI_FALSE@am__objects_6 = $(am__objects_5)
-am__objects_7 = az_fortran_wrap.$(OBJEXT)
-am__objects_8 = az_bilu.$(OBJEXT) az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
+am__objects_7 = az_bilu.$(OBJEXT) az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
 	az_cgstab.$(OBJEXT) az_converge.$(OBJEXT) \
 	az_dd_overlap.$(OBJEXT) az_dgemv2.$(OBJEXT) \
 	az_dgemv3.$(OBJEXT) az_domain_decomp.$(OBJEXT) \
@@ -165,16 +165,19 @@ am__objects_8 = az_bilu.$(OBJEXT) az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
 	az_qmrcgs.$(OBJEXT) az_rilu.$(OBJEXT) \
 	az_subdomain_solver.$(OBJEXT) az_cg_condnum.$(OBJEXT) \
 	az_gmres_condnum.$(OBJEXT)
-am__objects_9 = az_colperm.$(OBJEXT) az_matvec_mult.$(OBJEXT) \
+am__objects_8 = az_colperm.$(OBJEXT) az_matvec_mult.$(OBJEXT) \
 	az_old_matvec_mult.$(OBJEXT) az_precond.$(OBJEXT) \
-	az_reorder.$(OBJEXT) az_scaling.$(OBJEXT) az_solve.$(OBJEXT) \
-	az_sort.$(OBJEXT)
-am__objects_10 = md_timer_mpi.$(OBJEXT) md_wrap_mpi_c.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_11 = $(am__objects_10)
+	az_scaling.$(OBJEXT) az_solve.$(OBJEXT) az_sort.$(OBJEXT)
+am__objects_9 = md_timer_mpi.$(OBJEXT) md_wrap_mpi_c.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_10 = $(am__objects_9)
+am__objects_11 = az_reorder.$(OBJEXT) az_f_util.$(OBJEXT)
+@FORTRAN_DISABLED_FALSE@am__objects_12 = $(am__objects_11)
+am__objects_13 = az_c_reorder.$(OBJEXT) az_c_util.$(OBJEXT)
+@FORTRAN_DISABLED_TRUE@am__objects_14 = $(am__objects_13)
 am_libaztecoo_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_6) \
-	$(am__objects_7) $(am__objects_8) $(am__objects_9) \
-	$(am__objects_11) $(am__objects_4)
+	$(am__objects_7) $(am__objects_8) $(am__objects_10) \
+	$(am__objects_4) $(am__objects_12) $(am__objects_14)
 libaztecoo_a_OBJECTS = $(am_libaztecoo_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -192,8 +195,9 @@ F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
 F77LD = $(F77)
 F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 	$@
-SOURCES = $(libaztecoo_a_SOURCES)
-DIST_SOURCES = $(am__libaztecoo_a_SOURCES_DIST)
+SOURCES = $(libaztecoo_a_SOURCES) $(EXTRA_libaztecoo_a_SOURCES)
+DIST_SOURCES = $(am__libaztecoo_a_SOURCES_DIST) \
+	$(EXTRA_libaztecoo_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -399,7 +403,6 @@ UTIL = \
 	$(srcdir)/az_matrix_util.c \
 	$(srcdir)/az_pad_utils.c \
 	$(srcdir)/az_tools.c \
-	$(srcdir)/az_f_util.f \
 	$(srcdir)/az_util.c
 
 ENUM_H = 
@@ -414,12 +417,6 @@ EXTRA_MPI_H =
 EXTRA_MPI = \
 	$(srcdir)/md_timer_mpi.c \
 	$(srcdir)/md_wrap_mpi_c.c 
-
-EXTRA_DIST = \
-	$(EXTRA_MPI_H) \
-	$(EXTRA_MPI) \
-	$(EXTRA_SERIAL_H) \
-	$(EXTRA_SERIAL)
 
 @HAVE_MPI_FALSE@MPI_H = 
 @HAVE_MPI_TRUE@MPI_H = \
@@ -456,10 +453,11 @@ MPISMP =
 
 #endif
 USERBASE_H = 
-LANG_WRAPS_H = 
-LANG_WRAPS = \
-	$(srcdir)/az_fortran_wrap.c
 
+#LANG_WRAPS_H = 
+
+#LANG_WRAPS = \
+#	$(srcdir)/az_fortran_wrap.c
 DIST_H = 
 DIST = \
 	$(srcdir)/az_bilu.c \
@@ -495,11 +493,26 @@ COMP = \
 	$(srcdir)/az_matvec_mult.c \
 	$(srcdir)/az_old_matvec_mult.c \
 	$(srcdir)/az_precond.c \
-	$(srcdir)/az_reorder.f \
 	$(srcdir)/az_scaling.c \
 	$(srcdir)/az_solve.c \
 	$(srcdir)/az_sort.c 
 
+EXTRA_FORTRAN_ENABLED = \
+	$(srcdir)/az_reorder.f \
+	$(srcdir)/az_f_util.f
+
+EXTRA_FORTRAN_DISABLED = \
+	$(srcdir)/az_c_reorder.c \
+	$(srcdir)/az_c_util.c
+
+@FORTRAN_DISABLED_FALSE@FORTRAN_DISABLED = 
+@FORTRAN_DISABLED_TRUE@FORTRAN_DISABLED = \
+@FORTRAN_DISABLED_TRUE@	$(EXTRA_FORTRAN_DISABLED)
+
+@FORTRAN_DISABLED_FALSE@FORTRAN_ENABLED = \
+@FORTRAN_DISABLED_FALSE@	$(EXTRA_FORTRAN_ENABLED)
+
+@FORTRAN_DISABLED_TRUE@FORTRAN_ENABLED = 
 
 # ------------------------------------------------------------------------
 # Aztec library specifications
@@ -529,7 +542,17 @@ libaztecoo_a_SOURCES = \
 	$(DIST) \
 	$(COMP) \
 	$(MPI) \
-	$(MPISMP)
+	$(MPISMP) \
+	$(FORTRAN_ENABLED) \
+	$(FORTRAN_DISABLED)
+
+EXTRA_libaztecoo_a_SOURCES = \
+	$(EXTRA_FORTRAN_ENABLED) \
+	$(EXTRA_FORTRAN_DISABLED) \
+	$(EXTRA_MPI_H) \
+	$(EXTRA_MPI) \
+	$(EXTRA_SERIAL_H) \
+	$(EXTRA_SERIAL)
 
 @USE_ALTERNATE_AR_FALSE@libaztecoo_a_AR = $(AR) cru
 
@@ -677,6 +700,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOO_string_maps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MsrMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_bilu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_c_reorder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_c_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cg_condnum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_cgs.Po@am__quote@
@@ -691,7 +716,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_domain_decomp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_fix_pt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_flop_cnt.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_fortran_wrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gmres.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gmres_condnum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/az_gmresr.Po@am__quote@
@@ -888,20 +912,6 @@ md_wrap_scalar_c.obj: $(srcdir)/md_wrap_scalar_c.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/md_wrap_scalar_c.c' object='md_wrap_scalar_c.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_wrap_scalar_c.obj `if test -f '$(srcdir)/md_wrap_scalar_c.c'; then $(CYGPATH_W) '$(srcdir)/md_wrap_scalar_c.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/md_wrap_scalar_c.c'; fi`
-
-az_fortran_wrap.o: $(srcdir)/az_fortran_wrap.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_fortran_wrap.o -MD -MP -MF $(DEPDIR)/az_fortran_wrap.Tpo -c -o az_fortran_wrap.o `test -f '$(srcdir)/az_fortran_wrap.c' || echo '$(srcdir)/'`$(srcdir)/az_fortran_wrap.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/az_fortran_wrap.Tpo $(DEPDIR)/az_fortran_wrap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/az_fortran_wrap.c' object='az_fortran_wrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_fortran_wrap.o `test -f '$(srcdir)/az_fortran_wrap.c' || echo '$(srcdir)/'`$(srcdir)/az_fortran_wrap.c
-
-az_fortran_wrap.obj: $(srcdir)/az_fortran_wrap.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_fortran_wrap.obj -MD -MP -MF $(DEPDIR)/az_fortran_wrap.Tpo -c -o az_fortran_wrap.obj `if test -f '$(srcdir)/az_fortran_wrap.c'; then $(CYGPATH_W) '$(srcdir)/az_fortran_wrap.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_fortran_wrap.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/az_fortran_wrap.Tpo $(DEPDIR)/az_fortran_wrap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/az_fortran_wrap.c' object='az_fortran_wrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_fortran_wrap.obj `if test -f '$(srcdir)/az_fortran_wrap.c'; then $(CYGPATH_W) '$(srcdir)/az_fortran_wrap.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_fortran_wrap.c'; fi`
 
 az_bilu.o: $(srcdir)/az_bilu.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_bilu.o -MD -MP -MF $(DEPDIR)/az_bilu.Tpo -c -o az_bilu.o `test -f '$(srcdir)/az_bilu.c' || echo '$(srcdir)/'`$(srcdir)/az_bilu.c
@@ -1351,6 +1361,34 @@ md_wrap_mpi_c.obj: $(srcdir)/md_wrap_mpi_c.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md_wrap_mpi_c.obj `if test -f '$(srcdir)/md_wrap_mpi_c.c'; then $(CYGPATH_W) '$(srcdir)/md_wrap_mpi_c.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/md_wrap_mpi_c.c'; fi`
 
+az_c_reorder.o: $(srcdir)/az_c_reorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_c_reorder.o -MD -MP -MF $(DEPDIR)/az_c_reorder.Tpo -c -o az_c_reorder.o `test -f '$(srcdir)/az_c_reorder.c' || echo '$(srcdir)/'`$(srcdir)/az_c_reorder.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/az_c_reorder.Tpo $(DEPDIR)/az_c_reorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/az_c_reorder.c' object='az_c_reorder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_c_reorder.o `test -f '$(srcdir)/az_c_reorder.c' || echo '$(srcdir)/'`$(srcdir)/az_c_reorder.c
+
+az_c_reorder.obj: $(srcdir)/az_c_reorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_c_reorder.obj -MD -MP -MF $(DEPDIR)/az_c_reorder.Tpo -c -o az_c_reorder.obj `if test -f '$(srcdir)/az_c_reorder.c'; then $(CYGPATH_W) '$(srcdir)/az_c_reorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_c_reorder.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/az_c_reorder.Tpo $(DEPDIR)/az_c_reorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/az_c_reorder.c' object='az_c_reorder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_c_reorder.obj `if test -f '$(srcdir)/az_c_reorder.c'; then $(CYGPATH_W) '$(srcdir)/az_c_reorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_c_reorder.c'; fi`
+
+az_c_util.o: $(srcdir)/az_c_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_c_util.o -MD -MP -MF $(DEPDIR)/az_c_util.Tpo -c -o az_c_util.o `test -f '$(srcdir)/az_c_util.c' || echo '$(srcdir)/'`$(srcdir)/az_c_util.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/az_c_util.Tpo $(DEPDIR)/az_c_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/az_c_util.c' object='az_c_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_c_util.o `test -f '$(srcdir)/az_c_util.c' || echo '$(srcdir)/'`$(srcdir)/az_c_util.c
+
+az_c_util.obj: $(srcdir)/az_c_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT az_c_util.obj -MD -MP -MF $(DEPDIR)/az_c_util.Tpo -c -o az_c_util.obj `if test -f '$(srcdir)/az_c_util.c'; then $(CYGPATH_W) '$(srcdir)/az_c_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_c_util.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/az_c_util.Tpo $(DEPDIR)/az_c_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/az_c_util.c' object='az_c_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o az_c_util.obj `if test -f '$(srcdir)/az_c_util.c'; then $(CYGPATH_W) '$(srcdir)/az_c_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_c_util.c'; fi`
+
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -1539,17 +1577,17 @@ AztecOO_ConditionNumber.obj: $(srcdir)/AztecOO_ConditionNumber.cpp
 .f.obj:
 	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-az_f_util.o: $(srcdir)/az_f_util.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_f_util.o `test -f '$(srcdir)/az_f_util.f' || echo '$(srcdir)/'`$(srcdir)/az_f_util.f
-
-az_f_util.obj: $(srcdir)/az_f_util.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_f_util.obj `if test -f '$(srcdir)/az_f_util.f'; then $(CYGPATH_W) '$(srcdir)/az_f_util.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_f_util.f'; fi`
-
 az_reorder.o: $(srcdir)/az_reorder.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_reorder.o `test -f '$(srcdir)/az_reorder.f' || echo '$(srcdir)/'`$(srcdir)/az_reorder.f
 
 az_reorder.obj: $(srcdir)/az_reorder.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_reorder.obj `if test -f '$(srcdir)/az_reorder.f'; then $(CYGPATH_W) '$(srcdir)/az_reorder.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_reorder.f'; fi`
+
+az_f_util.o: $(srcdir)/az_f_util.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_f_util.o `test -f '$(srcdir)/az_f_util.f' || echo '$(srcdir)/'`$(srcdir)/az_f_util.f
+
+az_f_util.obj: $(srcdir)/az_f_util.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o az_f_util.obj `if test -f '$(srcdir)/az_f_util.f'; then $(CYGPATH_W) '$(srcdir)/az_f_util.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/az_f_util.f'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

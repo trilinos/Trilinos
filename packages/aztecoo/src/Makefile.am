@@ -131,7 +131,6 @@ UTIL = \
 	$(srcdir)/az_matrix_util.c \
 	$(srcdir)/az_pad_utils.c \
 	$(srcdir)/az_tools.c \
-	$(srcdir)/az_f_util.f \
 	$(srcdir)/az_util.c
 
 ENUM_H = 
@@ -152,12 +151,6 @@ EXTRA_MPI_H =
 EXTRA_MPI = \
 	$(srcdir)/md_timer_mpi.c \
 	$(srcdir)/md_wrap_mpi_c.c 
-
-EXTRA_DIST = \
-	$(EXTRA_MPI_H) \
-	$(EXTRA_MPI) \
-	$(EXTRA_SERIAL_H) \
-	$(EXTRA_SERIAL)
 
 if HAVE_MPI
 
@@ -204,10 +197,10 @@ MPISMP =
 USERBASE_H = 
 
 
-LANG_WRAPS_H = 
+#LANG_WRAPS_H = 
 
-LANG_WRAPS = \
-	$(srcdir)/az_fortran_wrap.c
+#LANG_WRAPS = \
+#	$(srcdir)/az_fortran_wrap.c
 
 DIST_H = 
 
@@ -246,11 +239,34 @@ COMP = \
 	$(srcdir)/az_matvec_mult.c \
 	$(srcdir)/az_old_matvec_mult.c \
 	$(srcdir)/az_precond.c \
-	$(srcdir)/az_reorder.f \
 	$(srcdir)/az_scaling.c \
 	$(srcdir)/az_solve.c \
 	$(srcdir)/az_sort.c 
 
+EXTRA_FORTRAN_ENABLED = \
+	$(srcdir)/az_reorder.f \
+	$(srcdir)/az_f_util.f
+
+EXTRA_FORTRAN_DISABLED = \
+	$(srcdir)/az_c_reorder.c \
+	$(srcdir)/az_c_util.c
+
+if FORTRAN_DISABLED
+
+FORTRAN_DISABLED = \
+	$(EXTRA_FORTRAN_DISABLED)
+
+FORTRAN_ENABLED = 
+
+else
+
+
+FORTRAN_ENABLED = \
+	$(EXTRA_FORTRAN_ENABLED)
+
+FORTRAN_DISABLED =
+
+endif
 
 # ------------------------------------------------------------------------
 # Aztec library specifications
@@ -283,7 +299,17 @@ libaztecoo_a_SOURCES = \
 	$(DIST) \
 	$(COMP) \
 	$(MPI) \
-	$(MPISMP)
+	$(MPISMP) \
+	$(FORTRAN_ENABLED) \
+	$(FORTRAN_DISABLED)
+
+EXTRA_libaztecoo_a_SOURCES = \
+	$(EXTRA_FORTRAN_ENABLED) \
+	$(EXTRA_FORTRAN_DISABLED) \
+	$(EXTRA_MPI_H) \
+	$(EXTRA_MPI) \
+	$(EXTRA_SERIAL_H) \
+	$(EXTRA_SERIAL)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

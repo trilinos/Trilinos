@@ -579,57 +579,23 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 /*
  * There are different conventions for external names for fortran subroutines.
  * In addition, different compilers return differing caluse for a fortran
- * subroutine call. In this section we take these into account.
+ * subroutine call.  Finally, there is now also an option to disable Fortran,
+ * so we also supply C versions of Fortran subroutines defined in AztecOO. 
+ * In this section we take all of this into account.
+
  */
 
+#ifndef FORTRAN_DISABLED
 #   define AZ_FNROOT_F77                 F77_FUNC_(az_fnroot,AZ_FNROOT)
 #   define MC64AD_F77                    F77_FUNC(mc64ad,MC64AD)
 #   define AZ_RCM_F77                    F77_FUNC_(az_rcm,AZ_RCM)
-#   define AZ_BROADCAST_F77              F77_FUNC_(az_broadcast,AZ_BROADCAST)
-#   define AZ_CHECK_INPUT_F77            F77_FUNC_(az_check_input,AZ_CHECK_INPUT)
-#   define AZ_CHECK_MSR_F77              F77_FUNC_(az_check_msr,AZ_CHECK_MSR)
-#   define AZ_CHECK_VBR_F77              F77_FUNC_(az_check_vbr,AZ_CHECK_VBR)
-#   define AZ_DEFAULTS_F77               F77_FUNC_(az_defaults,AZ_DEFAULTS)
-#   define AZ_EXCHANGE_BDRY_F77          F77_FUNC_(az_exchange_bdry,AZ_EXCHANGE_BDRY)
-#   define AZ_FIND_INDEX_F77             F77_FUNC_(az_find_index,AZ_FIND_INDEX)
-#   define AZ_FIND_LOCAL_INDICES_F77     F77_FUNC_(az_find_local_indices,AZ_FIND_LOCAL_INDICES)
-#   define AZ_FIND_PROCS_FOR_EXTERNS_F77 F77_FUNC_(az_find_procs_for_externs,AZ_FIND_PROCS_FOR_EXTERNS)
-#   define AZ_FREE_MEMORY_F77            F77_FUNC_(az_free_memory,AZ_FREE_MEMORY)
-#   define AZ_GAVG_DOUBLE_F77            F77_FUNC_(az_gavg_double,AZ_GAVG_DOUBLE)
-#   define AZ_GDOT_F77                   F77_FUNC_(az_gdot,AZ_GDOT)
-#   define AZ_GMAX_DOUBLE_F77            F77_FUNC_(az_gmax_double,AZ_GMAX_DOUBLE)
-#   define AZ_GMAX_INT_F77               F77_FUNC_(az_gmax_int,AZ_GMAX_INT)
-#   define AZ_GMAX_MATRIX_NORM_F77       F77_FUNC_(az_gmax_matrix_norm,AZ_GMAX_MATRIX_NORM)
-#   define AZ_GMAX_VEC_F77               F77_FUNC_(az_gmax_vec,AZ_GMAX_VEC)
-#   define AZ_GMIN_DOUBLE_F77            F77_FUNC_(az_gmin_double,AZ_GMIN_DOUBLE)
-#   define AZ_GMIN_INT_F77               F77_FUNC_(az_gmin_int,AZ_GMIN_INT)
-#   define AZ_GSUM_DOUBLE_F77            F77_FUNC_(az_gsum_double,AZ_GSUM_DOUBLE)
-#   define AZ_GSUM_INT_F77               F77_FUNC_(az_gsum_int,AZ_GSUM_INT)
-#   define AZ_GSUM_VEC_F77               F77_FUNC_(az_gsum_vec,AZ_GSUM_VEC)
-#   define AZ_GVECTOR_NORM_F77           F77_FUNC_(az_gvector_norm,AZ_GVECTOR_NORM)
-#   define AZ_INIT_QUICK_FIND_F77        F77_FUNC_(az_init_quick_find,AZ_INIT_QUICK_FIND)
-#   define AZ_INVORDER_VEC_F77           F77_FUNC_(az_invorder_vec,AZ_INVORDER_VEC)
-#   define AZ_MATVEC_MULT_F77            F77_FUNC_(az_matvec_mult,AZ_MATVEC_MULT)
-#   define AZ_VBR_MATVEC_MULT_F77        F77_FUNC_(az_VBR_matvec_mult,AZ_VBR_MATVEC_MULT)
-#   define AZ_MSR_MATVEC_MULT_F77        F77_FUNC_(az_MSR_matvec_mult,AZ_MSR_MATVEC_MULT)
-#   define AZ_MSR2VBR_F77                F77_FUNC_(az_msr2vbr,AZ_MSR2VBR)
-#   define AZ_ORDER_ELE_F77              F77_FUNC_(az_order_ele,AZ_ORDER_ELE)
-#   define AZ_PR_ERROR_F77               F77_FUNC_(az_pr_error,AZ_PR_ERROR)
-#   define AZ_PRINT_OUT_F77              F77_FUNC_(az_print_out,AZ_PRINT_OUT)
-#   define AZ_PROCESSOR_INFO_F77         F77_FUNC_(az_processor_info,AZ_PROCESSOR_INFO)
-#   define AZ_QUICK_FIND_F77             F77_FUNC_(az_quick_find,AZ_QUICK_FIND)
-#   define AZ_READ_MSR_MATRIX_F77        F77_FUNC_(az_read_msr_matrix,AZ_READ_MSR_MATRIX)
-#   define AZ_READ_UPDATE_F77            F77_FUNC_(az_read_update,AZ_READ_UPDATE)
-#   define AZ_REORDER_MATRIX_F77         F77_FUNC_(az_reorder_matrix,AZ_REORDER_MATRIX)
-#   define AZ_REORDER_VEC_F77            F77_FUNC_(az_reorder_vec,AZ_REORDER_VEC)
-#   define AZ_GET_COMM_F77               F77_FUNC_(az_get_comm,AZ_GET_COMM)
-#   define AZ_SET_COMM_F77               F77_FUNC_(az_set_comm,AZ_SET_COMM)
-#   define AZ_SET_MESSAGE_INFO_F77       F77_FUNC_(az_set_message_info,AZ_SET_MESSAGE_INFO)
-#   define AZ_SET_PROC_CONFIG_F77        F77_FUNC_(az_set_proc_config,AZ_SET_PROC_CONFIG)
-#   define AZ_SORT_F77                   F77_FUNC_(az_sort,AZ_SORT)
-#   define AZ_SOLVE_F77                  F77_FUNC_(az_solve,AZ_SOLVE)
-#   define AZ_TRANSFORM_F77              F77_FUNC_(az_transform,AZ_TRANSFORM)
+#else /* FORTRAN_DISABLED*/
+#   define AZ_FNROOT_F77                 az_fnroot_c
+#   define MC64AD_F77                    mc64ad_c
+#   define AZ_RCM_F77                    az_rcm_c
+#endif /* ndef FORTRAN_DISABLED */
 
+#ifndef FORTRAN_DISABLED
 #if defined(CRAY_T3X)
 
 #define AZ_DLASWP_F77  F77_FUNC_(az_slaswp,AZ_SLASWP)
@@ -641,6 +607,12 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 #define AZ_DLAIC1_F77  F77_FUNC_(az_dlaic1,AZ_DLAIC1)
 
 #endif
+#else /* FORTRAN_DISABLED*/
+
+#define AZ_DLASWP_F77  az_dlaswp_c
+#define AZ_DLAIC1_F77  az_dlaic1_c
+
+#endif /* ndef FORTRAN_DISABLED */
 
 #ifndef FSUB_TYPE
 #define  FSUB_TYPE void
@@ -651,6 +623,7 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 extern "C" {
 #endif
 
+#ifndef FORTRAN_DISABLED
 void PREFIX AZ_DLASWP_F77(int *, double *, int *, int *, int *, int *, int *);
 
 void PREFIX AZ_DLAIC1_F77(int * , int *, double *, double *, double *, double *,
@@ -659,7 +632,7 @@ void PREFIX AZ_SLASWP_F77(int *, float *, int *, int *, int *, int *, int *);
 
 void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 			  float *, float *, float *);
-
+#endif /* FORTRAN_DISABLED */
   /* Aztec function prototypes that can be called by the user */
 
   extern void AZ_solve(
@@ -1503,6 +1476,7 @@ extern unsigned int md_mpi_write(void *, unsigned int ,int , int , int *,int *);
 /*                    Auxilliary fortran rroutines needed by Aztec           */
 /*****************************************************************************/
 
+#ifndef FORTRAN_DISABLED
 extern void AZ_FNROOT_F77(int *,int *,int *,int *, int *, int *, int *);
 
 extern void MC64AD_F77(int *, int *, int *, int *, int *, double*,
@@ -1510,6 +1484,7 @@ extern void MC64AD_F77(int *, int *, int *, int *, int *, double*,
                     int *, int *);
 
 extern void AZ_RCM_F77(int *, int *,int *, int *,int *, int *, int *);
+#endif /* ndef FORTRAN_DISABLED */
 
 /*****************************************************************************/
 /*                    Auxilliary routines available to users                 */

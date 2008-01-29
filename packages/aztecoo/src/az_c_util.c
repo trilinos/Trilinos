@@ -232,7 +232,7 @@ static integer c__1 = 1;
 static doublereal c_b5 = 1.;
 static real c_b19 = 1.f;
 
-/* Subroutine */ int az_dlaic1(integer *job, integer *j, doublereal *x, 
+/* Subroutine */ int az_dlaic1_c(integer *job, integer *j, doublereal *x, 
 	doublereal *sest, doublereal *w, doublereal *gamma, doublereal *
 	sestpr, doublereal *s, doublereal *c__)
 {
@@ -545,7 +545,7 @@ double az_d_sign (doublereal * a, doublereal * b) {
 
 } /* az_dlaic1 */
 
-/* Subroutine */ int az_dlaswp(integer *n, doublereal *a, integer *lda, 
+/* Subroutine */ int az_dlaswp_c(integer *n, doublereal *a, integer *lda, 
 	integer *k1, integer *k2, integer *ipiv, integer *incx)
 {
     /* System generated locals */
@@ -690,7 +690,7 @@ double az_d_sign (doublereal * a, doublereal * b) {
 
 } /* az_dlaswp */
 
-/* Subroutine */ int az_slaic1(integer *job, integer *j, real *x, real *
+/* Subroutine */ int az_slaic1_c(integer *job, integer *j, real *x, real *
 	sest, real *w, real *gamma, real *sestpr, real *s, real *c__)
 {
     /* System generated locals */
@@ -1002,7 +1002,7 @@ double az_r_sign (real * a, real * b) {
 
 } /* az_slaic1 */
 
-/* Subroutine */ int az_slaswp(integer *n, real *a, integer *lda, integer *
+/* Subroutine */ int az_slaswp_c(integer *n, real *a, integer *lda, integer *
 	k1, integer *k2, integer *ipiv, integer *incx)
 {
     /* System generated locals */
@@ -1010,7 +1010,7 @@ double az_r_sign (real * a, real * b) {
 
     /* Local variables */
     static integer i__, ip, ix;
-    extern /* Subroutine */ int sswap_(integer *, real *, integer *, real *, 
+    extern /* Subroutine */ int sswap_c(integer *, real *, integer *, real *, 
 	    integer *);
 
 

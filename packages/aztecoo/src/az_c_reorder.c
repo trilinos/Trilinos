@@ -232,7 +232,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 /*     to computing a Reverse Cuthill-McKee Ordering corresponding */
 /*     to the graph of a matrix. */
 
-/* Subroutine */ int az_rcm(integer *root, integer *xadj, integer *adjncy, 
+/* Subroutine */ int az_rcm_c(integer *root, integer *xadj, integer *adjncy, 
 	integer *mask, integer *perm, integer *ccsize, integer *deg)
 {
     /* System generated locals */
@@ -240,7 +240,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 
     /* Local variables */
     static integer i__, j, k, l;
-    extern /* Subroutine */ int az_degree(integer *, integer *, integer *, 
+    extern /* Subroutine */ int az_degree_c(integer *, integer *, integer *, 
 	    integer *, integer *, integer *, integer *);
     static integer nbr, node, fnbr, lnbr, lperm, jstop, jstrt, lbegin, lvlend;
 
@@ -255,7 +255,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
     --xadj;
 
     /* Function Body */
-    az_degree(root, &xadj[1], &adjncy[1], &mask[1], &deg[1], ccsize, &perm[
+    az_degree_c(root, &xadj[1], &adjncy[1], &mask[1], &deg[1], ccsize, &perm[
 	    1]);
 
     mask[*root] = 0;
@@ -343,7 +343,7 @@ L600:
     return 0;
 } /* az_rcm*/
 
-/* Subroutine */ int az_degree(integer *root, integer *xadj, integer *
+/* Subroutine */ int az_degree_c(integer *root, integer *xadj, integer *
 	adjncy, integer *mask, integer *deg, integer *ccsize, integer *ls)
 {
     /* System generated locals */
@@ -420,9 +420,9 @@ L300:
 
 
     return 0;
-} /* az_degree */
+} /* az_degree_c */
 
-/* Subroutine */ int az_fnroot(integer *root, integer *xadj, integer *
+/* Subroutine */ int az_fnroot_c(integer *root, integer *xadj, integer *
 	adjncy, integer *mask, integer *nlvl, integer *xls, integer *ls)
 {
     /* System generated locals */
@@ -430,7 +430,7 @@ L300:
 
     /* Local variables */
     static integer j, k;
-    extern /* Subroutine */ int az_rootls(integer *, integer *, integer *, 
+    extern /* Subroutine */ int az_rootls_c(integer *, integer *, integer *, 
 	    integer *, integer *, integer *, integer *);
     static integer ndeg, node, nabor, kstop, jstrt, kstrt, mindeg, ccsize, 
 	    nunlvl;
@@ -446,7 +446,7 @@ L300:
     --xadj;
 
     /* Function Body */
-    az_rootls(root, &xadj[1], &adjncy[1], &mask[1], nlvl, &xls[1], &ls[1]);
+    az_rootls_c(root, &xadj[1], &adjncy[1], &mask[1], nlvl, &xls[1], &ls[1]);
 
     ccsize = xls[*nlvl + 1] - 1;
     if (*nlvl == 1 || *nlvl == ccsize) {
@@ -488,7 +488,7 @@ L300:
     }
 
 L400:
-    az_rootls(root, &xadj[1], &adjncy[1], &mask[1], &nunlvl, &xls[1], &ls[1]
+    az_rootls_c(root, &xadj[1], &adjncy[1], &mask[1], &nunlvl, &xls[1], &ls[1]
 	    );
 
     if (nunlvl <= *nlvl) {
@@ -503,7 +503,7 @@ L400:
     return 0;
 } /* az_fnroot*/
 
-/* Subroutine */ int az_rootls(integer *root, integer *xadj, integer *
+/* Subroutine */ int az_rootls_c(integer *root, integer *xadj, integer *
 	adjncy, integer *mask, integer *nlvl, integer *xls, integer *ls)
 {
     /* System generated locals */
