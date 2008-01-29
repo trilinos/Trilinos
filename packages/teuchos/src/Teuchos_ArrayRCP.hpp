@@ -69,8 +69,8 @@ REFCOUNTPTR_INLINE
 ArrayRCP<T>::~ArrayRCP()
 {
   if(node_ && node_->deincr_count() == 0 ) {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-    printActiveRCPNodes.foo(); // Make sure this object is used!
+#ifdef TEUCHOS_DEBUG
+    local_printActiveRCPNodes.foo(); // Make sure this object is used!
     remove_RCPNode(node_);
 #endif
     delete node_;
@@ -85,7 +85,7 @@ ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
   if( this == &r_ptr )
     return *this; // Assignment to self
   if( node_ && !node_->deincr_count() ) {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+#ifdef TEUCHOS_DEBUG
     remove_RCPNode(node_);
 #endif
     delete node_;
@@ -476,8 +476,8 @@ ArrayRCP<T>::ArrayRCP(
   ,lowerOffset_(lowerOffset_in)
   ,upperOffset_(upperOffset_in)
 {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-  if(node_) {
+#ifdef TEUCHOS_DEBUG
+  if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
        <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
@@ -501,12 +501,12 @@ ArrayRCP<T>::ArrayRCP(
   ,lowerOffset_(lowerOffset_in)
   ,upperOffset_(upperOffset_in)
 {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-  if(node_) {
+#ifdef TEUCHOS_DEBUG
+  if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
        <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
-    add_new_ArrayRCPNode(node_,os.str());
+    add_new_RCPNode(node_,os.str());
   }
 #endif
 }

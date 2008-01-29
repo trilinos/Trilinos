@@ -31,6 +31,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_BOOST
@@ -422,18 +423,19 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = rcp( new C, deallocFunctorHandleDelete<A>(deallocHandleA), true );
     a_ptr1 = null;
 
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+#ifdef TEUCHOS_DEBUG
     
 		if(verbose)
-			out << "\nCreate a circular reference that will case a memory leak! ...\n";
+			out << "\nCreate a circular reference that will cause a memory leak! ...\n";
     {
+      Teuchos::setTracingActiveRCPNodes(true);
       RCP<A> a = rcp(new A());
       RCP<C> c = rcp(new C());
       a->set_C(c);
       c->set_A(a);
     }
 
-#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+#endif // TEUCHOS_DEBUG
 
 #ifdef HAVE_TEUCHOS_BOOST
 
@@ -460,8 +462,12 @@ int main( int argc, char* argv[] ) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   
   try {
-    // This should show that the A and C RCP objects are still around!
+    // In debug mode, this should show that the A and C RCP objects are still
+    // around!
     Teuchos::printActiveRCPNodes(out);
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT_EQUALITY( 2, Teuchos::numActiveRCPNodes() );
+#endif
 	} // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   

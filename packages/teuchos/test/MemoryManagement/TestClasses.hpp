@@ -30,7 +30,7 @@
 #define TEUCHOS_TEST_CLASSES_HPP
 
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_RCP.hpp"
 
 
 // Return constants from class functions
@@ -83,12 +83,10 @@ public:
 	virtual ~A(); // See below
 	virtual int A_g() { return A_g_; }
 	virtual int A_f() const { return A_f_; }
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 private:
   Teuchos::RCP<C> c_;
 public:
   void set_C(const Teuchos::RCP<C> &c ) { c_ = c; }
-#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 };
 
 
@@ -120,12 +118,10 @@ public:
 	~C() { C_g_ = -1; C_f_ = -1; }
 	virtual int C_g() { return C_g_; }
 	virtual int C_f() const { return C_f_; }
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 private:
   Teuchos::RCP<A> a_;
 public:
   void set_A(const Teuchos::RCP<A> &a ) { a_ = a; }
-#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 };
 
 

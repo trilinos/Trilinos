@@ -35,6 +35,8 @@
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_SerialComm.hpp"
 #endif // TPETRA_MPI
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Assert.hpp"
 
 template<typename OrdinalType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
@@ -49,6 +51,10 @@ int testLIDGID(Tpetra::ElementSpace<OrdinalType> const& es, OrdinalType nME,
 int main(int argc, char* argv[]) {
 	int myImageID = 0; // assume we are on serial
 	int numImages = 1; // if MPI, will be reset later
+
+#ifdef TEUCHOS_DEBUG
+  Teuchos::setTracingActiveRCPNodes(true);
+#endif
   
 	// initialize MPI if needed
 #ifdef TPETRA_MPI
@@ -87,8 +93,22 @@ int main(int argc, char* argv[]) {
 #ifdef TPETRA_MPI
 	MPI_Finalize();
 #endif
+
+  bool dummy_success = true;
+  try {
+    //Teuchos::printActiveRCPNodes(std::cout);
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_ASSERT_EQUALITY( 0, Teuchos::numActiveRCPNodes() );
+#endif
+	} // end try
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,dummy_success);
+  if (!dummy_success)
+    ++ierr;
+  
 	if(verbose) outputEndMessage("ElementSpace", (ierr == 0));
+
 	return(ierr);
+
 }
 
 //======================================================================

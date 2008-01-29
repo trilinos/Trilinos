@@ -50,9 +50,6 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 
-//#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES // Define this on command line to keep track of this!
-
-
 // /////////////////////////////////////////////////////////////////////////
 // Inline implementations below, not for the client to look at.
 
@@ -224,8 +221,8 @@ RCP<T>::RCP( T* p, bool has_ownership_in )
     ? new RCPNodeTmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership_in)
     : NULL )
 {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-  if(node_) {
+#ifdef TEUCHOS_DEBUG
+  if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
     add_new_RCPNode(node_,os.str());
@@ -241,8 +238,8 @@ RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
   : ptr_(p)
   , node_( p ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership_in) : NULL )
 {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-  if(node_) {
+#ifdef TEUCHOS_DEBUG
+  if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
     add_new_RCPNode(node_,os.str());

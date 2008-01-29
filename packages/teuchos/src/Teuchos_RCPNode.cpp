@@ -31,6 +31,13 @@
 #include "Teuchos_Exceptions.hpp"
 
 
+// Define this macro here locally and rebuild just this *.cpp file and update
+// the Teuchos library and you will get node tracing turned on by default when
+// debugging support is enabled!  Note that you also have to TEUCHOS_DEBUG
+// defined as well (using --enable-teuchos-debug at configure time).
+// #define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+
+
 namespace {
 
 
@@ -57,20 +64,22 @@ rcp_node_list_t;
 // Here we must let the PrintActiveRCPNodes constructor and destructor handle
 // the creation and destruction of this map object.  This will ensure that
 // this map object will be valid when any global/static RCP objects are
-// destroyed!
+// destroyed!  Note that this object will get created and destroyed
+// reguardless if whether we are tracing RCPNodes or not.  This just makes our
+// life simpler.
 rcp_node_list_t *rcp_node_list = 0;
 
 
+bool loc_isTracingActiveRCPNodes =
+#if defined(TEUCHOS_DEBUG) && defined(TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES)
+  true
+#else
+  false
+#endif
+  ;
+
+
 } // namespace
-
-
-void Teuchos::throw_null_ptr_error( const std::string &type_name )
-{
-  TEST_FOR_EXCEPTION(
-    true, NullReferenceError
-    ,"RCP<"<<type_name<<">::assert_not_null() : You can not"
-    " call operator->() or operator*() if get()==NULL!" );
-}
 
 
 //
@@ -150,37 +159,46 @@ void RCPNode::impl_pre_delete_extra_data()
   }
 }
 
-
-// Define this macro here locally and rebuild just this *.cpp file and update
-// the Teuchos library and you will get node tracing turned on when debugging
-// support is enabled!  Note that you also have to TEUCHOS_DEBUG defined as
-// well (using --enable-teuchos-debug at configure time).
-
-//#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-
-
 } // namespace Teuchos
 
 
 void Teuchos::add_new_RCPNode( RCPNode* rcp_node, const std::string &info )
 {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-  TEST_FOR_EXCEPT(0==rcp_node_list);
-  static int call_number = 0;
-  (*rcp_node_list)[rcp_node] = InfoAndCallNumber(info,call_number);
-  ++call_number;
-#endif
+  if (loc_isTracingActiveRCPNodes) {
+    TEST_FOR_EXCEPT(0==rcp_node_list);
+    static int call_number = 0;
+    (*rcp_node_list)[rcp_node] = InfoAndCallNumber(info,call_number);
+    ++call_number;
+  }
 }
 
 
 void Teuchos::remove_RCPNode( RCPNode* rcp_node )
 {
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  // Here, we will try to remove an RCPNode reguardless if whether
+  // loc_isTracingActiveRCPNodes==true or not.  This will not be a performance
+  // problem and it will ensure that any RCPNode objects that are added to
+  // this list will be removed and will not look like a memory leak.  In
+  // non-debug mode, this function will never be called.  In debug mode, with
+  // loc_isTracingActiveRCPNodes==false, the list *rcp_node_list will be empty and
+  // therefore this find(...) operation should be pretty cheap (even for a bad
+  // implementation of std::map).
   TEST_FOR_EXCEPT(0==rcp_node_list);
   const rcp_node_list_t::iterator itr = rcp_node_list->find(rcp_node);
+#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+  // If we have the macro TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES turned on a
+  // compile time, then all RCPNode objects that get created will have been
+  // added to this list.  In this case, we can asset that the node exists.
   TEST_FOR_EXCEPT_PRINT(itr==rcp_node_list->end(),&std::cerr);
-  rcp_node_list->erase(itr);
+#else
+  // If the macro TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES turned off by
+  // default, then is is possible that an RCP got created before the bool
+  // loc_isTracingActiveRCPNodes was turned on.  In this case, we should allow
+  // for an RCP node not to have been added to this list.  In this case we
+  // will just let this go!
 #endif
+  if (itr != rcp_node_list->end())
+    rcp_node_list->erase(itr);
 }
 
 
@@ -205,13 +223,13 @@ Teuchos::PrintActiveRCPNodes::~PrintActiveRCPNodes()
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   std::cerr << "\nCalled PrintActiveRCPNodes::~PrintActiveRCPNodes() : count = " << count_ << "\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
-  if(--count_ == 0 ) {
+  if( --count_ == 0 ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
-    printActiveRCPNodes(std::cerr);
     TEST_FOR_EXCEPT(0==rcp_node_list);
+    printActiveRCPNodes(std::cerr);
     delete rcp_node_list;
   }
 }
@@ -227,6 +245,42 @@ void Teuchos::PrintActiveRCPNodes::foo()
 int Teuchos::PrintActiveRCPNodes::count_ = 0;
 
 
+
+
+//
+// Nonmember functions
+//
+
+
+bool Teuchos::isTracingActiveRCPNodes()
+{
+  return loc_isTracingActiveRCPNodes;
+}
+
+#ifdef TEUCHOS_DEBUG
+
+void Teuchos::setTracingActiveRCPNodes(bool tracingActiveNodes)
+{
+#ifdef TEUCHOS_DEBUG
+  loc_isTracingActiveRCPNodes = tracingActiveNodes;
+#else
+  TEST_FOR_EXCEPT_MSG(true,"Error, you can not call setTracingActiveRCPNodes(...)"
+    " when TEUCHOS_DEBUG is not defined!");
+#endif
+}
+
+#endif // TEUCHOS_DEBUG
+
+
+int Teuchos::numActiveRCPNodes() {
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(0==rcp_node_list);
+  return rcp_node_list->size();
+#endif
+  return 0;
+}
+
+
 void Teuchos::printActiveRCPNodes(std::ostream &out)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
@@ -234,26 +288,35 @@ void Teuchos::printActiveRCPNodes(std::ostream &out)
     << "\nCalled printActiveRCPNodes() :"
     << " rcp_node_list.size() = " << rcp_node_list.size() << "\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
-#ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-  TEST_FOR_EXCEPT(0==rcp_node_list);
-  rcp_node_list_t::const_iterator itr = rcp_node_list->begin();
-  if(itr != rcp_node_list->end()) {
-    out
-      << "\n***"
-      << "\n*** Warning! The following Teucho::RCPNode objects were created but have"
-      << "\n*** not been destoryed yet.  This may be an indication that these objects may"
-      << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
-      << "\n*** that these objects are not destoryed correctly."
-      << "\n***\n";
-    while( itr != rcp_node_list->end() ) {
-      const rcp_node_list_t::value_type &entry = *itr;
+  if (loc_isTracingActiveRCPNodes) {
+    TEST_FOR_EXCEPT(0==rcp_node_list);
+    rcp_node_list_t::const_iterator itr = rcp_node_list->begin();
+    if(itr != rcp_node_list->end()) {
       out
-        << "\n  RCPNode address = \'" << entry.first << "\',"
-        << " information = " << entry.second.info << ","
-        << " call number = " << entry.second.call_number;
-      ++itr;
+        << "\n***"
+        << "\n*** Warning! The following Teucho::RCPNode objects were created but have"
+        << "\n*** not been destoryed yet.  This may be an indication that these objects may"
+        << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
+        << "\n*** that these objects are not destoryed correctly."
+        << "\n***\n";
+      while( itr != rcp_node_list->end() ) {
+        const rcp_node_list_t::value_type &entry = *itr;
+        out
+          << "\n  RCPNode address = \'" << entry.first << "\',"
+          << " information = " << entry.second.info << ","
+          << " call number = " << entry.second.call_number;
+        ++itr;
+      }
+      out << "\n";
     }
-    out << "\n";
   }
-#endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
+}
+
+
+void Teuchos::throw_null_ptr_error( const std::string &type_name )
+{
+  TEST_FOR_EXCEPTION(
+    true, NullReferenceError
+    ,"RCP<"<<type_name<<">::assert_not_null() : You can not"
+    " call operator->() or operator*() if get()==NULL!" );
 }

@@ -204,6 +204,40 @@ private:
 };
 
 
+/** \brief Return if we are tracing active nodes or not.
+ *
+ * NOTE: This will always return <tt>false</tt> when <tt>TEUCHOS_DEBUG</tt> is
+ * not defined.
+ *
+ * \relates RCPNode
+ */
+bool isTracingActiveRCPNodes();
+
+
+#ifdef TEUCHOS_DEBUG
+
+/** \brief Set if we should be tracing active RCP nodes.
+ *
+ * This will only cause tracing of RCPNode-based objects that are created
+ * after this has been called with <tt>true</tt>.  This function can later be
+ * called with <tt>false</tt> to turn off tracing RCPNode objects.  This can
+ * allow the client to keep track of RCPNode objects that get created in
+ * specific blocks of code and can help as a debugging aid.
+ *
+ * NOTE: This function call will not even compile unless
+ * <tt>TEUCHOS_DEBUG</tt> is defined!
+ *
+ * \relates RCPNode
+ */
+void setTracingActiveRCPNodes(bool tracingActiveNodes);
+
+#endif // TEUCHOS_DEBUG
+
+
+/** \brief Print the number of active RCPNode objects being tracked. */
+int numActiveRCPNodes();
+
+
 /** \brief Print the list of currently active RCP nodes.
  *
  * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
