@@ -123,18 +123,17 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
    *   - Solver parameters
-   *      - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "LM"
-   *      - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
-   *      - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
-   *      - "Extra NEV Blocks" - a \c int specifying the number of extra blocks the solver should keep in addition to those
+   *      - \c "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "LM"
+   *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
+   *      - \c "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
+   *      - \c "Extra NEV Blocks" - a \c int specifying the number of extra blocks the solver should keep in addition to those
              required to compute the number of eigenvalues requested.  Default: 0
-   *      - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *      - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
-   *      - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
+   *      - \c "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
+   *      - \c "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
+   *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
    *   - Convergence parameters
-   *      - Locking parameters (if using default locking test; see setLockingStatusTest())
-   *      - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
-   *      - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
+   *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
+   *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
    */
   BlockKrylovSchurSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
