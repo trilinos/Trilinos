@@ -43,7 +43,8 @@ int * Epetra_NumPyIntVector::getArray(PyObject * pyObject)
 {
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array)
-    tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
+    tmp_array = (PyArrayObject *)
+      PyArray_ContiguousFromObject(pyObject,PyArray_INT,0,0);
   
   // If this fails, clean up and throw a PythonException
   if (!tmp_array)
@@ -67,13 +68,15 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
     // PyObject argument is a bool
     if (PyBool_Check(pyObject))
     {
-      tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
+      tmp_array = (PyArrayObject *)
+	PyArray_SimpleNew(1,defaultDims,PyArray_INT);
     }
     // PyObject argument is not a bool ... try to build a contiguous
     // PyArrayObject from it
     else
     {
-      tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
+      tmp_array = (PyArrayObject *)
+	PyArray_ContiguousFromObject(pyObject,PyArray_INT,0,0);
     }
     // If any PyArray factory functions fail, clean up and throw a
     // PythonException
@@ -86,8 +89,8 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
     intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
     if (arraySize != defaultDims[0])
     {
-      PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
-								    PyArray_INT);
+      PyArrayObject * myArray = (PyArrayObject *)
+	PyArray_SimpleNew(1,defaultDims,PyArray_INT);
       if (!myArray)
       {
 	cleanup();
@@ -145,8 +148,8 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap,
   intp dims[ ] = { blockMap.NumMyPoints() };
   int *v = NULL;
   Epetra_IntVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_INT,
-						      (void *)v);
+  array = (PyArrayObject *)
+    PyArray_SimpleNewFromData(1,dims,PyArray_INT,(void *)v);
   if (!array)
   {
     cleanup();
@@ -164,8 +167,8 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_IntVector & source):
   intp dims[ ] = { map->NumMyPoints() };
   int *v = NULL;
   Epetra_IntVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_INT,
-						      (void *)v);
+  array = (PyArrayObject *)
+    PyArray_SimpleNewFromData(1,dims,PyArray_INT,(void *)v);
   if (!array)
   {
     cleanup();

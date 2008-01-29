@@ -44,7 +44,8 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
 {
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array)
-    tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
+    tmp_array = (PyArrayObject *)
+      PyArray_ContiguousFromObject(pyObject,PyArray_DOUBLE,0,0);
   
   // If this fails, clean up and throw a PythonException
   if (!tmp_array)
@@ -76,7 +77,8 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
   {
     int  numVectors = (int) PyInt_AsLong(pyObject);
     intp dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
+    tmp_array = (PyArrayObject *)
+      PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
     if (!tmp_array)
     {
       cleanup();
@@ -88,7 +90,8 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
   else
   {
     if (!tmp_array)
-      tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
+      tmp_array = (PyArrayObject *)
+	PyArray_ContiguousFromObject(pyObject,PyArray_DOUBLE,0,0);
 
     // If this fails, clean up and throw a PythonException
     if (!tmp_array)
@@ -122,8 +125,8 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
       // Reallocate the tmp_array if necessary
       if (reallocate)
       {
-	PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,
-								      PyArray_DOUBLE);
+	PyArrayObject * myArray = (PyArrayObject *)
+	  PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
 	if (!myArray)
 	{
 	  cleanup();
@@ -201,7 +204,8 @@ int * Epetra_NumPyMultiVector::getRange(PyObject * range,
 
   // Try to create a contiguous array of integers from the PyObject
   if (!tmp_range)
-    tmp_range = (PyArrayObject *) PyArray_ContiguousFromObject(range,'i',1,1);
+    tmp_range = (PyArrayObject *)
+      PyArray_ContiguousFromObject(range,PyArray_INT,1,1);
 
   // If this fails, clean up and throw a PythonException
   if (!tmp_range)

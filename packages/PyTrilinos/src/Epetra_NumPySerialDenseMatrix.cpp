@@ -47,16 +47,18 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
     {
       tmp_bool = (bool) PyInt_AsLong(pyObject);
       intp dimensions[ ] = {0,0};
-      tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
+      tmp_array = (PyArrayObject *)
+	PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
     }
     // If pyObject is an int, then emulate an int-int constructor
     else
     {
       if (PyInt_Check(pyObject))
       {
-	int  numRows = (int) PyInt_AsLong(pyObject);
+	int      numRows = (int) PyInt_AsLong(pyObject);
 	intp dimensions[ ] = {numRows, numCols};
-	tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
+	tmp_array = (PyArrayObject *)
+	  PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
       }
       // If pyObject is not a bool nor an int, try to build a
       // contiguous 2D PyArrayObject from the pyObject
@@ -92,14 +94,14 @@ void Epetra_NumPySerialDenseMatrix::setArray(bool copy)
   }
   else
   {
-    intp     dimensions[ ] = { M(), N() };
-    double * data          = NULL;
-    if (!copy) data        = Epetra_SerialDenseMatrix::A();
+    intp dimensions[ ] = { M(), N() };
+    double * data      = NULL;
+    if (!copy) data    = Epetra_SerialDenseMatrix::A();
     // This NumPy function returns a borrowed pointer: no DECREF
     PyArray_Descr * dtype  = PyArray_DescrFromType(PyArray_DOUBLE);
-    array = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, dtype, 2,
-						  dimensions, NULL,
-						  (void*)data, FARRAY_FLAGS, NULL);
+    array = (PyArrayObject*)
+      PyArray_NewFromDescr(&PyArray_Type,dtype,2,dimensions,NULL,(void*)data,
+			   FARRAY_FLAGS,NULL);
     if (!array)
     {
       cleanup();
