@@ -209,7 +209,7 @@ PyObject* methodName(PyObject* partialObj)
     myCount = PyArray_SIZE(myArray);
     allND   = array_numdims(myArray) + 1;
     { // Scope this to make allDims array temporary
-      intp * allDims = new intp[allND];
+      npy_intp * allDims = new npy_intp[allND];
       allDims[0] = self->NumProc();
       for (int i=1; i<allND; ++i) allDims[i] = array_size(myArray,i-1);
       allObj = PyArray_SimpleNew(allND, allDims, type);

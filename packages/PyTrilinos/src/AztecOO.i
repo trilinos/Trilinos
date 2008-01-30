@@ -164,7 +164,7 @@ example subdirectory of the PyTrilinos package:
 {
   PyObject * methodName() const
   {
-    intp dims[ ] = { (intp) length };
+    npy_intp dims[ ] = { (npy_intp) length };
     return PyArray_SimpleNewFromData(1, dims, typeName, (void*)self->methodName());
   }
 }

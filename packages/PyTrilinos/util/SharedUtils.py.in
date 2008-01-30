@@ -454,6 +454,7 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
         # Build the swig runtime header file
         swigRuntime = os.path.join(self.buildDir, self.swigRuntime)
         if needsToBeBuilt(swigRuntime, [ ]):
+            print "\nBuilding the swig runtime header file"
             changeDirectory(self.buildDir)
             swig       = self.makeMacros["SWIG"           ]
             swigPython = self.makeMacros["SWIG_PYTHON_OPT"]
@@ -461,9 +462,13 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
             changeDirectory(self.thisDir)
 
         # Compile the PyTrilinos sources
+        count = 0
         for src,hdr,obj in zip(self.sources, self.headers, self.objects):
             if needsToBeBuilt(obj, [src,hdr]):
+                if count == 0:
+                    print "\nCompiling the PyTrilinos source files"
                 runCommand(self.getCompileCmd(src, obj))
+                count += 1
 
         # Create the shared PyTrilinos library
         if len(self.sources) > 0:

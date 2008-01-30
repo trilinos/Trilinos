@@ -139,7 +139,7 @@ except ImportError:
     int * result = self->methodName();
     if (result == NULL) return Py_BuildValue("");
     int * data   = NULL;
-    intp dims[ ] = { self->dimMethod() };
+    npy_intp dims[ ] = { self->dimMethod() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
 						NULL, FARRAY_FLAGS, NULL);
@@ -164,7 +164,7 @@ except ImportError:
     double * result = self->methodName();
     if (result == NULL) return Py_BuildValue("");
     double * data   = NULL;
-    intp dims[ ] = { self->dimMethod() };
+    npy_intp dims[ ] = { self->dimMethod() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
 						NULL, FARRAY_FLAGS, NULL);
@@ -189,7 +189,7 @@ except ImportError:
     double * result = self->methodName();
     if (result == NULL) return Py_BuildValue("");
     double * data   = NULL;
-    intp dims[ ] = { self->dimMethod1(), self->dimMethod2() };
+    npy_intp dims[ ] = { self->dimMethod1(), self->dimMethod2() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dims, NULL,
 						NULL, FARRAY_FLAGS, NULL);
@@ -459,7 +459,7 @@ memory parallel)."
   PyObject * ListOfColors()
   {
     int      * list    = self->ListOfColors();
-    intp       dims[ ] = { self->NumColors() };
+    npy_intp   dims[ ] = { self->NumColors() };
     int      * data;
     PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
     if (retObj == NULL) goto fail;
@@ -474,7 +474,7 @@ memory parallel)."
   PyObject * ColorLIDList(int color)
   {
     int      * list    = self->ColorLIDList(color);
-    intp       dims[ ] = { self->NumElementsWithColor(color) };
+    npy_intp   dims[ ] = { self->NumElementsWithColor(color) };
     int      * data;
     PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
     if (retObj == NULL) goto fail;
@@ -489,7 +489,7 @@ memory parallel)."
   PyObject * ElementColors()
   {
     int      * list    = self->ElementColors();
-    intp       dims[ ] = { self->Map().NumMyElements() };
+    npy_intp   dims[ ] = { self->Map().NumMyElements() };
     int      * data;
     PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
     if (retObj == NULL) goto fail;

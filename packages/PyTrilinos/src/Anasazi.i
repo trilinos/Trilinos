@@ -219,7 +219,7 @@ package:
   SWIG_CATCH_STDEXCEPT
   catch(...)
   {
-    SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
 

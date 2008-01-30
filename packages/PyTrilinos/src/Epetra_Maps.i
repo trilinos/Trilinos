@@ -219,7 +219,7 @@ indicates the local element ID that the point belongs to."
 
   PyObject * RemoteIDList(PyObject * GIDList)
   {
-    intp            numIDs[1];
+    npy_intp        numIDs[1];
     int             result;
     int           * GIDData   = NULL;
     int           * PIDData   = NULL;
@@ -282,7 +282,7 @@ indicates the local element ID that the point belongs to."
 
   PyObject * MyGlobalElements()
   {
-    intp       numEls[1];
+    npy_intp   numEls[1];
     int        result;
     int      * geData  = NULL;
     PyObject * geArray = NULL;
@@ -305,7 +305,7 @@ indicates the local element ID that the point belongs to."
 
   PyObject * FirstPointInElementList()
   {
-    intp       numEls[1];
+    npy_intp   numEls[1];
     int      * result;
     int      * fpeData  = NULL;
     PyObject * fpeArray = NULL;
@@ -323,7 +323,7 @@ indicates the local element ID that the point belongs to."
 
   PyObject * ElementSizeList()
   {
-    intp       numEls[1];
+    npy_intp   numEls[1];
     int        result;
     int      * eslData  = NULL;
     PyObject * eslArray = NULL;
@@ -346,7 +346,7 @@ indicates the local element ID that the point belongs to."
 
   PyObject * PointToElementList()
   {
-    intp       numPts[1];
+    npy_intp   numPts[1];
     int        result;
     int      * pteData  = NULL;
     PyObject * pteArray = NULL;
@@ -468,7 +468,7 @@ Epetra_Map::Epetra_Map(const Epetra_Map &);
 %define %epetra_mover_method(methodName, numMethod)
 PyObject * methodName()
 {
-  intp       numIDs[ ]   = { self->numMethod() };
+  npy_intp   numIDs[ ]   = { self->numMethod() };
   int      * ids         = NULL;
   int      * returnData  = NULL;
   PyObject * returnArray = PyArray_SimpleNew(1,numIDs,NPY_INT);

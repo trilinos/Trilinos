@@ -49,7 +49,7 @@
   Py_XDECREF($result);
   if (result == -1) SWIG_exception(SWIG_ValueError,   "Invalid row index"  );
   if (result == -2) SWIG_exception(SWIG_RuntimeError, "Graph not completed");
-  intp dims[ ] = { *$1 };
+  npy_intp dims[ ] = { *$1 };
   $result = PyArray_SimpleNewFromData(1,dims,NPY_INT,(void*)(*$2));
   if ($result == NULL) SWIG_exception(SWIG_RuntimeError, "Error creating integer array");
 }
@@ -222,7 +222,7 @@ Epetra_CrsGraph::RemoveMyIndices(int, int, int*);
     int        lrid          = 0;
     int        numIndices    = 0;
     int        result        = 0;
-    intp       dimensions[ ] = { 0 };
+    npy_intp   dimensions[ ] = { 0 };
     int      * indices       = NULL;
     PyObject * indicesArray  = NULL;
 
@@ -256,7 +256,7 @@ Epetra_CrsGraph::RemoveMyIndices(int, int, int*);
   {
     int        numIndices    = 0;
     int        result        = 0;
-    intp       dimensions[ ] = { 0 };
+    npy_intp   dimensions[ ] = { 0 };
     int      * indices       = NULL;
     PyObject * indicesArray  = NULL;
 

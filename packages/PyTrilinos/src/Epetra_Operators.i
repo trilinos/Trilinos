@@ -84,17 +84,17 @@
     int newVals = 0;
 
     // Create the array of rows
-    rowArray = obj_to_array_allow_conversion(Rows, PyArray_INT, &newRows);
+    rowArray = obj_to_array_allow_conversion(Rows, NPY_INT, &newRows);
     if (rowArray == NULL) goto fail;
     numRowEntries = (int) PyArray_MultiplyList(rowArray->dimensions,rowArray->nd);
 
     // Create the array of cols
-    colArray = obj_to_array_allow_conversion(Cols, PyArray_INT, &newCols);
+    colArray = obj_to_array_allow_conversion(Cols, NPY_INT, &newCols);
     if (colArray == NULL) goto fail;
     numColEntries = (int) PyArray_MultiplyList(colArray->dimensions,colArray->nd);
 
     // Create the array of values
-    valArray = obj_to_array_allow_conversion(Values, PyArray_DOUBLE, &newVals);
+    valArray = obj_to_array_allow_conversion(Values, NPY_DOUBLE, &newVals);
     if (valArray == NULL) goto fail;
     numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
 
@@ -183,17 +183,17 @@
     }
 
     // Create the array of rows
-    rowArray = obj_to_array_allow_conversion(Rows,PyArray_INT,&newRows);
+    rowArray = obj_to_array_allow_conversion(Rows,NPY_INT,&newRows);
     if (rowArray == NULL) goto fail;
     numRowEntries = (int) PyArray_MultiplyList(rowArray->dimensions,rowArray->nd);
 
     // Create the array of cols
-    colArray = obj_to_array_allow_conversion(Cols,PyArray_INT,&newCols);
+    colArray = obj_to_array_allow_conversion(Cols,NPY_INT,&newCols);
     if (colArray == NULL) goto fail;
     numColEntries = (int) PyArray_MultiplyList(colArray->dimensions,colArray->nd);
 
     // Create the array of values
-    valArray = obj_to_array_allow_conversion(Values,PyArray_DOUBLE,&newVals);
+    valArray = obj_to_array_allow_conversion(Values,NPY_DOUBLE,&newVals);
     if (valArray == NULL) goto fail;
     numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
 
@@ -218,6 +218,8 @@
       result = self->methodName(Row, 1, &Value, &Col);
       if(result < 0) goto fail;
     }
+
+    // Object cleanup
     if (newRows) Py_DECREF(rowArray);
     if (newCols) Py_DECREF(colArray);
     if (newVals) Py_DECREF(valArray);
@@ -420,17 +422,17 @@ Epetra_RowMatrix::RightScale;
 // NumEntries[0].
 %typemap(directorin) int &NumEntries
 %{
-  intp dims$argnum[ ] = { (intp) 1 };
+  npy_intp dims$argnum[ ] = { (npy_intp) 1 };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_INT, (void*)&$1_name);
 %}
 %typemap(directorin) double *Values
 %{
-  intp dims$argnum[ ] = { (intp) Length };
+  npy_intp dims$argnum[ ] = { (npy_intp) Length };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_DOUBLE, (void*)$1_name);
 %}
 %typemap(directorin) int *Indices
 %{
-  intp dims$argnum[ ] = { (intp) Length };
+  npy_intp dims$argnum[ ] = { (npy_intp) Length };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_INT, (void*)$1_name);
 %}
 %include "Epetra_RowMatrix.h"
@@ -445,7 +447,7 @@ Epetra_RowMatrix::RightScale;
 // Typemap for double * & Value
 %typemap(directorin) double *&Value
 %{
-  intp dims$argnum[ ] = { (intp) 1 };
+  npy_intp dims$argnum[ ] = { (npy_intp) 1 };
   $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_DOUBLE, (void*)$1_name);
 %}
 // Apply the referenced int typemap for NumEntries to RowIndex and ColIndex
@@ -821,7 +823,7 @@ Epetra_CrsMatrix::__getitem__;
     int        lrid          = 0;
     int        numEntries    = 0;
     int        result        = 0;
-    intp       dimensions[ ] = { 0 };
+    npy_intp   dimensions[ ] = { 0 };
     double   * values        = NULL;
     int      * indices       = NULL;
     PyObject * valuesArray   = NULL;
@@ -856,7 +858,7 @@ Epetra_CrsMatrix::__getitem__;
   {
     int        numEntries    = 0;
     int        result        = 0;
-    intp       dimensions[ ] = { 0 };
+    npy_intp   dimensions[ ] = { 0 };
     double   * values        = NULL;
     int      * indices       = NULL;
     PyObject * valuesArray   = NULL;
@@ -913,7 +915,7 @@ Epetra_CrsMatrix::__getitem__;
     int        lcid          = 0;
     int        error         = 0;
     int        numEntries    = 0;
-    intp       dimensions[ ] = { 0 };
+    npy_intp   dimensions[ ] = { 0 };
     int      * indices       = NULL;
     double     result        = 0.0;
     double   * values        = NULL;
