@@ -1,0 +1,5 @@
+#!/bin/tcsh
+which lamboot
+lamboot
+make runtests-mpi TRILINOS_MPI_GO="'mpirun -np '"
+
