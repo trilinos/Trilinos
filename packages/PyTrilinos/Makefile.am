@@ -65,7 +65,7 @@ doc/DevelopersGuide/BuildSystem.html       \
 doc/DevelopersGuide/Documentation.txt      \
 doc/DevelopersGuide/Documentation.html     \
 doc/DevelopersGuide/ExceptionHandling.txt  \
-doc/DevelopersGuide/ExceptionHandling.html \
+doc/DevelopersGuide/ExceptionHandling.html
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
