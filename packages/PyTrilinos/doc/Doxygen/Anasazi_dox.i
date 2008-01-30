@@ -464,7 +464,7 @@ C++ includes: AnasaziBasicOutputManager.hpp ";
 %feature("docstring")  Anasazi::BasicOutputManager::BasicOutputManager
 "Anasazi::BasicOutputManager< ScalarType >::BasicOutputManager(int
 vb=Anasazi::Errors, Teuchos::RCP< ostream >
-os=Teuchos::rcp(&std::cout, false))
+os=Teuchos::rcp(&std::cout, false), int printingRank=0)
 
 Default constructor. ";
 
@@ -715,6 +715,14 @@ current residual, etc. (see getState())
 initialize() gives the user the opportunity to manually set these,
 although this must be done with caution, as the validity of the user
 input will not be checked.
+
+Only the first newstate.curDim columns of newstate.V and newstate.KK
+and the first newstate.curDim rows of newstate.KK will be used.
+
+If newstate.V == getState().V, then the data is not copied. The same
+holds for newstate.KK, newstate.X, newstate.KX, newstate.MX, and
+newstate.R Only the upper triangular half of newstate.KK is used to
+initialize the state of the solver.
 
 isInitialized() == true (see post-conditions of isInitialize())  The
 user has the option of specifying any component of the state using

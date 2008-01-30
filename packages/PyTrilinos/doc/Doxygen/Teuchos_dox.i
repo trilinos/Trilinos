@@ -956,20 +956,19 @@ Make a deep copy of this object. ";
 
 /*  Data Access methods  */
 
-%feature("docstring")  Teuchos::XMLObject::getTag "const std::string&
-Teuchos::XMLObject::getTag() const
+%feature("docstring")  Teuchos::XMLObject::getTag "const std::string
+& XMLObject::getTag() const
 
 Return the tag of the current node. ";
 
 %feature("docstring")  Teuchos::XMLObject::hasAttribute "bool
-Teuchos::XMLObject::hasAttribute(const std::string &name) const
+XMLObject::hasAttribute(const std::string &name) const
 
 Find out if the current node has an attribute of the specified name.
 ";
 
 %feature("docstring")  Teuchos::XMLObject::getAttribute "const
-std::string& Teuchos::XMLObject::getAttribute(const std::string &name)
-const
+std::string & XMLObject::getAttribute(const std::string &name) const
 
 Return the value of the attribute with the specified name. ";
 
@@ -1000,48 +999,48 @@ Get an attribute, assigning a default value if the requested attribute
 does not exist. ";
 
 %feature("docstring")  Teuchos::XMLObject::numChildren "int
-Teuchos::XMLObject::numChildren() const
+XMLObject::numChildren() const
 
 Return the number of child nodes owned by this node. ";
 
-%feature("docstring")  Teuchos::XMLObject::getChild "const XMLObject&
-Teuchos::XMLObject::getChild(int i) const
+%feature("docstring")  Teuchos::XMLObject::getChild "const XMLObject
+& XMLObject::getChild(int i) const
 
 Return the i-th child node. ";
 
 %feature("docstring")  Teuchos::XMLObject::numContentLines "int
-Teuchos::XMLObject::numContentLines() const
+XMLObject::numContentLines() const
 
 Return the number of lines of character content stored in this node.
 ";
 
 %feature("docstring")  Teuchos::XMLObject::getContentLine "const
-std::string& Teuchos::XMLObject::getContentLine(int i) const
+std::string & XMLObject::getContentLine(int i) const
 
 Return the i-th line of character content stored in this node. ";
 
 %feature("docstring")  Teuchos::XMLObject::toString "std::string
-Teuchos::XMLObject::toString() const
+XMLObject::toString() const
 
 Represent this node and its children as a std::string. ";
 
 %feature("docstring")  Teuchos::XMLObject::print "void
-Teuchos::XMLObject::print(std::ostream &os, int indent) const
+XMLObject::print(std::ostream &os, int indent) const
 
 Print this node and its children to stream with the given indentation.
 ";
 
 %feature("docstring")  Teuchos::XMLObject::header "std::string
-Teuchos::XMLObject::header() const
+XMLObject::header() const
 
 Write the header for this object to a std::string. ";
 
-%feature("docstring")  Teuchos::XMLObject::terminatedHeader "std::string Teuchos::XMLObject::terminatedHeader() const
+%feature("docstring")  Teuchos::XMLObject::terminatedHeader "std::string XMLObject::terminatedHeader() const
 
 Write the header for this object to a std::string. ";
 
 %feature("docstring")  Teuchos::XMLObject::footer "std::string
-Teuchos::XMLObject::footer() const
+XMLObject::footer() const
 
 Write the footer for this object to a std::string. ";
 
@@ -1058,8 +1057,8 @@ Check that a tag is equal to an expected std::string. ";
 /*  Tree-Assembly methods  */
 
 %feature("docstring")  Teuchos::XMLObject::addAttribute "void
-Teuchos::XMLObject::addAttribute(const std::string &name, const
-std::string &value)
+XMLObject::addAttribute(const std::string &name, const std::string
+&value)
 
 Add an attribute to the current node's atribute list. ";
 
@@ -1079,12 +1078,12 @@ Teuchos::XMLObject::addBool(const std::string &name, bool val)
 Add a bool as an attribute. ";
 
 %feature("docstring")  Teuchos::XMLObject::addChild "void
-Teuchos::XMLObject::addChild(const XMLObject &child)
+XMLObject::addChild(const XMLObject &child)
 
 Add a child node to the node. ";
 
 %feature("docstring")  Teuchos::XMLObject::addContent "void
-Teuchos::XMLObject::addContent(const std::string &contentLine)
+XMLObject::addContent(const std::string &contentLine)
 
 Add a line of character content. ";
 

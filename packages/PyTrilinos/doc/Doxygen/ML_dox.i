@@ -1091,7 +1091,7 @@ Teuchos::RefCountPtr< DoubleVector > RCPValues)
 
 Constructor with a given Space, and user-provided RefCountPtr. ";
 
-%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const Space &VectorSpace, vector<
+%feature("docstring")  MLAPI::MultiVector::MultiVector "MLAPI::MultiVector::MultiVector(const Space &VectorSpace, std::vector<
 Teuchos::RefCountPtr< DoubleVector > > RCPValues)
 
 Constructor with a given Space, and user-provided array of values. ";
@@ -1667,6 +1667,37 @@ Operator &A, Teuchos::ParameterList &List, Operator &Ptent)
 
 Builds the tentative prolongator with default null space. ";
 
+%feature("docstring")  MLAPI::GetAggregates "int
+MLAPI::GetAggregates(const Operator &A, Teuchos::ParameterList &List,
+const MultiVector &ThisNS, Epetra_IntVector &aggrinfo)
+
+Call ML aggregation on A according to parameters supplied in List.
+Return aggregates in aggrinfo.
+
+On input, map of aggrinfo has to map row map of A. On output,
+aggrinfo[i] contains number of aggregate the row belongs to, where
+aggregates are numbered starting from 0. Return value is the
+processor-local number of aggregates build. If aggrinfo[i] >= return-
+value, then i is a processor local row of a row that ML has detected
+to be on a Dirichlet BC.
+
+Parameters:
+-----------
+
+A:  (in): Matrix to be aggregated on
+
+List:  (in): ParameterList containing ML options
+
+ThisNS:  (in): nullspace
+
+aggrinfo(out):  ::  vector containing aggregation information
+
+Map of aggrinfo has to match rowmap of A on input.
+
+returns processor-local number of aggregates
+
+Michael Gee (gee@lnm.mw.tum.de) ";
+
 %feature("docstring")  MLAPI::SetDefaults "void
 MLAPI::SetDefaults(Teuchos::ParameterList &List)
 
@@ -1890,9 +1921,6 @@ MLAPI::GetString(const double &x) ";
 
 %feature("docstring")  MLAPI::GetMatrixType "int
 MLAPI::GetMatrixType() ";
-
-
-// File: namespacestd.xml
 
 
 // File: namespaceTeuchos.xml
