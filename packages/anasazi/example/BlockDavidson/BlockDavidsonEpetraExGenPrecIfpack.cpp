@@ -31,6 +31,7 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_InvOperator.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 // Include header for Ifpack incomplete Cholesky preconditioner
@@ -48,47 +49,6 @@
 
 
 using namespace Anasazi;
-
-
-// ****************************************************************************
-// Class:  IFPACKPrecOp
-// Purpose:  Applies A^{-1}*X where A is an IFPack preconditioner.  
-//           Class supports Epetra_Operator interface.
-// Date: Jan 9, 2006
-// Author:  Heidi K. Thornquist (AmesosGenOp)
-// Modified: July 2, 2007, Chris Baker
-// ****************************************************************************
-class IFPACKPrecOp : public virtual Epetra_Operator
-{
-public:
-  // Basic constructor
-  IFPACKPrecOp( const Teuchos::RCP<Ifpack_Preconditioner>& prec );
-  // Destructor
-  ~IFPACKPrecOp() {};
-  
-  // Methods for supporting Epetra_Operator interface
-  int SetUseTranspose(bool useTranspose) {return -1;}
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const;
-  const char* Label() const { return "IFPACK Incomplete Cholesky preconditioner"; }
-  bool UseTranspose() const { return false; }
-  const Epetra_Comm& Comm() const { return prec_->Comm(); }
-  const Epetra_Map& OperatorDomainMap() const { return prec_->OperatorDomainMap(); }
-  const Epetra_Map& OperatorRangeMap() const { return prec_->OperatorRangeMap(); }
-    
-  // Epetra_Operator interface methods that are not supported.
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const { return -1; }
-  bool HasNormInf() const { return false; };
-  double NormInf() const { return -1.0; };
-   
-private:  
-  // Default constructor
-  IFPACKPrecOp () {};
- 
-  // Copy constructor
-  IFPACKPrecOp ( const IFPACKPrecOp& precOp ) {};
-  
-  Teuchos::RCP<Ifpack_Preconditioner> prec_;
-};
 
 
 //*****************************************************************************
@@ -211,7 +171,7 @@ int main(int argc, char *argv[]) {
     printer.stream(Errors) 
       << " done." << std::endl;
     // encapsulate this preconditioner into a IFPACKPrecOp class
-    PrecOp = Teuchos::rcp( new IFPACKPrecOp(prec) );
+    PrecOp = Teuchos::rcp( new Epetra_InvOperator(&*prec) );
   }
 
 
@@ -335,22 +295,3 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-
-// ****************************************************************************
-// Class:  IFPACKPrecOp
-// Purpose:  Applies A^{-1}*X where A is an IFPack preconditioner.  
-//           Class supports Epetra_Operator interface.
-// Date: Jan 9, 2006
-// Author:  Heidi K. Thornquist (AmesosGenOp)
-// Modified: July 2, 2007, Chris Baker
-// ****************************************************************************
-
-
-IFPACKPrecOp::IFPACKPrecOp( const Teuchos::RCP<Ifpack_Preconditioner>& prec ) 
-  : prec_(prec) {}
-
-int IFPACKPrecOp::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const 
-{
-  // Solve the linear system A*Y = X
-  return prec_->ApplyInverse(X,Y);
-}
