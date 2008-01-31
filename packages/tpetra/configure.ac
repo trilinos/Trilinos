@@ -222,6 +222,8 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE(tbb, [Enable use of Intel's Thread Building Blocks library], TPETRA_TBB, no)
+
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
@@ -328,6 +330,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/verySimple/Makefile
 		example/EpetraTpetraProfile/Makefile
+		example/TpetraOPs/Makefile
 		test/Makefile
 		test/Platform/Makefile
 		test/Comm/Makefile

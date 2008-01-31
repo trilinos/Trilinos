@@ -26,15 +26,30 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../epetra/Makefile.export.epetra
+include $(top_builddir)/../triutils/Makefile.export.triutils
 
-all-local:
+EXEEXT = .exe
 
-#if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Comm Distributor ElementSpace Directory ImportExport BlockElementSpace VectorSpace Vector CisMatrix DistObject BasicPerfTest
-#endif
+noinst_PROGRAMS = TpetraOPs
 
-SUBDIRS = $(STANDARD_SUBDIRS)
+TpetraOPs_SOURCES = $(srcdir)/cxx_main.cpp
 
-EXTRA_DIST = tpetra_test_util.hpp
+TpetraOPs_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../kokkos/src/libkokkos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a
 
+_EXPORT_INCLUDES = $(TPETRA_INCLUDES)  $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)
+_EXPORT_LIBS =  $(TPETRA_LIBS) $(EPETRA_LIBS) $(TRIUTILS_LIBS)
+
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+@USING_GNUMAKE_TRUE@EXPORT_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_FALSE@EXPORT_LIBS     = $(_EXPORT_LIBS)
+
+TpetraOPs_CXXFLAGS = $(EXPORT_INCLUDES)
+
+TpetraOPs_LDADD = $(EXPORT_LIBS)

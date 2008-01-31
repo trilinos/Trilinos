@@ -54,7 +54,7 @@ namespace Tpetra {
 		//@{ \name Constructor/Destructor Methods
 
 		//! Destructor
-		virtual ~Comm() {};
+		virtual ~Comm() {}
 
 		//@}
   

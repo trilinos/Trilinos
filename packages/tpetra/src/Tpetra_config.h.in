@@ -123,6 +123,9 @@
 /* Define if want to build tpetra-examples */
 #undef HAVE_TPETRA_EXAMPLES
 
+/* Define if want to build tbb */
+#undef HAVE_TPETRA_TBB
+
 /* Define if want to build tpetra-tests */
 #undef HAVE_TPETRA_TESTS
 

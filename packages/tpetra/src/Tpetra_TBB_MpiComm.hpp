@@ -26,20 +26,24 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_MPICOMM_HPP
-#define TPETRA_MPICOMM_HPP
+#ifndef TPETRA_TBB_MPICOMM_HPP
+#define TPETRA_TBB_MPICOMM_HPP
 
 #include <mpi.h>
 #include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
+
+#ifdef HAVE_TPETRA_TBB
+#include "Tpetra_TBB_TaskScheduler.hpp"
+
 #include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_MpiData.hpp"
 #include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
-  //! Tpetra::MpiComm:  The Tpetra MPI Communication Class.
+  //! Tpetra::TBB_MpiComm:  The Tpetra TBB-capable MPI Communication Class.
   /*! The MpiComm class is an implementation of Tpetra::Comm, providing the general
       information and services needed for other Tpetra classes to run on 
     a parallel computer using MPI.
@@ -54,34 +58,58 @@ namespace Tpetra {
   */
 
   template<typename OrdinalType, typename PacketType>
-  class MpiComm : public Object, public virtual Comm<OrdinalType, PacketType> {
+  class TBB_MpiComm : public Object, public virtual Comm<OrdinalType, PacketType> {
   public:
     
     //@{ \name Constructor/Destructor Methods
 
     //! default constuctor
-    /*! This is used when the user wants to create an MpiComm instance directly.
+    /*! This is used when the user wants to create an TBB_MpiComm instance directly.
       \param Comm In
              MPI_Comm communicator we will use.
     */
-    MpiComm(MPI_Comm Comm) 
-      : Object("Tpetra::MpiComm") 
+    TBB_MpiComm(MPI_Comm Comm, int num_threads = 0) 
+      : Object("Tpetra::TBB_MpiComm") 
       , MpiData_()
       , tag_(-1)
     {
       MpiData_ = Teuchos::rcp(new MpiData(Comm));
-      tag_ = MpiData_->getMpiTag();
+      tag_ = data().getMpiTag();
+
+      Tpetra::task_scheduler(Tpetra::START_TASK_SCHEDULER, num_threads);
+    }
+
+    //! platform constructor
+    /*! This is used by MpiPlatform to create an TBB_MpiComm instance. It should
+      not be called directly by the user.
+      \param MpiData In
+             MpiData inner data class passed in by MpiPlatform.
+    */
+    TBB_MpiComm(Teuchos::RCP<MpiData> const& mpidata, int num_threads = 0)
+      : Object("Tpetra::TBB_MpiComm")
+      , MpiData_(mpidata)
+         //, tag_(-1)
+      , tag_(data().getMpiTag())
+    {
+      //tag_ = data().getMpiTag();
+      Tpetra::task_scheduler(Tpetra::START_TASK_SCHEDULER, num_threads);
     }
 
     //! copy constructor
-    MpiComm(MpiComm<OrdinalType, PacketType> const& comm) 
+    TBB_MpiComm(TBB_MpiComm<OrdinalType, PacketType> const& comm) 
       : Object(comm.label())
-      , MpiData_(Teuchos::rcp(new MpiData(comm.MpiData_->getMpiComm())))
-      , tag_(MpiData_->getMpiTag())
+      , MpiData_(comm.MpiData_)
+         //, tag_(-1)
+      , tag_(data().getMpiTag())
     {
+      tag_ = data().getMpiTag();
     }
 
-    virtual ~MpiComm() {}
+    virtual ~TBB_MpiComm()
+    {
+std::cout << "TBB_MpiComm dtor"<<std::endl;
+      Tpetra::task_scheduler(Tpetra::STOP_TASK_SCHEDULER);
+    }
 
     //@}
     
@@ -246,14 +274,14 @@ namespace Tpetra {
       if(myVals == 0)
         throw reportError("myVals is null.", 1);
       // Throw an exception if destImageID is not a valid ID.
-      if(destImageID < 0 || destImageID >= MpiData_->getNumImages())
+      if(destImageID < 0 || destImageID >= data().getNumImages())
         throw reportError("Invalid destImageID specified. Should be in the range [0," +
-                  toString(MpiData_->getNumImages()) + ").", 3);
+                  toString(data().getNumImages()) + ").", 3);
       
       int err = MPI_Send(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(),
-                 destImageID, tag_, MpiData_->getMpiComm());
+                 destImageID, tag_, data().getMpiComm());
       if(err != 0)
-        cerr << "MpiComm error on image " << MpiData_->getMyImageID() << ", code = " << err << endl;
+        cerr << "MpiComm error on image " << data().getMyImageID() << ", code = " << err << endl;
       
     }
 
@@ -275,9 +303,9 @@ namespace Tpetra {
       if(myVals == 0)
         throw reportError("myVals is null.", 1);
       // Throw an exception if sourceImageID is not a valid ID.
-      if(sourceImageID < -1 || sourceImageID >= MpiData_->getNumImages())
+      if(sourceImageID < -1 || sourceImageID >= data().getNumImages())
         throw reportError("Invalid sourceImageID specified. Should be in the range [-1," +
-                  toString(MpiData_->getNumImages()) + ").", 2);
+                  toString(data().getNumImages()) + ").", 2);
       
       // Because MPI_ANY_SOURCE is an MPI constant, we have the caller pass 
       // the generic value -1 instead. Here we convert that to the value MPI expects.
@@ -287,10 +315,10 @@ namespace Tpetra {
       MPI_Status status; // A dummy MPI_Status object, needed for the MPI_Recv call.
 
       MPI_Recv(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(),
-                 sourceImageID, tag_, MpiData_->getMpiComm(), &status);
+                 sourceImageID, tag_, data().getMpiComm(), &status);
 
       if(status.MPI_ERROR != 0) {
-        cerr << "MpiComm error on image " << MpiData_->getMyImageID() << ", code = " << status.MPI_ERROR << endl;
+        cerr << "MpiComm error on image " << data().getMyImageID() << ", code = " << status.MPI_ERROR << endl;
         return(-1);
       }
 
@@ -481,19 +509,24 @@ namespace Tpetra {
 
     //@}
 
+    //@{ \name Thread-related Methods
+    int getNumThreads() const {return(num_threads_);}
+
+    //@}
+
     //@{ \name Image Info Methods
 
     //! getMyImageID
     /*! returns the rank of the calling image in the MPI communicator we are using. 
         (Obtained by calling MPI_Comm_rank.)
      */
-    int getMyImageID() const {return(MpiData_->getMyImageID());}
+    int getMyImageID() const {return(data().getMyImageID());}
 
     //! getNumImages - returns the MPI size
     /*! returns the size of the MPI communicator we are using. 
         (Obtained by calling MPI_Comm_size.)
      */
-    int getNumImages() const {return(MpiData_->getNumImages());}
+    int getNumImages() const {return(data().getNumImages());}
 
     //@}
     
@@ -509,13 +542,17 @@ namespace Tpetra {
 
     //! Access method to the MPI Communicator we're using.
     MPI_Comm getMpiComm() const {
-      return(MpiData_->getMpiComm());
+      return(data().getMpiComm());
     }
     
     //@}
     
   private:
     
+    // convenience functions for returning inner data class, both const and nonconst versions.
+    MpiData& data() {return(*MpiData_);}
+    MpiData const& data() const {return(*MpiData_);}
+
     // private data members
     Teuchos::RCP<MpiData> MpiData_;
     int tag_;
@@ -525,25 +562,25 @@ namespace Tpetra {
     void rsend(PacketType& myVal, int destinationImageID) const {
       // this one's for a single value
       MPI_Rsend(&myVal, MpiTraits<PacketType>::count(1), MpiTraits<PacketType>::datatype(), 
-            destinationImageID, tag_, MpiData_->getMpiComm());
+            destinationImageID, tag_, data().getMpiComm());
     }
 
     void rsend(std::vector<PacketType>& myVals, OrdinalType startIndex, OrdinalType count, int destinationImageID) const {
       // this one's for a vector or partial vector
       MPI_Rsend(&myVals[startIndex], MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), 
-            destinationImageID, tag_, MpiData_->getMpiComm());
+            destinationImageID, tag_, data().getMpiComm());
     }
 
     // templated MPI_Irecv functions
     void irecv(PacketType& myVal, int sourceImageID, MPI_Request& request) const {
       MPI_Irecv(&myVal, MpiTraits<PacketType>::count(1), MpiTraits<PacketType>::datatype(), 
-            sourceImageID, tag_, MpiData_->getMpiComm(), &request);
+            sourceImageID, tag_, data().getMpiComm(), &request);
     }
 
     void irecv(std::vector<PacketType>& myVals, OrdinalType startIndex, OrdinalType count, 
            int sourceImageID, MPI_Request& request) const {
       MPI_Irecv(&myVals[startIndex], MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), 
-            sourceImageID, tag_, MpiData_->getMpiComm(), &request);
+            sourceImageID, tag_, data().getMpiComm(), &request);
     }
 
     // replacement for previously used memcpy
@@ -561,8 +598,9 @@ namespace Tpetra {
     }
     
     
-  }; // MpiComm class
+  }; // TBB_MpiComm class
   
 } // namespace Tpetra
 
+#endif // HAVE_TPETRA_TBB
 #endif // TPETRA_MPICOMM_HPP

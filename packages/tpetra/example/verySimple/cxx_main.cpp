@@ -36,12 +36,12 @@
 
 int main(int argc, char *argv[])
 {
-	cout << "*** Starting verySimple example..." << endl;
+  cout << "*** Starting verySimple example..." << endl;
 
-	cout << Tpetra::Tpetra_Version() << endl;
+  cout << Tpetra::Tpetra_Version() << endl;
 
-	// test OutputObject
-	cout << "*** Creating OutputObject..." << endl;
+  // test OutputObject
+  cout << "*** Creating OutputObject..." << endl;
 	Tpetra::OutputObject obj1;
 
 	obj1.newPrint(cout); cout << endl;

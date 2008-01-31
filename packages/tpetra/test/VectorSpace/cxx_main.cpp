@@ -92,9 +92,6 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	int ierr = 0;
 	int returnierr = 0;
 
-	OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-	OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
-
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================

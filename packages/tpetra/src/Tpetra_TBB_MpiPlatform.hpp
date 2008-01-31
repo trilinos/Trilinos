@@ -26,48 +26,56 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_MPIPLATFORM_HPP
-#define TPETRA_MPIPLATFORM_HPP
+#ifndef TPETRA_TBB_MPIPLATFORM_HPP
+#define TPETRA_TBB_MPIPLATFORM_HPP
 
 #include <mpi.h>
 #include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
-#include "Tpetra_MpiComm.hpp"
+
+#ifdef HAVE_TPETRA_TBB
+
+#include "Tpetra_TBB_MpiComm.hpp"
+#include "Tpetra_MpiData.hpp"
 #include "Tpetra_ElementSpace.hpp"
 
 namespace Tpetra {
 
-  //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
+  //! Tpetra::TBB_MpiPlatform: MPI Implementation of the Platform class, that can
+  //  produce instances of the TBB-capable TBB_MpiComm object.
 
   template<typename OrdinalType, typename ScalarType>
-  class MpiPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
+  class TBB_MpiPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
   public:
 
     //@{ \name Constructor/Destructor Methods
 
     //! Constructor
-    MpiPlatform(MPI_Comm Comm) 
+    TBB_MpiPlatform(MPI_Comm Comm, int num_threads = 0) 
       : Object("Tpetra::MpiPlatform")
-      , MpiComm_(Comm)
+      , MpiData_()
+      , num_threads_(num_threads)
     {
-    }
+      MpiData_ = Teuchos::rcp(new MpiData(Comm));
+    };
 
     //! Copy Constructor
-    MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) 
+    TBB_MpiPlatform(TBB_MpiPlatform<OrdinalType, ScalarType> const& platform) 
       : Object(platform.label())
-      , MpiComm_(platform.MpiComm_)
-    {}
+      , MpiData_(platform.MpiData_)
+      , num_threads_(platform.num_threads_)
+    {};
 
     //! Destructor
-    ~MpiPlatform() {}
+    ~TBB_MpiPlatform() {};
 
     //! Clone Constructor - implements Tpetra::Platform virtual clone method.
     Teuchos::RCP< Platform<OrdinalType, ScalarType> > clone() const {
-      Teuchos::RCP< MpiPlatform<OrdinalType, ScalarType> > platform;
-      platform = Teuchos::rcp(new MpiPlatform<OrdinalType, ScalarType>(*this));
+      Teuchos::RCP< TBB_MpiPlatform<OrdinalType, ScalarType> > platform;
+      platform = Teuchos::rcp(new TBB_MpiPlatform<OrdinalType, ScalarType>(*this));
       return(platform);
-    }
+    };
 
     //@}
 
@@ -75,13 +83,13 @@ namespace Tpetra {
 
     //! Comm Instances
     Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const {
-      Teuchos::RCP< MpiComm<OrdinalType, ScalarType> > comm;
-      comm = Teuchos::rcp(new MpiComm<OrdinalType, ScalarType>(MpiComm_));
+      Teuchos::RCP< TBB_MpiComm<OrdinalType, ScalarType> > comm;
+      comm = Teuchos::rcp(new TBB_MpiComm<OrdinalType, ScalarType>(MpiData_, num_threads_));
       return(comm);
     };
     Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
-      Teuchos::RCP< MpiComm<OrdinalType, OrdinalType> > comm;
-      comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiComm_));
+      Teuchos::RCP< TBB_MpiComm<OrdinalType, OrdinalType> > comm;
+      comm = Teuchos::rcp(new TBB_MpiComm<OrdinalType, OrdinalType>(MpiData_, num_threads_));
       return(comm);
     };
 
@@ -96,13 +104,27 @@ namespace Tpetra {
     void printInfo(ostream& os) const {os << *this;};
 
     //@}
+    
+    //@{ \name MPI-specific methods, not inherited from Tpetra::Platform
 
+    //! Access method to the MPI Communicator we're using.
+    MPI_Comm getMpiComm() const {
+      return(data().MpiComm_);
+    };
+    
+    //@}
+    
   private:
-    MPI_Comm MpiComm_;
-
-  }; // MpiPlatform class
-
+    Teuchos::RCP<MpiData> MpiData_;
+    
+    // convenience functions for returning inner data class, both const and nonconst versions.
+    MpiData& data() {return(*MpiData_);};
+    MpiData const& data() const {return(*MpiData_);};
+    
+    int num_threads_;
+  }; // TBB_MpiPlatform class
+  
 } // namespace Tpetra
 
-#endif // TPETRA_MPIPLATFORM_HPP
-
+#endif //HAVE_TPETRA_TBB
+#endif // TPETRA_TBB_MPIPLATFORM_HPP

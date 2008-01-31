@@ -1356,6 +1356,8 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
+  --enable-tbb            Enable use of Intel's Thread Building Blocks library
+                          (default is no)
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
 
@@ -7927,6 +7929,32 @@ fi
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+
+# Check whether --enable-tbb was given.
+if test "${enable_tbb+set}" = set; then
+  enableval=$enable_tbb; ac_cv_use_tbb=$enableval
+else
+  ac_cv_use_tbb=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use tbb" >&5
+echo $ECHO_N "checking whether to use tbb... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_tbb" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TPETRA_TBB
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
@@ -8496,7 +8524,7 @@ fi
 # ------------------------------------------------------------------------
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile example/verySimple/Makefile example/EpetraTpetraProfile/Makefile test/Makefile test/Platform/Makefile test/Comm/Makefile test/Distributor/Makefile test/ElementSpace/Makefile test/Directory/Makefile test/ImportExport/Makefile test/BlockElementSpace/Makefile test/VectorSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/DistObject/Makefile test/BasicPerfTest/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile example/verySimple/Makefile example/EpetraTpetraProfile/Makefile example/TpetraOPs/Makefile test/Makefile test/Platform/Makefile test/Comm/Makefile test/Distributor/Makefile test/ElementSpace/Makefile test/Directory/Makefile test/ImportExport/Makefile test/BlockElementSpace/Makefile test/VectorSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/DistObject/Makefile test/BasicPerfTest/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9189,6 +9217,7 @@ do
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
     "example/verySimple/Makefile") CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;
     "example/EpetraTpetraProfile/Makefile") CONFIG_FILES="$CONFIG_FILES example/EpetraTpetraProfile/Makefile" ;;
+    "example/TpetraOPs/Makefile") CONFIG_FILES="$CONFIG_FILES example/TpetraOPs/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/Platform/Makefile") CONFIG_FILES="$CONFIG_FILES test/Platform/Makefile" ;;
     "test/Comm/Makefile") CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile" ;;

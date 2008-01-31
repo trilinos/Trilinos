@@ -169,23 +169,27 @@ endif
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
 
-runtests-serial :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  --trilinos-dir=$(TRILINOS_HOME_DIR) \
-  --comm=serial \
-  --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=INSTALL \
-  --output-dir=@abs_top_builddir@/test/runtests-results \
-  --verbosity=1 \
-  --packages=tpetra
+if HAVE_MPI
+TPETRA_CHECK_COMM=mpi
+else
+TPETRA_CHECK_COMM=serial
+endif
 
-runtests-mpi :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  --trilinos-dir=$(TRILINOS_HOME_DIR) \
-  --comm=mpi \
-  --mpi-go=$(TRILINOS_MPI_GO) \
-  --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=INSTALL \
-  --output-dir=@abs_top_builddir@/test/runtests-results \
-  --verbosity=1 \
-  --packages=tpetra
+run-tests:
+	@echo
+	@echo "==========================="
+	@echo "Running the Tpetra tests..."
+	@echo "==========================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TPETRA_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=FRAMEWORK \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=tpetra
+
