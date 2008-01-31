@@ -215,8 +215,9 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
 
   Teuchos::ParameterList paramlist;
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
-  sublist.set("PARMETIS_METHOD", "PARTKWAY");
+  // No parameters will test default Zoltan method (hypergraph)
+  //sublist.set("LB_METHOD", "GRAPH");
+  //sublist.set("PARMETIS_METHOD", "PARTKWAY");
 
   //Wrap a RefCountPtr around the matrix graph, and specify 'false', meaning
   //that the RefCountPtr will not take ownership of the graph (will not
@@ -314,8 +315,9 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
 
   Teuchos::ParameterList paramlist;
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
-  sublist.set("PARMETIS_METHOD", "PARTKWAY");
+  // No parameters will test default Zoltan method (hypergraph)
+  //sublist.set("LB_METHOD", "GRAPH");
+  //sublist.set("PARMETIS_METHOD", "PARTKWAY");
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
@@ -362,6 +364,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
              <<") is (nearly) the same on every proc...\n" << std::endl;
   }
 
+  // TODO: Make balance test consistent with Zoltan definition of balance
   double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
   double ratio = std::abs(numerator/num_nonzeros);
   if (ratio < 0.1 ) test_passed = true;
