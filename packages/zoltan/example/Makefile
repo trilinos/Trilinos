@@ -25,7 +25,7 @@
 # relative to this directory
 #
 ZOLTAN_TOP = ..
-ZOLTAN_UTIL = ../Utilities
+ZOLTAN_UTIL = ../src/Utilities
 
 #
 # relative to the subdirectories
@@ -42,13 +42,13 @@ ZOLTAN_ARCH	= generic
 endif
 
 ifndef ZOLTAN_CONFIG
-ZOLTAN_CONFIG = $(ZOLTAN_TOP)/Utilities/Config/Config.$(ZOLTAN_ARCH)
+ZOLTAN_CONFIG = $(ZOLTAN_TOP)/src/Utilities/Config/Config.$(ZOLTAN_ARCH)
 endif
 
 include $(ZOLTAN_CONFIG)
 
 ifndef ZOLTAN_OBJ_DIR
-ZOLTAN_OBJ_DIR = $(ZTOP)/Obj_$(ZOLTAN_ARCH)
+ZOLTAN_OBJ_DIR = $(ZTOP)/src/Obj_$(ZOLTAN_ARCH)
 endif
 
 ifndef ZOLTAN_LIB_DIR
@@ -93,12 +93,12 @@ ZOLTAN_INCLUDE= -I. -I$(ZUTIL)/Communication \
                 -I$(ZUTIL)/Memory \
                 -I$(ZUTIL)/Timer \
                 -I$(ZUTIL)/shared \
-                -I$(ZTOP)/zz \
-                -I$(ZTOP)/ha \
-                -I$(ZTOP)/par \
-                -I$(ZTOP)/params \
-                -I$(ZTOP)/lb \
-                -I$(ZTOP)/include
+                -I$(ZTOP)/src/zz \
+                -I$(ZTOP)/src/ha \
+                -I$(ZTOP)/src/par \
+                -I$(ZTOP)/src/params \
+                -I$(ZTOP)/src/lb \
+                -I$(ZTOP)/src/include
 
 INCLUDE = -I../lib $(ZOLTAN_INCLUDE) $(INCLUDE_PATH) $(MPI_INCPATH)
 

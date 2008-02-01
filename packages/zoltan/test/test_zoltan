@@ -216,14 +216,16 @@ if (! $?run ) then
     case gccP3:
     case g++:
     case linux:
-    case linux64:
-    case linux64pure:
     case mac:
     case mac32:
     case mac64:
     case purecov:
     case pure:
       set run = "mpirun -np"
+      breaksw
+    case linux64:
+    case linux64pure:
+      set run = "mpirun --mca mpi_yield_when_idle 1 -np"
       breaksw
     case linux64lam:
     case linux64lampure:
