@@ -26,32 +26,76 @@
 # ************************************************************************
 # @HEADER
 
-EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i Epetra.i Epetra_Base.i \
-	     Epetra_Comm.i Epetra_Graphs.i Epetra_Maps.i Epetra_Operators.i \
-	     Epetra_SerialDense.i Epetra_Vectors.i \
+EXTRA_DIST = Amesos.i                             \
+	     Anasazi.i                            \
+	     AztecOO.i                            \
+	     Epetra.i                             \
+	     EpetraExt.i                          \
+	     Epetra_Base.i                        \
+	     Epetra_Comm.i                        \
+	     Epetra_Graphs.i                      \
+	     Epetra_Maps.i                        \
+	     Epetra_NumPyFEVector.cpp             \
+	     Epetra_NumPyFEVector.h               \
 	     Epetra_NumPyIntSerialDenseMatrix.cpp \
-	     Epetra_NumPyIntSerialDenseMatrix.h \
+	     Epetra_NumPyIntSerialDenseMatrix.h   \
 	     Epetra_NumPyIntSerialDenseVector.cpp \
-	     Epetra_NumPyIntSerialDenseVector.h \
-	     Epetra_NumPySerialDenseMatrix.cpp Epetra_NumPySerialDenseMatrix.h \
-	     Epetra_NumPySerialDenseVector.cpp Epetra_NumPySerialDenseVector.h \
-	     Epetra_NumPyIntVector.cpp Epetra_NumPyIntVector.h \
-	     Epetra_NumPyMultiVector.cpp Epetra_NumPyMultiVector.h \
-	     Epetra_NumPyVector.cpp Epetra_NumPyVector.h \
-	     Epetra_NumPyFEVector.cpp Epetra_NumPyFEVector.h \
-	     Epetra_RowMatrix_Utils.i EpetraExt.i Galeri.i \
-	     IFPACK.i Komplex.i LOCA.__init__.i LOCA.Abstract.i \
-	     LOCA.Bifurcation.i LOCA.Continuation.i LOCA.Epetra.i \
-	     LOCA.Homotopy.i LOCA.LAPACK.i LOCA.MultiContinuation.i \
-	     LOCA.TimeDependent.i ML.i MLAPI_PyMatrix.h NOX.__init__.i \
-	     NOX.Abstract.i NOX.Epetra.__init__.i \
-	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     PythonException.cpp PythonException.h \
-	     Teuchos.i Teuchos_Traits.i Teuchos_Comm.i \
-	     Teuchos_Epetra.i Teuchos_ParameterList.i Teuchos_XML.i \
-	     Teuchos_PythonParameter.cpp Teuchos_PythonParameter.h Thyra.i \
-	     TriUtils.i UserArray.patch NumPyImporter.h numpy.i \
-	     pyfragments.swg.in numpy_include.h setup.py scripts/ParamConvert.py
+	     Epetra_NumPyIntSerialDenseVector.h   \
+	     Epetra_NumPyIntVector.cpp            \
+	     Epetra_NumPyIntVector.h              \
+	     Epetra_NumPyMultiVector.cpp          \
+	     Epetra_NumPyMultiVector.h            \
+	     Epetra_NumPySerialDenseMatrix.cpp    \
+	     Epetra_NumPySerialDenseMatrix.h      \
+	     Epetra_NumPySerialDenseVector.cpp    \
+	     Epetra_NumPySerialDenseVector.h      \
+	     Epetra_NumPyVector.cpp               \
+	     Epetra_NumPyVector.h                 \
+	     Epetra_Operators.i                   \
+	     Epetra_RowMatrix_Utils.i             \
+	     Epetra_SerialDense.i                 \
+	     Epetra_Vectors.i                     \
+	     Galeri.i                             \
+	     IFPACK.i                             \
+	     Komplex.i                            \
+	     LOCA.Abstract.i                      \
+	     LOCA.Bifurcation.i                   \
+	     LOCA.Chan.i                          \
+	     LOCA.Continuation.i                  \
+	     LOCA.Epetra.i                        \
+	     LOCA.Homotopy.i                      \
+	     LOCA.LAPACK.i                        \
+	     LOCA.MultiContinuation.i             \
+	     LOCA.TimeDependent.i                 \
+	     LOCA.__init__.i                      \
+	     ML.i                                 \
+	     MLAPI_PyMatrix.h                     \
+	     NOX.Abstract.i                       \
+	     NOX.Epetra.Interface.i               \
+	     NOX.Epetra.__init__.i                \
+	     NOX.Solver.i                         \
+	     NOX.StatusTest.i                     \
+	     NOX.__init__.i                       \
+	     NumPyImporter.h                      \
+	     PythonException.cpp                  \
+	     PythonException.h                    \
+	     Teuchos.i                            \
+	     Teuchos_Traits.i                     \
+	     Teuchos_Comm.i                       \
+	     Teuchos_Epetra.i                     \
+	     Teuchos_ParameterList.i              \
+	     Teuchos_Traits.i                     \
+	     Teuchos_XML.i                        \
+	     Teuchos_PythonParameter.cpp          \
+	     Teuchos_PythonParameter.h            \
+	     Thyra.i                              \
+	     TriUtils.i                           \
+	     UserArray.patch                      \
+	     numpy.i                              \
+	     numpy_include.h                      \
+	     pyfragments.swg.in                   \
+	     setup.py                             \
+	     scripts/ParamConvert.py
 
 # Configuration macros
 @HAVE_MPI_TRUE@HAVE_MPI = 1
