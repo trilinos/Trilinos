@@ -18,7 +18,7 @@
 #  For explanations of these variables, please see Config.generic.
 ##############################################################################
 
-DEFS 			= 
+DEFS 			= -DZOLTAN_PURIFY
 DEPS			= -xM
 
 RANLIB			= ranlib

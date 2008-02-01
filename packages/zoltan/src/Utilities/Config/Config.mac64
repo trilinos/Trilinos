@@ -27,8 +27,8 @@ DBG_FLAGS		= -g
 OPT_FLAGS		= -O
 CFLAGS 			= $(DBG_FLAGS)
 
-# To use fortran, MUST USE lam mpi in ~/code/lib-m32/lam-7.1.2.
-# Make sure path to mpif77 points to ~/code/lib-m32/lam-7.1.2/bin/mpif77.
+# To use fortran, MUST USE lam mpi in ~/code/lib-m64/lam-7.1.4.
+# Make sure path to mpif77 points to ~/code/lib-m64/lam-7.1.4/bin/mpif77.
 F90			= mpif77 -m64
 LOCAL_F90		= gfortran -m64
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
@@ -42,9 +42,11 @@ MPI_LIBPATH		=
 
 PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1
 PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1
+#PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+#PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
 
-#PATOH_LIBPATH		= -L../../lib-m32/PaToH/lib
-#PATOH_INCPATH		= -I../../lib-m32/PaToH/src/api
+PATOH_LIBPATH		= -L../../lib-m64/PaToH/dist
+PATOH_INCPATH		= -I../../lib-m64/PaToH/dist
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src

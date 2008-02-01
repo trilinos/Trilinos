@@ -36,9 +36,9 @@ FAST_PROJECT        zoltan
 # Tests on Octopi using OpenMPI
 ############################################################################
 
-#Test zoltan-octopi_v3_OMPI-nightly
-#octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
+Test zoltan-octopi_v3_OMPI-nightly
+octopi.sandia.gov
+cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_CPP_v3_OMPI-nightly
 #octopi.sandia.gov

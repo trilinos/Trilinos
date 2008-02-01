@@ -106,8 +106,10 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
 
+#ifdef ZOLTAN_PURIFY
   printf("%d of %d ZDRIVE LAUNCH pid = %d file = %s\n", 
          Proc, Num_Proc, getpid(), argv[1]);
+#endif
 
   /* Initialize flags */
   Test.DDirectory = 0;

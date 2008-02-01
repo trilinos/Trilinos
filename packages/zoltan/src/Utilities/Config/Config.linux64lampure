@@ -95,7 +95,7 @@ endif
 endif
 endif
 
-DEFS 			= 
+DEFS 			= -DZOLTAN_PURIFY
 
 RANLIB			= ranlib
 AR			= ar r
