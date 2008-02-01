@@ -8,9 +8,9 @@
 
 # cvs.a adapted for Zoltan -schake
 
-CVSROOT=schake@software.sandia.gov:/space/CVS-Zoltan
+CVSROOT=kddevin@software.sandia.gov:/space/CVS
 CVS_RSH=ssh.cvs
 export CVS_RSH
 user=`whoami`
 
-cvs -d :ext:${user}@software.sandia.gov:/space/CVS-Zoltan $*
+cvs -d :ext:${user}@software.sandia.gov:/space/CVS $*

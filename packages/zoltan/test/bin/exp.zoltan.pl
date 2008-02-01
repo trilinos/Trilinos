@@ -8,7 +8,7 @@
 # ZOLTAN_ARCH - architechture of the machine.  Choices are generally:
 #   generic, solaris, sun, linux, qed.  Defaults to "sun"
 # ZOLTAN_ZDRIVE - location of zdrive, defaults to
-#   "../../Obj_$ZOLTAN_ARCH/zdrive".  Usually not set if ZOLTAN_ARCH
+#   "../../src/Obj_$ZOLTAN_ARCH/zdrive".  Usually not set if ZOLTAN_ARCH
 #   has already been set, except for special purposes.
 
 use Sys::Hostname;
@@ -45,7 +45,7 @@ if ($ENV{ZOLTAN_ARCH}) {
 if ($ENV{ZOLTAN_ZDRIVE}) {
   $zdrive = $ENV{ZOLTAN_ZDRIVE};
 } else {
-  $zdrive = "../../Obj_$zarch/zdrive";
+  $zdrive = "../../src/Obj_$zarch/zdrive";
 }
 
 # contents of $infile, after parseinfile()

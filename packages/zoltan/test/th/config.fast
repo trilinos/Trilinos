@@ -38,39 +38,39 @@ FAST_PROJECT        zoltan
 
 Test zoltan-octopi_v3_OMPI-nightly
 octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_CPP_v3_OMPI-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zCPPdrive 'test/{ch_hammond,hg_ibm03}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zCPPdrive 'test/{ch_hammond,hg_ibm03}' 
 
 #Test zoltan-octopi_F90_v3_OMPI-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
 
 #Test zoltan-octopi_v3_LAM-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/opt/lam/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam/bin:\$PATH ; echo \$PATH ; /opt/lam/bin/lamboot ; csh -f ../../zoltan.build octopiLamTest $tname zdrive 'test/{ch_*,hg_*}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/opt/lam/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam/bin:\$PATH ; echo \$PATH ; /opt/lam/bin/lamboot ; csh -f ../../zoltan.build octopiLamTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_CPP_v3_LAM-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/opt/lam/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam/bin:\$PATH ; echo \$PATH ; /opt/lam/bin/lamboot ; csh -f ../../zoltan.build octopiLamTest $tname zCPPdrive 'test/{ch_*,hg_*}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/opt/lam/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam/bin:\$PATH ; echo \$PATH ; /opt/lam/bin/lamboot ; csh -f ../../zoltan.build octopiLamTest $tname zCPPdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_F90_v3_LAM-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/opt/lam/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam/bin:\$PATH ; echo \$PATH ; /opt/lam/bin/lamboot ; csh -f ../../zoltan.build octopiLamTest $tname zfdrive 'test/{ch_bug,ch_degenerateAA,ch_grid20x19,ch_nograph,ch_vwgt,ch_hammond,ch_onedbug,ch_simple,ch_degenerate,ch_ewgt,hg_diag500_4,hg_cage10}'
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/opt/lam/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam/bin:\$PATH ; echo \$PATH ; /opt/lam/bin/lamboot ; csh -f ../../zoltan.build octopiLamTest $tname zfdrive 'test/{ch_bug,ch_degenerateAA,ch_grid20x19,ch_nograph,ch_vwgt,ch_hammond,ch_onedbug,ch_simple,ch_degenerate,ch_ewgt,hg_diag500_4,hg_cage10}'
 
 #Test zoltan-octopi_v3_junktest-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_serial}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_serial}' 
 
 Test zoltan-octopi_v3_LAMPURE-nightly
 octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_v3_OMPIPURE-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  export PATH=/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; csh -f ../../zoltan.build octopiPureTest $tname zdrive 'test/{ch_*,hg_*}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  export PATH=/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; csh -f ../../zoltan.build octopiPureTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 ############################################################################
 # Tests on seamus using 32-bit MPICH.
@@ -81,18 +81,18 @@ cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release
 
 Test zoltan-sun_v3-nightly
 seamus
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{hg_*}' 
 
 #Test zoltan-sun_CPP_v3-nightly
 #seamus
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zCPPdrive 'test/{ch_*,hg_*}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build gcctest $tname zCPPdrive 'test/{ch_*,hg_*}' 
 #Test zoltan-sun_F90_v3-nightly
 #seamus
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build gcctest $tname zfdrive 'test/{ch_bug,ch_degenerateAA,ch_grid20x19,ch_nograph,ch_vwgt,ch_hammond,ch_onedbug,ch_simple,ch_degenerate,ch_ewgt,hg_diag500_4,hg_cage10}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build gcctest $tname zfdrive 'test/{ch_bug,ch_degenerateAA,ch_grid20x19,ch_nograph,ch_vwgt,ch_hammond,ch_onedbug,ch_simple,ch_degenerate,ch_ewgt,hg_diag500_4,hg_cage10}' 
 
 #Test zoltan-sun_base-nightly
 #seamus
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}'
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{ch_*,hg_*}'
 
 ############################################################################
 # Codecheck on software.sandia.gov; generates Bugzilla summary seen in
@@ -101,7 +101,7 @@ cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release
 
 Test zoltan-codecheck
 software.sandia.gov
-cvs -d /space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build --codecheck $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d /space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build --codecheck $tname zdrive 'test/{ch_*,hg_*}'
 
 ############################################################################
 # Tests on Lee Ann's workstation.
@@ -112,11 +112,11 @@ cvs -d /space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../
 
 Test zoltan-lin32_v3-nightly
 sadl14088
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
 
 #Test zoltan-lin32_base-nightly
 #sadl14088
-#cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
 
 ############################################################################
 # Tests on Karen's Mac using LAM (64-bit)
@@ -126,14 +126,14 @@ cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release
 
 Test zoltan-mac64_v3-smoke
 joda.srn.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build mac64 $tname zdrive 'test/{ch_*,hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build mac64 $tname zdrive 'test/{ch_*,hg_*}' 
 
 ############################################################################
 # bigtests compiles everything, but then runs tests in Zoltan_Tests directory
 ############################################################################
 Test zoltan-lin64_big-nightly
 pill.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; (cd ~/Zoltan_Tests ; cvs -d software.sandia.gov:/space/CVS-Zoltan -Q update); csh -f ../../zoltan.build lin64test $tname zdrive '~/Zoltan_Tests/{xyce}' '~/Zoltan_Tests'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; (cd ~/Zoltan_Tests ; cvs -d software.sandia.gov:/space/CVS -Q update); csh -f ../../zoltan.build lin64test $tname zdrive '~/Zoltan_Tests/{xyce}' '~/Zoltan_Tests'
 
 ###########################################################################
 # Old tests that we no longer run.
@@ -141,13 +141,13 @@ cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release
 
 Test zoltan-lin32-smoke
 bobo.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build linux $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build linux $tname zdrive 'test/{ch_*,hg_*}'
 
 Test zoltan-lin64-nightly
 disabled-pill.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P -r Zoltan_v3_Release Zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
 
 Test zoltan-lin64_base-nightly
 disabled-pill.sandia.gov
-cvs -d software.sandia.gov:/space/CVS-Zoltan -Q checkout -P Zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
 

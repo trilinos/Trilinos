@@ -277,7 +277,7 @@ if ( $yes_fortran ) then
     set zdrive = zfdrive
   endif
   if ( $?arch ) then
-    set zdrives = ( $zdrive ../Obj_${arch}/zfdrive )
+    set zdrives = ( $zdrive ../src/Obj_${arch}/zfdrive )
   else
     set zdrives = $zdrive
   endif
@@ -287,7 +287,7 @@ else if ( $yes_cpp ) then
     set zdrive = zCPPdrive
   endif
   if ( $?arch ) then
-    set zdrives = ( $zdrive ../Obj_${arch}/zCPPdrive )
+    set zdrives = ( $zdrive ../src/Obj_${arch}/zCPPdrive )
   else
     set zdrives = $zdrive
   endif
@@ -297,7 +297,7 @@ else
     set zdrive = zdrive
   endif
   if ( $?arch ) then
-    set zdrives = ( $zdrive ../Obj_${arch}/zdrive )
+    set zdrives = ( $zdrive ../src/Obj_${arch}/zdrive )
   else
     set zdrives = $zdrive
   endif
@@ -332,7 +332,7 @@ if ( $no_parmetis ) then
   @ pmversion = 0
 else
   # Scan ParMETIS header file for version info
-  set pmfile = `sed -n 's/^.* \([^ ]*parmetis\.h\).*/\1/p' ../Obj_${arch}/parmetis_jostle.d`
+  set pmfile = `sed -n 's/^.* \([^ ]*parmetis\.h\).*/\1/p' ../src/Obj_${arch}/parmetis_jostle.d`
   set majorversion = `grep MAJOR_VERSION $pmfile[1]`
   if ( $status ) then
     @ pmversion = 2

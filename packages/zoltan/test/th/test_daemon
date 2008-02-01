@@ -36,9 +36,9 @@ $archive_tests = 0;
 
 $ENV{CVS_RSH} = 'ssh';
 if ($host ne "software.sandia.gov") {
-  $cvs="cvs -d :ext:$ENV{USER}\@software.sandia.gov:/space/CVS-Zoltan";
+  $cvs="cvs -d :ext:$ENV{USER}\@software.sandia.gov:/space/CVS";
 } else {
-  $cvs="cvs -d /space/CVS-Zoltan";
+  $cvs="cvs -d /space/CVS";
 }
 
 ##
