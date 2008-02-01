@@ -27,32 +27,28 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.isorropia
+
 EXEEXT = .exe
 
-DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir)
+noinst_PROGRAMS = copyfiles rebalance_1d_default
 
-noinst_PROGRAMS = copyfiles utest
+rebalance_1d_default_SOURCES = $(srcdir)/rebalance_1d_default.cpp
 
-utest_SOURCES = $(srcdir)/utest.cpp $(srcdir)/utst_serial.cpp $(srcdir)/utst_serial.hpp
+copyfiles_SOURCES = $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2
 
-copyfiles_SOURCES = $(top_srcdir)/test/utest/src_utest_dist1
-
-utest_DEPENDENCIES = \
+rebalance_1d_default_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a \
 	$(top_builddir)/test/utils/libisorropia_test_utils.a
 
-utest_CXXFLAGS = $(EPETRA_INCLUDES)
-utest_LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils \
-      -L$(top_builddir)/src -lisorropia \
-      $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+rebalance_1d_default_CXXFLAGS = -I$(top_srcdir)/test/utils \
+   $(ISORROPIA_INCLUDES) 
+rebalance_1d_default_LDADD = \
+   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 EXTRA_DIST = \
-	src_utest_dist1 \
-        src_utest_dist2 \
-        src_utest_dist3
+	src_rebalance_1d_dist.2
 
 copyfiles$(EXEEXT):$(copyfiles_SOURCES)
-	cp $(top_srcdir)/test/utest/src_utest_dist1 $(top_builddir)/test/utest/utest_dist1
-	cp $(top_srcdir)/test/utest/src_utest_dist2 $(top_builddir)/test/utest/utest_dist2
-	cp $(top_srcdir)/test/utest/src_utest_dist3 $(top_builddir)/test/utest/utest_dist3
+	cp $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2 $(top_builddir)/test/rebalance_1d_default/rebalance_1d_dist.2
 

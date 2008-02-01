@@ -27,29 +27,18 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.isorropia
+
 EXEEXT = .exe
 
-DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
+noinst_PROGRAMS = rebalance_zoltan
 
-noinst_PROGRAMS = copyfiles rebalance_1d_default
+rebalance_zoltan_SOURCES = $(srcdir)/rebalance_zoltan.cpp
 
-rebalance_1d_default_SOURCES = $(srcdir)/rebalance_1d_default.cpp
-
-copyfiles_SOURCES = $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2
-
-rebalance_1d_default_DEPENDENCIES = \
+rebalance_zoltan_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a \
 	$(top_builddir)/test/utils/libisorropia_test_utils.a
 
-rebalance_1d_default_CXXFLAGS = $(EPETRA_INCLUDES)
-rebalance_1d_default_LDADD = \
-      -L$(top_builddir)/test/utils -lisorropia_test_utils \
-      -L$(top_builddir)/src -lisorropia \
-      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
-
-EXTRA_DIST = \
-	src_rebalance_1d_dist.2
-
-copyfiles$(EXEEXT):$(copyfiles_SOURCES)
-	cp $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2 $(top_builddir)/test/rebalance_1d_default/rebalance_1d_dist.2
+rebalance_zoltan_CXXFLAGS = $(ISORROPIA_INCLUDES) 
+rebalance_zoltan_LDADD = $(ISORROPIA_LIBS)
 

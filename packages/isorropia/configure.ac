@@ -299,18 +299,12 @@ AC_CONFIG_FILES([
     Makefile
     Makefile.export.isorropia
     src/Makefile
-    src/Makefile.include
     example/Makefile
-    example/Makefile.include
     test/Makefile
     test/rebalance_1d_default/Makefile
-    test/rebalance_1d_default/Makefile.include
     test/zoltan/Makefile
-    test/zoltan/Makefile.include
     test/utest/Makefile
-    test/utest/Makefile.include
     test/utils/Makefile
-    test/utils/Makefile.include
     ])
 
 AC_OUTPUT

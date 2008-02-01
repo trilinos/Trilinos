@@ -35,6 +35,8 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+include $(top_builddir)/Makefile.export.isorropia
+
 CORE = \
 	$(srcdir)/Isorropia_EpetraCostDescriber.cpp \
 	$(srcdir)/Isorropia_EpetraPartitioner.cpp \
@@ -76,9 +78,7 @@ ZOLTAN_H = \
 	$(srcdir)/zoltan/IZoltan_QueryFunctions.h \
 	$(srcdir)/zoltan/IZoltan_QueryObject.h
 
-DEFAULT_INCLUDES = \
-	-I$(top_builddir)/src $(EPETRA_INCLUDES) $(TEUCHOS_INCLUDES) \
-	$(EPETRAEXT_INCLUDES) -I$(top_srcdir)/src -I$(top_srcdir)/src/zoltan
+DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
 
 if BUILD_ZOLTAN
 ZOLTAN_SOURCES = $(ZOLTAN)

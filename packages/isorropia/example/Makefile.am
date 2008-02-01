@@ -27,25 +27,53 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.isorropia
+
 EXEEXT = .exe
 
-DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
+if BUILD_EXAMPLES
+PROGS = matrix_1 part_redist vert_weights graphedge_weights hgedge_weights
+endif
 
-noinst_PROGRAMS = copyfiles rebalance_zoltan
+noinst_PROGRAMS = $(PROGS)
 
-rebalance_zoltan_SOURCES = $(srcdir)/rebalance_zoltan.cpp
+matrix_1_SOURCES = $(srcdir)/matrix_1.cpp
 
-copyfiles_SOURCES = 
+matrix_1_DEPENDENCIES = \
+	$(top_builddir)/src/libisorropia.a
 
-rebalance_zoltan_DEPENDENCIES = \
-	$(top_builddir)/src/libisorropia.a \
-	$(top_builddir)/test/utils/libisorropia_test_utils.a
+matrix_1_CXXFLAGS = $(ISORROPIA_INCLUDES)
+matrix_1_LDADD = $(ISORROPIA_LIBS)
 
-rebalance_zoltan_CXXFLAGS = $(EPETRA_INCLUDES)
-rebalance_zoltan_LDADD = \
-      -L$(top_builddir)/test/utils -lisorropia_test_utils \
-      -L$(top_builddir)/src -lisorropia \
-      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+part_redist_SOURCES = $(srcdir)/part_redist.cpp
 
-copyfiles$(EXEEXT):$(copyfiles_SOURCES)
-	echo "nothing to do here..."
+part_redist_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+part_redist_CXXFLAGS = $(ISORROPIA_INCLUDES) 
+part_redist_LDADD = $(ISORROPIA_LIBS)
+
+vert_weights_SOURCES = $(srcdir)/vert_weights.cpp
+
+vert_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+vert_weights_CXXFLAGS = $(ISORROPIA_INCLUDES)
+vert_weights_LDADD = $(ISORROPIA_LIBS)
+
+graphedge_weights_SOURCES = $(srcdir)/graphedge_weights.cpp
+
+graphedge_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+graphedge_weights_CXXFLAGS = $(ISORROPIA_INCLUDES)
+graphedge_weights_LDADD = $(ISORROPIA_LIBS)
+
+hgedge_weights_SOURCES = $(srcdir)/hgedge_weights.cpp
+
+hgedge_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+hgedge_weights_CXXFLAGS = $(ISORROPIA_INCLUDES) 
+hgedge_weights_LDADD = $(ISORROPIA_LIBS)
+

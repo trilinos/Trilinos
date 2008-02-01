@@ -27,12 +27,7 @@
 # ************************************************************************
 #@HEADER
 
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside Epetra. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.isorropia
 
 CORE = \
 	$(srcdir)/ispatest_epetra_utils.cpp \
@@ -46,10 +41,7 @@ EXTRA_DIST = \
 	$(srcdir)/ispatest_utils.hpp \
 	$(srcdir)/ispatest_read_distribution.hpp
 
-DEFAULT_INCLUDES = \
-	-I$(top_srcdir)/test/utils \
-	-I$(top_builddir)/src $(EPETRA_INCLUDES) $(TEUCHOS_INCLUDES) \
-	-I$(top_srcdir)/src
+DEFAULT_INCLUDES = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
 
 # ------------------------------------------------------------------------
 # Epetra_test library specifications
