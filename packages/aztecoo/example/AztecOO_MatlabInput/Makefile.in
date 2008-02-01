@@ -27,7 +27,7 @@
 # ************************************************************************
 #@HEADER
 
-include ../../Makefile.export
+include ../../Makefile.export.aztecoo
 
 include Makefile.include
 

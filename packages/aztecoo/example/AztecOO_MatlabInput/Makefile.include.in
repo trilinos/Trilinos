@@ -96,7 +96,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_AztecOO_MatlabInput_OBJECTS =  \
 	AztecOO_MatlabInput-cxx_main.$(OBJEXT)
 AztecOO_MatlabInput_OBJECTS = $(am_AztecOO_MatlabInput_OBJECTS)
-am__DEPENDENCIES_1 =
 AztecOO_MatlabInput_LINK = $(CXXLD) $(AztecOO_MatlabInput_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -232,17 +231,12 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AztecOO_MatlabInput_SOURCES = $(srcdir)/cxx_main.cpp 
 AztecOO_MatlabInput_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a $(top_builddir)/../epetraext/src/libepetraext.a
-AztecOO_MatlabInput_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
-	-I$(top_srcdir)/../epetraext/src/inout -I$(top_srcdir)/../epetraext/src \
-	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../epetra/src \
-        -I$(top_builddir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src \
-        -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	-I$(top_builddir)/../triutils/src
+AztecOO_MatlabInput_CXXFLAGS = -I$(top_srcdir)/../epetraext/src/inout \
+  -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src \
+  $(AZTECOO_INCLUDES) 
 
-AztecOO_MatlabInput_LDADD = $(AZTECOO_LIBS) $(top_builddir)/../epetraext/src/libepetraext.a \
-     $(top_builddir)/../epetra/src/libepetra.a \
-     $(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+AztecOO_MatlabInput_LDADD = $(top_builddir)/../epetraext/src/libepetraext.a \
+                            $(AZTECOO_LIBS)
 
 all: all-am
 
