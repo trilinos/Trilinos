@@ -51,8 +51,10 @@ EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           = ../example/LOBPCG/LOBPCGEpetraEx.cpp                     \
                          ../example/LOBPCG/LOBPCGEpetraExSimple.cpp               \
                          ../example/LOBPCG/LOBPCGEpetraExGen.cpp                  \
+                         ../example/LOBPCG/LOBPCGEpetraExGenPrecIfpack.cpp        \
                          ../example/BlockDavidson/BlockDavidsonEpetraEx.cpp       \
                          ../example/BlockDavidson/BlockDavidsonEpetraExGen.cpp    \
+                         ../example/BlockDavidson/BlockDavidsonEpetraExGenPrecIfpack.cpp        \
                          ../example/BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp               \
                          ../example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp      \
                          ../example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp     \

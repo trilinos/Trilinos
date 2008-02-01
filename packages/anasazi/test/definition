@@ -60,7 +60,7 @@
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --exsitu --locking,
            --verbose --exsitu --nolocking;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {

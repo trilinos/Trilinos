@@ -1,31 +1,3 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
-//
 //  This example computes the eigenvalues of smallest magnitude of the 
 //  discretized 2D Laplacian operator using the block Krylov-Schur method.  
 //  This problem shows the construction of an inner-outer iteration using 
@@ -51,6 +23,7 @@
 // Include header for Epetra compressed-row storage matrix and linear problem
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_InvOperator.h"
 
 // Include header for Belos solver and solver interface for Epetra_Operator
 #include "BelosEpetraOperator.h"
@@ -161,7 +134,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the 
   //        preconditioner with Apply() NOT ApplyInverse().
-  Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp( new Belos::EpetraPrecOp( ICT ) );
+  Teuchos::RCP<Epetra_Operator> belosPrec = Teuchos::rcp( new Epetra_InvOperator( &*ICT ) );
   My_LP->setLeftPrec( belosPrec );
   //
   // Create the ParameterList for the Belos Operator
