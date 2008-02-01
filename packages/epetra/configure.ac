@@ -253,7 +253,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetra_examples" != "Xno")
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  Cannot be disabled unless tests and examples are also disabled.  Cannot be disabled when fortran is disabled.], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -264,8 +264,6 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
-AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes"])
 # Define F77_FUNC that will be used to link with Fortran subroutines found in
 # Trilinos source code
 if test "X$ac_cv_use_fortran" != "Xno"; then
@@ -289,6 +287,32 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
   TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
   TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+else
+
+  if test "X$ac_cv_use_fortran" != "Xno"; then
+  # If we don't check for BLAS above, we will use F77_FUNC as the name mangling
+  # for the BLAS and LAPACK.  This is what we used before we allowed the BLAS
+  # and LAPACK to use different name mangling than the compiler.
+  AC_F77_FUNC(dgemm)
+    if test "X$dgemm" = "Xdgemm_"; then
+      AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name ## _], [Define the Fortran name mangling to be used for the BLAS])
+    else
+      if test "X$dgemm" = "Xdgemm"; then
+        AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name], [Define the Fortran name mangling to be used for the BLAS])
+      else
+        if test "X$dgemm" = "XDGEMM"; then
+          AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME], [Define the Fortran name mangling to be used for the BLAS])
+        else
+          if test "X$dgemm" = "XDGEMM_"; then
+             AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME ## _], [Define the Fortran name mangling to be used for the BLAS])
+          else
+            AC_MSG_ERROR([[Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option.]])
+          fi
+        fi
+      fi
+    fi
+  fi
 
 fi
 # end of the list of libraries that don't need to be checked for if
