@@ -1,0 +1,9 @@
+#
+set i = junk
+foreach i ($*)
+     echo "_______________________________________________________________"
+     echo $i
+     echo "_______________________________________________________________"
+     diff -w $i ~kddevin/code/Zoltan.bugfix/$i | grep -v Revision
+end
+
