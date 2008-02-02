@@ -157,6 +157,10 @@ int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
                               int row_lengths[]);
 int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatrix);
 
+void ML_CreateSublist(Teuchos::ParameterList &List,
+                      Teuchos::ParameterList &newList,
+                      int *LevelID,int NumLevels);
+
 #ifndef ML_CPP
 }
 #endif

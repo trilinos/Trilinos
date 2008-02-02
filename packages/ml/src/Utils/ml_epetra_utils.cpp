@@ -42,6 +42,7 @@
 
 
 using namespace std;
+using namespace Teuchos;
 
 
 // ====================================================================== 
@@ -3491,6 +3492,89 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
    }
 
 } //BreakForDebugger()
+
+// ============================================================================
+
+/*
+  Utility that from an existing Teuchos ParameterList creates a new list, in
+  which level-specific parameters are replaced with sublists.
+
+  Currently, only level-specific parameters that begin with "smoother:"
+  or "aggregation:" are placed in sublists.
+*/
+
+void ML_CreateSublist(ParameterList &List, ParameterList &newList,
+                      int *LevelID, int NumLevels)
+{
+  char listName[80], subname[160];
+  ParameterList  **smList = new ParameterList*[NumLevels];
+  ParameterList  **aggList = new ParameterList*[NumLevels];
+  for (int i=0; i<NumLevels; i++) smList[i] = aggList[i] = 0;
+  newList.setName(List.name());
+
+  // Create sublists in new list only for levels explicitly used in old list.
+  for (ParameterList::ConstIterator param=List.begin();
+                                    param!=List.end() ; param++)
+  {
+    const string pname=List.name(param);
+    unsigned int where = pname.find(" (level",0);
+    if (where != string::npos)
+    {
+      if(pname.find("smoother:",0) == 0
+         && pname.find("smoother: list") != 0)
+      {
+        int i=-999;
+        const char *s = pname.c_str()+where;
+        if (sscanf(s," (level %d)",&i)) {
+          // pull out the level number and create/grab a sublist
+          sprintf(listName,"smoother: list (level %d)",i);
+          smList[i] = &(newList.sublist(listName));
+          // shove option w/o level number into sublist
+          strncpy(subname,pname.c_str(),where);
+          subname[where] = '\0';
+          smList[i]->setEntry(subname,List.entry(param));
+        }
+        else {
+          cout << "Error in creating smoother sublists" << endl;
+          cout << "Offending parameter: " << pname << endl;
+#       ifdef ML_MPI
+          MPI_Finalize();
+#       endif
+          exit(EXIT_FAILURE);
+        }
+      } else if (pname.find("aggregation:",0) == 0
+                && pname.find("aggregation: list") != 0)
+      {
+        int i=-999;
+        const char *s = pname.c_str()+where;
+        if (sscanf(s," (level %d)",&i)) {
+          // pull out the level number and create/grab a sublist
+          sprintf(listName,"aggregation: list (level %d)",i);
+          aggList[i] = &(newList.sublist(listName));
+          // shove option w/o level number into sublist
+          strncpy(subname,pname.c_str(),where);
+          subname[where] = '\0';
+          aggList[i]->setEntry(subname,List.entry(param));
+        }
+        else {
+          cout << "Error in creating aggregation sublists" << endl;
+          cout << "Offending parameter: " << pname << endl;
+#       ifdef ML_MPI
+          MPI_Finalize();
+#       endif
+          exit(EXIT_FAILURE);
+        }
+      } //if (pname.find("aggregation:",0)
+    } else {
+      // not level-specific, so copy to new list
+      newList.setEntry(pname,List.entry(param));
+    } //if (where != string::npos)
+  } //param list iterator
+
+  delete [] smList;
+  delete [] aggList;
+
+} //ML_CreateSublist()
 
 /*
   // -------------------------------------------------------------------
