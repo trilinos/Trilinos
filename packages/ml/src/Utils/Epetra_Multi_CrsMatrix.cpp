@@ -24,7 +24,8 @@ extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra
 ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra_CrsMatrix ** CrsMatrices)
   :NumMatrices_(NumMatrices),CrsMatrices_(CrsMatrices),Label_(0)
 {
-  Label_=strdup("Epetra_Multi_CrsMatrix");
+  Label_=new char[80];
+  strcpy(Label_,"Epetra_Multi_CrsMatrix");
   Comm_ = &(CrsMatrices_[0]->Comm());
   DomainMap_ = &(CrsMatrices_[NumMatrices_-1]->OperatorDomainMap());
   RangeMap_ = &(CrsMatrices_[0]->OperatorRangeMap());
@@ -32,7 +33,7 @@ ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra
 
 // ================================================ ====== ==== ==== == = 
 // Destructor
-ML_Epetra::Epetra_Multi_CrsMatrix::~Epetra_Multi_CrsMatrix(){if(Label_) free(Label_);}
+ML_Epetra::Epetra_Multi_CrsMatrix::~Epetra_Multi_CrsMatrix(){if(Label_) delete Label_;}
 
 
 // ================================================ ====== ==== ==== == = 
