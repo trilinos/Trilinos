@@ -131,6 +131,7 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/transform/EpetraExt_Reindex_LinearProblem.cpp \
 	$(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.cpp \
 	$(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp \
+	$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp \
 	$(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp \
 	$(srcdir)/transform/EpetraExt_AMD_CrsGraph.cpp \
 	$(srcdir)/btf/EpetraExt_BTF_CrsGraph.cpp \
@@ -200,7 +201,8 @@ am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_Reindex_MultiVector.$(OBJEXT) \
 	EpetraExt_Reindex_LinearProblem.$(OBJEXT) \
 	EpetraExt_SolverMap_CrsMatrix.$(OBJEXT) \
-	EpetraExt_SolverMap_LinearProblem.$(OBJEXT)
+	EpetraExt_SolverMap_LinearProblem.$(OBJEXT) \
+	EpetraExt_BlockAdjacencyGraph.$(OBJEXT)
 am__objects_3 = EpetraExt_SymmRCM_CrsGraph.$(OBJEXT) \
 	EpetraExt_AMD_CrsGraph.$(OBJEXT)
 @BUILD_EXPERIMENTAL_FALSE@@BUILD_TRANSFORM_TRUE@am__objects_4 = $(am__objects_2)
@@ -308,6 +310,7 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/transform/EpetraExt_Reindex_LinearProblem.h \
 	$(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.h \
 	$(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.h \
+	$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.h \
 	$(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.h \
 	$(srcdir)/transform/EpetraExt_AMD_CrsGraph.h \
 	$(srcdir)/btf/EpetraExt_BTF_CrsGraph.h \
@@ -519,7 +522,8 @@ EXTRA_TRANSFORM_H = \
      $(srcdir)/transform/EpetraExt_Reindex_MultiVector.h \
      $(srcdir)/transform/EpetraExt_Reindex_LinearProblem.h \
      $(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.h \
-     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.h
+     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.h \
+     $(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.h 
 
 EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_Permutation.cpp \
@@ -537,7 +541,8 @@ EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_Reindex_MultiVector.cpp \
      $(srcdir)/transform/EpetraExt_Reindex_LinearProblem.cpp \
      $(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.cpp \
-     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp
+     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp \
+     $(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp
 
 EXTRA_TRANSFORM_EXPERIMENTAL_H = \
      $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.h \
@@ -990,6 +995,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_LinearProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockJacobi_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapIn.Po@am__quote@
@@ -1316,6 +1322,20 @@ EpetraExt_SolverMap_LinearProblem.obj: $(srcdir)/transform/EpetraExt_SolverMap_L
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp' object='EpetraExt_SolverMap_LinearProblem.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_SolverMap_LinearProblem.obj `if test -f '$(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp'; fi`
+
+EpetraExt_BlockAdjacencyGraph.o: $(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockAdjacencyGraph.o -MD -MP -MF $(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Tpo -c -o EpetraExt_BlockAdjacencyGraph.o `test -f '$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Tpo $(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp' object='EpetraExt_BlockAdjacencyGraph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockAdjacencyGraph.o `test -f '$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp
+
+EpetraExt_BlockAdjacencyGraph.obj: $(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockAdjacencyGraph.obj -MD -MP -MF $(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Tpo -c -o EpetraExt_BlockAdjacencyGraph.obj `if test -f '$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Tpo $(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp' object='EpetraExt_BlockAdjacencyGraph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockAdjacencyGraph.obj `if test -f '$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp'; fi`
 
 EpetraExt_SymmRCM_CrsGraph.o: $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_SymmRCM_CrsGraph.o -MD -MP -MF $(DEPDIR)/EpetraExt_SymmRCM_CrsGraph.Tpo -c -o EpetraExt_SymmRCM_CrsGraph.o `test -f '$(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp

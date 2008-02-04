@@ -69,7 +69,8 @@ EXTRA_TRANSFORM_H = \
      $(srcdir)/transform/EpetraExt_Reindex_MultiVector.h \
      $(srcdir)/transform/EpetraExt_Reindex_LinearProblem.h \
      $(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.h \
-     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.h
+     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.h \
+     $(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.h 
 
 EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_Permutation.cpp \
@@ -87,7 +88,8 @@ EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_Reindex_MultiVector.cpp \
      $(srcdir)/transform/EpetraExt_Reindex_LinearProblem.cpp \
      $(srcdir)/transform/EpetraExt_SolverMap_CrsMatrix.cpp \
-     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp
+     $(srcdir)/transform/EpetraExt_SolverMap_LinearProblem.cpp \
+     $(srcdir)/transform/EpetraExt_BlockAdjacencyGraph.cpp
 
 EXTRA_TRANSFORM_EXPERIMENTAL_H = \
      $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.h \
