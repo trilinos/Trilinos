@@ -122,7 +122,8 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
   RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
   NodeMap_ = &(D0_Clean_Matrix_->OperatorDomainMap());
 
-  Label_=strdup("ML reformulated Maxwell preconditioner");
+  Label_=new char [80];
+  strcpy(Label_,"ML reformulated Maxwell preconditioner");
   List_=List;
   SetDefaultsRefMaxwell(List_,false);
   

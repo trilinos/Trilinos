@@ -33,7 +33,7 @@ ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra
 
 // ================================================ ====== ==== ==== == = 
 // Destructor
-ML_Epetra::Epetra_Multi_CrsMatrix::~Epetra_Multi_CrsMatrix(){if(Label_) delete Label_;}
+ML_Epetra::Epetra_Multi_CrsMatrix::~Epetra_Multi_CrsMatrix(){if(Label_) delete [] Label_;}
 
 
 // ================================================ ====== ==== ==== == = 

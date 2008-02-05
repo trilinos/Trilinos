@@ -82,7 +82,8 @@ verbose_(false),very_verbose_(false),print_hierarchy(false)
   NodeRangeMap_ = &(TMT_Matrix_->OperatorRangeMap());
   
   List_=List;
-  Label_=strdup("ML edge matrix-free preconditioner");
+  Label_=new char[80];
+  strcpy(Label_,"ML edge matrix-free preconditioner");
   InvDiagonal_ = new Epetra_Vector(Diagonal);  
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/

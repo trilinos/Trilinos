@@ -34,7 +34,7 @@ namespace ML_Epetra
     //! @name Destructor
     //@{ 
     //! Destructor
-    virtual ~ML_Preconditioner() {if(Label_) free(Label_);};
+    virtual ~ML_Preconditioner() {if(Label_) delete [] Label_;};
     //@}
 
     //@{ \name Query & Set functions

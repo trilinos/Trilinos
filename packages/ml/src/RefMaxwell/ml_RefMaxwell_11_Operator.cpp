@@ -43,7 +43,8 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
   ,D0T_Matrix_(0)
 #endif
 {
-  Label_=strdup("ML_RefMaxwell_11_Operator");
+  Label_=new char [80];
+  strcpy(Label_,"ML_RefMaxwell_11_Operator");
   Comm_ = &(SM_Matrix_->Comm());
   DomainMap_ = &(SM_Matrix_->OperatorDomainMap());
   RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
@@ -104,7 +105,7 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
 // Destructor
 ML_Epetra::ML_RefMaxwell_11_Operator::~ML_RefMaxwell_11_Operator()
 {
-  if(Label_) free(Label_);
+  if(Label_) delete [] Label_;
   if(Addon_Matrix_) delete [] Addon_Matrix_;
   if(Addon_) delete Addon_;
 #ifdef USE_CORE_MATRIX
