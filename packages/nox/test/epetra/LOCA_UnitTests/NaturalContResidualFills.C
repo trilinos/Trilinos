@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 
     // Check final solution
     ierr += testCompare.testVector(finalSolutionS, finalSolution,
-				   1.0e-14, 1.0e-14,
+				   1.0e-13, 1.0e-13,
 				   "final solution");
 
     LOCA::destroyGlobalData(globalData);
