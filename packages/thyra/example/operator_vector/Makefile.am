@@ -86,8 +86,7 @@ EXTRA_DIST = \
   $(srcdir)/silliestCgSolve.hpp \
   $(srcdir)/sillyCgSolve.hpp \
   $(srcdir)/sillyModifiedGramSchmidt.hpp \
-  $(srcdir)/sillyPowerMethod.hpp \
-  $(srcdir)/exampleImplicitlyComposedLinearOperators.hpp
+  $(srcdir)/sillyPowerMethod.hpp
 
 # This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
 LIBS =

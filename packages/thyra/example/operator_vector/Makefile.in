@@ -278,8 +278,7 @@ EXTRA_DIST = \
   $(srcdir)/silliestCgSolve.hpp \
   $(srcdir)/sillyCgSolve.hpp \
   $(srcdir)/sillyModifiedGramSchmidt.hpp \
-  $(srcdir)/sillyPowerMethod.hpp \
-  $(srcdir)/exampleImplicitlyComposedLinearOperators.hpp
+  $(srcdir)/sillyPowerMethod.hpp
 
 all: all-am
 
