@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "Sacado_ScalarFlopCounter.hpp"
+#include "Sacado_DynamicArrayTraits.hpp"
 
 // Initialization of static members
 const char* 
@@ -95,10 +96,11 @@ Sacado::FlopCounterPack::FlopCounts::FlopCounts()
 void 
 Sacado::FlopCounterPack::FlopCounts::reset()
 {
-  std::fill_n( &partialFlopCounts[0], int(NUM_OPS), uint(0) );
-  std::fill_n( &partialSummaryFlopCounts[0], int(NUM_SUMMARY_OPS), uint(0) );
-  std::fill_n( &flopCounts[0], int(NUM_OPS), double(0) );
-  std::fill_n( &summaryFlopCounts[0], int(NUM_SUMMARY_OPS), double(0) );
+  ds_array<unsigned int>::zero( &partialFlopCounts[0], int(NUM_OPS) );
+  ds_array<unsigned int>::zero( &partialSummaryFlopCounts[0], 
+				int(NUM_SUMMARY_OPS) );
+  ds_array<double>::zero( &flopCounts[0], int(NUM_OPS) );
+  ds_array<double>::zero( &summaryFlopCounts[0], int(NUM_SUMMARY_OPS) );
   totalFlopCount = 0.0;
 }
 
