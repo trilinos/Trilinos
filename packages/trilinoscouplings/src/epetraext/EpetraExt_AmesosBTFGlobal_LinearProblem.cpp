@@ -1,0 +1,261 @@
+// @HEADER
+// ***********************************************************************
+// 
+//     EpetraExt: Epetra Extended - Linear Algebra Services Package
+//                 Copyright (2001) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ***********************************************************************
+// @HEADER
+#include <EpetraExt_AmesosBTFGlobal_LinearProblem.h>
+
+#include <Epetra_Import.h>
+#include <Epetra_Export.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Vector.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_Map.h>
+#include <Epetra_Comm.h>
+#include <Epetra_LinearProblem.h>
+	
+#include <EpetraExt_AmesosBTF_CrsMatrix.h>
+#include <EpetraExt_Reindex_CrsMatrix.h>
+#include <EpetraExt_BlockAdjacencyGraph.h>
+
+#include <Teuchos_ParameterList.hpp>
+#include <Isorropia_Epetra.hpp>
+
+using std::vector;
+
+namespace EpetraExt {
+
+AmesosBTFGlobal_LinearProblem::
+~AmesosBTFGlobal_LinearProblem()
+{
+}
+
+AmesosBTFGlobal_LinearProblem::NewTypeRef
+AmesosBTFGlobal_LinearProblem::
+operator()( OriginalTypeRef orig )
+{
+  origObj_ = &orig;
+
+  // Extract the matrix and vectors from the linear problem
+  OldRHS_ = Teuchos::rcp( orig.GetRHS(), false );
+  OldLHS_ = Teuchos::rcp( orig.GetLHS(), false );
+  OldMatrix_ = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>( orig.GetMatrix() ), false );
+
+  int nGlobal = OldMatrix_->NumGlobalRows(); 
+  int n = OldMatrix_->NumMyRows();
+  int nnz = OldMatrix_->NumMyNonzeros();  
+
+  // Check if the matrix is on one processor.
+  int myMatProc = -1, matProc = -1;
+  int myPID = OldMatrix_->Comm().MyPID();
+  int numProcs = OldMatrix_->Comm().NumProc();
+  for (int proc=0; proc<numProcs; proc++) 
+  {
+    if (OldMatrix_->NumGlobalNonzeros() == OldMatrix_->NumMyNonzeros())
+      myMatProc = myPID;
+  }
+  OldMatrix_->Comm().MaxAll( &myMatProc, &matProc, 1 );
+  
+  Teuchos::RCP<Epetra_CrsMatrix> serialMatrix;
+  if( OldMatrix_->RowMap().DistributedGlobal() && matProc == -1) 
+  {
+    // The matrix is distributed and needs to be moved to processor zero.
+    // Set the zero processor as the master.
+    matProc = 0;
+    Teuchos::RCP<Epetra_Map> serialMap;
+    if (myPID == matProc) 
+      serialMap = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, 0, OldMatrix_->Comm() ) );
+    else
+      serialMap = Teuchos::rcp( new Epetra_Map( nGlobal, 0, 0, OldMatrix_->Comm() ) );
+    Epetra_Import serialImporter( *serialMap, OldMatrix_->RowMap() );
+    serialMatrix = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *serialMap, 0 ) );
+    serialMatrix->Import( *OldMatrix_, serialImporter, Insert );
+    serialMatrix->FillComplete();
+  }
+  else {
+    // The old matrix has already been moved to one processor (matProc).
+    serialMatrix = OldMatrix_;
+  }
+
+  if( verbose_ )
+  {
+    cout << "Original (serial) Matrix:\n";
+    cout << *serialMatrix << endl;
+  }
+
+  // Compute and apply BTF to the serial CrsMatrix and has been filtered by the threshold
+  EpetraExt::AmesosBTF_CrsMatrix BTFTrans( threshold_, upperTri_, verbose_ );
+  Epetra_CrsMatrix newSerialMatrix = BTFTrans( *serialMatrix );
+  BTFTrans.fwd();
+
+  rowPerm_ = BTFTrans.RowPerm();
+  colPerm_ = BTFTrans.ColPerm();
+  blockPtr_ = BTFTrans.BlockPtr();
+  numBlocks_ = BTFTrans.NumBlocks();
+
+  // Generate the full serial matrix that imports according to the previously computed BTF.
+  Epetra_CrsMatrix newSerialMatrixF( Copy, newSerialMatrix.RowMap(), newSerialMatrix.ColMap(), 0 );
+  newSerialMatrixF.Import( *serialMatrix, *(BTFTrans.Importer()), Insert );
+  newSerialMatrixF.FillComplete();
+
+  // Perform reindexing on the full serial matrix (needed for balancing).
+  Epetra_Map reIdxMap( newSerialMatrixF.RowMap().NumGlobalElements(), newSerialMatrixF.RowMap().NumMyElements(), 0, newSerialMatrixF.Comm() );
+  EpetraExt::ViewTransform<Epetra_CrsMatrix> * reIdxTrans =
+        new EpetraExt::CrsMatrix_Reindex( reIdxMap );
+  Epetra_CrsMatrix tNewSerialMatrixF = (*reIdxTrans)( newSerialMatrixF );
+  reIdxTrans->fwd();
+
+  Teuchos::RCP<Epetra_Map> balancedMap;
+
+  if (balance_ == "linear") {
+
+    // Distribute block somewhat evenly across processors
+    std::vector<int> rowDist(numProcs+1,0);
+    int balRows = nGlobal / numProcs + 1;
+    int numRows = balRows, currProc = 1;
+    for ( int i=0; i<numBlocks_ || currProc < numProcs; ++i ) {
+      if (blockPtr_[i] > numRows) {
+	rowDist[currProc++] = blockPtr_[i-1];
+	numRows = blockPtr_[i-1] + balRows;
+      }      
+    }
+    rowDist[numProcs] = nGlobal;
+    
+    // Create new Map based on this linear distribution.
+    int numMyBalancedRows = rowDist[myPID+1]-rowDist[myPID];
+
+    NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, &rowPerm_[ rowDist[myPID] ], 0, OldMatrix_->Comm() ) );
+    // Right now we do not explicitly build the column map and assume the BTF permutation is symmetric!
+    //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
+
+    std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;    
+    //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, 0, serialMatrix->Comm() ) );
+  }
+  else if (balance_ == "isorropia") {
+	
+    // Compute block adjacency graph for partitioning.
+    std::vector<double> weight;
+    Teuchos::RCP<Epetra_CrsGraph> blkGraph;
+    EpetraExt::BlockAdjacencyGraph adjGraph;
+    blkGraph = adjGraph.compute( const_cast<Epetra_CrsGraph&>(tNewSerialMatrixF.Graph()), 
+							numBlocks_, blockPtr_, weight);
+    Epetra_Vector rowWeights( View, blkGraph->Map(), &weight[0] );
+    
+    // Call Isorropia to rebalance this graph.
+    Teuchos::ParameterList isorropiaList;
+    Teuchos::ParameterList& sublist = isorropiaList.sublist( "Zoltan" );
+    sublist.set("LB_METHOD", "GRAPH");
+    sublist.set("PARMETIS_METHOD", "PARTKWAY");
+    Teuchos::RCP<Epetra_CrsGraph> balancedGraph =
+      Isorropia::Epetra::create_balanced_copy( *blkGraph, rowWeights );
+    
+    int myNumBlkRows = balancedGraph->NumMyRows();    
+    
+    //std::vector<int> myGlobalElements(nGlobal);
+    std::vector<int> newRangeElements(nGlobal), newDomainElements(nGlobal);
+    int grid = 0, myElements = 0;
+    for (int i=0; i<myNumBlkRows; ++i) {
+      grid = balancedGraph->GRID( i );
+      for (int j=blockPtr_[grid]; j<blockPtr_[grid+1]; ++j) {
+	newRangeElements[myElements++] = rowPerm_[j];
+	//myGlobalElements[myElements++] = j;
+      }
+    }
+    NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, myElements, &newRangeElements[0], 0, OldMatrix_->Comm() ) );
+    // Right now we do not explicitly build the column map and assume the BTF permutation is symmetric!
+    //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
+
+    //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, myElements, &myGlobalElements[0], 0, serialMatrix->Comm() ) );
+    std::cout << "Processor " << myPID << " has " << myElements << " rows." << std::endl;
+
+  }
+  
+  // Use New Domain and Range Maps to Generate Importer
+  //for now, assume they start out as identical
+  Epetra_Map OldRowMap = OldMatrix_->RowMap();
+  Epetra_Map OldColMap = OldMatrix_->ColMap();
+  
+  if( verbose_ )
+  {
+    cout << "New Row Map\n";
+    cout << *NewRowMap_ << endl;
+    //cout << "New Col Map\n";
+    //cout << *NewColMap_ << endl;
+  }
+
+  // Generate New Graph
+  // NOTE:  Right now we are creating the graph, assuming that the permutation is symmetric!
+  // NewGraph_ = Teuchos::rcp( new Epetra_CrsGraph( Copy, *NewRowMap_, *NewColMap_, 0 ) );
+  NewGraph_ = Teuchos::rcp( new Epetra_CrsGraph( Copy, *NewRowMap_, 0 ) );
+  Importer_ = Teuchos::rcp( new Epetra_Import( *NewRowMap_, OldRowMap ) );
+  NewGraph_->Import( OldMatrix_->Graph(), *Importer_, Insert );
+  NewGraph_->FillComplete();
+
+  if( verbose_ )
+  {
+    cout << "NewGraph\n";
+    cout << *NewGraph_;
+  }
+
+  // Create new linear problem and import information from old linear problem
+  NewMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *NewGraph_ ) );
+  NewMatrix_->Import( *OldMatrix_, *Importer_, Insert );
+  NewMatrix_->FillComplete();
+
+  NewLHS_ = Teuchos::rcp( new Epetra_MultiVector( *NewRowMap_, OldLHS_->NumVectors() ) );
+  NewLHS_->Import( *OldLHS_, *Importer_, Insert );
+  
+  NewRHS_ = Teuchos::rcp( new Epetra_MultiVector( *NewRowMap_, OldRHS_->NumVectors() ) );
+  NewRHS_->Import( *OldRHS_, *Importer_, Insert );
+
+  if( verbose_ )
+  {
+    cout << "New Matrix\n";
+    cout << *NewMatrix_ << endl;
+  }
+
+  newObj_ = new Epetra_LinearProblem( &*NewMatrix_, &*NewLHS_, &*NewRHS_ );
+
+  return *newObj_;
+}
+
+bool
+AmesosBTFGlobal_LinearProblem::
+fwd()
+{
+  NewLHS_->Import( *OldLHS_, *Importer_, Insert );
+  NewRHS_->Import( *OldRHS_, *Importer_, Insert );
+  NewMatrix_->Import( *OldMatrix_, *Importer_, Insert );
+}
+
+bool
+AmesosBTFGlobal_LinearProblem::
+rvs()
+{
+  OldLHS_->Export( *NewLHS_, *Importer_, Insert );
+}
+
+} //namespace EpetraExt

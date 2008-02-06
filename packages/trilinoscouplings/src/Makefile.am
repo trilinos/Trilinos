@@ -142,11 +142,13 @@ endif
 
 EXTRA_EPETRAEXT_AMESOS_H = \
 	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.h
 
 EXTRA_EPETRAEXT_AMESOS = \
 	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.cpp
 
 if BUILD_EPETRAEXT_AMESOS
 
