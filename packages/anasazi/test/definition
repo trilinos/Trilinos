@@ -30,7 +30,6 @@
     TESTS = OrthoManager/OrthoManager_gentest.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
-    X-HOST = gabriel.sandia.gov;
     COMM = SERIAL, MPI;
 }
 
