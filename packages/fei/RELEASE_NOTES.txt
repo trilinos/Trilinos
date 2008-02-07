@@ -409,3 +409,8 @@ July 7 2005: version 2.14.00
   - fixed a compile error that only showed up on Mac OS X, where fei_Pool_alloc.hpp
     was missing a templated member 'construct'.
 
+ ??? ?? ???? minor version 2.22.02
+  - fixed a bug where the hasSlaveDof_ member of fei::Record wasn't initialized in
+    the constructor. This was causing some erroneous is_slave() queries in the
+    Aria application.
+

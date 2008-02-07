@@ -1804,6 +1804,8 @@ int fei::VectorSpace::setLocalEqnNumbers()
     osstr << "." <<numProcs<< "." << localProc;
 
     id2eqnStream = new FEI_OFSTREAM(osstr.str().c_str(), IOS_OUT);
+    FEI_OSTREAM& os = *id2eqnStream;
+    os << "# Each line contains:\n#   ID   blk-eqn   eqn" << FEI_ENDL;
   }
 
   int eqnNumberOffset = 0;

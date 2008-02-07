@@ -16,7 +16,8 @@ fei::Record::Record()
     number_(-1),
     fieldMask_(NULL),
     offsetIntoEqnNumbers_(0),
-    ownerProc_(-1)
+    ownerProc_(-1),
+    hasSlaveDof_(false)
 {
 }
 
@@ -31,6 +32,7 @@ int fei::Record::deepCopy(const Record& rcd)
   fieldMask_ = rcd.fieldMask_;
   offsetIntoEqnNumbers_ = rcd.offsetIntoEqnNumbers_;
   ownerProc_ = rcd.ownerProc_;
+  hasSlaveDof_ = rcd.hasSlaveDof_;
 
   return(0);
 }

@@ -35,7 +35,7 @@ namespace snl_fei {
     /** Query the number of rows. This is expected to be the number of rows
         on the local processor.
     */
-    static int getNumRows(LinearSystemCore* lsc, int& numRows)
+    static int getNumLocalRows(LinearSystemCore* lsc, int& numRows)
     {
       numRows = -1;
       return(-1);

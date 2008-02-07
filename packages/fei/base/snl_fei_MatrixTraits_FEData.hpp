@@ -34,7 +34,7 @@ namespace snl_fei {
     /** Query the number of rows. This is expected to be the number of rows
         on the local processor.
     */
-    static int getNumRows(FiniteElementData* fed, int& numRows)
+    static int getNumLocalRows(FiniteElementData* fed, int& numRows)
     {
       numRows = -1;
       return(-1);

@@ -17,15 +17,15 @@ namespace fei {
 
 namespace snl_fei {
   /** Define a struct of matrix access traits. The fei matrix implementation
-      class snl_fei::Matrix is essentially a filter which passes data to
-      library- specific matrix objects (such as Trilinos/Epetra's
-      Epetra_CrsMatrix).  snl_fei::Matrix is a template, and the template
+      class fei::Matrix_Impl is essentially a filter which passes data to
+      library-specific matrix objects (such as Trilinos/Epetra's
+      Epetra_CrsMatrix).  fei::Matrix_Impl is a template, and the template
       parameter is the matrix object. In order to use an arbitrary matrix
-      object with snl_fei::Matrix, it is only necessary to define a
+      object with fei::Matrix_Impl, it is only necessary to define a
       specialization of this MatrixTraits struct for the matrix object.
 
       For an example specialization, see
-        support-Trilinos/MatrixTraits_Epetra.hpp.
+        support-Trilinos/fei_MatrixTraits_Epetra.hpp.
 
       This "base" MatrixTraits struct provides function stubs for default
       type "T", which will catch the use of any matrix type for which
@@ -61,7 +61,7 @@ namespace snl_fei {
     /** Query the number of local rows. This is expected to be the number of
         point-entry rows on the local processor.
     */
-    static int getNumRows(T* mat, int& numRows)
+    static int getNumLocalRows(T* mat, int& numRows)
       { return(-1); }
 
     /** Given a locally-owned global row number, query the length (number of

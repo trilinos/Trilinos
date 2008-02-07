@@ -36,7 +36,7 @@ namespace snl_fei {
     /** Query the number of rows. This is expected to be the number of rows
         on the local processor.
     */
-    static int getNumRows(fei::LinearProblemManager* mat, int& numRows)
+    static int getNumLocalRows(fei::LinearProblemManager* mat, int& numRows)
     {
       numRows = mat->getLocalNumRows();
       return(0);

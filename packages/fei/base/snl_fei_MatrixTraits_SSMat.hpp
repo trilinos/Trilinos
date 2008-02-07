@@ -43,7 +43,7 @@ namespace snl_fei {
     /** Query the number of rows. This is expected to be the number of rows
         on the local processor.
     */
-    static int getNumRows(SSMat* mat, int& numRows)
+    static int getNumLocalRows(SSMat* mat, int& numRows)
     {
       numRows = mat->getRowNumbers().length();
       return(0);

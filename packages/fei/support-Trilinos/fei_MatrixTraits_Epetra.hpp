@@ -36,7 +36,7 @@ namespace snl_fei {
         return( mat->PutScalar(scalar) );
       }
 
-    static int getNumRows(Epetra_CrsMatrix* mat, int& numRows)
+    static int getNumLocalRows(Epetra_CrsMatrix* mat, int& numRows)
     {
       numRows = mat->NumMyRows();
       return(0);
