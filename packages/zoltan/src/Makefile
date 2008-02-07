@@ -756,7 +756,6 @@ clean:
 	 cd ..; \
 	 done;
 	@cd Utilities; $(MAKE) clean; cd .. ; 
-	@cd examples; $(MAKE) clean; cd .. ; 
 	@echo $(ZOLTAN_OBJ_DIR);
 	@$(RM) -rf $(ZOLTAN_OBJ_DIR)/*; 
 	@echo "fort"
