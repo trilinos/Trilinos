@@ -946,16 +946,20 @@ int Zoltan_PHG_Initialize_Params(
          * number of processors. */
         usePrimeComm = 1;
 
+    if ((!strcasecmp(method, "REPART")) ||
+        (!strcasecmp(method, "FAST_REPART"))) {
+        zz->LB.Remap_Flag = 0;
+    }
 
     if ((!strcasecmp(method, "REPART")) ||
         (!strcasecmp(method, "REFINE")) ||
         (!strcasecmp(method, "FAST_REPART")) ||
         (!strcasecmp(method, "MULTILEVEL_REFINE")) ){
         hgp->fm_loop_limit = 4; /* experimental evaluation showed that for
-                                   repartitioning/refinement small number of passes
-                                   is "good enough". These are all heuristics hence
-                                   it is possible to create a pathological cases; but
-                                   in general this seems to be sufficient */
+                                repartitioning/refinement small number of passes
+                                is "good enough". These are all heuristics hence
+                                it is possible to create a pathological cases; 
+                                but in general this seems to be sufficient */
     }
     
     if (!strcasecmp(method, "REFINE") || !strcasecmp(method, "FAST_REPART")){
@@ -963,10 +967,10 @@ int Zoltan_PHG_Initialize_Params(
         strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);
 
         /* we have modified all coarse partitioners to handle preferred part
-           if user wants to choose one she can choose; otherwise default partitioner
+           if user wants to choose one she can choose; otherwise default 
+           partitioner
            (greedy growing) does work better than previous default partitioning
            for phg_refine ("no"). */        
-        zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
 
     }
@@ -976,7 +980,6 @@ int Zoltan_PHG_Initialize_Params(
            didn't prove itself useful; it is too costly even with local matching
            hence it will not be be released yet (i.e. not in v3). */
         strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
-        zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
     }    
   }
