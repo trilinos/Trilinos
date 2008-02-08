@@ -608,6 +608,7 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
   static int timer_pj = -1;
+  static int timer_final_output = -1;
   float *part_sizes = input_part_sizes;
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
@@ -718,6 +719,8 @@ static int Zoltan_ParMetis_Jostle(
   if (use_timers) {
     if (timer_pj < 0)
       timer_pj = Zoltan_Timer_Init(zz->ZTime, 1, "ParMETIS_Jostle");
+    if (timer_final_output < 0)
+      timer_final_output = Zoltan_Timer_Init(zz->ZTime, 1, "Final_Output");
     ZOLTAN_TIMER_START(zz->ZTime, timer_pj, zz->Communicator);
   }
 
@@ -1546,6 +1549,8 @@ End:
 #ifdef UVC_DORUK_COMP_OBJSIZE    
     double minD, maxD, gminD, gmaxD;
 #endif
+    if (use_timers) 
+      ZOLTAN_TIMER_START(zz->ZTime, timer_final_output, zz->Communicator);
 
     if (nRuns == 0) { 
       for (i = 0; i < FOMAXDIM; i++) {
@@ -1653,6 +1658,8 @@ End:
       ZOLTAN_FREE(&adjpart);
       }
 #undef FOMAXDIM
+      if (use_timers) 
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_final_output, zz->Communicator);
     }
 
   if (use_timers)

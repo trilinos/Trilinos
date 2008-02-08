@@ -323,8 +323,10 @@ if (iteration == 1) {
   struct Zoltan_Struct *zzcopy;
   zzcopy = Zoltan_Copy(zz);
   /* Don't do any migration or accumulate any stats. */
+  if (Proc == 0) printf("%d KDDKDD IGNORING FIRST ITERATION STATS\n", Proc);
   Zoltan_Set_Param(zzcopy, "RETURN_LISTS", "NONE");
   Zoltan_Set_Param(zzcopy, "FINAL_OUTPUT", "0");
+  Zoltan_Set_Param(zzcopy, "USE_TIMERS", "0");
   if (!run_zoltan(zzcopy, Proc, &prob, &mesh, &pio_info)) {
     Gen_Error(0, "fatal: Error returned from run_zoltan\n");
     error_report(Proc);
