@@ -316,6 +316,24 @@ int main(int argc, char *argv[])
       }
     }
     else{
+#ifdef IGNORE_FIRST_ITERATION_STATS
+if (iteration == 1) {
+  /* Exercise partitioner once on Tbird because first run is slow. */
+  /* Lee Ann suspects Tbird is loading shared libraries. */
+  struct Zoltan_Struct *zzcopy;
+  zzcopy = Zoltan_Copy(zz);
+  /* Don't do any migration or accumulate any stats. */
+  Zoltan_Set_Param(zzcopy, "RETURN_LISTS", "NONE");
+  Zoltan_Set_Param(zzcopy, "FINAL_OUTPUT", "0");
+  if (!run_zoltan(zzcopy, Proc, &prob, &mesh, &pio_info)) {
+    Gen_Error(0, "fatal: Error returned from run_zoltan\n");
+    error_report(Proc);
+    print_output = 0;
+    goto End;
+  }
+  Zoltan_Destroy(&zzcopy);
+}
+#endif /* IGNORE_FIRST_ITERATION_STATS */
       if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
         Gen_Error(0, "fatal: Error returned from run_zoltan\n");
         error_report(Proc);
@@ -340,14 +358,15 @@ int main(int argc, char *argv[])
             mesh.elements[i].avg_coord[j] = mesh.elements[i].coord[0][j];
           }
         }
-        /* Increase weights in some partitions */
+        /* Increase weights in some parts */
         if (Test.Dynamic_Weights){
-          /* Randomly pick 10% of partitions to "refine" */
+          /* Randomly pick 10% of parts to "refine" */
+          /* Note:  Assumes at least 10 parts!  */
           /* Increase vertex weight, and also edge weights? TODO */
           j = (int) ((10.0*rand())/RAND_MAX + .5);
           for (i = 0; i < mesh.num_elems; i++) {
             if ((mesh.elements[i].my_part%10) == j){
-                mesh.elements[i].cpu_wgt[0] = Test.Dynamic_Weights * (1+rand()%5);
+                mesh.elements[i].cpu_wgt[0] = Test.Dynamic_Weights*(1+rand()%5);
             }
           }
         }
