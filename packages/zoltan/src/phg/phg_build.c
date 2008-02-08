@@ -1823,19 +1823,6 @@ int nRepartEdge = 0, nRepartVtx = 0;
   ZOLTAN_FREE(&tmpparts);
   ZOLTAN_FREE(&tmpwgts);
 
-  if (!zz->LB.Remap_Flag && zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
-    int gnremove;
-    rc = MPI_Allreduce(&(zhg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM, 
-                  zz->Communicator);
-    CHECK_FOR_MPI_ERROR(rc)
-    if (!final_output || !gnremove) {
-      /* Don't need the plan long-term; destroy it now. */
-      Zoltan_Comm_Destroy(&(zhg->VtxPlan));
-      ZOLTAN_FREE(&(zhg->Recv_GNOs));
-      zhg->nRecv_GNOs = 0;
-    }
-  }
-
   /*  Send edge weights, if any */
 
   dim = zz->Edge_Weight_Dim;
@@ -1961,6 +1948,20 @@ int nRepartEdge = 0, nRepartVtx = 0;
               goto End;
       }
   }
+
+  if (!zz->LB.Remap_Flag && zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
+    int gnremove;
+    rc = MPI_Allreduce(&(zhg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM, 
+                  zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+    if (!final_output || !gnremove) {
+      /* Don't need the plan long-term; destroy it now. */
+      Zoltan_Comm_Destroy(&(zhg->VtxPlan));
+      ZOLTAN_FREE(&(zhg->Recv_GNOs));
+      zhg->nRecv_GNOs = 0;
+    }
+  }
+
     
   ierr = Zoltan_HG_Create_Mirror(zz, phg);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
