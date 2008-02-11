@@ -707,17 +707,19 @@ ELEM_INFO *elem;
             ((float)mesh->global_blank_count*100.0/total_vertices));
   }
   fflush(stdout);
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (mesh->num_elems){
-    printf("Proc %d: %d vertices, %d blanked (%0.2f%%)\n",
-          mesh->proc, mesh->num_elems,  mesh->blank_count,
-          ((float)mesh->blank_count*100.0/mesh->num_elems));
+  if (Debug_Driver > 1) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (mesh->num_elems){
+      printf("Proc %d: %d vertices, %d blanked (%0.2f%%)\n",
+            mesh->proc, mesh->num_elems,  mesh->blank_count,
+            ((float)mesh->blank_count*100.0/mesh->num_elems));
+    }
+    else{
+      printf("Proc %d: 0 vertices\n", mesh->proc);
+    }
+    fflush(stdout);
+    MPI_Barrier(MPI_COMM_WORLD);
   }
-  else{
-    printf("Proc %d: 0 vertices\n", mesh->proc);
-  }
-  fflush(stdout);
-  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 #ifdef DEBUG_READ_MESH
