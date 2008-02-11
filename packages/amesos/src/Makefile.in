@@ -152,55 +152,62 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/UFsparse/BTF/Source/btf_order.c \
 	$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c \
 	$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c \
-	$(srcdir)/UFsparse/PARAKLETE/memory.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c \
-	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
-	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c \
 	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c \
 	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c \
 	$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c \
 	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_l_2.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_1.c \
-	$(srcdir)/UFsparse/CAMD/Source/camd_2.c \
-	$(srcdir)/UFsparse/CAMD/Source/camd_aat.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_control.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_defaults.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_dump.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_info.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_order.c \
-	$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_valid.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_global.c \
-	$(srcdir)/UFsparse/CCOLAMD/ccolamd.c \
+	$(srcdir)/UFsparse/COLAMD/colamd_l.c \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c \
 	$(srcdir)/Amesos_Paraklete.cpp $(srcdir)/Amesos_MC64.cpp \
 	$(srcdir)/Amesos_Scalapack.cpp $(srcdir)/Amesos.cpp \
@@ -239,54 +246,64 @@ am__objects_8 = amd_1.$(OBJEXT) amd_2.$(OBJEXT) amd_aat.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	btf_order.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	btf_maxtrans.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	btf_strongcomp.$(OBJEXT)
-@HAVE_AMESOS_PARAKLETE_TRUE@am__objects_11 = memory.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@am__objects_11 =  \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_analyze.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_btf.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_error.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_factorize.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_finish.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_kernel.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_solve.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_node.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_lsolve_node.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_node.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_reanalyze.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_solve.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_start.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_usolve_node.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_common.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_common.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_dense.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_factor.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_change_factor.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_memory.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_complex.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_transpose.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_sparse.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_band.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_copy.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_factor.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_change_factor.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_memory.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_complex.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_transpose.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_sparse.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_band.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_copy.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_triplet.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_error.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_aat.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_add.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_error.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_aat.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_add.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_check.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_postorder.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_amd.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_colamd.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_etree.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_rowcolcounts.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_postorder.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_amd.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_colamd.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_etree.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_rowcolcounts.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_solve.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_resymbol.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_analyze.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_ccolamd.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_camd.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_csymamd.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_metis.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_nesdis.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	camd_1.$(OBJEXT) camd_2.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	camd_aat.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_analyze.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_ccolamd.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_camd.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_csymamd.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_metis.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	cholmod_l_nesdis.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amd_l_2.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amd_l_postorder.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amd_l_post_tree.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	camd_1.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	camd_l_2.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	camd_l_aat.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_control.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_defaults.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_dump.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_info.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_order.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	camd_postorder.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	camd_l_postorder.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_preprocess.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_valid.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	camd_global.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	ccolamd.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	colamd_l.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	colamd_global.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	ccolamd_l.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	ccolamd_global.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	Amesos_Paraklete.$(OBJEXT)
 @HAVE_AMESOS_MC64_TRUE@am__objects_12 = Amesos_MC64.$(OBJEXT)
@@ -330,6 +347,7 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_core.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_io64.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h \
 	$(srcdir)/UFsparse/UFconfig/UFconfig.h \
 	$(srcdir)/UFsparse/KLU/Include/klu.h \
@@ -676,6 +694,7 @@ PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_core.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_io64.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h \
 	$(srcdir)/UFsparse/UFconfig/UFconfig.h
 
@@ -715,55 +734,63 @@ PARAKLETE_KLU_COMMON_H = \
 
 @HAVE_AMESOS_PARAKLETE_FALSE@PARAKLETE = 
 @HAVE_AMESOS_PARAKLETE_TRUE@PARAKLETE = \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/memory.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/AMD/Source/amd_l_2.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_1.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_2.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_aat.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_control.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_defaults.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_dump.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_info.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_order.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_valid.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Source/camd_global.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/COLAMD/colamd_l.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/COLAMD/colamd_global.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/Amesos_Paraklete.cpp
 
@@ -1023,6 +1050,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_l_2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_l_post_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_l_postorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_post_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_postorder.Po@am__quote@
@@ -1032,49 +1062,49 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_strongcomp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_aat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_control.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_defaults.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_l_2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_l_aat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_l_postorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_order.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_postorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_preprocess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_valid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd_global.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_aat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_add.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_amd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_analyze.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_band.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_camd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_ccolamd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_change_factor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd_l.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_check.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_colamd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_common.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_complex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_copy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_csymamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_dense.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_error.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_etree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_factor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_memory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_metis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_nesdis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_postorder.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_resymbol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_rowcolcounts.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_aat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_add.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_amd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_analyze.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_band.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_camd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_ccolamd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_change_factor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_colamd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_complex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_copy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_csymamd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_error.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_etree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_factor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_memory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_metis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_nesdis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_postorder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_rowcolcounts.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_sparse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_l_transpose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_sparse.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_transpose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cholmod_triplet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colamd_global.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colamd_l.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_analyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_analyze_given.Po@am__quote@
@@ -1092,13 +1122,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_tsolve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_analyze.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_btf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_factorize.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_finish.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_kernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_lsolve_node.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_node.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_reanalyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_solve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_start.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_usolve_node.Po@am__quote@
 
 .c.o:
@@ -1605,20 +1639,6 @@ btf_strongcomp.obj: $(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_strongcomp.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; fi`
 
-memory.o: $(srcdir)/UFsparse/PARAKLETE/memory.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT memory.o -MD -MP -MF $(DEPDIR)/memory.Tpo -c -o memory.o `test -f '$(srcdir)/UFsparse/PARAKLETE/memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/memory.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/memory.Tpo $(DEPDIR)/memory.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/memory.c' object='memory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o memory.o `test -f '$(srcdir)/UFsparse/PARAKLETE/memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/memory.c
-
-memory.obj: $(srcdir)/UFsparse/PARAKLETE/memory.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT memory.obj -MD -MP -MF $(DEPDIR)/memory.Tpo -c -o memory.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/memory.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/memory.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/memory.Tpo $(DEPDIR)/memory.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/memory.c' object='memory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o memory.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/memory.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/memory.c'; fi`
-
 paraklete_analyze.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_analyze.o -MD -MP -MF $(DEPDIR)/paraklete_analyze.Tpo -c -o paraklete_analyze.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_analyze.Tpo $(DEPDIR)/paraklete_analyze.Po
@@ -1632,6 +1652,34 @@ paraklete_analyze.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c' object='paraklete_analyze.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_analyze.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c'; fi`
+
+paraklete_btf.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_btf.o -MD -MP -MF $(DEPDIR)/paraklete_btf.Tpo -c -o paraklete_btf.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_btf.Tpo $(DEPDIR)/paraklete_btf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c' object='paraklete_btf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_btf.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c
+
+paraklete_btf.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_btf.obj -MD -MP -MF $(DEPDIR)/paraklete_btf.Tpo -c -o paraklete_btf.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_btf.Tpo $(DEPDIR)/paraklete_btf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c' object='paraklete_btf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_btf.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c'; fi`
+
+paraklete_error.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_error.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_error.o -MD -MP -MF $(DEPDIR)/paraklete_error.Tpo -c -o paraklete_error.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_error.Tpo $(DEPDIR)/paraklete_error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c' object='paraklete_error.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_error.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c
+
+paraklete_error.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_error.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_error.obj -MD -MP -MF $(DEPDIR)/paraklete_error.Tpo -c -o paraklete_error.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_error.Tpo $(DEPDIR)/paraklete_error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c' object='paraklete_error.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_error.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c'; fi`
 
 paraklete_factorize.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_factorize.o -MD -MP -MF $(DEPDIR)/paraklete_factorize.Tpo -c -o paraklete_factorize.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c
@@ -1647,6 +1695,20 @@ paraklete_factorize.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_factorize.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c'; fi`
 
+paraklete_finish.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_finish.o -MD -MP -MF $(DEPDIR)/paraklete_finish.Tpo -c -o paraklete_finish.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_finish.Tpo $(DEPDIR)/paraklete_finish.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c' object='paraklete_finish.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_finish.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c
+
+paraklete_finish.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_finish.obj -MD -MP -MF $(DEPDIR)/paraklete_finish.Tpo -c -o paraklete_finish.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_finish.Tpo $(DEPDIR)/paraklete_finish.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c' object='paraklete_finish.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_finish.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c'; fi`
+
 paraklete_kernel.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_kernel.o -MD -MP -MF $(DEPDIR)/paraklete_kernel.Tpo -c -o paraklete_kernel.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_kernel.Tpo $(DEPDIR)/paraklete_kernel.Po
@@ -1660,34 +1722,6 @@ paraklete_kernel.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c' object='paraklete_kernel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_kernel.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c'; fi`
-
-paraklete_solve.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_solve.o -MD -MP -MF $(DEPDIR)/paraklete_solve.Tpo -c -o paraklete_solve.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_solve.Tpo $(DEPDIR)/paraklete_solve.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' object='paraklete_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_solve.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
-
-paraklete_solve.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_solve.obj -MD -MP -MF $(DEPDIR)/paraklete_solve.Tpo -c -o paraklete_solve.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_solve.Tpo $(DEPDIR)/paraklete_solve.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' object='paraklete_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_solve.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; fi`
-
-paraklete_node.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_node.o -MD -MP -MF $(DEPDIR)/paraklete_node.Tpo -c -o paraklete_node.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_node.Tpo $(DEPDIR)/paraklete_node.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' object='paraklete_node.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_node.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
-
-paraklete_node.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_node.obj -MD -MP -MF $(DEPDIR)/paraklete_node.Tpo -c -o paraklete_node.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_node.Tpo $(DEPDIR)/paraklete_node.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' object='paraklete_node.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_node.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; fi`
 
 paraklete_lsolve_node.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_lsolve_node.o -MD -MP -MF $(DEPDIR)/paraklete_lsolve_node.Tpo -c -o paraklete_lsolve_node.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c
@@ -1703,6 +1737,62 @@ paraklete_lsolve_node.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_lsolve_node.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c'; fi`
 
+paraklete_node.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_node.o -MD -MP -MF $(DEPDIR)/paraklete_node.Tpo -c -o paraklete_node.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_node.Tpo $(DEPDIR)/paraklete_node.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' object='paraklete_node.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_node.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
+
+paraklete_node.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_node.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_node.obj -MD -MP -MF $(DEPDIR)/paraklete_node.Tpo -c -o paraklete_node.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_node.Tpo $(DEPDIR)/paraklete_node.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c' object='paraklete_node.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_node.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c'; fi`
+
+paraklete_reanalyze.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_reanalyze.o -MD -MP -MF $(DEPDIR)/paraklete_reanalyze.Tpo -c -o paraklete_reanalyze.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_reanalyze.Tpo $(DEPDIR)/paraklete_reanalyze.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c' object='paraklete_reanalyze.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_reanalyze.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c
+
+paraklete_reanalyze.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_reanalyze.obj -MD -MP -MF $(DEPDIR)/paraklete_reanalyze.Tpo -c -o paraklete_reanalyze.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_reanalyze.Tpo $(DEPDIR)/paraklete_reanalyze.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c' object='paraklete_reanalyze.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_reanalyze.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c'; fi`
+
+paraklete_solve.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_solve.o -MD -MP -MF $(DEPDIR)/paraklete_solve.Tpo -c -o paraklete_solve.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_solve.Tpo $(DEPDIR)/paraklete_solve.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' object='paraklete_solve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_solve.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
+
+paraklete_solve.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_solve.obj -MD -MP -MF $(DEPDIR)/paraklete_solve.Tpo -c -o paraklete_solve.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_solve.Tpo $(DEPDIR)/paraklete_solve.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c' object='paraklete_solve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_solve.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c'; fi`
+
+paraklete_start.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_start.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_start.o -MD -MP -MF $(DEPDIR)/paraklete_start.Tpo -c -o paraklete_start.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_start.Tpo $(DEPDIR)/paraklete_start.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c' object='paraklete_start.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_start.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c
+
+paraklete_start.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_start.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_start.obj -MD -MP -MF $(DEPDIR)/paraklete_start.Tpo -c -o paraklete_start.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_start.Tpo $(DEPDIR)/paraklete_start.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c' object='paraklete_start.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_start.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c'; fi`
+
 paraklete_usolve_node.o: $(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT paraklete_usolve_node.o -MD -MP -MF $(DEPDIR)/paraklete_usolve_node.Tpo -c -o paraklete_usolve_node.o `test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/paraklete_usolve_node.Tpo $(DEPDIR)/paraklete_usolve_node.Po
@@ -1717,19 +1807,19 @@ paraklete_usolve_node.obj: $(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o paraklete_usolve_node.obj `if test -f '$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c'; fi`
 
-cholmod_common.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_common.o -MD -MP -MF $(DEPDIR)/cholmod_common.Tpo -c -o cholmod_common.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_common.Tpo $(DEPDIR)/cholmod_common.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c' object='cholmod_common.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_common.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_common.o -MD -MP -MF $(DEPDIR)/cholmod_l_common.Tpo -c -o cholmod_l_common.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_common.Tpo $(DEPDIR)/cholmod_l_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c' object='cholmod_l_common.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_common.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_common.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c
 
-cholmod_common.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_common.obj -MD -MP -MF $(DEPDIR)/cholmod_common.Tpo -c -o cholmod_common.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_common.Tpo $(DEPDIR)/cholmod_common.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c' object='cholmod_common.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_common.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_common.obj -MD -MP -MF $(DEPDIR)/cholmod_l_common.Tpo -c -o cholmod_l_common.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_common.Tpo $(DEPDIR)/cholmod_l_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c' object='cholmod_l_common.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_common.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_common.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c'; fi`
 
 cholmod_dense.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_dense.o -MD -MP -MF $(DEPDIR)/cholmod_dense.Tpo -c -o cholmod_dense.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c
@@ -1745,117 +1835,117 @@ cholmod_dense.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_dense.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c'; fi`
 
-cholmod_factor.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_factor.o -MD -MP -MF $(DEPDIR)/cholmod_factor.Tpo -c -o cholmod_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_factor.Tpo $(DEPDIR)/cholmod_factor.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c' object='cholmod_factor.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_factor.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_factor.o -MD -MP -MF $(DEPDIR)/cholmod_l_factor.Tpo -c -o cholmod_l_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_factor.Tpo $(DEPDIR)/cholmod_l_factor.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c' object='cholmod_l_factor.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c
 
-cholmod_factor.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_factor.obj -MD -MP -MF $(DEPDIR)/cholmod_factor.Tpo -c -o cholmod_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_factor.Tpo $(DEPDIR)/cholmod_factor.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c' object='cholmod_factor.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_factor.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_factor.obj -MD -MP -MF $(DEPDIR)/cholmod_l_factor.Tpo -c -o cholmod_l_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_factor.Tpo $(DEPDIR)/cholmod_l_factor.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c' object='cholmod_l_factor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c'; fi`
 
-cholmod_change_factor.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_change_factor.o -MD -MP -MF $(DEPDIR)/cholmod_change_factor.Tpo -c -o cholmod_change_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_change_factor.Tpo $(DEPDIR)/cholmod_change_factor.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c' object='cholmod_change_factor.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_change_factor.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_change_factor.o -MD -MP -MF $(DEPDIR)/cholmod_l_change_factor.Tpo -c -o cholmod_l_change_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_change_factor.Tpo $(DEPDIR)/cholmod_l_change_factor.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c' object='cholmod_l_change_factor.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_change_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_change_factor.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c
 
-cholmod_change_factor.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_change_factor.obj -MD -MP -MF $(DEPDIR)/cholmod_change_factor.Tpo -c -o cholmod_change_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_change_factor.Tpo $(DEPDIR)/cholmod_change_factor.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c' object='cholmod_change_factor.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_change_factor.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_change_factor.obj -MD -MP -MF $(DEPDIR)/cholmod_l_change_factor.Tpo -c -o cholmod_l_change_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_change_factor.Tpo $(DEPDIR)/cholmod_l_change_factor.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c' object='cholmod_l_change_factor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_change_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_change_factor.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c'; fi`
 
-cholmod_memory.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_memory.o -MD -MP -MF $(DEPDIR)/cholmod_memory.Tpo -c -o cholmod_memory.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_memory.Tpo $(DEPDIR)/cholmod_memory.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c' object='cholmod_memory.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_memory.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_memory.o -MD -MP -MF $(DEPDIR)/cholmod_l_memory.Tpo -c -o cholmod_l_memory.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_memory.Tpo $(DEPDIR)/cholmod_l_memory.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c' object='cholmod_l_memory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_memory.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_memory.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c
 
-cholmod_memory.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_memory.obj -MD -MP -MF $(DEPDIR)/cholmod_memory.Tpo -c -o cholmod_memory.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_memory.Tpo $(DEPDIR)/cholmod_memory.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c' object='cholmod_memory.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_memory.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_memory.obj -MD -MP -MF $(DEPDIR)/cholmod_l_memory.Tpo -c -o cholmod_l_memory.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_memory.Tpo $(DEPDIR)/cholmod_l_memory.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c' object='cholmod_l_memory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_memory.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_memory.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c'; fi`
 
-cholmod_complex.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_complex.o -MD -MP -MF $(DEPDIR)/cholmod_complex.Tpo -c -o cholmod_complex.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_complex.Tpo $(DEPDIR)/cholmod_complex.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c' object='cholmod_complex.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_complex.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_complex.o -MD -MP -MF $(DEPDIR)/cholmod_l_complex.Tpo -c -o cholmod_l_complex.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_complex.Tpo $(DEPDIR)/cholmod_l_complex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c' object='cholmod_l_complex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_complex.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_complex.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c
 
-cholmod_complex.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_complex.obj -MD -MP -MF $(DEPDIR)/cholmod_complex.Tpo -c -o cholmod_complex.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_complex.Tpo $(DEPDIR)/cholmod_complex.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c' object='cholmod_complex.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_complex.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_complex.obj -MD -MP -MF $(DEPDIR)/cholmod_l_complex.Tpo -c -o cholmod_l_complex.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_complex.Tpo $(DEPDIR)/cholmod_l_complex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c' object='cholmod_l_complex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_complex.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_complex.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c'; fi`
 
-cholmod_transpose.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_transpose.o -MD -MP -MF $(DEPDIR)/cholmod_transpose.Tpo -c -o cholmod_transpose.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_transpose.Tpo $(DEPDIR)/cholmod_transpose.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c' object='cholmod_transpose.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_transpose.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_transpose.o -MD -MP -MF $(DEPDIR)/cholmod_l_transpose.Tpo -c -o cholmod_l_transpose.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_transpose.Tpo $(DEPDIR)/cholmod_l_transpose.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c' object='cholmod_l_transpose.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_transpose.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_transpose.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c
 
-cholmod_transpose.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_transpose.obj -MD -MP -MF $(DEPDIR)/cholmod_transpose.Tpo -c -o cholmod_transpose.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_transpose.Tpo $(DEPDIR)/cholmod_transpose.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c' object='cholmod_transpose.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_transpose.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_transpose.obj -MD -MP -MF $(DEPDIR)/cholmod_l_transpose.Tpo -c -o cholmod_l_transpose.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_transpose.Tpo $(DEPDIR)/cholmod_l_transpose.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c' object='cholmod_l_transpose.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_transpose.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_transpose.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c'; fi`
 
-cholmod_sparse.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_sparse.o -MD -MP -MF $(DEPDIR)/cholmod_sparse.Tpo -c -o cholmod_sparse.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_sparse.Tpo $(DEPDIR)/cholmod_sparse.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c' object='cholmod_sparse.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_sparse.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_sparse.o -MD -MP -MF $(DEPDIR)/cholmod_l_sparse.Tpo -c -o cholmod_l_sparse.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_sparse.Tpo $(DEPDIR)/cholmod_l_sparse.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c' object='cholmod_l_sparse.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_sparse.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_sparse.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c
 
-cholmod_sparse.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_sparse.obj -MD -MP -MF $(DEPDIR)/cholmod_sparse.Tpo -c -o cholmod_sparse.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_sparse.Tpo $(DEPDIR)/cholmod_sparse.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c' object='cholmod_sparse.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_sparse.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_sparse.obj -MD -MP -MF $(DEPDIR)/cholmod_l_sparse.Tpo -c -o cholmod_l_sparse.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_sparse.Tpo $(DEPDIR)/cholmod_l_sparse.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c' object='cholmod_l_sparse.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_sparse.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_sparse.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c'; fi`
 
-cholmod_band.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_band.o -MD -MP -MF $(DEPDIR)/cholmod_band.Tpo -c -o cholmod_band.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_band.Tpo $(DEPDIR)/cholmod_band.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c' object='cholmod_band.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_band.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_band.o -MD -MP -MF $(DEPDIR)/cholmod_l_band.Tpo -c -o cholmod_l_band.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_band.Tpo $(DEPDIR)/cholmod_l_band.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c' object='cholmod_l_band.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_band.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_band.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c
 
-cholmod_band.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_band.obj -MD -MP -MF $(DEPDIR)/cholmod_band.Tpo -c -o cholmod_band.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_band.Tpo $(DEPDIR)/cholmod_band.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c' object='cholmod_band.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_band.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_band.obj -MD -MP -MF $(DEPDIR)/cholmod_l_band.Tpo -c -o cholmod_l_band.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_band.Tpo $(DEPDIR)/cholmod_l_band.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c' object='cholmod_l_band.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_band.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_band.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c'; fi`
 
-cholmod_copy.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_copy.o -MD -MP -MF $(DEPDIR)/cholmod_copy.Tpo -c -o cholmod_copy.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_copy.Tpo $(DEPDIR)/cholmod_copy.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c' object='cholmod_copy.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_copy.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_copy.o -MD -MP -MF $(DEPDIR)/cholmod_l_copy.Tpo -c -o cholmod_l_copy.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_copy.Tpo $(DEPDIR)/cholmod_l_copy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c' object='cholmod_l_copy.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_copy.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_copy.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c
 
-cholmod_copy.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_copy.obj -MD -MP -MF $(DEPDIR)/cholmod_copy.Tpo -c -o cholmod_copy.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_copy.Tpo $(DEPDIR)/cholmod_copy.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c' object='cholmod_copy.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_copy.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_copy.obj -MD -MP -MF $(DEPDIR)/cholmod_l_copy.Tpo -c -o cholmod_l_copy.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_copy.Tpo $(DEPDIR)/cholmod_l_copy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c' object='cholmod_l_copy.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_copy.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_copy.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c'; fi`
 
 cholmod_triplet.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_triplet.o -MD -MP -MF $(DEPDIR)/cholmod_triplet.Tpo -c -o cholmod_triplet.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c
@@ -1871,47 +1961,47 @@ cholmod_triplet.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_triplet.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c'; fi`
 
-cholmod_error.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_error.o -MD -MP -MF $(DEPDIR)/cholmod_error.Tpo -c -o cholmod_error.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_error.Tpo $(DEPDIR)/cholmod_error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c' object='cholmod_error.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_error.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_error.o -MD -MP -MF $(DEPDIR)/cholmod_l_error.Tpo -c -o cholmod_l_error.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_error.Tpo $(DEPDIR)/cholmod_l_error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c' object='cholmod_l_error.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_error.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_error.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c
 
-cholmod_error.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_error.obj -MD -MP -MF $(DEPDIR)/cholmod_error.Tpo -c -o cholmod_error.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_error.Tpo $(DEPDIR)/cholmod_error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c' object='cholmod_error.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_error.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_error.obj -MD -MP -MF $(DEPDIR)/cholmod_l_error.Tpo -c -o cholmod_l_error.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_error.Tpo $(DEPDIR)/cholmod_l_error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c' object='cholmod_l_error.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_error.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_error.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c'; fi`
 
-cholmod_aat.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_aat.o -MD -MP -MF $(DEPDIR)/cholmod_aat.Tpo -c -o cholmod_aat.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_aat.Tpo $(DEPDIR)/cholmod_aat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c' object='cholmod_aat.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_aat.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_aat.o -MD -MP -MF $(DEPDIR)/cholmod_l_aat.Tpo -c -o cholmod_l_aat.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_aat.Tpo $(DEPDIR)/cholmod_l_aat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c' object='cholmod_l_aat.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_aat.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_aat.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c
 
-cholmod_aat.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_aat.obj -MD -MP -MF $(DEPDIR)/cholmod_aat.Tpo -c -o cholmod_aat.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_aat.Tpo $(DEPDIR)/cholmod_aat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c' object='cholmod_aat.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_aat.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_aat.obj -MD -MP -MF $(DEPDIR)/cholmod_l_aat.Tpo -c -o cholmod_l_aat.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_aat.Tpo $(DEPDIR)/cholmod_l_aat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c' object='cholmod_l_aat.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_aat.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_aat.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c'; fi`
 
-cholmod_add.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_add.o -MD -MP -MF $(DEPDIR)/cholmod_add.Tpo -c -o cholmod_add.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_add.Tpo $(DEPDIR)/cholmod_add.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c' object='cholmod_add.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_add.o: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_add.o -MD -MP -MF $(DEPDIR)/cholmod_l_add.Tpo -c -o cholmod_l_add.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_add.Tpo $(DEPDIR)/cholmod_l_add.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c' object='cholmod_l_add.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_add.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_add.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c
 
-cholmod_add.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_add.obj -MD -MP -MF $(DEPDIR)/cholmod_add.Tpo -c -o cholmod_add.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_add.Tpo $(DEPDIR)/cholmod_add.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c' object='cholmod_add.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_add.obj: $(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_add.obj -MD -MP -MF $(DEPDIR)/cholmod_l_add.Tpo -c -o cholmod_l_add.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_add.Tpo $(DEPDIR)/cholmod_l_add.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c' object='cholmod_l_add.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_add.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_add.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c'; fi`
 
 cholmod_check.o: $(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_check.o -MD -MP -MF $(DEPDIR)/cholmod_check.Tpo -c -o cholmod_check.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c
@@ -1927,75 +2017,75 @@ cholmod_check.obj: $(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_check.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c'; fi`
 
-cholmod_postorder.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_postorder.o -MD -MP -MF $(DEPDIR)/cholmod_postorder.Tpo -c -o cholmod_postorder.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_postorder.Tpo $(DEPDIR)/cholmod_postorder.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c' object='cholmod_postorder.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_postorder.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_postorder.o -MD -MP -MF $(DEPDIR)/cholmod_l_postorder.Tpo -c -o cholmod_l_postorder.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_postorder.Tpo $(DEPDIR)/cholmod_l_postorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c' object='cholmod_l_postorder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_postorder.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_postorder.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c
 
-cholmod_postorder.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_postorder.obj -MD -MP -MF $(DEPDIR)/cholmod_postorder.Tpo -c -o cholmod_postorder.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_postorder.Tpo $(DEPDIR)/cholmod_postorder.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c' object='cholmod_postorder.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_postorder.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_postorder.obj -MD -MP -MF $(DEPDIR)/cholmod_l_postorder.Tpo -c -o cholmod_l_postorder.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_postorder.Tpo $(DEPDIR)/cholmod_l_postorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c' object='cholmod_l_postorder.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_postorder.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_postorder.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c'; fi`
 
-cholmod_amd.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_amd.o -MD -MP -MF $(DEPDIR)/cholmod_amd.Tpo -c -o cholmod_amd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_amd.Tpo $(DEPDIR)/cholmod_amd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c' object='cholmod_amd.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_amd.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_amd.o -MD -MP -MF $(DEPDIR)/cholmod_l_amd.Tpo -c -o cholmod_l_amd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_amd.Tpo $(DEPDIR)/cholmod_l_amd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c' object='cholmod_l_amd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_amd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_amd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c
 
-cholmod_amd.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_amd.obj -MD -MP -MF $(DEPDIR)/cholmod_amd.Tpo -c -o cholmod_amd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_amd.Tpo $(DEPDIR)/cholmod_amd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c' object='cholmod_amd.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_amd.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_amd.obj -MD -MP -MF $(DEPDIR)/cholmod_l_amd.Tpo -c -o cholmod_l_amd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_amd.Tpo $(DEPDIR)/cholmod_l_amd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c' object='cholmod_l_amd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_amd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_amd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c'; fi`
 
-cholmod_colamd.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_colamd.o -MD -MP -MF $(DEPDIR)/cholmod_colamd.Tpo -c -o cholmod_colamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_colamd.Tpo $(DEPDIR)/cholmod_colamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c' object='cholmod_colamd.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_colamd.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_colamd.o -MD -MP -MF $(DEPDIR)/cholmod_l_colamd.Tpo -c -o cholmod_l_colamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_colamd.Tpo $(DEPDIR)/cholmod_l_colamd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c' object='cholmod_l_colamd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_colamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_colamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c
 
-cholmod_colamd.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_colamd.obj -MD -MP -MF $(DEPDIR)/cholmod_colamd.Tpo -c -o cholmod_colamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_colamd.Tpo $(DEPDIR)/cholmod_colamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c' object='cholmod_colamd.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_colamd.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_colamd.obj -MD -MP -MF $(DEPDIR)/cholmod_l_colamd.Tpo -c -o cholmod_l_colamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_colamd.Tpo $(DEPDIR)/cholmod_l_colamd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c' object='cholmod_l_colamd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_colamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_colamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c'; fi`
 
-cholmod_etree.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_etree.o -MD -MP -MF $(DEPDIR)/cholmod_etree.Tpo -c -o cholmod_etree.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_etree.Tpo $(DEPDIR)/cholmod_etree.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c' object='cholmod_etree.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_etree.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_etree.o -MD -MP -MF $(DEPDIR)/cholmod_l_etree.Tpo -c -o cholmod_l_etree.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_etree.Tpo $(DEPDIR)/cholmod_l_etree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c' object='cholmod_l_etree.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_etree.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_etree.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c
 
-cholmod_etree.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_etree.obj -MD -MP -MF $(DEPDIR)/cholmod_etree.Tpo -c -o cholmod_etree.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_etree.Tpo $(DEPDIR)/cholmod_etree.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c' object='cholmod_etree.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_etree.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_etree.obj -MD -MP -MF $(DEPDIR)/cholmod_l_etree.Tpo -c -o cholmod_l_etree.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_etree.Tpo $(DEPDIR)/cholmod_l_etree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c' object='cholmod_l_etree.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_etree.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_etree.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c'; fi`
 
-cholmod_rowcolcounts.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_rowcolcounts.o -MD -MP -MF $(DEPDIR)/cholmod_rowcolcounts.Tpo -c -o cholmod_rowcolcounts.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_rowcolcounts.Tpo $(DEPDIR)/cholmod_rowcolcounts.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c' object='cholmod_rowcolcounts.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_rowcolcounts.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_rowcolcounts.o -MD -MP -MF $(DEPDIR)/cholmod_l_rowcolcounts.Tpo -c -o cholmod_l_rowcolcounts.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_rowcolcounts.Tpo $(DEPDIR)/cholmod_l_rowcolcounts.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c' object='cholmod_l_rowcolcounts.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_rowcolcounts.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_rowcolcounts.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c
 
-cholmod_rowcolcounts.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_rowcolcounts.obj -MD -MP -MF $(DEPDIR)/cholmod_rowcolcounts.Tpo -c -o cholmod_rowcolcounts.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_rowcolcounts.Tpo $(DEPDIR)/cholmod_rowcolcounts.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c' object='cholmod_rowcolcounts.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_rowcolcounts.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_rowcolcounts.obj -MD -MP -MF $(DEPDIR)/cholmod_l_rowcolcounts.Tpo -c -o cholmod_l_rowcolcounts.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_rowcolcounts.Tpo $(DEPDIR)/cholmod_l_rowcolcounts.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c' object='cholmod_l_rowcolcounts.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_rowcolcounts.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_rowcolcounts.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c'; fi`
 
 cholmod_solve.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_solve.o -MD -MP -MF $(DEPDIR)/cholmod_solve.Tpo -c -o cholmod_solve.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c
@@ -2011,103 +2101,131 @@ cholmod_solve.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_solve.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c'; fi`
 
-cholmod_resymbol.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_resymbol.o -MD -MP -MF $(DEPDIR)/cholmod_resymbol.Tpo -c -o cholmod_resymbol.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_resymbol.Tpo $(DEPDIR)/cholmod_resymbol.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c' object='cholmod_resymbol.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_analyze.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_analyze.o -MD -MP -MF $(DEPDIR)/cholmod_l_analyze.Tpo -c -o cholmod_l_analyze.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_analyze.Tpo $(DEPDIR)/cholmod_l_analyze.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c' object='cholmod_l_analyze.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_resymbol.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_analyze.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c
 
-cholmod_resymbol.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_resymbol.obj -MD -MP -MF $(DEPDIR)/cholmod_resymbol.Tpo -c -o cholmod_resymbol.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_resymbol.Tpo $(DEPDIR)/cholmod_resymbol.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c' object='cholmod_resymbol.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_analyze.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_analyze.obj -MD -MP -MF $(DEPDIR)/cholmod_l_analyze.Tpo -c -o cholmod_l_analyze.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_analyze.Tpo $(DEPDIR)/cholmod_l_analyze.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c' object='cholmod_l_analyze.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_resymbol.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_analyze.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c'; fi`
 
-cholmod_analyze.o: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_analyze.o -MD -MP -MF $(DEPDIR)/cholmod_analyze.Tpo -c -o cholmod_analyze.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_analyze.Tpo $(DEPDIR)/cholmod_analyze.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c' object='cholmod_analyze.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_ccolamd.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_ccolamd.o -MD -MP -MF $(DEPDIR)/cholmod_l_ccolamd.Tpo -c -o cholmod_l_ccolamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_ccolamd.Tpo $(DEPDIR)/cholmod_l_ccolamd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c' object='cholmod_l_ccolamd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_analyze.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_ccolamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c
 
-cholmod_analyze.obj: $(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_analyze.obj -MD -MP -MF $(DEPDIR)/cholmod_analyze.Tpo -c -o cholmod_analyze.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_analyze.Tpo $(DEPDIR)/cholmod_analyze.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c' object='cholmod_analyze.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_ccolamd.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_ccolamd.obj -MD -MP -MF $(DEPDIR)/cholmod_l_ccolamd.Tpo -c -o cholmod_l_ccolamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_ccolamd.Tpo $(DEPDIR)/cholmod_l_ccolamd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c' object='cholmod_l_ccolamd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_analyze.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_ccolamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c'; fi`
 
-cholmod_ccolamd.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_ccolamd.o -MD -MP -MF $(DEPDIR)/cholmod_ccolamd.Tpo -c -o cholmod_ccolamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_ccolamd.Tpo $(DEPDIR)/cholmod_ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c' object='cholmod_ccolamd.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_camd.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_camd.o -MD -MP -MF $(DEPDIR)/cholmod_l_camd.Tpo -c -o cholmod_l_camd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_camd.Tpo $(DEPDIR)/cholmod_l_camd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c' object='cholmod_l_camd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_ccolamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_camd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c
 
-cholmod_ccolamd.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_ccolamd.obj -MD -MP -MF $(DEPDIR)/cholmod_ccolamd.Tpo -c -o cholmod_ccolamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_ccolamd.Tpo $(DEPDIR)/cholmod_ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c' object='cholmod_ccolamd.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_camd.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_camd.obj -MD -MP -MF $(DEPDIR)/cholmod_l_camd.Tpo -c -o cholmod_l_camd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_camd.Tpo $(DEPDIR)/cholmod_l_camd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c' object='cholmod_l_camd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_ccolamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_camd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c'; fi`
 
-cholmod_camd.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_camd.o -MD -MP -MF $(DEPDIR)/cholmod_camd.Tpo -c -o cholmod_camd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_camd.Tpo $(DEPDIR)/cholmod_camd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c' object='cholmod_camd.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_csymamd.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_csymamd.o -MD -MP -MF $(DEPDIR)/cholmod_l_csymamd.Tpo -c -o cholmod_l_csymamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_csymamd.Tpo $(DEPDIR)/cholmod_l_csymamd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c' object='cholmod_l_csymamd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_camd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_csymamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c
 
-cholmod_camd.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_camd.obj -MD -MP -MF $(DEPDIR)/cholmod_camd.Tpo -c -o cholmod_camd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_camd.Tpo $(DEPDIR)/cholmod_camd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c' object='cholmod_camd.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_csymamd.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_csymamd.obj -MD -MP -MF $(DEPDIR)/cholmod_l_csymamd.Tpo -c -o cholmod_l_csymamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_csymamd.Tpo $(DEPDIR)/cholmod_l_csymamd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c' object='cholmod_l_csymamd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_camd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_csymamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c'; fi`
 
-cholmod_csymamd.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_csymamd.o -MD -MP -MF $(DEPDIR)/cholmod_csymamd.Tpo -c -o cholmod_csymamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_csymamd.Tpo $(DEPDIR)/cholmod_csymamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c' object='cholmod_csymamd.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_metis.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_metis.o -MD -MP -MF $(DEPDIR)/cholmod_l_metis.Tpo -c -o cholmod_l_metis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_metis.Tpo $(DEPDIR)/cholmod_l_metis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c' object='cholmod_l_metis.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_csymamd.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_metis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c
 
-cholmod_csymamd.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_csymamd.obj -MD -MP -MF $(DEPDIR)/cholmod_csymamd.Tpo -c -o cholmod_csymamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_csymamd.Tpo $(DEPDIR)/cholmod_csymamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c' object='cholmod_csymamd.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_metis.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_metis.obj -MD -MP -MF $(DEPDIR)/cholmod_l_metis.Tpo -c -o cholmod_l_metis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_metis.Tpo $(DEPDIR)/cholmod_l_metis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c' object='cholmod_l_metis.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_csymamd.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_metis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c'; fi`
 
-cholmod_metis.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_metis.o -MD -MP -MF $(DEPDIR)/cholmod_metis.Tpo -c -o cholmod_metis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_metis.Tpo $(DEPDIR)/cholmod_metis.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c' object='cholmod_metis.o' libtool=no @AMDEPBACKSLASH@
+cholmod_l_nesdis.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_nesdis.o -MD -MP -MF $(DEPDIR)/cholmod_l_nesdis.Tpo -c -o cholmod_l_nesdis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_nesdis.Tpo $(DEPDIR)/cholmod_l_nesdis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c' object='cholmod_l_nesdis.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_metis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_nesdis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c
 
-cholmod_metis.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_metis.obj -MD -MP -MF $(DEPDIR)/cholmod_metis.Tpo -c -o cholmod_metis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_metis.Tpo $(DEPDIR)/cholmod_metis.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c' object='cholmod_metis.obj' libtool=no @AMDEPBACKSLASH@
+cholmod_l_nesdis.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_l_nesdis.obj -MD -MP -MF $(DEPDIR)/cholmod_l_nesdis.Tpo -c -o cholmod_l_nesdis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_l_nesdis.Tpo $(DEPDIR)/cholmod_l_nesdis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c' object='cholmod_l_nesdis.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_metis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_l_nesdis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c'; fi`
 
-cholmod_nesdis.o: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_nesdis.o -MD -MP -MF $(DEPDIR)/cholmod_nesdis.Tpo -c -o cholmod_nesdis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_nesdis.Tpo $(DEPDIR)/cholmod_nesdis.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c' object='cholmod_nesdis.o' libtool=no @AMDEPBACKSLASH@
+amd_l_2.o: $(srcdir)/UFsparse/AMD/Source/amd_l_2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_l_2.o -MD -MP -MF $(DEPDIR)/amd_l_2.Tpo -c -o amd_l_2.o `test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_2.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/AMD/Source/amd_l_2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amd_l_2.Tpo $(DEPDIR)/amd_l_2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/AMD/Source/amd_l_2.c' object='amd_l_2.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_nesdis.o `test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_l_2.o `test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_2.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/AMD/Source/amd_l_2.c
 
-cholmod_nesdis.obj: $(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cholmod_nesdis.obj -MD -MP -MF $(DEPDIR)/cholmod_nesdis.Tpo -c -o cholmod_nesdis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cholmod_nesdis.Tpo $(DEPDIR)/cholmod_nesdis.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c' object='cholmod_nesdis.obj' libtool=no @AMDEPBACKSLASH@
+amd_l_2.obj: $(srcdir)/UFsparse/AMD/Source/amd_l_2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_l_2.obj -MD -MP -MF $(DEPDIR)/amd_l_2.Tpo -c -o amd_l_2.obj `if test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_2.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/AMD/Source/amd_l_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/AMD/Source/amd_l_2.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amd_l_2.Tpo $(DEPDIR)/amd_l_2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/AMD/Source/amd_l_2.c' object='amd_l_2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cholmod_nesdis.obj `if test -f '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_l_2.obj `if test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_2.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/AMD/Source/amd_l_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/AMD/Source/amd_l_2.c'; fi`
+
+amd_l_postorder.o: $(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_l_postorder.o -MD -MP -MF $(DEPDIR)/amd_l_postorder.Tpo -c -o amd_l_postorder.o `test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amd_l_postorder.Tpo $(DEPDIR)/amd_l_postorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c' object='amd_l_postorder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_l_postorder.o `test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c
+
+amd_l_postorder.obj: $(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_l_postorder.obj -MD -MP -MF $(DEPDIR)/amd_l_postorder.Tpo -c -o amd_l_postorder.obj `if test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amd_l_postorder.Tpo $(DEPDIR)/amd_l_postorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c' object='amd_l_postorder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_l_postorder.obj `if test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c'; fi`
+
+amd_l_post_tree.o: $(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_l_post_tree.o -MD -MP -MF $(DEPDIR)/amd_l_post_tree.Tpo -c -o amd_l_post_tree.o `test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amd_l_post_tree.Tpo $(DEPDIR)/amd_l_post_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c' object='amd_l_post_tree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_l_post_tree.o `test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c
+
+amd_l_post_tree.obj: $(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amd_l_post_tree.obj -MD -MP -MF $(DEPDIR)/amd_l_post_tree.Tpo -c -o amd_l_post_tree.obj `if test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amd_l_post_tree.Tpo $(DEPDIR)/amd_l_post_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c' object='amd_l_post_tree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amd_l_post_tree.obj `if test -f '$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c'; fi`
 
 camd_1.o: $(srcdir)/UFsparse/CAMD/Source/camd_1.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_1.o -MD -MP -MF $(DEPDIR)/camd_1.Tpo -c -o camd_1.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_1.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_1.c
@@ -2123,33 +2241,33 @@ camd_1.obj: $(srcdir)/UFsparse/CAMD/Source/camd_1.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_1.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_1.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_1.c'; fi`
 
-camd_2.o: $(srcdir)/UFsparse/CAMD/Source/camd_2.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_2.o -MD -MP -MF $(DEPDIR)/camd_2.Tpo -c -o camd_2.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_2.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_2.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_2.Tpo $(DEPDIR)/camd_2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_2.c' object='camd_2.o' libtool=no @AMDEPBACKSLASH@
+camd_l_2.o: $(srcdir)/UFsparse/CAMD/Source/camd_l_2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_l_2.o -MD -MP -MF $(DEPDIR)/camd_l_2.Tpo -c -o camd_l_2.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_l_2.Tpo $(DEPDIR)/camd_l_2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c' object='camd_l_2.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_2.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_2.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_2.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_l_2.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c
 
-camd_2.obj: $(srcdir)/UFsparse/CAMD/Source/camd_2.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_2.obj -MD -MP -MF $(DEPDIR)/camd_2.Tpo -c -o camd_2.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_2.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_2.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_2.Tpo $(DEPDIR)/camd_2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_2.c' object='camd_2.obj' libtool=no @AMDEPBACKSLASH@
+camd_l_2.obj: $(srcdir)/UFsparse/CAMD/Source/camd_l_2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_l_2.obj -MD -MP -MF $(DEPDIR)/camd_l_2.Tpo -c -o camd_l_2.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_l_2.Tpo $(DEPDIR)/camd_l_2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c' object='camd_l_2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_2.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_2.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_2.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_l_2.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c'; fi`
 
-camd_aat.o: $(srcdir)/UFsparse/CAMD/Source/camd_aat.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_aat.o -MD -MP -MF $(DEPDIR)/camd_aat.Tpo -c -o camd_aat.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_aat.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_aat.Tpo $(DEPDIR)/camd_aat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_aat.c' object='camd_aat.o' libtool=no @AMDEPBACKSLASH@
+camd_l_aat.o: $(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_l_aat.o -MD -MP -MF $(DEPDIR)/camd_l_aat.Tpo -c -o camd_l_aat.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_l_aat.Tpo $(DEPDIR)/camd_l_aat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c' object='camd_l_aat.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_aat.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_aat.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_l_aat.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c
 
-camd_aat.obj: $(srcdir)/UFsparse/CAMD/Source/camd_aat.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_aat.obj -MD -MP -MF $(DEPDIR)/camd_aat.Tpo -c -o camd_aat.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_aat.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_aat.Tpo $(DEPDIR)/camd_aat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_aat.c' object='camd_aat.obj' libtool=no @AMDEPBACKSLASH@
+camd_l_aat.obj: $(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_l_aat.obj -MD -MP -MF $(DEPDIR)/camd_l_aat.Tpo -c -o camd_l_aat.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_l_aat.Tpo $(DEPDIR)/camd_l_aat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c' object='camd_l_aat.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_aat.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_aat.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_l_aat.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c'; fi`
 
 camd_control.o: $(srcdir)/UFsparse/CAMD/Source/camd_control.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_control.o -MD -MP -MF $(DEPDIR)/camd_control.Tpo -c -o camd_control.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_control.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_control.c
@@ -2221,19 +2339,19 @@ camd_order.obj: $(srcdir)/UFsparse/CAMD/Source/camd_order.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_order.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_order.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_order.c'; fi`
 
-camd_postorder.o: $(srcdir)/UFsparse/CAMD/Source/camd_postorder.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_postorder.o -MD -MP -MF $(DEPDIR)/camd_postorder.Tpo -c -o camd_postorder.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_postorder.Tpo $(DEPDIR)/camd_postorder.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c' object='camd_postorder.o' libtool=no @AMDEPBACKSLASH@
+camd_l_postorder.o: $(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_l_postorder.o -MD -MP -MF $(DEPDIR)/camd_l_postorder.Tpo -c -o camd_l_postorder.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_l_postorder.Tpo $(DEPDIR)/camd_l_postorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c' object='camd_l_postorder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_postorder.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_l_postorder.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c
 
-camd_postorder.obj: $(srcdir)/UFsparse/CAMD/Source/camd_postorder.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_postorder.obj -MD -MP -MF $(DEPDIR)/camd_postorder.Tpo -c -o camd_postorder.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_postorder.Tpo $(DEPDIR)/camd_postorder.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c' object='camd_postorder.obj' libtool=no @AMDEPBACKSLASH@
+camd_l_postorder.obj: $(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_l_postorder.obj -MD -MP -MF $(DEPDIR)/camd_l_postorder.Tpo -c -o camd_l_postorder.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/camd_l_postorder.Tpo $(DEPDIR)/camd_l_postorder.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c' object='camd_l_postorder.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_postorder.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_l_postorder.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c'; fi`
 
 camd_preprocess.o: $(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT camd_preprocess.o -MD -MP -MF $(DEPDIR)/camd_preprocess.Tpo -c -o camd_preprocess.o `test -f '$(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c
@@ -2277,19 +2395,33 @@ camd_global.obj: $(srcdir)/UFsparse/CAMD/Source/camd_global.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o camd_global.obj `if test -f '$(srcdir)/UFsparse/CAMD/Source/camd_global.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CAMD/Source/camd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CAMD/Source/camd_global.c'; fi`
 
-ccolamd.o: $(srcdir)/UFsparse/CCOLAMD/ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd.o -MD -MP -MF $(DEPDIR)/ccolamd.Tpo -c -o ccolamd.o `test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CCOLAMD/ccolamd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd.Tpo $(DEPDIR)/ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CCOLAMD/ccolamd.c' object='ccolamd.o' libtool=no @AMDEPBACKSLASH@
+colamd_l.o: $(srcdir)/UFsparse/COLAMD/colamd_l.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT colamd_l.o -MD -MP -MF $(DEPDIR)/colamd_l.Tpo -c -o colamd_l.o `test -f '$(srcdir)/UFsparse/COLAMD/colamd_l.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/COLAMD/colamd_l.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/colamd_l.Tpo $(DEPDIR)/colamd_l.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/COLAMD/colamd_l.c' object='colamd_l.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.o `test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CCOLAMD/ccolamd.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o colamd_l.o `test -f '$(srcdir)/UFsparse/COLAMD/colamd_l.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/COLAMD/colamd_l.c
 
-ccolamd.obj: $(srcdir)/UFsparse/CCOLAMD/ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd.obj -MD -MP -MF $(DEPDIR)/ccolamd.Tpo -c -o ccolamd.obj `if test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CCOLAMD/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CCOLAMD/ccolamd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd.Tpo $(DEPDIR)/ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CCOLAMD/ccolamd.c' object='ccolamd.obj' libtool=no @AMDEPBACKSLASH@
+colamd_l.obj: $(srcdir)/UFsparse/COLAMD/colamd_l.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT colamd_l.obj -MD -MP -MF $(DEPDIR)/colamd_l.Tpo -c -o colamd_l.obj `if test -f '$(srcdir)/UFsparse/COLAMD/colamd_l.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/COLAMD/colamd_l.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/COLAMD/colamd_l.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/colamd_l.Tpo $(DEPDIR)/colamd_l.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/COLAMD/colamd_l.c' object='colamd_l.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.obj `if test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CCOLAMD/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CCOLAMD/ccolamd.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o colamd_l.obj `if test -f '$(srcdir)/UFsparse/COLAMD/colamd_l.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/COLAMD/colamd_l.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/COLAMD/colamd_l.c'; fi`
+
+ccolamd_l.o: $(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_l.o -MD -MP -MF $(DEPDIR)/ccolamd_l.Tpo -c -o ccolamd_l.o `test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd_l.Tpo $(DEPDIR)/ccolamd_l.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c' object='ccolamd_l.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_l.o `test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c
+
+ccolamd_l.obj: $(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_l.obj -MD -MP -MF $(DEPDIR)/ccolamd_l.Tpo -c -o ccolamd_l.obj `if test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd_l.Tpo $(DEPDIR)/ccolamd_l.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c' object='ccolamd_l.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_l.obj `if test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c'; fi`
 
 ccolamd_global.o: $(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_global.o -MD -MP -MF $(DEPDIR)/ccolamd_global.Tpo -c -o ccolamd_global.o `test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c

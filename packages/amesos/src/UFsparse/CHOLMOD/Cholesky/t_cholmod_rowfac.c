@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -231,22 +230,40 @@ static int TEMPLATE (cholmod_rowfac)
 	/* ------------------------------------------------------------------ */
 
 #ifdef MASK
-	/* TODO rewrite this loop so it goes from top to n-1 */
         /* remove the dead element of Wx */
-        if ( mask != NULL )
+        if (mask != NULL)
         {
+
+#if 0
+	    /* older version */
             for (p = n; p > top;)
             {
                 i = Stack [--p] ;
-                if ( mask [i] >= 0 ) CLEAR (Wx,Wz,i) ;	/* set W(i) to zero */
+                if ( mask [i] >= 0 )
+		{
+		    CLEAR (Wx,Wz,i) ;	/* set W(i) to zero */
+		}
             }
+#endif
+
+            for (s = top ; s < n ; s++)
+            {
+                i = Stack [s] ;
+                if (mask [i] >= 0)
+		{
+		    CLEAR (Wx,Wz,i) ;	/* set W(i) to zero */
+		}
+            }
+
         }
 #endif
 
 	/* nonzero pattern of kth row of L is now in Stack [top..n-1].
 	 * Flag [Stack [top..n-1]] is equal to mark, but no longer needed */
 
-	mark = CHOLMOD(clear_flag) (Common) ;
+	/* mark = CHOLMOD(clear_flag) (Common) ; */
+	CHOLMOD_CLEAR_FLAG (Common) ;
+	mark = Common->mark ;
 
 	/* ------------------------------------------------------------------ */
 	/* compute kth row of L and store in column form */

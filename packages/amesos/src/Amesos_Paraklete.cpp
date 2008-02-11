@@ -670,11 +670,11 @@ int Amesos_Paraklete::SymbolicFactorization()
   
   paraklete_common& pk_common =  *PrivateParakleteData_->common_ ;
   cholmod_common *cm = &(pk_common.cm) ;
-  cholmod_start (cm) ;
-  DEBUG_INIT ("pk") ;
+  cholmod_l_start (cm) ;
+  DEBUG_INIT ("pk", cm) ;
   pk_common.nproc = MaxProcesses_ ;
   pk_common.myid = Comm().MyPID() ; 
-  pk_common.mpicomm = PK_Comm ; 
+  //pk_common.mpicomm = PK_Comm ; 
   cm->print = 1 ;
   cm->precise = TRUE ;
   cm->error_handler = my_handler ;

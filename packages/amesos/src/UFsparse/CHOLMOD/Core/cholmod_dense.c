@@ -3,8 +3,8 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Core Module.  Version 1.1.  Copyright (C) 2005-2006, Univ. of Florida.
- * Author: Timothy A. Davis
+ * CHOLMOD/Core Module.  Copyright (C) 2005-2006,
+ * Univ. of Florida.  Author: Timothy A. Davis
  * The CHOLMOD/Core Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -172,6 +172,7 @@ cholmod_dense *CHOLMOD(zeros)
     /* allocate a dense matrix and set it to zero */
     /* ---------------------------------------------------------------------- */
 
+    RETURN_IF_NULL_COMMON (NULL) ;
     X = CHOLMOD(allocate_dense) (nrow, ncol, nrow, xtype, Common) ;
     if (Common->status < CHOLMOD_OK)
     {
@@ -238,6 +239,7 @@ cholmod_dense *CHOLMOD(ones)
     /* allocate a dense matrix and set it to all ones */
     /* ---------------------------------------------------------------------- */
 
+    RETURN_IF_NULL_COMMON (NULL) ;
     X = CHOLMOD(allocate_dense) (nrow, ncol, nrow, xtype, Common) ;
     if (Common->status < CHOLMOD_OK)
     {
@@ -305,6 +307,7 @@ cholmod_dense *CHOLMOD(eye)
     /* allocate a dense matrix and set it to the identity matrix */
     /* ---------------------------------------------------------------------- */
 
+    RETURN_IF_NULL_COMMON (NULL) ;
     X = CHOLMOD(zeros) (nrow, ncol, xtype, Common) ;
     if (Common->status < CHOLMOD_OK)
     {

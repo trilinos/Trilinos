@@ -1,21 +1,26 @@
 /* ========================================================================== */
-/* === paraklete_lsolve ===================================================== */
+/* === paraklete_solve ====================================================== */
 /* ========================================================================== */
 
 #include "paraklete.h"
 
 /* paraklete_solve (LU, LUsymbolic, B, Common) solves Ly=Pb, where P is
- * the initial fill-reducing ordering (Cperm).  The solution is
- * left in LU->LUnode [c]->X, for each node c.  Next, it solves
- * UQ'x=y, where the solution is written into the input array B.
+ * the initial fill-reducing ordering (P=Cperm).
  *
- * PARAKLETE version 0.1: parallel sparse LU factorization.  May 13, 2005
- * Copyright (C) 2005, Univ. of Florida.  Author: Timothy A. Davis
+ * The solution is left in LU->LUnode [c]->X, for each node c.  Next, it solves
+ * UQ'x=y, where the solution is written into the input array B,
+ * and where Q is the final column ordering.
+ *
+ * This solve is performed using the original LUsymbolic object, not the one
+ * returned from paraklete_reanalyze.
+ *
+ * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
+ * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
  * See License.txt for the Version 2.1 of the GNU Lesser General Public License
  * http://www.cise.ufl.edu/research/sparse
  */
 
-int paraklete_solve
+Int paraklete_solve
 (
     /* inputs, not modified */
     paraklete_numeric *LU,
@@ -26,8 +31,8 @@ int paraklete_solve
 {
     cholmod_common *cm ;
     double *Blocal, *X, *W, *X2 ;
-    int *Cperm, *Cstart, *Cinv, *Q, *Sched, *Child, *Childp ;
-    int i, n, ncomponents, k, c, k1, k2, nfound, myid, cp, nchild, child ;
+    Int *Cperm, *Rperm, *Cstart, *Q, *Sched, *Child, *Childp ;
+    Int i, n, ncomponents, k, c, k1, k2, nfound, myid, cp, nchild, child ;
     MPI (MPI_Status ms) ;
 
     /* ---------------------------------------------------------------------- */
@@ -41,19 +46,20 @@ int paraklete_solve
 
     ncomponents = LUsymbolic->ncomponents ;
     Cperm  = LUsymbolic->Cperm ;
-    Cinv   = LUsymbolic->Cinv ;
+    Rperm  = LUsymbolic->Rperm ;
+    Rperm  = (Rperm == NULL) ? Cperm : Rperm ;
     Cstart = LUsymbolic->Cstart ;
     Sched  = LUsymbolic->Sched ;
 
     /* ---------------------------------------------------------------------- */
-    /* W = Cperm*B, on process 0 only */
+    /* W = Rperm*B, on process 0 only */
     /* ---------------------------------------------------------------------- */
 
     if (myid == 0)
     {
 	for (k = 0 ; k < n ; k++)
 	{
-	    W [k] = B [Cperm [k]] ;
+	    W [k] = B [Rperm [k]] ;
 	}
     }
 
@@ -82,7 +88,7 @@ int paraklete_solve
 	    else
 	    {
 		MPI (MPI_Isend (W + k1, k2-k1, MPI_DOUBLE, Sched [c],
-			/* TAG: */ c, Common->mpicomm, &(LU->LUnode [c]->req))) ;
+			/* TAG: */ c, MPI_COMM_WORLD, &(LU->LUnode [c]->req))) ;
 	    }
 	}
 	else
@@ -90,7 +96,7 @@ int paraklete_solve
 	    if (Sched [c] == myid)
 	    {
 		MPI (MPI_Irecv (Blocal, k2-k1, MPI_DOUBLE, 0,
-			/* TAG: */ c, Common->mpicomm, &(LU->LUnode [c]->req))) ;
+			/* TAG: */ c, MPI_COMM_WORLD, &(LU->LUnode [c]->req))) ;
 	    }
 	}
     }
@@ -114,7 +120,7 @@ int paraklete_solve
 		{
 		    MPI (MPI_Irecv (LU->LUnode [child]->X,
 			LU->LUnode [child]->PK_NN, MPI_DOUBLE, Sched [child],
-			TAG0, Common->mpicomm, &(LU->LUnode [c]->Req [cp]))) ;
+			TAG0, MPI_COMM_WORLD, &(LU->LUnode [c]->Req [cp]))) ;
 		}
 		else
 		{
@@ -136,7 +142,7 @@ int paraklete_solve
 	}
     }
 
-    MPI (MPI_Barrier (Common->mpicomm)) ;
+    MPI (MPI_Barrier (MPI_COMM_WORLD)) ;
 
     /* ---------------------------------------------------------------------- */
     /* backsolve: Ux=y */
@@ -150,7 +156,7 @@ int paraklete_solve
 	}
     }
 
-    MPI (MPI_Barrier (Common->mpicomm)) ;
+    MPI (MPI_Barrier (MPI_COMM_WORLD)) ;
 
     /* ---------------------------------------------------------------------- */
     /* get the permuted solution from each node */
@@ -164,13 +170,13 @@ int paraklete_solve
 	nfound = LU->LUnode [c]->PK_NFOUND ;
 	if (myid == 0)
 	{
-	    PR1 ((Common->file, "get soln, node c=%d, nfound %d\n", c, nfound)) ;
+	    PR1 ((Common->file, "get soln, node c="ID", nfound "ID"\n", c, nfound));
 	    /* get X from node c */
 	    if (Sched [c] != myid)
 	    {
-		PR1 ((Common->file, "recv node %d from %d\n", c, Sched [c])) ;
+		PR1 ((Common->file, "recv node "ID" from "ID"\n", c, Sched [c])) ;
 		MPI (MPI_Recv (W, nfound, MPI_DOUBLE, Sched [c],
-			    TAG0, Common->mpicomm, &ms)) ;
+			    TAG0, MPI_COMM_WORLD, &ms)) ;
 		X2 = W ;
 	    }
 	    else
@@ -178,11 +184,11 @@ int paraklete_solve
 		PR1 ((Common->file, "I own it already\n")) ;
 		X2 = X ;
 	    }
-	    PR1 ((Common->file, "got it from Sched [c] = %d\n", Sched [c])) ;
+	    PR1 ((Common->file, "got it from Sched [c] = "ID"\n", Sched [c])) ;
 	    for (i = 0 ; i < nfound ; i++)
 	    {
 		B [Q [k]] = X2 [i] ;
-		PR2 ((Common->file, "X [%d] is global B [%d] %g\n",
+		PR2 ((Common->file, "X ["ID"] is global B ["ID"] %g\n",
 		    i, k, X2 [i])) ;
 		k++ ;
 	    }
@@ -192,9 +198,9 @@ int paraklete_solve
 	    if (Sched [c] == myid)
 	    {
 		PR1 ((Common->file,
-		    "send soln, node c = %d, myid %d nfound %d\n",
+		    "send soln, node c = "ID", myid "ID" nfound "ID"\n",
 		    c, myid, nfound)) ;
-		MPI (MPI_Send (X, nfound, MPI_DOUBLE, 0, TAG0, Common->mpicomm)) ;
+		MPI (MPI_Send (X, nfound, MPI_DOUBLE, 0, TAG0, MPI_COMM_WORLD));
 	    }
 	}
     }

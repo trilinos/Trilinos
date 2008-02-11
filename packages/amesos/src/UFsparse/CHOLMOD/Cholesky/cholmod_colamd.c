@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -24,16 +23,13 @@
  *	Allocates a copy of its input matrix, which
  *	is then used as CCOLAMD's workspace.
  *
- * Note that v2.4 corrected a bug in v2.3, but the bug only affected symamd,
- * not colamd.  This routine requires colamd v2.4 or later.
- *
  * Supports any xtype (pattern, real, complex, or zomplex)
  */
 
 #ifndef NCHOLESKY
 
-#include "colamd.h"
 #include "cholmod_internal.h"
+#include "colamd.h"
 #include "cholmod_cholesky.h"
 
 #if (!defined (COLAMD_VERSION) || (COLAMD_VERSION < COLAMD_VERSION_CODE (2,5)))

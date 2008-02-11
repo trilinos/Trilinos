@@ -3,8 +3,8 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Core Module.  Version 1.1.  Copyright (C) 2005-2006, Univ. of Florida.
- * Author: Timothy A. Davis
+ * CHOLMOD/Core Module.  Copyright (C) 2005-2006,
+ * Univ. of Florida.  Author: Timothy A. Davis
  * The CHOLMOD/Core Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -152,7 +152,9 @@ cholmod_sparse *CHOLMOD(add)
 
     /* If integer overflow occurs, nzmax < 0 and the allocate fails properly
      * (likewise in most other matrix manipulation routines). */
-    nzmax = A->nzmax + B->nzmax ;
+
+    nzmax = CHOLMOD(nnz) (A, Common) + CHOLMOD(nnz) (B, Common) ;
+
     C = CHOLMOD(allocate_sparse) (nrow, ncol, nzmax, FALSE, TRUE,
 	    SIGN (A->stype), values ? A->xtype : CHOLMOD_PATTERN, Common) ;
     if (Common->status < CHOLMOD_OK)
@@ -176,7 +178,9 @@ cholmod_sparse *CHOLMOD(add)
 	Cp [j] = nz ;
 
 	/* clear the Flag array */
-	mark = CHOLMOD(clear_flag) (Common) ;
+	/* mark = CHOLMOD(clear_flag) (Common) ; */
+	CHOLMOD_CLEAR_FLAG (Common) ;
+	mark = Common->mark ;
 
 	/* scatter B into W */
 	pb = Bp [j] ;

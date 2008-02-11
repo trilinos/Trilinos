@@ -1,6 +1,8 @@
 /*
- * PARAKLETE version 0.1: parallel sparse LU factorization.  May 13, 2005
- * Copyright (C) 2005, Univ. of Florida.  Author: Timothy A. Davis
+ * Include file for demo main program.
+ *
+ * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
+ * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
  * See License.txt for the Version 2.1 of the GNU Lesser General Public License
  * http://www.cise.ufl.edu/research/sparse
  */

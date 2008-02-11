@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -65,10 +64,10 @@
 static void LSOLVE (PREFIX,1)
 (
     cholmod_factor *L,
-    cholmod_dense *Y		    /* n-by-1 in row form */
+    double X [ ]		    /* n-by-1 in row form */
 )
 {
-    double *Lx = L->x, *X = Y->x ;
+    double *Lx = L->x ;
     Int *Li = L->i ;
     Int *Lp = L->p ;
     Int *Lnz = L->nz ;
@@ -82,7 +81,7 @@ static void LSOLVE (PREFIX,1)
 	Int pend = p + lnz ;
 
 	/* find a chain of supernodes (up to j, j-1, and j-2) */
-	if (j == 0 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
+	if (j < 4 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -96,22 +95,19 @@ static void LSOLVE (PREFIX,1)
 #ifdef LD
 	    y /= d ;
 #endif
-
 	    for (p++ ; p < pend ; p++)
 	    {
 		y -= Lx [p] * X [Li [p]] ;
 	    }
-
 #ifdef LL
 	    X [j] = y / d ;
 #else
 	    X [j] = y ;
 #endif
-
-	    j-- ;
+	    j-- ;	/* advance to the next column of L */
 
 	}
-	else if (j == 1 || lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
+	else if (lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -133,25 +129,21 @@ static void LSOLVE (PREFIX,1)
 	    y [0] = X [j  ] ;
 	    y [1] = X [j-1] ;
 #endif
-
 	    for (p++, q += 2 ; p < pend ; p++, q++)
 	    {
 		Int i = Li [p] ;
 		y [0] -= Lx [p] * X [i] ;
 		y [1] -= Lx [q] * X [i] ;
 	    }
-
 #ifdef LL
 	    y [0] /= d [0] ;
 	    y [1] = (y [1] - t * y [0]) / d [1] ;
 #else
 	    y [1] -= t * y [0] ;
 #endif
-
 	    X [j  ] = y [0] ;
 	    X [j-1] = y [1] ;
-
-	    j -= 2 ;
+	    j -= 2 ;	    /* advance to the next column of L */
 
 	}
 	else
@@ -182,7 +174,6 @@ static void LSOLVE (PREFIX,1)
 	    y [1] = X [j-1] ;
 	    y [2] = X [j-2] ;
 #endif
-
 	    for (p++, q += 2, r += 3 ; p < pend ; p++, q++, r++)
 	    {
 		Int i = Li [p] ;
@@ -190,10 +181,6 @@ static void LSOLVE (PREFIX,1)
 		y [1] -= Lx [q] * X [i] ;
 		y [2] -= Lx [r] * X [i] ;
 	    }
-
-	    q = Lp [j-1]  ;
-	    r = Lp [j-2]  ;
-
 #ifdef LL
 	    y [0] /= d [0] ;
 	    y [1] = (y [1] - t [0] * y [0]) / d [1] ;
@@ -202,12 +189,10 @@ static void LSOLVE (PREFIX,1)
 	    y [1] -= t [0] * y [0] ;
 	    y [2] -= t [2] * y [0] + t [1] * y [1] ;
 #endif
-
 	    X [j-2] = y [2] ;
 	    X [j-1] = y [1] ;
 	    X [j  ] = y [0] ;
-
-	    j -= 3 ;
+	    j -= 3 ;	    /* advance to the next column of L */
 	}
     }
 }
@@ -222,10 +207,10 @@ static void LSOLVE (PREFIX,1)
 static void LSOLVE (PREFIX,2)
 (
     cholmod_factor *L,
-    cholmod_dense *Y		    /* n-by-2 in row form */
+    double X [ ][2]		    /* n-by-2 in row form */
 )
 {
-    double *Lx = L->x, *X = Y->x ;
+    double *Lx = L->x ;
     Int *Li = L->i ;
     Int *Lp = L->p ;
     Int *Lnz = L->nz ;
@@ -239,7 +224,7 @@ static void LSOLVE (PREFIX,2)
 	Int pend = p + lnz ;
 
 	/* find a chain of supernodes (up to j, j-1, and j-2) */
-	if (j == 0 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
+	if (j < 4 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -251,32 +236,29 @@ static void LSOLVE (PREFIX,2)
 	    double d = Lx [p] ;
 #endif
 #ifdef LD
-	    y [0] = X [2*j  ] / d ;
-	    y [1] = X [2*j+1] / d ;
+	    y [0] = X [j][0] / d ;
+	    y [1] = X [j][1] / d ;
 #else
-	    y [0] = X [2*j  ] ;
-	    y [1] = X [2*j+1] ;
+	    y [0] = X [j][0] ;
+	    y [1] = X [j][1] ;
 #endif
-
 	    for (p++ ; p < pend ; p++)
 	    {
-		Int i = 2 * Li [p] ;
-		y [0] -= Lx [p] * X [i  ] ;
-		y [1] -= Lx [p] * X [i+1] ;
+		Int i = Li [p] ;
+		y [0] -= Lx [p] * X [i][0] ;
+		y [1] -= Lx [p] * X [i][1] ;
 	    }
-
 #ifdef LL
-	    X [2*j  ] = y [0] / d ;
-	    X [2*j+1] = y [1] / d ;
+	    X [j][0] = y [0] / d ;
+	    X [j][1] = y [1] / d ;
 #else
-	    X [2*j  ] = y [0] ;
-	    X [2*j+1] = y [1] ;
+	    X [j][0] = y [0] ;
+	    X [j][1] = y [1] ;
 #endif
-
-	    j-- ;
+	    j-- ;	/* advance to the next column of L */
 
 	}
-	else if (j == 1 || lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
+	else if (lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -292,26 +274,24 @@ static void LSOLVE (PREFIX,2)
 #endif
 	    t = Lx [q+1] ;
 #ifdef LD
-	    y [0][0] = X [2*j  ] / d [0] ;
-	    y [0][1] = X [2*j+1] / d [0] ;
-	    y [1][0] = X [2*j-2] / d [1] ;
-	    y [1][1] = X [2*j-1] / d [1] ;
+	    y [0][0] = X [j  ][0] / d [0] ;
+	    y [0][1] = X [j  ][1] / d [0] ;
+	    y [1][0] = X [j-1][0] / d [1] ;
+	    y [1][1] = X [j-1][1] / d [1] ;
 #else
-	    y [0][0] = X [2*j  ] ;
-	    y [0][1] = X [2*j+1] ;
-	    y [1][0] = X [2*j-2] ;
-	    y [1][1] = X [2*j-1] ;
+	    y [0][0] = X [j  ][0] ;
+	    y [0][1] = X [j  ][1] ;
+	    y [1][0] = X [j-1][0] ;
+	    y [1][1] = X [j-1][1] ;
 #endif
-
 	    for (p++, q += 2 ; p < pend ; p++, q++)
 	    {
-		Int i = 2 * Li [p] ;
-		y [0][0] -= Lx [p] * X [i] ;
-		y [0][1] -= Lx [p] * X [i+1] ;
-		y [1][0] -= Lx [q] * X [i] ;
-		y [1][1] -= Lx [q] * X [i+1] ;
+		Int i = Li [p] ;
+		y [0][0] -= Lx [p] * X [i][0] ;
+		y [0][1] -= Lx [p] * X [i][1] ;
+		y [1][0] -= Lx [q] * X [i][0] ;
+		y [1][1] -= Lx [q] * X [i][1] ;
 	    }
-
 #ifdef LL
 	    y [0][0] /= d [0] ;
 	    y [0][1] /= d [0] ;
@@ -321,12 +301,11 @@ static void LSOLVE (PREFIX,2)
 	    y [1][0] -= t * y [0][0] ;
 	    y [1][1] -= t * y [0][1] ;
 #endif
-	    X [2*j  ] = y [0][0] ;
-	    X [2*j+1] = y [0][1] ;
-	    X [2*j-2] = y [1][0] ;
-	    X [2*j-1] = y [1][1] ;
-
-	    j -= 2 ;
+	    X [j  ][0] = y [0][0] ;
+	    X [j  ][1] = y [0][1] ;
+	    X [j-1][0] = y [1][0] ;
+	    X [j-1][1] = y [1][1] ;
+	    j -= 2 ;	    /* advance to the next column of L */
 
 	}
 	else
@@ -349,29 +328,30 @@ static void LSOLVE (PREFIX,2)
 	    t [1] = Lx [r+1] ;
 	    t [2] = Lx [r+2] ;
 #ifdef LD
-	    y [0][0] = X [2*j  ] / d [0] ;
-	    y [0][1] = X [2*j+1] / d [0] ;
-	    y [1][0] = X [2*j-2] / d [1] ;
-	    y [1][1] = X [2*j-1] / d [1] ;
-	    y [2][0] = X [2*j-4] / d [2] ;
-	    y [2][1] = X [2*j-3] / d [2] ;
+	    y [0][0] = X [j  ][0] / d [0] ;
+	    y [0][1] = X [j  ][1] / d [0] ;
+	    y [1][0] = X [j-1][0] / d [1] ;
+	    y [1][1] = X [j-1][1] / d [1] ;
+	    y [2][0] = X [j-2][0] / d [2] ;
+	    y [2][1] = X [j-2][1] / d [2] ;
 #else
-	    y [0][0] = X [2*j  ] ;
-	    y [0][1] = X [2*j+1] ;
-	    y [1][0] = X [2*j-2] ;
-	    y [1][1] = X [2*j-1] ;
-	    y [2][0] = X [2*j-4] ;
-	    y [2][1] = X [2*j-3] ;
+	    y [0][0] = X [j  ][0] ;
+	    y [0][1] = X [j  ][1] ;
+	    y [1][0] = X [j-1][0] ;
+	    y [1][1] = X [j-1][1] ;
+	    y [2][0] = X [j-2][0] ;
+	    y [2][1] = X [j-2][1] ;
 #endif
-
 	    for (p++, q += 2, r += 3 ; p < pend ; p++, q++, r++)
 	    {
-		Int i = 2 * Li [p] ;
-		y [0][0] -= Lx [p] * X [i] ; y [0][1] -= Lx [p] * X [i+1] ;
-		y [1][0] -= Lx [q] * X [i] ; y [1][1] -= Lx [q] * X [i+1] ;
-		y [2][0] -= Lx [r] * X [i] ; y [2][1] -= Lx [r] * X [i+1] ;
+		Int i = Li [p] ;
+		y [0][0] -= Lx [p] * X [i][0] ;
+		y [0][1] -= Lx [p] * X [i][1] ;
+		y [1][0] -= Lx [q] * X [i][0] ;
+		y [1][1] -= Lx [q] * X [i][1] ;
+		y [2][0] -= Lx [r] * X [i][0] ;
+		y [2][1] -= Lx [r] * X [i][1] ;
 	    }
-
 #ifdef LL
 	    y [0][0] /= d [0] ;
 	    y [0][1] /= d [0] ;
@@ -385,16 +365,13 @@ static void LSOLVE (PREFIX,2)
 	    y [2][0] -= t [2] * y [0][0] + t [1] * y [1][0] ;
 	    y [2][1] -= t [2] * y [0][1] + t [1] * y [1][1] ;
 #endif
-
-	    X [2*j  ] = y [0][0] ;
-	    X [2*j+1] = y [0][1] ;
-	    X [2*j-2] = y [1][0] ;
-	    X [2*j-1] = y [1][1] ;
-	    X [2*j-4] = y [2][0] ;
-	    X [2*j-3] = y [2][1] ;
-
-	    j -= 3 ;
-
+	    X [j  ][0] = y [0][0] ;
+	    X [j  ][1] = y [0][1] ;
+	    X [j-1][0] = y [1][0] ;
+	    X [j-1][1] = y [1][1] ;
+	    X [j-2][0] = y [2][0] ;
+	    X [j-2][1] = y [2][1] ;
+	    j -= 3 ;	    /* advance to the next column of L */
 	}
     }
 }
@@ -409,10 +386,10 @@ static void LSOLVE (PREFIX,2)
 static void LSOLVE (PREFIX,3)
 (
     cholmod_factor *L,
-    cholmod_dense *Y		    /* n-by-3 in row form */
+    double X [ ][3]		    /* n-by-3 in row form */
 )
 {
-    double *Lx = L->x, *X = Y->x ;
+    double *Lx = L->x ;
     Int *Li = L->i ;
     Int *Lp = L->p ;
     Int *Lnz = L->nz ;
@@ -426,7 +403,7 @@ static void LSOLVE (PREFIX,3)
 	Int pend = p + lnz ;
 
 	/* find a chain of supernodes (up to j, j-1, and j-2) */
-	if (j == 0 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
+	if (j < 4 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -438,37 +415,34 @@ static void LSOLVE (PREFIX,3)
 	    double d = Lx [p] ;
 #endif
 #ifdef LD
-	    y [0] = X [3*j  ] / d ;
-	    y [1] = X [3*j+1] / d ;
-	    y [2] = X [3*j+2] / d ;
+	    y [0] = X [j][0] / d ;
+	    y [1] = X [j][1] / d ;
+	    y [2] = X [j][2] / d ;
 #else
-	    y [0] = X [3*j  ] ;
-	    y [1] = X [3*j+1] ;
-	    y [2] = X [3*j+2] ;
+	    y [0] = X [j][0] ;
+	    y [1] = X [j][1] ;
+	    y [2] = X [j][2] ;
 #endif
-
 	    for (p++ ; p < pend ; p++)
 	    {
-		Int i = 3 * Li [p] ;
-		y [0] -= Lx [p] * X [i  ] ;
-		y [1] -= Lx [p] * X [i+1] ;
-		y [2] -= Lx [p] * X [i+2] ;
+		Int i = Li [p] ;
+		y [0] -= Lx [p] * X [i][0] ;
+		y [1] -= Lx [p] * X [i][1] ;
+		y [2] -= Lx [p] * X [i][2] ;
 	    }
-
 #ifdef LL
-	    X [3*j  ] = y [0] / d ;
-	    X [3*j+1] = y [1] / d ;
-	    X [3*j+2] = y [2] / d ;
+	    X [j][0] = y [0] / d ;
+	    X [j][1] = y [1] / d ;
+	    X [j][2] = y [2] / d ;
 #else
-	    X [3*j  ] = y [0] ;
-	    X [3*j+1] = y [1] ;
-	    X [3*j+2] = y [2] ;
+	    X [j][0] = y [0] ;
+	    X [j][1] = y [1] ;
+	    X [j][2] = y [2] ;
 #endif
-
-	    j-- ;
+	    j-- ;	/* advance to the next column of L */
 
 	}
-	else if (j == 1 || lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
+	else if (lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -484,34 +458,30 @@ static void LSOLVE (PREFIX,3)
 #endif
 	    t = Lx [q+1] ;
 #ifdef LD
-	    y [0][0] = X [3*j  ] / d [0] ;
-	    y [0][1] = X [3*j+1] / d [0] ;
-	    y [0][2] = X [3*j+2] / d [0] ;
-	    y [1][0] = X [3*j-3] / d [1] ;
-	    y [1][1] = X [3*j-2] / d [1] ;
-	    y [1][2] = X [3*j-1] / d [1] ;
+	    y [0][0] = X [j  ][0] / d [0] ;
+	    y [0][1] = X [j  ][1] / d [0] ;
+	    y [0][2] = X [j  ][2] / d [0] ;
+	    y [1][0] = X [j-1][0] / d [1] ;
+	    y [1][1] = X [j-1][1] / d [1] ;
+	    y [1][2] = X [j-1][2] / d [1] ;
 #else
-	    y [0][0] = X [3*j  ] ;
-	    y [0][1] = X [3*j+1] ;
-	    y [0][2] = X [3*j+2] ;
-	    y [1][0] = X [3*j-3] ;
-	    y [1][1] = X [3*j-2] ;
-	    y [1][2] = X [3*j-1] ;
+	    y [0][0] = X [j  ][0] ;
+	    y [0][1] = X [j  ][1] ;
+	    y [0][2] = X [j  ][2] ;
+	    y [1][0] = X [j-1][0] ;
+	    y [1][1] = X [j-1][1] ;
+	    y [1][2] = X [j-1][2] ;
 #endif
-
 	    for (p++, q += 2 ; p < pend ; p++, q++)
 	    {
-		Int i = 3 * Li [p] ;
-		y [0][0] -= Lx [p] * X [i] ;
-		y [0][1] -= Lx [p] * X [i+1] ;
-		y [0][2] -= Lx [p] * X [i+2] ;
-		y [1][0] -= Lx [q] * X [i] ;
-		y [1][1] -= Lx [q] * X [i+1] ;
-		y [1][2] -= Lx [q] * X [i+2] ;
+		Int i = Li [p] ;
+		y [0][0] -= Lx [p] * X [i][0] ;
+		y [0][1] -= Lx [p] * X [i][1] ;
+		y [0][2] -= Lx [p] * X [i][2] ;
+		y [1][0] -= Lx [q] * X [i][0] ;
+		y [1][1] -= Lx [q] * X [i][1] ;
+		y [1][2] -= Lx [q] * X [i][2] ;
 	    }
-
-	    q = Lp [j-1] ;
-
 #ifdef LL
 	    y [0][0] /= d [0] ;
 	    y [0][1] /= d [0] ;
@@ -524,14 +494,13 @@ static void LSOLVE (PREFIX,3)
 	    y [1][1] -= t * y [0][1] ;
 	    y [1][2] -= t * y [0][2] ;
 #endif
-	    X [3*j  ] = y [0][0] ;
-	    X [3*j+1] = y [0][1] ;
-	    X [3*j+2] = y [0][2] ;
-	    X [3*j-3] = y [1][0] ;
-	    X [3*j-2] = y [1][1] ;
-	    X [3*j-1] = y [1][2] ;
-
-	    j -= 2 ;
+	    X [j  ][0] = y [0][0] ;
+	    X [j  ][1] = y [0][1] ;
+	    X [j  ][2] = y [0][2] ;
+	    X [j-1][0] = y [1][0] ;
+	    X [j-1][1] = y [1][1] ;
+	    X [j-1][2] = y [1][2] ;
+	    j -= 2 ;	    /* advance to the next column of L */
 
 	}
 	else
@@ -554,41 +523,39 @@ static void LSOLVE (PREFIX,3)
 	    t [1] = Lx [r+1] ;
 	    t [2] = Lx [r+2] ;
 #ifdef LD
-	    y [0][0] = X [3*j  ] / d [0] ;
-	    y [0][1] = X [3*j+1] / d [0] ;
-	    y [0][2] = X [3*j+2] / d [0] ;
-	    y [1][0] = X [3*j-3] / d [1] ;
-	    y [1][1] = X [3*j-2] / d [1] ;
-	    y [1][2] = X [3*j-1] / d [1] ;
-	    y [2][0] = X [3*j-6] / d [2] ;
-	    y [2][1] = X [3*j-5] / d [2] ;
-	    y [2][2] = X [3*j-4] / d [2] ;
+	    y [0][0] = X [j  ][0] / d [0] ;
+	    y [0][1] = X [j  ][1] / d [0] ;
+	    y [0][2] = X [j  ][2] / d [0] ;
+	    y [1][0] = X [j-1][0] / d [1] ;
+	    y [1][1] = X [j-1][1] / d [1] ;
+	    y [1][2] = X [j-1][2] / d [1] ;
+	    y [2][0] = X [j-2][0] / d [2] ;
+	    y [2][1] = X [j-2][1] / d [2] ;
+	    y [2][2] = X [j-2][2] / d [2] ;
 #else
-	    y [0][0] = X [3*j  ] ;
-	    y [0][1] = X [3*j+1] ;
-	    y [0][2] = X [3*j+2] ;
-	    y [1][0] = X [3*j-3] ;
-	    y [1][1] = X [3*j-2] ;
-	    y [1][2] = X [3*j-1] ;
-	    y [2][0] = X [3*j-6] ;
-	    y [2][1] = X [3*j-5] ;
-	    y [2][2] = X [3*j-4] ;
+	    y [0][0] = X [j  ][0] ;
+	    y [0][1] = X [j  ][1] ;
+	    y [0][2] = X [j  ][2] ;
+	    y [1][0] = X [j-1][0] ;
+	    y [1][1] = X [j-1][1] ;
+	    y [1][2] = X [j-1][2] ;
+	    y [2][0] = X [j-2][0] ;
+	    y [2][1] = X [j-2][1] ;
+	    y [2][2] = X [j-2][2] ;
 #endif
-
 	    for (p++, q += 2, r += 3 ; p < pend ; p++, q++, r++)
 	    {
-		Int i = 3 * Li [p] ;
-		y [0][0] -= Lx [p] * X [i] ;
-		y [0][1] -= Lx [p] * X [i+1] ;
-		y [0][2] -= Lx [p] * X [i+2] ;
-		y [1][0] -= Lx [q] * X [i] ;
-		y [1][1] -= Lx [q] * X [i+1] ;
-		y [1][2] -= Lx [q] * X [i+2] ;
-		y [2][0] -= Lx [r] * X [i] ;
-		y [2][1] -= Lx [r] * X [i+1] ;
-		y [2][2] -= Lx [r] * X [i+2] ;
+		Int i = Li [p] ;
+		y [0][0] -= Lx [p] * X [i][0] ;
+		y [0][1] -= Lx [p] * X [i][1] ;
+		y [0][2] -= Lx [p] * X [i][2] ;
+		y [1][0] -= Lx [q] * X [i][0] ;
+		y [1][1] -= Lx [q] * X [i][1] ;
+		y [1][2] -= Lx [q] * X [i][2] ;
+		y [2][0] -= Lx [r] * X [i][0] ;
+		y [2][1] -= Lx [r] * X [i][1] ;
+		y [2][2] -= Lx [r] * X [i][2] ;
 	    }
-
 #ifdef LL
 	    y [0][0] /= d [0] ;
 	    y [0][1] /= d [0] ;
@@ -607,18 +574,16 @@ static void LSOLVE (PREFIX,3)
 	    y [2][1] -= t [2] * y [0][1] + t [1] * y [1][1] ;
 	    y [2][2] -= t [2] * y [0][2] + t [1] * y [1][2] ;
 #endif
-
-	    X [3*j  ] = y [0][0] ;
-	    X [3*j+1] = y [0][1] ;
-	    X [3*j+2] = y [0][2] ;
-	    X [3*j-3] = y [1][0] ;
-	    X [3*j-2] = y [1][1] ;
-	    X [3*j-1] = y [1][2] ;
-	    X [3*j-6] = y [2][0] ;
-	    X [3*j-5] = y [2][1] ;
-	    X [3*j-4] = y [2][2] ;
-
-	    j -= 3 ;
+	    X [j  ][0] = y [0][0] ;
+	    X [j  ][1] = y [0][1] ;
+	    X [j  ][2] = y [0][2] ;
+	    X [j-1][0] = y [1][0] ;
+	    X [j-1][1] = y [1][1] ;
+	    X [j-1][2] = y [1][2] ;
+	    X [j-2][0] = y [2][0] ;
+	    X [j-2][1] = y [2][1] ;
+	    X [j-2][2] = y [2][2] ;
+	    j -= 3 ;	    /* advance to the next column of L */
 	}
     }
 }
@@ -633,10 +598,10 @@ static void LSOLVE (PREFIX,3)
 static void LSOLVE (PREFIX,4)
 (
     cholmod_factor *L,
-    cholmod_dense *Y		    /* n-by-4 in row form */
+    double X [ ][4]		    /* n-by-4 in row form */
 )
 {
-    double *Lx = L->x, *X = Y->x ;
+    double *Lx = L->x ;
     Int *Li = L->i ;
     Int *Lp = L->p ;
     Int *Lnz = L->nz ;
@@ -650,7 +615,7 @@ static void LSOLVE (PREFIX,4)
 	Int pend = p + lnz ;
 
 	/* find a chain of supernodes (up to j, j-1, and j-2) */
-	if (j == 0 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
+	if (j < 4 || lnz != Lnz [j-1] - 1 || Li [Lp [j-1]+1] != j)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -662,42 +627,39 @@ static void LSOLVE (PREFIX,4)
 	    double d = Lx [p] ;
 #endif
 #ifdef LD
-	    y [0] = X [4*j  ] / d ;
-	    y [1] = X [4*j+1] / d ;
-	    y [2] = X [4*j+2] / d ;
-	    y [3] = X [4*j+3] / d ;
+	    y [0] = X [j][0] / d ;
+	    y [1] = X [j][1] / d ;
+	    y [2] = X [j][2] / d ;
+	    y [3] = X [j][3] / d ;
 #else
-	    y [0] = X [4*j  ] ;
-	    y [1] = X [4*j+1] ;
-	    y [2] = X [4*j+2] ;
-	    y [3] = X [4*j+3] ;
+	    y [0] = X [j][0] ;
+	    y [1] = X [j][1] ;
+	    y [2] = X [j][2] ;
+	    y [3] = X [j][3] ;
 #endif
-
 	    for (p++ ; p < pend ; p++)
 	    {
-		Int i = 4 * Li [p] ;
-		y [0] -= Lx [p] * X [i  ] ;
-		y [1] -= Lx [p] * X [i+1] ;
-		y [2] -= Lx [p] * X [i+2] ;
-		y [3] -= Lx [p] * X [i+3] ;
+		Int i = Li [p] ;
+		y [0] -= Lx [p] * X [i][0] ;
+		y [1] -= Lx [p] * X [i][1] ;
+		y [2] -= Lx [p] * X [i][2] ;
+		y [3] -= Lx [p] * X [i][3] ;
 	    }
-
 #ifdef LL
-	    X [4*j  ] = y [0] / d ;
-	    X [4*j+1] = y [1] / d ;
-	    X [4*j+2] = y [2] / d ;
-	    X [4*j+3] = y [3] / d ;
+	    X [j][0] = y [0] / d ;
+	    X [j][1] = y [1] / d ;
+	    X [j][2] = y [2] / d ;
+	    X [j][3] = y [3] / d ;
 #else
-	    X [4*j  ] = y [0] ;
-	    X [4*j+1] = y [1] ;
-	    X [4*j+2] = y [2] ;
-	    X [4*j+3] = y [3] ;
+	    X [j][0] = y [0] ;
+	    X [j][1] = y [1] ;
+	    X [j][2] = y [2] ;
+	    X [j][3] = y [3] ;
 #endif
-
-	    j-- ;
+	    j-- ;	/* advance to the next column of L */
 
 	}
-	else if (j == 1 || lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j)
+	else /* if (j == 1 || lnz != Lnz [j-2]-2 || Li [Lp [j-2]+2] != j) */
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -713,38 +675,36 @@ static void LSOLVE (PREFIX,4)
 #endif
 	    t = Lx [q+1] ;
 #ifdef LD
-	    y [0][0] = X [4*j  ] / d [0] ;
-	    y [0][1] = X [4*j+1] / d [0] ;
-	    y [0][2] = X [4*j+2] / d [0] ;
-	    y [0][3] = X [4*j+3] / d [0] ;
-	    y [1][0] = X [4*j-4] / d [1] ;
-	    y [1][1] = X [4*j-3] / d [1] ;
-	    y [1][2] = X [4*j-2] / d [1] ;
-	    y [1][3] = X [4*j-1] / d [1] ;
+	    y [0][0] = X [j  ][0] / d [0] ;
+	    y [0][1] = X [j  ][1] / d [0] ;
+	    y [0][2] = X [j  ][2] / d [0] ;
+	    y [0][3] = X [j  ][3] / d [0] ;
+	    y [1][0] = X [j-1][0] / d [1] ;
+	    y [1][1] = X [j-1][1] / d [1] ;
+	    y [1][2] = X [j-1][2] / d [1] ;
+	    y [1][3] = X [j-1][3] / d [1] ;
 #else
-	    y [0][0] = X [4*j  ] ;
-	    y [0][1] = X [4*j+1] ;
-	    y [0][2] = X [4*j+2] ;
-	    y [0][3] = X [4*j+3] ;
-	    y [1][0] = X [4*j-4] ;
-	    y [1][1] = X [4*j-3] ;
-	    y [1][2] = X [4*j-2] ;
-	    y [1][3] = X [4*j-1] ;
+	    y [0][0] = X [j  ][0] ;
+	    y [0][1] = X [j  ][1] ;
+	    y [0][2] = X [j  ][2] ;
+	    y [0][3] = X [j  ][3] ;
+	    y [1][0] = X [j-1][0] ;
+	    y [1][1] = X [j-1][1] ;
+	    y [1][2] = X [j-1][2] ;
+	    y [1][3] = X [j-1][3] ;
 #endif
-
 	    for (p++, q += 2 ; p < pend ; p++, q++)
 	    {
-		Int i = 4 * Li [p] ;
-		y [0][0] -= Lx [p] * X [i] ;
-		y [0][1] -= Lx [p] * X [i+1] ;
-		y [0][2] -= Lx [p] * X [i+2] ;
-		y [0][3] -= Lx [p] * X [i+3] ;
-		y [1][0] -= Lx [q] * X [i] ;
-		y [1][1] -= Lx [q] * X [i+1] ;
-		y [1][2] -= Lx [q] * X [i+2] ;
-		y [1][3] -= Lx [q] * X [i+3] ;
+		Int i = Li [p] ;
+		y [0][0] -= Lx [p] * X [i][0] ;
+		y [0][1] -= Lx [p] * X [i][1] ;
+		y [0][2] -= Lx [p] * X [i][2] ;
+		y [0][3] -= Lx [p] * X [i][3] ;
+		y [1][0] -= Lx [q] * X [i][0] ;
+		y [1][1] -= Lx [q] * X [i][1] ;
+		y [1][2] -= Lx [q] * X [i][2] ;
+		y [1][3] -= Lx [q] * X [i][3] ;
 	    }
-
 #ifdef LL
 	    y [0][0] /= d [0] ;
 	    y [0][1] /= d [0] ;
@@ -760,121 +720,20 @@ static void LSOLVE (PREFIX,4)
 	    y [1][2] -= t * y [0][2] ;
 	    y [1][3] -= t * y [0][3] ;
 #endif
-	    X [4*j  ] = y [0][0] ;
-	    X [4*j+1] = y [0][1] ;
-	    X [4*j+2] = y [0][2] ;
-	    X [4*j+3] = y [0][3] ;
-	    X [4*j-4] = y [1][0] ;
-	    X [4*j-3] = y [1][1] ;
-	    X [4*j-2] = y [1][2] ;
-	    X [4*j-1] = y [1][3] ;
-
-	    j -= 2 ;
-
+	    X [j  ][0] = y [0][0] ;
+	    X [j  ][1] = y [0][1] ;
+	    X [j  ][2] = y [0][2] ;
+	    X [j  ][3] = y [0][3] ;
+	    X [j-1][0] = y [1][0] ;
+	    X [j-1][1] = y [1][1] ;
+	    X [j-1][2] = y [1][2] ;
+	    X [j-1][3] = y [1][3] ;
+	    j -= 2 ;	    /* advance to the next column of L */
 	}
-	else
-	{
 
-	    /* -------------------------------------------------------------- */
-	    /* solve with a supernode of three columns of L */
-	    /* -------------------------------------------------------------- */
-
-	    double y [3][4], t [3] ;
-	    Int q = Lp [j-1] ;
-	    Int r = Lp [j-2] ;
-#ifdef DIAG
-	    double d [3] ;
-	    d [0] = Lx [p] ;
-	    d [1] = Lx [q] ;
-	    d [2] = Lx [r] ;
-#endif
-	    t [0] = Lx [q+1] ;
-	    t [1] = Lx [r+1] ;
-	    t [2] = Lx [r+2] ;
-#ifdef LD
-	    y [0][0] = X [4*j  ] / d [0] ;
-	    y [0][1] = X [4*j+1] / d [0] ;
-	    y [0][2] = X [4*j+2] / d [0] ;
-	    y [0][3] = X [4*j+3] / d [0] ;
-	    y [1][0] = X [4*j-4] / d [1] ;
-	    y [1][1] = X [4*j-3] / d [1] ;
-	    y [1][2] = X [4*j-2] / d [1] ;
-	    y [1][3] = X [4*j-1] / d [1] ;
-	    y [2][0] = X [4*j-8] / d [2] ;
-	    y [2][1] = X [4*j-7] / d [2] ;
-	    y [2][2] = X [4*j-6] / d [2] ;
-	    y [2][3] = X [4*j-5] / d [2] ;
-#else
-	    y [0][0] = X [4*j  ] ;
-	    y [0][1] = X [4*j+1] ;
-	    y [0][2] = X [4*j+2] ;
-	    y [0][3] = X [4*j+3] ;
-	    y [1][0] = X [4*j-4] ;
-	    y [1][1] = X [4*j-3] ;
-	    y [1][2] = X [4*j-2] ;
-	    y [1][3] = X [4*j-1] ;
-	    y [2][0] = X [4*j-8] ;
-	    y [2][1] = X [4*j-7] ;
-	    y [2][2] = X [4*j-6] ;
-	    y [2][3] = X [4*j-5] ;
-#endif
-
-	    for (p++, q += 2, r += 3 ; p < pend ; p++, q++, r++)
-	    {
-		Int i = 4 * Li [p] ;
-		y [0][0] -= Lx [p] * X [i] ;
-		y [0][1] -= Lx [p] * X [i+1] ;
-		y [0][2] -= Lx [p] * X [i+2] ;
-		y [0][3] -= Lx [p] * X [i+3] ;
-		y [1][0] -= Lx [q] * X [i] ;
-		y [1][1] -= Lx [q] * X [i+1] ;
-		y [1][2] -= Lx [q] * X [i+2] ;
-		y [1][3] -= Lx [q] * X [i+3] ;
-		y [2][0] -= Lx [r] * X [i] ;
-		y [2][1] -= Lx [r] * X [i+1] ;
-		y [2][2] -= Lx [r] * X [i+2] ;
-		y [2][3] -= Lx [r] * X [i+3] ;
-	    }
-
-#ifdef LL
-	    y [0][0] /= d [0] ;
-	    y [0][1] /= d [0] ;
-	    y [0][2] /= d [0] ;
-	    y [0][3] /= d [0] ;
-	    y [1][0] = (y [1][0] - t [0] * y [0][0]) / d [1] ;
-	    y [1][1] = (y [1][1] - t [0] * y [0][1]) / d [1] ;
-	    y [1][2] = (y [1][2] - t [0] * y [0][2]) / d [1] ;
-	    y [1][3] = (y [1][3] - t [0] * y [0][3]) / d [1] ;
-	    y [2][0] = (y [2][0] - t [2] * y [0][0] - t [1] * y [1][0]) / d [2];
-	    y [2][1] = (y [2][1] - t [2] * y [0][1] - t [1] * y [1][1]) / d [2];
-	    y [2][2] = (y [2][2] - t [2] * y [0][2] - t [1] * y [1][2]) / d [2];
-	    y [2][3] = (y [2][3] - t [2] * y [0][3] - t [1] * y [1][3]) / d [2];
-#else
-	    y [1][0] -= t [0] * y [0][0] ;
-	    y [1][1] -= t [0] * y [0][1] ;
-	    y [1][2] -= t [0] * y [0][2] ;
-	    y [1][3] -= t [0] * y [0][3] ;
-	    y [2][0] -= t [2] * y [0][0] + t [1] * y [1][0] ;
-	    y [2][1] -= t [2] * y [0][1] + t [1] * y [1][1] ;
-	    y [2][2] -= t [2] * y [0][2] + t [1] * y [1][2] ;
-	    y [2][3] -= t [2] * y [0][3] + t [1] * y [1][3] ;
-#endif
-
-	    X [4*j  ] = y [0][0] ;
-	    X [4*j+1] = y [0][1] ;
-	    X [4*j+2] = y [0][2] ;
-	    X [4*j+3] = y [0][3] ;
-	    X [4*j-4] = y [1][0] ;
-	    X [4*j-3] = y [1][1] ;
-	    X [4*j-2] = y [1][2] ;
-	    X [4*j-1] = y [1][3] ;
-	    X [4*j-8] = y [2][0] ;
-	    X [4*j-7] = y [2][1] ;
-	    X [4*j-6] = y [2][2] ;
-	    X [4*j-5] = y [2][3] ;
-
-	    j -= 3 ;
-	}
+	/* NOTE: with 4 right-hand-sides, it suffices to exploit dynamic
+	 * supernodes of just size 1 and 2.  3-column supernodes are not
+	 * needed. */
     }
 }
 
@@ -924,10 +783,10 @@ static void LSOLVE (PREFIX,k)
     ASSERT (Y->nrow <= 4) ;
     switch (Y->nrow)
     {
-	case 1: LSOLVE (PREFIX,1) (L, Y) ; break ;
-	case 2: LSOLVE (PREFIX,2) (L, Y) ; break ;
-	case 3: LSOLVE (PREFIX,3) (L, Y) ; break ;
-	case 4: LSOLVE (PREFIX,4) (L, Y) ; break ;
+	case 1: LSOLVE (PREFIX,1) (L, Y->x) ; break ;
+	case 2: LSOLVE (PREFIX,2) (L, Y->x) ; break ;
+	case 3: LSOLVE (PREFIX,3) (L, Y->x) ; break ;
+	case 4: LSOLVE (PREFIX,4) (L, Y->x) ; break ;
     }
 
 #else

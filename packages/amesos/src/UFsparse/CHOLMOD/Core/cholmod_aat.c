@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Core Module.  Version 1.1.  Copyright (C) 2005-2006,
+ * CHOLMOD/Core Module.  Copyright (C) 2005-2006,
  * Univ. of Florida.  Author: Timothy A. Davis
  * The CHOLMOD/Core Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
@@ -125,7 +125,9 @@ cholmod_sparse *CHOLMOD(aat)
     for (j = 0 ; j < n ; j++)
     {
 	/* clear the Flag array */
-	mark = CHOLMOD(clear_flag) (Common) ;
+	/* mark = CHOLMOD(clear_flag) (Common) ; */
+	CHOLMOD_CLEAR_FLAG (Common) ;
+	mark = Common->mark ;
 
 	/* exclude the diagonal, if requested */
 	if (!diag)

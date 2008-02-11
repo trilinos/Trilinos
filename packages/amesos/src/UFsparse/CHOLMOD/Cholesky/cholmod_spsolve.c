@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -76,7 +75,7 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
     cholmod_sparse *X ;
     double *Bx, *Bz, *Xx, *Xz, *B4x, *B4z, *X4x, *X4z ;
     Int *Bi, *Bp, *Xp, *Xi, *Bnz ;
-    Int n, nrhs, q, p, i, j, j1, j2, packed, block, pend, jn, xtype ;
+    Int n, nrhs, q, p, i, j, jfirst, jlast, packed, block, pend, j_n, xtype ;
     size_t xnz, nzmax ;
 
     /* ---------------------------------------------------------------------- */
@@ -148,25 +147,25 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
     /* solve in chunks of 4 columns at a time */
     /* ---------------------------------------------------------------------- */
 
-    for (j1 = 0 ; j1 < nrhs ; j1 += block)
+    for (jfirst = 0 ; jfirst < nrhs ; jfirst += block)
     {
 
 	/* ------------------------------------------------------------------ */
 	/* adjust the number of columns of B4 */
 	/* ------------------------------------------------------------------ */
 
-	j2 = MIN (nrhs, j1 + block) ;
-	B4->ncol = j2 - j1 ;
+	jlast = MIN (nrhs, jfirst + block) ;
+	B4->ncol = jlast - jfirst ;
 
 	/* ------------------------------------------------------------------ */
-	/* scatter B(j1:j2-1) into B4 */
+	/* scatter B(jfirst:jlast-1) into B4 */
 	/* ------------------------------------------------------------------ */
 
-	for (j = j1 ; j < j2 ; j++)
+	for (j = jfirst ; j < jlast ; j++)
 	{
 	    p = Bp [j] ;
 	    pend = (packed) ? (Bp [j+1]) : (p + Bnz [j]) ;
-	    jn = (j-j1)*n ;
+	    j_n = (j-jfirst)*n ;
 
 	    switch (B->xtype)
 	    {
@@ -174,14 +173,14 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		case CHOLMOD_REAL:
 		    for ( ; p < pend ; p++)
 		    {
-			B4x [Bi [p] + jn] = Bx [p] ;
+			B4x [Bi [p] + j_n] = Bx [p] ;
 		    }
 		    break ;
 
 		case CHOLMOD_COMPLEX:
 		    for ( ; p < pend ; p++)
 		    {
-			q = Bi [p] + jn ;
+			q = Bi [p] + j_n ;
 			B4x [2*q  ] = Bx [2*p  ] ;
 			B4x [2*q+1] = Bx [2*p+1] ;
 		    }
@@ -190,7 +189,7 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		case CHOLMOD_ZOMPLEX:
 		    for ( ; p < pend ; p++)
 		    {
-			q = Bi [p] + jn ;
+			q = Bi [p] + j_n ;
 			B4x [q] = Bx [p] ;
 			B4z [q] = Bz [p] ;
 		    }
@@ -218,10 +217,10 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 	/* append the solution onto X */
 	/* ------------------------------------------------------------------ */
 
-	for (j = j1 ; j < j2 ; j++)
+	for (j = jfirst ; j < jlast ; j++)
 	{
 	    Xp [j] = xnz ;
-	    jn = (j-j1)*n ;
+	    j_n = (j-jfirst)*n ;
 	    if ( xnz + n <= nzmax)
 	    {
 
@@ -235,7 +234,7 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_REAL:
 			for (i = 0 ; i < n ; i++)
 			{
-			    x = X4x [i + jn] ;
+			    x = X4x [i + j_n] ;
 			    if (IS_NONZERO (x))
 			    {
 				Xi [xnz] = i ;
@@ -248,8 +247,8 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_COMPLEX:
 			for (i = 0 ; i < n ; i++)
 			{
-			    x = X4x [2*(i + jn)  ] ;
-			    z = X4x [2*(i + jn)+1] ;
+			    x = X4x [2*(i + j_n)  ] ;
+			    z = X4x [2*(i + j_n)+1] ;
 			    if (IS_NONZERO (x) || IS_NONZERO (z))
 			    {
 				Xi [xnz] = i ;
@@ -263,8 +262,8 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_ZOMPLEX:
 			for (i = 0 ; i < n ; i++)
 			{
-			    x = X4x [i + jn] ;
-			    z = X4z [i + jn] ;
+			    x = X4x [i + j_n] ;
+			    z = X4z [i + j_n] ;
 			    if (IS_NONZERO (x) || IS_NONZERO (z))
 			    {
 				Xi [xnz] = i ;
@@ -290,7 +289,7 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_REAL:
 			for (i = 0 ; i < n ; i++)
 			{
-			    x = X4x [i + jn] ;
+			    x = X4x [i + j_n] ;
 			    if (IS_NONZERO (x))
 			    {
 				EXPAND_AS_NEEDED ;
@@ -304,8 +303,8 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_COMPLEX:
 			for (i = 0 ; i < n ; i++)
 			{
-			    x = X4x [2*(i + jn)  ] ;
-			    z = X4x [2*(i + jn)+1] ;
+			    x = X4x [2*(i + j_n)  ] ;
+			    z = X4x [2*(i + j_n)+1] ;
 			    if (IS_NONZERO (x) || IS_NONZERO (z))
 			    {
 				EXPAND_AS_NEEDED ;
@@ -320,8 +319,8 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_ZOMPLEX:
 			for (i = 0 ; i < n ; i++)
 			{
-			    x = X4x [i + jn] ;
-			    z = X4z [i + jn] ;
+			    x = X4x [i + j_n] ;
+			    z = X4z [i + j_n] ;
 			    if (IS_NONZERO (x) || IS_NONZERO (z))
 			    {
 				EXPAND_AS_NEEDED ;
@@ -342,14 +341,14 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 	/* clear B4 for next iteration */
 	/* ------------------------------------------------------------------ */
 
-	if (j2 < nrhs)
+	if (jlast < nrhs)
 	{
 
-	    for (j = j1 ; j < j2 ; j++)
+	    for (j = jfirst ; j < jlast ; j++)
 	    {
 		p = Bp [j] ;
 		pend = (packed) ? (Bp [j+1]) : (p + Bnz [j]) ;
-		jn = (j-j1)*n ;
+		j_n = (j-jfirst)*n ;
 
 		switch (B->xtype)
 		{
@@ -357,14 +356,14 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_REAL:
 			for ( ; p < pend ; p++)
 			{
-			    B4x [Bi [p] + jn] = 0 ;
+			    B4x [Bi [p] + j_n] = 0 ;
 			}
 			break ;
 
 		    case CHOLMOD_COMPLEX:
 			for ( ; p < pend ; p++)
 			{
-			    q = Bi [p] + jn ;
+			    q = Bi [p] + j_n ;
 			    B4x [2*q  ] = 0 ;
 			    B4x [2*q+1] = 0 ;
 			}
@@ -373,7 +372,7 @@ cholmod_sparse *CHOLMOD(spsolve)	    /* returns the sparse solution X */
 		    case CHOLMOD_ZOMPLEX:
 			for ( ; p < pend ; p++)
 			{
-			    q = Bi [p] + jn ;
+			    q = Bi [p] + j_n ;
 			    B4x [q] = 0 ;
 			    B4z [q] = 0 ;
 			}

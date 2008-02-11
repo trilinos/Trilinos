@@ -6,15 +6,16 @@
 
 /* my_malloc2, my_calloc2, and my_realloc2 pretend to fail if my_tries goes to
  * zero, to test CHOLMOD's memory error handling.   No failure occurs if
- * my_tries is negative.
+ * my_tries is negative.  This is only used in the demo main program, and then
+ * only for debugging.
  *
- * PARAKLETE version 0.1: parallel sparse LU factorization.  May 13, 2005
- * Copyright (C) 2005, Univ. of Florida.  Author: Timothy A. Davis
+ * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
+ * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
  * See License.txt for the Version 2.1 of the GNU Lesser General Public License
  * http://www.cise.ufl.edu/research/sparse
  */
 
-int my_tries = -1 ;
+Int my_tries = -1 ;
 
 void *my_malloc2 (size_t size)
 {
@@ -74,7 +75,7 @@ void normal_memory_handler ( cholmod_common *cm )
     cm->realloc_memory = realloc ;
     cm->free_memory = free ;
     cm->error_handler = my_handler ;
-    cholmod_free_work (cm) ;
+    CHOLMOD (free_work) (cm) ;
 }
 
 void test_memory_handler ( cholmod_common *cm )
@@ -84,6 +85,6 @@ void test_memory_handler ( cholmod_common *cm )
     cm->realloc_memory = my_realloc2 ;
     cm->free_memory = my_free2 ;
     cm->error_handler = NULL ;
-    cholmod_free_work (cm) ;
+    CHOLMOD (free_work) (cm) ;
     my_tries = 0 ;
 }

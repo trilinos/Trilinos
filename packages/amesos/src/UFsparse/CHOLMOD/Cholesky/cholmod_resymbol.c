@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -443,7 +442,10 @@ int CHOLMOD(resymbol_noperm)
 	/* ------------------------------------------------------------------ */
 
 	/* flag the diagonal entry */
-	mark = CHOLMOD(clear_flag) (Common) ;
+	/* mark = CHOLMOD(clear_flag) (Common) ; */
+	CHOLMOD_CLEAR_FLAG (Common) ;
+	mark = Common->mark ;
+
 	Flag [k] = mark ;
 	PRINT1 (("	row: "ID" (diagonal)\n", k)) ;
 
@@ -597,7 +599,9 @@ int CHOLMOD(resymbol_noperm)
     /* clear workspace */
     /* ---------------------------------------------------------------------- */
 
-    CHOLMOD(clear_flag) (Common) ;
+    /* CHOLMOD(clear_flag) (Common) ; */
+    CHOLMOD_CLEAR_FLAG (Common) ;
+
     DEBUG (CHOLMOD(dump_factor) (L, "ReSymbol final L (i, x):", Common)) ;
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
     return (TRUE) ;

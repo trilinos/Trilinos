@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -37,7 +36,7 @@
  *	METIS:	    nested dissection with METIS_NodeND
  *	NESDIS:	    nested dissection using METIS_NodeComputeSeparator,
  *		    typically followed by a constrained minimum degree
- *		    (CSYMAMD for the symmetric case, CCOLAMD for the AA' case).
+ *		    (CAMD for the symmetric case, CCOLAMD for the AA' case).
  *
  * Multiple ordering options can be tried (up to 9 of them), and the best one
  * is selected (the one that gives the smallest number of nonzeros in the
@@ -69,7 +68,9 @@
  * you do not have METIS, only the first two will be tried (user permutation,
  * if provided, and AMD/COLAMD).  This default behavior is obtained when
  * Common->nmethods is zero.  In this case, methods 0, 1, and 2 in
- * Common->method [..] are reset to User-provided, AMD, and METIS, respectively.
+ * Common->method [..] are reset to User-provided, AMD, and METIS (or NESDIS
+ * if Common->default_nesdis is set to the non-default value of TRUE),
+ * respectively.
  *
  * You can modify these 9 methods and the number of methods tried by changing
  * parameters in the Common argument.  If you know the best ordering for your
@@ -79,8 +80,8 @@
  *
  * Note that it is possible for METIS to terminate your program if it runs out
  * of memory.  This is not the case for any CHOLMOD or minimum degree ordering
- * routine (AMD, COLAMD, CCOLAMD, or CSYMAMD).  Since NESDIS relies on METIS,
- * it too can terminate your program.
+ * routine (AMD, COLAMD, CAMD, CCOLAMD, or CSYMAMD).  Since NESDIS relies on
+ * METIS, it too can terminate your program.
  *
  * The factor L is returned as simplicial symbolic (L->is_super FALSE) if
  * Common->supernodal <= CHOLMOD_SIMPLICIAL (0) or as supernodal symbolic if
@@ -309,6 +310,11 @@ int CHOLMOD(analyze_ordering)
 {
     cholmod_sparse *A1, *A2, *S, *F ;
     Int n, ok, do_rowcolcounts ;
+
+    /* check inputs */
+    RETURN_IF_NULL_COMMON (FALSE) ;
+    RETURN_IF_NULL (A, FALSE) ;
+
     n = A->nrow ;
 
     do_rowcolcounts = (ColCount != NULL) ;
@@ -405,6 +411,7 @@ cholmod_factor *CHOLMOD(analyze_p)
     Common->status = CHOLMOD_OK ;
     status = CHOLMOD_OK ;
     Common->selected = EMPTY ;
+    Common->called_nd = FALSE ;
 
     /* ---------------------------------------------------------------------- */
     /* get inputs */
@@ -430,10 +437,13 @@ cholmod_factor *CHOLMOD(analyze_p)
 	/* default strategy: try UserPerm, if given.  Try AMD for A, or COLAMD
 	 * to order A*A'.  Try METIS for the symmetric case only if AMD reports
 	 * a high degree of fill-in and flop count.  Always try METIS for the
-	 * unsymmetric case.  METIS is not tried if it isn't installed. */
+	 * unsymmetric case.  METIS is not tried if the Partition Module
+	 * isn't installed.   If Common->default_nesdis is TRUE, then NESDIS
+	 * is used as the 3rd ordering instead. */
 	Common->method [0].ordering = CHOLMOD_GIVEN ;/* skip if UserPerm NULL */
 	Common->method [1].ordering = CHOLMOD_AMD ;
-	Common->method [2].ordering = CHOLMOD_METIS ;
+	Common->method [2].ordering = 
+	    (Common->default_nesdis ? CHOLMOD_NESDIS : CHOLMOD_METIS) ;
 #ifndef NPARTITION
 	nmethods = 3 ;
 #else
@@ -629,8 +639,9 @@ cholmod_factor *CHOLMOD(analyze_p)
 	    /* -------------------------------------------------------------- */
 
 #ifndef NPARTITION
-	    /* postorder is false, because it will be later, below */
+	    /* postorder parameter is false, because it will be later, below */
 	    /* workspace: Iwork (4*nrow+uncol), Flag (nrow), Head (nrow+1) */
+	    Common->called_nd = TRUE ;
 	    CHOLMOD(metis) (A, fset, fsize, FALSE, Perm, Common) ;
 #else
 	    Common->status = CHOLMOD_NOT_INSTALLED ;
@@ -646,10 +657,11 @@ cholmod_factor *CHOLMOD(analyze_p)
 
 	    /* this method is based on METIS' node bissection routine
 	     * (METIS_NodeComputeSeparator).  In contrast to METIS_NodeND,
-	     * it calls CSYMAMD or CCOLAMD on the whole graph, instead of MMD
+	     * it calls CAMD or CCOLAMD on the whole graph, instead of MMD
 	     * on just the leaves. */
 #ifndef NPARTITION
 	    /* workspace: Flag (nrow), Head (nrow+1), Iwork (2*nrow) */
+	    Common->called_nd = TRUE ;
 	    CHOLMOD(nested_dissection) (A, fset, fsize, Perm, CParent, Cmember,
 		    Common) ;
 #else

@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Include/cholmod_partition.h.  Version 1.1.
+ * CHOLMOD/Include/cholmod_partition.h.
  * Copyright (C) 2005-2006, Univ. of Florida.  Author: Timothy A. Davis
  * CHOLMOD/Include/cholmod_partition.h is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
@@ -26,8 +26,8 @@
  * cholmod_bisect		graph partitioner (currently based on METIS)
  * cholmod_metis_bisector	direct interface to METIS_NodeComputeSeparator
  *
- * Requires the Core and Cholesky modules, and two packages: METIS and CCOLAMD.
- * Optionally used by the Cholesky module.
+ * Requires the Core and Cholesky modules, and three packages: METIS, CAMD,
+ * and CCOLAMD.  Optionally used by the Cholesky module.
  *
  * Note that METIS does not have a version that uses UF_long integers.  If you
  * try to use cholmod_nested_dissection, cholmod_metis, cholmod_bisect, or

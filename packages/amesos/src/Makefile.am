@@ -245,6 +245,7 @@ PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_core.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_io64.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h \
 	$(srcdir)/UFsparse/UFconfig/UFconfig.h
 
@@ -290,55 +291,63 @@ BOGUSMEX= \
 	$(srcdir)/UFsparse/CCOLAMD/csymamdmex.c
 
 PARAKLETE = \
-	$(srcdir)/UFsparse/PARAKLETE/memory.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_btf.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_error.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_finish.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c \
-	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
-	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_reanalyze.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_start.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_common.c \
 	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_change_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_memory.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_complex.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_transpose.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_sparse.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_band.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_copy.c \
 	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c \
-	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_error.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_aat.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_l_add.c \
 	$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_postorder.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_amd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_colamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_etree.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_rowcolcounts.c \
 	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c \
-	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c \
-	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_l_analyze.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_ccolamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_camd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_csymamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_metis.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_l_nesdis.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_l_2.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_l_postorder.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_l_post_tree.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_1.c \
-	$(srcdir)/UFsparse/CAMD/Source/camd_2.c \
-	$(srcdir)/UFsparse/CAMD/Source/camd_aat.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_l_2.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_l_aat.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_control.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_defaults.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_dump.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_info.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_order.c \
-	$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_l_postorder.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_valid.c \
 	$(srcdir)/UFsparse/CAMD/Source/camd_global.c \
-	$(srcdir)/UFsparse/CCOLAMD/ccolamd.c \
+	$(srcdir)/UFsparse/COLAMD/colamd_l.c \
+	$(srcdir)/UFsparse/COLAMD/colamd_global.c \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c \
 	$(srcdir)/Amesos_Paraklete.cpp
 else

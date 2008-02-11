@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -510,7 +509,9 @@ int CHOLMOD(rowcolcounts)
     /* ---------------------------------------------------------------------- */
 
     Common->mark = EMPTY ;
-    CHOLMOD(clear_flag) (Common) ;
+    /* CHOLMOD(clear_flag) (Common) ; */
+    CHOLMOD_CLEAR_FLAG (Common) ;
+
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
 
     /* ---------------------------------------------------------------------- */

@@ -10,8 +10,8 @@
  *
  * TODO: check return values of MPI
  *
- * PARAKLETE version 0.1: parallel sparse LU factorization.  May 13, 2005
- * Copyright (C) 2005, Univ. of Florida.  Author: Timothy A. Davis
+ * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
+ * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
  * See License.txt for the Version 2.1 of the GNU Lesser General Public License
  * http://www.cise.ufl.edu/research/sparse
  */
@@ -31,15 +31,16 @@
 
 #ifndef NMPI
 
-static int paraklete_bcast_symbolic
+static Int paraklete_bcast_symbolic
 (
     paraklete_symbolic **LUsymbolicHandle,
     paraklete_common *Common
 )
 
 {
-    paraklete_symbolic *LUsymbolic ;
-    int n, ncomponents, ok, all_ok, header [2] ;
+    paraklete_symbolic *LUsymbolic = NULL ;
+    Int n, ncomponents, header [2] ;
+    int ok, all_ok ;
     cholmod_common *cm ;
 
     cm = &(Common->cm) ;
@@ -64,65 +65,74 @@ static int paraklete_bcast_symbolic
     /* broadcast the size of the object, or -1 if a failure occured */
     header [0] = n ;
     header [1] = ncomponents ;
-    MPI_Bcast (&header, 2, MPI_INT, TAG0, Common->mpicomm) ;
+    MPI_Bcast (&header, 2, MPI_Int, TAG0, MPI_COMM_WORLD) ;
     n = header [0] ;
     ncomponents = header [1] ;
     if (n == EMPTY)
     {
 	/* the analysis in the root process failed */
-	PR0 ((Common->file, "proc %d root analyze fails\n", Common->myid)) ;
+	PR0 ((Common->file, "proc "ID" root analyze fails\n", Common->myid)) ;
 	return (FALSE) ;
     }
 
-    PR1 ((Common->file, "proc %d in bcast symbolic: status %d header %d %d\n",
+    PR1 ((Common->file, "proc "ID" in bcast symbolic: status "ID" header "ID" "ID"\n",
 	    Common->myid, cm->status, header [0], header [1])) ;
 
     if (Common->myid != 0)
     {
-	LUsymbolic = cholmod_malloc (1, sizeof (paraklete_symbolic), cm) ;
-	if (LUsymbolic != NULL)
-	{
-	    LUsymbolic->Mem_n  = cholmod_malloc (3*n, sizeof (int), cm) ;
-	    LUsymbolic->Cperm  = LUsymbolic->Mem_n ;
-	    LUsymbolic->Cinv   = LUsymbolic->Mem_n + n ;
-	    LUsymbolic->Cparent= LUsymbolic->Mem_n + 2*n ;
-
-	    LUsymbolic->Mem_c  = cholmod_malloc (7*ncomponents+2,
-				    sizeof(int), cm) ;
-
-	    /* each of size ncomponents: */
-	    LUsymbolic->Child  = LUsymbolic->Mem_c ;
-	    LUsymbolic->Clnz   = LUsymbolic->Mem_c + ncomponents ;
-	    LUsymbolic->Cn     = LUsymbolic->Mem_c + 2*ncomponents ;
-	    LUsymbolic->Cnz    = LUsymbolic->Mem_c + 3*ncomponents ;
-	    LUsymbolic->Sched  = LUsymbolic->Mem_c + 4*ncomponents ;
-
-	    /* each of size ncomponents+1: */
-	    LUsymbolic->Cstart = LUsymbolic->Mem_c + 5*ncomponents ;
-	    LUsymbolic->Childp = LUsymbolic->Mem_c + 6*ncomponents + 1 ;
-
-	    LUsymbolic->n = n ;
-	    LUsymbolic->ncomponents = ncomponents ;
-	}
+	LUsymbolic = paraklete_alloc_symbolic (n, ncomponents, FALSE, Common) ;
 	*LUsymbolicHandle = LUsymbolic ;
     }
 
-    ok = (cm->status == CHOLMOD_OK) ;
+    ok = (cm->status == CHOLMOD_OK) && (LUsymbolic != NULL) ;
+    all_ok = ok ;
 
     /* all processes find out if any one process fails to allocate memory */
-    MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, Common->mpicomm) ;
+    MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD) ;
     if (!all_ok)
     {
 	/* out of memory; inform all processes */
-	PR0 ((Common->file, "proc %d all fail in analyze\n", Common->myid)) ;
+	PR0 ((Common->file, "proc "ID" all fail in analyze\n", Common->myid)) ;
 	paraklete_free_symbolic (&LUsymbolic, Common) ;
 	*LUsymbolicHandle = NULL ;
 	return (FALSE) ;
     }
 
     /* broadcast the contents of the symbolic object */
-    MPI_Bcast (LUsymbolic->Mem_n, 3*n, MPI_INT, TAG0, Common->mpicomm) ;
-    MPI_Bcast (LUsymbolic->Mem_c, 7*ncomponents+2, MPI_INT, TAG0, Common->mpicomm) ;
+    MPI_Bcast (LUsymbolic->Mem_n, 3*n, MPI_Int, TAG0, MPI_COMM_WORLD) ;
+    MPI_Bcast (LUsymbolic->Mem_c, 7*ncomponents+2, MPI_Int, TAG0,
+	MPI_COMM_WORLD) ;
+
+#if 0
+    {
+	/* each of size ncomponents: */
+	Int *Child = LUsymbolic->Child ;
+	Int *Clnz  = LUsymbolic->Clnz ;
+	Int *Cn    = LUsymbolic->Cn ;
+	Int *Cnz   = LUsymbolic->Cnz ;
+	Int *Sched = LUsymbolic->Sched ;
+
+	/* each of size ncomponents+1: */
+	Int *Cstart = LUsymbolic->Cstart ;
+	Int *Childp = LUsymbolic->Childp ;
+	Int cc ;
+
+	for (cc = 0 ; cc < ncomponents ; cc++)
+	{
+	    printf ("component "ID"\n", cc) ;
+	    printf ("Child "ID"\n", Child [cc]) ;
+	    printf ("Clnz "ID"\n", Clnz [cc]) ;
+	    printf ("Cn "ID"\n", Cn [cc]) ;
+	    printf ("Cnz "ID"\n", Cnz [cc]) ;
+	    printf ("Sched "ID"\n", Sched [cc]) ;
+	    printf ("Cstart "ID"\n", Cstart [cc]) ;
+	    printf ("Childp "ID"\n", Childp [cc]) ;
+	}
+	    printf ("Cstart "ID"\n", Cstart [ncomponents]) ;
+	    printf ("Childp "ID"\n", Childp [ncomponents]) ;
+
+    }
+#endif
 
     return (TRUE) ;
 }
@@ -140,20 +150,25 @@ paraklete_symbolic *paraklete_analyze
     paraklete_common *Common
 )
 {
-    double work, cnt ;
+    double cnt ;
     double *Cwork ;
     cholmod_common *cm ;
     paraklete_symbolic *LUsymbolic ;
     cholmod_sparse *C, *AT, *Elo, *Eup ;
-    int *Cperm, *Cinv, *Cparent, *Cmember, *ColCount, *Cstart, *Childp, *Clnz,
-	*Cn, *Cnz, *Parent, *Post, *First, *Level, *Child, *Ap, *Ai, *Sched,
-	*Leaves, *Merged, *Nchildren, *NewNode, *Cparent2, *W ;
+    Int *Cperm, *RpermInv, *Cparent, *Cmember, *ColCount, *Cstart, *Childp,
+	*Clnz, *Cn, *Cnz, *Parent, *Post, *First, *Level, *Child, *Ap, *Ai,
+	*Sched, *W, *Rperm,
+        *Lo_id, *Hi_id ;
     double one [2] = {1,1} ;
-    int p, k, n, ncomponents, ci, cj, i, j, clast, c, parent, nparent, nroots,
-	nproc, nleaves, cp, cmerge, cc, c2, ncomp2, parent2 ;
+    Int p, k, n, ncomponents, ci, cj, i, j, clast, c, parent, nparent, nroots,
+	nproc, cp, nc0, nc1 ;
+    int ok = TRUE ;
+    size_t n5, nc7 ;
 
-#ifndef HACK
-    int proc, nchild ;
+#if 0
+    double work ;
+    Int proc = 0, parent2, ncomp2, c2, cc, cmerge, nleaves,
+    Int *NewNode, *Cparent2, *Merged, *Leaves, *Nchildren ;
 #endif
 
     /* ---------------------------------------------------------------------- */
@@ -182,7 +197,7 @@ paraklete_symbolic *paraklete_analyze
     RETURN_IF_NULL (A, NULL) ;
     if (A->nrow != A->ncol || A->stype)
     {
-	cholmod_error (CHOLMOD_INVALID, "paraklete: invalid matrix", cm) ;
+	CHOLMOD (error) (CHOLMOD_INVALID, "paraklete: invalid matrix", cm) ;
 	return (NULL) ;
     }
 #endif
@@ -196,11 +211,14 @@ paraklete_symbolic *paraklete_analyze
     /* ---------------------------------------------------------------------- */
 
     cm = &(Common->cm) ;
-    cholmod_allocate_work (n, 2*n, n, cm) ;
+    CHOLMOD (allocate_work) (n, 2*n, n, cm) ;
     if (cm->status != CHOLMOD_OK)
     {
 	/* out of memory; inform all processes */
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+        /*
+        printf ("   analyze failed 1!\n") ;
+        */
 	return (NULL) ;
     }
 
@@ -208,63 +226,57 @@ paraklete_symbolic *paraklete_analyze
     /* allocate first part of symbolic factor */
     /* ---------------------------------------------------------------------- */
 
-    LUsymbolic = cholmod_malloc (1, sizeof (paraklete_symbolic), cm) ;
+    LUsymbolic = paraklete_alloc_symbolic (n, 0, TRUE, Common) ;
 
-    if (cm->status != CHOLMOD_OK)
-    {
-	/* out of memory; inform all processes */
-	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
-	return (NULL) ;
-    }
-
-    LUsymbolic->Mem_n = cholmod_malloc (3*n, sizeof (int), cm) ;
-    Cperm      = LUsymbolic->Mem_n ;		/* size n */
-    Cinv       = LUsymbolic->Mem_n + n ;	/* size n */
-    Cparent    = LUsymbolic->Mem_n + 2*n ;	/* size n */
-
-    LUsymbolic->n = n ;
-    LUsymbolic->Cperm = Cperm ;
-    LUsymbolic->Cinv = Cinv ;
-    LUsymbolic->Cparent = Cparent ;
-
-    LUsymbolic->Mem_c = NULL ;
-    LUsymbolic->Cstart = NULL ;
-    LUsymbolic->Child = NULL ;
-    LUsymbolic->Childp = NULL ;
-    LUsymbolic->Clnz = NULL ;
-    LUsymbolic->Cn = NULL ;
-    LUsymbolic->Cnz = NULL ;
-    LUsymbolic->Sched = NULL ;
-
-    LUsymbolic->ncomponents = 0 ;
-
-    if (cm->status != CHOLMOD_OK)
+    if (LUsymbolic == NULL)
     {
 	/* out of memory; inform all processes */
 	PR0 ((Common->file, "oops, proc 0 ran out\n")) ;
-	paraklete_free_symbolic (&LUsymbolic, Common) ;
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+        /*
+        printf ("   analyze failed 2!\n") ;
+        */
 	return (NULL) ;
     }
 
-    Cmember = Cinv ;	    /* use Cinv as workspace for Cmember */
+    Cperm    = LUsymbolic->Cperm ;
+    RpermInv = LUsymbolic->RpermInv ;
+    Cparent  = LUsymbolic->Cparent ;
+
+    Cmember = RpermInv ;	    /* use RpermInv as workspace for Cmember */
 
     /* ---------------------------------------------------------------------- */
     /* C = pattern of triu (A+A'), in symmetric/upper form */
     /* ---------------------------------------------------------------------- */
 
-    AT = cholmod_transpose (A, FALSE, cm) ;
-    C = cholmod_add (A, AT, one, one, FALSE, FALSE, cm) ;
-    cholmod_free_sparse (&AT, cm) ;
-    cholmod_band_inplace (0, n, 0, C, cm) ;
+    /*
+    printf ("pattern of A+A', n = "ID" ("ID")\n", A->nrow, cm->status) ;
+    printf ("A "ID" by "ID", nzmax "ID"\n", A->nrow, A->ncol, A->nzmax) ;
+    */
+    AT = CHOLMOD (transpose) (A, FALSE, cm) ;
+    /*
+    printf ("AT is %p ("ID")\n", (void *) AT, cm->status) ;
+    */
+    C = CHOLMOD (add) (A, AT, one, one, FALSE, FALSE, cm) ;
+    /*
+    printf ("C is %p ("ID")\n", (void *) C, cm->status) ;
+    */
+    CHOLMOD (free_sparse) (&AT, cm) ;
+    CHOLMOD (band_inplace) (0, n, 0, C, cm) ;
+    /*
+    printf ("status is ("ID")\n", cm->status) ;
+    */
 
     if (cm->status != CHOLMOD_OK)
     {
 	/* out of memory; inform all processes */
 	PR0 ((Common->file, "oops, proc 0 ran out here2\n")) ;
-	cholmod_free_sparse (&C, cm) ;
+	CHOLMOD (free_sparse) (&C, cm) ;
 	paraklete_free_symbolic (&LUsymbolic, Common) ;
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+        /*
+        printf ("   analyze failed 3!\n") ;
+        */
 	return (NULL) ;
     }
 
@@ -280,18 +292,59 @@ paraklete_symbolic *paraklete_analyze
      * Cmember [i] = c if row/col i of A is in component c
      */
 
+    /* TODO rename Common->nleaves to be something else */
+    cm->method [0].nd_oksep = 0.1 ;
+
+    if (Common->nleaves <= 0)
+    {
+        cm->method [0].nd_small = MAX (1000, -(Common->nleaves)) ;
+    }
+    else
+    {
+        cm->method [0].nd_small = n / Common->nleaves ;
+    }
+
     cm->current = 0 ;
-    cm->method [0].nd_small = 4 ;
-    ncomponents = cholmod_nested_dissection (C, NULL, 0, Cperm, Cparent,
-	    Cmember, cm) ;
+    cm->method [0].nd_components = 0 ;  /* default value */
+    /*
+    printf ("nd_components "ID"\n", cm->method [0].nd_components) ;
+    */
+
+    ncomponents = CHOLMOD (nested_dissection) (C, NULL, 0, Cperm, Cparent,
+        Cmember, cm) ;
+
+    nc0 = ncomponents ; /* from CHOLMOD (nested_dissection) */
+    nc1 = ncomponents ; /* after collapsing */
+
+#ifndef NDEBUG
+    /* check results: */
+    clast = EMPTY ;
+    for (k = 0 ; k < n ; k++)
+    {
+	c = Cmember [Cperm [k]] ;
+	if (c != clast)
+	{
+	    /*
+	    printf ("Cmember ["ID"] = "ID"\n", k, Cmember [Cperm [k]]) ;
+	    printf ("start of component\n") ;
+	    */
+	    /* if (c != clast+1) { printf ("ERROR!\n") ; exit (1) ; } */
+	    ASSERT (c == clast + 1) ;
+	}
+	clast = c ;
+    }
+#endif
 
     if (cm->status != CHOLMOD_OK)
     {
 	/* out of memory; inform all processes */
 	PR0 ((Common->file, "oops, proc 0 ran out here3\n")) ;
 	paraklete_free_symbolic (&LUsymbolic, Common) ;
-	cholmod_free_sparse (&C, cm) ;
+	CHOLMOD (free_sparse) (&C, cm) ;
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+        /*
+        printf ("   analyze failed 4!\n") ;
+        */
 	return (NULL) ;
     }
 
@@ -299,15 +352,19 @@ paraklete_symbolic *paraklete_analyze
     /* Elo = C (p,p)', Eup = Elo' */
     /* ---------------------------------------------------------------------- */
 
-    Elo = cholmod_ptranspose (C, FALSE, Cperm, NULL, 0, cm) ;
-    cholmod_free_sparse (&C, cm) ;
-    Eup = cholmod_transpose (Elo, FALSE, cm) ;
+    Elo = CHOLMOD (ptranspose) (C, FALSE, Cperm, NULL, 0, cm) ;
+    CHOLMOD (free_sparse) (&C, cm) ;
+    Eup = CHOLMOD (transpose) (Elo, FALSE, cm) ;
 
     /* ---------------------------------------------------------------------- */
     /* allocate more workspace */
     /* ---------------------------------------------------------------------- */
 
-    W = cholmod_malloc (5*(n+1), sizeof (int), cm) ;
+    /* n5 = 5*(n+1) */
+    n5 = CHOLMOD (mult_size_t) (n+1, 5, &ok) ;
+    if (!ok) PARAKLETE_ERROR (PK_TOO_LARGE, "problem too large") ;
+
+    W = CHOLMOD (malloc) (n5, sizeof (Int), cm) ;
     ColCount = W ;	    /* size n [ */
     Parent   = W + n ;	    /* size n [ */
     Post     = W + 2*n ;    /* size n [ */
@@ -319,10 +376,11 @@ paraklete_symbolic *paraklete_analyze
 	/* out of memory; inform all processes */
 	PR0 ((Common->file, "oops, proc 0 ran out here4\n")) ;
 	paraklete_free_symbolic (&LUsymbolic, Common) ;
-	cholmod_free_sparse (&Eup, cm) ;
-	cholmod_free_sparse (&Elo, cm) ;
-	cholmod_free (5*(n+1), sizeof (int), W, cm) ;
+	CHOLMOD (free_sparse) (&Eup, cm) ;
+	CHOLMOD (free_sparse) (&Elo, cm) ;
+	CHOLMOD (free) (n5, sizeof (Int), W, cm) ;
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+        PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
 	return (NULL) ;
     }
 
@@ -331,22 +389,22 @@ paraklete_symbolic *paraklete_analyze
     /* ---------------------------------------------------------------------- */
 
     /* This assumes an LU factorization of C, with no partial pivoting */
-    cholmod_etree (Eup, Parent, cm) ;
-    cholmod_postorder (Parent, n, NULL, Post, cm) ;
-    cholmod_rowcolcounts (Elo, NULL, 0, Parent, Post, NULL, ColCount,
+    CHOLMOD (etree) (Eup, Parent, cm) ;
+    CHOLMOD (postorder) (Parent, n, NULL, Post, cm) ;
+    CHOLMOD (rowcolcounts) (Elo, NULL, 0, Parent, Post, NULL, ColCount,
 	    First, Level, cm) ;
 
-    cholmod_free_sparse (&Eup, cm) ;
-    cholmod_free_sparse (&Elo, cm) ;
+    CHOLMOD (free_sparse) (&Eup, cm) ;
+    CHOLMOD (free_sparse) (&Elo, cm) ;
 
     /* Parent, Post, First, Level no longer needed ]]]] */
 
     if (cm->status != CHOLMOD_OK)
     {
 	/* out of memory or other error; inform all processes */
-	PR0 ((Common->file, "oops, proc 0 ran out here5\n")) ;
+        PARAKLETE_ERROR (PK_UNKNOWN, "out of memory or other error") ;
 	paraklete_free_symbolic (&LUsymbolic, Common) ;
-	cholmod_free (5*(n+1), sizeof (int), W, cm) ;
+	CHOLMOD (free) (n5, sizeof (Int), W, cm) ;
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
 	return (NULL) ;
     }
@@ -370,10 +428,12 @@ paraklete_symbolic *paraklete_analyze
 #ifndef NDEBUG
     for (c = 0 ; c < ncomponents ; c++)
     {
-	PR1 ((Common->file, "Node %d work %g parent %d\n",
+	PR1 ((Common->file, "Node "ID" work %g parent "ID"\n",
 		    c, Cwork [c], Cparent [c])) ;
     }
 #endif
+
+#if 0
 
     /* ---------------------------------------------------------------------- */
     /* compress the tree until it has <= nproc leaves */
@@ -408,23 +468,23 @@ paraklete_symbolic *paraklete_analyze
     nleaves = 0 ;
     for (c = 0 ; c < ncomponents ; c++)
     {
-	PR1 ((Common->file, "Node %d has %d children\n", c, Nchildren [c])) ;
+	PR1 ((Common->file, "Node "ID" has "ID" children\n", c, Nchildren [c])) ;
 	if (Nchildren [c] == 0)
 	{
-	    PR1 ((Common->file, "Leaf: %d\n", c)) ;
+	    PR1 ((Common->file, "Leaf: "ID"\n", c)) ;
 	    Leaves [nleaves++] = c ;
 	}
     }
 
-    /* TODO find out why cholmod_nested_dissection returns a graph with
+    /* CHOLMOD (nested_dissection) returns a graph with
      * 2 nodes (one parent and one child) for vanHeukelum/cage3
      *
-     * TODO: use a heap for the leaves
+     * could use a heap for the leaves
      */
 
-    while (nleaves > nproc)
+    while (nleaves > target_nleaves)
     {
-	PR1 ((Common->file, "\n------------ nleaves: %d\n", nleaves)) ;
+	PR1 ((Common->file, "\n------------ nleaves: "ID"\n", nleaves)) ;
 
 	/* find the lightest leaf (skip node ncomponents-1) */
 	work = EMPTY ;
@@ -432,7 +492,7 @@ paraklete_symbolic *paraklete_analyze
 	cp = EMPTY ;
 	for (p = 0 ; p < nleaves ; p++)
 	{
-	    PR2 ((Common->file, "Leaf %d work %g\n",
+	    PR2 ((Common->file, "Leaf "ID" work %g\n",
 			Leaves [p], Cwork [Leaves [p]])) ;
 	    ASSERT (Merged [Leaves [p]] == EMPTY) ;
 	    if (Leaves [p] == ncomponents-1)
@@ -454,7 +514,7 @@ paraklete_symbolic *paraklete_analyze
 	    }
 	}
 	ASSERT (c != EMPTY) ;
-	PR2 ((Common->file, "Lightest leaf is %d with work %g\n", c, Cwork [c]));
+	PR2 ((Common->file,"Lightest leaf is "ID" with work %g\n", c, Cwork [c]));
 	ASSERT (c < ncomponents-1) ;
 	ASSERT (Nchildren [c] == 0) ;
 
@@ -475,7 +535,7 @@ paraklete_symbolic *paraklete_analyze
 	}
 
 	/* merge c into cmerge node, where c is a leaf */
-	PR1 ((Common->file, "merge %d into %d, parent %d\n", c, cmerge, parent));
+	PR1 ((Common->file,"merge "ID" into "ID", parent "ID"\n", c, cmerge, parent));
 	ASSERT (cmerge < ncomponents) ;
 	Cwork [cmerge] += Cwork [c] ;
 	Cwork [c] = 0 ;
@@ -487,14 +547,14 @@ paraklete_symbolic *paraklete_analyze
 	if (Nchildren [parent] == 0 && parent != ncomponents)
 	{
 	    /* parent is a new leaf, add it to the list of Leaves */
-	    PR1 ((Common->file, "parent is new leaf: %d\n", parent)) ;
+	    PR1 ((Common->file, "parent is new leaf: "ID"\n", parent)) ;
 	    Leaves [nleaves++] = parent ;
 	}
     }
 
     /* Leaves no longer needed ] */
 
-    PR1 ((Common->file, "\n--------------------------- done merging leaves\n")) ;
+    PR1 ((Common->file, "\n-------------------------- done merging leaves\n")) ;
 
     /* merge nodes that have just one child, with the one child */
     for (c = 0 ; c < ncomponents-1 ; c++)
@@ -505,14 +565,14 @@ paraklete_symbolic *paraklete_analyze
 	    if (parent == EMPTY) continue ;
 	    if (Nchildren [parent] == 1)
 	    {
-		PR1 ((Common->file, "\nparent %d of c %d has one child\n",
+		PR1 ((Common->file, "\nparent "ID" of c "ID" has one child\n",
 			    parent, c));
 		Cwork [parent] += Cwork [c] ;
 		Cwork [c] = 0 ;
 		Merged [c] = parent ;
 		for (cc = c+1 ; cc < parent ; cc++)
 		{
-		    PR1 ((Common->file, "merge %d into %d\n", cc, parent)) ;
+		    PR1 ((Common->file, "merge "ID" into "ID"\n", cc, parent)) ;
 		    ASSERT (Merged [cc] != EMPTY) ;
 		    Merged [cc] = parent ;
 		}
@@ -526,11 +586,11 @@ paraklete_symbolic *paraklete_analyze
     for (c = 0 ; c < ncomponents ; c++)
     {
 	/* find the ultimate node that node c was merged into */
-	PR1 ((Common->file, "\nFind ultimate node for %d\n", c)) ;
+	PR1 ((Common->file, "\nFind ultimate node for "ID"\n", c)) ;
 	for (cc = c ; Merged [cc] != EMPTY ; cc = Merged [cc]) ;
 	for (c2 = c ; Merged [c2] != EMPTY ; c2 = Merged [c2])
 	{
-	    PR1 ((Common->file, "   merge %d into %d\n", c2, cc)) ;
+	    PR1 ((Common->file, "   merge "ID" into "ID"\n", c2, cc)) ;
 	    Merged [c2] = cc ;
 	}
     }
@@ -542,7 +602,7 @@ paraklete_symbolic *paraklete_analyze
     {
 	if (Merged [c] == EMPTY)
 	{
-	    PR1 ((Common->file, "Live node %d becomes node %d\n", c, ncomp2)) ;
+	    PR1 ((Common->file, "Live node "ID" becomes node "ID"\n", c, ncomp2)) ;
 	    NewNode [c] = ncomp2++ ;
 	}
     }
@@ -551,7 +611,7 @@ paraklete_symbolic *paraklete_analyze
 	if (Merged [c] != EMPTY)
 	{
 	    NewNode [c] = NewNode [Merged [c]] ;
-	    PR1 ((Common->file, "Dead node %d becomes part of node %d\n",
+	    PR1 ((Common->file, "Dead node "ID" becomes part of node "ID"\n",
 			c, NewNode [c])) ;
 	}
     }
@@ -590,16 +650,26 @@ paraklete_symbolic *paraklete_analyze
 	Cparent [c] = Cparent2 [c] ;
     }
 
+#ifndef NDEBUG
+    printf ("Final components: "ID" leaves: "ID"\n", ncomponents, nleaves) ;
     for (c = 0 ; c < ncomponents ; c++)
     {
-	PR1 ((Common->file, "New node: %d new parent %d\n", c, Cparent [c])) ;
+	PR1 ((Common->file, "New node: "ID" new parent "ID"\n", c, Cparent [c])) ;
     }
+#endif
+
+#endif
 
     /* ---------------------------------------------------------------------- */
     /* allocate remainder of symbolic factor */
     /* ---------------------------------------------------------------------- */
 
-    LUsymbolic->Mem_c = cholmod_malloc (7*ncomponents+2, sizeof (int), cm) ;
+    /* nc7 = 7*ncomponents + 2 */
+    nc7 = CHOLMOD (mult_size_t) (ncomponents, 7, &ok) ;
+    nc7 = CHOLMOD (add_size_t) (nc7, 2, &ok) ;
+    if (!ok) PARAKLETE_ERROR (PK_TOO_LARGE, "problem too large") ;
+
+    LUsymbolic->Mem_c = CHOLMOD (malloc) (nc7, sizeof (Int), cm) ;
 
     /* each of size ncomponents: */
     Child = LUsymbolic->Child  = LUsymbolic->Mem_c ;
@@ -613,13 +683,16 @@ paraklete_symbolic *paraklete_analyze
     Childp = LUsymbolic->Childp = LUsymbolic->Mem_c + 6*ncomponents + 1 ;
 
     LUsymbolic->ncomponents = ncomponents ;
+    LUsymbolic->ncomp0 = nc0 ;
+    LUsymbolic->ncomp1 = nc1 ;
 
     if (cm->status != CHOLMOD_OK)
     {
 	/* out of memory or other error; inform all processes */
 	paraklete_free_symbolic (&LUsymbolic, Common) ;
-	cholmod_free (5*(n+1), sizeof (int), W, cm) ;
+	CHOLMOD (free) (n5, sizeof (Int), W, cm) ;
 	MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+        PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
 	return (NULL) ;
     }
 
@@ -633,6 +706,7 @@ paraklete_symbolic *paraklete_analyze
 	c = Cmember [Cperm [k]] ;
 	if (c != clast)
 	{
+	    /* if (c != clast+1) { printf ("Error!\n") ; exit (1) ; } */
 	    ASSERT (c == clast + 1) ;
 	    Cstart [c] = k ;
 	}
@@ -646,11 +720,21 @@ paraklete_symbolic *paraklete_analyze
 
     for (c = 0 ; c < ncomponents ; c++)
     {
-	Clnz [c] = 0 ;
+        size_t s = 0 ;
 	for (k = Cstart [c] ; k < Cstart [c+1] ; k++)
 	{
-	    Clnz [c] += ColCount [k] ;
+	    s = CHOLMOD (add_size_t) (s, ColCount [k], &ok) ;
 	}
+        if (!ok)
+        {
+            /* TODO return NULL, and broadcast error to all processes */
+            PARAKLETE_ERROR (PK_TOO_LARGE, "problem too large") ;
+        }
+	/*
+	printf ("Clnz ["ID"] = "ID", cols "ID" to "ID"\n", c, Clnz [c],
+	    Cstart [c], Cstart [c+1]-1) ;
+	*/
+	Clnz [c] = s ;
     }
 
     /* ColCount no longer needed ] */
@@ -668,7 +752,7 @@ paraklete_symbolic *paraklete_analyze
     for (c = 0 ; c < ncomponents ; c++)
     {
 	parent = Cparent [c] ;
-	PR1 ((Common->file, "node %d: parent %d\n", c, parent)) ;
+	PR1 ((Common->file, "node "ID": parent "ID"\n", c, parent)) ;
 	if (parent == EMPTY)
 	{
 	    nroots++ ;
@@ -680,10 +764,17 @@ paraklete_symbolic *paraklete_analyze
 	}
     }
 
+    if (nroots > 1)
+    {
+        /* TODO - this is an assertion */
+        PARAKLETE_ERROR (PK_UNKNOWN, "separator tree cannot be forest") ;
+        abort ( ) ;
+    }
+
 #ifndef NDEBUG
     for (c = 0 ; c < ncomponents ; c++)
     {
-	PR1 ((Common->file, "node %d: %d children\n", c, Cn [c])) ;
+	PR1 ((Common->file, "node "ID": "ID" children\n", c, Cn [c])) ;
     }
 #endif
 
@@ -694,7 +785,7 @@ paraklete_symbolic *paraklete_analyze
 	Childp [c] = k ;
 	k += Cn [c] ;
     }
-    PR1 ((Common->file, "k %d ncomponents %d\n", k, ncomponents)) ;
+    PR1 ((Common->file, "k "ID" ncomponents "ID"\n", k, ncomponents)) ;
     ASSERT (k == ncomponents - nroots) ;
     Childp [ncomponents] = k ;
 
@@ -702,6 +793,10 @@ paraklete_symbolic *paraklete_analyze
     for (c = 0 ; c < ncomponents ; c++)
     {
 	Cn [c] = Childp [c] ;
+    }
+    for (k = 0 ; k < ncomponents ; k++)
+    {
+	Child [k] = -1 ;
     }
     for (c = 0 ; c < ncomponents ; c++)
     {
@@ -715,10 +810,10 @@ paraklete_symbolic *paraklete_analyze
 #ifndef NDEBUG
     for (c = 0 ; c < ncomponents ; c++)
     {
-	PR1 ((Common->file, "Node %d children: ", c)) ;
+	PR1 ((Common->file, "Node "ID" children: ", c)) ;
 	for (cp = Childp [c] ; cp < Childp [c+1] ; cp++)
 	{
-	    PR1 ((Common->file, "%d ", Child [cp])) ;
+	    PR1 ((Common->file, ""ID" ", Child [cp])) ;
 	}
 	PR1 ((Common->file, "\n")) ;
     }
@@ -733,7 +828,7 @@ paraklete_symbolic *paraklete_analyze
 	parent = Cparent [c] ;
 	nparent = (parent == EMPTY) ? 0 : Cn [parent] ;
 	Cn [c] = (Cstart [c+1] - Cstart [c]) + nparent ;
-	PR1 ((Common->file, "node %d Cn: %d\n", c, Cn [c])) ;
+	PR1 ((Common->file, "node "ID" Cn: "ID"\n", c, Cn [c])) ;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -755,57 +850,152 @@ paraklete_symbolic *paraklete_analyze
 	    ci = Cmember [i] ;
 	    c = MIN (ci, cj) ;
 	    Cnz [c]++ ;
+	    PR3 ((Common->file, "A(1+"ID",1+"ID") = %g ; c(1+"ID",1+"ID") = "ID" ;\n",
+		i,j, 
+                A->x ? 0 : (((double *) (A->x)) [p]),
+                i,j, c)) ;
 	}
     }
 
+#ifndef NDEBUG
+    for (c = 0 ; c < ncomponents ; c++)
+    {
+	PR0 ((Common->file, "Cnz ["ID"] = "ID"\n", c, Cnz [c])) ;
+    }
+#endif
+
     /* ---------------------------------------------------------------------- */
-    /* compute Cinv = inverse of Cperm */
+    /* compute RpermInv = inverse of Cperm */
     /* ---------------------------------------------------------------------- */
 
+    Rperm = LUsymbolic->Rperm ;
+    ASSERT (Rperm != NULL) ;
+
+    /* Rperm starts out equal to Cperm */
     for (k = 0 ; k < n ; k++)
     {
-	Cinv [Cperm [k]] = k ;
+	Rperm [k] = Cperm [k] ;
+    }
+    for (k = 0 ; k < n ; k++)
+    {
+	RpermInv [Rperm [k]] = k ;
     }
 
     /* ---------------------------------------------------------------------- */
     /* schedule the processes to the nodes */
     /* ---------------------------------------------------------------------- */
 
-#ifdef HACK
-    for (c = 0 ; c < ncomponents ; c++)
-    {
-	Sched [c] = 0 ;
-    }
-#else
+#ifndef NMPI
+    /* processes Lo_id [c] to Hi_id [c] are assigned to node c or descendants */
+    Lo_id = W ;
+    Hi_id = W + ncomponents ; 
+
     for (c = 0 ; c < ncomponents ; c++)
     {
 	Sched [c] = EMPTY ;
+        Lo_id [c] = -1 ;
+        Hi_id [c] = -1 ;
     }
+
+    Lo_id [ncomponents-1] = 0 ;
+    Hi_id [ncomponents-1] = nproc-1 ;
+
+    for (c = ncomponents - 1 ; c >= 0 ; c--)
+    {
+        Int nchild, child, child_left, child_right, c_nproc ;
+
+        /* first available process does this node */
+        Sched [c] = Lo_id [c] ;
+
+        /* split the processes amongst the children */
+	nchild = Childp [c+1] - Childp [c] ;
+        cp = Childp [c] ;
+
+        if (nchild == 0)
+        {
+            /* nothing else to do */
+        }
+        else if (nchild == 1)
+        {
+            /* all processes go to the one child */
+            child = Child [cp] ;
+            Lo_id [child] = Lo_id [c] ;
+            Hi_id [child] = Hi_id [c] ;
+        }
+        else if (nchild == 2)
+        {
+            /* two children; split the processors between them */
+            child_left  = Child [cp] ;
+            child_right = Child [cp+1] ;
+
+            c_nproc = Hi_id [c] - Lo_id [c] + 1 ;
+            if (c_nproc > 1)
+            {
+                Lo_id [child_left ] = Lo_id [c] ;
+                Hi_id [child_left ] = Lo_id [c] + c_nproc / 2 - 1 ;
+                Lo_id [child_right] = Lo_id [c] + c_nproc / 2 ;
+                Hi_id [child_right] = Hi_id [c] ;
+            }
+            else
+            {
+                Lo_id [child_left ] = Lo_id [c] ;
+                Hi_id [child_left ] = Lo_id [c] ;
+                Lo_id [child_right] = Lo_id [c] ;
+                Hi_id [child_right] = Lo_id [c] ;
+            }
+        }
+        else
+        {
+            /* TODO this is an assertion - it cannot occur */
+            PARAKLETE_ERROR (PK_UNKNOWN, "invalid separator tree") ;
+            abort ( ) ;
+        }
+    }
+
+#if 0
     proc = 0 ;
     for (c = 0 ; c < ncomponents ; c++)
     {
-	nchild = Childp [c+1] - Childp [c] ;
+	Int nchild = Childp [c+1] - Childp [c] ;
 	if (nchild == 0)
 	{
-	    PR1 ((Common->file, "\nSchedule child %d to process %d\n", c, proc));
-	    ASSERT (proc < nproc) ;
+	    PR1 ((Common->file,"\nSchedule child "ID" to process "ID"\n", c, proc));
 	    for (cc = c ; cc != EMPTY && Sched [cc] == EMPTY ; cc = Cparent[cc])
 	    {
-		PR1 ((Common->file, "  node %d to process %d\n", cc, proc)) ;
+		PR1 ((Common->file, "  node "ID" to process "ID"\n", cc, proc)) ;
 		Sched [cc] = proc ;
 	    }
-	    proc++ ;
+            /* advance to the next process */
+	    proc = (proc + 1) % nproc ;
 	}
     }
 #endif
 
-#ifndef NDEBUG
-    PR0 ((Common->file, "\nncomponents:: %d\n", ncomponents)) ;
+#else
+    /* all components are done by process zero */
+    proc = 0 ;
     for (c = 0 ; c < ncomponents ; c++)
     {
-	PR0 ((Common->file, "    node %d Sched %d : Cparent %d proc %d\n",
+	Sched [c] = proc ;
+    }
+#endif
+
+#ifndef NDEBUG
+    PR0 ((Common->file, "\nncomponents:: "ID"\n", ncomponents)) ;
+    for (c = 0 ; c < ncomponents ; c++)
+    {
+	PR0 ((Common->file, "    node "ID" Sched "ID" : Cparent "ID" proc "ID"\n",
 		    c, Sched [c], Cparent [c],
 		    (Cparent [c] == EMPTY) ? EMPTY : Sched [Cparent [c]])) ;
+    }
+#endif
+
+#if 0
+    for (c = 0 ; c < ncomponents ; c++)
+    {
+        printf ("   node "ID" on "ID" : Cparent "ID" on "ID"\n",
+		    c, Sched [c], Cparent [c],
+		    (Cparent [c] == EMPTY) ? EMPTY : Sched [Cparent [c]]) ;
     }
 #endif
 
@@ -813,9 +1003,117 @@ paraklete_symbolic *paraklete_analyze
     /* return the symbolic factorization, and broadcast it to all processes */
     /* ---------------------------------------------------------------------- */
 
-    cholmod_free (5*(n+1), sizeof (int), W, cm) ;
+    CHOLMOD (free) (n5, sizeof (Int), W, cm) ;
     PR1 ((Common->file, "analysis done\n")) ;
     MPI (paraklete_bcast_symbolic (&LUsymbolic, Common)) ;
+    return (LUsymbolic) ;
+}
+
+
+/* ========================================================================== */
+/* === paraklete_alloc_symbolic ============================================= */
+/* ========================================================================== */
+
+/* allocate a symbolic object */
+
+paraklete_symbolic *paraklete_alloc_symbolic
+(
+    Int n,
+    Int ncomponents,
+    Int do_Rperm,
+    paraklete_common *Common
+)
+{
+    paraklete_symbolic *LUsymbolic ;
+    cholmod_common *cm ;
+    size_t n3, nc7 ;
+    int ok = TRUE ;
+
+    cm = &(Common->cm) ;
+
+    /* n3 = 3*n */
+    n3 = CHOLMOD (mult_size_t) (n, 3, &ok) ;
+    if (!ok) PARAKLETE_ERROR (PK_TOO_LARGE, "problem too large") ;
+
+    /* nc7 = 7*ncomponents + 2 */
+    nc7 = CHOLMOD (mult_size_t) (ncomponents, 7, &ok) ;
+    nc7 = CHOLMOD (add_size_t) (nc7, 2, &ok) ;
+    if (!ok) PARAKLETE_ERROR (PK_TOO_LARGE, "problem too large") ;
+
+    LUsymbolic = CHOLMOD (malloc) (1, sizeof (paraklete_symbolic), cm) ;
+
+    if (cm->status != CHOLMOD_OK)
+    {
+        PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
+	return (NULL) ;
+    }
+
+    if (n > 0)
+    {
+	LUsymbolic->Mem_n    = CHOLMOD (malloc) (n3, sizeof (Int), cm) ;
+	LUsymbolic->Cperm    = LUsymbolic->Mem_n ;
+	LUsymbolic->RpermInv = LUsymbolic->Mem_n + n ;
+	LUsymbolic->Cparent  = LUsymbolic->Mem_n + 2*n ;
+
+	if (do_Rperm)
+	{
+	    LUsymbolic->Rperm = CHOLMOD (malloc) (n, sizeof (Int), cm) ;
+	}
+	else
+	{
+	    /* fill-reducing ordering is symmetric, Rperm is implicitly
+	     * equal to Cperm */
+	    LUsymbolic->Rperm = NULL ;
+	}
+    }
+    else
+    {
+	LUsymbolic->Mem_n    = NULL ;
+	LUsymbolic->Cperm    = NULL ;
+	LUsymbolic->RpermInv = NULL ;
+	LUsymbolic->Cparent  = NULL ;
+	LUsymbolic->Rperm    = NULL ;
+    }
+
+    if (ncomponents > 0)
+    {
+
+	LUsymbolic->Mem_c  = CHOLMOD (malloc) (nc7, sizeof(Int), cm) ;
+
+	/* each of size ncomponents: */
+	LUsymbolic->Child  = LUsymbolic->Mem_c ;
+	LUsymbolic->Clnz   = LUsymbolic->Mem_c + ncomponents ;
+	LUsymbolic->Cn     = LUsymbolic->Mem_c + 2*ncomponents ;
+	LUsymbolic->Cnz    = LUsymbolic->Mem_c + 3*ncomponents ;
+	LUsymbolic->Sched  = LUsymbolic->Mem_c + 4*ncomponents ;
+
+	/* each of size ncomponents+1: */
+	LUsymbolic->Cstart = LUsymbolic->Mem_c + 5*ncomponents ;
+	LUsymbolic->Childp = LUsymbolic->Mem_c + 6*ncomponents + 1 ;
+
+    }
+    else
+    {
+	LUsymbolic->Mem_c  = NULL ;
+	LUsymbolic->Child  = NULL ;
+	LUsymbolic->Clnz   = NULL ;
+	LUsymbolic->Cn     = NULL ;
+	LUsymbolic->Cnz    = NULL ;
+	LUsymbolic->Sched  = NULL ;
+	LUsymbolic->Cstart = NULL ;
+	LUsymbolic->Childp = NULL ;
+    }
+
+    LUsymbolic->n = n ;
+    LUsymbolic->ncomponents = ncomponents ;
+
+    if (cm->status != CHOLMOD_OK)
+    {
+        /* out of memory */
+        PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
+	paraklete_free_symbolic (&LUsymbolic, Common) ;
+    }
+
     return (LUsymbolic) ;
 }
 
@@ -824,7 +1122,7 @@ paraklete_symbolic *paraklete_analyze
 /* === paraklete_free_symbolic ============================================== */
 /* ========================================================================== */
 
-/* Free the symbolic object.  All processes own a copy after it's broadcast. */
+/* Free the symbolic object.  All processes own a copy after it is broadcast. */
 
 void paraklete_free_symbolic
 (
@@ -834,7 +1132,7 @@ void paraklete_free_symbolic
 {
     paraklete_symbolic *LUsymbolic ;
     cholmod_common *cm ;
-    int n, ncomponents ;
+    Int n, ncomponents ;
 
     if (LUsymbolicHandle == NULL)
     {
@@ -852,12 +1150,20 @@ void paraklete_free_symbolic
     ncomponents = LUsymbolic->ncomponents ;
     n = LUsymbolic->n ;
 
-    cholmod_free (3*n, sizeof (int), LUsymbolic->Mem_n, cm) ;
+    /* size-3n space, in Mem_n */
+    CHOLMOD (free) (3*n, sizeof (Int), LUsymbolic->Mem_n, cm) ;
     LUsymbolic->Cperm = NULL ; 
-    LUsymbolic->Cinv = NULL ; 
+    LUsymbolic->RpermInv = NULL ; 
     LUsymbolic->Cparent = NULL ; 
 
-    cholmod_free (7*ncomponents + 2, sizeof (int), LUsymbolic->Mem_c, cm) ;
+    /* size-n space, only used for reanalyze/refactorize, or if the fill-
+     * reducing ordering is unsymmetric.  Otherwise, Rperm is implicitly
+     * equal to Cperm. */
+    CHOLMOD (free) (n, sizeof (Int), LUsymbolic->Rperm, cm) ;
+    LUsymbolic->Rperm = NULL ; 
+
+    /* size-(7*components+2) space, in Mem_c */
+    CHOLMOD (free) (7*ncomponents + 2, sizeof (Int), LUsymbolic->Mem_c, cm) ;
     LUsymbolic->Cstart = NULL ;
     LUsymbolic->Child = NULL ;
     LUsymbolic->Childp = NULL ;
@@ -866,6 +1172,6 @@ void paraklete_free_symbolic
     LUsymbolic->Cnz = NULL ;
     LUsymbolic->Sched = NULL ;
 
-    *LUsymbolicHandle = cholmod_free (
+    *LUsymbolicHandle = CHOLMOD (free) (
 	    1, sizeof (paraklete_symbolic), (*LUsymbolicHandle), cm) ;
 }

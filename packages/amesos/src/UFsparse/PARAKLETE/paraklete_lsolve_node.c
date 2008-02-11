@@ -6,15 +6,15 @@
 
 /* Solve Lx=b with node c of the separator tree.
  *
- * PARAKLETE version 0.1: parallel sparse LU factorization.  May 13, 2005
- * Copyright (C) 2005, Univ. of Florida.  Author: Timothy A. Davis
+ * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
+ * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
  * See License.txt for the Version 2.1 of the GNU Lesser General Public License
  * http://www.cise.ufl.edu/research/sparse
  */
 
-int paraklete_lsolve_node
+Int paraklete_lsolve_node
 (
-    int c,
+    Int c,
     paraklete_numeric *LU,
     paraklete_symbolic *LUsymbolic,
     paraklete_common *Common
@@ -25,9 +25,9 @@ int paraklete_lsolve_node
     paraklete_node *LUnode ;
     cholmod_common *cm ;
     double *X, *B, *LUix, *Xchild, *Lx ;
-    int *Child, *Childp, *Lost, *Lostp, *Cstart, *Lip, *Llen,
+    Int *Child, *Childp, *Lost, *Lostp, *Cstart, *Lip, *Llen,
 	*Cn, *Pinv, *Li, *Cparent, *Sched ;
-    int cp, nchild, child, cn, k, j, p, i, nfound, k1, k2, llen,
+    Int cp, nchild, child, cn, k, j, p, i, nfound, k1, k2, llen,
 	ci, nlost_in, cn_child, cn_nfound, parent, myid, pass ;
     MPI (MPI_Status ms) ;
     MPI (MPI_Request req) ;
@@ -37,7 +37,7 @@ int paraklete_lsolve_node
     /* ---------------------------------------------------------------------- */
 
     cm = &(Common->cm) ;
-    PR0 ((Common->file, "\n\n########################## Lsolve NODE %d\n", c)) ;
+    PR0 ((Common->file, "\n\n########################## Lsolve NODE "ID"\n", c)) ;
 
     /* ---------------------------------------------------------------------- */
     /* get the symbolic analysis of this node */
@@ -77,8 +77,8 @@ int paraklete_lsolve_node
 
 #ifndef NDEBUG
     {
-	int npiv = LUnode->PK_NPIV ;
-	int *Plocal = LUnode->Plocal ;
+	Int npiv = LUnode->PK_NPIV ;
+	Int *Plocal = LUnode->Plocal ;
 	ASSERT (cn == LUnode->PK_NN) ;
 	ASSERT (npiv == nlost_in + (k2 - k1)) ;
 	for (k = 0 ; k < npiv ; k++)
@@ -87,8 +87,8 @@ int paraklete_lsolve_node
 	    ASSERT (i >= 0 && i < npiv) ;
 	    ASSERT (Pinv [i] == k) ;
 	}
-	DEBUG (cholmod_print_perm (Plocal, npiv, npiv, "Plocal at node c", cm));
-	DEBUG (cholmod_print_perm (Pinv,   npiv, npiv, "Pinv at node c", cm)) ;
+	DEBUG (CHOLMOD (print_perm) (Plocal, npiv, npiv, "Plocal at node c", cm));
+	DEBUG (CHOLMOD (print_perm) (Pinv,   npiv, npiv, "Pinv at node c", cm)) ;
     }
 #endif
 
@@ -97,7 +97,7 @@ int paraklete_lsolve_node
     /* ---------------------------------------------------------------------- */
 
     X = LU->LUnode [c]->X ;
-    PR1 ((Common->file, "Lsolve at Node %d, cn %d\n", c, cn)) ;
+    PR1 ((Common->file, "Lsolve at Node "ID", cn "ID"\n", c, cn)) ;
     for (i = 0 ; i < cn ; i++)
     {
 	X [i] = 0 ;
@@ -116,7 +116,7 @@ int paraklete_lsolve_node
     {
 	ci = i + nlost_in ;
 	k = Pinv [ci] ;
-	PR2 ((Common->file, "orig B [%d] = %g goes to X [%d]\n", i, B [i], k)) ;
+	PR2 ((Common->file, "orig B ["ID"] = %g goes to X ["ID"]\n", i, B [i], k)) ;
 	ASSERT (k >= 0 && k < cn) ;
 	X [k] = B [i] ;
     }
@@ -143,7 +143,7 @@ int paraklete_lsolve_node
 	    cn_nfound = LU->LUnode [child]->PK_NFOUND ;
 	    Xchild = LU->LUnode [child]->X + cn_nfound ;
 
-	    PR1 ((Common->file, "child %d cn %d nfound %d\n",
+	    PR1 ((Common->file, "child "ID" cn "ID" nfound "ID"\n",
 		    child, cn_child, cn_nfound)) ;
 
 	    /* get the contributions of child to its lost pivot rows */
@@ -151,7 +151,7 @@ int paraklete_lsolve_node
 	    {
 		ci = i + Lostp [cp] ;	/* ci is now "original" local index */
 		k = Pinv [ci] ;		/* kth local pivot row */
-		PR2 ((Common->file, "Xchild [%d] = %g goes to X [%d] (lost)\n",
+		PR2 ((Common->file, "Xchild ["ID"] = %g goes to X ["ID"] (lost)\n",
 			i, Xchild [i], k)) ;
 		ASSERT (k >= 0 && k < cn) ;
 		X [k] += Xchild [i] ;
@@ -162,7 +162,7 @@ int paraklete_lsolve_node
 	    {
 		ci = i + (nlost_in - Lost [cp]) ;
 		k = Pinv [ci] ;		/* kth local pivot row */
-		PR2 ((Common->file, "Xchild [%d] = %g goes to X [%d] (cand)\n",
+		PR2 ((Common->file, "Xchild ["ID"] = %g goes to X ["ID"] (cand)\n",
 			i, Xchild [i], k)) ;
 		ASSERT (k >= 0 && k < cn) ;
 		X [k] += Xchild [i] ;
@@ -172,7 +172,7 @@ int paraklete_lsolve_node
 	    for ( ; i < cn_child - cn_nfound ; i++)
 	    {
 		k = i + (nlost_in - Lost [cp]) ;
-		PR2 ((Common->file, "Xchild [%d] = %g goes to X [%d] (anc)\n",
+		PR2 ((Common->file, "Xchild ["ID"] = %g goes to X ["ID"] (anc)\n",
 			i, Xchild [i], k)) ;
 		ASSERT (k >= 0 && k < cn) ;
 		X [k] += Xchild [i] ;
@@ -204,11 +204,13 @@ int paraklete_lsolve_node
     parent = Cparent [c] ;
     if (parent != EMPTY && Sched [parent] != myid)
     {
-	MPI (MPI_Isend (X, cn, MPI_DOUBLE, Sched [parent], TAG0, Common->mpicomm,
+	MPI (MPI_Isend (X, cn, MPI_DOUBLE, Sched [parent], TAG0, MPI_COMM_WORLD,
 	    &req)) ;
-        MPI (MPI_Request_free (&req)) ;
-    }
 
+	/* this request can be freed, because this process is now done, and 
+	   paraklete_lsolve_node is followed by a barrier */
+	MPI (MPI_Request_free (&req)) ;
+    }
 
     return (TRUE) ;
 }

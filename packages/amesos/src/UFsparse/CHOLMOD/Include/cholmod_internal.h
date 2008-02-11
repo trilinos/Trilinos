@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Include/cholmod_internal.h.  Version 1.1.
+ * CHOLMOD/Include/cholmod_internal.h.
  * Copyright (C) 2005-2006, Univ. of Florida.  Author: Timothy A. Davis
  * CHOLMOD/Include/cholmod_internal.h is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
@@ -33,6 +33,21 @@
 #ifndef CHOLMOD_INTERNAL_H
 #define CHOLMOD_INTERNAL_H
 
+/* ========================================================================== */
+/* === large file I/O ======================================================= */
+/* ========================================================================== */
+
+/* Definitions for large file I/O must come before any other #includes.  If
+ * this causes problems (may not be portable to all platforms), then compile
+ * CHOLMOD with -DNLARGEFILE.  You must do this for MATLAB 6.5 and earlier,
+ * for example. */
+
+#include "cholmod_io64.h"
+
+/* ========================================================================== */
+/* === debugging and basic includes ========================================= */
+/* ========================================================================== */
+
 /* turn off debugging */
 #ifndef NDEBUG
 #define NDEBUG
@@ -41,6 +56,10 @@
 /* Uncomment this line to enable debugging.  CHOLMOD will be very slow.
 #undef NDEBUG
  */
+
+#ifdef MATLAB_MEX_FILE
+#include "mex.h"
+#endif
 
 #if !defined(NPRINT) || !defined(NDEBUG)
 #include <stdio.h>
@@ -128,6 +147,13 @@
 #define IS_GT_ZERO(x)	CHOLMOD_IS_GT_ZERO(x)
 #define IS_LE_ZERO(x)	CHOLMOD_IS_LE_ZERO(x)
 
+/* 1e308 is a huge number that doesn't take many characters to print in a
+ * file, in CHOLMOD/Check/cholmod_read and _write.  Numbers larger than this
+ * are interpretted as Inf, since sscanf doesn't read in Inf's properly.
+ * This assumes IEEE double precision arithmetic.  DBL_MAX would be a little
+ * better, except that it takes too many digits to print in a file. */
+#define HUGE_DOUBLE 1e308
+
 /* ========================================================================== */
 /* === int/UF_long and double/float definitions ============================= */
 /* ========================================================================== */
@@ -190,7 +216,7 @@ size_t cholmod_l_add_size_t (size_t a, size_t b, int *ok) ;
 size_t cholmod_l_mult_size_t (size_t a, size_t k, int *ok) ;
 
 /* -------------------------------------------------------------------------- */
-/* double, UF_long */
+/* double (also complex double), UF_long */
 /* -------------------------------------------------------------------------- */
 
 #ifdef DLONG
@@ -233,7 +259,7 @@ size_t cholmod_l_mult_size_t (size_t a, size_t k, int *ok) ;
 #error "single-precision not yet supported"
 
 /* -------------------------------------------------------------------------- */
-/* double, int: this is the default */
+/* double (also complex double), int: this is the default */
 /* -------------------------------------------------------------------------- */
 
 #else
@@ -327,7 +353,7 @@ int  cholmod_l_dump_partition (UF_long, UF_long *, UF_long *, UF_long *,
 	UF_long *, UF_long, cholmod_common *) ;
 int  cholmod_l_dump_work(int, int, UF_long, cholmod_common *) ;
 
-#define DEBUG_INIT(s)  { CHOLMOD(dump_init)(s, Common) ; }
+#define DEBUG_INIT(s,Common)  { CHOLMOD(dump_init)(s, Common) ; }
 #define ASSERT(expression) (assert (expression))
 
 #define PRK(k,params) \
@@ -342,7 +368,14 @@ int  cholmod_l_dump_work(int, int, UF_long, cholmod_common *) ;
 #define PRINT1(params) PRK (1, params)
 #define PRINT2(params) PRK (2, params)
 #define PRINT3(params) PRK (3, params)
-#define PRINTM(params) PRK (CHOLMOD(dump_malloc), params)
+
+#define PRINTM(params) \
+{ \
+    if (CHOLMOD(dump_malloc) > 0) \
+    { \
+	printf params ; \
+    } \
+}
 
 #define DEBUG(statement) statement
 
@@ -350,7 +383,7 @@ int  cholmod_l_dump_work(int, int, UF_long, cholmod_common *) ;
 
 /* Debugging disabled (the normal case) */
 #define PRK(k,params)
-#define DEBUG_INIT(s)
+#define DEBUG_INIT(s,Common)
 #define PRINT0(params)
 #define PRINT1(params)
 #define PRINT2(params)

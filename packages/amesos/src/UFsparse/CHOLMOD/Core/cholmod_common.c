@@ -3,8 +3,8 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Core Module.  Version 1.1.  Copyright (C) 2005-2006, Univ. of Florida.
- * Author: Timothy A. Davis
+ * CHOLMOD/Core Module.  Copyright (C) 2005-2006,
+ * Univ. of Florida.  Author: Timothy A. Davis
  * The CHOLMOD/Core Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -164,7 +164,10 @@ int CHOLMOD(start)
     Common->rowfacfl = 0 ;
     Common->aatfl = EMPTY ;
 
-    DEBUG_INIT ("cholmod start") ;
+    /* Common->called_nd is TRUE if cholmod_analyze called or NESDIS */
+    Common->called_nd = FALSE ;
+
+    DEBUG_INIT ("cholmod start", Common) ;
     return (TRUE) ;
 }
 
@@ -217,6 +220,7 @@ int CHOLMOD(defaults)
 
     Common->prefer_zomplex = FALSE ;
     Common->prefer_upper = TRUE ;
+    Common->prefer_binary = FALSE ;
     Common->quick_return_if_not_posdef = FALSE ;
 
     /* METIS workarounds */
@@ -240,8 +244,13 @@ int CHOLMOD(defaults)
 #error "CHOLMOD_MAXMETHODS must be 9 or more (defined in cholmod_core.h)."
 #endif
 
-    Common->nmethods = 0 ;	/* try methods 0, 1, and 2 and pick the best */
-    Common->current = 0 ;
+    /* default strategy: try given, AMD, and then METIS if AMD reports high
+     * fill-in.  NESDIS can be used instead, if Common->default_nesdis is TRUE.
+     */
+    Common->nmethods = 0 ;		/* use default strategy */
+    Common->default_nesdis = FALSE ;	/* use METIS in default strategy */
+
+    Common->current = 0 ;	/* current method being tried */
     Common->selected = 0 ;	/* the best method selected */
 
     /* first, fill each method with default parameters */
@@ -253,7 +262,7 @@ int CHOLMOD(defaults)
 	/* CHOLMOD nested dissection and minimum degree parameter */
 	Common->method [i].prune_dense = 10.0 ;	/* dense row/col control */
 
-	/* min degree parameters (AMD, COLAMD, SYMAMD, CAMD, CCOLAMD, CSYMAMD) */
+	/* min degree parameters (AMD, COLAMD, SYMAMD, CAMD, CCOLAMD, CSYMAMD)*/
 	Common->method [i].prune_dense2 = -1 ;	/* COLAMD dense row control */
 	Common->method [i].aggressive = TRUE ;	/* aggressive absorption */
 	Common->method [i].order_for_lu = FALSE ;/* order for Cholesky not LU */

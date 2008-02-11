@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Partition Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Partition Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Partition Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -35,8 +34,8 @@
 
 #ifndef NPARTITION
 
-#include "camd.h"
 #include "cholmod_internal.h"
+#include "camd.h"
 #include "cholmod_partition.h"
 
 #if (CAMD_VERSION < CAMD_VERSION_CODE (2,0))
@@ -44,7 +43,7 @@
 #endif
 
 /* ========================================================================== */
-/* === cholmod_amd ========================================================== */
+/* === cholmod_camd ========================================================= */
 /* ========================================================================== */
 
 int CHOLMOD(camd)
@@ -53,8 +52,8 @@ int CHOLMOD(camd)
     cholmod_sparse *A,	/* matrix to order */
     Int *fset,		/* subset of 0:(A->ncol)-1 */
     size_t fsize,	/* size of fset */
-    /* ---- output --- */
-    Int *Cmember,	/* size nrow.  see cholmod_ccolamd.c for description */
+    Int *Cmember,	/* size nrow.  see cholmod_ccolamd.c for description.*/
+    /* ---- output ---- */
     Int *Perm,		/* size A->nrow, output permutation */
     /* --------------- */
     cholmod_common *Common
@@ -193,11 +192,11 @@ int CHOLMOD(camd)
     camd_printf = Common->print_function ;
 
 #ifdef LONG
-    /* camd_l_debug_init ("cholmod_l_camd") ; */
+    /* DEBUG (camd_l_debug_init ("cholmod_l_camd")) ; */
     camd_l2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
 	    Degree, Wi, Control, Info, Cmember, BucketSet) ;
 #else
-    /* camd_debug_init ("cholmod_camd") ; */
+    /* DEBUG (camd_debug_init ("cholmod_camd")) ; */
     camd_2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
 	    Degree, Wi, Control, Info, Cmember, BucketSet) ;
 #endif

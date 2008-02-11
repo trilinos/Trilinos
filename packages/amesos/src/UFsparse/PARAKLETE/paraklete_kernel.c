@@ -8,15 +8,15 @@
  * Gilbert & Peierl's method, with a non-recursive DFS and with Eisenstat &
  * Liu's symmetric pruning.  No user-callable routines are in this file.
  *
- * PARAKLETE version 0.1: parallel sparse LU factorization.  May 13, 2005
- * Copyright (C) 2005, Univ. of Florida.  Author: Timothy A. Davis
+ * PARAKLETE version 0.3: parallel sparse LU factorization.  Nov 13, 2007
+ * Copyright (C) 2007, Univ. of Florida.  Author: Timothy A. Davis
  * See License.txt for the Version 2.1 of the GNU Lesser General Public License
  * http://www.cise.ufl.edu/research/sparse
  */
 
 #ifndef NDEBUG
 /* global variables for debugging only */
-static int debug_k, debug_nfound, debug_n, debug_npiv ;
+static Int debug_k, debug_nfound, debug_n, debug_npiv ;
 #endif
 
 /* ========================================================================== */
@@ -25,36 +25,36 @@ static int debug_k, debug_nfound, debug_n, debug_npiv ;
 
 /* Does a depth-first-search, starting at node j. */
 
-static int dfs		/* returns new top of output stack */
+static Int dfs		/* returns new top of output stack */
 (
     /* input, not modified on output: */
-    int npiv,
-    int j,		/* node at which to start the DFS */
-    int mark,		/* mark value for Flag */
-    int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or EMPTY if
+    Int npiv,
+    Int j,		/* node at which to start the DFS */
+    Int mark,		/* mark value for Flag */
+    Int Pinv [ ],	/* Pinv [i] = k if row i is kth pivot row, or EMPTY if
 			 * row i is not yet pivotal.  Only used in phase 1. */
-    int Llen [ ],
-    int Lip [ ],
+    Int Llen [ ],
+    Int Lip [ ],
 
-    int phase1,		/* TRUE if in phase 1, FALSE if in phase 2 */
+    Int phase1,		/* TRUE if in phase 1, FALSE if in phase 2 */
 
     /* workspace, not defined on input or output */
-    int Stack [ ],	/* size n */
+    Int Stack [ ],	/* size n */
 
     /* input/output: */
-    int Flag [ ],	/* Flag [i] >= mark means i is marked */
-    int Lprune [ ],	/* for symmetric pruning */
-    int top,		/* top of stack on input */
+    Int Flag [ ],	/* Flag [i] >= mark means i is marked */
+    Int Lprune [ ],	/* for symmetric pruning */
+    Int top,		/* top of stack on input */
     double LU [ ],
-    int Li [ ],		/* resulting column of L */
-    int *plength,
+    Int Li [ ],		/* resulting column of L */
+    Int *plength,
 
     /* other, not defined on input or output */
-    int Pstack [ ]	/* keeps track of position in adj list during DFS */
+    Int Pstack [ ]	/* keeps track of position in adj list during DFS */
 )
 {
-    int i, pos, jnew, head, llen ;
-    int *Lj ;
+    Int i, pos, jnew, head, llen ;
+    Int *Lj ;
 
     llen = *plength ;
     head = 0 ;
@@ -83,7 +83,7 @@ static int dfs		/* returns new top of output stack */
 
 	/* add the adjacent nodes to the recursive stack by iterating through
 	 * until finding another non-visited pivotal node */
-	Lj = (int *) (LU + Lip [jnew]) ;
+	Lj = (Int *) (LU + Lip [jnew]) ;
 	for (pos = --Pstack [head] ; pos > 0 ; --pos)
 	{
 	    /* In phase 1, i is in the original row index space of A.  In
@@ -144,45 +144,45 @@ static int dfs		/* returns new top of output stack */
 static void lsolve_symbolic
 (
     /* input, not modified on output: */
-    int n,              /* L is n-by-n, where n >= 0 */
-    int k,		/* kth step of factorization */
-    int mark,		/* mark for Flag */
-    int kcol,		/* b = A (:,kcol) */
-    int Ap [ ],
-    int Ai [ ],
-    int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
+    Int n,              /* L is n-by-n, where n >= 0 */
+    Int k,		/* kth step of factorization */
+    Int mark,		/* mark for Flag */
+    Int kcol,		/* b = A (:,kcol) */
+    Int Ap [ ],
+    Int Ai [ ],
+    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
 			 * is not yet pivotal.  In phase 2, all rows are in
 			 * their final order, and Pinv is a complete inverse
 			 * permutation. */
 
-    int phase1,		/* TRUE if in phase 1, FALSE if in phase 2 */
-    int nfound,		/* used in phase 2 only */
-    int npiv,
+    Int phase1,		/* TRUE if in phase 1, FALSE if in phase 2 */
+    Int nfound,		/* used in phase 2 only */
+    Int npiv,
 
     /* workspace, not defined on input or output */
-    int Stack [ ],	/* size n */
+    Int Stack [ ],	/* size n */
 
     /* workspace, defined on input and output */
-    int Flag [ ],	/* size n.  Initially, all of Flag [0..n-1] < mark.
+    Int Flag [ ],	/* size n.  Initially, all of Flag [0..n-1] < mark.
 			 * After lsolve_symbolic is done, Flag [i] == mark if i
 			 * is in the pattern of the output, and
 			 * Flag [0..n-1] <= mark. */
 
     /* other */
-    int Lprune [ ],	/* for symmetric pruning */
-    int Pstack [ ],	/* workspace used in dfs */
+    Int Lprune [ ],	/* for symmetric pruning */
+    Int Pstack [ ],	/* workspace used in dfs */
 
     /* TODO: comment this */
     double LU [ ],
-    int *plu,
-    int Llen [ ],
-    int Ulen [ ],
-    int Lip [ ],
-    int Uip [ ]
+    Int *plu,
+    Int Llen [ ],
+    Int Ulen [ ],
+    Int Lip [ ],
+    Int Uip [ ]
 )
 {
-    int i, p, p2, pend, top, llen, ulen, lup ;
-    int *Li, *Ui ;
+    Int i, p, p2, pend, top, llen, ulen, lup ;
+    Int *Li, *Ui ;
 
     top = n ;
     llen = 0 ;
@@ -192,7 +192,7 @@ static void lsolve_symbolic
     {
 	Lip [k] = lup ;
     }
-    Li = (int *) (LU + lup) ;
+    Li = (Int *) (LU + lup) ;
     pend = Ap [kcol+1] ;
 
     for (p = Ap [kcol] ; p < pend ; p++)
@@ -247,7 +247,7 @@ static void lsolve_symbolic
 	ulen++ ;
     }
     Ulen [k] = ulen ;
-    Ui = (int *) (LU + lup) ;
+    Ui = (Int *) (LU + lup) ;
     Uip [k] = lup ;
 
     /* advance LU pointer past the pattern and values of the new column of U */ 
@@ -274,20 +274,20 @@ static void lsolve_symbolic
 static void construct_column
 (
     /* inputs, not modified on output */
-    int kcol,	    /* the column of A to construct */
-    int Ap [ ],
-    int Ai [ ],
+    Int kcol,	    /* the column of A to construct */
+    Int Ap [ ],
+    Int Ai [ ],
     double Ax [ ],
-    int phase1,	    /* phase 1: computing L1, L2 and U1.  phase 2: just U2 */
-    int nfound,	    /* only used in phase 2 */
-    int npiv,
-    int Pinv [ ],   /* only used in phase 2 */
+    Int phase1,	    /* phase 1: computing L1, L2 and U1.  phase 2: just U2 */
+    Int nfound,	    /* only used in phase 2 */
+    Int npiv,
+    Int Pinv [ ],   /* only used in phase 2 */
 
     /* zero on input, modified on output */
     double X [ ]
 )
 {
-    int p, pend, i ;
+    Int p, pend, i ;
 
     pend = Ap [kcol+1] ;
     if (phase1)
@@ -327,20 +327,20 @@ static void construct_column
 static void lsolve_numeric
 (
     /* input, not modified on output: */
-    int npiv,
-    int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
+    Int npiv,
+    Int Pinv [ ],	/* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
 			 * is not yet pivotal.  */
 
     /* TODO comment this */
     double *LU,
-    int Uip [ ],
-    int Lip [ ],
-    int Ulen [ ],
-    int Llen [ ],
-    int k,
+    Int Uip [ ],
+    Int Lip [ ],
+    Int Ulen [ ],
+    Int Llen [ ],
+    Int k,
 
-    int phase1,
-    int Lphase_len [ ],	/* phase 1: Llen, phase 2: L1_len */
+    Int phase1,
+    Int Lphase_len [ ],	/* phase 1: Llen, phase 2: L1_len */
 
     /* output, must be zero on input: */
     double X [ ]	/* size n, initially zero.  On output,
@@ -350,10 +350,10 @@ static void lsolve_numeric
 {
     double xj ;
     double *Lx ;
-    int p, s, j, jnew, llen, ulen ;
-    int *Ui, *Li ;  
+    Int p, s, j, jnew, llen, ulen ;
+    Int *Ui, *Li ;  
 
-    Ui = (int *) (LU + Uip [k]) ;
+    Ui = (Int *) (LU + Uip [k]) ;
     ulen = Ulen [k] ;
 
     if (phase1) ulen-- ;    /* skip the diagonal */
@@ -396,37 +396,37 @@ static void lsolve_numeric
 
 static void lsolve
 (
-   int phase1,
-   int nfound,
-   int npiv,
-   int n,
-   int k,
-   int kcol,
-   int Ap [ ],
-   int Ai [ ],
+   Int phase1,
+   Int nfound,
+   Int npiv,
+   Int n,
+   Int k,
+   Int kcol,
+   Int Ap [ ],
+   Int Ai [ ],
    double Ax [ ],
 
    double *LU,
-   int *lup,
-   int Lip [ ],
-   int Uip [ ],
-   int Llen [ ],
-   int Ulen [ ],
+   Int *lup,
+   Int Lip [ ],
+   Int Uip [ ],
+   Int Llen [ ],
+   Int Ulen [ ],
 
-   int Lphase_len [ ],
+   Int Lphase_len [ ],
 
-   int Pinv [ ],
-   int Stack [ ],
-   int Lprune [ ],
-   int Pstack [ ],
-   int Flag [ ],
-   int mark,
+   Int Pinv [ ],
+   Int Stack [ ],
+   Int Lprune [ ],
+   Int Pstack [ ],
+   Int Flag [ ],
+   Int mark,
    double X [ ]
 )
 {
     double *Ux ;
-    int i, p, ulen ;
-    int *Ui ;
+    Int i, p, ulen ;
+    Int *Ui ;
 
     /* ---------------------------------------------------------------------- */
     /* compute the nonzero pattern of the kth column of L and U */
@@ -490,26 +490,26 @@ static void lsolve
  * This routine is active during phase 1 only.  Returns TRUE if pivot found,
  * FALSE otherwise. */
 
-static int lpivot
+static Int lpivot
 (
-    int diagrow,
-    int *p_pivrow,
+    Int diagrow,
+    Int *p_pivrow,
     double *p_pivot,
     double *p_abs_pivot,
     double tol_diag,
     double tol_offdiag,
     double X [ ],
     double *LU,
-    int Lip [ ],
-    int Llen [ ],
-    int k,
-    int npiv
+    Int Lip [ ],
+    Int Llen [ ],
+    Int k,
+    Int npiv
 )
 {
     double x, pivot, abs_pivot, max_entry ;
     double *Lx ;
-    int p, i, ppivrow, pdiag, pivrow, pivot_found, llen ;
-    int *Li ;
+    Int p, i, ppivrow, pdiag, pivrow, pivot_found, llen ;
+    Int *Li ;
 
     /* ---------------------------------------------------------------------- */
     /* look in Li [0 ... Llen [k] - 1 ] for a pivot row */
@@ -617,22 +617,22 @@ static int lpivot
 static void prune
 (
     /* TODO comment this */
-    int npiv,
-    int Lprune [ ],
-    int Pinv [ ],
-    int k,
-    int pivrow,
+    Int npiv,
+    Int Lprune [ ],
+    Int Pinv [ ],
+    Int k,
+    Int pivrow,
     double *LU,
-    int Uip [ ],
-    int Lip [ ],
-    int Ulen [ ],
-    int Llen [ ]
+    Int Uip [ ],
+    Int Lip [ ],
+    Int Ulen [ ],
+    Int Llen [ ]
 )
 {
     double x ;
     double *Lx, *Ux ;
-    int p, i, j, p2, phead, ptail, ulen, llen ;
-    int *Li, *Ui ;
+    Int p, i, j, p2, phead, ptail, ulen, llen ;
+    Int *Li, *Ui ;
 
     /* ---------------------------------------------------------------------- */
     /* check to see if any column of L can be pruned */
@@ -703,7 +703,7 @@ static void prune
  * freed; that is done by the caller.   If the matrix is singular, the
  * Schur complement (S) has a larger dimension than expected. */
 
-int paraklete_kernel
+Int paraklete_kernel
 (
     cholmod_sparse *A,
     paraklete_node *LUnode,
@@ -713,10 +713,10 @@ int paraklete_kernel
     cholmod_common *cm ;
     double pivot, abs_pivot, umin, umax, ujk, x, tol_diag, tol_offdiag, growth ;
     double *Lx, *Ux, *LU, *S, *Sx, *Ax, *X ;
-    int *Li, *Ui, *Si, *Qinv, *L1_len, *Ap, *Ai, *Llen, *Ulen, *Lip, *Uip, *P,
+    Int *Li, *Ui, *Si, *Qinv, *L1_len, *Ap, *Ai, *Llen, *Ulen, *Lip, *Uip, *P,
 	*Q, *Pinv, *Sip, *Slen, *Flag, *Queue, *Iwork, *Stack, *Pstack,
 	*Lprune ;
-    int k, p, i, j, pivrow, kbar, diagrow, noffdiag, lup, mark, unpruned,
+    Int k, p, i, j, pivrow, kbar, diagrow, noffdiag, lup, mark, unpruned,
 	phead, ptail, sp, slen, llen, ulen, p2, pend, ngrow, qhead, qtail, sn,
 	found, kcol, second_try, nfound, n, npiv, lnz, unz, snz, lup_orig ;
     size_t lusize, ssize ;
@@ -757,7 +757,7 @@ int paraklete_kernel
     /* get workspace */
     /* ---------------------------------------------------------------------- */
 
-    cholmod_allocate_work (n, 3*n, n, cm) ;
+    CHOLMOD (allocate_work) (n, 3*n, n, cm) ;
     if (cm->status != CHOLMOD_OK)
     {
 	/* out of memory */
@@ -809,7 +809,7 @@ int paraklete_kernel
     ngrow = 
 	(n+1)		/* reals, in L and U (both diag L and U are stored) */
 	+ (n+1)/2	/* ints */
-	+ 2 ;		/* int to real may be rounded up */
+	+ 2 ;		/* Int to real may be rounded up */
 
 	/*
 	(3*n/2) + 2 ;
@@ -849,7 +849,7 @@ int paraklete_kernel
     for (k = 0 ; k < npiv ; k++)
     {
 
-	PR1 ((Common->file, "\n\n==========================L,U1:  k: %d\n", k)) ;
+	PR1 ((Common->file, "\n\n==========================L,U1:  k: "ID"\n", k));
 	DEBUG (debug_k = k) ;
 
 	/* ------------------------------------------------------------------ */
@@ -857,16 +857,17 @@ int paraklete_kernel
 	/* ------------------------------------------------------------------ */
 
         /* LU can grow by at most 3n/2 + 2 entries if the column is dense */
-	if (lup + ngrow > (int) lusize)
+	if (lup + ngrow > (Int) lusize)
 	{
 	    size_t new = (growth * lusize + ngrow + 2) ;
-	    PR1 ((Common->file, "growing LU from %d to %d\n", lusize, new)) ;
-	    LU = cholmod_realloc (new, sizeof (double), LU, &lusize, cm) ;
+	    PR1 ((Common->file, "growing LU from "ID" to "ID"\n", lusize, new)) ;
+	    LU = CHOLMOD (realloc) (new, sizeof (double), LU, &lusize, cm) ;
 	    LUnode->ix = LU ;
 	    LUnode->lusize = lusize ;
 	    if (cm->status != CHOLMOD_OK)
 	    {
-		/* out of memory */
+                /* TODO return FALSE, and broadcast error to all processes */
+                PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
 		return (FALSE) ;
 	    }
 	}
@@ -905,7 +906,7 @@ int paraklete_kernel
 
 	    /* determine what the "diagonal" is */
 	    diagrow = P [k] ;   /* might already be pivotal */
-	    PR1 ((Common->file, "k %d, diagrow = %d, UNFLIP(diagrow) = %d\n",
+	    PR1 ((Common->file, "k "ID", diagrow = "ID", UNFLIP(diagrow) = "ID"\n",
 		k, diagrow, UNFLIP (diagrow))) ;
 
 	    /* find a pivot and scale the pivot column */
@@ -920,22 +921,22 @@ int paraklete_kernel
 		 * computed by lsolve, above, is discarded. */
 		if (!second_try)
 		{
-		    PR1 ((Common->file, "requeue kcol %d for 2nd try\n", kcol)) ;
+		    PR1 ((Common->file, "requeue kcol "ID" for 2nd try\n", kcol));
 		    Queue [qtail] = FLIP (kcol) ;
 		    qtail = (qtail + 1) % (npiv + 1) ;
 		}
 		else
 		{
-		    PR1 ((Common->file, "discarding kcol %d\n", kcol)) ;
+		    PR1 ((Common->file, "discarding kcol "ID"\n", kcol)) ;
 		}
-		PR1 ((Common->file, "restore lup, %d to %d\n", lup_orig, lup)) ;
+		PR1 ((Common->file, "restore lup, "ID" to "ID"\n", lup_orig, lup)) ;
 		lup = lup_orig ;
 	    }
 	    else
 	    {
 		/* we found a pivot column */
 		Q [nfound++] = kcol ;
-		PR1 ((Common->file, "found kcol: %d nfound %d\n", kcol, nfound));
+		PR1 ((Common->file,"found kcol: "ID" nfound "ID"\n", kcol, nfound));
 	    }
 
 	    /* clear the flag array */
@@ -954,7 +955,7 @@ int paraklete_kernel
 	/* we now have a valid pivot row and column */
 	/* ------------------------------------------------------------------ */
 
-	PR1 ((Common->file, "\nk %d: pivcol %d pivrow %d: %g\n",
+	PR1 ((Common->file, "\nk "ID": pivcol "ID" pivrow "ID": %g\n",
 	    k, kcol, pivrow, pivot)) ;
 	ASSERT (pivrow >= 0 && pivrow < npiv) ;
 	ASSERT (Pinv [pivrow] < 0) ;
@@ -982,11 +983,11 @@ int paraklete_kernel
 	/* ------------------------------------------------------------------ */
 
 	GET_COLUMN (Uip, Ulen, LU, k, Ui, Ux, ulen) ;
-	PR1 ((Common->file, "k %d Ulen[k] %d\n", k, Ulen [k])) ;
+	PR1 ((Common->file, "k "ID" Ulen[k] "ID"\n", k, Ulen [k])) ;
 	ASSERT (ulen > 0) ;
 	Ui [ulen-1] = k ;
 	Ux [ulen-1] = pivot ;
-	PR1 ((Common->file, "pivot: Ui %d Ux %g\n", Ui [ulen-1], Ux [ulen-1])) ;
+	PR1 ((Common->file, "pivot: Ui "ID" Ux %g\n", Ui [ulen-1], Ux [ulen-1])) ;
 
 	/* ------------------------------------------------------------------ */
 	/* log the pivot permutation */
@@ -1000,7 +1001,10 @@ int paraklete_kernel
 	{
 	    /* an off-diagonal pivot has been chosen */
 	    noffdiag++ ;
-	    PR1 ((Common->file, ">>>>>>>>>>>>>>>> pivrow %d k %d off-diagonal\n",
+            /*
+            printf ("pivrow "ID" k "ID" noffdiagn "ID"\n", pivrow, k, noffdiag) ;
+            */
+	    PR1 ((Common->file,">>>>>>>>>>>>>>>> pivrow "ID" k "ID" off-diagonal\n",
 			pivrow, k)) ;
 	    if (Pinv [diagrow] < 0)
 	    {
@@ -1019,12 +1023,12 @@ int paraklete_kernel
 #ifndef NDEBUG
 	for (p = 0 ; p < ulen ; p++)
 	{
-	    PR2 ((Common->file, "Column %d of U: %d: %g\n", k, Ui [p], Ux [p])) ;
+	    PR2 ((Common->file,"Column "ID" of U: "ID": %g\n", k, Ui [p], Ux [p])) ;
 	}
 	GET_COLUMN (Lip, Llen, LU, k, Li, Lx, llen) ;
 	for (p = 0 ; p < llen ; p++)
 	{
-	    PR2 ((Common->file, "Column %d of L: %d: %g\n", k, Li [p], Lx [p])) ;
+	    PR2 ((Common->file,"Column "ID" of L: "ID": %g\n", k, Li [p], Lx [p])) ;
 	}
 #endif
 
@@ -1044,7 +1048,8 @@ int paraklete_kernel
     LUnode->PK_NFOUND = nfound ;		/* number of pivots found */
     LUnode->lnz = lnz ;			/* nnz in L */
 
-    PR1 ((Common->file, "noffdiag %d\n", noffdiag)) ;
+    PR1 ((Common->file, "noffdiag "ID"\n", noffdiag)) ;
+    PR1 ((Common->file, "umin %g umax %g condest %g\n", umin, umax, umax/umin));
 
     /* ====================================================================== */
     /* PHASE 2: compute U2 and S ============================================ */
@@ -1073,7 +1078,7 @@ int paraklete_kernel
     }
     for (k = 0 ; k < nfound ; k++)
     {
-	PR2 ((Common->file, "k %d Q [k] %d npiv %d\n", k, Q [k], npiv)) ;
+	PR2 ((Common->file, "k "ID" Q [k] "ID" npiv "ID"\n", k, Q [k], npiv)) ;
 	ASSERT (Q [k] >= 0 && Q [k] < npiv) ;
 	Qinv [Q [k]] = k ;
     }
@@ -1093,10 +1098,10 @@ int paraklete_kernel
 #ifndef NDEBUG
     for (i = 0 ; i < npiv ; i++)
     {
-	if (i == nfound) PR1 ((Common->file, "-------- nfound = %d\n", nfound)) ;
-	if (i == npiv  ) PR1 ((Common->file, "-------- npiv   = %d\n", npiv  )) ;
-	PR2 ((Common->file, "P[%d] = %d Pinv[%d] = %d\n", i, P[i], i, Pinv[i])) ;
-	PR2 ((Common->file, "Q[%d] = %d Qinv[%d] = %d\n", i, Q[i], i, Qinv[i])) ;
+	if (i == nfound) PR1 ((Common->file,"-------- nfound = "ID"\n", nfound)) ;
+	if (i == npiv  ) PR1 ((Common->file,"-------- npiv   = "ID"\n", npiv  )) ;
+	PR2 ((Common->file,"P["ID"] = "ID" Pinv["ID"] = "ID"\n", i, P[i], i, Pinv[i])) ;
+	PR2 ((Common->file,"Q["ID"] = "ID" Qinv["ID"] = "ID"\n", i, Q[i], i, Qinv[i])) ;
     }
 #endif
 
@@ -1189,11 +1194,11 @@ int paraklete_kernel
     ngrow = 
 	(nfound+1)	/* reals, in L and U (both diag L and U are stored) */
 	+ (nfound+1)/2	/* ints */
-	+ 2 ;		/* int to real may be rounded up */
+	+ 2 ;		/* Int to real may be rounded up */
 
     for (k = nfound ; k < n ; k++)
     {
-	PR1 ((Common->file, "\n\n=============================U2: k: %d\n", k)) ;
+	PR1 ((Common->file, "\n\n=============================U2: k: "ID"\n", k));
 	DEBUG (debug_k = k) ;
 
 	/* ------------------------------------------------------------------ */
@@ -1201,15 +1206,16 @@ int paraklete_kernel
 	/* ------------------------------------------------------------------ */
 
         /* LU can grow by at most 3*nfound/2+2 entries if the column is dense */
-	if (lup + ngrow > (int) lusize)
+	if (lup + ngrow > (Int) lusize)
 	{
 	    size_t new = (growth * lusize + ngrow + 2) ;
-	    LU = cholmod_realloc (new, sizeof (double), LU, &lusize, cm) ;
+	    LU = CHOLMOD (realloc) (new, sizeof (double), LU, &lusize, cm) ;
 	    LUnode->ix = LU ;
 	    LUnode->lusize = lusize ;
 	    if (cm->status != CHOLMOD_OK)
 	    {
-		/* out of memory */
+                /* TODO return FALSE, and broadcast error to all processes */
+                PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
 		return (FALSE) ;
 	    }
 	}
@@ -1228,13 +1234,13 @@ int paraklete_kernel
 	    n, k, kcol, Ap, Ai, Ax, LU, &lup, Lip, Uip,
 	    Llen, Ulen, L1_len, Pinv, Stack, Lprune, Pstack, Flag, mark, X) ;
 
-	PR2 ((Common->file, "lup is now %d\n", lup)) ;
+	PR2 ((Common->file, "lup is now "ID"\n", lup)) ;
 
 #ifndef NDEBUG
 	GET_COLUMN (Uip, Ulen, LU, k, Ui, Ux, ulen) ;
 	for (p = 0 ; p < ulen ; p++)
 	{
-	    PR2 ((Common->file, "Column %d of U2: %d: %g\n", k, Ui[p], Ux[p])) ;
+	    PR2 ((Common->file, "Column "ID" of U2: "ID": %g\n", k, Ui[p], Ux[p])) ;
 	}
 #endif
 
@@ -1250,10 +1256,10 @@ int paraklete_kernel
     /* shrink the LU factors to just the required size */
     /* ---------------------------------------------------------------------- */
 
-    LU = cholmod_realloc (lup, sizeof (double), LU, &lusize, cm) ;
+    LU = CHOLMOD (realloc) (lup, sizeof (double), LU, &lusize, cm) ;
     LUnode->ix = LU ; 
     LUnode->lusize = lusize ;
-    ASSERT (cm->status == CHOLMOD_OK)
+    ASSERT (cm->status == CHOLMOD_OK) ;
 
     /* ---------------------------------------------------------------------- */
     /* compute the Schur complement, S = A22 - L2*U2 */
@@ -1262,11 +1268,11 @@ int paraklete_kernel
     sn = n - nfound ;
     ssize = lusize ;
     LUnode->PK_SSIZE = ssize ;
-    PR1 ((Common->file, "allocate S, : ssize %d sn %d \n", ssize, sn)) ;
+    PR1 ((Common->file, "allocate S, : ssize "ID" sn "ID" \n", ssize, sn)) ;
 
-    S = cholmod_malloc (ssize, sizeof (double), cm) ;
-    Sip = cholmod_malloc (sn, sizeof (int), cm) ;
-    Slen = cholmod_malloc (sn, sizeof (int), cm) ;
+    S = CHOLMOD (malloc) (ssize, sizeof (double), cm) ;
+    Sip = CHOLMOD (malloc) (sn, sizeof (Int), cm) ;
+    Slen = CHOLMOD (malloc) (sn, sizeof (Int), cm) ;
     LUnode->sx = S ;
     LUnode->sp = Sip ;
     LUnode->slen = Slen ;
@@ -1274,7 +1280,8 @@ int paraklete_kernel
     LUnode->PK_SN = sn ;
     if (cm->status != CHOLMOD_OK)
     {
-	/* out of memory */
+        /* TODO return FALSE, and broadcast error to all processes */
+        PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
 	return (FALSE) ;
     }
 
@@ -1285,7 +1292,7 @@ int paraklete_kernel
 
     for (k = nfound ; k < n ; k++)
     {
-	PR2 ((Common->file, "\n\n========================== S:  k: %d sk: %d\n",
+	PR2 ((Common->file, "\n\n========================== S:  k: "ID" sk: "ID"\n",
 		    k, k-nfound)) ;
 	DEBUG (for (i = 0 ; i < n ; i++) ASSERT (Flag [i] < mark)) ;
 
@@ -1293,14 +1300,18 @@ int paraklete_kernel
 	/* determine if the Schur complement needs to grow */
 	/* ------------------------------------------------------------------ */
 
-	if (sp + ngrow > (int) ssize)
+	if (sp + ngrow > (Int) ssize)
 	{
 	    size_t new = (growth * ssize + ngrow + 2) ;
-	    S = cholmod_realloc (new, sizeof (double), S, &ssize, cm) ;
+	    PR1 ((Common->file, "proc "ID" growing S from "ID" to "ID"\n",
+		Common->myid, ssize, new)) ;
+	    S = CHOLMOD (realloc) (new, sizeof (double), S, &ssize, cm) ;
 	    LUnode->sx = S ;
 	    LUnode->PK_SSIZE = ssize ;
 	    if (cm->status != CHOLMOD_OK)
 	    {
+                /* TODO return FALSE, and broadcast error to all processes */
+                PARAKLETE_ERROR (PK_OUT_OF_MEMORY, "out of memory") ;
 		return (FALSE) ;
 	    }
 	}
@@ -1310,7 +1321,7 @@ int paraklete_kernel
 	/* ------------------------------------------------------------------ */
 
 	Sip [k - nfound] = sp ;
-	Si = (int *) (S + sp) ;
+	Si = (Int *) (S + sp) ;
 
 	/* ------------------------------------------------------------------ */
 	/* scatter the kth column of A*Q (namely, A(:,kcol)) into X */
@@ -1328,7 +1339,7 @@ int paraklete_kernel
 	    i = (i < npiv) ? Pinv [i] : i ;
 	    if (i >= nfound)
 	    {
-		PR3 ((Common->file, "S: Entry in A: %d %g\n", i, Ax [p])) ;
+		PR3 ((Common->file, "S: Entry in A: "ID" %g\n", i, Ax [p])) ;
 		X [i] = Ax [p] ;
 		Flag [i] = mark ;
 		Si [slen++] = i - nfound ;
@@ -1341,7 +1352,7 @@ int paraklete_kernel
 
 	/* get the pointers for the kth column of U */
 	GET_COLUMN (Uip, Ulen, LU, k, Ui, Ux, ulen) ;
-	PR2 ((Common->file, "Multiply L2 by U2(:,%d) :\n", k)) ;
+	PR2 ((Common->file, "Multiply L2 by U2(:,"ID") :\n", k)) ;
 
 	/* for each j for which U (j,k) is nonzero, do: */
 	for (p = 0 ; p < ulen ; p++)
@@ -1350,16 +1361,16 @@ int paraklete_kernel
 	    j = Ui [p] ;
 	    ASSERT (j >= 0 && j < nfound) ;
 	    ujk = Ux [p] ;
-	    PR2 ((Common->file, "U(%d,%d) = %g\n", j, k, ujk)) ;
+	    PR2 ((Common->file, "U("ID","ID") = %g\n", j, k, ujk)) ;
 	    GET_COLUMN (Lip, Llen, LU, j, Li, Lx, llen) ;
 	    for (p2 = L1_len [j] ; p2 < llen ; p2++)
 	    {
 		i = Li [p2] ;
 		ASSERT (i >= nfound && i < n) ;
-		PR3 ((Common->file, "    L(%d,%d) = %g\n", i, j, Lx [p2])) ;
+		PR3 ((Common->file, "    L("ID","ID") = %g\n", i, j, Lx [p2])) ;
 		if (Flag [i] < mark)
 		{
-		    PR3 ((Common->file, "    new entry in Si, slen %d\n", slen));
+		    PR3 ((Common->file, "    new entry in Si, slen "ID"\n",slen));
 		    Si [slen++] = i - nfound ;
 		    Flag [i] = mark ;
 		}
@@ -1371,8 +1382,14 @@ int paraklete_kernel
 	/* allocate space for S(:,k) */
 	/* ------------------------------------------------------------------ */
 
+	/* if slen is odd, this entry is allocated but not accessed */
+	if (slen % 2 == 1)
+	{
+	    Si [slen] = EMPTY ;
+	}
+
 	Slen [k - nfound] = slen ;
-	PR2 ((Common->file, "Slen [%d] = %d\n", k - nfound, Slen [k - nfound])) ;
+	PR2 ((Common->file, "Slen ["ID"] = "ID"\n", k - nfound, Slen [k - nfound]));
 	snz += slen ;
 	sp += ((slen + 1) / 2) ;
 	Sx = (double *) (S + sp) ;
@@ -1382,13 +1399,13 @@ int paraklete_kernel
 	/* gather X into S and clear X */
 	/* ------------------------------------------------------------------ */
 
-	PR2 ((Common->file, "snz so far: %d. Final col of S(:,%d)=\n", snz, k)) ;
+	PR2 ((Common->file, "snz so far: "ID". Final col of S(:,"ID")=\n", snz, k));
 	for (p = 0 ; p < slen ; p++)
 	{
 	    i = Si [p] + nfound ;
 	    Sx [p] = X [i] ;
 	    X [i] = 0 ;
-	    PR3 ((Common->file, " S(%d,%d) = %g\n", i-nfound, k-nfound, Sx [p])) ;
+	    PR3 ((Common->file, " S("ID","ID") = %g\n", i-nfound, k-nfound, Sx[p]));
 	}
 	DEBUG (for (i = 0 ; i < n ; i++) ASSERT (X [i] == 0)) ;
 
@@ -1400,8 +1417,8 @@ int paraklete_kernel
     /* shrink the Schur complement to just the required size */
     /* ---------------------------------------------------------------------- */
 
-    PR0 ((Common->file, "Final ssize = %d sn = %d snz: %d\n", sp, sn, snz)) ;
-    S = cholmod_realloc (sp, sizeof (double), S, &ssize, cm) ;
+    PR0 ((Common->file, "Final ssize = "ID" sn = "ID" snz: "ID"\n", sp, sn, snz)) ;
+    S = CHOLMOD (realloc) (sp, sizeof (double), S, &ssize, cm) ;
     LUnode->sx = S ; 
     LUnode->PK_SNZ = snz ; 
     LUnode->PK_SSIZE = ssize ;

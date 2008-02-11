@@ -3,8 +3,8 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Core Module.  Version 1.1.  Copyright (C) 2005-2006, Univ. of Florida.
- * Author: Timothy A. Davis
+ * CHOLMOD/Core Module.  Copyright (C) 2005-2006,
+ * Univ. of Florida.  Author: Timothy A. Davis
  * The CHOLMOD/Core Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -765,7 +765,7 @@ cholmod_factor *CHOLMOD(copy_factor)
 	    CHOLMOD(free_factor) (&L2, Common) ;
 	    return (NULL) ;	/* out of memory */
 	}
-	ASSERT (L->nzmax == L2->nzmax) ;
+	ASSERT (MAX (1, L->nzmax) == L2->nzmax) ;
 
 	/* ------------------------------------------------------------------ */
 	/* copy the contents of a simplicial numeric factor */

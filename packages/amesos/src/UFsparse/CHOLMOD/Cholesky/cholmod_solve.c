@@ -3,8 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Cholesky Module.  Version 1.1.  Copyright (C) 2005-2006,
- * Timothy A. Davis
+ * CHOLMOD/Cholesky Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Cholesky Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -256,10 +255,11 @@ static void perm
 	    switch (B->xtype)
 	    {
 
+#if 0
 		case CHOLMOD_REAL:
 		    /* this case is not used */
-		    ASSERT (0) ;
 		    break ;
+#endif
 
 		case CHOLMOD_COMPLEX:
 		    /* Y zomplex, B complex */
@@ -416,10 +416,11 @@ static void iperm
 	    switch (X->xtype)
 	    {
 
+#if 0
 		case CHOLMOD_REAL:
 		    /* this case is not used */
-		    ASSERT (0) ;
 		    break ;
+#endif
 
 		case CHOLMOD_COMPLEX:
 		    /* Y complex, X complex */
@@ -459,10 +460,11 @@ static void iperm
 	    switch (X->xtype)
 	    {
 
+#if 0
 		case CHOLMOD_REAL:
 		    /* this case is not used */
-		    ASSERT (0) ;
 		    break ;
+#endif
 
 		case CHOLMOD_COMPLEX:
 		    /* Y zomplex, X complex */
@@ -846,10 +848,11 @@ static void iptrans
 	    switch (X->xtype)
 	    {
 
+#if 0
 		case CHOLMOD_REAL:
 		    /* this case is not used */
-		    ASSERT (0) ;
 		    break ;
+#endif
 
 		case CHOLMOD_COMPLEX:
 		    /* Y complex, X complex  */
@@ -889,10 +892,11 @@ static void iptrans
 	    switch (X->xtype)
 	    {
 
+#if 0
 		case CHOLMOD_REAL:
 		    /* this case is not used */
-		    ASSERT (0) ;
 		    break ;
+#endif
 
 		case CHOLMOD_COMPLEX:
 		    /* Y zomplex, X complex  */
@@ -954,7 +958,7 @@ cholmod_dense *CHOLMOD(solve)
 {
     cholmod_dense *Y = NULL, *X = NULL ;
     Int *Perm ;
-    Int n, nrhs, ncols, ctype, xtype, k1, nr ;
+    Int n, nrhs, ncols, ctype, xtype, k1, nr, ytype ;
 
     /* ---------------------------------------------------------------------- */
     /* check inputs */
@@ -1058,7 +1062,7 @@ cholmod_dense *CHOLMOD(solve)
 	/* ------------------------------------------------------------------ */
 
 #ifndef NSUPERNODAL
-	Int ok ;
+	Int blas_ok = TRUE ;
 
 	/* allocate workspace */
 	cholmod_dense *E ;
@@ -1081,24 +1085,31 @@ cholmod_dense *CHOLMOD(solve)
 
 	if (sys == CHOLMOD_A || sys == CHOLMOD_LDLt)
 	{
-	    ok = CHOLMOD(super_lsolve) (L, Y, E, Common) ;	   /* Y = L\Y */
-	    ok = ok && CHOLMOD(super_ltsolve) (L, Y, E, Common) ;  /* Y = L'\Y*/
+	    blas_ok = CHOLMOD(super_lsolve) (L, Y, E, Common) ;	   /* Y = L\Y */
+	    blas_ok = blas_ok &&
+		CHOLMOD(super_ltsolve) (L, Y, E, Common) ;	   /* Y = L'\Y*/
 	}
 	else if (sys == CHOLMOD_L || sys == CHOLMOD_LD)
 	{
-	    ok = CHOLMOD(super_lsolve) (L, Y, E, Common) ;	   /* Y = L\Y */
+	    blas_ok = CHOLMOD(super_lsolve) (L, Y, E, Common) ;	   /* Y = L\Y */
 	}
 	else if (sys == CHOLMOD_Lt || sys == CHOLMOD_DLt)
 	{
-	    ok = CHOLMOD(super_ltsolve) (L, Y, E, Common) ;	   /* Y = L'\Y*/
+	    blas_ok = CHOLMOD(super_ltsolve) (L, Y, E, Common) ;   /* Y = L'\Y*/
 	}
 	CHOLMOD(free_dense) (&E, Common) ;
 
 	iperm (Y, Perm, 0, nrhs, X) ;			    /* X = P'*Y */
 
-	if (CHECK_BLAS_INT && !ok)
+	if (CHECK_BLAS_INT && !blas_ok)
 	{
-	    /* integer overflow in the BLAS */
+	    /* Integer overflow in the BLAS.  This is probably impossible,
+	     * since the BLAS were used to create the supernodal factorization.
+	     * It might be possible for the calls to the BLAS to differ between
+	     * factorization and forward/backsolves, however.  This statement
+	     * is untested; it does not appear in the compiled code if
+	     * CHECK_BLAS_INT is true (when the same integer is used in CHOLMOD
+	     * and the BLAS. */
 	    CHOLMOD(free_dense) (&X, Common) ;
 	}
 
@@ -1115,30 +1126,31 @@ cholmod_dense *CHOLMOD(solve)
 	/* solve using a simplicial LL' or LDL' factorization */
 	/* ------------------------------------------------------------------ */
 
-	if (L->xtype == CHOLMOD_REAL)
+	if (L->xtype == CHOLMOD_REAL && B->xtype == CHOLMOD_REAL)
 	{
-	    /* L is real, B is real/complex/zomplex, Y is real */
-	    if (B->xtype == CHOLMOD_REAL)
-	    {
-		/* solve with up to 4 columns of B at a time */
-		ncols = 4 ;
-		nr = MAX (4, nrhs) ;
-		Y = CHOLMOD(allocate_dense) (nr, n, nr, CHOLMOD_REAL, Common) ;
-	    }
-	    else
-	    {
-		/* solve with one column of B (real/imag), at a time */
-		ncols = 1 ;
-		Y = CHOLMOD(allocate_dense) (2, n, 2, CHOLMOD_REAL, Common) ;
-	    }
+	    /* L, B, and Y are all real */
+	    /* solve with up to 4 columns of B at a time */
+	    ncols = 4 ;
+	    nr = MAX (4, nrhs) ;
+	    ytype = CHOLMOD_REAL ;
+	}
+	else if (L->xtype == CHOLMOD_REAL)
+	{
+	    /* solve with one column of B (real/imag), at a time */
+	    ncols = 1 ;
+	    nr = 2 ;
+	    ytype = CHOLMOD_REAL ;
 	}
 	else
 	{
 	    /* L is complex or zomplex, B is real/complex/zomplex, Y has the
 	     * same complexity as L.  Solve with one column of B at a time. */
 	    ncols = 1 ;
-	    Y = CHOLMOD(allocate_dense) (1, n, 1, L->xtype, Common) ;
+	    nr = 1 ;
+	    ytype = L->xtype ;
 	}
+
+	Y = CHOLMOD(allocate_dense) (nr, n, nr, ytype, Common) ;
 
 	if (Common->status < CHOLMOD_OK)
 	{

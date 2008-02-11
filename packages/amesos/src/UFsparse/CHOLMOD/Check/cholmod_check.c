@@ -3,7 +3,7 @@
 /* ========================================================================== */
 
 /* -----------------------------------------------------------------------------
- * CHOLMOD/Check Module.  Version 1.1. Copyright (C) 2005-2006, Timothy A. Davis
+ * CHOLMOD/Check Module.  Copyright (C) 2005-2006, Timothy A. Davis
  * The CHOLMOD/Check Module is licensed under Version 2.1 of the GNU
  * Lesser General Public License.  See lesser.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
@@ -321,8 +321,16 @@ static int check_common
 	P3 ("%s", "  nmethods=0: default strategy:  Try user permutation if "
 		"given.  Try AMD.\n") ;
 #ifndef NPARTITION
-	P3 ("%s", "    Try METIS if AMD reports flops/nnz(L) >= 500 and "
+	if (Common->default_nesdis)
+	{
+	    P3 ("%s", "    Try NESDIS if AMD reports flops/nnz(L) >= 500 and "
 		"nnz(L)/nnz(A) >= 5.\n") ;
+	}
+	else
+	{
+	    P3 ("%s", "    Try METIS if AMD reports flops/nnz(L) >= 500 and "
+		"nnz(L)/nnz(A) >= 5.\n") ;
+	}
 #endif
 	P3 ("%s", "    Select best ordering tried.\n") ;
 	Common->method [0].ordering = CHOLMOD_GIVEN ;
@@ -554,6 +562,7 @@ static int check_common
 
     /* workspace and parameters are valid */
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     return (TRUE) ;
 }
 
@@ -834,6 +843,7 @@ static UF_long check_sparse
     /* matrix is valid */
     P4 ("  nnz on diagonal: "ID"\n", dnz) ;
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     *nnzdiag = dnz ;
     return (TRUE) ;
 }
@@ -972,6 +982,7 @@ static int check_dense
 
     /* dense  is valid */
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     return (TRUE) ;
 }
 
@@ -1060,6 +1071,7 @@ static int check_subset
     if (len <= 0 || S == NULL)
     {
 	P3 ("%s", "  OK\n") ;
+	P4 ("%s", "\n") ;
 	return (TRUE) ;
     }
 
@@ -1090,6 +1102,7 @@ static int check_subset
 	}
     }
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     return (TRUE) ;
 }
 
@@ -1309,6 +1322,7 @@ int CHOLMOD(print_perm)
     if (ok)
     {
 	P3 ("%s", "  OK\n") ;
+	P4 ("%s", "\n") ;
     }
     return (ok) ;
 }
@@ -1373,6 +1387,7 @@ static int check_parent
 	}
     }
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     return (TRUE) ;
 }
 
@@ -1925,6 +1940,7 @@ static int check_factor
     /* factor is valid */
     P3 ("  nz "ID"", lnz) ;
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     return (TRUE) ;
 }
 
@@ -2110,6 +2126,7 @@ static int check_triplet
 
     /* triplet matrix is valid */
     P3 ("%s", "  OK\n") ;
+    P4 ("%s", "\n") ;
     return (TRUE) ;
 }
 
@@ -2158,7 +2175,7 @@ int CHOLMOD(dump_malloc) = -1 ;
 /* workspace: no debug routines use workspace in Common */
 
 /* ========================================================================== */
-/* === cholmod_dump_init ===================================================== */
+/* === cholmod_dump_init ==================================================== */
 /* ========================================================================== */
 
 void CHOLMOD(dump_init) (char *s, cholmod_common *Common)
