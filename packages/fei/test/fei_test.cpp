@@ -67,6 +67,11 @@ int execute_named_test(const std::string& testname,
 		       char** argv,
 		       const snl_fei::CommUtils<int>& intCommUtils);
 
+void read_input_and_execute_fullsystem_tests(const std::string& filename,
+                                             int argc,
+                                             char** argv,
+                                             snl_fei::CommUtils<int>& intCommUtils);
+
 void execute_unit_tests(const std::string& path,
                         const snl_fei::CommUtils<int>& intCommUtils);
 
@@ -100,33 +105,58 @@ int main(int argc, char** argv) {
   std::string testname = fei_test_utils::get_arg_value("-test", argc, argv);
   fei_test_utils::broadcast_string(MPI_COMM_WORLD, 0, testname);
 
+  int errcode = 0;
+
   if (!testname.empty()) {
-    int errcode = execute_named_test(testname, argc, argv, intCommUtils);
+    errcode = execute_named_test(testname, argc, argv, intCommUtils);
 
     if (intCommUtils.localProc() == 0 && errcode == 0) {
       FEI_COUT << localProc << ": FEI test successful" << FEI_ENDL;
     }
+  }
+  else {
+    //...else since testname is empty,
+    //Check whether the -i flag was used to specify an input file.
+    //(construct_filename constructs a file name using a combination of
+    // '-i <file>' and optional '-d <path>' flags.)
+    std::string filename;
+    if (localProc == 0) {
+      filename = fei_test_utils::construct_filename(argc, argv);
+    }
+    fei_test_utils::broadcast_string(MPI_COMM_WORLD, 0, filename);
 
-#ifndef FEI_SER
-    if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);
-#endif
-    return(errcode);
+    try {
+      read_input_and_execute_fullsystem_tests(filename, argc, argv, intCommUtils);
+    }
+    catch(fei::Exception& exc) {
+      FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
+      errcode = -1;
+    }
   }
 
+#ifndef FEI_SER
+  if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);
+#endif
 
+  if (localProc == 0) {
+    double elapsedTime = fei::utils::cpu_time() - start_time;
+    FEI_COUT << "Proc0 CPU  time: " << elapsedTime << " seconds." << FEI_ENDL;
+  }
+
+  return(0);
+}
+
+void read_input_and_execute_fullsystem_tests(const std::string& filename,
+                                             int argc, char** argv,
+                                            snl_fei::CommUtils<int>& intCommUtils)
+{
   //We'll run some 'full-system' FEI tests, if any are contained in the
-  //specified .i file.
-  //First, fill an array with names that we read from our .i file. These names
+  //specified filename.
+  //First, fill an array with names that we read from filename. These names
   //are input-file-names, followed by an int specifying the number of processors
   //the test should be run on.
 
   std::vector<std::string> inputFileNames;
-  std::string filename;
-  if (localProc == 0) {
-    filename = fei_test_utils::construct_filename(argc, argv);
-  }
-  fei_test_utils::broadcast_string(MPI_COMM_WORLD, 0, filename);
-
   int global_err = 0;
   if (!filename.empty()) {
     int errcode = 0;
@@ -154,15 +184,17 @@ int main(int argc, char** argv) {
     //Next, if we're running on 4 procs, create two new communicators each
     //representing 2 procs, and run some 2-proc tests using one of those
     //communicators.
+    int numProcs = intCommUtils.numProcs();
+    int localProc = intCommUtils.localProc();
     if (numProcs == 4 && global_err == 0) {
       intCommUtils.Barrier();
       if (localProc == 0) {
-	FEI_COUT
+        FEI_COUT
          << "*****************************************************************"
          << FEI_ENDL << "   Running tests with partitioned communicators/groups"
-	 << FEI_ENDL
-	 << "*****************************************************************"
-	 << FEI_ENDL << FEI_ENDL;
+         << FEI_ENDL
+         << "*****************************************************************"
+         << FEI_ENDL << FEI_ENDL;
       }
 
       std::string path = fei_test_utils::get_arg_value("-d", argc, argv);
@@ -175,43 +207,19 @@ int main(int argc, char** argv) {
 
       //newcomm1 and newgroup1 will represent procs 0 and 1, while
       //newcomm2 and newgroup2 will represent procs 2 and 3.
-      CHK_ERR( split_four_procs_into_two_groups(intCommUtils.getCommunicator(),
-						newcomm1, newgroup1,
-						newcomm2, newgroup2) );
+      split_four_procs_into_two_groups(intCommUtils.getCommunicator(),
+                                       newcomm1, newgroup1,
+                                       newcomm2, newgroup2);
 
-      int local_err = 0;
       if (intCommUtils.localProc() < 2) {
-	snl_fei::CommUtils<int> intCommUtils1(newcomm1);
+        snl_fei::CommUtils<int> intCommUtils1(newcomm1);
 
-	try {
-	  execute_fullsystem_tests(intCommUtils1, path, name_numproc_pairs);
-	}
-	catch(fei::Exception& exc) {
-	  FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
-	  local_err = -1;
-	}
+        execute_fullsystem_tests(intCommUtils1, path, name_numproc_pairs);
       }
 
-      intCommUtils.GlobalSum(local_err, global_err);
     }
 #endif
   }
-
-#ifndef FEI_SER
-  if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);
-#endif
-
-  //This is something the runtest tool looks for in test output...
-  if (localProc==0 && global_err == 0) {
-    FEI_COUT << localProc << ": FEI test successful" << FEI_ENDL;
-  }
-
-  if (localProc == 0) {
-    double elapsedTime = fei::utils::cpu_time() - start_time;
-    FEI_COUT << "Proc0 CPU  time: " << elapsedTime << " seconds." << FEI_ENDL;
-  }
-
-  return(0);
 }
 
 int test_library_plugins(const snl_fei::CommUtils<int>& intCommUtils)
