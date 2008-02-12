@@ -142,13 +142,11 @@ endif
 
 EXTRA_EPETRAEXT_AMESOS_H = \
 	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.h
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h 
 
 EXTRA_EPETRAEXT_AMESOS = \
 	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.cpp
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
 
 if BUILD_EPETRAEXT_AMESOS
 
@@ -162,6 +160,27 @@ else
 
 EPETRAEXT_AMESOS_H =
 EPETRAEXT_AMESOS =
+
+endif
+
+EXTRA_EPETRAEXT_AMESOS_ISORROPIA_H = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.h
+
+EXTRA_EPETRAEXT_AMESOS_ISORROPIA = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.cpp
+
+if BUILD_EPETRAEXT_AMESOS_ISORROPIA
+
+EPETRAEXT_AMESOS_ISORROPIA_H = \
+	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA_H)
+
+EPETRAEXT_AMESOS_ISORROPIA = \
+	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA)
+
+else
+
+EPETRAEXT_AMESOS_ISORROPIA_H =
+EPETRAEXT_AMESOS_ISORROPIA =
 
 endif
 
@@ -190,7 +209,8 @@ TRILINOSCOUPLINGS_H = \
 	$(IFPACK_ML_H) \
 	$(NOX_ML_H) \
 	$(EPETRAEXT_ISORROPIA_H) \
-	$(EPETRAEXT_AMESOS_H)      
+	$(EPETRAEXT_AMESOS_H) \
+	$(EPETRAEXT_AMESOS_ISORROPIA_H)      
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
@@ -199,7 +219,9 @@ libtrilinoscouplings_a_SOURCES = \
 	$(IFPACK_ML) \
 	$(NOX_ML) \
 	$(EPETRAEXT_ISORROPIA) \
-	$(EPETRAEXT_AMESOS)
+	$(EPETRAEXT_AMESOS) \
+	$(EPETRAEXT_AMESOS_ISORROPIA)
+
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
@@ -209,7 +231,9 @@ EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_EPETRAEXT_ISORROPIA) \
 	$(EXTRA_EPETRAEXT_ISORROPIA_H) \
 	$(EXTRA_EPETRAEXT_AMESOS) \
-	$(EXTRA_EPETRAEXT_AMESOS_H)
+	$(EXTRA_EPETRAEXT_AMESOS_H) \
+	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA) \
+	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA_H)
 
 include $(top_builddir)/Makefile.export.trilinoscouplings
 

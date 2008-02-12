@@ -749,6 +749,8 @@ BUILD_EPETRAEXT_AMESOS_TRUE
 BUILD_EPETRAEXT_AMESOS_FALSE
 BUILD_EPETRAEXT_ISORROPIA_TRUE
 BUILD_EPETRAEXT_ISORROPIA_FALSE
+BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE
+BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE
 ac_aux_dir
 LIBOBJS
 LTLIBOBJS'
@@ -6955,6 +6957,15 @@ else
 fi
 
 
+ if test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_amesos" = "Xyes" && test "X$ac_cv_use_isorropia" = "Xyes"; then
+  BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE=
+  BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE='#'
+else
+  BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE='#'
+  BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE=
+fi
+
+
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 
@@ -7399,6 +7410,13 @@ if test -z "${BUILD_EPETRAEXT_ISORROPIA_TRUE}" && test -z "${BUILD_EPETRAEXT_ISO
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT_ISORROPIA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EPETRAEXT_ISORROPIA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE}" && test -z "${BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT_AMESOS_ISORROPIA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRAEXT_AMESOS_ISORROPIA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8115,12 +8133,14 @@ BUILD_EPETRAEXT_AMESOS_TRUE!$BUILD_EPETRAEXT_AMESOS_TRUE$ac_delim
 BUILD_EPETRAEXT_AMESOS_FALSE!$BUILD_EPETRAEXT_AMESOS_FALSE$ac_delim
 BUILD_EPETRAEXT_ISORROPIA_TRUE!$BUILD_EPETRAEXT_ISORROPIA_TRUE$ac_delim
 BUILD_EPETRAEXT_ISORROPIA_FALSE!$BUILD_EPETRAEXT_ISORROPIA_FALSE$ac_delim
+BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE!$BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE$ac_delim
+BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE!$BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

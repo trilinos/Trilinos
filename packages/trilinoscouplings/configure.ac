@@ -272,6 +272,8 @@ AM_CONDITIONAL(BUILD_EPETRAEXT_AMESOS, test "X$ac_cv_use_epetraext" = "Xyes" && 
 
 AM_CONDITIONAL(BUILD_EPETRAEXT_ISORROPIA, test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_isorropia" = "Xyes")
 
+AM_CONDITIONAL(BUILD_EPETRAEXT_AMESOS_ISORROPIA, test "X$ac_cv_use_epetraext" = "Xyes" && test "X$ac_cv_use_amesos" = "Xyes" && test "X$ac_cv_use_isorropia" = "Xyes")
+
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 

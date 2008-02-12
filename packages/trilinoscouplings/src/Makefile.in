@@ -126,12 +126,14 @@ am__objects_4 = nlnml_prepostoperator.$(OBJEXT) \
 am__objects_6 = EpetraExt_Isorropia_CrsGraph.$(OBJEXT)
 @BUILD_EPETRAEXT_ISORROPIA_TRUE@am__objects_7 = $(am__objects_6)
 am__objects_8 = EpetraExt_AmesosBTF_CrsGraph.$(OBJEXT) \
-	EpetraExt_AmesosBTF_CrsMatrix.$(OBJEXT) \
-	EpetraExt_AmesosBTFGlobal_LinearProblem.$(OBJEXT)
+	EpetraExt_AmesosBTF_CrsMatrix.$(OBJEXT)
 @BUILD_EPETRAEXT_AMESOS_TRUE@am__objects_9 = $(am__objects_8)
+am__objects_10 = EpetraExt_AmesosBTFGlobal_LinearProblem.$(OBJEXT)
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE@am__objects_11 =  \
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE@	$(am__objects_10)
 am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
 	$(am__objects_3) $(am__objects_5) $(am__objects_7) \
-	$(am__objects_9)
+	$(am__objects_9) $(am__objects_11)
 libtrilinoscouplings_a_OBJECTS = $(am_libtrilinoscouplings_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -370,13 +372,11 @@ EXTRA_EPETRAEXT_ISORROPIA = \
 
 EXTRA_EPETRAEXT_AMESOS_H = \
 	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.h \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.h
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.h 
 
 EXTRA_EPETRAEXT_AMESOS = \
 	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp \
-	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.cpp
+	$(srcdir)/epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
 
 @BUILD_EPETRAEXT_AMESOS_FALSE@EPETRAEXT_AMESOS_H = 
 @BUILD_EPETRAEXT_AMESOS_TRUE@EPETRAEXT_AMESOS_H = \
@@ -385,6 +385,20 @@ EXTRA_EPETRAEXT_AMESOS = \
 @BUILD_EPETRAEXT_AMESOS_FALSE@EPETRAEXT_AMESOS = 
 @BUILD_EPETRAEXT_AMESOS_TRUE@EPETRAEXT_AMESOS = \
 @BUILD_EPETRAEXT_AMESOS_TRUE@	$(EXTRA_EPETRAEXT_AMESOS)
+
+EXTRA_EPETRAEXT_AMESOS_ISORROPIA_H = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.h
+
+EXTRA_EPETRAEXT_AMESOS_ISORROPIA = \
+	$(srcdir)/epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.cpp
+
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE@EPETRAEXT_AMESOS_ISORROPIA_H = 
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE@EPETRAEXT_AMESOS_ISORROPIA_H = \
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE@	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA_H)
+
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_FALSE@EPETRAEXT_AMESOS_ISORROPIA = 
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE@EPETRAEXT_AMESOS_ISORROPIA = \
+@BUILD_EPETRAEXT_AMESOS_ISORROPIA_TRUE@	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA)
 
 
 #EXTRA_NOX_ML_H = \
@@ -411,7 +425,8 @@ TRILINOSCOUPLINGS_H = \
 	$(IFPACK_ML_H) \
 	$(NOX_ML_H) \
 	$(EPETRAEXT_ISORROPIA_H) \
-	$(EPETRAEXT_AMESOS_H)      
+	$(EPETRAEXT_AMESOS_H) \
+	$(EPETRAEXT_AMESOS_ISORROPIA_H)      
 
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
@@ -421,7 +436,8 @@ libtrilinoscouplings_a_SOURCES = \
 	$(IFPACK_ML) \
 	$(NOX_ML) \
 	$(EPETRAEXT_ISORROPIA) \
-	$(EPETRAEXT_AMESOS)
+	$(EPETRAEXT_AMESOS) \
+	$(EPETRAEXT_AMESOS_ISORROPIA)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
@@ -431,7 +447,9 @@ EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_EPETRAEXT_ISORROPIA) \
 	$(EXTRA_EPETRAEXT_ISORROPIA_H) \
 	$(EXTRA_EPETRAEXT_AMESOS) \
-	$(EXTRA_EPETRAEXT_AMESOS_H)
+	$(EXTRA_EPETRAEXT_AMESOS_H) \
+	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA) \
+	$(EXTRA_EPETRAEXT_AMESOS_ISORROPIA_H)
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(TRILINOSCOUPLINGS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRILINOSCOUPLINGS_INCLUDES))
