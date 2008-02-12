@@ -126,7 +126,6 @@ operator()( OriginalTypeRef orig )
       }
     
     // Transformation information
-    int numBlocks = 0;      // number of blocks found.
     int numMatch = 0;       // number of nonzeros on diagonal after permutation.
     double maxWork =  0.0;  // no limit on how much work to perform in max-trans.
     double workPerf = 0.0;  // how much work was performed in max-trans.
@@ -254,6 +253,7 @@ AmesosBTF_CrsMatrix::
 fwd()
 {
   NewMatrix_->Import( *origObj_, *Importer_, Insert );
+  return true;
 }
 
 bool
@@ -261,6 +261,7 @@ AmesosBTF_CrsMatrix::
 rvs()
 {
   origObj_->Export( *NewMatrix_, *Importer_, Insert );
+  return true;
 }
 
 } //namespace EpetraExt
