@@ -40,6 +40,7 @@
 
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBaseDecl.hpp>
+#include <Thyra_MultiVectorStdOps.hpp>
 
 namespace Anasazi {
   

@@ -31,6 +31,8 @@
 
 #include "Teuchos_PolynomialTraits.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 
 namespace Teuchos {
 

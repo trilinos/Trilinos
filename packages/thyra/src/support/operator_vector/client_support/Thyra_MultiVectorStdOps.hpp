@@ -136,7 +136,7 @@ void Thyra::scale( Scalar alpha, MultiVectorBase<Scalar>* V )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
+  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"scale(...), Error!");
 #endif
   if(alpha==ST::zero()) {
     assign( V, ST::zero() );

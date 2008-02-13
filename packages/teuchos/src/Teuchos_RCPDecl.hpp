@@ -510,6 +510,15 @@ public:
   Ptr<T> ptr() const;
   /** \brief Release the ownership of the underlying dynamically allocated object.
    *
+   * <b>WARNING!</b> Never call <tt>delete rcp.release().get()</tt> as this
+   * can cause all kinds of segfaults.  Instead, release your use of the
+   * shared object by simply assigning the <tt>RCP</tt> object to
+   * <tt>Teuchos::null</tt>.
+   *
+   * This function should only be used as last result when all hell has broken
+   * loose and memory management control has broken down.  This function is
+   * not to be used lightly!
+   *
    * After this function is called then the client is responsible for
    * deallocating the shared object no matter how many
    * <tt>ref_count_prt<T></tt> objects have a reference to it.  If

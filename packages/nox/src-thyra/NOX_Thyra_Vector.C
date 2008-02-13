@@ -43,6 +43,7 @@
 #include "NOX_Thyra_MultiVector.H"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 
 NOX::Thyra::Vector::
 Vector(const Teuchos::RCP< ::Thyra::VectorBase<double> >& source) :

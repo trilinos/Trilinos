@@ -31,12 +31,20 @@
 
 #include "Thyra_VectorSpaceBaseDecl.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Thyra_VectorStdOps.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Teuchos_Tuple.hpp"
 
 #ifdef TEUCHOS_DEBUG
-#define THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
+#  define THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
 #endif
+
+#ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
+#include "RTOpPack_TOpAssignScalar.hpp"
+// 2008/02/13: rabartl: This include represents a bad dependency to a concrete
+// implementation of an RTOp. However, this is better than a dependency on
+// Thyra_[Multi]VectorStdOps.hpp!  I don't know of a better alternative at
+// this point.
+#endif // THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
 
 namespace Thyra {
 
@@ -88,7 +96,12 @@ Thyra::createMember(
 {
   RCP<VectorBase<Scalar> > v = vs->createMember();
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  assign(&*v,Teuchos::ScalarTraits<Scalar>::nan());
+  applyOp<Scalar>(
+    RTOpPack::TOpAssignScalar<Scalar>(Teuchos::ScalarTraits<Scalar>::nan()),
+    0, (const VectorBase<Scalar>**)NULL,
+    1, &Teuchos::tuple<VectorBase<Scalar>*>(&*v)[0],
+    (RTOpPack::ReductTarget*)NULL
+    );
 #endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
   if(label.length()) v->setObjectLabel(label);
@@ -114,7 +127,11 @@ Thyra::createMembers(
   RCP<MultiVectorBase<Scalar> >
     mv = vs->createMembers(numMembers);
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  assign(&*mv,Teuchos::ScalarTraits<Scalar>::nan());
+  applyOp<Scalar>(
+    RTOpPack::TOpAssignScalar<Scalar>(Teuchos::ScalarTraits<Scalar>::nan()),
+    Teuchos::null, Teuchos::tuple(mv.ptr()),
+    Teuchos::null
+    );
 #endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
   if(label.length()) mv->setObjectLabel(label);
