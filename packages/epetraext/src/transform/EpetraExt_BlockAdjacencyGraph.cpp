@@ -25,7 +25,8 @@
 // 
 // ***********************************************************************
 //@HEADER
-                                                                                              #include <EpetraExt_BlockAdjacencyGraph.h>
+  
+ #include <EpetraExt_BlockAdjacencyGraph.h>
 
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
@@ -37,7 +38,7 @@
 
 namespace EpetraExt {
 
-  int cmp(const void *a, const void *b)
+  int compare_ints(const void *a, const void *b)
   {
     return(*((int *) a) - *((int *) b));
   }
@@ -92,13 +93,16 @@ namespace EpetraExt {
 	j += B.NumGlobalIndices(i);
       }
     }
+    /* one more time for the final block */
+     m = EPETRA_MAX(m,j) ;   /* nonzeros in block row */
+
     colstack = (int*) malloc( EPETRA_MAX(m,1) * sizeof(int) );
     nzM = 0; q = -1; l = 0;
     int * indices;
     int numEntries;
     for( i = 0; i <= nrr; i++ ){
       if( i >= r[l+1] ){
-	if( q > 0 ) qsort(colstack,q+1,sizeof(colstack[0]),cmp); /* sort stack */
+	if( q > 0 ) qsort(colstack,q+1,sizeof(int),compare_ints); /* sort stack */
 	if( q >= 0 ) ns = 1; /* l, colstack[0] M */
 	for( j=1; j<=q ; j++ ){ /* delete copies */
 	  if( colstack[j] > colstack[j-1] ) ++ns;
@@ -136,7 +140,7 @@ namespace EpetraExt {
     q = -1; l = 0; pm = -1;
     for( i = 0; i <= nrr; i++ ){
       if( i >= r[l+1] ){
-	if( q > 0 ) qsort(colstack,q+1,sizeof(colstack[0]),cmp); /* sort stack */
+	if( q > 0 ) qsort(colstack,q+1,sizeof(colstack[0]),compare_ints); /* sort stack */
 	if( q >= 0 ){
 	  Mi[++pm] = l;
 	  Mj[pm] = colstack[0];

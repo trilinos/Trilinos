@@ -44,7 +44,7 @@ namespace EpetraExt {
  *
  */
 
-int cmp(const void *a, const void *b);
+int compare_ints(const void *a, const void *b);
 
 class BlockAdjacencyGraph {
 
