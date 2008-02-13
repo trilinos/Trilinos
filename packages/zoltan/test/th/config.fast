@@ -133,7 +133,7 @@ cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan
 ############################################################################
 Test zoltan-lin64_big-nightly
 pill.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; (cd ~/Zoltan_Tests ; cvs -d software.sandia.gov:/space/CVS -Q update); csh -f ../../zoltan.build lin64test $tname zdrive '~/Zoltan_Tests/{xyce}' '~/Zoltan_Tests'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; (cd /home/zoltan/Zoltan_Tests ; cvs -d software.sandia.gov:/space/CVS-Zoltan -Q update); csh -f ../../zoltan.build lin64test $tname zdrive '/home/zoltan/Zoltan_Tests/{xyce}' '/home/zoltan/Zoltan_Tests'
 
 ###########################################################################
 # Old tests that we no longer run.

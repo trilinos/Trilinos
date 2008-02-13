@@ -787,13 +787,13 @@ allclean:
 	 exit 0
 
 cleantest:
-	 @if [ -d test ];         \
-	 then cd test; \
+	 @if [ -d ../test ];         \
+	 then cd ../test; \
 	 touch ch_simple/zdrive.inp; \
 	 touch ch_simple/output/junk; \
-	 touch nem_box_064/pio_01/.blot.; \
+	 touch nem_ti_4k/pio_01/.blot.; \
 	 /bin/rm -f */zdrive.inp; \
-	 /bin/rm -f */output/*; \
+	 /bin/rm -fr */output; \
          /bin/rm -f */pio*/*.blot.*; \
 	 fi;
 	 exit 0
