@@ -39,6 +39,9 @@ rebalance_zoltan_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a \
 	$(top_builddir)/test/utils/libisorropia_test_utils.a
 
-rebalance_zoltan_CXXFLAGS = $(ISORROPIA_INCLUDES) 
-rebalance_zoltan_LDADD = $(ISORROPIA_LIBS)
+rebalance_zoltan_CXXFLAGS = -I$(top_srcdir)/test/utils \
+   $(ISORROPIA_INCLUDES)
+rebalance_zoltan_LDADD = \
+   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
+
 
