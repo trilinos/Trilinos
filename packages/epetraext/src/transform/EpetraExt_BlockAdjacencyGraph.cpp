@@ -78,7 +78,7 @@ namespace EpetraExt {
     std::vector<int> Mi, Mj, Mnum(nbrr+1,0);
     nrr = B.NumMyRows();
     if ( matProc == myPID )
-      printf(" nrr = %d      nbrr = %d\n",nrr, nbrr);
+      std::printf(" nrr = %d      nbrr = %d\n",nrr, nbrr);
     else
       nrr = -1;     /* Prevent processor from doing any computations */
     bstree = csr_bst(nbrr);  /* 0 : nbrr-1 */
@@ -124,17 +124,17 @@ namespace EpetraExt {
 	    ++ns;
 	    if( p > nbrr || ns > 14 ) {
 	      error = j;
-	      printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
+	      std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
 	    }
 	  }
 	  colstack[++q] = bstree[p];
 	}
-	if( error >-1 ){ printf("%d\n",error); break; }
+	if( error >-1 ){ std::printf("%d\n",error); break; }
       }
     }
     
     if ( matProc == myPID )
-      printf("nzM =  %d \n", nzM );
+      std::printf("nzM =  %d \n", nzM );
     Mi.resize( nzM );
     Mj.resize( nzM );
     q = -1; l = 0; pm = -1;
@@ -170,12 +170,12 @@ namespace EpetraExt {
 	    ++ns;
 	    if( p > nbrr || ns > 14 ) {
 	      error = j;
-	      printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
+	      std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
 	    }
 	  }
 	  colstack[++q] = bstree[p];
 	}
-	if( error >-1 ){ printf("%d\n",error); break; }
+	if( error >-1 ){ std::printf("%d\n",error); break; }
       }
     }
     if ( bstree ) free ( bstree );
@@ -222,7 +222,7 @@ namespace EpetraExt {
     stack = (int *) malloc(3*nexp * sizeof(int) );
     stack[3*nstack] = 0; stack[3*nstack+1] = 0; stack[3*nstack+2] = n;
     ++nstack;
-    /*if( debug ) printf("stack : %d %d %d\n", stack[0] , stack[1], stack[2] );*/
+    /*if( debug ) std::printf("stack : %d %d %d\n", stack[0] , stack[1], stack[2] );*/
     while( nstack > 0 ){
       --nstack;
       i = stack[3*nstack]; os = stack[3*nstack+1]; m = stack[3*nstack+2];
