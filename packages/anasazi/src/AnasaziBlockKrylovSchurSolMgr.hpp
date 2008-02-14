@@ -145,6 +145,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! @name Accessor methods
   //@{ 
 
+  //! Return the eigenvalue problem.
   const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *_problem;
   }
@@ -248,8 +249,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _xtra_nevBlocks(0),
   _verbosity(Anasazi::Errors),
   _inSituRestart(false),
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("BKSSolMgr::solve()")),
-  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BKSSolMgr restarting"))
+  _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr::solve()")),
+  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr restarting"))
 {
   TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");

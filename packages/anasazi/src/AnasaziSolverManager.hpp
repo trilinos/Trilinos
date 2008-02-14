@@ -65,6 +65,7 @@ class SolverManager {
   //! @name Accessor methods
   //@{ 
 
+  //! Return the eigenvalue problem.
   virtual const Eigenproblem<ScalarType,MV,OP>& getProblem() const = 0;
 
   //@}

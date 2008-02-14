@@ -154,9 +154,21 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! @name Accessor methods
   //@{ 
 
+  //! Return the eigenvalue problem.
   const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *problem_;
   }
+
+  /*! \brief Return the timers for this object. 
+   *
+   * The timers are ordered as follows:
+   *   - time spent in solve() routine
+   *   - time spent locking converged eigenvectors
+   */
+   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
+     return tuple(_timerSolve, _timerLocking);
+   }
+
 
   //@}
 
@@ -229,6 +241,8 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RCP<LOBPCGState<ScalarType,MV> > state_;
   enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_, lockNorm_;
 
+  Teuchos::RCP<Teuchos::Time> _timerSolve, _timerLocking;
+
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
@@ -254,9 +268,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   verbosity_(Anasazi::Errors),
   lockQuorum_(1),
   recover_(true),
-  globalTest_(Teuchos::null),
-  lockingTest_(Teuchos::null),
-  debugTest_(Teuchos::null)
+  _timerSolve(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr::solve()")),
+  _timerLocking(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr locking"))
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
@@ -496,425 +509,432 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     lobpcg_solver->initialize(*state_);
   }
 
-  // tell the lobpcg_solver to iterate
-  while (1) {
-    try {
-      lobpcg_solver->iterate();
+  // enter solve() iterations
+  {
+    Teuchos::TimeMonitor slvtimer(*_timerSolve);
 
-      ////////////////////////////////////////////////////////////////////////////////////
-      //
-      // check user-specified debug test; if it passed, return an exception
-      //
-      ////////////////////////////////////////////////////////////////////////////////////
-      if (debugTest_ != Teuchos::null && debugTest_->getStatus() == Passed) {
-        throw AnasaziError("Anasazi::LOBPCGSolMgr::solve(): User-specified debug status test returned Passed.");
-      }
-      ////////////////////////////////////////////////////////////////////////////////////
-      //
-      // check convergence first
-      //
-      ////////////////////////////////////////////////////////////////////////////////////
-      else if (ordertest->getStatus() == Passed || (maxtest != Teuchos::null && maxtest->getStatus() == Passed) ) {
-        // we have convergence or not
-        // ordertest->whichVecs() tells us which vectors from lockvecs and solver state are the ones we want
-        // ordertest->howMany() will tell us how many
-        break;
-      }
-      ////////////////////////////////////////////////////////////////////////////////////
-      //
-      // check locking if we didn't converge
-      //
-      ////////////////////////////////////////////////////////////////////////////////////
-      else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
+    // tell the lobpcg_solver to iterate
+    while (1) {
+      try {
+        lobpcg_solver->iterate();
 
-        // remove the locked vectors,values from lobpcg_solver: put them in newvecs, newvals
-        TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
-            "Anasazi::LOBPCGSolMgr::solve(): status test mistake: howMany() non-positive.");
-        TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
-            "Anasazi::LOBPCGSolMgr::solve(): status test mistake: howMany() not consistent with whichVecs().");
-        TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
-            "Anasazi::LOBPCGSolMgr::solve(): status test mistake: locking not deactivated.");
-        // get the indices
-        int numnew = locktest->howMany();
-        std::vector<int> indnew = locktest->whichVecs();
-
-        // don't lock more than maxLocked_; we didn't allocate enough space.
-        if (curNumLocked + numnew > maxLocked_) {
-          numnew = maxLocked_ - curNumLocked;
-          indnew.resize(numnew);
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
+        // check user-specified debug test; if it passed, return an exception
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
+        if (debugTest_ != Teuchos::null && debugTest_->getStatus() == Passed) {
+          throw AnasaziError("Anasazi::LOBPCGSolMgr::solve(): User-specified debug status test returned Passed.");
         }
-
-        // the call below to lobpcg_solver->setAuxVecs() will reset the solver to unitialized with hasP() == false
-        // store the hasP() state for use below
-        bool hadP = lobpcg_solver->hasP();
-
-        {
-          // debug printing
-          printer->print(Debug,"Locking vectors: ");
-          for (unsigned int i=0; i<indnew.size(); i++) {printer->stream(Debug) << " " << indnew[i];}
-          printer->print(Debug,"\n");
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
+        // check convergence first
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
+        else if (ordertest->getStatus() == Passed || (maxtest != Teuchos::null && maxtest->getStatus() == Passed) ) {
+          // we have convergence or not
+          // ordertest->whichVecs() tells us which vectors from lockvecs and solver state are the ones we want
+          // ordertest->howMany() will tell us how many
+          break;
         }
-        std::vector<MagnitudeType> newvals(numnew);
-        Teuchos::RCP<const MV> newvecs;
-        {
-          // work in a local scope, to hide the variabes needed for extracting this info
-          // get the vectors
-          newvecs = MVT::CloneView(*lobpcg_solver->getRitzVectors(),indnew);
-          // get the values
-          std::vector<Value<ScalarType> > allvals = lobpcg_solver->getRitzValues();
-          for (int i=0; i<numnew; i++) {
-            newvals[i] = allvals[indnew[i]].realpart;
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
+        // check locking if we didn't converge
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
+        else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
+
+          Teuchos::TimeMonitor lcktimer(*_timerLocking);
+
+          // remove the locked vectors,values from lobpcg_solver: put them in newvecs, newvals
+          TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
+              "Anasazi::LOBPCGSolMgr::solve(): status test mistake: howMany() non-positive.");
+          TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
+              "Anasazi::LOBPCGSolMgr::solve(): status test mistake: howMany() not consistent with whichVecs().");
+          TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
+              "Anasazi::LOBPCGSolMgr::solve(): status test mistake: locking not deactivated.");
+          // get the indices
+          int numnew = locktest->howMany();
+          std::vector<int> indnew = locktest->whichVecs();
+
+          // don't lock more than maxLocked_; we didn't allocate enough space.
+          if (curNumLocked + numnew > maxLocked_) {
+            numnew = maxLocked_ - curNumLocked;
+            indnew.resize(numnew);
           }
-        }
-        // put newvecs into lockvecs
-        {
-          std::vector<int> indlock(numnew);
-          for (int i=0; i<numnew; i++) indlock[i] = curNumLocked+i;
-          MVT::SetBlock(*newvecs,indlock,*lockvecs);
-          newvecs = Teuchos::null;
-        }
-        // put newvals into lockvals
-        lockvals.insert(lockvals.end(),newvals.begin(),newvals.end());
-        curNumLocked += numnew;
-        // add locked vecs as aux vecs, along with aux vecs from problem
-        {
-          std::vector<int> indlock(curNumLocked);
-          for (int i=0; i<curNumLocked; i++) indlock[i] = i;
-          Teuchos::RCP<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
-          if (probauxvecs != Teuchos::null) {
-            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs,curlocked) );
-          }
-          else {
-            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(curlocked) );
-          }
-        }
-        // add locked vals to ordertest
-        ordertest->setAuxVals(lockvals);
-        // fill out the empty state in the solver
-        {
-          LOBPCGState<ScalarType,MV> state = lobpcg_solver->getState();
-          Teuchos::RCP<MV> newstateX, newstateMX, newstateP, newstateMP;
-          //
-          // workMV will be partitioned as follows: workMV = [X P MX MP], 
-          //
-          // make a copy of the current X,MX state
-          std::vector<int> bsind(blockSize_); 
-          for (int i=0; i<blockSize_; i++) bsind[i] = i;
-          newstateX = MVT::CloneView(*workMV,bsind);
-          MVT::SetBlock(*state.X,bsind,*newstateX);
 
-          if (state.MX != Teuchos::null) {
-            std::vector<int> block3(blockSize_);
-            for (int i=0; i<blockSize_; i++) block3[i] = 2*blockSize_+i;
-            newstateMX = MVT::CloneView(*workMV,block3);
-            MVT::SetBlock(*state.MX,bsind,*newstateMX);
-          }
-          //
-          // get select part, set to random, apply M
+          // the call below to lobpcg_solver->setAuxVecs() will reset the solver to unitialized with hasP() == false
+          // store the hasP() state for use below
+          bool hadP = lobpcg_solver->hasP();
+
           {
-            Teuchos::RCP<MV> newX = MVT::CloneView(*newstateX,indnew);
-            MVT::MvRandom(*newX);
-
-            if (newstateMX != Teuchos::null) {
-              Teuchos::RCP<MV> newMX = MVT::CloneView(*newstateMX,indnew);
-              OPT::Apply(*problem_->getM(),*newX,*newMX);
+            // debug printing
+            printer->print(Debug,"Locking vectors: ");
+            for (unsigned int i=0; i<indnew.size(); i++) {printer->stream(Debug) << " " << indnew[i];}
+            printer->print(Debug,"\n");
+          }
+          std::vector<MagnitudeType> newvals(numnew);
+          Teuchos::RCP<const MV> newvecs;
+          {
+            // work in a local scope, to hide the variabes needed for extracting this info
+            // get the vectors
+            newvecs = MVT::CloneView(*lobpcg_solver->getRitzVectors(),indnew);
+            // get the values
+            std::vector<Value<ScalarType> > allvals = lobpcg_solver->getRitzValues();
+            for (int i=0; i<numnew; i++) {
+              newvals[i] = allvals[indnew[i]].realpart;
             }
           }
-
-          Teuchos::Array<Teuchos::RCP<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
-          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
-          // ortho X against the aux vectors
-          ortho->projectAndNormalizeMat(*newstateX,curauxvecs,dummyC,Teuchos::null,newstateMX);
-
-          if (hadP) {
-            //
-            // get P and optionally MP, orthogonalize against X and auxiliary vectors
-            std::vector<int> block2(blockSize_);
-            for (int i=0; i<blockSize_; i++) block2[i] = blockSize_+i;
-            newstateP = MVT::CloneView(*workMV,block2);
-            MVT::SetBlock(*state.P,bsind,*newstateP);
-
-            if (state.MP != Teuchos::null) {
-              std::vector<int> block4(blockSize_);
-              for (int i=0; i<blockSize_; i++) block4[i] = 3*blockSize_+i;
-              newstateMP = MVT::CloneView(*workMV,block4);
-              MVT::SetBlock(*state.MP,bsind,*newstateMP);
-            }
-
-            if (fullOrtho_) {
-              // ortho P against the new aux vectors and new X
-              curauxvecs.push_back(newstateX);
-              ortho->projectAndNormalizeMat(*newstateP,curauxvecs,dummyC,Teuchos::null,newstateMP);
+          // put newvecs into lockvecs
+          {
+            std::vector<int> indlock(numnew);
+            for (int i=0; i<numnew; i++) indlock[i] = curNumLocked+i;
+            MVT::SetBlock(*newvecs,indlock,*lockvecs);
+            newvecs = Teuchos::null;
+          }
+          // put newvals into lockvals
+          lockvals.insert(lockvals.end(),newvals.begin(),newvals.end());
+          curNumLocked += numnew;
+          // add locked vecs as aux vecs, along with aux vecs from problem
+          {
+            std::vector<int> indlock(curNumLocked);
+            for (int i=0; i<curNumLocked; i++) indlock[i] = i;
+            Teuchos::RCP<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
+            if (probauxvecs != Teuchos::null) {
+              lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs,curlocked) );
             }
             else {
-              // ortho P against the new aux vectors
-              ortho->projectAndNormalizeMat(*newstateP,curauxvecs,dummyC,Teuchos::null,newstateMP);
+              lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(curlocked) );
             }
           }
-          // set the new state
-          LOBPCGState<ScalarType,MV> newstate;
-          newstate.X  = newstateX;
-          newstate.MX = newstateMX;
-          newstate.P  = newstateP;
-          newstate.MP = newstateMP;
-          lobpcg_solver->initialize(newstate);
-        }
+          // add locked vals to ordertest
+          ordertest->setAuxVals(lockvals);
+          // fill out the empty state in the solver
+          {
+            LOBPCGState<ScalarType,MV> state = lobpcg_solver->getState();
+            Teuchos::RCP<MV> newstateX, newstateMX, newstateP, newstateMP;
+            //
+            // workMV will be partitioned as follows: workMV = [X P MX MP], 
+            //
+            // make a copy of the current X,MX state
+            std::vector<int> bsind(blockSize_); 
+            for (int i=0; i<blockSize_; i++) bsind[i] = i;
+            newstateX = MVT::CloneView(*workMV,bsind);
+            MVT::SetBlock(*state.X,bsind,*newstateX);
 
-        if (curNumLocked == maxLocked_) {
-          // disable locking now; remove locking test from combo test
-          combotest->removeTest(locktest);
+            if (state.MX != Teuchos::null) {
+              std::vector<int> block3(blockSize_);
+              for (int i=0; i<blockSize_; i++) block3[i] = 2*blockSize_+i;
+              newstateMX = MVT::CloneView(*workMV,block3);
+              MVT::SetBlock(*state.MX,bsind,*newstateMX);
+            }
+            //
+            // get select part, set to random, apply M
+            {
+              Teuchos::RCP<MV> newX = MVT::CloneView(*newstateX,indnew);
+              MVT::MvRandom(*newX);
+
+              if (newstateMX != Teuchos::null) {
+                Teuchos::RCP<MV> newMX = MVT::CloneView(*newstateMX,indnew);
+                OPT::Apply(*problem_->getM(),*newX,*newMX);
+              }
+            }
+
+            Teuchos::Array<Teuchos::RCP<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
+            Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
+            // ortho X against the aux vectors
+            ortho->projectAndNormalizeMat(*newstateX,curauxvecs,dummyC,Teuchos::null,newstateMX);
+
+            if (hadP) {
+              //
+              // get P and optionally MP, orthogonalize against X and auxiliary vectors
+              std::vector<int> block2(blockSize_);
+              for (int i=0; i<blockSize_; i++) block2[i] = blockSize_+i;
+              newstateP = MVT::CloneView(*workMV,block2);
+              MVT::SetBlock(*state.P,bsind,*newstateP);
+
+              if (state.MP != Teuchos::null) {
+                std::vector<int> block4(blockSize_);
+                for (int i=0; i<blockSize_; i++) block4[i] = 3*blockSize_+i;
+                newstateMP = MVT::CloneView(*workMV,block4);
+                MVT::SetBlock(*state.MP,bsind,*newstateMP);
+              }
+
+              if (fullOrtho_) {
+                // ortho P against the new aux vectors and new X
+                curauxvecs.push_back(newstateX);
+                ortho->projectAndNormalizeMat(*newstateP,curauxvecs,dummyC,Teuchos::null,newstateMP);
+              }
+              else {
+                // ortho P against the new aux vectors
+                ortho->projectAndNormalizeMat(*newstateP,curauxvecs,dummyC,Teuchos::null,newstateMP);
+              }
+            }
+            // set the new state
+            LOBPCGState<ScalarType,MV> newstate;
+            newstate.X  = newstateX;
+            newstate.MX = newstateMX;
+            newstate.P  = newstateP;
+            newstate.MP = newstateMP;
+            lobpcg_solver->initialize(newstate);
+          }
+
+          if (curNumLocked == maxLocked_) {
+            // disable locking now; remove locking test from combo test
+            combotest->removeTest(locktest);
+          }
+        }
+        else {
+          TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid return from lobpcg_solver::iterate().");
         }
       }
-      else {
-        TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): Invalid return from lobpcg_solver::iterate().");
-      }
-    }
-    ////////////////////////////////////////////////////////////////////////////////////
-    //
-    // check Ritz Failure
-    //
-    ////////////////////////////////////////////////////////////////////////////////////
-    catch (LOBPCGRitzFailure re) {
-      if (fullOrtho_==true || recover_==false) {
-        // if we are already using full orthogonalization, there isn't much we can do here. 
-        // the most recent information in the status tests is still valid, and can be used to extract/return the 
-        // eigenpairs that have converged.
+      ////////////////////////////////////////////////////////////////////////////////////
+      //
+      // check Ritz Failure
+      //
+      ////////////////////////////////////////////////////////////////////////////////////
+      catch (LOBPCGRitzFailure re) {
+        if (fullOrtho_==true || recover_==false) {
+          // if we are already using full orthogonalization, there isn't much we can do here. 
+          // the most recent information in the status tests is still valid, and can be used to extract/return the 
+          // eigenpairs that have converged.
+          printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << std::endl
+            << "Will not try to recover." << std::endl;
+          break; // while(1)
+        }
         printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << std::endl
-                                << "Will not try to recover." << std::endl;
-        break; // while(1)
-      }
-      printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << std::endl
-                              << "Full orthogonalization is off; will try to recover." << std::endl;
-      // get the current "basis" from the solver, orthonormalize it, do a rayleigh-ritz, and restart with the ritz vectors
-      // if there aren't enough, break and quit with what we have
-      //
-      // workMV = [X H P OpX OpH OpP], where OpX OpH OpP will be used for K and M
-      LOBPCGState<ScalarType,MV> curstate = lobpcg_solver->getState();
-      Teuchos::RCP<MV> restart, Krestart, Mrestart;
-      int localsize = lobpcg_solver->hasP() ? 3*blockSize_ : 2*blockSize_;
-      bool hasM = problem_->getM() != Teuchos::null;
-      {
-        std::vector<int> recind(localsize);
-        for (int i=0; i<localsize; i++) recind[i] = i;
-        restart = MVT::CloneView(*workMV,recind);
-      }
-      {
-        std::vector<int> recind(localsize);
-        for (int i=0; i<localsize; i++) recind[i] = localsize+i;
-        Krestart = MVT::CloneView(*workMV,recind);
-      }
-      if (hasM) {
-        Mrestart = Krestart;
-      }
-      else {
-        Mrestart = restart;
-      }
-      //
-      // set restart = [X H P] and Mrestart = M*[X H P]
-      //
-      // put X into [0 , blockSize)
-      {
-        std::vector<int> blk1(blockSize_);
-        for (int i=0; i < blockSize_; i++) blk1[i] = i;
-        MVT::SetBlock(*curstate.X,blk1,*restart);
-
-        // put MX into [0 , blockSize)
-        if (hasM) {
-          MVT::SetBlock(*curstate.MX,blk1,*Mrestart);
+          << "Full orthogonalization is off; will try to recover." << std::endl;
+        // get the current "basis" from the solver, orthonormalize it, do a rayleigh-ritz, and restart with the ritz vectors
+        // if there aren't enough, break and quit with what we have
+        //
+        // workMV = [X H P OpX OpH OpP], where OpX OpH OpP will be used for K and M
+        LOBPCGState<ScalarType,MV> curstate = lobpcg_solver->getState();
+        Teuchos::RCP<MV> restart, Krestart, Mrestart;
+        int localsize = lobpcg_solver->hasP() ? 3*blockSize_ : 2*blockSize_;
+        bool hasM = problem_->getM() != Teuchos::null;
+        {
+          std::vector<int> recind(localsize);
+          for (int i=0; i<localsize; i++) recind[i] = i;
+          restart = MVT::CloneView(*workMV,recind);
         }
-      }
-      //
-      // put H into [blockSize_ , 2*blockSize)
-      {
-        std::vector<int> blk2(blockSize_);
-        for (int i=0; i < blockSize_; i++) blk2[i] = blockSize_+i;
-        MVT::SetBlock(*curstate.H,blk2,*restart);
-
-        // put MH into [blockSize_ , 2*blockSize)
-        if (hasM) {
-          MVT::SetBlock(*curstate.MH,blk2,*Mrestart);
+        {
+          std::vector<int> recind(localsize);
+          for (int i=0; i<localsize; i++) recind[i] = localsize+i;
+          Krestart = MVT::CloneView(*workMV,recind);
         }
-      }
-      // optionally, put P into [2*blockSize,3*blockSize)
-      if (localsize == 3*blockSize_) {
-        std::vector<int> blk3(blockSize_);
-        for (int i=0; i < blockSize_; i++) blk3[i] = 2*blockSize_+i;
-        MVT::SetBlock(*curstate.P,blk3,*restart);
-
-        // put MP into [2*blockSize,3*blockSize)
-        if (hasM) {
-          MVT::SetBlock(*curstate.MP,blk3,*Mrestart);
-        }
-      }
-      // project against auxvecs and locked vecs, and orthonormalize the basis
-      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
-      Teuchos::Array<Teuchos::RCP<const MV> > Q;
-      {
-        if (curNumLocked > 0) {
-          std::vector<int> indlock(curNumLocked);
-          for (int i=0; i<curNumLocked; i++) indlock[i] = i;
-          Teuchos::RCP<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
-          Q.push_back(curlocked);
-        }
-        if (probauxvecs != Teuchos::null) {
-          Q.push_back(probauxvecs);
-        }
-      }
-      int rank = ortho->projectAndNormalizeMat(*restart,Q,dummyC,Teuchos::null,Mrestart);
-      if (rank < blockSize_) {
-        // quit
-        printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << blockSize_ << ".\n"
-                                << "Recovery failed." << std::endl;
-        break;
-      }
-      // reduce multivec size if necessary
-      if (rank < localsize) {
-        localsize = rank;
-        std::vector<int> redind(localsize);
-        for (int i=0; i<localsize; i++) redind[i] = i;
-        // grab the first part of restart,Krestart
-        restart = MVT::CloneView(*restart,redind);
-        Krestart = MVT::CloneView(*Krestart,redind);
         if (hasM) {
           Mrestart = Krestart;
         }
         else {
           Mrestart = restart;
         }
+        //
+        // set restart = [X H P] and Mrestart = M*[X H P]
+        //
+        // put X into [0 , blockSize)
+        {
+          std::vector<int> blk1(blockSize_);
+          for (int i=0; i < blockSize_; i++) blk1[i] = i;
+          MVT::SetBlock(*curstate.X,blk1,*restart);
+
+          // put MX into [0 , blockSize)
+          if (hasM) {
+            MVT::SetBlock(*curstate.MX,blk1,*Mrestart);
+          }
+        }
+        //
+        // put H into [blockSize_ , 2*blockSize)
+        {
+          std::vector<int> blk2(blockSize_);
+          for (int i=0; i < blockSize_; i++) blk2[i] = blockSize_+i;
+          MVT::SetBlock(*curstate.H,blk2,*restart);
+
+          // put MH into [blockSize_ , 2*blockSize)
+          if (hasM) {
+            MVT::SetBlock(*curstate.MH,blk2,*Mrestart);
+          }
+        }
+        // optionally, put P into [2*blockSize,3*blockSize)
+        if (localsize == 3*blockSize_) {
+          std::vector<int> blk3(blockSize_);
+          for (int i=0; i < blockSize_; i++) blk3[i] = 2*blockSize_+i;
+          MVT::SetBlock(*curstate.P,blk3,*restart);
+
+          // put MP into [2*blockSize,3*blockSize)
+          if (hasM) {
+            MVT::SetBlock(*curstate.MP,blk3,*Mrestart);
+          }
+        }
+        // project against auxvecs and locked vecs, and orthonormalize the basis
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC;
+        Teuchos::Array<Teuchos::RCP<const MV> > Q;
+        {
+          if (curNumLocked > 0) {
+            std::vector<int> indlock(curNumLocked);
+            for (int i=0; i<curNumLocked; i++) indlock[i] = i;
+            Teuchos::RCP<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
+            Q.push_back(curlocked);
+          }
+          if (probauxvecs != Teuchos::null) {
+            Q.push_back(probauxvecs);
+          }
+        }
+        int rank = ortho->projectAndNormalizeMat(*restart,Q,dummyC,Teuchos::null,Mrestart);
+        if (rank < blockSize_) {
+          // quit
+          printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << blockSize_ << ".\n"
+            << "Recovery failed." << std::endl;
+          break;
+        }
+        // reduce multivec size if necessary
+        if (rank < localsize) {
+          localsize = rank;
+          std::vector<int> redind(localsize);
+          for (int i=0; i<localsize; i++) redind[i] = i;
+          // grab the first part of restart,Krestart
+          restart = MVT::CloneView(*restart,redind);
+          Krestart = MVT::CloneView(*Krestart,redind);
+          if (hasM) {
+            Mrestart = Krestart;
+          }
+          else {
+            Mrestart = restart;
+          }
+        }
+        Teuchos::SerialDenseMatrix<int,ScalarType> KK(localsize,localsize), MM(localsize,localsize), S(localsize,localsize);
+        std::vector<MagnitudeType> theta(localsize);
+        // project the matrices
+        //
+        // MM = restart^H M restart
+        MVT::MvTransMv(1.0,*restart,*Mrestart,MM);
+        // 
+        // compute Krestart = K*restart
+        OPT::Apply(*problem_->getOperator(),*restart,*Krestart);
+        //
+        // KK = restart^H K restart
+        MVT::MvTransMv(1.0,*restart,*Krestart,KK);
+        rank = localsize;
+        msutils::directSolver(localsize,KK,Teuchos::rcp(&MM,false),S,theta,rank,1);
+        if (rank < blockSize_) {
+          printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
+            << "Block size is " << blockSize_ << ".\n"
+            << "Recovery failed." << std::endl;
+          break;
+        }
+        theta.resize(rank);
+        //
+        // sort the ritz values using the sort manager
+        {
+          Teuchos::BLAS<int,ScalarType> blas;
+          std::vector<int> order(rank);
+          // sort
+          sorter->sort( lobpcg_solver.get(), rank, theta, &order );   // don't catch exception
+          // Sort the primitive ritz vectors
+          Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,rank,rank);
+          msutils::permuteVectors(order,curS);
+        }
+        //
+        Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,blockSize_);
+        //
+        // compute the ritz vectors: store them in Krestart
+        LOBPCGState<ScalarType,MV> newstate;
+        Teuchos::RCP<MV> newX; 
+        {
+          std::vector<int> bsind(blockSize_);
+          for (int i=0; i<blockSize_; i++) bsind[i] = i;
+          newX = MVT::CloneView(*Krestart,bsind);
+        }
+        MVT::MvTimesMatAddMv(1.0,*restart,S1,0.0,*newX);
+        // send X and theta into the solver
+        newstate.X = newX;
+        theta.resize(blockSize_);
+        newstate.T = Teuchos::rcp( &theta, false );
+        // initialize
+        lobpcg_solver->initialize(newstate);
       }
-      Teuchos::SerialDenseMatrix<int,ScalarType> KK(localsize,localsize), MM(localsize,localsize), S(localsize,localsize);
-      std::vector<MagnitudeType> theta(localsize);
-      // project the matrices
-      //
-      // MM = restart^H M restart
-      MVT::MvTransMv(1.0,*restart,*Mrestart,MM);
-      // 
-      // compute Krestart = K*restart
-      OPT::Apply(*problem_->getOperator(),*restart,*Krestart);
-      //
-      // KK = restart^H K restart
-      MVT::MvTransMv(1.0,*restart,*Krestart,KK);
-      rank = localsize;
-      msutils::directSolver(localsize,KK,Teuchos::rcp(&MM,false),S,theta,rank,1);
-      if (rank < blockSize_) {
-        printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
-                                << "Block size is " << blockSize_ << ".\n"
-                                << "Recovery failed." << std::endl;
-        break;
+      catch (AnasaziError err) {
+        printer->stream(Errors) 
+          << "Anasazi::LOBPCGSolMgr::solve() caught unexpected exception from Anasazi::LOBPCG::iterate() at iteration " << lobpcg_solver->getNumIters() << std::endl
+          << err.what() << std::endl
+          << "Anasazi::LOBPCGSolMgr::solve() returning Unconverged with no solutions." << std::endl;
+        return Unconverged;
       }
-      theta.resize(rank);
-      //
-      // sort the ritz values using the sort manager
+      // don't catch any other exceptions
+    }
+
+    sol.numVecs = ordertest->howMany();
+    if (sol.numVecs > 0) {
+      sol.Evecs = MVT::Clone(*problem_->getInitVec(),sol.numVecs);
+      sol.Espace = sol.Evecs;
+      sol.Evals.resize(sol.numVecs);
+      std::vector<MagnitudeType> vals(sol.numVecs);
+
+      // copy them into the solution
+      std::vector<int> which = ordertest->whichVecs();
+      // indices between [0,blockSize) refer to vectors/values in the solver
+      // indices between [-curNumLocked,-1] refer to locked vectors/values [0,curNumLocked)
+      // everything has already been ordered by the solver; we just have to partition the two references
+      std::vector<int> inlocked(0), insolver(0);
+      for (unsigned int i=0; i<which.size(); i++) {
+        if (which[i] >= 0) {
+          TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): positive indexing mistake from ordertest.");
+          insolver.push_back(which[i]);
+        }
+        else {
+          // sanity check
+          TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): negative indexing mistake from ordertest.");
+          inlocked.push_back(which[i] + curNumLocked);
+        }
+      }
+
+      TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): indexing mistake.");
+
+      // set the vecs,vals in the solution
+      if (insolver.size() > 0) {
+        // set vecs
+        int lclnum = insolver.size();
+        std::vector<int> tosol(lclnum);
+        for (int i=0; i<lclnum; i++) tosol[i] = i;
+        Teuchos::RCP<const MV> v = MVT::CloneView(*lobpcg_solver->getRitzVectors(),insolver);
+        MVT::SetBlock(*v,tosol,*sol.Evecs);
+        // set vals
+        std::vector<Value<ScalarType> > fromsolver = lobpcg_solver->getRitzValues();
+        for (unsigned int i=0; i<insolver.size(); i++) {
+          vals[i] = fromsolver[insolver[i]].realpart;
+        }
+      }
+
+      // get the vecs,vals from locked storage
+      if (inlocked.size() > 0) {
+        int solnum = insolver.size();
+        // set vecs
+        int lclnum = inlocked.size();
+        std::vector<int> tosol(lclnum);
+        for (int i=0; i<lclnum; i++) tosol[i] = solnum + i;
+        Teuchos::RCP<const MV> v = MVT::CloneView(*lockvecs,inlocked);
+        MVT::SetBlock(*v,tosol,*sol.Evecs);
+        // set vals
+        for (unsigned int i=0; i<inlocked.size(); i++) {
+          vals[i+solnum] = lockvals[inlocked[i]];
+        }
+      }
+
+      // sort the eigenvalues and permute the eigenvectors appropriately
       {
-        Teuchos::BLAS<int,ScalarType> blas;
-        std::vector<int> order(rank);
-        // sort
-        sorter->sort( lobpcg_solver.get(), rank, theta, &order );   // don't catch exception
-        // Sort the primitive ritz vectors
-        Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,rank,rank);
-        msutils::permuteVectors(order,curS);
+        std::vector<int> order(sol.numVecs);
+        sorter->sort( lobpcg_solver.get(), sol.numVecs, vals, &order );
+        // store the values in the Eigensolution
+        for (int i=0; i<sol.numVecs; i++) {
+          sol.Evals[i].realpart = vals[i];
+          sol.Evals[i].imagpart = MT::zero();
+        }
+        // now permute the eigenvectors according to order
+        msutils::permuteVectors(sol.numVecs,order,*sol.Evecs);
       }
-      //
-      Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,blockSize_);
-      //
-      // compute the ritz vectors: store them in Krestart
-      LOBPCGState<ScalarType,MV> newstate;
-      Teuchos::RCP<MV> newX; 
-      {
-        std::vector<int> bsind(blockSize_);
-        for (int i=0; i<blockSize_; i++) bsind[i] = i;
-        newX = MVT::CloneView(*Krestart,bsind);
-      }
-      MVT::MvTimesMatAddMv(1.0,*restart,S1,0.0,*newX);
-      // send X and theta into the solver
-      newstate.X = newX;
-      theta.resize(blockSize_);
-      newstate.T = Teuchos::rcp( &theta, false );
-      // initialize
-      lobpcg_solver->initialize(newstate);
+
+      // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
+      sol.index.resize(sol.numVecs,0);
     }
-    catch (AnasaziError err) {
-      printer->stream(Errors) 
-        << "Anasazi::LOBPCGSolMgr::solve() caught unexpected exception from Anasazi::LOBPCG::iterate() at iteration " << lobpcg_solver->getNumIters() << std::endl
-        << err.what() << std::endl
-        << "Anasazi::LOBPCGSolMgr::solve() returning Unconverged with no solutions." << std::endl;
-      return Unconverged;
-    }
-    // don't catch any other exceptions
-  }
-
-  sol.numVecs = ordertest->howMany();
-  if (sol.numVecs > 0) {
-    sol.Evecs = MVT::Clone(*problem_->getInitVec(),sol.numVecs);
-    sol.Espace = sol.Evecs;
-    sol.Evals.resize(sol.numVecs);
-    std::vector<MagnitudeType> vals(sol.numVecs);
-
-    // copy them into the solution
-    std::vector<int> which = ordertest->whichVecs();
-    // indices between [0,blockSize) refer to vectors/values in the solver
-    // indices between [-curNumLocked,-1] refer to locked vectors/values [0,curNumLocked)
-    // everything has already been ordered by the solver; we just have to partition the two references
-    std::vector<int> inlocked(0), insolver(0);
-    for (unsigned int i=0; i<which.size(); i++) {
-      if (which[i] >= 0) {
-        TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): positive indexing mistake from ordertest.");
-        insolver.push_back(which[i]);
-      }
-      else {
-        // sanity check
-        TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): negative indexing mistake from ordertest.");
-        inlocked.push_back(which[i] + curNumLocked);
-      }
-    }
-
-    TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): indexing mistake.");
-
-    // set the vecs,vals in the solution
-    if (insolver.size() > 0) {
-      // set vecs
-      int lclnum = insolver.size();
-      std::vector<int> tosol(lclnum);
-      for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RCP<const MV> v = MVT::CloneView(*lobpcg_solver->getRitzVectors(),insolver);
-      MVT::SetBlock(*v,tosol,*sol.Evecs);
-      // set vals
-      std::vector<Value<ScalarType> > fromsolver = lobpcg_solver->getRitzValues();
-      for (unsigned int i=0; i<insolver.size(); i++) {
-        vals[i] = fromsolver[insolver[i]].realpart;
-      }
-    }
-
-    // get the vecs,vals from locked storage
-    if (inlocked.size() > 0) {
-      int solnum = insolver.size();
-      // set vecs
-      int lclnum = inlocked.size();
-      std::vector<int> tosol(lclnum);
-      for (int i=0; i<lclnum; i++) tosol[i] = solnum + i;
-      Teuchos::RCP<const MV> v = MVT::CloneView(*lockvecs,inlocked);
-      MVT::SetBlock(*v,tosol,*sol.Evecs);
-      // set vals
-      for (unsigned int i=0; i<inlocked.size(); i++) {
-        vals[i+solnum] = lockvals[inlocked[i]];
-      }
-    }
-
-    // sort the eigenvalues and permute the eigenvectors appropriately
-    {
-      std::vector<int> order(sol.numVecs);
-      sorter->sort( lobpcg_solver.get(), sol.numVecs, vals, &order );
-      // store the values in the Eigensolution
-      for (int i=0; i<sol.numVecs; i++) {
-        sol.Evals[i].realpart = vals[i];
-        sol.Evals[i].imagpart = MT::zero();
-      }
-      // now permute the eigenvectors according to order
-      msutils::permuteVectors(sol.numVecs,order,*sol.Evecs);
-    }
-
-    // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
-    sol.index.resize(sol.numVecs,0);
   }
 
   // print final summary
