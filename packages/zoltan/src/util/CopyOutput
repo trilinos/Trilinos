@@ -1,0 +1,18 @@
+#
+# Script for updating answer files from output subdirectories.
+#
+set CURR_WD=`pwd`
+set testdirs = `find $CURR_WD/* -type d -print`
+foreach dir ($testdirs)
+  echo $dir
+  set subdirs = `find $dir -name "output"  -print`
+  foreach subdir ($subdirs)
+    cd $subdir
+    set files = `ls *`
+    foreach file ($files)
+      echo "  " $file
+      /bin/cp $file ../answers/$file
+    end
+  end
+end
+
