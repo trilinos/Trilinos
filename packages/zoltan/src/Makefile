@@ -275,9 +275,9 @@ PAR_INC		= par_const.h par_average_const.h par_median_const.h \
 		  par_bisect_const.h \
                   par_tflops_special_const.c
 
-PARMETIS_CSRC	= parmetis_jostle.c build_graph.c verify_graph.c \
+PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c parmetis_interface.c build_graph.c verify_graph.c \
                   scatter_graph.c
-PARMETIS_INC	= parmetis_jostle_const.h
+PARMETIS_INC	= third_library_const.h
 
 TIMER_CSRC	= timer_params.c
 TIMER_INC	= timer_const.h

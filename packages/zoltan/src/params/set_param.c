@@ -27,7 +27,7 @@ extern "C" {
 #ifdef ZOLTAN_OCT
 #include "octupdate_const.h"
 #endif
-#include "parmetis_jostle_const.h"
+#include "third_library_const.h"
 #include "reftree_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
@@ -52,8 +52,8 @@ static int remove_param(ZZ *, char *, int);
 static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Set_Malloc_Param,
        Zoltan_RCB_Set_Param,
+       Zoltan_Third_Set_Param,
        Zoltan_ParMetis_Set_Param,
-       Zoltan_Jostle_Set_Param,
 #ifdef ZOLTAN_OCT
        Zoltan_Oct_Set_Param,
 #endif

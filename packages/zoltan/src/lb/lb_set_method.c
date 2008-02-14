@@ -126,14 +126,6 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
-  else if (strcmp(method_upper, "JOSTLE") == 0){
-    zz->LB.Method = GRAPH;
-    zz->LB.LB_Fn = Zoltan_Jostle;
-    zz->LB.Free_Structure = NULL;
-    zz->LB.Copy_Structure = NULL;
-    zz->LB.Point_Assign = NULL;
-    zz->LB.Box_Assign = NULL;
-  }
   else if (strcmp(method_upper, "REFTREE") == 0) {
     zz->LB.Method = REFTREE;
     zz->LB.LB_Fn = Zoltan_Reftree_Part;
