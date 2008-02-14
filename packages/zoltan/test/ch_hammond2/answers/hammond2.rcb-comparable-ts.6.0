@@ -1,5 +1,5 @@
 Decomposition Method 	= rcb
-Zoltan Parameters       = tflops_special=1
+Zoltan Parameters	= tflops_special=1
 Zoltan Parameters	= obj_weight_dim=2
 Zoltan Parameters       = obj_weights_comparable=1
 File Type		= Chaco
