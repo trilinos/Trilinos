@@ -1,0 +1,7 @@
+../configure --enable-mpi --with-mpi-compilers -C \
+--prefix=/home/maherou/Trilinos/SUN_MPI \
+--disable-dependency-tracking \
+CXXFLAGS="-pto -O3 -library=stlport4" CFLAGS=-O3 FFLAGS=-O3 \
+--disable-default-packages \
+--enable-loca --enable-aztecoo --enable-ifpack --enable-epetraext --enable-teuchos \
+LDFLAGS="-xlic_lib=sunperf"
