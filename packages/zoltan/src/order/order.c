@@ -171,6 +171,14 @@ int Zoltan_Order(
     strcpy(opt.method, "NODEND");
     strcpy(opt.order_type, "GLOBAL");
   }
+#ifdef ZOLTAN_SCOTCH
+  else if (!strcmp(opt.method, "SCOTCH")) {
+    Order_fn = Zoltan_Scotch_Order;
+    /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
+    strcpy(opt.method, "NODEND");
+    strcpy(opt.order_type, "GLOBAL");
+  }
+#endif /* ZOLTAN_SCOTCH */
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");
     ZOLTAN_TRACE_EXIT(zz, yo);

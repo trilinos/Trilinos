@@ -109,25 +109,20 @@ THIRD_PARTY_INCPATH =
 # link ParMETIS into zdrive.
 ifdef PARMETIS_LIBPATH
   GDEFINES     += -DZOLTAN_PARMETIS
-  ifdef SCOTCH_LIBPATH
-    THIRD_PARTY_LIBS += -lptscotchparmetis -lptscotch -lscotch -lscotcherrcom -lcommon
-    THIRD_PARTY_LIBPATH += $(SCOTCH_LIBPATH)
-  endif	
   THIRD_PARTY_LIBS += -lparmetis -lmetis
   THIRD_PARTY_LIBPATH += $(PARMETIS_LIBPATH)
   THIRD_PARTY_INCPATH += $(PARMETIS_INCPATH)
 endif
 
-# If JOSTLE_LIBPATH is defined, compile the JOSTLE interface and 
-# link JOSTLE into zdrive.
-ifdef JOSTLE_LIBPATH
-  GDEFINES     += -DZOLTAN_JOSTLE
-  THIRD_PARTY_LIBS += -ljostle
-  THIRD_PARTY_INCPATH += $(JOSTLE_INCPATH)
-  THIRD_PARTY_LIBPATH += $(JOSTLE_LIBPATH)
-  THIRD_PARTY_CSRC += jmpilib.c
-  THIRD_PARTY_VPATH += $(JOSTLE_SRCPATH)
-endif
+# If SCOTCH_LIBPATH is defined, compile the SCOTCH interface and 
+# link SCOTCH into zdrive.
+ifdef SCOTCH_LIBPATH
+  GDEFINES     += -DZOLTAN_SCOTCH
+  THIRD_PARTY_LIBS +=  -lptscotch -lscotch -lscotcherrcom -lcommon
+  THIRD_PARTY_LIBPATH += $(SCOTCH_LIBPATH)
+  THIRD_PARTY_INCPATH += $(SCOTCH_INCPATH)
+endif	
+
 
 # If PATOH_LIBPATH is defined, compile the PaToH interface and 
 # link PaToH into zdrive.
@@ -275,9 +270,16 @@ PAR_INC		= par_const.h par_average_const.h par_median_const.h \
 		  par_bisect_const.h \
                   par_tflops_special_const.c
 
-PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c parmetis_interface.c build_graph.c verify_graph.c \
+PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c build_graph.c verify_graph.c \
                   scatter_graph.c
 PARMETIS_INC	= third_library_const.h
+ifdef PARMETIS_LIBPATH
+PARMETIS_CSRC  += parmetis_interface.c
+endif
+ifdef SCOTCH_LIBPATH
+PARMETIS_CSRC  += scotch_interface.c
+endif
+
 
 TIMER_CSRC	= timer_params.c
 TIMER_INC	= timer_const.h

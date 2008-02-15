@@ -160,7 +160,7 @@ int Zoltan_ParMetis(
   }
 
 
-  timer_p = Zoltan_Preprocess_Timer(zz, alg, &use_timers);
+  timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
     /* Start timer */
   get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
@@ -634,7 +634,7 @@ int Zoltan_ParMetis_Order(
   if ((order_opt && order_opt->reorder))
     gr.id_known = 1;                        /* We already have global_ids and local_ids */
 
-  timer_p = Zoltan_Preprocess_Timer(zz, alg, &use_timers);
+  timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
     /* Start timer */
   get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);

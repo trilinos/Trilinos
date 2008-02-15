@@ -126,7 +126,7 @@ int Zoltan_Preprocess_Graph(
   );
 
 /* Activate timers if requested */
-int Zoltan_Preprocess_Timer(ZZ *zz, char* alg, int *use_timer);
+int Zoltan_Preprocess_Timer(ZZ *zz, int *use_timer);
 
 /* Display timing informations */
 void Zoltan_Third_DisplayTime(ZZ* zz, double* times);

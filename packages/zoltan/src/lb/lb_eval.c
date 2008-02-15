@@ -24,7 +24,7 @@ extern "C" {
 #include <limits.h>
 #include <float.h>
 
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
 #ifndef FLT_MAX /* just in case it's not defined */
 #define FLT_MAX (1e38) /* some large number */
 #endif

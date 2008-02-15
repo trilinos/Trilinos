@@ -75,6 +75,10 @@ typedef int ZOLTAN_ORDER_FN(ZZ *, int,
 /* Ordering functions */
 extern ZOLTAN_ORDER_FN Zoltan_ParMetis_Order;
 
+#ifdef ZOLTAN_SCOTCH
+extern ZOLTAN_ORDER_FN Zoltan_Scotch_Order;
+#endif /* ZOLTAN_SCOTCH */
+
 /* Parameter routine */
 extern int Zoltan_Order_Set_Param(char *, char *);
 

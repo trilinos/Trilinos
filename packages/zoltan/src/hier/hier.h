@@ -14,7 +14,7 @@
 #ifndef __HIER_H
 #define __HIER_H
 
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
 #include "zoltan_dd.h"
 
 #ifdef __cplusplus

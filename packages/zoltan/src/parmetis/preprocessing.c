@@ -700,7 +700,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
 }
 
 
-int Zoltan_Preprocess_Timer(ZZ *zz, char* alg, int *use_timers)
+int Zoltan_Preprocess_Timer(ZZ *zz, int *use_timers)
 {
   static int timer_p = -1;
 

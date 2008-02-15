@@ -18,7 +18,7 @@ extern "C" {
 
 #include "zz_const.h"
 #include "zz_util_const.h"
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
 #include "params_const.h"
 #include "phg_hypergraph.h"
 

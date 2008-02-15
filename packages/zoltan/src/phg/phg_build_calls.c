@@ -20,7 +20,8 @@ extern "C" {
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "phg.h"
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
+#include "third_library_tools.h"
 
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \

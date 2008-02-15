@@ -53,7 +53,12 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Set_Malloc_Param,
        Zoltan_RCB_Set_Param,
        Zoltan_Third_Set_Param,
+#ifdef ZOLTAN_PARMETIS
        Zoltan_ParMetis_Set_Param,
+#endif /* ZOLTAN_PARMETIS_SET_PARAM */
+#ifdef ZOLTAN_SCOTCH
+       Zoltan_Scotch_Set_Param,
+#endif /* ZOLTAN_PARMETIS_SET_PARAM */
 #ifdef ZOLTAN_OCT
        Zoltan_Oct_Set_Param,
 #endif

@@ -18,7 +18,8 @@ extern "C" {
 
 #include "phg.h"
 #include "zz_const.h"
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
+#include "third_library_tools.h"
 #include "zz_util_const.h"
 
 /*#define DEBUG_FILL_HYPERGRAPH 1*/
