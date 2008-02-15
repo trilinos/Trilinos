@@ -8,7 +8,8 @@ import re, sys, getopt, commands, time, os
 # Paths to executables and names
 # User can modify this
 
-executable={'Scotch': "../../Obj_linux64scotch/zdrive", 'ParMetis':   "../../Obj_linux64/zdrive" }
+executable="../../Obj_linux64scotch/zdrive"
+zdriveinp={'Scotch': "zdrive.inp.scotch" , 'ParMetis':   "zdrive.inp.parmetis" }
 evaltool='../../Obj_linux64scotch/order_eval'
 orderfile='./toscotchperm.py'
 gunzip='gunzip'
@@ -58,17 +59,17 @@ def extracttime(string):
 def computeordering(filename, procnbr, verbose):
     results = {}
 
-    for key in executable.keys():
+    for key in zdriveinp.keys():
         if (verbose == True):
             print "Running ordering with %s ..." % key
-        output = commands.getoutput("mpirun -np %d %s | tee %s/%s-%s-%d.%s" % (procnbr, executable[key], logdir, key, filename, procnbr, time.strftime("%Y%m%d%H%m%S")))
+        output = commands.getoutput("mpirun -np %d %s %s | tee %s/%s-%s-%d.%s" % (procnbr, executable, zdriveinp[key], logdir, key, filename, procnbr, time.strftime("%Y%m%d%H%m%S")))
         results.update({"%sTIME" % key: extracttime(output)})
         output = commands.getoutput("%s -n %d -o %s/%s-%d.%s %s" % (orderfile, procnbr, resultdir, filename, procnbr, key, currentfilename))
 
     if (verbose == True):
         print "Computing OPC ..."
 
-    for key in executable.keys():
+    for key in zdriveinp.keys():
         results.update(opcextract(filename, procnbr, key))
 
     return results
@@ -78,12 +79,12 @@ def computeordering(filename, procnbr, verbose):
 def displayresults(procmin, procmax, results, values):
     p = procmin
     print " --- %s ----" % values
-    for key in executable.keys():
+    for key in zdriveinp.keys():
         print "\t%s\t" % key,
     print '\n',
     while p<= procmax:
         print "%d"%p,
-        for key in executable.keys():
+        for key in zdriveinp.keys():
             print "\t%e" %results[p]['%s%s' % (key, values)],
         print "\n",
         p *=2
@@ -111,9 +112,12 @@ def ispowerof2(num):
 # Verifies that we have all executable files
 
 def doverify(proc, force):
-    for key in executable.keys():
-        if (os.path.exists(executable[key]) == False):
-            print "You have to compile %s" % executable[key]
+    if (os.path.exists(executable) == False):
+            print "You have to compile %s" % executable
+            sys.exit(2)
+    for key in zdriveinp.keys():
+        if (os.path.exists(zdriveinp[key]) == False):
+            print "Zdrive.inp file not found : %s" % zdriveinp[key]
             sys.exit(2)
     if (os.path.exists(evaltool) == False):
         print "You have to compile %s" % evaltool
