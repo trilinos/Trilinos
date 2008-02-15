@@ -19,7 +19,8 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
+#include "third_library_tools.h"
 
 /*
  * Scatter a ParMetis-style graph to all processors such that each proc

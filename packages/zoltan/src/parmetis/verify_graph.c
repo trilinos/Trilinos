@@ -19,7 +19,12 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "parmetis_jostle.h"
+#include "third_library_const.h"
+#include "third_library_tools.h"
+
+/* comparison routine for bsearch */
+static int Zoltan_Compare_Ints(const void *key, const void *arg);
+
 
 /*********************************************************************/
 /* Verify ParMetis graph structure.                                  */

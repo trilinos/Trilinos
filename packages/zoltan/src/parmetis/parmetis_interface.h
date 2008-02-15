@@ -17,7 +17,7 @@
 
 #include <limits.h>
 #include "zoltan_comm.h"
-#include "parmetis_jostle_const.h"
+#include "third_library_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

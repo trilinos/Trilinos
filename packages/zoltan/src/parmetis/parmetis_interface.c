@@ -188,9 +188,6 @@ int Zoltan_ParMetis(
     return (ierr);
   }
 
-  /* Copy input_parts array to part, in case ParMetis needs it. */
-  for (i=0; i<gr.num_obj; i++)
-    prt.part[i] = prt.input_part[i];
 #define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */
 
 

@@ -64,14 +64,15 @@ int rc;
   Zoltan_Assign_Param_Vals(zz->Params, Graph_Package_params, zz->Debug_Level,
           zz->Proc, zz->Debug_Proc);
 
-
+#ifdef ZOLTAN_PARMETIS
   if (!strcasecmp(package, "PARMETIS")){
-
     rc = Zoltan_ParMetis(zz, part_sizes, num_imp, imp_gids, imp_lids,
                          imp_procs, imp_to_part,
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
   }
-  else if (!strcasecmp(package, "ZOLTAN") ||
+  else
+#endif /* ZOLTAN_PARMETIS */
+ if (!strcasecmp(package, "ZOLTAN") ||
            !strcasecmp(package, "PHG")) {
 
     /* Use hypergraph partitioner on graph model. */
@@ -102,7 +103,7 @@ char *val)                      /* value of variable */
   PARAM_UTYPE result;         /* value returned from Check_Param */
   int index;                  /* index returned from Check_Param */
   char *valid_methods[] = {
-    "PARMETIS", "PHG", "ZOLTAN",
+    "PARMETIS", "PHG", "ZOLTAN", "SCOTCH",
     NULL };
 
   status = Zoltan_Check_Param(name, val, Graph_Package_params,
