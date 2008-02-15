@@ -72,6 +72,7 @@ int Zoltan_Postprocess_Graph(
     indextype *rank = NULL;
 
     if (ord) rank = ord->rank;
+    else rank = NULL;
     ierr = Zoltan_Postprocess_UnScatter_Graph (zz, gr, prt, &rank);
     if (ierr) {
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
@@ -113,7 +114,7 @@ Zoltan_Postprocess_UnScatter_Graph (ZZ *zz,
 
   if (gr->scatter >0){
     gr->num_obj = gr->num_obj_orig;
-    if (rank) {                        /* We have to project back rank */
+    if (*rank) {                        /* We have to project back rank */
       dst = (indextype*) ZOLTAN_MALLOC(gr->num_obj*sizeof(indextype));
       src = *rank;
     }

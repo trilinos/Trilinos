@@ -44,14 +44,7 @@ extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj,
        idxtype **adjncy, idxtype **vwgt, idxtype **vsize, idxtype **adjwgt,
        float **xyz, int ndims, int, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
-extern int Zoltan_Build_Graph( ZZ *zz, int graph_type, int check_graph,
-       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-       int obj_wgt_dim, int edge_wgt_dim,
-       idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, float **ewgts,
-       int **adjproc);
 extern int Zoltan_Compare_Ints(const void *key, const void *arg);
-extern int Zoltan_Get_Num_Edges_Per_Obj(ZZ *, int, ZOLTAN_ID_PTR,
-       ZOLTAN_ID_PTR, int **, int *, int *);
 
 
 /* Auxiliary function prototypes. */
@@ -201,12 +194,17 @@ int Zoltan_Preprocess_Graph(
 
   if (prt) {
     prt->part_sizes = prt->input_part_sizes;
-    prt->part = (idxtype *)ZOLTAN_MALLOC((gr->num_obj+1) * sizeof(indextype));
-    if (!prt->part){
-    /* Not enough memory */
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    if (gr->num_obj >0) {
+      prt->part = (indextype *)ZOLTAN_MALLOC((gr->num_obj+1) * sizeof(indextype));
+      if (!prt->part){
+	/* Not enough memory */
+	ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+      }
+      memcpy (prt->part, prt->input_part, (gr->num_obj) * sizeof(indextype));
     }
-    memcpy (prt->part, prt->input_part, (gr->num_obj+1) * sizeof(indextype));
+    else {
+      prt->input_part = prt->part = NULL;
+    }
   }
 
   /* Convert from float. */
