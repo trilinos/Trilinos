@@ -74,7 +74,7 @@
     TESTS = GCRODR/gcrodr_hb.exe,
             GCRODR/prec_gcrodr_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-4 --num-rhs=2 --max-subspace=31 --recycle=23 --max-cycles=75;
+    ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75;
     COMM = SERIAL, MPI;
 }
 
