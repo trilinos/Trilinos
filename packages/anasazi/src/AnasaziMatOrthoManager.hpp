@@ -303,7 +303,7 @@ namespace Anasazi {
 
   template <class ScalarType, class MV, class OP>
   MatOrthoManager<ScalarType,MV,OP>::MatOrthoManager(Teuchos::RCP<const OP> Op)
-      : _Op(Op), _hasOp(Op!=Teuchos::null) {}
+      : _Op(Op), _hasOp(Op!=Teuchos::null), _OpCounter(0) {}
 
   template <class ScalarType, class MV, class OP>
   void MatOrthoManager<ScalarType,MV,OP>::setOp( Teuchos::RCP<const OP> Op ) 
