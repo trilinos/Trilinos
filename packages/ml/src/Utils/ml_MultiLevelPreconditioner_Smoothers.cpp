@@ -152,7 +152,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     if (Comm().NumProc() == 1) NodeSubSmOmega = 1.0;
     else                       NodeSubSmOmega = ML_DDEFAULT;
     NodeSubSmOmega = List_.get("subsmoother: damping factor",NodeSubSmOmega);
-    NodeSubSmOmega = List_.get("subsmoother: edge damping factor",NodeSubSmOmega);
+    NodeSubSmOmega = List_.get("subsmoother: node damping factor",NodeSubSmOmega);
     SubSmType = List_.get("subsmoother: type","MLS");
 
     // Grab or set subsmoother options that are not level specific. 
