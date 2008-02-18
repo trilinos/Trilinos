@@ -912,8 +912,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
         lapack.GESVD('N', 'O',
                    R.numRows(),R.numCols(),R.values(), R.numRows(),
                    &Svec[0],
-                   Ur.values(),one,
-                   VT.values(),one, // Output: VT stored in R
+                   Ur.values(),1,
+                   VT.values(),1, // Output: VT stored in R
                    &work[0], lwork,
                    &rwork[0], &info);
 
