@@ -413,4 +413,7 @@ July 7 2005: version 2.14.00
   - fixed a bug where the hasSlaveDof_ member of fei::Record wasn't initialized in
     the constructor. This was causing some erroneous is_slave() queries in the
     Aria application.
+  - added a call to AZ_manage_memory(AZ_CLEAR_ALL) in fei_Solver_AztecOO's destructor,
+    to make sure that Aztec cleans up any memory allocated with AZ_keep_info=1. This
+    cured some memory leaks seen by the Aria application.
 

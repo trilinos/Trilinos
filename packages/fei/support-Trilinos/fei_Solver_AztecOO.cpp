@@ -52,6 +52,8 @@ Solver_AztecOO::~Solver_AztecOO()
   delete [] ml_aztec_params_;
   delete ml_prec_;
 #endif
+
+  AZ_manage_memory(0, AZ_CLEAR_ALL, 0, NULL, NULL);
 }
 
 //---------------------------------------------------------------------------
