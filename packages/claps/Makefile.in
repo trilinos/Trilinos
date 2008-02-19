@@ -253,10 +253,8 @@ config/ac_cxx_mutable.m4                config/mkinstalldirs \
 config/ac_cxx_namespaces.m4             config/tac_arg_check_mpi.m4 \
 config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
 config/tac_arg_enable_feature.m4 	config/ac_cxx_std_sprintf.m4 \
-config/tac_arg_with_ar.m4 		config/tac_arg_with_blaslib.m4 \
-config/acx_blas.m4 			config/tac_arg_with_flags.m4 \
-config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
-config/tac_arg_with_lapacklib.m4 \
+config/tac_arg_with_ar.m4               config/tac_arg_with_flags.m4 \
+config/tac_arg_with_incdirs.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub                       config/strip_dup_incl_paths.pl \
 config/strip_dup_libs.pl                config/tac_arg_with_perl.m4 \
