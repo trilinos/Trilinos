@@ -36,6 +36,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 #include <Epetra_LinearProblem.h>
+#include <Epetra_Util.h>
 	
 #include <EpetraExt_AmesosBTF_CrsMatrix.h>
 #include <EpetraExt_Reindex_CrsMatrix.h>
@@ -63,7 +64,7 @@ operator()( OriginalTypeRef orig )
   OldRHS_ = Teuchos::rcp( orig.GetRHS(), false );
   OldLHS_ = Teuchos::rcp( orig.GetLHS(), false );
   OldMatrix_ = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>( orig.GetMatrix() ), false );
-
+	
   int nGlobal = OldMatrix_->NumGlobalRows(); 
   int n = OldMatrix_->NumMyRows();
   int nnz = OldMatrix_->NumMyNonzeros();  
@@ -72,6 +73,15 @@ operator()( OriginalTypeRef orig )
   int myMatProc = -1, matProc = -1;
   int myPID = OldMatrix_->Comm().MyPID();
   int numProcs = OldMatrix_->Comm().NumProc();
+
+  const Epetra_BlockMap& oldRowMap = OldMatrix_->RowMap();
+
+  // Get some information about the parallel distribution.
+  int maxMyRows = 0;
+  std::vector<int> numGlobalElem( numProcs );
+  OldMatrix_->Comm().GatherAll(&n, &numGlobalElem[0], 1);
+  OldMatrix_->Comm().MaxAll(&n, &maxMyRows, 1);
+
   for (int proc=0; proc<numProcs; proc++) 
   {
     if (OldMatrix_->NumGlobalNonzeros() == OldMatrix_->NumMyNonzeros())
@@ -80,16 +90,14 @@ operator()( OriginalTypeRef orig )
   OldMatrix_->Comm().MaxAll( &myMatProc, &matProc, 1 );
   
   Teuchos::RCP<Epetra_CrsMatrix> serialMatrix;
-  if( OldMatrix_->RowMap().DistributedGlobal() && matProc == -1) 
+  Teuchos::RCP<Epetra_Map> serialMap;	
+  if( oldRowMap.DistributedGlobal() && matProc == -1) 
   {
     // The matrix is distributed and needs to be moved to processor zero.
     // Set the zero processor as the master.
     matProc = 0;
-    Teuchos::RCP<Epetra_Map> serialMap;
-    if (myPID == matProc) 
-      serialMap = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, 0, OldMatrix_->Comm() ) );
-    else
-      serialMap = Teuchos::rcp( new Epetra_Map( nGlobal, 0, 0, OldMatrix_->Comm() ) );
+    serialMap = Teuchos::rcp( new Epetra_Map( Epetra_Util::Create_Root_Map( OldMatrix_->RowMap(), matProc ) ) );
+    
     Epetra_Import serialImporter( *serialMap, OldMatrix_->RowMap() );
     serialMatrix = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *serialMap, 0 ) );
     serialMatrix->Import( *OldMatrix_, serialImporter, Insert );
@@ -106,32 +114,70 @@ operator()( OriginalTypeRef orig )
     cout << *serialMatrix << endl;
   }
 
+  // Obtain the current row and column orderings
+  std::vector<int> origGlobalRows(nGlobal), origGlobalCols(nGlobal);
+  serialMatrix->RowMap().MyGlobalElements( &origGlobalRows[0] );
+  serialMatrix->ColMap().MyGlobalElements( &origGlobalCols[0] );
+  
+  // Perform reindexing on the full serial matrix (needed for BTF).
+  Epetra_Map reIdxMap( serialMatrix->RowMap().NumGlobalElements(), serialMatrix->RowMap().NumMyElements(), 0, serialMatrix->Comm() );
+  EpetraExt::ViewTransform<Epetra_CrsMatrix> * reIdxTrans =
+    new EpetraExt::CrsMatrix_Reindex( reIdxMap );
+  Epetra_CrsMatrix newSerialMatrix = (*reIdxTrans)( *serialMatrix );
+  reIdxTrans->fwd();
+  
   // Compute and apply BTF to the serial CrsMatrix and has been filtered by the threshold
   EpetraExt::AmesosBTF_CrsMatrix BTFTrans( threshold_, upperTri_, verbose_ );
-  Epetra_CrsMatrix newSerialMatrix = BTFTrans( *serialMatrix );
+  Epetra_CrsMatrix newSerialMatrixBTF = BTFTrans( newSerialMatrix );
   BTFTrans.fwd();
-
+  
   rowPerm_ = BTFTrans.RowPerm();
   colPerm_ = BTFTrans.ColPerm();
   blockPtr_ = BTFTrans.BlockPtr();
   numBlocks_ = BTFTrans.NumBlocks();
+ 
+  if (myPID == matProc && verbose_) {
+    bool isSym = true;
+    for (int i=0; i<nGlobal; ++i) {
+      if (rowPerm_[i] != colPerm_[i]) {
+        isSym = false;
+        break;
+      }
+    }
+    std::cout << "The BTF permutation symmetry (0=false,1=true) is : " << isSym << std::endl;
+  }
+  
+  // Compute the permutation w.r.t. the original row and column GIDs.
+  std::vector<int> origGlobalRowsPerm(nGlobal), origGlobalColsPerm(nGlobal);
+  std::vector<int> origBlockPtr(numBlocks_);
+  if (myPID == matProc) {
+    for (int i=0; i<nGlobal; ++i) {
+      origGlobalRowsPerm[i] = origGlobalRows[ rowPerm_[i] ];
+      origGlobalColsPerm[i] = origGlobalCols[ colPerm_[i] ];
+    }
+    for (int i=0; i<numBlocks_; ++i) {
+      origBlockPtr[i] = origGlobalRows[ blockPtr_[i] ];
+    }
+  }
+  OldMatrix_->Comm().Broadcast( &origGlobalRowsPerm[0], nGlobal, matProc );
+  OldMatrix_->Comm().Broadcast( &origGlobalColsPerm[0], nGlobal, matProc );
 
   // Generate the full serial matrix that imports according to the previously computed BTF.
-  Epetra_CrsMatrix newSerialMatrixF( Copy, newSerialMatrix.RowMap(), newSerialMatrix.ColMap(), 0 );
-  newSerialMatrixF.Import( *serialMatrix, *(BTFTrans.Importer()), Insert );
-  newSerialMatrixF.FillComplete();
-
+  Epetra_CrsMatrix newSerialMatrixT( Copy, newSerialMatrixBTF.RowMap(), 0 );
+  newSerialMatrixT.Import( newSerialMatrix, *(BTFTrans.Importer()), Insert );
+  newSerialMatrixT.FillComplete();
+  
   // Perform reindexing on the full serial matrix (needed for balancing).
-  Epetra_Map reIdxMap( newSerialMatrixF.RowMap().NumGlobalElements(), newSerialMatrixF.RowMap().NumMyElements(), 0, newSerialMatrixF.Comm() );
-  EpetraExt::ViewTransform<Epetra_CrsMatrix> * reIdxTrans =
-        new EpetraExt::CrsMatrix_Reindex( reIdxMap );
-  Epetra_CrsMatrix tNewSerialMatrixF = (*reIdxTrans)( newSerialMatrixF );
-  reIdxTrans->fwd();
+  Epetra_Map reIdxMap2( newSerialMatrixT.RowMap().NumGlobalElements(), newSerialMatrixT.RowMap().NumMyElements(), 0, newSerialMatrixT.Comm() );
+  EpetraExt::ViewTransform<Epetra_CrsMatrix> * reIdxTrans2 =
+    new EpetraExt::CrsMatrix_Reindex( reIdxMap2 );
+  Epetra_CrsMatrix tNewSerialMatrixT = (*reIdxTrans2)( newSerialMatrixT );
+  reIdxTrans2->fwd();
 
   Teuchos::RCP<Epetra_Map> balancedMap;
-
+  
   if (balance_ == "linear") {
-
+    
     // Distribute block somewhat evenly across processors
     std::vector<int> rowDist(numProcs+1,0);
     int balRows = nGlobal / numProcs + 1;
@@ -146,11 +192,11 @@ operator()( OriginalTypeRef orig )
     
     // Create new Map based on this linear distribution.
     int numMyBalancedRows = rowDist[myPID+1]-rowDist[myPID];
-
-    NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, &rowPerm_[ rowDist[myPID] ], 0, OldMatrix_->Comm() ) );
+    
+    NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, &origGlobalRowsPerm[ rowDist[myPID] ], 0, OldMatrix_->Comm() ) );
     // Right now we do not explicitly build the column map and assume the BTF permutation is symmetric!
     //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
-
+    
     std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;    
     //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, 0, serialMatrix->Comm() ) );
   }
@@ -160,7 +206,7 @@ operator()( OriginalTypeRef orig )
     std::vector<double> weight;
     Teuchos::RCP<Epetra_CrsGraph> blkGraph;
     EpetraExt::BlockAdjacencyGraph adjGraph;
-    blkGraph = adjGraph.compute( const_cast<Epetra_CrsGraph&>(tNewSerialMatrixF.Graph()), 
+    blkGraph = adjGraph.compute( const_cast<Epetra_CrsGraph&>(tNewSerialMatrixT.Graph()), 
 							numBlocks_, blockPtr_, weight);
     Epetra_Vector rowWeights( View, blkGraph->Map(), &weight[0] );
     
@@ -180,7 +226,7 @@ operator()( OriginalTypeRef orig )
     for (int i=0; i<myNumBlkRows; ++i) {
       grid = balancedGraph->GRID( i );
       for (int j=blockPtr_[grid]; j<blockPtr_[grid+1]; ++j) {
-	newRangeElements[myElements++] = rowPerm_[j];
+	newRangeElements[myElements++] = origGlobalRowsPerm[j];
 	//myGlobalElements[myElements++] = j;
       }
     }
