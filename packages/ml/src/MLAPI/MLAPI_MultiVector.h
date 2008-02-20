@@ -806,9 +806,9 @@ public:
       tmp[i] = (*this)(i, v);
 
     if (IsIncreasing)
-      sort(tmp.begin(), tmp.end(), std::greater<double>());
+      std::sort(tmp.begin(), tmp.end(), std::greater<double>());
     else
-      sort(tmp.begin(), tmp.end());
+      std::sort(tmp.begin(), tmp.end());
 
     for (int i = 0 ; i < GetMyLength() ; ++i)
       (*this)(i,v) = tmp[i];
