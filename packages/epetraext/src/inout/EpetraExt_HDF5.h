@@ -573,6 +573,6 @@ class HDF5
 
     // @}
 };
-};
+}
 #endif
 #endif /* EPETRAEXT_HDF5_H */
