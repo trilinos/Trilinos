@@ -58,11 +58,9 @@ config/replace-install-prefix.pl          config/tac_arg_enable_can_use_package.
 config/tac_arg_enable_compiler_options.m4 config/tac_arg_enable_export-makefiles.m4 \
 config/tac_arg_enable_feature.m4  	  config/tac_arg_enable_option.m4 \
 config/ac_prompt_user.m4                  config/tac_arg_with_ar.m4 \
-config/ac_prompt_user_no_define.m4        config/tac_arg_with_blaslib.m4 \
-config/acx_blas.m4                        config/tac_arg_with_compiler.m4 \
+config/ac_prompt_user_no_define.m4        config/tac_arg_with_compiler.m4 \
 config/acx_check_dos_filesys.m4           config/tac_arg_with_flags.m4 \
-config/acx_lapack.m4                      config/tac_arg_with_incdirs.m4 \
-config/acx_pthread.m4                     config/tac_arg_with_lapacklib.m4 \
+config/tac_arg_with_incdirs.m4            config/acx_pthread.m4 \
 config/config.guess                       config/tac_arg_with_libdirs.m4 \
 config/config.sub                         config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
