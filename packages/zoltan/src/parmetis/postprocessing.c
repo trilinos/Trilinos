@@ -297,7 +297,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 
   ZOLTAN_FREE(&newproc);
 
-  return (ierr);
+  return (ZOLTAN_OK);
 }
 
 

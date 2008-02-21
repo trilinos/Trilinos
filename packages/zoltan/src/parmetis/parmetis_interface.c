@@ -135,6 +135,7 @@ int Zoltan_ParMetis(
   memset (&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset (&part, 0, sizeof(ZOLTAN_Output_Part));
   part.num_imp = part.num_exp = -1;
+  prt.input_part_sizes = prt.part_sizes = part_sizes;
 
   /* Most ParMetis methods use only graph data */
   gr.get_data = 1;
@@ -188,8 +189,6 @@ int Zoltan_ParMetis(
     return (ierr);
   }
 
-#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */
-
 
 #if (PARMETIS_MAJOR_VERSION >= 3)
   /* Get object sizes if requested */
@@ -208,6 +207,27 @@ int Zoltan_ParMetis(
   wgtflag = 2*(gr.obj_wgt_dim>0) + (gr.edge_wgt_dim>0);
   numflag = 0;
   ncon = (gr.obj_wgt_dim > 0 ? gr.obj_wgt_dim : 1);
+
+  if (!prt.part_sizes){
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"Input parameter part_sizes is NULL.");
+  }
+  if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)) {
+    for (i=0; i<num_part; i++){
+      int j;
+
+      printf("Debug: Size(s) for partition %1d = ", i);
+      for (j=0; j<ncon; j++)
+	printf("%f ", prt.part_sizes[i*ncon+j]);
+      printf("\n");
+    }
+  }
+
+  /* if (strcmp(alg, "ADAPTIVEREPART") == 0) */
+  for (i = 0; i < num_part*ncon; i++)
+    if (prt.part_sizes[i] == 0) 
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Zero-sized partition(s) requested! "
+			    "ParMETIS 3.x will likely fail. Please use a different method, or remove the zero-sized partitions from the problem.");
+
 
   /* Set Imbalance Tolerance for each weight component. */
   imb_tols = (float *) ZOLTAN_MALLOC(ncon * sizeof(float));
@@ -243,7 +263,7 @@ int Zoltan_ParMetis(
   }
   else if (strcmp(alg, "ADAPTIVEREPART") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
-    ParMETIS_V3_AdaptiveRepart (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, vsize, gr.ewgts,
+    ParMETIS_V3_AdaptiveRepart (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, vsp.vsize, gr.ewgts,
 				&wgtflag, &numflag, &ncon, &num_part, prt.part_sizes, imb_tols,
 				&itr, options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
@@ -255,7 +275,8 @@ int Zoltan_ParMetis(
 			    options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
-#else  /* PARMETIS_MAJOR_VERSION >= 3 */
+  else
+#endif  /* PARMETIS_MAJOR_VERSION >= 3 */
   /* Check for ParMetis 2.0 routines */
   if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
@@ -272,7 +293,7 @@ int Zoltan_ParMetis(
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_PartGeom (gr.vtxdist, &ndims, xyz, prt.part, &comm);
+    ParMETIS_PartGeom (gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
@@ -305,7 +326,6 @@ int Zoltan_ParMetis(
 			 &numflag, options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
-#endif
   else {
     /* Sanity check: This should never happen! */
     char msg[256];
@@ -440,21 +460,21 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 	strcpy(alg, "ADAPTIVEREPART");
 	*pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
                           100 gives similar partition quality to GDiffusion */
-  #else
+#else /* PARMETIS_MAJOR_VERSION >= 3 */
 	strcpy(alg, "REPARTGDIFFUSION");
-  #endif
+#endif
       }
       else if (!strcasecmp(zz->LB.Approach, "refine")){
 	strcpy(alg, "REFINEKWAY");
       }
       else { /* If no LB_APPROACH is set, use repartition */
-  #if PARMETIS_MAJOR_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
 	strcpy(alg, "ADAPTIVEREPART");
 	*pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
                           100 gives similar partition quality to GDiffusion */
-  #else
+#else /*PARMETIS_MAJOR_VERSION >= 3 */
 	strcpy(alg, "REPARTGDIFFUSION");
-  #endif
+#endif
       }
     }
     else {
@@ -481,7 +501,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 
     /* Copy option values to ParMetis options array */
 
-  #if PARMETIS_MAJOR_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
     /* In this version of Zoltan, processors and partitions are coupled. */
     /* This will likely change in future releases, and then the options  */
     /* value should change to DISCOUPLED.                                */
@@ -496,7 +516,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 	*itr = *pmv3_itr;
     }
     else
-  #endif
+#endif
     {
       /* ParMetis 2.0 options */
       options[OPTION_IPART] = coarse_alg;
@@ -509,7 +529,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       strcpy(alg, ord->order_opt->method);
     }
 
-  #if PARMETIS_MAJOR_VERSION >= 3
+#if PARMETIS_MAJOR_VERSION >= 3
     if ((zz->Num_Proc == 1) &&
         (!strcmp(alg, "ADAPTIVEREPART") ||
          !strcmp(alg, "REPARTLDIFFUSION") ||
@@ -524,10 +544,10 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       ZOLTAN_PRINT_ERROR(zz->Proc, __func__, str);
       return (ZOLTAN_FATAL);
     }
-  #endif
+#endif
 
     return(ZOLTAN_OK);
-  }
+}
 
 
 

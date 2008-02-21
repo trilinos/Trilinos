@@ -113,23 +113,6 @@ int Zoltan_Preprocess_Graph(
   gr->vwgt = gr->ewgts = NULL;
   float_vwgt = float_ewgts = NULL;
 
-  /* If reorder is true, we already have the id lists. Ignore weights. */
-  if ((*global_ids == NULL) || (!gr->id_known)){
-    int * input_part;
-    ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
-			       gr->obj_wgt_dim, &float_vwgt, &input_part);
-    if (prt) {
-      prt->input_part = input_part;
-    }
-    else { /* Ordering, dont need part */
-      ZOLTAN_FREE(&input_part);
-    }
-    if (ierr){
-      /* Return error */
-      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
-    }
-  }
-
   if (gr->obj_wgt_dim >= 0) {
     /* Check weight dimensions */
     if (zz->Obj_Weight_Dim<0){
@@ -182,6 +165,23 @@ int Zoltan_Preprocess_Graph(
   Zoltan_Bind_Param(Graph_params, "ADD_OBJ_WEIGHT", (void *) add_obj_weight);
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
+
+  /* If reorder is true, we already have the id lists. Ignore weights. */
+  if ((*global_ids == NULL) || (!gr->id_known)){
+    int * input_part;
+    ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
+			       gr->obj_wgt_dim, &float_vwgt, &input_part);
+    if (prt) {
+      prt->input_part = input_part;
+    }
+    else { /* Ordering, dont need part */
+      ZOLTAN_FREE(&input_part);
+    }
+    if (ierr){
+      /* Return error */
+      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
+    }
+  }
 
 
   /* Build Graph for third party library data structures, or just get vtxdist. */
@@ -381,7 +381,7 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
   }
 
   *rnd_wgt = (weighttype *)ZOLTAN_MALLOC(ndim * number * sizeof(weighttype));
-  if (*rnd_wgt){
+  if (*rnd_wgt == NULL){
 	/* Not enough memory */
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
@@ -395,9 +395,9 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
   }
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
-    for (i99=0; i99 < (number <3 ? number : 3); i99++){
+    for (i99=0; i99 < (number < 3 ? number : 3); i99++){
       for (k=0; k<gr->obj_wgt_dim; k++)
-	sprintf(msg+10*k, "%9d ", *rnd_wgt[i99*gr->obj_wgt_dim+k]);
+	sprintf(msg+10*k, "%9d ", (*rnd_wgt)[i99*gr->obj_wgt_dim+k]);
       printf("[%1d] Debug: scaled weights for %s %d = %s\n",
 	     zz->Proc, name, offset+i99, msg);
     }
@@ -549,11 +549,9 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
     if (prt) {
       src = prt->part_orig = prt->part;
       prt->part = dst;
-    Zoltan_Comm_Do(gr->comm_plan, TAG1, (char *) src, sizeof(indextype),
+      Zoltan_Comm_Do(gr->comm_plan, TAG1, (char *) src, sizeof(indextype),
 		     (char *) dst);
     }
-    else
-      src = (indextype *) ZOLTAN_MALLOC((gr->num_obj_orig+1) * sizeof(indextype));
     if (!prt) {
       ZOLTAN_FREE (&src);
       ZOLTAN_FREE (&dst);
