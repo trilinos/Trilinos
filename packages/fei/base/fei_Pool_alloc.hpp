@@ -82,7 +82,7 @@ class fei_Pool_alloc {
   void destroy(pointer p)
   { p->~T(); }
 
-  size_type max_size() const throw();
+  size_type max_size() const throw() { return n_>0 ? n_ : 1; }
 
 };
 
