@@ -198,7 +198,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    ML_CommInfoOP *getrow_comm; 
    ML_Operator *Ptent;
    ML_Aggregate_Viz_Stats *grid_info;
-   char str[80];
 #ifdef ML_TIMING
    double t0;
 #endif

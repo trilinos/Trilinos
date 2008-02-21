@@ -661,19 +661,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
  try {
 
-  // Validate Parameter List
-  int depth=List_.get("ML validate depth",0);
-  if(List_.get("ML validate parameter list",true)
-     && !ValidateMLPParameters(List_,depth))
-  {
-    if (Comm_->MyPID() == 0)
-      std::cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<std::endl;
-#   ifdef HAVE_MPI
-    MPI_Finalize();
-#   endif
-    exit(EXIT_FAILURE);
-  }
-
   // ============================================================== //
   // check whether the old filtering is still ok for the new matrix //
   // ============================================================== //
@@ -726,22 +713,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
 #endif
 
+  if (List_.name() == "ANONYMOUS") List_.setName("ML preconditioner");
+
   // check for an XML input file and validate again if necessary
   std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
   if (List_.get("read XML", false)) {
     ReadXML(XMLFileName,List_,Comm());
-    if (List_.get("ML validate parameter list",true)) {
-      int depth=List_.get("ML validate depth",0);
-      if (!ValidateMLPParameters(List_,depth)) {
-        if (Comm_->MyPID() == 0)
-          std::cout<< "ERROR: The file " << XMLFileName
-                   << " contains an incorrect parameter!"<<std::endl;
-#       ifdef HAVE_MPI
-        MPI_Finalize();
-#       endif
-        exit(EXIT_FAILURE);
-      }
-    }
   } //if (List_.get("read XML", false))
 
   if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
@@ -800,10 +777,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // compute how to traverse levels (increasing of descreasing)
   // By default, use ML_INCREASING.
   
-  std::string IsIncreasing = List_.get("increasing or decreasing", "increasing");
+  string IsIncreasing = List_.get("increasing or decreasing", "increasing");
 
   if( SolvingMaxwell_ == true ) IsIncreasing = "decreasing";
-  
+
   int FinestLevel;
 
   LevelID_.resize(NumLevels_);
@@ -818,9 +795,29 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // check no levels are negative
   for (int i = 0 ; i < NumLevels_ ; ++i)
     if (LevelID_[i] < 0) {
-      std::cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << std::endl;
+      cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << endl;
       ML_EXIT(EXIT_FAILURE);
-    }  
+    }
+
+  // Uncomment next three lines to create new master list in which smoother
+  // and aggregation level-specific options are now in sublists.
+/*
+  ParameterList newList;
+  ML_CreateSublist(List_,newList,&LevelID_[0],NumLevels_);
+  List_ = newList;
+*/
+  // Validate Parameter List
+  int depth=List_.get("ML validate depth",0);
+  if(List_.get("ML validate parameter list",true)
+     && !ValidateMLPParameters(List_,depth))
+  {
+    if (Comm_->MyPID() == 0)
+      cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(EXIT_FAILURE);
+  }
 
   mlpLabel_ = List_.get("ML label","not-set");
   if (verbose_) {
@@ -1267,7 +1264,7 @@ agg_->keep_P_tentative = 1;
      int smoother_steps = List_.get("smoother: sweeps", 2);
      if (List_.get("smoother: pre or post","post") == "pre or post") smoother_steps*=2;
 
-     int int_zoltan_type;
+     int int_zoltan_type=ML_ZOLTAN_TYPE_RCB;
      if(zoltan_type=="RCB")                  int_zoltan_type = ML_ZOLTAN_TYPE_RCB;
      else if(zoltan_type=="hypergraph")      int_zoltan_type = ML_ZOLTAN_TYPE_HYPERGRAPH; 
      else if(zoltan_type=="fast hypergraph") int_zoltan_type = ML_ZOLTAN_TYPE_FAST_HYPERGRAPH;        

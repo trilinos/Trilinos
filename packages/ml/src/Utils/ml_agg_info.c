@@ -1764,7 +1764,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 
       else  
 	sprintf( graphfile,
-		"graph-level%d.%s.xyz",
+		"graph-level%d.xyz",
 		level);
 
       if( comm->ML_mypid == 0 ) 
@@ -1784,7 +1784,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 
       else  
         sprintf(graphfile,
-                "graph-level%d.%s.vtk",
+                "graph-level%d.vtk",
                 level);
 
       if( comm->ML_mypid == 0 ) 

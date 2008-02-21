@@ -80,6 +80,7 @@ static void AddParameter(Teuchos::ParameterList& List,
 // ============================================================================ 
 static void AddSubList(Teuchos::ParameterList& List, Teuchos::ParameterList& ListToAdd)
 {
+  if (List.name() == "ANONYMOUS") List.setName(ListToAdd.name());
   for (ParameterList::ConstIterator i = ListToAdd.begin(); i != ListToAdd.end(); ++i)
   {
     const ParameterEntry& val = ListToAdd.entry(i);

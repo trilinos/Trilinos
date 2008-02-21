@@ -60,12 +60,12 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   strParam.allowString(true); 
 
   /* Allocate List for Smoothing Options */
-  const int num_smoothers=20;
+  const int num_smoothers=24;
   const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi",
    "ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel",
    "Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
-   "SuperLU","IFPACK-Chebyshev","self","do-nothing"};
+   "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT"};
   Array<std::string> smoothers(num_smoothers);
   for(int i=0;i<num_smoothers;i++) smoothers[i] = smoother_strings[i];
 

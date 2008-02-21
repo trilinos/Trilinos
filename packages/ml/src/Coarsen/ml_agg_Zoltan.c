@@ -1047,8 +1047,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      fprintf(stderr,
              "*ML*ERR* null y pointer!\n"
              "*ML*ERR* (file %s, line %d)\n",
-             __FILE__, __LINE__);  int repart_multiplier;
-
+             __FILE__, __LINE__);
      exit(EXIT_FAILURE);
    }
    if (N_dimensions == 3 && old_z == NULL)
