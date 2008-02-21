@@ -28,6 +28,7 @@ FFLAGS=-O3 \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
 --enable-external \
+--enable-fei \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
