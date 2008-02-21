@@ -334,7 +334,7 @@ if ( $no_parmetis ) then
   @ pmversion = 0
 else
   # Scan ParMETIS header file for version info
-  set pmfile = `sed -n 's/^.* \([^ ]*parmetis\.h\).*/\1/p' ../src/Obj_${arch}/parmetis_jostle.d`
+  set pmfile = `sed -n 's/^.* \([^ ]*parmetis\.h\).*/\1/p' ../src/Obj_${arch}/parmetis_interface.d`
   set majorversion = `grep MAJOR_VERSION $pmfile[1]`
   if ( $status ) then
     @ pmversion = 2
