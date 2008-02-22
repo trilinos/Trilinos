@@ -646,10 +646,10 @@ There are two kinds of cells and cell tempates
   TET            -> (0,0,0),(1,0,0), (0,1,0), (0,0,1)
   
   HEX            -> (-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1)  - bottom face 
-  (-1,-1, 1),(1,-1, 1),(1,1, 1),(-1,1, 1)  - top face
+                    (-1,-1, 1),(1,-1, 1),(1,1, 1),(-1,1, 1)  - top face
   
   TRIPRISM       -> (0,0,0),(1,0,0),(0,1,0)                  - bottom CELL_TRI
-  (0,0,1),(1,0,1),(0,1,1)                  - upper CELL_TRI
+                    (0,0,1),(1,0,1),(0,1,1)                  - upper CELL_TRI
   
   PYRAMID        -> (-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)      - CELL_QUAD base and (0,0,1) - top
  
@@ -664,11 +664,11 @@ There are two kinds of cells and cell tempates
  The vertices, edges and faces of the reference cell3 are numbered as follows using the negative 
  y-axis as standard line of sight:
  @verbatim
- (1,1,1)
- *-------*        *-------*      ^ z
- /|       |       /       /|      |
- / |       |      /       / |      |  ^ y
- /  |       |     /       /  |      | /
+          (1,1,1)
+     *-------*        *-------*      ^ z
+    /|       |       /       /|      |
+   / |       |      /       / |      |  ^ y
+  /  |       |     /       /  |      | /
  *   |       |    *-------*   |      |/
  |   *-------*    |       |   *  ----/------------>  
  |  /       /     |       |  /      /|            x
@@ -685,10 +685,10 @@ and top faces are shown on the other drawing.
 
 The vertices are numbered first on the bottom face and then by shift on the top face:
 @verbatim
-7-------6        7-------6->(1,1,1)
-/|       |       /       /|
-/ |       |      /       / |
-/  |       |     /       /  |
+    7-------6        7-------6->(1,1,1)
+   /|       |       /       /|
+  / |       |      /       / |
+ /  |       |     /       /  |
 4   |       |    4-------5   |
 |   3-------2    |       |   2->(1,1,-1)
 |  /       /     |       |  /
@@ -702,10 +702,10 @@ The vertices are numbered first on the bottom face and then by shift on the top 
 The local edge numbering is to number first the edges on the bottom, then the vertical edges 
 connecting the bottom and top faces, and finally, the top edges.
 @verbatim
-*--10---*        *--10---*
-/|       |       /       /|
-11 |       6      11      9 6
-/  7       |     /       /  |
+    *--10---*        *--10---*
+   /|       |       /       /|
+ 11 |       6      11      9 6
+ /  7       |     /       /  |
 *   |       |    *---8---*   |
 |   *---2---*    |       |   *
 4  /       /     |       5  /
@@ -715,10 +715,10 @@ connecting the bottom and top faces, and finally, the top edges.
 @endverbatim
 <b> Local orientation of an edge </b> is defined by the order of its endpoints:
 @verbatim
-*---<---*        *---<---*
-/|       |       /       /|
-v |       ^      v       ^ ^
-/  ^       |     /       /  |
+    *---<---*        *---<---*
+   /|       |       /       /|
+  v |       ^      v       ^ ^
+ /  ^       |     /       /  |
 *   |       |    *--->---*   |
 |   *---<---*    |       |   *
 |  /       /     |       ^  /
@@ -731,10 +731,10 @@ v |       ^      v       ^ ^
 
 The faces are numbered in this order: front, right, back, left, bottom, top
 @verbatim
-*-------*        *-------*
-/|       |       /       /|
-/ |   2   |      /   5   / |
-/  |       |     /       /  |
+    *-------*        *-------*
+   /|       |       /       /|
+  / |   2   |      /   5   / |
+ /  |       |     /       /  |
 *   |       |    *-------*   |
 | 3 *-------*    |       | 1 *
 |  /       /     |       |  /
@@ -751,17 +751,17 @@ as a unit normal.
 The standard orientation is to choose the unit outer normal to each face. 
 
 @verbatim
-^                ^
-*-------* /      	     *---|---*
-/|       |      	    /    |  /|
-/ |   2   |      	   /   5   / |
-/          |     	  /       / ----> 
-<----*   |       |    	     *-------*   |
-| 3 *-------*   		 |       | 1 *
-|  /       /    		 |  /    |  /
-| /   4   /     		 | \/ 0  | /
-|/       /      		 |       |/
-*-----|-*       		 *-------*
+    ^                ^
+    *-------* /      *---|---*
+   /|       |       /    |  /|
+  / |   2   |      /   5   / |
+ /          |     /       / ----> 
+*   |       |    *-------*   |
+| 3 *-------*    |       | 1 *
+|  /       /     |  /    |  /
+| /   4   /      | \/ 0  | /
+|/       /       |       |/
+*-----|-*        *-------*
 |
 |
 v
