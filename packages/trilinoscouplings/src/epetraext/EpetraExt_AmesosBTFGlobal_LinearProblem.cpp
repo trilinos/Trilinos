@@ -52,6 +52,7 @@ namespace EpetraExt {
 AmesosBTFGlobal_LinearProblem::
 ~AmesosBTFGlobal_LinearProblem()
 {
+  if ( newObj_ ) delete newObj_;
 }
 
 AmesosBTFGlobal_LinearProblem::NewTypeRef
@@ -121,8 +122,8 @@ operator()( OriginalTypeRef orig )
   
   // Perform reindexing on the full serial matrix (needed for BTF).
   Epetra_Map reIdxMap( serialMatrix->RowMap().NumGlobalElements(), serialMatrix->RowMap().NumMyElements(), 0, serialMatrix->Comm() );
-  EpetraExt::ViewTransform<Epetra_CrsMatrix> * reIdxTrans =
-    new EpetraExt::CrsMatrix_Reindex( reIdxMap );
+  Teuchos::RCP<EpetraExt::ViewTransform<Epetra_CrsMatrix> > reIdxTrans =
+    Teuchos::rcp( new EpetraExt::CrsMatrix_Reindex( reIdxMap ) );
   Epetra_CrsMatrix newSerialMatrix = (*reIdxTrans)( *serialMatrix );
   reIdxTrans->fwd();
   
@@ -136,7 +137,7 @@ operator()( OriginalTypeRef orig )
   blockPtr_ = BTFTrans.BlockPtr();
   numBlocks_ = BTFTrans.NumBlocks();
  
-  if (myPID == matProc && verbose_) {
+  if (myPID == matProc) {
     bool isSym = true;
     for (int i=0; i<nGlobal; ++i) {
       if (rowPerm_[i] != colPerm_[i]) {
@@ -169,8 +170,8 @@ operator()( OriginalTypeRef orig )
   
   // Perform reindexing on the full serial matrix (needed for balancing).
   Epetra_Map reIdxMap2( newSerialMatrixT.RowMap().NumGlobalElements(), newSerialMatrixT.RowMap().NumMyElements(), 0, newSerialMatrixT.Comm() );
-  EpetraExt::ViewTransform<Epetra_CrsMatrix> * reIdxTrans2 =
-    new EpetraExt::CrsMatrix_Reindex( reIdxMap2 );
+  Teuchos::RCP<EpetraExt::ViewTransform<Epetra_CrsMatrix> > reIdxTrans2 =
+    Teuchos::rcp( new EpetraExt::CrsMatrix_Reindex( reIdxMap2 ) );
   Epetra_CrsMatrix tNewSerialMatrixT = (*reIdxTrans2)( newSerialMatrixT );
   reIdxTrans2->fwd();
 
@@ -301,7 +302,11 @@ bool
 AmesosBTFGlobal_LinearProblem::
 rvs()
 {
+  cout << "AmesosBTFGlobal_LinearProblem: NewLHS_" << endl;
+  cout << *NewLHS_ << endl;
   OldLHS_->Export( *NewLHS_, *Importer_, Insert );
+  cout << "AmesosBTFGlobal_LinearProblem: OldLHS_" << endl;
+  cout << *OldLHS_ << endl;
 }
 
 } //namespace EpetraExt
