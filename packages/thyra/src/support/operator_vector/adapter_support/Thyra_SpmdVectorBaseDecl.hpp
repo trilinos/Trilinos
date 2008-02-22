@@ -90,8 +90,8 @@ namespace Thyra {
  *
  * It is interesting to note that in the above use case when the explicit
  * subvector access functions call on its default implementation defined in
- * <tt>VectorBase</tt> (which calls on <tt>applyOp()</tt>), the operator will
- * be properly applied since the version of <tt>applyOp()</tt> implemented in
+ * <tt>VectorBase</tt> (which calls on <tt>applyOpImpl()</tt>), the operator will
+ * be properly applied since the version of <tt>applyOpImpl()</tt> implemented in
  * this class will only request local vector data and hence there will only be
  * two levels of recursion for any call to an explicit subvector access
  * function.  This is a truly elegant result.
@@ -118,12 +118,11 @@ public:
   /** \brief Returns a non-<tt>const</tt> pointer to the beginning of the
    * local vector data (and its stride).
    *
-   * \param  localValues
-   *           [out] On output <tt>*localValues</tt> will point to an array
-   *           of the local values.
-   * \param  stride
-   *           [out] On output <tt>*stride</tt> will be the stride between
-   *           elements in <tt>(*localValues)[]</tt>
+   * \param localValues [out] On output <tt>*localValues</tt> will point to an
+   * array of the local values.
+   *
+   * \param stride [out] On output <tt>*stride</tt> will be the stride between
+   * elements in <tt>(*localValues)[]</tt>
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -145,8 +144,8 @@ public:
   /** \brief Commits updated local vector data that was accessed using
    * <tt>this->getLocalData()</tt>.
    *
-   * \param  localValues  [in/out] On input <tt>localValues</tt> must have been set by
-   *                      a previous call to <tt>this->getData()</tt>.
+   * \param localValues [in/out] On input <tt>localValues</tt> must have been
+   * set by a previous call to <tt>this->getData()</tt>.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -166,12 +165,11 @@ public:
   /** \brief Returns a <tt>const</tt> pointer to the beginning of the local
    * vector data.
    *
-   * \param  localValues
-   *           [out] On output <tt>*localValues</tt> will point to an array
-   *           of the local values.
-   * \param  stride
-   *           [out] On output <tt>*stride</tt> will be the stride between
-   *           elements in <tt>(*localValues)[]</tt>
+   * \param localValues [out] On output <tt>*localValues</tt> will point to an
+   * array of the local values.
+   *
+   * \param stride [out] On output <tt>*stride</tt> will be the stride between
+   * elements in <tt>(*localValues)[]</tt>
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -200,8 +198,8 @@ public:
   /** \brief Frees a <tt>const</tt> view of local vector data that was
    * accessed using <tt>this->getLocalData()</tt>.
    *
-   * @param  localValues  [in/out] On input <tt>localValues</tt> must have been set by
-   *                 a previous call to <tt>this->getLocalData()</tt>.
+   * \param localValues [in/out] On input <tt>localValues</tt> must have been
+   * set by a previous call to <tt>this->getLocalData()</tt>.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -215,32 +213,20 @@ public:
    */
   virtual void freeLocalData( const Scalar* localValues ) const;
 
-  /** \brief Implements the <tt>%applyOp()</tt> function through the
-   * functions <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and
-   * <tt>commitDetachedView()</tt> as described above.
+  /** \brief Implementation of applyOpImpl(...) that uses an input Comm.
    *
-   * \param  comm
-   *           [in] The Spmd communicator to use in the global reduction.
-   *           If <tt>comm==NULL</tt>, then the local communicator
-   *           will be used instead.
-   *
-   * Note that if this function is entered again before a call has been
-   * completed, then this is an indication that the functions
-   * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and/or
-   * <tt>commitDetachedView()</tt> have not been overridden properly and this
-   * function will then throw an exception.
+   * \param comm [in] The Spmd communicator to use in the global reduction.
+   * If <tt>comm==NULL</tt>, then the local communicator will be used instead.
    */
-  void applyOp(
-    const Teuchos::Comm<Index>      *comm
-    ,const RTOpPack::RTOpT<Scalar>  &op
-    ,const int                      num_vecs
-    ,const VectorBase<Scalar>*const vecs[]
-    ,const int                      num_targ_vecs
-    ,VectorBase<Scalar>*const        targ_vecs[]
-    ,RTOpPack::ReductTarget         *reduct_obj
-    ,const Index                    first_ele_offset
-    ,const Index                    sub_dim
-    ,const Index                    global_offset
+  virtual void applyOpImplWithComm(
+    const Ptr<const Teuchos::Comm<Index> > &comm,
+    const RTOpPack::RTOpT<Scalar> &op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index first_ele_offset,
+    const Index sub_dim,
+    const Index global_offset
     ) const;
 
   //@}
@@ -256,17 +242,24 @@ public:
 
   /** \brief Returns <tt>this->spmdSpace()</tt>. */
   Teuchos::RCP<const VectorSpaceBase<Scalar> > space() const;
-  /** \brief Calls <tt>this->applyOp(NULL,op,...)</tt>. */
-  void applyOp(
-    const RTOpPack::RTOpT<Scalar>   &op
-    ,const int                      num_vecs
-    ,const VectorBase<Scalar>*const vecs[]
-    ,const int                      num_targ_vecs
-    ,VectorBase<Scalar>*const       targ_vecs[]
-    ,RTOpPack::ReductTarget         *reduct_obj
-    ,const Index                    first_ele_offset
-    ,const Index                    sub_dim
-    ,const Index                    global_offset
+
+  //@}
+
+protected:
+
+  /** \name Overridden protected functions from VectorBase */
+  //@{
+
+  /** \brief Calls applyOpImplWithComm(null,op,...).
+   */
+  void applyOpImpl(
+    const RTOpPack::RTOpT<Scalar> &op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index first_ele_offset,
+    const Index sub_dim,
+    const Index global_offset
     ) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */
   void acquireDetachedVectorViewImpl(
@@ -287,19 +280,22 @@ public:
 
   //@}
 
-protected:
+  /** \name Protected functions to be used by subclasses */
+  //@{
 
   /** \brief Subclasses must call this function whenever the structure of the
    * VectorSpaceBase changes.
    */
   virtual void updateSpmdSpace();
 
+  //@}
+
 private:
 
   // ///////////////////////////////////////
   // Private data members
   
-  mutable bool in_applyOp_;
+  mutable bool in_applyOpImpl_;
 
   // Cached (only on vector space!)
   mutable Index  globalDim_;

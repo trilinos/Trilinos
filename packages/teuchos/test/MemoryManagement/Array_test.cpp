@@ -114,6 +114,8 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   TEST_EQUALITY_CONST( a.empty(), false );
   TEST_EQUALITY( a.length(), n );
   TEST_EQUALITY( as<int>(a.size()), n );
+  TEST_EQUALITY( a.getRawPtr(), &a[0] );
+  TEST_EQUALITY( getConst(a).getRawPtr(), &getConst(a)[0] );
   TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
   TEST_COMPARE( as<int>(a.capacity()), >=, n );
  
@@ -152,6 +154,8 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     Array<T> a2;
     TEST_EQUALITY_CONST( as<int>(a2.size()), 0 );
     TEST_EQUALITY_CONST( as<int>(a2.empty()), true );
+    TEST_EQUALITY_CONST( a2.getRawPtr(), 0 );
+    TEST_EQUALITY_CONST( getConst(a2).getRawPtr(), 0 );
   }
 
   {

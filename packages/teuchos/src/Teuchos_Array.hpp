@@ -356,13 +356,19 @@ public:
    *
    * Equivalent to size(), but * included for backwards compatibility.
    */
-  int length() const {return this->size();}
+  inline int length() const;
 
   /** \brief Convert an Array to an <tt>std::string</tt> */
-  std::string toString() const;
+  inline std::string toString() const;
 
   /** \brief Return true if Array has been compiled with boundschecking on. */ 
-  static bool hasBoundsChecking();
+  inline static bool hasBoundsChecking();
+
+  /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
+  inline T* getRawPtr();
+
+  /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
+  inline const T* getRawPtr() const;
 
   //@}
 
@@ -1065,6 +1071,13 @@ void Array<T>::remove(int i)
 
 
 template<typename T> inline
+int Array<T>::length() const
+{
+  return this->size();
+}
+
+
+template<typename T> inline
 std::string Array<T>::toString() const
 {
   std::ostringstream ss;
@@ -1089,6 +1102,20 @@ bool Array<T>::hasBoundsChecking()
 #else
   return false;
 #endif
+}
+
+
+template<typename T> inline
+T* Array<T>::getRawPtr()
+{
+  return ( size() ? &(*this)[0] : 0 );
+}
+
+
+template<typename T> inline
+const T* Array<T>::getRawPtr() const
+{
+  return ( size() ? &(*this)[0] : 0 );
 }
 
 

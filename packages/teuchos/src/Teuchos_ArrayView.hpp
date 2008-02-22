@@ -132,7 +132,7 @@ typename ArrayView<T>::Ordinal ArrayView<T>::size() const
 
 
 template<class T> inline
-T* ArrayView<T>::get() const
+T* ArrayView<T>::getRawPtr() const
 {
   return ptr_;
 }
@@ -220,7 +220,7 @@ void ArrayView<T>::assign(const ArrayView<const T>& array) const
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assert_not_null();
 #endif
-  if (this->get()==array.get() && this->size()==array.size())
+  if (this->getRawPtr()==array.getRawPtr() && this->size()==array.size())
     return; // Assignment to self
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assert_in_range(0,array.size());

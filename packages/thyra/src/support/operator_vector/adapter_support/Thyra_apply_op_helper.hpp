@@ -39,19 +39,19 @@
 
 template<class Scalar>
 void Thyra::apply_op_validate_input(
-  const char func_name[]
-  ,const VectorSpaceBase<Scalar> &space
-  ,const RTOpPack::RTOpT<Scalar> &op
-  ,const int num_vecs
-  ,const VectorBase<Scalar>*const vecs[]
-  ,const int num_targ_vecs
-  ,VectorBase<Scalar>*const targ_vecs[]
-  ,RTOpPack::ReductTarget *reduct_obj
-  ,const Index first_ele_offset_in
-  ,const Index sub_dim_in
-  ,const Index global_offset_in
+  const std::string &func_name,
+  const VectorSpaceBase<Scalar> &space,
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset_in,
+  const Index sub_dim_in,
+  const Index global_offset_in
   )
 {
+  const int num_vecs = vecs.size();
+  const int num_targ_vecs = targ_vecs.size();
   const Index
     dim = space.dim();
   TEST_FOR_EXCEPTION(

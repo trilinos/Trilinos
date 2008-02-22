@@ -51,7 +51,7 @@ namespace Thyra {
 
 template<class Scalar>
 SpmdVectorBase<Scalar>::SpmdVectorBase()
-  :in_applyOp_(false)
+  :in_applyOpImpl_(false)
   ,globalDim_(0)
   ,localOffset_(-1)
   ,localSubDim_(0)
@@ -76,19 +76,25 @@ void SpmdVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
 
 
 template<class Scalar>
-void SpmdVectorBase<Scalar>::applyOp(
-  const Teuchos::Comm<Index>      *comm_in
-  ,const RTOpPack::RTOpT<Scalar>  &op
-  ,const int                      num_vecs
-  ,const VectorBase<Scalar>*const vecs[]
-  ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*const       targ_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele_offset_in
-  ,const Index                    sub_dim_in
-  ,const Index                    global_offset_in
+void SpmdVectorBase<Scalar>::applyOpImplWithComm(
+  const Ptr<const Teuchos::Comm<Index> > &comm_in,
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset_in,
+  const Index sub_dim_in,
+  const Index global_offset_in
   ) const
 {
+
+  using Teuchos::null;
+  using Teuchos::dyn_cast;
+  using Teuchos::Workspace;
+
+  const int num_vecs = vecs.size();
+  const int num_targ_vecs = targ_vecs.size();
+
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -107,49 +113,57 @@ void SpmdVectorBase<Scalar>::applyOp(
       ;
   }
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
-  using Teuchos::dyn_cast;
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
+
+  Ptr<Teuchos::WorkspaceStore> wss = Teuchos::get_default_workspace_store().ptr();
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
+
 #ifdef TEUCHOS_DEBUG
   // ToDo: Validate input!
   TEST_FOR_EXCEPTION(
-    in_applyOp_, std::invalid_argument
+    in_applyOpImpl_, std::invalid_argument
     ,"SpmdVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
     "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
     "was not implemented properly!"
     );
   Thyra::apply_op_validate_input(
-    "SpmdVectorBase<>::applyOp(...)",*space()
-    ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset_in,sub_dim_in,global_offset_in
+    "SpmdVectorBase<>::applyOp(...)",*space(),
+    op, vecs, targ_vecs, reduct_obj,
+    first_ele_offset_in, sub_dim_in, global_offset_in
     );
 #endif
+
   Teuchos::RCP<const Teuchos::Comm<Index> > comm;
-  if( comm_in != NULL )
-    comm = Teuchos::rcp(comm_in,false);
+  if (!is_null(comm_in))
+    comm = Teuchos::rcp(&*comm_in,false);
   else
     comm = spmdSpc.getComm();
+
   // Flag that we are in applyOp()
-  in_applyOp_ = true;
+  in_applyOpImpl_ = true;
+
   // First see if this is a locally replicated vector in which case
   // we treat this as a local operation only.
-  const bool locallyReplicated = ( comm_in == NULL && localSubDim_ == globalDim_ );
+  const bool locallyReplicated = ( comm_in == null && localSubDim_ == globalDim_ );
+
   // Get the overlap in the current process with the input logical sub-vector
   // from (first_ele_offset_in,sub_dim_in,global_offset_in)
-  Index  overlap_first_local_ele_off  = 0;
-  Index  overlap_local_sub_dim        = 0;
-  Index  overlap_global_off           = 0;
+  Index  overlap_first_local_ele_off = 0;
+  Index  overlap_local_sub_dim = 0;
+  Index  overlap_global_off = 0;
   if(localSubDim_) {
     RTOp_parallel_calc_overlap(
-      globalDim_, localSubDim_, localOffset_, first_ele_offset_in, sub_dim_in, global_offset_in
-      ,&overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_off
+      globalDim_, localSubDim_, localOffset_,
+      first_ele_offset_in, sub_dim_in, global_offset_in,
+      &overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_off
       );
   }
   const Range1D local_rng = (
     overlap_first_local_ele_off>=0
-    ? Range1D( localOffset_ + overlap_first_local_ele_off, localOffset_ + overlap_first_local_ele_off + overlap_local_sub_dim - 1 )
+    ? Range1D( localOffset_ + overlap_first_local_ele_off, localOffset_
+      + overlap_first_local_ele_off + overlap_local_sub_dim - 1 )
     : Range1D::Invalid
     );
+
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
   if(show_dump) {
     *out
@@ -161,9 +175,10 @@ void SpmdVectorBase<Scalar>::applyOp(
       ;
   }
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
+
   // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss,num_vecs);
-  Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss,num_targ_vecs);
+  Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss.get(),num_vecs);
+  Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss.get(),num_targ_vecs);
   if( overlap_first_local_ele_off >= 0 ) {
     {for(int k = 0; k < num_vecs; ++k ) {
       vecs[k]->acquireDetachedView( local_rng, &sub_vecs[k] );
@@ -174,35 +189,39 @@ void SpmdVectorBase<Scalar>::applyOp(
       sub_targ_vecs[k].setGlobalOffset( overlap_global_off );
     }}
   }
+
   // Apply the RTOp operator object (all processors must participate)
-  const bool validSubVecs = ( localSubDim_ > 0 && overlap_first_local_ele_off >= 0 );
   RTOpPack::SPMD_apply_op(
-    locallyReplicated ? NULL : comm.get()                       // comm
-    ,op                                                         // op
-    ,num_vecs                                                   // num_vecs
-    ,num_vecs && validSubVecs ? &sub_vecs[0] : NULL             // sub_vecs
-    ,num_targ_vecs                                              // num_targ_vecs
-    ,num_targ_vecs && validSubVecs ? &sub_targ_vecs[0] : NULL   // targ_sub_vecs
-    ,reduct_obj                                                 // reduct_obj
+    locallyReplicated ? NULL : &*comm,     // comm
+    op,                                    // op
+    num_vecs,                              // num_vecs
+    sub_vecs.getRawPtr(),                  // sub_vecs
+    num_targ_vecs,                         // num_targ_vecs
+    sub_targ_vecs.getRawPtr(),             // targ_sub_vecs
+    reduct_obj.get()                       // reduct_obj
     );
+
   // Free and commit the local data
-  if( overlap_first_local_ele_off >= 0 ) {
-    {for(int k = 0; k < num_vecs; ++k ) {
+  if (overlap_first_local_ele_off >= 0) {
+    for (int k = 0; k < num_vecs; ++k ) {
       sub_vecs[k].setGlobalOffset(local_rng.lbound());
       vecs[k]->releaseDetachedView( &sub_vecs[k] );
-    }}
-    {for(int k = 0; k < num_targ_vecs; ++k ) {
+    }
+    for (int k = 0; k < num_targ_vecs; ++k ) {
       sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
       targ_vecs[k]->commitDetachedView( &sub_targ_vecs[k] );
-    }}
+    }
   }
+
   // Flag that we are leaving applyOp()
-  in_applyOp_ = false;
+  in_applyOpImpl_ = false;
+
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
   if(show_dump) {
     *out << "\nLeaving SpmdVectorBase<Scalar>::applyOp(...) ...\n";
   }
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
+
 }
 
 
@@ -220,7 +239,8 @@ std::string SpmdVectorBase<Scalar>::description() const
 }
 
 
-// Overridden from VectorBase
+// Overridden public functions from VectorBase
+
 
 template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
@@ -230,24 +250,25 @@ SpmdVectorBase<Scalar>::space() const
 }
 
 
+// protected
+
+
+// Overridden protected functions from VectorBase
+
+
 template<class Scalar>
-void SpmdVectorBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>   &op
-  ,const int                      num_vecs
-  ,const VectorBase<Scalar>*const vecs[]
-  ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*const       targ_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele_offset
-  ,const Index                    sub_dim
-  ,const Index                    global_offset
+void SpmdVectorBase<Scalar>::applyOpImpl(
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset,
+  const Index sub_dim,
+  const Index global_offset
   ) const
 {
-  applyOp(
-    NULL
-    ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
-    ,first_ele_offset,sub_dim,global_offset
-    );
+  applyOpImplWithComm( Teuchos::null, op, vecs, targ_vecs, reduct_obj,
+    first_ele_offset, sub_dim, global_offset );
 }
 
 

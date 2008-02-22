@@ -39,15 +39,19 @@
 #include "Teuchos_arrayArg.hpp"
 #include "Teuchos_implicit_cast.hpp"
 
+
 namespace Thyra {
 
+
 // Constructors/initializers/accessors
+
 
 template <class Scalar>
 DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector()
 {
   uninitialize();
 }
+
 
 template <class Scalar>
 DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector(
@@ -57,6 +61,7 @@ DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector(
 {
   initialize(productSpace,vecs);
 }
+
 
 template <class Scalar>
 void DefaultClusteredSpmdProductVector<Scalar>::initialize(
@@ -77,6 +82,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::initialize(
   }
 }
 
+
 template <class Scalar>
 void DefaultClusteredSpmdProductVector<Scalar>::uninitialize(
   Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace
@@ -90,7 +96,9 @@ void DefaultClusteredSpmdProductVector<Scalar>::uninitialize(
   vecs_.resize(0);
 }
 
+
 // Overridden from ProductVectorBase
+
 
 template <class Scalar>
 Teuchos::RCP<VectorBase<Scalar> >
@@ -101,6 +109,7 @@ DefaultClusteredSpmdProductVector<Scalar>::getNonconstVectorBlock(const int k)
   return vecs_[k];
 }
 
+
 template <class Scalar>
 Teuchos::RCP<const VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
@@ -110,7 +119,9 @@ DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
   return vecs_[k];
 }
 
+
 // Overridden from ProductVectorBase
+
 
 template <class Scalar>
 Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
@@ -118,6 +129,7 @@ DefaultClusteredSpmdProductVector<Scalar>::productSpace() const
 {
   return productSpace_;
 }
+
 
 template <class Scalar>
 bool DefaultClusteredSpmdProductVector<Scalar>::blockIsConst(const int k) const
@@ -127,12 +139,14 @@ bool DefaultClusteredSpmdProductVector<Scalar>::blockIsConst(const int k) const
   return false;
 }
 
+
 template <class Scalar>
 Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
 }
+
 
 template <class Scalar>
 Teuchos::RCP<const MultiVectorBase<Scalar> >
@@ -141,7 +155,9 @@ DefaultClusteredSpmdProductVector<Scalar>::getMultiVectorBlock(const int k) cons
   return getVectorBlock(k);
 }
 
+
 // Overridden from VectorBase
+
 
 template <class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
@@ -150,24 +166,29 @@ DefaultClusteredSpmdProductVector<Scalar>::space() const
   return productSpace_;
 }
 
+
+// Overridden protected members from VectorBase
+
+
 template <class Scalar>
-void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>    &op
-  ,const int                       num_vecs
-  ,const VectorBase<Scalar>*const  vecs[]
-  ,const int                       num_targ_vecs
-  ,VectorBase<Scalar>*const        targ_vecs[]
-  ,RTOpPack::ReductTarget          *reduct_obj
-  ,const Index                     first_ele_offset_in
-  ,const Index                     sub_dim_in
-  ,const Index                     global_offset_in
+void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset_in,
+  const Index sub_dim_in,
+  const Index global_offset_in
   ) const
 {
-  using Teuchos::dyn_cast;
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  //
+
+  using Teuchos::null;
+  using Teuchos::ptr_dynamic_cast;
+
   const Index	n = productSpace_->dim();
+  const int num_vecs = vecs.size();
+  const int num_targ_vecs = targ_vecs.size();
+
   // Validate input
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
@@ -185,7 +206,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
     << "first_ele_offset_in = " << first_ele_offset_in << " and n = " << n
     << " are not compatible" );
   bool test_failed;
-  for(int k = 0; k < num_vecs; ++k) {
+  for (int k = 0; k < num_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*vecs[k]->space());
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
@@ -194,7 +215,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
       <<"\'VectorSpaceBlocked\' vector space!"
       );
   }
-  for(int k = 0; k < num_targ_vecs; ++k) {
+  for (int k = 0; k < num_targ_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*targ_vecs[k]->space());
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
@@ -204,24 +225,26 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
       );
   }
 #endif
+
   //
   // Cast all of the vector arguments to DefaultClusteredSpmdProductVector and
   // make sure that they are all compatible!
   //
-  Workspace<const DefaultClusteredSpmdProductVector<Scalar>*> cl_vecs(wss,num_vecs);
-  for( int k = 0; k < num_vecs; ++k ) {
+  Array<Ptr<const DefaultClusteredSpmdProductVector<Scalar> > > cl_vecs(num_vecs);
+  for ( int k = 0; k < num_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(vecs[k]==NULL);
+    TEST_FOR_EXCEPT(vecs[k]==null);
 #endif
-    cl_vecs[k] = &dyn_cast<const DefaultClusteredSpmdProductVector<Scalar> >(*vecs[k]);
+    cl_vecs[k] = ptr_dynamic_cast<const DefaultClusteredSpmdProductVector<Scalar> >(vecs[k],true);
   }
-  Workspace<DefaultClusteredSpmdProductVector<Scalar>*> cl_targ_vecs(wss,num_targ_vecs);
-  for( int k = 0; k < num_targ_vecs; ++k ) {
+  Array<Ptr<DefaultClusteredSpmdProductVector<Scalar> > > cl_targ_vecs(num_targ_vecs);
+  for ( int k = 0; k < num_targ_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(targ_vecs[k]==NULL);
+    TEST_FOR_EXCEPT(targ_vecs[k]==null);
 #endif
-    cl_targ_vecs[k] = &dyn_cast<DefaultClusteredSpmdProductVector<Scalar> >(*targ_vecs[k]);
+    cl_targ_vecs[k] = ptr_dynamic_cast<DefaultClusteredSpmdProductVector<Scalar> >(targ_vecs[k],true);
   }
+
   //
   // Get the overlap of the element for this cluster that will participate in
   // the RTOp operation.
@@ -236,29 +259,32 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
   Index  overlap_first_cluster_ele_off  = 0;
   Index  overlap_cluster_sub_dim        = 0;
   Index  overlap_global_off             = 0;
-  if(clusterSubDim) {
+  if (clusterSubDim) {
     RTOp_parallel_calc_overlap(
       globalDim,clusterSubDim,clusterOffset,first_ele_offset_in,sub_dim_in
       ,global_offset_in
       ,&overlap_first_cluster_ele_off,&overlap_cluster_sub_dim,&overlap_global_off
       );
   }
+
   //
   // Perform the RTOp for each set of block vectors just within this cluster
   // of processes.
   //
   Teuchos::RCP<RTOpPack::ReductTarget> i_reduct_obj;
-  if(reduct_obj) i_reduct_obj = op.reduct_obj_create();
+  if (!is_null(reduct_obj))
+    i_reduct_obj = op.reduct_obj_create();
   // Note: i_reduct_obj will accumulate the reduction within this cluster of
   // processes.
   const int numBlocks = vecs_.size();
-  if( overlap_first_cluster_ele_off >=0 ) {
+  if (overlap_first_cluster_ele_off >=0) {
+
     //
     // There is overlap with at least one element in one block
     // vector for this cluster
     //
-    Workspace<const VectorBase<Scalar>*>  v_vecs(wss,num_vecs);
-    Workspace<VectorBase<Scalar>*>        v_targ_vecs(wss,num_targ_vecs);
+    Array<Ptr<const VectorBase<Scalar> > >  v_vecs(num_vecs);
+    Array<Ptr<VectorBase<Scalar> > > v_targ_vecs(num_targ_vecs);
     Index overall_global_offset = overlap_global_off;
     for( int j = 0; j < numBlocks; ++j ) {
       const VectorBase<Scalar>
@@ -267,47 +293,46 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
         &v_space = *v.space();
       // Load up the constutuent block SPMD vectors
       for( int k = 0; k < num_vecs ; ++k )
-        v_vecs[k] = &*cl_vecs[k]->vecs_[j];
+        v_vecs[k] = cl_vecs[k]->vecs_[j].ptr();
       for( int k = 0; k < num_targ_vecs ; ++k )
-        v_targ_vecs[k] = &*cl_targ_vecs[k]->vecs_[j];
+        v_targ_vecs[k] = cl_targ_vecs[k]->vecs_[j].ptr();
       TEST_FOR_EXCEPTION(
         numBlocks > 1, std::logic_error
         ,"Error, Have not implemented general support for numBlocks > 1!"
         ); // ToDo: Fix the below code for numBlocks_ > 1!
       Index
-        v_global_offset     = overall_global_offset,
-        v_first_ele_offset  = overlap_first_cluster_ele_off,
-        v_sub_dim           = overlap_cluster_sub_dim;
+        v_global_offset = overall_global_offset,
+        v_first_ele_offset = overlap_first_cluster_ele_off,
+        v_sub_dim = overlap_cluster_sub_dim;
       // Apply RTOp on just this cluster
-      Thyra::applyOp(
-        op
-        ,num_vecs, num_vecs ? &v_vecs[0] : NULL
-        ,num_targ_vecs, num_targ_vecs ? &v_targ_vecs[0] : NULL
-        ,i_reduct_obj.get() ? &*i_reduct_obj : NULL
-        ,v_first_ele_offset,v_sub_dim,v_global_offset
+      Thyra::applyOp<Scalar>(
+        op, v_vecs, v_targ_vecs, i_reduct_obj.ptr(),
+        v_first_ele_offset, v_sub_dim, v_global_offset
         );
       //
       overall_global_offset += v_space.dim();
     }
+
   }
+
   //
   // Perform the global reduction across all of the root processes in each of
   // the clusters and then move the global reduction out to each of the
   // processes within the cluster.
   //
-  if( reduct_obj ) {
+  if (!is_null(reduct_obj)) {
     Teuchos::RCP<RTOpPack::ReductTarget>
       icl_reduct_obj = op.reduct_obj_create();
     // First, accumulate the global reduction across all of the elements by
     // just performing the global reduction involving the root processes of
     // each cluster.
-    if(interClusterComm.get()) {
+    if (interClusterComm.get()) {
       RTOpPack::SPMD_all_reduce(
-        &*interClusterComm
-        ,op
-        ,1
-        ,Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*i_reduct_obj)()
-        ,Teuchos::arrayArg<RTOpPack::ReductTarget*>(&*icl_reduct_obj)()
+        &*interClusterComm,
+        op,
+        1,
+        Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*i_reduct_obj)(),
+        Teuchos::arrayArg<RTOpPack::ReductTarget*>(&*icl_reduct_obj)()
         );
     }
     // Now the root processes in each cluster have the full global reduction
@@ -316,18 +341,21 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
     // thing to do is to just perform the reduction within each cluster of
     // processes and to add into the in/out *reduct_obj.
     RTOpPack::SPMD_all_reduce(
-      &*intraClusterComm
-      ,op
-      ,1
-      ,Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*icl_reduct_obj)()
-      ,Teuchos::arrayArg<RTOpPack::ReductTarget*>(reduct_obj)()
+      &*intraClusterComm,
+      op,
+      1,
+      Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*icl_reduct_obj)(),
+      Teuchos::arrayArg<RTOpPack::ReductTarget*>(&*reduct_obj)()
       );
-    // ToDo: Replace the above operation with a reduction across clustes into
+    // ToDo: Replace the above operation with a reduction across clustere into
     // reduct_obj in the root processes and then broadcast the result to all
     // of the slave processes.
   }
+
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_HPP

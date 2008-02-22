@@ -181,6 +181,18 @@ Ptr<T> outArg( T& arg )
 }
 
 
+/** \brief create a general <tt>Ptr</tt> input argument for a function call
+ * from a reference.
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<const T> ptrInArg( T& arg )
+{
+  return Ptr<const T>(&arg);
+}
+
+
 /** \brief create a non-persisting const input argument for a function call.
  *
  * \relates Ptr

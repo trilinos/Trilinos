@@ -116,7 +116,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
     out << "\nTesting basic null construction!\n\n";
     ArrayView<T> av2 = Teuchos::null;
     TEST_EQUALITY_CONST(av2.size(),0);
-    TEST_EQUALITY_CONST(av2.get(),0);
+    TEST_EQUALITY_CONST(av2.getRawPtr(),0);
     TEST_ITER_EQUALITY(av2.begin(),av2.end());
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     TEST_THROW(av2[0],Teuchos::NullReferenceError);
@@ -128,7 +128,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
 #endif
     ArrayView<const T> cav2(av2); // Tests copy constructor and implicit conversion operator! 
     TEST_EQUALITY_CONST(cav2.size(),0);
-    TEST_EQUALITY_CONST(cav2.get(),0);
+    TEST_EQUALITY_CONST(cav2.getRawPtr(),0);
     TEST_ITER_EQUALITY(cav2.begin(),av2.end());
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     TEST_THROW(cav2[0],Teuchos::NullReferenceError);

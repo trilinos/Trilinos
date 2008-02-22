@@ -199,8 +199,14 @@ public:
 	 * passed to the constructor.
 	 */
 	~Workspace();
-	/// Return the number of elements in the array.
+	/** \brief Return the number of elements in the array. */
 	size_t size() const;
+  /** \brief Return a raw pointer to the beginning of the array or null if
+   * unsized. */
+  T* getRawPtr();
+  /** \brief Return a raw pointer to the beginning of the array or null if
+   * unsized. */
+  const T* getRawPtr() const;
 	/** \brief Non-const zero based element access.
 	 *
 	 * Preconditions:<ul>
@@ -355,6 +361,20 @@ inline
 size_t Workspace<T>::size() const
 {
 	return raw_workspace_.num_bytes() / sizeof(T);
+}
+
+template<class T>
+inline
+T* Workspace<T>::getRawPtr()
+{
+  return ( size() ? &(*this)[0] : 0 );
+}
+
+template<class T>
+inline
+const T* Workspace<T>::getRawPtr() const
+{
+  return ( size() ? &(*this)[0] : 0 );
 }
 
 template<class T>

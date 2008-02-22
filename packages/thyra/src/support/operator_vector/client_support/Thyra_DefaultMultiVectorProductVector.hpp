@@ -246,31 +246,27 @@ DefaultMultiVectorProductVector<Scalar>::space() const
 }
 
 
-template <class Scalar>
-void DefaultMultiVectorProductVector<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>    &op
-  ,const int                       num_vecs
-  ,const VectorBase<Scalar>*const  vecs[]
-  ,const int                       num_targ_vecs
-  ,VectorBase<Scalar>*const        targ_vecs[]
-  ,RTOpPack::ReductTarget          *reduct_obj
-  ,const Index                     first_ele_offset_in
-  ,const Index                     sub_dim_in
-  ,const Index                     global_offset_in
-  ) const
-{
-  this->getDefaultProductVector()->applyOp(
-    op, num_vecs, vecs, num_targ_vecs, targ_vecs,
-    reduct_obj,
-    first_ele_offset_in, sub_dim_in, global_offset_in
-    );
-}
-
-
 // protected
 
 
 // Overridden protected functions from VectorBase
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::applyOpImpl(
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset,
+  const Index sub_dim,
+  const Index global_offset
+  ) const
+{
+  this->getDefaultProductVector()->applyOp(
+    op, vecs, targ_vecs, reduct_obj,
+    first_ele_offset, sub_dim, global_offset );
+}
 
 
 template <class Scalar>

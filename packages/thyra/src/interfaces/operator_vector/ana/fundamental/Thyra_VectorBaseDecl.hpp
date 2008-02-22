@@ -159,33 +159,21 @@ public:
   /** @name Reduction/Transformation operator support */
   //@{
 
-  /** \brief Apply a reduction/transformation operator over a set of vectors:
-   * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
-   * z[0]...z[nz-1],(*reduct_obj)</tt>.
+  /** \brief Calls applyOpImpl().
    *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * </ul>
-   *
-   * The vector <tt>*this</tt> that this function is called on is assumed to
-   * be one of the vectors in <tt>v[0]...v[nv-1],z[0]...z[nz-1]</tt>.  This
-   * function is generally should not called directly by a client but instead
-   * the client should call the nonmember function <tt>Thyra::applyOp()</tt>.
-   *
-   * See the documentation for the nonmember function <tt>Thyra::applyOp()</tt>
-   * for a description of what this function does.
+   * Temporary NVI function.
    */
-  virtual void applyOp(
+  void applyOp(
     const RTOpPack::RTOpT<Scalar> &op,
-    const int num_vecs,
-    const VectorBase<Scalar>*const vecs[],
-    const int num_targ_vecs,
-    VectorBase<Scalar>*const targ_vecs[],
-    RTOpPack::ReductTarget *reduct_obj,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
     const Index first_ele_offset,
     const Index sub_dim,
     const Index global_offset
-    ) const = 0;
+    ) const
+    { applyOpImpl(op,vecs,targ_vecs,reduct_obj,
+        first_ele_offset,sub_dim,global_offset); }
 
   //@}
 
@@ -265,6 +253,48 @@ protected:
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
 
+  /** \brief Apply a reduction/transformation operator over a set of vectors:
+   * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
+   * z[0]...z[nz-1],(*reduct_obj)</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
+   * </ul>
+   *
+   * The vector <tt>*this</tt> that this function is called on is assumed to
+   * be one of the vectors in <tt>v[0]...v[nv-1],z[0]...z[nz-1]</tt>.  This
+   * function is generally should not called directly by a client but instead
+   * the client should call the nonmember function <tt>Thyra::applyOp()</tt>.
+   *
+   * See the documentation for the nonmember function <tt>Thyra::applyOp()</tt>
+   * for a description of what this function does.
+   */
+  virtual void applyOpImpl(
+    const RTOpPack::RTOpT<Scalar> &op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index first_ele_offset,
+    const Index sub_dim,
+    const Index global_offset
+    ) const = 0;
+/*
+    {
+      // 2008/02/19: rabartl: ToDo: Remove this default implemenation once the
+      // refactoring is done.
+      using Teuchos::as;
+      Array<const VectorBase<Scalar>*> raw_vecs(vecs.size());
+      for ( int k = 0; k < as<int>(vecs.size()); ++k )
+        raw_vecs[k] = &*vecs[k];
+      Array<VectorBase<Scalar>*> raw_targ_vecs(targ_vecs.size());
+      for ( int k = 0; k < as<int>(targ_vecs.size()); ++k )
+        raw_targ_vecs[k] = &*targ_vecs[k];
+      this->applyOp(op, raw_vecs.size(), raw_vecs.getRawPtr(),
+        raw_targ_vecs.size(), raw_targ_vecs.getRawPtr(),
+        reduct_obj.get(), first_ele_offset, sub_dim, global_offset );
+    }
+*/
+  
   /** \brief Get a non-mutable explicit view of a sub-vector.
    *
    * \param rng [in] The range of the elements to extract the sub-vector view.
@@ -440,6 +470,26 @@ protected:
 
   //@}
 
+public:
+
+/*
+  virtual void applyOp(
+    const RTOpPack::RTOpT<Scalar> &op,
+    const int num_vecs,
+    const VectorBase<Scalar>*const vecs[],
+    const int num_targ_vecs,
+    VectorBase<Scalar>*const targ_vecs[],
+    RTOpPack::ReductTarget *reduct_obj,
+    const Index first_ele_offset,
+    const Index sub_dim,
+    const Index global_offset
+    ) const
+    {
+      TEST_FOR_EXCEPT(true);
+      // ToDo: remove this function once the refactoring is finished!
+    }
+*/
+
 };
 
 
@@ -451,35 +501,29 @@ protected:
  * sub-vector and assemble the intermediate targets into <tt>reduct_obj</tt>
  * (if <tt>reduct_obj != RTOp_REDUCT_OBJ_NULL</tt>).
  *
- * \param num_vecs [in] Number of non-mutable vectors in <tt>vecs[]</tt>.  If
- * <tt>vecs==NULL</tt> then this argument is ignored but should be set to
- * zero.
- *
  * \param vecs [in] Array (length <tt>num_vecs</tt>) of a set of pointers to
  * non-mutable vectors to include in the operation.  The order of these
- * vectors is significant to <tt>op</tt>.
- *
- * \param num_targ_vecs [in] Number of mutable vectors in
- * <tt>targ_vecs[]</tt>.  If <tt>targ_vecs==NULL</tt> then this argument is
- * ignored but should be set to zero.
+ * vectors is significant to <tt>op</tt>.  If <tt>vecs.size()==0</tt>, then
+ * <tt>op</tt> is called with no non-mutable vectors.
  *
  * \param targ_vecs [in] Array (length <tt>num_targ_vecs</tt>) of a set of
  * pointers to mutable vectors to include in the operation.  The order of
- * these vectors is significant to <tt>op</tt>.  If <tt>targ_vecs==NULL</tt>
- * then <tt>op</tt> is called with no mutable vectors.
+ * these vectors is significant to <tt>op</tt>.  If
+ * <tt>targ_vecs.size()==0</tt>, then <tt>op</tt> is called with no mutable
+ * vectors.
  *
  * \param reduct_obj [in/out] Target object of the reduction operation.  This
- * object must have been created by the
- * <tt>op.reduct_obj_create_raw(&reduct_obj)</tt> function first.  The
- * reduction operation will be added to <tt>(*reduct_obj)</tt> if
- * <tt>(*reduct_obj)</tt> has already been through a reduction.  By allowing
- * the info in <tt>(*reduct_obj)</tt> to be added to the reduction over all of
- * these vectors, the reduction operation can be accumulated over a set of
- * abstract vectors which can be useful for implementing composite vectors for
- * instance.  If <tt>op.get_reduct_type_num_entries(...)</tt> returns
- * <tt>num_values == 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars ==
- * 0</tt> then <tt>reduct_obj</tt> should be set to
- * <tt>RTOp_REDUCT_OBJ_NULL</tt> and no reduction will be performed.
+ * object must have been created by the <tt>op.reduct_obj_create_raw()</tt>
+ * function first.  The reduction operation will be added to
+ * <tt>*reduct_obj</tt> if <tt>*reduct_obj</tt> has already been through a
+ * reduction.  By allowing the info in <tt>*reduct_obj</tt> to be added to the
+ * reduction over all of these vectors, the reduction operation can be
+ * accumulated over a set of abstract vectors which can be useful for
+ * implementing composite vectors for instance.  If
+ * <tt>op.get_reduct_type_num_entries(...)</tt> returns <tt>num_values ==
+ * 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars == 0</tt> then
+ * <tt>reduct_obj</tt> must be set to <tt>null</tt> and no reduction will be
+ * performed.
  *
  * \param first_ele_offset [in] (default = 0) The index of the first element
  * in <tt>this</tt> to be included.
@@ -494,15 +538,14 @@ protected:
  * \param global_offset [in] (default = 0) The offset applied to the included
  * vector elements.
  *
- *
  * <b>Preconditions:</b><ul>
- * <li> [<tt>num_vecs > 0</tt>] <tt>vecs[k]->space()->isCompatible(*this->space()) == true</tt>,
- *      for <tt>k = 0...num_vecs-1</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
- * <li> [<tt>num_targ_vecs > 0</tt>] <tt>targ_vecs[k]->space()->isCompatible(*this->space()) == true</tt>,
- *      for <tt>k = 0...num_targ_vecs-1</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
- * <li> [<tt>num_targ_vecs > 0</tt>] The vectors pointed to by <tt>targ_vecs[k]</tt>, for
- *      <tt>k = 0...num_targ_vecs-1</tt> must not alias each other or any of the vectors
- *      <tt>vecs[k]</tt>, for <tt>k = 0...num_vecs-1</tt>.  <b>You have be warned!!!!</b>
+ * <li> [<tt>vecs.size() > 0</tt>] <tt>vecs[k]->space()->isCompatible(*this->space()) == true</tt>,
+ *      for <tt>k = 0...vecs.size()-1</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+ * <li> [<tt>targ_vecs.size() > 0</tt>] <tt>targ_vecs[k]->space()->isCompatible(*this->space()) == true</tt>,
+ *      for <tt>k = 0...targ_vecs.size()-1</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+ * <li> [<tt>targ_vecs.size() > 0</tt>] The vectors pointed to by <tt>targ_vecs[k]</tt>, for
+ *      <tt>k = 0...targ_vecs.size()-1</tt> must not alias each other or any of the vectors
+ *      <tt>vecs[k]</tt>, for <tt>k = 0...vecs.size()-1</tt>.  <b>You have be warned!!!!</b>
  * <li> <tt>0 <= first_ele_offset < this->space()->dim()</tt> (throw <tt>std::out_of_range</tt>)
  * <li> <tt>global_offset >= 0</tt> (throw <tt>std::invalid_argument</tt>)
  * <li> <tt>sub_dim - first_ele_offset <= this->space()->dim()</tt> (throw <tt>std::length_error</tt>).
@@ -510,7 +553,7 @@ protected:
  *
  * <b>Postconditions:</b><ul>
  * <li> The vectors in <tt>targ_vecs[]</tt> may be modified as determined by the definition of <tt>op</tt>.
- * <li> [<tt>reduct_obj!=RTOp_REDUCT_OBJ_NULL</tt>] The reduction object <tt>reduct_obj</tt> contains
+ * <li> [<tt>reduct_obj!=null</tt>] The reduction object <tt>reduct_obj</tt> contains
  *      the combined reduction from the input state of <tt>reduct_obj</tt> and the reductions that
  *      where accumulated during this this function invocation.
  * </ul>
@@ -538,23 +581,50 @@ template<class Scalar>
 inline
 void applyOp(
   const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset = 0,
+  const Index sub_dim = -1,
+  const Index global_offset = 0
+  )
+{
+  if (vecs.size())
+    vecs[0]->applyOp(
+      op, vecs, targ_vecs, reduct_obj, first_ele_offset, sub_dim, global_offset);
+  else if (targ_vecs.size())
+    targ_vecs[0]->applyOp(
+      op, vecs, targ_vecs, reduct_obj, first_ele_offset, sub_dim, global_offset);
+}
+
+
+/** \brief Deprecated.
+ *
+ * \relates VectorBase
+ */
+template<class Scalar>
+inline
+void applyOp(
+  const RTOpPack::RTOpT<Scalar> &op,
   const int num_vecs,
-  const VectorBase<Scalar>*const vecs[],
+  const VectorBase<Scalar>*const vecs_in[],
   const int num_targ_vecs,
-  VectorBase<Scalar>*const targ_vecs[],
+  VectorBase<Scalar>*const targ_vecs_inout[],
   RTOpPack::ReductTarget *reduct_obj,
   const Index first_ele_offset = 0,
   const Index sub_dim = -1,
   const Index global_offset = 0
   )
 {
-  if(num_vecs)
-    vecs[0]->applyOp(
-      op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,
-      first_ele_offset,sub_dim,global_offset);
-  else if (num_targ_vecs)
-    targ_vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,
-      reduct_obj,first_ele_offset,sub_dim,global_offset);
+  using Teuchos::ptr;
+  Array<Ptr<const VectorBase<Scalar> > > vecs(num_vecs);
+  for ( int k = 0; k < num_vecs; ++k )
+    vecs[k] = ptr(vecs_in[k]);
+  Array<Ptr<VectorBase<Scalar> > > targ_vecs(num_targ_vecs);
+  for ( int k = 0; k < num_targ_vecs; ++k )
+    targ_vecs[k] = ptr(targ_vecs_inout[k]);
+  applyOp<Scalar>(op, vecs, targ_vecs, ptr(reduct_obj),
+    first_ele_offset, sub_dim, global_offset );
 }
 
 

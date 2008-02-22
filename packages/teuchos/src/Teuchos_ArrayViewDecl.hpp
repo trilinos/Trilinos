@@ -186,10 +186,8 @@ public:
   //! @name Element Access Functions 
   //@{
 
-  /** \brief Get unchecked pointer to underlying array memory (may return
-   * NULL).
-   */
-  T* get() const;
+  /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
+  inline T* getRawPtr() const;
 
 	/** \brief Random object access.
 	 *

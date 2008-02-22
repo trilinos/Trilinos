@@ -43,17 +43,15 @@ namespace Thyra {
  */
 template<class Scalar>
 void apply_op_validate_input(
-  const char func_name[]
-  ,const VectorSpaceBase<Scalar> &space
-  ,const RTOpPack::RTOpT<Scalar> &op
-  ,const int num_vecs
-  ,const VectorBase<Scalar>*const vecs[]
-  ,const int num_targ_vecs
-  ,VectorBase<Scalar>*const targ_vecs[]
-  ,RTOpPack::ReductTarget *reduct_obj
-  ,const Index first_ele_offset
-  ,const Index sub_dim
-  ,const Index global_offset
+  const std::string &func_name,
+  const VectorSpaceBase<Scalar> &space,
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset,
+  const Index sub_dim,
+  const Index global_offset
   );
 
 /** \brief Validate the inputs to <tt>MultiVectorBase::applyOp()</tt>.

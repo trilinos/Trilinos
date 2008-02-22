@@ -292,23 +292,33 @@ DefaultProductVector<Scalar>::space() const
 
 
 template <class Scalar>
-void DefaultProductVector<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>    &op
-  ,const int                       num_vecs
-  ,const VectorBase<Scalar>*const  vecs[]
-  ,const int                       num_targ_vecs
-  ,VectorBase<Scalar>*const        targ_vecs[]
-  ,RTOpPack::ReductTarget          *reduct_obj
-  ,const Index                     first_ele_offset_in
-  ,const Index                     sub_dim_in
-  ,const Index                     global_offset_in
+void DefaultProductVector<Scalar>::applyOpImpl(
+  const RTOpPack::RTOpT<Scalar> &op,
+  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Index first_ele_offset_in,
+  const Index sub_dim_in,
+  const Index global_offset_in
   ) const
 {
-  using Teuchos::Workspace;
-  using Teuchos::RCP;
-  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  //
+
+  // 2008/02/20: rabartl: ToDo: Upgrade Teuchos::Workspace<T> to implicitly
+  // convert to Teuchos::ArrayView<T>.  This will allow the calls to
+  // applyOp(...) with sub_vecs and sub_targ_vecs to work without trouble!
+  // For now, I just want to get this done.  It is likely that this function
+  // is going to change in major ways soon anyway!
+
+  //using Teuchos::Workspace;
+  using Teuchos::ptr_dynamic_cast;
+  using Teuchos::null;
+
+  //Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
+
   const Index	n = productSpace_->dim();
+  const int num_vecs = vecs.size();
+  const int num_targ_vecs = targ_vecs.size();
+
   // Validate the compatibility of the vectors!
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
@@ -345,9 +355,10 @@ void DefaultProductVector<Scalar>::applyOp(
       );
   }
 #endif
+
   //
   // The first thing that we do is to see if all of the vectors involved are
-  // incore, serial vectors.  In this case, the vectors should be compatible.
+  // incore, serial vectors. In this case, the vectors should be compatible.
   // To accomplish this we will pick the continguous vector to implement
   // the applyOp(...) function.
   //
@@ -356,62 +367,68 @@ void DefaultProductVector<Scalar>::applyOp(
     Range1D(),VIEW_TYPE_DETACHED,STRIDE_TYPE_NONUNIT
     );
   int incore_vec_k = -1, incore_targ_vec_k = -1;
+
   // Dynamic cast the pointers for the vector arguments
-  Workspace<const ProductVectorBase<Scalar>*>
-    vecs_args(wss,num_vecs,false);
+  Array<Ptr<const ProductVectorBase<Scalar> > >
+    vecs_args(num_vecs);
   for(int k = 0; k < num_vecs; ++k) {
-    vecs_args[k] = dynamic_cast<const ProductVectorBase<Scalar>*>(vecs[k]);
-    if( vecs_args[k] == NULL ) {
+    vecs_args[k] = ptr_dynamic_cast<const ProductVectorBase<Scalar> >(vecs[k]);
+    if( vecs_args[k] == null ) {
       const bool isInCore_k = vecs[k]->space()->hasInCoreView();
       if( this_isInCore && isInCore_k ) {
         incore_vec_k = k;
         break;
       }
       TEST_FOR_EXCEPTION(
-        !this_isInCore || (this_isInCore && !isInCore_k), Exceptions::IncompatibleVectorSpaces
+        !this_isInCore || (this_isInCore && !isInCore_k),
+        Exceptions::IncompatibleVectorSpaces
         ,"DefaultProductVector::applyOp(...): Error vecs["<<k<<"] "
         <<"of type \'"<<typeName(*vecs[k])<<"\' does not support the "
-        <<"\'DefaultProductVector<Scalar>\' interface and is not an incore vector or this is not an incore vector!"
+        <<"\'DefaultProductVector<Scalar>\' interface and is not an incore"
+        "vector or this is not an incore vector!"
         );
     }
   }
-  Workspace<ProductVectorBase<Scalar>*>
-    targ_vecs_args(wss,num_targ_vecs,false);
+  Array<Ptr<ProductVectorBase<Scalar> > >
+    targ_vecs_args(num_targ_vecs);
   for(int k = 0; k < num_targ_vecs; ++k) {
-    targ_vecs_args[k] = dynamic_cast<ProductVectorBase<Scalar>*>(targ_vecs[k]);
-    if( targ_vecs_args[k] == NULL ) {
+    targ_vecs_args[k] = ptr_dynamic_cast<ProductVectorBase<Scalar> >(targ_vecs[k]);
+    if( targ_vecs_args[k] == null ) {
       const bool isInCore_k = targ_vecs[k]->space()->hasInCoreView();
       if( this_isInCore && isInCore_k ) {
         incore_targ_vec_k = k;
         break;
       }
       TEST_FOR_EXCEPTION(
-        !this_isInCore || (this_isInCore && !isInCore_k), Exceptions::IncompatibleVectorSpaces
+        !this_isInCore || (this_isInCore && !isInCore_k),
+        Exceptions::IncompatibleVectorSpaces
         ,"DefaultProductVector::applyOp(...): Error targ_vecs["<<k<<"] "
         <<"of type \'"<<typeName(*targ_vecs[k])<<"\' does not support the "
-        <<"\'DefaultProductVector<Scalar>\' interface and is not an incore vector or this is not an incore vector!"
+        <<"\'DefaultProductVector<Scalar>\' interface and is not an incore"
+        " vector or this is not an incore vector!"
         );
     }
   }
+
   // Let a incore-only vector with a contiguous view handle this through
   // explicit vector access?
   if( incore_vec_k >= 0 ) {
     vecs[incore_vec_k]->applyOp(
-      op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
-      ,first_ele_offset_in,sub_dim_in,global_offset_in
-      );
+      op, vecs, targ_vecs, reduct_obj,
+      first_ele_offset_in, sub_dim_in, global_offset_in );
     return;
   }
   else if ( incore_targ_vec_k >= 0 ) {
     targ_vecs[incore_targ_vec_k]->applyOp(
-      op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
-      ,first_ele_offset_in,sub_dim_in,global_offset_in
+      op, vecs, targ_vecs, reduct_obj,
+      first_ele_offset_in, sub_dim_in, global_offset_in
       );
     return;
   }
+
   //
-  // If we get here, then we will implement the applyOp(...) one vector block
-  // at a time.
+  // If we get here, then we will implement the applyOpImpl(...) one vector
+  // block at a time.
   //
   const Index this_dim = n;
   const Index sub_dim
@@ -422,14 +439,14 @@ void DefaultProductVector<Scalar>::applyOp(
       );
   Index num_elements_remaining = sub_dim;
   const int numBlocks = productSpace_->numBlocks();
-  Workspace<RCP<const VectorBase<Scalar> > >
-    sub_vecs_rcps(wss,num_vecs);
-  Workspace<const VectorBase<Scalar>*>
-    sub_vecs(wss,num_vecs,false);
-  Workspace<RCP<VectorBase<Scalar> > >
-    sub_targ_vecs_rcps(wss,num_targ_vecs);
-  Workspace<VectorBase<Scalar>*>
-    sub_targ_vecs(wss,num_targ_vecs,false);
+  Array<RCP<const VectorBase<Scalar> > >
+    sub_vecs_rcps(num_vecs);
+  Array<Ptr<const VectorBase<Scalar> > >
+    sub_vecs(num_vecs);
+  Array<RCP<VectorBase<Scalar> > >
+    sub_targ_vecs_rcps(num_targ_vecs);
+  Array<Ptr<VectorBase<Scalar> > >
+    sub_targ_vecs(num_targ_vecs);
   Index g_off = -first_ele_offset_in;
   for(int k = 0; k < numBlocks; ++k) {
     const Index local_dim = productSpace_->getBlock(k)->dim();
@@ -440,33 +457,32 @@ void DefaultProductVector<Scalar>::applyOp(
     const Index
       local_sub_dim
       = ( g_off >= 0
-          ? std::min( local_dim, num_elements_remaining )
-          : std::min( local_dim + g_off, num_elements_remaining ) );
+        ? std::min( local_dim, num_elements_remaining )
+        : std::min( local_dim + g_off, num_elements_remaining ) );
     if( local_sub_dim <= 0 )
       break;
     // Fill constituent vectors for block k
     for( int i = 0; i < num_vecs; ++i ) {
       sub_vecs_rcps[i] = vecs_args[i]->getVectorBlock(k);
-      sub_vecs[i] = &*sub_vecs_rcps[i];
+      sub_vecs[i] = sub_vecs_rcps[i].ptr();
     }
     // Fill constituent target vectors for block k
     for( int j = 0; j < num_targ_vecs; ++j ) {
       sub_targ_vecs_rcps[j] = targ_vecs_args[j]->getNonconstVectorBlock(k);
-      sub_targ_vecs[j] = &*sub_targ_vecs_rcps[j];
+      sub_targ_vecs[j] = sub_targ_vecs_rcps[j].ptr();
     }
-    Thyra::applyOp( 
-      op
-      ,num_vecs,num_vecs?&sub_vecs[0]:NULL
-      ,num_targ_vecs,num_targ_vecs?&sub_targ_vecs[0]:NULL
-      ,reduct_obj
-      ,g_off < 0 ? -g_off : 0                                    // first_ele_offset
-      ,local_sub_dim                                             // sub_dim
-      ,g_off < 0 ? global_offset_in : global_offset_in + g_off   // global_offset
+    Thyra::applyOp<Scalar>(
+      op, sub_vecs, sub_targ_vecs,
+      reduct_obj,
+      g_off < 0 ? -g_off : 0, // first_ele_offset
+      local_sub_dim, // sub_dim
+      g_off < 0 ? global_offset_in : global_offset_in + g_off // global_offset
       );
     g_off += local_dim;
     num_elements_remaining -= local_sub_dim;
   }
   TEST_FOR_EXCEPT(!(num_elements_remaining==0));
+
 }
 
 

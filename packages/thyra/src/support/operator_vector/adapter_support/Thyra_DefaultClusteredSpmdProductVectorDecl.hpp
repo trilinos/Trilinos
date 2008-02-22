@@ -117,17 +117,23 @@ public:
 
   /** \brief . */
   Teuchos::RCP< const VectorSpaceBase<Scalar> > space() const;
+
+  //@}
+
+protected:
+
+  /** @name Overridden protected members from VectorBase */
+  //@{
+
   /** \brief . */
-  void applyOp(
-    const RTOpPack::RTOpT<Scalar>    &op
-    ,const int                       num_vecs
-    ,const VectorBase<Scalar>*const  vecs[]
-    ,const int                       num_targ_vecs
-    ,VectorBase<Scalar>*const        targ_vecs[]
-    ,RTOpPack::ReductTarget          *reduct_obj
-    ,const Index                     first_ele
-    ,const Index                     sub_dim
-    ,const Index                     global_offset
+  void applyOpImpl(
+    const RTOpPack::RTOpT<Scalar> &op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Index first_ele_offset,
+    const Index sub_dim,
+    const Index global_offset
     ) const;
 
   //@}
