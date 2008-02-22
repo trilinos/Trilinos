@@ -368,7 +368,7 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
   int k;
   char msg[256];
 
-  if ((ndim == 0) || (number == 0))
+  if (ndim == 0)
     return ierr;
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
@@ -381,7 +381,7 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
   }
 
   *rnd_wgt = (weighttype *)ZOLTAN_MALLOC(ndim * number * sizeof(weighttype));
-  if (*rnd_wgt == NULL){
+  if ((number >0 ) && (*rnd_wgt == NULL)){
 	/* Not enough memory */
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }

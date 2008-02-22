@@ -98,7 +98,6 @@ int Zoltan_ParMetis(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
-  indextype *vsize = NULL;
   int i;
   float *imb_tols;
   int  ncon;
