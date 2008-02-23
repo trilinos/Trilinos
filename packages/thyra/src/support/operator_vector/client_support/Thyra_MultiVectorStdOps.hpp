@@ -44,327 +44,324 @@
 #include "RTOpPack_TOpLinearCombination.hpp"
 #include "RTOpPack_TOpScaleVector.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_arrayArg.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
+
 
 template<class Scalar>
-void Thyra::norms( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
+void Thyra::norms( const MultiVectorBase<Scalar>& V,
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   const int m = V.domain()->dim();
-  std::vector<Scalar> prods(m);
+  Array<Scalar> prods(m);
   V.range()->scalarProds(V,V,&prods[0]);
-  for( int j = 0; j < m; ++j )
+  for ( int j = 0; j < m; ++j )
     norms[j] = ST::magnitude(ST::squareroot(prods[j]));
 }
 
+
 template<class Scalar, class NormOp>
-void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
+void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
 {
-  int kc;
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   const int m = V.domain()->dim();
-  std::vector<Teuchos::RCP<RTOpPack::ReductTarget> >  rcp_op_targs(m);
-  std::vector<RTOpPack::ReductTarget*>                        op_targs(m);
-  for( kc = 0; kc < m; ++kc ) {
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
     rcp_op_targs[kc] = op.reduct_obj_create();
-    op_targs[kc] = &*rcp_op_targs[kc];
+    op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  const MultiVectorBase<Scalar>* multi_vecs[] = { &V,};
-  applyOp<Scalar>(op,1,multi_vecs,0,static_cast<MultiVectorBase<Scalar>**>(NULL),&op_targs[0]);
-  for( kc = 0; kc < m; ++kc ) {
+  applyOp<Scalar>(op, tuple(ptrInArg(V)), null, op_targs );
+  for( int kc = 0; kc < m; ++kc ) {
     norms[kc] = op(*op_targs[kc]);
   }
 }
 
+
 template<class Scalar>
-void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2, Scalar dots[] )
+void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
+  const ArrayView<Scalar> &dots )
 {
-  int kc;
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   const int m = V1.domain()->dim();
   RTOpPack::ROpDotProd<Scalar> dot_op;
-  std::vector<Teuchos::RCP<RTOpPack::ReductTarget> >  rcp_dot_targs(m);
-  std::vector<RTOpPack::ReductTarget*>                        dot_targs(m);
-  for( kc = 0; kc < m; ++kc ) {
+  Array<RCP<RTOpPack::ReductTarget> > rcp_dot_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > dot_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
     rcp_dot_targs[kc] = dot_op.reduct_obj_create();
-    dot_targs[kc] = &*rcp_dot_targs[kc];
+    dot_targs[kc] = rcp_dot_targs[kc].ptr();
   }
-  const MultiVectorBase<Scalar>* multi_vecs[] = { &V1, &V2 };
-  applyOp<Scalar>(dot_op,2,multi_vecs,0,static_cast<MultiVectorBase<Scalar>**>(NULL),&dot_targs[0]); // Cast required by sun compiler
-  for( kc = 0; kc < m; ++kc ) {
+  applyOp<Scalar>( dot_op, tuple(ptrInArg(V1), ptrInArg(V2)), null, dot_targs );
+  for( int kc = 0; kc < m; ++kc ) {
     dots[kc] = dot_op(*dot_targs[kc]);
   }
 }
 
+
 template<class Scalar>
-void Thyra::sums( const MultiVectorBase<Scalar>& V, Scalar sums[] )
+void Thyra::sums( const MultiVectorBase<Scalar>& V, const ArrayView<Scalar> &sums )
 {
-  int kc;
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   const int m = V.domain()->dim();
   RTOpPack::ROpSum<Scalar> sum_op;
-  std::vector<Teuchos::RCP<RTOpPack::ReductTarget> >  rcp_op_targs(m);
-  std::vector<RTOpPack::ReductTarget*>                        op_targs(m);
-  for( kc = 0; kc < m; ++kc ) {
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
     rcp_op_targs[kc] = sum_op.reduct_obj_create();
-    op_targs[kc] = &*rcp_op_targs[kc];
+    op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  const MultiVectorBase<Scalar>* multi_vecs[] = { &V,};
-  applyOp<Scalar>(sum_op,1,multi_vecs,0,static_cast<MultiVectorBase<Scalar>**>(NULL),&op_targs[0]);
-  for( kc = 0; kc < m; ++kc ) {
+  applyOp<Scalar>(sum_op, tuple(ptrInArg(V)), null, op_targs );
+  for( int kc = 0; kc < m; ++kc ) {
     sums[kc] = sum_op(*op_targs[kc]);
   }
 }
+
 
 template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_1( const MultiVectorBase<Scalar>& V )
 {
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   // Primary column-wise reduction (sum of absolute values)
   RTOpPack::ROpNorm1<Scalar> sum_abs_op;
-  // Secondary reduction (max over all columns = induced norm_1 matrix  norm)
+  // Secondary reduction (max over all columns = induced norm_1 matrix norm)
   RTOpPack::ROpNormInf<Scalar> max_op;
   // Reduction object (must be same for both sum_abs and max_targ objects)
-  Teuchos::RCP<RTOpPack::ReductTarget>
+  RCP<RTOpPack::ReductTarget>
     max_targ = max_op.reduct_obj_create();
   // Perform the reductions
-  const MultiVectorBase<Scalar>* multi_vecs[] = { &V };
-  applyOp<Scalar>(sum_abs_op,max_op,1,multi_vecs,0,static_cast<MultiVectorBase<Scalar>**>(NULL),&*max_targ); // Sun complier requires this cast
+  applyOp<Scalar>(sum_abs_op, max_op, tuple(ptrInArg(V)), null, max_targ.ptr() );
   // Return the final value
   return max_op(*max_targ);
 }
 
+
 template<class Scalar>
-void Thyra::scale( Scalar alpha, MultiVectorBase<Scalar>* V )
+void Thyra::scale( Scalar alpha, const Ptr<MultiVectorBase<Scalar> > &V )
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"scale(...), Error!");
-#endif
-  if(alpha==ST::zero()) {
+  using Teuchos::tuple; using Teuchos::null;
+  typedef ScalarTraits<Scalar> ST;
+  if (alpha==ST::zero()) {
     assign( V, ST::zero() );
     return;
   }
-  if(alpha==ST::one()) {
+  if (alpha==ST::one()) {
     return;
   }
   RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
-  MultiVectorBase<Scalar>* targ_multi_vecs[] = { V };
-  applyOp<Scalar>(
-    scale_vector_op,0,(const MultiVectorBase<Scalar>**)NULL // The SUN compiler requires these casts!
-    ,1,targ_multi_vecs,(RTOpPack::ReductTarget**)NULL
-    );
+  applyOp<Scalar>( scale_vector_op, null, tuple(V), null );
 }
 
+
 template<class Scalar>
-void Thyra::scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
+void Thyra::scaleUpdate( const VectorBase<Scalar>& a,
+  const MultiVectorBase<Scalar>& U, const Ptr<MultiVectorBase<Scalar> > &V )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
   bool is_compatible = U.range()->isCompatible(*a.space());
   TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.range()->isCompatible(*a.space())==false");
+    !is_compatible, Exceptions::IncompatibleVectorSpaces,
+    "update(...), Error, U.range()->isCompatible(*a.space())==false" );
   is_compatible = U.range()->isCompatible(*V->range());
   TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.range()->isCompatible((V->range())==false ");
+    !is_compatible, Exceptions::IncompatibleVectorSpaces,
+    "update(...), Error, U.range()->isCompatible((V->range())==false" );
   is_compatible = U.domain()->isCompatible(*V->domain());
   TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.domain().isCompatible(V->domain())==false ");
+    !is_compatible, Exceptions::IncompatibleVectorSpaces,
+    "update(...), Error, U.domain().isCompatible(V->domain())==false" );
 #endif
   const int m = U.domain()->dim();
   for( int j = 0; j < m; ++j ) {
-    ele_wise_prod( Scalar(1.0), a, *U.col(j), &*V->col(j) ); 
+    ele_wise_prod<Scalar>( 1.0, a, *U.col(j), V->col(j).ptr() ); 
   }
 }
 
+
 template<class Scalar>
-void Thyra::assign( MultiVectorBase<Scalar>* V, Scalar alpha )
+void Thyra::assign( const Ptr<MultiVectorBase<Scalar> > &V, Scalar alpha )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
-#endif
+  using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
-  MultiVectorBase<Scalar>* targ_multi_vecs[] = { V };
-  applyOp<Scalar>(
-    assign_scalar_op,0,(const MultiVectorBase<Scalar>**)NULL // The SUN compiler requires these casts!
-    ,1,targ_multi_vecs,(RTOpPack::ReductTarget**)NULL
-    );
+  applyOp<Scalar>(assign_scalar_op, null, tuple(V), null);
 }
 
+
 template<class Scalar>
-void Thyra::assign( MultiVectorBase<Scalar>* V, const MultiVectorBase<Scalar>& U )
+void Thyra::assign( const Ptr<MultiVectorBase<Scalar> > &V,
+  const MultiVectorBase<Scalar>& U )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
-#endif
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
-  const MultiVectorBase<Scalar>* multi_vecs[]      = { &U };
-  MultiVectorBase<Scalar>*       targ_multi_vecs[] = { V   };
-  applyOp<Scalar>(
-    assign_vectors_op,1,multi_vecs,1,targ_multi_vecs
-    ,(RTOpPack::ReductTarget**)NULL // The SUN compiler requires this cast!
-    );
+  applyOp<Scalar>( assign_vectors_op, tuple(ptrInArg(U)), tuple(V), null );
 }
 
+
 template<class Scalar>
-void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
+void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U,
+  const Ptr<MultiVectorBase<Scalar> > &V )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
-#endif
+  using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
-  const MultiVectorBase<Scalar>* multi_vecs[]       = { &U };
-  MultiVectorBase<Scalar>*       targ_multi_vecs[]  = { V  };
-  applyOp<Scalar>(axpy_op,1,multi_vecs,1,targ_multi_vecs,(RTOpPack::ReductTarget**)NULL); // Sun compiler requires this cast
+  applyOp<Scalar>( axpy_op, tuple(ptrInArg(U)), tuple(V), null );
 }
 
+
 template<class Scalar>
-void Thyra::update( const Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
+void Thyra::update( const ArrayView<const Scalar> &alpha, Scalar beta,
+  const MultiVectorBase<Scalar>& U, const Ptr<MultiVectorBase<Scalar> > &V )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
   bool is_compatible = U.range()->isCompatible(*V->range());
   TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.range()->isCompatible((V->range())==false ");
+    !is_compatible, Exceptions::IncompatibleVectorSpaces,
+    "update(...), Error, U.range()->isCompatible((V->range())==false");
   is_compatible = U.domain()->isCompatible(*V->domain());
   TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.domain().isCompatible(V->domain())==false ");
+    !is_compatible, Exceptions::IncompatibleVectorSpaces,
+    "update(...), Error, U.domain().isCompatible(V->domain())==false");
 #endif
   const int m = U.domain()->dim();
   for( int j = 0; j < m; ++j )
-    Vp_StV( V->col(j).get(), alpha[j]*beta, *U.col(j) );
+    Vp_StV<Scalar>( V->col(j).ptr(), alpha[j]*beta, *U.col(j) );
 }
 
 
 template<class Scalar>
-void Thyra::update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar beta, MultiVectorBase<Scalar>* V )
+void Thyra::update( const MultiVectorBase<Scalar>& U,
+  const ArrayView<const Scalar> &alpha, Scalar beta,
+  const Ptr<MultiVectorBase<Scalar> > &V )
 {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
   bool is_compatible = U.range()->isCompatible(*V->range());
     TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.range()->isCompatible((V->range())==false ");
-  is_compatible = U.domain()->isCompatible(*V->domain());
+      !is_compatible, Exceptions::IncompatibleVectorSpaces,
+      "update(...), Error, U.range()->isCompatible((V->range())==false");
+    is_compatible = U.domain()->isCompatible(*V->domain());
     TEST_FOR_EXCEPTION(
-    !is_compatible,Exceptions::IncompatibleVectorSpaces
-    ,"update(...), Error, U.domain().isCompatible(V->domain())==false ");
+      !is_compatible, Exceptions::IncompatibleVectorSpaces,
+      "update(...), Error, U.domain().isCompatible(V->domain())==false");
 #endif
   const int m = U.domain()->dim();
   for( int j = 0; j < m; ++j ) {
-    Vt_S( V->col(j).get(), alpha[j]*beta );
-    Vp_StV( V->col(j).get(), 1.0, *U.col(j) );
+    Vt_S<Scalar>( V->col(j).ptr(), alpha[j]*beta );
+    Vp_StV<Scalar>( V->col(j).ptr(), 1.0, *U.col(j) );
   }
 }
+
 
 template<class Scalar>
 void Thyra::linear_combination(
-  const int                         m
-  ,const Scalar                     alpha[]
-  ,const MultiVectorBase<Scalar>*   X[]
-  ,const Scalar                     &beta
-  ,MultiVectorBase<Scalar>          *Y
+  const ArrayView<const Scalar> &alpha,
+  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &X,
+  const Scalar &beta,
+  const Ptr<MultiVectorBase<Scalar> > &Y
   )
 {
+  using Teuchos::tuple; using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(Y==NULL,std::logic_error,"linear_combination(...), Error!");
+  TEUCHOS_ASSERT_EQUALITY(alpha.size(),X.size());
 #endif
-  if( beta == Teuchos::ScalarTraits<Scalar>::one() && m == 1 ) {
+  const int m = alpha.size();
+  if ( beta == ScalarTraits<Scalar>::one() && m == 1 ) {
     update( alpha[0], *X[0], Y );
     return;
   }
-  else if( m == 0 ) {
+  else if (m == 0) {
     scale( beta, Y );
     return;
   }
-  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(m,alpha,beta);
-  MultiVectorBase<Scalar>* targ_multi_vecs[] = { Y };
-  Thyra::applyOp<Scalar>(lin_comb_op,m,X,1,targ_multi_vecs,(RTOpPack::ReductTarget**)NULL);  // Cast returned by sun compiler
+  RTOpPack::TOpLinearCombination<Scalar>
+    lin_comb_op(m,alpha.getRawPtr(),beta);
+  Thyra::applyOp<Scalar>( lin_comb_op, X, tuple(Y), null );
 }
 
+
 template<class Scalar>
-void Thyra::randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V )
+void Thyra::randomize( Scalar l, Scalar u,
+  const Ptr<MultiVectorBase<Scalar> > &V )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"randomize(...), Error!");
-#endif
   const int m = V->domain()->dim();
   for( int j = 0; j < m; ++j )
-    randomize( l, u, V->col(j).get() );
+    randomize( l, u, V->col(j).ptr() );
   // Todo: call applyOp(...) directly!
 }
 
+
 template<class Scalar>
-void Thyra::Vt_S( MultiVectorBase<Scalar>* Z, const Scalar& alpha )
+void Thyra::Vt_S( const Ptr<MultiVectorBase<Scalar> > &Z,
+  const Scalar& alpha )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(Z==NULL,std::logic_error,"Vt_S(...), Error!");
-#endif
   const int m = Z->domain()->dim();
   for( int j = 0; j < m; ++j )
-    Vt_S( &*Z->col(j), alpha );
+    Vt_S( Z->col(j).ptr(), alpha );
   // Todo: call applyOp(...) directly!
 }
 
+
 template<class Scalar>
-void Thyra::Vp_S( MultiVectorBase<Scalar>* Z, const Scalar& alpha )
+void Thyra::Vp_S( const Ptr<MultiVectorBase<Scalar> > &Z,
+  const Scalar& alpha )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(Z==NULL,std::logic_error,"Vp_S(...), Error!");
-#endif
   const int m = Z->domain()->dim();
   for( int j = 0; j < m; ++j )
-    Vp_S( &*Z->col(j), alpha );
+    Vp_S( Z->col(j).ptr(), alpha );
   // Todo: call applyOp(...) directly!
 }
 
-template<class Scalar>
-void Thyra::Vp_V( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X )
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  linear_combination(
-    1, Teuchos::arrayArg<Scalar>(ST::one())(),
-    Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X)(),
-    ST::one(), Z
-    );
-}
 
 template<class Scalar>
-void Thyra::V_VpV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y )
+void Thyra::Vp_V( const Ptr<MultiVectorBase<Scalar> > &Z,
+  const MultiVectorBase<Scalar>& X )
 {
+  using Teuchos::tuple; using Teuchos::ptrInArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  linear_combination(
-    2,Teuchos::arrayArg<Scalar>(ST::one(),ST::one())()
-    ,Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X,&Y)()
-    ,ST::zero(),Z
-    );
+  linear_combination<Scalar>( tuple(ST::one()), tuple(ptrInArg(X)),
+    ST::one(), Z );
 }
 
-template<class Scalar>
-void Thyra::V_VmV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y )
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  linear_combination(
-    2,Teuchos::arrayArg<Scalar>(ST::one(),Scalar(-ST::one()))()
-    ,Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X,&Y)()
-    ,ST::zero(),Z
-    );
-}
 
 template<class Scalar>
-void Thyra::V_StVpV(
-  MultiVectorBase<Scalar>* Z, const Scalar &alpha,
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y 
-  )
+void Thyra::V_VpV( const Ptr<MultiVectorBase<Scalar> > &Z,
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y )
 {
+  using Teuchos::tuple; using Teuchos::ptrInArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  linear_combination(
-    2, Teuchos::arrayArg<Scalar>(alpha,ST::one())(),
-    Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X,&Y)(),
+  linear_combination<Scalar>(
+    tuple(ST::one(), ST::one()), tuple(ptrInArg(X), ptrInArg(Y)),
     ST::zero(), Z
     );
 }
+
+
+template<class Scalar>
+void Thyra::V_VmV( const Ptr<MultiVectorBase<Scalar> > &Z,
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination<Scalar>(
+    tuple(ST::one(), as<Scalar>(-ST::one())), tuple(ptrInArg(X), ptrInArg(Y)),
+    ST::zero(), Z
+    );
+}
+
+
+template<class Scalar>
+void Thyra::V_StVpV(
+  const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha,
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y 
+  )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination<Scalar>(
+    tuple(alpha, ST::one()),  tuple(ptrInArg(X), ptrInArg(Y)),
+    ST::zero(), Z
+    );
+}
+
 
 #endif // THYRA_MULTI_VECTOR_STD_OPS_HPP
