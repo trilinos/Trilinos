@@ -441,7 +441,7 @@ void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *for
     return;
   }
   A = (ML_Operator*) data;
-  *num_lists = A->outvec_leng;  /* Local # of rows     */
+  *num_lists = A->getrow->Nrows;/* Local # of rows     */
   *num_pins  = A->N_nonzeros;   /* Local # of nonzeros */
   *format    = ZOLTAN_COMPRESSED_EDGE;
 }
@@ -464,26 +464,28 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
   }
   
   A = (ML_Operator*) data;
-  N= A->outvec_leng;
+  N= A->getrow->Nrows; 
 
   /* Use getrow to pull all the data over */
   values =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
   for(i=0;i<N;i++) {
     vtxedge_ptr[i]=rowtotal;
     rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,&pin_GID[rowtotal],values,&rowlength);
-    if(rv==0) {printf("CMS: Out of space in getrow i=%d/%d",i,N);*ierr=ZOLTAN_FATAL;}
+    if(rv==0) {printf("ML: Out of space in getrow i=%d/%d",i,N);fflush(stdout);*ierr=ZOLTAN_FATAL;}
+    /* ADD: Safety catch if A->max_nz_per_row is not correct.  Use ML_get_matrix_row and do a copy-back.
+       WARNING: There is an int / unsigned int typing issue with pin_GID & getrow.  Live on the edge.   
+    */
     rowtotal+=rowlength;
   }
   /* Note: vtxedge_ptr does not have the extra "N+1" element that regular CSR
      matrices have. */
   
   /* Reindex to global IDs - this allocates memory*/
-  ML_create_unique_col_id(A->outvec_leng,&indices,A->getrow->pre_comm,&maxnz,A->comm);
+  ML_create_unique_col_id(A->getrow->Nrows,&indices,A->getrow->pre_comm,&maxnz,A->comm);
   for(i=0;i<num_pins;i++) pin_GID[i]=indices[pin_GID[i]];    
 
   ML_free(values);
   ML_free(indices);
-  fflush(stdout);
 }
 
 
