@@ -1233,28 +1233,29 @@ Array<T>::vec( bool isStructureBeingModified, bool activeIter )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (isStructureBeingModified) {
-    arcp_ = null; // Give up my ArrayRCP since the array we be getting modifed!
+    // Give up my ArrayRCPs used for iterator access since the array we be
+    // getting modifed!
+    arcp_ = null;
+    carcp_ = null;
     if (activeIter) {
       // If there is an active iterator in this call, then we need to allow
       // for the existance of one or more other iterators!  We can't know for
       // sure how many other iterators there will be since some copy
-      // constructors might be called etc.!  This leaves a dangerous
+      // constructors etc., might be called!  This leaves a dangerous
       // situration in place where the client might access the iterator after
-      // this call.
+      // this call!
       
       // 2007/11/08: rabartl: ToDo: I need to add a bool field to RCP_node
-      // that stores of the underlying object is valid or not.  I can then put
+      // that stores if the underlying object is valid or not.  I can then put
       // in a debug-enabled check that any use of that object will be invalid
-      // and throw!
-      
+      // and throw!  The WEAK RCP pointer approach might be able to handle
+      // this!
     }
     else {
-      // If there is no active iterator, then we don't allow any other dangling
-      // references or we will thrown an exception!
-      if (isStructureBeingModified) {
-        TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError,
-          "Error, Array is being modified while a dangling reference exists!");
-      }
+      // If there is no active iterator, then we don't allow any other
+      // dangling references or we will thrown an exception!
+      TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError,
+        "Error, Array is being modified while a dangling reference exists!");
     }
   }
   return *vec_;

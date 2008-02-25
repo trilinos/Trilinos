@@ -813,6 +813,18 @@ typename ArrayRCP<T>::difference_type
 operator-( const ArrayRCP<T> &p1, const ArrayRCP<T> &p2 );
 
 
+/** \brief Const cast of underlying <tt>ArrayRCP</tt> type from <tt>const T*</tt>
+ * to <tt>T*</tt>.
+ *
+ * The function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>)
+ * compiles.
+ *
+ * \relates ArrayRCP
+ */
+template<class T2, class T1>
+ArrayRCP<T2> arcp_const_cast(const ArrayRCP<T1>& p1);
+
+
 /** \brief Reinterpret cast of underlying <tt>ArrayRCP</tt> type from
  * <tt>T1*</tt> to <tt>T2*</tt>.
  *

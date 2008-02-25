@@ -97,7 +97,6 @@ bool test_ArrayRCP_iterators(
   using Teuchos::ArrayRCP;
   using Teuchos::null;
   using Teuchos::arcp;
-  using Teuchos::arcp_reinterpret_cast;
 
   bool success = true;
 
@@ -256,6 +255,7 @@ bool test_ArrayRCP(
 
   using Teuchos::ArrayView;
   using Teuchos::ArrayRCP;
+  using Teuchos::arcp_const_cast;
 
   bool success = true, result;
  
@@ -279,9 +279,18 @@ bool test_ArrayRCP(
   result = test_ArrayRCP_iterators(ptr,out);
   if (!result) success = false;
 
+  //
+  out << "\nTest const casting ...\n";
+  //
+
+  {
+    const ArrayRCP<const T> cptr2 = ptr;
+    const ArrayRCP<T> ptr3 = arcp_const_cast<T>(cptr2);
+    TEST_COMPARE_ARRAYS( ptr3, ptr );
+  }
 
   //
-  out << "\nG) Test views ...\n";
+  out << "\nTest views ...\n";
   //
 
   {

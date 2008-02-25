@@ -811,8 +811,23 @@ Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
   Ordinal upperOffset2 = (p1.upperOffset()+1) / sizeOfT2ToT1 -1;
   T2 *ptr2 = reinterpret_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
-    ptr2,lowerOffset2,upperOffset2
-    ,p1.access_node()
+    ptr2, lowerOffset2, upperOffset2,
+    p1.access_node()
+    );
+  // Note: Above is just fine even if p1.get()==NULL!
+}
+
+
+template<class T2, class T1>
+REFCOUNTPTR_INLINE
+Teuchos::ArrayRCP<T2>
+Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
+{
+  typedef typename ArrayRCP<T1>::Ordinal Ordinal;
+  T2 *ptr2 = const_cast<T2*>(p1.get());
+  return ArrayRCP<T2>(
+    ptr2, p1.lowerOffset(), p1.upperOffset(),
+    p1.access_node()
     );
   // Note: Above is just fine even if p1.get()==NULL!
 }

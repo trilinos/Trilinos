@@ -200,6 +200,15 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     TEST_COMPARE_ARRAYS( a2, a );
   }
 
+  {
+    out << "\nTest iterator access and then resize ...\n";
+    Array<T> a2(a);
+    const Array<T> &ca2 = a2;
+    Array<T> a3(ca2.begin(),ca2.end());
+    TEST_COMPARE_ARRAYS( a3, a );
+    TEST_NOTHROW(a2.resize(0)); // This used to throw exception!
+  }
+
   //
   out << "\nC) Test element access ...\n";
   //
