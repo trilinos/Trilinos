@@ -1,0 +1,318 @@
+// @HEADER
+// ************************************************************************
+//
+//                           Intrepid Package
+//                 Copyright (2007) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
+//                    Denis Ridzal (dridzal@sandia.gov).
+//
+// ************************************************************************
+// @HEADER
+
+/** \file   Intrepid_LexContainer.hpp
+    \brief  Definition file for utility class to provide lexicographical containers.
+    \author Created by P. Bochev and D. Ridzal.
+*/
+
+namespace Intrepid {
+
+//===========================================================================//
+//                                                                           //
+//          Member function definitions of the class LexContainer.           //
+//                                                                           //
+//===========================================================================//
+
+template<class Scalar>
+LexContainer<Scalar>::LexContainer(const LexContainer<Scalar>& right) {
+  
+  // Copy indexRange and data values from right
+  indexRange_.assign(right.indexRange_.begin(),right.indexRange_.end());  
+  data_.assign(right.data_.begin(),right.data_.end());
+}
+
+
+
+template<class Scalar>
+LexContainer<Scalar>::LexContainer(const Teuchos::Array<int>& indexRange) {  
+  
+  // Copy upper index bounds and resize container storage to match them
+  indexRange_ .assign(indexRange.begin(),indexRange.end());  
+  data_.resize( this -> getSize());
+}
+
+
+
+template<class Scalar>
+LexContainer<Scalar>::LexContainer(const Teuchos::Array<int>& indexRange,
+                                   const Teuchos::Array<Scalar>& data) {  
+  
+  // Copy upper bounds for indices
+  indexRange_.assign(indexRange.begin(),indexRange.end());
+  
+  // Validate input: size of data must match size computed from upper index bounds in indexRange
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (int)data.size() != this -> getSize() ),
+                      std::invalid_argument,
+                      ">>> ERROR (LexContainer): Size of data does not match specified index range.");
+#endif
+  
+  // Assign data
+  data_.assign(data.begin(),data.end());
+}
+
+
+
+template<class Scalar>
+inline int LexContainer<Scalar>::getRank() const {
+  return indexRange_.size();
+}
+  
+
+
+template<class Scalar>
+inline int LexContainer<Scalar>::getSize() const {
+
+  // Size equals product of all upper index bounds in indexRange_
+  int rank = indexRange_.size();
+  int size = indexRange_[0];
+  for(int r = 1; r < rank ; r++){
+    size *= indexRange_[r];
+  }
+  return size;
+}
+
+
+
+template<class Scalar>
+int LexContainer<Scalar>::getAddress(Teuchos::Array<int> multiIndex) const {
+
+  // Check if number of multi-indices matches rank of the LexContainer object
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( multiIndex.size() != indexRange_.size() ),
+                      std::length_error,
+                      ">>> ERROR (LexContainer): Number of multi-indices does not match rank of container.");
+#endif
+    
+  // Compute address using Horner's nested scheme: intialize address to 0th index value
+  int address = multiIndex[0];
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( ( multiIndex[0] < 0) || ( multiIndex[0] >= indexRange_[0]) ),
+                      std::out_of_range,
+                      ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif  
+  
+  int rank = indexRange_.size();
+  for (int r = 0; r < rank - 1; r++){
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ( (multiIndex[r+1] < 0) || (multiIndex[r+1] >= indexRange_[r+1]) ),
+                        std::out_of_range,
+                        ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+    
+    // Add increment
+    address = address*indexRange_[r+1] + multiIndex[r+1];
+  }
+  return address;
+}
+
+
+
+template<class Scalar>
+int LexContainer<Scalar>::getAddress(int* multiIndexPtr) const {
+  
+  // Uses getAddress with Teuchos::Array argument to compute the address.
+  int rank = this -> getRank();
+  Teuchos::Array<int> multiIndexArray(rank);
+  multiIndexArray.assign(multiIndexPtr,multiIndexPtr + rank);  
+  return this -> getAddress(multiIndexArray);
+}
+
+
+
+template<class Scalar>
+void LexContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
+                                         const int valueAddress) const {
+  
+  // Verify address is in the admissible range for this LexContainer
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (valueAddress < 0) || (valueAddress >= (int)data_.size()) ),
+                      std::out_of_range,
+                      ">>> ERROR (LexContainer): Specified address is out of range.");    
+#endif
+  
+  // make sure multiIndex has the right size to hold all multi-indices
+  int rank = indexRange_.size();
+  multiIndex.resize(rank);
+  
+  // Initializations
+  int temp_addr = valueAddress;
+  int temp_range = 1;
+  
+  // Compute product of all but the first upper bound
+  for(int r = 1; r < rank ; r++){
+    temp_range *=indexRange_[r];
+  }
+  
+  // Index 0 is computed first using integer division
+  multiIndex[0] = temp_addr/temp_range;
+  
+  // Indices 1 to (rank - 2) are computed next
+  for(int r = 1; r < rank - 1; r++){
+    temp_addr  -= multiIndex[r-1]*temp_range;
+    temp_range /= indexRange_[r];
+    multiIndex[r] = temp_addr/temp_range;
+  }
+  
+  // Index (rank - 1) is computed last
+  multiIndex[rank - 1] = temp_addr - multiIndex[rank - 2]*temp_range;
+}
+
+
+
+template<class Scalar>
+inline Scalar LexContainer<Scalar>::getValue(const Teuchos::Array<int>& multiIndex) const {
+  return data_[this -> getAddress(multiIndex)];
+}
+
+
+
+template<class Scalar>
+void LexContainer<Scalar>::resetContainer(const Teuchos::Array<int>& newIndexRange) {
+  
+  // Copy upper index bounds and resize container storage to match new upper bounds.
+  indexRange_.assign(newIndexRange.begin(),newIndexRange.end());  
+  data_.resize(this -> getSize());
+}
+
+
+
+template<class Scalar>
+inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const Teuchos::Array<int>& multiIndex) {
+  data_[this -> getAddress(multiIndex)] = dataValue; 
+}
+
+
+
+template<class Scalar>
+void LexContainer<Scalar>::setValues(const Teuchos::Array<Scalar>& dataArray) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (dataArray.size() != (data_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (LexContainer): Size of argument does not match size of container.");  
+#endif  
+  data_.assign(dataArray.begin(),dataArray.end());
+}
+
+
+
+template<class Scalar>
+inline void LexContainer<Scalar>::setValues(const Scalar* dataPtr, const int dataSize) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (dataSize != (int)data_.size() ),
+                      std::invalid_argument,
+                      ">>> ERROR (LexContainer): Size of container does not match dataSize value.");  
+#endif  
+  data_.assign(dataPtr, dataPtr + dataSize); 
+}
+
+
+
+template<class Scalar>
+const Scalar& LexContainer<Scalar>::operator [] (const int address) const {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
+                      std::out_of_range,
+                      ">>> ERROR (Point): address out of range.");
+#endif
+  return data_[address];
+}
+  
+
+
+template<class Scalar>
+inline LexContainer<Scalar>& LexContainer<Scalar>::operator = (const LexContainer<Scalar>& right)
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid right-hand side to '='. Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( this -> getSize() != right.getSize() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid size of right-hand side argument to '='.");
+  TEST_FOR_EXCEPTION( ( indexRange_.size() != right.indexRange_.size() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): Invalid rank of right-hand side argument to '='.");
+#endif
+  data_ = right.data_;
+  indexRange_ = right.indexRange_; 
+  return *this;
+}
+
+
+//===========================================================================//
+//                                                                           //
+//           END of member definitions; START friends and related            //
+//                                                                           //
+//===========================================================================//
+
+
+template<class Scalar>
+std::ostream& operator << (std::ostream& os, const LexContainer<Scalar>& container) {
+  
+  // Save the format state of the original ostream os.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(os);  
+
+  os.setf(std::ios_base::scientific, std::ios_base::floatfield);
+  os.setf(std::ios_base::right);
+  int myprec = os.precision();
+  
+  int size = container.getSize();
+  int rank = container.getRank();
+  Teuchos::Array<int> multiIndex(rank);
+
+  os<< "===============================================================================\n"\
+    << "\t Container size = " << size << "   rank = " << rank << "\n"
+    << "===============================================================================\n"\
+    << "| \t Multi-index        Address              Value                            |\n"\
+    << "===============================================================================\n";
+  
+  for(int address = 0; address < size; address++){
+    container.getMultiIndex(multiIndex,address);
+    os << "\t\t" ;
+    for(int r = 0; r < rank; r++){
+      os <<  multiIndex[r]; 
+    }
+    os<< std::setiosflags(std::ios::left) << std::setw(16) << address << "\t" \
+      << std::setw(myprec+8) << "\t" << container[address] << "\n";
+  }
+  
+  os<< "===============================================================================\n\n";
+
+  // reset format state of os
+  os.copyfmt(oldFormatState);
+
+  return os;
+}
+
+// End member, friend, and related function definitions of class LexContainer.
+
+} // end namespace Intrepid

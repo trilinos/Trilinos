@@ -219,7 +219,7 @@ top_srcdir = @top_srcdir@
 DISABLED = 
 
 #
-SUBDIRS = Cubature MultiCell RealSpace
+SUBDIRS = Cubature MultiCell RealSpace LexContainer
 all: all-recursive
 
 .SUFFIXES:

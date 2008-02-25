@@ -28,16 +28,29 @@
 # @HEADER
 
 
-# The following line helps the test harness recover from build errors.
+# Tests
 
-all-local:
+include $(top_builddir)/Makefile.export.intrepid
 
-DISABLED =
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(INTREPID_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_TEST_INCLUDES))
+else
+EXPORT_LIBS = $(INTREPID_TEST_LIBS)
+EXPORT_INC_PATH = $(INTREPID_TEST_INCLUDES)
+endif
 
-## #######################################################################
-## Subdirectories.
-## #######################################################################
-#
-SUBDIRS = Cubature MultiCell RealSpace LexContainer
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
-# EXTRA_DIST = definition
+EXEEXT = .exe
+
+noinst_PROGRAMS = test_01
+
+# Dependencies used when rebuilding tests without building everything from scratch.
+test_01_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+test_01_SOURCES = test_01.cpp
+test_01_LDADD = $(EXPORT_LIBS)
+test_01_CXXFLAGS = -I$(srcdir)
