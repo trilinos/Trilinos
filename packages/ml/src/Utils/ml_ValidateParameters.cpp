@@ -223,6 +223,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL,intParam);
 
   /* Hightly experimental */
+  PL->set("repartition: output timings",false);
   setIntParameter("repartition: estimated iterations",0,"Estimated number of iterations",PL,intParam);
   setStringToIntegralParameter<int>("repartition: Zoltan type","RCB","Type of repartitioner to use",tuple<std::string>("RCB","hypergraph","fast hypergraph"),PL);
 

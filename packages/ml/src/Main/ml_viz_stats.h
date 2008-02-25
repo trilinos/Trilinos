@@ -27,6 +27,7 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
   /* Stuff for Zoltan */
   int zoltan_type;
   int zoltan_estimated_its; 
+  int zoltan_timers;
   int smoothing_steps;
   
 } ML_Aggregate_Viz_Stats;

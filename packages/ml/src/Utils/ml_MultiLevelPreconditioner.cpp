@@ -1260,6 +1260,7 @@ agg_->keep_P_tentative = 1;
     std::string Repartitioner = List_.get("repartition: partitioner","Zoltan");
     if(Repartitioner=="Zoltan"){
      int zoltan_estimated_its=List_.get("repartition: estimated iterations",40);
+     bool zoltan_timers=List_.get("repartition: output timings",false);
      string zoltan_type=List_.get("repartition: Zoltan type","RCB");
      int smoother_steps = List_.get("smoother: sweeps", 2);
      if (List_.get("smoother: pre or post","post") == "pre or post") smoother_steps*=2;
@@ -1272,6 +1273,7 @@ agg_->keep_P_tentative = 1;
        ML_Aggregate_Viz_Stats * grid_info =(ML_Aggregate_Viz_Stats *)ml_->Grid[i].Grid;
        grid_info->zoltan_type          = int_zoltan_type;
        grid_info->zoltan_estimated_its = zoltan_estimated_its;
+       grid_info->zoltan_timers        = (int)zoltan_timers;
        grid_info->smoothing_steps      = smoother_steps;
      }      
     }    

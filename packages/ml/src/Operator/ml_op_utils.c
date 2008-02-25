@@ -700,6 +700,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 				      x_coord, y_coord, z_coord, matrix->to->levelnum,
                                       grid_info->zoltan_type,
                                       grid_info->zoltan_estimated_its,
+				      grid_info->zoltan_timers,
                                       grid_info->smoothing_steps,
                                       num_PDE_eqns
                                       ) < 0)

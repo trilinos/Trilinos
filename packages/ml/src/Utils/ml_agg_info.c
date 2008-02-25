@@ -71,6 +71,7 @@ int ML_Aggregate_VizAndStats_Setup( ML *ml)
     info->Amatrix = NULL;
     info->zoltan_type = ML_ZOLTAN_TYPE_RCB;
     info->zoltan_estimated_its = 40;
+    info->zoltan_timers = 0;
     info->smoothing_steps = 4;
     ML_Grid_Set_Grid(ml->Grid+i,(void *)info);
   }
