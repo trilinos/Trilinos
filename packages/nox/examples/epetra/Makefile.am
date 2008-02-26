@@ -30,4 +30,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed LOCA_Sacado_FEApp
+SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed LOCA_Sacado_FEApp System_Sacado_FEApp
