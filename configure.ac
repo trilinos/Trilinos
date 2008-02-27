@@ -69,6 +69,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditione
 
 TAC_ARG_ENABLE_FEATURE(fei, [Build fei, a sparse linear-system assembly package], FEI, no)
 
+TAC_ARG_ENABLE_FEATURE(fortrilinos, [Build ForTrilinos, a package providing Fortran wrappers for other Trilinos packages], FORTRILINOS, no)
+
 TAC_ARG_ENABLE_FEATURE(intrepid, [Build intrepid, a discretization package], INTREPID, no)
 
 TAC_ARG_ENABLE_FEATURE(isorropia, [Build isorropia, a repartitioning/rebalancing package], ISORROPIA, no)
@@ -590,6 +592,17 @@ else
   BUILD_WEBTRILINOS=no
 fi
 AM_CONDITIONAL(BUILD_WEBTRILINOS, test "X$BUILD_WEBTRILINOS" != "Xno")
+
+if test "X$ac_cv_use_fortrilinos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/ForTrilinos])
+  BUILD_FORTRILINOS=yes
+  if test "X$ac_cv_use_fortrilinos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-fortrilinos"
+  fi
+else
+  BUILD_FORTRILINOS=no
+fi
+AM_CONDITIONAL(BUILD_FORTRILINOS, test "X$BUILD_FORTRILINOS" != "Xno")
 
 if test "X$ac_cv_use_external" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/external])
