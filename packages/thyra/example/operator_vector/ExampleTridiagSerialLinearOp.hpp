@@ -142,8 +142,8 @@ protected:
     {
       typedef Teuchos::ScalarTraits<Scalar> ST;
       // Get raw pointers to the values
-      const Scalar *x = x_in.values();
-      Scalar       *y = y_out->values();
+      const Scalar *x = x_in.values().get();
+      Scalar       *y = y_out->values().get();
       // Perform y = beta*y (being careful to set y=0 if beta=0 in case y is uninitialized on input!)
       Thyra::Index k = 0;
       if( beta == ST::zero() ) {

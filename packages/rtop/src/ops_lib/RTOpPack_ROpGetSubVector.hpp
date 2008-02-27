@@ -30,12 +30,16 @@
 #ifndef RTOPPACK_ROP_GET_SUB_VECTOR_HPP
 #define RTOPPACK_ROP_GET_SUB_VECTOR_HPP
 
+
 #include "RTOpPack_RTOpTHelpers.hpp"
+
 
 namespace RTOpPack {
 
+
 /** \brief . */
 template<class Scalar> class ReductTargetSubVectorT;
+
 
 /** \brief Reduction operator that extracts a sub-vector in the range of
  * global zero-based indexes [l,u].
@@ -66,9 +70,9 @@ public:
 
   /** \brief . */
   void get_reduct_type_num_entries(
-    int*   num_values
-    ,int*  num_indexes
-    ,int*  num_chars
+    int* num_values
+    ,int* num_indexes
+    ,int* num_chars
     ) const;
   /** \brief . */
   Teuchos::RCP<ReductTarget> reduct_obj_create() const;
@@ -80,54 +84,54 @@ public:
   void reduct_obj_reinit( ReductTarget* reduct_obj ) const;
   /** \brief . */
   void extract_reduct_obj_state(
-    const ReductTarget        &reduct_obj
-    ,int                      num_values
-    ,primitive_value_type     value_data[]
-    ,int                      num_indexes
-    ,Teuchos_Index            index_data[]
-    ,int                      num_chars
-    ,::RTOpPack::char_type           char_data[]
+    const ReductTarget &reduct_obj
+    ,int num_values
+    ,primitive_value_type value_data[]
+    ,int num_indexes
+    ,Teuchos_Index index_data[]
+    ,int num_chars
+    ,::RTOpPack::char_type char_data[]
     ) const;
   /** \brief . */
   void load_reduct_obj_state(
-    int                            num_values
-    ,const primitive_value_type    value_data[]
-    ,int                           num_indexes
-    ,const Teuchos_Index           index_data[]
-    ,int                           num_chars
-    ,const ::RTOpPack::char_type          char_data[]
-    ,ReductTarget                  *reduct_obj
+    int num_values
+    ,const primitive_value_type value_data[]
+    ,int num_indexes
+    ,const Teuchos_Index index_data[]
+    ,int num_chars
+    ,const ::RTOpPack::char_type char_data[]
+    ,ReductTarget *reduct_obj
     ) const;
   /** \brief . */
   void get_op_type_num_entries(
-    int*  num_values
+    int* num_values
     ,int* num_indexes
     ,int* num_chars
     ) const;
   /** \brief . */
   void extract_op_state(
-    int                             num_values
-    ,primitive_value_type           value_data[]
-    ,int                            num_indexes
-    ,Teuchos_Index                  index_data[]
-    ,int                            num_chars
-    ,::RTOpPack::char_type                 char_data[]
+    int num_values
+    ,primitive_value_type value_data[]
+    ,int num_indexes
+    ,Teuchos_Index index_data[]
+    ,int num_chars
+    ,::RTOpPack::char_type char_data[]
     ) const;
   /** \brief . */
   void load_op_state(
-    int                           num_values
-    ,const primitive_value_type   value_data[]
-    ,int                          num_indexes
-    ,const Teuchos_Index          index_data[]
-    ,int                          num_chars
-    ,const ::RTOpPack::char_type         char_data[]
+    int num_values
+    ,const primitive_value_type value_data[]
+    ,int num_indexes
+    ,const Teuchos_Index index_data[]
+    ,int num_chars
+    ,const ::RTOpPack::char_type char_data[]
     );
   /** \brief . */
   bool coord_invariant() const;
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+    const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[]
+    ,const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const;
 
@@ -135,8 +139,8 @@ public:
 
 private:
 
-  index_type  l_;
-  index_type  u_;
+  index_type l_;
+  index_type u_;
 
 }; // class ROpGetSubVector
 
@@ -151,10 +155,10 @@ public:
       try {
         const int subDim = u-l+1;
         sub_vec.initialize(
-          l                    // global_offset
-          ,subDim              // subDim
-          ,new Scalar[subDim]  // values
-          ,1                   // stride
+          l // global_offset
+          ,subDim // subDim
+          ,new Scalar[subDim] // values
+          ,1 // stride
           );
         reinit();
       }
@@ -170,23 +174,25 @@ public:
   /** \brief . */
   void reinit()
     {
-      std::fill_n( const_cast<Scalar*>(sub_vec.values()), sub_vec.subDim(), Teuchos::ScalarTraits<Scalar>::zero() );
+      std::fill_n( const_cast<Scalar*>(sub_vec.values().get()),
+        sub_vec.subDim(), Teuchos::ScalarTraits<Scalar>::zero() );
     }
   /** \brief . */
   void transfer( ConstSubVectorView<Scalar> *sub_vec_out )
     {
-      sub_vec_out->initialize(sub_vec.globalOffset(),sub_vec.subDim(),sub_vec.values(),sub_vec.stride());
+      sub_vec_out->initialize(sub_vec.globalOffset(), sub_vec.subDim(),
+        sub_vec.values(), sub_vec.stride() );
       sub_vec.set_uninitialized();
     }
   /** \brief . */
   static void free( ConstSubVectorView<Scalar> *sub_vec )
     {
-      if(sub_vec->values())
-        delete [] const_cast<Scalar*>(sub_vec->values());
+      if(sub_vec->values().get())
+        delete [] const_cast<Scalar*>(sub_vec->values().get());
       sub_vec->set_uninitialized();
     }
   /** \brief . */
-  ConstSubVectorView<Scalar>  sub_vec;
+  ConstSubVectorView<Scalar> sub_vec;
 private:
   // Not defined and not to be called!
   ReductTargetSubVectorT();
@@ -229,15 +235,16 @@ ROpGetSubVector<Scalar>::operator()( const ReductTarget& reduct_obj ) const
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::get_reduct_type_num_entries(
-  int*   num_values
-  ,int*  num_indexes
-  ,int*  num_chars
+  int* num_values
+  ,int* num_indexes
+  ,int* num_chars
   ) const
 {
-  const int num_prim_objs_per_scalar = Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
-  *num_values  = (u_-l_+1)*num_prim_objs_per_scalar;
+  const int num_prim_objs_per_scalar =
+    Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+  *num_values = (u_-l_+1)*num_prim_objs_per_scalar;
   *num_indexes = 0;
-  *num_chars   = 0;
+  *num_chars = 0;
 }
 
 template<class Scalar>
@@ -253,13 +260,16 @@ void ROpGetSubVector<Scalar>::reduce_reduct_objs(
   ) const
 {
   using Teuchos::dyn_cast;
-  const ConstSubVectorView<Scalar> &sub_vec_in = dyn_cast<const ReductTargetSubVectorT<Scalar> >(in_reduct_obj).sub_vec;
-  ConstSubVectorView<Scalar> &sub_vec_inout = dyn_cast<ReductTargetSubVectorT<Scalar> >(*inout_reduct_obj).sub_vec;
+  const ConstSubVectorView<Scalar> &sub_vec_in =
+    dyn_cast<const ReductTargetSubVectorT<Scalar> >(in_reduct_obj).sub_vec;
+  ConstSubVectorView<Scalar> &sub_vec_inout =
+    dyn_cast<ReductTargetSubVectorT<Scalar> >(*inout_reduct_obj).sub_vec;
   TEST_FOR_EXCEPT(
-    sub_vec_in.subDim()!=sub_vec_inout.subDim()||sub_vec_in.globalOffset()!=sub_vec_inout.globalOffset()
-    ||!sub_vec_in.values()||!sub_vec_inout.values()
+    sub_vec_in.subDim()!=sub_vec_inout.subDim()
+    ||sub_vec_in.globalOffset()!=sub_vec_inout.globalOffset()
+    ||!sub_vec_in.values().get()||!sub_vec_inout.values().get()
     );
-  Scalar *svio_values = const_cast<Scalar*>(sub_vec_inout.values());
+  Scalar *svio_values = const_cast<Scalar*>(sub_vec_inout.values().get());
   for( int k = 0; k < sub_vec_in.subDim(); ++k ) {
     svio_values[k] += sub_vec_in[k];
   }
@@ -274,66 +284,82 @@ void ROpGetSubVector<Scalar>::reduct_obj_reinit( ReductTarget* reduct_obj ) cons
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::extract_reduct_obj_state(
-  const ReductTarget        &reduct_obj
-  ,int                      num_values
-  ,primitive_value_type     value_data[]
-  ,int                      num_indexes
-  ,Teuchos_Index          index_data[]
-  ,int                      num_chars
-  ,::RTOpPack::char_type           char_data[]
+  const ReductTarget &reduct_obj
+  ,int num_values
+  ,primitive_value_type value_data[]
+  ,int num_indexes
+  ,Teuchos_Index index_data[]
+  ,int num_chars
+  ,::RTOpPack::char_type char_data[]
   ) const
 {
   using Teuchos::dyn_cast;
   typedef Teuchos::PrimitiveTypeTraits<Scalar> PTT;
   const int num_prim_objs_per_scalar = PTT::numPrimitiveObjs();
-  const ConstSubVectorView<Scalar> &sub_vec = dyn_cast<const ReductTargetSubVectorT<Scalar> >(reduct_obj).sub_vec;
+  const ConstSubVectorView<Scalar> &sub_vec =
+    dyn_cast<const ReductTargetSubVectorT<Scalar> >(reduct_obj).sub_vec;
   int value_data_off = 0;
-  for( int k = 0; k < sub_vec.subDim(); ++k, value_data_off += num_prim_objs_per_scalar )
-    PTT::extractPrimitiveObjs( sub_vec[k], num_prim_objs_per_scalar, value_data+value_data_off );
+  for(
+    int k = 0;
+    k < sub_vec.subDim();
+    ++k, value_data_off += num_prim_objs_per_scalar
+    )
+  {
+    PTT::extractPrimitiveObjs( sub_vec[k], num_prim_objs_per_scalar,
+      value_data+value_data_off );
+  }
 }
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::load_reduct_obj_state(
-  int                            num_values
-  ,const primitive_value_type    value_data[]
-  ,int                           num_indexes
-  ,const Teuchos_Index         index_data[]
-  ,int                           num_chars
-  ,const ::RTOpPack::char_type          char_data[]
-  ,ReductTarget                  *reduct_obj
+  int num_values
+  ,const primitive_value_type value_data[]
+  ,int num_indexes
+  ,const Teuchos_Index index_data[]
+  ,int num_chars
+  ,const ::RTOpPack::char_type char_data[]
+  ,ReductTarget *reduct_obj
   ) const
 {
   using Teuchos::dyn_cast;
   typedef Teuchos::PrimitiveTypeTraits<Scalar> PTT;
   const int num_prim_objs_per_scalar = PTT::numPrimitiveObjs();
-  ConstSubVectorView<Scalar> &sub_vec = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
-  Scalar *sv_values = const_cast<Scalar*>(sub_vec.values()); 
+  ConstSubVectorView<Scalar> &sub_vec =
+    dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
+  Scalar *sv_values = const_cast<Scalar*>(sub_vec.values().get()); 
   int value_data_off = 0;
-  for( int k = 0; k < sub_vec.subDim(); ++k, value_data_off += num_prim_objs_per_scalar )
-    PTT::loadPrimitiveObjs( num_prim_objs_per_scalar, value_data+value_data_off, &sv_values[k] );
+  for(
+    int k = 0;
+    k < sub_vec.subDim();
+    ++k, value_data_off += num_prim_objs_per_scalar
+    )
+  {
+    PTT::loadPrimitiveObjs( num_prim_objs_per_scalar,
+      value_data+value_data_off, &sv_values[k] );
+  }
 }
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::get_op_type_num_entries(
-  int*  num_values
+  int* num_values
   ,int* num_indexes
   ,int* num_chars
   ) const
 {
   TEST_FOR_EXCEPT( !num_values || !num_indexes || !num_chars ); 
-  *num_values  = 0;
+  *num_values = 0;
   *num_indexes = 2; // l, u
-  *num_chars   = 0;
+  *num_chars = 0;
 }
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::extract_op_state(
-  int                             num_values
-  ,primitive_value_type           value_data[]
-  ,int                            num_indexes
-  ,Teuchos_Index                index_data[]
-  ,int                            num_chars
-  ,::RTOpPack::char_type                 char_data[]
+  int num_values
+  ,primitive_value_type value_data[]
+  ,int num_indexes
+  ,Teuchos_Index index_data[]
+  ,int num_chars
+  ,::RTOpPack::char_type char_data[]
   ) const
 {
   TEST_FOR_EXCEPT( num_values!=0 || num_indexes!=2 || num_chars!=0 ); 
@@ -344,12 +370,12 @@ void ROpGetSubVector<Scalar>::extract_op_state(
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::load_op_state(
-  int                           num_values
-  ,const primitive_value_type   value_data[]
-  ,int                          num_indexes
-  ,const Teuchos_Index        index_data[]
-  ,int                          num_chars
-  ,const ::RTOpPack::char_type         char_data[]
+  int num_values
+  ,const primitive_value_type value_data[]
+  ,int num_indexes
+  ,const Teuchos_Index index_data[]
+  ,int num_chars
+  ,const ::RTOpPack::char_type char_data[]
   )
 {
   TEST_FOR_EXCEPT( num_values!=0 || num_indexes!=2 || num_chars!=0 ); 
@@ -366,8 +392,8 @@ bool ROpGetSubVector<Scalar>::coord_invariant() const
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::apply_op(
-  const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-  ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+  const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[]
+  ,const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[]
   ,ReductTarget *reduct_obj
   ) const
 {
@@ -375,21 +401,27 @@ void ROpGetSubVector<Scalar>::apply_op(
 
   RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
 
-  if( u_ < globalOffset || globalOffset + subDim - 1 < l_ )
-    return; // None of the sub-vector elements that we are looking for is in this vector chunk!
-  
+  if( u_ < globalOffset || globalOffset + subDim - 1 < l_ ) {
+    // None of the sub-vector elements that we are looking for is in this
+    // vector chunk!
+    return;
+  }
+ 
   index_type
-    i_l = ( l_ <= globalOffset           ? 0          : l_ - globalOffset  ),
-    i_u = ( u_ >= globalOffset+subDim-1  ? subDim-1   : u_ - globalOffset  );
+    i_l = ( l_ <= globalOffset ? 0 : l_ - globalOffset ),
+    i_u = ( u_ >= globalOffset+subDim-1 ? subDim-1 : u_ - globalOffset );
 
-  ConstSubVectorView<Scalar> &sub_vec_targ = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
-  Scalar *svt_values = const_cast<Scalar*>(sub_vec_targ.values());
+  ConstSubVectorView<Scalar> &sub_vec_targ =
+    dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
+  Scalar *svt_values = const_cast<Scalar*>(sub_vec_targ.values().get());
 
   for( index_type i = i_l; i <= i_u; ++i )
     svt_values[i+(globalOffset-l_)] = v0_val[i*v0_s];
 
 }
 
+
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_ROP_GET_SUB_VECTOR_HPP

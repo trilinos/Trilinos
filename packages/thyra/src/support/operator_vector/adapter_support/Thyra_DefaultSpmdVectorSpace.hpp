@@ -141,7 +141,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
       Teuchos::rcp(this,false),
-      Teuchos::arcp(raw_v.values(),0,raw_v.subDim(),false),
+      Teuchos::arcp(raw_v.values().get(),0,raw_v.subDim(),false),
       raw_v.stride()
       )
     );
@@ -159,7 +159,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
       Teuchos::rcp(this,false),
-      Teuchos::arcp(const_cast<Scalar*>(raw_v.values()),0,raw_v.subDim(),false),
+      Teuchos::arcp(const_cast<Scalar*>(raw_v.values().get()),0,raw_v.subDim(),false),
       raw_v.stride()
       )
     );
@@ -179,7 +179,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
       Teuchos::rcp(this,false),
       Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true),
-      Teuchos::arcp(raw_mv.values(),0,raw_mv.leadingDim()*raw_mv.numSubCols(),false),
+      Teuchos::arcp(raw_mv.values().get(),0,raw_mv.leadingDim()*raw_mv.numSubCols(),false),
       raw_mv.leadingDim()
       )
     );
@@ -200,7 +200,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
       Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true),
       Teuchos::arcp(
-        const_cast<Scalar*>(raw_mv.values()),
+        const_cast<Scalar*>(raw_mv.values().get()),
         0,raw_mv.leadingDim()*raw_mv.numSubCols(),false),
       raw_mv.leadingDim()
       )

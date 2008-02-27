@@ -559,7 +559,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
     ,const_cast<Scalar*>(X_local.values()) // B
     ,X_local.leadingDim() // LDB
     ,localBeta // BETA
-    ,Y_local_tmp.values() // C
+    ,Y_local_tmp.values().get() // C
     ,Y_local_tmp.leadingDim() // LDC
     );
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
@@ -580,8 +580,8 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);
       // Perform the reduction
       Teuchos::reduceAll<Index,Scalar>(
-        *comm,Teuchos::REDUCE_SUM,Y_local_final_buff.size(),Y_local_tmp.values()
-        ,&Y_local_final_buff[0]
+        *comm,Teuchos::REDUCE_SUM,Y_local_final_buff.size(),Y_local_tmp.values().get(),
+        &Y_local_final_buff[0]
         );
       // Load Y_local_final_buff back into Y_local
       const Scalar *Y_local_final_buff_ptr = &Y_local_final_buff[0];

@@ -231,8 +231,8 @@ protected:
       // Get constants
       const Scalar zero = ST::zero();
       // Get raw pointers to vector data to make me feel better!
-      const Scalar *x = local_x_in.values();
-      Scalar       *y = local_y_out->values();
+      const Scalar *x = local_x_in.values().get();
+      Scalar       *y = local_y_out->values().get();
       // Determine what process we are
       const bool first = ( procRank_ == 0 ), last = ( procRank_ == numProcs_-1 );
       // Communicate ghost elements

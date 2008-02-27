@@ -56,14 +56,15 @@ RTOP_INTERFACES_H = \
 
 RTOP_SUPPORT_H = \
   $(srcdir)/support/RTOpPack_MPI_apply_op.hpp\
+  $(srcdir)/support/RTOpPack_MPI_apply_op_decl.hpp\
   $(srcdir)/support/RTOpPack_RTOpServer.hpp\
   $(srcdir)/support/RTOpPack_RTOpServerDecl.hpp\
   $(srcdir)/support/RTOpPack_RTOpTHelpers.hpp\
   $(srcdir)/support/RTOpPack_SPMD_apply_op.hpp\
   $(srcdir)/support/RTOpPack_SPMD_apply_op_decl.hpp\
-  $(srcdir)/support/RTOpPack_TOpUnaryFuncPtrDecl.hpp\
-  $(srcdir)/support/RTOpPack_MPI_apply_op_decl.hpp\
-  $(srcdir)/support/RTOpPack_TOpUnaryFuncPtr.hpp
+  $(srcdir)/support/RTOpPack_SparseSubVectorT.hpp\
+  $(srcdir)/support/RTOpPack_TOpUnaryFuncPtr.hpp\
+  $(srcdir)/support/RTOpPack_TOpUnaryFuncPtrDecl.hpp
 
 RTOP_SUPPORT = \
   $(srcdir)/support/RTOpPack_MPI_apply_op.cpp\

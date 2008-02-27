@@ -738,6 +738,7 @@ public:
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
 #define RTOP_APPLY_OP_1_0( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
+  typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t; \
   TEST_FOR_EXCEPTION( \
     (NUM_VECS)!=1 || (SUB_VECS)==NULL \
     ,RTOpPack::InvalidNumVecs \
@@ -748,17 +749,18 @@ public:
     ,RTOpPack::InvalidNumTargVecs \
     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
     ); \
-  const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
-  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  const RTOpPack::index_type subDim  = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type globalOffset = (SUB_VECS)[0].globalOffset(); \
   TEST_FOR_EXCEPT(globalOffset<0); \
-  const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
-  const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride()
+  const_iter_t v0_val = (SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t v0_s = (SUB_VECS)[0].stride()
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==2, num_targ_vecs==0.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
 #define RTOP_APPLY_OP_2_0( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
+  typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t; \
   TEST_FOR_EXCEPTION( \
     (NUM_VECS)!=2 || (SUB_VECS)==NULL \
     ,RTOpPack::InvalidNumVecs \
@@ -776,19 +778,20 @@ public:
     ,"Error, sub_vec[0] (subDim="<<(SUB_VECS)[0].subDim()<<",globalOffset="<<(SUB_VECS)[0].globalOffset()<<")" \
     " is not compatible with sub_vec[1] (subDim="<<(SUB_VECS)[1].subDim()<<",globalOffset="<<(SUB_VECS)[1].globalOffset()<<")" \
     ); \
-  const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
-  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  const RTOpPack::index_type subDim  = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type globalOffset = (SUB_VECS)[0].globalOffset(); \
   TEST_FOR_EXCEPT(globalOffset<0); \
-  const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
-  const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
-  const Scalar                 *v1_val = (SUB_VECS)[1].values(); \
-  const ptrdiff_t              v1_s    = (SUB_VECS)[1].stride()
+  const_iter_t v0_val = (SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t v0_s = (SUB_VECS)[0].stride(); \
+  const_iter_t v1_val = (SUB_VECS)[1].values().begin(); \
+  const ptrdiff_t v1_s = (SUB_VECS)[1].stride()
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==0, num_targ_vecs==1.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
 #define RTOP_APPLY_OP_0_1( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
+  typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t; \
   TEST_FOR_EXCEPTION( \
     (NUM_VECS)!=0 || (SUB_VECS)!=NULL \
     ,RTOpPack::InvalidNumVecs \
@@ -799,15 +802,17 @@ public:
     ,RTOpPack::InvalidNumTargVecs \
     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==1, targ_sub_vecs!=NULL" \
     ); \
-  const RTOpPack::index_type   subDim  = (TARG_SUB_VECS)[0].subDim(); \
-  const RTOpPack::index_type   globalOffset = (TARG_SUB_VECS)[0].globalOffset(); \
+  const RTOpPack::index_type subDim = (TARG_SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type globalOffset = (TARG_SUB_VECS)[0].globalOffset(); \
   TEST_FOR_EXCEPT(globalOffset<0); \
-  Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
-  const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
+  iter_t z0_val = (TARG_SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t z0_s = (TARG_SUB_VECS)[0].stride()
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==1, num_targ_vecs==1.
  */
 #define RTOP_APPLY_OP_1_1( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
+  typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t; \
+  typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t; \
   TEST_FOR_EXCEPTION( \
     (NUM_VECS)!=1 || (SUB_VECS)==NULL \
     ,RTOpPack::InvalidNumVecs \
@@ -826,18 +831,20 @@ public:
     " is not compatible with targ_sub_vec[0] (subDim="<<(TARG_SUB_VECS)[0].subDim()<<",globalOffset="<<(TARG_SUB_VECS)[0].globalOffset()<<")" \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
-  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+ const RTOpPack::index_type globalOffset = (SUB_VECS)[0].globalOffset(); \
   TEST_FOR_EXCEPT(globalOffset<0); \
-  const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
-  const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
-  Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
-  const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
+  const_iter_t v0_val = (SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t v0_s = (SUB_VECS)[0].stride(); \
+  iter_t z0_val = (TARG_SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t z0_s = (TARG_SUB_VECS)[0].stride()
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==2, num_targ_vecs==1.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
 #define RTOP_APPLY_OP_2_1( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
+  typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t; \
+  typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t; \
   TEST_FOR_EXCEPTION( \
     (NUM_VECS)!=2 || (SUB_VECS)==NULL \
     ,RTOpPack::InvalidNumVecs \
@@ -859,47 +866,50 @@ public:
     " and targ_sub_vec[0] (subDim="<<(TARG_SUB_VECS)[0].subDim()<<",globalOffset="<<(TARG_SUB_VECS)[0].globalOffset()<<")" \
     " are not compatible." \
     ); \
-  const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
-  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  const RTOpPack::index_type subDim = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type globalOffset = (SUB_VECS)[0].globalOffset(); \
   TEST_FOR_EXCEPT(globalOffset<0); \
-  const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
-  const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
-  const Scalar                 *v1_val = (SUB_VECS)[1].values(); \
-  const ptrdiff_t              v1_s    = (SUB_VECS)[1].stride(); \
-  Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
-  const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
+  const_iter_t v0_val = (SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t v0_s = (SUB_VECS)[0].stride(); \
+  const_iter_t v1_val = (SUB_VECS)[1].values().begin(); \
+  const ptrdiff_t v1_s = (SUB_VECS)[1].stride(); \
+  iter_t z0_val = (TARG_SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t z0_s = (TARG_SUB_VECS)[0].stride()
 
 
-/** \brief Use within an apply_op(...) function implementation where num_vecs==3, num_targ_vecs==0.
+/** \brief Use within an apply_op(...) function implementation where
+ * num_vecs==3, num_targ_vecs==0.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
 #define RTOP_APPLY_OP_3_0( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
-  TEST_FOR_EXCEPTION(                                                   \
-                     (NUM_VECS)!=3 || (SUB_VECS)==NULL                  \
-                     ,RTOpPack::InvalidNumVecs                          \
-                     ,"Error, num_vecs="<<(NUM_VECS)<<" not allowed, only num_vecs==3, sub_vecs!=NULL" \
-                     );                                                 \
-  TEST_FOR_EXCEPTION(                                                   \
-                     (NUM_TARG_VECS)!=0 || (TARG_SUB_VECS)!=NULL        \
-                     ,RTOpPack::InvalidNumTargVecs                      \
-                     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
-                     );                                                 \
-  TEST_FOR_EXCEPTION(                                                   \
-                     (SUB_VECS)[0].subDim() != (SUB_VECS)[1].subDim()   \
-                     || (SUB_VECS)[0].subDim() != (SUB_VECS)[2].subDim() \
-                     ||(SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
-                     ||(SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
-                     ,IncompatibleVecs                                  \
-                     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
-                     );                                                 \
-  const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim();        \
-  const Scalar                 *v0_val = (SUB_VECS)[0].values();        \
-  const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride();        \
-  const Scalar                 *v1_val = (SUB_VECS)[1].values();        \
-  const ptrdiff_t              v1_s    = (SUB_VECS)[1].stride();        \
-  const Scalar                 *v2_val = (SUB_VECS)[2].values();        \
-  const ptrdiff_t              v2_s    = (SUB_VECS)[2].stride();
+  typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t; \
+  typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t; \
+  TEST_FOR_EXCEPTION( \
+    (NUM_VECS)!=3 || (SUB_VECS)==NULL \
+    ,RTOpPack::InvalidNumVecs \
+    ,"Error, num_vecs="<<(NUM_VECS)<<" not allowed, only num_vecs==3, sub_vecs!=NULL" \
+    ); \
+  TEST_FOR_EXCEPTION( \
+    (NUM_TARG_VECS)!=0 || (TARG_SUB_VECS)!=NULL \
+    ,RTOpPack::InvalidNumTargVecs \
+    ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+    ); \
+  TEST_FOR_EXCEPTION( \
+    (SUB_VECS)[0].subDim() != (SUB_VECS)[1].subDim() \
+    || (SUB_VECS)[0].subDim() != (SUB_VECS)[2].subDim() \
+    ||(SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
+    ||(SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
+    ,IncompatibleVecs \
+    ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+    ); \
+  const RTOpPack::index_type subDim = (SUB_VECS)[0].subDim(); \
+  const_iter_t v0_val = (SUB_VECS)[0].values().begin(); \
+  const ptrdiff_t v0_s = (SUB_VECS)[0].stride(); \
+  const_iter_t v1_val = (SUB_VECS)[1].values().begin(); \
+  const ptrdiff_t v1_s = (SUB_VECS)[1].stride(); \
+  const_iter_t v2_val = (SUB_VECS)[2].values().begin(); \
+  const ptrdiff_t v2_s = (SUB_VECS)[2].stride();
 
 
 

@@ -389,7 +389,7 @@ void MultiVectorDefaultBase<Scalar>::releaseDetachedMultiVectorViewImpl(
   ) const
 {
   // Here we just need to free the view and that is it!
-  delete [] const_cast<Scalar*>(sub_mv->values());
+  delete [] const_cast<Scalar*>(sub_mv->values().get());
   sub_mv->set_uninitialized();
 }
 
@@ -437,7 +437,7 @@ void MultiVectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
     col_k->commitDetachedView( &msv );
   }
   // Free the memory
-  delete [] const_cast<Scalar*>(sub_mv->values());
+  delete [] const_cast<Scalar*>(sub_mv->values().get());
   // Zero out the view
   sub_mv->set_uninitialized();
 }

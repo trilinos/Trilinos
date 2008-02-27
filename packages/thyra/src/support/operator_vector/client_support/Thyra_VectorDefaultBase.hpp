@@ -365,8 +365,8 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
     <<"] is not in range = [0,"<<(this->space()->dim()-1)<<"]" );
 #endif
   // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
-  if( sub_vec_inout->values() ) {
-    delete [] sub_vec_inout->values();
+  if( sub_vec_inout->values().get() ) {
+    delete [] sub_vec_inout->values().get();
   }
   // Initialize the operator
   RTOpPack::ROpGetSubVector<Scalar> get_sub_vector_op(rng.lbound(),rng.ubound());
@@ -416,7 +416,7 @@ void VectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
   VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl( rng, &sub_vec );
   sub_vec_inout->initialize(
     sub_vec.globalOffset(), sub_vec.subDim(),
-    const_cast<Scalar*>(sub_vec.values()),sub_vec.stride()
+    const_cast<Scalar*>(sub_vec.values().get()),sub_vec.stride()
     );
 }
 
@@ -428,7 +428,7 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(
 {
   RTOpPack::SparseSubVectorT<Scalar> spc_sub_vec(
     sub_vec_inout->globalOffset(), sub_vec_inout->subDim()
-    ,sub_vec_inout->values(), sub_vec_inout->stride()
+    ,sub_vec_inout->values().get(), sub_vec_inout->stride()
     );
   VectorDefaultBase<Scalar>::setSubVectorImpl( spc_sub_vec ); // Commit the changes!
   RTOpPack::ConstSubVectorView<Scalar> sub_vec(*sub_vec_inout);

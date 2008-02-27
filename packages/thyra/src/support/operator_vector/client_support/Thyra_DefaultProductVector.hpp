@@ -532,7 +532,7 @@ void DefaultProductVector<Scalar>::releaseDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  if( sub_vec->values() == NULL ) return;
+  if( sub_vec->values().get() == NULL ) return;
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
@@ -595,7 +595,7 @@ void DefaultProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
   RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
-  if( sub_vec->values() == NULL ) return;
+  if( sub_vec->values().get() == NULL ) return;
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);

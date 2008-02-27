@@ -190,19 +190,19 @@ public:
   ~ConstDetachedVectorView()
     {
       if( sv_s_.stride() != sv_.stride() )
-        delete [] const_cast<Scalar*>(sv_.values());
+        delete [] const_cast<Scalar*>(sv_.values().get());
       v_->releaseDetachedView(&sv_s_);
     }
   /// Returns the explicit view as an <tt>RTOpPack::ConstSubVectorView<Scalar></tt> object
   const RTOpPack::ConstSubVectorView<Scalar>& sv() const { return sv_; }
   /// Returns the global offset for the explicit view
-  Teuchos_Index   globalOffset() const { return sv_.globalOffset(); }
+  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
   /// Returns the dimension of the explicit view
-  Teuchos_Index   subDim()       const { return sv_.subDim();  }
+  Teuchos_Index subDim() const { return sv_.subDim(); }
   /// Return a pointer to a <tt>Scalar</tt> array containing the explicit view
-  const Scalar*     values()       const { return sv_.values();  }
+  const Scalar* values() const { return sv_.values().get(); }
   /// Return the stride between elements in the array returned from <tt>this->values()</tt>
-  ptrdiff_t         stride()       const { return sv_.stride();  }
+  ptrdiff_t stride() const { return sv_.stride(); }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   const Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
@@ -223,7 +223,7 @@ private:
       if( forceUnitStride && sv_s_.stride() != 1 ) {
         Scalar *values = new Scalar[sv_s_.subDim()];
         Teuchos_Index i; const Scalar *sv_v;
-        for( sv_v = sv_s_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+        for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
           values[i] = *sv_v;
         sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
       }
@@ -397,22 +397,28 @@ public:
     {
       if( sv_s_.stride() != sv_.stride() ) {
         Teuchos_Index i; Scalar *sv_v; const Scalar *values;
-        for( sv_v = sv_s_.values(), values = sv_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+        for (
+          sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
+          i < sv_s_.subDim();
+          ++i, sv_v += sv_s_.stride()
+          )
+        {
           *sv_v = *values++;
-        delete [] sv_.values();
+        }
+        delete [] sv_.values().get();
       }
       v_->commitDetachedView(&sv_s_);
     }
   /// Returns the explicit view as an <tt>RTOpPack::ConstSubVectorView<Scalar></tt> object
   const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
   /// Returns the global offset for the explicit view
-  Teuchos_Index   globalOffset() const { return sv_.globalOffset(); }
+  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
   /// Returns the dimension of the explicit view
-  Teuchos_Index   subDim()       const { return sv_.subDim();  }
+  Teuchos_Index subDim() const { return sv_.subDim(); }
   /// Return a pointer to a <tt>Scalar</tt> array containing the explicit view
-  Scalar*           values()       const { return sv_.values();  }
+  Scalar* values() const { return sv_.values().get(); }
   /// Return the stride between elements in the array returned from <tt>this->values()</tt>
-  ptrdiff_t         stride()       const { return sv_.stride();  }
+  ptrdiff_t stride() const { return sv_.stride(); }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
@@ -433,7 +439,7 @@ private:
       if( forceUnitStride && sv_s_.stride() != 1 ) {
         Scalar *values = new Scalar[sv_s_.subDim()];
         Teuchos_Index i; const Scalar *sv_v;
-        for( sv_v = sv_s_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+        for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
           values[i] = *sv_v;
         sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
       }

@@ -31,7 +31,7 @@
 
 all-local:
 
-SUBDIRS = spmd
+SUBDIRS = spmd base
 
 EXTRA_DIST = definition
 

@@ -33,7 +33,9 @@
 #include "RTOpPack_RTOpT.hpp"
 #include "Teuchos_Workspace.hpp"
 
+
 namespace RTOpPack {
+
 
 /** \brief Linear combination transformation operator: <tt>z0[i] = beta*z0[i]
  * + sum( alpha[k]*v[k][i], k=0...num_vecs-1 ), i=0...n-1</tt>.
@@ -48,39 +50,46 @@ namespace RTOpPack {
 template<class Scalar>
 class TOpLinearCombination : public RTOpT<Scalar> {
 public:
+
   /** \brief . */
   TOpLinearCombination(
-    const int       num_vecs  = 0
-    ,const Scalar   alpha[]   = NULL
-    ,const Scalar   &beta     = Teuchos::ScalarTraits<Scalar>::zero()
+    const int num_vecs = 0
+    ,const Scalar alpha[] = NULL
+    ,const Scalar &beta = Teuchos::ScalarTraits<Scalar>::zero()
     )
     :RTOpT<Scalar>("TOpLinearCombination")
-     ,beta_(beta)
+    ,beta_(beta)
     { if(num_vecs) this->alpha(num_vecs,alpha); }
+
   /** \brief . */
   void beta( const Scalar& beta ) { beta_ = beta; }
   /** \brief . */
   Scalar beta() const { return beta_; }
+
   /** \brief . */
   void alpha( 
-    const int       num_vecs
-    ,const Scalar   alpha[]    ///< Array length <tt>num_vecs</tt>
+    const int num_vecs
+    ,const Scalar alpha[] ///< Array length <tt>num_vecs</tt>
     )
     {
       TEST_FOR_EXCEPT( num_vecs<=0 || alpha==NULL );
       alpha_.resize(0);
       alpha_.insert(alpha_.begin(),alpha,alpha+num_vecs);
     }
+
   /** \brief . */
   int num_vecs() const { return alpha_.size(); }
+
   /** \brief . */
   const Scalar* alpha() const { return &alpha_[0]; }
+
   /** @name Overridden from RTOpT */
   //@{
+
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+    const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[]
+    ,const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const
     {
@@ -95,18 +104,18 @@ public:
       TEST_FOR_EXCEPT( targ_sub_vecs == NULL );
 #endif
       // Get pointers to local data
-      const RTOpPack::index_type    subDim  = targ_sub_vecs[0].subDim();
-      Scalar                        *z0_val = targ_sub_vecs[0].values();
-      const ptrdiff_t               z0_s    = targ_sub_vecs[0].stride();
+      const RTOpPack::index_type subDim = targ_sub_vecs[0].subDim();
+      Scalar *z0_val = targ_sub_vecs[0].values().get();
+      const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
       Workspace<const Scalar*> v_val(wss,num_vecs,false);
-      Workspace<ptrdiff_t>     v_s(wss,num_vecs,false);
+      Workspace<ptrdiff_t> v_s(wss,num_vecs,false);
       for( int k = 0; k < num_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
         TEST_FOR_EXCEPT( sub_vecs[k].subDim() != subDim );
         TEST_FOR_EXCEPT( sub_vecs[k].globalOffset() != targ_sub_vecs[0].globalOffset() );
 #endif					
-        v_val[k] = sub_vecs[k].values();
-        v_s[k]   = sub_vecs[k].stride();
+        v_val[k] = sub_vecs[k].values().get();
+        v_s[k] = sub_vecs[k].stride();
       }
       //
       // Perform the operation and specialize the cases for num_vecs = 1 and 2
@@ -117,8 +126,8 @@ public:
         // z0 = alpha*v0 + beta*z0
         //
         const Scalar alpha = alpha_[0], beta = beta_;
-        const Scalar       *v0_val = v_val[0];
-        const ptrdiff_t    v0_s    = v_s[0]; 
+        const Scalar *v0_val = v_val[0];
+        const ptrdiff_t v0_s = v_s[0]; 
         if( beta==ST::zero() ) {
           // z0 = alpha*v0
           if( z0_s==1 && v0_s==1 ) {
@@ -160,10 +169,10 @@ public:
         // z0 = alpha0*v0 + alpha1*v1 + beta*z0
         //
         const Scalar alpha0 = alpha_[0], alpha1=alpha_[1], beta = beta_;
-        const Scalar     *v0_val = v_val[0];
-        const ptrdiff_t  v0_s    = v_s[0]; 
-        const Scalar     *v1_val = v_val[1];
-        const ptrdiff_t  v1_s    = v_s[1]; 
+        const Scalar *v0_val = v_val[0];
+        const ptrdiff_t v0_s = v_s[0]; 
+        const Scalar *v1_val = v_val[1];
+        const ptrdiff_t v1_s = v_s[1]; 
         if( beta==ST::zero() ) {
           if( alpha0 == ST::one() ) {
             if( alpha1 == ST::one() ) {
@@ -329,7 +338,7 @@ public:
             (*z0_val) *= beta_;
         }
         // z0 += sum( alpha[k]*v[k], k=0...num_vecs-1)
-        z0_val = targ_sub_vecs[0].values();
+        z0_val = targ_sub_vecs[0].values().get();
         for( int j = 0; j < subDim; ++j, z0_val += z0_s ) {
           for( int k = 0; k < num_vecs; ++k ) {
             const Scalar
@@ -341,12 +350,18 @@ public:
         }
       }
     }
+
   //@}
+
 private:
-  Scalar                  beta_;
-  std::vector<Scalar>  alpha_;
+
+  Scalar beta_;
+  std::vector<Scalar> alpha_;
+
 }; // class TOpLinearCombination
 
+
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_TOP_LINEAR_COMBINATION_HPP

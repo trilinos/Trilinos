@@ -49,7 +49,7 @@ public:
     {
       RTOpPack::ConstSubVectorView<Scalar> sv;
       v_->acquireDetachedView(Range1D(),&sv);
-      RTOpPack::assign_entries( &raw_v_, sv );
+      RTOpPack::assign_entries<Scalar>( Teuchos::outArg(raw_v_), sv );
       v_->releaseDetachedView(&sv);
     }
 private:
@@ -67,7 +67,7 @@ public:
     {
       RTOpPack::ConstSubMultiVectorView<Scalar> smv;
       mv_->acquireDetachedView(Range1D(),Range1D(),&smv);
-      RTOpPack::assign_entries( &raw_mv_, smv );
+      RTOpPack::assign_entries<Scalar>( Teuchos::outArg(raw_mv_), smv );
       mv_->releaseDetachedView(&smv);
     }
 private:
@@ -96,7 +96,7 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorView<
   // Copy initial values in raw_v into vector
   RTOpPack::SubVectorView<Scalar> sv;
   v->acquireDetachedView(Range1D(),&sv);
-  RTOpPack::assign_entries( &sv, raw_v );
+  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(sv), raw_v );
   v->commitDetachedView(&sv);
   // Setup smart pointer to vector to copy view back out just before vector is destroyed
   Teuchos::set_extra_data(
@@ -120,7 +120,7 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::ConstSubVector
   // Copy initial values in raw_v into vector
   RTOpPack::SubVectorView<Scalar> sv;
   v->acquireDetachedView(Range1D(),&sv);
-  RTOpPack::assign_entries( &sv, raw_v );
+  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(sv), raw_v );
   v->commitDetachedView(&sv);
   return v;
 }
@@ -137,7 +137,7 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVecto
   // Copy initial values in raw_mv into multi-vector
   RTOpPack::SubMultiVectorView<Scalar> smv;
   mv->acquireDetachedView(Range1D(),Range1D(),&smv);
-  RTOpPack::assign_entries( &smv, raw_mv );
+  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(smv), raw_mv );
   mv->commitDetachedView(&smv);
   // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
   Teuchos::set_extra_data(
@@ -161,7 +161,7 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::ConstSubMulti
   // Copy values in raw_mv into multi-vector
   RTOpPack::SubMultiVectorView<Scalar> smv;
   mv->acquireDetachedView(Range1D(),Range1D(),&smv);
-  RTOpPack::assign_entries( &smv, raw_mv );
+  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(smv), raw_mv );
   mv->commitDetachedView(&smv);
   return mv;
 }

@@ -59,7 +59,7 @@ public:
   /** \brief . */
   Teuchos_Index numSubCols() const { return smv_.numSubCols(); }
   /** \brief . */
-  const Scalar* values() const { return smv_.values(); }
+  const Scalar* values() const { return smv_.values().get(); }
   /** \brief . */
   Teuchos_Index leadingDim() const { return smv_.leadingDim(); }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j<numSubCols())</tt>
@@ -98,7 +98,7 @@ public:
   /** \brief . */
   Teuchos_Index numSubCols() const { return smv_.numSubCols(); }
   /** \brief . */
-  Scalar* values() const { return smv_.values(); }
+  Scalar* values() const { return smv_.values().get(); }
   /** \brief . */
   Teuchos_Index leadingDim() const { return smv_.leadingDim(); }
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j<numSubCols())</tt>

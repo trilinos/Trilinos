@@ -299,6 +299,7 @@ AC_CONFIG_FILES([
     Makefile.export.rtop
     src/Makefile
     test/Makefile
+    test/base/Makefile
     test/spmd/Makefile
     ])
 

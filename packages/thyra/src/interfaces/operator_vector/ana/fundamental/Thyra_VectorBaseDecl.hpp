@@ -33,6 +33,7 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorBaseDecl.hpp"
 #include "RTOpPack_RTOpT.hpp"
+#include "RTOpPack_SparseSubVectorT.hpp"
 
 
 namespace Thyra {
