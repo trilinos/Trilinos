@@ -29,6 +29,7 @@ FFLAGS=-O3 \
 --enable-epetraext-transform \
 --enable-external \
 --enable-fei \
+--enable-fortrilinos \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
