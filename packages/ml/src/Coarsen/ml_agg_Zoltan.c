@@ -174,6 +174,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
       return 0;
     }
   }
+
 #endif
   
   /*
@@ -305,6 +306,7 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
   char value[80];
   sprintf(value,"%d",N_parts);
   Zoltan_Set_Param(zz,"num_global_partitions", value);
+
 
   /*
    * Call Zoltan to compute a new decomposition. 
@@ -479,8 +481,8 @@ void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *for
     return;
   }
   A = (ML_Operator*) data;
-  *num_lists = A->getrow->Nrows;/* Local # of rows     */
-  *num_pins  = A->N_nonzeros;   /* Local # of nonzeros */
+  *num_lists = A->getrow->Nrows;             /* Local # of rows */
+  *num_pins  = ML_Operator_ComputeNumNzs(A); /* Local nnz       */
   *format    = ZOLTAN_COMPRESSED_VERTEX;
 }
 
@@ -494,6 +496,7 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
   int *indices;
   double *values;
   int i,N,maxnz,rv,rowlength,rowtotal=0;
+  int *pin_ids;
 
   *ierr = ZOLTAN_OK;
   if (data == NULL) {
@@ -506,16 +509,15 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
 
   /* Use getrow to pull all the data over */
   values =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
+  pin_ids =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
+
   for(i=0;i<N;i++) {
-    vtxedge_GID[i] = (ZOLTAN_ID_TYPE) (i + MLZ_offset);
+    vtxedge_GID[i] = (ZOLTAN_ID_TYPE) (i + MLZ_offset);   
     vtxedge_ptr[i]=rowtotal;
-    rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,&pin_GID[rowtotal],values,&rowlength);
+    rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,pin_ids,values,&rowlength);
     if(rv==0) {printf("ML: Out of space in getrow i=%d/%d",i,N);fflush(stdout);*ierr=ZOLTAN_FATAL;}
-    /* ADD: Safety catch if A->max_nz_per_row is not correct.  Use ML_get_matrix_row and do a copy-back.
-       WARNING: There is an int / unsigned int typing issue with pin_GID & getrow.  From Zoltan's perspective, 
-       this doesn't actually matter, no matter what sort of warnings the compiler may throw --- these things 
-       are just unique IDs to Zoltan. Live on the edge.   
-    */    
+    for(j=0;j<rowlength;j++) pin_GID[rowtotal+j] = (ZOLTAN_ID_TYPE) pin_ids[j];
+    /* ADD: Safety catch if A->max_nz_per_row is not correct.  Use ML_get_matrix_row and do a copy-back. */
     rowtotal+=rowlength;
   }
   /* Note: vtxedge_ptr does not have the extra "N+1" element that regular CSR
@@ -524,9 +526,10 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
   /* Reindex to global IDs - this allocates memory*/
   ML_build_global_numbering(A, &indices,"cols");
   for(i=0;i<num_pins;i++) pin_GID[i]=indices[pin_GID[i]];    
-
+  
   ML_free(values);
   ML_free(indices);
+  ML_free(pin_ids);
 }
 
 
@@ -540,7 +543,7 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
   struct ML_CSR_MSRdata * CSR_Data;
   int *indices;
   double *values;
-  int i,N,maxnz,rowlength;
+  int i,N,maxnz,rowlength,rv;
   struct ML_CSR_MSRdata *input_matrix;
   
   *ierr = ZOLTAN_OK;
@@ -550,25 +553,25 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
   }
   
   A = (ML_Operator*) data;
-  N=A->outvec_leng;
-
+  N= A->getrow->Nrows; 
   /* Get the row lengths --- use special purpose code for MSR matrices,
      just call the getrow routine for everything else */
-  if(A->getrow->func_ptr==MSR_getrows){
-    input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(A);
-    for(i=0;i<N;i++) 
+  /*  if(A->getrow->func_ptr==MSR_getrows){
+      input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(A);
+      for(i=0;i<N;i++) 
       sizes[i] = (input_matrix->columns[i+1] - input_matrix->columns[i] + 1)* (sizeof(double)+sizeof(int));
-  }
-  else{
+      }
+      else{*/
     indices =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
     values  =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
     for(i=0;i<N;i++) {
-      (*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
+      rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
+      if(rv==0) {printf("ML: Out of space in getrow i=%d/%d",i,N);fflush(stdout);*ierr=ZOLTAN_FATAL;}
       sizes[i]=rowlength*(sizeof(double)+sizeof(int)); // add its cost here
     }
     ML_free(indices);
     ML_free(values);
-  }
+    /*  }*/
 }
 #endif
 
