@@ -69,7 +69,7 @@ struct HierPartParamsStruct {
   int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
   float *vwgt;                       /* vector of vertex weights */
   int *input_parts;                  /* Initial partitions for objects. */
-  idxtype *vtxdist, *xadj;           /* intermediate graph structure storage */
+  indextype *vtxdist, *xadj;           /* intermediate graph structure storage */
   ZOLTAN_ID_PTR adjncy;              /*    see Zoltan_Build_Graph */
   float *ewgts;                      /* edge weights for intermediate struct */
   int *adjproc;                      /* adjacent proc for each edge */

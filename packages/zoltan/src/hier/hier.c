@@ -293,7 +293,7 @@ int Zoltan_Hier(
 			     the user data) */
   int i99, i, exp_index;
   char msg[256];
-  idxtype *adjncy_idxtype = NULL;
+  indextype *adjncy_indextype = NULL;
   int num_adj;
   char *yo = "Zoltan_Hier";
   /* internal Zoltan_LB_Partition call parameters */
@@ -443,7 +443,7 @@ int Zoltan_Hier(
 			    hpp.checks, hpp.init_num_obj,
 			    hpp.global_ids, hpp.local_ids,
 			    hpp.obj_wgt_dim, hpp.edge_wgt_dim,
-			    &hpp.vtxdist, &hpp.xadj, &adjncy_idxtype,
+			    &hpp.vtxdist, &hpp.xadj, &adjncy_indextype,
 			    &hpp.ewgts, &hpp.adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
     ZOLTAN_HIER_ERROR(ierr, "Zoltan_Build_Graph returned error.");
@@ -451,13 +451,13 @@ int Zoltan_Hier(
   
   /* we want our adjncy to have ZOLTAN_ID_TYPE entries (it contains GIDs) */
   /* is this necessary? */
-  if (adjncy_idxtype) {
+  if (adjncy_indextype) {
     num_adj = hpp.xadj[hpp.init_num_obj];
     hpp.adjncy = (ZOLTAN_ID_PTR)ZOLTAN_MALLOC(sizeof(ZOLTAN_ID_TYPE)*num_adj);
     for (i=0; i<num_adj; i++) {
-      hpp.adjncy[i] = (ZOLTAN_ID_TYPE)adjncy_idxtype[i];
+      hpp.adjncy[i] = (ZOLTAN_ID_TYPE)adjncy_indextype[i];
     }
-    ZOLTAN_FREE(&adjncy_idxtype);
+    ZOLTAN_FREE(&adjncy_indextype);
   }
 
   hpp.num_edges = (hpp.use_graph ? hpp.xadj[hpp.init_num_obj] : 0);

@@ -47,7 +47,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 			      ZOLTAN_ID_PTR       global_ids,
 			      ZOLTAN_ID_PTR       local_ids);
 
-static int Compute_Bal(ZZ *, int, idxtype *, int, int *, double *);
+static int Compute_Bal(ZZ *, int, indextype *, int, int *, double *);
 static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
 static int Compute_NetCut(ZZ *, int, int *, int *, int *);
 static int Compute_ConCut(ZZ *, int, int *, int *, int *);
@@ -454,7 +454,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 static int Compute_Bal(
   ZZ *zz,
   int nvtx,
-  idxtype *vwgts,
+  indextype *vwgts,
   int obj_wgt_dim,
   int *parts,
   double *bal

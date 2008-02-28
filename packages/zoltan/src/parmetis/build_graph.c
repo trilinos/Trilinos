@@ -57,7 +57,7 @@ int Zoltan_Build_Graph(
     ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
-    idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, 
+    indextype **vtxdist, indextype **xadj, indextype **adjncy, 
     float **ewgts, int **adjproc)
 {
   /* Local variables */
@@ -110,7 +110,7 @@ int Zoltan_Build_Graph(
               "A graph query function is not registered.\n");
   }
   
-  *vtxdist = (idxtype *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(idxtype));
+  *vtxdist = (indextype *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(indextype));
   if (num_obj>0){
     if (!(*vtxdist)){
       /* Not enough memory */
@@ -146,8 +146,8 @@ int Zoltan_Build_Graph(
       printf("[%1d] Debug: num_edges = %d\n", zz->Proc, num_edges);
 
     /* Allocate space for ParMETIS data structs */
-    *xadj   = (idxtype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(idxtype));
-    *adjncy = (idxtype *)ZOLTAN_MALLOC(num_edges * sizeof(idxtype));
+    *xadj   = (indextype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(indextype));
+    *adjncy = (indextype *)ZOLTAN_MALLOC(num_edges * sizeof(indextype));
     *adjproc = (int *)ZOLTAN_MALLOC(num_edges * sizeof(int));
   
     if (!(*xadj) || (num_edges && (!(*adjncy) || !(*adjproc)))){

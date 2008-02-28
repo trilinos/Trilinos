@@ -37,12 +37,12 @@ static PARAM_VARS Graph_params[] = {
 	{ NULL, NULL, NULL, 0 } };
 
 /* Extern function prototypes. Should be in a separate header file? */
-extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
-       idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt,
+extern int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
+       indextype *adjncy, indextype *vwgt, indextype *adjwgt,
        int vwgt_dim, int ewgt_dim, int graph_type, int check_graph,
        int debug_level);
-extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj,
-       idxtype **adjncy, idxtype **vwgt, idxtype **vsize, idxtype **adjwgt,
+extern int Zoltan_Scatter_Graph(indextype **vtxdist, indextype **xadj,
+       indextype **adjncy, indextype **vwgt, indextype **vsize, indextype **adjwgt,
        float **xyz, int ndims, int, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
 extern int Zoltan_Compare_Ints(const void *key, const void *arg);
 
@@ -76,7 +76,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
 				 ZOLTAN_Third_Geom *geo,
 				 ZOLTAN_Third_Vsize *vsp);
 
-static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
+static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
 			       int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
 
@@ -574,7 +574,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
  * rounding to zero weights.
  */
 
-static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
+static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
 		 int mode, int max_wgt_sum, int debug_level, MPI_Comm comm)
 {
   int i, j, tmp, ierr, proc;

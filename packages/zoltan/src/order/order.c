@@ -156,6 +156,7 @@ int Zoltan_Order(
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);
   }
+#ifdef ZOLTAN_PARMETIS
   else if (!strcmp(opt.method, "NODEND")) {
     Order_fn = Zoltan_ParMetis_Order;
   }
@@ -171,6 +172,7 @@ int Zoltan_Order(
     strcpy(opt.method, "NODEND");
     strcpy(opt.order_type, "GLOBAL");
   }
+#endif /* ZOLTAN_PARMETIS */
 #ifdef ZOLTAN_SCOTCH
   else if (!strcmp(opt.method, "SCOTCH")) {
     Order_fn = Zoltan_Scotch_Order;

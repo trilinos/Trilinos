@@ -113,7 +113,7 @@ int Zoltan_Color(
 
 
   static char *yo = "color_fn";
-  idxtype *vtxdist, *xadj, *adjncy; /* arrays to store the graph structure */
+  indextype *vtxdist, *xadj, *adjncy; /* arrays to store the graph structure */
   int *adjproc;                     
   int *input_parts;                 /* Initial partitions for objects. */
   int nvtx = num_obj;               /* number of vertices */

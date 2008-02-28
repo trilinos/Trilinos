@@ -60,8 +60,8 @@ static int Zoltan_Compare_Ints(const void *key, const void *arg);
 /*                                                                   */
 /*********************************************************************/
 
-int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
-       idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
+int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj, 
+       indextype *adjncy, indextype *vwgt, indextype *adjwgt, 
        int vwgt_dim, int ewgt_dim, 
        int graph_type, int check_graph, int output_level)
 {
@@ -69,8 +69,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   int flag, cross_edges, mesg_size, sum, global_sum;
   int nprocs, proc, *proclist, errors, global_errors;
   int num_zeros, num_selfs, num_duplicates, num_singletons;
-  idxtype global_i, global_j;
-  idxtype *ptr1, *ptr2;
+  indextype global_i, global_j;
+  indextype *ptr1, *ptr2;
   int *adjncy_sort=NULL, *perm=NULL, *ptr=NULL, free_adjncy_sort=0;
   char *sendbuf=NULL, *recvbuf=NULL;
   ZOLTAN_COMM_OBJ *comm_plan;
@@ -349,7 +349,7 @@ barrier1:
     /* Test for consistency across processors. */
 
     /* Allocate space for off-proc data */
-    mesg_size = (2+ewgt_dim)*sizeof(idxtype);
+    mesg_size = (2+ewgt_dim)*sizeof(indextype);
     sendbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
     recvbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
     proclist = (int *) ZOLTAN_MALLOC(cross_edges*sizeof(int));
@@ -361,7 +361,7 @@ barrier1:
 
     /* Second pass: Copy data to send buffer */
     nedges = 0;
-    ptr1 = (idxtype *) sendbuf;
+    ptr1 = (indextype *) sendbuf;
     for (i=0; i<num_obj; i++){
       global_i = vtxdist[proc]+i;
       for (ii=xadj[i]; ii<xadj[i+1]; ii++){
@@ -409,10 +409,10 @@ barrier1:
         /* Third pass: Compare on-proc data to the off-proc data we received */
         /* sendbuf and recvbuf should contain the same data except (i,j) is  */
         /* (j,i)                                                             */
-        for (i=0, ptr1=(idxtype *)sendbuf; i<cross_edges; 
+        for (i=0, ptr1=(indextype *)sendbuf; i<cross_edges; 
              i++, ptr1 += (2+ewgt_dim)){
           flag = 0;
-          for (j=0, ptr2=(idxtype *)recvbuf; j<cross_edges; 
+          for (j=0, ptr2=(indextype *)recvbuf; j<cross_edges; 
                j++, ptr2 += (2+ewgt_dim)){
             if ((ptr2[0] == ptr1[1]) && (ptr2[1] == ptr1[0])){
               /* Found matching edge */
