@@ -698,6 +698,8 @@ BUILD_ISORROPIA_TRUE
 BUILD_ISORROPIA_FALSE
 BUILD_NEW_PACKAGE_TRUE
 BUILD_NEW_PACKAGE_FALSE
+BUILD_SUNDANCE_TRUE
+BUILD_SUNDANCE_FALSE
 BUILD_MOERTEL_TRUE
 BUILD_MOERTEL_FALSE
 BUILD_PYTRILINOS_TRUE
@@ -752,6 +754,7 @@ packages/sacado
 packages/nox
 packages/isorropia
 packages/new_package
+packages/Sundance
 packages/moertel
 packages/PyTrilinos
 packages/rythmos
@@ -1410,6 +1413,8 @@ Optional Features:
                           (default is no)
   --enable-stokhos        Build stokhos, an intrusive stochastic Galerkin
                           package (default is no)
+  --enable-sundance       Build Sundance, a system for development of parallel
+                          finite-element solutions of PDEs (default is no)
   --enable-teuchos        Build teuchos, a tools package (default is no)
   --enable-rtop           Build RTOp, a vector reduction/transformation
                           operator package (default is no)
@@ -3338,6 +3343,34 @@ fi
 
 
 
+# Check whether --enable-sundance was given.
+if test "${enable_sundance+set}" = set; then
+  enableval=$enable_sundance; ac_cv_use_sundance=$enableval
+ac_cv_use_sundance_explicit=$enableval
+else
+  ac_cv_use_sundance=no
+ac_cv_use_sundance_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use sundance" >&5
+echo $ECHO_N "checking whether to use sundance... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_sundance" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SUNDANCE
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-teuchos was given.
 if test "${enable_teuchos+set}" = set; then
   enableval=$enable_teuchos; ac_cv_use_teuchos=$enableval
@@ -3673,6 +3706,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_sacado" != "Xno" ||
 	test "X$ac_cv_use_stokhos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
@@ -3701,6 +3735,7 @@ if test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno"; then
   subdirs="$subdirs packages/rtop"
 
@@ -3723,6 +3758,7 @@ fi
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno"; then
   subdirs="$subdirs packages/thyra"
 
@@ -3742,7 +3778,8 @@ else
 fi
 
 
-if test "X$ac_cv_use_stratimikos" != "Xno"; then
+if test "X$ac_cv_use_stratimikos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno"; then
   subdirs="$subdirs packages/stratimikos"
 
   BUILD_STRATIMIKOS=yes
@@ -3795,6 +3832,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   subdirs="$subdirs packages/epetra"
@@ -3853,6 +3891,7 @@ fi
 if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno"; then
@@ -3895,6 +3934,7 @@ fi
 
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno"; then
   subdirs="$subdirs packages/ifpack"
 
@@ -3917,6 +3957,7 @@ fi
 if test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   subdirs="$subdirs packages/aztecoo"
@@ -3976,6 +4017,7 @@ fi
 
 
 if test "X$ac_cv_use_amesos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
   subdirs="$subdirs packages/amesos"
@@ -3998,6 +4040,7 @@ fi
 
 if test "X$ac_cv_use_epetraext" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	( test "X$ac_cv_use_thyra" != "Xno" && test "X$ac_cv_use_aztecoo" != "Xno" ); then
   subdirs="$subdirs packages/epetraext"
@@ -4133,6 +4176,7 @@ fi
 
 
 if test "X$ac_cv_use_ml" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
@@ -4193,6 +4237,7 @@ fi
 
 
 if test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno"; then
   subdirs="$subdirs packages/nox"
 
@@ -4248,6 +4293,25 @@ fi
 else
   BUILD_NEW_PACKAGE_TRUE='#'
   BUILD_NEW_PACKAGE_FALSE=
+fi
+
+
+if test "X$ac_cv_use_sundance" != "Xno"; then
+  subdirs="$subdirs packages/Sundance"
+
+  BUILD_SUNDANCE=yes
+  if test "X$ac_cv_use_sundance_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-sundance"
+  fi
+else
+  BUILD_SUNDANCE=no
+fi
+ if test "X$BUILD_SUNDANCE" != "Xno"; then
+  BUILD_SUNDANCE_TRUE=
+  BUILD_SUNDANCE_FALSE='#'
+else
+  BUILD_SUNDANCE_TRUE='#'
+  BUILD_SUNDANCE_FALSE=
 fi
 
 
@@ -4755,6 +4819,13 @@ if test -z "${BUILD_NEW_PACKAGE_TRUE}" && test -z "${BUILD_NEW_PACKAGE_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NEW_PACKAGE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_NEW_PACKAGE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_SUNDANCE_TRUE}" && test -z "${BUILD_SUNDANCE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_SUNDANCE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_SUNDANCE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -5511,6 +5582,8 @@ BUILD_ISORROPIA_TRUE!$BUILD_ISORROPIA_TRUE$ac_delim
 BUILD_ISORROPIA_FALSE!$BUILD_ISORROPIA_FALSE$ac_delim
 BUILD_NEW_PACKAGE_TRUE!$BUILD_NEW_PACKAGE_TRUE$ac_delim
 BUILD_NEW_PACKAGE_FALSE!$BUILD_NEW_PACKAGE_FALSE$ac_delim
+BUILD_SUNDANCE_TRUE!$BUILD_SUNDANCE_TRUE$ac_delim
+BUILD_SUNDANCE_FALSE!$BUILD_SUNDANCE_FALSE$ac_delim
 BUILD_MOERTEL_TRUE!$BUILD_MOERTEL_TRUE$ac_delim
 BUILD_MOERTEL_FALSE!$BUILD_MOERTEL_FALSE$ac_delim
 BUILD_PYTRILINOS_TRUE!$BUILD_PYTRILINOS_TRUE$ac_delim
@@ -5535,7 +5608,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

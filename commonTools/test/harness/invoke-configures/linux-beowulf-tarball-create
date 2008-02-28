@@ -56,6 +56,7 @@ FFLAGS=-O3 \
 --enable-pliris \
 --enable-rythmos \
 --enable-stokhos \
+--enable-sundance \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \

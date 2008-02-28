@@ -91,8 +91,8 @@ DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
 	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
 	belos anasazi rbgen pliris ml aristos intrepid moertel \
 	stratimikos meros fei stokhos sacado nox rythmos \
-	trilinoscouplings new_package moocho PyTrilinos ForTrilinos \
-	didasko WebTrilinos external
+	trilinoscouplings new_package moocho Sundance PyTrilinos \
+	ForTrilinos didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -215,6 +215,7 @@ common/styles.css common/tag_files/keepme.txt
 @BUILD_RTOP_TRUE@RTOP_SUBDIR = rtop
 @BUILD_THYRA_TRUE@THYRA_SUBDIR = thyra
 @BUILD_STRATIMIKOS_TRUE@STRATIMIKOS_SUBDIR = stratimikos
+@BUILD_SUNDANCE_TRUE@SUNDANCE_SUBDIR = Sundance
 @BUILD_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
 @BUILD_TRILINOSCOUPLINGS_TRUE@TRILINOSCOUPLINGS_SUBDIR = trilinoscouplings
 @BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
@@ -264,6 +265,7 @@ PACKAGE_NAMES = \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \
 	$(MOOCHO_SUBDIR)       \
+	$(SUNDANCE_SUBDIR)     \
 	$(PYTRILINOS_SUBDIR)   \
 	$(FORTRILINOS_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \

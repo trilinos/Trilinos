@@ -19,6 +19,8 @@ STD_NAME: didasko, DIR_NAME: didasko
 STD_NAME: epetra, DIR_NAME: epetra
 STD_NAME: epetraext, DIR_NAME: epetraext
 STD_NAME: external, DIR_NAME: external
+STD_NAME: fei, DIR_NAME: fei
+STD_NAME: fortrilinos, DIR_NAME: ForTrilinos
 STD_NAME: galeri, DIR_NAME: galeri
 STD_NAME: ifpack, DIR_NAME: ifpack
 STD_NAME: isorropia, DIR_NAME: isorropia
@@ -38,6 +40,7 @@ STD_NAME: rtop, DIR_NAME: rtop
 STD_NAME: rythmos, DIR_NAME: rythmos
 STD_NAME: sacado, DIR_NAME: sacado 
 STD_NAME: stratimikos, DIR_NAME: stratimikos 
+STD_NAME: sundance, DIR_NAME: Sundance
 STD_NAME: teuchos, DIR_NAME: teuchos
 STD_NAME: thyra, DIR_NAME: thyra
 STD_NAME: tpetra, DIR_NAME: tpetra
@@ -47,4 +50,5 @@ STD_NAME: tsf, DIR_NAME: TSF
 STD_NAME: tsfcore, DIR_NAME: TSFCore
 STD_NAME: tsfcoreutils, DIR_NAME: TSFCoreUtils
 STD_NAME: tsfextended, DIR_NAME: TSFExtended
-STD_NAME: webtrilinos, DIR_NAME: WebTrilinos 
+STD_NAME: webtrilinos, DIR_NAME: WebTrilinos
+STD_NAME: zoltan, DIR_NAME: zoltan 

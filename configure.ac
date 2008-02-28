@@ -105,6 +105,8 @@ TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado, an automatic differentation packag
 
 TAC_ARG_ENABLE_FEATURE(stokhos, [Build stokhos, an intrusive stochastic Galerkin package], STOKHOS, no)
 
+TAC_ARG_ENABLE_FEATURE(sundance, [Build Sundance, a system for development of parallel finite-element solutions of PDEs], SUNDANCE, no)
+
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos, a tools package], TEUCHOS, no)
 
 TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOp, a vector reduction/transformation operator package], RTOP, no)
@@ -151,6 +153,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_sacado" != "Xno" ||
 	test "X$ac_cv_use_stokhos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
@@ -171,6 +174,7 @@ if test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/rtop])
   BUILD_RTOP=yes
@@ -185,6 +189,7 @@ AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/thyra])
   BUILD_THYRA=yes
@@ -196,7 +201,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_THYRA, test "X$BUILD_THYRA" != "Xno")
 
-if test "X$ac_cv_use_stratimikos" != "Xno"; then
+if test "X$ac_cv_use_stratimikos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/stratimikos])
   BUILD_STRATIMIKOS=yes
   if test "X$ac_cv_use_stratimikos_explicit" != "Xyes"; then
@@ -233,6 +239,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
@@ -267,6 +274,7 @@ AM_CONDITIONAL(BUILD_PLIRIS, test "X$BUILD_PLIRIS" != "Xno")
 if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno"; then 
@@ -293,6 +301,7 @@ fi
 AM_CONDITIONAL(BUILD_GALERI, test "X$BUILD_GALERI" != "Xno")
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ifpack])
   BUILD_IFPACK=yes
@@ -307,6 +316,7 @@ AM_CONDITIONAL(BUILD_IFPACK, test "X$BUILD_IFPACK" != "Xno")
 if test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/aztecoo])
@@ -342,6 +352,7 @@ fi
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$BUILD_KOMPLEX" != "Xno")
 
 if test "X$ac_cv_use_amesos" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/amesos])
@@ -356,6 +367,7 @@ AM_CONDITIONAL(BUILD_AMESOS, test "X$BUILD_AMESOS" != "Xno")
 
 if test "X$ac_cv_use_epetraext" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	( test "X$ac_cv_use_thyra" != "Xno" && test "X$ac_cv_use_aztecoo" != "Xno" ); then
   AC_CONFIG_SUBDIRS([packages/epetraext])
@@ -435,6 +447,7 @@ fi
 AM_CONDITIONAL(BUILD_MEROS, test "X$BUILD_MEROS" != "Xno")
 
 if test "X$ac_cv_use_ml" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
@@ -471,6 +484,7 @@ fi
 AM_CONDITIONAL(BUILD_SACADO, test "X$BUILD_SACADO" != "Xno")
 
 if test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_sundance" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/nox])
   BUILD_NOX=yes
@@ -504,6 +518,17 @@ else
   BUILD_NEW_PACKAGE=no
 fi
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$BUILD_NEW_PACKAGE" != "Xno")
+
+if test "X$ac_cv_use_sundance" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/Sundance])
+  BUILD_SUNDANCE=yes
+  if test "X$ac_cv_use_sundance_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-sundance"
+  fi
+else
+  BUILD_SUNDANCE=no
+fi
+AM_CONDITIONAL(BUILD_SUNDANCE, test "X$BUILD_SUNDANCE" != "Xno")
 
 if test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/moertel])
