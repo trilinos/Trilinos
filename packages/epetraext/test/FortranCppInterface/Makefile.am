@@ -5,7 +5,13 @@ EXEEXT = .exe
 # Actual programs
 #
 
-noinst_PROGRAMS = simpleEpetraExteranCInterface simpleEpetraFortranInterface
+if FORTRAN90_DISABLED
+FORTRAN90_EXES =
+else
+FORTRAN90_EXES = simpleEpetraFortranInterface
+endif
+
+noinst_PROGRAMS = simpleEpetraExteranCInterface $(FORTRAN90_EXES)
 
 simpleEpetraExteranCInterface_SOURCES = \
   $(srcdir)/simpleEpetraExteranCInterface.c \
