@@ -496,7 +496,7 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
   int *indices;
   double *values;
   int i,N,maxnz,rv,rowlength,rowtotal=0;
-  int *pin_ids;
+  int *pin_ids,j;
 
   *ierr = ZOLTAN_OK;
   if (data == NULL) {
