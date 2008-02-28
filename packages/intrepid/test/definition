@@ -3,7 +3,7 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature RealSpace;
+    DIRS = Cubature,RealSpace;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
@@ -11,7 +11,7 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature RealSpace;
+    DIRS = Cubature,RealSpace;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
