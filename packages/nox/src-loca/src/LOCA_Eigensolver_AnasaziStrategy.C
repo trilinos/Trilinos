@@ -133,6 +133,9 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   Teuchos::RCP<MV> ivec = xVector.createMultiVector(blksz);
   ivec->random();
 
+  // Give the Strategy a chance to massage the random seed vector
+  anasaziOp->preProcessSeedVector(*ivec);
+
   // Create an instance of the eigenproblem
   Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > 
     LOCAProblem =
@@ -227,6 +230,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
     anasaziOp->rayleighQuotient((*evecs_r)[i], (*evecs_i)[i], rq_r, rq_i);
 
     // Print out untransformed eigenvalues and Rayleigh quotient residual
+
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
        globalData->locaUtils->out() << "Eigenvalue " << i << " : " << 
 	 globalData->locaUtils->sciformat((*evals_r)[i]) << "  " << 

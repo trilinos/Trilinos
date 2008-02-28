@@ -110,6 +110,12 @@ namespace LOCA {
 	    NOX::Abstract::MultiVector& output) const = 0;
 
       /*! 
+       * \brief Give strategy an opportunit to massage the random seed vector
+       */
+      virtual void
+      preProcessSeedVector(NOX::Abstract::MultiVector& ivec) {};
+
+      /*! 
        * \brief Transform eigenvalue in place
        */
       virtual void

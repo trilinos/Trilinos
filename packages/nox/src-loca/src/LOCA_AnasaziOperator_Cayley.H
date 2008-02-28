@@ -126,6 +126,15 @@ namespace LOCA {
 	    NOX::Abstract::MultiVector& output) const;
 
       /*! 
+       * \brief PreProcess the random seed vector 
+       *
+       * Performs one backward Euler iteration on the random 
+       * initial seed vector, to satisfy contraints
+       */
+      virtual void
+      preProcessSeedVector(NOX::Abstract::MultiVector& ivec);
+
+      /*! 
        * \brief Transform eigenvalue.
        *
        * Transforms the given eigenvalue to the eigenvalue of the 

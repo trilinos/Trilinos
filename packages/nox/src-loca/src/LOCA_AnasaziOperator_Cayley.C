@@ -120,6 +120,51 @@ LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::MultiVector& input,
 }
 
 void
+LOCA::AnasaziOperator::Cayley::preProcessSeedVector(NOX::Abstract::MultiVector& ivec)
+{
+  // Changes random seed vector ivec:   ivec = (J - sigma*M)^{-1}*M*ivec
+  string callingFunction = 
+    "LOCA::AnasaziOperator::Cayley::preProcessSeedVector()";
+
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+  
+  // Allocate temporary vector
+  if (tmp_r == Teuchos::null || tmp_r->numVectors() != ivec.numVectors())
+    tmp_r = ivec.clone(NOX::ShapeCopy);
+
+  // Compute M
+  status = grp->computeShiftedMatrix(0.0, 1.0);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  // Compute M*ivec
+  status = grp->applyShiftedMatrixMultiVector(ivec, *tmp_r);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  // Compute J-sigma*M
+  status = grp->computeShiftedMatrix(1.0, -sigma);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  // Solve (J-sigma*M)*output = (M)*ivec
+  status = grp->applyShiftedMatrixInverseMultiVector(*solverParams, *tmp_r, 
+						     ivec);
+
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+}
+
+void
 LOCA::AnasaziOperator::Cayley::transformEigenvalue(double& ev_r, 
 						   double& ev_i) const
 {
