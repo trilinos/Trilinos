@@ -980,10 +980,10 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::init(bool perturbSoln,
   // Rescale length vector so that the normalization condition is met
   double lVecDotNullVec = lTransNorm(*(xVec->getNullVec()));
 
-  if (lVecDotNullVec == 0.0) {
+  if (fabs(lVecDotNullVec) < 1.0e-8) {
     globalData->locaErrorCheck->throwError(
 		   "LOCA::Pitchfork::MooreSpence::ExtendedGroup::init()",
-		   "null vector can be orthogonal to length-scaling vector");
+		   "null vector cannot be orthogonal to length-scaling vector: ");
   }
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 

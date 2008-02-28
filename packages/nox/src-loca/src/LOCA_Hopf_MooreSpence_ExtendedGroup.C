@@ -1030,10 +1030,10 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::init(bool perturbSoln,
   double ldy = lTransNorm(*(xVec->getRealEigenVec()));
   double ldz = lTransNorm(*(xVec->getImagEigenVec()));
 
-  if (ldy == 0.0) {
+  if (fabs(ldy) < 1.0e-8) {
     globalData->locaErrorCheck->throwError(
 		   "LOCA::Hopf::MooreSpence::ExtendedGroup::init()",
-		   "Real component of eigenvector cannot be orthogonal to length-scaling vector");
+		   "Real component of eigenvector cannot be orthogonal to length-scaling vector ");
   }
 
   double denom = ldy*ldy + ldz*ldz;
