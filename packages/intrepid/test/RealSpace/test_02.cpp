@@ -27,24 +27,40 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-\brief  Example of the Matrix class.
-\author Created by P. Bochev and D. Ridzal
+/** \file test_02.cpp
+\brief  Unit test for the Matrix class.
+\author Created by P. Bochev and D. Ridzal.
 */
+
 #include "Intrepid_RealSpace.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RCP.hpp"
 
 using namespace std;
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
-  cout \
+
+  // This little trick lets us print to std::cout only if
+  // a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+
+  // Save the format state of the original std::cout.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
+
+  *outStream \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
-  << "|                      Example use of the Matrix class                        |\n" \
+  << "|                              Unit Test (Matrix)                             |\n" \
   << "|                                                                             |\n" \
-  << "|   1) Creating Matrix objects and accessing their elements                   |\n" \
-  << "|   2) Matrix operations, inverse, transpose, norms and determinant           |\n" \
-  << "|   3) Matrix - Point operations                                              |\n" \
+  << "|     1) Matrix creation, math operations                                     |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -52,174 +68,294 @@ int main(int argc, char *argv[]) {
   << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
-  << "===============================================================================\n" \
-  << "| EXAMPLE 1: class Matrix in 3D                                               |\n"\
-  << "===============================================================================\n\n";
+  << "===============================================================================\n"\
+  << "| TEST 1: matrix creation, exception testing                                  |\n"\
+  << "===============================================================================\n";
+
+  int errorFlag = 0;
+  int beginThrowNumber = TestForException_getThrowNumber();
+  int endThrowNumber = beginThrowNumber + 16;
   
-  // Matrix objects can be created from square or flat lists of data, arranged by row. If
-  double mat3[3][3] = {{1,2,3},{4,5,7},{7,8,10}};
-  double arr3[]     = { 1,2,3,  4,5,7,  7,8,10};
-  // then Matrix objects created from these lists correspond to the same 3-by-3 matrix:
-  //          | 1 2 3 |
-  //          | 4 5 6 |
-  //          | 7 8 9 |
-  //
-  cout << "Created Matrix my_3D_Matrix from a 3-by-3 array of numbers:";
-  Matrix<double> my_3D_Matrix(&mat3[0][0],3);
-  cout << my_3D_Matrix << endl;
+  // Create arrays of coefficients
+  double vec[]  = {1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 6.0, 5.0, 9.0};
+  double vec2[] = {-1.0, 2.0, -3.0, 4.0, -8.0, 7.0, -6.0, 5.0, -9.0};
 
-  cout << "Created Matrix my_other_3D_Matrix from a 1-by-9 array with the same numbers:";
-  Matrix<double> my_other_3D_Matrix(arr3,3);
-  cout << my_3D_Matrix << endl;
-  
-  cout << "Compute the transpose of my_3D_Matrix:";
-  cout << my_3D_Matrix.getTranspose() << endl;
+  try{
 
-  cout << "Transpose my_3D_Matrix (in place -- mutator):";
-  my_3D_Matrix.transpose();
-  cout << my_3D_Matrix << endl;
+    try {
+      Matrix<double> m00(0);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Computing: my_3D_Matrix * my_other_3D_Matrix:";
-  Matrix<double> prod3 = my_3D_Matrix * my_other_3D_Matrix;
-  cout << prod3 << endl;
+    Matrix<double> m01(1);
+    Matrix<double> m02(2);
+    Matrix<double> m03(3);
 
-  cout << "Compute the inverse of my_3D_Matrix:";
-  cout << my_3D_Matrix.getInverse() << endl;
+    try {
+      Matrix<double> m04(4);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Invert my_3D_Matrix (in place -- mutator):";
-  my_3D_Matrix.invert();
-  cout << my_3D_Matrix << endl;
-  cout << "\t Determinant of the inverted matrix = " << my_3D_Matrix.det() << "\n\n";
+    try {
+      Matrix<double> m05(vec, 0);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Invert my_3D_Matrix again (in place -- mutator):";
-  my_3D_Matrix.invert();
-  cout << my_3D_Matrix << endl;
-  cout << "\t Determinant of the inverted matrix = " << my_3D_Matrix.det() << "\n\n";
+    Matrix<double> m06(vec, 1);
+    Matrix<double> m07(vec, 2);
+    Matrix<double> m08(vec, 3);
 
-  // Norms of matrices
-  cout << "Computing norms of my_3D_Matrix: " << endl;
-  cout << "\t First     matrix norm (max column sum) = " << my_3D_Matrix.norm(NORM_ONE) << endl;
-  cout << "\t Infinity  matrix norm (max row    sum) = " << my_3D_Matrix.norm(NORM_INF) << endl;
-  cout << "\t Frobenius matrix norm                  = " << my_3D_Matrix.norm(NORM_FRO) << "\n\n";
-  
-  
-  // Extraction of rows and columns as Point objects (they are indexed from 0!)
-  cout << "Get first row of my_3D_Matrix as a Point object:\n";
-  Point<double> my_1st_Row = my_3D_Matrix.getRow(0);
-  cout << my_1st_Row << "\n\n";
+    try {
+      Matrix<double> m09(vec, 4);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Get third column of my_3D_Matrix as a Point object:\n";
-  Point<double> my_3rd_Column  = my_3D_Matrix.getColumn(2);
-  cout << my_3rd_Column << "\n\n";
+    try {
+      m08.setElements(vec2, 2);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+
+    m08.setElements(vec2, 3);
+
+    try {
+      m08.getElement(0,3);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+
+    m08.getElement(0,2);
+
+    try {
+      m08.getColumn(3);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+
+    m08.getColumn(2);
+
+    try {
+      m08.getRow(3);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+
+    m08.getRow(1);
+
+    try {
+      m02 = m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
     
-  // Changing data in an existing matrix object
-  double my_New_3D_Data[] = {1,1,1,2,2,2,3,3,3};
-  cout << "Changing data in an existing matrix (my_3D_Matrix):";
-  my_3D_Matrix.setElements(my_New_3D_Data,3);
-  cout << my_3D_Matrix << endl;
+    m03 = m08;
 
-  cout << "\n" \
-  << "===============================================================================\n" \
-  << "| EXAMPLE 1a: overloaded operators for Matrix objects                         |\n"\
-  << "===============================================================================\n\n";
-  
-  Matrix<double> first_3D_Matrix(&mat3[0][0],3);
-  Matrix<double> second_3D_Matrix(arr3,3);
-  Matrix<double> result(3);
+    try {
+      m03 += m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  // Subtraction
-  cout << "Subtract two matrices holding the same coefficients:";
-  result = first_3D_Matrix - second_3D_Matrix;
-  cout << result << "\n\n";
-  
-  // Addition
-  cout << "Add two matrices holding the same coefficients:"; 
-    result = first_3D_Matrix + second_3D_Matrix;
-  cout << result << "\n\n";
-  
-  // Scalar multiplication
-  cout << "Multiply my_3D_Matrix by 10: ";
-  cout << 10.0*my_3D_Matrix << endl;
+    try {
+      m02 += m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  // Matrix times Point
-  cout << "Multiply my_3D_Matrix by a Point that is its first row:\n";
-  cout << my_3D_Matrix*my_3D_Matrix.getRow(0) << "\n\n";
+    m03 += m08;
 
-  // Point times Matrix
-  cout << "Multiply Point that is first column of my_3D_Matrix by the matrix:\n";
-  cout << my_3D_Matrix.getColumn(0)*my_3D_Matrix << endl;
-  
-  
-  cout << "\n" \
-  << "===============================================================================\n" \
-  << "| EXAMPLE 2: class Matrix in 2D                                                |\n"\
-  << "===============================================================================\n\n";
-  
-  // A flat list of matrix data arranged by row
-  double mat2[] = {1,2,4,6};
+    try {
+      m03 -= m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  // Uisng constructor that takes flat list of elements arranged by row and matrix dimension
-  cout << "Created Matrix my_2D_Matrix:";
-  Matrix<double> my_2D_Matrix(mat2,2);
-  cout << my_2D_Matrix << endl;
+    try {
+      m02 -= m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Compute the transpose of my_2D_Matrix:";
-  cout << my_2D_Matrix.getTranspose() << endl;
+    m03 -= m08;
 
-  cout << "Transpose my_2D_Matrix (in place -- mutator):";
-  my_2D_Matrix.transpose();
-  cout << my_2D_Matrix << endl;
+    try {
+      Point<double> v01(1);
+      v01 = m03 * v01;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Computing: my_2D_Matrix * my_2D_Matrix:";
-  Matrix<double> prod2 = my_2D_Matrix * my_2D_Matrix;
-  cout << prod2 << endl;
+    Point<double> v03(3);
+    v03 = m03 * v03;
 
-  cout << "Compute the inverse of my_2D_Matrix:";
-  cout << my_2D_Matrix.getInverse() << endl;
+    try {
+      Point<double> v01(1);
+      v01 = v01 * m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "Invert my_2D_Matrix (in place -- mutator):";
-  my_2D_Matrix.invert();
-  cout << my_2D_Matrix << endl;
+    v03 = v03 * m03;
 
-  cout << "Invert my_2D_Matrix again (in place -- mutator):";
-  my_2D_Matrix.invert();
-  cout << my_2D_Matrix << endl;
+    try {
+      m03 = m02 * m03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
 
-  cout << "\n" \
-  << "===============================================================================\n" \
-  << "| EXAMPLE 3: class Matrix in 1D                                                |\n"\
-  << "===============================================================================\n\n";
-  
-  double mat1 = 4;
+    m03 = m03 * m03;
 
-  cout << "Created Matrix my_1D_Matrix:";
-  Matrix<double> my_1D_Matrix(&mat1,1);
-  cout << my_1D_Matrix << endl;
+    outStream->precision(4);
+    *outStream << m01 << std::endl;
+    *outStream << m02 << std::endl;
+    *outStream << m03 << std::endl;
 
-  cout << "Compute the transpose of my_1D_Matrix:";
-  cout << my_1D_Matrix.getTranspose() << endl;
+  }
+  catch (std::logic_error err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
 
-  cout << "Transpose my_1D_Matrix (in place -- mutator):";
-  my_1D_Matrix.transpose();
-  cout << my_1D_Matrix << endl;
+  if (TestForException_getThrowNumber() != endThrowNumber)
+    errorFlag++;
 
-  cout << "Computing: my_1D_Matrix * my_1D_Matrix:";
-  Matrix<double> prod1 = my_1D_Matrix * my_1D_Matrix;
-  cout << prod1 << endl;
+  *outStream \
+  << "\n"
+  << "===============================================================================\n"\
+  << "| TEST 2: correctness of math operations in 1-3D                              |\n"\
+  << "===============================================================================\n";
 
-  cout << "Compute the inverse of my_1D_Matrix:";
-  cout << my_1D_Matrix.getInverse() << endl;
+  outStream->precision(20);
 
-  cout << "Invert my_1D_Matrix (in place -- mutator):";
-  my_1D_Matrix.invert();
-  cout << my_1D_Matrix << endl;
+  try{
+    for (int dim=3; dim>0; dim--) {
+      Matrix<double> m01(dim);
+      Matrix<double> m02(dim);
+      Matrix<double> m03(dim);
+      Point<double>  v01(dim);
+      Point<double>  v02(dim);
+      m01.setElements(vec, dim);
+      m02.setElements(vec2, dim);
+      v01.setCoordinates(vec2, dim);
+      double zero = INTREPID_TOL, mult = 123.123;
 
-  cout << "Invert my_1D_Matrix again (in place -- mutator):";
-  my_1D_Matrix.invert();
-  cout << my_1D_Matrix << endl;
+      *outStream << "m01 = \n" << m01 << "\n";
+      *outStream << "m02 = \n" << m02 << "\n";
+      *outStream << "v01 = "   << v01 << "\n\n";
 
-  
-  
-  
-  return 0;
+      m03 = (mult*m01 + m02) - m02 - mult*m01;
+      *outStream << "m03 =   (mult*m01 + m02) - m02 - mult*m01 = " << "\n" << m03;
+      if (m03.norm(NORM_FRO) > zero || m03.norm(NORM_ONE) > zero || m03.norm(NORM_INF) > zero) {
+        *outStream << " ^^^^----FAILURE!" << "\n";
+        errorFlag++;
+      }
+
+      m03 = m01 - (m01.getInverse()).getInverse();
+      *outStream << "\nm03 =   m01 - inv(inv(m01)) = " << "\n" << m03;
+      if (m03.norm(NORM_FRO) > zero || m03.norm(NORM_ONE) > zero || m03.norm(NORM_INF) > zero) {
+        *outStream << " ^^^^----FAILURE!" << "\n";
+        errorFlag++;
+      }
+
+      m03 = m01 - (m01.getTranspose()).getTranspose();
+      *outStream << "\nm03 =   m01 - (m01^T)^T = " << "\n" << m03;
+      if (m03.norm(NORM_FRO) > zero || m03.norm(NORM_ONE) > zero || m03.norm(NORM_INF) > zero) {
+        *outStream << " ^^^^----FAILURE!" << "\n";
+        errorFlag++;
+      }
+
+      double res = 1.0 - m01.det() * (m01.getInverse()).det();
+      *outStream << "\n1.0 - det(m01) * det(inv(m01)) = " << res << '\n';
+      if (std::abs(res) > zero) {
+        *outStream << " ^^^^----FAILURE!" << "\n";
+        errorFlag++;
+      }
+
+      v02 = v01*m01.getTranspose() - m01*v01;
+      *outStream << "\nv02 =   (v01^T * m01^T)^T - m01*v01 = " << v02 << "\n";
+      if (v02.norm(NORM_TWO) > zero || v02.norm(NORM_ONE) > zero || v02.norm(NORM_INF) > zero) {
+        *outStream << " ^^^^----FAILURE!" << "\n";
+        errorFlag++;
+      }
+
+      m03 = (m01*m02).getInverse() - (m02.getInverse())*(m01.getInverse());
+      *outStream << "\nm03 =   inv(m01*m02) - inv(m02)*inv(m01) = " << "\n" << m03;
+      if (m03.norm(NORM_FRO) > zero || m03.norm(NORM_ONE) > zero || m03.norm(NORM_INF) > zero) {
+        *outStream << " ^^^^----FAILURE!" << "\n";
+        errorFlag++;
+      }
+      
+      *outStream << "\n";
+    }
+  }
+  catch (std::logic_error err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1;
+  };
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
+
+  return errorFlag;
 }

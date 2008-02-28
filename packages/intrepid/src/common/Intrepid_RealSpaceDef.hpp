@@ -47,6 +47,8 @@ Point<Scalar>::Point(const Point<Scalar>& right) {
   data_ = right.data_;
   frameKind_ = right.frameKind_;
 }
+
+
   
 template<class Scalar>
 Point<Scalar>::Point(const int dim,
@@ -59,12 +61,16 @@ Point<Scalar>::Point(const int dim,
   data_.assign(dim, (Scalar)0);
 }
 
+
+
 template<class Scalar>
 Point<Scalar>::Point(const Scalar x,
                      const EFrame frameKind) : frameKind_(frameKind) {
   data_.resize(1);
   data_[0] = x;
 }
+
+
   
 template<class Scalar>
 Point<Scalar>::Point(const Scalar x, 
@@ -74,6 +80,8 @@ Point<Scalar>::Point(const Scalar x,
   data_[0] = x;
   data_[1] = y;
 }
+
+
   
 template<class Scalar>
 Point<Scalar>::Point(const int x, 
@@ -83,6 +91,8 @@ Point<Scalar>::Point(const int x,
   data_[0] = (Scalar)x;
   data_[1] = (Scalar)y;
 }
+
+
   
 template<class Scalar>
 Point<Scalar>::Point(const Scalar x, 
@@ -94,6 +104,8 @@ Point<Scalar>::Point(const Scalar x,
   data_[1] = y;
   data_[2] = z;
 }
+
+
   
 template<class Scalar>
 Point<Scalar>::Point(const Scalar* dataPtr, 
@@ -106,26 +118,36 @@ Point<Scalar>::Point(const Scalar* dataPtr,
 #endif
   data_.assign(dataPtr, dataPtr + dim);
 }
+
+
   
 template<class Scalar>
 inline int Point<Scalar>::getDim() const {
   return data_.size();
 }
+
+
   
 template<class Scalar>
 inline EFrame Point<Scalar>::getFrameKind() const {
   return frameKind_;
 }
+
+
   
 template<class Scalar>
 inline const char* Point<Scalar>::getFrameName() const {
   return FrameNames[frameKind_];
 }
 
+
+
 template<class Scalar>
 inline const Teuchos::Array<Scalar> & Point<Scalar>::getCoordinates() const {
   return data_;
 }
+
+
   
 template<class Scalar>
 inline void Point<Scalar>::setCoordinates(const Scalar* dataPtr, 
@@ -139,11 +161,14 @@ inline void Point<Scalar>::setCoordinates(const Scalar* dataPtr,
     data_[dim] = dataPtr[dim];
   }
 }
+
+
   
 template<class Scalar>
 inline void Point<Scalar>::setFrameKind(const EFrame newFrameKind) {
   frameKind_ = newFrameKind;
 }
+
   
   
 template<class Scalar>
@@ -161,6 +186,8 @@ Scalar Point<Scalar>::distance(const Point& endPoint) const {
   }
   return (Scalar)std::sqrt(temp);
 }
+
+
   
 template<class Scalar>
 Scalar Point<Scalar>::norm(ENorm normType) const{
@@ -185,15 +212,14 @@ Scalar Point<Scalar>::norm(ENorm normType) const{
       }
       break;
     default:
-#ifdef HAVE_INTREPID_DEBUG
       TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
                           std::invalid_argument,
                           ">>> ERROR (Point): Invalid argument normType.");
-#endif
-     ;
   }
   return temp;
 }
+
+
   
 template<class Scalar>
 const Scalar & Point<Scalar>::operator [] (const int coordinateId) const {
@@ -204,6 +230,8 @@ const Scalar & Point<Scalar>::operator [] (const int coordinateId) const {
 #endif
   return data_[coordinateId];
 }
+
+
   
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator = (const Point<Scalar>& right)
@@ -220,6 +248,8 @@ inline Point<Scalar> & Point<Scalar>::operator = (const Point<Scalar>& right)
   frameKind_ = right.frameKind_;      // changes point type of left!
   return *this;
 }
+
+
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator += (const Point<Scalar>& right)
@@ -246,15 +276,14 @@ inline Point<Scalar> & Point<Scalar>::operator += (const Point<Scalar>& right)
       data_[0] += right.data_[0];
       break;
     default:
-#ifdef HAVE_INTREPID_DEBUG
       TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Point): Invalid point dimension.");
-#endif
-      ;
   }
   return *this;
 }
+
+
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator ^= (const Point<Scalar>& right)
@@ -274,6 +303,8 @@ inline Point<Scalar> & Point<Scalar>::operator ^= (const Point<Scalar>& right)
   data_  = tmp;
   return *this;
 }
+
+
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator -= (const Point<Scalar>& right)
@@ -300,15 +331,14 @@ inline Point<Scalar> & Point<Scalar>::operator -= (const Point<Scalar>& right)
       data_[0] -= right.data_[0];
       break;
     default:
-#ifdef HAVE_INTREPID_DEBUG
       TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Point): Invalid point dimension.");
-#endif
-      ;
   }
   return *this;
 }
+
+
 
 template<class Scalar>
 inline Point<Scalar> & Point<Scalar>::operator *= (const Scalar left)
@@ -327,12 +357,9 @@ inline Point<Scalar> & Point<Scalar>::operator *= (const Scalar left)
       data_[0] *= left;
       break;
     default:
-#ifdef HAVE_INTREPID_DEBUG
       TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Point): Invalid point dimension.");
-#endif
-      ;
   }
   return *this;
 }
@@ -350,12 +377,16 @@ const Point<Scalar> operator ^ (const Point<Scalar>& left, const Point<Scalar>& 
   return result;
 }
 
+
+
 template<class Scalar>
 const Point<Scalar> operator + (const Point<Scalar>& left, const Point<Scalar>& right) {
   Point<Scalar> result(left);
   result += right;
   return result;
 }
+
+
 
 template<class Scalar>
 const Point<Scalar> operator - (const Point<Scalar>& left, const Point<Scalar>& right) {
@@ -364,12 +395,16 @@ const Point<Scalar> operator - (const Point<Scalar>& left, const Point<Scalar>& 
   return result;
 }
 
+
+
 template<class Scalar>
 const Point<Scalar> operator * (const Scalar left, const Point<Scalar>& right) {
   Point<Scalar> result(right);
   result *= left;
   return result;
 }
+
+
 
 template<class Scalar>
 const Scalar operator * (const Point<Scalar>& left, const Point<Scalar>& right) {
@@ -393,15 +428,14 @@ const Scalar operator * (const Point<Scalar>& left, const Point<Scalar>& right) 
       result = left.getCoordinates()[0]*right.getCoordinates()[0];
       break;
     default:
-#ifdef HAVE_INTREPID_DEBUG
       TEST_FOR_EXCEPTION( ( (left.getDim() != 1) && (left.getDim() != 2) && (left.getDim() != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Point): Invalid point dimension.");
-#endif
-      ;
   }
   return result;
 }
+
+
 
 template<class Scalar>
 std::ostream& operator << (std::ostream& os, const Point<Scalar>& point) {
@@ -428,6 +462,8 @@ std::ostream& operator << (std::ostream& os, const Point<Scalar>& point) {
 
 // End member, friend, and related function definitions of class Point.
 
+
+
 //===========================================================================//
 //                                                                           //
 //              Member function definitions of the class Matrix.             //
@@ -439,16 +475,28 @@ Matrix<Scalar>::Matrix(const Matrix<Scalar>& right){
   elements_.assign(right.elements_.begin(), right.elements_.end());
 }
 
+
+
 template<class Scalar>
 Matrix<Scalar>::Matrix(const int dim){
-  assert(0 < dim && dim <= INTREPID_MAX_DIMENSION);
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (dim < 1) || (dim > INTREPID_MAX_DIMENSION) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Invalid dim argument.");
+#endif
   Teuchos::Array<Scalar> tmp(dim);
   elements_.assign(dim,tmp);
 }
+
+
 
 template<class Scalar>
 Matrix<Scalar>::Matrix(const Scalar* dataPtr, const int dim){
-  assert(0 < dim && dim <= INTREPID_MAX_DIMENSION);
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (dim < 1) || (dim > INTREPID_MAX_DIMENSION) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Invalid dim argument.");
+#endif
   Teuchos::Array<Scalar> tmp(dim);
   elements_.assign(dim,tmp);
   for(int i=0; i < dim; ++i){
@@ -458,61 +506,77 @@ Matrix<Scalar>::Matrix(const Scalar* dataPtr, const int dim){
   }
 }
 
+
+
 template<class Scalar>
 void Matrix<Scalar>::setElements(const Scalar* dataPtr, const int dim){
-  assert(this -> getDim() == dim);
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this->getDim() != dim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Invalid dim argument.");
+#endif
   for(int i=0; i < dim; ++i){
     for(int j=0; j < dim; ++j){
       elements_[i][j]=*(dataPtr+i*dim+j);
     }
   }
 }
+
+
 
 template<class Scalar>
 int Matrix<Scalar>::getDim() const {
   return elements_.size();
 }
 
+
+
 template<class Scalar>
 Scalar Matrix<Scalar>::getElement(int rowID, int colID) const {
-  assert(0 <= rowID && rowID < (int)elements_.size());
-  assert(0 <= colID && colID < (int)elements_.size());
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (rowID < 0) || (rowID >= (int)elements_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): row ID out of range.");
+  TEST_FOR_EXCEPTION( ( (colID < 0) || (colID >= (int)elements_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): column ID out of range.");
+#endif
   return( elements_[rowID][colID]);
 }
 
+
+
 template<class Scalar>
 Point<Scalar> Matrix<Scalar>::getColumn(int colID) const {
-  assert(0<=colID && (unsigned int)colID<elements_.size());
-  switch (getDim()) {
-    case 3:
-      return Point<Scalar>(elements_[0][colID],
-                           elements_[1][colID],
-                           elements_[2][colID]);
-    case 2:
-      return Point<Scalar>(elements_[0][colID],
-                           elements_[1][colID]);
-    default: // = case 1
-      return Point<Scalar>(elements_[0][colID]);
-  }
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (colID < 0) || (colID >= (int)elements_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): column ID out of range.");
+#endif
+  Scalar elVec[INTREPID_MAX_DIMENSION];
+  int myDim = getDim();
+  for (int i=0; i<myDim; i++)
+    elVec[i] = elements_[i][colID];
+  return Point<Scalar>(elVec, myDim);
 }
+
+
 
 template<class Scalar>
 Point<Scalar> Matrix<Scalar>::getRow(int rowID) const {
-  assert(0 <= rowID && rowID < (int)elements_.size());
-  switch (getDim()) {
-    case 3:
-      return Point<Scalar>(elements_[rowID][0],
-                           elements_[rowID][1],
-                           elements_[rowID][2]);
-      break;
-    case 2:
-      return Point<Scalar>(elements_[rowID][0],
-                           elements_[rowID][1]);
-      break;
-    default: // = case 1
-      return Point<Scalar>(elements_[rowID][0]);
-  }
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (rowID < 0) || (rowID >= (int)elements_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): row ID out of range.");
+#endif
+  Scalar elVec[INTREPID_MAX_DIMENSION];
+  int myDim = getDim();
+  for (int i=0; i<myDim; i++)
+    elVec[i] = elements_[rowID][i];
+  return Point<Scalar>(elVec, myDim);
 }
+
+
 
 template<class Scalar>
 Matrix<Scalar> Matrix<Scalar>::getTranspose() const {
@@ -526,6 +590,8 @@ Matrix<Scalar> Matrix<Scalar>::getTranspose() const {
   }
   return transpose;
 }
+
+
 
 template<class Scalar>
 Matrix<Scalar> Matrix<Scalar>::getInverse() const {
@@ -617,6 +683,8 @@ void Matrix<Scalar>::transpose() {
   }
 }
 
+
+
 template<class Scalar>
 Scalar Matrix<Scalar>::det() const {
   int i,j,rowID = 0;
@@ -624,6 +692,7 @@ Scalar Matrix<Scalar>::det() const {
   int rowperm[3]={0,1,2};
   int colperm[3]={0,1,2}; // Complete pivoting
   Scalar emax(0), determinant(0);
+
   switch (getDim()) {
     case 3:
       for(i=0; i < 3; ++i){
@@ -658,74 +727,83 @@ Scalar Matrix<Scalar>::det() const {
           if( rowID ) determinant = -determinant;
           if( colID ) determinant = -determinant;
       }
-      return(determinant); // vulnerable to underflow and overflow
+      break;
     case 2:
-      return(elements_[0][0]*elements_[1][1]-
-             elements_[0][1]*elements_[1][0]);
-    default: // case 1
-      return(elements_[0][0]);
+      determinant = elements_[0][0]*elements_[1][1]-
+                    elements_[0][1]*elements_[1][0];
+      break;
+    case 1:
+      determinant = elements_[0][0];
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
+  return determinant;
 }
+
+
 
 template<class Scalar>
 Scalar Matrix<Scalar>::norm(ENorm normType) const {
   int dim = getDim();
+  Scalar result(0);
+  Scalar temp(0);
+
   switch(normType) {
-    case NORM_ONE: { // std::max column sum of the absolute values
-      
+    case NORM_ONE:  // std::max column sum of the absolute values
       // Set result equal to 1-norm of the first column
-      Scalar result = this -> getColumn(0).norm(NORM_ONE);
+      result = this -> getColumn(0).norm(NORM_ONE);
       
       // If dim > 1 compare 1-norm of first column with 1-norm of second column
       if(dim > 1){
-        Scalar temp = getColumn(1).norm(NORM_ONE);
+        temp = getColumn(1).norm(NORM_ONE);
         result = (temp > result) ? temp : result;
       }
       
       // Now result holds the larger of the 1-norms of columns 1 and 2. If dim=3 compare
       // this number with the 1-norm of the 3rd column:
       if(dim == 3) {
-        Scalar temp = getColumn(2).norm(NORM_ONE);
+        temp = getColumn(2).norm(NORM_ONE);
         result = (temp > result) ? temp : result; 
       }
-      return result;
       break;
-    }
-    case NORM_INF:{// std::max row sum of absolute values: apply above algorithm to rows
+    case NORM_INF:  // std::max row sum of absolute values: apply above algorithm to rows
       // Set result equal to 1-norm of the first row
-      Scalar result = this -> getRow(0).norm(NORM_ONE);
+      result = this -> getRow(0).norm(NORM_ONE);
       
       // If dim > 1 compare 1-norm of first row with 1-norm of second row
       if(dim > 1){
-        Scalar temp = getRow(1).norm(NORM_ONE);
+        temp = getRow(1).norm(NORM_ONE);
         result = (temp > result) ? temp : result;
       }
       
       // Now result holds the larger of the 1-norms of rows 1 and 2. If dim=3 compare
       // this number with the 1-norm of the 3rd row:
       if(dim == 3) {
-        Scalar temp = getRow(2).norm(NORM_ONE);
+        temp = getRow(2).norm(NORM_ONE);
         result = (temp > result) ? temp : result; 
       }
-      return result;
       break;
-    }
-    case NORM_FRO: {                    // square root of sum of all element squares 
-      Scalar result = 0;
+    case NORM_FRO:  // square root of sum of all element squares 
       for(int i = 0; i < dim; i++){
         for(int j = 0; j < dim; j++){
           result += elements_[i][j]*elements_[i][j];
         }
       }
-      return std::sqrt(result);
+      result = std::sqrt(result);
       break;
-    }
     case NORM_TWO:
-    default: 
-      std::cerr << " Matrix norm not implemented "; exit(1);
-      return 0;
+    default:
+      TEST_FOR_EXCEPTION( ( (normType != NORM_ONE) && (normType != NORM_INF) && (normType != NORM_FRO) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Matrix norm not implemented.");
   }
+  return result;
 }
+
+
 
 template<class Scalar>
 void Matrix<Scalar>::invert() {
@@ -733,19 +811,36 @@ void Matrix<Scalar>::invert() {
   *this = tempMatrix;
 }
 
+
+
 template<class Scalar>
 inline Matrix<Scalar> & Matrix<Scalar>::operator = (const Matrix<Scalar>& right)
 {
-  assert(this != &right);            // check for self-assignment
-  assert(getDim()==right.getDim());  // dimensions must match
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( getDim() != right.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Dimensions do not match in assignment statement.");
+#endif
   elements_ = right.elements_;
   return *this;
 }
 
+
+
 template<class Scalar>
 inline Matrix<Scalar> & Matrix<Scalar>::operator += (const Matrix<Scalar>& right)
 {
-  assert(this != &right);  // check for self-assignment
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( getDim() != right.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Dimensions do not match in in-place addition.");
+#endif
   switch (getDim()) {      
     case 3:
       elements_[0][0] += right.elements_[0][0];
@@ -758,25 +853,40 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator += (const Matrix<Scalar>& right
       //
       elements_[2][0] += right.elements_[2][0];
       elements_[2][1] += right.elements_[2][1];
-      elements_[2][2] += right.elements_[2][2];      
-      return *this;
+      elements_[2][2] += right.elements_[2][2];
+      break;
     case 2:
       elements_[0][0] += right.elements_[0][0];
       elements_[0][1] += right.elements_[0][1];
       //
       elements_[1][0] += right.elements_[1][0];
       elements_[1][1] += right.elements_[1][1];
-      return *this;
-    default: // case 1
+      break;
+    case 1:
       elements_[0][0] += right.elements_[0][0];
-      return *this;
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
+
+  return *this;
 }
+
+
 
 template<class Scalar>
 inline Matrix<Scalar> & Matrix<Scalar>::operator -= (const Matrix<Scalar>& right)
 {
-  assert(this != &right);  // check for self-assignment
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this == &right ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Self-assignment prohibited.");
+  TEST_FOR_EXCEPTION( ( getDim() != right.getDim() ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Dimensions do not match in in-place subtraction.");
+#endif
   switch (getDim()) {      
     case 3:
       elements_[0][0] -= right.elements_[0][0];
@@ -789,20 +899,28 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator -= (const Matrix<Scalar>& right
       //
       elements_[2][0] -= right.elements_[2][0];
       elements_[2][1] -= right.elements_[2][1];
-      elements_[2][2] -= right.elements_[2][2];      
-      return *this;
+      elements_[2][2] -= right.elements_[2][2];
+      break;
     case 2:
       elements_[0][0] -= right.elements_[0][0];
       elements_[0][1] -= right.elements_[0][1];
       //
       elements_[1][0] -= right.elements_[1][0];
       elements_[1][1] -= right.elements_[1][1];
-      return *this;
-    default: // case 1
+      break;
+    case 1:
       elements_[0][0] -= right.elements_[0][0];
-      return *this;
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
+
+  return *this;
 }
+
+
 
 template<class Scalar>
 inline Matrix<Scalar> & Matrix<Scalar>::operator *= (const Scalar left)
@@ -819,20 +937,27 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator *= (const Scalar left)
       //
       elements_[2][0] *= left;
       elements_[2][1] *= left;
-      elements_[2][2] *= left;      
-      return *this;
+      elements_[2][2] *= left;
+      break;
     case 2:
       elements_[0][0] *= left;
       elements_[0][1] *= left;
       //
       elements_[1][0] *= left;
       elements_[1][1] *= left;
-      return *this;
-    default: // case 1
+      break;
+    case 1:
       elements_[0][0] *= left;
-      return *this;
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
+
+  return *this;
 }
+
 //===========================================================================//
 //                                                                           //
 //  END of member definitions for class Matrix; START friends and related    //
@@ -846,12 +971,16 @@ const Matrix<Scalar> operator + (const Matrix<Scalar>& left, const Matrix<Scalar
   return result;
 }
 
+
+
 template<class Scalar>
 const Matrix<Scalar> operator - (const Matrix<Scalar>& left, const Matrix<Scalar>& right){
   Matrix<Scalar> result(left);
   result -= right;
   return result;
 }
+
+
 
 template<class Scalar>
 const Matrix<Scalar> operator * (const Scalar left, const Matrix<Scalar>& right) {
@@ -860,11 +989,17 @@ const Matrix<Scalar> operator * (const Scalar left, const Matrix<Scalar>& right)
   return result;
 }
 
+
+
 template<class Scalar>
 const Point<Scalar> operator * (const Matrix<Scalar>& mat, const Point<Scalar>& vec) {
   Scalar Product[3];
   int dim = vec.getDim();
-  assert(mat.getDim()==dim);
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( mat.getDim() != dim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
+#endif
   for (int i = 0; i < dim; ++i) {
     Product[i] = 0.0;
     for (int j = 0; j < dim; ++j) {
@@ -874,11 +1009,17 @@ const Point<Scalar> operator * (const Matrix<Scalar>& mat, const Point<Scalar>& 
   return Point<Scalar>(Product, dim);
 }
 
+
+
 template<class Scalar>
 const Point<Scalar> operator * ( const Point<Scalar>& vec, const Matrix<Scalar>& mat) {
   Scalar Product[3];
   int dim = vec.getDim();
-  assert(mat.getDim() == dim);
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( mat.getDim() != dim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
+#endif
   for (int i = 0; i < dim; ++i)
   {
     Product[i] = 0.0;
@@ -889,10 +1030,15 @@ const Point<Scalar> operator * ( const Point<Scalar>& vec, const Matrix<Scalar>&
 }
 
 
+
 template<class Scalar>
 const Matrix<Scalar> operator * (const Matrix<Scalar>& lmat, const Matrix<Scalar>& rmat) {
-  assert(lmat.getDim()==rmat.getDim());
   int dim = lmat.getDim();
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( rmat.getDim() != dim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Matrix dimensions do not match.");
+#endif
   Scalar Product[9];
   for (int i = 0; i < dim; ++i)
   {
@@ -906,34 +1052,53 @@ const Matrix<Scalar> operator * (const Matrix<Scalar>& lmat, const Matrix<Scalar
   return Matrix<Scalar>(Product, dim);
 }
 
+
+
 template<class Scalar>
-std::ostream& operator << (std::ostream& os, const Matrix<Scalar>& matrix)
-{
+std::ostream& operator << (std::ostream& os, const Matrix<Scalar>& matrix) {
+  // Save the format state of the original ostream os.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(os);
+
   short dim = matrix.getDim();
-  os  << "\nMatrix info: ambient dimension = " << dim << "D\n";
+
+  int myprec = os.precision();
+  int outWidth = myprec+10;
+
+  os << " " <<  dim << "D "<< "Matrix:\n";
+
+  os.setf(std::ios_base::left);
+  os << "           ";
   switch(dim){
     case 1:
-      os << "               Col 0" << std::endl;
+      os << std::setw(outWidth) << "Col 0" << std::endl;
       break;
     case 2:
-      os << "               Col 0          Col 1" << std::endl;
+      os << std::setw(outWidth) << "Col 0" << std::setw(outWidth) << "Col 1" << std::endl;
       break;
     case 3:
-      os << "               Col 0          Col 1          Col 2" << std::endl;
+      os << std::setw(outWidth) << "Col 0" << std::setw(outWidth) << "Col 1" << std::setw(outWidth) << "Col 2" << std::endl;
       break;
     default:
-      os << "Matrix error: invalid ambient dimension\n";
-      exit(1);
+      TEST_FOR_EXCEPTION( ( (dim != 1) && (dim != 2) && (dim != 3) ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
-  os 	<< std::setprecision(6) << std::setiosflags(std::ios::scientific);
+
+  os.setf(std::ios_base::scientific, std::ios_base::floatfield);
+  os.setf(std::ios_base::right);
+
   for(int i = 0; i < dim; ++i){
     os << " Row "<< i<< " ";
     for(int j = 0; j < dim; ++j) {
-      os << std::setiosflags(std::ios::right) << std::setw(16) << matrix.getElement(i,j);
+      os << std::setw(outWidth) << matrix.getElement(i,j);
     }
     os << std::endl;
   }
-  os << std::resetiosflags(std::ios::floatfield);
+
+  // reset format state of os
+  os.copyfmt(oldFormatState);
+
   return os;
 }
 

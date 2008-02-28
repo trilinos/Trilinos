@@ -27,9 +27,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-\brief  Illustrates use of the Point class.
-\author Created by P. Bochev and D. Ridzal
+/** \file test_01.cpp
+\brief  Unit tests for the Point class.
+\author Created by P. Bochev and D. Ridzal.
 */
 
 #include "Intrepid_RealSpace.hpp"
