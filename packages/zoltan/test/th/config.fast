@@ -36,17 +36,21 @@ FAST_PROJECT        zoltan
 # Tests on Octopi using OpenMPI
 ############################################################################
 
-Test zoltan-octopi_v3_OMPI-nightly
+#Test zoltan-octopi_v3_OMPI-nightly
+#octopi.sandia.gov
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
+
+Test zoltan-octopi_CPP_v3_OMPI-nightly
 octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zCPPdrive 'test/{ch_hammond,hg_ibm03}' 
 
-#Test zoltan-octopi_CPP_v3_OMPI-nightly
-#octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zCPPdrive 'test/{ch_hammond,hg_ibm03}' 
+Test zoltan-octopi_F90_v3_OMPI-nightly
+octopi.sandia.gov
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
 
-#Test zoltan-octopi_F90_v3_OMPI-nightly
-#octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
+Test zoltan-octopi_MAIN_OMPI-nightly
+octopi.sandia.gov
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_v3_LAM-nightly
 #octopi.sandia.gov
@@ -63,6 +67,10 @@ cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan
 #Test zoltan-octopi_v3_junktest-nightly
 #octopi.sandia.gov
 #cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r Zoltan_v3_Release zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_serial}' 
+
+Test zoltan-octopi_MAIN_LAMPURE-nightly
+octopi.sandia.gov
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 Test zoltan-octopi_v3_LAMPURE-nightly
 octopi.sandia.gov

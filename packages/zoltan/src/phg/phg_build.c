@@ -109,6 +109,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->AppObjSizes = NULL;
   zhg->showMoveVol = 0;
   zhg->GnRepartVtx = 0;
+  zhg->GnRepartEdge = 0;
   zhg->nObj = 0;
   zhg->GnObj = 0;
   zhg->nRemove = 0;
@@ -1587,13 +1588,11 @@ int nRepartEdge = 0, nRepartVtx = 0;
     nRepartVtx++;  /* # of repartition vtx == max partition + 1 */
     MPI_Allreduce(&nRepartVtx, &(zhg->GnRepartVtx), 1, MPI_INT, MPI_MAX,
                   zz->Communicator);
-/*
     MPI_Allreduce(&nRepartEdge, &(zhg->GnRepartEdge), 1, MPI_INT, MPI_SUM,
                   zz->Communicator);
-*/
 
     nRepartVtx = NumRepart(myProc_x, nProc_x, zhg->GnRepartVtx);
-    nRepartEdge = NumRepart(myProc_y, nProc_y, zhg->GnObj);
+    nRepartEdge = NumRepart(myProc_y, nProc_y, zhg->GnRepartEdge);
   }
 
   /*
@@ -2874,7 +2873,7 @@ static int Zoltan_PHG_Add_Repart_Data(
 char *yo = "Zoltan_PHG_Add_Repart_Data";
 PHGComm *hgc = phg->comm;
 int gnRepartVtx = zhg->GnRepartVtx;
-int gnRepartEdge = zhg->GnObj;
+int gnRepartEdge = zhg->GnRepartEdge;
 int myProc_x = hgc->myProc_x;
 int myProc_y = hgc->myProc_y;
 int nProc_x = hgc->nProc_x;
@@ -3276,7 +3275,7 @@ int i;
 
   for (sum = 0, i = 0; i < nProc_y; i++) {
     phg->dist_y[i] -= sum;
-    sum += NumRepart(i, nProc_y, zhg->GnObj);
+    sum += NumRepart(i, nProc_y, zhg->GnRepartEdge);
   }
   phg->dist_y[nProc_y] -= sum;
 
