@@ -33,7 +33,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = simpleEpetraExteranCInterface$(EXEEXT)
+noinst_PROGRAMS = simpleEpetraExteranCInterface$(EXEEXT) \
+	simpleEpetraFortranInterface$(EXEEXT)
 subdir = test/FortranCppInterface
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -76,6 +77,11 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(EPETRAEXT_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+am_simpleEpetraFortranInterface_OBJECTS = FEpetra_Map.$(OBJEXT) \
+	FEpetra_Vector.$(OBJEXT) \
+	simpleEpetraFortranInterface.$(OBJEXT)
+simpleEpetraFortranInterface_OBJECTS =  \
+	$(am_simpleEpetraFortranInterface_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -88,8 +94,14 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(simpleEpetraExteranCInterface_SOURCES)
-DIST_SOURCES = $(simpleEpetraExteranCInterface_SOURCES)
+FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
+FCLD = $(FC)
+FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+	$@
+SOURCES = $(simpleEpetraExteranCInterface_SOURCES) \
+	$(simpleEpetraFortranInterface_SOURCES)
+DIST_SOURCES = $(simpleEpetraExteranCInterface_SOURCES) \
+	$(simpleEpetraFortranInterface_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -222,6 +234,13 @@ simpleEpetraExteranCInterface_SOURCES = \
 
 simpleEpetraExteranCInterface_DEPENDENCIES = $(common_dependencies)
 simpleEpetraExteranCInterface_LDADD = $(common_ldadd)
+simpleEpetraFortranInterface_SOURCES = \
+  $(srcdir)/FEpetra_Map.cpp \
+  $(srcdir)/FEpetra_Vector.cpp \
+  $(srcdir)/simpleEpetraFortranInterface.f90
+
+simpleEpetraFortranInterface_DEPENDENCIES = $(common_dependencies)
+simpleEpetraFortranInterface_LDADD = $(common_ldadd)
 
 #
 # Common stuff
@@ -238,7 +257,7 @@ common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .c .cpp .f90 .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -274,6 +293,9 @@ clean-noinstPROGRAMS:
 simpleEpetraExteranCInterface$(EXEEXT): $(simpleEpetraExteranCInterface_OBJECTS) $(simpleEpetraExteranCInterface_DEPENDENCIES) 
 	@rm -f simpleEpetraExteranCInterface$(EXEEXT)
 	$(CXXLINK) $(simpleEpetraExteranCInterface_OBJECTS) $(simpleEpetraExteranCInterface_LDADD) $(LIBS)
+simpleEpetraFortranInterface$(EXEEXT): $(simpleEpetraFortranInterface_OBJECTS) $(simpleEpetraFortranInterface_DEPENDENCIES) 
+	@rm -f simpleEpetraFortranInterface$(EXEEXT)
+	$(CXXLINK) $(simpleEpetraFortranInterface_OBJECTS) $(simpleEpetraFortranInterface_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -354,6 +376,18 @@ FEpetra_Vector.obj: $(srcdir)/FEpetra_Vector.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEpetra_Vector.cpp' object='FEpetra_Vector.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEpetra_Vector.obj `if test -f '$(srcdir)/FEpetra_Vector.cpp'; then $(CYGPATH_W) '$(srcdir)/FEpetra_Vector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEpetra_Vector.cpp'; fi`
+
+.f90.o:
+	$(FCCOMPILE) -c -o $@ $<
+
+.f90.obj:
+	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+simpleEpetraFortranInterface.o: $(srcdir)/simpleEpetraFortranInterface.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o simpleEpetraFortranInterface.o `test -f '$(srcdir)/simpleEpetraFortranInterface.f90' || echo '$(srcdir)/'`$(srcdir)/simpleEpetraFortranInterface.f90
+
+simpleEpetraFortranInterface.obj: $(srcdir)/simpleEpetraFortranInterface.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o simpleEpetraFortranInterface.obj `if test -f '$(srcdir)/simpleEpetraFortranInterface.f90'; then $(CYGPATH_W) '$(srcdir)/simpleEpetraFortranInterface.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/simpleEpetraFortranInterface.f90'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

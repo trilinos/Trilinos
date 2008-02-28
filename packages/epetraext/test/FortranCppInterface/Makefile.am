@@ -5,7 +5,7 @@ EXEEXT = .exe
 # Actual programs
 #
 
-noinst_PROGRAMS = simpleEpetraExteranCInterface
+noinst_PROGRAMS = simpleEpetraExteranCInterface simpleEpetraFortranInterface
 
 simpleEpetraExteranCInterface_SOURCES = \
   $(srcdir)/simpleEpetraExteranCInterface.c \
@@ -13,6 +13,14 @@ simpleEpetraExteranCInterface_SOURCES = \
   $(srcdir)/FEpetra_Vector.cpp
 simpleEpetraExteranCInterface_DEPENDENCIES = $(common_dependencies)
 simpleEpetraExteranCInterface_LDADD = $(common_ldadd)
+
+simpleEpetraFortranInterface_SOURCES = \
+  $(srcdir)/FEpetra_Map.cpp \
+  $(srcdir)/FEpetra_Vector.cpp \
+  $(srcdir)/simpleEpetraFortranInterface.f90
+simpleEpetraFortranInterface_DEPENDENCIES = $(common_dependencies)
+simpleEpetraFortranInterface_LDADD = $(common_ldadd)
+
 
 
 #
