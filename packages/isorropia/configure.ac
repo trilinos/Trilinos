@@ -305,6 +305,7 @@ AC_CONFIG_FILES([
     test/zoltan/Makefile
     test/utest/Makefile
     test/utils/Makefile
+    test/mtx/Makefile
     ])
 
 AC_OUTPUT
