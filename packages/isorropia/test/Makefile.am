@@ -42,7 +42,7 @@ endif
 #
 # Note: utils must be built first, before the other subdirs
 #
-SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR)
+SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) mtx
 
 TESTS = \
 utest/utest.exe \

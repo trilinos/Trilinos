@@ -66,7 +66,7 @@ target_triplet = @target@
 TESTS = utest/utest.exe rebalance_1d_default/rebalance_1d_default.exe \
 	$(am__EXEEXT_1)
 subdir = test
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -110,7 +110,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
 ETAGS = etags
 CTAGS = ctags
 @BUILD_ZOLTAN_TRUE@am__EXEEXT_1 = rebalance_zoltan.exe
-DIST_SUBDIRS = utils utest rebalance_1d_default zoltan
+DIST_SUBDIRS = utils utest rebalance_1d_default zoltan mtx
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -243,7 +243,7 @@ top_srcdir = @top_srcdir@
 #
 # Note: utils must be built first, before the other subdirs
 #
-SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR)
+SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) mtx
 EXTRA_DIST = definition
 all: all-recursive
 
