@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
 
   Teuchos::RCP<Epetra_CrsMatrix> new_matrix = rd.redistribute(*matrix_ptr);
 
-  show_matrix("After load balancing", matrix_ptr, Comm);
+  show_matrix("After load balancing", new_matrix.get(), Comm);
 
   // What is the difference between using Redistributor and doing this:
   //
