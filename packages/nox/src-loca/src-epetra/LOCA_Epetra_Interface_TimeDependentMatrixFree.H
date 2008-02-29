@@ -65,7 +65,7 @@ namespace LOCA {
        * This is needed for linear stability analysis and Hopf tracking.
        */
       class TimeDependentMatrixFree : 
-	public LOCA::Epetra::Interface::Required {
+	public virtual LOCA::Epetra::Interface::Required {
 
       public:
  
