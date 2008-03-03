@@ -33,9 +33,9 @@ extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, i
 #endif /* ZOLTAN_PARMETIS */
 
 #ifdef ZOLTAN_SCOTCH
-#undef MAX
-#undef MIN
-#include "common.h"
+/* #undef MAX */
+/* #undef MIN */
+/* #include "common.h" */
 #include "ptscotch.h"
 #ifndef indextype
 #define indextype SCOTCH_Num
