@@ -100,8 +100,10 @@ bool testSubVectorView(
     TEST_EQUALITY_CONST(sv.subDim(),0);
     TEST_EQUALITY_CONST(sv.values(),null);
     TEST_EQUALITY_CONST(sv.stride(),0);
-    TEST_THROW(sv[0],std::out_of_range);
-    TEST_THROW(sv(0),std::out_of_range);
+#ifdef TEUCHOS_DEBUG
+      TEST_THROW(sv[0],std::out_of_range);
+      TEST_THROW(sv(0),std::out_of_range);
+#endif
   }
 
   {
@@ -111,18 +113,24 @@ bool testSubVectorView(
     TEST_EQUALITY_CONST(sv.subDim(),0);
     TEST_EQUALITY_CONST(sv.values(),null);
     TEST_EQUALITY_CONST(sv.stride(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(sv[0],std::out_of_range);
     TEST_THROW(sv(0),std::out_of_range);
+#endif
   }
 
   out << "\nCreating value data for subview ...\n";
   const ArrayRCP<Scalar>
-    values = Teuchos::arcp<Scalar>(subDim*stride);
-  std::fill(values.begin(),values.end(),as<Scalar>(-1));
-  typename ArrayRCP<Scalar>::iterator itr = values.begin();
-  for ( int i = 0; i < subDim; ++i ) {
-    *itr = as<Scalar>(i);
-    itr+=stride;
+    values = Teuchos::arcp<Scalar>(subDim*std::abs(stride));
+  std::fill(values.begin(), values.end(), as<Scalar>(-1));
+  {
+    typename ArrayRCP<Scalar>::iterator itr = values.begin();
+    if (stride < 0)
+      itr += ( (-subDim*stride) - 1 );
+    for ( int i = 0; i < subDim; ++i ) {
+      *itr = as<Scalar>(i);
+      itr+=stride;
+    }
   }
 
   out << "\nCreating SubVectorView ...\n";
@@ -135,10 +143,12 @@ bool testSubVectorView(
     TEST_EQUALITY(sv.subDim(),subDim);
     TEST_EQUALITY(sv.values(),values);
     TEST_EQUALITY(sv.stride(),stride);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(sv[-1],std::out_of_range);
     TEST_THROW(sv(-1),std::out_of_range);
     TEST_THROW(sv[subDim],std::out_of_range);
     TEST_THROW(sv(subDim),std::out_of_range);
+#endif
     out << "\nTest that sv[i] == i ... ";
     bool local_success = true;
     for ( int i = 0; i < subDim; ++i )
@@ -156,10 +166,12 @@ bool testSubVectorView(
     TEST_EQUALITY(csv.subDim(),subDim);
     TEST_EQUALITY(csv.values(),values);
     TEST_EQUALITY(csv.stride(),stride);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csv[-1],std::out_of_range);
     TEST_THROW(csv(-1),std::out_of_range);
     TEST_THROW(csv[subDim],std::out_of_range);
     TEST_THROW(csv(subDim),std::out_of_range);
+#endif
     out << "\nTest that csv[i] == i ... ";
     bool local_success = true;
     for ( int i = 0; i < subDim; ++i )
@@ -170,24 +182,28 @@ bool testSubVectorView(
 
   {
     out << "\nUninitialize SubVectorView ...\n";
-    sv.set_uninitialized();
+    sv.uninitialize();
     TEST_EQUALITY_CONST(sv.globalOffset(),0);
     TEST_EQUALITY_CONST(sv.subDim(),0);
     TEST_EQUALITY_CONST(sv.values(),null);
     TEST_EQUALITY_CONST(sv.stride(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(sv[0],std::out_of_range);
     TEST_THROW(sv(0),std::out_of_range);
+#endif
   }
   
   {
     out << "\nUninitialize ConstSubVectorView ...\n";
-    csv.set_uninitialized();
+    csv.uninitialize();
     TEST_EQUALITY_CONST(csv.globalOffset(),0);
     TEST_EQUALITY_CONST(csv.subDim(),0);
     TEST_EQUALITY_CONST(csv.values(),null);
     TEST_EQUALITY_CONST(csv.stride(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csv[0],std::out_of_range);
     TEST_THROW(csv(0),std::out_of_range);
+#endif
   }
 
   {
@@ -197,10 +213,12 @@ bool testSubVectorView(
     TEST_EQUALITY(sv.subDim(),subDim);
     TEST_EQUALITY(sv.values(),values);
     TEST_EQUALITY(sv.stride(),stride);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(sv[-1],std::out_of_range);
     TEST_THROW(sv(-1),std::out_of_range);
     TEST_THROW(sv[subDim],std::out_of_range);
     TEST_THROW(sv(subDim),std::out_of_range);
+#endif
   }
 
   {
@@ -210,10 +228,12 @@ bool testSubVectorView(
     TEST_EQUALITY(csv.subDim(), subDim);
     TEST_EQUALITY(csv.values(), values);
     TEST_EQUALITY(csv.stride(), stride);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csv[-1], std::out_of_range);
     TEST_THROW(csv(-1), std::out_of_range);
     TEST_THROW(csv[subDim], std::out_of_range);
     TEST_THROW(csv(subDim), std::out_of_range);
+#endif
   }
 
   {
@@ -223,10 +243,12 @@ bool testSubVectorView(
     TEST_EQUALITY(sv2.subDim(),subDim);
     TEST_EQUALITY(sv2.values(),values);
     TEST_EQUALITY(sv2.stride(),stride);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(sv2[-1],std::out_of_range);
     TEST_THROW(sv2(-1),std::out_of_range);
     TEST_THROW(sv2[subDim],std::out_of_range);
     TEST_THROW(sv2(subDim),std::out_of_range);
+#endif
   }
 
   {
@@ -236,10 +258,12 @@ bool testSubVectorView(
     TEST_EQUALITY(csv2.subDim(),subDim);
     TEST_EQUALITY(csv2.values(),values);
     TEST_EQUALITY(csv2.stride(),stride);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csv2[-1],std::out_of_range);
     TEST_THROW(csv2(-1),std::out_of_range);
     TEST_THROW(csv2[subDim],std::out_of_range);
     TEST_THROW(csv2(subDim),std::out_of_range);
+#endif
   }
 
   {
@@ -257,7 +281,7 @@ bool testSubVectorView(
   {
     out << "\nTest copy of elements ...\n";
     SubVectorView<Scalar> sv2(globalOffset, subDim,
-      Teuchos::arcp<Scalar>(subDim*stride), stride);
+      Teuchos::arcp<Scalar>(subDim*std::abs(stride)), stride);
     RTOpPack::assign_entries<Scalar>(Teuchos::outArg(sv2), csv);
     out << "\nTest that sv2[i] == subDim-i-1 ... ";
     bool local_success = true;
@@ -315,8 +339,10 @@ bool testSubMultiVectorView(
     TEST_EQUALITY_CONST(smv.numSubCols(),0);
     TEST_EQUALITY_CONST(smv.values(),null);
     TEST_EQUALITY_CONST(smv.leadingDim(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(smv(0,0),std::out_of_range);
     TEST_THROW(smv.col(0),std::out_of_range);
+#endif
   }
 
   {
@@ -328,8 +354,10 @@ bool testSubMultiVectorView(
     TEST_EQUALITY_CONST(csmv.numSubCols(),0);
     TEST_EQUALITY_CONST(csmv.values(),null);
     TEST_EQUALITY_CONST(csmv.leadingDim(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csmv(0,0),std::out_of_range);
     TEST_THROW(csmv.col(0),std::out_of_range);
+#endif
   }
 
   out << "\nCreating value data for subview ...\n";
@@ -357,10 +385,12 @@ bool testSubMultiVectorView(
     TEST_EQUALITY(smv.values(),values);
     TEST_EQUALITY(smv.colOffset(),colOffset);
     TEST_EQUALITY(smv.numSubCols(),numSubCols);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(smv(-1,0),std::out_of_range);
     TEST_THROW(smv(subDim,0),std::out_of_range);
     TEST_THROW(smv(0,-1),std::out_of_range);
     TEST_THROW(smv(0,numSubCols),std::out_of_range);
+#endif
     out << "\nTest that smv(i,j) == i + j/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
@@ -387,10 +417,12 @@ bool testSubMultiVectorView(
     TEST_EQUALITY(csmv.values(),values);
     TEST_EQUALITY(csmv.colOffset(),colOffset);
     TEST_EQUALITY(csmv.numSubCols(),numSubCols);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csmv(-1,0),std::out_of_range);
     TEST_THROW(csmv(subDim,0),std::out_of_range);
     TEST_THROW(csmv(0,-1),std::out_of_range);
     TEST_THROW(csmv(0,numSubCols),std::out_of_range);
+#endif
     out << "\nTest that csmv(i,j) == i + j/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
@@ -408,28 +440,32 @@ bool testSubMultiVectorView(
 
   {
     out << "\nUninitialize SubMultiVectorView ...\n";
-    smv.set_uninitialized();
+    smv.uninitialize();
     TEST_EQUALITY_CONST(smv.globalOffset(),0);
     TEST_EQUALITY_CONST(smv.subDim(),0);
     TEST_EQUALITY_CONST(smv.colOffset(),0);
     TEST_EQUALITY_CONST(smv.numSubCols(),0);
     TEST_EQUALITY_CONST(smv.values(),null);
     TEST_EQUALITY_CONST(smv.leadingDim(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(smv(0,0),std::out_of_range);
     TEST_THROW(smv.col(0),std::out_of_range);
+#endif
   }
 
   {
     out << "\nUninitialize ConstSubMultiVectorView ...\n";
-    csmv.set_uninitialized();
+    csmv.uninitialize();
     TEST_EQUALITY_CONST(csmv.globalOffset(),0);
     TEST_EQUALITY_CONST(csmv.subDim(),0);
     TEST_EQUALITY_CONST(csmv.colOffset(),0);
     TEST_EQUALITY_CONST(csmv.numSubCols(),0);
     TEST_EQUALITY_CONST(csmv.values(),null);
     TEST_EQUALITY_CONST(csmv.leadingDim(),0);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csmv(0,0),std::out_of_range);
     TEST_THROW(csmv.col(0),std::out_of_range);
+#endif
   }
 
   {
@@ -440,10 +476,12 @@ bool testSubMultiVectorView(
     TEST_EQUALITY(smv.values(),values);
     TEST_EQUALITY(smv.colOffset(),colOffset);
     TEST_EQUALITY(smv.numSubCols(),numSubCols);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(smv(-1,0),std::out_of_range);
     TEST_THROW(smv(subDim,0),std::out_of_range);
     TEST_THROW(smv(0,-1),std::out_of_range);
     TEST_THROW(smv(0,numSubCols),std::out_of_range);
+#endif
   }
 
   {
@@ -454,10 +492,12 @@ bool testSubMultiVectorView(
     TEST_EQUALITY(csmv.values(),values);
     TEST_EQUALITY(csmv.colOffset(),colOffset);
     TEST_EQUALITY(csmv.numSubCols(),numSubCols);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csmv(-1,0),std::out_of_range);
     TEST_THROW(csmv(subDim,0),std::out_of_range);
     TEST_THROW(csmv(0,-1),std::out_of_range);
     TEST_THROW(csmv(0,numSubCols),std::out_of_range);
+#endif
   }
 
   {
@@ -468,10 +508,12 @@ bool testSubMultiVectorView(
     TEST_EQUALITY(smv2.values(),values);
     TEST_EQUALITY(smv2.colOffset(),colOffset);
     TEST_EQUALITY(smv2.numSubCols(),numSubCols);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(smv2(-1,0),std::out_of_range);
     TEST_THROW(smv2(subDim,0),std::out_of_range);
     TEST_THROW(smv2(0,-1),std::out_of_range);
     TEST_THROW(smv2(0,numSubCols),std::out_of_range);
+#endif
   }
 
   {
@@ -482,10 +524,12 @@ bool testSubMultiVectorView(
     TEST_EQUALITY(csmv2.values(),values);
     TEST_EQUALITY(csmv2.colOffset(),colOffset);
     TEST_EQUALITY(csmv2.numSubCols(),numSubCols);
+#ifdef TEUCHOS_DEBUG
     TEST_THROW(csmv2(-1,0),std::out_of_range);
     TEST_THROW(csmv2(subDim,0),std::out_of_range);
     TEST_THROW(csmv2(0,-1),std::out_of_range);
     TEST_THROW(csmv2(0,numSubCols),std::out_of_range);
+#endif
   }
 
   {

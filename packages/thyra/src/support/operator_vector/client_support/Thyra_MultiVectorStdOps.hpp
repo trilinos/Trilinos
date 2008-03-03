@@ -273,8 +273,7 @@ void Thyra::linear_combination(
     scale( beta, Y );
     return;
   }
-  RTOpPack::TOpLinearCombination<Scalar>
-    lin_comb_op(m,alpha.getRawPtr(),beta);
+  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha, beta);
   Thyra::applyOp<Scalar>( lin_comb_op, X, tuple(Y), null );
 }
 

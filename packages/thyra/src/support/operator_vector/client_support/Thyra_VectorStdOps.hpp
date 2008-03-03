@@ -319,9 +319,7 @@ void Thyra::linear_combination(
     Vt_S( y, beta );
     return;
   }
-  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(m,&alpha[0],beta);
-  // 2008/02/19: rabartl: ToDo: Remove all raw pointers from
-  // TOpLinearCombination!
+  RTOpPack::TOpLinearCombination<Scalar> lin_comb_op(alpha,beta);
   applyOp<Scalar>( lin_comb_op, x, tuple(y), null );
 }
 

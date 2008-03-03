@@ -33,6 +33,7 @@
 
 
 #include "RTOpPack_Types.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace RTOpPack {
@@ -40,141 +41,179 @@ namespace RTOpPack {
 
 /** \brief Class for a (sparse or dense) sub-vector.
  *
- *	Sparse and dense local vectors are supported as follows:
+ * Warning! This class is really nothing more than a dumb data container!
  *
- *	A dense vector <tt>vec</tt> is identified by <tt>vec.subDim() == vec.subNz()</tt>
- * and <tt>vec.indices() == NULL</tt> in which case
- *	<tt>vec.indicesStride()</tt>, <tt>vec.localOffset()</tt> and <tt>vec.isSorted()</tt>
- * are ignored.  For a dense sub-vector <tt>vec</tt>, the corresponding entries
- *	in the global vector <tt>x(j)</tt> (one based) are as follows:
+ * Sparse and dense local vectors are supported as follows:
+ *
+ * A dense vector <tt>vec</tt> is identified by <tt>vec.subDim() ==
+ * vec.subNz()</tt> and <tt>vec.indices() == Teuchos::null</tt> in which case
+ * <tt>vec.indicesStride()</tt>, <tt>vec.localOffset()</tt> and
+ * <tt>vec.isSorted()</tt> are ignored.  For a dense sub-vector <tt>vec</tt>,
+ * the corresponding entries in the global vector <tt>x(j)</tt> (zero-based)
+ * are as follows:
+
  \verbatim
 
- x( vec.globalOffset() + k )
- = vec.values()[ vec.valueStride() * k ]
+ x(vec.globalOffset() + k) == vec.values()[vec.valueStride() * k],
 
- for k = 0,...,vec.subDim()-1
+     for k = 0,...,vec.subDim()-1
+
  \endverbatim
- * The stride member <tt>vec.valueStride()</tt> may be positive (>0), negative (<0)
- * or even zero (0).  A negative stride <tt>vec.valueStride() < 0</tt> allows a
- * reverse traversal of the elements in <tt>vec.values()[]</tt>.  A zero stride
- * <tt>vec.valueStride() == 0</tt> allows a vector with all the elements the same.
+
+ * The stride member <tt>vec.valueStride()</tt> may be positive (>0) or
+ * negative (<0) but not zero (0).  A negative stride <tt>vec.valueStride() <
+ * 0</tt> allows a reverse traversal of the elements in <tt>vec.values()</tt>.
  *
- *	A sparse vector is identified by <tt>vec.subDim() > vec.subNz()</tt>
- * or <tt>vec.indices() != NULL</tt>
- * in which case all the fields in the structure are meaningful.
- *	The corresponding elements in the global vector <tt>x(j)</tt>
- * defined as:
+ * A sparse vector is identified by <tt>vec.subDim() > vec.subNz()</tt> or
+ * <tt>vec.indices() != Teuchos::null</tt> in which case all the fields in the
+ * structure are meaningful.  The corresponding elements in the global vector
+ * <tt>x(j)</tt> defined as:
+
  \verbatim
 
  x( vec.globalOffset() + vec.localOffset() + vec.indices()[vec.indicesStride()*k] )
- = vec.values[vec.valueStride()*k]
+ == vec.values[vec.valueStride()*k],
 
- for k = 0,...,vec.subNz()-1
+     for k = 0,...,vec.subNz()-1
+
  \endverbatim
- * If <tt>vec.subNz() == 0</tt> then it is allowed for <tt>vec.indices() == NULL</tt>.
- * If <tt>vec.subDim() > vec.subNz() > 0</tt> then <tt>vec.indices() != NULL</tt> must be true.
+
+ * If <tt>vec.subNz() == 0</tt> then <tt>vec.indices() == Teuchos::null</tt>.
+ * If <tt>vec.subDim() > vec.subNz() > 0</tt>, then <tt>vec.indices() !=
+ * Teuchos::null</tt> must be true.
  *
- * A sparse sub-vector may be sorted (<tt>vec.isSorted()!=0</tt>) or
- * unsorted (<tt>vec.isSorted()==0</tt>) but the indices <tt>vec.indices()[k]</tt>
- * must be unique.  A sorted vector (<tt>vec.isSorted()!=0</tt>) means that
- * the indices are in ascending order:
+ * A sparse sub-vector may be sorted (<tt>vec.isSorted()!=0</tt>) or unsorted
+ * (<tt>vec.isSorted()==0</tt>) but the indices <tt>vec.indices()[k]</tt> must
+ * be unique.  A sorted vector (<tt>vec.isSorted()!=0</tt>) means that the
+ * indices are in ascending order:
+
  \verbatim
 
- vec.indices()[vec.indicesStride()*k] < vec.indices()[vec.indicesStride()*k]
+ vec.indices()[vec.indicesStride()*k] < vec.indices()[vec.indicesStride()*k],
 
- for k = 0,...,vec.subNz()-1
+     for k = 0,...,vec.subNz()-1
+
  \endverbatim
- * The member <tt>vec.localOffset()</tt> is used to shift the values in <tt>vec.indices()[]</tt>
- * to be in range of the local sub-vector.  In other words:
+
+ * The member <tt>vec.localOffset()</tt> is used to shift the values in
+ * <tt>vec.indices()[]</tt> to be in range of the local sub-vector.  In other
+ * words:
+
  \verbatim
   
- 0 <= vec.localOffset() + vec.indices()[vec.indicesStride()*k] <= vec.subNz()
+ 0 <= vec.localOffset() + vec.indices()[vec.indicesStride()*k] < vec.subDim(),
 
- for k = 0...vec.subNz()-1
+     for k = 0...vec.subNz()-1
+
  \endverbatim
- * The member <tt>vec.valueStride()</tt> may be positive (>0), negative (<0) or zero (0).
- * However, the member <tt>vec.indicesStride()</tt> may be may be positive (>0)
- * or negative (<0) but not zero (0).  Allowing <tt>vec.indicesStride() == 0</tt>
- * would mean that a vector would have <tt>vec.subNz()</tt> nonzero elements with
- * all the same value and all the same indexes and non-unique indices are
- * not allowed.  Allowing non-unique indexes would make some operations
- * (e.g. dot product) very difficult to implement and therefore can not
- * be allowed.  A sparse vector where <tt>vec.valueStride() == 0</tt> is one
- * where all of the non-zeros have the value <tt>vec.values[0]</tt>.  If
- * <tt>vec.subNz() == 0</tt> for a sparse vector then it is allowed for
- * <tt>vec.values == NULL</tt> and <tt>vec.indices() == NULL</tt>.
+
+ * The member <tt>vec.valueStride()</tt> may be positive (>0) or negative (<0)
+ * but not zero (0).  Also, the member <tt>vec.indicesStride()</tt> may be may
+ * be positive (>0) or negative (<0) but not zero (0).  If <tt>vec.subNz() ==
+ * 0</tt> for a sparse vector then <tt>vec.values == Teuchos::null</tt> and
+ * <tt>vec.indices() == Teuchos::null</tt>.
  *
- *	This specification allows a lot of flexibility in determining
- * how the vectors are laid out in memory.  However, allowing vectors to be
- * sparse and unsorted may make many user defined operations
- * considerably harder and expensive to implement.
- *
- * To avoid making mistakes in setting the members of this struct use
- * one of the helper functions <tt>RTOp_sparse_sub_vector_from_dense()</tt>,
- * <tt>RTOp_sparse_sub_vector()</tt> or <tt>RTOp_sub_vector_null()</tt>.
+ * This specification allows a lot of flexibility in determining how the
+ * vectors are laid out in memory.  However, allowing vectors to be sparse and
+ * unsorted may make many user defined operations considerably harder and
+ * expensive to implement.
  */
 template<class Scalar>
 class SparseSubVectorT {
 public:
   /** \brief . */
   SparseSubVectorT()
-    :globalOffset_(0),subDim_(0),subNz_(0)
-    ,values_(NULL),valuesStride_(0),indices_(NULL)
-    ,indicesStride_(0),localOffset_(0),isSorted_(0)
+    :globalOffset_(0), subDim_(0), subNz_(0),
+     valuesStride_(0), indicesStride_(0), localOffset_(0),
+     isSorted_(false)
     {}
   /** \brief . */
   SparseSubVectorT(
-    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz
-    ,const Scalar values[], ptrdiff_t valuesStride
-    ,const Teuchos_Index indices[], ptrdiff_t indicesStride
-    ,ptrdiff_t localOffset, int isSorted
+    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
+    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride,
+    const ArrayRCP<const Teuchos_Index> &indices, ptrdiff_t indicesStride,
+    ptrdiff_t localOffset, bool isSorted
     )
-    :globalOffset_(globalOffset),subDim_(subDim),subNz_(subNz)
-    ,values_(values),valuesStride_(valuesStride),indices_(indices)
-    ,indicesStride_(indicesStride),localOffset_(localOffset),isSorted_(isSorted)
-    {}
+    :globalOffset_(globalOffset), subDim_(subDim), subNz_(subNz),
+     values_(values), valuesStride_(valuesStride), indices_(indices),
+     indicesStride_(indicesStride), localOffset_(localOffset), isSorted_(isSorted)
+    {
+#ifdef TEUCHOS_DEBUG
+      // Call initialize(...) just to check the preconditions
+      initialize(globalOffset, subDim, subNz, values, valuesStride,
+        indices, indicesStride, localOffset, isSorted);
+#endif
+    }
   /** \brief . */
   SparseSubVectorT(
-    Teuchos_Index globalOffset, Teuchos_Index subDim
-    ,const Scalar values[], ptrdiff_t valuesStride
+    Teuchos_Index globalOffset, Teuchos_Index subDim,
+    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride
     )
-    :globalOffset_(globalOffset),subDim_(subDim),subNz_(subDim)
-    ,values_(values),valuesStride_(valuesStride),indices_(NULL)
-    ,indicesStride_(0),localOffset_(0),isSorted_(0)
-    {}
+    :globalOffset_(globalOffset), subDim_(subDim), subNz_(subDim),
+     values_(values), valuesStride_(valuesStride),
+     indicesStride_(0), localOffset_(0), isSorted_(true)
+    {
+#ifdef TEUCHOS_DEBUG
+      // Call initialize(...) just to check the preconditions
+      initialize(globalOffset, subDim, values, valuesStride);
+#endif
+    }
   /** \brief . */
   SparseSubVectorT( const ConstSubVectorView<Scalar>& sv )
-    :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()), subNz_(sv.subDim()), values_(sv.values())
-    ,valuesStride_(sv.stride()), indices_(NULL),indicesStride_(0),localOffset_(0),isSorted_(0)
+    :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()), subNz_(sv.subDim()),
+     values_(sv.values()),  valuesStride_(sv.stride()), indicesStride_(0),
+     localOffset_(0), isSorted_(sv.isSorted())
     {}
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz
-    ,const Scalar values[], ptrdiff_t valuesStride
-    ,const Teuchos_Index indices[], ptrdiff_t indicesStride
-    ,ptrdiff_t localOffset, int isSorted
+    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
+    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride,
+    const ArrayRCP<const Teuchos_Index> &indices, ptrdiff_t indicesStride,
+    ptrdiff_t localOffset, bool isSorted
     )
     {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_ASSERT(globalOffset >= 0);
+      TEUCHOS_ASSERT(subDim > 0);
+      TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(subNz, 0, subDim+1);
+      TEUCHOS_ASSERT_EQUALITY(values.lowerOffset(), 0);
+      TEUCHOS_ASSERT(valuesStride != 0);
+      TEUCHOS_ASSERT_EQUALITY(values.size(), subNz*std::abs(valuesStride));
+      if (!is_null(indices)) {
+        TEUCHOS_ASSERT(indicesStride != 0);
+        TEUCHOS_ASSERT_EQUALITY(indices.size(), subNz*std::abs(indicesStride));
+        // Note: localOffset can be +, -, or 0 so there is nothing to assert!
+        if (isSorted) {
+          for (int k = 0; k < subNz-1; ++k) {
+            const Teuchos_Index idx_k = indices[k*indicesStride];
+            const Teuchos_Index idx_kp1 = indices[(k+1)*indicesStride];
+            TEST_FOR_EXCEPTION( !(idx_k < idx_kp1), std::out_of_range,
+              "Error indices["<<k<<"]="<<idx_k<<" >= indices["<<k+1<<"]="<<idx_kp1
+              <<"!" );
+          }
+        }
+      }
+#endif
       globalOffset_ = globalOffset; subDim_ = subDim; subNz_ = subNz;
       values_ = values; valuesStride_ = valuesStride; indices_ = indices;
-      indicesStride_ = indicesStride; localOffset_ = localOffset; isSorted_ = isSorted;
+      indicesStride_ = indicesStride; localOffset_ = localOffset;
+      isSorted_ = isSorted;
     }
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim
-    ,const Scalar values[], ptrdiff_t valuesStride
+    Teuchos_Index globalOffset, Teuchos_Index subDim,
+    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride
     )
     {
-      globalOffset_ = globalOffset; subDim_ = subDim; subNz_ = subDim;
-      values_ = values; valuesStride_ = valuesStride; indices_ = NULL;
-      indicesStride_ = 0; localOffset_ = 0; isSorted_ = 1;
+      initialize(globalOffset, subDim, subDim, values, valuesStride,
+        Teuchos::null, 0, 0, true);
     }
   /** \brief . */
-  void set_uninitialized()
+  void uninitialize()
     {
       globalOffset_ = 0; subDim_ = 0; subNz_ = 0;
-      values_ = NULL; valuesStride_ = 0; indices_ = NULL;
-      indicesStride_ = 0; localOffset_ = 0; isSorted_ = 1;
+      values_ = Teuchos::null; valuesStride_ = 0; indices_ = Teuchos::null;
+      indicesStride_ = 0; localOffset_ = 0; isSorted_ = false;
     }
   /** \brief . */
   void setGlobalOffset(Teuchos_Index globalOffset) { globalOffset_ = globalOffset; } 
@@ -187,32 +226,78 @@ public:
   Teuchos_Index subNz() const { return subNz_; }
   /** \brief Array (size min{|<tt>valueStride*subNz</tt>|,1}) for the values
    * in the vector. */
-  const Scalar* values() const { return values_; }
+  const ArrayRCP<const Scalar> values() const { return values_; }
   /** \brief Stride between elements in <tt>values[]</tt>. */
   ptrdiff_t valuesStride() const { return valuesStride_; }
-  /** \brief Array (size min{|<tt>indicesStride*subNz</tt>|,1} if not <tt>NULL</tt>) for the
-   * indices of the nonzero elements in the vector (sparse vectors only)
+  /** \brief Array (size <tt>indicesStride*subNz</tt>) if not
+   * <tt>Teuchos::null</tt>) for the indices of the nonzero elements in the
+   * vector (sparse vectors only).
    */
-  const Teuchos_Index* indices() const { return indices_; }
+  const ArrayRCP<const Teuchos_Index> indices() const { return indices_; }
   /** \brief Stride between indices in indices[] (sparse vectors only). */
   ptrdiff_t indicesStride() const { return indicesStride_; }
   /** \brief Offset of indices[] into local sub-vector (sparse vectors
    * only). */
   ptrdiff_t localOffset() const { return localOffset_; }
-  /** \brief If <tt>isSorted == 0</tt> then the vector is not sorted,
+  /** \brief If <tt>isSorted == false</tt> then the vector is not sorted,
    * otherwise it is sorted (sparse vectors only). */
-  int isSorted() const { return isSorted_; }
+  bool isSorted() const { return isSorted_; }
 private:
   Teuchos_Index globalOffset_;
   Teuchos_Index subDim_;
   Teuchos_Index subNz_;
-  const Scalar *values_;
-  // 2007/11/14: rabartl: ToDo: Replace with ArrayRCP<Scalar>
+  ArrayRCP<const Scalar> values_;
   ptrdiff_t valuesStride_;
-  const Teuchos_Index *indices_;
+  ArrayRCP<const Teuchos_Index> indices_;
   ptrdiff_t indicesStride_;
   ptrdiff_t localOffset_;
-  int isSorted_;
+  bool isSorted_;
+public:
+  /** \brief Deprecated. */
+  SparseSubVectorT(
+    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
+    const Scalar values[], ptrdiff_t valuesStride,
+    const Teuchos_Index indices[], ptrdiff_t indicesStride,
+    ptrdiff_t localOffset, int isSorted
+    )
+    {
+      initialize(globalOffset, subDim, subNz, values, valuesStride,
+        indices, indicesStride, localOffset, isSorted);
+    }
+  /** \brief Deprecated. */
+  SparseSubVectorT(
+    Teuchos_Index globalOffset, Teuchos_Index subDim,
+    const Scalar values[], ptrdiff_t valuesStride
+    )
+    {
+      initialize(globalOffset, subDim, values, valuesStride);
+    }
+  /** \brief Deprecated. */
+  void initialize(
+    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
+    const Scalar values[], ptrdiff_t valuesStride,
+    const Teuchos_Index indices[], ptrdiff_t indicesStride,
+    ptrdiff_t localOffset, int isSorted
+    )
+    {
+      initialize(globalOffset, subDim, subNz,
+        Teuchos::arcp(values, 0, subNz*std::abs(valuesStride), false), valuesStride,
+        Teuchos::arcp(indices, 0, subNz*std::abs(indicesStride), false), indicesStride,
+        localOffset, isSorted);
+    }
+  /** \brief Deprecated. */
+  void initialize(
+    Teuchos_Index globalOffset, Teuchos_Index subDim,
+    const Scalar values[], ptrdiff_t valuesStride
+    )
+    {
+      initialize(globalOffset, subDim,
+        Teuchos::arcp(values, 0, subDim*std::abs(valuesStride), false),
+        valuesStride);
+    }
+  /** \brief Deprecated. */
+  void set_uninitialized()
+    { uninitialize(); }
 };
 
 

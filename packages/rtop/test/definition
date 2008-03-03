@@ -4,3 +4,20 @@
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;
 }
+
+(FRAMEWORK,INSTALL) {
+    TESTS = base/RTOpPack_Types_test.exe;
+    ARGS = --echo-command-line,
+      --echo-command-line --sub-dim=3,
+      --echo-command-line --sub-dim=2,
+      --echo-command-line --sub-dim=4 --stride=-1,
+      --echo-command-line --sub-dim=4 --stride=-2,
+      --echo-command-line --sub-dim=4 --stride=-4,
+      --echo-command-line --sub-dim=2 --leading-dim=3,
+      --echo-command-line --sub-dim=2 --leading-dim=4,
+      --echo-command-line --sub-dim=2 --leading-dim=5,
+      --echo-command-line --num-cols=1,
+      --echo-command-line --num-cols=3;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI,SERIAL;
+}

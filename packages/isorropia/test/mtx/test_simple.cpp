@@ -30,6 +30,10 @@
 
 
 
+#ifdef HAVE_MPI
+
+
+
 // Need to add a function to utilities to compute cutl or some
 // balance measure so we can compare quality with Zoltan w/o Isorropia
 //
@@ -214,3 +218,16 @@ static void show_matrix(const char *txt, Epetra_CrsMatrix *matrix, const Epetra_
     std::cout << "==============" << std::endl;
   }
 }
+
+
+#else // HAVE_MPI
+
+
+int main()
+{
+  return 0;
+}
+
+
+#endif // HAVE_MPI
+

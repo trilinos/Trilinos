@@ -142,10 +142,8 @@ public:
       stride_=stride;
     }
   /** \brief . */
-  void set_uninitialized()
-    { globalOffset_ = 0; subDim_=0; values_=Teuchos::null; stride_ = 0; }
-  // 2008/02/27: rabartl: ToDo: Above: change the name of set_uninitialized()
-  // to uninitiaize()!
+  void uninitialize()
+    { globalOffset_ = 0; subDim_=0; values_ = Teuchos::null; stride_ = 0; }
   /** \brief . */
   void setGlobalOffset(Teuchos_Index globalOffset)
     {
@@ -169,7 +167,7 @@ public:
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(i, 0, subDim_);
 #endif
-      return values_[stride_*i];
+      return valuesBegin()[stride_*i];
     }
   /** \brief Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i
    * < subDim())</tt>). */
@@ -179,6 +177,12 @@ private:
   Teuchos_Index subDim_;
   ArrayRCP<const Scalar> values_;
   ptrdiff_t stride_;
+  const typename ArrayRCP<const Scalar>::iterator valuesBegin() const
+    {
+      if (stride_ > 0)
+        return values_.begin();
+      return values_.begin() + (subDim_*std::abs(stride_) - 1);
+    } 
 public:
   /** \brief Deprecated. */
   ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
@@ -194,6 +198,9 @@ public:
       values_=Teuchos::arcp(values,0,subDim*std::abs(stride),false);
       stride_=stride;
     }
+  /** \brief Deprecated. */
+  void set_uninitialized()
+    { uninitialize(); }
 };
 
 
@@ -343,13 +350,11 @@ public:
       leadingDim_=leadingDim;
     }
   /** \brief . */
-  void set_uninitialized()
+  void uninitialize()
     {
       globalOffset_ = 0; subDim_=0; colOffset_=0, numSubCols_=0;
       values_=Teuchos::null; leadingDim_=0;
     }
-  // 2008/02/27: rabartl: ToDo: Above: change the name of set_uninitialized()
-  // to uninitiaize()!
   /** \brief . */
   void setGlobalOffset(Teuchos_Index globalOffset)
     {
@@ -423,6 +428,9 @@ public:
       values_=Teuchos::arcp(values,0,numSubCols*leadingDim,false);
       leadingDim_=leadingDim;
     }
+  /** \brief Deprecated. */
+  void set_uninitialized()
+    { uninitialize(); }
 };
 
 
