@@ -274,6 +274,13 @@ REMOVE --enable-webtrilinos
 REMOVE --enable-python
 DONE
 
+IF PACKAGE pytrilinos SUBDIRECTORY shared THEN
+REMOVE --enable-pytrilinos
+REMOVE --enable-webtrilinos
+REMOVE --enable-python
+REMOVE --enable-shared
+DONE
+
 # RTOp -------------------------------------------------------------------------
 IF PACKAGE rtop THEN
 REMOVE --enable-rtop
