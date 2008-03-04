@@ -27,13 +27,6 @@
 // ************************************************************************
 //@HEADER
 
-
-
-
-#ifdef HAVE_MPI
-
-
-
 // Need to add a function to utilities to compute cutl or some
 // balance measure so we can compare quality with Zoltan w/o Isorropia
 //
@@ -55,47 +48,40 @@
 #include <ispatest_utils.hpp>
 #include <ispatest_epetra_utils.hpp>
 
-#include <Epetra_SerialDenseVector.h>
-
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #ifdef HAVE_EPETRA
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
 #include <Epetra_LinearProblem.h>
 #include <EpetraExt_CrsMatrixIn.h>
 #include <EpetraExt_BlockMapIn.h>
-#endif
 
 static void show_matrix(const char *txt, Epetra_CrsMatrix *matrix, const Epetra_Comm &Comm);
+#endif
 
 int main(int argc, char** argv) {
 
   int rc=0;  
-#ifndef HAVE_MPI
-  std::cout << "test_simple: don't have MPI, can't run test."
-            << std::endl;
-  return 1;
-#endif
-#ifndef HAVE_EPETRA
-  std::cout << "test_simple main: currently can only test "
-         << "with Epetra enabled." << std::endl;
-  return 1;
-#endif
+#ifdef HAVE_EPETRA
 
   bool verbose = false;
   int numProcs = 1;
   int localProc = 0;
 
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
   const Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  const Epetra_SerialComm Comm;
+#endif
 
   try {
     verbose = ispatest::set_verbose(localProc, argc, argv);
@@ -103,7 +89,9 @@ int main(int argc, char** argv) {
   catch(std::exception& exc) {
     std::cout << "err, setting verbosity: " << exc.what() << std::endl;
     std::cout << "End Result: TEST FAILED" << std::endl;
+#ifdef HAVE_MPI
     MPI_Finalize();
+#endif
     return(-1);
   }
 
@@ -135,11 +123,15 @@ int main(int argc, char** argv) {
   // asks for an Epetra_Vector of weights.  For graphs this is OK, but
   // for hypergraphs we need to say which vertices those weights are for.
 
+#ifdef HAVE_ISORROPIA_ZOLTAN
   Teuchos::ParameterList params;
   Teuchos::ParameterList &sublist = params.sublist("Zoltan");
   sublist.set("LB_METHOD", "HYPERGRAPH");
   sublist.set("PHG_CUT_OBJECTIVE", "CONNECTIVITY");  // "cutl"
   sublist.set("EDGE_WEIGHT_DIM", "1");  
+#else
+  Teuchos::ParameterList params;
+#endif
 
   const Epetra_Map &myRowMap = matrix_ptr->RowMap();
   int numMyRows = matrix_ptr->NumMyRows();
@@ -183,10 +175,20 @@ int main(int argc, char** argv) {
 
   // Recompute balance and cuts 
 
+#ifdef HAVE_MPI
   MPI_Finalize();
+#endif
 
-  return(0);
+#else
+  std::cout << "test_simple main: currently can only test "
+         << "with Epetra enabled." << std::endl;
+  rc = -1;
+#endif
+
+  return rc;
 }
+
+#ifdef HAVE_EPETRA
 static void show_matrix(const char *txt, Epetra_CrsMatrix *matrix, const Epetra_Comm &Comm)
 {
   int localProc = Comm.MyPID();
@@ -218,16 +220,5 @@ static void show_matrix(const char *txt, Epetra_CrsMatrix *matrix, const Epetra_
     std::cout << "==============" << std::endl;
   }
 }
-
-
-#else // HAVE_MPI
-
-
-int main()
-{
-  return 0;
-}
-
-
-#endif // HAVE_MPI
+#endif
 
