@@ -316,6 +316,7 @@ bool testSubMultiVectorView(
   using RTOpPack::SubVectorView;
   using Teuchos::TypeNameTraits;
   using Teuchos::ArrayRCP;
+  using Teuchos::Array;
   using Teuchos::OSTab;
   using Teuchos::null;
   using Teuchos::as;
@@ -361,14 +362,25 @@ bool testSubMultiVectorView(
   }
 
   out << "\nCreating value data for subview ...\n";
+
   const ArrayRCP<Scalar>
     values = Teuchos::arcp<Scalar>(numSubCols*leadingDim);
   std::fill(values.begin(),values.end(),as<Scalar>(-1));
+
+  // 2008/03/04: rabartl: Here I am creating a simple 2D array to hold the
+  // expected values for the SubMultiVector objects.  This is to avoid strange
+  // roundoff problems that seem to be happening on some platforms
+  // (e.g. beowulf) for some reason.  By storing the expected values instead
+  // of recomputing them, this should compare correctly on all platforms.
+  Array<Array<Scalar> > contigValues(subDim);
+  for ( int i = 0; i < subDim; ++i ) contigValues[i].resize(numSubCols); 
+
   typename ArrayRCP<Scalar>::iterator itr = values.begin();
   for ( int j = 0; j < numSubCols; ++j ) {
     typename ArrayRCP<Scalar>::iterator col_itr = itr + j*leadingDim;
     for ( int i = 0; i < subDim; ++i ) {
-      *col_itr++ = as<Scalar>(i) + as<Scalar>(j)/as<Scalar>(1000);
+      contigValues[i][j] = as<Scalar>(i) + as<Scalar>(j)/as<Scalar>(1000);
+      *col_itr++ = contigValues[i][j];
     }
   }
 
@@ -394,14 +406,14 @@ bool testSubMultiVectorView(
     out << "\nTest that smv(i,j) == i + j/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
-        TEST_EQUALITY(smv(i,j), as<Scalar>(i) + as<Scalar>(j)/as<Scalar>(1000));
+        TEST_EQUALITY(smv(i,j), contigValues[i][j]);
       }
     }
     out << "\nTest that smv.col(j)(i) == i + j/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       const SubVectorView<Scalar> smv_col_j = smv.col(j);
       for ( int i = 0; i < subDim; ++i ) {
-        TEST_EQUALITY(smv_col_j[i], as<Scalar>(i) + as<Scalar>(j)/as<Scalar>(1000));
+        TEST_EQUALITY(smv_col_j[i], contigValues[i][j]);
       }
     }
   }
@@ -426,14 +438,14 @@ bool testSubMultiVectorView(
     out << "\nTest that csmv(i,j) == i + j/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
-        TEST_EQUALITY(csmv(i,j), as<Scalar>(i) + as<Scalar>(j)/as<Scalar>(1000));
+        TEST_EQUALITY(csmv(i,j), contigValues[i][j]);
       }
     }
     out << "\nTest that csmv.col(j)(i) == i + j/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       const ConstSubVectorView<Scalar> csmv_col_j = csmv.col(j);
       for ( int i = 0; i < subDim; ++i ) {
-        TEST_EQUALITY(csmv_col_j[i], as<Scalar>(i) + as<Scalar>(j)/as<Scalar>(1000));
+        TEST_EQUALITY(csmv_col_j[i], contigValues[i][j]);
       }
     }
   }
@@ -536,13 +548,14 @@ bool testSubMultiVectorView(
     out << "\nChange of SubMultiVectorView to smv(i,j) = j + i/1000  ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
-        smv(i,j) = as<Scalar>(j) + as<Scalar>(i)/as<Scalar>(1000);
+        contigValues[i][j] = as<Scalar>(j) + as<Scalar>(i)/as<Scalar>(1000);
+        smv(i,j) = contigValues[i][j];
       }
     }
     out << "\nTest that smv(i,j) == j + i/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
-        TEST_EQUALITY(smv(i,j), as<Scalar>(j) + as<Scalar>(i)/as<Scalar>(1000));
+        TEST_EQUALITY(smv(i,j), contigValues[i][j]);
       }
     }
   }
@@ -555,7 +568,7 @@ bool testSubMultiVectorView(
     out << "\nTest that smv2(i,j) == j + i/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {
       for ( int i = 0; i < subDim; ++i ) {
-        TEST_EQUALITY(smv2(i,j), as<Scalar>(j) + as<Scalar>(i)/as<Scalar>(1000));
+        TEST_EQUALITY(smv2(i,j), contigValues[i][j]);
       }
     }
   }
