@@ -147,12 +147,14 @@ int main(int argc, char *argv[]) {
       if (dim==3) {
         p03 = p01^p02;
         *outStream << "p03 =   p01 x p02  = " << p03 << "\n";
-        if (std::abs(std::pow(p03.norm(NORM_TWO),2)-cross_sq) > zero) {
-          *outStream << std::setw(39) << "^^^^----FAILURE!" << "\n";
+        if (std::abs(p03.norm(NORM_TWO)*p03.norm(NORM_TWO)-cross_sq) > zero) {
+          *outStream << std::setw(39) << "^^^^----FAILURE!";
+          *outStream << "   ||p03||^2 = " << std::pow(p03.norm(NORM_TWO),2);
+          *outStream << "  cross_sq = " << cross_sq << "\n";
           errorFlag++;
         }
         p03 = p01^p01;
-        *outStream << "p03 =   p01 x p02  = " << p03 << "\n";
+        *outStream << "p03 =   p01 x p01  = " << p03 << "\n";
         if (p03.norm(NORM_TWO) > 0 || p03.norm(NORM_ONE) > zero || p03.norm(NORM_INF) > zero) {
           *outStream << std::setw(39) << "^^^^----FAILURE!" << "\n";
           errorFlag++;

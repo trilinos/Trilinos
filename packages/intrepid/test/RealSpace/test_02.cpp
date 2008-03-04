@@ -73,8 +73,10 @@ int main(int argc, char *argv[]) {
   << "===============================================================================\n";
 
   int errorFlag = 0;
+#ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 16;
+#endif
   
   // Create arrays of coefficients
   double vec[]  = {1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 6.0, 5.0, 9.0};
@@ -82,6 +84,7 @@ int main(int argc, char *argv[]) {
 
   try{
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       Matrix<double> m00(0);
     }
@@ -90,11 +93,13 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     Matrix<double> m01(1);
     Matrix<double> m02(2);
     Matrix<double> m03(3);
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       Matrix<double> m04(4);
     }
@@ -103,7 +108,9 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       Matrix<double> m05(vec, 0);
     }
@@ -112,11 +119,13 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     Matrix<double> m06(vec, 1);
     Matrix<double> m07(vec, 2);
     Matrix<double> m08(vec, 3);
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       Matrix<double> m09(vec, 4);
     }
@@ -125,7 +134,9 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m08.setElements(vec2, 2);
     }
@@ -134,9 +145,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m08.setElements(vec2, 3);
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m08.getElement(0,3);
     }
@@ -145,9 +158,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m08.getElement(0,2);
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m08.getColumn(3);
     }
@@ -156,9 +171,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m08.getColumn(2);
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m08.getRow(3);
     }
@@ -167,9 +184,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m08.getRow(1);
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m02 = m03;
     }
@@ -178,9 +197,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
     
     m03 = m08;
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m03 += m03;
     }
@@ -189,7 +210,9 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m02 += m03;
     }
@@ -198,9 +221,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m03 += m08;
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m03 -= m03;
     }
@@ -209,7 +234,9 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m02 -= m03;
     }
@@ -218,9 +245,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m03 -= m08;
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       Point<double> v01(1);
       v01 = m03 * v01;
@@ -230,10 +259,12 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     Point<double> v03(3);
     v03 = m03 * v03;
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       Point<double> v01(1);
       v01 = v01 * m03;
@@ -243,9 +274,11 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     v03 = v03 * m03;
 
+#ifdef HAVE_INTREPID_DEBUG
     try {
       m03 = m02 * m03;
     }
@@ -254,6 +287,7 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+#endif
 
     m03 = m03 * m03;
 
@@ -270,8 +304,10 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
 
+#ifdef HAVE_INTREPID_DEBUG
   if (TestForException_getThrowNumber() != endThrowNumber)
     errorFlag++;
+#endif
 
   *outStream \
   << "\n"
