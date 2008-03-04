@@ -73,36 +73,223 @@ int main(int argc, char *argv[]) {
   << "===============================================================================\n";
 
   int errorFlag = 0;
+#ifdef HAVE_INTREPID_DEBUG
+  int beginThrowNumber = TestForException_getThrowNumber();
+  int endThrowNumber = beginThrowNumber + 15;
+#endif
   
   // Create arrays of coefficients
   double vec[]  = {1.0, 2.0, 3.0};
   double vec2[] = {-3.0, -1.0, 15.0};
 
   try{
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      Point<double> p00(0);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     Point<double> p01(1);
     Point<double> p02(2);
     Point<double> p03(3);
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      Point<double> p00(4);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      Point<double> p00(vec, 0);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     Point<double> p04(vec, 1);
     Point<double> p05(vec, 2);
     Point<double> p06(vec, 3);
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      Point<double> p00(vec, 4);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p06.setCoordinates(vec2, 4);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06.setCoordinates(vec2, 3);
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p06.distance(p01);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06.distance(p03);
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p06[3];
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06[2];
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p05 = p06;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06 = p03;
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p03 += p03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p03 += p01;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06 += p03;
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p03 ^= p03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p03 ^= p01;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06 ^= p03;
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p03 -= p03;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p03 -= p01;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06 -= p03;
+
     p06 ^ p06;
     p06 - p06;
     p06 + p06;
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      p06 * p01;
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
     p06 * p06;
+
     p06[0] * p06;
   }
   catch (std::logic_error err) {
-    *outStream << err.what() << "\n\n";
-    errorFlag = -1;
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
   };
 
+#ifdef HAVE_INTREPID_DEBUG
+  if (TestForException_getThrowNumber() != endThrowNumber)
+    errorFlag++;
+#endif
 
   *outStream \
   << "\n"
