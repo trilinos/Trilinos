@@ -34,9 +34,7 @@ extern "C" {
 #include "hsfc_const.h"
 #include "all_allo_const.h"
 #include "order_const.h"
-#ifdef ZOLTAN_HG
 #include "phg_const.h"    
-#endif
 #ifdef ZOLTAN_HIER
 #include "hier.h"
 #endif
@@ -66,10 +64,8 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_RIB_Set_Param,
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
-#ifdef ZOLTAN_HG
        Zoltan_PHG_Set_Param,
        Zoltan_MP_Set_Param,
-#endif
 #ifdef ZOLTAN_HIER
        Zoltan_Hier_Set_Param,
 #endif

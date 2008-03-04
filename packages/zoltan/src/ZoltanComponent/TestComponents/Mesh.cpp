@@ -184,7 +184,6 @@ void ZoltanTestSpace::Mesh::read_mesh()
 	   << " fatal: Error returned from read_exoII_mesh" << std::endl;
     }
   }
-#ifdef ZOLTAN_HG
   else if (pio_info.file_type == HYPERGRAPH_FILE) {
     if (!read_hypergraph_file(Proc, Num_Procs, &prob, &pio_info, &mesh)) 
     {
@@ -192,7 +191,6 @@ void ZoltanTestSpace::Mesh::read_mesh()
 		<< " fatal: Error returned from read_hypergraph_file" << std::endl;
     }
   }
-#endif
   else if (pio_info.file_type == NO_FILE) {
     if (!create_random_input(Proc, Num_Procs, &prob, &pio_info, &mesh)) 
     {

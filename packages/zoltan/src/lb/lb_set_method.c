@@ -155,7 +155,6 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
   else if ((strcmp(method_upper, "HYPERGRAPH") == 0) 
            || (strcmp(method_upper, "PHG") == 0)){
 
-#ifdef ZOLTAN_HG
     /* HYPERGRAPH is a family of methods. */
     /* PHG is Zoltan's standard parallel hypergraph partitioner. */
     zz->LB.Method = HYPERGRAPH;
@@ -164,16 +163,8 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
-#else
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "Hypergraph method selected but not compiled into Zoltan; "
-                       "Compile with ZOLTAN_HG=1.");
-    error = ZOLTAN_FATAL;
-    goto End;
-#endif
   }
   else if (strcmp(method_upper, "SPARSE_MATRIX") == 0) {
-#ifdef ZOLTAN_HG
     zz->LB.Method = SPARSE_MATRIX;
     /* Sparse Matrix method has a different interface, application
      * calls Zoltan_Matrix_Partition, not Zoltan_LB_Partition.  Results
@@ -185,13 +176,6 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Copy_Structure = Zoltan_MP_Copy_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
-#else
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "Matrix Multiply uses Hypergraph method but it's not available; "
-      "Compile with ZOLTAN_HG=1.");
-    error = ZOLTAN_FATAL;
-    goto End;
-#endif
   }
   else if (strcmp(method_upper, "HIER") == 0) {
 #ifdef ZOLTAN_HIER

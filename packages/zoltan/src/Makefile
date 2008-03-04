@@ -84,7 +84,6 @@ endif
 # Process input flags
 ##############################################################################
 # Default values for inclusion of methods.
-ZOLTAN_HG=1
 ZOLTAN_OCT=1
 ZOLTAN_HIER=1
 
@@ -244,7 +243,6 @@ endif
 HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
-ifdef ZOLTAN_HG
 PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
 		  phg_coarse.c phg_distrib.c phg_gather.c \
 		  phg_match.c phg_plot.c \
@@ -253,11 +251,6 @@ PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
 		  phg_scale.c phg_comm.c phg_order.c \
                   phg_parkway.c phg_patoh.c
 PHG_INC 	= phg.h phg_util.h phg_hypergraph.h 
-GDEFINES       += -DZOLTAN_HG
-else
-HG_CSRC		= phg_hypergraph.c
-endif
-
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c

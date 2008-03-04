@@ -363,7 +363,6 @@ static int read_mesh(
         return 0;
     }
   }
-#ifdef ZOLTAN_HG
   else if (pio_info->file_type == HYPERGRAPH_FILE) {
     if (!read_hypergraph_file(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_hypergraph_file\n");
@@ -382,7 +381,6 @@ static int read_mesh(
         
     }
   }
-#endif
   else if (pio_info->file_type == NO_FILE) {
     if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from create_random_input\n");
