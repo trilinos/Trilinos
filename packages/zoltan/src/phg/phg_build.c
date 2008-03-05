@@ -3024,6 +3024,7 @@ int *tmpobjsize = NULL;
     myStart_vtx = (myProc_y * phg->nVtx) / nProc_y;
     nextStart_vtx = ((myProc_y+1) * phg->nVtx) / nProc_y;
     cnt = nextStart_vtx - myStart_vtx;
+    tmp = 0;
   
 #define NSEND 3  /* number of fields to be sent for each vertex */
     if (cnt) {
@@ -3031,7 +3032,7 @@ int *tmpobjsize = NULL;
       sendbuf = (int *) ZOLTAN_MALLOC(NSEND * 2 * cnt * sizeof(int));
       if (!proclist || !sendbuf) MEMORY_ERROR;
   
-      for (tmp = 0, i = 0; i < cnt; i++){
+      for (i = 0; i < cnt; i++){
         int vtxproc_x;            /* Processor column for actual vtx. */
         int proc_x;               /* Processor column for repartition vtx. */
         int proc_y;               /* Processor row for repartition edge. */
