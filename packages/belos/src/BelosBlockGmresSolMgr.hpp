@@ -261,6 +261,7 @@ private:
   static const bool adaptiveBlockSize_default_;
   static const bool showMaxResNormOnly_default_;
   static const bool flexibleGmres_default_;
+  static const bool expResTest_default_;
   static const int blockSize_default_;
   static const int numBlocks_default_;
   static const int verbosity_default_;
@@ -275,7 +276,7 @@ private:
   MagnitudeType convtol_, orthoKappa_;
   int maxRestarts_, maxIters_;
   int blockSize_, numBlocks_, verbosity_, outputFreq_;
-  bool adaptiveBlockSize_, showMaxResNormOnly_, isFlexible_;
+  bool adaptiveBlockSize_, showMaxResNormOnly_, isFlexible_, expResTest_;
   std::string orthoType_; 
   std::string impResScale_, expResScale_;
     
@@ -284,7 +285,7 @@ private:
   Teuchos::RCP<Teuchos::Time> timerSolve_;
 
   // Internal state variables.
-  bool isSet_, isSTSet_, expResTest_;
+  bool isSet_, isSTSet_;
   bool loaDetected_;
 };
 
@@ -310,6 +311,9 @@ const bool BlockGmresSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = fal
 
 template<class ScalarType, class MV, class OP>
 const bool BlockGmresSolMgr<ScalarType,MV,OP>::flexibleGmres_default_ = false;
+
+template<class ScalarType, class MV, class OP>
+const bool BlockGmresSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
 
 template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
@@ -354,13 +358,13 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   isFlexible_(flexibleGmres_default_),
+  expResTest_(expResTest_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
   label_(label_default_),
   isSet_(false),
   isSTSet_(false),
-  expResTest_(false),
   loaDetected_(false)
 {}
 
@@ -383,13 +387,13 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   isFlexible_(flexibleGmres_default_),
+  expResTest_(expResTest_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
   label_(label_default_),
   isSet_(false),
   isSTSet_(false),
-  expResTest_(false),
   loaDetected_(false)
 {
 
@@ -444,6 +448,8 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Flexible Gmres", flexibleGmres_default_,
       "Whether the solver manager should use the flexible variant\n"
       "of GMRES.");
+    pl->set("Explicit Residual Test", expResTest_default_,
+      "Whether the explicitly computed residual should be used in the convergence test.");
     pl->set("Implicit Residual Scaling", impResScale_default_,
       "The type of scaling used in the implicit residual convergence test.");
     pl->set("Explicit Residual Scaling", expResScale_default_,
@@ -684,6 +690,16 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
         }
       }
     }      
+  }
+
+  if (params->isParameter("Explicit Residual Test")) {
+    expResTest_ = Teuchos::getParameter<bool>( *params,"Explicit Residual Test" );
+
+    // Reconstruct the convergence test if the explicit residual test is not being used.
+    params_->set("Explicit Residual Test", expResTest_);
+    if (expConvTest_ == Teuchos::null) {
+      isSTSet_ = false;
+    }
   }
 
 
