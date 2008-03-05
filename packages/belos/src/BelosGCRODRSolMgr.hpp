@@ -255,7 +255,7 @@ namespace Belos {
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
 
     // Method to convert string to enumerated type for residual.
-    typename Belos::ScaleType convertStringToScaleType( string& scaleType ) {
+    Belos::ScaleType convertStringToScaleType( string& scaleType ) {
       if (scaleType == "Norm of Initial Residual") {
 	return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of Preconditioned Initial Residual") {
@@ -582,7 +582,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
-      typename Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
+      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
       impResScale_ = tempImpResScale;
 
       // Update parameter in our list and residual tests
@@ -605,7 +605,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
-      typename Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
+      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
       expResScale_ = tempExpResScale;
 
       // Update parameter in our list and residual tests
