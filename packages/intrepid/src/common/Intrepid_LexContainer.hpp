@@ -36,6 +36,7 @@
 #define INTREPID_LEXCONTAINER_HPP
 
 #include "Intrepid_ConfigDefs.hpp"
+#include "Intrepid_Types.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -148,19 +149,72 @@ class LexContainer {
     Scalar getValue(const Teuchos::Array<int>& multiIndex) const;
 
     
-    /** \brief Resets LexContainer to accept new multi-indexed quantity. The size of the argument
-      implicitly defines the rank of the container. The size of the container is computed from
-      the upper bounds for the indices in the argument.
+    /** \brief Resets LexContainer to trivial container (one with rank = 0 and size = 0)
+      */
+    void emptyContainer();
+    
+    
+    /** \brief Resets LexContainer to unit length and stores a single zero. Default for multi-indexed
+      quantity whose values are all zero (such as for example, 3rd derivatives of a linear basis)
+      */
+    void storeZero(); 
+    
+    
+    
+    /** \brief General purpose resize method: resizes LexContainer based on a new array of index 
+      ranges. The size of the input array implicitly defines the rank of the container. 
+      The size of the container is computed from the new index ranges in the array argument.
       
       \param newIndexRange[in]             - new upper values for index ranges
+      */
+    void resizeContainer(const Teuchos::Array<int>& newIndexRange);
+    
+  
+    
+    /** \brief Specialized resize method, useful for resizing containers to store a multi-indexed
+      quantity which represents the values of an operator applied to a set of scalar, vector or
+      tensor fields, and evaluated at a set of points. Such quantities have three distinct groups
+      of indices:
+      group 1:  2 indices for number of points and number of fields
+      group 2:  0,1, or 2 indices for scalar, vector or tensor field, respectively
+      group 3:  0,1,2,.., or 10 indices: equal to the order of total derivative operator Dk
+      The multi-index of such quantity looks like this: {np,nf; f0,..,f_{rank-1}; d0,...,d_{ord-1} }
+      
+      \param numPoints       [in]        - number of evaluation points
+      \param numFields       [in]        - number of fields that will be evaluated
+      \param fieldRank       [in]        - rank of the field: 0=scalar, 1=vector, 2=tensor
+      \param operatorOrd     [in]        - order of the specified operator (0 - 10)
+      \param spaceDim        [in]        - dimension of the ambient space
      */
-    void resetContainer(const Teuchos::Array<int>& newIndexRange);
+    void resizeContainer(const int numPoints,
+                         const int numFields,
+                         const int fieldRank,
+                         const int operatorOrd,
+                         const int spaceDim);
+    
+    
+    
+    /** \brief Shapes LexContainer based on fieldType and operatorType arguments. This method is
+      a wrapper for the specialized resizeContainer method, that translates its arguments into 
+      a set of arguments for the specialized resizeContainer method.
+      
+      \param numPoints       [in]        - number of evaluation points
+      \param numFields       [in]        - number of fields that will be evaluated
+      \param fieldType       [in]        - type of the field whose basis will be evaluated
+      \param operatorType    [in]        - type of the operator that will be applied to the basis
+      \param spaceDim        [in]        - dimension of the ambient space
+      */
+    void shapeContainer(const int       numPoints,
+                        const int       numFields,
+                        const EField    fieldType,
+                        const EOperator operatorType,
+                        const int       spaceDim);
     
     
     /** \brief Assign value by its multi-index. Does not change rank or index ranges of the LexContainer.
       In DEBUG mode checks if number of multi-indices matches the rank of the LexContainer and  
       whether each index is within its admissible range.
-
+      
       \param dataValue [in]             - value to be assigned
       \param multiIndex [in]            - multi-index of the value
       */
@@ -206,6 +260,20 @@ class LexContainer {
 */
 template<class Scalar>
   std::ostream& operator << (std::ostream& os, const LexContainer<Scalar>& container);
+
+
+
+/** \relates LexContainer
+    Returns rank of the field: 0, 1, or 2 for scalar, vector, or tensor fields
+*/
+int getFieldRank(const EField fieldType); 
+
+
+
+/**\relates LexContainer 
+   Returns order of an operator: ranges from 0 (for OPERATOR_VALUE) to 10 (OPERATOR_D10)
+*/
+int getOperatorOrder(const EOperator operatorType);
 
 //===========================================================================//
 //                                                                           //

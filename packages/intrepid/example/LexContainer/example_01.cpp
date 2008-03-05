@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   indexRange[2] = 3;
   
   // Reset the existing container to accept rank-3 value with the specified index ranges
-  myContainer.resetContainer(indexRange);
+  myContainer.resizeContainer(indexRange);
   
   // Fill with some data
   for(int p = 0; p < indexRange[0]; p++){
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   indexRange[3] = 4;
   
   // Resize myContainer using the new indexRange
-  myContainer.resetContainer(indexRange);
+  myContainer.resizeContainer(indexRange);
   
   // Define array to store values with dimension equal to the number of multi-indexed values
   double dataArray[2*3*2*4];
@@ -301,6 +301,27 @@ int main(int argc, char *argv[]) {
   catch(std::logic_error err){
     cout << err.what() << endl;
   }
+  
+  
+  cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 6: making trivial LexContainers and storing a single zero           |\n"\
+    << "===============================================================================\n\n";
+  
+  // Make trivial container by resetting the index range to zero rank (no indices) and then
+  // using resizeContainer method
+  indexRange.resize(0);
+  myContainer.resizeContainer(indexRange);
+  std::cout << myContainer;
+  
+  // Make trivial container by using emptyContainer method:
+  myNewContainer.emptyContainer();
+  std::cout << myNewContainer;
+  
+  // Now use storeZero() to reset the container to hold a single zero
+  myNewContainer.storeZero();
+  std::cout << myNewContainer;
+  
   
    return 0;
 }

@@ -114,7 +114,6 @@ namespace Intrepid {
   static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
 
 
-  
   /** \enum  Intrepid::EStatus
     \brief To indicate the status of an object.
   */
@@ -124,11 +123,13 @@ namespace Intrepid {
     STATUS_MAX
   };
   
+
   static const char* StatusNames[] = {
     "Undefined",
     "Defined",
     "Max. status"
   };
+  
   
   /** \enum Intrepid::EFrame
     \brief Enumeration of coordinate frames (reference/ambient) for geometrical entities (cells, points)
@@ -138,10 +139,12 @@ namespace Intrepid {
     FRAME_REFERENCE
   };
   
+
   static const char* FrameNames[]={
     "Physical ",
     "Reference"
   };
+  
   
   /** \enum Intrepid::ECoordinates
     \brief Enumeration of coordinate systems for geometrical entities (cells, points)
@@ -165,7 +168,7 @@ namespace Intrepid {
   */
   
   /** \enum Intrepid::ENorm
-    \brief Enumeration of norm norm types for vectors and functions
+    \brief Enumeration of norm types for vectors and functions
   */
   enum ENorm{
     NORM_ONE = 0,
@@ -183,31 +186,49 @@ namespace Intrepid {
   */
   
   /** \enum Intrepid::EOperator
-    \brief Enumeration of operators (differential and other) available in Intrepid
+    \brief Enumeration of primitive operators available in Intrepid. Primitive operators act on
+    reconstructed functions. Pairs of primitive operators are used to specify what kind of local
+    weak operator should be constructed.
   */
   enum EOperator{
-    OPERATOR_MASS = 0,
-    OPERATOR_GRAD,
-    OPERATOR_CURL,
-    OPERATOR_DIV,
-    OPERATOR_DIV_GRAD,
-    OPERATOR_CURL_CURL,
-    OPERATOR_GRAD_DIV,
-    OPERATOR_MAX
+    OPERATOR_VALUE = 0,
+    OPERATOR_GRAD,      // 1
+    OPERATOR_CURL,      // 2
+    OPERATOR_DIV,       // 3
+    OPERATOR_D1,        // 4
+    OPERATOR_D2,        // 5
+    OPERATOR_D3,        // 6
+    OPERATOR_D4,        // 7
+    OPERATOR_D5,        // 8
+    OPERATOR_D6,        // 9
+    OPERATOR_D7,        // 10
+    OPERATOR_D8,        // 11
+    OPERATOR_D9,        // 12
+    OPERATOR_D10,       // 13
+    OPERATOR_MAX        // 14
   };
   
   /* These will be disabled until we actually need them, in order to prevent compiler warnings.
     static const char* OperatorNames[]={
-      "Mass",
+      "Value",
       "Grad",
       "Curl",
       "Div",
-      "DivGrad",
-      "CurlCurl",
-      "GradDiv",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D6",
+      "D7",
+      "D8",
+      "D9",
+      "D10",
       "Max. Operator"
     };
   */
+  
+
   
   /** \enum  Intrepid::ECell
     \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
@@ -543,84 +564,110 @@ namespace Intrepid {
     
   };
   
-  /** \enum  Intrepid::EReconstruction
-    \brief Enumeration of the admissible reconstructions in Intrepid.
+  /** \enum  Intrepid::EField
+    \brief Enumeration of the admissible field types in Intrepid.
   */
-  enum EReconstruction
+  enum EField
   {
-    RECONSTRUCTION_FEM = 0,
-    RECONSTRUCTION_FVD,
-    RECONSTRUCTION_CUSTOM,
-    RECONSTRUCTION_MAX
+    FIELD_FORM_0 = 0,
+    FIELD_FORM_1,
+    FIELD_FORM_2,
+    FIELD_FORM_3,
+    FIELD_VECTOR,
+    FIELD_TENSOR,
+    FIELD_MAX
   };
   
   /* These will be disabled until we actually need them, in order to prevent compiler warnings.
 
-  static const char* ReconstructionNames[] = {
-    "FEM",
-    "FVD",
-    "Custom",
-    "Max. reconstructions"
+  static const char* FieldNames[] = {
+    "Form 0",
+    "Form 1",
+    "Form 2",
+    "Form 3",
+    "Vector",
+    "Tensor",
+    "Max.fields"
   };
   */
   
-  /** \enum  Intrepid::EForm_0_Flavor
-    \brief Enumeration of the available reconstruction flavors for 0-forms.
+  /** \enum  Intrepid::EReconstructionSpace
+    \brief Enumeration of the available reconstruction spaces. Intrepid allows three basic kinds
+    of reconstruction spaces for each cell type, although not all three kinds have to be defined
+    for each cell type.
+    
+    \arg COMPLETE   on simplicial cells is complete polynomial space, on HEX and QUAD cells is 
+                    tensor product space whose degree is the same in each coordinate direction
+    \arg INCOMPLETE used for div and curl conforming elements of the 1st and 2nd kind
+    \arg BROKEN     used for reconstructions that may subdivide a cell into subcells, i.e., a 
+                    piecewise polynomial space on a cell.
+                                                                                                
   */
-  enum EForm_0_Flavor
+  enum EReconstructionSpace
   {
-    FORM_0_FLAVOR_LAGRANGE = 0,
-    FORM_0_FLAVOR_HIERARCHICAL,
-    FORM_0_FLAVOR_MAX_FEM,                // Last flavor for FEM reconstruction
-    FORM_0_FLAVOR_COVOLUME,
-    FORM_0_FLAVOR_MIMETIC,
-    FORM_0_FLAVOR_CUSTOM,
-    FORM_0_FLAVOR_MAX                     // Last reconstruction flavor
+    RECONSTRUCTION_SPACE_COMPLETE = 0,
+    RECONSTRUCTION_SPACE_INCOMPLETE,
+    RECONSTRUCTION_SPACE_BROKEN,                
+    RECONSTRUCTION_SPACE_MAX                     
   };
+  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
+    
+    static const char* ReconstructionSpaceNames[] = {
+      "Complete",
+      "Incomplete",
+      "Broken",
+      "Max. space"
+    };
+  */
+  
  
-  /** \enum  Intrepid::EForm_1_Flavor
-    \brief Enumeration of the available reconstruction flavors for 1-forms.
+  /** \enum  Intrepid::EBasis
+    \brief Enumeration of basis types in Intrepid
   */
-  enum EForm_1_Flavor
+  enum EBasis
   {
-    FORM_1_FLAVOR_TYPE_A = 0,             // Nedelec 1st kind
-    FORM_1_FLAVOR_TYPE_B,                 // Nedelec 2nd kind
-    FORM_1_FLAVOR_HIERARCHICAL,
-    FORM_1_FLAVOR_MAX_FEM,                // Last flavor for FEM reconstruction
-    FORM_1_FLAVOR_COVOLUME,
-    FORM_1_FLAVOR_MIMETIC,
-    FORM_1_FLAVOR_CUSTOM,
-    FORM_1_FLAVOR_MAX                     // Last reconstruction flavor
+    BASIS_FEM_DEFAULT = 0,            
+    BASIS_FEM_HIERARCHICAL,                 
+    BASIS_FEM_FIAT,
+    BASIS_FVD_DEFAULT,                
+    BASIS_FVD_COVOLUME,
+    BASIS_FVD_MIMETIC,
+    BASIS_FVD_MAX                     
   };
+  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
+    
+    static const char* BasisTypeNames[] = {
+      "FEM Default",
+      "FEM Hierarchical",
+      "FEM FIAT",
+      "FVD Default",
+      "FVD Covolume",
+      "FVD Mimetic",
+      "Max. basis"
+    };
+  */
   
-  /** \enum  Intrepid::EForm_2_Flavor
-    \brief Enumeration of the available reconstruction flavors for 2-forms.
-  */
-  enum EForm_2_Flavor
-  {
-    FORM_2_FLAVOR_TYPE_A = 0,             // Raviart-Thomas 
-    FORM_2_FLAVOR_TYPE_B,                 // BDM
-    FORM_2_FLAVOR_HIERARCHICAL,
-    FORM_2_FLAVOR_MAX_FEM,                // Last flavor for FEM reconstruction
-    FORM_2_FLAVOR_COVOLUME,
-    FORM_2_FLAVOR_MIMETIC,
-    FORM_2_FLAVOR_CUSTOM,
-    FORM_2_FLAVOR_MAX                     // Last reconstruction flavor
-  };
   
-  /** \enum  Intrepid::EForm_0_Flavor
-    \brief Enumeration of the available reconstruction flavors for 3-forms.
+  /** \enum  Intrepid::EIntegrationDomain
+    \brief Enumeration of integration domains
   */
-  enum EForm_3_Flavor
+  enum EIntegrationDomain
   {
-    FORM_3_FLAVOR_LAGRANGE = 0,
-    FORM_3_FLAVOR_HIERARCHICAL,
-    FORM_3_FLAVOR_MAX_FEM,                // Last flavor for FEM reconstruction
-    FORM_3_FLAVOR_COVOLUME,
-    FORM_3_FLAVOR_MIMETIC,
-    FORM_3_FLAVOR_CUSTOM,
-    FORM_3_FLAVOR_MAX                     // Last reconstruction flavor
+    INTEGRATION_DOMAIN_CELL = 0,             
+    INTEGRATION_DOMAIN_SURFACE,                 
+    INTEGRATION_DOMAIN_LINE,
+    INTEGRATION_DOMAIN_MAX                     
   };
+  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
+    
+    static const char* IntegrationDomainNames[] = {
+      "Cell",
+      "Surface",
+      "Line",
+      "Max. domains"
+    };
+  */
+  
   
   /** \enum  Intrepid::EFailCode
     \brief Enumeration of failure codes in Intrepid.

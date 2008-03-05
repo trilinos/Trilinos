@@ -43,8 +43,10 @@ int main(int argc, char *argv[]) {
   
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
+  
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
+  
   if (iprint > 0)
     outStream = Teuchos::rcp(&std::cout, false);
   else
@@ -118,7 +120,7 @@ int main(int argc, char *argv[]) {
     *outStream \
       << "\n"
       << "===============================================================================\n"\
-      << "| TEST 1: Traverse LexContainer by address                                    |\n"\
+      << "| TEST 1: Scan LexContainer by address                                        |\n"\
       << "===============================================================================\n";
     
     // Loop over container by address
@@ -131,13 +133,15 @@ int main(int argc, char *argv[]) {
       if( myNewContainer[address] != myNewContainer.getValue(multiIndex) ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << "     Value by address = " << myNewContainer[address] << "\n";
+        *outStream << " Value by multi-index = " << myNewContainer.getValue(multiIndex) << "\n";
       }
     }
     
     *outStream \
       << "\n"
       << "===============================================================================\n"\
-      << "| TEST 2: Traverse LexContainer by multi-index & compare with data array      |\n"\
+      << "| TEST 2: Scan LexContainer by multi-index & compare with data array          |\n"\
       << "===============================================================================\n";
     
     // Loop over container by multi-index
@@ -159,17 +163,42 @@ int main(int argc, char *argv[]) {
               if( myNewContainer[address] != myNewContainer.getValue(multiIndex)) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " Value by multi-index = " << myNewContainer.getValue(multiIndex) << "\n";
+                *outStream << "     Value by address = " << myNewContainer[address] << "\n";
               }
               
               // Check if container data matches values in dataTeuchosArray 
               if(dataTeuchosArray[address] != myNewContainer.getValue(multiIndex)) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " Value by multi-index = " << myNewContainer.getValue(multiIndex) << "\n";
+                *outStream << "     Value from array = " << dataTeuchosArray[address] << "\n";
               }
             }
           }
         }
       }
+    }
+    
+    *outStream \
+      << "\n"
+      << "===============================================================================\n"\
+      << "| TEST 3: Empty container and store a single zero                             |\n"\
+      << "===============================================================================\n";
+    
+    myNewContainer.emptyContainer();
+    if( !(myNewContainer.getSize() == 0 && myNewContainer.getRank() == 0)) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Container size = " << myNewContainer.getSize() << "\n";
+      *outStream << " Container rank = " << myNewContainer.getRank() << "\n";
+    }
+      
+    myNewContainer.storeZero();
+    if( !(myNewContainer.getSize() == 1 && myNewContainer.getRank() == 1 && myNewContainer[0] == 0.0) ) {
+      errorFlag++;
+      *outStream << " Container size = " << myNewContainer.getSize() << "\n";
+      *outStream << " Container rank = " << myNewContainer.getRank() << "\n";      
     }
     
   } //try 
