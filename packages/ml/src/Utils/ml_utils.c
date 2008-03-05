@@ -2071,21 +2071,16 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 
    Nrows = matrix->outvec_leng;
 
-   if( label != NULL ) {	 
-     sprintf( filename,
-	      "%s.m",
-	      label );
-
-     if( MyPID == 0 )
-       printf("Writing matrix to file %s...\n",filename);
+   if( label != NULL ) {
+     sprintf( filename, "%s.m", label );
+     if( MyPID == 0 ) printf("Writing matrix to file %s...\n",filename);
    } else {
-     if( MyPID == 0 )
-       printf("Writing matrix to stdout...\n");
-   }    
-     
-   for( iproc=0 ; iproc<NumProc ; iproc++ ) {
+     if( MyPID == 0 ) printf("Writing matrix to stdout...\n");
+   }
 
-     if( MyPID == iproc )
+   for ( iproc=0 ; iproc<NumProc ; iproc++ ) {
+
+     if ( MyPID == iproc )
      {
        if( label != NULL ) {
          if( MyPID == 0 ) fid = fopen(filename,"w");
@@ -2093,43 +2088,39 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
        } else {
          fid = stdout;
        }
-       	 
+ 
        if( MyPID == 0 ) {
-	     fprintf( fid, "%%N_global_rows = %d\n", NglobalRows );
-	     fprintf( fid, "%%N_global_cols = %d\n", NglobalCols );
+         fprintf(fid,"%%N_global_rows = %d\n", NglobalRows );
+         fprintf(fid,"%%N_global_cols = %d\n", NglobalCols );
          fprintf(fid,"%% To load this data into Matlab:\n");
          fprintf(fid,"%%    load(filename); A = spconvert(filename);\n");
-         fprintf(fid,"%%This ordering may be different than the application's matrix ordering!\n");
+         fprintf(fid,"%% This ordering may be different than the application's matrix ordering!\n\n");
+         fprintf(fid,"%% NOTE: If there are no entries in column %d or row %d,\n",NglobalCols,NglobalRows);
+         fprintf(fid,"%% Matlab may get the matrix dimensions wrong.\n");
        }
        
        fprintf( fid,
-		"%%Writing data for processor %d\n%%N_update = %d\n%%outvec_leng = %d\n%%invec_leng = %d\n",
+		"%%Writing data for processor %d\n%%N_rows = %d\n%%outvec_leng = %d\n%%invec_leng = %d\n",
 		iproc,
 		Nrows,
         matrix->outvec_leng,
         matrix->invec_leng );
               
-       for (i = 0 ; i < Nrows; i++)
-         {
+       for (i = 0 ; i < Nrows; i++) {
          ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                  &row_length, 0);
-  
          for  (j = 0; j < row_length; j++)
            fprintf(fid,"%d  %d  %20.13e\n",
                    global_row_ordering[i]+1,
                    global_col_ordering[bindx[j]]+1,
                    val[j]);
        }
-       /* in case last row is empty so that matlab gets the matrix size right */
-  	   if (row_length == 0)
-  	     fprintf(fid,"%d  1 0.0\n", global_row_ordering[Nrows-1]+1);
-         if( label != NULL ) fclose(fid);
-     }
+       if( label != NULL ) fclose(fid);
+     } /*if ( MyPID == iproc ) */
 #ifdef ML_MPI
      ML_Comm_Barrier( matrix->comm);
 #endif
-     
-   }
+   } /*for ( iproc=0 ; iproc<NumProc ; iproc++ ) */
 
    /* free memory and return */
    
