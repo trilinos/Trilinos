@@ -262,22 +262,20 @@ int gen_geom, int gen_graph, int gen_hg)
    */
   /* Write object assignments to file. */
   /* For now, only write partition number. */
-  if (num_obj > 0){
-    sprintf(full_fname, "%s.assign", fname);
-    if (zz->Proc == 0)
-      fp = fopen(full_fname, "w");
-    else
-      fp = fopen(full_fname, "a");
-    if (fp==NULL){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
-      error = ZOLTAN_FATAL;
-      goto End;
-    }
-    for (i=0; i<num_obj; i++)
-      fprintf(fp, "%d\n", part[i]);
-      /* fprintf(fp, "%d\n", zz->Proc); */
-    fclose(fp);
+  sprintf(full_fname, "%s.assign", fname);
+  if (zz->Proc == 0)
+    fp = fopen(full_fname, "w");
+  else
+    fp = fopen(full_fname, "a");
+  if (fp==NULL){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
+    error = ZOLTAN_FATAL;
+    goto End;
   }
+  for (i=0; i<num_obj; i++)
+    fprintf(fp, "%d\n", part[i]);
+    /* fprintf(fp, "%d\n", zz->Proc); */
+  fclose(fp);
 
   /* Write geometry to file, if applicable. */
   if (gen_geom){
