@@ -308,6 +308,11 @@ int chaco_dist_graph(
 
   if (use_graph) {
 
+    if (*ewgt_dim) {
+      old_ewgts = *ewgts;
+      *ewgts = NULL;
+    }
+
     /* Allocate space for edge data */
     nedges = (*xadj)[ *nvtxs];
     if (nedges > 0) {
@@ -317,7 +322,6 @@ int chaco_dist_graph(
         return 0;
       }
       if (*ewgt_dim){
-        old_ewgts = *ewgts;
         *ewgts = (float *) malloc(nedges*(*ewgt_dim) * sizeof (float));
         if (*ewgts == NULL) {
           Gen_Error(0, "fatal: insufficient memory");
