@@ -41,6 +41,30 @@ RUN (beowulf-nightly-mpi) {
 
 ###############################################################################
 #
+# beowulf mpi - strict
+#
+###############################################################################
+
+RUN (beowulf-strict-mpi) {
+
+    BUILD-LABEL         = strict;
+    BUILD-DIR           = MPIstrict;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi-strict;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 12;
+    MPI-START           = lamboot;
+    MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
+    MPI-PING            = mpitask;
+    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+
+###############################################################################
+#
 # beowulf nightly tarball-creation
 #
 ###############################################################################
