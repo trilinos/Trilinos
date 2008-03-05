@@ -1570,7 +1570,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   if (method_repart){
     /* For REPART, we add one vertex per partition and one edge 
-     * per object (connecting the object with its input partition vertex).
+     * per object in a repartition part (connecting the object with 
+     * its input partition vertex).
      * Compute the number of these per processor within the 2D distribution
      * now so we can allocate relevant arrays to be large enough to include
      * this extra data.
@@ -1592,7 +1593,10 @@ int nRepartEdge = 0, nRepartVtx = 0;
                   zz->Communicator);
 
     nRepartVtx = NumRepart(myProc_x, nProc_x, zhg->GnRepartVtx);
-    nRepartEdge = NumRepart(myProc_y, nProc_y, zhg->GnRepartEdge);
+    /* For memory allocation and easy mapping of repartition edges to 
+     * processor rows, compute maximum number of repart edges possible; 
+     * will reduce later. */
+    nRepartEdge = NumRepart(myProc_y, nProc_y, zhg->GnObj);
   }
 
   /*
@@ -2870,10 +2874,28 @@ static int Zoltan_PHG_Add_Repart_Data(
                                vertices are added at the end.  */
 )
 {
+/* Function to add repartition vertices and edges to the hypergraph.
+ * Repartition vertices and edges are distributed among the processor columns
+ * and rows.
+ * One repartition vertex is added for each part to be included in the 
+ * partition (i.e., the target number of parts in the new partition).
+ * One repartition edge is added for each vertex in one of the target parts.
+ * Initially, edge memory is allocated large enough to hold the maximum
+ * number of repartition edges; this eases the mapping from vertices to their
+ * repartition edges when we create the edges.   The nRepartEdges variables
+ * represent the maximum number of edges that would be added to a processor.
+ * Then we remove zero-length edges resulting from vertices that are in parts
+ * that will not be in the new partition (i.e., vertex v in part q with q > k.
+ * We then readjust the nRepartEdges variables to represent the actual number
+ * of repartition edges added to a processor and use the actual numbers to 
+ * adjust phg->dist_y.
+ */
 char *yo = "Zoltan_PHG_Add_Repart_Data";
 PHGComm *hgc = phg->comm;
 int gnRepartVtx = zhg->GnRepartVtx;
 int gnRepartEdge = zhg->GnRepartEdge;
+int maxgnRepartEdge = zhg->GnObj;   /* max # of repartition edges that could
+                                       be added to the global hypergraph. */
 int myProc_x = hgc->myProc_x;
 int myProc_y = hgc->myProc_y;
 int nProc_x = hgc->nProc_x;
@@ -2914,6 +2936,7 @@ int cnt, tmp, dim, sum, prev;
 int ierr = ZOLTAN_OK;
 int *objsize = NULL;                 /* repartition edge weights. */
 int *tmpobjsize = NULL;
+int *colProc_cnt = NULL;             /* actual nRepartEdge per column proc */
 
   if (myProc_x >= 0 && myProc_y >= 0) {  /* This proc is part of 2D decomp */
 
@@ -2921,9 +2944,10 @@ int *tmpobjsize = NULL;
     phg->nRepartVtx = nRepartVtx = NumRepart(myProc_x, nProc_x, gnRepartVtx);
     firstRepartVtx = FirstRepart(myProc_x, nProc_x, gnRepartVtx);
 
-    /* Compute number of repartition edges to add to this processor row */
-    phg->nRepartEdge = nRepartEdge = NumRepart(myProc_y, nProc_y, gnRepartEdge);
-    firstRepartEdge = FirstRepart(myProc_y, nProc_y, gnRepartEdge);
+    /* Compute maximum number of repartition edges to add to this proc row */
+    phg->nRepartEdge = nRepartEdge = NumRepart(myProc_y, nProc_y, 
+                                               maxgnRepartEdge);
+    firstRepartEdge = FirstRepart(myProc_y, nProc_y, maxgnRepartEdge);
 
     /* If application did not fix any vertices, allocate fixed array for 
      * repartition vertices. 
@@ -2956,7 +2980,7 @@ int *tmpobjsize = NULL;
     /***** Repartition edges are distributed linearly.         *****/
     dim = phg->EdgeWeightDim;
     for (i = phg->nEdge; i < (phg->nEdge + nRepartEdge); i++) {
-      phg->hindex[i] = 0;
+      phg->hindex[i] = 0;  
       for (j = 0; j < dim; j++)
         phg->ewgt[i*dim+j] = 0.;
     }
@@ -3047,7 +3071,7 @@ int *tmpobjsize = NULL;
           proc_x = ProcForRepart(k, nProc_x, gnRepartVtx);
 
           /* Determine proc row for repartition edge associated with vtx i */
-          proc_y = ProcForRepart(vgno, nProc_y, gnRepartEdge);
+          proc_y = ProcForRepart(vgno, nProc_y, maxgnRepartEdge);
  
           /* Fill message buffers */
   
@@ -3092,7 +3116,7 @@ int *tmpobjsize = NULL;
      */
 
     tmp_hindex = &(phg->hindex[phg->nEdge]);
-    tmp_hvertex = &(phg->hvertex[tmp_hindex[0]]);
+    tmp_hvertex = phg->hvertex;
   
     /* Loop to build hindex array */
     for (i = 0; i < nrecv; i++) {
@@ -3206,24 +3230,34 @@ int *tmpobjsize = NULL;
     phg->nEdge += nRepartEdge;
     phg->nPins += nRepartPin;
 
-/* SANITY CHECK */
+    /* SANITY CHECK */
     if (phg->nPins != phg->hindex[phg->nEdge]) {
-      printf("%d KDDKDD SANITY CHECK FAILED %d != %d\n", zz->Proc, phg->nPins, phg->hindex[phg->nEdge]);
+      printf("%d KDDKDD SANITY CHECK FAILED %d != %d   %d %d %d %d %d %d\n", 
+             zz->Proc, phg->nPins, phg->hindex[phg->nEdge], nRepartVtx, 
+             phg->nVtx, nRepartEdge, phg->nEdge, nRepartPin, phg->nPins);
       exit( -1);
     }
 
     /* Update distx and disty to include the repartition vtx & edges. */
+    /* Easy for repartition vertices. */
     for (sum = 0, i = 0; i < nProc_x; i++) {
       phg->dist_x[i] += sum;
       sum += NumRepart(i, nProc_x, gnRepartVtx);
     }
     phg->dist_x[nProc_x] += sum;
 
+    /* Tougher for repartition edges, since we removed the empty ones.
+     * Need to get actual nRepartEdge values from each proc in column. */
+    
+    colProc_cnt = (int *) ZOLTAN_MALLOC(nProc_y * sizeof(int));
+    MPI_Allgather(&nRepartEdge, 1, MPI_INT, colProc_cnt, 1, MPI_INT, 
+                  phg->comm->col_comm);
     for (sum = 0, i = 0; i < nProc_y; i++) {
       phg->dist_y[i] += sum;
-      sum += NumRepart(i, nProc_y, gnRepartEdge);
+      sum += colProc_cnt[i];
     }
     phg->dist_y[nProc_y] += sum;
+    ZOLTAN_FREE(&colProc_cnt);
   }
 
 End:
@@ -3251,6 +3285,7 @@ int nProc_x = phg->comm->nProc_x;
 int nProc_y = phg->comm->nProc_y;
 int sum;
 int i;
+int *colProc_cnt = NULL;
 
   phg->nVtx  -= phg->nRepartVtx;
   phg->nEdge -= phg->nRepartEdge;
@@ -3268,17 +3303,25 @@ int i;
   }
 
   /* Update distx and disty to remove the repartition vtx & edges. */
+  /* Easy for repartition vertices */
   for (sum = 0, i = 0; i < nProc_x; i++) {
     phg->dist_x[i] -= sum;
     sum += NumRepart(i, nProc_x, zhg->GnRepartVtx);
   }
   phg->dist_x[nProc_x] -= sum;
 
+  /* Tougher for repartition edges, since we removed the empty ones.
+   * Need to get actual nRepartEdge values from each proc in column. */
+    
+  colProc_cnt = (int *) ZOLTAN_MALLOC(nProc_y * sizeof(int));
+  MPI_Allgather(&(phg->nRepartEdge), 1, MPI_INT, colProc_cnt, 1, MPI_INT, 
+                phg->comm->col_comm);
   for (sum = 0, i = 0; i < nProc_y; i++) {
     phg->dist_y[i] -= sum;
-    sum += NumRepart(i, nProc_y, zhg->GnRepartEdge);
+    sum += colProc_cnt[i];
   }
   phg->dist_y[nProc_y] -= sum;
+  ZOLTAN_FREE(&colProc_cnt);
 
   return ZOLTAN_OK;
 }
