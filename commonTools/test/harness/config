@@ -105,6 +105,24 @@ RUN (beowulf-nightly-tarball-test) {
 }
 
 ###############################################################################
+##
+## beowulf no fortran serial
+##
+################################################################################
+
+RUN (beowulf-nofortran-serial) {
+
+    BUILD-LABEL         = no fortran;
+    BUILD-DIR           = NO_FORTRAN_SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-nofortran;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+################################################################################
 #
 # beowulf coverage
 #
@@ -120,79 +138,6 @@ RUN (beowulf-coverage) {
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
-
-}
-
-###############################################################################
-#
-# beowulf-n12 nightly serial
-#
-###############################################################################
- 
-RUN (beowulf-n12-nightly-serial) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = SERIAL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = linux-beowulf;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# beowulf-n13 nightly serial
-#
-###############################################################################
- 
-RUN (beowulf-n13-nightly-serial) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = SERIAL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = linux-beowulf;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# beowulf-n14 nightly serial
-#
-###############################################################################
- 
-RUN (beowulf-n14-nightly-serial) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = SERIAL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = linux-beowulf;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# beowulf-n15 coverage
-#
-###############################################################################
-
-RUN (beowulf-n15-coverage) {
-    
-    BUILD-LABEL         = coverage;
-    BUILD-DIR           = COVERAGE;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = linux-beowulf-coverage;
-   #TEST-CATEGORY       = COVERAGE; # set up later
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -234,128 +179,6 @@ RUN (exetazo-mpi) {
 
 }
 
-###############################################################################
-#
-# hrothgar nightly serial
-#
-###############################################################################
-
-RUN (hrothgar-nightly-serial) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = SERIAL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = linux-hrothgar;
-    MAKE-COMMAND        = make -j2;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# hrothgar nightly mpi
-#
-###############################################################################
-
-RUN (hrothgar-nightly-mpi) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = MPI;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = linux-hrothgar-mpi;
-    MAKE-COMMAND        = make -j2;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 4;
-    MPI-START           = lamboot;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# paunchy nightly serial
-#
-###############################################################################
-
-RUN (paunchy-nightly-serial) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = SERIAL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = sunos-paunchy;
-    MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# paunchy nightly mpi
-#
-###############################################################################
-
-RUN (paunchy-nightly-mpi) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = MPI;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = sunos-paunchy-mpi;
-    MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 4;
-    MPI-START           = lamboot;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# atlantis nightly serial
-#
-###############################################################################
-
-RUN (atlantis-nightly-serial) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = SERIAL;
-    COMM                = serial;
-    INVOKE-CONFIGURE    = sgi-atlantis;
-    MAKE-COMMAND        = gmake;
-    TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# atlantis nightly mpi
-#
-###############################################################################
-
-RUN (atlantis-nightly-mpi) {
-
-    BUILD-LABEL         = default;
-    BUILD-DIR           = MPI;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = sgi-atlantis-mpi;
-    MAKE-COMMAND        = gmake;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 5;
-    TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
 ###############################################################################
 #
 # redstorm X compile nightly mpi
