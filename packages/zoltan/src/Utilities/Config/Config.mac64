@@ -15,7 +15,7 @@
 #  Config.mac  
 ##############################################################################
 
-DEFS 			= -DIGNORE_FIRST_ITERATION_STATS
+DEFS 			= 
 
 RANLIB			= ranlib
 AR			= ar r
