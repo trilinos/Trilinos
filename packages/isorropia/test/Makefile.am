@@ -39,10 +39,16 @@ ZOLTAN_TEST_DIR =
 ZOLTAN_TEST =
 endif
 
+if HAVE_EPETRAEXT
+EPETRAEXT_TEST = mtx
+else
+EPETRAEXT_TEST =
+endif
+
 #
 # Note: utils must be built first, before the other subdirs
 #
-SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) mtx
+SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(EPETRAEXT_TEST)
 
 TESTS = \
 utest/utest.exe \
