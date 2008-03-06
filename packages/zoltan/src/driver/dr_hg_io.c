@@ -433,7 +433,7 @@ int read_hypergraph_file(
   }
 
   /*
-   * intialize all of the element structs as unused by
+   * initialize all of the element structs as unused by
    * setting the globalID to -1
    */
   for (i = 0; i < mesh->elem_array_len; i++) 

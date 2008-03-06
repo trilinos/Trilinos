@@ -398,16 +398,16 @@ int error = 0;  /* flag to indicate status */
       start = NULL;   /* index of start of vertices' edge lists */
      
       /* Assume symmetric matrix. Always create weights, but they are 
-         only used if user sets Zoltan parameter obj_weight_dim=1. */
+         used only if user sets Zoltan parameter obj_weight_dim=1. */
       *ch_ewgt_dim = 1;
       *vwgt_dim = 1;
 
       cnt = (int *) calloc(N, sizeof(int));
       start = (int *) malloc((N+1) * sizeof(int));
       if (*vwgt_dim)
-        vwgts = (float *) malloc((*vwgt_dim) * N * sizeof(int));
+        vwgts = (float *) calloc((*vwgt_dim) * N, sizeof(float));
       if (*ch_ewgt_dim)
-        ewgts = (float *) malloc((*ch_ewgt_dim) * (*nPins) * sizeof(int));
+        ewgts = (float *) calloc((*ch_ewgt_dim) * (*nPins), sizeof(float));
       if ((N && !cnt) || !start || ((*vwgt_dim && N) && !vwgts) 
          || ((*ch_ewgt_dim && *nPins) && !ewgts)) {
         fprintf(stderr, "%s Insufficient memory.", yo);
