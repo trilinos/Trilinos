@@ -503,6 +503,7 @@ End:
       safe_free((void **) &index);
       safe_free((void **) &vertex);
     }
+    safe_free((void **) &myIJV);
     safe_free((void **) &myVals);
     return error;
 }
