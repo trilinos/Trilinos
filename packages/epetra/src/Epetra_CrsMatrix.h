@@ -641,7 +641,7 @@ or if the number of entries in this row exceed the Length parameter.
                 \warning The NormInf() method will not properly calculate the infinity norm for a matrix that has entries that are
                 replicated on multiple processors.  In this case, if the rows are fully replicated, NormInf() will return a
                 value equal to the maximum number of processors that any individual row of the matrix is replicated on.
-    \param x - (Out) An Epetra_Vector containing the row sums of the \e this matrix.
+    \param x - (Out) An Epetra_Vector containing the inverse of the row sums of the \e this matrix.
                 \warning When rows are fully replicated on multiple processors, it is assumed that the distribution of x is
                 the same as the rows (RowMap())of \e this.  When multiple processors contain partial sums for individual entries, the
                 distribution of x is assumed to be the same as the RangeMap() of \e this.  When each row of \e this is
@@ -653,11 +653,11 @@ or if the number of entries in this row exceed the Length parameter.
   */
   int InvRowSums(Epetra_Vector& x) const;
 
-  //! Computes the max of absolute values of the rows of the Epetra_CrsMatrix, results returned in x.
+  //! Computes the inverse of the max of absolute values of the rows of the Epetra_CrsMatrix, results returned in x.
   /*! The vector x will return such that x[i] will contain the inverse of max of the absolute values of the entries in the ith
 	        row of the \e this matrix.
                 \warning This method will not work when multiple processors contain partial sums for individual entries.
-    \param x - (Out) An Epetra_Vector containing the row maxs of the \e this matrix. 
+    \param x - (Out) An Epetra_Vector containing the inverse of the row maxs of the \e this matrix. 
 		\warning When rows are fully replicated on multiple processors, it is assumed that the distribution of x is
                 the same as the rows (RowMap())of \e this.  When each row of \e this is uniquely owned, the distribution of 
 		x can be that of the RowMap() or the RangeMap().
