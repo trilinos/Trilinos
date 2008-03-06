@@ -1716,8 +1716,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
       for (j=0; j<recvCounts[i]; j+=2){
         row = recvIDs[recvDisp[i]+j];
         col = recvIDs[recvDisp[i]+j+1];
-        if ( (row < 0) || (row > mpd->nRows) ||
-             (col < 0) || (col > mpd->nCols)){
+        if ((row > mpd->nRows) || (col > mpd->nCols)){
           ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "Bad ID\n");
           exit(0);
         }
@@ -1843,7 +1842,7 @@ void Zoltan_MP_Debug_Partitioning(ZZ *zz)
         for (j=recvDisp[i]; j < recvDisp[i] + recvCounts[i]; j++){
           idx = recvIDs[j] - baseID;
     
-          if ((idx < 0) || (idx >= numIDs)){
+          if (idx >= numIDs){
             ZOLTAN_PRINT_ERROR(mpd->zzLib->Proc, yo, "bad id\n");
             exit(0);
           }
