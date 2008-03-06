@@ -144,7 +144,7 @@ int Zoltan_ParMetis(
 
   /* Some algorithms use geometry data */
   if (strncmp(alg, "PARTGEOM", 8) == 0){               /* PARTGEOM & PARTGEOMKWAY */
-    geo = (ZOLTAN_Third_Geom*) ZOLTAN_MALLOC(sizeof(ZOLTAN_Third_Geom*));
+    geo = (ZOLTAN_Third_Geom*) ZOLTAN_MALLOC(sizeof(ZOLTAN_Third_Geom));
     memset (geo, 0, sizeof(ZOLTAN_Third_Geom));
     /* ParMETIS will crash if geometric method and some procs have no nodes. */
     /* Avoid fatal crash by setting scatter to level 2 or higher. */

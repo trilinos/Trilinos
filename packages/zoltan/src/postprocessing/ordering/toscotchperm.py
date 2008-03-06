@@ -18,11 +18,12 @@ def computeoffset(infile):
 
 def dotranslation(infile, outfile, offset):
     """Translate Zoltan ordering format into Scotch format"""
+    counteroffset = 1 - offset
     for line in infile:
         currline= re.split(' |\t',line)
         if (currline[0].isalpha()):
             continue
-        buff = buff = "%d\t%d\n" % (int(currline[0]), int(currline[2])+offset)
+        buff = buff = "%d\t%d\n" % (int(currline[0])-counteroffset, int(currline[2])+offset)
         outfile.write(buff)
 
 def computevertices(file):
@@ -47,7 +48,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
     try:
-        opts, args = getopt.gnu_getopt(argv[1:], "hi:o:vn:", ["help", "output=", "input=", "verbose", "np="])
+        opts, args = getopt.gnu_getopt(argv[1:], "hi:o:vn:", ["help", "output=", "input=", "verbose", "np=", "offset="])
     except getopt.GetoptError:
         # print help information and exit:
         usage()
