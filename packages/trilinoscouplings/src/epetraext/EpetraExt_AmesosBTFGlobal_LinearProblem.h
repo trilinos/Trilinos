@@ -93,7 +93,7 @@ class AmesosBTFGlobal_LinearProblem: public SameTypeTransform<Epetra_LinearProbl
   
   Teuchos::RCP<Epetra_CrsGraph> NewGraph_;
 
-  Teuchos::RCP<Epetra_Import> Importer_;
+  Teuchos::RCP<Epetra_Import> Importer_, Importer2_;
 
   std::vector<int> rowPerm_, colPerm_, blockPtr_;
 
