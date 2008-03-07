@@ -120,6 +120,7 @@ int chaco_dist_graph(
   }
   if (*vwgt_dim){
     old_vwgts = *vwgts;
+    *vwgts = NULL;
     if (n > 0) {
       *vwgts = (float *) malloc(n*(*vwgt_dim)*sizeof(float));
       if (*vwgts == NULL) {
