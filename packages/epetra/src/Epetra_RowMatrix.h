@@ -91,7 +91,7 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
     \param Out
 	   Values - Extracted values for this row.
     \param Out
-	   Indices - Extracted global column indices for the corresponding values.
+	   Indices - Extracted local column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful.
   */
