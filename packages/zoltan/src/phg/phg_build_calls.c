@@ -834,7 +834,10 @@ ZOLTAN_ID_PTR keep_pins, remove_pins, in_pins;
 int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
 
   /* Remove dense edges and zero-sized edges from input list */
-  gesize_threshold = esize_threshold * gnVtx;
+  if (esize_threshold<1)
+    gesize_threshold = esize_threshold * gnVtx; /* relative */
+  else
+    gesize_threshold = esize_threshold; /* absolute */
   nremove = 0;
   nremove_size = 0;
 

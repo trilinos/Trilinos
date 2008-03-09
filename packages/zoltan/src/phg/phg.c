@@ -89,6 +89,7 @@ static PARAM_VARS PHG_params[] = {
     /* Same as PHG_USE_TIMERS. */
   {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
     /* Ignore hyperedges larger than this threshold times nvertex */
+    /* If PHG_EDGE_SIZE_THRESHOLD>1, interpret it as absolute value. */
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
     /* Adjustment factor for balance in recursive bisection. */
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
