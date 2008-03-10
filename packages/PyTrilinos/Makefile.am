@@ -119,6 +119,7 @@ if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 
+if BUILD_PYTRILINOS
 if BUILD_TESTS
 tests:
 	@echo ""
@@ -151,6 +152,17 @@ examples:
 
 install-examples:
 	@echo "PyTrilinos examples were disabled at configure time"
+endif
+else
+# BUILD_PYTRILINOS = no
+tests:
+	@echo "PyTrilinos was disabled at configure time"
+
+examples:
+	@echo "PyTrilinos was disabled at configure time"
+
+install-examples:
+	@echo "PyTrilinos was disabled at configure time"
 endif
 
 clean-tests:
