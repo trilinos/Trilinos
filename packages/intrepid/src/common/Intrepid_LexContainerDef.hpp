@@ -226,226 +226,6 @@ inline void LexContainer<Scalar>::resizeContainer(const Teuchos::Array<int>& new
   indexRange_.assign(newIndexRange.begin(),newIndexRange.end());  
   data_.resize(this -> getSize());
 }
-
-
-
-template<class Scalar>
-void LexContainer<Scalar>::resizeContainer(const int numPoints,
-                                           const int numFields,
-                                           const int fieldRank,
-                                           const int operatorOrd,
-                                           const int spaceDim){  
-  // Validate input
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( numPoints < 0),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Number of points cannot be negative!");  
-  TEST_FOR_EXCEPTION( ( numFields < 0),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Number of fields cannot be negative!");  
-  TEST_FOR_EXCEPTION( !( (0 <= fieldRank ) && ( fieldRank <= 2 ) ),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Field rank can be 0,1, or 2 only.");  
-  TEST_FOR_EXCEPTION( !( (0 <= operatorOrd ) && ( operatorOrd <= 10 ) ),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Total derivative order has to be between 0 and 10.");  
-  TEST_FOR_EXCEPTION( !( (0 <  spaceDim ) && ( spaceDim <= 3  ) ),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Space dimension has to be between 1 and 3.");  
-  TEST_FOR_EXCEPTION(  ( (1 == spaceDim ) && ( fieldRank > 0  ) ),
-                       std::invalid_argument,
-                       ">>> ERROR (LexContainer): Field rank cannot be greater than 0 in one-dimension");  
-#endif  
-  
-  // Set rank of the LexContainer
-  int rank = 0;
-  if(spaceDim == 1) {
-    
-    // Indices count: numPoints (1) + numFields (1) + (numDerivatives)
-    rank = 1 + 1 + operatorOrd; 
-  }
-  else {
-    
-    // Indices count: numPoints (1) + numFields (1)  + (fieldRank) + (numDerivatives)
-    rank = 1 + 1 + fieldRank + operatorOrd; 
-  }
-  
-  // Define an array for the new index ranges
-  Teuchos::Array<int> newIndexRange(rank);
-  
-  // Load indexRange_ with upper bounds for each index
-  newIndexRange[0] = numPoints;
-  newIndexRange[1] = numFields;
-  
-  // For vector and tensor fields index range for components is bounded by the space dimension
-  for(int fRank = 0; fRank < fieldRank; fRank++){
-    newIndexRange[2 + fRank] = spaceDim; 
-  }
-  
-  // For all field types index range for partial derivatives is bounded by space dimension
-  for(int dOrd = 0; dOrd < operatorOrd; dOrd++) {
-    newIndexRange[2 + fieldRank + dOrd] = spaceDim;
-  }
-  
-  // Once newIndexRange has been set, reset to change container size to reflect the new index bounds
-  this -> resizeContainer(newIndexRange);
-}
-
-
-template<class Scalar>
-void LexContainer<Scalar>::shapeContainer(const int       numPoints,
-                                          const int       numFields,
-                                          const EField    fieldType,
-                                          const EOperator operatorType,
-                                          const int       spaceDim)
-{
-  // Validate input
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( numPoints < 0),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Number of points cannot be negative!");  
-  TEST_FOR_EXCEPTION( ( numFields < 0),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Number of fields cannot be negative!");  
-  TEST_FOR_EXCEPTION( !( (0 <  spaceDim ) && ( spaceDim <= 3  ) ),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Space dimension has to be between 1 and 3.");  
-#endif  
-  
-  // We need to shape a container that will hold the result of (operatorType) applied to (fieldType).
-  // Depending on the values of these arguments and the space dimension, the resulting field may have
-  // different rank and operator order. For example, operators VALUE and all total derivatives, i.e.,
-  // Dk, preserve the rank and the operator order. Other, like DIV or CURL may change one or both
-  // of these values. See comments below.
-  
-  // rank of the range field and its derivative order
-  int rangeFieldRank = -1;
-  int rangeOperatorOrd  = -1;
-  
-  // Rank of the input field and derivative order of the specified input operator
-  int fieldRank = getFieldRank(fieldType);
-  int operatorOrd = getOperatorOrder(operatorType);
-  
-  // If space dimension = 1 only scalar fields admissible. Any differential operator in 1D defaults
-  // to a 1D derivative and so only the order of the operator matters. Only necessary to verify 
-  // input and copy rank and derivative order data; no need to fall through separate operator cases.
-  if(spaceDim == 1) {
-#ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( fieldRank > 0 ),
-                        std::invalid_argument,
-                        ">>> ERROR (LexContainer): Field rank cannot be greater than 0 in one-dimension");  
-#endif  
-    rangeFieldRank = fieldRank;
-    rangeOperatorOrd = operatorOrd;
-  }
-  
-  // We are either in 2D or 3D
-  else {
-    switch(operatorType){
-      
-      // The range container for value and total derivative operators has the same rank as the input 
-      // field and order equal to the operator order. These operators can be applied to all fields.
-      case OPERATOR_VALUE:
-      case OPERATOR_GRAD:
-      case OPERATOR_D1:
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10:
-        
-        rangeFieldRank = fieldRank;
-        rangeOperatorOrd = operatorOrd;
-        break;
-        
-      case OPERATOR_DIV:
-        
-        // DIV applied to VECTOR gives SCALAR => rangeFieldRank = 0 = fieldRank - 1
-        // DIV applied to TENSOR gives VECTOR => rangeFieldRank = 1 = fieldRank - 1
-        // and rangeOperatorOrd = 0. Verify that field rank is 1 or 2! (cannot apply DIV to scalars!)
-#ifdef HAVE_INTREPID_DEBUG
-        TEST_FOR_EXCEPTION( ( !( (fieldRank == 1) || ( fieldRank == 2) ) ),
-                            std::invalid_argument,
-                            ">>> ERROR (LexContainer): Invalid field type for OPERATOR_DIV");  
-#endif  
-        rangeFieldRank = fieldRank - 1;
-        rangeOperatorOrd = 0;
-        break;
-        
-      case OPERATOR_CURL:
-        
-        // CURL: Rank of the range field depends on space dimension and rank of input field:
-        switch(spaceDim){
-          case 3:
-            
-            // 3D CURL applied to VECTOR returns VECTOR => rangeFieldRank =  fieldRank
-            // 3D CURL applied to TENSOR returns TENOSR => rangeFieldRank =  fieldRank
-            // and rangeOperatorOrd = 0. Verify that field rank is 1 or 2! (cannot apply 3D CURL to scalars)
-#ifdef HAVE_INTREPID_DEBUG
-            TEST_FOR_EXCEPTION( ( !( (fieldRank == 1) || ( fieldRank == 2) ) ),
-                                std::invalid_argument,
-                                ">>> ERROR (LexContainer): Invalid field type for 3D OPERATOR_CURL");  
-#endif  
-            rangeFieldRank = fieldRank;
-            rangeOperatorOrd = 0;
-            break;
-            
-          case 2:
-            
-            // 2D CURL: VECTOR -> SCALAR => if(fieldRank == 1) { rangeFieldRank = 0}  
-            // 2D CURL: SCALAR -> VECTOR => if(fieldRank == 0) { rangeFieldRank = 1}  
-            // In both cases rangeOperatorOrd = 0. Verify that field rank is 0 or 1
-#ifdef HAVE_INTREPID_DEBUG
-            TEST_FOR_EXCEPTION( ( !( (fieldRank == 0) || ( fieldRank == 1) ) ),
-                                std::invalid_argument,
-                                ">>> ERROR (LexContainer): Invalid field type for 2D OPERATOR_CURL");  
-#endif  
-            // range rank can be computed without logic statements by the simple formula below            
-            rangeFieldRank = 1 - fieldRank;
-            rangeOperatorOrd = 0;
-            break;
-            
-          default:
-            TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ),
-                                std::invalid_argument,
-                                ">>> ERROR (LexContainer): Invalid space dimension");
-        }// spaceDim
-        break; // CURL
-        
-      default:
-        TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
-                              (operatorType != OPERATOR_GRAD)  && 
-                              (operatorType != OPERATOR_CURL)  && 
-                              (operatorType != OPERATOR_DIV)   &&
-                              (operatorType != OPERATOR_D1)    && 
-                              (operatorType != OPERATOR_D2)    && 
-                              (operatorType != OPERATOR_D3)    && 
-                              (operatorType != OPERATOR_D4)    && 
-                              (operatorType != OPERATOR_D5)    && 
-                              (operatorType != OPERATOR_D6)    && 
-                              (operatorType != OPERATOR_D7)    && 
-                              (operatorType != OPERATOR_D8)    && 
-                              (operatorType != OPERATOR_D9)    && 
-                              (operatorType != OPERATOR_D10) ),
-                            std::invalid_argument,
-                            ">>> ERROR (LexContainer): Invalid operator type");
-    }// operatorType
-  }// !(spaceDim == 1)
-  
-  // Call specialized resize method
-  this -> resizeContainer(numPoints,
-                          numFields,
-                          rangeFieldRank,
-                          rangeOperatorOrd,
-                          spaceDim);
-}
-
-
-
 template<class Scalar>
 inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const Teuchos::Array<int>& multiIndex) {
   data_[this -> getAddress(multiIndex)] = dataValue; 
@@ -482,7 +262,7 @@ const Scalar& LexContainer<Scalar>::operator [] (const int address) const {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
                       std::out_of_range,
-                      ">>> ERROR (Point): address out of range.");
+                      ">>> ERROR (LexContainer): Specified address is out of range.");
 #endif
   return data_[address];
 }
@@ -495,13 +275,13 @@ inline LexContainer<Scalar>& LexContainer<Scalar>::operator = (const LexContaine
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
-                      ">>> ERROR (Point): Invalid right-hand side to '='. Self-assignment prohibited.");
+                      ">>> ERROR (LexContainer): Invalid right-hand side to '='. Self-assignment prohibited.");
   TEST_FOR_EXCEPTION( ( this -> getSize() != right.getSize() ),
                       std::invalid_argument,
-                      ">>> ERROR (Point): Invalid size of right-hand side argument to '='.");
+                      ">>> ERROR (LexContainer): Invalid size of right-hand side argument to '='.");
   TEST_FOR_EXCEPTION( ( indexRange_.size() != right.indexRange_.size() ),
                       std::invalid_argument,
-                      ">>> ERROR (Point): Invalid rank of right-hand side argument to '='.");
+                      ">>> ERROR (LexContainer): Invalid rank of right-hand side argument to '='.");
 #endif
   data_ = right.data_;
   indexRange_ = right.indexRange_; 
@@ -562,82 +342,6 @@ std::ostream& operator << (std::ostream& os, const LexContainer<Scalar>& contain
 
   return os;
 }
-
-
-
-int getFieldRank(const EField fieldType) {
- int fieldRank = -1;
-  switch(fieldType){
-    case FIELD_FORM_0:
-    case FIELD_FORM_3:
-      fieldRank = 0;
-      break;
-    case FIELD_FORM_1:
-    case FIELD_FORM_2:
-    case FIELD_VECTOR:
-      fieldRank = 1;
-      break;
-    case FIELD_TENSOR:
-      fieldRank = 2;
-    default:
-      TEST_FOR_EXCEPTION( ( (fieldType != FIELD_FORM_0) &&
-                            (fieldType != FIELD_FORM_1) && 
-                            (fieldType != FIELD_FORM_2) && 
-                            (fieldType != FIELD_FORM_3) &&
-                            (fieldType != FIELD_VECTOR) && 
-                            (fieldType != FIELD_TENSOR) ),
-                          std::invalid_argument,
-                          ">>> ERROR (getFieldRank): Invalid field type");
-  }
-  return fieldRank;
-}
-
-
-
-int getOperatorOrder(const EOperator operatorType) {
-  int opOrder;
-  switch(operatorType){
-    case OPERATOR_VALUE:
-      opOrder = 0;
-      break;
-    case OPERATOR_GRAD:
-    case OPERATOR_CURL:
-    case OPERATOR_DIV:
-    case OPERATOR_D1:
-      opOrder = 1;
-      break;
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10:
-      opOrder = (int)operatorType - (int)OPERATOR_D1 + 1;
-      break;
-    default:
-      TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
-                            (operatorType != OPERATOR_GRAD)  && 
-                            (operatorType != OPERATOR_CURL)  && 
-                            (operatorType != OPERATOR_DIV)   &&
-                            (operatorType != OPERATOR_D1)    && 
-                            (operatorType != OPERATOR_D2)    && 
-                            (operatorType != OPERATOR_D3)    && 
-                            (operatorType != OPERATOR_D4)    && 
-                            (operatorType != OPERATOR_D5)    && 
-                            (operatorType != OPERATOR_D6)    && 
-                            (operatorType != OPERATOR_D7)    && 
-                            (operatorType != OPERATOR_D8)    && 
-                            (operatorType != OPERATOR_D9)    && 
-                            (operatorType != OPERATOR_D10) ),
-                          std::invalid_argument,
-                          ">>> ERROR (getOperatorOrder): Invalid operator type");
-      opOrder = -1;
-  }
-  return opOrder;
-}    
 
 // End member, friend, and related function definitions of class LexContainer.
 
