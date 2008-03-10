@@ -299,6 +299,8 @@ fwd()
   NewLHS_->Import( *OldLHS_, *Importer_, Insert );
   NewRHS_->Import( *OldRHS_, *Importer_, Insert );
   NewMatrix_->Import( *OldMatrix_, *Importer_, Insert );
+
+  return true;
 }
 
 bool
@@ -323,6 +325,8 @@ rvs()
   }
   //cout << "AmesosBTFGlobal_LinearProblem: OldLHS_" << endl;
   //cout << *OldLHS_ << endl;
+
+  return true;
 }
 
 } //namespace EpetraExt
