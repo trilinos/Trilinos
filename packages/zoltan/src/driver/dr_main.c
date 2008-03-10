@@ -375,7 +375,9 @@ if (iteration == 1) {
       }
       /* change the ParMETIS Seed */
       sprintf(str, "%d", iteration);
+#ifdef ZOLTAN_PARMETIS      
       Zoltan_Set_Param(zz, "PARMETIS_SEED", str);
+#endif
     }
 
   } /* End of loop over read and balance */

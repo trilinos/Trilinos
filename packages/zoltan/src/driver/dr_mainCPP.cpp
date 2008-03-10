@@ -284,7 +284,9 @@ int main(int argc, char *argv[])
         }
       /* change the ParMETIS Seed */
       sprintf(str, "%d", iteration%10000);
+#ifdef ZOLTAN_PARMETIS      
       zz->Set_Param("PARMETIS_SEED", str);
+#endif
     }
 
   } /* End of loop over read and balance */
