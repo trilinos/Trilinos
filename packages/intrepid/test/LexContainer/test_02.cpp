@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "|                           Unit Test LexContainer                            |\n" \
     << "|                                                                             |\n" \
-    << "|     1) Shaping LexContainer based on fieldType and operatorType             |\n" \
-    << "|     2) Testing exception handling if intrepid-debug is enabled              |\n" \
+    << "|     1) Testing exception handling                                           |\n" \
+    << "|       requires intrepid to be configured with --enable-intrepid-debug       |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
     << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -75,581 +75,19 @@ int main(int argc, char *argv[]) {
   // Test initializations
   int errorFlag  = 0;
   
-  // Upper ranges for numer of fields and number of evaluation points
-  int maxNumPoints = 10;
-  int maxNumFields = 10;
+  // Define variables to create and use LexContainers
+  Teuchos::Array<int> indexRange;
+  Teuchos::Array<int> multiIndex;
   
-  // These tests checks if a LexContainer has the correct size for different field & operator sets
-  LexContainer<double> myContainer;
-  int correctSize;
-  int spaceDim;
+  // Initialize indexRange for rank-4 multi-index value
+  indexRange.resize(4);
+  indexRange[0] = 5;
+  indexRange[1] = 3;
+  indexRange[2] = 2;
+  indexRange[3] = 7;
   
-  *outStream  \
-    << "===============================================================================\n"\
-    << "| TEST 1: LexContainers for scalar fields                                     |\n"\
-    << "===============================================================================\n\n";
-  // Alternate fieldType between FORM_0 and FORM_3
-  
-  // - to shape LexContainer to store VALUE(FIELD_FORM_0) in 2D (dimension not actually used in this case):
-  *outStream << " Shape LexContainer to store VALUE(FIELD_FORM_0) in 2D: \n";
-  spaceDim  = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_VALUE,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields
-      correctSize = numPoints*numFields;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (1)" << "\n";     
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store GRAD(FIELD_FORM_3) in 2D (dimension is used in this case!):
-  *outStream << " Shape  LexContainer to store GRAD(FIELD_FORM_3) in 2D: \n";
-  spaceDim  = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_3,
-                                 OPERATOR_GRAD,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim
-      correctSize =  numPoints*numFields*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (2)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D2(FIELD_FORM_0) in 3D (dimension is used in this case!):
-  *outStream << " Shape  LexContainer  to store D2(FIELD_FORM_0) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_D2,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (3)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D3(FIELD_FORM_3) in 3D (dimension is used in this case!):
-  *outStream << " Shape  LexContainer  to store D3(FIELD_FORM_3) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_3,
-                                 OPERATOR_D3,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (4)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D4(FIELD_FORM_0) in 3D (dimension is used in this case!):
-  *outStream << " Shape  LexContainer  to store D4(FIELD_FORM_0) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_D4,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (5)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D5(FIELD_FORM_3) in 3D (dimension is used in this case!):
-  *outStream << " Shape  LexContainer  to store D5(FIELD_FORM_3) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_3,
-                                 OPERATOR_D5,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (6)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store CURL(FIELD_FORM_0) in 2D (dimension is used in this case!):
-  *outStream << " Shape  LexContainer  to store CURL(FIELD_FORM_0) in 2D: \n";  
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_CURL,
-                                 spaceDim);      
-      
-      // Size should equal numPoints*numFields*spaceDim
-      correctSize = numPoints*numFields*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (7)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  *outStream  << "\n" \
-    << "===============================================================================\n"\
-    << "| TEST 2: LexContainers for vector fields                                     |\n"\
-    << "===============================================================================\n\n";
-  
-  // - to shape LexContainer to store VALUE(FIELD_FORM_1) in 2D:
-  *outStream << " Shape  LexContainer  to store VALUE(FIELD_FORM_1) in 2D: \n";
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_VALUE,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim
-      correctSize = numPoints*numFields*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (8)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store CURL(FIELD_FORM_2) values in 2D:
-  *outStream << " Shape  LexContainer  to store CURL(FIELD_FORM_2) in 2D: \n";
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_2,
-                                 OPERATOR_CURL,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields
-      correctSize = numPoints*numFields;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (9)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store CURL(FIELD_VECTOR) values in 3D:
-  *outStream << " Shape  LexContainer  to store CURL(FIELD_VECTOR) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_VECTOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim
-      correctSize = numPoints*numFields*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (10)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D1(FIELD_FORM_1) values in 3D:
-  *outStream << " Shape  LexContainer  to store D1(FIELD_FORM_1) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_D1,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (11)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D2(FIELD_FORM_2) values in 3D:
-  *outStream << " Shape  LexContainer  to store D2(FIELD_FORM_2) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_2,
-                                 OPERATOR_D2,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (12)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D3(FIELD_VECTOR) values in 3D:
-  *outStream << " Shape  LexContainer  to store D3(FIELD_VECTOR) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_VECTOR,
-                                 OPERATOR_D3,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (13)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D4(FIELD_FORM_1) values in 3D:
-  *outStream << " Shape  LexContainer  to store D4(FIELD_FORM_1) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_D4,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (14)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  // - to shape LexContainer to store D5(FIELD_FORM_2) values in 2D:
-  *outStream << " Shape  LexContainer  to store D5(FIELD_FORM_2) in 2D: \n";
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_2,
-                                 OPERATOR_D5,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (14)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store DIV(FIELD_FORM_1) values in 3D: (checking on fieldType = FORM_1)
-  *outStream << " Shape  LexContainer  to store DIV(FIELD_FORM_1) in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_DIV,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields
-      correctSize = numPoints*numFields;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (15)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store DIV(FIELD_FORM_2) values in 2D: (checking on fieldType = FORM_2)
-  *outStream << " Shape  LexContainer  to store DIV(FIELD_FORM_2) in 2D: \n";
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_2,
-                                 OPERATOR_DIV,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields
-      correctSize = numPoints*numFields;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (16)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store DIV(FIELD_VECTOR) values in 2D: (checking on fieldType = VECTOR)
-  *outStream << " Shape  LexContainer  to store DIV(FIELD_VECTOR) in 2D: \n";
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_VECTOR,
-                                 OPERATOR_DIV,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields
-      correctSize = numPoints*numFields;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (17)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  *outStream  << "\n" \
-    << "===============================================================================\n"\
-    << "| TEST 3: LexContainers for tensor fields                                     |\n"\
-    << "===============================================================================\n\n";
-  
-  // - to shape LexContainer to store VALUE(TENSOR) values in 2D:
-  *outStream << " Shape  LexContainer  to store VALUE(TENSOR) values in 2D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_VALUE,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (18)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store DIV(TENSOR) values in 2D:
-  *outStream << " Shape  LexContainer  to store DIV(TENSOR) values in 2D: \n";
-  spaceDim = 2;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_DIV,
-                                 spaceDim);
-      
-      
-      // Size should equal numPoints*numFields*spaceDim
-      correctSize = numPoints*numFields*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (19)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store CURL(TENSOR) values in 3D:
-  *outStream << " Shape  LexContainer  to store CURL(TENSOR) values in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (20)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D1(TENSOR) values in 3D:
-  *outStream << " Shape  LexContainer  to store D1(TENSOR) values in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_D1,
-                                 spaceDim);
-      
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (21)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D2(TENSOR) values in 3D:
-  *outStream << " Shape  LexContainer  to store D2(TENSOR) values in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_D2,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (22)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
-  
-  // - to shape LexContainer to store D3(TENSOR) values in 3D:
-  *outStream << " Shape  LexContainer  to store D3(TENSOR) values in 3D: \n";
-  spaceDim = 3;
-  for(int numPoints = 0; numPoints < maxNumPoints; numPoints++) {
-    for (int numFields = 0; numFields <maxNumFields; numFields++) {  
-      myContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_D3,
-                                 spaceDim);
-      
-      // Size should equal numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim
-      correctSize = numPoints*numFields*spaceDim*spaceDim*spaceDim*spaceDim*spaceDim;
-      if( myContainer.getSize() != correctSize ){
-        errorFlag++;
-        *outStream  << std::setw(70) << "^^^^----FAILURE! (23)" << "\n";      
-        *outStream << " Container size = " << myContainer.getSize() << "\n";
-        *outStream << "   Correct size = " << correctSize << "\n";
-      }
-    }
-  }
-  
+  // Create a LexContainer
+  LexContainer<double> myContainer(indexRange);
   
   // These tests should only run if intrepid was configured with --enable-intrepid-debug option
   // Each test is designed to cause an exception. The total number of all caught exceptions should
@@ -658,102 +96,134 @@ int main(int argc, char *argv[]) {
   
   *outStream << "\n" \
     << "===============================================================================\n"\
-    << "| TEST 4: Catching exceptions                                                 |\n"\
+    << "| TEST 1: Catching exceptions                                                 |\n"\
     << "===============================================================================\n\n";
   
-  int numOfPoints = 1;
-  int numOfFields = 1;
-  
-  int numTestException = 8;
+  int numTestException = 9;
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + numTestException;
   
   try{ // Outer try block contains all tests for exception
     
+    
     try{ // catch exception (1)
       
-      // Trying to shape container for DIV(FIELD_VECTOR) in 1D is not allowed:
+      //  Trying to  get address using multi-index with the wrong rank:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to shape container for DIV(FIELD_VECTOR) in 1D is not allowed \n";
-      spaceDim = 1;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_VECTOR,
-                                 OPERATOR_DIV,
-                                 spaceDim);
+      << "  Trying to  get address using multi-index with the wrong rank: \n";
+      multiIndex.resize(5);
+      multiIndex[0] = 3; 
+      multiIndex[1] = 1;
+      multiIndex[2] = 2;
+      multiIndex[3] = 2;
+      multiIndex[4] = 6;
+      myContainer.getAddress(multiIndex);
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
     };
     
     
+    
     try{ // catch exception (2)
       
-      // Trying to shape container for DIV(FIELD_FORM_3) in > 1D is not allowed:
+      // Trying to get address using multi-index that is out of bounds: 3rd index is 4, must be <2
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to shape container for DIV(FIELD_FORM_3) in > 1D is not allowed \n";
-      spaceDim = 3;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_FORM_3,
-                                 OPERATOR_DIV,
-                                 spaceDim);
+      << " Trying to get address using multi-index that is out of bounds: \n";
+      multiIndex.resize(4);
+      multiIndex[0] = 3; 
+      multiIndex[1] = 1;
+      multiIndex[2] = 4;
+      multiIndex[3] = 2;
+      myContainer.getAddress(multiIndex);
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
     };
     
  
+    
     try{  // catch exception (3)
       
-      // Trying to shape container for CURL(FIELD_VECTOR) in  1D is not allowed:
+      // Trying to set values from array whose size is less than LexContainer's size:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      <<  " Trying to shape container for CURL(FIELD_VECTOR) in 1D is not allowed \n";
-      spaceDim = 1;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_VECTOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
+      <<  " Trying to set values from array whose size is less than LexContainer's size: \n";
+      
+      // Change one of the values of the indexRange to a lesser value: original value was 5 
+      indexRange[0] = 4;
+      
+      // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
+      Teuchos::Array<double> dataTeuchosArray(4*3*2*7);
+      
+      // Fill with data
+      int counter = 0;
+      for(int i=0; i < indexRange[0]; i++){
+        for(int j=0; j < indexRange[1]; j++){
+          for(int k=0; k < indexRange[2]; k++){
+            for(int l = 0; l < indexRange[3]; l++){
+              dataTeuchosArray[counter] = (double)counter;
+              counter++;
+            }
+          }
+        }
+      }
+      
+      // Now try to stuff this data into LexContainer
+      myContainer.setValues(dataTeuchosArray);
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
     };
+    
     
     
     try{  // catch exception (4)
       
-      // Trying to shape container for CURL(FIELD_FORM_3) in  3D is not allowed:
+      // Trying to set values from array whose size is greater than LexContainer's size:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      <<  " Trying to shape container for CURL(FIELD_FORM_3) in 3D is not allowed \n";
-      spaceDim = 3;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_FORM_3,
-                                 OPERATOR_CURL,
-                                 spaceDim);
+      <<  " Trying to set values from array whose size is greater than LexContainer's size: \n";
+      
+      // Change one of the values of the indexRange to a lesser value: restore indexRange[0] to the 
+      // value used to construct the LexArray and change indexRange[2] to a greater value
+      indexRange[0] = 5;
+      indexRange[2] = 3;
+      
+      // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
+      Teuchos::Array<double> dataTeuchosArray(5*3*3*7);
+      
+      // Fill with data
+      int counter = 0;
+      for(int i=0; i < indexRange[0]; i++){
+        for(int j=0; j < indexRange[1]; j++){
+          for(int k=0; k < indexRange[2]; k++){
+            for(int l = 0; l < indexRange[3]; l++){
+              dataTeuchosArray[counter] = (double)counter;
+              counter++;
+            }
+          }
+        }
+      }
+      
+      // Now try to stuff this data into LexContainer
+      myContainer.setValues(dataTeuchosArray);
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
     };
     
     
+    
     try{ // catch exception (5)
       
-      // Trying to shape container for CURL(FIELD_TENSOR) in  2D is not allowed:
+      // Trying to use [] with address that is out of range:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to shape container for CURL(FIELD_TENSOR) in 2D is not allowed \n";
-      spaceDim = 2;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
+      << " Trying to use [] with address that is out of range: \n";
+      myContainer[1000];
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
@@ -762,53 +232,77 @@ int main(int argc, char *argv[]) {
     
     
     try{ // catch exception (6)
+      
+      // Trying to get multi-index from address that is out of bounds:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to shape container using negative number of points \n";
-      numOfPoints = -1;
-      numOfFields =  1;
-      spaceDim    =  2;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
+      << " Trying to get multi-index from address that is out of bounds: \n";
+      myContainer.getMultiIndex(multiIndex,10000);
     }
     catch(std::logic_error err) {
      *outStream << err.what() << "\n";
     }
     
+  
     
     try{ // catch exception (7)
+      
+      //Trying to self-assign LexContainer
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to shape container using negative number of fields \n";
-      numOfPoints =  1;
-      numOfFields = -1;
-      spaceDim    =  2;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
+      << " Trying to self-assign LexContainer \n";
+      myContainer = myContainer;
     }
     catch(std::logic_error err) {
       *outStream << err.what() << "\n"; 
     }
 
     
+    
     try{ // catch exception (8)
+      
+      // Trying to copy from LexContainer with the same rank but different size:
+      // indexRange[0] was 5 when defining myContainer
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to shape container using invalid dimension \n";
-      numOfPoints =  1;
-      numOfFields =  1;
-      spaceDim    =  0;
-      myContainer.shapeContainer(numOfPoints,
-                                 numOfFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_CURL,
-                                 spaceDim);
+      << " Trying to copy from LexContainer with the same rank but different size:  \n";
+      indexRange[0] = 6;
+      LexContainer<double> myNewContainer(indexRange);
+      myContainer = myNewContainer;
+    }
+    catch(std::logic_error err) {
+      *outStream << err.what() << "\n"; 
+    }
+    
+    
+    
+    try{ // catch exception (9)
+      
+      // Trying to copy from LexContainer with the same size but different rank
+      // indexRange[0] was 5 when defining myContainer
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " Trying to copy from LexContainer with the same size but different rank:  \n";
+      
+      // Define index range for LexContainer of rank 3 and size 48
+      indexRange.resize(3);
+      indexRange[0] = 2;
+      indexRange[1] = 4;
+      indexRange[2] = 6;
+      LexContainer<double> myNewContainer(indexRange);
+      
+      // Redefine index range to correspond to LexContainer of the same size but rank 4
+      indexRange.resize(4);
+      indexRange[0] = 2;
+      indexRange[1] = 4;
+      indexRange[2] = 6;
+      indexRange[3] = 1;
+      
+      // resize myContainer
+      myContainer.resizeContainer(indexRange);
+      
+      // Try assignment
+      myContainer = myNewContainer;
     }
     catch(std::logic_error err) {
       *outStream << err.what() << "\n"; 
