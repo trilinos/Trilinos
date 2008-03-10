@@ -43,8 +43,9 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|                  Example use of the LexContainer class                      |\n" \
   << "|                                                                             |\n" \
-  << "|    1) Shaping LexContainers to store basis function evaluations             |\n" \
-  << "|    3) using LexContainer in DEBUG mode                                      |\n" \
+  << "|    1) using LexContainer in DEBUG mode:                                     |\n" \
+  << "|       requires intrepid to be configured with --enable-intrepid-debug       |\n" \
+  << "|       See /test/LexContainer/test_02.cpp for more examples                  |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -58,234 +59,151 @@ int main(int argc, char *argv[]) {
   Teuchos::Array<int> indexRange;
   Teuchos::Array<int> multiIndex;
   
+  // Initialize indexRange for rank-4 multi-index value
+  indexRange.resize(4);
+  indexRange[0] = 5;
+  indexRange[1] = 3;
+  indexRange[2] = 2;
+  indexRange[3] = 7;
+  
+  // Create a LexContainer
+  LexContainer<double> myContainer(indexRange);
+  
+  cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 1: Debug mode                                                       |\n"\
+    << "===============================================================================\n\n";
+  
+  // Trying to  get address using multi-index with the wrong rank (myContainer's rank is 4, 
+  // whereas multiIndex has rank 5)
   cout \
     << "===============================================================================\n"\
-    << "| EXAMPLE 1: LexContainers for scalar fields                               |\n"\
-    << "===============================================================================\n\n";
-  
-  LexContainer<double> scalarContainer;
-
-  // Suppose that we have numFields scalar functions and numPoints evaluation points
-  int numPoints = 3;
-  int numFields = 0;
-  int spaceDim  = 2;
-  
-  // - to shape LexContainer to store function values in 2D (dimension not actually used in this case):
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_VALUE,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " VALUE(SCALAR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  // - to shape LexContainer to store values of gradient of the scalar in 2D (dimension is used in this case!):
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_GRAD,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " GRAD(SCALAR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  // - to shape LexContainer to store values of D2 of the scalar in 2D (dimension is used in this case!):
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_D2,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " D2(SCALAR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  
-  // - to shape LexContainer to store values of CURL of the scalar in 2D (dimension is used in this case!):
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_0,
-                                 OPERATOR_CURL,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " CURL(SCALAR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-
-  cout << "\n" \
-  << "===============================================================================\n"\
-  << "| EXAMPLE 2: LexContainers for vector fields                                  |\n"\
-  << "===============================================================================\n\n";
-  
-  // - to shape LexContainer to store vector field values in 2D:
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_VALUE,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " VALUE(VECTOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-
-  // - to shape LexContainer to store curl(vector) values in 2D:
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_CURL,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " CURL(VECTOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  // - to shape LexContainer to store curl(vector) values in 3D:
-  spaceDim = 3;
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_CURL,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " CURL(VECTOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  // - to shape LexContainer to store D1(vector) values in 3D:
-  spaceDim = 3;
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_D1,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " D1(VECTOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  // - to shape LexContainer to store DIV(vector) values in 3D:
-  spaceDim = 3;
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_FORM_1,
-                                 OPERATOR_DIV,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " DIV(VECTOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  
-  
-  cout << "\n" \
-  << "===============================================================================\n"\
-  << "| EXAMPLE 3: LexContainers for tensor fields                                  |\n"\
-  << "===============================================================================\n\n";
-  
-  // - to shape LexContainer to store VALUE(TENSOR) values in 2D:
-  spaceDim = 3;
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_VALUE,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " VALUE(TENSOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-
-  // - to shape LexContainer to store DIV(TENSOR) values in 2D:
-  spaceDim = 2;
-  scalarContainer.shapeContainer(numPoints,
-                                 numFields,
-                                 FIELD_TENSOR,
-                                 OPERATOR_DIV,
-                                 spaceDim);
-  std::cout 
-    << "Stores " << numFields << " DIV(TENSOR) evaluated at " 
-    << numPoints << " points, in " << spaceDim << " dimensions \n";
-  std::cout << scalarContainer;
-  
-  
-  cout << "\n" \
-    << "===============================================================================\n"\
-    << "| EXAMPLE 4: Catching exceptions                                              |\n"\
-    << "===============================================================================\n\n";
-  
+    << " Trying to  get address using multi-index with the wrong rank: \n\n";
   try{
-    
-    // Trying to shape container for DIV(VECTOR) in 1D is not allowed:
-    cout << "\n" \
-    << "===============================================================================\n"\
-    << " Trying to shape container for DIV(VECTOR) in 1D is not allowed \n";
-    spaceDim = 1;
-    scalarContainer.shapeContainer(numPoints,
-                                   numFields,
-                                   FIELD_VECTOR,
-                                   OPERATOR_DIV,
-                                   spaceDim);
+    multiIndex.resize(5);
+    multiIndex[0] = 3; 
+    multiIndex[1] = 1;
+    multiIndex[2] = 2;
+    multiIndex[3] = 2;
+    multiIndex[4] = 6;
+    myContainer.getAddress(multiIndex);
   }
-  catch (std::logic_error err) {
-    std::cout << err.what() << "\n";
-  };
+  catch(std::logic_error err){
+    cout << err.what() << "\n"; 
+  }
   
-  
+  // Trying to get address using multi-index that is out of bounds: 3rd index is 4, must be <2 
+  cout \
+    << "===============================================================================\n"\
+    << " Trying to get address using multi-index that is out of bounds: \n\n";
   try{
-    
-    // Trying to shape container for DIV(SCALAR) in > 1D is not allowed:
-    cout << "\n" \
-    << "===============================================================================\n"\
-    << " Trying to shape container for DIV(SCALAR) in > 1D is not allowed \n";
-    spaceDim = 3;
-    scalarContainer.shapeContainer(numPoints,
-                                   numFields,
-                                   FIELD_FORM_3,
-                                   OPERATOR_DIV,
-                                   spaceDim);
+    multiIndex.resize(4);
+    multiIndex[0] = 3; 
+    multiIndex[1] = 1;
+    multiIndex[2] = 4;
+    multiIndex[3] = 2;
+    myContainer.getAddress(multiIndex);
   }
-  catch (std::logic_error err) {
-    std::cout << err.what() << "\n";
-  };
+  catch(std::logic_error err){
+    cout << err.what() << "\n\n"; 
+  }
   
+  // Trying to set values from array whose size is less than LexContainer size
+  cout \
+    << "===============================================================================\n"\
+    << " Trying to set values from array whose size is less than LexContainer's size: \n\n";
+
+  // Change one of the values of the indexRange to a lesser value: original value was 5 
+  indexRange[0] = 4;
   
+  // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
+  Teuchos::Array<double> dataTeuchosArray(4*3*2*7);
+  
+  // Fill with data
+  int counter = 0;
+  for(int i=0; i < indexRange[0]; i++){
+    for(int j=0; j < indexRange[1]; j++){
+      for(int k=0; k < indexRange[2]; k++){
+        for(int l = 0; l < indexRange[3]; l++){
+          dataTeuchosArray[counter] = (double)counter;
+          counter++;
+        }
+      }
+    }
+  }
+  
+  // Now try to stuff this data into LexContainer
   try{
-    
-    // Trying to shape container for CURL(SCALAR) in  3D is not allowed:
-    cout << "\n" \
-    << "===============================================================================\n"\
-    <<  " Trying to shape container for CURL(SCALAR) in 3D is not allowed \n";
-    spaceDim = 3;
-    scalarContainer.shapeContainer(numPoints,
-                                   numFields,
-                                   FIELD_FORM_3,
-                                   OPERATOR_CURL,
-                                   spaceDim);
+    myContainer.setValues(dataTeuchosArray);
   }
-  catch (std::logic_error err) {
-    std::cout << err.what() << "\n";
-  };
- 
+  catch(std::logic_error err){
+    cout << err.what() << "\n";
+  }
   
-  try{
-    
-    // Trying to shape container for CURL(TENSOR) in  2D is not allowed:
-    cout << "\n" \
+  // Trying to set values from array whose size is greater than LexContainer's size
+  cout \
     << "===============================================================================\n"\
-    << " Trying to shape container for CURL(TENSOR) in 2D is not allowed \n";
-    spaceDim = 2;
-    scalarContainer.shapeContainer(numPoints,
-                                   numFields,
-                                   FIELD_TENSOR,
-                                   OPERATOR_CURL,
-                                   spaceDim);
+    << " Trying to set values from array whose size is greater than LexContainer's size: \n\n";
+  // Change one of the values of the indexRange to a lesser value: restore indexRange[0] to the 
+  // value used to construct the LexArray and change indexRange[2] to a greater value
+  indexRange[0] = 5;
+  indexRange[2] = 3;
+  
+  // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
+  dataTeuchosArray.resize(5*3*3*7);
+  
+  // Fill with data
+  counter = 0;
+  for(int i=0; i < indexRange[0]; i++){
+    for(int j=0; j < indexRange[1]; j++){
+      for(int k=0; k < indexRange[2]; k++){
+        for(int l = 0; l < indexRange[3]; l++){
+          dataTeuchosArray[counter] = (double)counter;
+          counter++;
+        }
+      }
+    }
   }
-  catch (std::logic_error err) {
-    std::cout << err.what() << "\n";
-  };
-   return 0;
+  
+  // Now try to stuff this data into LexContainer
+  try{
+    myContainer.setValues(dataTeuchosArray);
+  }
+  catch(std::logic_error err){
+    cout << err.what() << "\n";
+  }
+  
+  
+  // Trying to use [] with address that is out of range (size of myContainer is 210)
+  cout \
+    << "===============================================================================\n"\
+    << " Trying to use [] with address that is out of range: \n\n";
+  try{
+    myContainer[1000];
+  }
+  catch(std::logic_error err){
+    cout << err.what() << "\n\n"; 
+  }
+  
+  // Trying to create LexContainer using incompatible data array and indexRange. In this example
+  // dataTeuchosArray corresponds to indexRange = {5,3,3,7} but we change the indexRange to one
+  // that does not match the data. Note that if we permute the values in indexRange it will be
+  // compatible with the data because it will specify the same size for the container. However, 
+  // index bound permutation reshapes the container!
+  cout \
+    << "===============================================================================\n"\
+    << " Trying to create LexContainer using incompatible data array and indexRange: \n\n";
+  try{
+    indexRange[0] = 5;
+    indexRange[1] = 3;
+    indexRange[2] = 3;
+    indexRange[3] = 8;
+    
+    LexContainer<double> myOtherContainer(indexRange, dataTeuchosArray);
+  }
+  catch(std::logic_error err){
+    cout << err.what() << endl;
+  }
+  
+  return 0;
 }

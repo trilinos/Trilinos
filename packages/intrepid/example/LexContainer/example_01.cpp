@@ -45,7 +45,6 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|    1) Creating and filling LexContainer objects                             |\n" \
   << "|    2) Accessing elements in LexContainer objects                            |\n" \
-  << "|    3) using LexContainer in DEBUG mode                                      |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -228,84 +227,7 @@ int main(int argc, char *argv[]) {
 
   cout << "\n" \
     << "===============================================================================\n"\
-    << "| EXAMPLE 5: Debug mode                                                       |\n"\
-    << "===============================================================================\n\n";
-  
-  // Trying to  get address using multi-index with the wrong rank (myContainer's rank is 4, 
-  // whereas multiIndex has rank 5)
-  cout \
-    << "===============================================================================\n"\
-    << " Trying to  get address using multi-index with the wrong rank: \n\n";
-  try{
-    myContainer.getAddress(multiIndex);
-  }
-  catch(std::logic_error err){
-    cout << err.what() << "\n"; 
-  }
-
-  // Trying to get address using multi-index that is out of bounds (the last value should be < 6)
-  cout \
-    << "===============================================================================\n"\
-    << " Trying to get address using multi-index that is out of bounds: \n\n";
-  try{
-    multiIndex[0] = 3; 
-    multiIndex[1] = 1;
-    multiIndex[2] = 2;
-    multiIndex[3] = 2;
-    multiIndex[4] = 6;
-    myNewContainer.getAddress(multiIndex);
-  }
-  catch(std::logic_error err){
-    cout << err.what() << "\n\n"; 
-  }
-  
-  // Trying to set values from array whose size does not match LexContainer size
-  cout \
-    << "===============================================================================\n"\
-    << " Trying to set values from array whose size does not match LexContainer size: \n\n";
-  try{
-    myContainer.setValues(dataTeuchosArray);
-  }
-  catch(std::logic_error err){
-    cout << err.what() << "\n";
-  }
-  
-  // Trying to use [] with address that is out of range (size of myNewContainer is 720)
-  cout \
-    << "===============================================================================\n"\
-    << " Trying to use [] with address that is out of range: \n\n";
-  try{
-    myNewContainer[1000];
-  }
-  catch(std::logic_error err){
-    cout << err.what() << "\n\n"; 
-  }
-
-  // Trying to create LexContainer using incompatible data array and indexRange. In this example
-  // dataTeuchosArray corresponds to indexRange = {5,2,3,4,6} but we change the indexRange to one
-  // that does not match the data. Note that if we permute the values in indexRange it will be
-  // compatible with the data because it will specify the same size for the container. However, 
-  // index bound permutation reshapes the container!
-  cout \
-    << "===============================================================================\n"\
-    << " Trying to create LexContainer using incompatible data array and indexRange: \n\n";
-  try{
-    indexRange[0] = 5;
-    indexRange[1] = 2;
-    indexRange[2] = 3;
-    indexRange[3] = 8;
-    indexRange[4] = 6;
-    
-    LexContainer<double> myOtherContainer(indexRange, dataTeuchosArray);
-  }
-  catch(std::logic_error err){
-    cout << err.what() << endl;
-  }
-  
-  
-  cout << "\n" \
-    << "===============================================================================\n"\
-    << "| EXAMPLE 6: making trivial LexContainers and storing a single zero           |\n"\
+    << "| EXAMPLE 5: making trivial LexContainers and storing a single zero           |\n"\
     << "===============================================================================\n\n";
   
   // Make trivial container by resetting the index range to zero rank (no indices) and then
