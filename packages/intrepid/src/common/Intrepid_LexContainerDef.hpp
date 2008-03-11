@@ -202,7 +202,7 @@ inline Scalar LexContainer<Scalar>::getValue(const Teuchos::Array<int>& multiInd
 
 
 template<class Scalar>
-inline void LexContainer<Scalar>::emptyContainer() {
+inline void LexContainer<Scalar>::empty() {
   indexRange_.resize(0);
   data_.resize(0);
 }
@@ -220,7 +220,7 @@ inline void LexContainer<Scalar>::storeZero() {
 
 
 template<class Scalar>
-inline void LexContainer<Scalar>::resizeContainer(const Teuchos::Array<int>& newIndexRange) {
+inline void LexContainer<Scalar>::resize(const Teuchos::Array<int>& newIndexRange) {
   
   // Copy upper index bounds and resize container storage to match new upper bounds.
   indexRange_.assign(newIndexRange.begin(),newIndexRange.end());  

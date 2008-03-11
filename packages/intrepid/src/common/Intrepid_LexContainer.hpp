@@ -150,7 +150,7 @@ public:
     
     /** \brief Resets LexContainer to trivial container (one with rank = 0 and size = 0)
       */
-    void emptyContainer();
+    void empty();
     
     
     /** \brief Resets LexContainer to a rank-1 container with upper index bound equal to 1. The
@@ -166,7 +166,7 @@ public:
       
       \param newIndexRange[in]          - new upper values for index ranges
       */
-    void resizeContainer(const Teuchos::Array<int>& newIndexRange);
+    void resize(const Teuchos::Array<int>& newIndexRange);
     
     
     /** \brief Assign value by its multi-index. Does not change rank or index ranges of the LexContainer.
