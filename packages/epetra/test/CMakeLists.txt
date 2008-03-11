@@ -34,11 +34,13 @@ TRILINOS_ADD_EXECUTABLE(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v
 
 TRILINOS_ADD_EXECUTABLE(FECrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-TRILINOS_ADD_EXECUTABLE(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+# Not building on Windows
+#TRILINOS_ADD_EXECUTABLE(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
 TRILINOS_ADD_EXECUTABLE(FEVbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-TRILINOS_ADD_EXECUTABLE(FEVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+# Not building on Windows
+#TRILINOS_ADD_EXECUTABLE(FEVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
 TRILINOS_ADD_EXECUTABLE(ImportExport ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
@@ -59,7 +61,8 @@ TRILINOS_ADD_EXECUTABLE(SerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS 
 
 TRILINOS_ADD_EXECUTABLE(SerialSpdDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-TRILINOS_ADD_EXECUTABLE(VbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+# Not building on Windows
+#TRILINOS_ADD_EXECUTABLE(VbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
 TRILINOS_ADD_EXECUTABLE(Vector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
 
