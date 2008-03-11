@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
       << "| TEST 3: Empty container and store a single zero                             |\n"\
       << "===============================================================================\n";
     
-    myNewContainer.emptyContainer();
+    myNewContainer.empty();
     if( !(myNewContainer.getSize() == 0 && myNewContainer.getRank() == 0)) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

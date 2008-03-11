@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
       indexRange[3] = 1;
       
       // resize myContainer
-      myContainer.resizeContainer(indexRange);
+      myContainer.resize(indexRange);
       
       // Try assignment
       myContainer = myNewContainer;
