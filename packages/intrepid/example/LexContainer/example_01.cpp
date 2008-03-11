@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   indexRange[2] = 3;
   
   // Reset the existing container to accept rank-3 value with the specified index ranges
-  myContainer.resizeContainer(indexRange);
+  myContainer.resize(indexRange);
   
   // Fill with some data
   for(int p = 0; p < indexRange[0]; p++){
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
   indexRange[3] = 4;
   
   // Resize myContainer using the new indexRange
-  myContainer.resizeContainer(indexRange);
+  myContainer.resize(indexRange);
   
   // Define array to store values with dimension equal to the number of multi-indexed values
   double dataArray[2*3*2*4];
@@ -231,13 +231,13 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n\n";
   
   // Make trivial container by resetting the index range to zero rank (no indices) and then
-  // using resizeContainer method
+  // using resize method
   indexRange.resize(0);
-  myContainer.resizeContainer(indexRange);
+  myContainer.resize(indexRange);
   std::cout << myContainer;
   
-  // Make trivial container by using emptyContainer method:
-  myNewContainer.emptyContainer();
+  // Make trivial container by using empty method:
+  myNewContainer.empty();
   std::cout << myNewContainer;
   
   // Now use storeZero() to reset the container to hold a single zero
