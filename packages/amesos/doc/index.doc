@@ -700,11 +700,14 @@ for more details.
 
 \section am_thyra Thyra support
 
-The <a href="../../thyra/doc/html/index.html">Amesos to Thyra Linear Solver
-Adapters</a> take <tt>Thyra::LinearOpBase</tt> objects that wrap
+The Amesos to Thyra Linear Solver Adapters in Stratimikos
+take <tt>Thyra::LinearOpBase</tt> objects that wrap
 <tt>Epetra_Operator</tt> objects and turn them into
 <tt>Thyra::LinearOpWithSolveBase</tt> objects which can then be used to solve
 linear systems using <tt>Amesos_BaseSolver</tt> implementations.
+Please refer to the Stratimikos documentation
+http://trilinos.sandia.gov/packages/stratimikos/documentation.html
+for more details.
 
 \section am_future Known bugs and future developments
 
