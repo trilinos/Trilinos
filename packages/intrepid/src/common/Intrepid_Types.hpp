@@ -100,6 +100,11 @@
 */
 #define INTREPID_MAX_NEWTON 15
 
+/** \def INTREPID_MAX_DERIVATIVE
+  \brief Maximum order of derivatives allowed in intrepid
+*/
+#define INTREPID_MAX_DERIVATIVE 10
+
 namespace Intrepid {
   
   /* 
@@ -208,7 +213,7 @@ namespace Intrepid {
     OPERATOR_MAX        // 14
   };
   
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
+  // These will be disabled until we actually need them, in order to prevent compiler warnings.
     static const char* OperatorNames[]={
       "Value",
       "Grad",
@@ -226,9 +231,27 @@ namespace Intrepid {
       "D10",
       "Max. Operator"
     };
-  */
   
-
+    inline EOperator & operator++(EOperator &type) {
+      return type = static_cast<EOperator>(type+1);
+    }
+    
+    inline EOperator operator++(EOperator &type, int) {
+      EOperator oldval = type;
+      ++type;
+      return oldval;
+    }
+    
+    inline EOperator & operator--(EOperator &type) {
+      return type = static_cast<EOperator>(type-1);
+    }
+    
+    inline EOperator operator--(EOperator &type, int) {
+      EOperator oldval = type;
+      --type;
+      return oldval;
+    }
+    
   
   /** \enum  Intrepid::ECell
     \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
@@ -578,8 +601,7 @@ namespace Intrepid {
     FIELD_MAX
   };
   
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-
+  // These will be disabled until we actually need them, in order to prevent compiler warnings.
   static const char* FieldNames[] = {
     "Form 0",
     "Form 1",
@@ -589,7 +611,27 @@ namespace Intrepid {
     "Tensor",
     "Max.fields"
   };
-  */
+  
+  inline EField & operator++(EField &type) {
+    return type = static_cast<EField>(type+1);
+  }
+  
+  inline EField operator++(EField &type, int) {
+    EField oldval = type;
+    ++type;
+    return oldval;
+  }
+  
+  inline EField & operator--(EField &type) {
+    return type = static_cast<EField>(type-1);
+  }
+  
+  inline EField operator--(EField &type, int) {
+    EField oldval = type;
+    --type;
+    return oldval;
+  }
+  
   
   /** \enum  Intrepid::EReconstructionSpace
     \brief Enumeration of the available reconstruction spaces. Intrepid allows three basic kinds

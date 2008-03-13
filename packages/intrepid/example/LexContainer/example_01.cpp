@@ -136,9 +136,9 @@ int main(int argc, char *argv[]) {
     << multiIndex[0] << multiIndex[1] << multiIndex[2] << "}="\
     << myContainer.getValue(multiIndex) <<"\n";
   
-  // Access same value by address
-  int address = myContainer.getAddress(multiIndex);
-  cout << "Access by address:     myContainer[" << address << "]=" << myContainer[address] <<"\n";
+  // Access same value by enumeration
+  int enumeration = myContainer.getEnumeration(multiIndex);
+  cout << "Access by enumeration:     myContainer[" << enumeration << "]=" << myContainer[enumeration] <<"\n";
     
   cout << "\n" \
   << "===============================================================================\n"\
@@ -221,9 +221,9 @@ int main(int argc, char *argv[]) {
     << multiIndex[0] << multiIndex[1] << multiIndex[2] << multiIndex[3] << multiIndex[4] << "}="\
     << myNewContainer.getValue(multiIndex) <<"\n";
   
-  // Access same value by address
-  address = myNewContainer.getAddress(multiIndex);
-  cout << "Access by address:     myNewContainer[" << address << "]=" << myNewContainer[address] <<"\n";
+  // Access same value by enumeration
+  enumeration = myNewContainer.getEnumeration(multiIndex);
+  cout << "Access by enumeration: myNewContainer[" << enumeration << "]=" << myNewContainer[enumeration] <<"\n";
 
   cout << "\n" \
     << "===============================================================================\n"\

@@ -346,13 +346,15 @@ AC_CONFIG_FILES([
   test/Makefile
   example/Makefile
   test/Cubature/Makefile
-  test/LexContainer/Makefile
   test/MultiCell/Makefile
   test/RealSpace/Makefile
+  test/LexContainer/Makefile
+  test/VarContainer/Makefile
   example/Cubature/Makefile
-  example/LexContainer/Makefile
   example/MultiCell/Makefile
   example/RealSpace/Makefile
+  example/LexContainer/Makefile
+  example/VarContainer/Makefile
 ])
 
 AC_OUTPUT()

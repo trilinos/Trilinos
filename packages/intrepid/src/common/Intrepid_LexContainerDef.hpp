@@ -107,7 +107,32 @@ inline int LexContainer<Scalar>::getSize() const {
 
 
 template<class Scalar>
-int LexContainer<Scalar>::getAddress(Teuchos::Array<int> multiIndex) const {
+void LexContainer<Scalar>::getIndexRange(Teuchos::Array<int>& indexRange) const {
+  
+  //Resize return argument to match rank of the container
+  indexRange.resize(this -> getRank()); 
+  
+  indexRange.assign(indexRange_.begin(),indexRange_.end());
+}
+
+
+
+template<class Scalar>
+int LexContainer<Scalar>::getIndexBound(const int whichIndex) const {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (0 > whichIndex),
+                      std::invalid_argument,
+                      ">>> ERROR (LexContainer): which index number cannot be negative");
+  TEST_FOR_EXCEPTION( (whichIndex >= this -> getRank() ),
+                      std::invalid_argument,
+                      ">>> ERROR (LexContainer): which index number cannot exceed container rank");
+#endif
+return indexRange_[whichIndex];
+}
+
+
+template<class Scalar>
+int LexContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex) const {
 
   // Check if number of multi-indices matches rank of the LexContainer object
 #ifdef HAVE_INTREPID_DEBUG
@@ -141,24 +166,24 @@ int LexContainer<Scalar>::getAddress(Teuchos::Array<int> multiIndex) const {
 
 
 template<class Scalar>
-int LexContainer<Scalar>::getAddress(int* multiIndexPtr) const {
+int LexContainer<Scalar>::getEnumeration(int* multiIndexPtr) const {
   
-  // Uses getAddress with Teuchos::Array argument to compute the address.
+  // Uses getEnumeration with Teuchos::Array argument to compute the address.
   int rank = this -> getRank();
   Teuchos::Array<int> multiIndexArray(rank);
   multiIndexArray.assign(multiIndexPtr,multiIndexPtr + rank);  
-  return this -> getAddress(multiIndexArray);
+  return this -> getEnumeration(multiIndexArray);
 }
 
 
 
 template<class Scalar>
 void LexContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
-                                         const int valueAddress) const {
+                                         const int valueEnum) const {
   
   // Verify address is in the admissible range for this LexContainer
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (valueAddress < 0) || (valueAddress >= (int)data_.size()) ),
+  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::out_of_range,
                       ">>> ERROR (LexContainer): Specified address is out of range.");    
 #endif
@@ -168,7 +193,7 @@ void LexContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
   multiIndex.resize(rank);
   
   // Initializations
-  int temp_addr = valueAddress;
+  int temp_enum = valueEnum;
   int temp_range = 1;
   
   // Compute product of all but the first upper bound
@@ -177,18 +202,18 @@ void LexContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
   }
   
   // Index 0 is computed first using integer division
-  multiIndex[0] = temp_addr/temp_range;
+  multiIndex[0] = temp_enum/temp_range;
   
   // Indices 1 to (rank - 2) are computed next; will be skipped if rank <=2
   for(int r = 1; r < rank - 1; r++){
-    temp_addr  -= multiIndex[r-1]*temp_range;
+    temp_enum  -= multiIndex[r-1]*temp_range;
     temp_range /= indexRange_[r];
-    multiIndex[r] = temp_addr/temp_range;
+    multiIndex[r] = temp_enum/temp_range;
   }
   
   // Index (rank - 1) is computed last, skip if rank = 1 and keep if rank = 2
   if(rank > 1) {
-    multiIndex[rank - 1] = temp_addr - multiIndex[rank - 2]*temp_range;
+    multiIndex[rank - 1] = temp_enum - multiIndex[rank - 2]*temp_range;
   }
                                          }
 
@@ -196,7 +221,7 @@ void LexContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
 
 template<class Scalar>
 inline Scalar LexContainer<Scalar>::getValue(const Teuchos::Array<int>& multiIndex) const {
-  return data_[this -> getAddress(multiIndex)];
+  return data_[this -> getEnumeration(multiIndex)];
 }
 
 
@@ -228,7 +253,7 @@ inline void LexContainer<Scalar>::resize(const Teuchos::Array<int>& newIndexRang
 }
 template<class Scalar>
 inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const Teuchos::Array<int>& multiIndex) {
-  data_[this -> getAddress(multiIndex)] = dataValue; 
+  data_[this -> getEnumeration(multiIndex)] = dataValue; 
 }
 
 
@@ -310,19 +335,28 @@ std::ostream& operator << (std::ostream& os, const LexContainer<Scalar>& contain
   int size = container.getSize();
   int rank = container.getRank();
   Teuchos::Array<int> multiIndex(rank);
+  Teuchos::Array<int> indexRange;
+  container.getIndexRange(indexRange);
+  
+  os<< "===============================================================================\n"\
+    << "\t Container size = " << size << "   rank = " << rank << "\n" ;
   
   if( (rank == 0 ) && (size == 0) ) {
-    os<< "===============================================================================\n"\
-    << "\t Container size = " << size << "   rank = " << rank << "\n"
-    << "===============================================================================\n"\
-    << "|                     *** This is an empty container ****                     |\n";
+    os<< "\t Index Range    = (0) \n"    
+      << "===============================================================================\n"\
+      << "|                     *** This is an empty container ****                     |\n";
   }
   else {
+    os<< "\t Index Range    = ";
+    
+    for(int r = 0; r < rank; r++){
+      os << " (" << indexRange[r] <<") ";
+    }
+    os << "\n";
+    
     os<< "===============================================================================\n"\
-    << "\t Container size = " << size << "   rank = " << rank << "\n"
-    << "===============================================================================\n"\
-    << "| \t Multi-index        Address              Value                            |\n"\
-    << "===============================================================================\n";
+      << "| \t Multi-index        Address              Value                            |\n"\
+      << "===============================================================================\n";
   }
   
   for(int address = 0; address < size; address++){

@@ -3,7 +3,7 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature,RealSpace,LexContainer;
+    DIRS = Cubature,RealSpace,LexContainer,VarContainer;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;

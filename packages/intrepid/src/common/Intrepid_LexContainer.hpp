@@ -48,8 +48,8 @@ namespace Intrepid {
   LexContainer object stores a multi-indexed value using the lexicographical index ordering: the
   rightmost index changes first and the leftmost index changes last. LexContainer can be viewed
   as a dynamic multidimensional array whose values can be accessed in two ways: by their
-  multi-index or by their address, using an overloaded [] operator. The address gives the enumeration
-  of the multi-indexed value with respect to the lexicographical order. 
+  multi-index or by their enumeration, using an overloaded [] operator. The enumeration 
+  gives the sequential order of the multi-indexed value with respect to the lexicographical order. 
   The number of indices is unlimited.
   */
   template<class Scalar>
@@ -116,32 +116,44 @@ public:
     int getSize() const;
     
     
-    /** \brief Returns address of value based on its multi-index (in Teuchos::Array format). In DEBUG
+    /** \brief Returns array of size the rank of the LexContainer with the upper bounds for each index.
+      */
+    void getIndexRange(Teuchos::Array<int>& indexRange) const;
+    
+    
+    /** \brief Returns the upper bound for the specified index
+      
+      \param whichIndex     [in]      - number of the index whose upper bound we want
+      */
+    int getIndexBound(const int whichIndex) const;
+    
+    
+    /** \brief Returns enumeration of value based on its multi-index (in Teuchos::Array format). In DEBUG
       mode checks if number of multi-indices matches the rank of the LexContainer and 
       whether each index is within its admissible range.
       */
-    int getAddress(Teuchos::Array<int> multiIndex) const;
+    int getEnumeration(const Teuchos::Array<int>& multiIndex) const;
     
     
-    /** \brief Returns address of value based on its multi-index (in an int array format). 
+    /** \brief Returns enumeration of value based on its multi-index (in an int array format). 
       \warning Method does not check if number of multi-indices matches rank of the LexContainer, it
       will use as many index values as required by the current rank of the LexContainer.
       */
-    int getAddress(int* multiIndexPtr) const;
+    int getEnumeration(int* multiIndexPtr) const;
     
     
-    /** \brief Returns multi-index corresponding to a LexContainer address
+    /** \brief Returns multi-index corresponding to a LexContainer enumeration
       
-      \param multiIndex   [out]       - array containg multi-index of the specified address
-      \param valueAddress [in]        - address of the value in the LexContainer
+      \param multiIndex   [out]       - array containg multi-index of the specified enumeration
+      \param valueEnum    [in]        - enumeration of the value in the LexContainer
       */
     void getMultiIndex(Teuchos::Array<int>& multiIndex,
-                       const int            valueAddress) const;
+                       const int            valueEnum) const;
     
     
     /** \brief Retrieve value by its multi-index. In DEBUG mode checks if number of multi-indices 
       matches the rank of the LexContainer and  whether each index is within its admissible range. 
-      To retrieve value by its address use overloaded [] operator.
+      To retrieve value by its enumeration use overloaded [] operator.
       
       \param multiIndex [in]            - array containing multi-index of the desired value
       */
@@ -160,7 +172,7 @@ public:
     void storeZero(); 
     
     
-    /** \brief Resizes LexContainer based on a new array of index  ranges. 
+    /** \brief Resizes LexContainer based on a new array of index  ranges and sets new upper bounds.
       The size of the input array implicitly defines the rank of the container. 
       The size of the container is computed from the new index ranges in the array argument.
       
@@ -197,7 +209,7 @@ public:
                    const int     dataSize);
     
     
-    /** \brief   Overloaded [] operator. returns value based on its address
+    /** \brief   Overloaded [] operator. returns value based on its enumeration
       */
     const Scalar & operator [] (const int address) const;
     

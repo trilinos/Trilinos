@@ -74,11 +74,11 @@ int main(int argc, char *argv[]) {
     << "| EXAMPLE 1: Debug mode                                                       |\n"\
     << "===============================================================================\n\n";
   
-  // Trying to  get address using multi-index with the wrong rank (myContainer's rank is 4, 
+  // Trying to  get enumeration using multi-index with the wrong rank (myContainer's rank is 4, 
   // whereas multiIndex has rank 5)
   cout \
     << "===============================================================================\n"\
-    << " Trying to  get address using multi-index with the wrong rank: \n\n";
+    << " Trying to  get enumeration using multi-index with the wrong rank: \n\n";
   try{
     multiIndex.resize(5);
     multiIndex[0] = 3; 
@@ -86,23 +86,23 @@ int main(int argc, char *argv[]) {
     multiIndex[2] = 2;
     multiIndex[3] = 2;
     multiIndex[4] = 6;
-    myContainer.getAddress(multiIndex);
+    myContainer.getEnumeration(multiIndex);
   }
   catch(std::logic_error err){
     cout << err.what() << "\n"; 
   }
   
-  // Trying to get address using multi-index that is out of bounds: 3rd index is 4, must be <2 
+  // Trying to get enumeration using multi-index that is out of bounds: 3rd index is 4, must be <2 
   cout \
     << "===============================================================================\n"\
-    << " Trying to get address using multi-index that is out of bounds: \n\n";
+    << " Trying to get enumeration using multi-index that is out of bounds: \n\n";
   try{
     multiIndex.resize(4);
     multiIndex[0] = 3; 
     multiIndex[1] = 1;
     multiIndex[2] = 4;
     multiIndex[3] = 2;
-    myContainer.getAddress(multiIndex);
+    myContainer.getEnumeration(multiIndex);
   }
   catch(std::logic_error err){
     cout << err.what() << "\n\n"; 
@@ -174,10 +174,10 @@ int main(int argc, char *argv[]) {
   }
   
   
-  // Trying to use [] with address that is out of range (size of myContainer is 210)
+  // Trying to use [] with enumeration that is out of range (size of myContainer is 210)
   cout \
     << "===============================================================================\n"\
-    << " Trying to use [] with address that is out of range: \n\n";
+    << " Trying to use [] with enumeration that is out of range: \n\n";
   try{
     myContainer[1000];
   }

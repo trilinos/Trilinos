@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "|                           Unit Test LexContainer                            |\n" \
     << "|                                                                             |\n" \
-    << "|     1) Value accesss by multi-index and address, setting values             |\n" \
+    << "|     1) Value accesss by multi-index and enumeration, setting values         |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
     << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -120,20 +120,20 @@ int main(int argc, char *argv[]) {
     *outStream \
       << "\n"
       << "===============================================================================\n"\
-      << "| TEST 1: Scan LexContainer by address                                        |\n"\
+      << "| TEST 1: Scan LexContainer by enumeration                                        |\n"\
       << "===============================================================================\n";
     
-    // Loop over container by address
-    for(int address = 0; address < containerSize; address++) {
+    // Loop over container by enumeration
+    for(int enumeration = 0; enumeration < containerSize; enumeration++) {
       
-      // Convert address to multi-index
-      myNewContainer.getMultiIndex(multiIndex, address);
+      // Convert enumeration to multi-index
+      myNewContainer.getMultiIndex(multiIndex, enumeration);
       
-      // Check if access by address gives the same value as access by multi-index
-      if( myNewContainer[address] != myNewContainer.getValue(multiIndex) ) {
+      // Check if access by enumeration gives the same value as access by multi-index
+      if( myNewContainer[enumeration] != myNewContainer.getValue(multiIndex) ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "     Value by address = " << myNewContainer[address] << "\n";
+        *outStream << " Value by enumeration = " << myNewContainer[enumeration] << "\n";
         *outStream << " Value by multi-index = " << myNewContainer.getValue(multiIndex) << "\n";
       }
     }
@@ -156,23 +156,23 @@ int main(int argc, char *argv[]) {
             for(int m = 0; m < indexRange[4]; m++){
               multiIndex[4] = m;
               
-              // Convert multi-index to address
-              int address = myNewContainer.getAddress(multiIndex);
+              // Convert multi-index to enumeration
+              int enumeration = myNewContainer.getEnumeration(multiIndex);
               
-              // Check if access by address gives the same value as access by multi-index
-              if( myNewContainer[address] != myNewContainer.getValue(multiIndex)) {
+              // Check if access by enumeration gives the same value as access by multi-index
+              if( myNewContainer[enumeration] != myNewContainer.getValue(multiIndex)) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 *outStream << " Value by multi-index = " << myNewContainer.getValue(multiIndex) << "\n";
-                *outStream << "     Value by address = " << myNewContainer[address] << "\n";
+                *outStream << " Value by enumeration = " << myNewContainer[enumeration] << "\n";
               }
               
               // Check if container data matches values in dataTeuchosArray 
-              if(dataTeuchosArray[address] != myNewContainer.getValue(multiIndex)) {
+              if(dataTeuchosArray[enumeration] != myNewContainer.getValue(multiIndex)) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 *outStream << " Value by multi-index = " << myNewContainer.getValue(multiIndex) << "\n";
-                *outStream << "     Value from array = " << dataTeuchosArray[address] << "\n";
+                *outStream << "     Value from array = " << dataTeuchosArray[enumeration] << "\n";
               }
             }
           }

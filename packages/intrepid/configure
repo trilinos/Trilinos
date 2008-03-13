@@ -7784,7 +7784,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Cubature/Makefile test/LexContainer/Makefile test/MultiCell/Makefile test/RealSpace/Makefile example/Cubature/Makefile example/LexContainer/Makefile example/MultiCell/Makefile example/RealSpace/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/LexContainer/Makefile test/VarContainer/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/LexContainer/Makefile example/VarContainer/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8456,13 +8456,15 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
     "test/Cubature/Makefile") CONFIG_FILES="$CONFIG_FILES test/Cubature/Makefile" ;;
-    "test/LexContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/LexContainer/Makefile" ;;
     "test/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES test/MultiCell/Makefile" ;;
     "test/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES test/RealSpace/Makefile" ;;
+    "test/LexContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/LexContainer/Makefile" ;;
+    "test/VarContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/VarContainer/Makefile" ;;
     "example/Cubature/Makefile") CONFIG_FILES="$CONFIG_FILES example/Cubature/Makefile" ;;
-    "example/LexContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/LexContainer/Makefile" ;;
     "example/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES example/MultiCell/Makefile" ;;
     "example/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES example/RealSpace/Makefile" ;;
+    "example/LexContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/LexContainer/Makefile" ;;
+    "example/VarContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/VarContainer/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

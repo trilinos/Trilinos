@@ -108,17 +108,17 @@ int main(int argc, char *argv[]) {
     
     try{ // catch exception (1)
       
-      //  Trying to  get address using multi-index with the wrong rank:
+      //  Trying to  get enumeration using multi-index with the wrong rank:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << "  Trying to  get address using multi-index with the wrong rank: \n";
+      << "  Trying to  get enumeration using multi-index with the wrong rank: \n";
       multiIndex.resize(5);
       multiIndex[0] = 3; 
       multiIndex[1] = 1;
       multiIndex[2] = 2;
       multiIndex[3] = 2;
       multiIndex[4] = 6;
-      myContainer.getAddress(multiIndex);
+      myContainer.getEnumeration(multiIndex);
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
@@ -128,16 +128,16 @@ int main(int argc, char *argv[]) {
     
     try{ // catch exception (2)
       
-      // Trying to get address using multi-index that is out of bounds: 3rd index is 4, must be <2
+      // Trying to get enumeration using multi-index that is out of bounds: 3rd index is 4, must be <2
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to get address using multi-index that is out of bounds: \n";
+      << " Trying to get enumeration using multi-index that is out of bounds: \n";
       multiIndex.resize(4);
       multiIndex[0] = 3; 
       multiIndex[1] = 1;
       multiIndex[2] = 4;
       multiIndex[3] = 2;
-      myContainer.getAddress(multiIndex);
+      myContainer.getEnumeration(multiIndex);
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";
@@ -219,10 +219,10 @@ int main(int argc, char *argv[]) {
     
     try{ // catch exception (5)
       
-      // Trying to use [] with address that is out of range:
+      // Trying to use [] with enumeration that is out of range:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to use [] with address that is out of range: \n";
+      << " Trying to use [] with enumeration that is out of range: \n";
       myContainer[1000];
     }
     catch (std::logic_error err) {
@@ -233,10 +233,10 @@ int main(int argc, char *argv[]) {
     
     try{ // catch exception (6)
       
-      // Trying to get multi-index from address that is out of bounds:
+      // Trying to get multi-index from enumeration that is out of bounds:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to get multi-index from address that is out of bounds: \n";
+      << " Trying to get multi-index from enumeration that is out of bounds: \n";
       myContainer.getMultiIndex(multiIndex,10000);
     }
     catch(std::logic_error err) {
