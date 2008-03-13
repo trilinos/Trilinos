@@ -21,8 +21,7 @@ OUTPUT_DIRECTORY       = ../browser/doc
 INPUT                  = ../browser/doc/index.doc \
                          ../src \
                          ../example \
-                         ../test \
-                         ../thyra
+                         ../test
 #INPUT                  = ../browser/doc/index.doc \
 #                         ../example/model_evaluator
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
