@@ -848,6 +848,9 @@ int Zoltan_PHG_Coarsening
   if (c_hg->nEdge &&
       !(c_hg->ewgt=(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
       MEMORY_ERROR;
+  if (c_hg->nEdge &&
+      !(c_hg->esize=(int*)ZOLTAN_MALLOC(c_hg->nEdge*sizeof(int))))
+      MEMORY_ERROR;
 
 #ifdef _DEBUG1  
 #ifndef _DEBUG2
@@ -859,6 +862,7 @@ int Zoltan_PHG_Coarsening
   for (idx=ni=i=0; i<size; ++i)
       if (ip[i]) {
           c_hg->hindex[ni] = idx;
+          c_hg->esize[ni] = hsize[i];
           memcpy(&c_hg->ewgt[ni], &c_ewgt[i], c_hg->EdgeWeightDim*sizeof(float));
           memcpy(&c_hg->hvertex[idx], &ahvertex[ahindex[i]], hlsize[i]*sizeof(int));
           ++ni;

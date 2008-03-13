@@ -30,6 +30,7 @@ static ZOLTAN_PHG_MATCHING_FN pmatching_hybrid_ipm;  /* hybrid ipm */
 
 static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, PHGPartParams* hgp,
                                      Matching match, int small_degree);
+static int Zoltan_PHG_compute_esize(ZZ* zz, HGraph* hg, PHGPartParams* hgp);
 
 typedef struct triplet {
     int candidate;      /* gno of candidate vertex */
@@ -135,7 +136,8 @@ char  *yo = "Zoltan_PHG_Matching";
     /* first match isolated vertices */
     Zoltan_PHG_match_isolated(zz, hg, hgp, match, 0);
     /* now do the real matching */
-    ierr = hgp->matching (zz, hg, match, hgp);
+    if ((ierr = Zoltan_PHG_compute_esize(zz, hg, hgp))==ZOLTAN_OK)
+        ierr = hgp->matching (zz, hg, match, hgp);
     /* clean up by matching "near-isolated" vertices of degree 1 */
     /* only useful in special cases (e.g. near-diagonal matrices).
        in many cases there is a slight increase in cuts, so 
@@ -194,6 +196,36 @@ static void phasethreereduce (
       }
     } 
   }
+}
+
+
+/* UVCUVC TODO CHECK: later consider about reusing edge size computed in
+   recursive bisection split; but that also requires communication of
+   those values in redistribution */ 
+static int Zoltan_PHG_compute_esize(
+  ZZ *zz,
+  HGraph *hg,
+  PHGPartParams *hgp
+)
+{
+    int  i, *lsize=NULL;
+    static char *yo = "Zoltan_PHG_compute_esize";
+    int ierr = ZOLTAN_OK;
+
+    if (hg->nEdge && !hg->esize) {
+      if (!(lsize = (int*)  ZOLTAN_MALLOC(hg->nEdge*sizeof(int))))
+        MEMORY_ERROR;
+      if (!(hg->esize = (int*)  ZOLTAN_MALLOC(hg->nEdge*sizeof(int))))
+        MEMORY_ERROR;
+
+      for (i=0; i<hg->nEdge; ++i)
+          lsize[i] = hg->hindex[i+1] - hg->hindex[i];
+      MPI_Allreduce(lsize, hg->esize, hg->nEdge, MPI_INT, MPI_SUM, hg->comm->row_comm);
+      
+End:
+      ZOLTAN_FREE(&lsize);
+    }
+    return ierr;
 }
 
 
@@ -306,17 +338,19 @@ static int matching_ipm(ZZ *zz, HGraph *hg, PHGPartParams *hgp,
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
-                
-            /* for every other vertex in the hyperedge */
-            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
-                v2 = hg->hvertex[j];
-                if (match[v2] != v2) {
-                    /* row swapping goes here */
-                }
-                else {
-                    if (ips[v2]==0.0)
-                        adj[n++] = v2;
-                    ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+
+            if (hg->esize[edge] < hgp->MatchEdgeSizeThreshold) {
+                /* for every other vertex in the hyperedge */
+                for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                    v2 = hg->hvertex[j];
+                    if (match[v2] != v2) {
+                        /* row swapping goes here */
+                    }
+                    else {
+                        if (ips[v2]==0.0)
+                            adj[n++] = v2;
+                        ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    }
                 }
             }
         }
@@ -492,39 +526,46 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 
 
 /* Actual inner product calculations between candidates (in rec buffer)    */
-/* and local vertices.  Not inlined because inline is not universal, yet.  */
+/* and local vertices.  Not inlined because ARG is changing for each edge */
+/* in inner loop and also uses hgp->MatchEdgeSizeThreshold */
 #define INNER_PRODUCT1(ARG)\
-  for (i = 0; i < count; r++, i++)\
-    for (j = hg->hindex[*r]; j < hg->hindex[*r + 1]; j++) {\
-      if (cmatch[hg->hvertex[j]] == hg->hvertex[j])  {\
-        if (sums[hg->hvertex[j]] == 0.0)\
-          index[m++] = hg->hvertex[j];\
-        sums[hg->hvertex[j]] += (ARG);\
+  for (i = 0; i < count; r++, i++) {\
+    if (((ARG)>0.0) && (hg->esize[*r] < hgp->MatchEdgeSizeThreshold)) {\
+      for (j = hg->hindex[*r]; j < hg->hindex[*r + 1]; j++) {\
+        if (cmatch[hg->hvertex[j]] == hg->hvertex[j])  {\
+          if (sums[hg->hvertex[j]] == 0.0)\
+            index[m++] = hg->hvertex[j];\
+          sums[hg->hvertex[j]] += (ARG);\
+        }\
       }\
-    }
+    }\
+  }
 
 #define AGG_INNER_PRODUCT1(ARG)\
   for (i = 0; i < count; r++, i++) {\
-   if ((ARG)>0.0) {\
-    for (j = hg->hindex[*r]; j < hg->hindex[*r + 1]; j++) {\
-      int v=lhead[hg->hvertex[j]]; \
-      if (sums[v] == 0.0)\
+    if (((ARG)>0.0) && (hg->esize[*r]<hgp->MatchEdgeSizeThreshold)) {\
+      for (j = hg->hindex[*r]; j < hg->hindex[*r + 1]; j++) {\
+        int v=lhead[hg->hvertex[j]];\
+        if (sums[v] == 0.0)\
           aux[m++] = v;\
-      sums[v] += (ARG);\
-    } \
-   } \
+        sums[v] += (ARG);\
+      }\
+    }\
   }
+  
 
 /* Mostly identical inner product calculation to above for c-ipm variant. Here */
 /* candidates are a subset of local vertices and are not in a separate buffer  */
 #define INNER_PRODUCT2(ARG)\
    for (i = hg->vindex[candidate_gno]; i < hg->vindex[candidate_gno+1]; i++)  {\
      edge = hg->vedge[i];\
-     for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)  {\
-       if (cmatch[hg->hvertex[j]] == hg->hvertex[j])    {\
-         if (sums[hg->hvertex[j]] == 0.0)\
-           index[m++] = hg->hvertex[j];\
-         sums[hg->hvertex[j]] += (ARG);\
+     if (((ARG)>0.0) && (hg->esize[edge]<hgp->MatchEdgeSizeThreshold)) {\
+       for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)  {\
+         if (cmatch[hg->hvertex[j]] == hg->hvertex[j])    {\
+           if (sums[hg->hvertex[j]] == 0.0)\
+             index[m++] = hg->hvertex[j];\
+           sums[hg->hvertex[j]] += (ARG);\
+         }\
        }\
      }\
    }  

@@ -90,6 +90,8 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
     /* Ignore hyperedges larger than this threshold times nvertex */
     /* If PHG_EDGE_SIZE_THRESHOLD>1, interpret it as absolute value. */
+  {"PHG_MATCH_EDGE_SIZE_THRESHOLD",   NULL,  "INT",    0},
+    /* Ignore hyperedges larger than this threshold, in local processor, during matching */
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
     /* Adjustment factor for balance in recursive bisection. */
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
@@ -742,6 +744,8 @@ int Zoltan_PHG_Initialize_Params(
                                  (void*) &hgp->use_timers);  
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SIZE_THRESHOLD",
                                  (void*) &hgp->EdgeSizeThreshold);  
+  Zoltan_Bind_Param(PHG_params, "PHG_MATCH_EDGE_SIZE_THRESHOLD",
+                                 (void*) &hgp->MatchEdgeSizeThreshold);  
   Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
                                  (void*) &hgp->bal_tol_adjustment);  
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
@@ -803,7 +807,8 @@ int Zoltan_PHG_Initialize_Params(
   hgp->fm_max_neg_move = 250;  
   hgp->refinement_quality = 1;
   hgp->RandomizeInitDist = 0;
-  hgp->EdgeSizeThreshold = 0.25;  
+  hgp->EdgeSizeThreshold = 0.25;
+  hgp->MatchEdgeSizeThreshold = 500;  
   hgp->hybrid_keep_factor = 0.;
   hgp->ProRedL = 0.0; /* UVCUVC: CHECK default set to 0 until we run more experiments */
   hgp->RepartMultiplier = 100.;

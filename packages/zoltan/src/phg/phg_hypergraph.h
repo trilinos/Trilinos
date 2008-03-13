@@ -45,6 +45,7 @@ typedef struct {
   /* physical coordinates of each vertex, optional */
   int nDim;         /* number of coordinate dimensions for a vertex */
   double *coor;     /* |V| long by CoordinateDim */
+  int  *esize;      /* global edge size; nEdge long */
 
   /* arrays to look up vertices given a hyperedge */
   int *hindex;      /* length nEdge+1 index into hvertex, last is nPins */

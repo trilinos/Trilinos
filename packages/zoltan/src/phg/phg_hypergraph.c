@@ -35,6 +35,7 @@ void Zoltan_HG_HGraph_Init(
 
   phg->comm    = NULL;
   phg->coor    = NULL;
+  phg->esize   = NULL;
   phg->vwgt    = NULL;
   phg->ewgt    = NULL;
   phg->hindex  = NULL;
@@ -65,6 +66,7 @@ int Zoltan_HG_HGraph_Free(
      &hg->dist_y, &hg->vmap, &hg->fixed);
 */
 
+    ZOLTAN_FREE(&hg->esize); 
     ZOLTAN_FREE(&hg->coor); 
     ZOLTAN_FREE(&hg->vwgt); 
     ZOLTAN_FREE(&hg->ewgt);
