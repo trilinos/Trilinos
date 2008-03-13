@@ -391,7 +391,7 @@ include_HEADERS = $(THYRA_H)
 # special.
 
 execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = Thyra_Config.h $(THYRA_H)
+nodist_execinclude_HEADERS = Thyra_Config.h
 
 # --------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

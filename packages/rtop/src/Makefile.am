@@ -192,7 +192,7 @@ include_HEADERS = $(RTOP_H)
 # special.
 
 execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = RTOp_Config.h $(RTOP_H)
+nodist_execinclude_HEADERS = RTOp_Config.h
 
 # --------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
