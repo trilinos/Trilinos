@@ -38,52 +38,53 @@
 include $(top_builddir)/Makefile.export.isorropia
 
 CORE = \
-	$(srcdir)/Isorropia_EpetraCostDescriber.cpp \
-	$(srcdir)/Isorropia_EpetraPartitioner.cpp \
-	$(srcdir)/Isorropia_Redistributor.cpp \
 	$(srcdir)/Isorropia_Utils.cpp \
-	$(srcdir)/Isorropia_Epetra.cpp \
 	$(srcdir)/Isorropia_Exception.cpp
 
 CORE_H = \
 	$(srcdir)/Isorropia_CostDescriber.hpp \
-	$(srcdir)/Isorropia_EpetraCostDescriber.hpp \
-	$(srcdir)/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
-	$(srcdir)/Isorropia_Epetra.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
 	$(srcdir)/Isorropia_ConfigDefs.hpp
 
-ZOLTAN = \
-	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
-	$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp \
-	$(srcdir)/zoltan/IZoltan_LoadBalance.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationObject.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryContainer.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryObject.cpp
+EPETRA = \
+	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
+	$(srcdir)/epetra/Isorropia_Epetra.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
 
-ZOLTAN_H = \
-	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.hpp \
-	$(srcdir)/zoltan/Isorropia_ZoltanQuery.h \
-	$(srcdir)/zoltan/IZoltan_LoadBalance.h \
-	$(srcdir)/zoltan/IZoltan_MigrationContainer.h \
-	$(srcdir)/zoltan/IZoltan_MigrationFunctions.h \
-	$(srcdir)/zoltan/IZoltan_MigrationObject.h \
-	$(srcdir)/zoltan/IZoltan_QueryContainer.h \
-	$(srcdir)/zoltan/IZoltan_QueryFunctions.h \
-	$(srcdir)/zoltan/IZoltan_QueryObject.h
+EPETRA_H = \
+	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
+	$(srcdir)/epetra/Isorropia_Epetra.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp
+
+EPETRA_ZOLTAN = \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp \
+	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
+
+EPETRA_ZOLTAN_H = \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp \
+	$(srcdir)/epetra/zoltanLib/QueryObject.hpp
 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
 
+if BUILD_EPETRA
+EPETRA_SOURCES = $(EPETRA)
+EPETRA_HEADERFILES = $(EPETRA_H)
+EPETRA_INC=-I$(srcdir)/epetra
+
 if BUILD_ZOLTAN
-ZOLTAN_SOURCES = $(ZOLTAN)
-ZOLTAN_HEADERFILES = $(ZOLTAN_H)
+EPETRA_ZOLTAN_SOURCES = $(EPETRA_ZOLTAN)
+EPETRA_ZOLTAN_HEADERFILES = $(EPETRA_ZOLTAN_H)
+ZOLTAN_INC=-I$(srcdir)/epetra/zoltanLib
 endif
+
+endif
+
+AM_CPPFLAGS=$(EPETRA_INC) $(ZOLTAN_INC)
 
 # ------------------------------------------------------------------------
 # Isorropia library specifications
@@ -93,7 +94,7 @@ ISORROPIA_LIB = libisorropia.a
 
 
 libisorropia_a_SOURCES = \
-	$(CORE) $(ZOLTAN_SOURCES)
+	$(CORE) $(EPETRA_SOURCES) $(EPETRA_ZOLTAN_SOURCES)
 
 
 #We need the following to support separate build directories
@@ -125,7 +126,7 @@ libisorropia_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 lib_LIBRARIES = $(ISORROPIA_LIB)
 
-include_HEADERS = $(CORE_H) $(ZOLTAN_HEADERFILES)
+include_HEADERS = $(CORE_H) $(EPETRA_HEADERFILES) $(EPETRA_ZOLTAN_HEADERFILES)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)

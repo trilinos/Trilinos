@@ -117,34 +117,27 @@ AR = ar
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libisorropia_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__libisorropia_a_SOURCES_DIST =  \
-	$(srcdir)/Isorropia_EpetraCostDescriber.cpp \
-	$(srcdir)/Isorropia_EpetraPartitioner.cpp \
-	$(srcdir)/Isorropia_Redistributor.cpp \
-	$(srcdir)/Isorropia_Utils.cpp $(srcdir)/Isorropia_Epetra.cpp \
+am__libisorropia_a_SOURCES_DIST = $(srcdir)/Isorropia_Utils.cpp \
 	$(srcdir)/Isorropia_Exception.cpp \
-	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
-	$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp \
-	$(srcdir)/zoltan/IZoltan_LoadBalance.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationObject.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryContainer.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryObject.cpp
-am__objects_1 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
+	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
+	$(srcdir)/epetra/Isorropia_Epetra.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp \
+	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
+am__objects_1 = Isorropia_Utils.$(OBJEXT) \
+	Isorropia_Exception.$(OBJEXT)
+am__objects_2 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
 	Isorropia_EpetraPartitioner.$(OBJEXT) \
-	Isorropia_Redistributor.$(OBJEXT) Isorropia_Utils.$(OBJEXT) \
-	Isorropia_Epetra.$(OBJEXT) Isorropia_Exception.$(OBJEXT)
-am__objects_2 = Isorropia_Zoltan_Repartition.$(OBJEXT) \
-	Isorropia_ZoltanQuery.$(OBJEXT) IZoltan_LoadBalance.$(OBJEXT) \
-	IZoltan_MigrationContainer.$(OBJEXT) \
-	IZoltan_MigrationFunctions.$(OBJEXT) \
-	IZoltan_MigrationObject.$(OBJEXT) \
-	IZoltan_QueryContainer.$(OBJEXT) \
-	IZoltan_QueryFunctions.$(OBJEXT) IZoltan_QueryObject.$(OBJEXT)
-@BUILD_ZOLTAN_TRUE@am__objects_3 = $(am__objects_2)
-am_libisorropia_a_OBJECTS = $(am__objects_1) $(am__objects_3)
+	Isorropia_Epetra.$(OBJEXT) \
+	Isorropia_EpetraRedistributor.$(OBJEXT)
+@BUILD_EPETRA_TRUE@am__objects_3 = $(am__objects_2)
+am__objects_4 = Isorropia_Zoltan_Repartition.$(OBJEXT) \
+	QueryObject.$(OBJEXT)
+@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_5 =  \
+@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_4)
+am_libisorropia_a_OBJECTS = $(am__objects_1) $(am__objects_3) \
+	$(am__objects_5)
 libisorropia_a_OBJECTS = $(am_libisorropia_a_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -156,22 +149,17 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(libisorropia_a_SOURCES)
 DIST_SOURCES = $(am__libisorropia_a_SOURCES_DIST)
 am__include_HEADERS_DIST = $(srcdir)/Isorropia_CostDescriber.hpp \
-	$(srcdir)/Isorropia_EpetraCostDescriber.hpp \
-	$(srcdir)/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
-	$(srcdir)/Isorropia_Utils.hpp $(srcdir)/Isorropia_Epetra.hpp \
+	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
 	$(srcdir)/Isorropia_ConfigDefs.hpp \
-	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.hpp \
-	$(srcdir)/zoltan/Isorropia_ZoltanQuery.h \
-	$(srcdir)/zoltan/IZoltan_LoadBalance.h \
-	$(srcdir)/zoltan/IZoltan_MigrationContainer.h \
-	$(srcdir)/zoltan/IZoltan_MigrationFunctions.h \
-	$(srcdir)/zoltan/IZoltan_MigrationObject.h \
-	$(srcdir)/zoltan/IZoltan_QueryContainer.h \
-	$(srcdir)/zoltan/IZoltan_QueryFunctions.h \
-	$(srcdir)/zoltan/IZoltan_QueryObject.h
+	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
+	$(srcdir)/epetra/Isorropia_Epetra.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp \
+	$(srcdir)/epetra/zoltanLib/QueryObject.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -302,56 +290,52 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 CORE = \
-	$(srcdir)/Isorropia_EpetraCostDescriber.cpp \
-	$(srcdir)/Isorropia_EpetraPartitioner.cpp \
-	$(srcdir)/Isorropia_Redistributor.cpp \
 	$(srcdir)/Isorropia_Utils.cpp \
-	$(srcdir)/Isorropia_Epetra.cpp \
 	$(srcdir)/Isorropia_Exception.cpp
 
 CORE_H = \
 	$(srcdir)/Isorropia_CostDescriber.hpp \
-	$(srcdir)/Isorropia_EpetraCostDescriber.hpp \
-	$(srcdir)/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
-	$(srcdir)/Isorropia_Epetra.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
 	$(srcdir)/Isorropia_ConfigDefs.hpp
 
-ZOLTAN = \
-	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
-	$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp \
-	$(srcdir)/zoltan/IZoltan_LoadBalance.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp \
-	$(srcdir)/zoltan/IZoltan_MigrationObject.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryContainer.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp \
-	$(srcdir)/zoltan/IZoltan_QueryObject.cpp
+EPETRA = \
+	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
+	$(srcdir)/epetra/Isorropia_Epetra.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
 
-ZOLTAN_H = \
-	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.hpp \
-	$(srcdir)/zoltan/Isorropia_ZoltanQuery.h \
-	$(srcdir)/zoltan/IZoltan_LoadBalance.h \
-	$(srcdir)/zoltan/IZoltan_MigrationContainer.h \
-	$(srcdir)/zoltan/IZoltan_MigrationFunctions.h \
-	$(srcdir)/zoltan/IZoltan_MigrationObject.h \
-	$(srcdir)/zoltan/IZoltan_QueryContainer.h \
-	$(srcdir)/zoltan/IZoltan_QueryFunctions.h \
-	$(srcdir)/zoltan/IZoltan_QueryObject.h
+EPETRA_H = \
+	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
+	$(srcdir)/epetra/Isorropia_Epetra.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp
+
+EPETRA_ZOLTAN = \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp \
+	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
+
+EPETRA_ZOLTAN_H = \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp \
+	$(srcdir)/epetra/zoltanLib/QueryObject.hpp
 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
-@BUILD_ZOLTAN_TRUE@ZOLTAN_SOURCES = $(ZOLTAN)
-@BUILD_ZOLTAN_TRUE@ZOLTAN_HEADERFILES = $(ZOLTAN_H)
+@BUILD_EPETRA_TRUE@EPETRA_SOURCES = $(EPETRA)
+@BUILD_EPETRA_TRUE@EPETRA_HEADERFILES = $(EPETRA_H)
+@BUILD_EPETRA_TRUE@EPETRA_INC = -I$(srcdir)/epetra
+@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@EPETRA_ZOLTAN_SOURCES = $(EPETRA_ZOLTAN)
+@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@EPETRA_ZOLTAN_HEADERFILES = $(EPETRA_ZOLTAN_H)
+@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@ZOLTAN_INC = -I$(srcdir)/epetra/zoltanLib
+AM_CPPFLAGS = $(EPETRA_INC) $(ZOLTAN_INC)
 
 # ------------------------------------------------------------------------
 # Isorropia library specifications
 # ------------------------------------------------------------------------
 ISORROPIA_LIB = libisorropia.a
 libisorropia_a_SOURCES = \
-	$(CORE) $(ZOLTAN_SOURCES)
+	$(CORE) $(EPETRA_SOURCES) $(EPETRA_ZOLTAN_SOURCES)
 
 @USE_ALTERNATE_AR_FALSE@libisorropia_a_AR = $(AR) cru
 
@@ -373,7 +357,7 @@ libisorropia_a_SOURCES = \
 # ------------------------------------------------------------------------
 libisorropia_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 lib_LIBRARIES = $(ISORROPIA_LIB)
-include_HEADERS = $(CORE_H) $(ZOLTAN_HEADERFILES)
+include_HEADERS = $(CORE_H) $(EPETRA_HEADERFILES) $(EPETRA_ZOLTAN_HEADERFILES)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -481,21 +465,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_LoadBalance.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_MigrationContainer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_MigrationFunctions.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_MigrationObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_QueryContainer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_QueryFunctions.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IZoltan_QueryObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Epetra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraCostDescriber.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraPartitioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraRedistributor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Exception.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Redistributor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_ZoltanQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Zoltan_Repartition.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueryObject.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -511,48 +488,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Isorropia_EpetraCostDescriber.o: $(srcdir)/Isorropia_EpetraCostDescriber.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraCostDescriber.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo -c -o Isorropia_EpetraCostDescriber.o `test -f '$(srcdir)/Isorropia_EpetraCostDescriber.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_EpetraCostDescriber.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo $(DEPDIR)/Isorropia_EpetraCostDescriber.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_EpetraCostDescriber.cpp' object='Isorropia_EpetraCostDescriber.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraCostDescriber.o `test -f '$(srcdir)/Isorropia_EpetraCostDescriber.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_EpetraCostDescriber.cpp
-
-Isorropia_EpetraCostDescriber.obj: $(srcdir)/Isorropia_EpetraCostDescriber.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraCostDescriber.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo -c -o Isorropia_EpetraCostDescriber.obj `if test -f '$(srcdir)/Isorropia_EpetraCostDescriber.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_EpetraCostDescriber.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_EpetraCostDescriber.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo $(DEPDIR)/Isorropia_EpetraCostDescriber.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_EpetraCostDescriber.cpp' object='Isorropia_EpetraCostDescriber.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraCostDescriber.obj `if test -f '$(srcdir)/Isorropia_EpetraCostDescriber.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_EpetraCostDescriber.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_EpetraCostDescriber.cpp'; fi`
-
-Isorropia_EpetraPartitioner.o: $(srcdir)/Isorropia_EpetraPartitioner.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraPartitioner.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo -c -o Isorropia_EpetraPartitioner.o `test -f '$(srcdir)/Isorropia_EpetraPartitioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_EpetraPartitioner.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo $(DEPDIR)/Isorropia_EpetraPartitioner.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_EpetraPartitioner.cpp' object='Isorropia_EpetraPartitioner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraPartitioner.o `test -f '$(srcdir)/Isorropia_EpetraPartitioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_EpetraPartitioner.cpp
-
-Isorropia_EpetraPartitioner.obj: $(srcdir)/Isorropia_EpetraPartitioner.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraPartitioner.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo -c -o Isorropia_EpetraPartitioner.obj `if test -f '$(srcdir)/Isorropia_EpetraPartitioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_EpetraPartitioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_EpetraPartitioner.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo $(DEPDIR)/Isorropia_EpetraPartitioner.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_EpetraPartitioner.cpp' object='Isorropia_EpetraPartitioner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraPartitioner.obj `if test -f '$(srcdir)/Isorropia_EpetraPartitioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_EpetraPartitioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_EpetraPartitioner.cpp'; fi`
-
-Isorropia_Redistributor.o: $(srcdir)/Isorropia_Redistributor.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Redistributor.o -MD -MP -MF $(DEPDIR)/Isorropia_Redistributor.Tpo -c -o Isorropia_Redistributor.o `test -f '$(srcdir)/Isorropia_Redistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_Redistributor.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Redistributor.Tpo $(DEPDIR)/Isorropia_Redistributor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_Redistributor.cpp' object='Isorropia_Redistributor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Redistributor.o `test -f '$(srcdir)/Isorropia_Redistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_Redistributor.cpp
-
-Isorropia_Redistributor.obj: $(srcdir)/Isorropia_Redistributor.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Redistributor.obj -MD -MP -MF $(DEPDIR)/Isorropia_Redistributor.Tpo -c -o Isorropia_Redistributor.obj `if test -f '$(srcdir)/Isorropia_Redistributor.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_Redistributor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_Redistributor.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Redistributor.Tpo $(DEPDIR)/Isorropia_Redistributor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_Redistributor.cpp' object='Isorropia_Redistributor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Redistributor.obj `if test -f '$(srcdir)/Isorropia_Redistributor.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_Redistributor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_Redistributor.cpp'; fi`
-
 Isorropia_Utils.o: $(srcdir)/Isorropia_Utils.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Utils.o -MD -MP -MF $(DEPDIR)/Isorropia_Utils.Tpo -c -o Isorropia_Utils.o `test -f '$(srcdir)/Isorropia_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_Utils.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Utils.Tpo $(DEPDIR)/Isorropia_Utils.Po
@@ -566,20 +501,6 @@ Isorropia_Utils.obj: $(srcdir)/Isorropia_Utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_Utils.cpp' object='Isorropia_Utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Utils.obj `if test -f '$(srcdir)/Isorropia_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_Utils.cpp'; fi`
-
-Isorropia_Epetra.o: $(srcdir)/Isorropia_Epetra.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Epetra.o -MD -MP -MF $(DEPDIR)/Isorropia_Epetra.Tpo -c -o Isorropia_Epetra.o `test -f '$(srcdir)/Isorropia_Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_Epetra.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Epetra.Tpo $(DEPDIR)/Isorropia_Epetra.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_Epetra.cpp' object='Isorropia_Epetra.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Epetra.o `test -f '$(srcdir)/Isorropia_Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_Epetra.cpp
-
-Isorropia_Epetra.obj: $(srcdir)/Isorropia_Epetra.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Epetra.obj -MD -MP -MF $(DEPDIR)/Isorropia_Epetra.Tpo -c -o Isorropia_Epetra.obj `if test -f '$(srcdir)/Isorropia_Epetra.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_Epetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_Epetra.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Epetra.Tpo $(DEPDIR)/Isorropia_Epetra.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Isorropia_Epetra.cpp' object='Isorropia_Epetra.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Epetra.obj `if test -f '$(srcdir)/Isorropia_Epetra.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_Epetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_Epetra.cpp'; fi`
 
 Isorropia_Exception.o: $(srcdir)/Isorropia_Exception.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Exception.o -MD -MP -MF $(DEPDIR)/Isorropia_Exception.Tpo -c -o Isorropia_Exception.o `test -f '$(srcdir)/Isorropia_Exception.cpp' || echo '$(srcdir)/'`$(srcdir)/Isorropia_Exception.cpp
@@ -595,131 +516,89 @@ Isorropia_Exception.obj: $(srcdir)/Isorropia_Exception.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Exception.obj `if test -f '$(srcdir)/Isorropia_Exception.cpp'; then $(CYGPATH_W) '$(srcdir)/Isorropia_Exception.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Isorropia_Exception.cpp'; fi`
 
-Isorropia_Zoltan_Repartition.o: $(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Zoltan_Repartition.o -MD -MP -MF $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo -c -o Isorropia_Zoltan_Repartition.o `test -f '$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp
+Isorropia_EpetraCostDescriber.o: $(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraCostDescriber.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo -c -o Isorropia_EpetraCostDescriber.o `test -f '$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo $(DEPDIR)/Isorropia_EpetraCostDescriber.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp' object='Isorropia_EpetraCostDescriber.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraCostDescriber.o `test -f '$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp
+
+Isorropia_EpetraCostDescriber.obj: $(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraCostDescriber.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo -c -o Isorropia_EpetraCostDescriber.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraCostDescriber.Tpo $(DEPDIR)/Isorropia_EpetraCostDescriber.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp' object='Isorropia_EpetraCostDescriber.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraCostDescriber.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp'; fi`
+
+Isorropia_EpetraPartitioner.o: $(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraPartitioner.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo -c -o Isorropia_EpetraPartitioner.o `test -f '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo $(DEPDIR)/Isorropia_EpetraPartitioner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp' object='Isorropia_EpetraPartitioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraPartitioner.o `test -f '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp
+
+Isorropia_EpetraPartitioner.obj: $(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraPartitioner.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo -c -o Isorropia_EpetraPartitioner.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraPartitioner.Tpo $(DEPDIR)/Isorropia_EpetraPartitioner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp' object='Isorropia_EpetraPartitioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraPartitioner.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; fi`
+
+Isorropia_Epetra.o: $(srcdir)/epetra/Isorropia_Epetra.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Epetra.o -MD -MP -MF $(DEPDIR)/Isorropia_Epetra.Tpo -c -o Isorropia_Epetra.o `test -f '$(srcdir)/epetra/Isorropia_Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_Epetra.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Epetra.Tpo $(DEPDIR)/Isorropia_Epetra.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_Epetra.cpp' object='Isorropia_Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Epetra.o `test -f '$(srcdir)/epetra/Isorropia_Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_Epetra.cpp
+
+Isorropia_Epetra.obj: $(srcdir)/epetra/Isorropia_Epetra.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Epetra.obj -MD -MP -MF $(DEPDIR)/Isorropia_Epetra.Tpo -c -o Isorropia_Epetra.obj `if test -f '$(srcdir)/epetra/Isorropia_Epetra.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_Epetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_Epetra.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Epetra.Tpo $(DEPDIR)/Isorropia_Epetra.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_Epetra.cpp' object='Isorropia_Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Epetra.obj `if test -f '$(srcdir)/epetra/Isorropia_Epetra.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_Epetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_Epetra.cpp'; fi`
+
+Isorropia_EpetraRedistributor.o: $(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraRedistributor.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraRedistributor.Tpo -c -o Isorropia_EpetraRedistributor.o `test -f '$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraRedistributor.Tpo $(DEPDIR)/Isorropia_EpetraRedistributor.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp' object='Isorropia_EpetraRedistributor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraRedistributor.o `test -f '$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
+
+Isorropia_EpetraRedistributor.obj: $(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraRedistributor.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraRedistributor.Tpo -c -o Isorropia_EpetraRedistributor.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraRedistributor.Tpo $(DEPDIR)/Isorropia_EpetraRedistributor.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp' object='Isorropia_EpetraRedistributor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraRedistributor.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp'; fi`
+
+Isorropia_Zoltan_Repartition.o: $(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Zoltan_Repartition.o -MD -MP -MF $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo -c -o Isorropia_Zoltan_Repartition.o `test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo $(DEPDIR)/Isorropia_Zoltan_Repartition.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp' object='Isorropia_Zoltan_Repartition.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' object='Isorropia_Zoltan_Repartition.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Zoltan_Repartition.o `test -f '$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Zoltan_Repartition.o `test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
 
-Isorropia_Zoltan_Repartition.obj: $(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Zoltan_Repartition.obj -MD -MP -MF $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo -c -o Isorropia_Zoltan_Repartition.obj `if test -f '$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp'; fi`
+Isorropia_Zoltan_Repartition.obj: $(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Zoltan_Repartition.obj -MD -MP -MF $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo -c -o Isorropia_Zoltan_Repartition.obj `if test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; fi`
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo $(DEPDIR)/Isorropia_Zoltan_Repartition.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp' object='Isorropia_Zoltan_Repartition.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' object='Isorropia_Zoltan_Repartition.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Zoltan_Repartition.obj `if test -f '$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Zoltan_Repartition.obj `if test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; fi`
 
-Isorropia_ZoltanQuery.o: $(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_ZoltanQuery.o -MD -MP -MF $(DEPDIR)/Isorropia_ZoltanQuery.Tpo -c -o Isorropia_ZoltanQuery.o `test -f '$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_ZoltanQuery.Tpo $(DEPDIR)/Isorropia_ZoltanQuery.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp' object='Isorropia_ZoltanQuery.o' libtool=no @AMDEPBACKSLASH@
+QueryObject.o: $(srcdir)/epetra/zoltanLib/QueryObject.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueryObject.o -MD -MP -MF $(DEPDIR)/QueryObject.Tpo -c -o QueryObject.o `test -f '$(srcdir)/epetra/zoltanLib/QueryObject.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/QueryObject.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/QueryObject.Tpo $(DEPDIR)/QueryObject.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/zoltanLib/QueryObject.cpp' object='QueryObject.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_ZoltanQuery.o `test -f '$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueryObject.o `test -f '$(srcdir)/epetra/zoltanLib/QueryObject.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/QueryObject.cpp
 
-Isorropia_ZoltanQuery.obj: $(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_ZoltanQuery.obj -MD -MP -MF $(DEPDIR)/Isorropia_ZoltanQuery.Tpo -c -o Isorropia_ZoltanQuery.obj `if test -f '$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_ZoltanQuery.Tpo $(DEPDIR)/Isorropia_ZoltanQuery.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp' object='Isorropia_ZoltanQuery.obj' libtool=no @AMDEPBACKSLASH@
+QueryObject.obj: $(srcdir)/epetra/zoltanLib/QueryObject.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueryObject.obj -MD -MP -MF $(DEPDIR)/QueryObject.Tpo -c -o QueryObject.obj `if test -f '$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/QueryObject.Tpo $(DEPDIR)/QueryObject.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/zoltanLib/QueryObject.cpp' object='QueryObject.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_ZoltanQuery.obj `if test -f '$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp'; fi`
-
-IZoltan_LoadBalance.o: $(srcdir)/zoltan/IZoltan_LoadBalance.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_LoadBalance.o -MD -MP -MF $(DEPDIR)/IZoltan_LoadBalance.Tpo -c -o IZoltan_LoadBalance.o `test -f '$(srcdir)/zoltan/IZoltan_LoadBalance.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_LoadBalance.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_LoadBalance.Tpo $(DEPDIR)/IZoltan_LoadBalance.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_LoadBalance.cpp' object='IZoltan_LoadBalance.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_LoadBalance.o `test -f '$(srcdir)/zoltan/IZoltan_LoadBalance.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_LoadBalance.cpp
-
-IZoltan_LoadBalance.obj: $(srcdir)/zoltan/IZoltan_LoadBalance.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_LoadBalance.obj -MD -MP -MF $(DEPDIR)/IZoltan_LoadBalance.Tpo -c -o IZoltan_LoadBalance.obj `if test -f '$(srcdir)/zoltan/IZoltan_LoadBalance.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_LoadBalance.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_LoadBalance.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_LoadBalance.Tpo $(DEPDIR)/IZoltan_LoadBalance.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_LoadBalance.cpp' object='IZoltan_LoadBalance.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_LoadBalance.obj `if test -f '$(srcdir)/zoltan/IZoltan_LoadBalance.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_LoadBalance.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_LoadBalance.cpp'; fi`
-
-IZoltan_MigrationContainer.o: $(srcdir)/zoltan/IZoltan_MigrationContainer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_MigrationContainer.o -MD -MP -MF $(DEPDIR)/IZoltan_MigrationContainer.Tpo -c -o IZoltan_MigrationContainer.o `test -f '$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_MigrationContainer.Tpo $(DEPDIR)/IZoltan_MigrationContainer.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp' object='IZoltan_MigrationContainer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_MigrationContainer.o `test -f '$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp
-
-IZoltan_MigrationContainer.obj: $(srcdir)/zoltan/IZoltan_MigrationContainer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_MigrationContainer.obj -MD -MP -MF $(DEPDIR)/IZoltan_MigrationContainer.Tpo -c -o IZoltan_MigrationContainer.obj `if test -f '$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_MigrationContainer.Tpo $(DEPDIR)/IZoltan_MigrationContainer.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp' object='IZoltan_MigrationContainer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_MigrationContainer.obj `if test -f '$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp'; fi`
-
-IZoltan_MigrationFunctions.o: $(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_MigrationFunctions.o -MD -MP -MF $(DEPDIR)/IZoltan_MigrationFunctions.Tpo -c -o IZoltan_MigrationFunctions.o `test -f '$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_MigrationFunctions.Tpo $(DEPDIR)/IZoltan_MigrationFunctions.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp' object='IZoltan_MigrationFunctions.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_MigrationFunctions.o `test -f '$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp
-
-IZoltan_MigrationFunctions.obj: $(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_MigrationFunctions.obj -MD -MP -MF $(DEPDIR)/IZoltan_MigrationFunctions.Tpo -c -o IZoltan_MigrationFunctions.obj `if test -f '$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_MigrationFunctions.Tpo $(DEPDIR)/IZoltan_MigrationFunctions.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp' object='IZoltan_MigrationFunctions.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_MigrationFunctions.obj `if test -f '$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp'; fi`
-
-IZoltan_MigrationObject.o: $(srcdir)/zoltan/IZoltan_MigrationObject.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_MigrationObject.o -MD -MP -MF $(DEPDIR)/IZoltan_MigrationObject.Tpo -c -o IZoltan_MigrationObject.o `test -f '$(srcdir)/zoltan/IZoltan_MigrationObject.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_MigrationObject.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_MigrationObject.Tpo $(DEPDIR)/IZoltan_MigrationObject.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_MigrationObject.cpp' object='IZoltan_MigrationObject.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_MigrationObject.o `test -f '$(srcdir)/zoltan/IZoltan_MigrationObject.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_MigrationObject.cpp
-
-IZoltan_MigrationObject.obj: $(srcdir)/zoltan/IZoltan_MigrationObject.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_MigrationObject.obj -MD -MP -MF $(DEPDIR)/IZoltan_MigrationObject.Tpo -c -o IZoltan_MigrationObject.obj `if test -f '$(srcdir)/zoltan/IZoltan_MigrationObject.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_MigrationObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_MigrationObject.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_MigrationObject.Tpo $(DEPDIR)/IZoltan_MigrationObject.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_MigrationObject.cpp' object='IZoltan_MigrationObject.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_MigrationObject.obj `if test -f '$(srcdir)/zoltan/IZoltan_MigrationObject.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_MigrationObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_MigrationObject.cpp'; fi`
-
-IZoltan_QueryContainer.o: $(srcdir)/zoltan/IZoltan_QueryContainer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_QueryContainer.o -MD -MP -MF $(DEPDIR)/IZoltan_QueryContainer.Tpo -c -o IZoltan_QueryContainer.o `test -f '$(srcdir)/zoltan/IZoltan_QueryContainer.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_QueryContainer.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_QueryContainer.Tpo $(DEPDIR)/IZoltan_QueryContainer.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_QueryContainer.cpp' object='IZoltan_QueryContainer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_QueryContainer.o `test -f '$(srcdir)/zoltan/IZoltan_QueryContainer.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_QueryContainer.cpp
-
-IZoltan_QueryContainer.obj: $(srcdir)/zoltan/IZoltan_QueryContainer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_QueryContainer.obj -MD -MP -MF $(DEPDIR)/IZoltan_QueryContainer.Tpo -c -o IZoltan_QueryContainer.obj `if test -f '$(srcdir)/zoltan/IZoltan_QueryContainer.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_QueryContainer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_QueryContainer.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_QueryContainer.Tpo $(DEPDIR)/IZoltan_QueryContainer.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_QueryContainer.cpp' object='IZoltan_QueryContainer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_QueryContainer.obj `if test -f '$(srcdir)/zoltan/IZoltan_QueryContainer.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_QueryContainer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_QueryContainer.cpp'; fi`
-
-IZoltan_QueryFunctions.o: $(srcdir)/zoltan/IZoltan_QueryFunctions.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_QueryFunctions.o -MD -MP -MF $(DEPDIR)/IZoltan_QueryFunctions.Tpo -c -o IZoltan_QueryFunctions.o `test -f '$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_QueryFunctions.Tpo $(DEPDIR)/IZoltan_QueryFunctions.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp' object='IZoltan_QueryFunctions.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_QueryFunctions.o `test -f '$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp
-
-IZoltan_QueryFunctions.obj: $(srcdir)/zoltan/IZoltan_QueryFunctions.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_QueryFunctions.obj -MD -MP -MF $(DEPDIR)/IZoltan_QueryFunctions.Tpo -c -o IZoltan_QueryFunctions.obj `if test -f '$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_QueryFunctions.Tpo $(DEPDIR)/IZoltan_QueryFunctions.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp' object='IZoltan_QueryFunctions.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_QueryFunctions.obj `if test -f '$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp'; fi`
-
-IZoltan_QueryObject.o: $(srcdir)/zoltan/IZoltan_QueryObject.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_QueryObject.o -MD -MP -MF $(DEPDIR)/IZoltan_QueryObject.Tpo -c -o IZoltan_QueryObject.o `test -f '$(srcdir)/zoltan/IZoltan_QueryObject.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_QueryObject.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_QueryObject.Tpo $(DEPDIR)/IZoltan_QueryObject.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_QueryObject.cpp' object='IZoltan_QueryObject.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_QueryObject.o `test -f '$(srcdir)/zoltan/IZoltan_QueryObject.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/IZoltan_QueryObject.cpp
-
-IZoltan_QueryObject.obj: $(srcdir)/zoltan/IZoltan_QueryObject.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IZoltan_QueryObject.obj -MD -MP -MF $(DEPDIR)/IZoltan_QueryObject.Tpo -c -o IZoltan_QueryObject.obj `if test -f '$(srcdir)/zoltan/IZoltan_QueryObject.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_QueryObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_QueryObject.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IZoltan_QueryObject.Tpo $(DEPDIR)/IZoltan_QueryObject.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zoltan/IZoltan_QueryObject.cpp' object='IZoltan_QueryObject.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IZoltan_QueryObject.obj `if test -f '$(srcdir)/zoltan/IZoltan_QueryObject.cpp'; then $(CYGPATH_W) '$(srcdir)/zoltan/IZoltan_QueryObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zoltan/IZoltan_QueryObject.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueryObject.obj `if test -f '$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
