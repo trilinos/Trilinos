@@ -31,17 +31,14 @@ include $(top_builddir)/Makefile.export.isorropia
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = test_simple
+AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
 
-test_simple_SOURCES = $(srcdir)/test_simple.cpp
+noinst_PROGRAMS = new_test_simple
+#noinst_PROGRAMS = hypergraph_test graph_test
 
-test_simple_DEPENDENCIES = \
-	$(top_builddir)/src/libisorropia.a \
-	$(top_builddir)/test/utils/libisorropia_test_utils.a
+new_test_simple_SOURCES = $(srcdir)/new_test_simple.cpp
 
-test_simple_CXXFLAGS = -I$(top_srcdir)/test/utils \
-   $(ISORROPIA_INCLUDES)
-test_simple_LDADD = \
+new_test_simple_LDADD = \
    -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 EXTRA_DIST = simple.mtx
