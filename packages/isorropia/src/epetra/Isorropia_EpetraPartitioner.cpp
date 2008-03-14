@@ -30,7 +30,9 @@ Questions? Contact Alan Williams (william@sandia.gov)
 //@HEADER
 
 #include <Isorropia_EpetraPartitioner.hpp>
+#ifdef HAVE_ISORROPIA_ZOLTAN
 #include <Isorropia_Zoltan_Repartition.hpp>
+#endif
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
