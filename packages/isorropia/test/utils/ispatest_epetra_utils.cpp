@@ -123,7 +123,6 @@ int fill_graph(Epetra_CrsGraph& graph,
   err = graph.FillComplete();
   return(err);
 }
-
 }//namespace ispatest
 
 #endif //HAVE_EPETRA

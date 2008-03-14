@@ -107,7 +107,8 @@ ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libisorropia_test_utils_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = ispatest_epetra_utils.$(OBJEXT) \
-	ispatest_utils.$(OBJEXT) ispatest_read_distribution.$(OBJEXT)
+	ispatest_lbeval_utils.$(OBJEXT) ispatest_utils.$(OBJEXT) \
+	ispatest_read_distribution.$(OBJEXT)
 am_libisorropia_test_utils_a_OBJECTS = $(am__objects_1)
 libisorropia_test_utils_a_OBJECTS =  \
 	$(am_libisorropia_test_utils_a_OBJECTS)
@@ -248,6 +249,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 CORE = \
 	$(srcdir)/ispatest_epetra_utils.cpp \
+	$(srcdir)/ispatest_lbeval_utils.cpp \
 	$(srcdir)/ispatest_utils.cpp \
 	$(srcdir)/ispatest_read_distribution.cpp
 
@@ -256,6 +258,7 @@ CORE = \
 #included in the distribution tarball.
 EXTRA_DIST = \
 	$(srcdir)/ispatest_epetra_utils.hpp \
+	$(srcdir)/ispatest_lbeval_utils.hpp \
 	$(srcdir)/ispatest_utils.hpp \
 	$(srcdir)/ispatest_read_distribution.hpp
 
@@ -367,6 +370,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ispatest_epetra_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ispatest_lbeval_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ispatest_read_distribution.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ispatest_utils.Po@am__quote@
 
@@ -397,6 +401,20 @@ ispatest_epetra_utils.obj: $(srcdir)/ispatest_epetra_utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ispatest_epetra_utils.cpp' object='ispatest_epetra_utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ispatest_epetra_utils.obj `if test -f '$(srcdir)/ispatest_epetra_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/ispatest_epetra_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ispatest_epetra_utils.cpp'; fi`
+
+ispatest_lbeval_utils.o: $(srcdir)/ispatest_lbeval_utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ispatest_lbeval_utils.o -MD -MP -MF $(DEPDIR)/ispatest_lbeval_utils.Tpo -c -o ispatest_lbeval_utils.o `test -f '$(srcdir)/ispatest_lbeval_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/ispatest_lbeval_utils.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ispatest_lbeval_utils.Tpo $(DEPDIR)/ispatest_lbeval_utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ispatest_lbeval_utils.cpp' object='ispatest_lbeval_utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ispatest_lbeval_utils.o `test -f '$(srcdir)/ispatest_lbeval_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/ispatest_lbeval_utils.cpp
+
+ispatest_lbeval_utils.obj: $(srcdir)/ispatest_lbeval_utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ispatest_lbeval_utils.obj -MD -MP -MF $(DEPDIR)/ispatest_lbeval_utils.Tpo -c -o ispatest_lbeval_utils.obj `if test -f '$(srcdir)/ispatest_lbeval_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/ispatest_lbeval_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ispatest_lbeval_utils.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ispatest_lbeval_utils.Tpo $(DEPDIR)/ispatest_lbeval_utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ispatest_lbeval_utils.cpp' object='ispatest_lbeval_utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ispatest_lbeval_utils.obj `if test -f '$(srcdir)/ispatest_lbeval_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/ispatest_lbeval_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ispatest_lbeval_utils.cpp'; fi`
 
 ispatest_utils.o: $(srcdir)/ispatest_utils.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ispatest_utils.o -MD -MP -MF $(DEPDIR)/ispatest_utils.Tpo -c -o ispatest_utils.o `test -f '$(srcdir)/ispatest_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/ispatest_utils.cpp

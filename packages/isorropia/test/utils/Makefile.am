@@ -31,6 +31,7 @@ include $(top_builddir)/Makefile.export.isorropia
 
 CORE = \
 	$(srcdir)/ispatest_epetra_utils.cpp \
+	$(srcdir)/ispatest_lbeval_utils.cpp \
 	$(srcdir)/ispatest_utils.cpp \
 	$(srcdir)/ispatest_read_distribution.cpp
 
@@ -38,6 +39,7 @@ CORE = \
 #included in the distribution tarball.
 EXTRA_DIST = \
 	$(srcdir)/ispatest_epetra_utils.hpp \
+	$(srcdir)/ispatest_lbeval_utils.hpp \
 	$(srcdir)/ispatest_utils.hpp \
 	$(srcdir)/ispatest_read_distribution.hpp
 
