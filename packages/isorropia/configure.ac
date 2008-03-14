@@ -195,11 +195,13 @@ AC_CXX_STD_SPRINTF
 # should be built.
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
+AM_CONDITIONAL(BUILD_EPETRA, [test "X$ac_cv_use_epetra" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB( isorropia, zoltan, [Enable Isorropia interface support for Zoltan], ISORROPIA_ZOLTAN, no)
 AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_isorropia_zoltan" != "Xno"])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext, EPETRAEXT, HAVE_EPETRAEXT, yes, [Use EpetraExt in Isorropia.], [Use EpetraExt in Isorropia.  Can be overridden with --disable-isorropia-epetraext.])
+AM_CONDITIONAL(BUILD_EPETRAEXT, [test "X$ac_cv_use_epetraext" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
