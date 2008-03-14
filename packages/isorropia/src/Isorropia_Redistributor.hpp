@@ -34,20 +34,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
-#include <Teuchos_ParameterList.hpp>
-
-#ifdef HAVE_EPETRA
-class Epetra_Map;
-class Epetra_BlockMap;
-class Epetra_Import;
-class Epetra_Vector;
-class Epetra_MultiVector;
-class Epetra_CrsGraph;
-class Epetra_CrsMatrix;
-class Epetra_RowMatrix;
-class Epetra_LinearProblem;
-class Epetra_SrcDistObject;
-class Epetra_DistObject;
 
 /** Isorropia is the namespace that contains isorropia's declarations
   for classes and functions.
@@ -55,75 +41,19 @@ class Epetra_DistObject;
 namespace Isorropia {
   class Partitioner;
 
-/** Class which is constructed with a Partitioner instance, and
-     provides several methods for redistributing Epetra objects
-     given the partitioning computed by the Partitioner object.
+/** Abstract base class for classes which are constructed with a 
+ ** Partitioner instance, and define methods redistribute their objects.
 */
 class Redistributor {
 public:
-  /** Constructor.
-      This constructor calls partitioner.compute_partitioning() if it
-      has not already been called.
-   */
-  Redistributor(Teuchos::RefCountPtr<Partitioner> partitioner);
 
   /** Destructor
    */
   virtual ~Redistributor();
 
-  /** Method to redistribute a Epetra_SrcDistObject into a
-      Epetra_DistObject. The caller is required to have constructed
-      the target object using the correct target map.
-  */
-  void redistribute(const Epetra_SrcDistObject& src,
-		    Epetra_DistObject& target);
-
-  /** Method to accept a Epetra_CrsGraph object, and
-      return a redistributed Epetra_CrsGraph object.
-
-      Note that the 'input_graph' argument may be a
-      different object than the one which was used to
-      construct the partitioner.
-  */
-  Teuchos::RefCountPtr<Epetra_CrsGraph>
-     redistribute(const Epetra_CrsGraph& input_graph);
-
-  /** Method to accept a Epetra_CrsMatrix object, and
-      return a redistributed Epetra_CrsMatrix object.
-
-      Note that the 'input_matrix' argument may be a
-      different object than the one which was used to
-      construct the partitioner.
-  */
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>
-     redistribute(const Epetra_CrsMatrix& input_matrix);
-
-  /** Method to accept a Epetra_RowMatrix object, and
-      return a redistributed Epetra_CrsMatrix object.
-  */
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>
-     redistribute(const Epetra_RowMatrix& input_matrix);
-
-  /** Method to accept a Epetra_MultiVector object, and
-      return a redistributed Epetra_MultiVector object.
-  */
-  Teuchos::RefCountPtr<Epetra_MultiVector>
-     redistribute(const Epetra_MultiVector& input_vector);
-
-private:
-  void create_importer(const Epetra_BlockMap& src_map);
-
-  Teuchos::RefCountPtr<Partitioner> partitioner_;
-  Teuchos::RefCountPtr<Epetra_Import> importer_;
-  Teuchos::RefCountPtr<Epetra_Map> target_map_;
-
-  bool created_importer_;
-
 }; //class Redistributor
 
 }//namespace Isorropia
-
-#endif //HAVE_EPETRA
 
 #endif
 
