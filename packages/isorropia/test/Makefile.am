@@ -41,7 +41,7 @@ endif
 
 if BUILD_EPETRAEXT
 MTX_TEST_DIR = mtx
-MTX_TESTS = 
+MTX_TESTS = test_simple.exe
 endif
 
 #
@@ -52,7 +52,7 @@ SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
 TESTS = \
 utest/utest.exe \
 rebalance_1d_default/rebalance_1d_default.exe \
-$(ZOLTAN_TEST)
+$(ZOLTAN_TEST) $(MTX_TESTS)
 
 EXTRA_DIST = definition
 
