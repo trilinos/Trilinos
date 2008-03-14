@@ -33,12 +33,12 @@ EXEEXT = .exe
 
 AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
 
-noinst_PROGRAMS = new_test_simple
+noinst_PROGRAMS = test_simple
 #noinst_PROGRAMS = hypergraph_test graph_test
 
-new_test_simple_SOURCES = $(srcdir)/new_test_simple.cpp
+test_simple_SOURCES = $(srcdir)/test_simple.cpp
 
-new_test_simple_LDADD = \
+test_simple_LDADD = \
    -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 EXTRA_DIST = simple.mtx
