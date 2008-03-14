@@ -40,7 +40,7 @@
 //The Isorropia symbols being demonstrated are declared
 //in these headers:
 #include <Isorropia_Epetra.hpp>
-#include <Isorropia_Redistributor.hpp>
+#include <Isorropia_EpetraRedistributor.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
   }
 
   //We'll need a Teuchos::ParameterList object to pass to the
-  //Isorropia::Partitioner class.
+  //Isorropia::Epetra::Partitioner class.
   Teuchos::ParameterList paramlist;
 
   // If Zoltan is available, the Zoltan package will be used for
@@ -117,14 +117,14 @@ int main(int argc, char** argv) {
 
   //Now create the partitioner object using an Isorropia factory-like
   //function...
-  Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
+  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner =
     Isorropia::Epetra::create_partitioner(rowmat, paramlist);
 
 
   //Next create a Redistributor object and use it to create balanced
   //copies of the objects in linprob.
 
-  Isorropia::Redistributor rd(partitioner);
+  Isorropia::Epetra::Redistributor rd(partitioner);
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
   Teuchos::RefCountPtr<Epetra_MultiVector> bal_x;
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
   //if it encounters an error.
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::Redistributor::redistribute..."
+    std::cout << " calling Isorropia::Epetra::Redistributor::redistribute..."
         << std::endl;
   }
 
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
     bal_b = rd.redistribute(*linprob->GetRHS());
   }
   catch(std::exception& exc) {
-    std::cout << "linsys example: Isorropia::Redistributor threw "
+    std::cout << "linsys example: Isorropia::Epetra::Redistributor threw "
          << "exception '" << exc.what() << "' on proc "
          << localProc << std::endl;
     MPI_Finalize();

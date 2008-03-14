@@ -43,7 +43,7 @@
 //in these headers:
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
-#include <Isorropia_Redistributor.hpp>
+#include <Isorropia_EpetraRedistributor.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
   }
 
   //We'll need a Teuchos::ParameterList object to pass to the
-  //Isorropia::Partitioner class.
+  //Isorropia::Epetra::Partitioner class.
   Teuchos::ParameterList paramlist;
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
@@ -146,14 +146,14 @@ int main(int argc, char** argv) {
 
   //Now create the partitioner object using an Isorropia factory-like
   //function...
-  Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
+  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner =
     Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
 
 
   //Next create a Redistributor object and use it to create a repartitioned
   //copy of the matrix.
 
-  Isorropia::Redistributor rd(partitioner);
+  Isorropia::Epetra::Redistributor rd(partitioner);
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
 
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
   //if it encounters an error.
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::Redistributor::redistribute..."
+    std::cout << " calling Isorropia::Epetra::Redistributor::redistribute..."
         << std::endl;
   }
 
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
     bal_matrix = rd.redistribute(*rowmatrix);
   }
   catch(std::exception& exc) {
-    std::cout << "linsys example: Isorropia::Redistributor threw "
+    std::cout << "linsys example: Isorropia::Epetra::Redistributor threw "
          << "exception '" << exc.what() << "' on proc "
          << localProc << std::endl;
     MPI_Finalize();

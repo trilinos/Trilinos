@@ -8,3 +8,6 @@ The programs can be run like this (for example):
 (You may need a different mpirun command depending on your particular
 system.)
 
+See test/mtx/test_simple.mtx for a better example of hypergraph
+partitioning.  Hypergraphs are not in general sqare and symmetric.
+
