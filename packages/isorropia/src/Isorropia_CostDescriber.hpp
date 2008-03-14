@@ -113,7 +113,7 @@ public:
   /** Get the number of Hypergraph edges. Hypergraph edges typically
      correspond to matrix columns.
   */
-  virtual int getNumHypergraphEdges() const = 0;
+  virtual int getNumHypergraphEdgeWeights() const = 0;
 
   /** Get the hypergraph edge weights.
   */
