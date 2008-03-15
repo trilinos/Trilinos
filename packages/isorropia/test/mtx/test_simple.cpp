@@ -82,8 +82,6 @@
 #include <Isorropia_EpetraRedistributor.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <ispatest_utils.hpp>
-#include <ispatest_epetra_utils.hpp>
 #include <ispatest_lbeval_utils.hpp>
 
 #ifdef HAVE_EPETRA
@@ -100,6 +98,8 @@
 #endif
 
 #endif
+
+#include <Teuchos_CommandLineProcessor.hpp>
 
 #define GRAPH_PARTITIONING            1
 #define HYPERGRAPH_PARTITIONING       2
@@ -471,6 +471,7 @@ int main(int argc, char** argv) {
   bool verbose = false;
   int numProcs = 1;
   int localProc = 0;
+  std::string *fstr;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -481,24 +482,41 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  try {
-    // --v will print out partitioning
-    verbose = ispatest::set_verbose(localProc, argc, argv);
-  }
-  catch(std::exception& exc) {
-    std::cout << "err, setting verbosity: " << exc.what() << std::endl;
-    std::cout << "End Result: TEST FAILED" << std::endl;
+  Teuchos::CommandLineProcessor clp(false,true);
+
+  // --f=fileName provides a different matrix market file for input
+  // --v will print out the partitioning (small files only)
+
+  std::string *inputFile = new std::string("simple.mtx");
+
+  clp.setOption( "f", inputFile, 
+                "Name of input matrix market file");
+  clp.setOption( "v", "q", &verbose, 
+                "Display matrix before and after partitioning.");
+
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
+    clp.parse(argc,argv);
+
+  if( parse_return == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED){
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
-    return(-1);
+    return 0;
   }
+  if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return 1;
+  }
+  
+  const char *fname = inputFile->c_str();
 
   // Read in the matrix market file and distribute its rows across the
   // processes.
 
   Epetra_CrsMatrix *matrixPtr;
-  rc = EpetraExt::MatrixMarketFileToCrsMatrix("simple.mtx", Comm, matrixPtr);
+  rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
   if (rc < 0){
     ERROREXIT((localProc==0), "error reading in simple.mtx");
   }

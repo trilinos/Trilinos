@@ -45,4 +45,3 @@ EXTRA_DIST = simple.mtx
 
 all-local:
 	@if test -e simple.mtx; then : ; else cp $(srcdir)/simple.mtx .; fi
-
