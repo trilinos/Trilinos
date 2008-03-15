@@ -4,7 +4,6 @@
 
 (FRAMEWORK, IsorropiaTests) {
    DIRS = utest,
-          mtx,
           rebalance_1d_default,
           zoltan;
    ARGS = --v;
@@ -13,10 +12,21 @@
 
 (INSTALL, IsorropiaTests) {
    DIRS = utest,
-          mtx,
           rebalance_1d_default,
           zoltan;
    ARGS = --v;
    COMM = SERIAL, MPI;
 }
 
+(FRAMEWORK, IsorropiaTests) {
+   DIRS = mtx;
+   ARGS = --f=mtx/simple.mtx;
+   COMM = SERIAL, MPI;
+}
+
+
+(INSTALL, IsorropiaTests) {
+   DIRS = mtx;
+   ARGS = --f=mtx/simple.mtx;
+   COMM = SERIAL, MPI;
+}

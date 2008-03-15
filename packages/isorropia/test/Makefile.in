@@ -64,7 +64,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 TESTS = utest/utest.exe rebalance_1d_default/rebalance_1d_default.exe \
-	$(am__EXEEXT_1)
+	$(am__EXEEXT_1) $(MTX_TESTS)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -240,7 +240,7 @@ top_srcdir = @top_srcdir@
 @BUILD_ZOLTAN_FALSE@ZOLTAN_TEST = 
 @BUILD_ZOLTAN_TRUE@ZOLTAN_TEST = rebalance_zoltan.exe
 @BUILD_EPETRAEXT_TRUE@MTX_TEST_DIR = mtx
-@BUILD_EPETRAEXT_TRUE@MTX_TESTS = 
+@BUILD_EPETRAEXT_TRUE@MTX_TESTS = test_simple.exe
 
 #
 # Note: utils must be built first, before the other subdirs
