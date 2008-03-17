@@ -84,7 +84,13 @@ endif
 
 endif
 
-AM_CPPFLAGS=$(EPETRA_INC) $(ZOLTAN_INC)
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ISORROPIA_INCLUDES))
+else
+EXPORT_INCLUDES = $(ISORROPIA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_INC) $(ZOLTAN_INC)
 
 # ------------------------------------------------------------------------
 # Isorropia library specifications

@@ -182,7 +182,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos
+		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../epetraext
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ISORROPIA > $(exec_prefix)/include/Makefile.export.isorropia.macros
 
 uninstall-hook:

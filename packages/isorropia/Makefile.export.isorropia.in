@@ -8,7 +8,7 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 _ISORROPIA_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                    -I@abs_top_srcdir@/src/epetra \
-                   -I@abs_top_srcdir@/src/epetra/zoltan \
+                   -I@abs_top_srcdir@/src/epetra/zoltanLib \
 	           $(EPETRA_INCLUDES) $(EPETRAEXT_INCLUDES) $(TEUCHOS_INCLUDES) 
 
 _ISORROPIA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lisorropia \
