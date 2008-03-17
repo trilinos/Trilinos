@@ -37,7 +37,7 @@ extern "C" {
  * Zoltan algorithm used for the sparse matrix need not be PHG.
  ********************************************************************/
 
-typedef unsigned int IJTYPE; /* matrix row ID, column ID or matrix size */
+#include <zoltan.h>
 
 enum ObjectType {ROW_TYPE = 1, COL_TYPE = 2, NZ_TYPE = 3};
 
@@ -106,16 +106,9 @@ struct Zoltan_MP_Data_Struct{
 
 typedef struct Zoltan_MP_Data_Struct ZOLTAN_MP_DATA;
 
-int Zoltan_MP_Get_NonZero_Assignment(struct Zoltan_Struct *zz, int nNZ,
-        IJTYPE *rowIDs, IJTYPE *colIDs, int *nzProcs, int *nzParts);
-int Zoltan_MP_Get_Column_Assignment(struct Zoltan_Struct *zz, int nCols, IJTYPE *colIDs,
-        int *colProcs, int *colParts);
-int Zoltan_MP_Get_Row_Assignment(struct Zoltan_Struct *zz, int nRows, IJTYPE *rowIDs,
-        int *rowProcs, int *rowParts);
 int Zoltan_Lookup_Obj(obj_lookup *lu, IJTYPE I, IJTYPE J);
 
 void Zoltan_MP_Debug_Partitioning(struct Zoltan_Struct *zz);
-
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
