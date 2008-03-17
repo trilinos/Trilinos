@@ -2842,6 +2842,139 @@ extern int Zoltan_LB_Balance(
 
 /*****************************************************************************/
 /*
+ *  Function to partition a sparse matrix.  The interface differs from
+ *  Zoltan_LB_Partition in that you supply (through query functions) a
+ *  sparse matrix and then Zoltan_Matrix_Partition sets up and runs a Zoltan
+ *  PHG problem for you.  You obtain the row or column assignments by
+ *  calling Zoltan_MP_* functions with the Zoltan_Struct.  
+ *  (Zoltan_Matrix_Partition encoded the necessary information in the 
+ *  Zoltan_Struct after invoking PHG.)
+ *
+ *  The goal was to make the common case of matrix partitioning easier.  The
+ *  application does not need to set up a Zoltan PHG problem.
+ *
+ *  Input:
+ *    zz                  --  The Zoltan structure returned by Zoltan_Create.
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_Matrix_Partition(
+  struct Zoltan_Struct *zz);
+
+/*
+ *  For direct matrix partitioning (with Zoltan_Matrix_Partition), this is 
+ *  the type for a row ID, and column ID, or a matrix dimension.
+ */
+typedef unsigned int IJTYPE;
+
+/*
+ *  Function which may be called after calling Zoltan_Matrix_Partition in
+ *  order to obtain the assignment of non zeros of the sparse matrix.
+ *
+ *  A process may only request the assignment for non-zeros that it supplied 
+ *  to Zoltan in its query functions.
+ *
+ *  Input:
+ *    zz                  --  The Zoltan structure that was given to
+ *                            Zoltan_Matrix_Partition.
+ *    nNZ                 --  The number of non-zeros for which partitioning
+ *                            assignments are requested
+ *    rowIDs              --  The row ID for each non-zero for which
+ *                            partitioning assignments are requested.  (These
+ *                            are the IDs you used in the query functions
+ *                            to describe the sparse matrix.)
+ *    colIDs              --  The column ID for each non-zero for which
+ *                            partitioning assignments are requested
+ *  Output:
+ *    nzProcs             --  The process to which each non-zero is
+ *                            assigned under the new partitioning.  The
+ *                            memory must be allocated by the caller.
+ *    nzParts             --  The partition to which each non-zero is
+ *                            assigned under the new partitioning.  The
+ *                            memory must be allocated by the caller.
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_MP_Get_NonZero_Assignment(
+  struct Zoltan_Struct *zz, 
+  int nNZ,
+  IJTYPE *rowIDs, 
+  IJTYPE *colIDs, 
+  int *nzProcs, 
+  int *nzParts);
+
+/*
+ *  Function which may be called after calling Zoltan_Matrix_Partition in
+ *  order to obtain the assignment of columns of the sparse matrix.
+ *
+ *  A process may only request the assignment of columns for which it
+ *  supplied non-zeros for to Zoltan in its query functions.
+ *
+ *  Input:
+ *    zz                  --  The Zoltan structure that was given to
+ *                            Zoltan_Matrix_Partition.
+ *    nCols               --  The number of columns for which partitioning
+ *                            assignments are requested
+ *    colIDs              --  The column IDs for for which partitioning 
+ *                            assignments are requested.  (These
+ *                            are the IDs you used in the query functions
+ *                            to describe the sparse matrix.)
+ *  Output:
+ *    colProcs            --  The process to which each column is
+ *                            assigned under the new partitioning.  The
+ *                            memory must be allocated by the caller.
+ *    colParts            --  The partition to which each column is
+ *                            assigned under the new partitioning.  The
+ *                            memory must be allocated by the caller.
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_MP_Get_Column_Assignment(
+  struct Zoltan_Struct *zz, 
+  int nCols, 
+  IJTYPE *colIDs,
+  int *colProcs, 
+  int *colParts);
+
+/*
+ *  Function which may be called after calling Zoltan_Matrix_Partition in
+ *  order to obtain the assignment of rows of the sparse matrix.
+ *
+ *  A process may only request the assignment of rows for which it
+ *  supplied non-zeros for to Zoltan in its query functions.
+ *
+ *  Input:
+ *    zz                  --  The Zoltan structure that was given to
+ *                            Zoltan_Matrix_Partition.
+ *    nRows               --  The number of rows for which partitioning
+ *                            assignments are requested
+ *    rowIDs              --  The row IDs for for which partitioning 
+ *                            assignments are requested.  (These
+ *                            are the IDs you used in the query functions
+ *                            to describe the sparse matrix.)
+ *  Output:
+ *    rowProcs            --  The process to which each row is
+ *                            assigned under the new partitioning.  The
+ *                            memory must be allocated by the caller.
+ *    rowParts            --  The partition to which each row is
+ *                            assigned under the new partitioning.  The
+ *                            memory must be allocated by the caller.
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_MP_Get_Row_Assignment(
+  struct Zoltan_Struct *zz, 
+  int nRow, 
+  IJTYPE *rowIDs,
+  int *rowProcs, 
+  int *rowParts);
+
+/*****************************************************************************/
+/*
  *  Function to return the bounding box of a partition generated by RCB.
  *  Input:
  *    zz                  --  The Zoltan structure returned by Zoltan_Create.
