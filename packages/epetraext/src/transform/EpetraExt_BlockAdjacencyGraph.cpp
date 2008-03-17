@@ -68,7 +68,7 @@ namespace EpetraExt {
     if( matProc == -1)
       { cout << "FAIL for Global!  All CrsGraph entries must be on one processor!\n"; abort(); }
     
-    int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns, log2nbrr = 14;
+    int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns, log2nbrr = 20;
     int error = -1;    /* error detected, possibly a problem with the input */
     int nrr;           /* number of rows in B */
     int nzM = 0;       /* number of edges in graph */
@@ -122,7 +122,7 @@ namespace EpetraExt {
 	      if( r[bstree[p]+1] <= j) p = 2*p+2;
 	    }
 	    ++ns;
-	    if( p > nbrr || ns > 14 ) {
+	    if( p > nbrr || ns > 20 ) {
 	      error = j;
 	      std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
 	    }
