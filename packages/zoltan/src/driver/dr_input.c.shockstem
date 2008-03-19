@@ -30,6 +30,11 @@
 extern "C" {
 #endif
 
+/****************************************************************************/
+/*  ALTERNATE FILE FOR SHOCKSTEM ADAPTIVE MESH REFINEMENT EXPERIMENTS ONLY. */
+/*  DO NOT COMMIT AS A REGULAR DRIVER FILE.                                 */
+/****************************************************************************/
+
 
 #define SKIPW    "%*[,\t ]"         /* eat up white space amd comma */
 #define SKIPEQ   " = "                /* eat up white space and req'd = sign */

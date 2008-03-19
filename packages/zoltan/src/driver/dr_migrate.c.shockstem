@@ -11,6 +11,11 @@
  *    $Revision$
  ****************************************************************************/
 
+/****************************************************************************/
+/*  ALTERNATE FILE FOR SHOCKSTEM ADAPTIVE MESH REFINEMENT EXPERIMENTS ONLY. */
+/*  DO NOT COMMIT AS A REGULAR DRIVER FILE.                                 */
+/****************************************************************************/
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to migrate elements.                                */
 /*          Contains all of the callback functions that Zoltan needs        */

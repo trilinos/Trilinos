@@ -25,6 +25,11 @@ extern "C" {
 #include "dr_const.h"
 #endif
 
+/****************************************************************************/
+/*  ALTERNATE FILE FOR SHOCKSTEM ADAPTIVE MESH REFINEMENT EXPERIMENTS ONLY. */
+/*  DO NOT COMMIT AS A REGULAR DRIVER FILE.                                 */
+/****************************************************************************/
+
 /* define the input file types */
 #define NO_FILE_POINTS    0
 #define NO_FILE_TRIANGLES 1

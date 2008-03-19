@@ -2005,6 +2005,7 @@ void get_hg_size_compressed_pin_storage(
   *num_lists = mesh->nhedges;
   *format = mesh->format;
   *num_pins = mesh->hindex[mesh->nhedges];
+{int KDD; MPI_Comm_rank(MPI_COMM_WORLD, &KDD);printf("%d KDDPINS %d  LISTS %d\n", KDD, *num_pins, *num_lists);}
 
   STOP_CALLBACK_TIMER;
 }
