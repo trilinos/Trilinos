@@ -967,13 +967,7 @@ int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
 
     Zoltan_Destroy(&zz_copy);
 
-    if (Debug_Driver > 5) {
-      /* Display entire matrix - only works if matrix no larger
-       * than 100 x 100.
-       */
-      Zoltan_MP_Debug_Partitioning(zz);
-    }
-    else if (Debug_Driver > 2){
+    if (Debug_Driver > 2){
       /* 
        * We will call the sparse matrix partitioning queries.  Really
        * we should call Zoltan_Matrix_Partition_Eval(), but it isn't
