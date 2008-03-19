@@ -43,15 +43,27 @@ class Epetra_BlockMap;
 class Epetra_CrsGraph;
 class Epetra_RowMatrix;
 
+/** Isorropia is the namespace that contains isorropia's declarations
+  for classes and functions.
+*/
 namespace Isorropia {
+
+/** The Epetra namespace contains Isorropia's Epetra-specific
+  classes and functions.
+*/
 namespace Epetra {
   class CostDescriber;
+
+/** The ZoltanLib namespace within the Epetra namespace contains the 
+    classes and functions that use the Zoltan library to partition an
+    Epetra object.
+*/
 namespace ZoltanLib {
 
-///
-/** Query helper object to be used for Zoltan partitioning/ordering.
- * This object allows Zoltan to query an Epetra_CrsGraph object for it's
- * partitioning algorithms
+/** QueryObject is a class that contains the query functions required
+    by the Zoltan library.  These fuctions, when called by Zoltan,
+    provide the objects to be balanced (rows), the graph or hypergraph 
+    edges, and object and edge weights.
  */
 class QueryObject
 {
@@ -72,22 +84,37 @@ class QueryObject
 
   void fill_procmap();
 
-  // General query functions
+  /** My_Number_Objects() returns the number of rows currently
+      assigned to this process.  (The rows are interpreted as
+      graph vertices for Graph partitioning, and as hypergraph
+      vertices for hypergraph partitioning.)
+   */
   int My_Number_Objects(void *data, int *ierr);
+
+  /** My_ObjectList() returns to Zoltan the global ID and weight of the
+      rows currently assigned to this process.
+   */
   void My_Object_List  ( void * data, int num_gid_entries, int num_lid_entries,
                      ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                      int weight_dim, float * object_weights, int * ierr );
 
-  // Query functions for graph partitioning only
+  /** My_Number_Edges_Multi() is a query function used for graph partitioning
+      only.  It returns to Zoltan the number of edges (non-zeroes) that each
+      vertex (row) has.
+   */
   void My_Number_Edges_Multi  ( void * data, int num_gid_entries, int num_lid_entries,
                int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                int *num_edges, int * ierr );
+
+  /** My_Edge_List_Multi() is a query function used for graph partitioning
+      only.  For each vertex (row), it returns a list of the global ID of
+      each neighbor (non-zero) and the process owning that neighbor (that row).
+   */
   void My_Edge_List_Multi( void * data, int num_gid_entries, int num_lid_entries, 
                int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
                int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
                int weight_dim, float * edge_weights, int * ierr );
 
-  // Query functions for hypergraph partitioning only
   void My_HG_Size_CS ( void * data, int* num_lists, int* num_pins, int* format, 
                           int * ierr );
   void My_HG_CS ( void * data, int num_gid_entries, int num_row_or_col, int num_pins, 

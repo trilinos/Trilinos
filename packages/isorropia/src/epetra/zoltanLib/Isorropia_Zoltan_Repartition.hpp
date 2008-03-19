@@ -63,8 +63,19 @@ namespace ZoltanLib{
 
 #ifdef HAVE_EPETRA
 
-/** Calculate a new partitioning, and fill lists with new elements for
-    the local partition, as well as export and import lists.
+/** Partition an Epetra_CrsGraph using Zoltan.
+
+    myNewElements lists the global IDs of the rows I will have
+    under the new partitioning.
+
+    exports is a map from my row global IDs to process receiving that
+    row under the new partititioning.
+
+    imports is a map from each row globalID that will be sent to me
+    under the new partitioning to the process that currently owns it.
+
+    Isorropia::Epetra::ZoltanLib::repartition() is called by the
+    Isorropia::Epetra::Partition constructor when Zoltan is available.
 */
 int
 repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
@@ -74,8 +85,19 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
             std::map<int,int>& exports,
             std::map<int,int>& imports);
 
-/** Calculate a new partitioning, and fill lists with new elements for
-    the local partition, as well as export and import lists.
+/** Partition an Epetra_RowMatrix using Zoltan.
+
+    myNewElements lists the global IDs of the rows I will have
+    under the new partitioning.
+
+    exports is a map from my row global IDs to process receiving that
+    row under the new partititioning.
+
+    imports is a map from each row globalID that will be sent to me
+    under the new partitioning to the process that currently owns it.
+
+    Isorropia::Epetra::ZoltanLib::repartition() is called by the
+    Isorropia::Epetra::Partition constructor when Zoltan is available.
 */
 int
 repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
@@ -86,6 +108,21 @@ repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
             std::map<int,int>& imports);
 
 #ifdef HAVE_MPI
+/** load_balance() is called by Isorropia::Epetra::ZoltanLib::repartition().
+
+    It sets up the Zoltan query functions and parameters and calls Zoltan
+    to perform the partitioning.
+
+    myNewElements lists the global IDs of the rows I will have
+    under the new partitioning.
+
+    exports is a map from my row global IDs to process receiving that
+    row under the new partititioning.
+
+    imports is a map from each row globalID that will be sent to me
+    under the new partitioning to the process that currently owns it.
+*/
+    
 int
 load_balance(MPI_Comm &comm,
 	     Teuchos::ParameterList& paramlist,
