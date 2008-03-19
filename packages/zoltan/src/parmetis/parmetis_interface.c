@@ -88,8 +88,8 @@ int Zoltan_ParMetis(
   ZOLTAN_ID_PTR global_ids = NULL;
   ZOLTAN_ID_PTR local_ids = NULL;
 
-  int use_timers;
-  int timer_p;
+  int use_timers = 0;
+  int timer_p = -1;
   int get_times = 0;
   double times[5];
 
@@ -355,7 +355,7 @@ int Zoltan_ParMetis(
 
   if (get_times) Zoltan_Third_DisplayTime(zz, times);
 
-  if (use_timers)
+  if (use_timers && timer_p >= 0)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
 
   if (gr.final_output) {
@@ -487,7 +487,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_SEED",
                       (void *) &seed);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_ITR",
-                      (void *) &pmv3_itr);
+                      (void *) pmv3_itr);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_USE_OBJ_SIZE",
                       (void *) &use_obj_size);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG",
@@ -512,7 +512,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       options[PMV3_OPTION_SEED] = seed;
       options[PMV3_OPT_USE_OBJ_SIZE] = use_obj_size;
       if (ord == NULL)
-	*itr = *pmv3_itr;
+	*itr = (float)*pmv3_itr;
     }
     else
 #endif
@@ -756,7 +756,7 @@ char *val)                      /* value of variable */
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
     char *valid_methods[] = {
-        "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM", 
+        "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM",
         "REPARTLDIFFUSION", "REPARTGDIFFUSION",
         "REPARTREMAP", "REPARTMLREMAP",
         "REFINEKWAY", "ADAPTIVEREPART",
@@ -772,7 +772,7 @@ char *val)                      /* value of variable */
         status = 2;
         for (i=0; valid_methods[i] != NULL; i++){
           if (strcmp(val, valid_methods[i]) == 0){
-            status = 0; 
+            status = 0;
             break;
           }
         }
