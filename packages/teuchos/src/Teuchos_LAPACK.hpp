@@ -304,14 +304,8 @@ namespace Teuchos
     //@{ 
 
     /*! Computes some or all of the right and/or left eigenvectors of an upper triangular matrix \c T. If ScalarType is \c float or \c double, then the matrix is quasi-triangular and arugments \c RWORK is ignored.
-       \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a std::complex eigenvalue.)
     */
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, OrdinalType* info) const;
-
-    /*! Computes some or all of the right and/or left eigenvectors of an upper triangular matrix \c T. If ScalarType is \c float or \c double, then the matrix is quasi-triangular and arugments \c RWORK is ignored.
-       \note (This is the version used for \c std::complex<float> and \c std::complex<double>, where \c select requires one arguments to represent a std::complex eigenvalue.)
-    */
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, MagnitudeType* RWORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, OrdinalType* info) const;
 
     /*! Computes some or all of the right and/or left eigenvectors of an upper triangular matrix \c T. If ScalarType is \c float or \c double, then the matrix is quasi-triangular and arugments \c RWORK is ignored.
        \note (This is the version used for any \c ScalarType, when the user doesn't want to enable the selecting functionality, with HOWMNY='A'.)
@@ -590,7 +584,8 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const {
+  void LAPACK<OrdinalType, ScalarType>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const 
+  {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
@@ -631,13 +626,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, OrdinalType* info) const
-  {
-    UndefinedLAPACKRoutine<ScalarType>::notDefined();
-  }
-  
-  template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, MagnitudeType* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, ScalarType>::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -769,7 +758,7 @@ namespace Teuchos
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(float*, float*), const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const;
     void TREVC(const char SIDE, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, float *RWORK, OrdinalType* info) const;
     void TREXC(const char COMPQ, const OrdinalType n, float* T, const OrdinalType ldt, float* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, float* WORK, OrdinalType* info) const;
 
@@ -1048,9 +1037,9 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(float*,float*), const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, float>::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const
   {
-    STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), ptr2func, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
+    STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
   
   template<typename OrdinalType>
@@ -1189,7 +1178,7 @@ namespace Teuchos
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(double*,double*), const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const;
     void TREVC(const char SIDE, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, double* RWORK, OrdinalType* info) const;
     void TREXC(const char COMPQ, const OrdinalType n, double* T, const OrdinalType ldt, double* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, double* WORK, OrdinalType* info) const;
 
@@ -1469,9 +1458,9 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(double*,double*), const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, double>::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const
   {
-    DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), ptr2func, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
+    DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
   
   template<typename OrdinalType>
@@ -1606,7 +1595,7 @@ namespace Teuchos
     void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, float* S, std::complex<float>* U, const OrdinalType ldu, std::complex<float>* V, const OrdinalType ldv, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(std::complex<float>*), const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
     void TREVC(const char SIDE, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
     void TREXC(const char COMPQ, const OrdinalType n, std::complex<float>* T, const OrdinalType ldt, std::complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, std::complex<float>* WORK, OrdinalType* info) const;
 
@@ -1845,9 +1834,9 @@ namespace Teuchos
 */  
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(std::complex<float>*), const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, std::complex<float> >::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
   {
-    CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), ptr2func, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
+    CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
   
   template<typename OrdinalType>
@@ -1960,7 +1949,7 @@ namespace Teuchos
     void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, double* S, std::complex<double>* U, const OrdinalType ldu, std::complex<double>* V, const OrdinalType ldv, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(std::complex<double>*), const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
     void TREVC(const char SIDE, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
     void TREXC(const char COMPQ, const OrdinalType n, std::complex<double>* T, const OrdinalType ldt, std::complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, std::complex<double>* WORK, OrdinalType* info) const;
 
@@ -2199,9 +2188,9 @@ namespace Teuchos
 */
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::TREVC(const char SIDE, const char HOWMNY, OrdinalType (*ptr2func)(std::complex<double>*), const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, std::complex<double> >::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
   {
-    ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), ptr2func, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
+    ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
   }
   
   template<typename OrdinalType>
