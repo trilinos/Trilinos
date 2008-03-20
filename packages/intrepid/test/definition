@@ -3,7 +3,11 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature,RealSpace,LexContainer,VarContainer;
+    DIRS = Cubature,
+           RealSpace,
+           LexContainer,
+           VarContainer,
+           Basis/F0_TRI_C1_FEM_DEFAULT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
@@ -11,7 +15,11 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature,RealSpace,LexContainer;
+    DIRS = Cubature,
+           RealSpace,
+           LexContainer,
+           VarContainer,
+           Basis/F0_TRI_C1_FEM_DEFAULT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
