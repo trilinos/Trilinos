@@ -235,7 +235,15 @@ PARAKLETE_KLU_COMMON = \
 	$(srcdir)/UFsparse/AMD/Source/amd_preprocess.c \
 	$(srcdir)/UFsparse/AMD/Source/amd_valid.c \
 	$(srcdir)/UFsparse/COLAMD/colamd.c \
-	$(srcdir)/UFsparse/COLAMD/colamd_global.c 
+	$(srcdir)/UFsparse/COLAMD/colamd_global.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_2.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c
 
 PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/UFsparse/AMD/Include/amd.h \
@@ -284,7 +292,7 @@ PARAKLETE_H = \
 	$(srcdir)/UFsparse/CAMD/Include/camd.h \
 	$(srcdir)/UFsparse/CAMD/Include/camd_internal.h 
 
-#  Note:  PARAKLETE rewuires KLU (for colamd) 
+#  Note:  PARAKLETE requires KLU (for colamd) 
 
 BOGUSMEX= \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamdmex.c \
@@ -349,6 +357,20 @@ PARAKLETE = \
 	$(srcdir)/UFsparse/COLAMD/colamd_global.c \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd_l.c \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_analyze.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_analyze_given.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_defaults.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_free_numeric.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_free_symbolic.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_factor.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_kernel.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_memory.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_scale.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_l_solve.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_l_order.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_l_maxtrans.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_l_strongcomp.c \
 	$(srcdir)/Amesos_Paraklete.cpp
 else
 PARAKLETE_H =
