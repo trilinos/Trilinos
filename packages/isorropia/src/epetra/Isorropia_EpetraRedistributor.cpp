@@ -99,7 +99,9 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph)
 
   new_graph->Import(input_graph, *importer_, Insert);
 
-  new_graph->FillComplete();
+  Epetra_Map newDomainMap(input_graph.NumGlobalCols(), 0, input_graph.Comm());
+
+  new_graph->FillComplete(newDomainMap, *target_map_);
 
   return( new_graph );
 }
@@ -116,7 +118,9 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix)
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
-  new_matrix->FillComplete();
+  Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
+
+  new_matrix->FillComplete(newDomainMap,  *target_map_);
 
   return( new_matrix );
 }
@@ -133,7 +137,9 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix)
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
-  new_matrix->FillComplete();
+  Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
+
+  new_matrix->FillComplete(newDomainMap, *target_map_);
 
   return( new_matrix );
 }
