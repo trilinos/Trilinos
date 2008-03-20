@@ -605,6 +605,10 @@ int check_inp (
 
 
 
+/* Broadcast commands to all processes.
+   NOTE: This requires manual updating when a new field 
+   is added to a struct, like Test!
+ */
 void brdcst_cmd_info (
   int Proc, 
   PROB_INFO_PTR prob, 
@@ -614,7 +618,7 @@ void brdcst_cmd_info (
 {
   int ctrl_id, j, k;
   int size;
-  int int_params[19];  /* Make sure this array is large enough */
+  int int_params[20];  /* Make sure this array is large enough */
   float float_params[2];  /* Make sure this array is large enough */
 
   k = 0;
@@ -647,6 +651,7 @@ void brdcst_cmd_info (
   int_params[j++] = Test.Drops;
   int_params[j++] = Test.RCB_Box;
   int_params[j++] = Test.Gen_Files;
+  int_params[j++] = Test.Vtx_Inc;
 
   MPI_Bcast (int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -670,6 +675,7 @@ void brdcst_cmd_info (
   Test.Drops             = int_params[j++];
   Test.RCB_Box           = int_params[j++];
   Test.Gen_Files         = int_params[j++];
+  Test.Vtx_Inc           = int_params[j++];
 
   MPI_Bcast (pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 

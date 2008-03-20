@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
   Test.Null_Lists = NONE;
   Test.Dynamic_Weights = .0;
   Test.Dynamic_Graph = .0;
+  Test.Vtx_Inc = 0;
 
   Output.Text = 1;
   Output.Gnuplot = 0;

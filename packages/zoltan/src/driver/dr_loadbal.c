@@ -2021,7 +2021,6 @@ void get_hg_size_compressed_pin_storage(
           ++(*num_pins);
       }
     }
-    printf("Debug: visible pins = %d\n", *num_pins);
   }
 /*
 {int KDD; MPI_Comm_rank(MPI_COMM_WORLD, &KDD);printf("%d KDDPINS %d  LISTS %d\n", KDD, *num_pins, *num_lists);}
