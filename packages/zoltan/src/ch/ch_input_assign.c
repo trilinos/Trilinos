@@ -25,11 +25,11 @@
 extern "C" {
 #endif
 
-static int input_assign_normal(FILE *, char *, int, short*), 
-           input_assign_inv(FILE *, char *, int, short*);
+static int input_assign_normal(ZOLTAN_FILE, char *, int, short*),
+           input_assign_inv(ZOLTAN_FILE, char *, int, short*);
 
 int chaco_input_assign(
-FILE     *finassign,		/* input assignment file */
+ZOLTAN_FILE     finassign,		/* input assignment file */
 char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
@@ -51,7 +51,7 @@ short    *assignment)		/* values to be printed */
 
 
 static int input_assign_normal(
-FILE     *finassign,		/* input assignment file */
+ZOLTAN_FILE     finassign,		/* input assignment file */
 char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
@@ -73,14 +73,14 @@ short    *assignment)		/* values to be printed */
     if (assignment[0] < 0) {
 	printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
 	       1, inassignname, assignment[0]);
-	fclose(finassign);
+	ZOLTAN_FILE_close(finassign);
         DEBUG_TRACE_END(0, yo);
 	return (1);
     }
 
     if (end_flag == -1) {
 	printf("ERROR: No values found in assignment file `%s'\n", inassignname);
-	fclose(finassign);
+	ZOLTAN_FILE_close(finassign);
         DEBUG_TRACE_END(0, yo);
 	return (1);
     }
@@ -89,17 +89,17 @@ short    *assignment)		/* values to be printed */
     if (assignment[0] > nvtxs)
 	flag = assignment[1];
     for (i = 1; i < nvtxs; i++) {
-	j = fscanf(finassign, "%hd", &(assignment[i]));
+	j = ZOLTAN_FILE_scanf(finassign, "%hd", &(assignment[i]));
 	if (j != 1) {
 	    printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
-	    fclose(finassign);
+	    ZOLTAN_FILE_close(finassign);
             DEBUG_TRACE_END(0, yo);
 	    return (1);
 	}
 	if (assignment[i] < 0) {
 	    printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
 		   i+1, inassignname, assignment[i]);
-	    fclose(finassign);
+	    ZOLTAN_FILE_close(finassign);
             DEBUG_TRACE_END(0, yo);
 	    return (1);
 	}
@@ -127,14 +127,14 @@ short    *assignment)		/* values to be printed */
 	printf("         Numerical data found after expected end of file\n");
     }
 
-    fclose(finassign);
+    ZOLTAN_FILE_close(finassign);
     DEBUG_TRACE_END(0, yo);
     return (0);
 }
 
 
 static int input_assign_inv(
-FILE     *finassign,		/* input assignment file */
+ZOLTAN_FILE finassign,		/* input assignment file */
 char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
@@ -167,7 +167,7 @@ short    *assignment)		/* values to be printed */
     if (end_flag == -1) {
 	printf("ERROR: In assignment file `%s'\n", inassignname);
 	printf("       No values found\n");
-	fclose(finassign);
+	ZOLTAN_FILE_close(finassign);
         DEBUG_TRACE_END(0, yo);
 	return (1);
     }
@@ -175,7 +175,7 @@ short    *assignment)		/* values to be printed */
     if (size < 0) {
 	printf("ERROR: In assignment file `%s'\n", inassignname);
 	printf("       Size of set %d less than zero (%d)\n", set, size);
-	fclose(finassign);
+	ZOLTAN_FILE_close(finassign);
         DEBUG_TRACE_END(0, yo);
 	return (1);
     }
@@ -183,7 +183,7 @@ short    *assignment)		/* values to be printed */
     if (total + size > nvtxs) {
 	printf("ERROR: In assignment file `%s'\n", inassignname);
 	printf("       Total set sizes greater than nvtxs (%d)\n", nvtxs);
-	fclose(finassign);
+	ZOLTAN_FILE_close(finassign);
         DEBUG_TRACE_END(0, yo);
 	return (1);
     }
@@ -192,11 +192,11 @@ short    *assignment)		/* values to be printed */
     done = FALSE;
     while (!done && total < nvtxs) {
 	for (i = 1; i <= size; i++) {
-	    j = fscanf(finassign, "%d", &k);
+	    j = ZOLTAN_FILE_scanf(finassign, "%d", &k);
 	    if (j != 1) {
 	        printf("ERROR: Too few values in assignment file `%s'.\n",
 		    inassignname);
-	        fclose(finassign);
+	        ZOLTAN_FILE_close(finassign);
                 DEBUG_TRACE_END(0, yo);
 	        return (1);
 	    }
@@ -205,7 +205,7 @@ short    *assignment)		/* values to be printed */
 		printf("ERROR: In assignment file `%s'\n", inassignname);
 		printf("       Entry %d of set %d invalid (%d)\n", 
 		    total + i, set, k);
-		fclose(finassign);
+		ZOLTAN_FILE_close(finassign);
                 DEBUG_TRACE_END(0, yo);
 		return (1);
 	    }
@@ -213,7 +213,7 @@ short    *assignment)		/* values to be printed */
 	    if ((int) assignment[k - 1] != -1) {
 		printf("ERROR: In assignment file `%s'\n", inassignname);
 		printf("       Vertex %d assigned to multiple sets\n", k);
-		fclose(finassign);
+		ZOLTAN_FILE_close(finassign);
                 DEBUG_TRACE_END(0, yo);
 		return (1);
 	    }
@@ -222,13 +222,13 @@ short    *assignment)		/* values to be printed */
 	}
 
 	total += size;
-	j = fscanf(finassign, "%d", &size);
+	j = ZOLTAN_FILE_scanf(finassign, "%d", &size);
 	++set;
 	if (j != 1) {
 	    if (total != nvtxs) {
 	        printf("ERROR: Too few values in assignment file `%s'.\n",
 		    inassignname);
-		fclose(finassign);
+		ZOLTAN_FILE_close(finassign);
                 DEBUG_TRACE_END(0, yo);
 		return (1);
 	    }
@@ -242,7 +242,7 @@ short    *assignment)		/* values to be printed */
 	if (size < 0) {
 	    printf("ERROR: In assignment file `%s'\n", inassignname);
 	    printf("       Size of set %d less than zero (%d)\n", set, size);
-	    fclose(finassign);
+	    ZOLTAN_FILE_close(finassign);
             DEBUG_TRACE_END(0, yo);
 	    return (1);
 	}
@@ -250,13 +250,13 @@ short    *assignment)		/* values to be printed */
 	if (total + size > nvtxs) {
 	    printf("ERROR: In assignment file `%s'\n", inassignname);
 	    printf("       Total set sizes greater than nvtxs (%d)\n", nvtxs);
-	    fclose(finassign);
+	    ZOLTAN_FILE_close(finassign);
             DEBUG_TRACE_END(0, yo);
 	    return (1);
 	}
     }
 
-    fclose(finassign);
+    ZOLTAN_FILE_close(finassign);
     DEBUG_TRACE_END(0, yo);
     return (0);
 }

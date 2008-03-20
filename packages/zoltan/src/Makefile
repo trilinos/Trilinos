@@ -316,6 +316,15 @@ DR_BOTH_INC	= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h \
                   zoltan_hg_readfile_const.h dr_mmio.h dr_dd.h
 
+ifdef GZIP_LIBPATH
+GDEFINES       += -DZOLTAN_GZIP
+DR_BOTH_SRC    += dr_compress.c
+DR_BOTH_INC    += dr_compress_const.h
+THIRD_PARTY_LIBS += -lz 
+THIRD_PARTY_LIBPATH += $(GZIP_LIBPATH)
+THIRD_PARTY_INCPATH += $(GZIP_INCPATH)
+endif
+
 DR_CPP_INC	= zoltan_cpp.h zoltan_comm_cpp.h zoltan_dd_cpp.h \
 		  dr_param_fileCPP.h
 

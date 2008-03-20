@@ -34,10 +34,10 @@ static int offset = 0;		/* offset into line for next data */
 static int break_pnt = LINE_LENGTH;	/* place in sequence to pause */
 static int save_pnt;		/* place in sequence to save */
 
-static void flush_line(FILE *);
+static void flush_line(ZOLTAN_FILE);
 
 double    read_val(
-  FILE     *infile,		/* file to read value from */
+  ZOLTAN_FILE infile,		/* file to read value from */
   int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 )
 {
@@ -68,13 +68,13 @@ double    read_val(
 	line[LINE_LENGTH - 1] = ' ';
 	line[LINE_LENGTH - 2] = ' ';
 	/* Now read next line, or next segment of current one. */
-	ptr2 = fgets(&line[length_left], length, infile);
+	ptr2 = ZOLTAN_FILE_gets(&line[length_left], length, infile);
 
 	if (ptr2 == (char *) NULL) {	/* We've hit end of file. */
 	    *end_flag = -1;
 	    return((double) 0.0);
 	}
-	
+
 	if (line[LINE_LENGTH - 1] == '\0' && line[LINE_LENGTH - 2] != '\0' &&
 	    line[LINE_LENGTH - 2] != '\n' && line[LINE_LENGTH - 2] != '\f') {
 	    /* Line too long.  Find last safe place in line. */
@@ -130,7 +130,7 @@ double    read_val(
 
 
 int       read_int(
-FILE     *infile,		/* file to read value from */
+ZOLTAN_FILE infile,		/* file to read value from */
 int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 )
 {
@@ -161,13 +161,13 @@ int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 	line[LINE_LENGTH - 1] = ' ';
 	line[LINE_LENGTH - 2] = ' ';
 	/* Now read next line, or next segment of current one. */
-	ptr2 = fgets(&line[length_left], length, infile);
+	ptr2 = ZOLTAN_FILE_gets(&line[length_left], length, infile);
 
 	if (ptr2 == (char *) NULL) {	/* We've hit end of file. */
 	    *end_flag = -1;
 	    return(0);
 	}
-	
+
 	if (line[LINE_LENGTH - 1] == '\0' && line[LINE_LENGTH - 2] != '\0' &&
 	    line[LINE_LENGTH - 2] != '\n' && line[LINE_LENGTH - 2] != '\f') {
 	    /* Line too long.  Find last safe place in line. */
@@ -223,14 +223,14 @@ int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 
 
 static void flush_line(
-FILE     *infile 		/* file to read value from */
+ZOLTAN_FILE infile 		/* file to read value from */
 )
 {
     char      c;		/* character being read */
 
-    c = getc(infile);
+    c = ZOLTAN_FILE_getc(infile);
     while (c != '\n' && c != '\f')
-	c = getc(infile);
+	c = ZOLTAN_FILE_getc(infile);
 }
 
 #ifdef __cplusplus

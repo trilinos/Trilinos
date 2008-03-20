@@ -26,6 +26,7 @@
 #include "dr_maps_const.h"
 #include "ch_input_const.h"
 #include "ch_init_dist_const.h"
+#include "dr_compress_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -63,7 +64,7 @@ int read_chaco_file(int Proc,
 
   short *assignments = NULL;
 
-  FILE  *fp;
+  ZOLTAN_FILE fp;
   int    file_error = 0;
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -75,9 +76,17 @@ int read_chaco_file(int Proc,
   if (Proc == 0) {
 
     /* Open and read the Chaco graph file. */
-    sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);   
-    fp = fopen(chaco_fname, "r");
-    file_error = (fp == NULL);
+    sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);
+    if (pio_info->file_comp == GZIP)
+      sprintf(chaco_fname, "%s.gz", chaco_fname);
+
+    fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
+    file_error =
+#ifndef ZOLTAN_COMPRESS
+      (fp == NULL);
+#else
+    fp.error;
+#endif
   }
 
   MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -99,8 +108,18 @@ int read_chaco_file(int Proc,
 
     /* Read Chaco geometry file, if provided. */
     sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
-    fp = fopen(chaco_fname, "r");
-    if (fp == NULL) {
+    if (pio_info->file_comp == GZIP)
+      sprintf(chaco_fname, "%s.gz", chaco_fname);
+
+    fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
+    file_error =
+#ifndef ZOLTAN_COMPRESS
+      (fp == NULL);
+#else
+    fp.error;
+#endif
+
+    if (file_error) {
       no_geom = TRUE;
       sprintf(cmesg, "warning:  Could not open Chaco geometry file %s; "
               "no geometry data will be read",
@@ -167,8 +186,18 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
     /* Read Chaco assignment file, if requested */
     if (pio_info->init_dist_type == INITIAL_FILE) {
       sprintf(chaco_fname, "%s.assign", pio_info->pexo_fname);
-      fp = fopen(chaco_fname, "r");
-      if (fp == NULL) {
+      if (pio_info->file_comp == GZIP)
+	sprintf(chaco_fname, "%s.gz", chaco_fname);
+
+      fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
+      file_error =
+#ifndef ZOLTAN_COMPRESS
+	(fp == NULL);
+#else
+      fp.error;
+#endif
+
+      if (file_error) {
         sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
                 "initial distribution cannot be read",
                 chaco_fname);

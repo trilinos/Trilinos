@@ -77,6 +77,7 @@ struct Parallel_IO
                         /*     /pfs/tmp_1)                                   */
 
   int     file_type;    /* input file type */
+  int     file_comp;    /* wether the file is compressed and how       */
   int     chunk_reader;   /* for very large matrix market files */
   int     init_dist_type;      /* Flag indicating how input objects
                                   should be initially distributed.     */

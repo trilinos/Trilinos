@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "ch_input_const.h"
 #include "dr_const.h"
+#include "dr_compress_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -29,7 +30,7 @@ extern "C" {
 #endif
 
 int chaco_input_geom(
-FILE     *fingeom,		/* geometry input file */
+ZOLTAN_FILE     fingeom,		/* geometry input file */
 char     *geomname,		/* name of geometry file */
 int       nvtxs,		/* number of coordinates to read */
 int      *igeom,		/* dimensionality of geometry */
@@ -59,7 +60,7 @@ float   **z
 
     if (end_flag == -1) {
 	printf("No values found in geometry file `%s'\n", geomname);
-	fclose(fingeom);
+	ZOLTAN_FILE_close(fingeom);
 	return (1);
     }
 
@@ -76,7 +77,7 @@ float   **z
 		       geomname);
 
 		printf(" Maximum dimensionality is 3\n");
-		fclose(fingeom);
+		ZOLTAN_FILE_close(fingeom);
 		return (1);
 	    }
 	}
@@ -98,26 +99,26 @@ float   **z
     for (nread = 1; nread < nvtxs; nread++) {
 	++line_num;
 	if (ndims == 1) {
-	    i = fscanf(fingeom, "%f", &((*x)[nread]));
+	    i = ZOLTAN_FILE_scanf(fingeom, "%f", &((*x)[nread]));
 	}
 	else if (ndims == 2) {
-	    i = fscanf(fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
+	    i = ZOLTAN_FILE_scanf(fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
 	}
 	else if (ndims == 3) {
-	    i = fscanf(fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
+	    i = ZOLTAN_FILE_scanf(fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
 		       &((*z)[nread]));
 	}
 
 	if (i == EOF) {
 	    printf("Too few lines of values in geometry file; nvtxs=%d, but only %d read\n",
 		   nvtxs, nread);
-	    fclose(fingeom);
+	    ZOLTAN_FILE_close(fingeom);
 	    return (1);
 	}
 	else if (i != ndims) {
 	    printf("Wrong number of values in line %d of geometry file `%s'\n",
 		   line_num, geomname);
-	    fclose(fingeom);
+	    ZOLTAN_FILE_close(fingeom);
 	    return (1);
 	}
     }
@@ -135,7 +136,7 @@ float   **z
 	printf(" Numerical data found after expected end of file\n");
     }
 
-    fclose(fingeom);
+    ZOLTAN_FILE_close(fingeom);
 
     DEBUG_TRACE_END(0, yo);
     return (0);

@@ -37,7 +37,7 @@ struct ijv
 /* comparison functions. */
 static int comp(const void *, const void *);
 
-static int add_new_vals(int *newvals, int newCount, 
+static int add_new_vals(int *newvals, int newCount,
        int **myVals, int *myCount, int *myMaxCount);
 
 /*****************************************************************************/
@@ -48,8 +48,8 @@ static int add_new_vals(int *newvals, int newCount,
 
 int MM_readfile (
  int Proc,
- int Num_Proc,  
- FILE *f,
+ int Num_Proc,
+ ZOLTAN_FILE f,
  PARIO_INFO_PTR pio_info,
  int *nVtx, int *nEdge, int *nPins,
  int **index,   int **vertex,
@@ -63,7 +63,7 @@ int MM_readfile (
 int prev_edge;
 const char *yo = "MM_readfile";
 MM_typecode matcode;
-int M, N, nz, gnz;   
+int M, N, nz, gnz;
 int j, k, tmp;
 MPI_Status status;
 int read_in_chunks = 0;
@@ -90,7 +90,7 @@ int error = 0;  /* flag to indicate status */
 *
 *   1) Matrix Market files are always 1-based, i.e. the index of the first
 *      element of a matrix is (1,1), not (0,0) as in C.  ADJUST THESE
-*      OFFSETS ACCORDINGLY offsets accordingly when reading and writing 
+*      OFFSETS ACCORDINGLY offsets accordingly when reading and writing
 *      to files.
 *
 *   2) ANSI C requires one to use the "l" format modifier when reading
@@ -100,19 +100,19 @@ int error = 0;  /* flag to indicate status */
 */
 
     M=N=gnz=0;
-  
+
     if (Proc == 0){
-      rewind(f);
+      ZOLTAN_FILE_rewind(f);
       if (mm_read_banner(f, &matcode) != 0) {
           fprintf(stderr,"%s Could not process Matrix Market banner.\n",yo);
       }
-      else if (mm_is_complex(matcode) && mm_is_matrix(matcode) && 
+      else if (mm_is_complex(matcode) && mm_is_matrix(matcode) &&
               mm_is_sparse(matcode) ) {
         /*  This is how one can screen matrix types if their application */
         /*  only supports a subset of the Matrix Market data types.      */
-      
+
           fprintf(stderr,"%s Sorry, this application does not support ",yo);
-          fprintf(stderr,"%s Market Market type: [%s]\n", 
+          fprintf(stderr,"%s Market Market type: [%s]\n",
                   mm_typecode_to_str(matcode),yo);
       }
       else if (mm_read_mtx_crd_size(f, &M, &N, &gnz) !=0){
@@ -128,7 +128,7 @@ int error = 0;  /* flag to indicate status */
     MPI_Bcast(&gnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+
     if (pio_info->matrix_obj==COLUMNS){
       *nVtx = N;
       *nEdge = M;
@@ -138,7 +138,7 @@ int error = 0;  /* flag to indicate status */
       *nEdge = N;
     }
     *global_nPins = gnz;
-  
+
     if ((Num_Proc > 1) && pio_info->chunk_reader && (gnz > Num_Proc)){
       /* Process 0 will read the input file in chunks and send
        * pins to other processes before reading the next chunk.
@@ -146,13 +146,13 @@ int error = 0;  /* flag to indicate status */
        */
       read_in_chunks = 1;
     }
-  
+
     if (!read_in_chunks && (Proc > 0)){
       return error;   /* global number of non-zeroes */
     }
-  
+
     if (read_in_chunks){
-  
+
       /* Process 0 reads in a portion of the file, and sends
        * pins to other processes using a scheme that ensures
        * edges are not divided across processes.  (We need that
@@ -194,7 +194,7 @@ int error = 0;  /* flag to indicate status */
         error = 1;
         return error;
       }
-    
+
       while (remaining > 0){
         amt = (remaining < chunksize) ? remaining : chunksize;
         if (Proc == 0){
@@ -204,7 +204,7 @@ int error = 0;  /* flag to indicate status */
           memset(sendcount, 0, sizeof(int) * Num_Proc);
           inptr = inVals;
           for (k=0; k<amt; k++){
-            fgets(line, 128, f);
+            ZOLTAN_FILE_gets(line, 128, f);
             sscanf(line, "%d %d", &edge, &vtx);
             if (pio_info->matrix_obj==ROWS){
               tmp = edge;
@@ -250,14 +250,14 @@ int error = 0;  /* flag to indicate status */
             outVals[idx*2 + 1] = vtx;
           }
           for (j=1; j<Num_Proc; j++){
-            MPI_Send(outVals + (2*start[j]), sendcount[j] * 2, 
+            MPI_Send(outVals + (2*start[j]), sendcount[j] * 2,
                      MPI_INT, j, 0x0102, MPI_COMM_WORLD);
           }
           rc = add_new_vals(outVals, myInCount, &myVals, &myCount, &myMaxCount);
           if (rc) {
             fprintf(stderr,"Process %d out of memory\n",Proc);
             error = 1;
-            return error;  
+            return error;
           }
         }
         else{
@@ -269,22 +269,22 @@ int error = 0;  /* flag to indicate status */
           if (rc) {
             fprintf(stderr,"Process %d out of memory\n",Proc);
             error = 1;
-            return error;  
+            return error;
           }
         }
         remaining -= amt;
       }
-    
+
       if (Proc == 0){
         free(sendcount);
         free(start);
         free(outVals);
-      } 
+      }
       free(inVals);
-    
+
       nz = myCount;
     }
-    else{  
+    else{
       /* Not reading in chunks.
        * Process 0 will read in the entire file.
        */
@@ -296,10 +296,10 @@ int error = 0;  /* flag to indicate status */
       }
 
       for (k=0; k<gnz; k++){
-        fgets(line, 128, f);
+        ZOLTAN_FILE_gets(line, 128, f);
         sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
                &(myIJV[k].v));
-        
+
         if (pio_info->matrix_obj==ROWS){
           tmp = myIJV[k].i;
           myIJV[k].i = myIJV[k].j;
@@ -341,7 +341,7 @@ int error = 0;  /* flag to indicate status */
 
     *nPins = nz;
 
-    /* allocate storage for hypergraph data */    
+    /* allocate storage for hypergraph data */
     if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
      || (*nPins && !(*vertex = (int*) malloc  (*nPins   * sizeof(int))))) {
          fprintf(stderr, "%s Insufficient memory.", yo);
@@ -355,7 +355,7 @@ int error = 0;  /* flag to indicate status */
 
     for (j=0; j<(*nEdge+1); j++)
       (*index)[j] = -1;
-    /* Loop over the nonzeros. For each hyperedge (same index i), 
+    /* Loop over the nonzeros. For each hyperedge (same index i),
        make list of vertices (index j). Data are sorted by i index. */
     prev_edge = -1;
     num_lone_vertices=0;
@@ -363,7 +363,7 @@ int error = 0;  /* flag to indicate status */
       if (myIJV)
         inptr=(int*)(myIJV+k);
       else
-        inptr= myVals+2*k; 
+        inptr= myVals+2*k;
       /* next edge is mat[k].i */
       if (inptr[0] > prev_edge) {
         (*index)[inptr[0]] = k;
@@ -386,7 +386,7 @@ int error = 0;  /* flag to indicate status */
     /*  Assume the input matrix is symmetric. */
 
     /*  If N==M and the graph is not symmetric we get errors later on
-     *  in migration.  This happens with test directory hg_FluidDFT. 
+     *  in migration.  This happens with test directory hg_FluidDFT.
      */
 
     if (N == M){                   /* Square matrix */
@@ -396,8 +396,8 @@ int error = 0;  /* flag to indicate status */
       float *vwgts = NULL;     /* vertex weights for diagonal entries */
       float *ewgts = NULL;     /* edge weights for off-diagonals */
       start = NULL;   /* index of start of vertices' edge lists */
-     
-      /* Assume symmetric matrix. Always create weights, but they are 
+
+      /* Assume symmetric matrix. Always create weights, but they are
          used only if user sets Zoltan parameter obj_weight_dim=1. */
       *ch_ewgt_dim = 1;
       *vwgt_dim = 1;
@@ -408,13 +408,13 @@ int error = 0;  /* flag to indicate status */
         vwgts = (float *) calloc((*vwgt_dim) * N, sizeof(float));
       if (*ch_ewgt_dim)
         ewgts = (float *) calloc((*ch_ewgt_dim) * (*nPins), sizeof(float));
-      if ((N && !cnt) || !start || ((*vwgt_dim && N) && !vwgts) 
+      if ((N && !cnt) || !start || ((*vwgt_dim && N) && !vwgts)
          || ((*ch_ewgt_dim && *nPins) && !ewgts)) {
         fprintf(stderr, "%s Insufficient memory.", yo);
         error = 1;
         goto End;
       }
-      
+
       /* Count number of neighbors for each vertex */
       if (myIJV)
         for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {

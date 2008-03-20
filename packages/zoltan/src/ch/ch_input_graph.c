@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 int chaco_input_graph(
-FILE     *fin,			/* input file */
+ZOLTAN_FILE fin,			/* input file */
 char     *inname,		/* name of input file */
 int     **start,		/* start of edge list for each vertex */
 int     **adjacency,		/* edge list data */
@@ -92,7 +92,7 @@ float   **eweights 		/* edge weight list data */
     if (*nvtxs <= 0) {
 	printf("ERROR in graph file `%s':", inname);
 	printf(" Invalid number of vertices (%d).\n", *nvtxs);
-	fclose(fin);
+	ZOLTAN_FILE_close(fin);
 	return(1);
     }
 
@@ -100,7 +100,7 @@ float   **eweights 		/* edge weight list data */
     if (narcs < 0) {
 	printf("ERROR in graph file `%s':", inname);
 	printf(" Invalid number of expected edges (%d).\n", narcs);
-	fclose(fin);
+	ZOLTAN_FILE_close(fin);
 	return(1);
     }
 
@@ -172,13 +172,13 @@ float   **eweights 		/* edge weight list data */
 		    break;
 		printf("ERROR in graph file `%s':", inname);
 		printf(" no vertex number in line %d.\n", line_num);
-		fclose(fin);
+		ZOLTAN_FILE_close(fin);
 		return (1);
 	    }
 	    if (j != vertex && j != vertex + 1) {
 		printf("ERROR in graph file `%s':", inname);
 		printf(" out-of-order vertex number in line %d.\n", line_num);
-		fclose(fin);
+		ZOLTAN_FILE_close(fin);
 		return (1);
 	    }
 	    if (j != vertex) {
@@ -201,13 +201,13 @@ float   **eweights 		/* edge weight list data */
 	    	if (end_flag) {
 			printf("ERROR in graph file `%s':", inname);
 			printf(" not enough weights for vertex %d.\n", vertex);
-			fclose(fin);
+			ZOLTAN_FILE_close(fin);
 			return (1);
 	    	}
 	    	if ((weight < 0) && Debug_Chaco_Input) {
 			printf("ERROR in graph file `%s':", inname);
 			printf(" negative weight entered for vertex %d.\n", vertex);
-			fclose(fin);
+			ZOLTAN_FILE_close(fin);
 			return (1);
 	    	}
 	    	(*vweights)[(vertex-1)*(*vwgt_dim)+j] = weight;
@@ -223,23 +223,23 @@ float   **eweights 		/* edge weight list data */
 	    skip_flag = FALSE;
 	    ignore_me = FALSE;
 
-            if (Debug_Chaco_Input){ 
+            if (Debug_Chaco_Input){
 
     	    if (neighbor > *nvtxs) {
     		printf("ERROR in graph file `%s':", inname);
     		printf(" nvtxs=%d, but edge (%d,%d) was input.\n",
     		       *nvtxs, vertex, neighbor);
-    		fclose(fin);
+    		ZOLTAN_FILE_close(fin);
     		return (1);
     	    }
     	    if (neighbor < 0) {
     		printf("ERROR in graph file `%s':", inname);
     		printf(" negative vertex in edge (%d,%d).\n",
     		       vertex, neighbor);
-    		fclose(fin);
+    		ZOLTAN_FILE_close(fin);
     		return (1);
     	    }
-    
+
     	    if (neighbor == vertex) {
     		if (!self_edge && Debug_Chaco_Input) {
     		    printf("WARNING: Self edge (%d, %d) being ignored.\n",
@@ -248,7 +248,7 @@ float   **eweights 		/* edge weight list data */
     		skip_flag = TRUE;
     		++self_edge;
     	    }
-    
+
     	    /* Check if adjacency is repeated. */
     	    if (!skip_flag) {
     		found_flag = FALSE;
@@ -275,7 +275,7 @@ float   **eweights 		/* edge weight list data */
 		    if (end_flag) {
 		        printf("ERROR in graph file `%s':", inname);
 		        printf(" not enough weights for edge (%d,%d).\n", vertex, neighbor);
-		        fclose(fin);
+		        ZOLTAN_FILE_close(fin);
 		        return (1);
 		    }
 
@@ -318,7 +318,7 @@ float   **eweights 		/* edge weight list data */
 		    printf("ERROR in graph file `%s':", inname);
 		    printf(" at least %d adjacencies entered, but nedges = %d\n",
 			nedges, narcs);
-		    fclose(fin);
+		    ZOLTAN_FILE_close(fin);
 		    return (1);
 		}
 		*adjptr++ = neighbor;
@@ -355,8 +355,8 @@ float   **eweights 		/* edge weight list data */
 	/* Make sure narcs was reasonable. */
 	if (nedges + 2 * self_edge != 2 * narcs &&
 	    nedges + 2 * self_edge + ignored != 2 * narcs &&
-		nedges + self_edge != 2 * narcs && 
-		nedges + self_edge + ignored != 2 * narcs && 
+		nedges + self_edge != 2 * narcs &&
+		nedges + self_edge + ignored != 2 * narcs &&
 		nedges != 2 * narcs &&
 		nedges + ignored != 2 * narcs &&
 		Debug_Chaco_Input) {
@@ -378,7 +378,7 @@ float   **eweights 		/* edge weight list data */
 	*adjacency = NULL;
     }
 
-    fclose(fin);
+    ZOLTAN_FILE_close(fin);
 
     DEBUG_TRACE_END(0, yo);
     return (error_flag);
