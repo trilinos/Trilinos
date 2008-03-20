@@ -418,6 +418,9 @@ int read_cmd_file (
     else if (sscanf(line, " test dynamic graph" SKIPEQ "%f%n",
                     &Test.Dynamic_Graph, &n) == 1)
       continue;                /* Dynamic graph; edges/verts change between iter. */
+    else if (sscanf(line, " test vertex increment" SKIPEQ "%i%n",
+                    &Test.Vtx_Inc, &n) == 1)
+      continue;                /* Add more vertices in each iteration. */
     else if (sscanf(line, " test multi callbacks" SKIPEQ "%d%n",
                     &Test.Multi_Callbacks, &n) == 1)
       continue;             /* List-based (MULTI) callback function testing */

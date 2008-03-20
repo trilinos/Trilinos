@@ -183,6 +183,7 @@ struct Mesh_Description
                                     if NULL it's the same as hgid            */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge
                                    weights; size = hewgt_dim * heNumWgts;  */
+  int    visible_nvtx;          /* #vertices to use, may be < num_elems */
   int    proc;        /* my rank, want to know if adj elements are on my proc */
 };
 typedef struct Mesh_Description  MESH_INFO;
@@ -231,7 +232,8 @@ struct Test_Flags {
   int Null_Lists;           /* Exercises null import or export lists to
                                Zoltan_Migrate. */
   float Dynamic_Weights;    /* Perturb weights between iterations. */
-  float Dynamic_Graph;     /* Graph pertubation between iterations. */
+  float Dynamic_Graph;      /* Graph pertubation between iterations. */
+  int Vtx_Inc;              /* Increment #vertices for each iteration. */
 };
 
 /* Structure for output flags for various types of output. */

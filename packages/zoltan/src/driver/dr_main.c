@@ -18,9 +18,6 @@
 /*--------------------------------------------------------------------------*/
 /* Author(s):  Matthew M. St.John (9226)                                    */
 /*--------------------------------------------------------------------------*/
-/* Supported Environment(s):    Intel Paragon                               */
-/*                              Intel Teraflop                              */
-/*--------------------------------------------------------------------------*/
 /* Revision History:                                                        */
 /*                                                                          */
 /*    30 March 1999:    Date of creation                                    */
@@ -300,6 +297,19 @@ int main(int argc, char *argv[])
         print_output = 0;
         goto End;
       }
+    }
+
+    if (Test.Vtx_Inc > 0){
+      if (mesh.data_type == HYPERGRAPH ) {
+        mesh.visible_nvtx += Test.Vtx_Inc; /* For now, increment uniformly */
+      }
+      else{
+        Gen_Error(0, "fatal: \"vertex increment\" only works on hypergraphs\n");
+        error_report(Proc);
+        print_output = 0;
+        goto End;
+      }
+      printf("Debug: visible vertices = %d\n", mesh.visible_nvtx);
     }
 
     /*
@@ -627,7 +637,9 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
   mesh->heWgtId        = NULL;
   mesh->hewgts         = NULL;
   mesh->proc           = proc;
+  mesh->visible_nvtx   = 0;
 }
+
 static void remove_random_vertices(MESH_INFO_PTR mesh, int iteration, 
                                    float blank_factor) 
 {

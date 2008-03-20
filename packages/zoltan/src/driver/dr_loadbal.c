@@ -1192,7 +1192,10 @@ MESH_INFO_PTR mesh;
 
   STOP_CALLBACK_TIMER;
 
-  return(mesh->num_elems - mesh->blank_count);
+  if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx)
+    return(mesh->visible_nvtx);
+  else
+    return(mesh->num_elems - mesh->blank_count);
 }
 
 /*****************************************************************************/
@@ -1226,6 +1229,9 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
     if (mesh->blank && mesh->blank[i]) continue;
 
     current_elem = &elem[i];
+    if ((mesh->data_type == HYPERGRAPH) && 
+        (current_elem->globalID >= mesh->visible_nvtx)) continue;
+
     for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;
     global_id[idx*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
     if (num_lid_entries) {
@@ -1983,6 +1989,7 @@ void get_hg_size_compressed_pin_storage(
   int *format, int *ierr)
 {
   MESH_INFO_PTR mesh;
+  int i;
 
   START_CALLBACK_TIMER;
 
@@ -2005,7 +2012,20 @@ void get_hg_size_compressed_pin_storage(
   *num_lists = mesh->nhedges;
   *format = mesh->format;
   *num_pins = mesh->hindex[mesh->nhedges];
+ 
+  if (mesh->visible_nvtx){
+    /* Count #pins in "visible" part */
+    *num_pins = 0;
+    for (i=0; i<mesh->hindex[mesh->nhedges]; i++){
+      if (mesh->hvertex[i] < mesh->visible_nvtx){
+          ++(*num_pins);
+      }
+    }
+    printf("Debug: visible pins = %d\n", *num_pins);
+  }
+/*
 {int KDD; MPI_Comm_rank(MPI_COMM_WORLD, &KDD);printf("%d KDDPINS %d  LISTS %d\n", KDD, *num_pins, *num_lists);}
+*/
 
   STOP_CALLBACK_TIMER;
 }
@@ -2122,9 +2142,9 @@ void get_hg_compressed_pin_storage(
   MESH_INFO_PTR mesh;
   ZOLTAN_ID_PTR edg_GID, vtx_GID;
   int *row_ptr;
-  int nedges;
+  int nedges, pins;
   int gid = num_gid_entries - 1;
-  int i, k;
+  int i, j, k;
 
   START_CALLBACK_TIMER;
   *ierr = ZOLTAN_OK;
@@ -2145,6 +2165,7 @@ void get_hg_compressed_pin_storage(
   row_ptr = rowcol_ptr;
   nedges = nrowcol;
 
+  /* copy hyperedge (row) GIDs */
   for (i=0; i<nedges; i++){
     for (k=0; k<gid; k++){
       *edg_GID++ = 0;
@@ -2152,14 +2173,27 @@ void get_hg_compressed_pin_storage(
     *edg_GID++ = mesh->hgid[i];
   }
 
-  for (i=0; i<npins; i++){
-    for (k=0; k<gid; k++){
-      *vtx_GID++ = 0;
-    }
-    *vtx_GID++ = mesh->hvertex[i];
-  }
-
+  /* copy row (hyperedge) pointers */
   memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
+
+  /* copy pin (vertex) GIDs */
+  for (i=0; i<mesh->nhedges; i++){
+    pins = 0;
+    for (j=mesh->hindex[i]; j<mesh->hindex[i+1]; j++){
+      if (mesh->visible_nvtx && (mesh->hvertex[j] >= mesh->visible_nvtx))
+        ; /* skip pin */
+      else{
+        for (k=0; k<gid; k++){
+          *vtx_GID++ = 0;
+        }
+        *vtx_GID++ = mesh->hvertex[j];
+        pins++;
+      }
+    }
+    if (mesh->visible_nvtx)
+      /* overwrite row_ptr to account for only visible part */ 
+      row_ptr[i+1] = row_ptr[i]+pins;
+  }
 
 End:
 
