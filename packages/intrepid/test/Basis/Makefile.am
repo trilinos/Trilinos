@@ -38,6 +38,6 @@ DISABLED =
 ## Subdirectories.
 ## #######################################################################
 #
-SUBDIRS = Basis Cubature MultiCell RealSpace LexContainer VarContainer
+SUBDIRS = F0_TRI_C1_FEM_DEFAULT
 
 EXTRA_DIST = definition

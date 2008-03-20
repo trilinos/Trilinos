@@ -345,11 +345,13 @@ AC_CONFIG_FILES([
   src/Makefile
   test/Makefile
   example/Makefile
+  test/Basis/Makefile
   test/Cubature/Makefile
   test/MultiCell/Makefile
   test/RealSpace/Makefile
   test/LexContainer/Makefile
   test/VarContainer/Makefile
+  test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile
   example/Cubature/Makefile
   example/MultiCell/Makefile
   example/RealSpace/Makefile

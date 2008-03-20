@@ -6,6 +6,7 @@ _INTREPID_INCLUDES = \
         -I@abs_top_srcdir@/src \
         -I@abs_top_srcdir@/src/common \
         -I@abs_top_srcdir@/src/local \
+        -I@abs_top_srcdir@/src/local/basis \
         -I@abs_top_builddir@/src \
         $(TEUCHOS_INCLUDES)
 
@@ -22,6 +23,7 @@ _INTREPID_TEST_INCLUDES = \
         -I@abs_top_srcdir@/src \
         -I@abs_top_srcdir@/src/common \
         -I@abs_top_srcdir@/src/local \
+        -I@abs_top_srcdir@/src/local/basis \
         -I@abs_top_builddir@/src \
         $(TEUCHOS_INCLUDES)
 

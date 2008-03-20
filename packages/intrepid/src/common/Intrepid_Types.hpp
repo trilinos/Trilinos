@@ -415,14 +415,15 @@ namespace Intrepid {
   };
   
   /** \struct Intrepid::LocalDofTag
-    \brief A data type that allows to associate a local dofId (assigned using Intrepid's canonical 
-           local dof order) with a global dofId. For a fixed local dof, the data is:
-           \li tag[0] - dimension of the subcell associated with the local dof
-           \li tag[1] - the local id of the subcell (defined in file Intrepid_CellTemplates)
-           \li tag[2] - the order of the dof relative to the subcell (if more than 1 per subcell)
+      \brief  A data type that allows to associate a local dofId (assigned using Intrepid's canonical 
+              local dof order) with a global dofId. For a fixed local dof, the data is:
+              \li tag[0] - dimension of the subcell associated with the local dof
+              \li tag[1] - the local id of the subcell (defined in file Intrepid_CellTemplates)
+              \li tag[2] - the order of the dof relative to the subcell
+              \li tag[3] - total number of dofs assigned to this subcell
   */
   struct LocalDofTag {
-    short tag_[3];
+    int tag_[4];
   };
   
   /** \enum  Intrepid::CubatureType

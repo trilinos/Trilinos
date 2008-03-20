@@ -55,7 +55,7 @@ LexContainer<Scalar>::LexContainer(const Teuchos::Array<int>& indexRange) {
   
   // Copy upper index bounds and resize container storage to match them
   indexRange_ .assign(indexRange.begin(),indexRange.end());  
-  data_.resize( this -> getSize());
+  data_.resize( this->getSize());
 }
 
 
@@ -69,7 +69,7 @@ LexContainer<Scalar>::LexContainer(const Teuchos::Array<int>& indexRange,
   
   // Validate input: size of data must match size computed from upper index bounds in indexRange
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (int)data.size() != this -> getSize() ),
+  TEST_FOR_EXCEPTION( ( (int)data.size() != this->getSize() ),
                       std::invalid_argument,
                       ">>> ERROR (LexContainer): Size of data does not match specified index range.");
 #endif
@@ -110,7 +110,7 @@ template<class Scalar>
 void LexContainer<Scalar>::getIndexRange(Teuchos::Array<int>& indexRange) const {
   
   //Resize return argument to match rank of the container
-  indexRange.resize(this -> getRank()); 
+  indexRange.resize(this->getRank()); 
   
   indexRange.assign(indexRange_.begin(),indexRange_.end());
 }
@@ -123,11 +123,11 @@ int LexContainer<Scalar>::getIndexBound(const int whichIndex) const {
   TEST_FOR_EXCEPTION( (0 > whichIndex),
                       std::invalid_argument,
                       ">>> ERROR (LexContainer): which index number cannot be negative");
-  TEST_FOR_EXCEPTION( (whichIndex >= this -> getRank() ),
+  TEST_FOR_EXCEPTION( (whichIndex >= this->getRank() ),
                       std::invalid_argument,
                       ">>> ERROR (LexContainer): which index number cannot exceed container rank");
 #endif
-return indexRange_[whichIndex];
+  return indexRange_[whichIndex];
 }
 
 
@@ -169,10 +169,10 @@ template<class Scalar>
 int LexContainer<Scalar>::getEnumeration(int* multiIndexPtr) const {
   
   // Uses getEnumeration with Teuchos::Array argument to compute the address.
-  int rank = this -> getRank();
+  int rank = this->getRank();
   Teuchos::Array<int> multiIndexArray(rank);
   multiIndexArray.assign(multiIndexPtr,multiIndexPtr + rank);  
-  return this -> getEnumeration(multiIndexArray);
+  return this->getEnumeration(multiIndexArray);
 }
 
 
@@ -221,7 +221,7 @@ void LexContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
 
 template<class Scalar>
 inline Scalar LexContainer<Scalar>::getValue(const Teuchos::Array<int>& multiIndex) const {
-  return data_[this -> getEnumeration(multiIndex)];
+  return data_[this->getEnumeration(multiIndex)];
 }
 
 
@@ -249,11 +249,11 @@ inline void LexContainer<Scalar>::resize(const Teuchos::Array<int>& newIndexRang
   
   // Copy upper index bounds and resize container storage to match new upper bounds.
   indexRange_.assign(newIndexRange.begin(),newIndexRange.end());  
-  data_.resize(this -> getSize());
+  data_.resize(this->getSize());
 }
 template<class Scalar>
 inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const Teuchos::Array<int>& multiIndex) {
-  data_[this -> getEnumeration(multiIndex)] = dataValue; 
+  data_[this->getEnumeration(multiIndex)] = dataValue; 
 }
 
 
@@ -301,7 +301,7 @@ inline LexContainer<Scalar>& LexContainer<Scalar>::operator = (const LexContaine
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (LexContainer): Invalid right-hand side to '='. Self-assignment prohibited.");
-  TEST_FOR_EXCEPTION( ( this -> getSize() != right.getSize() ),
+  TEST_FOR_EXCEPTION( ( this->getSize() != right.getSize() ),
                       std::invalid_argument,
                       ">>> ERROR (LexContainer): Invalid size of right-hand side argument to '='.");
   TEST_FOR_EXCEPTION( ( indexRange_.size() != right.indexRange_.size() ),

@@ -44,20 +44,20 @@
 namespace Intrepid {
 
 /** \class Intrepid::CubatureDirect
-  \brief Defines direct cubature (integration) rules in Intrepid.
+    \brief Defines direct cubature (integration) rules in Intrepid.
 
-  Cubature template (rule) consists of cubature points and cubature weights.
-  Intrepid provides a small collection of frequently used cubature rule templates
-  for FEM reconstructions on simplices (edge, tri, tet) and pyramid cells.
+    Cubature template (rule) consists of cubature points and cubature weights.
+    Intrepid provides a small collection of frequently used cubature rule templates
+    for FEM reconstructions on simplices (edge, tri, tet) and pyramid cells.
 
-  For quad, hex, and triprism rules, see tensor-product rules
-  defined in the class CubatureTensor, and its derived classes.
+    For quad, hex, and triprism rules, see tensor-product rules
+    defined in the class CubatureTensor, and its derived classes.
 
-  Cubature rules for simplices and the pyramid are stored in the
-  <var>cubature_data_</var> array.
+    Cubature rules for simplices and the pyramid are stored in the
+    <var>cubature_data_</var> array.
 
-  All templates are defined on a reference cell and can be mapped to physical space
-  cells by the methods available in the MultiCell class.
+    All templates are defined on a reference cell and can be mapped to physical space
+    cells by the methods available in the MultiCell class.
 */
 template<class Scalar>
 class CubatureDirect : public Intrepid::Cubature<Scalar> {
@@ -79,12 +79,12 @@ class CubatureDirect : public Intrepid::Cubature<Scalar> {
   /** \brief Returns number of cubature points, cubature points, and weights
              (return arrays will be sized and memory will be allocated).
 
-    \param numCubPoints    [out]     - Number of cubature points.
-    \param cubPoints       [out]     - Vector containing the cubature points.
-    \param cubWeights      [out]     - Vector of corresponding cubature weights.
-    \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-    \param degree           [in]     - The degree of polynomials that are integrated
-                                       exactly by this cubature rule.
+      \param numCubPoints    [out]     - Number of cubature points.
+      \param cubPoints       [out]     - Vector containing the cubature points.
+      \param cubWeights      [out]     - Vector of corresponding cubature weights.
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - The degree of polynomials that are integrated
+                                         exactly by this cubature rule.
   */
   void getCubature(int &                            numCubPoints,
                    Teuchos::Array< Point<Scalar> >& cubPoints,
@@ -95,11 +95,11 @@ class CubatureDirect : public Intrepid::Cubature<Scalar> {
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
 
-    \param cubPoints       [out]     - Vector containing the cubature points.
-    \param cubWeights      [out]     - Vector of corresponding cubature weights.
-    \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-    \param degree           [in]     - The degree of polynomials that are integrated
-                                       exactly by this cubature rule.
+      \param cubPoints       [out]     - Vector containing the cubature points.
+      \param cubWeights      [out]     - Vector of corresponding cubature weights.
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - The degree of polynomials that are integrated
+                                         exactly by this cubature rule.
   */
   void getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
                    Teuchos::Array<Scalar>&          cubWeights,
@@ -108,9 +108,9 @@ class CubatureDirect : public Intrepid::Cubature<Scalar> {
 
   /** \brief Returns the number of cubature points.
 
-    \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-    \param degree           [in]     - The degree of polynomials that are integrated
-                                       exactly by this cubature rule.
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - The degree of polynomials that are integrated
+                                         exactly by this cubature rule.
   */
   int getNumPoints(const ECell cellType,
                    const int   degree) const;

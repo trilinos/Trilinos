@@ -96,7 +96,11 @@ template<class Scalar>
 inline int VarContainer<Scalar>::getNumFields() const {
   
   // Number of fields is upper bound for 2nd index: stored in dataContainer_.indexRange_[1]
-  return dataContainer_.getIndexBound(1);
+  // if this is a zero VarContainer, number of fields is zero
+  int val = 0;
+  if (!(dataContainer_.getSize() == 1 && dataContainer_.getRank() == 1 && dataContainer_[0] == 0.0))
+    val = dataContainer_.getIndexBound(1);
+  return val;
 }
 
 

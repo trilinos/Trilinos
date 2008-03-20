@@ -44,18 +44,18 @@
 namespace Intrepid {
 
 /** \class Intrepid::Cubature
-  \brief Defines the base class for cubature (integration) rules in Intrepid.
+    \brief Defines the base class for cubature (integration) rules in Intrepid.
 
-  Cubature template (rule) consists of cubature points and cubature weights.
-  Intrepid provides a small collection of frequently used cubature rule templates
-  for FEM reconstructions on simplices (edge, tri, tet) and the pyramid cell,
-  defined in the derived class CubatureDirect.
+    Cubature template (rule) consists of cubature points and cubature weights.
+    Intrepid provides a small collection of frequently used cubature rule templates
+    for FEM reconstructions on simplices (edge, tri, tet) and the pyramid cell,
+    defined in the derived class CubatureDirect.
 
-  For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
-  templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
+    For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
+    templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
 
-  All templates are defined on a reference cell and can be mapped to physical space
-  cells by the methods available in the MultiCell class.
+    All templates are defined on a reference cell and can be mapped to physical space
+    cells by the methods available in the MultiCell class.
 */
 template<class Scalar>
 class Cubature {
@@ -71,14 +71,14 @@ class Cubature {
   /** \brief Returns number of cubature points, cubature points, and weights
              (return arrays will be sized and memory will be allocated).
 
-    \param numCubPoints    [out]     - Number of cubature points.
-    \param cubPoints       [out]     - Vector containing the cubature points.
-    \param cubWeights      [out]     - Vector of corresponding cubature weights.
-    \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-    \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                       exactly by this cubature rule. For certain derived classes,
-                                       <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                       see classes CubatureTensorVar and CubatureTensorSparse.
+      \param numCubPoints    [out]     - Number of cubature points.
+      \param cubPoints       [out]     - Vector containing the cubature points.
+      \param cubWeights      [out]     - Vector of corresponding cubature weights.
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
+                                         exactly by this cubature rule. For certain derived classes,
+                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
+                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
   virtual void getCubature(int &                            numCubPoints,
                            Teuchos::Array< Point<Scalar> >& cubPoints,
@@ -90,13 +90,13 @@ class Cubature {
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
 
-    \param cubPoints       [out]     - Vector containing the cubature points.
-    \param cubWeights      [out]     - Vector of corresponding cubature weights.
-    \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-    \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                       exactly by this cubature rule. For certain derived classes,
-                                       <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                       see classes CubatureTensorVar and CubatureTensorSparse.
+      \param cubPoints       [out]     - Vector containing the cubature points.
+      \param cubWeights      [out]     - Vector of corresponding cubature weights.
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
+                                         exactly by this cubature rule. For certain derived classes,
+                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
+                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
   virtual void getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
                            Teuchos::Array<Scalar>&          cubWeights,
@@ -106,12 +106,12 @@ class Cubature {
 
   /** \brief Returns the number of cubature points.
 
-    \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-    \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                       exactly by this cubature rule. For certain derived classes,
-                                       <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                       see classes CubatureTensorVar and CubatureTensorSparse.
-   */
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
+                                         exactly by this cubature rule. For certain derived classes,
+                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
+                                         see classes CubatureTensorVar and CubatureTensorSparse.
+  */
   virtual int getNumPoints(const ECell cell_type,
                            const int   degree) const = 0;
 
