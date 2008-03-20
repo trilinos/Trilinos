@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
      */
     if (iteration == 1) {
       double init, end;
-      init = MPI_Wtime();
+/*       init = MPI_Wtime(); */
       if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
         Gen_Error(0, "fatal: Error returned from read_mesh\n");
         error_report(Proc);
@@ -256,10 +256,10 @@ int main(int argc, char *argv[])
         goto End;
       }
 
-      end =  MPI_Wtime();
-      fprintf (stderr, "Loading Time : %g\n", end-init);
+/*       end =  MPI_Wtime(); */
+/*       fprintf (stderr, "Loading Time : %g\n", end-init); */
 
-      return (0);
+/*       return (0); */
       /* 
        *  Create a Zoltan DD for tracking elements during repartitioning.
        */
