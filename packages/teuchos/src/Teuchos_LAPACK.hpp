@@ -1045,7 +1045,7 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::TREVC(const char SIDE, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, float* RWORK, OrdinalType* info) const
   {
-    std::vector<OrdinalType> select(1)
+    std::vector<OrdinalType> select(1);
     const char whch = 'A';
     STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
   }
