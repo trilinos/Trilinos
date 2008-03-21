@@ -1192,8 +1192,12 @@ MESH_INFO_PTR mesh;
 
   STOP_CALLBACK_TIMER;
 
-  if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx)
-    return(mesh->visible_nvtx);
+  if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx) {
+    int i, cnt = 0;
+    for (i = 0; i < mesh->num_elems; i++) 
+      if (mesh->elements[i].globalID < mesh->visible_nvtx) cnt++;
+    return(cnt);
+  }
   else
     return(mesh->num_elems - mesh->blank_count);
 }
