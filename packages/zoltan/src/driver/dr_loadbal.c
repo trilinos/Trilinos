@@ -1612,6 +1612,21 @@ void get_num_edges_multi(
       }
       nedges = ncount;
     }
+
+    if (mesh->visible_nvtx) {
+      ncount = 0;
+      for (j = 0; j < nedges; j++)  {
+        if (current_elem->adj_proc[j] == mesh->proc) {
+          if (mesh->elements[current_elem->adj[j]].globalID<mesh->visible_nvtx) 
+            ncount++;
+        }
+        else {
+          if (current_elem->adj[j] < mesh->visible_nvtx)
+            ncount++;
+        }
+      }
+      nedges = ncount;
+    }
     edges_per_obj[i] = nedges;
   }
   STOP_CALLBACK_TIMER;
@@ -1671,9 +1686,13 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
       if (local_elem >= 0){
         /* Did I blank this vertex of mine */
         if (mesh->blank && mesh->blank[local_elem]) continue;
+        if (mesh->visible_nvtx && 
+            mesh->elements[local_elem].globalID >= mesh->visible_nvtx) continue;
       }
-      else{
+      else {
         if (current_elem->adj_blank && current_elem->adj_blank[i]) continue;
+        if (mesh->visible_nvtx && 
+            current_elem->adj[i] >= mesh->visible_nvtx) continue;
       }
 
       for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
