@@ -310,8 +310,6 @@ int main(int argc, char *argv[])
     if (Test.Vtx_Inc > 0){
       if (mesh.data_type == HYPERGRAPH ) {
         mesh.visible_nvtx += Test.Vtx_Inc; /* For now, increment uniformly */
-        Test.Multi_Callbacks = 1;  /* vertex increment implemented only in
-                                      multi callbacks */
       }
       else{
         Gen_Error(0, "fatal: \"vertex increment\" only works on hypergraphs\n");

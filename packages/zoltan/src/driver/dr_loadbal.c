@@ -128,6 +128,11 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   idx = partid + nprocs;
   Export_Lists_Special = 0;
 
+  if (Test.Vtx_Inc) {
+    Test.Multi_Callbacks = 1;  /* vertex increment implemented only in
+                                  multi callbacks */
+  }
+
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
     if (prob->params[i].Index>=0)
