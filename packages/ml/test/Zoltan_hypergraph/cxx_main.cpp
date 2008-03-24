@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   char xmlFile[80];
   bool readXML=false;
   if (argc > 2) {strcpy(xmlFile,argv[2]); readXML = true;}
-  else sprintf(xmlFile,"params.xml");
+  else sprintf(xmlFile,"%s","params.xml");
 
   ParameterList GaleriList;
   GaleriList.set("nx", nx);
