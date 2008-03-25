@@ -117,6 +117,9 @@ MPI_LIBPATH	=
 #MPI_LIB = -lg2c
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
+GZIP_INCPATH		= -L/usr/include
+GZIP_LIBPATH		= -L/usr/lib64
+
 PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3 
 PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 

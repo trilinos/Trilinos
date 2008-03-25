@@ -158,6 +158,22 @@ Zoltan Parameters	= RCB_REUSE=0
 File Type		= NemesisI
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Compression = <type of compression>
+#
+# This line is OPTIONAL. If it is not included, then it is assumed that
+# the input file is not compressed.
+# Currently, we support compression for Chaco, hypergraph and matrixmarket file
+# format.
+#
+# This line indicates which compression is used for the file. The current
+# compression supported for this line are:
+#	uncompressed	- No compression
+#	gzip		- input file is gzipped. The name would be postfixed by
+#                         the ".gz" extension. example: foo.mtx.gz for original
+#                         file foo in matrix market format.
+Compression = uncompressed
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # File Name = <filename>
 #
 # This line contains the filename for the input finite element mesh.
