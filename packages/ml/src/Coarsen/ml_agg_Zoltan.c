@@ -101,6 +101,8 @@ static double* MLZ_y;
 static double* MLZ_z;
 static int MLZ_offset;
 
+static int* MLZ_indices;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -112,6 +114,9 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   char str[80];
   if (ML_Get_PrintLevel() > 9) strcpy(str,"1");
   else strcpy(str,"0");   
+
+  //  strcpy(str,"7");/*HAQ - CMS*/
+
   if (Zoltan_Set_Param(zz, "DEBUG_LEVEL", str) == ZOLTAN_FATAL) {
     printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
@@ -480,6 +485,7 @@ void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *for
     *ierr = ZOLTAN_FATAL;
     return;
   }
+
   A = (ML_Operator*) data;
   *num_lists = A->getrow->Nrows;             /* Local # of rows */
   *num_pins  = ML_Operator_ComputeNumNzs(A); /* Local nnz       */
@@ -493,7 +499,6 @@ void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *for
 void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int num_pins, int format, ZOLTAN_ID_PTR vtxedge_GID, int *vtxedge_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr){
   ML_Operator* A;
   struct ML_CSR_MSRdata * CSR_Data;
-  int *indices;
   double *values;
   int i,N,maxnz,rv,rowlength,rowtotal=0;
   int *pin_ids,j;
@@ -524,11 +529,9 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
      matrices have. */
   
   /* Reindex to global IDs - this allocates memory*/
-  ML_build_global_numbering(A, &indices,"cols");
-  for(i=0;i<num_pins;i++) pin_GID[i]=indices[pin_GID[i]];    
+  for(i=0;i<num_pins;i++) pin_GID[i]=MLZ_indices[pin_GID[i]];    
   
   ML_free(values);
-  ML_free(indices);
   ML_free(pin_ids);
 }
 
@@ -662,6 +665,9 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   MLZ_offset = 0;
 #endif
 
+  /* Build a Global Column Numbering --- needed for the HG partitioner */
+  ML_build_global_numbering(Amatrix, &MLZ_indices,"cols");
+
   if (N_parts <= 0) N_parts = 1;
 
   /* ********************************************************************** */
@@ -739,6 +745,10 @@ End:
 	   current_level,
 	   t0 );
   }
+
+  
+  /* Cleanup */
+  free(MLZ_indices);
   
   /* returns the *global* number of partitions */
   return(N_parts);
