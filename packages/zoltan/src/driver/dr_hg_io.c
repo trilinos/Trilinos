@@ -136,7 +136,7 @@ int read_hypergraph_file(
   int   *hindex = NULL, *hvertex = NULL, *hvertex_proc = NULL;
   int   *hgid = NULL;
   float *hewgts = NULL, *vwgts = NULL;
-  ZOLTAN_FILE fp;
+  ZOLTAN_FILE* fp;
   int base = 0;   /* Smallest vertex number; usually zero or one. */
   char filename[256];
 
@@ -184,12 +184,8 @@ int read_hypergraph_file(
 
     do {
       fp = ZOLTAN_FILE_open(filename, "r", pio_info->file_comp);
-      file_error =
-#ifndef ZOLTAN_COMPRESS
-	(fp == NULL);
-#else
-      fp.error;
-#endif
+      file_error = (fp == NULL);
+
       if (file_error == 0) break;
       if (!strcmp(filename, pio_info->pexo_fname)) break;
       sprintf(filename, "%s", pio_info->pexo_fname);
@@ -317,14 +313,8 @@ int read_hypergraph_file(
       sprintf(filename, "%s.gz", filename);
 
    fp = ZOLTAN_FILE_open(filename, "r", pio_info->file_comp);
-   file_error =
-#ifndef ZOLTAN_COMPRESS
-     (fp == NULL);
-#else
-   fp.error;
-#endif
 
-   if (file_error) {
+   if (fp == NULL) {
      sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
 	     "initial distribution cannot be read",
 	     filename);

@@ -25,11 +25,11 @@
 extern "C" {
 #endif
 
-static int input_assign_normal(ZOLTAN_FILE, char *, int, short*),
-           input_assign_inv(ZOLTAN_FILE, char *, int, short*);
+static int input_assign_normal(ZOLTAN_FILE*, char *, int, short*),
+           input_assign_inv(ZOLTAN_FILE*, char *, int, short*);
 
 int chaco_input_assign(
-ZOLTAN_FILE     finassign,		/* input assignment file */
+ZOLTAN_FILE*     finassign,		/* input assignment file */
 char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
@@ -51,7 +51,7 @@ short    *assignment)		/* values to be printed */
 
 
 static int input_assign_normal(
-ZOLTAN_FILE     finassign,		/* input assignment file */
+ZOLTAN_FILE*     finassign,		/* input assignment file */
 char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */
@@ -134,7 +134,7 @@ short    *assignment)		/* values to be printed */
 
 
 static int input_assign_inv(
-ZOLTAN_FILE finassign,		/* input assignment file */
+ZOLTAN_FILE* finassign,		/* input assignment file */
 char     *inassignname,		/* name of input assignment file */
 int       nvtxs,		/* number of vertices to output */
 short    *assignment)		/* values to be printed */

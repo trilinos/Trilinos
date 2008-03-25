@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 int chaco_input_geom(
-ZOLTAN_FILE     fingeom,		/* geometry input file */
+ZOLTAN_FILE *fingeom,		/* geometry input file */
 char     *geomname,		/* name of geometry file */
 int       nvtxs,		/* number of coordinates to read */
 int      *igeom,		/* dimensionality of geometry */

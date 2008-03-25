@@ -29,10 +29,10 @@ extern "C" {
 #define ERROR(proc,yo,msg,err) \
  {printf("Proc(%d) From(%s): %s\n",proc,yo,msg);return(err);}
 
-static int   readfile  (int, ZOLTAN_FILE, int*, int*, int*, int**, int**, int*,
+static int   readfile  (int, ZOLTAN_FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
-static int nextstr (ZOLTAN_FILE f, char *string);
+static int nextstr (ZOLTAN_FILE* f, char *string);
 
 
 /* These routines work with multiple (vector) vertex and hyperedge weights */
@@ -41,7 +41,7 @@ static int nextstr (ZOLTAN_FILE f, char *string);
 
 int HG_readfile (
   int Proc,
-  ZOLTAN_FILE f,
+  ZOLTAN_FILE* f,
   int *nVtx, int *nEdge, int *nPins,
   int **hindex,  int **hvertex,
   int *vwgt_dim, float **vwgt,
@@ -121,7 +121,7 @@ int HG_readfile (
 
 static int readfile (
  int Proc,
- ZOLTAN_FILE f,
+ ZOLTAN_FILE* f,
  int *nVtx, int *nEdge, int *nPins,
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
@@ -178,7 +178,7 @@ static int readfile (
 
 /*****************************************************************************/
 /* Uses character reads to read arbitrary long hyperedge definition lines.   */
-static int nextstr (ZOLTAN_FILE f, char *string)
+static int nextstr (ZOLTAN_FILE* f, char *string)
 {
   char ch;
 

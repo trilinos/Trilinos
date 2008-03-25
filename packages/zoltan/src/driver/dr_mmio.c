@@ -18,7 +18,7 @@
 int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 		double **val_, int **I_, int **J_)
 {
-    ZOLTAN_FILE f;
+    ZOLTAN_FILE *f;
     MM_typecode matcode;
     int M, N, nz;
     int i;
@@ -26,14 +26,8 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
     int *I, *J;
 
     f = ZOLTAN_FILE_open(fname, "r", STANDARD);
-
-#ifndef ZOLTAN_COMPRESS
     if (f == NULL)
-#else
-    if (f.error)
-#endif
       return -1;
-
 
     if (mm_read_banner(f, &matcode) != 0)
     {
@@ -100,7 +94,7 @@ int mm_is_valid(MM_typecode matcode)
     return 1;
 }
 
-int mm_read_banner(ZOLTAN_FILE f, MM_typecode *matcode)
+int mm_read_banner(ZOLTAN_FILE* f, MM_typecode *matcode)
 {
     char line[MM_MAX_LINE_LENGTH];
     char banner[MM_MAX_TOKEN_LENGTH];
@@ -194,7 +188,7 @@ int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
 	return 0;
 }
 
-int mm_read_mtx_crd_size(ZOLTAN_FILE f, int *M, int *N, int *nz )
+int mm_read_mtx_crd_size(ZOLTAN_FILE* f, int *M, int *N, int *nz )
 {
     char line[MM_MAX_LINE_LENGTH], *c;
     int num_items_read;
@@ -228,7 +222,7 @@ int mm_read_mtx_crd_size(ZOLTAN_FILE f, int *M, int *N, int *nz )
 }
 
 
-int mm_read_mtx_array_size(ZOLTAN_FILE f, int *M, int *N)
+int mm_read_mtx_array_size(ZOLTAN_FILE* f, int *M, int *N)
 {
     char line[MM_MAX_LINE_LENGTH];
     int num_items_read;
@@ -273,7 +267,7 @@ int mm_write_mtx_array_size(FILE *f, int M, int N)
 /* use when I[], J[], and val[]J, and val[] are already allocated */
 /******************************************************************/
 
-int mm_read_mtx_crd_data(ZOLTAN_FILE f, int M, int N, int nz, int I[], int J[],
+int mm_read_mtx_crd_data(ZOLTAN_FILE* f, int M, int N, int nz, int I[], int J[],
 	double val[], MM_typecode matcode)
 {
     int i;
@@ -306,7 +300,7 @@ int mm_read_mtx_crd_data(ZOLTAN_FILE f, int M, int N, int nz, int I[], int J[],
 
 }
 
-int mm_read_mtx_crd_entry(ZOLTAN_FILE f, int *I, int *J,
+int mm_read_mtx_crd_entry(ZOLTAN_FILE* f, int *I, int *J,
 	double *real, double *imag, MM_typecode matcode)
 {
     if (mm_is_complex(matcode))
@@ -345,18 +339,9 @@ int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
 	double **val, MM_typecode *matcode)
 {
     int ret_code;
-    ZOLTAN_FILE f;
+    ZOLTAN_FILE* f;
 
-#ifdef ZOLTAN_COMPRESS
-    if (strcmp(fname, "stdin") == 0) {
-      f.type = STANDARD;
-      f.fileunc=stdin;
-    } else if ((f = ZOLTAN_FILE_open(fname, "r", STANDARD)),(f.error != 0))
-
-#else
-    if (strcmp(fname, "stdin") == 0) f = stdin;
-    else  if ((f = ZOLTAN_FILE_open(fname, "r", STANDARD)) == NULL)
-#endif
+    if ((f = ZOLTAN_FILE_open(fname, "r", STANDARD)) == NULL)
       return MM_COULD_NOT_READ_FILE;
 
 
@@ -397,12 +382,7 @@ int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
 	if (ret_code != 0) return ret_code;
     }
 
-#ifndef ZOLTAN_COMPRESS
-    if (f != stdin)
-#else
-    if (f.fileunc != stdin)
-#endif /*ZOLTAN_COMPRESS */
-      ZOLTAN_FILE_close(f);
+    ZOLTAN_FILE_close(f);
     return 0;
 }
 

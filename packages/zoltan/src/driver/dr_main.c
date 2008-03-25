@@ -36,6 +36,7 @@
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
 #include "dr_dd.h"
+#include "dr_compress_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
   initialize_mesh(&mesh, Proc);
 
   pio_info.dsk_list_cnt		= -1;
+  pio_info.file_comp            = STANDARD;
   pio_info.num_dsk_ctrlrs	= -1;
   pio_info.pdsk_add_fact	= -1;
   pio_info.zeros		= -1;
@@ -248,7 +250,7 @@ int main(int argc, char *argv[])
      */
     if (iteration == 1) {
       double init, end;
-/*       init = MPI_Wtime(); */
+      init = MPI_Wtime();
       if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
         Gen_Error(0, "fatal: Error returned from read_mesh\n");
         error_report(Proc);
@@ -256,8 +258,8 @@ int main(int argc, char *argv[])
         goto End;
       }
 
-/*       end =  MPI_Wtime(); */
-/*       fprintf (stderr, "Loading Time : %g\n", end-init); */
+      end =  MPI_Wtime();
+      fprintf (stderr, "Loading Time : %g\n", end-init);
 
 /*       return (0); */
       /* 

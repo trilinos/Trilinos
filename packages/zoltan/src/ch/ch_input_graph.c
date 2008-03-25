@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 int chaco_input_graph(
-ZOLTAN_FILE fin,			/* input file */
+ZOLTAN_FILE *fin,			/* input file */
 char     *inname,		/* name of input file */
 int     **start,		/* start of edge list for each vertex */
 int     **adjacency,		/* edge list data */

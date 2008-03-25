@@ -53,7 +53,9 @@ typedef enum ZOLTAN_FILETYPE_ {
 #ifdef ZOLTAN_COMPRESS
 typedef struct ZOLTAN_FILE_ {
   ZOLTAN_FILETYPE type;
-  int error;
+  char * buffer;
+  int size;
+  int pos;
   union {
     FILE * fileunc;
 #ifdef ZOLTAN_GZIP
@@ -65,20 +67,21 @@ typedef struct ZOLTAN_FILE_ {
   } ;
 } ZOLTAN_FILE;
 #else /* ZOLTAN_COMPRESS */
-  typedef FILE* ZOLTAN_FILE;
+  typedef FILE ZOLTAN_FILE;
 #endif /* ZOLTAN_COMPRESS */
 
-ZOLTAN_FILE ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FILETYPE type);
-int ZOLTAN_FILE_printf(ZOLTAN_FILE file, const char * format, ...);
-int ZOLTAN_FILE_scanf(ZOLTAN_FILE stream, const char * format, ... );
-int ZOLTAN_FILE_puts(char *s, ZOLTAN_FILE file);
-char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE file);
-int ZOLTAN_FILE_putc(int c, ZOLTAN_FILE file);
-int ZOLTAN_FILE_getc(ZOLTAN_FILE file);
-int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE file);
-int ZOLTAN_FILE_flush(ZOLTAN_FILE file);
-int ZOLTAN_FILE_close(ZOLTAN_FILE file);
-void ZOLTAN_FILE_rewind(ZOLTAN_FILE stream);
+ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FILETYPE type);
+int ZOLTAN_FILE_printf(ZOLTAN_FILE* file, const char * format, ...);
+int ZOLTAN_FILE_scanf(ZOLTAN_FILE* stream, const char * format, ... );
+int ZOLTAN_FILE_puts(char *s, ZOLTAN_FILE* file);
+char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file);
+int ZOLTAN_FILE_putc(int c, ZOLTAN_FILE* file);
+int ZOLTAN_FILE_getc(ZOLTAN_FILE* file);
+int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE* file);
+int ZOLTAN_FILE_flush(ZOLTAN_FILE* file);
+int ZOLTAN_FILE_close(ZOLTAN_FILE* file);
+void ZOLTAN_FILE_rewind(ZOLTAN_FILE* stream);
+int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
 
 #ifndef ZOLTAN_COMPRESS
 #define ZOLTAN_FILE_open(path, mode, type) fopen(path, mode)
@@ -92,6 +95,7 @@ void ZOLTAN_FILE_rewind(ZOLTAN_FILE stream);
 #define ZOLTAN_FILE_flush(file) fflush(file)
 #define ZOLTAN_FILE_close(file) fclose(file)
 #define ZOLTAN_FILE_rewind(stream) rewind(stream)
+#define ZOLTAN_FILE_read(ptr, size, nitems, file) fread(ptr, size, nitems, file)
 #endif /* ZOLTAN_COMPRESS */
 
 #ifdef __cplusplus

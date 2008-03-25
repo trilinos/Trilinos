@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define ZOLTAN_GZIP
 #include "dr_compress_const.h"
 
 #ifdef __cplusplus
@@ -25,13 +24,22 @@
 extern "C" {
 #endif
 
-ZOLTAN_FILE ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FILETYPE type)
-{
-  ZOLTAN_FILE file;
-  char truemode[10];
+#define BUFF_SIZE 3*1024*1024
+#define MIN(a,b) ((a)<(b)?(a):(b))
 
-  file.type = type;
-  file.error = 0;
+
+ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FILETYPE type)
+{
+  ZOLTAN_FILE* file;
+  char truemode[10];
+  int error = 0;
+
+  file = (ZOLTAN_FILE*) ZOLTAN_MALLOC(sizeof(ZOLTAN_FILE));
+  if (file == NULL) return (NULL);
+
+  file->type = type;
+  file->pos = -1;
+  file->size = 0;
 
   if (type != STANDARD) {
     if (!strstr(mode, "b"))
@@ -42,18 +50,18 @@ ZOLTAN_FILE ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FI
 
   switch (type) {
   case STANDARD:
-    file.fileunc = fopen(path, mode);
-    file.error = (file.fileunc == NULL);
+    file->fileunc = fopen(path, mode);
+    error = (file->fileunc == NULL);
     break;
 #ifdef ZOLTAN_GZIP
   case GZIP:
-    file.filegz = gzopen(path, truemode);
-    file.error = (file.filegz == NULL);
+    file->filegz = gzopen(path, truemode);
+    error = (file->filegz == NULL);
     break;
 #endif
 #ifdef ZOLTAN_BZ2
   case BZIP2:
-    file.filebz2 = BZ2_bzopen(path, truemode);
+    file->filebz2 = BZ2_bzopen(path, truemode);
     break;
 #endif
 #ifdef ZOLTAN_LZMA
@@ -64,17 +72,166 @@ ZOLTAN_FILE ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FI
     break;
   }
 
+  if (error) {
+    ZOLTAN_FREE(&file);
+    return (NULL);
+  }
+
+  if (type != STANDARD) {
+    file->buffer = (char*) ZOLTAN_MALLOC(BUFF_SIZE);
+    if (file->buffer == NULL) {
+      ZOLTAN_FREE(&file);
+      return (NULL);
+    }
+  }
+
   return (file);
 }
 
-int ZOLTAN_FILE_printf(ZOLTAN_FILE file, const char * format, ...)
+
+/* int ZOLTAN_FILE_puts(char *s, ZOLTAN_FILE file) */
+/* { */
+/*   switch (file.type) { */
+/*   case STANDARD: */
+/*     return (fputs(s, file.fileunc)); */
+/* #ifdef ZOLTAN_GZIP */
+/*   case GZIP: */
+/*     return (gzputs(s, file.filegz)); */
+/* #endif */
+/*   default: */
+/*     break; */
+/*   } */
+/*   return (0); */
+/* } */
+
+int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
 {
-  switch (file.type) {
+  int toread = 0;
+  int nbrdone = 0;
+
+  if (file->type == STANDARD)
+    return fread(ptr, size, nitems, file->fileunc);
+
+  toread = nitems;
+  do {
+    int tocpy = 0;
+
+    tocpy = MIN(file->size - file->pos, toread);
+    if ((tocpy > 0) && (file->pos >= 0)) {
+      memcpy (ptr + nbrdone, file->buffer + file->pos, tocpy);
+      file->pos += tocpy;
+      toread -= tocpy;
+      nbrdone += tocpy;
+    }
+    else {
+      switch(file->type) {
+#ifdef ZOLTAN_GZIP
+      case GZIP:
+	file->size = gzread(file->filegz, file->buffer, BUFF_SIZE);
+	break;
+#endif
+      default:
+	return (-1);
+      }
+      if (file->size < BUFF_SIZE)    /* Nothing else to read on next call */
+	toread = MIN(file->size, toread);
+      if (file->size <= 0)
+	return (nbrdone);
+      file->pos = 0;
+    }
+  } while (toread);
+
+  return (nbrdone);
+}
+
+char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
+{
+  int size;
+  char * end = NULL;
+  int offset = 0;
+
+  if (file->type == STANDARD) return (fgets(buf, len, file->fileunc));
+
+  if ((file->pos >= 0) &&( file->size > 0))
+    offset = file->size - file->pos;
+
+  if (offset > 0) {
+    end = memchr(file->buffer + file->pos, '\n', MIN(offset, len - 1));
+
+  }
+  if (end != NULL) {          /* End of line found */
+    size = end - (file->buffer + file->pos) + 1;
+    memcpy (buf, file->buffer + file->pos, size);
+    buf[size] = '\0';
+    file->pos += size;
+    return (buf);
+  }
+  /* No new line */
+  size = ZOLTAN_FILE_read(buf, 1, len - 1, file);
+  if (size == 0)
+    return (NULL);
+  buf[size] = '\0';
+  end = memchr(buf, '\n', size);
+  if (end == NULL) {
+    return (buf);
+  }
+  end[1] = '\0';
+  file->pos = (end-buf) - offset + 1;
+  return (buf);
+}
+
+
+/* int ZOLTAN_FILE_putc(int c, ZOLTAN_FILE file) */
+/* { */
+/*   switch (file.type) { */
+/*   case STANDARD: */
+/*     return (fputc(c, file.fileunc)); */
+/* #ifdef ZOLTAN_GZIP */
+/*   case GZIP: */
+/*     return (gzputc(file.filegz, c)); */
+/* #endif */
+/*   default: */
+/*     break; */
+/*   } */
+/*   return (0); */
+/* } */
+
+int ZOLTAN_FILE_getc(ZOLTAN_FILE* file)
+{
+  int read;
+  if (file->type == STANDARD)
+    return (fgetc(file->fileunc));
+  if (ZOLTAN_FILE_read((char*)&read, 1, 1, file) == 0)
+    return (EOF);
+  return (read);
+}
+
+int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE* file)
+{
+  if (file->type == STANDARD)
+    return (ungetc(c, file->fileunc));
+
+  file->pos --;
+  if (file->pos < 0) {
+    file->size = 0;
+#ifdef ZOLTAN_GZIP
+    if (file->type == GZIP)
+      return (gzungetc(c, file->filegz));
+#endif
+  }
+
+  file->buffer[file->pos] = (char)c;
+  return (c);
+}
+
+int ZOLTAN_FILE_flush(ZOLTAN_FILE* file)
+{
+  switch (file->type) {
   case STANDARD:
-    return (fprintf(file.fileunc, format));
+    return (fflush(file->fileunc));
 #ifdef ZOLTAN_GZIP
   case GZIP:
-    return (gzprintf(file.filegz, format));
+    return (gzflush(file->filegz, Z_SYNC_FLUSH));
 #endif
   default:
     break;
@@ -82,119 +239,39 @@ int ZOLTAN_FILE_printf(ZOLTAN_FILE file, const char * format, ...)
   return (0);
 }
 
-int ZOLTAN_FILE_puts(char *s, ZOLTAN_FILE file)
+int ZOLTAN_FILE_close(ZOLTAN_FILE* file)
 {
-  switch (file.type) {
-  case STANDARD:
-    return (fputs(s, file.fileunc));
+  int retval = 0;
+
+  if (file == NULL)
+    return (0);
+  if (file->type == STANDARD)
+    retval = fclose(file->fileunc);
+  else {
+    switch (file->type) {
 #ifdef ZOLTAN_GZIP
-  case GZIP:
-    return (gzputs(s, file.filegz));
+    case GZIP:
+      retval = gzclose(file->filegz);
 #endif
-  default:
-    break;
+    default:
+      retval = 1;
+      break;
+    }
+    ZOLTAN_FREE(&file->buffer);
   }
-  return (0);
+  ZOLTAN_FREE(&file);
+  return (retval);
 }
 
-char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE file)
+void ZOLTAN_FILE_rewind(ZOLTAN_FILE* file)
 {
-  switch (file.type) {
+  switch (file->type) {
   case STANDARD:
-    return (fgets(buf, len, file.fileunc));
+    return (rewind(file->fileunc));
 #ifdef ZOLTAN_GZIP
   case GZIP:
-    return (gzgets(file.filegz, buf, len));
-#endif
-  default:
-    break;
-  }
-  return (0);
-}
-
-int ZOLTAN_FILE_putc(int c, ZOLTAN_FILE file)
-{
-  switch (file.type) {
-  case STANDARD:
-    return (fputc(c, file.fileunc));
-#ifdef ZOLTAN_GZIP
-  case GZIP:
-    return (gzputc(file.filegz, c));
-#endif
-  default:
-    break;
-  }
-  return (0);
-}
-
-int ZOLTAN_FILE_getc(ZOLTAN_FILE file)
-{
-  switch (file.type) {
-  case STANDARD:
-    return (fgetc(file.fileunc));
-#ifdef ZOLTAN_GZIP
-  case GZIP:
-    return (gzgetc(file.filegz));
-#endif
-  default:
-    break;
-  }
-  return (0);
-}
-
-int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE file)
-{
-  switch (file.type) {
-  case STANDARD:
-    return (ungetc(c, file.fileunc));
-#ifdef ZOLTAN_GZIP
-  case GZIP:
-    return (gzungetc(c, file.filegz));
-#endif
-  default:
-    break;
-  }
-  return (0);
-}
-
-int ZOLTAN_FILE_flush(ZOLTAN_FILE file)
-{
-  switch (file.type) {
-  case STANDARD:
-    return (fflush(file.fileunc));
-#ifdef ZOLTAN_GZIP
-  case GZIP:
-    return (gzflush(file.filegz, Z_SYNC_FLUSH));
-#endif
-  default:
-    break;
-  }
-  return (0);
-}
-
-int ZOLTAN_FILE_close(ZOLTAN_FILE file)
-{
-  switch (file.type) {
-  case STANDARD:
-    return (fclose(file.fileunc));
-#ifdef ZOLTAN_GZIP
-  case GZIP:
-    return (gzclose(file.filegz));
-#endif
-  default:
-    break;
-  }
-  return (0);
-}
-
-void ZOLTAN_FILE_rewind(ZOLTAN_FILE file)
-{
-  switch (file.type) {
-  case STANDARD:
-    return (rewind(file.fileunc));
-#ifdef ZOLTAN_GZIP
-  case GZIP:
-    gzrewind(file.filegz);
+    gzrewind(file->filegz);
+    file->pos = -1;
     return;
 #endif
   default:
@@ -202,19 +279,25 @@ void ZOLTAN_FILE_rewind(ZOLTAN_FILE file)
   }
 }
 
-int ZOLTAN_FILE_scanf(ZOLTAN_FILE stream, const char * format, ... )
+int ZOLTAN_FILE_scanf(ZOLTAN_FILE *stream, const char * format, ... )
 {
   va_list argList;
+  char myformat[256];
   char buff[1024];
+  int nbrchar;
+  int retval;
 
   va_start( argList, format );
-  if (stream.type == STANDARD) {
-    return (fscanf(stream.fileunc, format, argList));
+  if (stream->type == STANDARD) {
+    return (fscanf(stream->fileunc, format, argList));
   }
 
   if (ZOLTAN_FILE_gets(buff, 1024, stream) == NULL)
     return (0);
-  return (sscanf(buff, format, argList));
+  sprintf(myformat, "%s%%n", format);
+  retval = sscanf(buff, myformat, argList, &nbrchar);
+
+  return (retval);
 }
 
 

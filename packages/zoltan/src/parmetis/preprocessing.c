@@ -529,8 +529,6 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
   }
 
   if (gr->scatter){
-    indextype *dst;
-    indextype *src;
 
     if (geo)
       ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->vwgt, &vsp->vsize,
@@ -545,16 +543,13 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
     }
     gr->num_obj = gr->vtxdist[zz->Proc+1]-gr->vtxdist[zz->Proc];
 
-    dst =  (indextype *) ZOLTAN_MALLOC((gr->num_obj+1) * sizeof(indextype));
+
     if (prt) {
-      src = prt->part_orig = prt->part;
-      prt->part = dst;
-      Zoltan_Comm_Do(gr->comm_plan, TAG1, (char *) src, sizeof(indextype),
-		     (char *) dst);
-    }
-    if (!prt) {
-      ZOLTAN_FREE (&src);
-      ZOLTAN_FREE (&dst);
+      prt->part_orig = prt->part;
+      prt->part =  (indextype *) ZOLTAN_MALLOC((gr->num_obj+1) * sizeof(indextype));
+      Zoltan_Comm_Do(gr->comm_plan, TAG1, (char *) prt->part_orig, sizeof(indextype),
+		     (char *) prt->part);
+
     }
   }
   return ierr;

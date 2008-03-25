@@ -64,8 +64,8 @@ int read_chaco_file(int Proc,
 
   short *assignments = NULL;
 
-  ZOLTAN_FILE fp;
-  int    file_error = 0;
+  ZOLTAN_FILE *fp = NULL;
+  int file_error;
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -81,12 +81,7 @@ int read_chaco_file(int Proc,
       sprintf(chaco_fname, "%s.gz", chaco_fname);
 
     fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
-    file_error =
-#ifndef ZOLTAN_COMPRESS
-      (fp == NULL);
-#else
-    fp.error;
-#endif
+    file_error = (fp == NULL);
   }
 
   MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -112,14 +107,7 @@ int read_chaco_file(int Proc,
       sprintf(chaco_fname, "%s.gz", chaco_fname);
 
     fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
-    file_error =
-#ifndef ZOLTAN_COMPRESS
-      (fp == NULL);
-#else
-    fp.error;
-#endif
-
-    if (file_error) {
+    if (fp == NULL) {
       no_geom = TRUE;
       sprintf(cmesg, "warning:  Could not open Chaco geometry file %s; "
               "no geometry data will be read",
@@ -190,14 +178,7 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
 	sprintf(chaco_fname, "%s.gz", chaco_fname);
 
       fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
-      file_error =
-#ifndef ZOLTAN_COMPRESS
-	(fp == NULL);
-#else
-      fp.error;
-#endif
-
-      if (file_error) {
+      if (fp == NULL) {
         sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
                 "initial distribution cannot be read",
                 chaco_fname);

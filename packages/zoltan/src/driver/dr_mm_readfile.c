@@ -49,7 +49,7 @@ static int add_new_vals(int *newvals, int newCount,
 int MM_readfile (
  int Proc,
  int Num_Proc,
- ZOLTAN_FILE f,
+ ZOLTAN_FILE* f,
  PARIO_INFO_PTR pio_info,
  int *nVtx, int *nEdge, int *nPins,
  int **index,   int **vertex,
