@@ -38,6 +38,7 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_VarContainer.hpp"
 #include "Intrepid_MultiCell.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Intrepid {
   
@@ -128,10 +129,9 @@ class Basis {
       \param dofTags  [out]  - Teuchos::Array of degree-of-freedom tags.
   */
   virtual void getAllLocalDofTags(Teuchos::Array<LocalDofTag>& dofTags) = 0;
-    
+
 };
   
 }// namespace Intrepid
-
 
 #endif

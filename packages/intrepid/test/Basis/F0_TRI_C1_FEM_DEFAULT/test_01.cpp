@@ -32,7 +32,7 @@
 \author Created by P. Bochev and D. Ridzal.
 */
 
-#include "Intrepid_F0_TRI_C1_FEM_DEFAULT.hpp"
+#include "Intrepid_DefaultBasisFactory.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -81,7 +81,9 @@ int main(int argc, char *argv[]) {
   double basisvals[] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
   
   VarContainer<double> vals;
-  Basis_F0_TRI_C1_FEM_DEFAULT<double> tribasis;
+  DefaultBasisFactory<double> BFactory;
+  Teuchos::RCP<Basis<double> > tribasis =  BFactory.create(
+    FIELD_FORM_0, CELL_TRI, RECONSTRUCTION_SPACE_COMPLETE, 1, BASIS_FEM_DEFAULT, COORDINATES_CARTESIAN);
   Teuchos::Array< Point<double> > points01;
   Point<double> pt(2, FRAME_REFERENCE);
   points01.assign(3, pt);
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]) {
   try{
 
     try {
-      tribasis.getValues(vals, points01, OPERATOR_DIV);
+      tribasis->getValues(vals, points01, OPERATOR_DIV);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -104,22 +106,22 @@ int main(int argc, char *argv[]) {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
 
-    tribasis.getValues(vals, points01, OPERATOR_VALUE);
+    tribasis->getValues(vals, points01, OPERATOR_VALUE);
     *outStream << vals << "\n";
-    tribasis.getValues(vals, points01, OPERATOR_GRAD);
+    tribasis->getValues(vals, points01, OPERATOR_GRAD);
     *outStream << vals << "\n";
-    tribasis.getValues(vals, points01, OPERATOR_CURL);
+    tribasis->getValues(vals, points01, OPERATOR_CURL);
     *outStream << vals << "\n";
 
     for (EOperator op = OPERATOR_D1; op < OPERATOR_MAX; op++) {
-      tribasis.getValues(vals, points01, op);
+      tribasis->getValues(vals, points01, op);
       *outStream << vals << "\n";
     }
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       LocalDofTag myTag = {{3,0,0,1}};
-      tribasis.getLocalDofEnumeration(myTag);
+      tribasis->getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -131,7 +133,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       LocalDofTag myTag = {{1,1,1,0}};
-      tribasis.getLocalDofEnumeration(myTag);
+      tribasis->getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       LocalDofTag myTag = {{0,3,0,0}};
-      tribasis.getLocalDofEnumeration(myTag);
+      tribasis->getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -155,7 +157,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       int bfId = 4;
-      tribasis.getLocalDofTag(bfId);
+      tribasis->getLocalDofTag(bfId);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -167,7 +169,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       int bfId = -1;
-      tribasis.getLocalDofTag(bfId);
+      tribasis->getLocalDofTag(bfId);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -177,11 +179,11 @@ int main(int argc, char *argv[]) {
 #endif
 
     Teuchos::Array<LocalDofTag> allTags;
-    tribasis.getAllLocalDofTags(allTags);
+    tribasis->getAllLocalDofTags(allTags);
     for (unsigned i=0; i<allTags.size(); i++) {
       LocalDofTag myTag = allTags[i];
-      int bfId = tribasis.getLocalDofEnumeration(myTag);
-      myTag = tribasis.getLocalDofTag(bfId);
+      int bfId = tribasis->getLocalDofEnumeration(myTag);
+      myTag = tribasis->getLocalDofTag(bfId);
       *outStream << "Local Bf Id = " << bfId << "  -->  " << "DoF Tag = ";
       *outStream << "{" << myTag.tag_[0] << ", " << myTag.tag_[1] << ", " << myTag.tag_[2] << ", " << myTag.tag_[3] << "}\n";
     }
@@ -206,7 +208,7 @@ int main(int argc, char *argv[]) {
   outStream->precision(20);
 
   try{
-    tribasis.getValues(vals, points01, OPERATOR_VALUE);
+    tribasis->getValues(vals, points01, OPERATOR_VALUE);
     for (int i=0; i<vals.getSize(); i++) {
       *outStream << "  Computed value: " << vals[i] << "   Reference value: " << basisvals[i] << "\n";
       if (std::abs(vals[i]-basisvals[i]) > INTREPID_TOL)

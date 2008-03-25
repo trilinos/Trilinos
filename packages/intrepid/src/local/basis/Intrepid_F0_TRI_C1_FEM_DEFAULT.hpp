@@ -75,8 +75,8 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
 
 };
 
-#include "Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp"
-  
 }// namespace Intrepid
+
+#include "Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp"
 
 #endif
