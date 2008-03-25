@@ -59,9 +59,8 @@ static int mpi_err_len;
 
 /* Macro returning the processor row or column storing a given 
  * repartition vertex or edge, respectively. */
-#define ProcForRepart(i, nProc, Gn) \
-        ((int) ((i) * (nProc) / (Gn)) - \
-         ((i) < FirstRepart((int) ((i) * (nProc) / (Gn)), (nProc), (Gn))))
+#define ProcForRepart(i, repart_dist, nProc) \
+        Zoltan_PHG_Gno_To_Proc_Block(i, repart_dist, nProc)
 
 /*****************************************************************************/
 /* Function prototypes */
@@ -2936,17 +2935,34 @@ int ierr = ZOLTAN_OK;
 int *objsize = NULL;                 /* repartition edge weights. */
 int *tmpobjsize = NULL;
 int *colProc_cnt = NULL;             /* actual nRepartEdge per column proc */
+int *repart_dist_x = NULL;           /* Distribution of repartition vertices
+                                        to proc rows; similar to phg->dist_x. */
+int *repart_dist_y = NULL;           /* Distribution of repartition edges
+                                        to proc cols; similar to phg->dist_y. */
 
   if (myProc_x >= 0 && myProc_y >= 0) {  /* This proc is part of 2D decomp */
 
+    /* Compute distribution of repartition vertices and edges */
+    repart_dist_x = (int *) ZOLTAN_MALLOC((2+nProc_x+nProc_y) * sizeof(int));
+    repart_dist_y = repart_dist_x + nProc_x + 1;
+
+    for (i = 0; i < nProc_x; i++)
+      repart_dist_x[i] = FirstRepart(i, nProc_x, gnRepartVtx);
+    repart_dist_x[nProc_x] = gnRepartVtx;
+
+    for (i = 0; i < nProc_y; i++)
+      repart_dist_y[i] = FirstRepart(i, nProc_y, maxgnRepartEdge);
+    repart_dist_y[nProc_y] = maxgnRepartEdge;
+
     /* Compute number of repartition vertices to add to this processor column */
-    phg->nRepartVtx = nRepartVtx = NumRepart(myProc_x, nProc_x, gnRepartVtx);
-    firstRepartVtx = FirstRepart(myProc_x, nProc_x, gnRepartVtx);
+    phg->nRepartVtx = nRepartVtx
+                    = repart_dist_x[myProc_x+1] - repart_dist_x[myProc_x];
+    firstRepartVtx = repart_dist_x[myProc_x];
 
     /* Compute maximum number of repartition edges to add to this proc row */
-    phg->nRepartEdge = nRepartEdge = NumRepart(myProc_y, nProc_y, 
-                                               maxgnRepartEdge);
-    firstRepartEdge = FirstRepart(myProc_y, nProc_y, maxgnRepartEdge);
+    phg->nRepartEdge = nRepartEdge 
+                     = repart_dist_y[myProc_y+1] - repart_dist_y[myProc_y];
+    firstRepartEdge = repart_dist_y[myProc_y];
 
     /* If application did not fix any vertices, allocate fixed array for 
      * repartition vertices. 
@@ -3067,10 +3083,10 @@ int *colProc_cnt = NULL;             /* actual nRepartEdge per column proc */
           vgno = VTX_LNO_TO_GNO(phg,v);  /* Gno of vertex */
 
           /* Determine proc col for repartition vtx associated with part k */
-          proc_x = ProcForRepart(k, nProc_x, gnRepartVtx);
+          proc_x = ProcForRepart(k, repart_dist_x, nProc_x);
 
           /* Determine proc row for repartition edge associated with vtx i */
-          proc_y = ProcForRepart(vgno, nProc_y, maxgnRepartEdge);
+          proc_y = ProcForRepart(vgno, repart_dist_y, nProc_y);
  
           /* Fill message buffers */
   
@@ -3095,6 +3111,7 @@ int *colProc_cnt = NULL;             /* actual nRepartEdge per column proc */
     }
 
     ZOLTAN_FREE(&objsize);
+    ZOLTAN_FREE(&repart_dist_x);
 
     /* Create plan and send info. */
 
@@ -3231,7 +3248,8 @@ int *colProc_cnt = NULL;             /* actual nRepartEdge per column proc */
 
     /* SANITY CHECK */
     if (phg->nPins != phg->hindex[phg->nEdge]) {
-      printf("%d KDDKDD SANITY CHECK FAILED %d != %d   %d %d %d %d %d %d\n", 
+      uprintf(phg->comm, 
+             "%d KDDKDD SANITY CHECK FAILED %d != %d   %d %d %d %d %d %d\n", 
              zz->Proc, phg->nPins, phg->hindex[phg->nEdge], nRepartVtx, 
              phg->nVtx, nRepartEdge, phg->nEdge, nRepartPin, phg->nPins);
       exit( -1);
