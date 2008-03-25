@@ -115,8 +115,6 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   if (ML_Get_PrintLevel() > 9) strcpy(str,"1");
   else strcpy(str,"0");   
 
-  //  strcpy(str,"7");/*HAQ - CMS*/
-
   if (Zoltan_Set_Param(zz, "DEBUG_LEVEL", str) == ZOLTAN_FATAL) {
     printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
@@ -195,28 +193,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
                     (void (*)()) ML_get_entries,
                     (void *) A) == ZOLTAN_FATAL) {
-    printf("fatal(3)  error returned from Zoltan_Set_Fn()\n"
-  //  printf("[%d] num_pins = %d rowtotal = %d\n",A->comm->ML_mypid,num_pins,rowtotal);fflush(stdout);/*DEBUG*/
-
-  /* DEBUG */
-  //  for(i=0;i<num_pins;i++)
-  //    fprintf(f,"%d ",pin_GID[i]);
-  //  fprintf(f,"\n");
-  //  fclose(f);
-
-  //  sprintf(str,"zoltan_vtxedge_gid.%d.dat",A->comm->ML_mypid);
-  //  f=fopen(str,"w");
-  //  for(i=0;i<N;i++)
-  //    fprintf(f,"%d\n",vtxedge_GID[i]);
-  //  fclose(f);
-
-  //  sprintf(str,"zoltan_vtxedge_gid.%d.dat",A->comm->ML_mypid);
-  //  f=fopen(str,"w");
-  //  for(i=0;i<N;i++)
-  //    fprintf(f,"%d\n",vtxedge_GID[i]);
-  //  fclose(f);
-
-);
+    printf("fatal(3)  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
@@ -528,7 +505,7 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
   /* Note: vtxedge_ptr does not have the extra "N+1" element that regular CSR
      matrices have. */
   
-  /* Reindex to global IDs - this allocates memory*/
+  /* Reindex to global IDs */
   for(i=0;i<num_pins;i++) pin_GID[i]=MLZ_indices[pin_GID[i]];    
   
   ML_free(values);
