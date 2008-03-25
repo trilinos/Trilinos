@@ -52,6 +52,7 @@ struct Test_Flags Test;
 struct Output_Flags Output;
 
 double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
+int CITESEER[200]; /* Hack for Citeseer Vtx_Inc experiments */
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *, int, PROB_INFO_PTR, PARIO_INFO_PTR, float );
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
     /*
      * Produce files to verify input.
      */
-    if (iteration == 1)
+    if (iteration == 1) {
       if (Debug_Driver > 2) {
         if (!output_results(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)){
           Gen_Error(0, "fatal: Error returned from output_results\n");
@@ -296,6 +297,22 @@ int main(int argc, char *argv[])
             error_report(Proc);
           }
       }
+      if (Test.Vtx_Inc<0){
+        /* Read Citeseer data from file */
+        FILE *fp;
+        int i=0;
+        if (Proc==0){
+          fp = fopen("months.txt", "r");
+          if (!fp)
+            printf("ERROR: Couldn't open file months.txt\n");
+          while (fscanf(fp, "%d", &CITESEER[i])==1){
+            ++i;
+          }
+          fclose(fp);
+        }
+        MPI_Bcast (CITESEER, 200, MPI_INT, 0, MPI_COMM_WORLD);
+      }
+    }
 
     if (Test.Dynamic_Graph > 0.0){
       if (mesh.data_type == ZOLTAN_GRAPH) {
@@ -309,9 +326,12 @@ int main(int argc, char *argv[])
       }
     }
 
-    if (Test.Vtx_Inc > 0){
+    if (Test.Vtx_Inc){
       if (mesh.data_type == HYPERGRAPH ) {
-        mesh.visible_nvtx += Test.Vtx_Inc; /* For now, increment uniformly */
+        if (Test.Vtx_Inc>0)
+          mesh.visible_nvtx += Test.Vtx_Inc; /* Increment uniformly */
+        else
+          mesh.visible_nvtx = CITESEER[iteration-1]; /* Citeseer document matrix. */
       }
       else{
         Gen_Error(0, "fatal: \"vertex increment\" only works on hypergraphs\n");
