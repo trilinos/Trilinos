@@ -1238,7 +1238,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
     if (mesh->blank && mesh->blank[i]) continue;
 
     current_elem = &elem[i];
-    if ((mesh->data_type == HYPERGRAPH) && 
+    if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx &&
         (current_elem->globalID >= mesh->visible_nvtx)) continue;
 
     for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;
