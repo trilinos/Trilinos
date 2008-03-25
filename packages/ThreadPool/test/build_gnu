@@ -1,0 +1,24 @@
+#!/bin/bash
+
+gcc	-O3	\
+	-I../include	\
+	-o test_tpi.gnu_plain.exe	\
+	test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c	\
+	../src/TPI_pthreads.c ../src/TPI_Walltime.c	\
+	-lpthread
+	
+#
+
+GNU_PATH="/usr/local/gcc/32Bit/4.0.1/bin"
+
+export PATH="${GNU_PATH}:${PATH}"
+
+gcc	-std=c99 -Wall -Wextra -Werror	\
+	-Wa,--32 -m32 -static	\
+	-I../include	\
+	-O3	\
+	-o test_tpi.gnu_4_c99.exe	\
+	test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c	\
+	../src/TPI_pthreads.c ../src/TPI_Walltime.c	\
+	-lpthread
+

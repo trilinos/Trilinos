@@ -1,0 +1,15 @@
+#!/bin/bash
+
+source /usr/local/intel/cc/9.1.044/bin/iccvars.sh
+source /usr/local/intel/fc/9.1.039/bin/ifortvars.sh
+
+
+icc	-strict-ansi -Wall -Wcheck -Werror	\
+	-wd981 -wd1418 -wd1419 -wd141 -wd444	\
+	-I../include	\
+	-O3	\
+	-o test_tpi.intel.exe	\
+	test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c	\
+	../src/TPI_pthreads.c ../src/TPI_Walltime.c	\
+	-lpthread
+

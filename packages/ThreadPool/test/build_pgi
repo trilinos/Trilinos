@@ -1,0 +1,14 @@
+#!/bin/bash
+
+export LM_LICENSE_FILE=7500@reddish
+PGI_HOME="/usr/local/pgi_64/linux86-64/7.0-7"
+
+export PATH="${PGI_HOME}/bin:${PATH}"
+
+pgcc	-I../include	\
+	-O4	\
+	-o test_tpi.pgi.exe	\
+	test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c	\
+	../src/TPI_pthreads.c ../src/TPI_Walltime.c	\
+	-lpthread
+
