@@ -29,7 +29,7 @@
 EXEEXT = .exe
 
 #np# List all executable names here
-noinst_PROGRAMS = DenseMatrix_example
+noinst_PROGRAMS = DenseMatrix_example SymDenseMatrix_example
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
@@ -49,4 +49,22 @@ DenseMatrix_example_CXXFLAGS = -I$(top_srcdir)/src
 DenseMatrix_example_LDADD = $(top_builddir)/src/libteuchos.a \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
+
+#np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
+#np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
+#np# files needed to compile the exe.
+SymDenseMatrix_example_SOURCES = $(srcdir)/cxx_main_sym.cpp
+
+#np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
+#np# exe depends on.  (This primary is not absolutely essential.)
+SymDenseMatrix_example_DEPENDENCIES = 
+
+#np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
+#np# building the exe.
+SymDenseMatrix_example_CXXFLAGS = -I$(top_srcdir)/src
+
+#np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
+#np# building the exe.
+SymDenseMatrix_example_LDADD = $(top_builddir)/src/libteuchos.a \
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
