@@ -529,6 +529,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       int NumAggr = ML_Aggregate_Get_AggrCount(agg_,level);
       int* AggrMap = 0;
       ML_CHK_ERR(ML_Aggregate_Get_AggrMap(agg_,level,&AggrMap));
+      IfpackList.set("ILU: sweeps", Mynum_smoother_steps);
 
       // set these in the case the user wants "partitioner: type" = "user"
       // (if not, these values are ignored).

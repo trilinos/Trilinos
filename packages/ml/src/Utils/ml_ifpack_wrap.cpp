@@ -53,28 +53,34 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle) ; 
    assert (status == 0); 
 
+   /* This is only used to control the factorization sweeps. I believe */
+   /* that when ifpack is used for things like Gauss-Seidel the number */
+   /* of sweeps is handled somewhere in IFPACK.                        */
+
+   int sweeps =    List.get("ILU: sweeps", 1);
+
    /* Sets function pointers */
 
    if (pre_or_post == ML_PRESMOOTHER) {
      sprintf(str,"IFPACK_pre%d",nl);
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]), (void*)Ifpack_Handle,
-			      fun, 1, 0.0, str);
+			      fun, sweeps, 0.0, str);
      ml->pre_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
      sprintf(str,"IFPACK_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
-			      (void*)Ifpack_Handle, fun, 1, 0.0, str);
+			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
    }
    else if (pre_or_post == ML_BOTH) {
      sprintf(str,"IFPACK_pre%d",nl);
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]),
 			      (void*)Ifpack_Handle,
-			      fun, 1,  0.0, str);
+			      fun, sweeps,  0.0, str);
      sprintf(str,"IFPACK_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]),
-			      (void*)Ifpack_Handle, fun, 1, 0.0, str);
+			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
    }
    else 
