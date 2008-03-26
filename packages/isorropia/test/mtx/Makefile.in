@@ -97,7 +97,6 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_test_simple_OBJECTS = test_simple.$(OBJEXT)
 test_simple_OBJECTS = $(am_test_simple_OBJECTS)
-test_simple_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -235,12 +234,15 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
-#noinst_PROGRAMS = hypergraph_test graph_test
+test_simple_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a \
+        $(top_builddir)/test/utils/libisorropia_test_utils.a
+
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
 test_simple_LDADD = \
    -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
-EXTRA_DIST = simple.mtx
+EXTRA_DIST = simple.mtx simple_rectangular.mtx
 all: all-am
 
 .SUFFIXES:
@@ -496,6 +498,7 @@ include $(top_builddir)/Makefile.export.isorropia
 
 all-local:
 	@if test -e simple.mtx; then : ; else cp $(srcdir)/simple.mtx .; fi
+	@if test -e simple_rectangular.mtx; then : ; else cp $(srcdir)/simple_rectangular.mtx .; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

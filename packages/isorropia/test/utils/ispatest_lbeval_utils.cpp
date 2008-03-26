@@ -53,19 +53,89 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <set>
 #include <iostream>
 
-/** ispatest is the namespace that contains isorropia's test-utilities
-*/
 namespace ispatest {
 
 #ifdef HAVE_EPETRA
+
 static double compute_balance(const Epetra_Comm &comm, int myRows, int nwgts, float *wgts);
+
+/******************************************************************
+  Compute graph metrics
+******************************************************************/
+
+int compute_graph_metrics(const Epetra_RowMatrix &matrix,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
+{
+  const Epetra_BlockMap &rowmap = matrix.RowMatrixRowMap();
+  const Epetra_BlockMap &colmap = matrix.RowMatrixColMap();
+
+  int maxEdges = colmap.NumMyElements();
+
+  std::vector<std::vector<int> > myRows(rowmap.NumMyElements());
+
+  if (maxEdges > 0){
+    int numEdges = 0;
+    int *nborLID  = new int [maxEdges];
+    double *tmp = new double [maxEdges];
+
+    for (int i=0; i<rowmap.NumMyElements(); i++){
+
+      matrix.ExtractMyRowCopy(i, maxEdges, numEdges, tmp, nborLID);
+      std::vector<int> cols(numEdges);
+      for (int j=0; j<numEdges; j++){
+        cols[j] = nborLID[j];
+      }
+      myRows[i] = cols;
+    }
+    delete [] nborLID;
+  }
+ 
+  return compute_graph_metrics(rowmap, colmap, myRows, costs,
+                               balance, numCuts, cutWgt, cutn, cutl);
+
+}
+
 int compute_graph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
-  const Epetra_Comm &comm  = graph.Comm();
+  const Epetra_BlockMap &rowmap = graph.RowMap();
+  const Epetra_BlockMap &colmap = graph.ColMap();
+
+  int maxEdges = colmap.NumMyElements();
+
+  std::vector<std::vector<int> > myRows(rowmap.NumMyElements());
+
+  if (maxEdges > 0){
+    int numEdges = 0;
+    int *nborLID  = new int [maxEdges];
+    for (int i=0; i<rowmap.NumMyElements(); i++){
+
+      graph.ExtractMyRowCopy(i, maxEdges, numEdges, nborLID);
+      std::vector<int> cols(numEdges);
+      for (int j=0; j<numEdges; j++){
+        cols[j] = nborLID[j];
+      }
+      myRows[i] = cols;
+    }
+    delete [] nborLID;
+  }
+ 
+  return compute_graph_metrics(rowmap, colmap, myRows, costs,
+                               balance, numCuts, cutWgt, cutn, cutl);
+
+}
+
+int compute_graph_metrics(const Epetra_BlockMap &rowmap,
+                          const Epetra_BlockMap &colmap,
+                          std::vector<std::vector<int> > &rows,
+                          Isorropia::Epetra::CostDescriber &costs,
+            double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
+{
+  const Epetra_Comm &comm  = rowmap.Comm();
   int myProc = comm.MyPID();
-  int myRows = graph.NumMyRows();
+  int myRows = rowmap.NumMyElements();
   int rc;
   int *vgid = NULL;
   float *vwgt = NULL;
@@ -102,15 +172,10 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
   double localCutn = 0.0;
   double localCutl = 0.0;
 
-  int maxEdges = graph.MaxNumIndices();
+  int maxEdges = colmap.NumMyElements();
 
   if (maxEdges > 0){
-    int *nborID  = new int [maxEdges];
-    int numEdges;
     std::map<int, float> weightMap;
-
-    const Epetra_BlockMap &rowmap = graph.RowMap();
-    const Epetra_BlockMap &colmap = graph.ColMap();
 
     // Get the processes owning my vertices neighbors
 
@@ -126,7 +191,6 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
       std::cout << std::endl;
       delete [] nborProc_GID;
       delete [] nborRow_LID;
-      delete [] nborID;
       return -1;
     }
 
@@ -150,18 +214,10 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
         costs.getGraphEdgeWeights(vtxGID, weightMap);
       }
 
-      int numEdges = graph.NumMyIndices(i);
+      int numEdges = rows[i].size();
 
       if (numEdges > 0){
 
-        // get neighboring vertices
-
-        graph.ExtractMyRowCopy(i, maxEdges, numEdges, nborID);
-
-        for (int j=0; j<numEdges; j++){
-          nborID[j] = colGIDs[nborID[j]];  // convert to global ID
-        }
-        
         // get processes that own my neighbors
   
         std::set<int> nbors;
@@ -169,24 +225,24 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
 
         for (int j=0; j < numEdges; j++){
 
-          if (nborID[j] == vtxGID) continue;  // skip self edges
+          int nborGID = colGIDs[rows[i][j]];
 
-          procIter = colProc.find(nborID[j]);
+          if (nborGID == vtxGID) continue;  // skip self edges
+
+          procIter = colProc.find(nborGID);
           if (procIter == colProc.end()){
             std::cout << "process owning column is missing";
             std::cout << std::endl;
-            delete [] nborID;
             return -1;
           }
           int procNum = procIter->second;
 
           float wgt = 1.0;
           if (haveEdgeWeights){
-            std::map<int, float>::iterator curr = weightMap.find(nborID[j]);
+            std::map<int, float>::iterator curr = weightMap.find(nborGID);
             if (curr == weightMap.end()){
               std::cout << "Graph edge weights do not match matrix";
               std::cout << std::endl;
-              delete [] nborID;
               return -1;
             }
             wgt = curr->second;
@@ -211,8 +267,6 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
         }
       }
     } // next vertex in my partition
-
-    delete [] nborID;
   }
 
   double lval[4], gval[4];
@@ -231,11 +285,33 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
 
   return 0;
 }
+
+/******************************************************************
+  Compute hypergraph metrics
+******************************************************************/
+
+int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &balance, double &cutn, double &cutl)  // output
+{
+  return compute_hypergraph_metrics(matrix.RowMatrixRowMap(), matrix.RowMatrixColMap(),
+                                     matrix.NumGlobalCols(),
+                                     costs, balance, cutn, cutl);
+}
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl)  // output
 {
-  const Epetra_Comm &comm  = graph.Comm();
+  return compute_hypergraph_metrics(graph.RowMap(), graph.ColMap(),
+                                     graph.NumGlobalCols(),
+                                     costs, balance, cutn, cutl);
+}
+int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_BlockMap &colmap,
+            int numGlobalColumns,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &balance, double &cutn, double &cutl)  // output
+{
+  const Epetra_Comm &comm  = rowmap.Comm();
 #ifdef HAVE_MPI
   const Epetra_MpiComm* mpiComm =
     dynamic_cast<const Epetra_MpiComm*>(&comm);
@@ -244,7 +320,7 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
 #endif
   int nProcs = comm.NumProc();
   int myProc = comm.MyPID();
-  int myRows = graph.NumMyRows();
+  int myRows = rowmap.NumMyElements();
   int rc;
   int *vgid = NULL;
   float *vwgt = NULL;
@@ -274,15 +350,14 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
    */
 
   int totalHEWeights = 0; 
-  int numCols = graph.NumGlobalCols();
 
   int numHEWeights = costs.getNumHypergraphEdgeWeights();
 
   comm.SumAll(&numHEWeights, &totalHEWeights, 1);
  
-  if ((totalHEWeights > 0) && (totalHEWeights !=  numCols)){
+  if ((totalHEWeights > 0) && (totalHEWeights <  numGlobalColumns)){
     if (myProc == 0)
-      std::cerr << "Must supply either no h.e. weights or else supply one for each column" << std::endl;
+      std::cerr << "Must supply either no h.e. weights or else supply at least one for each column" << std::endl;
       return -1;
   }
 
@@ -314,21 +389,20 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
   // Create a set containing all the columns in my rows.  We assume all
   // the rows are in the same partition.
 
-  const Epetra_BlockMap &colMap = graph.ColMap();
-  int numMyCols = colMap.NumMyElements();
+  int numMyCols = colmap.NumMyElements();
 
   std::set<int> colGIDS;
   std::set<int>::iterator gidIter;
 
   for (int j=0; j<numMyCols; j++){
-    colGIDS.insert(colMap.GID(j));
+    colGIDS.insert(colmap.GID(j));
   }
   
   /* Divide columns among processes, then each process computes its
    * assigned columns' cutl and cutn.
    */
-  int ncols = numCols / nProcs;
-  int leftover = numCols - (nProcs * ncols);
+  int ncols = numGlobalColumns / nProcs;
+  int leftover = numGlobalColumns - (nProcs * ncols);
   std::vector<int> colCount(nProcs, 0);
   for (int i=0; i<nProcs; i++){
     colCount[i] = ncols;
@@ -348,7 +422,7 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
     localWeights = new double [ncols + 1];
   }
 
-  int base = colMap.IndexBase();
+  int base = colmap.IndexBase();
   int colStart = base;
 
   for (int i=0; i<nProcs; i++){

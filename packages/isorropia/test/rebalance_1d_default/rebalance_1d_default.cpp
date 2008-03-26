@@ -235,7 +235,7 @@ bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix;
   try {
     if (verbose) {
       std::cout << " calling Isorropia::create_balanced_copy(Epetra_RowMatrix)..."
@@ -254,7 +254,7 @@ bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
   //is indeed equal on each processor. (We constructed the input matrix
   //so that a correct rebalancing would result in the same number of
   //nonzeros being on each processor.)
-  const Epetra_Map& bal_rowmap = balanced_matrix->RowMap();
+  const Epetra_Map& bal_rowmap = balanced_matrix->RowMatrixRowMap();
   int bal_local_num_rows = bal_rowmap.NumMyElements();
 
   //count the local nonzeros.
@@ -263,8 +263,10 @@ bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
   }
 
   int num_nonzeros = 0;
+  int n;
   for(int i=0; i<bal_local_num_rows; ++i) {
-    num_nonzeros += balanced_matrix->NumMyEntries(i);
+    balanced_matrix->NumMyRowEntries(i, n);
+    num_nonzeros += n;
   }
 
   const Epetra_Comm& comm = input_matrix->Comm();

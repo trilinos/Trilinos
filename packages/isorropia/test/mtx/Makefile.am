@@ -33,15 +33,19 @@ EXEEXT = .exe
 
 AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
 
+test_simple_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a \
+        $(top_builddir)/test/utils/libisorropia_test_utils.a
+
 noinst_PROGRAMS = test_simple
-#noinst_PROGRAMS = hypergraph_test graph_test
 
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
 
 test_simple_LDADD = \
    -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
-EXTRA_DIST = simple.mtx
+EXTRA_DIST = simple.mtx simple_rectangular.mtx
 
 all-local:
 	@if test -e simple.mtx; then : ; else cp $(srcdir)/simple.mtx .; fi
+	@if test -e simple_rectangular.mtx; then : ; else cp $(srcdir)/simple_rectangular.mtx .; fi

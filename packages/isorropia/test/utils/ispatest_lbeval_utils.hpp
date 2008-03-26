@@ -33,6 +33,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #define _ispatest_lbeval_utils_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
+#include <vector>
 
 #ifdef HAVE_EPETRA
 
@@ -95,14 +96,42 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl);
 
+int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &balance, double &cutn, double &cutl);
+
+int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
+            const Epetra_BlockMap &colmap,
+            int numGlobalColumns,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &balance, double &cutn, double &cutl);
+
 /* TODO explain metrics computed in compute_graph_metrics
  */
+
+/** Compute graph metrics given an Epetra_RowMatrix
+  */
+int compute_graph_metrics(const Epetra_RowMatrix &matrix,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
+
+/** Compute graph metrics given an Epetra_CrsGraph
+  */
 int compute_graph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
 
+/** Compute graph metrics given a row map, a column map, and a vector with one
+    element for each row.  The element is a vector containing the column local ID 
+    for each non zero in that row.
+  */
+int compute_graph_metrics(const Epetra_BlockMap &rowmap,
+                          const Epetra_BlockMap &colmap,
+                          std::vector<std::vector<int> > &rows,
+                          Isorropia::Epetra::CostDescriber &costs,
+            double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
 
-// Print out the matrix showing the partitioning, for debugging purposes.
+
 // This only works for small example matrices and 10 or fewer processes.
 
 void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Comm &comm);
