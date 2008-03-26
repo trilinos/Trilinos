@@ -34,6 +34,7 @@
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
+#include "Rythmos_StepperHelpers.hpp"
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -210,6 +211,7 @@ private:
   // Private date members
 
   bool isInitialized_;
+  bool haveInitialCondition_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
@@ -219,8 +221,8 @@ private:
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_;
   Scalar t_;
-
   Scalar t_old_;
+
   Scalar dt_;
   int numSteps_;
 
@@ -234,7 +236,7 @@ private:
   // //////////////////////////
   // Private member functions
 
-  void initialize_();
+  void initialize();
 
 };
 
@@ -248,26 +250,29 @@ private:
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper()
-  :t_(-1.0)
-  ,t_old_(0.0)
-{
-  numSteps_ = 0;
-  isInitialized_=false;
-}
+  :isInitialized_(false),
+   haveInitialCondition_(false),
+   t_(-1.0),
+   t_old_(0.0),
+   dt_(0.0),
+   numSteps_(0)
+{}
 
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
-  :t_(-1.0)
-  ,t_old_(0.0)
+  :isInitialized_(false),
+   haveInitialCondition_(false),
+   t_(-1.0),
+   t_old_(0.0),
+   dt_(0.0),
+   numSteps_(0)
 {
   setModel(model);
   setSolver(solver);
-  numSteps_ = 0;
-  isInitialized_ = false;
 }
 
 
@@ -386,6 +391,7 @@ void BackwardEulerStepper<Scalar>::setModel(
   using Teuchos::as;
 
   TEST_FOR_EXCEPT( is_null(model) );
+  assertValidModel( *this, *model );
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -403,6 +409,8 @@ void BackwardEulerStepper<Scalar>::setModel(
   x_dot_old_ = Teuchos::null;
 
   isInitialized_ = false;
+  haveInitialCondition_ = setDefaultInitialConditionFromNominalValues<Scalar>(
+    *model_, Teuchos::ptr(this) );
   
 }
 
@@ -459,12 +467,11 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
   
   // t
   
-  t_ = (
-    initialCondition.supports(MEB::IN_ARG_t)
-    ? initialCondition.get_t()
-    : ST::zero()
-    );
+  t_ = initialCondition.get_t();
+
   t_old_ = t_;
+
+  haveInitialCondition_ = true;
 
 }
 
@@ -479,6 +486,8 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
 
+  initialize();
+
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::takeStep");
@@ -488,10 +497,6 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
     *out
       << "\nEntering " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
       << "::takeStep("<<dt<<","<<toString(stepSizeType)<<") ...\n"; 
-  }
-
-  if (!isInitialized_) {
-    initialize_();
   }
 
   dt_ = dt;
@@ -643,26 +648,15 @@ const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus() const
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  StepStatus<Scalar> stepStatus;
+  StepStatus<Scalar> stepStatus; // Defaults to unknown status
 
   if (!isInitialized_) {
-    stepStatus.message = "This stepper is uninitialized.";
     stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
-    stepStatus.stepSize = Scalar(-ST::one());
-    stepStatus.order = -1;
-    stepStatus.time = Scalar(-ST::one());
-    // 2007/05/21: rabartl: ToDo: Need to return something other than -1.0
-    // since negative time might be just fine.
-    stepStatus.solution = Teuchos::null;
-    // 2007/05/18: rabartl: I changed the above to null since just returning a
-    // vector fully of junk makes no sense.
-    stepStatus.solutionDot = Teuchos::null;
-    return(stepStatus);
   }
-
-  if (numSteps_ > 0) {
+  else if (numSteps_ > 0) {
     stepStatus.stepStatus = STEP_STATUS_CONVERGED; 
   }
+  // else unknown
 
   stepStatus.stepSize = dt_;
   stepStatus.order = 1;
@@ -671,6 +665,7 @@ const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus() const
   stepStatus.solutionDot = x_dot_;
 
   return(stepStatus);
+
 }
 
 
@@ -687,32 +682,41 @@ BackwardEulerStepper<Scalar>::get_x_space() const
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::addPoints(
-    const Array<Scalar>& time_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    )
+  const Array<Scalar>& time_vec,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  )
 {
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call addPoints before the stepper is initialized!\n");
-  TEST_FOR_EXCEPTION(time_vec.size() == 0, std::logic_error, "Error, addPoints called with an empty time_vec array!\n");
-#endif // TEUCHOS_DEBUG
   using Teuchos::as;
+
+  initialize();
+
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    time_vec.size() == 0, std::logic_error,
+    "Error, addPoints called with an empty time_vec array!\n");
+#endif // TEUCHOS_DEBUG
+
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::setPoints");
+
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
     for (int i=0 ; i<Teuchos::as<int>(time_vec.size()) ; ++i) {
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     }
-  } else if (time_vec.size() == 1) {
+  }
+  else if (time_vec.size() == 1) {
     int n = 0;
     t_ = time_vec[n];
     t_old_ = t_;
     Thyra::V_V(&*x_,*x_vec[n]);
     Thyra::V_V(&*scaled_x_old_,*x_);
-  } else {
+  }
+  else {
     int n = time_vec.size()-1;
     int nm1 = time_vec.size()-2;
     t_ = time_vec[n];
@@ -724,20 +728,24 @@ void BackwardEulerStepper<Scalar>::addPoints(
 }
 
 
-
 template<class Scalar>
 TimeRange<Scalar> BackwardEulerStepper<Scalar>::getTimeRange() const
 {
-  return timeRange(t_old_,t_);
+  if ( !isInitialized_ && haveInitialCondition_ )
+    return timeRange<Scalar>(t_,t_);
+  if ( !isInitialized_ && !haveInitialCondition_ )
+    return invalidTimeRange<Scalar>();
+  return timeRange<Scalar>(t_old_,t_);
 }
 
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::getPoints(
-    const Array<Scalar>& time_vec
-    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,Array<ScalarMag>* accuracy_vec) const
+  const Array<Scalar>& time_vec,
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+  Array<ScalarMag>* accuracy_vec
+  ) const
 {
 
   using Teuchos::as;
@@ -748,9 +756,10 @@ void BackwardEulerStepper<Scalar>::getPoints(
   typename DataStore<Scalar>::DataStoreVector_t ds_out;
 
 #ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(!haveInitialCondition_);
   TEST_FOR_EXCEPT( 0 == x_vec );
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call getPoints before the stepper is initialized!\n");
 #endif
+
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::getPoints");
@@ -834,6 +843,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
       << "Leaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
       << "::getPoints(...) ...\n"; 
   }
+
 }
 
 
@@ -841,9 +851,12 @@ template<class Scalar>
 void BackwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   using Teuchos::as;
+
+
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call getNodes before stepper is initialized!\n");
-#endif // TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(!haveInitialCondition_);
+#endif
+
   time_vec->clear();
   time_vec->push_back(t_old_);
   if (numSteps_ > 0) {
@@ -864,9 +877,7 @@ void BackwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call removeNodes before stepper is initialized!\n");
-#endif // TEUCHOS_DEBUG
+  initialize();
   using Teuchos::as;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -947,9 +958,9 @@ BackwardEulerStepper<Scalar>::getValidParameters() const
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::describe(
-      Teuchos::FancyOStream                &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ) const
+  Teuchos::FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
 {
   using Teuchos::as;
   Teuchos::OSTab tab(out);
@@ -1001,17 +1012,15 @@ void BackwardEulerStepper<Scalar>::describe(
 
 
 template <class Scalar>
-void BackwardEulerStepper<Scalar>::initialize_()
+void BackwardEulerStepper<Scalar>::initialize()
 {
-  TEST_FOR_EXCEPT(model_ == Teuchos::null);
-  TEST_FOR_EXCEPT(solver_ == Teuchos::null);
 
-  if (is_null(x_)) {
-    // If x has not been set then setInitialCondition(...) was not
-    // called by the client so the model had better have the 
-    // initial condition!
-    this->setInitialCondition(model_->getNominalValues());
-  }
+  if (isInitialized_)
+    return;
+
+  TEST_FOR_EXCEPT(is_null(model_));
+  TEST_FOR_EXCEPT(is_null(solver_));
+  TEST_FOR_EXCEPT(!haveInitialCondition_);
 
   if ( is_null(interpolator_) ) {
     // If an interpolator has not been explicitly set, then just create

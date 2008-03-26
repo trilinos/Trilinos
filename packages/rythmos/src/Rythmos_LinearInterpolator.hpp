@@ -168,9 +168,10 @@ void LinearInterpolator<Scalar>::interpolate(
       const Scalar& ti = data_in[i].time;
       const Scalar& tip1 = data_in[i+1].time;
       const Scalar  h = tip1-ti;
+      const TimeRange<Scalar> range_i(ti,tip1);
       // For the interploation range of [ti,tip1], satisify all of the
       // requested points in this range.
-      while ((ti <= t_values[n]) && (t_values[n] <= tip1)) {
+      while ( range_i.isInRange(t_values[n]) ) {
         // First we check for exact node matches:
         if (compareTimeValues(t_values[n],ti)==0) {
           DataStore<Scalar> DS(data_in[i]);

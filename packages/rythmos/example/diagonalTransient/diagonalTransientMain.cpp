@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     //
 
     RCP<Rythmos::TimeStepNonlinearSolver<double> >
-      nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+      nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
     RCP<ParameterList>
       nonlinearSolverPL = sublist(paramList,TimeStepNonlinearSolver_name);
     nonlinearSolverPL->get("Default Tol",1e-3*maxStateError); // Set default if not set

@@ -37,8 +37,8 @@ namespace Rythmos {
 
 /** \brief Compare two times taking into account floating point errors.
  *
- * \returns Return <tt>-1</tt> if <tt>v1 <= v2</tt>, <tt>0</tt> if
- * <tt>v1==v2</tt> and <tt>+1</tt> if <tt>v1 >= v2</tt>.
+ * \returns Return <tt>-1</tt> if <tt>v1 < v2</tt>, <tt>0</tt> if
+ * <tt>v1==v2</tt> and <tt>+1</tt> if <tt>v1 > v2</tt>.
  *
  * Note that this function compares t1 to t2 and not the other way around.
  *
@@ -59,9 +59,7 @@ namespace Rythmos {
 template<class TimeType>
 int compareTimeValues( const TimeType &t1, const TimeType &t2 )
 {
-  // Here we will do the comparison based on the larger mag number in order to
-  // make the comparison return the same independent of the order the
-  // arguments are passed in!
+  // Here we will do the comparison based on the magnitude of t1
   typedef Teuchos::ScalarTraits<TimeType> ST;
   const TimeType epsMore = 10.0*std::numeric_limits<TimeType>::epsilon();
   const TimeType t1Mag = ST::magnitude(t1);
@@ -93,7 +91,9 @@ public:
   TimeRange( const TimeType &lower, const TimeType &upper )
     : lower_(lower), upper_(upper)
     {
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_ASSERT( lower_ <= upper_ ); 
+#endif
     }
   /** \brief . */
   bool isValid() const { return (lower_ <= upper_); }

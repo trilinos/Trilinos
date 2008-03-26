@@ -135,7 +135,7 @@ public:
    * A return value of <tt>returnVal.isValid()==false</tt> means that there is
    * no time range for which interpolation can be performed.  Otherwise,
    * <tt>returnVal</tt> gives the time range for which state information can
-   * be returned.
+   * be returned. 
    */
   virtual TimeRange<Scalar> getTimeRange() const = 0;
 

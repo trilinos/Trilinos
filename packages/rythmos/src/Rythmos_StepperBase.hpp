@@ -47,6 +47,22 @@ namespace Rythmos {
  * time.  Therefore a negative step length in the context of this interface is
  * an invalid step length.
  *
+ * \section Initialization states
+ *
+ * A stepper object can have one of three states of initialization:
+ *
+ * <ul>
+ *
+ * <li> <em>Uninitialized</em>: <tt>this->getTimeRange().isVaid()==false</tt>
+ *
+ * <li> <em>Has initial condition</em>: <tt>this->getTimeRange().lower() ==
+ * this->getTimeRange().upper()</tt>
+ *
+ * <li> <em>Has state buffer</em>: <tt>this->getTimeRange().lower() <
+ * this->getTimeRange().upper()</tt>
+ *
+ * </ul>
+ *
  * ToDo: Finish documentation!
  *
  * 2007/05/17: rabartl: ToDo: Consider implementing a <tt>undoStep()</tt>
@@ -119,15 +135,25 @@ public:
    * <tt>setInitialCondition()</tt>.
    *
    * <b>Preconditions:</b><ul>
+   *
    * <li><tt>acceptsModel()==true</tt>
+   *
    * <li><tt>!is_null(model)</tt>
+   *
    * <li><tt>model->createInArgs().supports(MEB::IN_ARG_t)==true</tt>
+   *
    * <li><tt>model->createInArgs().supports(MEB::IN_ARG_x)==true</tt>
+   *
    * <li><tt>model->createOutArgs().supports(MEB::OUT_ARG_f)==true</tt>
+   *
    * <li>[<tt>isImplicit()</tt>] <tt>model->createInArgs().supports(MEB::IN_ARG_x_dot)==true</tt>
+   *
    * <li>[<tt>isImplicit()</tt>] <tt>model->createInArgs().supports(MEB::IN_ARG_alpha)==true</tt>
+   *
    * <li>[<tt>isImplicit()</tt>] <tt>model->createInArgs().supports(MEB::IN_ARG_beta)==true</tt>
+   *
    * <li>[<tt>isImplicit()</tt>] <tt>model->createOutArgs().supports(MEB::OUT_ARG_W)==true</tt>
+   *
    * </ul>
    *
    * 2007/06/10: rabartl : ToDo: Create helper macros that will assert these
@@ -161,6 +187,12 @@ public:
    *
    * The default implementation throwns an exception.
    *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li><tt>this->getModel() != null</tt>
+   *
+   * </ul>
+   *
    * ToDo: Remove this default implementation and make every concrete subclass
    * implement this!  Every stepper should except an initial condition that is
    * separate from the model object.
@@ -190,6 +222,12 @@ public:
    *
    * If stepType == STEP_TYPE_VARIABLE, and returnVal <= 0.0 then no variable step
    * will succeed in its current state. 
+   *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li><tt>isInitialized(*this) == true</tt>
+   *
+   * </ul>
    */
   virtual Scalar takeStep(Scalar dt, StepSizeType stepType) = 0;
 
@@ -197,6 +235,12 @@ public:
    *
    * This function must have a low <tt>O(1)</tt> complexity.  In other words,
    * it should be essentially free to call this function!
+   *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li><tt>isInitialized(*this) == true</tt>
+   *
+   * </ul>
    */
   virtual const StepStatus<Scalar> getStepStatus() const = 0;
 
@@ -206,19 +250,27 @@ public:
    * with another.
    *
    * The default implementation simply does nothing so be warned!
+   *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li><tt>isInitialized(*this) == true</tt>
+   *
+   * </ul>
    */
   virtual void setStepControlData(const StepperBase & stepper);
 
-  /** \brief getTimeRange stepper specific behavior.
-   *
-   * If the stepper is uninitialized, then getTimeRange returns invalid time range
-   * If the stepper is initialized but has not taken a step, then getTimeRange
-   *     returns lower==upper==time point of initial condition.
-   * If the stepper is initialized and has taken a step, then getTimeRange 
-   *     returns a non-trivial range.
-   */
-
 };
+
+
+/** \brief .
+ *
+ * \relates StepperBase
+ */
+template<class Scalar>
+bool isInitialized( const StepperBase<Scalar>& stepper )
+{
+  return stepper.getTimeRange().isValid();
+}
 
 
 // ///////////////////////////////

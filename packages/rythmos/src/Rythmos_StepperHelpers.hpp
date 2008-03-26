@@ -4,9 +4,92 @@
 
 
 #include "Rythmos_StepperBase.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Rythmos {
+
+
+/** \brief Assert valid transient model for StepperBase.
+ *
+ */
+template<class Scalar>
+void assertValidModel(
+  const StepperBase<Scalar>& stepper,
+  const Thyra::ModelEvaluator<Scalar>& model
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  TEUCHOS_ASSERT(stepper.acceptsModel());
+
+  const MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  const MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
+
+  TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_t));
+  TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_x));
+  TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_f));
+  
+  if (stepper.isImplicit()) {
+    TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_x_dot));
+    TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_alpha));
+    TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_beta));
+    TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W));
+  }
+
+}
+
+
+/** \brief Set an initial condition on a stepper from a model if the stepper
+ * does not already have an initial condition.
+ *
+ * \returns Returns <tt>true</tt> if the stepper->setInitialCondition(...) was
+ * called and returns <tt>false</tt> otherwise.
+ */
+template<class Scalar>
+bool setDefaultInitialConditionFromNominalValues(
+  const Thyra::ModelEvaluator<Scalar>& model,
+  const Ptr<StepperBase<Scalar> >& stepper
+  )
+{
+
+  typedef ScalarTraits<Scalar> ST;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  if (isInitialized(*stepper))
+    return false;  // Already has an initial condition
+  
+  MEB::InArgs<Scalar> initCond = model.getNominalValues();
+
+  if (!is_null(initCond.get_x())) {
+    // IC has x, we will assume that initCont.get_t() is the valid start time.
+    // Therefore, we just need to check that x_dot is also set or we will
+    // create a zero x_dot
+#ifdef TEUCHOS_DEBUG
+    THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
+      *model.get_x_space(), *initCond.get_x()->space() );
+#endif
+    if (is_null(initCond.get_x_dot())) {
+      const RCP<Thyra::VectorBase<Scalar> > x_dot =
+        createMember(model.get_x_space());
+      assign(x_dot.ptr(), ST::zero());
+    }
+    else {
+#ifdef TEUCHOS_DEBUG
+      THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
+        *model.get_x_space(), *initCond.get_x_dot()->space() );
+#endif
+    }
+    stepper->setInitialCondition(initCond);
+    return true;
+  }
+
+  // The model has not nominal values for which to set the initial
+  // conditions so wo don't do anything!  The stepper will still have not
+  return false;
+
+}
 
 
 /** \brief Restart a time stepper.
@@ -40,7 +123,6 @@ void restart( StepperBase<Scalar> *stepper )
   // reset the stepper to think that it is starting over again (which it is).
   stepper->setInitialCondition(initialCondition);
 }
-
 
 
 } // namespace Rythmos

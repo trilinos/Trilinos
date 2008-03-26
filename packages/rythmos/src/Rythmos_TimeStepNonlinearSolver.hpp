@@ -30,7 +30,7 @@
 #ifndef RYTHMOS_TIME_STEP_NONLINEAR_SOLVER_HPP
 #define RYTHMOS_TIME_STEP_NONLINEAR_SOLVER_HPP
 
-
+#include "Rythmos_Types.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -158,6 +158,17 @@ private:
   static const bool ThrownOnLinearSolveFailure_default_;
 
 };
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates TimeStepNonlinearSolver
+ */
+template <class Scalar>
+RCP<TimeStepNonlinearSolver<Scalar> > timeStepNonlinearSolver()
+{
+  return Teuchos::rcp(new TimeStepNonlinearSolver<Scalar>);
+}
 
 
 // ////////////////////////
@@ -439,8 +450,8 @@ TimeStepNonlinearSolver<Scalar>::solve(
   bool converged = false;
   bool sawFailedLinearSolve = false;
   Thyra::SolveStatus<Scalar> failedLinearSolveStatus;
-  ScalarMag nrm_dx;
-  ScalarMag nrm_dx_last;
+  ScalarMag nrm_dx = SMT::nan();
+  ScalarMag nrm_dx_last = SMT::nan();
   int iter = 1;
   for( ; iter <= maxIters; ++iter ) {
     if (showNewtonDetails)
