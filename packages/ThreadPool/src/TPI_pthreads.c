@@ -98,7 +98,8 @@ int TPI_Partition( int Thread_Rank ,
 {
   const int result =
     Local_Begin && Local_Number
-      ? ( 0 <= Thread_Rank && Thread_Rank < Thread_Size ? 0 : TPI_ERROR_SIZE )       :  TPI_ERROR_NULL ;
+      ? ( 0 <= Thread_Rank && Thread_Rank < Thread_Size ? 0 : TPI_ERROR_SIZE )
+      :  TPI_ERROR_NULL ;
 
   if ( ! result ) {
     const int rem  = Number % Thread_Size ;
@@ -115,50 +116,30 @@ int TPI_Partition( int Thread_Rank ,
 
 int TPI_Lock( TPI_ThreadPool local , int i )
 {
-  int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( i < 0 || local->m_lock_size <= i ) {
-      result = TPI_ERROR_SIZE ;
-    }
-    else if ( pthread_mutex_lock( local->m_lock + i ) ) {
-      result = TPI_ERROR_LOCK ;
-    }
-  }
+  const int result = 
+    ( NULL == local                           ? TPI_ERROR_NULL :
+    ( i < 0 || local->m_lock_size <= i        ? TPI_ERROR_SIZE :
+    ( pthread_mutex_lock( local->m_lock + i ) ? TPI_ERROR_LOCK : 0 ) ) );
   return result ;
 }
 
 int TPI_Trylock( TPI_ThreadPool local , int i )
 {
-  int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( i < 0 || local->m_lock_size <= i ) {
-      result = TPI_ERROR_SIZE ;
-    }
-    else {
-      switch( pthread_mutex_trylock( local->m_lock + i ) ) {
-      case 0 : break ;
-      case EBUSY : result = TPI_LOCK_BUSY ; break ;
-      default    : result = TPI_ERROR_LOCK ; break ;
-      }
-    }
-  }
+  int p ;
+  const int result = 
+    ( NULL == local                    ? TPI_ERROR_NULL :
+    ( i < 0 || local->m_lock_size <= i ? TPI_ERROR_SIZE :
+    ( EBUSY == ( p = pthread_mutex_trylock(local->m_lock+i) ) ? TPI_LOCK_BUSY :
+    ( p ? TPI_ERROR_LOCK : 0 ) ) ) );
   return result ;
 }
 
 int TPI_Unlock( TPI_ThreadPool local , int i )
 {
-  int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( i < 0 || local->m_lock_size <= i ) {
-      result = TPI_ERROR_SIZE ;
-    }
-    else if ( pthread_mutex_unlock( local->m_lock + i ) ) {
-      result = TPI_ERROR_LOCK ;
-    }
-  }
+  const int result = 
+    ( NULL == local                             ? TPI_ERROR_NULL :
+    ( i < 0 || local->m_lock_size <= i          ? TPI_ERROR_SIZE :
+    ( pthread_mutex_unlock( local->m_lock + i ) ? TPI_ERROR_LOCK : 0 ) ) );
   return result ;
 }
 
@@ -181,7 +162,7 @@ static int local_thread_pool_run_work( ThreadWork * const work ,
 
       /*  Cannot be sure of 'work->m_routine' until I have it locked.
        *  Claim the work by setting the 'work->m_routine' to NULL.
-       *  Do this quickly so my sibling threads know it has been claimed.
+       *  Do this quickly so the other threads know it has been claimed.
        */
 
       const TPI_parallel_subprogram routine = w->m_routine ;
@@ -237,7 +218,7 @@ static void * local_thread_pool_driver( void * arg )
                                     pool->m_work_size );
     }
     else {
-      /* Signal I'm terminating */
+      /* Normal termination: remove myself from the pool and signal */
       pool->m_thread_first = control.m_thread_next ;
       pthread_mutex_lock(   & pool->m_pool_lock );
       pthread_cond_signal(  & pool->m_pool_wait );
@@ -281,10 +262,15 @@ int TPI_Run_many( const int number_routine ,
                   void * routine_data[] ,
                   const int number[] )
 {
+  ThreadPool * const pool = local_thread_pool();
+
   int i , nwork ;
 
   int result =
-    ! number || ! routine || ! routine_data || ! number ? TPI_ERROR_NULL : 0 ;
+    ( NULL == routine ||
+      NULL == routine_data ||
+      NULL == number ? TPI_ERROR_NULL :
+    ( NULL == pool ? TPI_ERROR_ACTIVE : 0 ) );  
 
   for ( nwork = i = 0 ; ! result && i < number_routine ; ++i ) {
     if ( ! routine[i] ) {
@@ -300,87 +286,80 @@ int TPI_Run_many( const int number_routine ,
 
   if ( ! result ) {
 
-    ThreadPool * const pool = local_thread_pool();
+    const int number_total = nwork ;
+    const int number_locks = pool->m_number_locks ;
 
-    if ( ! pool ) { result = TPI_ERROR_ACTIVE ; }
+    pthread_mutex_t lock[ number_locks ];
+
+    int nlocks = 0 ;
+
+    while ( nlocks < number_locks && ! result ) {
+      if ( pthread_mutex_init( lock + nlocks , NULL ) ) {
+        result = TPI_ERROR_INTERNAL ;
+      }
+      else {
+        ++nlocks ;
+      }
+    }
 
     if ( ! result ) {
 
-      const int number_total = nwork ;
-      const int number_locks = pool->m_number_locks ;
+      ThreadWork work[ number_total ];
 
-      pthread_mutex_t lock[ number_locks ];
+      { /* Fill the work queue */
+        ThreadWork * w = work ;
 
-      int nlocks = 0 ;
-
-      while ( nlocks < number_locks && ! result ) {
-        if ( pthread_mutex_init( lock + nlocks , NULL ) ) {
-          result = TPI_ERROR_INTERNAL ;
-        }
-        else {
-          ++nlocks ;
-        }
-      }
-
-      if ( ! result ) {
-
-        ThreadWork work[ number_total ];
-
-        { /* Fill the work queue */
-          ThreadWork * w = work ;
-
-          for ( i = 0 ; i < number_routine ; ++i ) {
-            int k = 0 ;
-            for ( ; k < number[i] ; ++k , ++w ) {
-              pthread_mutex_init( & w->m_work_lock , NULL );
-              w->m_routine   = routine[i] ;
-              w->m_argument  = routine_data[i] ;
-              w->m_lock      = lock ;
-              w->m_lock_size = number_locks ;
-              w->m_size      = number[i] ;
-              w->m_rank      = k ;
-              w->m_group_rank = i ;
-              w->m_group_size = number_routine ;
-            }
-          }
-        }
-
-        pool->m_work_begin = work ;
-        pool->m_work_size  = number_total ;
-
-        { /* Signal all thread to get to work */
-          ThreadControl * c = pool->m_thread_first ;
-          for ( ; c ; c = c->m_thread_next ) {
-            pthread_cond_signal(  & c->m_thread_cond );
-            pthread_mutex_unlock( & c->m_thread_lock );
-          }
-        }
-
-        /* Participate in the work */
-        pool->m_work_count += local_thread_pool_run_work(work,0,number_total);
-
-        { /* Reacquire all thread locks - to be sure they are blocked */
-          ThreadControl * c = pool->m_thread_first ;
-          for ( ; c ; c = c->m_thread_next ) {
-            pthread_mutex_lock( & c->m_thread_lock );
-          }
-        }
-
-        pool->m_work_begin = NULL ;
-        pool->m_work_size  = 0 ;
-        pool->m_number_locks = 0 ;
-
-        { /* Destroy the work queue locks */
-          ThreadWork * const work_end = work + number_total ;
-          ThreadWork * w = work ;
-          for ( ; w < work_end ; ++w ) {
-            pthread_mutex_destroy( & w->m_work_lock );
+        for ( i = 0 ; i < number_routine ; ++i ) {
+          int k = 0 ;
+          for ( ; k < number[i] ; ++k , ++w ) {
+            pthread_mutex_init( & w->m_work_lock , NULL );
+            w->m_routine   = routine[i] ;
+            w->m_argument  = routine_data[i] ;
+            w->m_lock      = lock ;
+            w->m_lock_size = number_locks ;
+            w->m_size      = number[i] ;
+            w->m_rank      = k ;
+            w->m_group_rank = i ;
+            w->m_group_size = number_routine ;
           }
         }
       }
 
-      while ( nlocks-- ) { pthread_mutex_destroy( lock + nlocks ); }
+      pool->m_work_begin = work ;
+      pool->m_work_size  = number_total ;
+
+      { /* Signal all thread to get to work */
+        ThreadControl * c = pool->m_thread_first ;
+        for ( ; c ; c = c->m_thread_next ) {
+          pthread_cond_signal(  & c->m_thread_cond );
+          pthread_mutex_unlock( & c->m_thread_lock );
+        }
+      }
+
+      /* Participate in the work */
+      pool->m_work_count += local_thread_pool_run_work(work,0,number_total);
+
+      { /* Reacquire all thread locks - to be sure they are blocked */
+        ThreadControl * c = pool->m_thread_first ;
+        for ( ; c ; c = c->m_thread_next ) {
+          pthread_mutex_lock( & c->m_thread_lock );
+        }
+      }
+
+      pool->m_work_begin = NULL ;
+      pool->m_work_size  = 0 ;
+      pool->m_number_locks = 0 ;
+
+      { /* Destroy the work queue locks */
+        ThreadWork * const work_end = work + number_total ;
+        ThreadWork * w = work ;
+        for ( ; w < work_end ; ++w ) {
+          pthread_mutex_destroy( & w->m_work_lock );
+        }
+      }
     }
+
+    while ( nlocks-- ) { pthread_mutex_destroy( lock + nlocks ); }
   }
 
   return result ;
