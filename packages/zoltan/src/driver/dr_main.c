@@ -339,7 +339,6 @@ int main(int argc, char *argv[])
         print_output = 0;
         goto End;
       }
-      printf("Debug: visible vertices = %d\n", mesh.visible_nvtx);
     }
 
     /*
