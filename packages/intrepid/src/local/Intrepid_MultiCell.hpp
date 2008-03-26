@@ -487,7 +487,7 @@ public:
     
     /** \brief Returns the status of the <var>atlas_<var> data member as a string.
       */
-    const char* getAtlasStatusName() const;
+    std::string getAtlasStatusName() const;
     
     
     /** \brief Returns reference to <var>atlas_<var> that contains the chart of the specified cell  

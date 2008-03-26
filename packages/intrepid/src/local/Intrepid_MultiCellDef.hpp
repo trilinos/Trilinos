@@ -280,8 +280,6 @@ namespace Intrepid {
       double minus_one = -1.0 - threshold;
       double plus_one  =  1.0 + threshold;
       double minus_zero = - threshold;
-      double plus_zero  =   threshold;
-      
       
       switch(cellType) {
         case CELL_EDGE:
@@ -683,9 +681,9 @@ namespace Intrepid {
       out  << "\n============================= MultiCell info: =============================\n\n"; 
       out << std::left;
       out << std::setw(30) << "\t Generating cell type:" << this -> getMyCellName() << "\n";
-      out << std::setw(30) << "\t Atlas status:"         << StatusNames[atlasStatus_]    <<"\n";
-      out << std::setw(30) << "\t Edge signs status:"    << StatusNames[edgeSignsStatus_] <<"\n";
-      out << std::setw(30) << "\t Face signs status:"    << StatusNames[faceSignsStatus_] <<"\n";
+      out << std::setw(30) << "\t Atlas status:"         << EStatusToString(atlasStatus_)    <<"\n";
+      out << std::setw(30) << "\t Edge signs status:"    << EStatusToString(edgeSignsStatus_) <<"\n";
+      out << std::setw(30) << "\t Face signs status:"    << EStatusToString(faceSignsStatus_) <<"\n";
       out << std::setw(30) << "\t Number of cells:"      << numCells_ << "\n\n";
       out << "Cell vertices:\n\n";
       
@@ -725,7 +723,7 @@ namespace Intrepid {
         Teuchos::Array<int> tempNodes;
         ECell tempType = this -> getMySubcellType(2, i);
         this -> getMySubcellNodeIDs(2, i, tempNodes);
-        out << "    " << i << " -> " << std::setw(12) << getCellName(tempType) << ": ";
+        out << "    " << i << " -> " << std::setw(13) << getCellName(tempType) << ": ";
         for (int j=0; j < this -> getNumNodes(tempType); j++) {
           out << std::setw(4) << tempNodes[j];
         }

@@ -136,8 +136,8 @@ inline EFrame Point<Scalar>::getFrameKind() const {
 
   
 template<class Scalar>
-inline const char* Point<Scalar>::getFrameName() const {
-  return FrameNames[frameKind_];
+inline std::string Point<Scalar>::getFrameName() const {
+  return EFrameToString(frameKind_);
 }
 
 

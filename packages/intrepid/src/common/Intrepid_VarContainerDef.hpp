@@ -328,10 +328,10 @@ void VarContainer<Scalar>::print(std::ostream& os) const {
   
   os<< "===============================================================================\n"\
     << "\t Container size = " << size << "   rank = " << rank << "\n"\
-    << "\t Stores " << size << " values of " 
-    << OperatorNames[this -> getOperatorType()] \
+    << "\t Stores " << size << " values of " \
+    << EOperatorToString(this -> getOperatorType()) \
     << "(" 
-    << FieldNames[this -> getFieldType()] 
+    << EFieldToString(this -> getFieldType()) 
     << ") for a set of " 
     << this -> getNumFields() << " fields, evaluated at " \
     << this -> getNumPoints() << " points in " << this -> getSpaceDim() << "D. \n";
@@ -389,10 +389,10 @@ std::ostream& operator << (std::ostream& os, const VarContainer<Scalar>& contain
   
   os<< "===============================================================================\n"\
     << "\t Container size = " << size << "   rank = " << rank << "\n"\
-    << "\t Stores " << size << " values of " 
-    << OperatorNames[container.getOperatorType()] \
+    << "\t Stores " << size << " values of " \
+    << EOperatorToString(container.getOperatorType()) \
     << "(" 
-    << FieldNames[container.getFieldType()] 
+    << EFieldToString(container.getFieldType()) 
     << ") for a set of " 
     << container.getNumFields() << " fields, evaluated at " \
     << container.getNumPoints() << " points in " << container.getSpaceDim() << "D. \n";

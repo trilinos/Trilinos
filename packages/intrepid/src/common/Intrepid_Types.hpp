@@ -120,39 +120,49 @@ namespace Intrepid {
 
 
   /** \enum  Intrepid::EStatus
-    \brief To indicate the status of an object.
+      \brief Indicates the status of an object.
   */
   enum EStatus{
     STATUS_UNDEFINED=0,
     STATUS_DEFINED,
     STATUS_MAX
   };
+
+  std::string EStatusToString(EStatus status) {
+    std::string retString;
+    switch(status) {
+      case STATUS_UNDEFINED: retString = "Undefined";   break;
+      case STATUS_DEFINED:   retString = "Defined";     break;
+      case STATUS_MAX:       retString = "Max. Status"; break;
+      default:               retString = "INVALID EStatus";
+    }
+    return retString;
+  }
   
 
-  static const char* StatusNames[] = {
-    "Undefined",
-    "Defined",
-    "Max. status"
-  };
   
-  
-  /** \enum Intrepid::EFrame
-    \brief Enumeration of coordinate frames (reference/ambient) for geometrical entities (cells, points)
+  /** \enum  Intrepid::EFrame
+      \brief Enumeration of coordinate frames (reference/ambient) for geometrical entities (cells, points).
   */
   enum EFrame{
     FRAME_PHYSICAL=0,
     FRAME_REFERENCE
   };
+
+  std::string EFrameToString(EFrame frame) {
+    std::string retString;
+    switch(frame) {
+      case FRAME_PHYSICAL:  retString = "Physical";  break;
+      case FRAME_REFERENCE: retString = "Reference"; break;
+      default:              retString = "INVALID EFrame";
+    }
+    return retString;
+  }
   
 
-  static const char* FrameNames[]={
-    "Physical ",
-    "Reference"
-  };
   
-  
-  /** \enum Intrepid::ECoordinates
-    \brief Enumeration of coordinate systems for geometrical entities (cells, points)
+  /** \enum  Intrepid::ECoordinates
+      \brief Enumeration of coordinate systems for geometrical entities (cells, points).
   */
   enum ECoordinates{
     COORDINATES_CARTESIAN=0,
@@ -161,19 +171,24 @@ namespace Intrepid {
     COORDINATES_SPHERICAL,
     COORDINATES_MAX
   };
+
+  std::string ECoordinatesToString(ECoordinates coords) {
+    std::string retString;
+    switch(coords) {
+      case COORDINATES_CARTESIAN:   retString = "Cartesian";            break;
+      case COORDINATES_POLAR:       retString = "Polar";                break;
+      case COORDINATES_CYLINDRICAL: retString = "Cylindrical";          break;
+      case COORDINATES_SPHERICAL:   retString = "Spherical";            break;
+      case COORDINATES_MAX:         retString = "Max. Coordinates";     break;
+      default:                      retString = "INVALID ECoordinates";
+    }
+    return retString;
+  }
+
+
   
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-  static const char* CoordinatesNames[]={
-    "Cartesian",
-    "Polar",
-    "Cylindrical",
-    "Spherical",
-    "Max. coordinates"
-  };
-  */
-  
-  /** \enum Intrepid::ENorm
-    \brief Enumeration of norm types for vectors and functions
+  /** \enum  Intrepid::ENorm
+      \brief Enumeration of norm types for vectors and functions
   */
   enum ENorm{
     NORM_ONE = 0,
@@ -181,19 +196,25 @@ namespace Intrepid {
     NORM_INF,
     NORM_FRO    // Frobenius matrix norm
   };
+
+  std::string ENormToString(ENorm norm) {
+    std::string retString;
+    switch(norm) {
+      case NORM_ONE:   retString = "1-Norm";         break;
+      case NORM_TWO:   retString = "2-Norm";         break;
+      case NORM_INF:   retString = "Infinity Norm";  break;
+      case NORM_FRO:   retString = "Frobenius Norm"; break;
+      default:         retString = "INVALID ENorm";
+    }
+    return retString;
+  }
+
+
   
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-  static const char* NormNames[] = {
-    "First Norm",
-    "Second Norm",
-    "Infinity Norm",
-  };
-  */
-  
-  /** \enum Intrepid::EOperator
-    \brief Enumeration of primitive operators available in Intrepid. Primitive operators act on
-    reconstructed functions. Pairs of primitive operators are used to specify what kind of local
-    weak operator should be constructed.
+  /** \enum  Intrepid::EOperator
+      \brief Enumeration of primitive operators available in Intrepid. Primitive operators act on
+             reconstructed functions. Pairs of primitive operators are used to specify what kind of local
+             weak operator should be constructed.
   */
   enum EOperator{
     OPERATOR_VALUE = 0,
@@ -213,54 +234,59 @@ namespace Intrepid {
     OPERATOR_MAX        // 14
   };
   
-  // These will be disabled until we actually need them, in order to prevent compiler warnings.
-    static const char* OperatorNames[]={
-      "Value",
-      "Grad",
-      "Curl",
-      "Div",
-      "D1",
-      "D2",
-      "D3",
-      "D4",
-      "D5",
-      "D6",
-      "D7",
-      "D8",
-      "D9",
-      "D10",
-      "Max. Operator"
-    };
+  std::string EOperatorToString(EOperator op) {
+    std::string retString;
+    switch(op) {
+      case OPERATOR_VALUE: retString = "Value";         break;
+      case OPERATOR_GRAD:  retString = "Grad";          break;
+      case OPERATOR_CURL:  retString = "Curl";          break;
+      case OPERATOR_DIV:   retString = "Div";           break;
+      case OPERATOR_D1:    retString = "D1";            break;
+      case OPERATOR_D2:    retString = "D2";            break;
+      case OPERATOR_D3:    retString = "D3";            break;
+      case OPERATOR_D4:    retString = "D4";            break;
+      case OPERATOR_D5:    retString = "D5";            break;
+      case OPERATOR_D6:    retString = "D6";            break;
+      case OPERATOR_D7:    retString = "D7";            break;
+      case OPERATOR_D8:    retString = "D8";            break;
+      case OPERATOR_D9:    retString = "D9";            break;
+      case OPERATOR_D10:   retString = "D10";           break;
+      case OPERATOR_MAX:   retString = "Max. Operator"; break;
+      default:             retString = "INVALID EOperator";
+    }
+    return retString;
+  }
   
-    inline EOperator & operator++(EOperator &type) {
-      return type = static_cast<EOperator>(type+1);
-    }
+  inline EOperator & operator++(EOperator &type) {
+    return type = static_cast<EOperator>(type+1);
+  }
     
-    inline EOperator operator++(EOperator &type, int) {
-      EOperator oldval = type;
-      ++type;
-      return oldval;
-    }
+  inline EOperator operator++(EOperator &type, int) {
+    EOperator oldval = type;
+    ++type;
+    return oldval;
+  }
+   
+  inline EOperator & operator--(EOperator &type) {
+    return type = static_cast<EOperator>(type-1);
+  }
     
-    inline EOperator & operator--(EOperator &type) {
-      return type = static_cast<EOperator>(type-1);
-    }
-    
-    inline EOperator operator--(EOperator &type, int) {
-      EOperator oldval = type;
-      --type;
-      return oldval;
-    }
+  inline EOperator operator--(EOperator &type, int) {
+    EOperator oldval = type;
+    --type;
+    return oldval;
+  }
+
     
   
-  /** \enum  Intrepid::ECell
-    \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
-             provides a cell template. A fixed number of enumerations is provided for user-defined cells.
-             For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html
-    \warning The order of the enumeration must be exactly the same as the order of the cell
-             templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
-             order of two enumerations is changed, the order of the associated cell template definitions in that 
-             file also must be changed!
+  /** \enum   Intrepid::ECell
+     \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
+              provides a cell template. A fixed number of enumerations is provided for user-defined cells.
+              For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html
+     \warning The order of the enumeration must be exactly the same as the order of the cell
+              templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
+              order of two enumerations is changed, the order of the associated cell template definitions in that 
+              file also must be changed!
   */
   enum ECell{
     CELL_NODE = 0,       // 0-simplex, i.e. node
@@ -293,7 +319,6 @@ namespace Intrepid {
     CELL_MAX             // placeholder for looping over all types        (current value = 27)
   };
 
-  
   inline ECell & operator++(ECell &type) {
     return type = static_cast<ECell>(type+1);
   }
@@ -313,12 +338,14 @@ namespace Intrepid {
     --type;
     return oldval;
   }
+
+
   
   /** \struct Intrepid::ConnMapTemplate
-    \brief  Relational (with respect to a 1, 2, or 3-cell) connectivity map template for an arbitrary 
-            MultiCell.  Three of ConnMapTemplate objects are involved in fully describing the topological 
-            connectivity information of a cell. For example, the topological definition of a prism with a 
-            triangular base looks as the following 3-array of ConnMapTemplate objects:
+      \brief  Relational (with respect to a 1, 2, or 3-cell) connectivity map template for an arbitrary 
+              MultiCell.  Three of ConnMapTemplate objects are involved in fully describing the topological 
+              connectivity information of a cell. For example, the topological definition of a prism with a 
+              triangular base looks as the following 3-array of ConnMapTemplate objects:
  
     \verbatim
     conn_map_template[3] =
@@ -375,29 +402,35 @@ namespace Intrepid {
       */
     int nodeList_[INTREPID_MAX_ADJ_CELLS][INTREPID_MAX_CELL_NODES];
   };
+
   
-  /** \enum Intrepid::EMapping
-    \brief Enumeration of the admissible mappings in Intrepid
+
+  /** \enum  Intrepid::EMapping
+      \brief Enumeration of the admissible mappings in Intrepid.
   */
   enum EMapping {
     MAPPING_AFFINE = 0,
     MAPPING_NON_AFFINE,
     MAPPING_MAX
   };
-  
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-    
-    static const char* MappingNames[] = {
-      "Affine",
-      "Non affine",
-      "Max. mappings"
-    };
-  */
+
+  std::string EMappingToString(EMapping mapping) {
+    std::string retString;
+    switch(mapping) {
+      case MAPPING_AFFINE:     retString = "Affine";       break;
+      case MAPPING_NON_AFFINE: retString = "Non-Affine";   break;
+      case MAPPING_MAX:        retString = "Max. Mapping"; break;
+      default:                 retString = "INVALID EMapping";
+    }
+    return retString;
+  }
+
+
   
   /** \struct Intrepid::ChartTemplate
-    \brief A struct to store information about the reference cell shape and the polynomial mapping
-           that takes this cell to its ambient space image. The name chart alludes to the mathematical
-           notion of a chart as a pair {K,F} consisting of an open set and a one-to-one mapping.
+      \brief  A struct to store information about the reference cell shape and the polynomial mapping
+              that takes this cell to its ambient space image. The name chart alludes to the mathematical
+              notion of a chart as a pair {K,F} consisting of an open set and a one-to-one mapping.
   */
   template <class Scalar>
     struct ChartTemplate {
@@ -406,14 +439,18 @@ namespace Intrepid {
       EMapping       mappingType_;
     };
   
+
+
   /** \struct Intrepid::CanonicalDofTemplate
-    \brief Array of shorts giving the number of DOF per k-dimensional subcell for the available Intrepid
-           reconstruction operators. 
+      \brief  Array of shorts giving the number of DOF per k-dimensional subcell for the available Intrepid
+              reconstruction operators. 
   */
   struct CanonicalDofTemplate {    // For use with uniform DoF allocations, i.e.,
     short numDofPerSubcell_[4];     // number of DoFs per k-subcell is same for every k-subcell
   };
   
+
+
   /** \struct Intrepid::LocalDofTag
       \brief  A data type that allows to associate a local dofId (assigned using Intrepid's canonical 
               local dof order) with a global dofId. For a fixed local dof, the data is:
@@ -425,9 +462,11 @@ namespace Intrepid {
   struct LocalDofTag {
     int tag_[4];
   };
+
+
   
   /** \enum  Intrepid::CubatureType
-    \brief Enumerates canonical (default) cubature rules in Intrepid.
+      \brief Enumerates canonical (default) cubature rules in Intrepid.
   */
   enum ECubature
   {
@@ -515,16 +554,17 @@ namespace Intrepid {
   };
   
   
+
   /** \struct Intrepid::CubatureTemplate
-    \brief  Template for the cubature rules used by Intrepid. Cubature template consists of cubature 
-            points and cubature weights. Intrepid provides a collection of cubature templates for the 
-            canonical cell shapes. The templates are defined in reference coordinates using a standard 
-            reference cell for each canonical cell type. Cubature points are always specified by a triple
-            of (X,Y,Z) coordinates even if the cell dimension is less than 3. The unused dimensions should
-            be padded by zeroes.
+      \brief  Template for the cubature rules used by Intrepid. Cubature template consists of cubature 
+              points and cubature weights. Intrepid provides a collection of cubature templates for the 
+              canonical cell shapes. The templates are defined in reference coordinates using a standard 
+              reference cell for each canonical cell type. Cubature points are always specified by a triple
+              of (X,Y,Z) coordinates even if the cell dimension is less than 3. The unused dimensions should
+              be padded by zeroes.
     
-            For example, a set of Gauss rules on [-1,1]  (the reference CELL_EDGE cell) looks as 
-            the following array of CubatureTemplate objects:
+              For example, a set of Gauss rules on [-1,1]  (the reference CELL_EDGE cell) looks as 
+              the following array of CubatureTemplate objects:
     
     \verbatim
     cubature_rule[4] =
@@ -588,6 +628,8 @@ namespace Intrepid {
     
   };
   
+
+
   /** \enum  Intrepid::EField
     \brief Enumeration of the admissible field types in Intrepid.
   */
@@ -601,17 +643,21 @@ namespace Intrepid {
     FIELD_TENSOR,
     FIELD_MAX
   };
-  
-  // These will be disabled until we actually need them, in order to prevent compiler warnings.
-  static const char* FieldNames[] = {
-    "Form 0",
-    "Form 1",
-    "Form 2",
-    "Form 3",
-    "Vector",
-    "Tensor",
-    "Max.fields"
-  };
+
+  std::string EFieldToString(EField field) {
+    std::string retString;
+    switch(field) {
+      case FIELD_FORM_0: retString = "Form 0";     break;
+      case FIELD_FORM_1: retString = "Form 1";     break;
+      case FIELD_FORM_2: retString = "Form 2";     break;
+      case FIELD_FORM_3: retString = "Form 3";     break;
+      case FIELD_VECTOR: retString = "Vector";     break;
+      case FIELD_TENSOR: retString = "Tensor";     break;
+      case FIELD_MAX:    retString = "Max. Field"; break;
+      default:           retString = "INVALID EField";
+    }
+    return retString;
+  }
   
   inline EField & operator++(EField &type) {
     return type = static_cast<EField>(type+1);
@@ -633,11 +679,12 @@ namespace Intrepid {
     return oldval;
   }
   
+
   
   /** \enum  Intrepid::EReconstructionSpace
-    \brief Enumeration of the available reconstruction spaces. Intrepid allows three basic kinds
-    of reconstruction spaces for each cell type, although not all three kinds have to be defined
-    for each cell type.
+      \brief Enumeration of the available reconstruction spaces. Intrepid allows three basic kinds
+             of reconstruction spaces for each cell type, although not all three kinds have to be defined
+             for each cell type.
     
     \arg COMPLETE   on simplicial cells is complete polynomial space, on HEX and QUAD cells is 
                     tensor product space whose degree is the same in each coordinate direction
@@ -653,19 +700,23 @@ namespace Intrepid {
     RECONSTRUCTION_SPACE_BROKEN,                
     RECONSTRUCTION_SPACE_MAX                     
   };
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-    
-    static const char* ReconstructionSpaceNames[] = {
-      "Complete",
-      "Incomplete",
-      "Broken",
-      "Max. space"
-    };
-  */
+
+  std::string EReconstructionSpaceToString(EReconstructionSpace space) {
+    std::string retString;
+    switch(space) {
+      case RECONSTRUCTION_SPACE_COMPLETE:   retString = "Complete";        break;
+      case RECONSTRUCTION_SPACE_INCOMPLETE: retString = "Incomplete";      break;
+      case RECONSTRUCTION_SPACE_BROKEN:     retString = "Broken";          break;
+      case RECONSTRUCTION_SPACE_MAX:        retString = "Max. Rec. Space"; break;
+      default:                              retString = "INVALID EReconstructionSpace";
+    }
+    return retString;
+  }
+
   
  
   /** \enum  Intrepid::EBasis
-    \brief Enumeration of basis types in Intrepid
+      \brief Enumeration of basis types in Intrepid.
   */
   enum EBasis
   {
@@ -677,22 +728,26 @@ namespace Intrepid {
     BASIS_FVD_MIMETIC,
     BASIS_FVD_MAX                     
   };
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-    
-    static const char* BasisTypeNames[] = {
-      "FEM Default",
-      "FEM Hierarchical",
-      "FEM FIAT",
-      "FVD Default",
-      "FVD Covolume",
-      "FVD Mimetic",
-      "Max. basis"
-    };
-  */
+
+  std::string EBasisToString(EBasis basis) {
+    std::string retString;
+    switch(basis) {
+      case BASIS_FEM_DEFAULT:      retString = "FEM Default";        break;
+      case BASIS_FEM_HIERARCHICAL: retString = "FEM Hierarchical";   break;
+      case BASIS_FEM_FIAT:         retString = "FEM FIAT";           break;
+      case BASIS_FVD_DEFAULT:      retString = "FVD Default";        break;
+      case BASIS_FVD_COVOLUME:     retString = "FVD Covolume";       break;
+      case BASIS_FVD_MIMETIC:      retString = "FVD Mimetic";        break;
+      case BASIS_FVD_MAX:          retString = "Max. Basis";         break;
+      default:                     retString = "INVALID EBasis";
+    }
+    return retString;
+  }
+
   
   
   /** \enum  Intrepid::EIntegrationDomain
-    \brief Enumeration of integration domains
+      \brief Enumeration of integration domains.
   */
   enum EIntegrationDomain
   {
@@ -701,19 +756,23 @@ namespace Intrepid {
     INTEGRATION_DOMAIN_LINE,
     INTEGRATION_DOMAIN_MAX                     
   };
-  /* These will be disabled until we actually need them, in order to prevent compiler warnings.
-    
-    static const char* IntegrationDomainNames[] = {
-      "Cell",
-      "Surface",
-      "Line",
-      "Max. domains"
-    };
-  */
+
+  std::string EIntegrationDomainToString(EIntegrationDomain domain) {
+    std::string retString;
+    switch(domain) {
+      case INTEGRATION_DOMAIN_CELL:    retString = "Cell";        break;
+      case INTEGRATION_DOMAIN_SURFACE: retString = "Surface";     break;
+      case INTEGRATION_DOMAIN_LINE:    retString = "Line";        break;
+      case INTEGRATION_DOMAIN_MAX:     retString = "Max. Domain"; break;
+      default:                         retString = "INVALID EIntegrationDomain";
+    }
+    return retString;
+  }
   
+
   
   /** \enum  Intrepid::EFailCode
-    \brief Enumeration of failure codes in Intrepid.
+      \brief Enumeration of failure codes in Intrepid.
   */
   enum EFailCode
   {
@@ -732,8 +791,10 @@ namespace Intrepid {
     FAIL_CODE_ERROR
   };
   
+
+
   /** \enum  Intrepid::ETagType
-    \brief Enumeration of the admissible tag types in the Intrepid mesh manager.
+      \brief Enumeration of the admissible tag types in the Intrepid mesh manager.
   */
   enum ETagType
   {
@@ -743,9 +804,11 @@ namespace Intrepid {
     TAG_TYPE_MESH,
     TAG_TYPE_LAST
   };
+
+
   
   /** \enum  Intrepid::EDataType
-    \brief Enumeration of the admissible data types in the Intrepid mesh manager.
+      \brief Enumeration of the admissible data types in the Intrepid mesh manager.
   */
   enum EDataType
   {
@@ -756,31 +819,39 @@ namespace Intrepid {
     DATA_TYPE_HANDLE
   };
   
+
+
   /** \enum  Intrepid::EStorage
-    \brief Enumeration of the admissible storage modes used to encode information in Intrepid.
+      \brief Enumeration of the admissible storage modes used to encode information in Intrepid.
   */
   enum EStorage
   {
     STORAGE_INTERLEAVED=0,
     STORAGE_BLOCKED
   };
+
+
   
   /** \enum  Intrepid::ESetOp
-    \brief Enumeration of the set operations in the Intrepid mesh manager.
+      \brief Enumeration of the set operations in the Intrepid mesh manager.
   */
   enum ESetOp
   {
     SET_OP_INTERSECT = 0,
     SET_OP_UNION
   };
+
+
   
   /** \typedef Intrepid::CellHandle
-    \brief CellHandle is a 32-bit integer handle.
+      \brief   CellHandle is a 32-bit integer handle.
   */
   typedef unsigned int CellHandle;
+
+
   
   /** \typedef Intrepid::Tag
-    \brief A Tag can be anything, so we define it as a void**.
+      \brief   A Tag can be anything, so we define it as a void**.
   */
   typedef void** Tag;
   

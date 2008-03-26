@@ -140,7 +140,7 @@ class Point {
     
     /** \brief Returns a string with the name of the frame kind.
     */
-    const char* getFrameName() const;
+    std::string getFrameName() const;
     
     /** \brief Returns const reference to data member containing the Point coordinates.
     */

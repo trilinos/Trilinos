@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     << " Field type        Rank \n"
     <<  "-------------------------------------------------------------------------------\n";
   for(EField fieldType = FIELD_FORM_0; fieldType < FIELD_MAX; fieldType++) {
-    std::cout << "\t\t" << std::setw(10) << std::left << FieldNames[fieldType] 
+    std::cout << "\t\t" << std::setw(10) << std::left << EFieldToString(fieldType) 
     << "\t\t\t\t\t" <<  getFieldRank(fieldType) << "\n";
   }
   std::cout << "\n\n";
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     << std::left;
   for(EOperator opType = OPERATOR_VALUE; opType < OPERATOR_MAX; opType++){
     std::cout
-    << "\t\t" << std::setw(10) << OperatorNames[opType] 
+    << "\t\t" << std::setw(10) << EOperatorToString(opType) 
     << "\t\t\t\t\t" << getOperatorOrder(opType) << "\n";
   }
   std::cout << "\n\n";
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
         try{
           std::cout 
           << "\t\t" 
-          << std::setw(20) << OperatorNames[opType] 
+          << std::setw(20) << EOperatorToString(opType) 
           << std::setw(12) << fRank 
           << std::setw(15) << spDim
           << getOperatorRank(opType,fRank,spDim) << "\n";

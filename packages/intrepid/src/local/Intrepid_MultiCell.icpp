@@ -233,8 +233,8 @@ namespace Intrepid {
   
   
   template<class Scalar>
-  const char* MultiCell<Scalar>::getAtlasStatusName() const {
-    return StatusNames[atlasStatus_];
+  std::string MultiCell<Scalar>::getAtlasStatusName() const {
+    return EStatusToString(atlasStatus_);
   }
   
   
