@@ -117,7 +117,8 @@ public:
   int getNumVertices() const;
 
   /** Create a map from each vertex global ID to its weight.  Return the
-   ** number of vertices in the map.
+      number of vertices in the map.  If vertex weights are defined, there
+      is one weight for each vertex owned by this process. 
   */
   int getVertexWeights(std::map<int, float> &wgtMap) const;
 
@@ -157,7 +158,7 @@ public:
   */
   bool haveHypergraphEdgeWeights() const;
 
-  /** Get the number of Hypergraph edges. Hypergraph edges typically
+  /** Get the number of Hypergraph edge weights. Hypergraph edges typically
      correspond to matrix columns.
   */
   int getNumHypergraphEdgeWeights() const;

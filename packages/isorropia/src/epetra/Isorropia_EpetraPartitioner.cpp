@@ -174,15 +174,21 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
 
   bool use_zoltan = false;
 
-#ifdef HAVE_ISORROPIA_ZOLTAN
   std::string partitioning_method_str("PARTITIONING_METHOD");
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
   if (partitioning_method != "SIMPLE_LINEAR") {
     use_zoltan = true;
   }
 
   if (use_zoltan){
+
+    // Get special Zoltan parameters, if any
+
+    std::string zoltan("Zoltan");
+    Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
 
     // Check that we have a valid Zoltan problem.
     //
@@ -199,9 +205,10 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     //     this is the default if LB_METHOD is not set
      
   
+
     std::string lb_method_str("LB_METHOD");
-    if (paramlist_.isParameter(lb_method_str)){
-      std::string lb_meth = paramlist_.get(lb_method_str, "HYPERGRAPH");
+    if (sublist.isParameter(lb_method_str)){
+      std::string lb_meth = sublist.get(lb_method_str, "HYPERGRAPH");
       if (lb_meth == "GRAPH"){
         bool square = false;
         bool symmetric = false;
@@ -232,6 +239,9 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
           throw Isorropia::Exception(str1+str2);
         }
       }
+    }
+    else{
+      sublist.set("LB_METHOD", "HYPERGRAPH");  // default is to do hypergraph partitioning
     }
     // If vertex/edge costs have been set, do a global operation to find
     // out how many weights were given.  Some processes may provide no
@@ -329,15 +339,6 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     costs_->setNumGlobalGraphEdgeWeights(numGWeights);
     costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
 
-  }   // end if (use_zoltan)
-#endif
-
-  std::string zoltan("Zoltan");
-  if (use_zoltan || paramlist_.isSublist(zoltan)) {
-#ifdef HAVE_ISORROPIA_ZOLTAN
-
-    Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
-
     if (input_graph_.get() == 0) {
       err = Isorropia::Epetra::ZoltanLib::repartition(input_matrix_, costs_, sublist,
 					  myNewElements_, exports_, imports_);
@@ -350,16 +351,45 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     if (err != 0) {
       throw Isorropia::Exception("error in Isorropia_Zoltan::repartition");
     }
+  }   // end if (use_zoltan)
 #else
+  if (paramlist_.isSublist(zoltan) {
     throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
-#endif
   }
-  else { //we'll use the built-in simple-linear partitioner.
-    if (input_graph_.get() != 0) {
-      weights_ = Teuchos::rcp(create_row_weights_nnz(*input_graph_));
+#endif
+
+  if (!use_zoltan){  //we'll use the built-in simple-linear partitioner.
+
+    int nrows = input_map_->NumMyElements();
+
+    if (nrows && costs_.get()){
+      if (costs_->haveVertexWeights()){
+        std::map<int, float> vwgts;
+        costs_->getVertexWeights(vwgts);
+  
+        double *vals = new double [nrows];
+  
+        for (int i=0; i<nrows; i++){
+          int gid = input_map_->GID(i);
+          std::map<int, float>::iterator iter = vwgts.find(gid);
+          if (iter == vwgts.end()){
+            throw Isorropia::Exception("error 1 in simple linear repartitioning");
+          }
+          vals[i] = (double)iter->second;
+        }
+  
+        weights_ = Teuchos::rcp(new Epetra_Vector(Copy, *input_map_, vals));
+  
+        delete [] vals;
+      }
     }
-    else {
-      weights_ = Teuchos::rcp(create_row_weights_nnz(*input_matrix_));
+    else{
+      if (input_graph_.get() != 0) {
+        weights_ = Teuchos::rcp(create_row_weights_nnz(*input_graph_));
+      }
+      else {
+        weights_ = Teuchos::rcp(create_row_weights_nnz(*input_matrix_));
+      }
     }
 
     err = Isorropia::Epetra::repartition(*input_map_,
@@ -368,7 +398,7 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
                                                exports_, imports_);
 
     if (err != 0) {
-      throw Isorropia::Exception("error in simple linear repartitioning");
+      throw Isorropia::Exception("error 2 in simple linear repartitioning");
     }
   }
 

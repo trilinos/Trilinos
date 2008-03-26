@@ -349,125 +349,43 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
   all_proc_offsets[numProcs] = offset;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
-create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
-		     Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
-    Teuchos::rcp(&(input_matrix.Graph()), false);
-
-  Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_graph, paramlist));
-
-  const Epetra_Comm& comm = input_graph->RowMap().Comm();
-
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //next, create a new Epetra_CrsMatrix (which will be the return-value of
-  //this function) with the new row-distribution.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
-    redistribute_rows(input_matrix, *bal_rowmap);
-
-  if (input_matrix.Filled()) {
-    //If input_matrix.Filled(), then call FillComplete() on balanced_matrix.
-    //Potential problem: what if matrix isn't square? Would it be
-    //appropriate to use the domain-map and range-map from input_matrix??
-
-    balanced_matrix->FillComplete();
-  }
-
-  return balanced_matrix;
-}
-
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RefCountPtr<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 {
-  //first, create a weights vector which contains the number of nonzeros
-  //per row in the input_matrix.
-  Epetra_Vector* weights = 0;
-  try {
-    weights = create_row_weights_nnz(input_matrix);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //now, call the other overloading of 'create_balanced_copy', which
-  //accepts a weights vector.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
-  try {
-    balanced_matrix = create_balanced_copy(input_matrix, *weights);
-    delete weights;
-  }
-  catch(std::exception& exc) {
-    delete weights;
-    throw exc;
-  }
-
-  return balanced_matrix;
-}
-
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
-create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
-                     const Epetra_Vector& row_weights)
-{
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
-    Teuchos::rcp(&(input_matrix.Graph()), false);
-
+  CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_graph, paramlist));
-
-  const Epetra_Comm& comm = input_graph->RowMap().Comm();
-
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //next, create a new Epetra_CrsMatrix (which will be the return-value of
-  //this function) with the new row-distribution.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
-    redistribute_rows(input_matrix, *bal_rowmap);
-
-  if (input_matrix.Filled()) {
-    //If input_matrix.Filled(), then call FillComplete() on balanced_matrix.
-    //Potential problem: what if matrix isn't square? Would it be
-    //appropriate to use the domain-map and range-map from input_matrix??
-
-    balanced_matrix->FillComplete();
-  }
+  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+    create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RefCountPtr<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
-                     const Epetra_Vector& row_weights)
+		     const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_rowmat =
-    Teuchos::rcp(&input_matrix, false);
+  CostDescriber costs; 
 
-  Teuchos::ParameterList paramlist;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+    create_balanced_copy(input_matrix, costs, paramlist);
+
+  return balanced_matrix;
+}
+
+Teuchos::RefCountPtr<Epetra_RowMatrix>
+create_balanced_copy(const Epetra_RowMatrix& input_matrix,
+                     CostDescriber &costs,
+		     const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> matrixPtr=
+    Teuchos::rcp(&(input_matrix), false);
+
+  Teuchos::RefCountPtr<CostDescriber> costPtr =
+    Teuchos::rcp(&(costs), false);
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_rowmat, paramlist));
+    Teuchos::rcp(new Partitioner(matrixPtr, costPtr, paramlist));
 
   const Epetra_Comm& comm = input_matrix.RowMatrixRowMap().Comm();
 
@@ -481,31 +399,109 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
     throw Isorropia::Exception(str1+str2);
   }
 
+  //next, create a new Epetra_RowMatrix (which will be the return-value of
+  //this function) with the new row-distribution.
+  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+    redistribute_rows(input_matrix, *bal_rowmap);
+
+  return balanced_matrix;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix)
+{
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+    create_balanced_copy(input_matrix, costs, paramlist);
+
+  return balanced_matrix;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+		     const Teuchos::ParameterList& paramlist)
+{
+  CostDescriber costs; 
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+    create_balanced_copy(input_matrix, costs, paramlist);
+
+  return balanced_matrix;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+                     CostDescriber &costs,
+		     const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
+    Teuchos::rcp(&(input_matrix.Graph()), false);
+
+  Teuchos::RefCountPtr<CostDescriber> costPtr =
+    Teuchos::rcp(&(costs), false);
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new Partitioner(input_graph, costPtr, paramlist));
+
+  const Epetra_Comm& comm = input_graph->RowMap().Comm();
+
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
+  try {
+    bal_rowmap = create_target_map(comm, *partitioner);
+  }
+  catch(std::exception& exc) {
+    std::string str1("create_balanced_copy: caught exception: ");
+    std::string str2(exc.what());
+    throw Isorropia::Exception(str1+str2);
+  }
+
   //next, create a new Epetra_CrsMatrix (which will be the return-value of
   //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
     redistribute_rows(input_matrix, *bal_rowmap);
 
-  if (input_matrix.Filled()) {
-    //If input_matrix.Filled(), the call FillComplete() on balanced_matrix.
-    //Potential problem: what if matrix isn't square? Would it be
-    //appropriate to use the domain-map and range-map from input_matrix??
-
-    balanced_matrix->FillComplete();
-  }
-
   return balanced_matrix;
 }
 
 Teuchos::RefCountPtr<Epetra_CrsGraph>
-create_balanced_copy(const Epetra_CrsGraph& input_graph,
-		     Teuchos::ParameterList& paramlist)
+create_balanced_copy(const Epetra_CrsGraph& input_graph)
 {
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> in_graph =
-    Teuchos::rcp(&input_graph, false);
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+    create_balanced_copy(input_graph, costs, paramlist);
+
+  return balanced_graph;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsGraph>
+create_balanced_copy(const Epetra_CrsGraph& input_graph,
+		     const Teuchos::ParameterList& paramlist)
+{
+  CostDescriber costs; 
+
+  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+    create_balanced_copy(input_graph, costs, paramlist);
+
+  return balanced_graph;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsGraph>
+create_balanced_copy(const Epetra_CrsGraph& input_graph,
+                     CostDescriber &costs,
+		     const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> graphPtr=
+    Teuchos::rcp(&(input_graph), false);
+
+  Teuchos::RefCountPtr<CostDescriber> costPtr =
+    Teuchos::rcp(&(costs), false);
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(in_graph, paramlist));
+    Teuchos::rcp(new Partitioner(graphPtr, costPtr, paramlist));
 
   const Epetra_Comm& comm = input_graph.RowMap().Comm();
 
@@ -524,67 +520,46 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
     redistribute_rows(input_graph, *bal_rowmap);
 
-  if (input_graph.Filled()) {
-    //If input_graph.Filled(), then call FillComplete() on balanced_graph.
-    //Potential problem: what if input_graph isn't square? Would it be
-    //appropriate to use the domain-map and range-map from input_graph??
-
-    balanced_graph->FillComplete();
-  }
-
-  return balanced_graph;
-}
-
-Teuchos::RefCountPtr<Epetra_CrsGraph>
-create_balanced_copy(const Epetra_CrsGraph& input_graph,
-                     const Epetra_Vector& row_weights)
-{
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> in_graph =
-    Teuchos::rcp(&input_graph, false);
-
-  Teuchos::ParameterList paramlist;
-
-  Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(in_graph, paramlist));
-
-  const Epetra_Comm& comm = in_graph->RowMap().Comm();
-
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //next, create a new Epetra_CrsGraph (which will be the return-value of
-  //this function) with the new row-distribution.
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
-    redistribute_rows(input_graph, *bal_rowmap);
-
-  if (input_graph.Filled()) {
-    //If input_graph.Filled(), the call FillComplete() on balanced_graph.
-    //Potential problem: what if graph isn't square? Would it be
-    //appropriate to use the domain-map and range-map from input_graph??
-
-    balanced_graph->FillComplete();
-  }
-
   return balanced_graph;
 }
 
 Teuchos::RefCountPtr<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem)
 {
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+    create_balanced_copy(input_problem, costs, paramlist);
+
+  return linprob;
+}
+
+Teuchos::RefCountPtr<Epetra_LinearProblem>
+create_balanced_copy(const Epetra_LinearProblem& input_problem,
+		     const Teuchos::ParameterList& paramlist)
+{
+  CostDescriber costs; 
+
+  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+    create_balanced_copy(input_problem, costs, paramlist);
+
+  return linprob;
+}
+
+Teuchos::RefCountPtr<Epetra_LinearProblem>
+create_balanced_copy(const Epetra_LinearProblem& input_problem,
+                     CostDescriber &costs,
+		     const Teuchos::ParameterList& paramlist)
+{
   Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
     Teuchos::rcp(input_problem.GetMatrix(), false);
 
-  Teuchos::ParameterList paramlist;
+  Teuchos::RefCountPtr<CostDescriber> costPtr =
+    Teuchos::rcp(&(costs), false);
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(rowmat, paramlist));
+    Teuchos::rcp(new Partitioner(rowmat, costPtr, paramlist));
 
   Isorropia::Epetra::Redistributor rd(partitioner);
 
@@ -642,6 +617,11 @@ redistribute_rows(const Epetra_CrsMatrix& input_matrix,
   //it is safe to delete new_importer even if it is NULL
   delete new_importer;
 
+  if (!target_matrix->Filled()) {
+    Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
+    target_matrix->FillComplete(newDomainMap, target_rowmap);
+  }
+
   return(target_matrix);
 }
 
@@ -664,6 +644,11 @@ redistribute_rows(const Epetra_RowMatrix& input_matrix,
   //it is safe to delete new_importer even if it is NULL
   delete new_importer;
 
+  if (!target_matrix->Filled()) {
+    Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
+    target_matrix->FillComplete(newDomainMap, target_rowmap);
+  }
+
   return(target_matrix);
 }
 
@@ -685,6 +670,11 @@ redistribute_rows(const Epetra_CrsGraph& input_graph,
 
   //it is safe to delete new_importer even if it is NULL
   delete new_importer;
+
+  if (!target_graph->Filled()) {
+    Epetra_Map newDomainMap(input_graph.NumGlobalCols(), 0, input_graph.Comm());
+    target_graph->FillComplete(newDomainMap, target_rowmap);
+  }
 
   return(target_graph);
 }

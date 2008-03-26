@@ -166,18 +166,17 @@ load_balance(MPI_Comm &comm,
     paramlist.set(lb_method_str, lb_meth);  // set to HYPERGRAPH
   }
 
+  // If no process set vertex weights, let Zoltan default to
+  // unit weights for vertices
+
   if (queryObject.haveVertexWeights()) {
     if (!paramlist.isParameter("OBJ_WEIGHT_DIM")) {
       paramlist.set("OBJ_WEIGHT_DIM", "1");
     }
   }
-  else {
-    // If no user weights, weight rows (vertices) by #nonzeros.
-    // This ensures we balance nonzeros not rows.
-    if (!paramlist.isParameter("ADD_OBJ_WEIGHT")) {
-      paramlist.set("ADD_OBJ_WEIGHT", "nonzeros");
-    }
-  }
+
+  // If no process set graph or hypergraph edge weights, 
+  // let Zoltan default to unit weights for edges
 
   if (queryObject.haveGraphEdgeWeights() ||
       queryObject.haveHypergraphEdgeWeights()) {
