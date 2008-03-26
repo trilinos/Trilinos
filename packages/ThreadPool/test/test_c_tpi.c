@@ -97,8 +97,8 @@ int test_c_tpi_noop( int num_test , int * num_thread )
     use_max  /= n ;
 
     fprintf(stdout,
-            "%d , %g , %g , %g , %g , %g , %g\n",
-            num,dt_min , dt_mean , dt_max , use_min, use_mean, use_max );
+            "%u , %g , %g , %g , %g , %g , %g\n",
+            num, dt_min, dt_mean, dt_max, use_min, use_mean, use_max );
 
     fflush(stdout);
 

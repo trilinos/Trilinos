@@ -24,35 +24,39 @@
  * @author H. Carter Edwards
  */
 
-#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+
 #include <TPI.h>
 
-int test_c_tpi_noop( int , int * );
-int test_c_tpi_single( int );
-int test_c_tpi_many( int );
-int test_c_tpi_dnax( int );
-int test_pthreads_performance( int , int * );
+#ifndef TPI_NO_SCHED
+#define TPI_NO_SCHED 0
+#endif
 
-int main( int argc , char ** argv )
+/*--------------------------------------------------------------------*/
+
+int TPI_Concurrency()
 {
-  const int concurrent = TPI_Concurrency();
-  int num_thread[] = { 2 , 4 , 8 , 12 , 16 };
-  int num_test = sizeof(num_thread) / sizeof(int);
-  int i ;
-
-  if ( argc ) {
-    fprintf(stdout,"\"%s with concurrency %d\"\n",argv[0],concurrent);
-  }
-
-  for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_single( num_thread[i] ); }
-  for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_many( num_thread[i] ); }
-
-  test_pthreads_performance( num_test , num_thread );
-
-  test_c_tpi_noop( num_test , num_thread );
-
-  for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_dnax( num_thread[i] ); }
-
+#if TPI_NO_SCHED
   return 0 ;
+#else
+  enum { NTMP = 8 };
+
+  extern int sched_getaffinity( pid_t, unsigned int , unsigned long * );
+
+  int count = 0 ;
+  unsigned long tmp[ NTMP ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+  if ( ! sched_getaffinity( 0 , sizeof(tmp) , tmp ) ) {
+
+    int i ;
+
+    for ( i = 0 ; i < NTMP ; ++i ) {
+      unsigned long t = tmp[i] ;
+      for ( ; t ; t >>= 1 ) { if ( t & 01 ) { ++count ; } }
+    }
+  }
+  return count ;
+#endif
 }
 

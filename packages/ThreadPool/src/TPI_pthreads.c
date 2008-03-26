@@ -31,32 +31,6 @@
 
 #include <TPI.h>
 
-#define TPI_NO_SCHED 0
-#define TPI_USE_SPINLOCK 0
-
-/*  IDEA: try <pthread.h> advanced realtime 'pthread_spinlock_t'. */
-
-/*--------------------------------------------------------------------*/
-/*--------------------------------------------------------------------*/
-/* Choose between a hard lock or spin lock */
-
-static int local_thread_pool_lock( pthread_mutex_t * T )
-{
-  int result ;
-
-#if TPI_USE_SPINLOCK
-
-  while ( EBUSY == ( result = pthread_mutex_trylock( T ) ) ); 
-
-#else
-
-  result = pthread_mutex_lock( T );
-
-#endif
-
-  return result ;
-}
-
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
@@ -147,7 +121,7 @@ int TPI_Lock( TPI_ThreadPool local , int i )
     if ( i < 0 || local->m_lock_size <= i ) {
       result = TPI_ERROR_SIZE ;
     }
-    else if ( local_thread_pool_lock( local->m_lock + i ) ) {
+    else if ( pthread_mutex_lock( local->m_lock + i ) ) {
       result = TPI_ERROR_LOCK ;
     }
   }
@@ -553,40 +527,11 @@ int TPI_Finalize()
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
-int TPI_Size( int * number_allocated , int * number_concurrent )
+int TPI_Size( int * number_allocated )
 {
-  int result = 0 ;
-  int count = 0 ;
+  int result = number_allocated ? 0 : TPI_ERROR_NULL ;
 
-  if ( number_concurrent ) {
-
-#if ! TPI_NO_SCHED
-
-    enum { NTMP = 8 };
-
-    extern int sched_getaffinity( pid_t, unsigned int , unsigned long * );
-
-    unsigned long tmp[ NTMP ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-
-    if ( ! sched_getaffinity( 0 , sizeof(tmp) , tmp ) ) {
-
-      int i ;
-
-      for ( i = 0 ; i < NTMP ; ++i ) {
-        for ( ; tmp[i] ; tmp[i] >>= 1 ) {
-          if ( tmp[i] & 01 ) { ++count ; }
-        }
-      }
-    }
-    else {
-      result = TPI_ERROR_INTERNAL ;
-    }
-#endif
-
-    *number_concurrent = count ;
-  }
-
-  if ( number_allocated ) {
+  if ( ! result ) {
     ThreadPool * const pool = local_thread_pool();
 
     if ( pool ) {

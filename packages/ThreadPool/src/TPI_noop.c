@@ -349,13 +349,11 @@ int TPI_Finalize()
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
-int TPI_Size( int * number_allocated , int * number_concurrent )
+int TPI_Size( int * number_allocated )
 {
-  int result = 0 ;
+  int result = number_allocated ? 0 : TPI_ERROR_NULL ;
 
-  if ( number_concurrent ) { *number_concurrent = 0 ; }
-
-  if ( number_allocated ) {
+  if ( ! result ) {
     ThreadPool * const pool = local_thread_pool();
 
     if ( pool ) {

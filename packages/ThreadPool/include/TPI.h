@@ -169,7 +169,12 @@ int TPI_Unlock( TPI_ThreadPool , int );
 /** Initialize the root thread pool to the specified size.
  *  The thread pool is transitioned from 'uninitialized' to 'paused' state.
  */
-int TPI_Init( int );
+int TPI_Init( int /* size */ );
+
+/** Query the number of threads created.
+ *  The thread pool must be in the 'paused' state.
+ */
+int TPI_Size( int * );
 
 /** Finalize (shut down) all threads and thread pools.
  *  The thread pool is transitioned from 'paused' to 'uninitialized' state.
@@ -177,13 +182,10 @@ int TPI_Init( int );
 int TPI_Finalize();
 
 /*--------------------------------------------------------------------*/
-/** Query the number of threads actually created and
- *  known to be concurrently schedulable.
- *  If the concurrency is not detectable then number_concurrent = 0.
- *  The thread pool can be in the 'uninitialized' or 'paused' state.
+/** Query the number of threads known to be concurrently schedulable.
+ *  If the concurrency is not detectable then return 0.
  */
-int TPI_Size( int * /* number_created */ ,
-              int * /* number_concurrent */ );
+int TPI_Concurrency();
 
 /*--------------------------------------------------------------------*/
 /** A frequently occuring parallel operation is to partition a

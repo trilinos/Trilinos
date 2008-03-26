@@ -227,7 +227,7 @@ void test_tpi_dnax_driver( const unsigned Mflop_target ,
 
   {
     int size ;
-    TPI_Size( & size , NULL );
+    TPI_Size( & size );
     printf("\n\"test_tpi_dnax[%d]( length_array = %u , stride_array = %u )\"\n",
            size , length_array , stride_array );
     printf("\"NUMBER OF THREADS\" , %d\n", size );
@@ -538,15 +538,10 @@ int test_c_tpi_dnax( int nthread )
 {
   const unsigned Mflop_target = 10 ;
   const unsigned num_array[6] = { 2 , 5 , 10 , 20 , 50 , 100 };
-  int size , concurrent_size ;
+  const int concurrent = TPI_Concurrency();
+  const int size = concurrent && concurrent < nthread ? concurrent : nthread ;
 
   TPI_Init( nthread );
-
-  TPI_Size( & size , & concurrent_size );
-
-  if ( concurrent_size && concurrent_size < size ) {
-    size = concurrent_size ;
-  }
 
   test_tpi_dnax_driver( Mflop_target * size ,
                           5         /* number trials */ ,
