@@ -384,7 +384,8 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
         delete [] vals;
       }
     }
-    else{
+
+    if (nrows && !weights_.get()){
       if (input_graph_.get() != 0) {
         weights_ = Teuchos::rcp(create_row_weights_nnz(*input_graph_));
       }
