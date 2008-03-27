@@ -360,16 +360,17 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     ERROREXIT((localProc==0), "Error in computing partitioning metrics")
   }
 
-#ifdef HAVE_ISORROPIA_ZOLTAN
-
-  // Set the Zoltan parameters for this problem
-
   Teuchos::ParameterList params;
 
   if (partitioningType == NO_ZOLTAN){
     params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
   }
-  else{
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
+
+  // Set the Zoltan parameters for this problem
+
+  if (partitioningType != NO_ZOLTAN){
     Teuchos::ParameterList &sublist = params.sublist("Zoltan");
   
     if (partitioningType == GRAPH_PARTITIONING){
@@ -382,9 +383,11 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       sublist.set("PHG_CUT_OBJECTIVE", "CONNECTIVITY");  // "cutl"
     }
   }
-
 #else
-  Teuchos::ParameterList params;
+  if (partitioningType != NO_ZOLTAN){
+    ERROREXIT((localProc==0), 
+      "Zoltan partitioning required but Zoltan not available.")
+  }
 #endif
 
   // Perform hyperedge partitioning with Zoltan (if we have it)
@@ -431,9 +434,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   Teuchos::RCP<Epetra_CrsMatrix> newMatrix = rd.redistribute(*matrix);
 
-  newMatrix->FillComplete();
-  newMatrix->OptimizeStorage();
-
   // Redistribute the vertex weights
 
   if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS) ||
@@ -449,8 +449,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
     if (partitioningType == GRAPH_PARTITIONING){
       Teuchos::RCP<Epetra_CrsMatrix> newewgts = rd.redistribute(*eptr);
-      newewgts->FillComplete();
-      newewgts->OptimizeStorage();
       costs->setGraphEdgeWeights(newewgts);
     }
   }
@@ -495,7 +493,12 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
   else{
-    fail = (cutl2 > cutl1);
+    if (partitioningType == NO_ZOLTAN){
+      fail = (balance2 > balance1);
+    }
+    else{
+      fail = (cutl2 > cutl1);         // Zoltan hypergraph partitioning
+    }
   
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
@@ -509,7 +512,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
 
 #else
-  std::cout << "test_simple main: currently can only test "
+  std::cout << "test_simple : currently can only test "
          << "with Epetra and EpetraExt enabled." << std::endl;
   rc = -1;
 #endif
@@ -534,6 +537,11 @@ int main(int argc, char** argv) {
 #else
   const Epetra_SerialComm Comm;
 #endif
+
+  if (getenv("DEBUGME")){
+    std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
+    sleep(15);
+  }
 
   Teuchos::CommandLineProcessor clp(false,true);
 
@@ -585,6 +593,7 @@ int main(int argc, char** argv) {
   Teuchos::RCP<Epetra_CrsMatrix> testm = Teuchos::rcp(matrixPtr);
 
   if (square){
+#ifdef HAVE_ISORROPIA_ZOLTAN
     fail = run_test(testm,
                verbose,            // draw graph before and after partitioning
                GRAPH_PARTITIONING,      // do graph partitioning
@@ -630,8 +639,10 @@ int main(int argc, char** argv) {
     if (fail){
       goto Report;
     }
-
+#endif
   }
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
 
   fail = run_test(testm,
              verbose, 
@@ -677,7 +688,9 @@ int main(int argc, char** argv) {
   if (fail){
     goto Report;
   }
+#endif
 
+  // Default row weight is number of non zeros in the row
   fail = run_test(testm,
              verbose,
              NO_ZOLTAN,
@@ -692,9 +705,20 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
              verbose,
              NO_ZOLTAN,
+             SUPPLY_EQUAL_WEIGHTS,
+             NO_APPLICATION_SUPPLIED_WEIGHTS,
+             EPETRA_CRSGRAPH);
+
+  if (fail){
+    goto Report;
+  }
+
+  fail = run_test(testm,
+             verbose,
+             NO_ZOLTAN,
              SUPPLY_UNEQUAL_WEIGHTS,
              NO_APPLICATION_SUPPLIED_WEIGHTS,
-             EPETRA_CRSMATRIX);
+             EPETRA_CRSGRAPH);
 
   if (fail){
     goto Report;

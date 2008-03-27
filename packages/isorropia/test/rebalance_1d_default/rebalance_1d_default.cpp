@@ -320,6 +320,7 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   //be the number of nonzeros in that row.
 
   Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem;
+
   try {
     if (verbose) {
       std::cout << " calling Isorropia::create_balanced_copy(Epetra_LinearProblem)..."
