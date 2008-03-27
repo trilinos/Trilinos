@@ -156,6 +156,31 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
   return( weights );
 }
 
+double compute_imbalance(int nprocs, std::vector<int> &offsets, double *wgts, double target)
+{
+  double imbalance = 1.0;
+
+  for (int p=0; p < nprocs; p++){
+
+    double pweight = 0.0;
+
+    for (int row=offsets[p]; row < offsets[p+1]; row++){
+      pweight += wgts[row];
+    }
+
+    double ib = 1.0;
+
+    if (pweight <= target)
+      ib += ((target - pweight) / target);
+    else
+      ib += ((pweight - target) / target);
+
+    if (ib > imbalance) imbalance = ib;
+  }
+
+  return imbalance;
+}
+
 int
 repartition(const Epetra_BlockMap& input_map,
 	    const Epetra_Vector& weights,
@@ -199,16 +224,33 @@ repartition(const Epetra_BlockMap& input_map,
     proc0_weights.ExtractView(&proc0_weights_ptr);
     int weights_length = proc0_weights.MyLength();
 
+    double old_imbalance = 
+      compute_imbalance(numProcs, all_proc_old_offsets, proc0_weights_ptr, avg_weight);
+
     int offset = 0;
     for(int p=0; p<numProcs; ++p) {
       all_proc_new_offsets[p] = offset;
 
       double tmp_weight = 0.0;
+
       while(offset < weights_length && tmp_weight < avg_weight) {
         tmp_weight += proc0_weights_ptr[offset++];
       }
     }
-    all_proc_new_offsets[numProcs] = offset;
+    all_proc_new_offsets[numProcs] = weights_length;
+
+    double new_imbalance = 
+      compute_imbalance(numProcs, all_proc_new_offsets, proc0_weights_ptr, avg_weight);
+
+    // Because this is a quick and dirty partitioning, it is possible that
+    // if the balance was good to begin with, that we have just created a
+    // slightly worse balance.  In that case, return to the old partitioning.
+
+    if (new_imbalance > old_imbalance){
+      for (int proc=0; proc <= numProcs; proc++){
+        all_proc_new_offsets[proc] = all_proc_old_offsets[proc];
+      }
+    }
 
 #ifdef HAVE_MPI
     if (numProcs > 1) {

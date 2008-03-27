@@ -625,6 +625,10 @@ repartition(const Epetra_BlockMap& input_map,
 void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
                                     std::vector<int>& all_proc_offsets);
 
+
+double compute_imbalance(int nprocs, std::vector<int> &offsets, 
+                         double *wgts, double target);
+
 #endif //DOXYGEN_SHOULD_SKIP_THIS
 #endif //HAVE_EPETRA
 
