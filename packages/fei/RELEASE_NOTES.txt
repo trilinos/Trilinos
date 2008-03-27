@@ -419,3 +419,7 @@ July 7 2005: version 2.14.00
   - Fixed a compile-error in fei_Pool_alloc.hpp where the max_size() function was
     not defined.
 
+ ??? ?? ???? minor version 2.22.03
+  - Fixed a few method signatures in fei::Matrix and derived classes for const-ness.
+    (Some methods which could have been const, weren't.)
+

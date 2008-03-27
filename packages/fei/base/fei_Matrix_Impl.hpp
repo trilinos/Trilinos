@@ -93,7 +93,7 @@ namespace fei {
 
     /** Get the global number of rows in the matrix.
      */
-    int getGlobalNumRows()
+    int getGlobalNumRows() const
       {
 	if ((int)(globalOffsets().size()) < numProcs()+1) return(-1);
 	return(globalOffsets()[numProcs()]);
@@ -101,7 +101,7 @@ namespace fei {
 
     /** Get the local number of rows in the matrix.
      */
-    int getLocalNumRows()
+    int getLocalNumRows() const
       {
 	return(lastLocalOffset() - firstLocalOffset() + 1);
       }
@@ -114,7 +114,7 @@ namespace fei {
        @param length Output. Length of the row.
        @return error-code non-zero if any error occurs.
    */
-    int getRowLength(int row, int& length);
+    int getRowLength(int row, int& length) const;
 
    /** Obtain a copy of the coefficients and indices for a row of the matrix.
        @param row Global 0-based equation number
@@ -125,7 +125,7 @@ namespace fei {
        indices. (These indices will be global 0-based equation numbers.)
        @return error-code non-zero if any error occurs.
    */
-    int copyOutRow(int row, int len, double* coefs, int* indices);
+    int copyOutRow(int row, int len, double* coefs, int* indices) const;
 
     /** Sum coefficients into the matrix, adding them to any coefficients that
 	may already exist at the specified row/column locations.
@@ -448,7 +448,7 @@ int fei::Matrix_Impl<T>::parameters(int numParams,
 
 //----------------------------------------------------------------------------
 template<typename T>
-int fei::Matrix_Impl<T>::getRowLength(int row, int& length)
+int fei::Matrix_Impl<T>::getRowLength(int row, int& length) const
 {
   if (haveBlockMatrix()) {
     return( snl_fei::BlockMatrixTraits<T>::getPointRowLength(matrix_.get(), row, length) );
@@ -492,7 +492,7 @@ int fei::Matrix_Impl<T>::putScalar(double scalar)
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::copyOutRow(int row, int len,
-				   double* coefs, int* indices)
+				   double* coefs, int* indices) const
 {
   if (haveBlockMatrix()) {
     int dummy;

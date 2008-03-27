@@ -42,18 +42,18 @@ class Matrix_Local : public fei::Matrix {
 
     /** Get the global number of rows in the matrix.
      */
-    int getGlobalNumRows();
+    int getGlobalNumRows() const;
 
     /** Get the local number of rows in the matrix.
      */
-    int getLocalNumRows();
+    int getLocalNumRows() const;
 
    /** Get the length of a row of the matrix.
        @param row Global 0-based equation number
        @param length Output. Length of the row.
        @return error-code non-zero if any error occurs.
    */
-    int getRowLength(int row, int& length);
+    int getRowLength(int row, int& length) const;
 
     /** Set a specified scalar throughout the matrix. */
     int putScalar(double scalar);
@@ -67,7 +67,7 @@ class Matrix_Local : public fei::Matrix {
        @param len Length of the caller-allocated coefs and indices arrays
        @return error-code non-zero if any error occurs.
    */
-    int copyOutRow(int row, int len, double* coefs, int* indices);
+    int copyOutRow(int row, int len, double* coefs, int* indices) const;
 
     /** Sum coefficients into the matrix, adding them to any coefficients that
         may already exist at the specified row/column locations.
@@ -238,7 +238,7 @@ class Matrix_Local : public fei::Matrix {
     const std::vector<double>& getCoefs() const;
 
  private:
-  int getRowIndex(int rowNumber);
+  int getRowIndex(int rowNumber) const;
 
   int giveToMatrix(int numRows, const int* rows,
                       int numCols, const int* cols,

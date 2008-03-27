@@ -52,13 +52,13 @@ MatrixReducer::setMatrixGraph(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
 }
 
 int
-MatrixReducer::getGlobalNumRows()
+MatrixReducer::getGlobalNumRows() const
 {
   return(target_->getMatrixGraph()->getRowSpace()->getGlobalNumIndices());
 }
 
 int
-MatrixReducer::getLocalNumRows()
+MatrixReducer::getLocalNumRows() const
 {
   return(target_->getMatrixGraph()->getRowSpace()->getNumIndices_Owned());
 }
@@ -67,7 +67,7 @@ int MatrixReducer::putScalar(double scalar)
 { return(target_->putScalar(scalar)); }
 
 int
-MatrixReducer::getRowLength(int row, int& length)
+MatrixReducer::getRowLength(int row, int& length) const
 {
   if (reducer_->isSlaveEqn(row)) {
     FEI_OSTRINGSTREAM osstr;
@@ -80,7 +80,7 @@ MatrixReducer::getRowLength(int row, int& length)
 }
 
 int
-MatrixReducer::copyOutRow(int row, int len, double* coefs, int* indices)
+MatrixReducer::copyOutRow(int row, int len, double* coefs, int* indices) const
 {
   if (reducer_->isSlaveEqn(row)) {
     FEI_OSTRINGSTREAM osstr;

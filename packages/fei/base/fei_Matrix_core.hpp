@@ -142,17 +142,18 @@ class Matrix_core : protected fei::Logger {
   fei::SharedPtr<fei::VectorSpace> vecSpace() { return( vecSpace_ ); }
 
   std::vector<int>& globalOffsets() { return( globalOffsets_ ); }
+  const std::vector<int>& globalOffsets() const { return( globalOffsets_ ); }
 
-  int firstLocalOffset() { return( firstLocalOffset_ ); }
-  int lastLocalOffset()  { return( lastLocalOffset_ ); }
+  int firstLocalOffset() const { return( firstLocalOffset_ ); }
+  int lastLocalOffset() const  { return( lastLocalOffset_ ); }
 
-  int numProcs() { return( numProcs_ ); }
-  int localProc() { return( localProc_ ); }
+  int numProcs() const { return( numProcs_ ); }
+  int localProc() const { return( localProc_ ); }
 
-  bool haveBlockMatrix() { return( haveBlockMatrix_ ); }
+  bool haveBlockMatrix() const { return( haveBlockMatrix_ ); }
   void setBlockMatrix(bool flag) {haveBlockMatrix_ = flag; }
 
-  bool haveFEMatrix() { return( haveFEMatrix_ ); }
+  bool haveFEMatrix() const { return( haveFEMatrix_ ); }
   void setFEMatrix(bool flag) {haveFEMatrix_ = flag; }
 
   int getOwnerProc(int globalEqn);

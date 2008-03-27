@@ -61,18 +61,18 @@ namespace fei {
 
     /** Get the global number of rows in the matrix.
      */
-    virtual int getGlobalNumRows() = 0;
+    virtual int getGlobalNumRows() const = 0;
 
     /** Get the local number of rows in the matrix.
      */
-    virtual int getLocalNumRows() = 0;
+    virtual int getLocalNumRows() const = 0;
 
-   /** Get the length of a row of the matrix.
-       @param row Global 0-based equation number
-       @param length Output. Length of the row.
-       @return error-code non-zero if any error occurs.
-   */
-    virtual int getRowLength(int row, int& length) = 0;
+    /** Get the length of a row of the matrix.
+        @param row Global 0-based equation number
+        @param length Output. Length of the row.
+        @return error-code non-zero if any error occurs.
+    */
+    virtual int getRowLength(int row, int& length) const = 0;
 
     /** Set a specified scalar throughout the matrix. */
     virtual int putScalar(double scalar) = 0;
@@ -86,7 +86,7 @@ namespace fei {
        @param len Length of the caller-allocated coefs and indices arrays
        @return error-code non-zero if any error occurs.
    */
-    virtual int copyOutRow(int row, int len, double* coefs, int* indices)=0;
+    virtual int copyOutRow(int row, int len, double* coefs, int* indices) const = 0;
 
     /** Sum coefficients into the matrix, adding them to any coefficients that
 	may already exist at the specified row/column locations.

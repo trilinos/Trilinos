@@ -59,15 +59,15 @@ Matrix_Local::setMatrixGraph(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
 { matrixGraph_ = matrixGraph; }
 
 int
-Matrix_Local::getGlobalNumRows()
+Matrix_Local::getGlobalNumRows() const
 { return( sparseRowGraph_->rowNumbers.size() ); }
 
 int
-Matrix_Local::getLocalNumRows()
+Matrix_Local::getLocalNumRows() const
 { return( getGlobalNumRows() ); }
 
 int
-Matrix_Local::getRowIndex(int rowNumber)
+Matrix_Local::getRowIndex(int rowNumber) const
 {
   int* rows = &(sparseRowGraph_->rowNumbers[0]);
   int numRows = getLocalNumRows();
@@ -75,7 +75,7 @@ Matrix_Local::getRowIndex(int rowNumber)
 }
 
 int
-Matrix_Local::getRowLength(int row, int& length)
+Matrix_Local::getRowLength(int row, int& length) const
 {
   int idx = getRowIndex(row);
   if (idx < 0) return(idx);
@@ -94,7 +94,7 @@ Matrix_Local::putScalar(double scalar)
 }
 
 int
-Matrix_Local::copyOutRow(int row, int len, double* coefs, int* indices)
+Matrix_Local::copyOutRow(int row, int len, double* coefs, int* indices) const
 {
   int idx = getRowIndex(row);
   if (idx < 0) return(idx);
