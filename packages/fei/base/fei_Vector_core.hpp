@@ -35,7 +35,7 @@ class Vector_core : protected fei::Logger {
   int copyOut(int numValues,
 	      const int* indices,
 	      double* values,
-	      int vectorIndex=0);
+	      int vectorIndex=0) const;
 
   /** Sum in data for FiniteElementData-specific structure. Power users only. */
   virtual int sumIntoFEVector(int blockID,
@@ -95,7 +95,7 @@ class Vector_core : protected fei::Logger {
   virtual int copyOutOfUnderlyingVector(int numValues,
 					const int* indices,
 					double* values,
-					int vectorIndex=0) = 0;
+					int vectorIndex=0) const = 0;
 
   /** Establish basic information like sizes etc. */
   /** Write data to specified filename. */
@@ -125,10 +125,10 @@ class Vector_core : protected fei::Logger {
     }
 
   /** Query for first locally-owned vector position. */
-  int firstLocalOffset() { return( firstLocalOffset_ ); }
+  int firstLocalOffset() const { return( firstLocalOffset_ ); }
 
   /** Query for last locally-owned vector position. */
-  int lastLocalOffset() { return( lastLocalOffset_ ); }
+  int lastLocalOffset() const { return( lastLocalOffset_ ); }
 
   /** work_indices */
   std::vector<int>& work_indices() { return( work_indices_ ); }
@@ -142,6 +142,7 @@ class Vector_core : protected fei::Logger {
 
   /** remotelyOwned */
   std::vector<SSVec*>& remotelyOwned() { return( remotelyOwned_ ); }
+  const std::vector<SSVec*>& remotelyOwned() const { return( remotelyOwned_ ); }
 
  protected:
   fei::SharedPtr<fei::EqnComm> eqnComm_;

@@ -192,7 +192,7 @@ Vector_Local::copyOutFieldData(int fieldID,
 
 int
 Vector_Local::copyOut(int numValues, const int* indices,
-                      double* values, int vectorIndex)
+                      double* values, int vectorIndex) const
 {
   if (vectorIndex != 0) {
     FEI_CERR << "fei::Vector_Local ERROR, vectorIndex!=0. Report to Alan Williams."<<FEI_ENDL;
@@ -200,7 +200,7 @@ Vector_Local::copyOut(int numValues, const int* indices,
   }
 
   for(int i=0; i<numValues; ++i) {
-    std::map<int,int>::iterator
+    std::map<int,int>::const_iterator
      iter = global_to_local_.find(indices[i]);
     if (iter == global_to_local_.end()) {
       FEI_CERR << "fei::Vector_Local::copyOut ERROR, eqn "<<indices[i]<<" not found "

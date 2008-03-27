@@ -22,7 +22,7 @@ class Vector_Local : public fei::Vector {
 
   virtual ~Vector_Local();
 
-  const char* typeName() { return("fei::Vector_Local"); }
+  const char* typeName() const { return("fei::Vector_Local"); }
 
     /** Update 'this' = b*'this' + a*x
      */
@@ -106,7 +106,7 @@ class Vector_Local : public fei::Vector {
                          int vectorIndex=0);
 
     int copyOut(int numValues, const int* indices,
-                double* values, int vectorIndex=0);
+                double* values, int vectorIndex=0) const;
 
     int writeToFile(const char* filename,
                     bool matrixMarketFormat=true);

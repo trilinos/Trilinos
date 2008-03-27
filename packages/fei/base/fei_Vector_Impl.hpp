@@ -69,7 +69,7 @@ namespace fei {
     /** Return a name describing the run-time type
 	of this object.
     */
-    const char* typeName() { return(snl_fei::VectorTraits<T>::typeName()); }
+    const char* typeName() const { return(snl_fei::VectorTraits<T>::typeName()); }
 
     /** Update 'this' = b*'this' + a*x
      */
@@ -181,7 +181,7 @@ namespace fei {
     int copyOut(int numValues,
 		const int* indices,
 		double* values,
-		int vectorIndex=0);
+		int vectorIndex=0) const;
 
     /** please ignore
      */
@@ -197,7 +197,7 @@ namespace fei {
     int copyOutOfUnderlyingVector(int numValues,
 				  const int* indices,
 				  double* values,
-				  int vectorIndex=0);
+				  int vectorIndex=0) const;
 
     int sumIntoFEVector(int blockID,
 			int connOffset,
@@ -378,7 +378,7 @@ template<typename T>
 int fei::Vector_Impl<T>::copyOutOfUnderlyingVector(int numValues,
 						  const int* indices,
 						  double* values,
-						  int vectorIndex)
+						  int vectorIndex) const
 {
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -465,7 +465,7 @@ template<typename T>
 int fei::Vector_Impl<T>::copyOut(int numValues,
 				const int* indices,
 				double* values,
-				int vectorIndex)
+				int vectorIndex) const
 {
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;

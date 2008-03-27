@@ -421,5 +421,6 @@ July 7 2005: version 2.14.00
 
  ??? ?? ???? minor version 2.22.03
   - Fixed a few method signatures in fei::Matrix and derived classes for const-ness.
-    (Some methods which could have been const, weren't.)
+    (Some methods which could have been const, weren't.) Also fixed similar issues
+    in fei::Vector and derived classes.
 

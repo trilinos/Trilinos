@@ -202,7 +202,7 @@ int VectorReducer::writeToStream(FEI_OSTREAM& ostrm,
 int VectorReducer::copyOut(int numValues,
                            const int* indices,
                            double* values,
-                           int vectorIndex)
+                           int vectorIndex) const
 {
   int err = reducer_->copyOutVectorValues(numValues, indices, values,
                                           isSolution_, vectorIndex,

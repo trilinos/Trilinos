@@ -40,7 +40,7 @@ namespace fei {
     /** Return a name describing the run-time type
 	of this object.
     */
-    const char* typeName() { return(target_->typeName()); }
+    const char* typeName() const { return(target_->typeName()); }
 
     /** Update 'this' = b*'this' + a*x
      */
@@ -134,7 +134,7 @@ namespace fei {
     int copyOut(int numValues,
 		const int* indices,
 		double* values,
-		int vectorIndex=0);
+		int vectorIndex=0) const;
 
   private:
     /** please ignore

@@ -91,7 +91,7 @@ namespace fei {
     /** Return an implementation-dependent name describing the run-time type
 	of this object.
     */
-    virtual const char* typeName() = 0;
+    virtual const char* typeName() const = 0;
 
     /** Set a specified scalar throughout the vector. */
     virtual int putScalar(double scalar) = 0;
@@ -114,7 +114,7 @@ namespace fei {
 	be correct until after the scatterToOverlap() method has been called.
     */
     virtual int copyOut(int numValues, const int* indices, double* values,
-			int vectorIndex=0) = 0;
+			int vectorIndex=0) const = 0;
 
     /** Update 'this' = b*'this' + a*x
      */

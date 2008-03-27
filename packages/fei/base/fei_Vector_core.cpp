@@ -214,9 +214,9 @@ int fei::Vector_core::scatterToOverlap()
 int fei::Vector_core::copyOut(int numValues,
 				  const int* indices,
 				  double* values,
-				  int vectorIndex)
+				  int vectorIndex) const
 {
-  std::vector<SSVec*>& remote = remotelyOwned();
+  const std::vector<SSVec*>& remote = remotelyOwned();
 
   for(int i=0; i<numValues; ++i) {
     int ind = indices[i];
