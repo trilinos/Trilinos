@@ -58,6 +58,8 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/Intrepid_DefaultBasisFactory.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_DEFAULT.hpp \
+  $(srcdir)/local/Intrepid_CellDef.hpp \
+  $(srcdir)/local/Intrepid_Cell.hpp \
   $(srcdir)/local/Intrepid_CellTemplates.hpp \
   $(srcdir)/local/Intrepid_CubatureDirectDef.hpp \
   $(srcdir)/local/Intrepid_CubatureDirect.hpp \

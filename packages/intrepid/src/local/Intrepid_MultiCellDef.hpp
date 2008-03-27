@@ -70,9 +70,9 @@ namespace Intrepid {
   };
   
   template<class Scalar>
-    MultiCell<Scalar>::MultiCell(const int      numCells,
-                                 const ECell    generatingCellType,
-                                 const Scalar*  vertices) :
+  MultiCell<Scalar>::MultiCell(const int      numCells,
+                               const ECell    generatingCellType,
+                               const Scalar*  vertices) :
     // initializations
     numCells_(numCells),
     myCellType_(generatingCellType) 
@@ -117,11 +117,11 @@ namespace Intrepid {
   
   
   template<class Scalar>
-    MultiCell<Scalar>::MultiCell(const int      numCells,
-                                 const ECell    generatingCellType,
-                                 const Scalar*  vertices,
-                                 const short*   subcellSigns,
-                                 const int      subcellDim) :
+  MultiCell<Scalar>::MultiCell(const int      numCells,
+                               const ECell    generatingCellType,
+                               const Scalar*  vertices,
+                               const short*   subcellSigns,
+                               const int      subcellDim) :
     // intializations
     numCells_(numCells),
     myCellType_(generatingCellType) 
@@ -186,11 +186,11 @@ namespace Intrepid {
   
   
   template<class Scalar>
-    MultiCell<Scalar>::MultiCell(const int      numCells,
-                                 const ECell    generatingCellType,
-                                 const Scalar*  vertices,
-                                 const short*   edgeSigns,
-                                 const short*   faceSigns) :
+  MultiCell<Scalar>::MultiCell(const int      numCells,
+                               const ECell    generatingCellType,
+                               const Scalar*  vertices,
+                               const short*   edgeSigns,
+                               const short*   faceSigns) :
     // intializations
     numCells_(numCells),
     myCellType_(generatingCellType) 
@@ -243,8 +243,8 @@ namespace Intrepid {
   
 
   template<class Scalar>
-    void MultiCell<Scalar>::setConnMapCustom(const ECell           customCellType,
-                                             const ConnMapTemplate customCellTemplate[]) {
+  void MultiCell<Scalar>::setConnMapCustom(const ECell           customCellType,
+                                           const ConnMapTemplate customCellTemplate[]) {
       
       // Can only write to a custom template
       assert((customCellType > CELL_CANONICAL_MAX) && (customCellType < CELL_MAX)); 
@@ -253,13 +253,13 @@ namespace Intrepid {
       connMapCustom_[customCellType - CELL_CANONICAL_MAX - 1][0] = customCellTemplate[0];
       connMapCustom_[customCellType - CELL_CANONICAL_MAX - 1][1] = customCellTemplate[1];
       connMapCustom_[customCellType - CELL_CANONICAL_MAX - 1][2] = customCellTemplate[2];
-    }
+  }
 
   
   template<class Scalar>
-    EFailCode MultiCell<Scalar>::insideReferenceCell(const ECell cellType, 
-                                                     const Point<Scalar>& refPoint,
-                                                     const double threshold) {
+  EFailCode MultiCell<Scalar>::insideReferenceCell(const ECell cellType, 
+                                                   const Point<Scalar>& refPoint,
+                                                   const double threshold) {
       
       // First make sure the Point is in FRAME_REFERENCE
       if(refPoint.getFrameKind() != FRAME_REFERENCE) {
@@ -335,11 +335,11 @@ namespace Intrepid {
       }
       
       return code;
-    }
+  }
   
 
   template<class Scalar>
-    void MultiCell<Scalar>::setAtlas() {
+  void MultiCell<Scalar>::setAtlas() {
       
       // First check if <var>atlas_<var> was already set
       if(atlasStatus_ == STATUS_DEFINED) return; 
@@ -439,10 +439,10 @@ namespace Intrepid {
         }
       }
       atlasStatus_ = STATUS_DEFINED;
-    }
+  }
   
   template<class Scalar>
-    const ChartTemplate<Scalar>& MultiCell<Scalar>::getChart(const int cellID) const{
+  const ChartTemplate<Scalar>& MultiCell<Scalar>::getChart(const int cellID) const{
       if(atlasStatus_ == STATUS_DEFINED) {
         return atlas_[cellID]; 
       }
@@ -451,13 +451,13 @@ namespace Intrepid {
         "\t cell Atlas has not been defined\n";
         exit(1);
       }
-    }
+  }
 
   
   template<class Scalar>
-    Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID, 
-                                               const Point<Scalar>& refPoint,
-                                               double threshold) const{
+  Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID, 
+                                             const Point<Scalar>& refPoint,
+                                             double threshold) const{
 
       // Check if the PointType is in the FRAME_REFERENCE frame
       if(refPoint.getFrameKind() == FRAME_PHYSICAL){
@@ -528,11 +528,11 @@ namespace Intrepid {
       }
       Matrix<Scalar> DF_temp(DF,ambientDim_);
       return DF_temp;
-    }
+  }
   
   
   template<class Scalar>
-    Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID, 
+  Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID, 
                                                        const Point<Scalar>&  refPoint,
                                                        const double threshold) const {
 
@@ -608,11 +608,11 @@ namespace Intrepid {
       // The return point is in PHYSICAL space, set its type accordingly:
       Point<Scalar> physPoint(physCoords,ambientDim_,FRAME_PHYSICAL);
       return physPoint;
-    }
+  }
   
   
   template<class Scalar>
-    Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const {
+  Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,const Point<Scalar>& physPoint) const {
       
       // Warn if the coordinate frame of physPoint argument is not FRAME_PHYSICAL:
       if(physPoint.getFrameKind() != FRAME_PHYSICAL){
@@ -670,11 +670,19 @@ namespace Intrepid {
         " \t Computed reference point is outside its reference cell\n";
       }
       return refPoint;
-    }
-  
-    
+  }
+
+
   template<class Scalar>
-    void MultiCell<Scalar>::printMyInfo(std::ostream & out) const {
+  EFailCode MultiCell<Scalar>::insidePhysicalCell(const int cellID,
+                                                  const Point<Scalar>& physPoint,
+                                                  const double threshold) const {
+      return insideReferenceCell(myCellType_, mapToReferenceCell(cellID, physPoint), threshold);
+  }
+
+      
+  template<class Scalar>
+  void MultiCell<Scalar>::printMyInfo(std::ostream & out) const {
       out.setf(std::ios_base::scientific, std::ios_base::floatfield);
       out.precision(6);
       
@@ -741,13 +749,13 @@ namespace Intrepid {
         }
       }
       out  << "\n=========================== End MultiCell info: ===========================\n"; 
-    } // end printMyInfo
+  } // end printMyInfo
   
   
   template<class Scalar>
-    std::ostream& operator << (std::ostream& os, const MultiCell<Scalar>& base) {
+  std::ostream& operator << (std::ostream& os, const MultiCell<Scalar>& base) {
       base.printMyInfo(os);
       return os;
-    }
+  }
   
 } // namespace Intrepid

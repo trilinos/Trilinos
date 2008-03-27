@@ -194,7 +194,8 @@ namespace Intrepid {
     NORM_ONE = 0,
     NORM_TWO,
     NORM_INF,
-    NORM_FRO    // Frobenius matrix norm
+    NORM_FRO,    // Frobenius matrix norm
+    NORM_MAX
   };
 
   std::string ENormToString(ENorm norm) {
@@ -204,6 +205,7 @@ namespace Intrepid {
       case NORM_TWO:   retString = "2-Norm";         break;
       case NORM_INF:   retString = "Infinity Norm";  break;
       case NORM_FRO:   retString = "Frobenius Norm"; break;
+      case NORM_MAX:   retString = "Max. Norm";      break;
       default:         retString = "INVALID ENorm";
     }
     return retString;

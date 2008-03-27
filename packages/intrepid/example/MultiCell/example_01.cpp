@@ -33,6 +33,7 @@
 \author Created by P. Bochev and D. Ridzal
 */
 #include "Intrepid_MultiCell.hpp"
+#include "Intrepid_Cell.hpp"
 
 using namespace std;
 using namespace Intrepid;
@@ -81,10 +82,10 @@ int main(int argc, char *argv[]) {
       triNodes,                     // array with interleaved node coordinates
       triEdgeSigns,                 // array with edge signs
       1);                           // dimension of the subcells for which sign data is provided
-   
+
    // Display the newly created MultiCell
    cout << triMcell << endl;         
-   
+
    cout << "Testing multicell interface for the generating cell type...\n\n";
    
    cout << "\t type                   = " << triMcell.getMyCellType() << "\n";
@@ -321,7 +322,39 @@ int main(int argc, char *argv[]) {
      cout << p_in_pyramid << " is NOT inside reference pyramid " << endl;
    }
    cout << "You may need at least 16 digits to see the added perturbation!" << endl;
+
+
+
+   cout << "\n" \
+     << "===============================================================================\n"\
+     << "| EXAMPLE 4: Specialized methods of the Cell class                            |\n"\
+     << "===============================================================================\n";
+
+   // Invoke a ctor that takes an array of subcell signs and the dimension of the subcell
+   Cell<double> triCell(
+      CELL_TRI,                     // generating cell type
+      triNodes,                 // array with interleaved node coordinates
+      triEdgeSigns,                 // array with edge signs
+      1);                           // dimension of the subcells for which sign data is provided
    
+   // Display the newly created Cell
+   cout << triCell << endl;         
+
+   triCell.getMySubcellSigns(1);
+   cout << "Get vertex 2:\n" << triCell.getVertex(2) << "\n\n";
+   triCell.getCell();
+   triCell.setAtlas();
+   triCell.getChart();
+   Point<double> refPt(0.4,0.4,FRAME_REFERENCE);
+   cout << "Transformations based on: " << refPt << "\n";
+   cout << " Jacobian:\n" << triCell.jacobian(refPt) << endl;
+   cout << " Map to physical point:" << triCell.mapToPhysicalCell(refPt) << endl;
+   cout << " Map back to reference point:" << triCell.mapToReferenceCell(triCell.mapToPhysicalCell(refPt)) << endl;
+   cout << " Is physical point inside physical cell?";
+   if (triCell.insidePhysicalCell(triCell.mapToPhysicalCell(refPt)) == 0)
+     cout << " YES.\n";
+   else
+     cout << " NO.\n";
    
   return 0;
 }
