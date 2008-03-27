@@ -32,7 +32,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Utils.hpp>
 #include <Isorropia_Epetra.hpp>
-#include <Isorropia_EpetraRedistributor.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 
@@ -561,8 +560,6 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(rowmat, costPtr, paramlist));
 
-  Isorropia::Epetra::Redistributor rd(partitioner);
-
   const Epetra_Comm& comm = rowmat->RowMatrixRowMap().Comm();
 
   Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
@@ -575,16 +572,17 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
     throw Isorropia::Exception(str1+str2);
   }
 
-  Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, *bal_rowmap, 0);
-  Epetra_MultiVector* x =
-    new Epetra_MultiVector(*bal_rowmap, input_problem.GetLHS()->NumVectors());
-  Epetra_MultiVector* b =
-    new Epetra_MultiVector(*bal_rowmap, input_problem.GetRHS()->NumVectors());
+  Teuchos::RCP<Epetra_CrsMatrix> A =
+     redistribute_rows(*(input_problem.GetMatrix()), *bal_rowmap);
+  Teuchos::RCP<Epetra_MultiVector> x = 
+    redistribute(*(input_problem.GetLHS()), *bal_rowmap);
+  Teuchos::RCP<Epetra_MultiVector> b =  
+     redistribute(*(input_problem.GetRHS()), *bal_rowmap);
 
   try {
-    rd.redistribute(*input_problem.GetMatrix(), *A);
-    rd.redistribute(*input_problem.GetLHS(), *x);
-    rd.redistribute(*input_problem.GetRHS(), *b);
+    A = redistribute_rows(*input_problem.GetMatrix(), *bal_rowmap);
+    x = redistribute(*input_problem.GetLHS(), *bal_rowmap);
+    b = redistribute(*input_problem.GetRHS(), *bal_rowmap);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy(Epetra_LinearProblem): caught exception:");
@@ -593,7 +591,7 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   }
 
   Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
-    Teuchos::rcp(new Epetra_LinearProblem(A, x, b));
+    Teuchos::rcp(new Epetra_LinearProblem(A.get(), x.get(), b.get()));
 
   return( linprob );
 }

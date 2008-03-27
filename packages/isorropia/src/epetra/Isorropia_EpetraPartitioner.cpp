@@ -178,6 +178,8 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
+  std::string zoltan("Zoltan");
+
 #ifdef HAVE_ISORROPIA_ZOLTAN
   if (partitioning_method != "SIMPLE_LINEAR") {
     use_zoltan = true;
@@ -187,7 +189,6 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
 
     // Get special Zoltan parameters, if any
 
-    std::string zoltan("Zoltan");
     Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
 
     // Check that we have a valid Zoltan problem.
@@ -353,7 +354,7 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     }
   }   // end if (use_zoltan)
 #else
-  if (paramlist_.isSublist(zoltan) {
+  if (paramlist_.isSublist(zoltan)) {
     throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
   }
 #endif
