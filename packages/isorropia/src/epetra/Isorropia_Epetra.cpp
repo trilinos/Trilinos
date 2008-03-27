@@ -572,12 +572,9 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
     throw Isorropia::Exception(str1+str2);
   }
 
-  Teuchos::RCP<Epetra_CrsMatrix> A =
-     redistribute_rows(*(input_problem.GetMatrix()), *bal_rowmap);
-  Teuchos::RCP<Epetra_MultiVector> x = 
-    redistribute(*(input_problem.GetLHS()), *bal_rowmap);
-  Teuchos::RCP<Epetra_MultiVector> b =  
-     redistribute(*(input_problem.GetRHS()), *bal_rowmap);
+  Teuchos::RCP<Epetra_CrsMatrix> A;
+  Teuchos::RCP<Epetra_MultiVector> x;
+  Teuchos::RCP<Epetra_MultiVector> b;
 
   try {
     A = redistribute_rows(*input_problem.GetMatrix(), *bal_rowmap);
@@ -590,8 +587,17 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
     throw Isorropia::Exception(str1+str2);
   }
 
+  // Problem: A, x, and b are reference counted pointers.  The objects they
+  // point to get deallocated at the return from this function.  So I need 
+  // to make copies of the objects they point to, and use those copies to 
+  // create the Epetra_LinearProblem.
+
+  Epetra_CrsMatrix *A2 = new Epetra_CrsMatrix(*A);
+  Epetra_MultiVector *x2 = new Epetra_MultiVector(*x);
+  Epetra_MultiVector *b2 = new Epetra_MultiVector(*b);
+
   Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
-    Teuchos::rcp(new Epetra_LinearProblem(A.get(), x.get(), b.get()));
+    Teuchos::rcp(new Epetra_LinearProblem(A2, x2, b2));
 
   return( linprob );
 }
