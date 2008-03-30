@@ -585,6 +585,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
                   = mesh->hewgt_dim
                   = mesh->blank_count
                   = mesh->global_blank_count
+                  = mesh->visible_nvtx
                   = 0;
   mesh->eb_names       = NULL;
   mesh->eb_etypes      = NULL;
