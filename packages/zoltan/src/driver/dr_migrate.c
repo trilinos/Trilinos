@@ -48,7 +48,6 @@
 #include "dr_elem_util_const.h"
 #include "dr_maps_const.h"
 #include "dr_dd.h"
-#include "zz_util_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
