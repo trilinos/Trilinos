@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lbi_const.h"
 #include "ch_input_const.h"
 #include "dr_err_const.h"
 #include "dr_const.h"
