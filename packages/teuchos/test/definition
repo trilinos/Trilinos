@@ -68,7 +68,8 @@
 
 (FRAMEWORK,INSTALL) {
     TESTS = LAPACK/LAPACK_test.exe,
-            DenseMatrix/DenseMatrix_test.exe;
+            DenseMatrix/DenseMatrix_test.exe,
+            DenseMatrix/SymDenseMatrix_test.exe;
     ARGS = -v;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL;
