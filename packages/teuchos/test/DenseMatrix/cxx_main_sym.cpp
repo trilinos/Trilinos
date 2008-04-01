@@ -127,16 +127,12 @@ int main(int argc, char* argv[])
   Con4TestSubmatrix(0, 0) = 4;  
   Con4TestSubmatrix(1, 0) = 5; Con4TestSubmatrix(1, 1) = 8;
   SDMatrix Con4TestCopy1(Teuchos::Copy, Con4TestOrig, 2, 1);
-  std::cout << Con4TestCopy1 << std::endl;
   numberFailedTests += PrintTestResults("constructor 4 -- submatrix copy", Con4TestCopy1, Con4TestSubmatrix, verbose);
   SDMatrix Con4TestCopy2(Teuchos::Copy, Con4TestOrig, 3, 0);
-  std::cout << Con4TestCopy2 << std::endl;
   numberFailedTests += PrintTestResults("constructor 4 -- full matrix copy", Con4TestCopy2, Con4TestOrig, verbose);
   SDMatrix Con4TestView1(Teuchos::View, Con4TestOrig, 2, 1);
-  std::cout << Con4TestView1 << std::endl;
   numberFailedTests += PrintTestResults("constructor 4 -- full matrix view", Con4TestView1, Con4TestSubmatrix, verbose);
   SDMatrix Con4TestView2(Teuchos::View, Con4TestOrig, 3, 0);
-  std::cout << Con4TestView2 << std::endl;
   numberFailedTests += PrintTestResults("constructor 4 -- submatrix view", Con4TestView2, Con4TestOrig, verbose);
 
   // Norm Tests
@@ -155,20 +151,23 @@ int main(int argc, char* argv[])
   numberFailedTests += PrintTestResults("normInf of a 0x0", BBB.normInf(), 0.0, verbose);
   numberFailedTests += PrintTestResults("normFrobenius of a 0x0", BBB.normFrobenius(), 0.0, verbose);
 
+  // Multiplication Tests
 
-  //  Scale Tests.
+  // Reset values of AAA.
+  AAA(0, 0) = 8;
+  AAA(1, 0) = 1; AAA(1, 1) = 8;
+  AAA(2, 0) = 2; AAA(2, 1) = 3; AAA(2, 2) = 8;
 
-  SDMatrix ScalTest( 8 );
-  ScalTest.putScalar( 1.0 );
-  //  Scale the entries by 8, it should be 8.
-  if (verbose) std::cout << "scale() -- scale matrix by some number ";
-  returnCode = ScalTest.scale( 8.0 );
-  if (ScalTest(2, 3) == 8.0) {
-	if (verbose) std::cout<< "successful." <<std::endl;
-  } else {
-	if (verbose) std::cout<< "unsuccessful." <<std::endl;
-	numberFailedTests++;
-  }
+  DMatrix My_Prod( 4, 3 ), My_GenMatrix( 4, 3 );
+  My_GenMatrix.putScalar(1.0);
+
+  // Matrix multiplication ( My_Prod = 1.0*My_GenMatrix*My_Matrix )
+  My_Prod.multiply( Teuchos::RIGHT_SIDE, 1.0, AAA, My_GenMatrix, 0.0 );
+  numberFailedTests += PrintTestResults("multiply() -- general times symmetric matrix (storage = lower tri)", My_Prod.normOne(), 52.0, verbose);
+  AAA.setUpper();
+  AAA(2, 1) = 1.0;
+  My_Prod.multiply( Teuchos::RIGHT_SIDE, 1.0, AAA, My_GenMatrix, 0.0 );
+  numberFailedTests += PrintTestResults("multiply() -- general times symmetric matrix (storage = upper tri)", My_Prod.normOne(), 44.0, verbose);
 
   //  Set Method Tests.
 
@@ -246,6 +245,20 @@ int main(int argc, char* argv[])
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
     numberFailedTests++;   
   }  
+
+  //  Scale Tests.
+
+  SDMatrix ScalTest( 8 );
+  ScalTest.putScalar( 1.0 );
+  //  Scale the entries by 8, it should be 8.
+  if (verbose) std::cout << "operator*= -- scale matrix by some number ";
+  ScalTest *= 8.0;
+  if (ScalTest(2, 3) == 8.0) {
+	if (verbose) std::cout<< "successful." <<std::endl;
+  } else {
+	if (verbose) std::cout<< "unsuccessful." <<std::endl;
+	numberFailedTests++;
+  }
 
   //
   // If a test failed output the number of failed tests.

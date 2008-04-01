@@ -57,6 +57,7 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_SerialSymDenseMatrix.hpp"
 
 /*! 	\class Teuchos::SerialDenseMatrix
 	\brief This class creates and provides basic support for dense rectangular matrix of templated type.
@@ -263,6 +264,12 @@ public:
   //! Scale \c this matrix by \c alpha; \c *this = \c alpha*\c *this.
   /*!
     \param alpha Scalar to multiply \e this by.
+  */
+  SerialDenseMatrix<OrdinalType, ScalarType>& operator*= (const ScalarType alpha);
+
+  //! Scale \c this matrix by \c alpha; \c *this = \c alpha*\c *this.
+  /*!
+    \param alpha Scalar to multiply \e this by.
     \return Integer error code, set to 0 if successful.
   */
   int scale ( const ScalarType alpha );
@@ -292,6 +299,21 @@ public:
     \return Integer error code, set to 0 if successful.
   */
   int multiply (ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
+
+  //! Multiply \c A and \c B and add them to \e this; \e this = \c beta * \e this + \c alpha*A*B or \e this = \c beta * \e this + \c alpha*B*A.
+  /*!
+    \param sideA - Which side is A on for the multiplication to B, A*B (Teuchos::LEFT_SIDE) or B*A (Teuchos::RIGHT_SIDE).
+    \param alpha - The scaling factor for \c A * \c B, or \c B * \c A.
+    \param A - SerialSymDenseMatrix (a serial SPD dense matrix)
+    \param B - SerialDenseMatrix (a serial dense matrix)
+    \param beta - The scaling factor for \e this.
+
+    If the matrices \c A and \c B are not of the right dimension, consistent with \e this, then \e this
+    matrix will not be altered and -1 will be returned.
+    \return Integer error code, set to 0 if successful.
+  */
+  int multiply (ESide sideA, ScalarType alpha, const SerialSymDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
+
   //@}
 
   //! @name Comparison methods.
@@ -364,14 +386,14 @@ protected:
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix()
-  : CompObject(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
+  : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
 {}
   
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   OrdinalType numRows_in, OrdinalType numCols_in
   )
-  : CompObject(), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
+  : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
 {
   values_ = new ScalarType[stride_*numCols_];
   putScalar();
@@ -383,7 +405,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   DataAccess CV, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRows_in,
   OrdinalType numCols_in
   )
-  : CompObject(), numRows_(numRows_in), numCols_(numCols_in), stride_(stride_in),
+  : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), stride_(stride_in),
     valuesCopied_(false), values_(values_in)
 {
   if(CV == Copy)
@@ -396,7 +418,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
 }
   
 template<typename OrdinalType, typename ScalarType>
-SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
+SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
 {
   if ( trans == Teuchos::NO_TRANS ) 
   {
@@ -438,7 +460,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   OrdinalType numRows_in, OrdinalType numCols_in, OrdinalType startRow,
   OrdinalType startCol
   )
-  : CompObject(), numRows_(numRows_in), numCols_(numCols_in), stride_(Source.stride_),
+  : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), stride_(Source.stride_),
     valuesCopied_(false), values_(Source.values_)
 {
   if(CV == Copy)
@@ -794,6 +816,13 @@ bool SerialDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialDenseMa
 //----------------------------------------------------------------------------------------------------  
 
 template<typename OrdinalType, typename ScalarType>
+SerialDenseMatrix<OrdinalType, ScalarType>& SerialDenseMatrix<OrdinalType, ScalarType>::operator*= (const ScalarType alpha )
+{
+  this->scale( alpha );
+  return(*this);
+}
+
+template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
 {
   OrdinalType i, j;
@@ -847,7 +876,33 @@ int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETrans
   return(0);
 }
   
+template<typename OrdinalType, typename ScalarType>
+int SerialDenseMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarType alpha, const SerialSymDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
+{
+  // Check for compatible dimensions
+  OrdinalType A_nrows = A.numRows(), A_ncols = A.numCols();
+  OrdinalType B_nrows = B.numRows(), B_ncols = B.numCols();
   
+  if (ESideChar[sideA]=='L') {
+    if ((numRows_ != A_nrows) || (A_ncols != B_nrows) || (numCols_ != B_ncols)) {
+      TEUCHOS_CHK_ERR(-1); // Return error
+    }
+  } else {
+    if ((numRows_ != B_nrows) || (B_ncols != A_nrows) || (numCols_ != A_ncols)) {
+      TEUCHOS_CHK_ERR(-1); // Return error
+    }
+  } 
+  
+  // Call SYMM function
+  EUplo uplo = (A.upper() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI);
+  this->SYMM(sideA, uplo, numRows_, numCols_, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
+  double nflops = 2 * numRows_;
+  nflops *= numCols_;
+  nflops *= A_ncols;
+  updateFlops(nflops);
+  return(0);
+}
+
 template<typename OrdinalType, typename ScalarType>
 void SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
 {

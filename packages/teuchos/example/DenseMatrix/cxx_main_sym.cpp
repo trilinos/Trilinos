@@ -1,4 +1,5 @@
 #include "Teuchos_SerialSymDenseMatrix.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
@@ -34,8 +35,12 @@ int main(int argc, char* argv[])
   Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
 
   // Basic matrix arithmetic can be performed:
-  My_Copy2 += My_Matrix;         // Matrix addition
-  My_Copy2.scale( 0.5 );         // Matrix scaling
+  Teuchos::SerialDenseMatrix<int,double> My_Prod( 4, 3 ), My_GenMatrix( 4, 3 );
+  My_GenMatrix.putScalar(1.0);
+  // Matrix multiplication ( My_Prod = 1.0*My_GenMatrix*My_Matrix )
+  My_Prod.multiply( Teuchos::RIGHT_SIDE, 1.0, My_Matrix, My_GenMatrix, 0.0 );
+  My_Copy2 += My_Matrix;   // Matrix addition
+  My_Copy2 *= 0.5;         // Matrix scaling
   
   // Matrices can be compared:
   // Check if the matrices are equal in dimension and values

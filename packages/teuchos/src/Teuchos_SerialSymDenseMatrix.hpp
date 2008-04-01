@@ -292,16 +292,14 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
   //! @name Mathematical Methods
   //@{ 
 
-  //! Inplace scalar-matrix product A = \e alpha*A.
-  /*! Scale a matrix, entry-by-entry using the value \e alpha.  This method is sensitive to 
+  //! Inplace scalar-matrix product A = \c alpha*A.
+  /*! Scale a matrix, entry-by-entry using the value \e alpha.  This method is sensitive to
       the UPLO() parameter.
 
    \param alpha - Scalar to multiply with A.
 
-   \return Integer error code, set to 0 if successful.
-	 
   */
-  int scale( const ScalarType alpha );
+  SerialSymDenseMatrix<OrdinalType, ScalarType>& operator*= (const ScalarType alpha);
 
   //! Add another matrix to \e this matrix.
   /*! Add \c Source to \e this if the dimension of both matrices are the same.  If not, \e this matrix
@@ -376,6 +374,9 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
 
  protected:
 
+  // In-place scaling of matrix.
+  void scale( const ScalarType alpha );
+
   // Copy the values from one matrix to the other.  
   void copyMat(bool inputUpper, ScalarType* inputMatrix, OrdinalType inputStride,
 	       OrdinalType numRowCols, bool outputUpper, ScalarType* outputMatrix, 
@@ -404,12 +405,12 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix()
-  : CompObject(), numRowCols_(0), stride_(0), valuesCopied_(false), values_(0), upper_(false), UPLO_('L')
+  : CompObject(), Object("Teuchos::SerialSymDenseMatrix"), numRowCols_(0), stride_(0), valuesCopied_(false), values_(0), upper_(false), UPLO_('L')
 {}
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(OrdinalType numRowCols_in, bool zeroOut)
-  : CompObject(), numRowCols_(numRowCols_in), stride_(numRowCols_in), valuesCopied_(false), upper_(false), UPLO_('L')
+  : CompObject(), Object("Teuchos::SerialSymDenseMatrix"), numRowCols_(numRowCols_in), stride_(numRowCols_in), valuesCopied_(false), upper_(false), UPLO_('L')
 {
   values_ = new ScalarType[stride_*numRowCols_];
   valuesCopied_ = true;
@@ -421,7 +422,7 @@ template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
   DataAccess CV, bool upper_in, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRowCols_in
   )
-  : CompObject(), numRowCols_(numRowCols_in), stride_(stride_in), valuesCopied_(false), 
+  : CompObject(), Object("Teuchos::SerialSymDenseMatrix"), numRowCols_(numRowCols_in), stride_(stride_in), valuesCopied_(false), 
     values_(values_in), upper_(upper_in)
 {
   if (upper_)
@@ -439,7 +440,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
 }
   
 template<typename OrdinalType, typename ScalarType>
-SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source) : CompObject(), numRowCols_(Source.numRowCols_), stride_(Source.numRowCols_), valuesCopied_(true), values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_) 
+SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source) : CompObject(), Object("Teuchos::SerialSymDenseMatrix"), numRowCols_(Source.numRowCols_), stride_(Source.numRowCols_), valuesCopied_(true), values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_) 
 {
   values_ = new ScalarType[stride_*numRowCols_];
   copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0);
@@ -450,7 +451,7 @@ template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
 								    DataAccess CV, const SerialSymDenseMatrix<OrdinalType, 
 								    ScalarType> &Source, OrdinalType numRowCols_in, OrdinalType startRowCol )
-  : CompObject(), numRowCols_(numRowCols_in), stride_(Source.stride_), valuesCopied_(false), upper_(Source.upper_), UPLO_(Source.UPLO_)
+  : CompObject(), Object("Teuchos::SerialSymDenseMatrix"), numRowCols_(numRowCols_in), stride_(Source.stride_), valuesCopied_(false), upper_(Source.upper_), UPLO_(Source.UPLO_)
 {
   if(CV == Copy)
   {
@@ -678,6 +679,13 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::operator=( const SerialSymDenseMa
 }
 
 template<typename OrdinalType, typename ScalarType>
+SerialSymDenseMatrix<OrdinalType, ScalarType>& SerialSymDenseMatrix<OrdinalType, ScalarType>::operator*= (const ScalarType alpha)
+{
+  this->scale(alpha);
+  return(*this);
+}
+
+template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>& SerialSymDenseMatrix<OrdinalType, ScalarType>::operator+= (const SerialSymDenseMatrix<OrdinalType,ScalarType>& Source )
 {
   // Check for compatible dimensions
@@ -884,7 +892,7 @@ bool SerialSymDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialSymD
 //----------------------------------------------------------------------------------------------------  
 
 template<typename OrdinalType, typename ScalarType>
-int SerialSymDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
+void SerialSymDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
 {
   OrdinalType i, j;
   ScalarType* ptr;
@@ -901,8 +909,6 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha
       for (i=j; i<numRowCols_; i++) { *ptr = alpha * (*ptr); ptr++; }
     }
   }
-    
-  return(0);
 }
 
 /*
