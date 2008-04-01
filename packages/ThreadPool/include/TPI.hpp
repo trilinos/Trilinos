@@ -27,22 +27,57 @@
 #ifndef util_ThreadPool_hpp
 #define util_ThreadPool_hpp
 
-#include <string>
-#include <stdexcept>
-
-#include <util/TPI.h>
+#include <TPI.h>
 
 namespace TPI {
 
 typedef TPI_ThreadPool ThreadPool ;
 
-inline
-int Run( void (*)(void*,ThreadPool), void * );
+//----------------------------------------------------------------------
+/** Run  (*func)(arg,pool)  on all threads.
+ */
+int Run( void (*func)(void*,ThreadPool), void * arg );
 
-/** Run 'void Worker::method( TPI::ThreadPool )' */
+/** Run  worker.*method(pool)  on all threads.
+ */
 template<class Worker>
-inline
-int Run( Worker & , void (Worker::*)(ThreadPool) );
+int Run( Worker & worker , void (Worker::*method)(ThreadPool) );
+
+//----------------------------------------------------------------------
+/* Run  worker_#.*method_#(pool)  on  num_#  threads. */
+
+template<class W0>
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 );
+
+template<class W0, class W1>
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 );
+
+template<class W0, class W1, class W2>
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 );
+
+template<class W0, class W1, class W2, class W3>
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 ,
+         W3 & worker_3 , void (W3::*method_3)(ThreadPool) , int num_3 );
+
+template<class W0, class W1, class W2, class W3, class W4>
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 ,
+         W3 & worker_3 , void (W3::*method_3)(ThreadPool) , int num_3 ,
+         W4 & worker_4 , void (W3::*method_4)(ThreadPool) , int num_4 );
+
+template<class W0, class W1, class W2, class W3, class W4, class W5>
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 ,
+         W3 & worker_3 , void (W3::*method_3)(ThreadPool) , int num_3 ,
+         W4 & worker_4 , void (W3::*method_4)(ThreadPool) , int num_4 ,
+         W5 & worker_5 , void (W5::*method_5)(ThreadPool) , int num_5 );
 
 //----------------------------------------------------------------------
 
@@ -88,18 +123,24 @@ int Rank( ThreadPool pool , int & rank , int & size )
   { return TPI_Rank( pool , & rank , & size ); }
 
 inline
-int Partition( ThreadPool pool , int N , int & I_local , int & N_local )
-  { return TPI_Partition( pool , N , & I_local , & N_local ); }
+int Partition( int Rank , int Size , int N , int & I_local , int & N_local )
+  { return TPI_Partition( Rank , Size , N , & I_local , & N_local ); }
 
 //----------------------------------------------------------------------
 
+inline
 int Init( int n ) { return TPI_Init( n ); }
 
+inline
 int Finalize() { return TPI_Finalize(); }
 
-int Size( int & number_allocated , int & number_concurrent )
-  { return TPI_Size( & number_allocated , & number_concurrent ); }
+inline
+int Size( int & number_allocated ) { return TPI_Size( & number_allocated ); }
 
+inline
+int Concurrency() { return TPI_Concurrency(); }
+
+inline
 double Walltime() { return TPI_Walltime(); }
 
 //----------------------------------------------------------------------
@@ -108,11 +149,11 @@ double Walltime() { return TPI_Walltime(); }
 namespace {
 
 template<class Worker>
-class WorkerMethod {
+class WorkerMethodHelper {
 private:
-  WorkerMethod();
-  WorkerMethod( const WorkerMethod & );
-  WorkerMethod & operator = ( const WorkerMethod & );
+  WorkerMethodHelper();
+  WorkerMethodHelper( const WorkerMethodHelper & );
+  WorkerMethodHelper & operator = ( const WorkerMethodHelper & );
 
 public:
 
@@ -121,12 +162,12 @@ public:
   Worker & worker ;
   Method   method ;
 
-  WorkerMethod( Worker & w , Method m ) : worker(w), method(m) {}
+  WorkerMethodHelper( Worker & w , Method m ) : worker(w), method(m) {}
 
   static void run( void * arg , ThreadPool pool )
     {
       try {
-        WorkerMethod & wm = * reinterpret_cast<WorkerMethod*>(arg);
+        WorkerMethodHelper & wm = * reinterpret_cast<WorkerMethodHelper*>(arg);
         (wm.worker.*wm.method)(pool);
       } catch(...){}
     }
@@ -134,19 +175,20 @@ public:
 
 }
 
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+
 inline
-void Run( ThreadPool pool ,
-          void (*func)( void * , ThreadPool ) ,
-          void * arg )
+int Run( void (*func)( void * , ThreadPool ) , void * arg )
 {
-  TPI_Run( pool, reinterpret_cast< TPI_parallel_subprogram >(func), arg );
+  return TPI_Run( reinterpret_cast< TPI_parallel_subprogram >(func), arg );
 }
 
 template<class Worker>
 inline
-int Run( Worker & worker, void (Worker::*method)(ThreadPool))
+int Run( Worker & worker, void (Worker::*method)(ThreadPool) )
 {
-  typedef WorkerMethod<Worker> WM ;
+  typedef WorkerMethodHelper<Worker> WM ;
 
   WM tmp( worker , method );
 
@@ -154,68 +196,184 @@ int Run( Worker & worker, void (Worker::*method)(ThreadPool))
 }
 
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
 
 template<class W0>
 inline
 int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 )
 {
-  typedef WorkerMethod<W0> WM_0 ;
+  enum { N = 1 };
+  typedef WorkerMethodHelper<W0> WM_0 ;
 
-  WM_0 tmp1( worker_0 , method_0 );
+  WM_0 tmp_0( worker_0 , method_0 );
 
-  TPI_parallel_subprogram sub[1] = {
+  TPI_parallel_subprogram sub[N] = {
     reinterpret_cast<TPI_parallel_subprogram>(& WM_0::run) };
 
-  void * arg[1] = { & tmp_0 };
-  int    num[1] = {   num_0 };
+  void * arg[N] = { & tmp_0 };
+  int    num[N] = {   num_0 };
 
-  return TPI_Run_many( 1 , sub , arg , num );
+  return TPI_Run_many( N , sub , arg , num );
 }
+
+//----------------------------------------------------------------------
 
 template<class W0, class W1>
 inline
 int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
          W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 )
 {
-  typedef WorkerMethod<W0> WM_0 ;
-  typedef WorkerMethod<W1> WM_1 ;
+  enum { N = 2 };
+  typedef WorkerMethodHelper<W0> WM_0 ;
+  typedef WorkerMethodHelper<W1> WM_1 ;
 
-  WM_0 tmp1( worker_0 , method_0 );
-  WM_1 tmp1( worker_1 , method_1 );
+  WM_0 tmp_0( worker_0 , method_0 );
+  WM_1 tmp_1( worker_1 , method_1 );
 
-  TPI_parallel_subprogram sub[2] = {
+  TPI_parallel_subprogram sub[N] = {
     reinterpret_cast<TPI_parallel_subprogram>(& WM_0::run) ,
     reinterpret_cast<TPI_parallel_subprogram>(& WM_1::run) };
 
-  void * arg[2] = { & tmp_0 , & tmp_1 };
-  int    num[2] = {   num_0 ,   num_1 };
+  void * arg[N] = { & tmp_0 , & tmp_1 };
+  int    num[N] = {   num_0 ,   num_1 };
 
-  return TPI_Run_many( 2 , sub , arg , num );
+  return TPI_Run_many( N , sub , arg , num );
 }
 
-template<class W0, class W1, class W3>
+//----------------------------------------------------------------------
+
+template<class W0, class W1, class W2>
 inline
 int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
          W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
          W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 )
 {
-  typedef WorkerMethod<W0> WM_0 ;
-  typedef WorkerMethod<W1> WM_1 ;
-  typedef WorkerMethod<W2> WM_2 ;
+  enum { N = 3 };
+  typedef WorkerMethodHelper<W0> WM_0 ;
+  typedef WorkerMethodHelper<W1> WM_1 ;
+  typedef WorkerMethodHelper<W2> WM_2 ;
 
-  WM_0 tmp1( worker_0 , method_0 );
-  WM_1 tmp1( worker_1 , method_1 );
-  WM_2 tmp1( worker_2 , method_2 );
+  WM_0 tmp_0( worker_0 , method_0 );
+  WM_1 tmp_1( worker_1 , method_1 );
+  WM_2 tmp_2( worker_2 , method_2 );
 
-  TPI_parallel_subprogram sub[3] = {
+  TPI_parallel_subprogram sub[N] = {
     reinterpret_cast<TPI_parallel_subprogram>(& WM_0::run) ,
     reinterpret_cast<TPI_parallel_subprogram>(& WM_1::run) ,
     reinterpret_cast<TPI_parallel_subprogram>(& WM_2::run) };
 
-  void * arg[3] = { & tmp_0 , & tmp_1 , & tmp_2 };
-  int    num[3] = {   num_0 ,   num_1 ,   num_2 };
+  void * arg[N] = { & tmp_0 , & tmp_1 , & tmp_2 };
+  int    num[N] = {   num_0 ,   num_1 ,   num_2 };
 
-  return TPI_Run_many( 3 , sub , arg , num );
+  return TPI_Run_many( N , sub , arg , num );
+}
+
+//----------------------------------------------------------------------
+
+template<class W0, class W1, class W2, class W3>
+inline
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 ,
+         W3 & worker_3 , void (W3::*method_3)(ThreadPool) , int num_3 )
+{
+  enum { N = 4 };
+  typedef WorkerMethodHelper<W0> WM_0 ;
+  typedef WorkerMethodHelper<W1> WM_1 ;
+  typedef WorkerMethodHelper<W2> WM_2 ;
+  typedef WorkerMethodHelper<W3> WM_3 ;
+
+  WM_0 tmp_0( worker_0 , method_0 );
+  WM_1 tmp_1( worker_1 , method_1 );
+  WM_2 tmp_2( worker_2 , method_2 );
+  WM_3 tmp_3( worker_3 , method_3 );
+
+  TPI_parallel_subprogram sub[N] = {
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_0::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_1::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_2::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_3::run) };
+
+  void * arg[N] = { & tmp_0 , & tmp_1 , & tmp_2 , & tmp_3 };
+  int    num[N] = {   num_0 ,   num_1 ,   num_2 ,   num_3 };
+
+  return TPI_Run_many( N , sub , arg , num );
+}
+
+//----------------------------------------------------------------------
+
+template<class W0, class W1, class W2, class W3, class W4>
+inline
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 ,
+         W3 & worker_3 , void (W3::*method_3)(ThreadPool) , int num_3 ,
+         W4 & worker_4 , void (W3::*method_4)(ThreadPool) , int num_4 )
+{
+  enum { N = 5 };
+  typedef WorkerMethodHelper<W0> WM_0 ;
+  typedef WorkerMethodHelper<W1> WM_1 ;
+  typedef WorkerMethodHelper<W2> WM_2 ;
+  typedef WorkerMethodHelper<W3> WM_3 ;
+  typedef WorkerMethodHelper<W4> WM_4 ;
+
+  WM_0 tmp_0( worker_0 , method_0 );
+  WM_1 tmp_1( worker_1 , method_1 );
+  WM_2 tmp_2( worker_2 , method_2 );
+  WM_3 tmp_3( worker_3 , method_3 );
+  WM_4 tmp_4( worker_4 , method_4 );
+
+  TPI_parallel_subprogram sub[N] = {
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_0::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_1::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_2::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_3::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_4::run) };
+
+  void * arg[N] = { & tmp_0 , & tmp_1 , & tmp_2 , & tmp_3 , & tmp_4 };
+  int    num[N] = {   num_0 ,   num_1 ,   num_2 ,   num_3 ,   num_4 };
+
+  return TPI_Run_many( N , sub , arg , num );
+}
+
+//----------------------------------------------------------------------
+
+template<class W0, class W1, class W2, class W3, class W4, class W5>
+inline
+int Run( W0 & worker_0 , void (W0::*method_0)(ThreadPool) , int num_0 ,
+         W1 & worker_1 , void (W1::*method_1)(ThreadPool) , int num_1 ,
+         W2 & worker_2 , void (W2::*method_2)(ThreadPool) , int num_2 ,
+         W3 & worker_3 , void (W3::*method_3)(ThreadPool) , int num_3 ,
+         W4 & worker_4 , void (W3::*method_4)(ThreadPool) , int num_4 ,
+         W5 & worker_5 , void (W5::*method_5)(ThreadPool) , int num_5 )
+{
+  enum { N = 6 };
+  typedef WorkerMethodHelper<W0> WM_0 ;
+  typedef WorkerMethodHelper<W1> WM_1 ;
+  typedef WorkerMethodHelper<W2> WM_2 ;
+  typedef WorkerMethodHelper<W3> WM_3 ;
+  typedef WorkerMethodHelper<W4> WM_4 ;
+  typedef WorkerMethodHelper<W4> WM_5 ;
+
+  WM_0 tmp_0( worker_0 , method_0 );
+  WM_1 tmp_1( worker_1 , method_1 );
+  WM_2 tmp_2( worker_2 , method_2 );
+  WM_3 tmp_3( worker_3 , method_3 );
+  WM_4 tmp_4( worker_4 , method_4 );
+  WM_5 tmp_5( worker_5 , method_5 );
+
+  TPI_parallel_subprogram sub[N] = {
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_0::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_1::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_2::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_3::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_4::run) ,
+    reinterpret_cast<TPI_parallel_subprogram>(& WM_5::run) };
+
+  void * arg[N] = { & tmp_0, & tmp_1, & tmp_2, & tmp_3, & tmp_4, & tmp_5 };
+  int    num[N] = {   num_0,   num_1,   num_2,   num_3,   num_4,   num_5 };
+
+  return TPI_Run_many( N , sub , arg , num );
 }
 
 //----------------------------------------------------------------------

@@ -7,8 +7,19 @@ TEST_SRC="test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c"
 
 LIB_SRC="../src/TPI_pthreads.c ../src/TPI_Walltime.c ../src/TPI_Concurrency.c"
 
-icc	-strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
+LIB_OBJ="TPI_pthreads.o TPI_Walltime.o TPI_Concurrency.o"
+
+icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
+	-O3 -c	\
+	-I../include ${LIB_SRC} -lpthread
+
+icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
 	-O3	\
 	-o test_tpi.intel.exe	\
-	-I../include ${TEST_SRC} ${LIB_SRC} -lpthread
+	-I../include ${TEST_SRC} ${LIB_OBJ} -lpthread
+
+icc	-strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
+	-O3	\
+	-o test_tpi_cpp.intel.exe	\
+	-I../include test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++
 
