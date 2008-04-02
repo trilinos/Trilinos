@@ -758,7 +758,7 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
   isize = A->OperatorDomainMap().NumMyElements();
   //  isize = A->NumMyCols();
   int N_ghost = A->RowMatrixColMap().NumMyElements() - isize;
-  newMatrix->N_nonzeros = A->NumGlobalNonzeros();
+  newMatrix->N_nonzeros = A->NumMyNonzeros();
 
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
@@ -898,7 +898,8 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
     
     /* Do the "View" Wrap */
     struct ML_CSR_MSRdata *epetra_csr= (struct ML_CSR_MSRdata*)malloc(sizeof(struct ML_CSR_MSRdata));
-    epetra_csr->Nnz=newMatrix->N_nonzeros = A->NumGlobalNonzeros();
+    epetra_csr->Nnz = A->NumGlobalNonzeros();
+    newMatrix->N_nonzeros = A->NumMyNonzeros();
     epetra_csr->Nrows=osize;
     epetra_csr->Ncols=isize;  
     A->ExtractCrsDataPointers(epetra_csr->rowptr,epetra_csr->columns,epetra_csr->values);
