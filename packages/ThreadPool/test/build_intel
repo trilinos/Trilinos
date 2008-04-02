@@ -9,6 +9,8 @@ LIB_SRC="../src/TPI_pthreads.c ../src/TPI_Walltime.c ../src/TPI_Concurrency.c"
 
 LIB_OBJ="TPI_pthreads.o TPI_Walltime.o TPI_Concurrency.o"
 
+#-----------------------------------------------------------------------
+
 icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
 	-O3 -c	\
 	-I../include ${LIB_SRC} -lpthread
@@ -22,4 +24,22 @@ icc	-strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
 	-O3	\
 	-o test_tpi_cpp.intel.exe	\
 	-I../include test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++
+
+icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
+	-O3	\
+	-o test_sum.intel.exe	\
+	-I../include test_mpi_sum.c ${LIB_OBJ} -lpthread
+
+#-----------------------------------------------------------------------
+
+MPICH_HOME="/usr/local/mpi/sierra/32Bit/1.2.7/intel-9.0"
+
+export PATH="${MPICH_HOME}/bin:${PATH}"
+
+mpicc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
+	-O3	\
+	-o test_sum.mpi.intel.exe	\
+	-I../include -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread
+
+#-----------------------------------------------------------------------
 
