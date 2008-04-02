@@ -68,7 +68,6 @@ using namespace Teuchos;
 int ML_Epetra::MultiLevelPreconditioner::SetSmoothers() 
 {
 
-  char parameter[80];
   Epetra_Time Time(Comm());
 
   int num_smoother_steps = List_.get("smoother: sweeps", 2);
@@ -183,7 +182,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   // ===================== //
   // cycle over all levels //
   // ===================== //
- 
+
+  char smListName[80];
   for (int level = 0 ; level < SmootherLevels ; ++level) {
 
     if (verbose_) cout << endl;
@@ -192,14 +192,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     // general parameters for more than one smoother
 
-    sprintf(parameter,"smoother: sweeps (level %d)", LevelID_[level] );
-    int Mynum_smoother_steps = List_.get(parameter,num_smoother_steps);
+    sprintf(smListName,"smoother: list (level %d)",LevelID_[level]);
+    ParameterList &smList = List_.sublist(smListName);
 
-    sprintf(parameter,"smoother: damping factor (level %d)", LevelID_[level] );
-    double Myomega = List_.get(parameter,omega);
+    int Mynum_smoother_steps = smList.get("smoother: sweeps",num_smoother_steps);
+    double Myomega = smList.get("smoother: damping factor",omega);
 
-    sprintf(parameter,"smoother: pre or post (level %d)", LevelID_[level] );
-    string MyPreOrPostSmoother = List_.get(parameter, PreOrPostSmoother);
+    string MyPreOrPostSmoother = smList.get("smoother: pre or post", PreOrPostSmoother);
     
     if( MyPreOrPostSmoother      == "post" ) pre_or_post = ML_POSTSMOOTHER;
     else if( MyPreOrPostSmoother == "pre"  ) pre_or_post = ML_PRESMOOTHER;
@@ -207,8 +206,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     else 
       cerr << ErrorMsg_ << "smoother not recognized (" << MyPreOrPostSmoother << ")\n";
     
-    sprintf(parameter,"smoother: type (level %d)", LevelID_[level]);
-    string MySmoother = List_.get(parameter,Smoother);
+    string MySmoother = smList.get("smoother: type",Smoother);
 
     char msg[80];
     sprintf(msg,"Smoother (level %d) : ", LevelID_[level]);
@@ -364,22 +362,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
       int thisLevel = LevelID_[level];     // current level
       int nextLevel = LevelID_[level+1];   // next coarser level
-      sprintf(parameter,"smoother: MLS polynomial order (level %d)",
-              thisLevel);
-      int MyChebyshevPolyOrder = List_.get(parameter,ChebyshevPolyOrder);
-      if (MyChebyshevPolyOrder == -97) {
-         sprintf(parameter,"smoother: polynomial order (level %d)",
-                 thisLevel);
-         MyChebyshevPolyOrder = List_.get(parameter,MyChebyshevPolyOrder);
-      }
+      int MyChebyshevPolyOrder = smList.get("smoother: MLS polynomial order",ChebyshevPolyOrder);
+      if (MyChebyshevPolyOrder == -97)
+         MyChebyshevPolyOrder = smList.get("smoother: polynomial order",MyChebyshevPolyOrder);
       if (MyChebyshevPolyOrder== -97) MyChebyshevPolyOrder=Mynum_smoother_steps;
 
-      sprintf(parameter,"smoother: MLS alpha (level %d)",thisLevel);
-      double MyChebyshevAlpha = List_.get(parameter,ChebyshevAlpha);
-      if (MyChebyshevAlpha == -2.) {
-        sprintf(parameter,"smoother: Chebyshev alpha (level %d)",thisLevel);
-         MyChebyshevAlpha = List_.get(parameter,MyChebyshevAlpha);
-      }
+      double MyChebyshevAlpha = smList.get("smoother: MLS alpha",ChebyshevAlpha);
+      if (MyChebyshevAlpha == -2.)
+        MyChebyshevAlpha = smList.get("smoother: Chebyshev alpha",MyChebyshevAlpha);
       if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
       MyChebyshevAlpha = ML_Smoother_ChebyshevAlpha(MyChebyshevAlpha, ml_,
                                                     thisLevel, nextLevel);
@@ -418,12 +408,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // These should remain int* and double*, rather than Teuchos::RCP's.
       // The user created the options & params arrays, so he is responsible for
       // freeing them.
-      sprintf(parameter,"smoother: Aztec options (level %d)", LevelID_[level]);
-      int* MySmootherOptionsPtr = List_.get(parameter, SmootherOptionsPtr);
-      sprintf(parameter,"smoother: Aztec params (level %d)", LevelID_[level]);
-      double* MySmootherParamsPtr = List_.get(parameter, SmootherParamsPtr);
-      sprintf(parameter,"smoother: Aztec as solver (level %d)", LevelID_[level]);
-      bool MyAztecSmootherAsASolver = List_.get(parameter,AztecSmootherAsASolver);
+      int* MySmootherOptionsPtr = smList.get("smoother: Aztec options", SmootherOptionsPtr);
+      double* MySmootherParamsPtr = smList.get("smoother: Aztec params", SmootherParamsPtr);
+      bool MyAztecSmootherAsASolver = smList.get("smoother: Aztec as solver",AztecSmootherAsASolver);
      
       if( MyAztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
       else                                  aztec_its = Mynum_smoother_steps;
@@ -490,8 +477,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       string MyIfpackType;
       if (MySmoother == "IFPACK")
       {
-        sprintf(parameter,"smoother: ifpack type (level %d)", LevelID_[level]);
-        MyIfpackType = List_.get(parameter, IfpackType);
+        MyIfpackType = smList.get("smoother: ifpack type", IfpackType);
       }
       else 
       {
@@ -502,14 +488,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         lof = List_.get("smoother: ifpack level-of-fill", IfpackLOF);
       }
 
-      sprintf(parameter,"smoother: ifpack overlap (level %d)", LevelID_[level]);
-      int MyIfpackOverlap = List_.get(parameter, IfpackOverlap);
-      sprintf(parameter,"smoother: ifpack relative threshold (level %d)",
-              LevelID_[level]);
-      double MyIfpackRT = List_.get(parameter, IfpackRelThreshold);
-      sprintf(parameter,"smoother: ifpack absolute threshold (level %d)",
-              LevelID_[level]);
-      double MyIfpackAT = List_.get(parameter, IfpackAbsThreshold);
+      int MyIfpackOverlap = smList.get("smoother: ifpack overlap", IfpackOverlap);
+      double MyIfpackRT = smList.get("smoother: ifpack relative threshold", IfpackRelThreshold);
+      double MyIfpackAT = smList.get("smoother: ifpack absolute threshold", IfpackAbsThreshold);
 
       if( verbose_ ) {
         cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
@@ -559,24 +540,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     } else if( MySmoother == "IFPACK-Chebyshev" ) {
 
 #ifdef HAVE_ML_IFPACK
-      int logical_level = LevelID_[level];
-
-      sprintf(parameter,"smoother: MLS polynomial order (level %d)",
-              logical_level);
-      int MyChebyshevPolyOrder = List_.get(parameter,ChebyshevPolyOrder);
-      if (MyChebyshevPolyOrder == -97) {
-         sprintf(parameter,"smoother: polynomial order (level %d)",
-                 logical_level);
-         MyChebyshevPolyOrder = List_.get(parameter,MyChebyshevPolyOrder);
-      }
+      int MyChebyshevPolyOrder = smList.get("smoother: MLS polynomial order",ChebyshevPolyOrder);
+      if (MyChebyshevPolyOrder == -97)
+         MyChebyshevPolyOrder = smList.get("smoother: polynomial order",MyChebyshevPolyOrder);
       if (MyChebyshevPolyOrder== -97) MyChebyshevPolyOrder=Mynum_smoother_steps;
 
-      sprintf(parameter,"smoother: MLS alpha (level %d)",logical_level);
-      double MyChebyshevAlpha = List_.get(parameter,ChebyshevAlpha);
-      if (MyChebyshevAlpha == -2.) {
-        sprintf(parameter,"smoother: Chebyshev alpha (level %d)",logical_level);
-         MyChebyshevAlpha = List_.get(parameter,MyChebyshevAlpha);
-      }
+      double MyChebyshevAlpha = smList.get("smoother: MLS alpha",ChebyshevAlpha);
+      if (MyChebyshevAlpha == -2.)
+        MyChebyshevAlpha = smList.get("smoother: Chebyshev alpha",MyChebyshevAlpha);
       if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
 
       MyChebyshevAlpha = ML_Smoother_ChebyshevAlpha(MyChebyshevAlpha, ml_,
@@ -613,10 +584,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     } else if( MySmoother == "self" ) {
 
 #ifdef HAVE_ML_IFPACK
-      sprintf(parameter,"smoother: self overlap (level %d)", LevelID_[level]);
       int MyIfpackOverlap;
-      if(List_.isParameter(parameter))
-        MyIfpackOverlap = List_.get(parameter,0);
+      if(smList.isParameter("smoother: self overlap"))
+        MyIfpackOverlap = smList.get("smoother: self overlap",0);
       else
         MyIfpackOverlap = List_.get("smoother: self overlap",0);
       
@@ -658,23 +628,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ParaSails //
       // ========= //
 
-      sprintf(parameter,"smoother: ParaSails levels (level %d)", level);
-      int MyParaSailsN = List_.get(parameter,ParaSailsN);
+      int MyParaSailsN = smList.get("smoother: ParaSails levels",ParaSailsN);
 
-      sprintf(parameter,"smoother: ParaSails matrix (level %d)", level);
-      int MyParaSailsSym = List_.get(parameter,ParaSailsSym);
+      int MyParaSailsSym = smList.get("smoother: ParaSails matrix",ParaSailsSym);
 
-      sprintf(parameter,"smoother: ParaSails threshold (level %d)", level);
-      double MyParaSailsThresh = List_.get(parameter,ParaSailsThresh);
+      double MyParaSailsThresh = smList.get("smoother: ParaSails threshold",ParaSailsThresh);
 
-      sprintf(parameter,"smoother: ParaSails filter (level %d)", level);
-      double MyParaSailsFilter = List_.get(parameter,ParaSailsFilter);
+      double MyParaSailsFilter = smList.get("smoother: ParaSails filter",ParaSailsFilter);
 
-      sprintf(parameter,"smoother: ParaSails load balancing (level %d)", level);
-      double MyParaSailsLB = List_.get(parameter,ParaSailsLB);
+      double MyParaSailsLB = smList.get("smoother: ParaSails load balancing",ParaSailsLB);
 
-      sprintf(parameter,"smoother: ParaSails factorized (level %d)", level);
-      int MyParaSailsFactorized = List_.get(parameter,ParaSailsFactorized);
+      int MyParaSailsFactorized = smList.get("smoother: ParaSails factorized",ParaSailsFactorized);
 
       if( verbose_ ) 
 	cout << msg << "ParaSails "
@@ -732,41 +696,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // are passed as pointers to the smoother create function.
       // Hence, they are declared outside the FOR loop over the levels.
 
-      sprintf(parameter,"subsmoother: edge type (level %d)", level);
-      string MyEdgeSubSmType    = List_.get(parameter,EdgeSubSmType);
-      sprintf(parameter,"subsmoother: node type (level %d)",level);
-      string MyNodeSubSmType    = List_.get(parameter,NodeSubSmType);
-      sprintf(parameter,"subsmoother: node sweeps (level %d)",level);
-      int MyNodeSubSmIts     = List_.get(parameter, NodeSubSmIts);
-      sprintf(parameter,"subsmoother: edge sweeps (level %d)",level);
-      int MyEdgeSubSmIts     = List_.get(parameter, EdgeSubSmIts);
-      sprintf(parameter,"subsmoother: edge level-of-fill (level %d)",level);
-      double MyEdgeSubSmLOF     = List_.get(parameter,EdgeSubSmLOF);
-      sprintf(parameter,"subsmoother: node level-of-fill (level %d)",level);
-      double MyNodeSubSmLOF     = List_.get(parameter,NodeSubSmLOF);
-      sprintf(parameter,"subsmoother: edge overlap (level %d)",level);
-      int MyEdgeSubSmOverlap = List_.get(parameter,EdgeSubSmOverlap);
-      sprintf(parameter,"subsmoother: node overlap (level %d)",level);
-      int MyNodeSubSmOverlap = List_.get(parameter,NodeSubSmOverlap);
-      sprintf(parameter,"subsmoother: edge relative threshold (level %d)",level);
-      double MyEdgeSubSmRelThreshold=List_.get(parameter,EdgeSubSmRelThreshold);
-      sprintf(parameter,"subsmoother: node relative threshold (level %d)",level);
-      double MyNodeSubSmRelThreshold=List_.get(parameter,NodeSubSmRelThreshold);
-      sprintf(parameter,"subsmoother: edge absolute threshold (level %d)",level);
-      double MyEdgeSubSmAbsThreshold=List_.get(parameter,EdgeSubSmAbsThreshold);
-      sprintf(parameter,"subsmoother: node absolute threshold (level %d)",level);
-      double MyNodeSubSmAbsThreshold=List_.get(parameter,NodeSubSmAbsThreshold);
-      sprintf(parameter,"subsmoother: edge omega (level %d)",level);
-      double MyEdgeSubSmOmega   = List_.get(parameter,EdgeSubSmOmega);
-      sprintf(parameter,"subsmoother: node omega (level %d)",level);
-      double MyNodeSubSmOmega   = List_.get(parameter,NodeSubSmOmega);
-      sprintf(parameter,"subsmoother: edge alpha (level %d)",level);
-      double MyEdgeSubSmAlpha   = List_.get(parameter,-2.0);
-      sprintf(parameter,"subsmoother: node alpha (level %d)",level);
-      double MyNodeSubSmAlpha   = List_.get(parameter,-2.0);
+      string MyEdgeSubSmType    = smList.get("subsmoother: edge type",EdgeSubSmType);
+      string MyNodeSubSmType    = smList.get("subsmoother: node type",NodeSubSmType);
+      int MyNodeSubSmIts     = smList.get("subsmoother: node sweeps", NodeSubSmIts);
+      int MyEdgeSubSmIts     = smList.get("subsmoother: edge sweeps", EdgeSubSmIts);
+      double MyEdgeSubSmLOF     = smList.get("subsmoother: edge level-of-fill",EdgeSubSmLOF);
+      double MyNodeSubSmLOF     = smList.get("subsmoother: node level-of-fill",NodeSubSmLOF);
+      int MyEdgeSubSmOverlap = smList.get("subsmoother: edge overlap",EdgeSubSmOverlap);
+      int MyNodeSubSmOverlap = smList.get("subsmoother: node overlap",NodeSubSmOverlap);
+      double MyEdgeSubSmRelThreshold=smList.get("subsmoother: edge relative threshold",EdgeSubSmRelThreshold);
+      double MyNodeSubSmRelThreshold=smList.get("subsmoother: node relative threshold",NodeSubSmRelThreshold);
+      double MyEdgeSubSmAbsThreshold=smList.get("subsmoother: edge absolute threshold",EdgeSubSmAbsThreshold);
+      double MyNodeSubSmAbsThreshold=smList.get("subsmoother: node absolute threshold",NodeSubSmAbsThreshold);
+      double MyEdgeSubSmOmega   = smList.get("subsmoother: edge omega",EdgeSubSmOmega);
+      double MyNodeSubSmOmega   = smList.get("subsmoother: node omega",NodeSubSmOmega);
+      double MyEdgeSubSmAlpha   = smList.get("subsmoother: edge alpha",-2.0);
+      double MyNodeSubSmAlpha   = smList.get("subsmoother: node alpha",-2.0);
 
-      Teuchos::ParameterList& edgeList = List_.sublist("edge list");
-      Teuchos::ParameterList& nodeList = List_.sublist("node list");
+      Teuchos::ParameterList& edgeList = smList.sublist("edge list");
+      Teuchos::ParameterList& nodeList = smList.sublist("node list");
 
       // ++++++++++++++++++++++++++++++++++++++++++++++
       // Set the node and edge subsmoothers separately.
@@ -834,8 +782,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           // This is for backward compatibility 
           int itemp = List_.get("subsmoother: MLS polynomial order",-97);
           if (itemp == -97) itemp=List_.get("subsmoother: polynomial order",-97);
-          sprintf(parameter,"subsmoother: MLS polynomial order (level %d)",level);
-          itemp = List_.get(parameter,itemp);
+          itemp = smList.get("subsmoother: MLS polynomial order",itemp);
           if (itemp != -97) *MySubSmIts = itemp;
 
           double SubAlpha = List_.get("subsmoother: MLS alpha",MySubSmAlpha);

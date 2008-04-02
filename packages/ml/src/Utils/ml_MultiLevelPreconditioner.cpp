@@ -801,11 +801,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   // Uncomment next three lines to create new master list in which smoother
   // and aggregation level-specific options are now in sublists.
-/*
   ParameterList newList;
   ML_CreateSublist(List_,newList,&LevelID_[0],NumLevels_);
   List_ = newList;
-*/
   // Validate Parameter List
   int depth=List_.get("ML validate depth",0);
   if(List_.get("ML validate parameter list",true)
@@ -820,6 +818,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   mlpLabel_ = List_.get("ML label","not-set");
+
+  // avoid possible integer overflow in Epetra's global nnz count
+  double localNnz = RowMatrix_->NumMyNonzeros();
+  double globalNnz=0;
+  Comm().SumAll(&localNnz,&globalNnz,1);
+
   if (verbose_) {
     std::cout << PrintMsg_ << "*** " << std::endl;
     cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner";
@@ -827,7 +831,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
       cout << " [" << mlpLabel_ << "]";
     cout << endl << PrintMsg_ << "***" << endl;
     cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
-     << " rows and " << RowMatrix_->NumGlobalNonzeros() 
+     << " rows and " << globalNnz
          << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << endl;
     {
       const Epetra_CrsMatrix * dummy = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
@@ -939,7 +943,7 @@ agg_->keep_P_tentative = 1;
       ml_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
     }
     // set the number of nonzeros
-    ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumGlobalNonzeros();
+    ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumMyNonzeros();
 
     // ============ //
     // fix diagonal //
@@ -1661,11 +1665,7 @@ agg_->keep_P_tentative = 1;
       local[0] = ml_->Amat[LevelID_[i]].invec_leng;
       local[1] = ml_->Amat[LevelID_[i]].N_nonzeros;
       Comm().SumAll(local,global,2);
-      // kludge because it appears that the nonzeros for ML
-      // defined operators are only local, while for Epetra
-      // are global.
       if (i == 0) {
-        global[1] = local[1]; // FIXME: this is black magic
         RowZero = global[0];
         NnzZero = global[1];
       }
@@ -2570,8 +2570,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
 #include "ml_agg_user.h"
 int ML_Epetra::MultiLevelPreconditioner::SetAggregation() 
 {
-
-  char parameter[80];
+  char aggListName[80];
   
   int value = -777; /* pagina 777 di televideo */
   std::string CoarsenScheme = List_.get("aggregation: type","Uncoupled");
@@ -2595,10 +2594,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
   }
   else {
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {
+       sprintf(aggListName,"aggregation: list (level %d)",LevelID_[level]);
+       ParameterList &aggList = List_.sublist(aggListName);
    
-       sprintf(parameter, "aggregation: type (level %d)",
-           LevelID_[level]);
-       std::string MyCoarsenScheme = List_.get(parameter,CoarsenScheme);
+       string MyCoarsenScheme = aggList.get("aggregation: type",CoarsenScheme);
 
        if (MyCoarsenScheme == "METIS")
          ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
@@ -2628,9 +2627,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 #endif
        else {
          if( Comm().MyPID() == 0 ) {
-           std::cout << ErrorMsg_ << "specified options ("
-                << MyCoarsenScheme << ") not valid. Should be:" << std::endl;
-           std::cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled> / <user>" << std::endl;
+           cout << ErrorMsg_ << "specified options ("
+                << MyCoarsenScheme << ") not valid. Should be:" << endl;
+           cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled> / <user>" << endl;
          }
          exit( EXIT_FAILURE );
        }
@@ -2659,30 +2658,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          // first look for parameters without any level specification
 
-         sprintf(parameter, "%s","aggregation: global aggregates"); 
-         if( List_.isParameter(parameter) ){
+         if( List_.isParameter("aggregation: global aggregates") ){
            value = -777; // simply means not set
-           value = List_.get(parameter,value);
+           value = List_.get("aggregation: global aggregates",value);
            if( value != -777 ) {
              ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
              isSet = true;
            }
          }
 
-         sprintf(parameter, "%s","aggregation: local aggregates");
-         if( List_.isParameter(parameter) ){
+         if( List_.isParameter("aggregation: local aggregates") ){
            value = -777;
-           value = List_.get(parameter,value);
+           value = List_.get("aggregation: local aggregates",value);
            if( value != -777 ) {
              ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
              isSet = true;
            }
              }
 
-         sprintf(parameter, "%s","aggregation: nodes per aggregate");
-         if( List_.isParameter(parameter) ){
+         if( List_.isParameter("aggregation: nodes per aggregate") ){
            value = -777;
-           value = List_.get(parameter,value);
+           value = List_.get("aggregation: nodes per aggregate",value);
            if( value != -777 ) {
              ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
              isSet = true;
@@ -2691,33 +2687,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          // now for level-specific data
 
-         sprintf(parameter, "aggregation: global aggregates (level %d)", 
-                 LevelID_[level]);
-         if( List_.isParameter(parameter) ){
+         if( aggList.isParameter("aggregation: global aggregates") ){
            value = -777; // simply means not set
-           value = List_.get(parameter,value);
+           value = aggList.get("aggregation: global aggregates",value);
            if( value != -777 ) {
              ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
              isSet = true;
            }
          }
 
-         sprintf(parameter, "aggregation: local aggregates (level %d)", 
-                 LevelID_[level]);
-         if( List_.isParameter(parameter) ){
+         if( aggList.isParameter("aggregation: local aggregates") ){
            value = -777;
-           value = List_.get(parameter,value);
+           value = aggList.get("aggregation: local aggregates",value);
            if( value != -777 ) {
              ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
              isSet = true;
            }
          }
 
-         sprintf(parameter, "aggregation: nodes per aggregate (level %d)", 
-                 LevelID_[level]);
-         if( List_.isParameter(parameter) ){
+         if( aggList.isParameter("aggregation: nodes per aggregate") ){
            value = -777;
-           value = List_.get(parameter,value);
+           value = aggList.get("aggregation: nodes per aggregate",value);
            if( value != -777 ) {
              ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
              isSet = true;
@@ -2726,9 +2716,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          if( isSet == false ) {
            // put default values
-           sprintf(parameter, "aggregation: local aggregates (level %d)", 
-                   LevelID_[level]);
-           value = List_.get(parameter,1);
+           value = aggList.get("aggregation: local aggregates",1);
            ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
          }
 
@@ -2852,10 +2840,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
   // Check for additional smoothing of prolongator.  This should be used in
   // conjunction with more aggressive coarsening.
   int PSmSweeps = List_.get("aggregation: smoothing sweeps", 1);
+  char aggListName[80];
   for (int i=0; i<MaxLevels_; i++) {
-    char str[80];
-    sprintf(str,"aggregation: smoothing sweeps (level %d)",i);
-    int MyPSmSweeps = List_.get(str,PSmSweeps);
+    sprintf(aggListName,"aggregation: list (level %d)",LevelID_[i]);
+    ParameterList &aggList = List_.sublist(aggListName);
+    int MyPSmSweeps = aggList.get("aggregation: smoothing sweeps",PSmSweeps);
     ML_Aggregate_Set_DampingSweeps(agg_,MyPSmSweeps,LevelID_[i]);
   }
   //ML_Aggregate_Set_BlockDiagScaling(agg_);
