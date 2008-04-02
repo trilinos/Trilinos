@@ -39,6 +39,9 @@
 
 #include <map>
 
+#define DEBUG_QUERIES 0
+#define DEBUG_PROC 1
+
 namespace Isorropia{
 namespace Epetra{
 namespace ZoltanLib{
@@ -183,7 +186,7 @@ int QueryObject::Number_Objects(void *data, int *ierr)
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    numObj = zq->My_Number_Objects(NULL, ierr);
+    numObj = zq->My_Number_Objects(ierr);
   }
   else{
     *ierr = ZOLTAN_FATAL;
@@ -199,7 +202,7 @@ void QueryObject::Object_List  ( void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_Object_List(NULL, num_gid_entries, num_lid_entries, 
+    zq->My_Object_List(num_gid_entries, num_lid_entries, 
                     global_ids, local_ids, weight_dim, object_weights, ierr);
   }
   else{
@@ -217,7 +220,7 @@ void QueryObject::Number_Edges_Multi  ( void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_Number_Edges_Multi(NULL, num_gid_entries, num_lid_entries, num_obj,
+    zq->My_Number_Edges_Multi(num_gid_entries, num_lid_entries, num_obj,
              global_ids, local_ids, num_edges, ierr );
   }
   else{
@@ -235,7 +238,7 @@ void QueryObject::Edge_List_Multi( void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_Edge_List_Multi(NULL, num_gid_entries, num_lid_entries, num_obj,
+    zq->My_Edge_List_Multi(num_gid_entries, num_lid_entries, num_obj,
                global_ids, local_ids, num_edges,
                neighbor_global_ids,  neighbor_procs,
                weight_dim, edge_weights, ierr );
@@ -252,7 +255,7 @@ void QueryObject::HG_Size_CS ( void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_HG_Size_CS(NULL, num_lists, num_pins, format, ierr );
+    zq->My_HG_Size_CS(num_lists, num_pins, format, ierr );
   }
   else{
     *ierr = ZOLTAN_FATAL;
@@ -266,7 +269,7 @@ void QueryObject::HG_CS ( void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_HG_CS(NULL, num_gid_entries, num_row_or_col, num_pins, format,
+    zq->My_HG_CS(num_gid_entries, num_row_or_col, num_pins, format,
             vtxedge_GID, vtxedge_ptr, pin_GID, ierr );
   }
   else{
@@ -279,7 +282,7 @@ void QueryObject::HG_Size_Edge_Weights(void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_HG_Size_Edge_Weights(NULL, num_edges, ierr);
+    zq->My_HG_Size_Edge_Weights(num_edges, ierr);
   }
   else{
     *ierr = ZOLTAN_FATAL;
@@ -292,7 +295,7 @@ void QueryObject::HG_Edge_Weights(void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_HG_Edge_Weights(NULL, num_gid_entries, num_lid_entries, num_edges, 
+    zq->My_HG_Edge_Weights(num_gid_entries, num_lid_entries, num_edges, 
          edge_weight_dim, edge_GID, edge_LID, edge_weights, ierr);
   }
   else{
@@ -302,15 +305,21 @@ void QueryObject::HG_Edge_Weights(void * data,
 
 // Member general query functions.  
 
-int QueryObject::My_Number_Objects(void * data, int * ierr )
+int QueryObject::My_Number_Objects(int * ierr )
 {
   *ierr = ZOLTAN_OK;
+
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_Number_Objects" << std::endl;
+    std::cout << "  return: " << rowMap_->NumMyElements() << std::endl;
+  }
+#endif
 
   return rowMap_->NumMyElements();
 }
 
-void QueryObject::My_Object_List  ( void * data,
-                  int num_gid_entries, int num_lid_entries,
+void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
                   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                   int weight_dim, float * object_weights, int * ierr )
 {
@@ -350,13 +359,24 @@ void QueryObject::My_Object_List  ( void * data,
       object_weights[i] = curr->second;
     }
   }
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_Object_List, num obj and weight_dim " << num_gid_entries << " " << weight_dim << std::endl;
+    std::cout << "  return GID, weight: " << std::endl;
+    for (int i=0; i<rows; i++){
+      if (weight_dim)
+        std::cout << global_ids[i] << " " << object_weights[i] << std::endl;
+      else
+        std::cout << global_ids[i] << std::endl;
+    }
+  }
+#endif
   return;
 }
 
 // member graph query functions
 
-void QueryObject::My_Number_Edges_Multi( void * data,
-             int num_gid_entries, int num_lid_entries,
+void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries,
              int num_obj,
              ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
              int *num_edges, int * ierr )
@@ -401,11 +421,15 @@ void QueryObject::My_Number_Edges_Multi( void * data,
       }
     }
   }
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_Number_Edges_Multi" << std::endl;
+  }
+#endif
   return;
 }
 
-void QueryObject::My_Edge_List_Multi( void * data,
-               int num_gid_entries, int num_lid_entries, int num_obj,
+void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, int num_obj,
                ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, int *num_edges,
                ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
                int weight_dim, float * edge_weights, int * ierr )
@@ -512,14 +536,18 @@ void QueryObject::My_Edge_List_Multi( void * data,
       }
     }
   }
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_Edge_List_Multi" << std::endl;
+  }
+#endif
   if (gids) delete [] gids;
   if (tmp) delete [] tmp;
 }
 
 // member hypergraph query functions
 
-void QueryObject::My_HG_Size_CS ( void * data,
-         int* num_lists, int* num_pins, int* format, int * ierr )
+void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int * ierr )
 {
   int *indices;
   int num_indices, rc;
@@ -537,17 +565,24 @@ void QueryObject::My_HG_Size_CS ( void * data,
     *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
   }
 
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_HG_Size_CS" << std::endl;
+    std::cout << "  num_lists and num_pins " << *num_lists << " " << *num_pins << std::endl;
+  }
+#endif
+
   return;
 }
 
-void QueryObject::My_HG_CS ( void * data,
-            int num_gid_entries, int num_row_or_col, int num_pins, int format,
+void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins, int format,
             ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
                                      int * ierr )
 {
   int *indices;
   int num_indices, rc, npins;
   double *tmp=NULL;
+
 
   *ierr = ZOLTAN_OK;
 
@@ -610,20 +645,45 @@ void QueryObject::My_HG_CS ( void * data,
     pin_start_pos += num_indices;
     npins -= num_indices;
   }
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_HG_CS" << std::endl;
+    std::cout << "  num rows and num pins " << num_row_or_col << " " << num_pins << std::endl;
+    int idx = 0;
+    int len = 0;
+    for (int i=0; i < num_row_or_col; i++){
+      if (i == (num_row_or_col - 1)) len = num_pins - idx;
+      else                           len = vtxedge_ptr[i+1] - vtxedge_ptr[i];
+  
+      std::cout <<   "  vtx/row " << vtxedge_GID[i] << std::endl;
+      std::cout <<   "    " ;
+      for (int j=0; j < len; j++){
+        std::cout << pin_GID[idx+j] << " ";
+      }
+      std::cout << std::endl;
+      idx += len;
+    }
+  }
+#endif
 
   if (tmp){
     delete [] tmp;
   }
 }
 
-void QueryObject::My_HG_Size_Edge_Weights(void * data,
-			    int* num_edges, int* ierr)
+void QueryObject::My_HG_Size_Edge_Weights( int* num_edges, int* ierr)
 {
   *num_edges = costs_->getNumHypergraphEdgeWeights();
+
+#if DEBUG_QUERIES
+ if (myProc_ == DEBUG_PROC){
+   std::cout << "in My_HG_Size_Edge_Weights " << *num_edges << std::endl;
+ }
+#endif
   *ierr = ZOLTAN_OK;
 }
 
-void QueryObject::My_HG_Edge_Weights(void * data,
+void QueryObject::My_HG_Edge_Weights(
       int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
       ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr)
 {
@@ -644,8 +704,15 @@ void QueryObject::My_HG_Edge_Weights(void * data,
     }
   }
 
-  costs_->getHypergraphEdgeWeights(num_edges, (int *)edge_GID, edge_weights);
+#if DEBUG_QUERIES
+  if (myProc_ == DEBUG_PROC){
+    std::cout << "in My_HG_Edge_Weights, num edges " << num_edges << std::endl;
+    for (int j=0; j < num_edges; j++)
+      std::cout << "Edge " << edge_GID[j] << " (local " << edge_LID[j] << " weight " << edge_weights[j] << std::endl;
+}
+#endif
 
+  costs_->getHypergraphEdgeWeights(num_edges, (int *)edge_GID, edge_weights);
 }
 
 } // end namespace ZoltanLib

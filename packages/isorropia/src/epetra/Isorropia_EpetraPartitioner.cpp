@@ -93,6 +93,7 @@ Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     paramlist_(),
     partitioning_already_computed_(false)
 {
+
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
   paramlist_ = paramlist;
 

@@ -89,12 +89,12 @@ class QueryObject
       graph vertices for Graph partitioning, and as hypergraph
       vertices for hypergraph partitioning.)
    */
-  int My_Number_Objects(void *data, int *ierr);
+  int My_Number_Objects(int *ierr);
 
   /** My_ObjectList() returns to Zoltan the global ID and weight of the
       rows currently assigned to this process.
    */
-  void My_Object_List  ( void * data, int num_gid_entries, int num_lid_entries,
+  void My_Object_List  (int num_gid_entries, int num_lid_entries,
                      ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                      int weight_dim, float * object_weights, int * ierr );
 
@@ -102,7 +102,7 @@ class QueryObject
       only.  It returns to Zoltan the number of edges (non-zeroes) that each
       vertex (row) has.
    */
-  void My_Number_Edges_Multi  ( void * data, int num_gid_entries, int num_lid_entries,
+  void My_Number_Edges_Multi  (int num_gid_entries, int num_lid_entries,
                int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                int *num_edges, int * ierr );
 
@@ -110,19 +110,18 @@ class QueryObject
       only.  For each vertex (row), it returns a list of the global ID of
       each neighbor (non-zero) and the process owning that neighbor (that row).
    */
-  void My_Edge_List_Multi( void * data, int num_gid_entries, int num_lid_entries, 
+  void My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, 
                int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
                int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
                int weight_dim, float * edge_weights, int * ierr );
 
-  void My_HG_Size_CS ( void * data, int* num_lists, int* num_pins, int* format, 
+  void My_HG_Size_CS (int* num_lists, int* num_pins, int* format, 
                           int * ierr );
-  void My_HG_CS ( void * data, int num_gid_entries, int num_row_or_col, int num_pins, 
+  void My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins, 
            int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
                                        int * ierr );
-  void My_HG_Size_Edge_Weights(void * data, int* num_edges, int* ierr);
-  void My_HG_Edge_Weights(void * data,
-        int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
+  void My_HG_Size_Edge_Weights(int* num_edges, int* ierr);
+  void My_HG_Edge_Weights(int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
         ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);
 
  public:

@@ -61,6 +61,10 @@ public:
   /** Destructor */
   ~CostDescriber();
 
+  /** For debugging purposes, print out the cost information 
+    */
+  void ShowCosts();
+
   /** Set parameters for the CostDescriber instance. The contents of the
       input paramlist object are copied into an internal ParameterList
       attribute. This class does not retain a reference
@@ -72,7 +76,7 @@ public:
    ** Each vertex (row) weight should be supplied by exactly one process
    ** (the process that "owns" that row).
    */
-  void setVertexWeights(Teuchos::RefCountPtr<Epetra_Vector> vwts);
+  void setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> vwts);
 
   /** Graph edge weights; these typically correspond to nonzeros of a
    ** square symmetric matrix.
@@ -81,7 +85,7 @@ public:
    ** row that corresponds to the vertex.  All of the edges for a given
    ** vertex should be supplied by the one process that "owns" that row.
    */
-  void setGraphEdgeWeights(Teuchos::RefCountPtr<Epetra_CrsMatrix> gewts);
+  void setGraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_CrsMatrix> gewts);
 
   /** Hypergraph edge weights; these typically correspond to matrix columns.
    **
@@ -93,17 +97,17 @@ public:
    ** combines these weights according to the setting of the
    ** PHG_EDGE_WEIGHT_OPERATION parameter.
    */
-  void setHypergraphEdgeWeights(Teuchos::RefCountPtr<Epetra_Vector> hgewts);
+  void setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector> hgewts);
 
-  /** Supplly a list of hypergraph edge weights and corresponding hypergraph
+  /** Supply a list of hypergraph edge weights and corresponding hypergraph
    ** global IDs.
    */
-  void setHypergraphEdgeWeights(int numHGedges, int *hgGIDs, float *hgEwgts);
+  void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const float *hgEwgts);
 
-  /** Supplly a list of hypergraph edge weights and corresponding hypergraph
+  /** Supply a list of hypergraph edge weights and corresponding hypergraph
    ** global IDs.
    */
-  void setHypergraphEdgeWeights(int numHGedges, int *hgGIDs, double *hgEwgts);
+  void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const double *hgEwgts);
 
   /** Query whether non-default vertex weights are present. If this
     function returns false, the caller can assume that vertex weights
@@ -197,9 +201,9 @@ private:
   void allocate_hg_edge_weights_(int n);
   void free_hg_edge_weights_();
 
-  Teuchos::RefCountPtr<Epetra_Vector> vertex_weights_;
+  Teuchos::RefCountPtr<const Epetra_Vector> vertex_weights_;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> graph_edge_weights_;
+  Teuchos::RefCountPtr<const Epetra_CrsMatrix> graph_edge_weights_;
   std::set<int> graph_self_edges_;
 
   int *hg_edge_gids_;

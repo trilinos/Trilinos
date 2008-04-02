@@ -166,7 +166,8 @@ create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
   It will assign unit weight to each row (vertex), and unit weight to each 
-  column (hypergraph).  It will attempt to minimize cuts in the hyperedges.
+  column (hypergraph).  It will attempt to balance row weights while 
+  minimizing cuts in the hyperedges.
 
   The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -176,6 +177,25 @@ create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 */
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix);
+
+/** Create a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+  create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+                       const Epetra_Vector &row_weights);
 
 /** Create a balanced copy of an input Epetra_CrsMatrix.
 
@@ -261,6 +281,25 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
 
 /** Create a balanced copy of an input Epetra_RowMatrix.
 
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+Teuchos::RefCountPtr<Epetra_RowMatrix>
+  create_balanced_copy(const Epetra_RowMatrix& input_matrix,
+                       const Epetra_Vector &row_weights);
+
+/** Create a balanced copy of an input Epetra_RowMatrix.
+
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
   perform its own simple row partitioning.
@@ -342,6 +381,25 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 
 /** Create a balanced copy of an input Epetra_CrsGraph.
 
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+Teuchos::RefCountPtr<Epetra_CrsGraph>
+  create_balanced_copy(const Epetra_CrsGraph& input_matrix,
+                       const Epetra_Vector &row_weights);
+
+/** Create a balanced copy of an input Epetra_CrsGraph.
+
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
   perform its own simple row partitioning.
@@ -420,6 +478,25 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 
 Teuchos::RefCountPtr<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem & input_problem);
+
+/** Create a balanced copy of an input Epetra_LinearProblem.
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+Teuchos::RefCountPtr<Epetra_LinearProblem>
+  create_balanced_copy(const Epetra_LinearProblem& input_matrix,
+                       const Epetra_Vector &row_weights);
 
 /** Create a balanced copy of an input Epetra_LinearProblem.
 

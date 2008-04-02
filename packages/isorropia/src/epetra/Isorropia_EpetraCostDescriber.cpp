@@ -64,7 +64,7 @@ void CostDescriber::setParameters(const Teuchos::ParameterList& paramlist)
   paramlist_ = paramlist;
 }
 
-void CostDescriber::setVertexWeights(Teuchos::RefCountPtr<Epetra_Vector> vwts)
+void CostDescriber::setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> vwts)
 {
   if (vertex_weights_.get() != 0){
     vertex_weights_.release();
@@ -73,7 +73,7 @@ void CostDescriber::setVertexWeights(Teuchos::RefCountPtr<Epetra_Vector> vwts)
 }
 
 void
-CostDescriber::setGraphEdgeWeights(Teuchos::RefCountPtr<Epetra_CrsMatrix> gewts)
+CostDescriber::setGraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_CrsMatrix> gewts)
 {
   if (graph_edge_weights_.get() != 0){
     graph_edge_weights_.release();
@@ -103,7 +103,7 @@ CostDescriber::setGraphEdgeWeights(Teuchos::RefCountPtr<Epetra_CrsMatrix> gewts)
 }
 
 void
-CostDescriber::setHypergraphEdgeWeights(Teuchos::RefCountPtr<Epetra_Vector> hgewts)
+CostDescriber::setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector> hgewts)
 {
   free_hg_edge_weights_();
   const Epetra_BlockMap& map = hgewts->Map();
@@ -123,7 +123,7 @@ CostDescriber::setHypergraphEdgeWeights(Teuchos::RefCountPtr<Epetra_Vector> hgew
 }
 
 void
-CostDescriber::setHypergraphEdgeWeights(int numHGedges, int *hgGIDs, float *hgEwgts)
+CostDescriber::setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const float *hgEwgts)
 {
   free_hg_edge_weights_();
   if (numHGedges > 0){
@@ -136,7 +136,7 @@ CostDescriber::setHypergraphEdgeWeights(int numHGedges, int *hgGIDs, float *hgEw
 }
 
 void
-CostDescriber::setHypergraphEdgeWeights(int numHGedges, int *hgGIDs, double *hgEwgts)
+CostDescriber::setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const double *hgEwgts)
 {
   free_hg_edge_weights_();
   if (numHGedges > 0){
@@ -394,6 +394,102 @@ void CostDescriber::free_hg_edge_weights_()
   }
 }
 
+void CostDescriber::ShowCosts()
+{
+  int nv = getNumVertices();
+  int nhge = getNumHypergraphEdgeWeights();
+
+  int *gids = NULL;
+  if (nv){
+    std::cout << "Vertices and weights" << std::endl << "  ";
+    gids = new int [nv];
+    float *w = new float [nv];
+
+    getVertexWeights(nv, gids, w);
+    for (int j=0; j<nv; j++){
+      std::cout << gids[j] << " (" << w[j] << ") ";
+    }
+    std::cout << std::endl;
+    delete [] w;
+  }
+  else{
+    std::cout << "No vertex weights" << std::endl;
+  }
+  if (gids && haveGraphEdgeWeights()){
+    std::cout << "Graph edge (non zero) weights for each vertex (row)" << std::endl;
+    for (int i=0; i < nv; i++){
+      int vid = gids[i];
+      std::map<int, float> wgts;
+
+      getGraphEdgeWeights(vid, wgts);
+
+      std::cout << "  Vertex (row) GID " << vid << std::endl << "    ";
+      std::map<int, float>::iterator curr;
+
+      for(curr = wgts.begin(); curr != wgts.end(); curr++){
+        std::cout << curr->first << " (" << curr->second << ") ";
+      } 
+      std::cout << std::endl;
+    }
+  }
+  else{
+    std::cout << "No graph edge weights" << std::endl;
+  }
+  if (nhge){
+    int *colgids = new int [nhge];
+    float *wgts = new float [nhge];
+
+    getHypergraphEdgeWeights(nhge, colgids, wgts);
+
+    std::cout << "Hypergraph Edge (column) weights" << std::endl << "  ";
+
+    for (int j=0; j < nhge; j++){
+      std::cout << colgids[j] << " (" << wgts[j] << ") ";
+    }
+    std::cout << std::endl;
+
+    delete [] colgids;
+    delete [] wgts;
+  }
+  else{
+    std::cout << "No hypergraph edge weights" << std::endl;
+  }
+  
+  if (gids) delete [] gids;
+
+  nv = numGlobalVertexWeights_;
+  int nge = numGlobalGraphEdgeWeights_;
+  nhge = numGlobalHypergraphEdgeWeights_;
+
+  if (paramlist_.begin() == paramlist_.end()){
+    std::cout << "No parameters set" << std::endl;
+  }
+  else{
+    std::cout << "Have some parameters set" << std::endl;
+  }
+
+  if (haveGlobalVertexWeights()){
+    std::cout << "Number of global vertices " << nv << std::endl;
+  }
+  else{
+    std::cout << "Don't know number of global vertices " << std::endl;
+  }
+
+  if (haveGlobalGraphEdgeWeights()){
+    std::cout << "Number of global graph edge weights " << nge << std::endl;
+  }
+  else{
+    std::cout << "Don't know number of global graph edge weights " << std::endl;
+  }
+
+  if (haveGlobalHypergraphEdgeWeights()){
+    std::cout << "Number of global hypergraph edge weights " << nhge << std::endl;
+  }
+  else{
+    std::cout << "Don't know number of global hypergraph edge weights " << std::endl;
+  }
+
+}
 
 }//namespace Epetra
 }//namespace Isorropia

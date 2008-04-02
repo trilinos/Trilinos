@@ -404,6 +404,23 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 
 Teuchos::RefCountPtr<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
+                     const Epetra_Vector &row_weights)
+{
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RCP<const Epetra_Vector> vwgts = Teuchos::rcp(&row_weights);
+  vwgts.release();
+  costs.setVertexWeights(vwgts);
+
+  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+    create_balanced_copy(input_matrix, costs, paramlist);
+
+  return balanced_matrix;
+}
+
+Teuchos::RefCountPtr<Epetra_RowMatrix>
+create_balanced_copy(const Epetra_RowMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
@@ -462,6 +479,27 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix)
 
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+                     const Epetra_Vector &row_weights)
+{
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RCP<const Epetra_Vector> vwgts = Teuchos::rcp(&row_weights);
+  // release of ownership of vwgts, so destruction of stack objects
+  // does not do an extra destruction of row_weights and cause
+  // a fatal fault
+  vwgts.release();  
+
+  costs.setVertexWeights(vwgts);
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+    create_balanced_copy(input_matrix, costs, paramlist);
+
+  return balanced_matrix;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
@@ -505,12 +543,32 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 
   return balanced_matrix;
 }
-
 Teuchos::RefCountPtr<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph)
 {
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
+
+  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+    create_balanced_copy(input_graph, costs, paramlist);
+
+  return balanced_graph;
+}
+
+Teuchos::RefCountPtr<Epetra_CrsGraph>
+create_balanced_copy(const Epetra_CrsGraph& input_graph,
+                     const Epetra_Vector &row_weights)
+{
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RCP<const Epetra_Vector> vwgts = Teuchos::rcp(&row_weights);
+  // release of ownership of vwgts, so destruction of stack objects
+  // does not do an extra destruction of row_weights and cause
+  // a fatal fault
+  vwgts.release();  
+
+  costs.setVertexWeights(vwgts);
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
@@ -578,6 +636,26 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem)
 
 Teuchos::RefCountPtr<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem,
+                     const Epetra_Vector &row_weights)
+{
+  CostDescriber costs; 
+  Teuchos::ParameterList paramlist;
+
+  Teuchos::RCP<const Epetra_Vector> vwgts = Teuchos::rcp(&row_weights);
+  // release of ownership of vwgts, so destruction of stack objects
+  // does not do an extra destruction of row_weights and cause
+  // a fatal fault
+  vwgts.release();  
+  costs.setVertexWeights(vwgts);
+
+  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+    create_balanced_copy(input_problem, costs, paramlist);
+
+  return linprob;
+}
+
+Teuchos::RefCountPtr<Epetra_LinearProblem>
+create_balanced_copy(const Epetra_LinearProblem& input_problem,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
@@ -620,7 +698,13 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
 
   try {
     A = redistribute_rows(*input_problem.GetMatrix(), *bal_rowmap);
-    x = redistribute(*input_problem.GetLHS(), *bal_rowmap);
+
+    // Don't redistribute x in Ax=b.  It's a column related object and
+    // this a row balancing operation.
+    //x = redistribute(*input_problem.GetLHS(), *bal_rowmap);
+
+    x = Teuchos::rcp(new Epetra_MultiVector(*input_problem.GetLHS()));
+
     b = redistribute(*input_problem.GetRHS(), *bal_rowmap);
   }
   catch(std::exception& exc) {
@@ -628,6 +712,9 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
     std::string str2(exc.what());
     throw Isorropia::Exception(str1+str2);
   }
+
+#if 0
+  //  TODO remove this after testing
 
   // Problem: A, x, and b are reference counted pointers.  The objects they
   // point to get deallocated at the return from this function.  So I need 
@@ -640,6 +727,15 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
 
   Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
     Teuchos::rcp(new Epetra_LinearProblem(A2, x2, b2));
+#else
+
+  A.release();
+  x.release();
+  b.release();
+
+  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+    Teuchos::rcp(new Epetra_LinearProblem(A.get(), x.get(), b.get()));
+#endif
 
   return( linprob );
 }
