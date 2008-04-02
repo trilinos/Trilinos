@@ -40,6 +40,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
+#include <Epetra_LinearProblem.h>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
 /** ispatest is the namespace that contains isorropia's test-utilities.
@@ -132,9 +133,23 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
 
 
-// This only works for small example matrices and 10 or fewer processes.
+/** Print out a distributed RowMatrix.  This only works for small test
+    matrices and 10 or fewer processes.
+  */
+
+void show_matrix(const char *txt, const Epetra_RowMatrix &matrix, const Epetra_Comm &comm);
+
+/** Print out a distributed CrsGraph.  This only works for small test
+    matrices and 10 or fewer processes.
+  */
 
 void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Comm &comm);
+
+/** Print out a distributed LinearProblem.  This only works for small test
+    matrices and 10 or fewer processes.
+  */
+
+void show_matrix(const char *txt, const Epetra_LinearProblem &problem, const Epetra_Comm &comm);
 
 }//namespace ispatest
 

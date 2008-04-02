@@ -58,6 +58,9 @@ namespace ispatest {
 #ifdef HAVE_EPETRA
 
 static double compute_balance(const Epetra_Comm &comm, int myRows, int nwgts, float *wgts);
+static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
+                        int numRows, int numCols, const Epetra_Comm &comm);
+static int make_my_A(const Epetra_RowMatrix &matrix, int *myA, const Epetra_Comm &comm);
 
 /******************************************************************
   Compute graph metrics
@@ -145,8 +148,7 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
   int numVWgts = costs.getNumVertices();
 
   if ((numVWgts > 0) && (numVWgts != myRows)){
-    std::cout << "length of vertex weights array is not equal to number of my vertices";
-    std::cout << std::endl;
+    std::cerr << numVWgts << " row weights for " << myRows << "rows" << std::endl;
     return -1;
   }
 
@@ -554,7 +556,6 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
   int base = rowmap.IndexBase();
 
   int *myA = new int [numRows * numCols];
-  int *A = new int [numRows * numCols];
   memset(myA, 0, sizeof(int) * numRows * numCols);
 
   int *myIndices;
@@ -583,7 +584,150 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
     }
   }
 
+  printMatrix(txt, myA, NULL, NULL, numRows, numCols, comm);
+
+  delete [] myA;
+}
+
+void show_matrix(const char *txt, const Epetra_RowMatrix &matrix, const Epetra_Comm &comm)
+{
+  if (comm.NumProc() > 10){
+    if (comm.MyPID() == 0){
+      std::cout << txt << std::endl;
+      std::cout << "Printed matrix format only works for 10 or fewer processes" << std::endl;
+    }
+    return;
+  }
+
+  int numRows = matrix.NumGlobalRows();
+  int numCols = matrix.NumGlobalCols();
+
+  int *myA = new int [numRows * numCols];
+
+  int rc = make_my_A(matrix, myA, comm);
+
+  printMatrix(txt, myA, NULL, NULL, numRows, numCols, comm);
+
+  delete [] myA;
+}
+void show_matrix(const char *txt, const Epetra_LinearProblem &problem, const Epetra_Comm &comm)
+{
+  int me = comm.MyPID();
+
+  if (comm.NumProc() > 10){
+    if (me == 0){
+      std::cout << txt << std::endl;
+      std::cout << "Printed matrix format only works for 10 or fewer processes" << std::endl;
+    }
+    return;
+  }
+
+  Epetra_RowMatrix *matrix = problem.GetMatrix();
+  Epetra_MultiVector *lhs = problem.GetLHS();
+  Epetra_MultiVector *rhs = problem.GetRHS();
+
+  int numRows = matrix->NumGlobalRows();
+  int numCols = matrix->NumGlobalCols();
+
+  int *myA = new int [numRows * numCols];
+
+  int rc = make_my_A(*matrix, myA, comm);
+
+  int *myX = new int [numCols];
+  int *myB = new int [numRows];
+
+  memset(myX, 0, sizeof(int) * numCols);
+  memset(myB, 0, sizeof(int) * numRows);
+
+  const Epetra_BlockMap &lhsMap = lhs->Map();
+  const Epetra_BlockMap &rhsMap = rhs->Map();
+
+  int base = lhsMap.IndexBase();
+
+  for (int j=0; j < lhsMap.NumMyElements(); j++){
+    int colGID = lhsMap.GID(j);
+    myX[colGID - base] = me + 1;
+  }
+
+  for (int i=0; i < rhsMap.NumMyElements(); i++){
+    int rowGID = rhsMap.GID(i);
+    myB[rowGID - base] = me + 1;
+  }
+
+  printMatrix(txt, myA, myX, myB, numRows, numCols, comm);
+
+  delete [] myA;
+  delete [] myX;
+  delete [] myB;
+}
+
+static int make_my_A(const Epetra_RowMatrix &matrix, int *myA, const Epetra_Comm &comm)
+{
+  int me = comm.MyPID();
+
+  const Epetra_BlockMap &rowmap = matrix.RowMatrixRowMap();
+  const Epetra_BlockMap &colmap = matrix.RowMatrixColMap();
+
+  int myRows = matrix.NumMyRows();
+  int numRows = matrix.NumGlobalRows();
+  int numCols = matrix.NumGlobalCols();
+  int base = rowmap.IndexBase();
+  int maxRow = matrix.MaxNumEntries();
+
+  memset(myA, 0, sizeof(int) * numRows * numCols);
+
+  int *myIndices = new int [maxRow];
+  double *tmp = new double [maxRow];
+
+  int rowLen = 0;
+
+  for (int i=0; i< myRows; i++){
+
+    int rc = matrix.ExtractMyRowCopy(i, maxRow, rowLen, tmp, myIndices);
+
+    if (rc){
+      if (me == 0){
+        std::cout << "Error in make_my_A" << std::endl;
+      }
+       return 1;
+    }
+
+    int *row = myA + (numCols * (rowmap.GID(i) - base));
+
+    for (int j=0; j < rowLen; j++){
+
+      int colGID = colmap.GID(myIndices[j]);
+      
+      row[colGID - base] = me + 1;
+    }
+  }
+
+  if (maxRow){
+    delete [] myIndices;
+    delete [] tmp;
+  }
+  return 0;
+}
+
+static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
+                        int numRows, int numCols, const Epetra_Comm &comm)
+{
+  int me = comm.MyPID();
+
+  int *A = new int [numRows * numCols];
+  int *x = NULL;
+  int *b = NULL;
+
   comm.SumAll(myA, A, numRows * numCols);
+
+  if (myX){
+    x = new int [numCols];
+    comm.SumAll(myX, x, numCols);
+  }
+  if (myB){
+    b = new int [numRows];
+    comm.SumAll(myB, b, numRows);
+  }
 
   if (me == 0){
     std::cout << txt << std::endl;
@@ -592,6 +736,11 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
     for (int j=0; j<numCols; j++){
       std::cout << j%10 ;
     }
+    if (x)
+      std::cout << "    LHS";
+    if (b)
+      std::cout << "        RHS";
+
     std::cout << std::endl;
 
     int *row = A;
@@ -606,18 +755,47 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
           std::cout << " ";
         }
       }
-      std::cout << " " << i%10 << std::endl;
+      std::cout << " " << i%10 ;
+
+      if (x){
+        std::cout << "   " << x[i]-1;
+      }
+      if ((i == 0) && b){
+        std::cout << "    =  [";
+        for (int j=0; j<numRows; j++){
+          std::cout << b[j]-1;
+        }
+        std::cout << "]";
+      }
+      std::cout << std::endl;
+    
     }
     std::cout << "  ";
     for (int j=0; j<numCols; j++){
       std::cout << j%10 ;
     }
-    std::cout << std::endl;
+
+    int columnsRemaining = numCols - numRows;
+    int next_x = numRows;
+
+    if ((columnsRemaining > 0) && x){
+      std::cout << "     " << x[next_x++] - 1 << std::endl;
+      columnsRemaining--;
+      int pad = numCols + 7;
+      while(columnsRemaining){ 
+        for( int i=0; i < pad; i++){
+          std::cout << " ";
+        }
+        std::cout << x[next_x++] - 1 << std::endl;
+        columnsRemaining--;
+      }
+    }
     std::cout << std::endl;
   }
 
-  delete [] myA;
   delete [] A;
+  if (x) delete [] x;
+  if (b) delete [] b;
 }
 
 #endif // HAVE_EPETRA
