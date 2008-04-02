@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
           // reset the options, and stick IFPACK parameters list as 
           // needed by ML
           SetDefaults("SA",MLList);
+          MLList.set("smoother: sweeps", 1);
           MLList.set("smoother: pre or post", PreOrPost[j]);
           MLList.set("smoother: type", "IFPACK");
           MLList.set("smoother: ifpack type", "point relaxation stand-alone");
