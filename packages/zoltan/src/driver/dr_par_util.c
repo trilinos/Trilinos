@@ -98,7 +98,7 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
 */
 
 {
-  int         from, to, flag;
+  int         from, to, flag=0;
   MPI_Status  status;
   MPI_Request req;
 

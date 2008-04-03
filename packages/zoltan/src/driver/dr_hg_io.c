@@ -136,7 +136,7 @@ int read_hypergraph_file(
   int   *hindex = NULL, *hvertex = NULL, *hvertex_proc = NULL;
   int   *hgid = NULL;
   float *hewgts = NULL, *vwgts = NULL;
-  ZOLTAN_FILE* fp;
+  ZOLTAN_FILE* fp = NULL;
   int base = 0;   /* Smallest vertex number; usually zero or one. */
   char filename[256];
 
