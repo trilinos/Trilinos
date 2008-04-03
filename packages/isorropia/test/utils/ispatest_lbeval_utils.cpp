@@ -70,19 +70,22 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
-  const Epetra_BlockMap &rowmap = matrix.RowMatrixRowMap();
-  const Epetra_BlockMap &colmap = matrix.RowMatrixColMap();
+  const Epetra_BlockMap &rmap = 
+    static_cast<const Epetra_BlockMap &>(matrix.RowMatrixRowMap());
 
-  int maxEdges = colmap.NumMyElements();
+  const Epetra_BlockMap &cmap = 
+    static_cast<const Epetra_BlockMap &>(matrix.RowMatrixColMap());
 
-  std::vector<std::vector<int> > myRows(rowmap.NumMyElements());
+  int maxEdges = cmap.NumMyElements();
+
+  std::vector<std::vector<int> > myRows(rmap.NumMyElements());
 
   if (maxEdges > 0){
     int numEdges = 0;
     int *nborLID  = new int [maxEdges];
     double *tmp = new double [maxEdges];
 
-    for (int i=0; i<rowmap.NumMyElements(); i++){
+    for (int i=0; i<rmap.NumMyElements(); i++){
 
       matrix.ExtractMyRowCopy(i, maxEdges, numEdges, tmp, nborLID);
       std::vector<int> cols(numEdges);
@@ -94,7 +97,7 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
     delete [] nborLID;
   }
  
-  return compute_graph_metrics(rowmap, colmap, myRows, costs,
+  return compute_graph_metrics(rmap, cmap, myRows, costs,
                                balance, numCuts, cutWgt, cutn, cutl);
 
 }
@@ -103,17 +106,17 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
-  const Epetra_BlockMap &rowmap = graph.RowMap();
-  const Epetra_BlockMap &colmap = graph.ColMap();
+  const Epetra_BlockMap & rmap = graph.RowMap();
+  const Epetra_BlockMap & cmap = graph.ColMap();
 
-  int maxEdges = colmap.NumMyElements();
+  int maxEdges = cmap.NumMyElements();
 
-  std::vector<std::vector<int> > myRows(rowmap.NumMyElements());
+  std::vector<std::vector<int> > myRows(rmap.NumMyElements());
 
   if (maxEdges > 0){
     int numEdges = 0;
     int *nborLID  = new int [maxEdges];
-    for (int i=0; i<rowmap.NumMyElements(); i++){
+    for (int i=0; i<rmap.NumMyElements(); i++){
 
       graph.ExtractMyRowCopy(i, maxEdges, numEdges, nborLID);
       std::vector<int> cols(numEdges);
@@ -125,7 +128,7 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
     delete [] nborLID;
   }
  
-  return compute_graph_metrics(rowmap, colmap, myRows, costs,
+  return compute_graph_metrics(rmap, cmap, myRows, costs,
                                balance, numCuts, cutWgt, cutn, cutl);
 
 }
@@ -296,9 +299,16 @@ int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl)  // output
 {
-  return compute_hypergraph_metrics(matrix.RowMatrixRowMap(), matrix.RowMatrixColMap(),
+  const Epetra_BlockMap &rmap = 
+    static_cast<const Epetra_BlockMap &>(matrix.RowMatrixRowMap());
+
+  const Epetra_BlockMap &cmap = 
+    static_cast<const Epetra_BlockMap &>(matrix.RowMatrixColMap());
+
+  return compute_hypergraph_metrics(rmap, cmap,
                                      matrix.NumGlobalCols(),
                                      costs, balance, cutn, cutl);
+
 }
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
@@ -665,8 +675,8 @@ static int make_my_A(const Epetra_RowMatrix &matrix, int *myA, const Epetra_Comm
 {
   int me = comm.MyPID();
 
-  const Epetra_BlockMap &rowmap = matrix.RowMatrixRowMap();
-  const Epetra_BlockMap &colmap = matrix.RowMatrixColMap();
+  const Epetra_Map &rowmap = matrix.RowMatrixRowMap();
+  const Epetra_Map &colmap = matrix.RowMatrixColMap();
 
   int myRows = matrix.NumMyRows();
   int numRows = matrix.NumGlobalRows();
