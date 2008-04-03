@@ -199,9 +199,13 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   const Epetra_SerialComm &Comm = dynamic_cast<const Epetra_SerialComm &>(matrix->Comm());
 #endif
 
-  if (verbose)
-    ispatest::show_matrix("Before load balancing", matrix->Graph(), Comm);
+  if (localProc == 0){
+    test_type(partitioningType, vertexWeightType, edgeWeightType, objectType);
+  }
 
+  if (verbose){
+    ispatest::show_matrix("Before load balancing", matrix->Graph(), Comm);
+  }
 
   // Compute vertex and edge weights
 
@@ -472,9 +476,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   }
 
   std::cout << std::endl;
-  if (localProc == 0){
-    test_type(partitioningType, vertexWeightType, edgeWeightType, objectType);
-  }
   
   if (partitioningType == GRAPH_PARTITIONING){
     fail = (cutWgt2 > cutWgt1);
@@ -510,11 +511,13 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
 
+  if (localProc == 0)
+    std::cout << std::endl;
 
 #else
   std::cout << "test_simple : currently can only test "
          << "with Epetra and EpetraExt enabled." << std::endl;
-  rc = -1;
+  fail =  1;
 #endif
 
   return fail;
@@ -614,7 +617,6 @@ int main(int argc, char** argv) {
   
     if (fail){
       goto Report;
-      return 1;   
     }
   
     fail = run_test(testm,
@@ -626,7 +628,6 @@ int main(int argc, char** argv) {
   
     if (fail){
       goto Report;
-      return 1;   
     }
 
     fail = run_test(testm,
@@ -636,6 +637,39 @@ int main(int argc, char** argv) {
                NO_APPLICATION_SUPPLIED_WEIGHTS,
                EPETRA_CRSGRAPH);
 
+    if (fail){
+      goto Report;
+    }
+#else
+    fail = run_test(testm,
+               verbose,
+               NO_ZOLTAN, 
+               SUPPLY_UNEQUAL_WEIGHTS,
+               SUPPLY_EQUAL_WEIGHTS,
+               EPETRA_CRSMATRIX);
+  
+    if (fail){
+      goto Report;
+    }
+  
+    fail = run_test(testm,
+               verbose,
+               NO_ZOLTAN,
+               SUPPLY_EQUAL_WEIGHTS,
+               SUPPLY_UNEQUAL_WEIGHTS,
+               EPETRA_CRSGRAPH);
+  
+    if (fail){
+      goto Report;
+    }
+
+    fail = run_test(testm,
+               verbose,
+               NO_ZOLTAN,
+               NO_APPLICATION_SUPPLIED_WEIGHTS,
+               SUPPLY_EQUAL_WEIGHTS,
+               EPETRA_CRSGRAPH);
+  
     if (fail){
       goto Report;
     }

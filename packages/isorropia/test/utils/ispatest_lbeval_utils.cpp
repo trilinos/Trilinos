@@ -189,7 +189,7 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
     int *nborProc_GID = new int [numCols];
     int *nborRow_LID = new int [numCols];
 
-    rc = rowmap.RemoteIDList(numCols, colGIDs, nborProc_GID, nborRow_LID);
+    rc = colmap.RemoteIDList(numCols, colGIDs, nborProc_GID, nborRow_LID);
 
     if (rc != 0){
       std::cout << "Error obtaining remote process ID list";
