@@ -494,6 +494,8 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
+		test/CppUnitLite/Makefile
+		test/UnitTest/Makefile
 		])
 
 AC_OUTPUT()

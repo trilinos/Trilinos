@@ -2,6 +2,12 @@
 # FRAMEWORK group
 #
 
+# Unit Tests
+(FRAMEWORK, INSTALL) {
+  TESTS = UnitTest/Rythmos_UnitTest.exe;
+  COMM = SERIAL;
+}
+
 # Default run, Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;

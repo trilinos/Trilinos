@@ -9642,7 +9642,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/diagonalTransient/Makefile example/timeDiscretizedBackwardEuler/Makefile example/epetra/Makefile example/epetra/1Dfem/Makefile test/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/diagonalTransient/Makefile example/timeDiscretizedBackwardEuler/Makefile example/epetra/Makefile example/epetra/1Dfem/Makefile test/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/CppUnitLite/Makefile test/UnitTest/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10537,6 +10537,8 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile" ;;
+    "test/CppUnitLite/Makefile") CONFIG_FILES="$CONFIG_FILES test/CppUnitLite/Makefile" ;;
+    "test/UnitTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/UnitTest/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

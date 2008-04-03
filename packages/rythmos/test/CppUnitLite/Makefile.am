@@ -28,11 +28,6 @@
 
 # The following line helps the test harness recover from build errors.
 
-all-local:
-	@echo ""
-	@echo "Trilinos package rythmos subdirectory src built successfully."
-	@echo ""
-
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
@@ -41,65 +36,19 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
-  $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
-  $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
-  $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
-  $(srcdir)/Rythmos_ConfigDefs.h\
-  $(srcdir)/Rythmos_DataStore.hpp\
-  $(srcdir)/Rythmos_DataStore_UnitTest.hpp\
-  $(srcdir)/Rythmos_DefaultIntegrator.hpp\
-  $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
-  $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
-  $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
-  $(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp\
-  $(srcdir)/Rythmos_ForwardEulerStepper.hpp\
-  $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
-  $(srcdir)/Rythmos_ForwardResponseSensitivityComputerObserver.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityIntegratorAsModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
-  $(srcdir)/Rythmos_HermiteInterpolator.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperDecl.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperStepControlDecl.hpp\
-  $(srcdir)/Rythmos_ImplicitRKModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ImplicitRKStepper.hpp\
-  $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
-  $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
-  $(srcdir)/Rythmos_IntegratorBase.hpp\
-  $(srcdir)/Rythmos_InterpolationBuffer.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
-  $(srcdir)/Rythmos_InterpolatorBase.hpp\
-  $(srcdir)/Rythmos_LinearInterpolator.hpp\
-  $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
-  $(srcdir)/Rythmos_RKButcherTableau.hpp\
-  $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
-  $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
-  $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
-  $(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
-  $(srcdir)/Rythmos_SmartInterpolationBufferAppender.hpp\
-  $(srcdir)/Rythmos_SolverAcceptingStepperBase.hpp\
-  $(srcdir)/Rythmos_StateAndForwardSensitivityModelEvaluator.hpp\
-  $(srcdir)/Rythmos_StepControlInfo.hpp\
-  $(srcdir)/Rythmos_StepControlStrategyAcceptingStepperBase.hpp\
-  $(srcdir)/Rythmos_StepControlStrategyBase.hpp\
-  $(srcdir)/Rythmos_StepperAsModelEvaluator.hpp\
-  $(srcdir)/Rythmos_StepperBase.hpp\
-  $(srcdir)/Rythmos_StepperHelpers.hpp\
-  $(srcdir)/Rythmos_StepperSupportTypes.hpp\
-  $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
-  $(srcdir)/Rythmos_TimeRange.hpp\
-  $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
-  $(srcdir)/Rythmos_Types.hpp\
-  $(srcdir)/Rythmos_extractStateAndSens.hpp\
-  $(srcdir)/Rythmos_Version.h
+  $(srcdir)/TestHarness.h\
+  $(srcdir)/Test.h\
+  $(srcdir)/TestRegistry.h\
+  $(srcdir)/TestResult.h\
+  $(srcdir)/SimpleString.h\
+  $(srcdir)/Failure.h 
 
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp
+  $(srcdir)/Test.cpp\
+  $(srcdir)/TestRegistry.cpp\
+  $(srcdir)/TestResult.cpp\
+  $(srcdir)/SimpleString.cpp\
+  $(srcdir)/Failure.cpp
 
 UTIL_H =
 
@@ -163,9 +112,9 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # Rythmos library specifications
 # ------------------------------------------------------------------------
 
-RYTHMOS_LIB = librythmos.a
+CPPUNITLITE_LIB = libcppunitlite.a
 
-RYTHMOS_H = \
+CPPUNITLITE_H = \
   $(CORE_H) \
   $(UTIL_H) \
   $(ENUM_H) \
@@ -176,7 +125,7 @@ RYTHMOS_H = \
   $(COMP_H) \
   $(MPI_H)
 
-librythmos_a_SOURCES = \
+libcppunitlite_a_SOURCES = \
   $(CORE) \
   $(UTIL) \
   $(UNIPROC) \
@@ -185,7 +134,7 @@ librythmos_a_SOURCES = \
   $(COMP) \
   $(MPI)
 
-EXTRA_librythmos_a_SOURCES = \
+EXTRA_libcppunitlite_a_SOURCES = \
   $(EXTRA_MPI) \
   $(EXTRA_MPI_H)
 
@@ -201,10 +150,10 @@ EXTRA_librythmos_a_SOURCES = \
 
 if USE_ALTERNATE_AR
 
-librythmos_a_AR = $(ALTERNATE_AR)
+libcppunitlite_a_AR = $(ALTERNATE_AR)
 else
 
-librythmos_a_AR = $(AR) cru
+libcppunitlite_a_AR = $(AR) cru
 
 endif
 
@@ -213,13 +162,13 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-librythmos_a_LIBADD = $(XTRALDADD)
+libcppunitlite_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
-lib_LIBRARIES = $(RYTHMOS_LIB)
+lib_LIBRARIES = $(CPPUNITLITE_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
@@ -234,7 +183,7 @@ include_HEADERS = $(RYTHMOS_H)
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
 
-nodist_execinclude_HEADERS = Rythmos_config.h
+#nodist_execinclude_HEADERS = Rythmos_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

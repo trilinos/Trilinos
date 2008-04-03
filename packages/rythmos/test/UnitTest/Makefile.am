@@ -26,22 +26,43 @@
 # ***********************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+noinst_PROGRAMS = Rythmos_UnitTest
 
-#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-#np# For packages whose tests are located in this directory, rather than
-#np# in a subdirectory of this directory, use the Makefile.am located in
-#np# test1/ rather than this file.
+#
+# Actual programs
+#
 
-#SUBDIRS = unitTests
+Rythmos_UnitTest_SOURCES = $(srcdir)/Rythmos_UnitTest.cpp 
 
-SUBDIRS = ExplicitTaylorPolynomialStepper\
-          CppUnitLite\
-          UnitTest
+Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies) 
 
-EXTRA_DIST = definition
+Rythmos_UnitTest_LDADD = $(common_ldadd) 
 
+#
+# Common stuff
+#
+
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a 
+
+include $(top_builddir)/Makefile.export.rythmos 
+
+_EXPORT_INCLUDES = $(RYTHMOS_TEST_INCLUDES) -I$(top_srcdir)/test/CppUnitLite
+_EXPORT_LIBS = $(RYTHMOS_TEST_LIBS) -L$(top_builddir)/test/CppUnitLite -lcppunitlite
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+else
+EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+EXPORT_LIBS = $(_EXPORT_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
+
+# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
+LIBS =

@@ -29,6 +29,7 @@
 #ifndef Rythmos_DATA_STORE_H
 #define Rythmos_DATA_STORE_H
 
+#include "Rythmos_Types.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Describable.hpp"
@@ -47,7 +48,7 @@ class DataStore : virtual public Teuchos::Describable
     ~DataStore() {};
 
     /** \brief. */
-    DataStore() {};
+    DataStore();
 
     /** \brief. */
     DataStore(Scalar& time_
@@ -160,6 +161,12 @@ void vectorToDataStoreList(
       ,typename DataStore<Scalar>::DataStoreList_t *ds);
 
 // DataStore definitions:
+template<class Scalar>
+DataStore<Scalar>::DataStore()
+  :time(-1),
+   accuracy(-1)
+{}
+
 template<class Scalar>
 DataStore<Scalar>::DataStore(
   Scalar &time_

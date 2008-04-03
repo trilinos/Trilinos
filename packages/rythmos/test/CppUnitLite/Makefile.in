@@ -44,6 +44,13 @@
 
 # The following line helps the test harness recover from build errors.
 
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside New_Package. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -64,9 +71,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = src
+subdir = test/CppUnitLite
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/Rythmos_config.h.in
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -92,7 +99,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
-CONFIG_HEADER = Rythmos_config.h
+CONFIG_HEADER = $(top_builddir)/src/Rythmos_config.h
 CONFIG_CLEAN_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -100,21 +107,21 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" \
-	"$(DESTDIR)$(execincludedir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-librythmos_a_DEPENDENCIES =
-am__objects_1 = Rythmos_Version.$(OBJEXT)
+libcppunitlite_a_DEPENDENCIES =
+am__objects_1 = Test.$(OBJEXT) TestRegistry.$(OBJEXT) \
+	TestResult.$(OBJEXT) SimpleString.$(OBJEXT) Failure.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
-am_librythmos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+am_libcppunitlite_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
 	$(am__objects_2) $(am__objects_3)
-librythmos_a_OBJECTS = $(am_librythmos_a_OBJECTS)
-DEFAULT_INCLUDES = -I.@am__isrc@
+libcppunitlite_a_OBJECTS = $(am_libcppunitlite_a_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -122,11 +129,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(librythmos_a_SOURCES) $(EXTRA_librythmos_a_SOURCES)
-DIST_SOURCES = $(librythmos_a_SOURCES) $(EXTRA_librythmos_a_SOURCES)
+SOURCES = $(libcppunitlite_a_SOURCES) \
+	$(EXTRA_libcppunitlite_a_SOURCES)
+DIST_SOURCES = $(libcppunitlite_a_SOURCES) \
+	$(EXTRA_libcppunitlite_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
-nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -252,73 +260,20 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside New_Package. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
 CORE_H = \
-  $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
-  $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
-  $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
-  $(srcdir)/Rythmos_ConfigDefs.h\
-  $(srcdir)/Rythmos_DataStore.hpp\
-  $(srcdir)/Rythmos_DataStore_UnitTest.hpp\
-  $(srcdir)/Rythmos_DefaultIntegrator.hpp\
-  $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
-  $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
-  $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
-  $(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp\
-  $(srcdir)/Rythmos_ForwardEulerStepper.hpp\
-  $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
-  $(srcdir)/Rythmos_ForwardResponseSensitivityComputerObserver.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityIntegratorAsModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
-  $(srcdir)/Rythmos_HermiteInterpolator.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperDecl.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperStepControlDecl.hpp\
-  $(srcdir)/Rythmos_ImplicitRKModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ImplicitRKStepper.hpp\
-  $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
-  $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
-  $(srcdir)/Rythmos_IntegratorBase.hpp\
-  $(srcdir)/Rythmos_InterpolationBuffer.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
-  $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
-  $(srcdir)/Rythmos_InterpolatorBase.hpp\
-  $(srcdir)/Rythmos_LinearInterpolator.hpp\
-  $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
-  $(srcdir)/Rythmos_RKButcherTableau.hpp\
-  $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
-  $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
-  $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
-  $(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
-  $(srcdir)/Rythmos_SmartInterpolationBufferAppender.hpp\
-  $(srcdir)/Rythmos_SolverAcceptingStepperBase.hpp\
-  $(srcdir)/Rythmos_StateAndForwardSensitivityModelEvaluator.hpp\
-  $(srcdir)/Rythmos_StepControlInfo.hpp\
-  $(srcdir)/Rythmos_StepControlStrategyAcceptingStepperBase.hpp\
-  $(srcdir)/Rythmos_StepControlStrategyBase.hpp\
-  $(srcdir)/Rythmos_StepperAsModelEvaluator.hpp\
-  $(srcdir)/Rythmos_StepperBase.hpp\
-  $(srcdir)/Rythmos_StepperHelpers.hpp\
-  $(srcdir)/Rythmos_StepperSupportTypes.hpp\
-  $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
-  $(srcdir)/Rythmos_TimeRange.hpp\
-  $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
-  $(srcdir)/Rythmos_Types.hpp\
-  $(srcdir)/Rythmos_extractStateAndSens.hpp\
-  $(srcdir)/Rythmos_Version.h
+  $(srcdir)/TestHarness.h\
+  $(srcdir)/Test.h\
+  $(srcdir)/TestRegistry.h\
+  $(srcdir)/TestResult.h\
+  $(srcdir)/SimpleString.h\
+  $(srcdir)/Failure.h 
 
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp
+  $(srcdir)/Test.cpp\
+  $(srcdir)/TestRegistry.cpp\
+  $(srcdir)/TestResult.cpp\
+  $(srcdir)/SimpleString.cpp\
+  $(srcdir)/Failure.cpp
 
 UTIL_H = 
 UTIL = 
@@ -351,8 +306,8 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 # Rythmos library specifications
 # ------------------------------------------------------------------------
-RYTHMOS_LIB = librythmos.a
-RYTHMOS_H = \
+CPPUNITLITE_LIB = libcppunitlite.a
+CPPUNITLITE_H = \
   $(CORE_H) \
   $(UTIL_H) \
   $(ENUM_H) \
@@ -363,7 +318,7 @@ RYTHMOS_H = \
   $(COMP_H) \
   $(MPI_H)
 
-librythmos_a_SOURCES = \
+libcppunitlite_a_SOURCES = \
   $(CORE) \
   $(UTIL) \
   $(UNIPROC) \
@@ -372,11 +327,11 @@ librythmos_a_SOURCES = \
   $(COMP) \
   $(MPI)
 
-EXTRA_librythmos_a_SOURCES = \
+EXTRA_libcppunitlite_a_SOURCES = \
   $(EXTRA_MPI) \
   $(EXTRA_MPI_H)
 
-@USE_ALTERNATE_AR_FALSE@librythmos_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_FALSE@libcppunitlite_a_AR = $(AR) cru
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
@@ -387,18 +342,18 @@ EXTRA_librythmos_a_SOURCES = \
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@librythmos_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_TRUE@libcppunitlite_a_AR = $(ALTERNATE_AR)
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-librythmos_a_LIBADD = $(XTRALDADD)
+libcppunitlite_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
-lib_LIBRARIES = $(RYTHMOS_LIB)
+lib_LIBRARIES = $(CPPUNITLITE_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
@@ -411,14 +366,14 @@ include_HEADERS = $(RYTHMOS_H)
 
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = Rythmos_config.h
+
+#nodist_execinclude_HEADERS = Rythmos_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-all: Rythmos_config.h
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .cpp .o .obj
@@ -431,9 +386,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/CppUnitLite/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src/Makefile
+	  $(AUTOMAKE) --foreign  test/CppUnitLite/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -451,23 +406,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-Rythmos_config.h: stamp-h1
-	@if test ! -f $@; then \
-	  rm -f stamp-h1; \
-	  $(MAKE) $(AM_MAKEFLAGS) stamp-h1; \
-	else :; fi
-
-stamp-h1: $(srcdir)/Rythmos_config.h.in $(top_builddir)/config.status
-	@rm -f stamp-h1
-	cd $(top_builddir) && $(SHELL) ./config.status src/Rythmos_config.h
-$(srcdir)/Rythmos_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
-	cd $(top_srcdir) && $(AUTOHEADER)
-	rm -f stamp-h1
-	touch $@
-
-distclean-hdr:
-	-rm -f Rythmos_config.h stamp-h1
 install-libLIBRARIES: $(lib_LIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
@@ -497,10 +435,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-librythmos.a: $(librythmos_a_OBJECTS) $(librythmos_a_DEPENDENCIES) 
-	-rm -f librythmos.a
-	$(librythmos_a_AR) librythmos.a $(librythmos_a_OBJECTS) $(librythmos_a_LIBADD)
-	$(RANLIB) librythmos.a
+libcppunitlite.a: $(libcppunitlite_a_OBJECTS) $(libcppunitlite_a_DEPENDENCIES) 
+	-rm -f libcppunitlite.a
+	$(libcppunitlite_a_AR) libcppunitlite.a $(libcppunitlite_a_OBJECTS) $(libcppunitlite_a_LIBADD)
+	$(RANLIB) libcppunitlite.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -508,7 +446,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Failure.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleString.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestRegistry.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestResult.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -524,19 +466,75 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Rythmos_Version.o: $(srcdir)/Rythmos_Version.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.o -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Version.Tpo $(DEPDIR)/Rythmos_Version.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Version.cpp' object='Rythmos_Version.o' libtool=no @AMDEPBACKSLASH@
+Test.o: $(srcdir)/Test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test.o -MD -MP -MF $(DEPDIR)/Test.Tpo -c -o Test.o `test -f '$(srcdir)/Test.cpp' || echo '$(srcdir)/'`$(srcdir)/Test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Test.Tpo $(DEPDIR)/Test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Test.cpp' object='Test.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Test.o `test -f '$(srcdir)/Test.cpp' || echo '$(srcdir)/'`$(srcdir)/Test.cpp
 
-Rythmos_Version.obj: $(srcdir)/Rythmos_Version.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.obj -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Version.Tpo $(DEPDIR)/Rythmos_Version.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Version.cpp' object='Rythmos_Version.obj' libtool=no @AMDEPBACKSLASH@
+Test.obj: $(srcdir)/Test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test.obj -MD -MP -MF $(DEPDIR)/Test.Tpo -c -o Test.obj `if test -f '$(srcdir)/Test.cpp'; then $(CYGPATH_W) '$(srcdir)/Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Test.Tpo $(DEPDIR)/Test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Test.cpp' object='Test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Test.obj `if test -f '$(srcdir)/Test.cpp'; then $(CYGPATH_W) '$(srcdir)/Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Test.cpp'; fi`
+
+TestRegistry.o: $(srcdir)/TestRegistry.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestRegistry.o -MD -MP -MF $(DEPDIR)/TestRegistry.Tpo -c -o TestRegistry.o `test -f '$(srcdir)/TestRegistry.cpp' || echo '$(srcdir)/'`$(srcdir)/TestRegistry.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestRegistry.Tpo $(DEPDIR)/TestRegistry.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestRegistry.cpp' object='TestRegistry.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestRegistry.o `test -f '$(srcdir)/TestRegistry.cpp' || echo '$(srcdir)/'`$(srcdir)/TestRegistry.cpp
+
+TestRegistry.obj: $(srcdir)/TestRegistry.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestRegistry.obj -MD -MP -MF $(DEPDIR)/TestRegistry.Tpo -c -o TestRegistry.obj `if test -f '$(srcdir)/TestRegistry.cpp'; then $(CYGPATH_W) '$(srcdir)/TestRegistry.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestRegistry.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestRegistry.Tpo $(DEPDIR)/TestRegistry.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestRegistry.cpp' object='TestRegistry.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestRegistry.obj `if test -f '$(srcdir)/TestRegistry.cpp'; then $(CYGPATH_W) '$(srcdir)/TestRegistry.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestRegistry.cpp'; fi`
+
+TestResult.o: $(srcdir)/TestResult.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestResult.o -MD -MP -MF $(DEPDIR)/TestResult.Tpo -c -o TestResult.o `test -f '$(srcdir)/TestResult.cpp' || echo '$(srcdir)/'`$(srcdir)/TestResult.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestResult.Tpo $(DEPDIR)/TestResult.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestResult.cpp' object='TestResult.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestResult.o `test -f '$(srcdir)/TestResult.cpp' || echo '$(srcdir)/'`$(srcdir)/TestResult.cpp
+
+TestResult.obj: $(srcdir)/TestResult.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestResult.obj -MD -MP -MF $(DEPDIR)/TestResult.Tpo -c -o TestResult.obj `if test -f '$(srcdir)/TestResult.cpp'; then $(CYGPATH_W) '$(srcdir)/TestResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestResult.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestResult.Tpo $(DEPDIR)/TestResult.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestResult.cpp' object='TestResult.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestResult.obj `if test -f '$(srcdir)/TestResult.cpp'; then $(CYGPATH_W) '$(srcdir)/TestResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestResult.cpp'; fi`
+
+SimpleString.o: $(srcdir)/SimpleString.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SimpleString.o -MD -MP -MF $(DEPDIR)/SimpleString.Tpo -c -o SimpleString.o `test -f '$(srcdir)/SimpleString.cpp' || echo '$(srcdir)/'`$(srcdir)/SimpleString.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/SimpleString.Tpo $(DEPDIR)/SimpleString.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SimpleString.cpp' object='SimpleString.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleString.o `test -f '$(srcdir)/SimpleString.cpp' || echo '$(srcdir)/'`$(srcdir)/SimpleString.cpp
+
+SimpleString.obj: $(srcdir)/SimpleString.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SimpleString.obj -MD -MP -MF $(DEPDIR)/SimpleString.Tpo -c -o SimpleString.obj `if test -f '$(srcdir)/SimpleString.cpp'; then $(CYGPATH_W) '$(srcdir)/SimpleString.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SimpleString.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/SimpleString.Tpo $(DEPDIR)/SimpleString.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SimpleString.cpp' object='SimpleString.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleString.obj `if test -f '$(srcdir)/SimpleString.cpp'; then $(CYGPATH_W) '$(srcdir)/SimpleString.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SimpleString.cpp'; fi`
+
+Failure.o: $(srcdir)/Failure.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Failure.o -MD -MP -MF $(DEPDIR)/Failure.Tpo -c -o Failure.o `test -f '$(srcdir)/Failure.cpp' || echo '$(srcdir)/'`$(srcdir)/Failure.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Failure.Tpo $(DEPDIR)/Failure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Failure.cpp' object='Failure.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Failure.o `test -f '$(srcdir)/Failure.cpp' || echo '$(srcdir)/'`$(srcdir)/Failure.cpp
+
+Failure.obj: $(srcdir)/Failure.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Failure.obj -MD -MP -MF $(DEPDIR)/Failure.Tpo -c -o Failure.obj `if test -f '$(srcdir)/Failure.cpp'; then $(CYGPATH_W) '$(srcdir)/Failure.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Failure.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Failure.Tpo $(DEPDIR)/Failure.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Failure.cpp' object='Failure.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Failure.obj `if test -f '$(srcdir)/Failure.cpp'; then $(CYGPATH_W) '$(srcdir)/Failure.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Failure.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
@@ -554,23 +552,6 @@ uninstall-includeHEADERS:
 	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
 	done
-install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(execincludedir)" || $(MKDIR_P) "$(DESTDIR)$(execincludedir)"
-	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(nodist_execincludeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(execincludedir)/$$f'"; \
-	  $(nodist_execincludeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(execincludedir)/$$f"; \
-	done
-
-uninstall-nodist_execincludeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(execincludedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(execincludedir)/$$f"; \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -582,11 +563,11 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES) Rythmos_config.h.in $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) Rythmos_config.h.in $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -598,11 +579,11 @@ TAGS:  $(HEADERS) $(SOURCES) Rythmos_config.h.in $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES) Rythmos_config.h.in $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) Rythmos_config.h.in $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -648,9 +629,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) Rythmos_config.h all-local
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -686,7 +667,7 @@ distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-hdr distclean-tags
+	distclean-tags
 
 dvi: dvi-am
 
@@ -702,8 +683,7 @@ install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-libLIBRARIES \
-	install-nodist_execincludeHEADERS
+install-exec-am: install-libLIBRARIES
 
 install-html: install-html-am
 
@@ -734,32 +714,24 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS
+uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libLIBRARIES ctags distclean \
-	distclean-compile distclean-generic distclean-hdr \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man \
-	install-nodist_execincludeHEADERS install-pdf install-pdf-am \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS
+	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
 
-
-all-local:
-	@echo ""
-	@echo "Trilinos package rythmos subdirectory src built successfully."
-	@echo ""
 
 #Specify locations of include files within Trilinos
 
