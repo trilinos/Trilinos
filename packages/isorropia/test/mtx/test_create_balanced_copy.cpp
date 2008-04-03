@@ -568,7 +568,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     targetColMap = &(problemPtr->GetMatrix()->RowMatrixColMap());
   } 
 
-#if 0
   // Redistribute the edge weights
   // Comment this out since we don't redistribute columns
 
@@ -594,7 +593,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       costs.setGraphEdgeWeights(newewgts);
     }
   }
-#endif
 
   // Redistribute the vertex weights
 

@@ -20,26 +20,26 @@
 
 (FRAMEWORK, IsorropiaTests) {
    DIRS = mtx;
-   ARGS = --f=mtx/simple.mtx;
+   ARGS = --v --f=mtx/simple.mtx;
    COMM = SERIAL, MPI;
 }
 
 
 (INSTALL, IsorropiaTests) {
    DIRS = mtx;
-   ARGS = --f=mtx/simple.mtx;
+   ARGS = --v --f=mtx/simple.mtx;
    COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK, IsorropiaTests) {
    DIRS = mtx;
-   ARGS = --f=mtx/simple_rectangular.mtx;
+   ARGS = --v --f=mtx/simple_rectangular.mtx;
    COMM = SERIAL, MPI;
 }
 
 
 (INSTALL, IsorropiaTests) {
    DIRS = mtx;
-   ARGS = --f=mtx/simple_rectangular.mtx;
+   ARGS = --v --f=mtx/simple_rectangular.mtx;
    COMM = SERIAL, MPI;
 }
