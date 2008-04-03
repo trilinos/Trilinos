@@ -171,8 +171,9 @@ int Zoltan_ParMetis(
 
 #define  PARMETIS31_ALWAYS_FREES_VSIZE
 
+  vsp.vsize_malloc = 0;
 #ifdef PARMETIS31_ALWAYS_FREES_VSIZE
-  if (!strcmp(alg, "ADAPTIVEREPART") && (zz->Num_Proc > 1) && (!gr.obj_wgt_dim)) {
+  if (!strcmp(alg, "ADAPTIVEREPART") && (zz->Num_Proc > 1)) {
     /* ParMETIS will free this memory; use malloc to allocate so
        ZOLTAN_MALLOC counters don't show an error. */
     vsp.vsize_malloc = 1 ;

@@ -247,7 +247,8 @@ int Zoltan_Preprocess_Graph(
     else
       gr->float_ewgts = float_ewgts;
   }
-
+  else
+    ZOLTAN_FREE(&float_ewgts);
 
   if (geo){
     ierr = Zoltan_Preprocess_Extract_Geom (zz, global_ids, local_ids, gr, geo);
@@ -455,6 +456,8 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
   int ierr= ZOLTAN_OK;
   int i;
 
+  if (gr->obj_wgt_dim)
+    vsp->vsize_malloc = 0;
 
   if (!vsp->vsize) {                    /* If not already allocated */
     if (vsp->vsize_malloc)
