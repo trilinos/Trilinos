@@ -1,6 +1,7 @@
 #include "../CppUnitLite/TestHarness.h"
 
 #include "Rythmos_DataStore_UnitTest.hpp"
+#include "Rythmos_InterpolationBuffer_UnitTest.hpp"
 
 int main()
 {

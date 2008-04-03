@@ -30,6 +30,7 @@
 #define Rythmos_LINEAR_INTERPOLATOR_H
 
 #include "Rythmos_InterpolatorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Rythmos {

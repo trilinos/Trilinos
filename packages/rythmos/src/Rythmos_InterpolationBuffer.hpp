@@ -35,7 +35,7 @@
 #include "Rythmos_DataStore.hpp"
 
 #include "Thyra_VectorBase.hpp"
-
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Rythmos {
 
@@ -180,8 +180,8 @@ void InterpolationBuffer<Scalar>::initialize(
 {
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::initialize");
-  *out << "Initializing InterpolationBuffer" << std::endl;
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "Initializing InterpolationBuffer" << std::endl;
     *out << "Calling setInterpolator..." << std::endl;
   }
   setInterpolator(interpolator_);
@@ -385,7 +385,10 @@ void InterpolationBuffer<Scalar>::getPoints(
 template<class Scalar>
 TimeRange<Scalar> InterpolationBuffer<Scalar>::getTimeRange() const
 {
-  TimeRange<Scalar> timerange(data_vec_.front().time,data_vec_.back().time);
+  TimeRange<Scalar> timerange;
+  if (data_vec_.size() > 0) {
+    timerange = TimeRange<Scalar>(data_vec_.front().time,data_vec_.back().time);
+  }
   return(timerange);
 }
 
