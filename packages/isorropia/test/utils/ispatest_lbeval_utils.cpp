@@ -37,6 +37,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Comm.h>
+#include <Epetra_Map.h>
 #include <Epetra_BlockMap.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
@@ -70,11 +71,10 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
-  const Epetra_BlockMap &rmap = 
-    static_cast<const Epetra_BlockMap &>(matrix.RowMatrixRowMap());
 
-  const Epetra_BlockMap &cmap = 
-    static_cast<const Epetra_BlockMap &>(matrix.RowMatrixColMap());
+  const Epetra_Map &rmap = matrix.RowMatrixRowMap();
+
+  const Epetra_Map &cmap = matrix.RowMatrixColMap();
 
   int maxEdges = cmap.NumMyElements();
 
