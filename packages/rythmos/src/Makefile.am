@@ -94,6 +94,7 @@ CORE_H = \
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
+  $(srcdir)/Rythmos_TimeRange_UnitTest.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
   $(srcdir)/Rythmos_Types.hpp\
   $(srcdir)/Rythmos_extractStateAndSens.hpp\
