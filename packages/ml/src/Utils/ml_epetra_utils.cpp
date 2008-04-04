@@ -3518,7 +3518,7 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
                                     param!=List.end() ; param++)
   {
     const string pname=List.name(param);
-    unsigned int where = pname.find(" (level",0);
+    string::size_type where = pname.find(" (level",0);
     if (where != string::npos)
     {
       if(pname.find("smoother:",0) == 0
