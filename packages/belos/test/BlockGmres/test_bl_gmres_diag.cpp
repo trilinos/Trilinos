@@ -44,6 +44,7 @@
 #include <Epetra_CrsMatrix.h>
 
 #include <Teuchos_Time.hpp>
+#include "createEpetraProblem.hpp"
 
 #ifdef EPETRA_MPI
 #include <Epetra_MpiComm.h>
@@ -321,9 +322,10 @@ int main(int argc, char *argv[])
 {
   
   int pid = -1;
-  
+
 #ifdef EPETRA_MPI
-  MPI_Init(&argc, &argv);
+  MPI_Init(&argc,&argv);
+  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
@@ -386,10 +388,6 @@ int main(int argc, char *argv[])
 
   if (pid==0)
     std::cout << "Two-norm of std::vector (Y-1.0) : "<< norm_Y[0] << std::endl;
-  
-#ifdef EPETRA_MPI
-  MPI_Finalize(); 
-#endif
   
   if (norm_Y[0] > 1e-10 || Teuchos::ScalarTraits<double>::isnaninf( norm_Y[0] ) ) {
     if (pid==0)

@@ -38,6 +38,7 @@
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "createEpetraProblem.hpp"
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_BELOS_TRIUTILS
@@ -76,9 +77,9 @@ int main(int argc, char *argv[]) {
   bool norm_failure = false;
 
 #ifdef HAVE_MPI	
-  // Initialize MPI	
-  MPI_Init(&argc,&argv); 	
+  MPI_Init(&argc,&argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif
   //
   using Teuchos::RCP;
@@ -105,9 +106,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
   
@@ -121,9 +119,6 @@ int main(int argc, char *argv[]) {
   
 #ifndef HAVE_BELOS_TRIUTILS
   std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
   if (MyPID==0) {
     std::cout << "End Result: TEST FAILED" << std::endl;	
   }
@@ -143,9 +138,6 @@ int main(int argc, char *argv[]) {
       std::cout << "Error reading '" << filename << "'" << std::endl;
       std::cout << "End Result: TEST FAILED" << std::endl;
     }
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
   // Convert interleaved doubles to std::complex values
@@ -258,8 +250,5 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
 
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
   //
 } // end test_bl_gmres_complex_hb.cpp

@@ -209,6 +209,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
+
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       std::cout << "End Result: TEST FAILED" << std::endl;
@@ -220,9 +224,5 @@ int main(int argc, char *argv[]) {
   if (proc_verbose)
     std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
-  
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
   //
 } 

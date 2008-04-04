@@ -242,9 +242,6 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
   return 0;
 
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
   //
 } // end test_bl_pcg_hb.cpp
 
