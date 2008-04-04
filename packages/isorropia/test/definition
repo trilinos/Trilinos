@@ -7,7 +7,7 @@
           rebalance_1d_default,
           zoltan;
    ARGS = --v;
-   COMM = SERIAL, MPI;
+   COMM = MPI;
 }
 
 (INSTALL, IsorropiaTests) {
@@ -15,31 +15,31 @@
           rebalance_1d_default,
           zoltan;
    ARGS = --v;
-   COMM = SERIAL, MPI;
+   COMM = MPI;
 }
 
 (FRAMEWORK, IsorropiaTests) {
    DIRS = mtx;
    ARGS = --v --f=mtx/simple.mtx;
-   COMM = SERIAL, MPI;
+   COMM = MPI;
 }
 
 
 (INSTALL, IsorropiaTests) {
    DIRS = mtx;
    ARGS = --v --f=mtx/simple.mtx;
-   COMM = SERIAL, MPI;
+   COMM = MPI;
 }
 
 (FRAMEWORK, IsorropiaTests) {
    DIRS = mtx;
    ARGS = --v --f=mtx/simple_rectangular.mtx;
-   COMM = SERIAL, MPI;
+   COMM = MPI;
 }
 
 
 (INSTALL, IsorropiaTests) {
    DIRS = mtx;
    ARGS = --v --f=mtx/simple_rectangular.mtx;
-   COMM = SERIAL, MPI;
+   COMM = MPI;
 }
