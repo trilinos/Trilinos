@@ -43,6 +43,7 @@ TEST( InterpolationBuffer, newBuffer ) {
   CHECK( ib.getParameterList() == Teuchos::null );
 }
 
+
 }
 
 #endif // Rythmos_INTERPOLATION_BUFFER_UNITTEST_H

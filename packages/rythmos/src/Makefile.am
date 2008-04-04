@@ -41,6 +41,7 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
+  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
   $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
   $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\

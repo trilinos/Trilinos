@@ -32,8 +32,10 @@
 #include "../test/CppUnitLite/TestHarness.h"
 
 #include "Rythmos_DataStore.hpp"
+#include "Rythmos_UnitTestHelpers.hpp"
 
 namespace Rythmos {
+
 
 TEST( DataStore, newDataStore ) {
   DataStore<double> ds;
@@ -46,9 +48,13 @@ TEST( DataStore, newDataStore ) {
 TEST( DataStore, newDataStore2 ) {
   double time = 1.0234;
   double accuracy = 0.0012;
-  DataStore<double> ds(time,Teuchos::null,Teuchos::null,accuracy);
+  RCP<Thyra::VectorBase<double> > x = createDefaultVector<double>(5,1.0);
+  RCP<Thyra::VectorBase<double> > xdot = createDefaultVector<double>(5,2.0);
+  DataStore<double> ds(time,x,xdot,accuracy);
   CHECK( time == ds.time );
   CHECK( accuracy == ds.accuracy );
+  CHECK( x == ds.x ); // check that pointers are equal
+  CHECK( xdot == ds.xdot );
 }
 
 TEST( DataStore, clone ) {
@@ -58,6 +64,7 @@ TEST( DataStore, clone ) {
   DataStore<double> ds2(ds);
   CHECK( ds2.time == time );
   CHECK( ds2.accuracy == accuracy );
+  // What does the clone do with the RCPs for x and xdot?
 }
 
 TEST( DataStore, lessthan ) {
@@ -104,8 +111,8 @@ TEST( DataStore, dataStoreVectorToVector ) {
   }
 
   Array<double> time_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > x_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > xdot_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > x_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
   Array<double> accuracy_vec;
   // Make sure the output is cleared
   for (int i=0 ; i<2*N ; ++i) {
@@ -129,8 +136,8 @@ TEST( DataStore, dataStoreVectorToVector ) {
 
 TEST( DataStore, vectorToDataStoreVector ) {
   Array<double> time_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > x_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > xdot_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > x_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
   Array<double> accuracy_vec;
 
   int N = 3;
@@ -159,8 +166,8 @@ TEST( DataStore, vectorToDataStoreVector ) {
 
 TEST( DataStore, vectorToDataStoreList ) {
   Array<double> time_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > x_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > xdot_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > x_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
   Array<double> accuracy_vec;
 
   int N = 3;
@@ -192,8 +199,8 @@ TEST( DataStore, vectorToDataStoreList ) {
 
 TEST( DataStore, vectorToDataStoreListNoAccuracy ) {
   Array<double> time_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > x_vec;
-  Array<Teuchos::RCP<const Thyra::VectorBase<double> > > xdot_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > x_vec;
+  Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
 
   int N = 3;
   for (int i=0 ; i<N ; ++i) {
