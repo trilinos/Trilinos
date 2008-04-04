@@ -122,7 +122,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setStringToIntegralParameter<int>("subsmoother: type","Chebyshev","Subsmoother algorithm (Maxwell)",tuple<std::string>("Chebyshev","symmetric Gauss-Seidel","MLS"),PL);
   setDoubleParameter("subsmoother: Chebyshev alpha",20.0,"Damping radius for Chebshev",PL,dblParam);
   setDoubleParameter("subsmoother: MLS alpha",20.0,"Damping radius for Chebshev",PL,dblParam);
-  setDoubleParameter("subsmoother: SGS damping factor",1.333,"Damping factor for symmetric Gauss-Seidel",PL,dblParam); 
+  setDoubleParameter("subsmoother: damping factor",1.333,"Damping factor for symmetric Gauss-Seidel",PL,dblParam); 
   setIntParameter("subsmoother: edge sweeps",4,"Number of edge smoothing sweeps",PL,intParam);
   setIntParameter("subsmoother: node sweeps",4,"Number of node smoothing sweeps",PL,intParam);   
   
@@ -223,10 +223,20 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL,intParam);
 
   /* Hightly experimental */
+  PL->set("aggregation: respect materials",false);
+  PL->set("aggregation: material type",(int*)0); 
   PL->set("repartition: output timings",false);
   setIntParameter("repartition: estimated iterations",0,"Estimated number of iterations",PL,intParam);
   setStringToIntegralParameter<int>("repartition: Zoltan type","RCB","Type of repartitioner to use",tuple<std::string>("RCB","hypergraph","fast hypergraph"),PL);
 
+  /* Coarse IFPACK Solvers - experimental */
+  PL->set("coarse: ifpack list",dummy); 
+  PL->set("coarse: ifpack type",std::string(""));
+  setIntParameter("coarse: ifpack overlap",0,"Unlisted option",PL,intParam);
+  setDoubleParameter("coarse: ifpack level-of-fill",0.0,"Unlisted option",PL,dblParam);
+  setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
+  setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
+  
   return PL;
 }
 
