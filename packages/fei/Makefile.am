@@ -39,7 +39,7 @@ PETSC_DIR=
 endif
 
 if BUILD_TESTS
-TESTS=test_utils test example \
+TESTS=test_utils test example utest_cases utest \
 	test/elemDOF_Aztec \
 	test/cr_lagrange_20quad \
 	test/cr_lagrange_20quad_AZLSC \

@@ -436,6 +436,8 @@ AC_CONFIG_FILES([
                 test/cr_multifield_slave/Makefile
                 test/elemDOF_Aztec/Makefile
                 test/utest_base/Makefile
+		utest/Makefile
+		utest_cases/Makefile
                 example/Makefile
                 example/beam/Makefile
                 example/poisson/Makefile

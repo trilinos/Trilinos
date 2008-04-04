@@ -4,6 +4,13 @@
   ARGS = -d utest_base -test unit_tests;
   COMM = SERIAL, MPI(1);
 }
+(FRAMEWORK, FeiTests) {
+  DESCEND_DIRS = "yes";
+  DIRS = ../utest;
+  TESTS = ./fei_unit_tests.exe;
+  ARGS = ;
+  COMM = SERIAL, MPI(1);
+}
 
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;

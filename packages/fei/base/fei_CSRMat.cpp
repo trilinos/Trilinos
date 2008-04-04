@@ -163,7 +163,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
   const double* Bcoefs = &(B.getPackedCoefs()[0]);
 
-  static fei::FillableMat fc;
+  fei::FillableMat fc;
   fc.zero();
 
   static double fei_eps = std::numeric_limits<double>::epsilon();
