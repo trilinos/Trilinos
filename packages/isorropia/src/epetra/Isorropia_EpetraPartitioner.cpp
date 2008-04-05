@@ -309,6 +309,7 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     }
 
     comm.SumAll(&err, &gerr ,1);
+
     if (gerr > 0){
       throw Isorropia::Exception(str1+str2);
     }
