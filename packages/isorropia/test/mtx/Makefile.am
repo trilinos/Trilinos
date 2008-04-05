@@ -53,8 +53,9 @@ test_create_balanced_copy_LDADD = \
 
 noinst_PROGRAMS = test_simple test_create_balanced_copy
 
-EXTRA_DIST = simple.mtx simple_rectangular.mtx
+EXTRA_DIST = simple.mtx simple_rectangular.mtx small.mtx
 
 all-local:
+	@if test -e small.mtx; then : ; else cp $(srcdir)/small.mtx .; fi
 	@if test -e simple.mtx; then : ; else cp $(srcdir)/simple.mtx .; fi
 	@if test -e simple_rectangular.mtx; then : ; else cp $(srcdir)/simple_rectangular.mtx .; fi

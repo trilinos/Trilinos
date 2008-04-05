@@ -103,7 +103,6 @@
 #ifdef HAVE_EPETRAEXT
 #include <EpetraExt_CrsMatrixIn.h>
 #endif
-
 #endif
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -251,7 +250,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
         if (newVal) delete [] newVal;
       }
     
-      eptr->FillComplete();
+      eptr->FillComplete(matrix->DomainMap(), matrix->RangeMap());
       eptr->OptimizeStorage();
     
       costs->setGraphEdgeWeights(eptr);
@@ -640,7 +639,9 @@ int main(int argc, char** argv) {
     if (fail){
       goto Report;
     }
-#else
+
+#endif
+
     fail = run_test(testm,
                verbose,
                NO_ZOLTAN, 
@@ -673,7 +674,6 @@ int main(int argc, char** argv) {
     if (fail){
       goto Report;
     }
-#endif
   }
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
