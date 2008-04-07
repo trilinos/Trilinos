@@ -47,7 +47,6 @@
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
 #include "MyOperator.hpp"
-#include "createEpetraProblem.hpp"
 
 using namespace Teuchos;
 
@@ -232,10 +231,6 @@ int main(int argc, char *argv[]) {
   delete [] colptr;
   delete [] rowind;
   delete [] cvals;
-
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
 
   if ( ret!=Belos::Converged || norm_failure ) {
     if (proc_verbose)
