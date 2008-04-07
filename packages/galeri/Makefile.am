@@ -101,22 +101,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@echo 
-	@echo "        +----------------------------------------------------+"
-	@echo "        | Trilinos package Galeri built successfully         |"
-	@echo "        |                                                    |"
-	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
-	@echo "        | verify that all the Galeri examples run            |"
-	@echo "        | successfully. For more details, please refer to    |"
-	@echo "        | Trilinos/doc/check_installation.txt.               |"
-	@echo "        |                                                    |"
-	@echo "        | Please send questions/comments to:                 |"
-	@echo "        | - galeri-users@software.sandia.gov                 |"
-	@echo "        | - galeri-developers@software.sandia.gov            |"
-	@echo "        |                                                    |"
-	@echo "        | Have fun!                                          |"
-	@echo "        +----------------------------------------------------+"
-	@echo 
+	@echo "Trilinos package galeri built successfully." 
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -227,38 +212,3 @@ else
 GALERI_CHECK_COMM=serial
 endif
 
-run-examples:
-	@echo
-	@echo "=============================="
-	@echo "Running the Galeri examples..."
-	@echo "=============================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(GALERI_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=GaleriExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=galeri
-
-run-tests:
-	@echo
-	@echo "==========================="
-	@echo "Running the Galeri tests..."
-	@echo "==========================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(GALERI_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=galeri
