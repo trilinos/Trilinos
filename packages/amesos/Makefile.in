@@ -704,26 +704,6 @@ all-local:
 	@cp -f $(srcdir)/example/In_662_bus.rsa $(top_builddir)/example/662_bus.rsa
 	@cp -f $(srcdir)/example/_stratimikos_amesos_lapack.xml $(top_builddir)/example/stratimikos_amesos_lapack.xml
 	@cp -f $(srcdir)/example/_FourByFour.mtx $(top_builddir)/example/FourByFour.mtx
-	@echo 
-	@echo "        +----------------------------------------------------+"
-	@echo "        | Trilinos package amesos built successfully         |"
-	@echo "        |                                                    |"
-	@echo "        | You might want to type \"make run-examples\" to      |"
-	@echo "        | verify that all the Amesos examples run            |"
-	@echo "        | successfully. For more details, please refer to    |"
-	@echo "        | Trilinos/doc/check_installation.txt.               |"
-	@echo "        |                                                    |"
-	@echo "        | The Amesos Users' Guide is located in              |"
-	@echo "        | Trilinos/packages/amesos/doc/AmesosReferenceGuide. |"
-	@echo "        | Also you can consult the Amesos web page.          |"
-	@echo "        |                                                    |"
-	@echo "        | Please send questions/comments to:                 |"
-	@echo "        | - amesos-users@software.sandia.gov                 |"
-	@echo "        | - amesos-developers@software.sandia.gov            |"
-	@echo "        |                                                    |"
-	@echo "        | Have fun!                                          |"
-	@echo "        +----------------------------------------------------+"
-	@echo 
 
 @BUILD_TESTS_TRUE@tests: examples
 @BUILD_TESTS_TRUE@	@echo ""
@@ -796,63 +776,6 @@ runtests-serial :
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=amesos
-
-run-examples:
-	@echo
-	@echo "=============================="
-	@echo "Running the Amesos examples..."
-	@echo "=============================="
-	@echo
-	@echo "None of these examples should take more than a minute to execute on a typical compter"
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(AMESOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=AmesosExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=amesos
-
-run-tests:
-	@echo
-	@echo "==========================="
-	@echo "Running the Amesos tests..."
-	@echo "==========================="
-	@echo
-	@echo "None of these tests should take more than a minute or two to execute on a multi-processor computer"
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo "make run-full-tests perform a more complete set of tests"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(AMESOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=INSTALL \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=amesos
-
-run-full-tests:
-	@echo
-	@echo "==========================="
-	@echo "Running ALL Amesos tests..."
-	@echo "==========================="
-	@echo
-	@echo "None of these tests should take more than an hour to execute on a typical computer"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(AMESOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=amesos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
