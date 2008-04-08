@@ -35,6 +35,7 @@
 
 #include <ispatest_utils.hpp>
 #include <ispatest_epetra_utils.hpp>
+#include <ispatest_lbeval_utils.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -127,10 +128,17 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
   return(test_passed);
 #endif
 
+  double bal1, bal2, cutl1, cutl2, cutn1, cutn2;
+
   Epetra_CrsMatrix* input_matrix =
     create_epetra_test_matrix_1(numProcs, localProc, verbose);
 
+  Isorropia::Epetra::CostDescriber costs;   // default costs
+
+  ispatest::compute_hypergraph_metrics(*input_matrix, costs, bal1, cutn1, cutl1);
+
   //We'll use Zoltan for the rebalancing:
+
   Teuchos::ParameterList paramlist;
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "HYPERGRAPH");
@@ -149,47 +157,16 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
     std::cout << "caught exception: " << exc.what() << std::endl;
     return(false);
   }
-
-  //Now check the result matrix and make sure that the number of nonzeros
-  //is indeed equal on each processor. (We constructed the input matrix
-  //so that a correct rebalancing would result in the same number of
-  //nonzeros being on each processor.)
-  const Epetra_Map& bal_rowmap = balanced_matrix->RowMap();
-  int bal_local_num_rows = bal_rowmap.NumMyElements();
-
-  //count the local nonzeros.
-  if (verbose) {
-    std::cout << " counting local nnz for balanced matrix..." << std::endl;
-  }
-
-  int num_nonzeros = 0;
-  for(int i=0; i<bal_local_num_rows; ++i) {
-    num_nonzeros += balanced_matrix->NumMyEntries(i);
-  }
-
-  const Epetra_Comm& comm = input_matrix->Comm();
-
-  int global_num_nonzeros;
-  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
-
-  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
+  ispatest::compute_hypergraph_metrics(*balanced_matrix, costs, bal2, cutn2, cutl2);
 
   if (verbose) {
-    std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is (nearly) the same on every proc...\n" << std::endl;
+    std::cout << "before balancing hypergraph" << std::endl;
+    std::cout << "balance " << bal1 << " cutn " << cutn1 << " cutl " << cutl1 << std::endl;
+    std::cout << "after balancing hypergraph" << std::endl;
+    std::cout << "balance " << bal2 << " cutn " << cutn2 << " cutl " << cutl2 << std::endl;
   }
 
-  double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
-
-  if (std::abs(numerator/num_nonzeros) < 0.2 ) test_passed = true;
-
-  int local_int_result = test_passed ? 1 : 0;
-  int global_int_result;
-  comm.MinAll(&local_int_result, &global_int_result, 1);
-
-  delete input_matrix;
-
-  test_passed = global_int_result==1 ? true : false;
+  test_passed = (cutl2 <= cutl1);
 
   if (!test_passed && verbose) {
     std::cout << "test FAILED!" << std::endl;
@@ -205,9 +182,14 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
 #ifndef HAVE_MPI
   return(test_passed);
 #endif
+  double bal1, bal2, cutl1, cutl2, cutn1, cutn2;
+
+  Isorropia::Epetra::CostDescriber costs;   // default costs
 
   Epetra_CrsMatrix* input_matrix =
     create_epetra_test_matrix_1(numProcs, localProc, verbose);
+
+  ispatest::compute_hypergraph_metrics(*input_matrix, costs, bal1, cutn1, cutl1);
 
   Epetra_Vector* x = new Epetra_Vector(input_matrix->RowMap());
   Epetra_Vector* b = new Epetra_Vector(input_matrix->RowMap());
@@ -233,6 +215,8 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix =
     rd.redistribute(*(problem.GetMatrix()));
 
+  ispatest::compute_hypergraph_metrics(*bal_matrix, costs, bal2, cutn2, cutl2);
+
   Teuchos::RefCountPtr<Epetra_MultiVector> bal_x =
     rd.redistribute(*(problem.GetLHS()));
 
@@ -243,47 +227,14 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
     Teuchos::rcp(new Epetra_LinearProblem(bal_matrix.get(),
 					  bal_x.get(), bal_b.get()));
 
-  //Now check the result matrix and make sure that the number of nonzeros
-  //is indeed equal on each processor. (We constructed the input matrix
-  //so that a correct rebalancing would result in the same number of
-  //nonzeros being on each processor.)
-  const Epetra_Map& bal_rowmap = balanced_problem->GetMatrix()->RowMatrixRowMap();
-  int bal_local_num_rows = bal_rowmap.NumMyElements();
-
-  //count the local nonzeros.
   if (verbose) {
-    std::cout << "test_rebalance_epetra_linproblem: " << std::endl;
-    std::cout << " counting local nnz for balanced matrix..." << std::endl;
+    std::cout << "before balancing hypergraph" << std::endl;
+    std::cout << "balance " << bal1 << " cutn " << cutn1 << " cutl " << cutl1 << std::endl;
+    std::cout << "after balancing hypergraph" << std::endl;
+    std::cout << "balance " << bal2 << " cutn " << cutn2 << " cutl " << cutl2 << std::endl;
   }
 
-  int num_nonzeros = 0;
-  for(int i=0; i<bal_local_num_rows; ++i) {
-    int numrowentries = 0;
-    balanced_problem->GetMatrix()->NumMyRowEntries(i,numrowentries);
-    num_nonzeros += numrowentries;
-  }
-
-  const Epetra_Comm& comm = input_matrix->Comm();
-
-  int global_num_nonzeros;
-  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
-
-  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
-
-  if (verbose) {
-    std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is (nearly) the same on every proc...\n" << std::endl;
-  }
-
-  double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
-
-  if (std::abs(numerator/num_nonzeros) < 0.1 ) test_passed = true;
-
-  int local_int_result = test_passed ? 1 : 0;
-  int global_int_result;
-  comm.MinAll(&local_int_result, &global_int_result, 1);
-
-  test_passed = global_int_result==1 ? true : false;
+  test_passed = (cutl2 <= cutl1);
 
   if (!test_passed && verbose) {
     std::cout << "test FAILED!" << std::endl;
@@ -303,6 +254,8 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
 #ifndef HAVE_MPI
   return(test_passed);
 #endif
+  Isorropia::Epetra::CostDescriber costs;   // default costs
+  double bal1, bal2, cutl1, cutl2, cutn1, cutn2;
 
   Epetra_CrsGraph* input_graph =
     create_epetra_test_graph_1(numProcs, localProc, verbose);
@@ -335,56 +288,21 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
     return(false);
   }
 
-  //Now check the result graph and make sure that the number of nonzeros
-  //is indeed equal on each processor. (We constructed the input graph
-  //so that a correct rebalancing would result in the same number of
-  //nonzeros being on each processor.)
-  const Epetra_BlockMap& bal_rowmap = balanced_graph->RowMap();
-  int bal_local_num_rows = bal_rowmap.NumMyElements();
-
-  //count the local nonzeros.
-  if (verbose) {
-    std::cout << " counting local nnz for balanced graph..." << std::endl;
-  }
-
-  int num_nonzeros = 0;
-  for(int i=0; i<bal_local_num_rows; ++i) {
-    num_nonzeros += balanced_graph->NumMyIndices(i);
-  }
-
-  const Epetra_Comm& comm = input_graph->Comm();
-
-  int global_num_nonzeros;
-  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
-
-  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
+  ispatest::compute_hypergraph_metrics(*input_graph, costs, bal1, cutn1, cutl1);
+  ispatest::compute_hypergraph_metrics(*balanced_graph, costs, bal2, cutn2, cutl2);
 
   if (verbose) {
-    std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is (nearly) the same on every proc...\n" << std::endl;
+    std::cout << "before balancing hypergraph" << std::endl;
+    std::cout << "balance " << bal1 << " cutn " << cutn1 << " cutl " << cutl1 << std::endl;
+    std::cout << "after balancing hypergraph" << std::endl;
+    std::cout << "balance " << bal2 << " cutn " << cutn2 << " cutl " << cutl2 << std::endl;
   }
 
-  // TODO: Make balance test consistent with Zoltan definition of balance
-  double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
-  double ratio = std::abs(numerator/num_nonzeros);
-  if (ratio < 0.1 ) test_passed = true;
-  else {
-    std::cout << "proc " << comm.MyPID()
-         << ", imbalance ratio: " << ratio << std::endl;
-  }
-
-  int local_int_result = test_passed ? 1 : 0;
-  int global_int_result;
-  comm.MinAll(&local_int_result, &global_int_result, 1);
-
-  delete input_graph;
-
-  test_passed = global_int_result==1 ? true : false;
+  test_passed = (cutl2 <= cutl1);
 
   if (!test_passed && verbose) {
-    std::cout << "test FAILED! (imbalance ratio: " <<ratio<<")" << std::endl;
+    std::cout << "test FAILED!" << std::endl;
   }
-
   return(test_passed);
 }
 
