@@ -27,8 +27,6 @@
 // ************************************************************************
 //@HEADER
 //
-//    The LinearProblem repartitioning is not working right now
-//
 // Read in a matrix market file.  Use isorropia to do graph
 // or hypergraph partitioning.  Compute the graph or hypergraph
 // balance and cut metrics both before and after partitioning.
