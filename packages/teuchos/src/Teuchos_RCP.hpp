@@ -287,7 +287,7 @@ inline
 Teuchos::RCP<T>
 Teuchos::rcp( T* p, bool owns_mem )
 {
-  return RCP<T>(p,owns_mem);
+  return RCP<T>(p, owns_mem);
 }
 
 
@@ -296,7 +296,15 @@ inline
 Teuchos::RCP<T>
 Teuchos::rcp( T* p, Dealloc_T dealloc, bool owns_mem )
 {
-  return RCP<T>(p,dealloc,owns_mem);
+  return RCP<T>(p, dealloc, owns_mem);
+}
+
+
+template<class T>
+Teuchos::RCP<T>
+Teuchos::rcpFromRef( T& r )
+{
+  return Teuchos::rcp(&r, false);
 }
 
 

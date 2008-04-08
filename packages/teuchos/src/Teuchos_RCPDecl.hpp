@@ -864,6 +864,14 @@ template<class T, class Dealloc_T>
 RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 
 
+/** \brief Return a non-owning RCP object from a raw object reference.
+ *
+ * \relates RCP
+ */
+template<class T>
+Teuchos::RCP<T> rcpFromRef( T& r );
+
+
 /* \brief Create an RCP with and also put in an embedded object.
  *
  * In this case the embedded object is destroyed (by setting to Embedded())

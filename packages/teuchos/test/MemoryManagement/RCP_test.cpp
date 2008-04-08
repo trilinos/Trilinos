@@ -66,6 +66,7 @@ int main( int argc, char* argv[] ) {
 	using Teuchos::deallocFunctorHandleDelete;
 	using Teuchos::null;
 	using Teuchos::rcp;
+	using Teuchos::rcpFromRef;
 	using Teuchos::is_null;
 	using Teuchos::rcp_implicit_cast;
 	using Teuchos::rcp_const_cast;
@@ -98,7 +99,7 @@ int main( int argc, char* argv[] ) {
 	try {
 
 		// Read options from the commandline
-		CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor clp(false); // Don't throw exceptions
 		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
@@ -116,7 +117,7 @@ int main( int argc, char* argv[] ) {
 
 		// Create some smart pointers
 
-		RCP<A>       a_ptr1  = rcp(new C);
+		RCP<A> a_ptr1 = rcp(new C);
 		if(verbose)
 			out << "\na_ptr1 = " << a_ptr1 << "\n";
 #ifndef __sun
@@ -126,21 +127,28 @@ int main( int argc, char* argv[] ) {
 		// temporary objects and therefore the count() is not currect.
 		// In the above statement, at least one and perhaps two
 		// temporary RCP objects are created before the object
-		// a_ptr1 is initialized.  However, the standard says that the
+		// a_ptr1 is initialized. However, the standard says that the
 		// lifetime of temprary objects must not extend past the
 		// statement in which it was created (see section 10.4.10 in
-		// Stroustroup, 3ed edition).  This compiler stinks!!!!!
-		TEST_FOR_EXCEPT( a_ptr1.count()  != 1 );
-#endif
+		// Stroustroup, 3ed edition). This compiler stinks!!!!!
+		TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
+#endif // __sun
 		TEST_FOR_EXCEPT( a_ptr1.ptr() == null );
 		TEST_FOR_EXCEPT( a_ptr1 == null );
 		TEST_FOR_EXCEPT( !(a_ptr1 != null) );
 		TEST_FOR_EXCEPT( is_null(a_ptr1) );
-		RCP<D>       d_ptr1  = rcp(new E);
+		RCP<D> d_ptr1 = rcp(new E);
 #ifndef __sun
-		TEST_FOR_EXCEPT( d_ptr1.count()  != 1 );
+		TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
 #endif
 		TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
+
+    {
+      // Create a weak RCP
+      RCP<A> weak_a_ptr1 = rcpFromRef(*a_ptr1);
+      TEUCHOS_ASSERT( weak_a_ptr1.ptr() == a_ptr1.ptr() );
+      TEUCHOS_ASSERT( weak_a_ptr1.has_ownership() == false );
+    }
 
 		{
 
@@ -150,7 +158,7 @@ int main( int argc, char* argv[] ) {
       TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
       TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
 #ifndef __sun
-			TEST_FOR_EXCEPT( a_ptr1.count()  != 2 );
+			TEST_FOR_EXCEPT( a_ptr1.count() != 2 );
 #endif
 			TEST_FOR_EXCEPT( ca_ptr1.ptr() == null );
 #ifndef __sun
@@ -158,7 +166,7 @@ int main( int argc, char* argv[] ) {
 #endif
 			const RCP<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
 #ifndef __sun
-			TEST_FOR_EXCEPT( d_ptr1.count()  != 2 );
+			TEST_FOR_EXCEPT( d_ptr1.count() != 2 );
 #endif
 			TEST_FOR_EXCEPT( cd_ptr1.ptr() == null );
 #ifndef __sun
@@ -166,7 +174,7 @@ int main( int argc, char* argv[] ) {
 #endif
 
 #ifdef SHOW_RUN_TIME_ERROR_1
-			// Conversion using get() is a no no!  When a_ptr2 is deleted so will the allocated
+			// Conversion using get() is a no no! When a_ptr2 is deleted so will the allocated
 			// object and then a_ptr1 will be corrupted after this block ends!
 			const RCP<A> a_ptr2 = a_ptr1.get();
 #endif
@@ -177,25 +185,25 @@ int main( int argc, char* argv[] ) {
 
 #ifdef SHOW_COMPILE_TIME_ERRORS
 			ca_ptr1 = ca_ptr1; // Should not compile since ca_ptr1 is declared constant
-			ca_ptr1->A_g();    // Should not compile since A_g() is a non-const member function
+			ca_ptr1->A_g(); // Should not compile since A_g() is a non-const member function
 #endif
 
 			// Test function calls through operaor->(...)
 
-			TEST_FOR_EXCEPT( a_ptr1->A_g()  != A_g_return );
-			TEST_FOR_EXCEPT( a_ptr1->A_f()  != A_f_return );
+			TEST_FOR_EXCEPT( a_ptr1->A_g() != A_g_return );
+			TEST_FOR_EXCEPT( a_ptr1->A_f() != A_f_return );
 			TEST_FOR_EXCEPT( ca_ptr1->A_f() != A_f_return );
-			TEST_FOR_EXCEPT( d_ptr1->D_g()  != D_g_return );
-			TEST_FOR_EXCEPT( d_ptr1->D_f()  != D_f_return );
+			TEST_FOR_EXCEPT( d_ptr1->D_g() != D_g_return );
+			TEST_FOR_EXCEPT( d_ptr1->D_f() != D_f_return );
 			TEST_FOR_EXCEPT( cd_ptr1->D_f() != D_f_return );
 		
 			// Test funciton calls through operator*(...)
 
-			TEST_FOR_EXCEPT( (*a_ptr1).A_g()  != A_g_return );
-			TEST_FOR_EXCEPT( (*a_ptr1).A_f()  != A_f_return );
+			TEST_FOR_EXCEPT( (*a_ptr1).A_g() != A_g_return );
+			TEST_FOR_EXCEPT( (*a_ptr1).A_f() != A_f_return );
 			TEST_FOR_EXCEPT( (*ca_ptr1).A_f() != A_f_return );
-			TEST_FOR_EXCEPT( (*d_ptr1).D_g()  != D_g_return );
-			TEST_FOR_EXCEPT( (*d_ptr1).D_f()  != D_f_return );
+			TEST_FOR_EXCEPT( (*d_ptr1).D_g() != D_g_return );
+			TEST_FOR_EXCEPT( (*d_ptr1).D_f() != D_f_return );
 			TEST_FOR_EXCEPT( (*cd_ptr1).D_f() != D_f_return );
 
 			// Test dynamic and static conversions
@@ -205,31 +213,31 @@ int main( int argc, char* argv[] ) {
 			TEST_FOR_EXCEPT( cb1_ptr1.ptr() == null );
 #ifndef __sun
 			TEST_FOR_EXCEPT( cb1_ptr1.count() != 3 );
-			TEST_FOR_EXCEPT( ca_ptr1.count()  != 3 );
-			TEST_FOR_EXCEPT( a_ptr1.count()   != 3 );
+			TEST_FOR_EXCEPT( ca_ptr1.count() != 3 );
+			TEST_FOR_EXCEPT( a_ptr1.count() != 3 );
 #endif
 
 			// Cast up the inheritance hiearchy (const B1 -> const A)
-			TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(cb1_ptr1)->A_f()  != A_f_return );
-			TEST_FOR_EXCEPT( RCP<const A>(cb1_ptr1)->A_f()        != A_f_return );
+			TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(cb1_ptr1)->A_f() != A_f_return );
+			TEST_FOR_EXCEPT( RCP<const A>(cb1_ptr1)->A_f() != A_f_return );
 			// Implicit cast from const to non-const (A -> const A)
-			TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(a_ptr1)->A_f()    != A_f_return );
-			TEST_FOR_EXCEPT( RCP<const A>(a_ptr1)->A_f()          != A_f_return );
+			TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(a_ptr1)->A_f() != A_f_return );
+			TEST_FOR_EXCEPT( RCP<const A>(a_ptr1)->A_f() != A_f_return );
 			// Cast away constantness (const B1 -> B1)
-			TEST_FOR_EXCEPT( rcp_const_cast<B1>(cb1_ptr1)->B1_g()         != B1_g_return );
+			TEST_FOR_EXCEPT( rcp_const_cast<B1>(cb1_ptr1)->B1_g() != B1_g_return );
 			// Cast across the inheritance hiearchy (const B1 -> const B2)
 			TEST_FOR_EXCEPT( rcp_dynamic_cast<const B2>(cb1_ptr1)->B2_f() != B2_f_return );
 			// Cast down the inheritance hiearchy (const B1 -> const C)
-			TEST_FOR_EXCEPT( rcp_dynamic_cast<const C>(cb1_ptr1)->C_f()   != C_f_return );
+			TEST_FOR_EXCEPT( rcp_dynamic_cast<const C>(cb1_ptr1)->C_f() != C_f_return );
 
 			// Cast away constantness (const C -> C)
 			const RCP<C>
 				c_ptr1 = rcp_const_cast<C>(rcp_dynamic_cast<const C>(ca_ptr1));
 			TEST_FOR_EXCEPT( c_ptr1.ptr() == null );
 #ifndef __sun
-			TEST_FOR_EXCEPT( c_ptr1.count()   != 4 );
-			TEST_FOR_EXCEPT( ca_ptr1.count()  != 4 );
-			TEST_FOR_EXCEPT( a_ptr1.count()   != 4 );
+			TEST_FOR_EXCEPT( c_ptr1.count() != 4 );
+			TEST_FOR_EXCEPT( ca_ptr1.count() != 4 );
+			TEST_FOR_EXCEPT( a_ptr1.count() != 4 );
 #endif
 
 			// Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
@@ -237,29 +245,29 @@ int main( int argc, char* argv[] ) {
 				ce_ptr1 = rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
 			TEST_FOR_EXCEPT( ce_ptr1.ptr() == null);
 #ifndef __sun
-			TEST_FOR_EXCEPT( ce_ptr1.count()  != 3 );
-			TEST_FOR_EXCEPT( cd_ptr1.count()  != 3 );
-			TEST_FOR_EXCEPT( d_ptr1.count()   != 3 );
+			TEST_FOR_EXCEPT( ce_ptr1.count() != 3 );
+			TEST_FOR_EXCEPT( cd_ptr1.count() != 3 );
+			TEST_FOR_EXCEPT( d_ptr1.count() != 3 );
 #endif
 
 			// Cast up the inheritance hiearchy (const E -> const D)
-			TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f()   != D_f_return ); 
+			TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f() != D_f_return ); 
 			// Cast away constantness (const E -> E)
-			TEST_FOR_EXCEPT( rcp_const_cast<E>(ce_ptr1)->E_g()            != E_g_return );
-			TEST_FOR_EXCEPT( ce_ptr1->D_f()                               != D_f_return );
+			TEST_FOR_EXCEPT( rcp_const_cast<E>(ce_ptr1)->E_g() != E_g_return );
+			TEST_FOR_EXCEPT( ce_ptr1->D_f() != D_f_return );
 
 #ifdef SHOW_COMPILE_TIME_ERRORS
 			// Try to cast down inheritance hiearchy using dynamic_cast<...> (const D -> const E)
-			rcp_dynamic_cast<const E>( cd_ptr1 )->E_f();  // This should not compile since D and E are not polymophic
+			rcp_dynamic_cast<const E>( cd_ptr1 )->E_f(); // This should not compile since D and E are not polymophic
 #endif
 
 #ifndef _INTEL // Intel compiler does not seem to be doing dynamic cast correctly?
-#ifdef TEUCHOS_DEBUG  // operator->() only throws std::exception when TEUCHOS_DEBUG is defined
+#ifdef TEUCHOS_DEBUG // operator->() only throws std::exception when TEUCHOS_DEBUG is defined
 			try {
 				// Try to cast form one interface to another that is not supported (B2 -> B1).
 				// The RCP<B1> returned from rcp_dynamic_cast<...> should be null!
 				// Note that RCP<...>::optertor->() should throw an std::exception in debug
-				// mode (i.e. TEUCHOS_DEBUG is defined) but even so no memory leak occurs.  If you
+				// mode (i.e. TEUCHOS_DEBUG is defined) but even so no memory leak occurs. If you
 				// don't believe me then step through with a debugger and see for yourself.
 				TEST_FOR_EXCEPT( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() != B1_g_return );
 				return -1; // Should not be executed!
@@ -270,7 +278,7 @@ int main( int argc, char* argv[] ) {
 			try {
 				// Try to cast form one interface to another that is not supported (B2 -> B1).
 				// Note that rcp_dynamic_cast<B1>(...,true) should throw an std::exception but even
-				// so no memory leak occurs.  If you don't believe me then step through with a
+				// so no memory leak occurs. If you don't believe me then step through with a
 				// debugger and see for yourself.
 				rcp_dynamic_cast<B1>( rcp(new B2), true );
 				return -1; // Should not be executed!
@@ -281,7 +289,7 @@ int main( int argc, char* argv[] ) {
 
 			// Manually clean up some memory
 
-			delete d_ptr1.release().get();  // Now d_ptr1.get() no longer points to a valid object but okay
+			delete d_ptr1.release().get(); // Now d_ptr1.get() no longer points to a valid object but okay
 			// as long as no other access to this object is attempted! (see below)
 #ifdef SHOW_RUN_TIME_ERROR_2
 			TEST_FOR_EXCEPT( d_ptr1->D_g() == D_g_return ); // Should cause a segmentation fault since d_ptr.get() was deleted!
@@ -301,17 +309,17 @@ int main( int argc, char* argv[] ) {
 
 		// Assign some other dynamically created objects.
 	
-		a_ptr1 = rcp(new A);  // In each case the current dynamically allocated object is deleted ...
+		a_ptr1 = rcp(new A); // In each case the current dynamically allocated object is deleted ...
 		a_ptr1 = rcp(new B1); // before the new reference is set.
 		a_ptr1 = rcp(new B2); // ""
-		a_ptr1 = rcp(new C);  // ""
-		d_ptr1 = rcp(new D);  // ""
-		d_ptr1 = rcp(new E);  // ""
+		a_ptr1 = rcp(new C); // ""
+		d_ptr1 = rcp(new D); // ""
+		d_ptr1 = rcp(new E); // ""
 
 		// Assign pointers to some automatic objects that do not need deleted.
 		// We can do this but we need to remove ownership of the pointer
 		// from the smart pointer objects so that they do not try to
-		// delete them.  If we forget then delete will be called on these
+		// delete them. If we forget then delete will be called on these
 		// pointers and will cause a runtime error.
 
 		C c; // Automatic object what will be deleted by compiler at end of block
@@ -331,20 +339,20 @@ int main( int argc, char* argv[] ) {
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
 		// Allocate an using new and then store the non-base address in in
 		// a RCP and then try to delete (this is a no-no usually).
-		C *c_ptr5 = new C;      // Okay, no type info lost and address should be same as returned from malloc(...)
+		C *c_ptr5 = new C; // Okay, no type info lost and address should be same as returned from malloc(...)
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		const void *c_ptr5_base = dynamic_cast<void*>(c_ptr5);
 		if(verbose) {
 			out << "\nSize of C = " << sizeof(C) << std::endl;
-			out << "Base address of object of type C        = " << dynamic_cast<void*>(c_ptr5) << std::endl;
-			out << "Offset to address of object of type C   = " << ((long int)c_ptr5                   - (long int)c_ptr5_base) << std::endl;
+			out << "Base address of object of type C = " << dynamic_cast<void*>(c_ptr5) << std::endl;
+			out << "Offset to address of object of type C = " << ((long int)c_ptr5 - (long int)c_ptr5_base) << std::endl;
 			out << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
 			out << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-			out << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
+			out << "Offset of A object in object of type C = " << ((long int)static_cast<A*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
 		}
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
-		A *a_rptr5 = c_ptr5;    // Here the address has changed and is no longer the same as the base address
-		a_ptr1 = rcp(a_rptr5);  // This is a no-no and could cause trouble!
+		A *a_rptr5 = c_ptr5; // Here the address has changed and is no longer the same as the base address
+		a_ptr1 = rcp(a_rptr5); // This is a no-no and could cause trouble!
 		a_ptr1 = null; // This will cause a segmentation fault in free(...) on many platforms
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
 	
@@ -356,7 +364,7 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<A> >(a_ptr1)!=null );
     TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RCP<A>&>(a_ptr1))==null );
     TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RCP<A>&>(a_ptr1))!=null );
-    
+ 
 		// Test storing extra data and then getting it out again
 		TEST_FOR_EXCEPT( get_optional_nonconst_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
 		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
@@ -370,28 +378,29 @@ int main( int argc, char* argv[] ) {
 		TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
 		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
 
-		// Test storate extra data as and embedded and then getting it out again
-    
+		// Test storage of extra data as embedded objects and then getting it out
+		// again
+ 
     {
-      RCP<A> a_ptr  = rcpWithEmbeddedObj(new C,int(-5));
+      RCP<A> a_ptr = rcpWithEmbeddedObj(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
       TEST_FOR_EXCEPT( intRtn1 != -5 );
       getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
       TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
-    
+ 
     {
-      RCP<A> a_ptr  = rcpWithEmbeddedObjPreDestroy(new C,int(-5));
+      RCP<A> a_ptr = rcpWithEmbeddedObjPreDestroy(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
       TEST_FOR_EXCEPT( intRtn1 != -5 );
       getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
       TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
-    
+ 
     {
-      RCP<A> a_ptr  = rcpWithEmbeddedObjPostDestroy(new C,int(-5));
+      RCP<A> a_ptr = rcpWithEmbeddedObjPostDestroy(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
       TEST_FOR_EXCEPT( intRtn1 != -5 );
       getNonconstEmbeddedObj<C,int>(a_ptr) = -4;
@@ -411,7 +420,7 @@ int main( int argc, char* argv[] ) {
 #ifndef __sun
 		// RAB: 2004/08/12: It appears that SUN compiler is not deleting the piece of extra
 		// data properly and therefore the destructor of the above Get_A_f_return object
-		// is not being called (which sets the value of af_return).  This compiler stinks!
+		// is not being called (which sets the value of af_return). This compiler stinks!
     TEST_FOR_EXCEPT( a_f_return != A_f_return ); // Should be been called in destructor of a_ptr1 but before the A object is destroyed!
 #endif
 
@@ -424,7 +433,7 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = null;
 
 #ifdef TEUCHOS_DEBUG
-    
+ 
 		if(verbose)
 			out << "\nCreate a circular reference that will cause a memory leak! ...\n";
     {
@@ -442,15 +451,15 @@ int main( int argc, char* argv[] ) {
 		if(verbose)
 			out << "\nTesting basic RCP compatibility with boost::shared_ptr ...\n";
 
-    boost::shared_ptr<A>  a_sptr1(new C());
-    RCP<A>        a_rsptr1 = rcp(a_sptr1);
+    boost::shared_ptr<A> a_sptr1(new C());
+    RCP<A> a_rsptr1 = rcp(a_sptr1);
 		TEST_FOR_EXCEPT( a_rsptr1.ptr() != a_sptr1.ptr() );
-    boost::shared_ptr<A>  a_sptr2 = shared_pointer(a_rsptr1);
+    boost::shared_ptr<A> a_sptr2 = shared_pointer(a_rsptr1);
 		TEST_FOR_EXCEPT( a_sptr2.ptr() != a_sptr1.ptr() );
-    RCP<A>        a_rsptr2 = rcp(a_sptr2);
+    RCP<A> a_rsptr2 = rcp(a_sptr2);
 		TEST_FOR_EXCEPT( a_rsptr2.ptr() != a_rsptr1.ptr() );
-		//TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 );  // This should work if boost::get_deleter() works correctly!
-    boost::shared_ptr<A>  a_sptr3 = shared_pointer(a_rsptr2);
+		//TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 ); // This should work if boost::get_deleter() works correctly!
+    boost::shared_ptr<A> a_sptr3 = shared_pointer(a_rsptr2);
 		TEST_FOR_EXCEPT( a_sptr3.ptr() != a_rsptr2.ptr() );
 
 #endif // HAVE_TEUCHOS_BOOST
@@ -460,7 +469,7 @@ int main( int argc, char* argv[] ) {
 
 	} // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
-  
+ 
   try {
     // In debug mode, this should show that the A and C RCP objects are still
     // around!
@@ -470,7 +479,7 @@ int main( int argc, char* argv[] ) {
 #endif
 	} // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
-  
+ 
   if(success)
     out << "\nEnd Result: TEST PASSED" << std::endl;	
 
