@@ -46,52 +46,45 @@ Questions? Contact Alan Williams (william@sandia.gov)
 /** ispatest is the namespace that contains isorropia's test-utilities.
   These test-utilities are for internal testing, and are not generally
   expected to be seen or used by external users.
+
+  Load balance evaluation (As calculated in Zoltan_LB_Eval)
+
+  Given an Epetra graph and possible vertex and hyperedge weights,
+  calculate the hypergraph balance, cutn and cutl.  We think of
+  the rows of the graph as the objects (vertices) to be partitioned
+  and the columns of the graph as the hyperedges.
+
+  ====================================
+
+  Definition of hypergraph balance:
+
+  Suppose Size_p is target size of partition p.  (Sum of all Size_p is 1.0)
+  (For now Size_p is always 1/p in isorropia - we don't have an interface
+  to set different desired partition sizes.)
+
+  Let W_p be the total row weight on process p and WT be the sum of the
+  row weights on all processes.  Then
+
+  imbalance on process p =   |W_p - Size_p*WT| / Size_p*WT
+
+  balance = (1 + maximum imbalance over all processes p)
+
+  ====================================
+
+  Definition of hypergraph cutn and cutl:
+
+  Suppose Cut_k is the number of cuts in column k.  (So column k is in 
+  Cut_k + 1 different partitions.)  Suppose W_k is the weight of column k.
+
+  cutn = Sum over all k of W_K * ((Cut_k > 0) ? 1 : 0)
+
+  cutl = Sum over all k of Cut_k * W_k
+
+  ====================================
+
+  TODO explain metrics computed in compute_graph_metrics
 */
 namespace ispatest {
-
-/** Load balance evaluation (As calculated in Zoltan_LB_Eval)
-
-    Given an Epetra graph and possible vertex and hyperedge weights,
-    calculate the hypergraph balance, cutn and cutl.  We think of
-    the rows of the graph as the objects (vertices) to be partitioned
-    and the columns of the graph as the hyperedges.
-
-    ====================================
-
-    Definition of hypergraph balance:
-
-    Suppose Size_p is target size of partition p.  (Sum of all Size_p is 1.0)
-    (For now Size_p is always 1/p in isorropia - we don't have an interface
-    to set different desired partition sizes.)
-
-    Let W_p be the total row weight on process p and WT be the sum of the
-    row weights on all processes.  Then
-
-    imbalance on process p =   |W_p - Size_p*WT| / Size_p*WT
-
-    balance = (1 + maximum imbalance over all processes p)
-
-    ====================================
-
-    Definition of hypergraph cutn and cutl:
-
-    Suppose Cut_k is the number of cuts in column k.  (So column k is in 
-    Cut_k + 1 different partitions.)  Suppose W_k is the weight of column k.
-
-    cutn = Sum over all k of W_K * ((Cut_k > 0) ? 1 : 0)
-
-    cutl = Sum over all k of Cut_k * W_k
-
-    ====================================
-
-    Input:
-
-    graph - the partitioned Epetra_CrsGraph representing the hypergraph
-
-    costs - a CostDescriber with the optional vertex weights and/or hypergraph
-            edge weights.  If no costs we weights are all 1.0.  Maybe that's
-            not the right default.  TODO
-*/
 
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
@@ -106,9 +99,6 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
             int numGlobalColumns,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl);
-
-/* TODO explain metrics computed in compute_graph_metrics
- */
 
 /** Compute graph metrics given an Epetra_RowMatrix
   */
