@@ -62,6 +62,15 @@ namespace Intrepid {
 template<class Scalar>
 class CubatureDirect : public Intrepid::Cubature<Scalar> {
   private:
+
+  /** \brief Type of cell on which the cubature rule is defined.
+  */
+  ECell cellType_;
+
+  /** \brief The degree of polynomials that are integrated
+             exactly by this cubature rule.
+  */
+  int degree_;
   
   /** \brief Complete set of data defining frequently used direct cubature rules.
   */
@@ -76,44 +85,45 @@ class CubatureDirect : public Intrepid::Cubature<Scalar> {
 
   ~CubatureDirect() {}
 
+  /** \brief Constructor.
+
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - The degree of polynomials that are integrated
+                                         exactly by this cubature rule.
+  */
+  CubatureDirect(const ECell cellType, const int degree);
+
   /** \brief Returns number of cubature points, cubature points, and weights
              (return arrays will be sized and memory will be allocated).
 
       \param numCubPoints    [out]     - Number of cubature points.
-      \param cubPoints       [out]     - Vector containing the cubature points.
-      \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - The degree of polynomials that are integrated
-                                         exactly by this cubature rule.
+      \param cubPoints       [out]     - Array containing the cubature points.
+      \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
   void getCubature(int &                            numCubPoints,
                    Teuchos::Array< Point<Scalar> >& cubPoints,
-                   Teuchos::Array<Scalar>&          cubWeights,
-                   const ECell                      cellType,
-                   const int                        degree) const;
+                   Teuchos::Array<Scalar>&          cubWeights) const;
 
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
 
-      \param cubPoints       [out]     - Vector containing the cubature points.
-      \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - The degree of polynomials that are integrated
-                                         exactly by this cubature rule.
+      \param cubPoints       [out]     - Array containing the cubature points.
+      \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
   void getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
-                   Teuchos::Array<Scalar>&          cubWeights,
-                   const ECell                      cellType,
-                   const int                        degree) const;
+                   Teuchos::Array<Scalar>&          cubWeights) const;
 
   /** \brief Returns the number of cubature points.
-
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - The degree of polynomials that are integrated
-                                         exactly by this cubature rule.
   */
-  int getNumPoints(const ECell cellType,
-                   const int   degree) const;
+  int getNumPoints() const;
+
+  /** \brief Returns integration cell type.
+  */
+  ECell getCellType() const;
+
+  /** \brief Returns max. degree of polynomials that are integrated exactly.
+  */
+  int getAccuracy() const;
 
   /** \brief Returns global index of a direct cubature rule.
   */
@@ -122,8 +132,7 @@ class CubatureDirect : public Intrepid::Cubature<Scalar> {
 
   /** \brief Returns cubature name.
   */
-  const char* getName(const ECell cellType,
-                      const int   degree) const;
+  const char* getName() const;
 
   /** \brief Exposes static cubature data.
   */

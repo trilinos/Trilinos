@@ -65,7 +65,7 @@ double computeMonomial(Point<double> p, int xDeg, int yDeg=0, int zDeg=0) {
 */
 double computeIntegral(ECell cellType, int cubDegree, int polyDegree) {
 
-  CubatureDirect<double> dCub;
+  CubatureDirect<double> dCub(cellType, cubDegree);
   double val = 0.0;
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
@@ -73,7 +73,7 @@ double computeIntegral(ECell cellType, int cubDegree, int polyDegree) {
   switch (cellType) {
 
     case CELL_EDGE: {
-        int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
+        int numCubPoints = dCub.getNumPoints();
 
         Teuchos::Array< Point<double> > cubPoints;
         Teuchos::Array<double> cubWeights;
@@ -82,7 +82,7 @@ double computeIntegral(ECell cellType, int cubDegree, int polyDegree) {
         cubPoints.assign(numCubPoints,tempPoint);
         cubWeights.assign(numCubPoints,0.0);
 
-        dCub.getCubature(cubPoints, cubWeights, cellType, cubDegree);
+        dCub.getCubature(cubPoints, cubWeights);
 
         for (int i=0; i<numCubPoints; i++) {
           val += computeMonomial(cubPoints[i], polyDegree)*cubWeights[i];

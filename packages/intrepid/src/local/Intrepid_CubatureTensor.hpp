@@ -56,11 +56,34 @@ namespace Intrepid {
 */
 template<class Scalar>
 class CubatureTensor : public Intrepid::Cubature<Scalar> {
-  private:
+  protected:
+
+  /** \brief Type of cell on which the cubature rule is defined.
+  */
+  ECell cellType_;
+
+  /** \brief In general, represents the degree of polynomials that are integrated
+             exactly by this cubature rule; for certain derived classes,
+             <var>degree</var> is a hash code, whose meaning is purely contextual,
+             see classes CubatureTensorVar and CubatureTensorSparse.
+  */
+  int degree_;
+
   
   public:
 
   ~CubatureTensor() {}
+
+  /** \brief Constructor.
+
+      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
+      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
+                                         exactly by this cubature rule; for certain derived classes,
+                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
+                                         see classes CubatureTensorVar and CubatureTensorSparse.
+  */
+  CubatureTensor(const ECell cellType, const int degree);
+
 
   /** \brief Returns number of cubature points, cubature points, and weights
              (return arrays will be sized and memory will be allocated).
@@ -68,44 +91,31 @@ class CubatureTensor : public Intrepid::Cubature<Scalar> {
       \param numCubPoints    [out]     - Number of cubature points.
       \param cubPoints       [out]     - Vector containing the cubature points.
       \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                         exactly by this cubature rule. For certain derived classes,
-                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
   virtual void getCubature(int &                            numCubPoints,
                            Teuchos::Array< Point<Scalar> >& cubPoints,
-                           Teuchos::Array<Scalar>&          cubWeights,
-                           const ECell                      cellType,
-                           const int                        degree) const;
+                           Teuchos::Array<Scalar>&          cubWeights) const;
 
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
 
       \param cubPoints       [out]     - Vector containing the cubature points.
       \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                         exactly by this cubature rule. For certain derived classes,
-                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
   virtual void getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
-                           Teuchos::Array<Scalar>&          cubWeights,
-                           const ECell                      cellType,
-                           const int                        degree) const;
+                           Teuchos::Array<Scalar>&          cubWeights) const;
 
   /** \brief Returns the number of cubature points.
-
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                         exactly by this cubature rule. For certain derived classes,
-                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
-  virtual int getNumPoints(const ECell cellType,
-                           const int   degree) const;
+  virtual int getNumPoints() const;
+
+  /** \brief Returns integration cell type.
+  */
+  ECell getCellType() const;
+
+  /** \brief Returns max. degree of polynomials that are integrated exactly.
+  */
+  virtual int getAccuracy() const;
 
 }; // end class CubatureTensor 
 

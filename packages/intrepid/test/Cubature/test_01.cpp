@@ -47,8 +47,6 @@ using namespace Intrepid;
 double computeRefVolume(ECell cellType, int cubDegree) {
 
   Teuchos::RCP< Cubature<double> > myCub;
-  CubatureDirect<double> dCub;
-  CubatureTensor<double> tCub;
   double vol = 0.0;
 
   switch (cellType) {
@@ -56,13 +54,13 @@ double computeRefVolume(ECell cellType, int cubDegree) {
     case CELL_EDGE:
     case CELL_TRI:
     case CELL_TET:
-        myCub = Teuchos::rcp(&dCub, false);
+        myCub = Teuchos::rcp(new CubatureDirect<double>(cellType, cubDegree));
       break;
 
     case CELL_QUAD:
     case CELL_HEX:
     case CELL_TRIPRISM:
-        myCub = Teuchos::rcp(&tCub, false);
+        myCub = Teuchos::rcp(new CubatureTensor<double>(cellType, cubDegree));
       break;
 
     default:
@@ -77,7 +75,7 @@ double computeRefVolume(ECell cellType, int cubDegree) {
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
 
-  myCub->getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  myCub->getCubature(numCubPoints, cubPoints, cubWeights);
 
   for (int i=0; i<numCubPoints; i++)
     vol += cubWeights[i];

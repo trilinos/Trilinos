@@ -67,8 +67,6 @@ double computeMonomial(Point<double> p, int xDeg, int yDeg=0, int zDeg=0) {
 double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zDeg) {
 
   Teuchos::RCP< Cubature<double> > myCub;  
-  CubatureDirect<double> dCub;
-  CubatureTensor<double> tCub;
   double val = 0.0;
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
@@ -76,15 +74,15 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zD
   switch (cellType) {
 
     case CELL_TET:
-        myCub = Teuchos::rcp(&dCub, false);
+        myCub = Teuchos::rcp(new CubatureDirect<double>(cellType, cubDegree));
       break;
 
     case CELL_HEX:
-        myCub = Teuchos::rcp(&tCub, false);
+        myCub = Teuchos::rcp(new CubatureTensor<double>(cellType, cubDegree));
       break;
 
     case CELL_TRIPRISM:
-        myCub = Teuchos::rcp(&tCub, false);
+        myCub = Teuchos::rcp(new CubatureTensor<double>(cellType, cubDegree));
       break;
 
     default:
@@ -93,7 +91,7 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zD
                           ">>> ERROR (Unit Test -- Cubature -- 3D Monomial): Invalid cell type.");
   } // end switch
 
-  int numCubPoints = myCub->getNumPoints(cellType, cubDegree);
+  int numCubPoints = myCub->getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -104,7 +102,7 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zD
   cubWeights.assign(numCubPoints,0.0);
   functValues.assign(numCubPoints,0.0);
 
-  myCub->getCubature(cubPoints, cubWeights, cellType, cubDegree);
+  myCub->getCubature(cubPoints, cubWeights);
 
   for (int i=0; i<numCubPoints; i++) {
     functValues[i] = computeMonomial(cubPoints[i], xDeg, yDeg, zDeg);

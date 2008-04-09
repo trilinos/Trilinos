@@ -74,17 +74,10 @@ class Cubature {
       \param numCubPoints    [out]     - Number of cubature points.
       \param cubPoints       [out]     - Vector containing the cubature points.
       \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                         exactly by this cubature rule. For certain derived classes,
-                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
   virtual void getCubature(int &                            numCubPoints,
                            Teuchos::Array< Point<Scalar> >& cubPoints,
-                           Teuchos::Array<Scalar>&          cubWeights,
-                           const ECell                      cellType,
-                           const int                        degree) const = 0;
+                           Teuchos::Array<Scalar>&          cubWeights) const = 0;
 
 
   /** \brief Returns cubature points and weights
@@ -92,28 +85,25 @@ class Cubature {
 
       \param cubPoints       [out]     - Vector containing the cubature points.
       \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                         exactly by this cubature rule. For certain derived classes,
-                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
   virtual void getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
-                           Teuchos::Array<Scalar>&          cubWeights,
-                           const ECell                      cellType,
-                           const int                        degree) const = 0;
+                           Teuchos::Array<Scalar>&          cubWeights) const = 0;
 
 
   /** \brief Returns the number of cubature points.
-
-      \param cellType         [in]     - Type of cell on which the cubature rule is defined.
-      \param degree           [in]     - In general, represents the degree of polynomials that are integrated
-                                         exactly by this cubature rule. For certain derived classes,
-                                         <var>degree</var> is a hash code, whose meaning is purely contextual,
-                                         see classes CubatureTensorVar and CubatureTensorSparse.
   */
-  virtual int getNumPoints(const ECell cell_type,
-                           const int   degree) const = 0;
+  virtual int getNumPoints() const = 0;
+
+
+  /** \brief Returns integration domain, i.e. cell type.
+  */
+  virtual ECell getCellType() const = 0;
+
+
+  /** \brief Returns algebraic accuracy (e.g. max. degree of polynomial
+             that is integrated exactly).
+  */
+  virtual int getAccuracy() const = 0;
 
 }; // class Cubature 
 

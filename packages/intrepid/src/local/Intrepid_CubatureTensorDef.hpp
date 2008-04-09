@@ -35,34 +35,63 @@
 namespace Intrepid {
 
 template <class Scalar>
+CubatureTensor<Scalar>::CubatureTensor(const ECell                      cellType,
+                                       const int                        degree) :
+  cellType_(cellType), degree_(degree) {
+  switch (cellType_) {
+
+    case CELL_QUAD:
+      TEST_FOR_EXCEPTION((degree_ < 0) || (degree_ > INTREPID_MAX_CUBATURE_DEGREE_EDGE),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    case CELL_HEX:
+      TEST_FOR_EXCEPTION((degree_ < 0) || (degree_ > INTREPID_MAX_CUBATURE_DEGREE_EDGE),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    case CELL_TRIPRISM:
+      TEST_FOR_EXCEPTION((degree_ < 0) || (degree_ > std::min(INTREPID_MAX_CUBATURE_DEGREE_EDGE,INTREPID_MAX_CUBATURE_DEGREE_TRI)),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    default:
+       TEST_FOR_EXCEPTION((cellType_ != CELL_QUAD) && (cellType_ != CELL_HEX) && (cellType_ != CELL_TRIPRISM),
+                          std::invalid_argument,
+                          ">>> ERROR (CubatureTensor): Invalid cell type.");
+  } // end switch
+}
+
+
+
+template <class Scalar>
 void CubatureTensor<Scalar>::getCubature(int &                            numCubPoints,
                                          Teuchos::Array< Point<Scalar> >& cubPoints,
-                                         Teuchos::Array<Scalar>&          cubWeights,
-                                         const ECell                      cellType,
-                                         const int                        degree) const {
+                                         Teuchos::Array<Scalar>&          cubWeights) const {
 
-  numCubPoints = getNumPoints(cellType, degree);
+  numCubPoints = getNumPoints();
   
-  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType);
+  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType_);
 
   Point<Scalar> tempPoint(cellDim);
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,(Scalar)0);
 
-  getCubature(cubPoints, cubWeights, cellType, degree);
+  getCubature(cubPoints, cubWeights);
 } // end getCubature
 
 
 
 template <class Scalar>
 void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
-                                         Teuchos::Array<Scalar>&          cubWeights,
-                                         const ECell                      cellType,
-                                         const int                        degree) const {
+                                         Teuchos::Array<Scalar>&          cubWeights) const {
 
   EFrame cubPointFrame = FRAME_REFERENCE;
 
-  int numCubPoints = getNumPoints(cellType, degree);
+  int numCubPoints = getNumPoints();
 
   TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints ) || ( (int)cubWeights.size() < numCubPoints ) ),
                         std::out_of_range,
@@ -71,7 +100,7 @@ void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
   Scalar x[3];
   int d[3];
  
-  switch (cellType) {
+  switch (cellType_) {
 
     case CELL_QUAD: {
         //
@@ -81,7 +110,7 @@ void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
         // Cubature weights are computed as products of weights of lower-dimensional
         // rules.
         //
-        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree;
+        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree_;
         int numEdgePoints     = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].numPoints_;
         for(int point_id = 0; point_id < numCubPoints; point_id++){
           d[0] = point_id / numEdgePoints;
@@ -105,7 +134,7 @@ void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
         // Cubature weights are computed as products of weights of lower-dimensional
         // rules.
         //
-        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree;
+        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree_;
         int numEdgePoints     = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].numPoints_;
         int numEdgePointsSq   = numEdgePoints*numEdgePoints;
         int point_id_reduced  = 0;
@@ -135,8 +164,8 @@ void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
         // Cubature weights are computed as products of weights of lower-dimensional
         // rules.
         //
-        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree;
-        int cubatureIndexTri  = CUBATURE_TRI_0   + degree;
+        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree_;
+        int cubatureIndexTri  = CUBATURE_TRI_0   + degree_;
         //int numEdgePoints     = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].numPoints_;
         int numTriPoints      = (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].numPoints_;
         for(int point_id = 0; point_id < numCubPoints; point_id++){
@@ -154,7 +183,7 @@ void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
       break;
 
     default:
-       TEST_FOR_EXCEPTION((cellType != CELL_QUAD) && (cellType != CELL_HEX) && (cellType != CELL_TRIPRISM),
+       TEST_FOR_EXCEPTION((cellType_ != CELL_QUAD) && (cellType_ != CELL_HEX) && (cellType_ != CELL_TRIPRISM),
                           std::invalid_argument,
                           ">>> ERROR (CubatureTensor): Invalid cell type.");
   } // end switch
@@ -162,40 +191,30 @@ void CubatureTensor<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
 
 
 
-template <class Scalar>
-int CubatureTensor<Scalar>::getNumPoints(const ECell cellType,
-                                         const int   degree) const {
+template<class Scalar>
+int CubatureTensor<Scalar>::getNumPoints() const {
 
   int numCubPoints = -1;
 
-  switch (cellType) {
+  switch (cellType_) {
 
     case CELL_QUAD: {
-        TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_EDGE),
-                           std::out_of_range,
-                           ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
-        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree;
+        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree_;
         int numEdgePoints     = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].numPoints_;
         numCubPoints          = numEdgePoints*numEdgePoints;
       }
       break;
 
     case CELL_HEX: {
-        TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_EDGE),
-                           std::out_of_range,
-                           ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
-        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree;
+        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree_;
         int numEdgePoints     = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].numPoints_;
         numCubPoints          = numEdgePoints*numEdgePoints*numEdgePoints;
       }
       break;
 
     case CELL_TRIPRISM: {
-        TEST_FOR_EXCEPTION((degree < 0) || (degree > std::min(INTREPID_MAX_CUBATURE_DEGREE_EDGE,INTREPID_MAX_CUBATURE_DEGREE_TRI)),
-                           std::out_of_range,
-                           ">>> ERROR (CubatureTensor): No tensor-product cubature rule implemented for the desired polynomial degree.");
-        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree;
-        int cubatureIndexTri  = CUBATURE_TRI_0   + degree;
+        int cubatureIndexEdge = CUBATURE_GAUSS_0 + degree_;
+        int cubatureIndexTri  = CUBATURE_TRI_0   + degree_;
         int numEdgePoints     = (CubatureDirect<Scalar>::exposeData())[cubatureIndexEdge].numPoints_;
         int numTriPoints      = (CubatureDirect<Scalar>::exposeData())[cubatureIndexTri].numPoints_;
         numCubPoints          = numEdgePoints*numTriPoints;
@@ -203,7 +222,7 @@ int CubatureTensor<Scalar>::getNumPoints(const ECell cellType,
       break;
 
     default:
-       TEST_FOR_EXCEPTION((cellType != CELL_QUAD) && (cellType != CELL_HEX) && (cellType != CELL_TRIPRISM),
+       TEST_FOR_EXCEPTION((cellType_ != CELL_QUAD) && (cellType_ != CELL_HEX) && (cellType_ != CELL_TRIPRISM),
                           std::invalid_argument,
                           ">>> ERROR (CubatureTensor): Invalid cell type.");
   } // end switch
@@ -211,5 +230,19 @@ int CubatureTensor<Scalar>::getNumPoints(const ECell cellType,
   return numCubPoints;
 
 } // end getNumPoints
+
+
+
+template <class Scalar>
+ECell CubatureTensor<Scalar>::getCellType() const {
+  return cellType_;
+}
+
+
+
+template <class Scalar>
+int CubatureTensor<Scalar>::getAccuracy() const {
+  return degree_;
+}
 
 } // end namespace Intrepid

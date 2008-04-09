@@ -35,36 +35,71 @@
 namespace Intrepid {
 
 template <class Scalar>
+CubatureDirect<Scalar>::CubatureDirect(const ECell                      cellType,
+                                       const int                        degree) :
+  cellType_(cellType), degree_(degree) {
+  switch (cellType) {
+
+    case CELL_EDGE:
+      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_EDGE),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    case CELL_TRI:
+      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_TRI),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    case CELL_TET:
+      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_TET),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    case CELL_PYRAMID:
+      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_PYRAMID),
+                         std::out_of_range,
+                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
+      break;
+
+    default:
+       TEST_FOR_EXCEPTION((cellType != CELL_EDGE) && (cellType != CELL_TRI) && (cellType != CELL_TET) && (cellType != CELL_PYRAMID),
+                          std::invalid_argument,
+                          ">>> ERROR (CubatureDirect): Invalid cell type.");
+  }// end switch
+}
+
+
+
+template <class Scalar>
 void CubatureDirect<Scalar>::getCubature(int &                            numCubPoints,
                                          Teuchos::Array< Point<Scalar> >& cubPoints,
-                                         Teuchos::Array<Scalar>&          cubWeights,
-                                         const ECell                      cellType,
-                                         const int                        degree) const {
+                                         Teuchos::Array<Scalar>&          cubWeights) const {
 
-  int cubatureIndex = getIndex(cellType, degree);
+  int cubatureIndex = getIndex(cellType_, degree_);
 
   numCubPoints = cubature_data_[cubatureIndex].numPoints_;
 
-  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType);
+  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType_);
 
   Point<Scalar> tempPoint(cellDim);
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,(Scalar)0);
 
-  getCubature(cubPoints, cubWeights, cellType, degree);
+  getCubature(cubPoints, cubWeights);
 } // end getCubature
 
 
 
 template <class Scalar>
 void CubatureDirect<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
-                                         Teuchos::Array<Scalar>&          cubWeights,
-                                         const ECell                      cellType,
-                                         const int                        degree) const {
+                                         Teuchos::Array<Scalar>&          cubWeights) const {
 
   EFrame cubPointFrame = FRAME_REFERENCE;
 
-  int cubatureIndex = getIndex(cellType, degree);
+  int cubatureIndex = getIndex(cellType_, degree_);
 
   int numCubPoints = cubature_data_[cubatureIndex].numPoints_;
 
@@ -73,7 +108,7 @@ void CubatureDirect<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
                       std::out_of_range,
                       ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
 
-  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType);
+  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType_);
 
   Scalar x[3];
 
@@ -90,11 +125,24 @@ void CubatureDirect<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
 
 
 template <class Scalar>
-int CubatureDirect<Scalar>::getNumPoints(const ECell cellType,
-                                         const int   degree) const {
-  int cubatureIndex = getIndex(cellType, degree);
+int CubatureDirect<Scalar>::getNumPoints() const {
+  int cubatureIndex = getIndex(cellType_, degree_);
   return cubature_data_[cubatureIndex].numPoints_;
 } // end getNumPoints
+
+
+
+template <class Scalar>
+ECell CubatureDirect<Scalar>::getCellType() const {
+  return cellType_;
+}
+
+
+
+template <class Scalar>
+int CubatureDirect<Scalar>::getAccuracy() const {
+  return degree_;
+}
 
 
 
@@ -107,30 +155,18 @@ int CubatureDirect<Scalar>::getIndex(const ECell cellType,
   switch (cellType) {
 
     case CELL_EDGE:
-      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_EDGE),
-                         std::out_of_range,
-                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
       cubatureIndex = CUBATURE_GAUSS_0 + degree;
       break;
 
     case CELL_TRI:
-      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_TRI),
-                         std::out_of_range,
-                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
       cubatureIndex = CUBATURE_TRI_0 + degree;
       break;
 
     case CELL_TET:
-      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_TET),
-                         std::out_of_range,
-                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
       cubatureIndex = CUBATURE_TET_0 + degree;
       break;
 
     case CELL_PYRAMID:
-      TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_MAX_CUBATURE_DEGREE_PYRAMID),
-                         std::out_of_range,
-                         ">>> ERROR (CubatureDirect): No direct cubature rule implemented for the desired polynomial degree.");
       cubatureIndex = CUBATURE_PYRAMID_0 + degree;
       break;
 
@@ -146,9 +182,8 @@ int CubatureDirect<Scalar>::getIndex(const ECell cellType,
 
 
 template <class Scalar>
-const char* CubatureDirect<Scalar>::getName(const ECell cellType,
-                                            const int   degree) const {
-  int cubatureIndex = getIndex(cellType, degree);
+const char* CubatureDirect<Scalar>::getName() const {
+  int cubatureIndex = getIndex(cellType_, degree_);
   return cubature_names_[cubatureIndex];
 } // end getName
 
