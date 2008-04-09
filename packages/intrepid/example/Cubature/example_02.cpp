@@ -44,11 +44,11 @@ using namespace Intrepid;
 */
 void printInfo(ECell cellType, int cubDegree) {
 
-  CubatureTensor<double> tensorCub;
+  CubatureTensor<double> tensorCub(cellType, cubDegree);
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
-  int numCubPoints = tensorCub.getNumPoints(cellType, cubDegree);
+  int numCubPoints = tensorCub.getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -57,7 +57,7 @@ void printInfo(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  tensorCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  tensorCub.getCubature(numCubPoints, cubPoints, cubWeights);
 
   cout << "Cell type:      " << MultiCell<double>::getCellName(cellType) << "\n";
   cout << "Degree:         " << cubDegree << "\n";
@@ -81,11 +81,11 @@ void printInfo(ECell cellType, int cubDegree) {
 */
 double computeRefCellVolume(ECell cellType, int cubDegree) {
 
-  CubatureTensor<double> tensorCub;
+  CubatureTensor<double> tensorCub(cellType, cubDegree);
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
-  int numCubPoints = tensorCub.getNumPoints(cellType, cubDegree);
+  int numCubPoints = tensorCub.getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -94,7 +94,7 @@ double computeRefCellVolume(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  tensorCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  tensorCub.getCubature(numCubPoints, cubPoints, cubWeights);
 
   double vol = 0.0;
   for (int i=0; i<numCubPoints; i++)
@@ -124,11 +124,11 @@ double computeCupFunction(Point<double> p) {
 */
 double computeIntegral(ECell cellType, int cubDegree) {
 
-  CubatureTensor<double> tensorCub;
+  CubatureTensor<double> tensorCub(cellType, cubDegree);
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
-  int numCubPoints = tensorCub.getNumPoints(cellType, cubDegree);
+  int numCubPoints = tensorCub.getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -137,7 +137,7 @@ double computeIntegral(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  tensorCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  tensorCub.getCubature(numCubPoints, cubPoints, cubWeights);
 
   double vol = 0.0;
   for (int i=0; i<numCubPoints; i++)

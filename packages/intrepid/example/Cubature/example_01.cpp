@@ -44,11 +44,11 @@ using namespace Intrepid;
 */
 void printInfo(ECell cellType, int cubDegree) {
 
-  CubatureDirect<double> dCub;
+  CubatureDirect<double> dCub(cellType, cubDegree);
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
-  int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
+  int numCubPoints = dCub.getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -57,11 +57,11 @@ void printInfo(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  dCub.getCubature(numCubPoints, cubPoints, cubWeights);
 
   cout << "Cell type:      " << MultiCell<double>::getCellName(cellType) << "\n";
   cout << "Degree:         " << cubDegree << "\n";
-  cout << "Cubature name:  " << dCub.getName(cellType, cubDegree) << "\n";
+  cout << "Cubature name:  " << dCub.getName() << "\n";
   cout << "Num. of points: " << numCubPoints << "\n";
   cout << "Cubature points:\n";
   for (int i=0; i<numCubPoints; i++) {
@@ -82,11 +82,11 @@ void printInfo(ECell cellType, int cubDegree) {
 */
 double computeSimplexVolume(ECell cellType, int cubDegree) {
 
-  CubatureDirect<double> dCub;
+  CubatureDirect<double> dCub(cellType, cubDegree);
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
-  int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
+  int numCubPoints = dCub.getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -95,7 +95,7 @@ double computeSimplexVolume(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  dCub.getCubature(numCubPoints, cubPoints, cubWeights);
 
   double vol = 0.0;
   for (int i=0; i<numCubPoints; i++)
@@ -125,11 +125,11 @@ double computeCupFunction(Point<double> p) {
 */
 double computeIntegral(ECell cellType, int cubDegree) {
 
-  CubatureDirect<double> dCub;
+  CubatureDirect<double> dCub(cellType, cubDegree);
 
   int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
 
-  int numCubPoints = dCub.getNumPoints(cellType, cubDegree);
+  int numCubPoints = dCub.getNumPoints();
 
   Teuchos::Array< Point<double> > cubPoints;
   Teuchos::Array<double> cubWeights;
@@ -138,7 +138,7 @@ double computeIntegral(ECell cellType, int cubDegree) {
   cubPoints.assign(numCubPoints,tempPoint);
   cubWeights.assign(numCubPoints,0.0);
 
-  dCub.getCubature(numCubPoints, cubPoints, cubWeights, cellType, cubDegree);
+  dCub.getCubature(numCubPoints, cubPoints, cubWeights);
 
   double vol = 0.0;
   for (int i=0; i<numCubPoints; i++)
