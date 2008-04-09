@@ -93,7 +93,7 @@ Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::Basis_F0_TRI_C1_FEM_DEFAULT() {
 template<class Scalar> 
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
-                                                    const EOperator                        operatorType) {
+                                                    const EOperator                        operatorType) const {
 
   // Determine parameters to shape outputValues: number of points = size of input array
   int numPoints = inputPoints.size();
@@ -223,7 +223,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 template<class Scalar>
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
-                                                    const MultiCell<Scalar>&               mCell) {
+                                                    const MultiCell<Scalar>&               mCell) const {
   TEST_FOR_EXCEPTION( (true),
                       std::logic_error,
                       ">>> ERROR (VarContainer): FEM Basis calling an FV/D member function");
@@ -231,21 +231,45 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 
 
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTag dofTag) {
+int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTag dofTag) const {
   return tagToEnum_[dofTag.tag_[0]][dofTag.tag_[1]][dofTag.tag_[2]];
 }
 
 
 template<class Scalar>
-LocalDofTag Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) {
+LocalDofTag Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) const {
   return enumToTag_[id];
 }
 
 
 template<class Scalar>
-void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllLocalDofTags(Teuchos::Array<LocalDofTag>& dofTags) {
-  dofTags = enumToTag_;
+const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllLocalDofTags() const {
+  return enumToTag_;
 }
 
+
+template<class Scalar>
+ECell Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCellType() const {
+  return CELL_TRI;
+}
+
+
+template<class Scalar>
+EBasis Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getBasisType() const {
+  return BASIS_FEM_DEFAULT;
+}
+
+
+template<class Scalar>
+ECoordinates Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
+  return COORDINATES_CARTESIAN;
+}
+
+
+template<class Scalar>
+int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getDegree() const {
+  return 1;
+}
   
+
 }// namespace Intrepid

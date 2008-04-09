@@ -38,7 +38,6 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_VarContainer.hpp"
 #include "Intrepid_MultiCell.hpp"
-#include "Teuchos_RCP.hpp"
 
 namespace Intrepid {
   
@@ -85,7 +84,7 @@ class Basis {
   */    
   virtual void getValues(VarContainer<Scalar>&                  outputValues,
                          const Teuchos::Array< Point<Scalar> >& inputPoints,
-                         const EOperator                        operatorType) = 0;
+                         const EOperator                        operatorType) const = 0;
     
     
   /** \brief Returns multi-indexed value representing values of an FVD basis function, evaluated 
@@ -101,7 +100,7 @@ class Basis {
   */    
   virtual void getValues(VarContainer<Scalar>&                  outputValues,
                          const Teuchos::Array< Point<Scalar> >& inputPoints,
-                         const MultiCell<Scalar>&               mCell) = 0;
+                         const MultiCell<Scalar>&               mCell) const = 0;
 
   
   /** \brief Returns the local enumeration (Id) of a degree of freedom with a given LocalDofTag.
@@ -111,7 +110,7 @@ class Basis {
       \return
               - local enumeration (Id)
   */
-  virtual int getLocalDofEnumeration(const LocalDofTag dofTag) = 0;
+  virtual int getLocalDofEnumeration(const LocalDofTag dofTag) const = 0;
 
 
   /** \brief Returns the local degree-of-freedom tag (LocalDofTag) for a given enumeration (Id).
@@ -121,14 +120,47 @@ class Basis {
       \return
               - local degree-of-freedom tag
   */
-  virtual LocalDofTag getLocalDofTag(int id) = 0;
+  virtual LocalDofTag getLocalDofTag(const int id) const = 0;
 
 
   /** \brief Returns a Teuchos::Array containing local degree-of-freedom tags (LocalDofTag).
 
       \param dofTags  [out]  - Teuchos::Array of degree-of-freedom tags.
   */
-  virtual void getAllLocalDofTags(Teuchos::Array<LocalDofTag>& dofTags) = 0;
+  virtual const Teuchos::Array<LocalDofTag> & getAllLocalDofTags() const = 0;
+
+
+  /** \brief Returns cell type on which the basis is defined.
+
+      \return
+              - cell type
+  */
+  virtual ECell getCellType() const = 0;
+
+
+  /** \brief Returns basis type.
+
+      \return
+              - basis type
+  */
+  virtual EBasis getBasisType() const = 0;
+
+
+  /** \brief Returns type of coordinate system (Cartesian, polar, R-Z, etc.).
+
+      \return
+              - coordinate system
+  */
+  virtual ECoordinates getCoordinateSystem() const = 0;
+
+
+  /** \brief Returns the degree of a polynomial basis.
+
+      \return
+              - if the basis is a polynomial basis, returns degree of max. complete polynomial
+                that can be represented by the basis, otherwise -1
+  */
+  virtual int getDegree() const = 0;
 
 };
   

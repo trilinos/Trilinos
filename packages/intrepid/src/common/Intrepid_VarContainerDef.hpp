@@ -42,10 +42,9 @@ namespace Intrepid {
 //===========================================================================//
 
 template<class Scalar>
-VarContainer<Scalar>::VarContainer(const VarContainer<Scalar>& right) {  
-  dataContainer_ = right.dataContainer_;
-  fieldType_ = right.fieldType_;
-  operatorType_ = right.operatorType_;
+VarContainer<Scalar>::VarContainer(const VarContainer<Scalar>& right) {
+  this->reset(right.getNumPoints(), right.getNumFields(), right.fieldType_, right.operatorType_, right.spaceDim_);
+  this->data_   = right.data_;
 }
 
 
@@ -56,50 +55,31 @@ VarContainer<Scalar>::VarContainer(const int         numPoints,
                                    const EField      fieldType,
                                    const EOperator   operatorType,
                                    const int         spaceDim) {  
-  
   // Use reset method to adjust the internal storage and set private data
-  this -> reset(numPoints,numFields,fieldType,operatorType,spaceDim);
+  this->reset(numPoints,numFields,fieldType,operatorType,spaceDim);
 }
 
-
-
-template<class Scalar>
-inline int VarContainer<Scalar>::getSize() const {
-  return dataContainer_.getSize();
-}
-
-
-
-template<class Scalar> 
-inline void VarContainer<Scalar>::getIndexRange(Teuchos::Array<int>& indexRange) const {  
-  dataContainer_.getIndexRange(indexRange);
-}
-
-
-
-template<class Scalar>
-inline int VarContainer<Scalar>::getIndexBound(const int whichIndex) const {
-  return dataContainer_.getIndexBound(whichIndex);
-}
 
 
 template<class Scalar>
 inline int VarContainer<Scalar>::getNumPoints() const {
-  
   // Number of points is upper bound for 1st index: stored in dataContainer_.indexRange_[0]
-    return dataContainer_.getIndexBound(0);
+  int val = 0;
+  if (this->getSize() != 0) {
+    val = this->getIndexBound(0);
+  }
+  return val;
 }
 
 
 
 template<class Scalar>
 inline int VarContainer<Scalar>::getNumFields() const {
-  
   // Number of fields is upper bound for 2nd index: stored in dataContainer_.indexRange_[1]
-  // if this is a zero VarContainer, number of fields is zero
   int val = 0;
-  if (!(dataContainer_.getSize() == 1 && dataContainer_.getRank() == 1 && dataContainer_[0] == 0.0))
-    val = dataContainer_.getIndexBound(1);
+  if (this->getRank() != 0) {
+    val = this->getIndexBound(1);
+  }
   return val;
 }
 
@@ -127,37 +107,8 @@ inline int VarContainer<Scalar>::getSpaceDim() const {
 
 
 template<class Scalar>
-inline int VarContainer<Scalar>::getRank() const {
-  return dataContainer_.getRank(); 
-}
-
-
-
-template<class Scalar>
 inline int VarContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex) const {  
-  return dataContainer_.getEnumeration(multiIndex);
-}
-
-
-
-template<class Scalar>
-inline void VarContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
-                                                const int            valueEnum) const {
-  dataContainer_.getMultiIndex(multiIndex,valueEnum);
-}
-
-
-
-template<class Scalar>
-Scalar VarContainer<Scalar>::getValue(const Teuchos::Array<int>& multiIndex) const {  
-  return dataContainer_.getValue(multiIndex);
-}
-
-
-
-template<class Scalar>
-inline void VarContainer<Scalar>::storeZero() {
-  dataContainer_.storeZero();
+  return this->LexContainer<Scalar>::getEnumeration(multiIndex);
 }
 
 
@@ -176,7 +127,7 @@ void VarContainer<Scalar>::reset(const int       numPoints,
   TEST_FOR_EXCEPTION( ( numFields < 0),
                       std::invalid_argument,
                       ">>> ERROR (VarContainer): Number of fields cannot be negative!");  
-  TEST_FOR_EXCEPTION( !( (0 <  spaceDim ) && ( spaceDim <= 3  ) ),
+  TEST_FOR_EXCEPTION( !( (1 <=  spaceDim ) && ( spaceDim <= 3  ) ),
                       std::invalid_argument,
                       ">>> ERROR (VarContainer): Space dimension has to be between 1 and 3.");  
 #endif  
@@ -250,46 +201,13 @@ void VarContainer<Scalar>::reset(const int       numPoints,
   }
   
   // Once newIndexRange has been set, resize LexContainer (this also resets the index range)
-  // and change field type, operator tyepe and space dim:
-  dataContainer_.resize(newIndexRange);
+  // and change field type, operator type and space dim:
+  this->resize(newIndexRange);
   fieldType_    = fieldType;
   operatorType_ = operatorType;
   spaceDim_     = spaceDim;
-  
 }
 
-
-
-template<class Scalar>
-inline void VarContainer<Scalar>::setValue(const Scalar               dataValue,
-                                           const Teuchos::Array<int>& multiIndex) {
-  dataContainer_.setValue(dataValue,multiIndex);
-}
-
-
-
-template<class Scalar>
-void VarContainer<Scalar>::setValues(const Teuchos::Array<Scalar>& dataArray) {
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (dataArray.size() != (dataContainer_.size()) ),
-                      std::invalid_argument,
-                      ">>> ERROR (VarContainer): Size of argument does not match size of container.");  
-#endif  
-  dataContainer_.assign(dataArray.begin(),dataArray.end());
-}
-
-
-
-template<class Scalar>
-const Scalar& VarContainer<Scalar>::operator [] (const int valueEnum) const {
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)dataContainer_.getSize() ) ),
-                      std::out_of_range,
-                      ">>> ERROR (VarContainer): value enumeration out of range.");
-#endif
-  return dataContainer_[valueEnum];
-}
-  
 
 
 template<class Scalar>
@@ -299,14 +217,9 @@ inline VarContainer<Scalar>& VarContainer<Scalar>::operator = (const VarContaine
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (VarContainer): Invalid right-hand side to '='. Self-assignment prohibited.");
-  TEST_FOR_EXCEPTION( ( this -> getSize() != right.getSize() ),
-                      std::invalid_argument,
-                      ">>> ERROR (VarContainer): Invalid size of right-hand side argument to '='.");
 #endif
-  dataContainer_ = right.dataContainer_;
-  fieldType_     = right.fieldType_;
-  operatorType_  = right.OperatorType_;
-  spaceDim_      = right.spaceDim_;
+  this->reset(right.getNumPoints(), right.getNumFields(), right.fieldType_, right.operatorType_, right.spaceDim_);
+  this->data_ = right.data_;
   return *this;
 }
 

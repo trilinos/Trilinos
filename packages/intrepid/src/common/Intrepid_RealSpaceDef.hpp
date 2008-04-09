@@ -609,7 +609,11 @@ Matrix<Scalar> Matrix<Scalar>::getInverse() const {
         }
       }
     }
-    if( emax == 0 ) std::cerr <<" Matrix getInverse: Zero matrix\n";
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
+                        std::invalid_argument,
+                        ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
     if( rowID ){
       rowperm[0] = rowID;
       rowperm[rowID] = 0;
@@ -631,8 +635,12 @@ Matrix<Scalar> Matrix<Scalar>::getInverse() const {
         }
       }
       Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-      if( detS == 0 ) std::cerr <<" Matrix getInverse : Singular matrix\n";
-      
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
+                          std::invalid_argument,
+                          ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+
       Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
       Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
       

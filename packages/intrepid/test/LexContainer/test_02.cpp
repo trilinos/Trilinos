@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     << "| TEST 1: Catching exceptions                                                 |\n"\
     << "===============================================================================\n\n";
   
-  int numTestException = 9;
+  int numTestException = 7;
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + numTestException;
   
@@ -257,58 +257,6 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << "\n"; 
     }
 
-    
-    
-    try{ // catch exception (8)
-      
-      // Trying to copy from LexContainer with the same rank but different size:
-      // indexRange[0] was 5 when defining myContainer
-      *outStream << "\n" \
-      << "===============================================================================\n"\
-      << " Trying to copy from LexContainer with the same rank but different size:  \n";
-      indexRange[0] = 6;
-      LexContainer<double> myNewContainer(indexRange);
-      myContainer = myNewContainer;
-    }
-    catch(std::logic_error err) {
-      *outStream << err.what() << "\n"; 
-    }
-    
-    
-    
-    try{ // catch exception (9)
-      
-      // Trying to copy from LexContainer with the same size but different rank
-      // indexRange[0] was 5 when defining myContainer
-      *outStream << "\n" \
-      << "===============================================================================\n"\
-      << " Trying to copy from LexContainer with the same size but different rank:  \n";
-      
-      // Define index range for LexContainer of rank 3 and size 48
-      indexRange.resize(3);
-      indexRange[0] = 2;
-      indexRange[1] = 4;
-      indexRange[2] = 6;
-      LexContainer<double> myNewContainer(indexRange);
-      
-      // Redefine index range to correspond to LexContainer of the same size but rank 4
-      indexRange.resize(4);
-      indexRange[0] = 2;
-      indexRange[1] = 4;
-      indexRange[2] = 6;
-      indexRange[3] = 1;
-      
-      // resize myContainer
-      myContainer.resize(indexRange);
-      
-      // Try assignment
-      myContainer = myNewContainer;
-    }
-    catch(std::logic_error err) {
-      *outStream << err.what() << "\n"; 
-    }
-    
-    
     // Check if number of caught exceptions matches the expected number
     if (TestForException_getThrowNumber() != endThrowNumber) {
       errorFlag++;

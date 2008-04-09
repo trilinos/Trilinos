@@ -281,14 +281,15 @@ namespace Intrepid {
 
     
   
-  /** \enum   Intrepid::ECell
-     \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
-              provides a cell template. A fixed number of enumerations is provided for user-defined cells.
-              For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html
-     \warning The order of the enumeration must be exactly the same as the order of the cell
-              templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
-              order of two enumerations is changed, the order of the associated cell template definitions in that 
-              file also must be changed!
+  /** \enum    Intrepid::ECell
+      \brief   Enumeration of admissible cells in Intrepid. A canonical cell is one for which Intrepid 
+               provides a cell template. A fixed number of enumerations is provided for user-defined cells.
+               For summary of polygon types and names see http://mathworld.wolfram.com/Polygon.html .
+
+    \warning The order of the enumeration must be exactly the same as the order of the cell
+             templates defined in MultiCell<Scalar>::connMapCanonical_, Intrepid_CellTemplates. If the
+             order of two enumerations is changed, the order of the associated cell template definitions in that 
+             file also must be changed!
   */
   enum ECell{
     CELL_NODE = 0,       // 0-simplex, i.e. node
@@ -728,7 +729,7 @@ namespace Intrepid {
     BASIS_FVD_DEFAULT,                
     BASIS_FVD_COVOLUME,
     BASIS_FVD_MIMETIC,
-    BASIS_FVD_MAX                     
+    BASIS_MAX                     
   };
 
   std::string EBasisToString(EBasis basis) {
@@ -740,7 +741,7 @@ namespace Intrepid {
       case BASIS_FVD_DEFAULT:      retString = "FVD Default";        break;
       case BASIS_FVD_COVOLUME:     retString = "FVD Covolume";       break;
       case BASIS_FVD_MIMETIC:      retString = "FVD Mimetic";        break;
-      case BASIS_FVD_MAX:          retString = "Max. Basis";         break;
+      case BASIS_MAX:              retString = "Max. Basis";         break;
       default:                     retString = "INVALID EBasis";
     }
     return retString;
@@ -754,8 +755,8 @@ namespace Intrepid {
   enum EIntegrationDomain
   {
     INTEGRATION_DOMAIN_CELL = 0,             
-    INTEGRATION_DOMAIN_SURFACE,                 
-    INTEGRATION_DOMAIN_LINE,
+    INTEGRATION_DOMAIN_FACE,                 
+    INTEGRATION_DOMAIN_EDGE,
     INTEGRATION_DOMAIN_MAX                     
   };
 
@@ -763,14 +764,84 @@ namespace Intrepid {
     std::string retString;
     switch(domain) {
       case INTEGRATION_DOMAIN_CELL:    retString = "Cell";        break;
-      case INTEGRATION_DOMAIN_SURFACE: retString = "Surface";     break;
-      case INTEGRATION_DOMAIN_LINE:    retString = "Line";        break;
+      case INTEGRATION_DOMAIN_FACE:    retString = "Face";        break;
+      case INTEGRATION_DOMAIN_EDGE:    retString = "Edge";        break;
       case INTEGRATION_DOMAIN_MAX:     retString = "Max. Domain"; break;
       default:                         retString = "INVALID EIntegrationDomain";
     }
     return retString;
   }
+
+
+
+  /** \enum  Intrepid::EDataFormat
+      \brief Data format used when, e.g., calling getOperator
+             and getFunctional methods of the Intrepid::LocalField interface.
+  */
+  enum EDataFormat
+  {
+    DATA_SCALAR = 0,             
+    DATA_VECTOR,
+    DATA_TENSOR,
+    DATA_FORMAT_MAX
+  };
+
+  std::string EDataFormatToString(EDataFormat dFormat) {
+    std::string retString;
+    switch(dFormat) {
+      case DATA_SCALAR:          retString = "Scalar";              break;
+      case DATA_VECTOR:          retString = "Vector";              break;
+      case DATA_TENSOR:          retString = "Tensor";              break;
+      case DATA_FORMAT_MAX:      retString = "Max. Data Format";    break;
+      default:                   retString = "INVALID EDataFormat";
+    }
+    return retString;
+  }
+
+
+
+  /** \enum  Intrepid::ECompEngine
+      \brief Specifies how operators and functionals are computed internally
+             (COMP_MANUAL = native C++ implementation, COMP_BLAS = BLAS implementation, etc.).
+  */
+  enum ECompEngine
+  {
+    COMP_CPP = 0,             
+    COMP_BLAS,
+    COMP_ENGINE_MAX
+  };
+
+  std::string ECompEngineToString(ECompEngine cEngine) {
+    std::string retString;
+    switch(cEngine) {
+      case COMP_CPP:             retString = "Native C++";           break;
+      case COMP_BLAS:            retString = "BLAS";                 break;
+      case COMP_ENGINE_MAX:      retString = "Max. Comp. Engine";    break;
+      default:                   retString = "INVALID ECompEngine";
+    }
+    return retString;
+  }
   
+  inline ECompEngine & operator++(ECompEngine &type) {
+    return type = static_cast<ECompEngine>(type+1);
+  }
+
+  inline ECompEngine operator++(ECompEngine &type, int) {
+    ECompEngine oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline ECompEngine & operator--(ECompEngine &type) {
+    return type = static_cast<ECompEngine>(type-1);
+  }
+
+  inline ECompEngine operator--(ECompEngine &type, int) {
+    ECompEngine oldval = type;
+    --type;
+    return oldval;
+  }
+
 
   
   /** \enum  Intrepid::EFailCode

@@ -28,7 +28,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-\brief  Unit tests for the Point class.
+\brief  Unit tests for the Intrepid::Basis_F0_TRI_C1_FEM_DEFAULT class.
 \author Created by P. Bochev and D. Ridzal.
 */
 
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     Teuchos::Array<LocalDofTag> allTags;
-    tribasis->getAllLocalDofTags(allTags);
+    allTags = tribasis->getAllLocalDofTags();
     for (unsigned i=0; i<allTags.size(); i++) {
       LocalDofTag myTag = allTags[i];
       int bfId = tribasis->getLocalDofEnumeration(myTag);

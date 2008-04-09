@@ -54,7 +54,7 @@ namespace Intrepid {
   */
   template<class Scalar>
   class LexContainer {
-private:
+  protected:
     
     /** \brief Array to store the multi-indexed quantity 
     */
@@ -66,7 +66,7 @@ private:
     */
     Teuchos::Array<int> indexRange_;
     
-public:
+  public:
     
     /** \brief Default destructor.
     */
@@ -207,7 +207,21 @@ public:
       */
     void setValues(const Scalar* dataPtr,
                    const int     dataSize);
-    
+
+
+    /** \brief Exposes data of LexContainer, data can be modified.
+    */
+    Teuchos::Array<Scalar> & getData() {
+      return data_;
+    }    
+
+
+    /** \brief Exposes data of LexContainer, data cannot be modified.
+    */
+    const Teuchos::Array<Scalar> & getData() const {
+      return data_;
+    }    
+
     
     /** \brief   Overloaded [] operator. returns value based on its enumeration
       */

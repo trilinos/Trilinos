@@ -61,17 +61,25 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
     
   void getValues(VarContainer<Scalar>&                  outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
-                 const EOperator                        operatorType);
+                 const EOperator                        operatorType) const;
     
   void getValues(VarContainer<Scalar>&                  outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
-                 const MultiCell<Scalar>&               mCell);
+                 const MultiCell<Scalar>&               mCell) const;
 
-  int getLocalDofEnumeration(const LocalDofTag dofTag);
+  int getLocalDofEnumeration(const LocalDofTag dofTag) const;
 
-  LocalDofTag getLocalDofTag(int id);
+  LocalDofTag getLocalDofTag(int id) const;
 
-  void getAllLocalDofTags(Teuchos::Array<LocalDofTag>& dofTags);
+  const Teuchos::Array<LocalDofTag> & getAllLocalDofTags() const;
+
+  ECell getCellType() const;
+
+  EBasis getBasisType() const;
+
+  ECoordinates getCoordinateSystem() const;
+
+  int getDegree() const;
 
 };
 

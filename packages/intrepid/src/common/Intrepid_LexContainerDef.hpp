@@ -236,10 +236,9 @@ inline void LexContainer<Scalar>::empty() {
 
 template<class Scalar>
 inline void LexContainer<Scalar>::storeZero() {
-  indexRange_.resize(1); 
-  data_.resize(1);       
-  indexRange_[0] = 1;
-  data_[0] = (Scalar)0.0;
+  for (int i=0; i < this->getSize(); i++) {
+    data_[i] = (Scalar)0;
+  } 
 }
 
 
@@ -251,6 +250,9 @@ inline void LexContainer<Scalar>::resize(const Teuchos::Array<int>& newIndexRang
   indexRange_.assign(newIndexRange.begin(),newIndexRange.end());  
   data_.resize(this->getSize());
 }
+
+
+
 template<class Scalar>
 inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const Teuchos::Array<int>& multiIndex) {
   data_[this->getEnumeration(multiIndex)] = dataValue; 
@@ -301,12 +303,6 @@ inline LexContainer<Scalar>& LexContainer<Scalar>::operator = (const LexContaine
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (LexContainer): Invalid right-hand side to '='. Self-assignment prohibited.");
-  TEST_FOR_EXCEPTION( ( this->getSize() != right.getSize() ),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Invalid size of right-hand side argument to '='.");
-  TEST_FOR_EXCEPTION( ( indexRange_.size() != right.indexRange_.size() ),
-                      std::invalid_argument,
-                      ">>> ERROR (LexContainer): Invalid rank of right-hand side argument to '='.");
 #endif
   data_ = right.data_;
   indexRange_ = right.indexRange_; 

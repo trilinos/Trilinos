@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 #ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = TestForException_getThrowNumber();
-  int endThrowNumber = beginThrowNumber + 16;
+  int endThrowNumber = beginThrowNumber + 18;
 #endif
   
   // Create arrays of coefficients
@@ -290,6 +290,33 @@ int main(int argc, char *argv[]) {
 #endif
 
     m03 = m03 * m03;
+
+    Matrix<double> mZero(3);
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      m03 = mZero.getInverse();
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
+
+    double singvec[] = {1.0, 2.0, 3.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0};
+    Matrix<double> mSing(singvec, 3);
+
+#ifdef HAVE_INTREPID_DEBUG
+    try {
+      m03 = mSing.getInverse();
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
+#endif
 
     outStream->precision(4);
     *outStream << m01 << std::endl;
