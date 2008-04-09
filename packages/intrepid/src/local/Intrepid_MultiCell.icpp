@@ -40,29 +40,27 @@ namespace Intrepid {
   //--------------------------------------------------------------------------------------------//
   
   template<class Scalar>
-  inline int MultiCell<Scalar>::getMyAmbientDim() const {
-    return ambientDim_;
-  }
-  
-  template<class Scalar>
   inline ECell MultiCell<Scalar>::getMyCellType() const {
     return myCellType_;
   }
+  
   
   template<class Scalar>
   inline const char* MultiCell<Scalar>::getMyCellName() const {
     return cellNames_[myCellType_];
   }
   
+  
   template<class Scalar>
-  inline int MultiCell<Scalar>::getMyTopologicalDim() const {
+  inline int MultiCell<Scalar>::getMyCellDim() const {
     return (myCellType_ > CELL_CANONICAL_MAX ?
             connMapCustom_[myCellType_-CELL_CANONICAL_MAX-1][0].topologicalDim_ :
             connMapCanonical_[myCellType_][0].topologicalDim_);
   }
   
+  
   template<class Scalar>
-  inline int MultiCell<Scalar>::getMyNumNodes() const {
+  inline int MultiCell<Scalar>::getMyCellNumNodes() const {
     return (CELL_NODE == myCellType_ ? 1 :
             (myCellType_ > CELL_CANONICAL_MAX ?
              connMapCustom_[myCellType_-CELL_CANONICAL_MAX-1][connMapCustom_[myCellType_-CELL_CANONICAL_MAX-1][0].topologicalDim_-1].numNodesPerSubcell_[0] :
@@ -70,20 +68,47 @@ namespace Intrepid {
             );
   }
   
+  
+  template<class Scalar>
+  inline int MultiCell<Scalar>::getMyNumCells() const {
+    return numCells_;
+  }
+  
+  
   template<class Scalar>
   inline int MultiCell<Scalar>::getMyNumSubcells(const int subcellDim) const {
+    
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <=3) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell dimension"); 
+#endif
     return (myCellType_ != CELL_NODE && subcellDim > 0 ?
             (myCellType_ > CELL_CANONICAL_MAX ?
              connMapCustom_[myCellType_-CELL_CANONICAL_MAX-1][subcellDim-1].numSubcells_ :
-             connMapCanonical_[myCellType_][subcellDim-1].numSubcells_) : (subcellDim ? -1 : getMyNumNodes())
+             connMapCanonical_[myCellType_][subcellDim-1].numSubcells_) : (subcellDim ? -1 : getMyCellNumNodes())
             );
   }
   
+  
   template<class Scalar>
   inline ECell MultiCell<Scalar>::getMySubcellType(const int subcellDim,const int subcellID) const {
+    
+#ifdef HAVE_INTREPID_DEBUG
+    
+    // First check if dimension is within the admissible range
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <=3) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell dimension"); 
+    
+    // Then check if subcellID does not exceed the number of subcells of this dimension or is < 0
+    TEST_FOR_EXCEPTION( !( (0 <= subcellID) && (subcellID < this -> getMyNumSubcells(subcellDim) ) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell ID"); 
+#endif
     return (!subcellDim ?
             CELL_NODE :
-            (getMyTopologicalDim() == subcellDim ? myCellType_ :
+            (getMyCellDim() == subcellDim ? myCellType_ :
              (myCellType_ > CELL_CANONICAL_MAX ?
               connMapCustom_[myCellType_-CELL_CANONICAL_MAX-1][subcellDim-1].subcellType_[subcellID] :
               connMapCanonical_[myCellType_][subcellDim-1].subcellType_[subcellID])
@@ -91,9 +116,27 @@ namespace Intrepid {
             );
   }
   
+  
   template<class Scalar>
-  inline void MultiCell<Scalar>::getMySubcellNodeIDs(const int subcellDim, const int subcellID,Teuchos::Array<int> & subcellNodeIDs) const {
-    int num_nodes = getNumNodes(getMySubcellType(subcellDim, subcellID));	// num nodes of the desired subcell
+  inline void MultiCell<Scalar>::getMySubcellNodeIDs(Teuchos::Array<int> & subcellNodeIDs,
+                                                     const int subcellDim, 
+                                                     const int subcellID) const {
+                                                 
+#ifdef HAVE_INTREPID_DEBUG
+    
+    // First check if dimension is within the admissible range
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <=3) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell dimension"); 
+    
+    // Then check if subcellID does not exceed the number of subcells of this dimension or is < 0
+    TEST_FOR_EXCEPTION( !( (0 <= subcellID) && (subcellID < this -> getMyNumSubcells(subcellDim) ) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell ID"); 
+#endif
+    
+    // num nodes of the desired subcell
+    int num_nodes = getCellNumNodes(this -> getMySubcellType(subcellDim, subcellID));	
     subcellNodeIDs.resize(num_nodes);
     for (int i=0; i < num_nodes; i++)
       subcellNodeIDs[i] =
@@ -106,27 +149,97 @@ namespace Intrepid {
            connMapCanonical_[myCellType_][subcellDim-1].nodeList_[subcellID][i]))
          );
   }
+ 
   
   template<class Scalar>
-  inline const Teuchos::Array<short> & MultiCell<Scalar>::getMySubcellSigns(const int cellID,const int subcellDim) const{
-    assert( (edgeSignsStatus_ == STATUS_DEFINED && subcellDim == 1) || \
-            (faceSignsStatus_ == STATUS_DEFINED && subcellDim == 2) );
-    return (subcellDim == 1) ? edgeSigns_[cellID] : faceSigns_[cellID];
+  inline const Teuchos::Array<short> & MultiCell<Scalar>::getCellEdgeSigns(const int cellID) const{
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( (edgeSigns_.size() == 0),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Undefined edge signs"); 
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
+    return edgeSigns_[cellID];
   }
   
   
   template<class Scalar>
-  inline const Point<Scalar> & MultiCell<Scalar>::getVertex(const int cellID, const int vertexID) const {
+  inline const Teuchos::Array<short> & MultiCell<Scalar>::getCellFaceSigns(const int cellID) const{
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( (faceSigns_.size() == 0),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Undefined face signs");  
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
+    return faceSigns_[cellID];
+  }
+  
+  
+  template<class Scalar>
+  inline const Teuchos::Array<short> & MultiCell<Scalar>::getCellEdgeTags(const int cellID) const{
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( (edgeTags_.size() == 0),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Undefined edge tags");  
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
+    return edgeTags_[cellID];
+  }
+  
+  
+  template<class Scalar>
+  inline const Teuchos::Array<short> & MultiCell<Scalar>::getCellFaceTags(const int cellID) const{
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( (faceTags_.size() == 0),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Undefined face tags");  
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
+    return faceTags_[cellID];
+  }
+  
+  
+  template<class Scalar>
+  inline const Point<Scalar> & MultiCell<Scalar>::getCellVertex(const int cellID, const int vertexID) const {
+    
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !( (0 <= vertexID) && (vertexID < this -> getMyCellNumNodes() ) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid vertex ID");  
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
     return vertices_[cellID][vertexID];
   }
   
+  
   template<class Scalar>
-  inline const Teuchos::Array< Point<Scalar> > & MultiCell<Scalar>::getCell(const int cellID) const {
+  inline const Teuchos::Array< Point<Scalar> > & MultiCell<Scalar>::getCellVertices(const int cellID) const {
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
     return vertices_[cellID];
   }
   
+  
   template<class Scalar>
   inline const Teuchos::Array< Point<Scalar> > & MultiCell<Scalar>::operator [] (const int cellID) const {
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !( (0 <= cellID) && (cellID < numCells_) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell ID"); 
+#endif
     return vertices_[cellID];
   }
   
@@ -138,21 +251,47 @@ namespace Intrepid {
   
   template<class Scalar>
   inline ECell MultiCell<Scalar>::getCellType(const char* cellName) {
+    
+    // Flag to tell us if the name was found and a temp variable for return argument
+    bool nameFound = false;
+    ECell cellType;
+    
     for (ECell i = CELL_NODE; i < CELL_MAX; i++) {
-      if (0 == strcmp(cellName, cellNames_[i]))
-        return i;
+      if (0 == strcmp(cellName, cellNames_[i])){
+        cellType = i;
+        nameFound = true;
+        break;
+      }
     }
-    return CELL_MAX;
+    TEST_FOR_EXCEPTION( !nameFound, std::invalid_argument, ">>> ERROR (MultiCell): Invalid cell name");  
+    return cellType;
   }
   
   
   template<class Scalar>
   inline const char* MultiCell<Scalar>::getCellName(const ECell cellType) {
+    
+    // In debug mode check bounds on cellType.
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ! ( (CELL_NODE <= cellType) && (cellType <= CELL_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell type");  
+
+#endif
     return cellNames_[cellType];
   }
   
+  
   template<class Scalar>
-  inline int MultiCell<Scalar>::getTopologicalDim(const ECell cellType) {
+  inline int MultiCell<Scalar>::getCellDim(const ECell cellType) {
+    
+    // In debug mode check bounds on cellType.
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ! ( (CELL_NODE <= cellType) && (cellType <= CELL_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell type");  
+    
+#endif
     return (cellType > CELL_CANONICAL_MAX ?
             connMapCustom_[cellType-CELL_CANONICAL_MAX-1][0].topologicalDim_ :
             connMapCanonical_[cellType][0].topologicalDim_
@@ -161,7 +300,15 @@ namespace Intrepid {
   
   
   template<class Scalar>
-  inline int MultiCell<Scalar>::getNumNodes(const ECell cellType) {
+  inline int MultiCell<Scalar>::getCellNumNodes(const ECell cellType) {
+    
+    // In debug mode check bounds on cellType.
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ! ( (CELL_NODE <= cellType) && (cellType <= CELL_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell type");  
+    
+#endif
     return (CELL_NODE == cellType ? 1 :
             (cellType > CELL_CANONICAL_MAX ?
              connMapCustom_[cellType-CELL_CANONICAL_MAX-1][connMapCustom_[cellType-CELL_CANONICAL_MAX-1][0].topologicalDim_-1].numNodesPerSubcell_[0] :
@@ -174,6 +321,15 @@ namespace Intrepid {
   template<class Scalar>
   inline int MultiCell<Scalar>::getNumSubcells(const ECell parentCellType, 
                                                const int subcellDim) {
+    // In debug mode check bounds on parentCellType.
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( ! ( (CELL_NODE <= parentCellType) && (parentCellType <= CELL_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell type");  
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <=3) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell dimension"); 
+#endif
     return (parentCellType != CELL_NODE && subcellDim > 0 ?
             (parentCellType > CELL_CANONICAL_MAX ?
              connMapCustom_[parentCellType-CELL_CANONICAL_MAX-1][subcellDim-1].numSubcells_ :
@@ -181,7 +337,7 @@ namespace Intrepid {
              ) :
             (subcellDim ?
              -1 :
-             getNumNodes(parentCellType)
+             getCellNumNodes(parentCellType)
              )
             );
   }
@@ -191,9 +347,26 @@ namespace Intrepid {
   inline ECell MultiCell<Scalar>::getSubcellType(const ECell parentCellType, 
                                                  const int subcellDim,
                                                  const int subcellID) {
+#ifdef HAVE_INTREPID_DEBUG
+    
+    // First check bounds on the parent cell type
+    TEST_FOR_EXCEPTION( ! ( (CELL_NODE <= parentCellType) && (parentCellType <= CELL_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell type");  
+    
+    // Then check bounds on the subcell dimension
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <=3) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell dimension"); 
+    
+    // Finally check if subcellID does not exceed the number of subcells with this dimension, or is <0
+    TEST_FOR_EXCEPTION( !( (0 <= subcellID) && (subcellID < MultiCell<Scalar>::getNumSubcells(parentCellType,subcellDim) ) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell ID"); 
+#endif
     return (!subcellDim ?
             CELL_NODE :
-            (getTopologicalDim(parentCellType) == subcellDim ?
+            (getCellDim(parentCellType) == subcellDim ?
              parentCellType :
              (parentCellType > CELL_CANONICAL_MAX ?
               connMapCustom_[parentCellType-CELL_CANONICAL_MAX-1][subcellDim-1].subcellType_[subcellID] :
@@ -205,11 +378,30 @@ namespace Intrepid {
   
   
   template<class Scalar>
-  inline void MultiCell<Scalar>::getSubcellNodeIDs(const ECell parentCellType, 
+  inline void MultiCell<Scalar>::getSubcellNodeIDs(Teuchos::Array<int> &subcellNodeIDs,
+                                                   const ECell parentCellType, 
                                                    const int subcellDim,
-                                                   const int subcellID, 
-                                                   Teuchos::Array<int> &subcellNodeIDs) {
-    int num_nodes = getNumNodes(getSubcellType(parentCellType, subcellDim, subcellID));
+                                                   const int subcellID) {
+                                                  
+#ifdef HAVE_INTREPID_DEBUG
+    
+    // First check bounds on the parent cell type
+    TEST_FOR_EXCEPTION( ! ( (CELL_NODE <= parentCellType) && (parentCellType <= CELL_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid cell type");  
+    
+    // Then check if dimension is within the admissible range
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <=3) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell dimension"); 
+    
+    // Finally check if subcellID does not exceed the number of subcells of this dimension or is < 0
+    TEST_FOR_EXCEPTION( !( (0 <= subcellID) && (subcellID < MultiCell<Scalar>::getNumSubcells(parentCellType, subcellDim) ) ),
+                        std::invalid_argument,
+                        ">>> ERROR (MultiCell): Invalid subcell ID"); 
+#endif
+                                                 
+    int num_nodes = getCellNumNodes(getSubcellType(parentCellType, subcellDim, subcellID));
     subcellNodeIDs.resize(num_nodes);
     for (int i=0; i < num_nodes; i++)
       subcellNodeIDs[i] =
@@ -228,13 +420,13 @@ namespace Intrepid {
   
   template<class Scalar>
   EStatus MultiCell<Scalar>::getAtlasStatus() const {
-    return atlasStatus_;
+    return (atlas_.size() > 0) ? STATUS_DEFINED : STATUS_UNDEFINED;
   }
   
   
   template<class Scalar>
   std::string MultiCell<Scalar>::getAtlasStatusName() const {
-    return EStatusToString(atlasStatus_);
+    return EStatusToString(this -> getAtlasStatus());
   }
   
   

@@ -69,7 +69,7 @@ void computeIntegral(Teuchos::Array<double>& testIntFixDeg, ECell cellType, int 
 
   Teuchos::RCP< Cubature<double> > myCub;  
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   switch (cellType) {
 

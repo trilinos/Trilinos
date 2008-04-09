@@ -46,7 +46,7 @@ void printInfo(ECell cellType, int cubDegree) {
 
   CubatureDirect<double> dCub(cellType, cubDegree);
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   int numCubPoints = dCub.getNumPoints();
 
@@ -84,7 +84,7 @@ double computeSimplexVolume(ECell cellType, int cubDegree) {
 
   CubatureDirect<double> dCub(cellType, cubDegree);
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   int numCubPoints = dCub.getNumPoints();
 
@@ -127,7 +127,7 @@ double computeIntegral(ECell cellType, int cubDegree) {
 
   CubatureDirect<double> dCub(cellType, cubDegree);
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   int numCubPoints = dCub.getNumPoints();
 

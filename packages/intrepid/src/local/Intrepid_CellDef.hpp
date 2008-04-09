@@ -38,46 +38,70 @@ template<class Scalar>
 Cell<Scalar>::Cell(const ECell    generatingCellType,
                    const Scalar*  vertices) :
   MultiCell<Scalar>::MultiCell(1, generatingCellType, vertices) {}
-
-
-template<class Scalar>
-Cell<Scalar>::Cell(const ECell    generatingCellType,
-                   const Scalar*  vertices,
-                   const short*   subcellSigns,
-                   const int      subcellDim) :
-  MultiCell<Scalar>::MultiCell(1, generatingCellType, vertices, subcellSigns, subcellDim) {}
-    
-    
-template<class Scalar>
-Cell<Scalar>::Cell(const ECell    generatingCellType,
-                   const Scalar*  vertices,
-                   const short*   edgeSigns,
-                   const short*   faceSigns) :
-  MultiCell<Scalar>::MultiCell(1, generatingCellType, vertices, edgeSigns, faceSigns) {}
     
 
 template<class Scalar>
-const Teuchos::Array<short> & Cell<Scalar>::getMySubcellSigns(const int subcellDim) const {
-  return this->MultiCell<Scalar>::getMySubcellSigns(0, subcellDim);
+const Teuchos::Array<short> & Cell<Scalar>::getCellEdgeSigns() const {
+  return this -> MultiCell<Scalar>::getCellEdgeSigns(0);
+}
+    
+ 
+template<class Scalar>
+const Teuchos::Array<short> & Cell<Scalar>::getCellFaceSigns() const {
+  return this -> MultiCell<Scalar>::getCellFaceSigns(0);
+}
+
+
+template<class Scalar>
+const Teuchos::Array<short> & Cell<Scalar>::getCellEdgeTags() const {
+  return this -> MultiCell<Scalar>::getCellEdgeTags(0);
+}
+
+
+template<class Scalar>
+const Teuchos::Array<short> & Cell<Scalar>::getCellFaceTags() const {
+  return this -> MultiCell<Scalar>::getCellFaceTags(0);
+}
+
+
+template<class Scalar>
+const Point<Scalar> & Cell<Scalar>::getCellVertex(const int vertexID) const {
+  return this->MultiCell<Scalar>::getCellVertex(0, vertexID);
 }
     
     
 template<class Scalar>
-const Point<Scalar> & Cell<Scalar>::getVertex(const int vertexID) const {
-  return this->MultiCell<Scalar>::getVertex(0, vertexID);
-}
-    
-    
-template<class Scalar>
-const Teuchos::Array<Point<Scalar> > & Cell<Scalar>::getCell() const {
-  return this->MultiCell<Scalar>::getCell(0);
+const Teuchos::Array<Point<Scalar> > & Cell<Scalar>::getCellVertices() const {
+  return this->MultiCell<Scalar>::getCellVertices(0);
 }
     
 
 template<class Scalar>
-const ChartTemplate<Scalar> & Cell<Scalar>::getChart() const {
-  return this->MultiCell<Scalar>::getChart(0);
+void Cell<Scalar>::setChart() {
+  this -> MultiCell<Scalar>::setChart(0);
 }
+
+
+template<class Scalar>
+void Cell<Scalar>::setChart(const ShapePoints<Scalar>& shapePoints) {
+  this -> MultiCell<Scalar>::setChart(0, shapePoints);
+}
+
+
+template<class Scalar>
+void Cell<Scalar>::setAtlas() {
+  this -> MultiCell<Scalar>::setAtlas();
+}
+
+
+template<class Scalar> 
+void Cell<Scalar>::setAtlas(const ShapePoints<Scalar>& shapePoints) {
+  Teuchos::Array< ShapePoints<Scalar> > dummyArray;
+  dummyArray.resize(1);
+  dummyArray[0] = shapePoints;
+  this -> MultiCell<Scalar>::setAtlas(dummyArray);
+}
+
     
     
 template<class Scalar>
@@ -101,9 +125,9 @@ Point<Scalar> Cell<Scalar>::mapToReferenceCell(const Point<Scalar>& physPoint) c
     
 
 template<class Scalar>
-EFailCode Cell<Scalar>::insidePhysicalCell(const Point<Scalar>& physPoint,
-                                           const double threshold) const {
-  return this->MultiCell<Scalar>::insidePhysicalCell(0, physPoint, threshold);
+bool Cell<Scalar>::inPhysicalCell(const Point<Scalar>& physPoint,
+                                      const double threshold) const {
+  return this->MultiCell<Scalar>::inPhysicalCell(0, physPoint, threshold);
 }
   
 } // namespace Intrepid

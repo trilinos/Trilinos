@@ -51,11 +51,11 @@ class Cell : public Intrepid::MultiCell<Scalar> {
     
     /** \brief Disable default constructor.
     */
-    //Cell();
+    Cell();
     
   public:
-      
-    /** \brief Use this constructor if subcell signs are not needed by reconstruction interface.
+        
+    /** \brief Creates a Cell from a list of vertices and a generating cell type.
       
         \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
                                           or a custom, i.e. user-defined type.
@@ -69,80 +69,83 @@ class Cell : public Intrepid::MultiCell<Scalar> {
          const Scalar*  vertices);
     
     
-    /** \brief Use this constructor if the reconstruction interface needs edge OR face signs.
-      
-        \param generatingCellType [in]   - Generating cell type: can be a canonical (TET, HEX, etc.). 
-                                            or a custom, i.e. user-defined type.
-        \param vertices   [in]           - Physical coordinates of the vertices an interleaved format (see above).      
-        \param subcellSigns [in]         - Edge or face signs. For the cell \f$A\f$, the input sequence is:\n\n
-                                           \f$\{s^A_1, s^A_2, ..., s^A_m\}\f$,\n\n
-                                           where \f$m\f$ is the number of edges/faces per cell, and 
-                                           \f$s^A_j \in \{1,-1,0\}\f$.
-        \param subcellDim [in]           - dimension of the subcell type for which signs are provided (1 or 2)
-      
-      \warning Constructor cannot check correctness of the signs in <var>subcellSigns</var> because 
-      Cell does not have access to global mesh data. The user is responsible for setting the
-      correct subcell signs.
+  /** \brief Returns reference to the data member with the edge signs of the cell.
+  */
+  const Teuchos::Array<short> & getCellEdgeSigns() const;
+  
+  
+  /** \brief Returns reference to the data member with the face signs of the cell.
     */
-    Cell(const ECell    generatingCellType,
-         const Scalar*  vertices,
-         const short*   subcellSigns,
-         const int      subcellDim);
-    
-    
-    /** \brief Use this constructor if the reconstruction interface needs edge AND face signs
-      
-        \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
-                                          or a custom, i.e. user-defined type.
-        \param vertices   [in]          - Physical coordinates of the vertices in interleaved format (see above).
-        \param edgeSigns [in]           - Edge signs. For the cell \f$A\f$ the input sequence is:\n\n
-                                          \f$\{s^A_1, s^A_2, ..., s^A_m\}\f$,\n\n
-                                          where \f$m\f$ is the number of edges per cell, and 
-                                          \f$s^A_j \in \{1,-1,0\}\f$.
-      \param faceSigns [in]             - Face signs. For the cell \f$A\f$ the input sequence is:\n\n
-                                          \f$\{s^A_1, s^A_2, ..., s^A_m\}\f$,\n\n
-                                          where \f$m\f$ is the number of faces per cell, and 
-                                          \f$s^A_j \in \{1,-1,0\}\f$.
-      
-      \warning Constructor cannot check correctness of the signs in <var>edgeSigns</var> and 
-      <var>faceSigns</var> because Cell does not have access to global mesh data. The user is 
-      responsible for setting the correct edge and face signs.
+  const Teuchos::Array<short> & getCellFaceSigns() const;
+  
+  
+  /** \brief Returns reference to the data member with the edge tags of the cell.
     */
-    Cell(const ECell    generatingCellType,
-         const Scalar*  vertices,
-         const short*   edgeSigns,
-         const short*   faceSigns);
-    
+  const Teuchos::Array<short> & getCellEdgeTags() const;
+  
+  
+  /** \brief Returns reference to the data member with the face tags of the cell.
+    */
+  const Teuchos::Array<short> & getCellFaceTags() const;
+  
 
-    /** \brief Returns reference to the data member that holds the signs of 1 or 2 subcells of the cell.
-
-        \param subcellDim        [in]  - dimension of the subcells whose orientations we want
-    */
-    const Teuchos::Array<short> & getMySubcellSigns(const int subcellDim) const;
-    
-    
-    /** \brief Returns the coordinates of a vertex as a Point object.
+  /** \brief Returns the coordinates of a vertex as a Point object.
       
         \param vertexID [in]  - vertex ID relative to the generating cell template       
     */
-    const Point<Scalar> & getVertex(const int vertexID) const;
+    const Point<Scalar> & getCellVertex(const int vertexID) const;
     
     
     /** \brief Returns the coordinates of all vertices in a cell as an array of Point objects.
     */
-    const Teuchos::Array< Point<Scalar> > & getCell() const;
+    const Teuchos::Array< Point<Scalar> > & getCellVertices() const;
     
     //-------------------------------------------------------------------------------------//
     //                         Charts and atlas                                            //
     //-------------------------------------------------------------------------------------//
     
-    /** \brief Returns reference to <var>atlas_</var> that contains the chart of this cell.  
+    /** \brief Sets the default chart into the cell atlas. The atlas must have size > 0,
+      i.e., STATUS_DEFINED, for this method to work. Requires the generating cell to 
+      have a reference cell, i.e.,  admissible cell types are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, 
+      and PYRAMID.
     */
-    const ChartTemplate<Scalar> & getChart() const;
+    void setChart();
     
+    
+    /** \brief Sets a chart of degree 1, 2 or 3 into the cell atlas. The atlas must have size > 0,
+      i.e., STATUS_DEFINED, for this method to work. If the argument has size zero, i.e., there are
+      no additional shape points provided, the method sets the default chart of degree 1. To define 
+      a chart of degree 1, 2 or 3, the user must provide a shapePoints argument with properly filled 
+      additional shape points. The number and allocation of these points to the subcells must be 
+      consistent with the generating cell type and the desired chart degree. This method requires 
+      the generating cell to have a reference cell, i.e., admissible cell types are EDGE, TRI, QUAD, 
+      TET, HEX, TRIPRISM, and PYRAMID.
+      
+      \param shapePoints      [in]  - a set of additional shape points to compute higher degree chart.
+    */
+    void setChart(const ShapePoints<Scalar>& shapePoints);
+    
+    
+    /** \brief Fills an undefined atlas with the default cell chart, or overwrites the cell chart
+      in an existing atlas by the default chart. Requires the generating cell to have a reference
+      cell, i.e.,  admissible cell types are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID.
+    */
+    virtual void setAtlas();
+    
+    
+    /** \brief Fills an undefined atlas with a cell chart based on the provided shapePoints argument, 
+      or overwrites the cell chart in an existing atlas by that chart. The user is responsible for
+      populating the argument with shape points consistent with the desired chart type. For argument
+      of size 0 (no shape points) sets the default chart. Requires the generating cell to have a 
+      reference cell, i.e.,  admissible cell types are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID.
+      
+      \param shapePoints      [in]  - a set of additional shape points to compute higher degree chart.
+    */
+    void setAtlas(const ShapePoints<Scalar> & shapePoints);
+        
     
     /** \brief Returns Matrix object containing the Jacobian matrix of the chart mapping for
-               this cell, evaluated at a point in the reference frame. 
+      this cell, evaluated at a point in the reference frame. 
         
       \warning Not to be confused with the Jacobian determinant, the determinant of this matrix.
        
@@ -152,23 +155,24 @@ class Cell : public Intrepid::MultiCell<Scalar> {
     Matrix<Scalar> jacobian(const Point<Scalar>& refPoint,
                             const double threshold = INTREPID_THRESHOLD) const;
 
-    /** \brief  Maps a point from a reference cell to a target physical cell.
- 
-       The status of <var>atlas_</var> must be STATUS_DEFINED for this method
-       to work because it uses the reference-to-physical mapping defined in the cell's chart. 
-       Result is returned as a Point object with FRAME_PHYSICAL.
+    /** \brief  Returns a Point object with FRAME_PHYSICAL representing the image of a point from
+      the generating reference cell in the physical cell.
+      The method uses the chart of the physical cell and requires <var>atlas_</var> to have 
+      STATUS_DEFINED. Admissible generating cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and 
+      PYRAMID, i.e., cells that have reference cells.
       
-        \param  refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type
-        \param  threshold [in] - "tightness" of the inclusion test carried out inside the method
-    */
+      \param  cellID [in]    - cell ID relative to the MultiCell
+      \param  refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type
+      \param  threshold [in] - "tightness" of the inclusion test carried out inside the method
+      */
     Point<Scalar> mapToPhysicalCell(const Point<Scalar>& refPoint,
                                     const double threshold = INTREPID_THRESHOLD) const;
 
-    /** \brief Maps a point from a physical cell to its reference cell.
-
-      The status of <var>atlas_</var> must be STATUS_DEFINED for this method to work
-      because it uses Newton's method to invert the reference-to-physical mapping defined
-      in the cell's chart.  Result is returned as a Point object with FRAME_PHYSICAL.
+    /** \brief Returns a Point object with FRAME_REFERENCE representing the image of a point from
+      the physical cell in the generating reference cell.
+      The method uses the chart of the physical cell and requires <var>atlas_</var> to have 
+      STATUS_DEFINED. Admissible generating cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and 
+      PYRAMID, i.e., cells that have reference cells. This method uses an internal dynamic threshold value.
 
         \param physPoint [in]  - physical point, must have FRAME_PHYSICAL type
     */
@@ -178,7 +182,7 @@ class Cell : public Intrepid::MultiCell<Scalar> {
     //                               Inclusion tests                                       //
     //-------------------------------------------------------------------------------------//
     
-    /** \brief Checks if the Point argument belongs to the cell.
+    /** \brief Returns true if the Point argument belongs to the cell.
    
       Dimension of the Point argument must match the cell dimension and its coordinate
       frame must be of FRAME_PHYSICAL kind. This method checks inclusion in physical
@@ -191,7 +195,7 @@ class Cell : public Intrepid::MultiCell<Scalar> {
         \param physPoint [in]  - point in FRAME_PHYSICAL coordinates
         \param threshold [in]  - "tightness" of the inclusion test
     */
-    EFailCode insidePhysicalCell(const Point<Scalar>& physPoint,
+    bool inPhysicalCell(const Point<Scalar>& physPoint,
                                  const double threshold = INTREPID_THRESHOLD) const;
     
 }; // class Cell

@@ -80,6 +80,56 @@ int main(int argc, char *argv[]) {
     0.5, 2.0
   };
   
+  /*
+   
+   Need to fix point assignment operation shapePoints_[0][0] = Point<double> (data) 
+   because shapePoints have the wrong space dimensions and operator = throws an exception
+   
+  // Define an array of 4 shape point sets to make some triangles curvilinear
+  Teuchos::Array< ShapePoints<double> > triShapePoints(4);
+  
+  // The first TRI cell will be affine, so we don't provide any extra shape points:
+  triShapePoints[0].shapePoints_.resize(0);
+  triShapePoints[0].chartDegree_ = 1;
+  
+  // The second TRI cell will have chart of degree 2 which requires 3 edge points. Resize the
+  // shapePoints_ for this cell to make room for edge points
+  triShapePoints[1].shapePoints_.resize(1);
+  triShapePoints[1].chartDegree_ = 1;
+  
+  //The third TRI cell will have chart of degree 3 which requires 6 edge points. . Resize the
+  // shapePoints_ for this cell to make room for edge points
+  triShapePoints[2].shapePoints_.resize(1);
+  triShapePoints[2].chartDegree_ = 2;
+
+  // The las TRI cell will be affine, so we don't provide any extra shape points:
+  triShapePoints[0].shapePoints_.resize(0);
+  triShapePoints[0].chartDegree_ = 1;
+  
+  
+  // For 2nd TRI resize shapePoints_[0] (where edge points are stored) to 3
+  triShapePoints[1].shapePoints_[0].resize(3);    
+  triShapePoints[1].shapePoints_[0][0] = Point<double> (1.25, 0.5,FRAME_PHYSICAL);
+  triShapePoints[1].shapePoints_[0][1] = Point<double> (0.5, -0.25,FRAME_PHYSICAL);
+  triShapePoints[1].shapePoints_[0][2] = Point<double> (0.5,  0.5, FRAME_PHYSICAL);
+  
+  // For 3rd TRI resize shapePoints_[0] (where edge points are stored) to 6
+  triShapePoints[2].shapePoints_[0].resize(6);    
+  
+  // 2 points for edge 0
+  triShapePoints[2].shapePoints_[0][0] = Point<double> (0.3,  0.3 ,FRAME_PHYSICAL);
+  triShapePoints[2].shapePoints_[0][1] = Point<double> (0.6,  0.6 ,FRAME_PHYSICAL);
+  
+  // 2 Points for edge 1
+ // triShapePoints[2].shapePoints_[0][2] = Point<double> ;
+  //triShapePoints[2].shapePoints_[0][3] = Point<double> ;
+   
+   */
+  
+
+  
+  
+  
   // Define vertex data for 2 CELL_QUAD cells
   double quadNodes[] = {
     // 1st QUAD

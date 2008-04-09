@@ -74,7 +74,7 @@ void CubatureTensor<Scalar>::getCubature(int &                            numCub
 
   numCubPoints = getNumPoints();
   
-  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType_);
+  int cellDim = MultiCell<Scalar>::getCellDim(cellType_);
 
   Point<Scalar> tempPoint(cellDim);
   cubPoints.assign(numCubPoints,tempPoint);

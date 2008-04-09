@@ -68,7 +68,7 @@ double computeIntegral(ECell cellType, int cubDegree, int polyDegree) {
   CubatureDirect<double> dCub(cellType, cubDegree);
   double val = 0.0;
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   switch (cellType) {
 

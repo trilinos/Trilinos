@@ -82,7 +82,7 @@ void CubatureDirect<Scalar>::getCubature(int &                            numCub
 
   numCubPoints = cubature_data_[cubatureIndex].numPoints_;
 
-  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType_);
+  int cellDim = MultiCell<Scalar>::getCellDim(cellType_);
 
   Point<Scalar> tempPoint(cellDim);
   cubPoints.assign(numCubPoints,tempPoint);
@@ -108,7 +108,7 @@ void CubatureDirect<Scalar>::getCubature(Teuchos::Array< Point<Scalar> >& cubPoi
                       std::out_of_range,
                       ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
 
-  int cellDim = MultiCell<Scalar>::getTopologicalDim(cellType_);
+  int cellDim = MultiCell<Scalar>::getCellDim(cellType_);
 
   Scalar x[3];
 

@@ -38,13 +38,69 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_RealSpace.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Intrepid {
   
+  /** \relates Intrepid::MultiCell
+  \brief Provides additional shape points to compute a higher degree chart for a given physical 
+  cell. Can only be used with cells that have a reference cell. 
+  
+  The default chart of a physical cell has degree 1 and is computed using only its vertices. Such a
+  chart may not be adequate for cells that have curved sides. To approximate such cells Intrepid 
+  provides charts of degree 2 and 3. Their computation requires additional shape points that live
+  on some or all of the subcells of the cell. The precise allocation of these points depends on the
+  degree of the chart and the cell shape. To use the optional higher degree charts the user must 
+  populate the data of this struct with a valid set of shape points as follows:
+  
+  shapePoints_[0] -> 1D, 2D, 3D: array of edge shape points ordered by local edge ID
+  shapePoints_[1] -> 3D: array of face shape points ordered by local face ID
+           -> 2D: array of cell shape points
+  shapePoints_[2] -> 3D: array of cell shape points
+  
+  The valid shape shapePoints_ sets for charts of degree 2 and 3 are
+  \verbatim
+  |==========|==========================================|===========================================|
+  | cell type|            chart of degree 2             |             chart of degree 3             |
+  |==========|==========================================|===========================================|
+  | EDGE     |  shapePoints_[0] -> 1 pt.                |  shapePoints_[0] -> 2 points              |
+  |==========|==========================================|===========================================|
+  | QUAD     |  shapePoints_[0] -> 4 pts. (1 per edge)  |  shapePoints_[0] -> 8 pts.  (2 per edge)  |
+  |          |  shapePoints_[1] -> 1 pt                 |  shapePoints_[1] -> 4 pts.                |
+  |==========|==========================================|===========================================|
+  |          |  shapePoints_[0] -> 12 pts. (1 per edge) | shapePoints_[0] -> 24 pts.  (2 per edge)  |
+  | HEX      |  shapePoints_[1] -> 6 pts.  (1 per face) | shapePoints_[1] -> 24 pts.  (4 per face)  |
+  |          |  shapePoints_[2] -> 1 pt.                | shapePoints_[2] -> 8 pts.                 |
+  |==========|==========================================|===========================================|
+  |  TRI     |  shapePoints_[0] -> 3 pts.  (1 per edge) |  shapePoints_[0] -> 6 pts.  (2 per edge)  |
+  |          |                                          |  shapePoints_[1] -> 1 pt.                 |
+  |==========|==========================================|===========================================|
+  |  TET     |  shapePoints_[0] -> 6 pts.  (1 per edge) |  shapePoints_[0] -> 12 pts. (2 per edge)  |
+  |          |                                          |  shapePoints_[1] -> 4 pts.  (1 per face)  |
+  |==========|==========================================|===========================================|
+  | PYRAMID  |
+  |==========|==========================================|===========================================|
+  | TRIPRISM |
+  |==========|==========================================|===========================================|
+  \endverbatim
+  
+  To define the chart of a cell Intrepid uses the standard nodal basis functions of appropriate 
+  degree for the particular cell shape. However, for efficiency, instead of using 
+  */
+  template<class Scalar>
+  struct ShapePoints {
+    Teuchos::Array< Teuchos::Array< Point<Scalar> > > shapePoints_;
+    int chartDegree_;
+  };
+  
+  
 /** \class Intrepid::MultiCell
     \brief A MultiCell (batch or group of cells) object is used to communicate cell information from a 
-           (global) mesh object to a (local) interpolation/reconstruction operator.
-
+    (global) mesh object to a (local) interpolation/reconstruction operator. MultiCell interface
+    provides methods to access global data by local cell connectivity templates and to obtain
+    geometrical information about the cells such as cell Jacobians, cell charts (transformations)
+    end etc. 
+  
     A MultiCell object allows the user to aggregate cells that use the exact same reconstruction
     operator into groups. This may improve performance when computing local operators for the cells
     in the batch.
@@ -76,34 +132,29 @@ class MultiCell {
     int numCells_;
     
     
-    /** \brief Dimension of the ambient space. Equals the topological dimension of the generating cell.
-    */
-    int ambientDim_;
-    
-    
     /** \brief Type of the generating cell.
     */
     ECell myCellType_;
     
     
-    /** \brief Two-dimensional array whose leading dimension equals the number of cells in the MultiCell
-               and the number of columns equals the number of vertices of the generating cell type.
-
-        The i-th row  stores the vertices of the i-th cell as Point objects, i.e., vertices[i][j] is the j-th   
-        vertex of the i-th cell in the MultiCell.
+    /** \brief Rank-two array containing the vertices of the cells in the MultiCell as Point objects.
+      The leading dimension equals the number of cells in the MultiCell; the number of columns equals
+      the number of vertices of the generating cell type. In sum, vertices_[i][j] is the j-th vertex 
+      of the i-th cell in the MultiCell.
     */
-    Teuchos::Array< Teuchos::Array< Point<Scalar> > >  vertices_;
+    Teuchos::Array< Teuchos::Array<Point<Scalar> > >  vertices_;
     
     
-    /** \brief Two-dimensional array whose leading dimension equals the number of cells in the MultiCell
-               and the number of columns equals the number of edges (1-subcells) of the generating cell type. 
-
-      The i-th row stores the signs of the edges of the i-th cell, i.e., edgeSigns_[i][j] is the sign
-      of the j-th edge of the i-th cell. Edge signs are defined as follows:
+    /** \brief Rank-two array containing the edge signs of the cells in the MultiCell. The leading 
+      dimension equals the number of cells in the MultiCell and the number of columns equals the 
+      number of edges (1-subcells) of the generating cell type. In sum, edgeSigns_[i][j] is the sign
+      of the j-th edge of the i-th cell. Upon construction of a MultiCell the size of this array is 
+      zero thereby indicating that edge signs are undefined. Edge signs can only be defined in 2D 
+      and 3D where they have the following meaning:
       
       \verbatim
-        edgeSigns_[i][j] = +1 if local edge direction coincides with the global edge direction
-        edgeSigns_[i][j] = -1 if local edge direction is opposite to the global edge direction
+      edgeSigns_[i][j] = +1 if local edge direction coincides with the global edge direction
+      edgeSigns_[i][j] = -1 if local edge direction is opposite to the global edge direction
       \endverbatim
       
       Local edge direction is defined by the vertex order in the cell template of the generating cell 
@@ -116,52 +167,64 @@ class MultiCell {
     Teuchos::Array< Teuchos::Array<short> > edgeSigns_;
     
     
-    /** \brief STATUS_UNDEFINED if MultiCell was constructed without providing edge sign data.
-      */
-    EStatus edgeSignsStatus_;
-    
-    
-    /** \brief Two-dimensional array whose leading dimension equals the number of cells in the MultiCell
-               and the number of columns equals the number of faces (2-subcells) of the generating cell type. 
-
-      The i-th row stores the signs of the faces of the i-th cell, i.e., faceSigns_[i][j] is the sign of 
-      the j-th face of the i-th cell. Face signs are defined as follows:
+    /** \brief Rank-two array containing the face signs of the cells in the MultiCell. The leading
+      dimension equals the number of cells in the MultiCell and the number of columns equals the 
+      number of "faces" (2-subcells in 3D and 1-subcells in 2D) of the generating cell type. In sum,
+      faceSigns_[i][j] is the sign of the j-th face of the i-th cell. Upon construction of a MultiCell 
+      the size of this array is zero thereby indicating that face signs are undefined. Face signs can 
+      only be defined in 2D and 3D. While in 2D edges and "faces" are the same 1-subcells of the
+      generating cell, separate "face" and edge signs are needed to distinguish between orientation
+      of 1-subcells by the unit tangent (edge signs) vs. orientation by the unit normal ("face" signs)
+      Face signs are defined as follows:
       
       \verbatim
       faceSigns_[i][j] = +1 if local unit normal coincides with the global unit normal
       faceSigns_[i][j] = -1 if local unit normal coincides with the global unit normal
       \endverbatim
       
-      Local unit normals are defined using the right hand rule and the vertex order of the faces
+      Local unit normals in 3D are defined using the right hand rule and the vertex order of the faces
       in the cell template of the generating cell type.  For example, the local unit normals of the
       faces in a PYRAMID are defined by the order of their vertices in the PYRAMID cell template:
       {{0,3,2,1}, {0,1,4}, {1,2,4}, {2,3,4}, {3,0,4}} and application of the right hand rule, i.e., 
-      local orientation on all faces is provided by the outer unit normal. Setting face signs is
+      local orientation on all faces is provided by the outer unit normal. In 2D face signs are set
+      by comparing local and global unit normals to 1-subcells. Setting face signs is
       user's responsibility because the MultiCell is not aware of the global mesh structures and 
       orientation choices in the user code.
     */
     Teuchos::Array< Teuchos::Array<short> > faceSigns_;
     
     
-    /** \brief STATUS_UNDEFINED if MultiCell was constructed without providing face sign data.
+    /** \brief Rank-two array containing the edge tags of the cells in the MultiCell. The leading 
+      dimension equals the number of cells in the MultiCell and the number of columns equals the 
+      number of edges (1-subcells) of the generating cell type. In sum, edgeTags_[i][j] is the tag
+      of the j-th edge of the i-th cell. Upon construction of a MultiCell the size of this array is 
+      zero thereby indicating that edge tags are undefined. Intrepid uses tags to tell other methods 
+      which edges they should work on. The defaults are 0 (skip this edge) and 1 (work on this edge). 
+      Tags can be used to set computation of, e.g., Neumann data, or edge integrals along some interfaces.
     */
-    EStatus faceSignsStatus_;
+    Teuchos::Array< Teuchos::Array<short> > edgeTags_;
     
+      
+    /** \brief Rank-two array containing the face tags of the cells in the MultiCell. The leading
+      dimension equals the number of cells in the MultiCell and the number of columns equals the 
+      number of "faces" (2-subcells in 3D and 1-subcells in 2D) of the generating cell type. In sum,
+      faceTags_[i][j] is the tag of the j-th face of the i-th cell. Upon construction of a MultiCell 
+      the size of this array is zero thereby indicating that face signs are undefined. Intrepid uses 
+      tags to tell other methods which faces they should work on. The defaults are 0 (skip this face) 
+      and 1 (work on this face). While in 2D "faces" and edges are the same 1-subcells, separate
+      face and edge tags may be needed to distingusih between, e.g., boundaries where normal and 
+      tangential components of a vector field are specified.
+    */
+    Teuchos::Array< Teuchos::Array<short> > faceTags_;
+      
     
-    /** \brief A one-dimensional array of charts, i.e., mappings between the cells in the MultiCell 
-               and their standard reference cell.
-
-      Can be initialized if and only if the generating cell type has a chart, i.e., it is one of
-      CELL_EDGE, CELL_QUAD, CELL_TRI, CELL_TET, CELL_HEX, CELL_PYRAMID, or CELL_TRIPRISM.
-      By default, <var>atlas_<var> is not initialized by the ctor because not all reconstruction
-      methods require this information. 
+    /** \brief Rank-one array of charts, i.e., mappings between the cells in the MultiCell and their 
+      standard reference cell. Upon construction of a MultiCell the size of this array is zero thereby 
+      indicating that the atlas is undefined. An atlas can be populated with charts if and only if
+      the generating cell type has a reference cell, i.e., it is one of CELL_EDGE, CELL_QUAD, CELL_TRI, 
+      CELL_TET, CELL_HEX, CELL_PYRAMID, or CELL_TRIPRISM.
     */
     Teuchos::Array< ChartTemplate<Scalar> >  atlas_;
-    
-    
-    /** \brief Default value is STATUS_UNDEFINED. Changed to STATUS_DEFINED by Intrepid::setAtlas()
-    */
-    EStatus atlasStatus_;
     
     
     /** \brief Disable default constructor.
@@ -170,7 +233,11 @@ class MultiCell {
     
   public:
       
-    /** \brief Use this constructor if subcell signs are not needed by reconstruction interface.
+      /** \brief Virtual destructor
+      */
+      virtual ~MultiCell(){ };
+      
+    /** \brief Creates a multicell from a list of vertices and a generating cell type.
       
         \param numCells [in]            - Number of cells in this multicell.
         \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
@@ -180,7 +247,7 @@ class MultiCell {
                                           two-cell multicell consisting of cells \f$A\f$ and \f$B\f$, 
                                           the order is:\n\n
                                           \f$\{x^A_1, y^A_1, z^A_1, x^A_2, y^A_2, z^A_2, ..., x^A_n, y^A_n, z^A_n,
-                                               x^B_1, y^B_1, z^B_1, x^B_2, y^B_2, z^B_2, ..., x^B_n, y^B_n, z^B_n\}\f$,\n\n
+                                          x^B_1, y^B_1, z^B_1, x^B_2, y^B_2, z^B_2, ..., x^B_n, y^B_n, z^B_n\}\f$,\n\n
                                           where \f$n\f$ is the number of nodes (points) in the cell.
     */
     MultiCell(const int      numCells,
@@ -188,62 +255,60 @@ class MultiCell {
               const Scalar*  vertices);
     
     
-    /** \brief Use this constructor if the reconstruction interface needs edge OR face signs.
+    /** \brief Sets edge signs for 2D and 3D generating cells. 
+      \warning MultiCell cannot validate correctness of the sign data in the input argument because
+      it is not aware of the orientations rules applied to the global edges. The user is responsible
+      for setting correct edge signs that are consistent with Intrepid's local edge orientations.
       
-        \param numCells   [in]           - Number of cells in this multicell.
-        \param generatingCellType [in]   - Generating cell type: can be a canonical (TET, HEX, etc.). 
-                                            or a custom, i.e. user-defined type.
-        \param vertices   [in]           - Physical coordinates of the vertices for all cells of the
-                                           multicell in an interleaved format (see above).      
-        \param subcellSigns [in]         - Edge or face signs, per each cell. For a two-cell multicell  
-                                           consisting of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
-                                           \f$\{s^A_1, s^A_2, ..., s^A_m, s^B_1, s^B_2, ..., s^B_m\}\f$,\n\n
-                                           where \f$m\f$ is the number of edges/faces per cell, and 
-                                           \f$s^X_j \in \{1,-1,0\}\f$.
-        \param subcellDim [in]           - dimension of the subcell type for which signs are provided (1 or 2)
-      
-      \warning Constructor cannot check correctness of the signs in <var>subcellSigns</var> because 
-      MultiCell does not have access to global mesh data. The user is responsible for setting the
-      correct subcell signs.
+      \param edgeSigns [in]         - Edge signs, per each cell. For a two-cell multicell  
+                                      consisting of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
+                                      \f$\{s^A_1, s^A_2, ..., s^A_m, s^B_1, s^B_2, ..., s^B_m\}\f$,\n\n
+                                      where \f$m\f$ is the number of edges of the generating cell, and 
+                                      \f$s^X_j \in \{1,-1,0\}\f$.
     */
-    MultiCell(const int      numCells,
-              const ECell    generatingCellType,
-              const Scalar*  vertices,
-              const short*   subcellSigns,
-              const int      subcellDim);
+    void setEdgeSigns(const short* edgeSigns);
     
     
-    /** \brief Use this constructor if the reconstruction interface needs edge AND face signs
-      
-        \param numCells   [in]          - Number of cells in this multicell.
-        \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
-                                          or a custom, i.e. user-defined type.
-        \param vertices   [in]          - Physical coordinates of the vertices for all cells of the
-                                          multicell in an interleaved format (see above).
-        \param edgeSigns [in]           - Edge signs, per each cell. For a two-cell multicell consisting
-                                          of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
-                                          \f$\{s^A_1, s^A_2, ..., s^A_m, s^B_1, s^B_2, ..., s^B_m\}\f$,\n\n
-                                          where \f$m\f$ is the number of edges per cell, and 
-                                          \f$s^X_j \in \{1,-1,0\}\f$.
-      \param faceSigns [in]             - Face signs, per each cell. For a two-cell multicell consisting 
-                                          of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
-                                          \f$\{s^A_1, s^A_2, ..., s^A_m, s^B_1, s^B_2, ..., s^B_m\}\f$,\n\n
-                                          where \f$m\f$ is the number of faces per cell, and 
-                                          \f$s^X_j \in \{1,-1,0\}\f$.
-      
-      \warning Constructor cannot check correctness of the signs in <var>edgeSigns</var> and 
-      <var>faceSigns</var> because MultiCell does not have access to global mesh data. The user is 
-      responsible for setting the correct edge and face signs.
+    /** \brief Sets face signs for 2D and 3D generating cells. In 3D faces are 2-dimensional subcells, 
+      i.e., true faces. In 2D the "faces" are 1-dimensional subcells, i.e., edges.
+      \warning MultiCell cannot validate correctness of the sign data in the input argument because
+      it is not aware of the orientations rules applied to the global faces. The user is responsible
+      for setting correct face signs that are consistent with Intrepid's local face orientations.
+       
+      \param faceSigns [in]         - face signs, per each cell. For a two-cell multicell  
+                                      consisting of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
+                                      \f$\{s^A_1, s^A_2, ..., s^A_m, s^B_1, s^B_2, ..., s^B_m\}\f$,\n\n
+                                      where \f$m\f$ is the number of faces of the generating cell, and 
+                                      \f$s^X_j \in \{1,-1,0\}\f$.
     */
-    MultiCell(const int      numCells,
-              const ECell    generatingCellType,
-              const Scalar*  vertices,
-              const short*   edgeSigns,
-              const short*   faceSigns);
+    void setFaceSigns(const short* faceSigns);
     
+    
+    /** \brief Sets edge tags. 
+      
+      \param edgeTags  [in]         - Edge tags, per each cell. For a two-cell multicell  
+                                      consisting of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
+                                      \f$\{t^A_1, t^A_2, ..., t^A_m, t^B_1, t^B_2, ..., t^B_m\}\f$,\n\n
+                                      where \f$m\f$ is the number of edges in the generating cell, and 
+                                      \f$t^X_j \in \{0,1\}\f$.
+    */
+    void setEdgeTags(const short* edgeTags);
+    
+    
+    /** \brief Sets face tags. In 3D faces are 2-dimensional subcells, i.e., true faces. In 2D the
+      "faces" are 1-dimensional subcells, i.e., edges. 
+      
+      \param faceTags  [in]         - Face tags, per each cell. For a two-cell multicell  
+                                      consisting of cells \f$A\f$ and \f$B\f$, the input sequence is:\n\n
+                                      \f$\{t^A_1, t^A_2, ..., t^A_m, t^B_1, t^B_2, ..., t^B_m\}\f$,\n\n
+                                      where \f$m\f$ is the number of faces in the generating cell, and 
+                                      \f$s^A_j \in \{0,1\}\f$. 
+    */
+    void setFaceTags(const short* faceTags);
+        
     
     /** \brief A static function (can be called without prior object instantiation) to set the 
-               definition of a custom cell type inside the static data member <var>connMapCustom_</var>.
+        definition of a custom cell type inside the static data member <var>connMapCustom_</var>.
       
         \param customCellType [in]      - Cell type: must be a custom type (POLY0 - POLY9).
         \param customCellTemplate [in]  - An array of 3 (three) ConnMapTemplate structs.
@@ -293,11 +358,6 @@ class MultiCell {
     //--------------------------------------------------------------------------------------------//
     
     
-    /** \brief Returns the ambient dimension of the MultiCell object.
-    */
-    int getMyAmbientDim() const;
-    
-    
     /** \brief Returns the type of the generating cell of the MultiCell object.
     */
     ECell getMyCellType() const;
@@ -310,22 +370,28 @@ class MultiCell {
     
     /** \brief Returns the topological dimension of the generating cell of the MultiCell object.
     */
-    int getMyTopologicalDim() const;
+    int getMyCellDim() const;
     
     
     /** \brief Returns the number of nodes of the generating cell of the MultiCell object.
     */
-    int getMyNumNodes() const;
+    int getMyCellNumNodes() const;
+    
+    
+    /** \brief returns the number of cells in the multicell.
+      */
+    int getMyNumCells() const;
     
     
     /** \brief Returns number of subcells of specified dimension for the generating cell of the MultiCell object.
+      
         \param subcellDim [in] - dimension of the subcells whose number we want to find      
     */
     int getMyNumSubcells(const int subcellDim) const;
     
     
     /** \brief Returns the subcell type of a particular dimension, based on its local ID, for the 
-               generating cell (remember: subcells are implicitly indexed in the cell template, starting with 0).
+        generating cell (remember: subcells are implicitly indexed in the cell template, starting with 0).
       
         \param subcellDim [in] - dimension of the target subcell    
         \param subcellId  [in] - local subcell ID  \n
@@ -347,58 +413,83 @@ class MultiCell {
     /** \brief Returns local node IDs of a subcell of a particular dimension, based on its local ID, for the 
       generating cell (remember: subcells are implicitly indexed in the cell template, starting with 0).
       
+      \param subcellNodeIDs [out] - ordered list of the local node IDs that are vertices of the subcell 
       \param subcellDim     [in]  - dimension of the target subcell    
       \param subcellID      [in]  - local subcell ID 
-      \param subcellNodeIDs [out] - ordered list of the local node IDs that are vertices of the subcell 
 
       For example, if the generating cell type is CELL_PYRAMID, then
 
       \code
-        getMySubcellNodeIDs(2,0,subcellNodeIDs)
+        getMySubcellNodeIDs(subcellNodeIDs,2,0)
       \endcode
       loads <tt>{0,3,2,1}</tt> into subcellNodeIDs (the nodes of the first 2-subcell (face) of the pyramid
       in the cell template).
      
       \code 
-        getMySubcellNodeIDs(1,2,subcellNodeIDs)
+        getMySubcellNodeIDs(subcellNodeIDs,1,2)
       \endcode
       loads <tt>{2,3}</tt> into subcellNodeIDs (the nodes of the third 1-subcell (edge) of the pyramid
       in the cell template), etc.
     */
-    void getMySubcellNodeIDs(const int subcellDim,
-                             const int subcellID,
-                             Teuchos::Array<int> & subcellNodeIDs) const;
+    void getMySubcellNodeIDs(Teuchos::Array<int> & subcellNodeIDs,
+                             const int subcellDim,
+                             const int subcellID) const;
     
     
-    /** \brief Returns reference to the data member that holds the signs of 1 or 2 subcells of the 
-               specified cell in the MultiCell (remember, the cells stored in the MultiCell are implicitely 
-               indexed by the order in which they were provided by the user).
-
-        \param cellID            [in]  - cell ID relative to the MultiCell object
-        \param subcellDim        [in]  - dimension of the subcells whose orientations we want
+    /** \brief Returns reference to the data member with the edge signs for the specified cell in 
+      the MultiCell (the cells stored in the MultiCell are implicitely indexed by the order 
+      in which they were provided by the user).
+      
+      \param cellID            [in]  - cell ID relative to the MultiCell object
     */
-    const Teuchos::Array<short> & getMySubcellSigns(const int cellID,
-                                                    const int subcellDim) const;
+    const Teuchos::Array<short> & getCellEdgeSigns(const int cellID) const;
     
     
-    /** \brief Returns the coordinates of a vertex as a Point object.
+    /** \brief Returns reference to the data member with the face signs for the specified cell in 
+      the MultiCell (the cells stored in the MultiCell are implicitely indexed by the order 
+      in which they were provided by the user).
+      
+      \param cellID            [in]  - cell ID relative to the MultiCell object
+      */
+    const Teuchos::Array<short> & getCellFaceSigns(const int cellID) const;
+    
+    
+    /** \brief Returns reference to the data member with the edge tags for the specified cell in 
+      the MultiCell (the cells stored in the MultiCell are implicitely indexed by the order 
+      in which they were provided by the user).
+      
+      \param cellID            [in]  - cell ID relative to the MultiCell object
+      */
+    const Teuchos::Array<short> & getCellEdgeTags(const int cellID) const;
+    
+    
+    /** \brief Returns reference to the data member with the face tags for the specified cell in 
+      the MultiCell (the cells stored in the MultiCell are implicitely indexed by the order 
+      in which they were provided by the user).
+      
+      \param cellID            [in]  - cell ID relative to the MultiCell object
+      */
+    const Teuchos::Array<short> & getCellFaceTags(const int cellID) const;
+    
+    
+    /** \brief Returns coordinates of a single vertex in a cell as a Point object.
       
         \param cellID   [in]  - cell ID relative to the multicell
         \param vertexID [in]  - vertex ID relative to the generating cell template       
     */
-    const Point<Scalar> & getVertex(const int cellID,
-                                    const int vertexID) const;
+    const Point<Scalar> & getCellVertex(const int cellID,
+                                        const int vertexID) const;
     
     
-    /** \brief Returns the coordinates of all vertices in a cell as a vector of Point objects.
+    /** \brief Returns coordinates of all vertices in a cell as a vector of Point objects.
       
         \param cellID  [in]  - cell ID relative to the MultiCell.
     */
-    const Teuchos::Array< Point<Scalar> > & getCell(const int cellID) const;
+    const Teuchos::Array< Point<Scalar> > & getCellVertices(const int cellID) const;
     
     
     /** \brief Overloaded [] operator; returns the vertices of the cell with the specified
-               cellID (relative to the MultiCell). NOTE: this allows us to use the [][] operator as well.
+        cellID (relative to the MultiCell). NOTE: this allows us to use the [][] operator as well.
       
       \param cellID  [in]  - cell ID relative to the MultiCell.
     */
@@ -427,14 +518,14 @@ class MultiCell {
       
         \param cellType [in] - target cell type 
       */
-    static int getTopologicalDim(const ECell cellType);
+    static int getCellDim(const ECell cellType);
     
     
     /** \brief Returns number of nodes per cell for a specified cell type.
 
         \param cellType [in] - target cell type 
     */
-    static int getNumNodes(const ECell cellType);
+    static int getCellNumNodes(const ECell cellType);
     
     
     /** \brief Returns number of subcells of a particular dimension for a given cell type.
@@ -458,31 +549,70 @@ class MultiCell {
                                 const int subcellID);
     
     
-    /** \brief Returns node IDs of subcell of a particular dimension, based on its index, 
+    /** \brief Returns local node IDs of subcell of a particular dimension, based on its index, 
                for a given cell type.
       
+        \param subcellNodeIDs   [out] - ordered list of local node IDs of the desired subcell
         \param parentCellType   [in]  - parent cell type
         \param subcellDim       [in]  - dimension of the subcells whose type we want to get        
         \param subcellID        [in]  - local ID of the desired subcell, relative to the parent cell \n
                                         (remember: they are implicitly indexed in the cell template, starting with 0)
-        \param subcellNodeIDs   [out] - ordered list of local node IDs of the desired subcell
     */
-    static void getSubcellNodeIDs(const ECell parentCellType,
+    static void getSubcellNodeIDs(Teuchos::Array<int> & subcellNodeIDs,
+                                  const ECell parentCellType,
                                   const int subcellDim,
-                                  const int subcellID,
-                                  Teuchos::Array<int> & subcellNodeIDs);
+                                  const int subcellID);
     
     //-------------------------------------------------------------------------------------//
     //                         Charts and atlas                                            //
     //-------------------------------------------------------------------------------------//
     
-    /** \brief Computes charts for all cells in the MultiCell and stores them in <var>atlas_</var>.
-
-      The chart defines the mapping that takes a reference cell to an ambient space cell.
-      Admissible generating cell types for this method are EDGE, TRI, QUAD, TET, HEX, PRISM, PYRAMID.
+    /** \brief Sets a default chart into an existing atlas. 
+      The atlas must have size > 0, i.e., STATUS_DEFINED, for this method to work. Admissible 
+      generating cell types are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that 
+      have reference cells.
+       
+      \param cellID           [in]  - ID of the cell whose chart we want to set
     */
-    void setAtlas();
+    void setChart(const int cellID);
+    
+    /** \brief Sets a chart of degree 1, 2 or 3 into the MultiCell atlas. 
+      The atlas must have size > 0, i.e., STATUS_DEFINED, for this method to work. If 
+      <var>shapePoints<var> has size zero, i.e., there are no additional shape points provided, the 
+      method sets the default chart of degree 1. To define a chart of degree 2 or 3, the user must 
+      provide a <var>shapePoints<var> argument with properly filled additional shape points. The 
+      number and allocation of these points to the subcells must be consistent with the generating 
+      cell type and the desired chart degree. Admissible generating cell types are EDGE, TRI, QUAD, 
+      TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have reference cells.
+      
+      \param cellID           [in]  - ID of the cell whose chart we want to set
+      \param shapePoints      [in]  - a set of additional shape points to compute higher degree chart.
+    */
+    void setChart(const int cellID, 
+                  const ShapePoints<Scalar>& shapePoints);
+    
+    
+    /** \brief Fills an undefined atlas with default cell charts, or overwrites the cell charts
+      in an existing atlas by the default charts. Admissible generating cell types are EDGE, TRI, 
+      QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have reference cells.
+    */
+    virtual void setAtlas();
 
+    
+    /** \brief Fills an undefined atlas with cell charts based on the provided array of shapePoints, 
+      or overwrites the cell charts in an existing atlas by these charts. The user is responsible for
+      populating the array with <var>ShapePoints<var> structs consistent with the desired chart types  
+      for each cell. The shape point sets can correspond to any valid chart degree, i.e., the charts 
+      of the individual cells are not required to be of  the same degree. If a <var>ShapePoints<var>
+      set of a cell has zero size, the default chart will be set for that cell. Admissible generating
+      cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have 
+      reference cells. 
+      
+      \param shapePoints      [in]  - array of shape point structs for each cell in the MultiCell.
+    */
+    void setAtlas(const Teuchos::Array< ShapePoints<Scalar> >& shapePoints);
+    
+    
     /** \brief Returns the status of the <var>atlas_</var> data member (DEFINED or UNDEFINED)
     */
     EStatus getAtlasStatus() const;
@@ -493,15 +623,10 @@ class MultiCell {
     std::string getAtlasStatusName() const;
     
     
-    /** \brief Returns reference to <var>atlas_</var> that contains the chart of the specified cell  
-      
-        \param cellID    [in]   - cell ID relative to the MultiCell
-    */
-    const ChartTemplate<Scalar> & getChart(const int cellID) const;
-    
-    
-    /** \brief Returns Matrix object containing the Jacobian matrix of the chart mapping for the
-               specified cell, evaluated at a point in the reference frame. 
+    /** \brief Returns a Matrix object representing the Jacobian matrix of the maping specified by
+      the chart of the cell, evaluated at a point in the reference frame. Admissible generating
+      cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have 
+      reference cells.
         
       \warning Not to be confused with the Jacobian determinant, the determinant of this matrix.
        
@@ -513,12 +638,11 @@ class MultiCell {
                             const Point<Scalar>& refPoint,
                             const double threshold = INTREPID_THRESHOLD) const;
 
-    /** \brief  Maps a point from a reference cell to a target physical cell (relative to
-                the MultiCell).
- 
-       The status of <var>atlas_</var> must be STATUS_DEFINED for this method
-       to work because it uses the reference-to-physical mapping defined in the cell's chart. 
-       Result is returned as a Point object with FRAME_PHYSICAL.
+    /** \brief Returns a Point object with FRAME_PHYSICAL representing the image of a point from
+      the generating reference cell in the specified physical cell (relative to the MultiCell).
+      The method uses the chart of the specified cell and requires <var>atlas_</var> to have 
+      STATUS_DEFINED. Admissible generating cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and 
+      PYRAMID, i.e., cells that have reference cells.
       
         \param  cellID [in]    - cell ID relative to the MultiCell
         \param  refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type
@@ -528,54 +652,57 @@ class MultiCell {
                                     const Point<Scalar>& refPoint,
                                     const double threshold = INTREPID_THRESHOLD) const;
 
-    /** \brief Maps a point from a physical cell, relative to the MultiCell, to its reference cell.
+    /** \brief Returns a Point object with FRAME_REFERENCE representing the image of a point from
+      the specified physical cell (relative to the MultiCell) in the generating reference cell.
+      The method uses the chart of the specified cell and requires <var>atlas_</var> to have 
+      STATUS_DEFINED. Admissible generating cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and 
+      PYRAMID, i.e., cells that have reference cells. This method uses an internal dynamic threshold value.
 
-      The status of <var>atlas_</var> must be STATUS_DEFINED for this method to work
-      because it uses Newton's method to invert the reference-to-physical mapping defined
-      in the cell's chart.  Result is returned as a Point object with FRAME_PHYSICAL.
-
+      
         \param cellID [in]     - cell ID relative to the MultiCell
         \param physPoint [in]  - physical point, must have FRAME_PHYSICAL type
     */
-    Point<Scalar> mapToReferenceCell(const int cellID, const Point<Scalar>& physPoint) const;
+    Point<Scalar> mapToReferenceCell(const int cellID, 
+                                     const Point<Scalar>& physPoint) const;
     
     //-------------------------------------------------------------------------------------//
-    //                               Inclusion tests                                       //
+    //                                    Inclusion tests                                  //
     //-------------------------------------------------------------------------------------//
     
-    /** \brief Checks if the Point argument belongs to the reference cell of the specified type.
-
-      Valid cell type range is CELL_EDGE to CELL_TRIPRISM, i.e., cell types that have
-      reference cells. Dimension of the Point argument must match the cell dimension and
-      its coordinate frame must be of FRAME_REFERENCE kind. This is a static function, i.e.,
+    /** \brief Returns true if the Point argument is in the closure of the specified reference cell.
+      
+      Admissible cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., 
+      cells that have reference cells. Dimension of the Point argument must match the cell dimension 
+      and its coordinate frame must be of FRAME_REFERENCE kind. This is a static function, i.e.,
       it can be called without instantiation of a MultiCell object.
       
-        \param cellType  [in]  - cell type that has reference cell to be tested against
-        \param refPoint  [in]  - point in FRAME_REFERENCE coordinates that is being tested
-        \param threshold [in]  - "tightness" of the inclusion test
+      \param cellType  [in]  - cell type that has reference cell to be tested against
+      \param refPoint  [in]  - point in FRAME_REFERENCE coordinates that is being tested
+      \param threshold [in]  - "tightness" of the inclusion test
     */
-    static EFailCode insideReferenceCell(const ECell cellType, 
-                                         const Point<Scalar>& refPoint,
-                                         const double threshold = INTREPID_THRESHOLD);
+    static bool inReferenceCell(const ECell cellType, 
+                                const Point<Scalar>& refPoint,
+                                const double threshold = INTREPID_THRESHOLD);
     
-    /** \brief Checks if the Point argument belongs to the cell with the specified cellID
-               (relative to the MultiCell).
-   
+    
+    /** \brief Returns true if the Point argument is in the closure of the cell with the specified 
+      cellID (relative to the MultiCell).
+      
       Dimension of the Point argument must match the cell dimension and its coordinate
       frame must be of FRAME_PHYSICAL kind. This method checks inclusion in physical
       space and so it requires a properly instantiated MultiCell object that holds
       valid vertex data for at least one cell. 
       
       \warning Inclusion tests for cells without reference cells, or whose charts are 
-               non-affine can be slow!
-       
-        \param cellID [in]     - cell ID relative to the MultiCell
-        \param physPoint [in]  - point in FRAME_PHYSICAL coordinates
-        \param threshold [in]  - "tightness" of the inclusion test
-    */
-    EFailCode insidePhysicalCell(const int cellID, 
-                                 const Point<Scalar>& physPoint,
-                                 const double threshold = INTREPID_THRESHOLD) const;
+      non-affine can be slow!
+      
+      \param cellID [in]     - cell ID relative to the MultiCell
+      \param physPoint [in]  - point in FRAME_PHYSICAL coordinates
+      \param threshold [in]  - "tightness" of the inclusion test
+      */
+    bool inPhysicalCell(const int cellID, 
+                        const Point<Scalar>& physPoint,
+                        const double threshold = INTREPID_THRESHOLD) const;
     
     //-------------------------------------------------------------------------------------//
     //                                     Debugging                                       //

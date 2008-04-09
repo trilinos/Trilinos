@@ -73,7 +73,7 @@ Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::Basis_F0_TRI_C1_FEM_DEFAULT() {
     // build tagToEnum array
     int maxBfId      = 0;
     int maxScId = 0;
-    int maxDim       = MultiCell<Scalar>::getTopologicalDim(mycell);  // max dimension for this cell type
+    int maxDim       = MultiCell<Scalar>::getCellDim(mycell);  // max dimension for this cell type
     for (int i=0; i<numBf; i++)  // find max local Bf id
       if (maxBfId < tags[i*tagSize+posBfId])
         maxBfId = tags[i*tagSize+posBfId];

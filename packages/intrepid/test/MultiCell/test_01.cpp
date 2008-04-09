@@ -33,295 +33,537 @@
 \author Created by P. Bochev and D. Ridzal
 */
 #include "Intrepid_MultiCell.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RCP.hpp"
 
 using namespace std;
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
-  cout \
-  << "===============================================================================\n" \
-  << "|                                                                             |\n" \
-  << "|                   Example use of the MultiCell class                        |\n" \
-  << "|                                                                             |\n" \
-  << "|     1) Creating MultiCells and accessing their data                         |\n" \
-  << "|     2) testing points for inclusion in reference and physical cells         |\n" \
-  << "|                                                                             |\n" \
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-  << "|                                                                             |\n" \
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-  << "|                                                                             |\n" \
-  << "===============================================================================\n"\
-  << "| EXAMPLE 1: class MultiCell in 2D                                            |\n"\
-  << "===============================================================================\n";
-   
-  // Define an array to store cell coordinates in an interleaved format. Cell type is triangle.
-   double triNodes[] = 
-    {0.0, 0.0,                      // nodes of the first triangle
-     1.0, 0.0,
-     1.0, 1.0,
-     0.0, 0.0,                      // nodes of the second triangle
-     1.0, 1.0,
-     0.0, 1.0,
-     0.0, 1.0,                      // nodes of the third triangle
-     1.5, 1.0,
-     0.5, 2.0};
-   
-   // Suppose that edge signs are also needed. Define an array for the edge signs
-   short triEdgeSigns[] = 
-     {1, 1, -1,                     // edge signs for the edges of the first triangle
-     -1, -1, 1,                     // edge signs for the edges of the second triangle
-      1, 1, -1};                    // edge signs for the edges of the third triangle
-   
-   // Invoke a ctor that takes an array of subcell signs and the dimension of the subcell
-   MultiCell<double> triMcell(
-      3,                            // number of cells (triangles) in the multicell instance
-      CELL_TRI,                     // generating cell type
-      triNodes,                     // array with interleaved node coordinates
-      triEdgeSigns,                 // array with edge signs
-      1);                           // dimension of the subcells for which sign data is provided
-   
-   // Display the newly created MultiCell
-   cout << triMcell << endl;         
-   
-   cout << "Testing multicell interface for the generating cell type...\n\n";
-   
-   cout << "\t type                   = " << triMcell.getMyCellType() << "\n";
-   cout << "\t name                   = " << triMcell.getMyCellName() << "\n";
-   cout << "\t ambient dimension      = " << triMcell.getMyAmbientDim() <<"\n";
-   cout << "\t topological dimension  = " << triMcell.getMyTopologicalDim() << "\n";
-   cout << "\t # of nodes             = " << triMcell.getMyNumNodes() << "\n"; 
-   cout << "\t # of 0-subcells        = " << triMcell.getMyNumSubcells(0) << "\n";
-   cout << "\t # of 1-subcells        = " << triMcell.getMyNumSubcells(1) << "\n";
-   cout << "\t # of 2-subcells        = " << triMcell.getMyNumSubcells(2) << "\n";
-   cout << "\t # of 3-subcells        = " << triMcell.getMyNumSubcells(3) << "\n";
-   cout << "\t 1-subcell with index 0 = " << triMcell.getCellName(triMcell.getMySubcellType(1,0)) <<"\n";
-   cout << "\t 1-subcell with index 1 = " << triMcell.getCellName(triMcell.getMySubcellType(1,1)) <<"\n";
-   cout << "\t 1-subcell with index 2 = " << triMcell.getCellName(triMcell.getMySubcellType(1,2)) <<"\n";
-   
-   cout << "\t 2-subcell with index 0 = " << triMcell.getCellName(triMcell.getMySubcellType(2,0)) <<"\n\n";
-   
-   // Space for the node connectivities of subcells
-   Teuchos::Array<int> subcellNodeConn;               
-   triMcell.getMySubcellNodeIDs(1,                    // dimension of the subcell whose nodes we want
-                                0,                    // local order (relative to cell template) of the subcell
-                                subcellNodeConn);     // output - contains list of local node IDs
-   
-   cout << "Node connectivity of the 0th 1-subcell -> { ";
-   for(unsigned int i=0; i<subcellNodeConn.size(); i++) cout << subcellNodeConn[i]<<" ";
-   cout << "}\n\n";
-   
-   // Using the overloaded [] operator to access the vertices of the cells in the MultiCell
-   cout << "Using the overloaded [] operator to access the vertices of the cell with cell ID = 1...\n";
-   Point<double> vertex_0 = triMcell[1][0];            // vertex 0 of cell with cellID = 1
-   Point<double> vertex_1 = triMcell[1][1];            // vertex 1 of cell with cellID = 1
-   Point<double> vertex_2 = triMcell[1][2];            // vertex 2 of cell with cellID = 1
-   cout << "\t triMcell[1][0] =" << vertex_0 << "\n";   // << is overloaded for Point objects
-   cout << "\t triMcell[1][1] =" << vertex_1 << "\n";
-   cout << "\t triMcell[1][2] =" << vertex_2 << "\n\n";
-   
-   // Using getVertex(i,j) to access the vertices of the cells in the MultiCell 
-   cout << "Testing that triMcell[i][j] = triMcell.getVertex(i,j) for the cell with cell ID = 1...\n";
-   Point<double> vertex_0a = triMcell.getVertex(1,0);    
-   Point<double> vertex_1a = triMcell.getVertex(1,1);    
-   Point<double> vertex_2a = triMcell.getVertex(1,2);    
-   cout << "\t triMcell.getVertex(1,0) =" << vertex_0a << "\n";   
-   cout << "\t triMcell.getVertex(1,1) =" << vertex_1a << "\n";   
-   cout << "\t triMcell.getVertex(1,2) =" << vertex_2a << "\n\n";   
+  
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+  
+  // Save the format state of the original std::cout.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
+  
+  *outStream \
+    << "===============================================================================\n" \
+    << "|                                                                             |\n" \
+    << "|                              Unit Test MultiCell                            |\n" \
+    << "|                                                                             |\n" \
+    << "|     1) Test Accessing MultiCell data                                        |\n" \
+    << "|     2) Test mapping to and from a physical cell                             |\n" \
+    << "|                                                                             |\n" \
+    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+    << "|                                                                             |\n" \
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|                                                                             |\n" \
+    << "===============================================================================\n";
+  
+  int errorFlag  = 0;
 
-   // Using overloaded [] operator to access coordinates of the vertices stored as Point objects:
-   cout << "Testing [] operator for vertex_0 \n";
-   cout << "\t vertex_0[0] = "<< vertex_0[0] <<"\n";
-   cout << "\t vertex_0[1] = "<< vertex_0[1] <<"\n\n";
-   
-   cout << "Testing [] operator for vertex_1 \n";
-   cout << "\t vertex_1[0] = "<< vertex_1[0] <<"\n";
-   cout << "\t vertex_1[1] = "<< vertex_1[1] <<"\n\n";
-   
-   cout \
-   << "===============================================================================\n"\
-   << "| EXAMPLE 2: class MultiCell in 3D                                            |\n"\
-   << "===============================================================================\n";
-   
-   // Define an array to store cell coordinates in an interleaved format. Cell type is TRIPRISM.
-   double prismnodes[] = 
-    {0.0, 0.0, 0.0,         // nodes of the first prism
-     1.0, 0.0, 0.0,
-     0.5, 0.5, 0.0,
-     0.0, 0.0, 1.0,
-     1.0, 0.0, 1.0,
-     0.5, 0.5, 1.0, 
-     0.0, 0.0, 1.0,         // nodes of the second prism
-     1.0, 0.0, 1.0,         // = nodes of the first prism offset by 1 in the z-axes
-     0.5, 0.5, 1.0,         // i.e., two prisms stacked on top of each other
-     0.0, 0.0, 2.0,
-     1.0, 0.0, 2.0,
-     0.5, 0.5, 2.0};
-   
-   // Define an array with the edge signs for the two prisms
-   short prismEdgeSigns[] = 
-    { 1,  1,  1, 1, 1, 1,  1,  1,  1,             // signs for the edges of prism #1
-     -1, -1, -1, 1, 1, 1, -1, -1, -1};            // signs for the edges of prism #2
-   
-   // Define an array with the face signs for the two prisms
-   short prismFaceSigns[] = 
-    { 1,  1,  1,  1,  1,                          // signs for the faces of prism #1
-     -1, -1, -1, -1, -1};                         // signs for the faces of prism #2
-   
-   // Use the ctor that takes both edge AND face sign data
-   MultiCell<double> prismMcell(2,                // number of cells (prisms) in the multicell 
-                                CELL_TRIPRISM,    // generating cell type
-                                prismnodes,       // list of node coordinates
-                                prismEdgeSigns,   // list of edge signs
-                                prismFaceSigns);  // list of face signs
-   cout << prismMcell << endl;
-   
-   cout << "Testing multicell interface for the generating cell type...\n\n";
-   cout << "\t type                   = " << prismMcell.getMyCellType() << "\n";
-   cout << "\t name                   = " << prismMcell.getMyCellName() << "\n";
-   cout << "\t ambient dimension      = " << prismMcell.getMyAmbientDim() <<"\n";
-   cout << "\t topological dimension  = " << prismMcell.getMyTopologicalDim() << "\n";
-   cout << "\t # of nodes             = " << prismMcell.getMyNumNodes() << "\n"; 
-   cout << "\t # of 0-subcells        = " << prismMcell.getMyNumSubcells(0) << "\n";
-   cout << "\t # of 1-subcells        = " << prismMcell.getMyNumSubcells(1) << "\n";
-   cout << "\t # of 2-subcells        = " << prismMcell.getMyNumSubcells(2) << "\n";
-   cout << "\t # of 3-subcells        = " << prismMcell.getMyNumSubcells(3) << "\n";
-   cout << "\t 2-subcell with index 0 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,0)) <<"\n";
-   cout << "\t 2-subcell with index 1 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,1)) <<"\n";
-   cout << "\t 2-subcell with index 2 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,2)) <<"\n";
-   cout << "\t 2-subcell with index 3 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,3)) <<"\n";
-   cout << "\t 2-subcell with index 4 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,4)) <<"\n";
-   cout << "\t 3-subcell with index 0 = " << prismMcell.getCellName(prismMcell.getMySubcellType(3,0)) <<"\n\n";
-   
-   // Accessing local node IDs (node lists) of the subcells
-   prismMcell.getMySubcellNodeIDs(2,                  // dimension of the subcell whose nodes we want
-                                  3,                  // local order (relative to cell template) of the subcell
-                                  subcellNodeConn);   // output - contains list of local node IDs
-   
-   cout << "Node connectivity of the 2-subcell with ID = 3 -> { ";
-   for(unsigned int i=0; i<subcellNodeConn.size(); i++) cout << subcellNodeConn[i]<<" ";
-   cout << "}\n\n";
-   
-   // Using overloaded [] to access vertex coordinates
-   cout << "Accessing vertex coordinates of cell with cellID = 1 ...\n";
-   for(int i=0; i<prismMcell.getMyNumSubcells(0); i++){
-     cout << "prismMcell[1]["<< i <<"] = " << prismMcell[1][i] << "\n";
-   }
-   
-   cout << "\n" \
-     << "===============================================================================\n"\
-     << "| EXAMPLE 3: Using inclusion test methods in MultiCell                             |\n"\
-     << "===============================================================================\n";
-   
-   //The static member function insideReferenceCell can be used without a MultiCell instantiation
-   cout << "\nUsing static member insideReferenceCell to check if a Point is inside a reference cell: " << endl;
-   
-   // Points below illustrate using constructors that take 1,2 or 3 point coordinates 
-   // and the user sets the frame kind explicitely to override the default (FRAME_PHYSICAL).
-   
-   // 1D point that is close to the right endpoint of the reference edge cell
-   Point<double> p_in_edge(1.0-INTREPID_EPSILON,FRAME_REFERENCE);
-   
-   // 2D point that is close to the top right corner of the reference quad cell
-   Point<double> p_in_quad(1.0,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
-   
-   // 2D point that is close to the midpoint of the slanted edge of the reference tri cell
-   Point<double> p_in_tri(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,FRAME_REFERENCE);
-   
-   // 3D point that is close to 0th vertex of the reference hex cell
-   Point<double> p_in_hex(1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
-   
-   // 3D point that is close to the slanted face of the reference tet cell
-   Point<double> p_in_tet(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,FRAME_REFERENCE);
-   
-   // 3D point close to the top face of the reference prism 
-   Point<double> p_in_prism(0.5,0.25,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
-   
-   // 3D point close to the top of the reference pyramid
-   Point<double> p_in_pyramid(-INTREPID_EPSILON,INTREPID_EPSILON,(1.0-INTREPID_EPSILON),FRAME_REFERENCE);
-   
-   // Check if the points are in their respective reference cells
-   EFailCode in_edge    = MultiCell<double>::insideReferenceCell(CELL_EDGE, p_in_edge);   
-   EFailCode in_tri     = MultiCell<double>::insideReferenceCell(CELL_TRI, p_in_tri);
-   EFailCode in_quad    = MultiCell<double>::insideReferenceCell(CELL_QUAD, p_in_quad);
-   EFailCode in_tet     = MultiCell<double>::insideReferenceCell(CELL_TET, p_in_tet);
-   EFailCode in_hex     = MultiCell<double>::insideReferenceCell(CELL_HEX, p_in_hex);
-   EFailCode in_prism   = MultiCell<double>::insideReferenceCell(CELL_TRIPRISM, p_in_prism);
-   EFailCode in_pyramid = MultiCell<double>::insideReferenceCell(CELL_PYRAMID, p_in_pyramid);
-   //
-   if(in_edge == FAIL_CODE_SUCCESS) {
-     cout <<  p_in_edge << " is inside reference edge " << endl;
-   }
-   if(in_tri == FAIL_CODE_SUCCESS) {
-     cout << p_in_tri << " is inside reference triangle " << endl;
-   }
-   if(in_quad == FAIL_CODE_SUCCESS) {
-     cout << p_in_quad << " is inside reference quad " << endl;
-   }
-   if(in_tet == FAIL_CODE_SUCCESS) {
-     cout << p_in_tet << " is inside reference tet " << endl;
-   }
-   if(in_hex == FAIL_CODE_SUCCESS) {
-     cout << p_in_hex << " is inside reference hex " << endl;
-   }
-   if(in_prism == FAIL_CODE_SUCCESS) {
-     cout << p_in_prism << " is inside reference prism " << endl;
-   }
-   if(in_pyramid == FAIL_CODE_SUCCESS) {
-     cout << p_in_pyramid << " is inside reference pyramid " << endl;
-   }
-   
-   // Now make 1,2 and 3D points with very small coefficients, but larger than threshold
-   double small = 2.0*INTREPID_THRESHOLD;
-   Point<double> p_eps_1D(small,FRAME_REFERENCE);
-   Point<double> p_eps_2D(small,small,FRAME_REFERENCE);
-   Point<double> p_eps_3D(small,small,small,FRAME_REFERENCE);
-   
-   // Add these points to the good reference points above:
-   cout << "\nAdding small perturbations to these points..." << endl;
-   p_in_edge    += p_eps_1D;
-   p_in_tri     += p_eps_2D;
-   p_in_quad    += p_eps_2D;
-   p_in_tet     += p_eps_3D;
-   p_in_hex     += p_eps_3D;
-   p_in_prism   += p_eps_3D;
-   p_in_pyramid += p_eps_3D;
-   
-   // Now check again if the points are in their respective reference cells.
-   cout << "\nChecking if the perturbed Points belongs to reference cell: " << endl;
-   in_edge    = MultiCell<double>::insideReferenceCell(CELL_EDGE, p_in_edge);
-   in_tri     = MultiCell<double>::insideReferenceCell(CELL_TRI, p_in_tri);
-   in_quad    = MultiCell<double>::insideReferenceCell(CELL_QUAD, p_in_quad);
-   in_tet     = MultiCell<double>::insideReferenceCell(CELL_TET, p_in_tet);
-   in_hex     = MultiCell<double>::insideReferenceCell(CELL_HEX, p_in_hex);
-   in_prism   = MultiCell<double>::insideReferenceCell(CELL_TRIPRISM, p_in_prism);
-   in_pyramid = MultiCell<double>::insideReferenceCell(CELL_PYRAMID, p_in_pyramid);
-   
-   //
-   if(in_edge == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout <<  p_in_edge << " is NOT inside reference edge " << endl;
-   }
-   if(in_tri == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout << p_in_tri << " is NOT inside reference triangle " << endl;
-   }
-   if(in_quad == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout << p_in_quad << " is NOT inside reference quad " << endl;
-   }
-   if(in_tet == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout << p_in_tet << " is NOT inside reference tet " << endl;
-   }
-   if(in_hex == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout << p_in_hex << " is NOT inside reference hex " << endl;
-   }
-   if(in_prism == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout << p_in_prism << " is NOT inside reference prism " << endl;
-   }
-   if(in_pyramid == FAIL_CODE_NOT_IN_REF_CELL) {
-     cout << p_in_pyramid << " is NOT inside reference pyramid " << endl;
-   }
-   cout << "You may need at least 16 digits to see the added pertirbation!" << endl;
-   
-   
-  return 0;
+  try{
+    
+    *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| Test 1: MultiCell interface:      CELL_TRI generating cell                  |\n"\
+    << "===============================================================================\n\n";
+    
+    // Vertex data for 3 CELL_TRI cells in (x,y) interleaved format
+    double triNodes[] = 
+      { 0.0, 0.0,                      // nodes of the first triangle
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 0.0,                      // nodes of the second triangle
+        1.0, 1.0,
+        0.0, 1.0,
+        0.0, 1.0,                      // nodes of the third triangle
+        1.5, 1.0,
+        0.5, 2.0};
+    
+    // Edge & "face" sign and tag data for 3 cells in flat format
+    short triEdgeSigns[] = {  1, 1,-1,  -1,-1, 1,  1, 1,-1}; 
+    short triFaceSigns[] = { -1,-1, 1,   1, 1,-1, -1,-1, 1}; 
+    short triEdgeTags[]  = {  0, 0, 1,   0, 1, 0,  0, 0, 0}; 
+    short triFaceTags[]  = {  1, 1, 0,   1, 0, 1,  1, 1, 1}; 
+
+    // Multicell consisting of 3 CELL_TRI cells with vertices specified in triNodes:
+    MultiCell<double> triMcell(3,CELL_TRI,triNodes);    
+    
+    //============================================================================================//
+    //  Testing getMySubcellNodeIDs                                                               //
+    //============================================================================================//
+    Teuchos::Array<int> subcellNodeIDs;
+    int correctSubcellNodeID = -1;
+    for(int cellID = 0; cellID < triMcell.getMyNumCells(); cellID++) {
+      for(int subcellDim = 0; subcellDim < triMcell.getMyCellDim(); subcellDim++) {
+        for(int subcellID = 0; subcellID < triMcell.getMyNumSubcells(subcellDim); subcellID++){
+          
+          triMcell.getMySubcellNodeIDs(subcellNodeIDs,subcellDim,subcellID);
+          
+          ECell subcellType = triMcell.getMySubcellType(subcellDim,subcellID);
+          int numSubcellNodes = MultiCell<double>::getCellNumNodes(subcellType);
+          
+          for(int subcellNode = 0; subcellNode < numSubcellNodes; subcellNode++){
+            
+            
+            // Hardcode correct subcell node IDs for a triangle generating cell
+            if(subcellDim == 0) {
+              
+              // 0-subcells are the nodes, they have 1 node whose ID equals the subcellID
+              correctSubcellNodeID = subcellID;
+            }
+            else if(subcellDim == 1) {
+              
+              // 1-subcells of CELL_TRI are the edges. They have 2 nodes.
+              if(subcellNode == 0) {
+                if(subcellID == 0) {
+                  correctSubcellNodeID = 0;
+                }
+                else if(subcellID == 1) {
+                  correctSubcellNodeID = 1;
+                }
+                else if(subcellID == 2) {
+                  correctSubcellNodeID = 2;
+                }
+              }
+              else if(subcellNode == 1){
+                if(subcellID == 0) {
+                  correctSubcellNodeID = 1;
+                }
+                else if(subcellID == 1) {
+                  correctSubcellNodeID = 2;
+                }
+                else if(subcellID == 2) {
+                  correctSubcellNodeID = 0;
+                }
+              }
+            }
+            
+            // 2-subcell is the triangle itself
+            else if(subcellDim == 2) {
+              correctSubcellNodeID = subcellNode;
+            }
+
+            if(correctSubcellNodeID != subcellNodeIDs[subcellNode] ) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              *outStream << " Subcell Node ID retrived by getMySubcellNodeIDs = " << subcellNodeIDs[subcellNode] << "\n";
+              *outStream << "                         Correct subcell node ID = " << correctSubcellNodeID << "\n";
+              
+            }
+          }
+        }
+      }
+    }
+    
+    //============================================================================================//
+    // Test setting and accessing edge/face signs/tags.                                           //
+    //============================================================================================//
+    
+    // For 2D generating cell edges and faces are 1-subcells and tests can be done together
+    triMcell.setEdgeSigns(triEdgeSigns);  
+    triMcell.setFaceSigns(triFaceSigns);  
+    triMcell.setEdgeTags(triEdgeTags);
+    triMcell.setFaceTags(triFaceTags);
+    
+    for(int cellID = 0; cellID < triMcell.getMyNumCells(); cellID++) {
+      for(int edgeID = 0; edgeID < triMcell.getMyNumSubcells(1); edgeID++) {
+        
+        // Compute the flat index of the edge/face sign for the given cellID and edgeID
+        int flatIndex = triMcell.getMyNumSubcells(1)*cellID + edgeID;
+        
+        // Check edge signs
+        if(triEdgeSigns[flatIndex] != triMcell.getCellEdgeSigns(cellID)[edgeID]) {
+          errorFlag++ ;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Edge sign value in data array = " << triEdgeSigns[flatIndex] << "\n";
+          *outStream << " Edge sign value in MultiCell  = " << triMcell.getCellEdgeSigns(cellID)[edgeID] << "\n";
+        }
+        
+        // Check edge tags
+        if(triEdgeTags[flatIndex] != triMcell.getCellEdgeTags(cellID)[edgeID]) {
+          errorFlag++ ;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Edge tag value in data array = " << triEdgeTags[flatIndex] << "\n";
+          *outStream << " Edge tag value in MultiCell  = " << triMcell.getCellEdgeTags(cellID)[edgeID] << "\n";
+        }
+        
+        // Check face signs
+        if(triFaceSigns[flatIndex] != triMcell.getCellFaceSigns(cellID)[edgeID]) {
+          errorFlag++ ;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Face sign value in data array = " << triFaceSigns[flatIndex] << "\n";
+          *outStream << " Face sign value in MultiCell  = " << triMcell.getCellFaceSigns(cellID)[edgeID] << "\n";
+        }
+        
+        // Check face tags
+        if(triFaceTags[flatIndex] != triMcell.getCellFaceTags(cellID)[edgeID]) {
+          errorFlag++ ;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Face tag value in data array = " << triFaceTags[flatIndex] << "\n";
+          *outStream << " Face tag value in MultiCell  = " << triMcell.getCellFaceTags(cellID)[edgeID] << "\n";
+        }
+      }
+    }
+    
+    //============================================================================================//
+    //  Test getMyCellType and getCellType                                                        //
+    //============================================================================================//
+    if(triMcell.getMyCellType() != CELL_TRI ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Cell type by getMyCellType = " << MultiCell<double>::getCellName(triMcell.getMyCellType()) << "\n";
+      *outStream << "          Correct cell type = " << MultiCell<double>::getCellName(CELL_TRI) << "\n";
+    }
+    if(MultiCell<double>::getCellType("Triangle") != CELL_TRI ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Cell type by getCellType   = " << MultiCell<double>::getCellName(MultiCell<double>::getCellType("Triangle")) << "\n";
+      *outStream << "          Correct cell type = " << MultiCell<double>::getCellName(CELL_TRI) << "\n";
+    }
+
+    //============================================================================================//
+    //  Test getMyCellName and getCellName                                                        //
+    //============================================================================================//
+    if(triMcell.getMyCellName() != "Triangle" ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Cell name by getMyCellName = " << triMcell.getMyCellName() << "\n";
+      *outStream << "          Correct cell name = Triangle \n";
+    }
+    if(MultiCell<double>::getCellName(triMcell.getMyCellType()) != "Triangle" ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Cell name by getCellName   = " << MultiCell<double>::getCellName(triMcell.getMyCellType()) << "\n";
+      *outStream << "          Correct cell name = Triangle \n";
+    }
+    
+    //============================================================================================//
+    //  Test getMyCellDim and getCellDim                                                          //
+    //============================================================================================//
+    if(triMcell.getMyCellDim() != 2 ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Generating cell dimension by getMyCellDim = " << triMcell.getMyCellDim() << "\n";
+      *outStream << "         Correct generating cell dimension = 2 \n";
+    }
+    if(MultiCell<double>::getCellDim(triMcell.getMyCellType()) != 2 ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Generating cell dimension by getCellDim   = " << MultiCell<double>::getCellDim(triMcell.getMyCellType()) << "\n";
+      *outStream << "         Correct generating cell dimension = 2 \n";
+    }
+    
+    //============================================================================================//
+    //  Test getMyCellNumNodes and getCellNumNodes                                                //
+    //============================================================================================//
+    if(triMcell.getMyCellNumNodes() != 3 ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " # nodes of generating cell by getMyCellNumNodes = " << triMcell.getMyCellNumNodes() << "\n";
+      *outStream << "              Correct # nodes of generating cell = 3\n";
+    }
+    if(MultiCell<double>::getCellNumNodes(triMcell.getMyCellType()) != 3 ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " # nodes of generating cell by getCellNumNodes   = " << MultiCell<double>::getCellNumNodes(triMcell.getMyCellType()) << "\n";
+      *outStream << "              Correct # nodes of generating cell = 3\n";
+    }
+    
+    //============================================================================================//
+    //  Test getMyNumSubcells and getNumSubcells                                                  //
+    //============================================================================================//
+    for(int subcellDim = 0; subcellDim < triMcell.getMyCellDim(); subcellDim++){
+      int numSubcells=-1;
+      if(subcellDim ==0 ){
+        numSubcells = 3 ;
+      }
+      else if(subcellDim == 1) {
+        numSubcells = 3;
+      }
+      else if(subcellDim == 2) {
+        numSubcells = 1;
+      }
+      
+      if(triMcell.getMyNumSubcells(subcellDim) != numSubcells ) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " # of " << subcellDim << "-subcells by getMyNumSubcells = " << triMcell.getMyNumSubcells(subcellDim) << "\n";
+        *outStream << " # of " << subcellDim << "-subcells should be           = " << numSubcells << "\n";
+      }
+      if(MultiCell<double>::getNumSubcells(CELL_TRI,subcellDim) != numSubcells ) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " # of " << subcellDim << "-subcells by getNumSubcells   = " << MultiCell<double>::getNumSubcells(CELL_TRI,subcellDim) << "\n";
+        *outStream << " # of " << subcellDim << "-subcells should be           = " << numSubcells << "\n";
+      }
+    }
+    
+    //============================================================================================//
+    //  Test getMySubcellType and getSubcellType                                                  //
+    //============================================================================================//
+    for(int subcellDim = 0; subcellDim <= triMcell.getMyCellDim(); subcellDim++) {
+      
+      // Loop over subcell ID
+      for(int subcellID = 0; subcellID < triMcell.getMyNumSubcells(subcellDim); subcellID++) {
+        
+        ECell subcellType = CELL_NODE;
+        if(subcellDim == 0 ){
+          subcellType = CELL_NODE;
+        }
+        else if(subcellDim == 1) {
+          subcellType = CELL_EDGE;
+        }
+        else if(subcellDim == 2) {
+          subcellType = CELL_TRI;
+        }
+        
+        if(triMcell.getMySubcellType(subcellDim,subcellID) != subcellType ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Subcell type by getMySubcellType = " << MultiCell<double>::getCellName(triMcell.getMySubcellType(subcellDim,subcellID)) << "\n";
+          *outStream << "           Subcell type should be = " << MultiCell<double>::getCellName(subcellType) << "\n";
+        }
+        if(MultiCell<double>::getSubcellType(CELL_TRI,subcellDim,subcellID) != subcellType ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Subcell type by getSubcellType   = " << MultiCell<double>::getCellName(MultiCell<double>::getSubcellType(CELL_TRI,subcellDim,subcellID)) << "\n";
+          *outStream << "           Subcell type should be = " << MultiCell<double>::getCellName(subcellType) << "\n";
+        }
+      }
+    }
+    
+    //============================================================================================//
+    //  Test getCellVertex, getCellVertices and overloaded []                                     //
+    //============================================================================================//
+    Teuchos::Array< Point<double> > cellVertices;
+    int numCells     = triMcell.getMyNumCells();
+    int cellNumNodes = triMcell.getMyCellNumNodes();
+    int cellDim      = triMcell.getMyCellDim();
+    
+    for(int cellID = 0; cellID < numCells; cellID++) {
+      for(int vertexID = 0; vertexID < cellNumNodes; vertexID++) {
+        
+        Point<double> vertex = triMcell.getCellVertex(cellID,vertexID);
+        for(int dim = 0; dim < cellDim; dim++ ) {
+          
+          // Compute index of the dim-th coordinate of the node with vertexID in the cell with cellID
+          int flatIndex = cellID*(cellNumNodes*cellDim) + vertexID*cellDim + dim;
+          
+          if(triMcell.getCellVertex(cellID,vertexID)[dim] != triNodes[flatIndex]) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Node coordinate by getCellVertex  = " << triMcell.getCellVertex(cellID,vertexID)[dim]<< "\n";
+            *outStream << "          Correct node coordinate  = " << triNodes[flatIndex] << "\n";
+          }
+          cellVertices = triMcell.getCellVertices(cellID);
+          if(cellVertices[vertexID][dim] != triNodes[flatIndex]) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Node coordinate by getCellVertices  = " << cellVertices[vertexID][dim]<< "\n";
+            *outStream << "            Correct node coordinate  = " << triNodes[flatIndex] << "\n";
+          }
+          if(triMcell[cellID][vertexID][dim] != triNodes[flatIndex]) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Node coordinate by overloaded []  = " << triMcell[cellID][vertexID][dim]<< "\n";
+            *outStream << "          Correct node coordinate  = " << triNodes[flatIndex] << "\n";
+          }          
+        }
+      }
+    }
+    
+    //============================================================================================//
+    //  Test mapToPhysicalCell and mapToReferenceCell (implicit test of setAtlas() and jacobian)  //
+    //============================================================================================//
+    
+    // The test makes random points in the reference CELL_TRI, maps them to a physical cell and back.
+    triMcell.setAtlas();
+    Point<double> randomRefPoint(2,FRAME_REFERENCE);
+    
+    for(int numPts = 0; numPts < 500; numPts++){
+      srand( time(NULL)*numPts );			
+      
+      // Two random numbers between 0 and 1
+      double rx = ((double)rand())/RAND_MAX;	
+      double ry = ((double)rand())/RAND_MAX;	
+      
+      // Make a random point inside the reference CELL_TRI
+      if( rx + ry <= 1.0 ) {
+        randomRefPoint = Point<double>::Point(rx,ry,FRAME_REFERENCE); 
+      }
+      else {
+        double sum = rx + ry;
+        rx = rx/sum;
+        ry = ry/sum;
+      }
+      
+      //Loop over the cells in the MultiCell
+      for(int cellID = 0; cellID < triMcell.getMyNumCells(); cellID++) {
+        Point<double> randomPhysPoint = triMcell.mapToPhysicalCell(cellID,randomRefPoint);
+        Point<double> tempPoint       = triMcell.mapToReferenceCell(cellID,randomPhysPoint);
+        
+        if( randomRefPoint.distance(tempPoint) > INTREPID_TOL ) {
+          errorFlag++; 
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Original reference point " << randomRefPoint << "\n";
+          *outStream << " Result after mapToPhysicalCell followed by mapToReferenceCell: " << tempPoint << "\n";
+          *outStream << " Distance between the two points " << randomRefPoint.distance(tempPoint) 
+            << "exceeds the default INTREPID_TOL value of " << INTREPID_TOL << "\n"; 
+        }
+      }
+    }
+    
+    //============================================================================================//
+    //  Test inReferenceCell (a static member function)                                           //
+    //============================================================================================//
+    
+    // Create reference points near the boundaries of the reference cells
+    Point<double> p_in_edge(1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+    Point<double> p_in_quad(1.0,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+    Point<double> p_in_tri(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,FRAME_REFERENCE);
+    Point<double> p_in_hex(1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+    Point<double> p_in_tet(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,2.0*INTREPID_EPSILON,FRAME_REFERENCE);
+    Point<double> p_in_prism(0.5,0.25,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
+    Point<double> p_in_pyramid(-INTREPID_EPSILON,INTREPID_EPSILON,(1.0-INTREPID_EPSILON),FRAME_REFERENCE);
+    
+    // Check if the points are in their respective reference cells
+    bool in_edge    = MultiCell<double>::inReferenceCell(CELL_EDGE, p_in_edge);   
+    bool in_tri     = MultiCell<double>::inReferenceCell(CELL_TRI, p_in_tri);
+    bool in_quad    = MultiCell<double>::inReferenceCell(CELL_QUAD, p_in_quad);
+    bool in_tet     = MultiCell<double>::inReferenceCell(CELL_TET, p_in_tet);
+    bool in_hex     = MultiCell<double>::inReferenceCell(CELL_HEX, p_in_hex);
+    bool in_prism   = MultiCell<double>::inReferenceCell(CELL_TRIPRISM, p_in_prism);
+    bool in_pyramid = MultiCell<double>::inReferenceCell(CELL_PYRAMID, p_in_pyramid);
+    
+    if( !in_edge ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_edge << " incorrectly classified as not in the closed reference CELL_EDGE \n";
+    }
+    if( !in_tri ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_tri << " incorrectly classified as not in the closed reference CELL_TRI \n";
+    }
+    if( !in_quad ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_quad << " incorrectly classified as not in the closed reference CELL_QUAD \n";
+    }
+    if( !in_tet ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_tet << " incorrectly classified as not in the closed reference CELL_TET \n";
+    }
+    if( !in_hex ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_hex << " incorrectly classified as not in the closed reference CELL_HEX \n";
+    }
+    if( !in_prism ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_prism << " incorrectly classified as not in the closed reference CELL_TRIPRISM \n";
+    }
+    if( !in_pyramid ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_pyramid << " incorrectly classified as not in the closed reference CELL_PYRAMID \n";
+    }
+    
+    // Now make 1,2 and 3D points with very small coefficients, but larger than threshold
+    double small = 2.0*INTREPID_THRESHOLD;
+    Point<double> p_eps_1D(small,FRAME_REFERENCE);
+    Point<double> p_eps_2D(small,small,FRAME_REFERENCE);
+    Point<double> p_eps_3D(small,small,small,FRAME_REFERENCE);
+    
+    // Add these points to the good reference points above:
+    p_in_edge    += p_eps_1D;
+    p_in_tri     += p_eps_2D;
+    p_in_quad    += p_eps_2D;
+    p_in_tet     += p_eps_3D;
+    p_in_hex     += p_eps_3D;
+    p_in_prism   += p_eps_3D;
+    p_in_pyramid += p_eps_3D;
+    
+    // Now check again if the points are in their respective reference cells.
+    in_edge    = MultiCell<double>::inReferenceCell(CELL_EDGE, p_in_edge);
+    in_tri     = MultiCell<double>::inReferenceCell(CELL_TRI, p_in_tri);
+    in_quad    = MultiCell<double>::inReferenceCell(CELL_QUAD, p_in_quad);
+    in_tet     = MultiCell<double>::inReferenceCell(CELL_TET, p_in_tet);
+    in_hex     = MultiCell<double>::inReferenceCell(CELL_HEX, p_in_hex);
+    in_prism   = MultiCell<double>::inReferenceCell(CELL_TRIPRISM, p_in_prism);
+    in_pyramid = MultiCell<double>::inReferenceCell(CELL_PYRAMID, p_in_pyramid);
+    
+    if( in_edge ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_edge << " incorrectly classified as in the closed reference CELL_EDGE \n";
+    }
+    if( in_tri ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_tri << " incorrectly classified as in the closed reference CELL_TRI \n";
+    }
+    if( in_quad ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_quad << " incorrectly classified as in the closed reference CELL_QUAD \n";
+    }
+    if( in_tet ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_tet << " incorrectly classified as in the closed reference CELL_TET \n";
+    }
+    if( in_hex ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_hex << " incorrectly classified as in the closed reference CELL_HEX \n";
+    }
+    if( in_prism ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_prism << " incorrectly classified as in the closed reference CELL_TRIPRISM \n";
+    }
+    if( in_pyramid ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << p_in_pyramid << " incorrectly classified as in the closed reference CELL_PYRAMID \n";
+    }
+
+  }// try
+  
+  //============================================================================================//
+  // Wrap up test: check if the test broke down unexpectedly due to an exception                //
+  //============================================================================================//
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  };
+  
+  
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+  
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
+  
+  return errorFlag;
 }

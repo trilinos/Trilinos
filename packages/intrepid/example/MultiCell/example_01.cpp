@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   << "|                   Example use of the MultiCell class                        |\n" \
   << "|                                                                             |\n" \
   << "|     1) Creating MultiCells and accessing their data                         |\n" \
-  << "|     2) testing points for inclusion in reference and physical cells         |\n" \
+  << "|     2) Testing points for inclusion in reference and physical cells         |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -54,10 +54,10 @@ int main(int argc, char *argv[]) {
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
   << "===============================================================================\n"\
-  << "| EXAMPLE 1: class MultiCell in 2D                                            |\n"\
+  << "| EXAMPLE 1: class MultiCell in 2D: CELL_TRI generating cell                  |\n"\
   << "===============================================================================\n";
    
-  // Define an array to store cell coordinates in an interleaved format. Cell type is triangle.
+  // Vertex data for 3 CELL_TRI cells in (x,y) interleaved format.
    double triNodes[] = 
     {0.0, 0.0,                      // nodes of the first triangle
      1.0, 0.0,
@@ -69,30 +69,27 @@ int main(int argc, char *argv[]) {
      1.5, 1.0,
      0.5, 2.0};
    
-   // Suppose that edge signs are also needed. Define an array for the edge signs
+   // Edge sign data for 3 cells in flat format
    short triEdgeSigns[] = 
      {1, 1, -1,                     // edge signs for the edges of the first triangle
      -1, -1, 1,                     // edge signs for the edges of the second triangle
       1, 1, -1};                    // edge signs for the edges of the third triangle
-   
-   // Invoke a ctor that takes an array of subcell signs and the dimension of the subcell
-   MultiCell<double> triMcell(
-      3,                            // number of cells (triangles) in the multicell instance
-      CELL_TRI,                     // generating cell type
-      triNodes,                     // array with interleaved node coordinates
-      triEdgeSigns,                 // array with edge signs
-      1);                           // dimension of the subcells for which sign data is provided
+    
+   // Create multicell consisting of 3 CELL_TRI cells with vertices specified in triNodes:
+   MultiCell<double> triMcell(3,CELL_TRI,triNodes);   
 
+   // Set the edge signs
+   triMcell.setEdgeSigns(triEdgeSigns);                  
+   
    // Display the newly created MultiCell
    cout << triMcell << endl;         
 
    cout << "Testing multicell interface for the generating cell type...\n\n";
-   
-   cout << "\t type                   = " << triMcell.getMyCellType() << "\n";
-   cout << "\t name                   = " << triMcell.getMyCellName() << "\n";
-   cout << "\t ambient dimension      = " << triMcell.getMyAmbientDim() <<"\n";
-   cout << "\t topological dimension  = " << triMcell.getMyTopologicalDim() << "\n";
-   cout << "\t # of nodes             = " << triMcell.getMyNumNodes() << "\n"; 
+   cout << "\t # of cells in MCell    = " << triMcell.getMyNumCells() << "\n"; 
+   cout << "\t generating cell type   = " << triMcell.getMyCellType() << "\n";
+   cout << "\t generating cell name   = " << triMcell.getMyCellName() << "\n";
+   cout << "\t generating cell dim    = " << triMcell.getMyCellDim() <<"\n";
+   cout << "\t # of nodes             = " << triMcell.getMyCellNumNodes() << "\n"; 
    cout << "\t # of 0-subcells        = " << triMcell.getMyNumSubcells(0) << "\n";
    cout << "\t # of 1-subcells        = " << triMcell.getMyNumSubcells(1) << "\n";
    cout << "\t # of 2-subcells        = " << triMcell.getMyNumSubcells(2) << "\n";
@@ -100,14 +97,13 @@ int main(int argc, char *argv[]) {
    cout << "\t 1-subcell with index 0 = " << triMcell.getCellName(triMcell.getMySubcellType(1,0)) <<"\n";
    cout << "\t 1-subcell with index 1 = " << triMcell.getCellName(triMcell.getMySubcellType(1,1)) <<"\n";
    cout << "\t 1-subcell with index 2 = " << triMcell.getCellName(triMcell.getMySubcellType(1,2)) <<"\n";
-   
    cout << "\t 2-subcell with index 0 = " << triMcell.getCellName(triMcell.getMySubcellType(2,0)) <<"\n\n";
    
    // Space for the node connectivities of subcells
    Teuchos::Array<int> subcellNodeConn;               
-   triMcell.getMySubcellNodeIDs(1,                    // dimension of the subcell whose nodes we want
-                                0,                    // local order (relative to cell template) of the subcell
-                                subcellNodeConn);     // output - contains list of local node IDs
+   triMcell.getMySubcellNodeIDs(subcellNodeConn,      // output - contains list of local node IDs
+                                1,                    // dimension of the subcell whose nodes we want
+                                0);                   // local order (relative to cell template) of the subcell
    
    cout << "Node connectivity of the 0th 1-subcell -> { ";
    for(unsigned int i=0; i<subcellNodeConn.size(); i++) cout << subcellNodeConn[i]<<" ";
@@ -122,14 +118,14 @@ int main(int argc, char *argv[]) {
    cout << "\t triMcell[1][1] =" << vertex_1 << "\n";
    cout << "\t triMcell[1][2] =" << vertex_2 << "\n\n";
    
-   // Using getVertex(i,j) to access the vertices of the cells in the MultiCell 
-   cout << "Testing that triMcell[i][j] = triMcell.getVertex(i,j) for the cell with cell ID = 1...\n";
-   Point<double> vertex_0a = triMcell.getVertex(1,0);    
-   Point<double> vertex_1a = triMcell.getVertex(1,1);    
-   Point<double> vertex_2a = triMcell.getVertex(1,2);    
-   cout << "\t triMcell.getVertex(1,0) =" << vertex_0a << "\n";   
-   cout << "\t triMcell.getVertex(1,1) =" << vertex_1a << "\n";   
-   cout << "\t triMcell.getVertex(1,2) =" << vertex_2a << "\n\n";   
+   // Using getCellVertex(i,j) to access the vertices of the cells in the MultiCell 
+   cout << "Testing that triMcell[i][j] = triMcell.getCellVertex(i,j) for the cell with cell ID = 1...\n";
+   Point<double> vertex_0a = triMcell.getCellVertex(1,0);    
+   Point<double> vertex_1a = triMcell.getCellVertex(1,1);    
+   Point<double> vertex_2a = triMcell.getCellVertex(1,2);    
+   cout << "\t triMcell.getCellVertex(1,0) =" << vertex_0a << "\n";   
+   cout << "\t triMcell.getCellVertex(1,1) =" << vertex_1a << "\n";   
+   cout << "\t triMcell.getCellVertex(1,2) =" << vertex_2a << "\n\n";   
 
    // Using overloaded [] operator to access coordinates of the vertices stored as Point objects:
    cout << "Testing [] operator for vertex_0 \n";
@@ -142,7 +138,7 @@ int main(int argc, char *argv[]) {
    
    cout \
    << "===============================================================================\n"\
-   << "| EXAMPLE 2: class MultiCell in 3D                                            |\n"\
+   << "| EXAMPLE 2: class MultiCell in 3D: CELL_TRIPRISM generating cell             |\n"\
    << "===============================================================================\n";
    
    // Define an array to store cell coordinates in an interleaved format. Cell type is TRIPRISM.
@@ -170,20 +166,20 @@ int main(int argc, char *argv[]) {
     { 1,  1,  1,  1,  1,                          // signs for the faces of prism #1
      -1, -1, -1, -1, -1};                         // signs for the faces of prism #2
    
-   // Use the ctor that takes both edge AND face sign data
-   MultiCell<double> prismMcell(2,                // number of cells (prisms) in the multicell 
-                                CELL_TRIPRISM,    // generating cell type
-                                prismnodes,       // list of node coordinates
-                                prismEdgeSigns,   // list of edge signs
-                                prismFaceSigns);  // list of face signs
+   // Define a multicell consisting of two prisms
+   MultiCell<double> prismMcell(2, CELL_TRIPRISM, prismnodes);      
+   
+   // Set edge and face signs:
+   prismMcell.setEdgeSigns(prismEdgeSigns);
+   prismMcell.setFaceSigns(prismFaceSigns);
    cout << prismMcell << endl;
    
    cout << "Testing multicell interface for the generating cell type...\n\n";
-   cout << "\t type                   = " << prismMcell.getMyCellType() << "\n";
-   cout << "\t name                   = " << prismMcell.getMyCellName() << "\n";
-   cout << "\t ambient dimension      = " << prismMcell.getMyAmbientDim() <<"\n";
-   cout << "\t topological dimension  = " << prismMcell.getMyTopologicalDim() << "\n";
-   cout << "\t # of nodes             = " << prismMcell.getMyNumNodes() << "\n"; 
+   cout << "\t # of cells in MCell    = " << prismMcell.getMyNumCells() << "\n"; 
+   cout << "\t generating cell type   = " << prismMcell.getMyCellType() << "\n";
+   cout << "\t generating cell name   = " << prismMcell.getMyCellName() << "\n";
+   cout << "\t ambient dimension      = " << prismMcell.getMyCellDim() <<"\n";
+   cout << "\t # of nodes             = " << prismMcell.getMyCellNumNodes() << "\n"; 
    cout << "\t # of 0-subcells        = " << prismMcell.getMyNumSubcells(0) << "\n";
    cout << "\t # of 1-subcells        = " << prismMcell.getMyNumSubcells(1) << "\n";
    cout << "\t # of 2-subcells        = " << prismMcell.getMyNumSubcells(2) << "\n";
@@ -196,9 +192,9 @@ int main(int argc, char *argv[]) {
    cout << "\t 3-subcell with index 0 = " << prismMcell.getCellName(prismMcell.getMySubcellType(3,0)) <<"\n\n";
    
    // Accessing local node IDs (node lists) of the subcells
-   prismMcell.getMySubcellNodeIDs(2,                  // dimension of the subcell whose nodes we want
-                                  3,                  // local order (relative to cell template) of the subcell
-                                  subcellNodeConn);   // output - contains list of local node IDs
+   prismMcell.getMySubcellNodeIDs(subcellNodeConn,    // output - contains list of local node IDs
+                                  2,                  // dimension of the subcell whose nodes we want
+                                  3);                  // local order (relative to cell template) of the subcell
    
    cout << "Node connectivity of the 2-subcell with ID = 3 -> { ";
    for(unsigned int i=0; i<subcellNodeConn.size(); i++) cout << subcellNodeConn[i]<<" ";
@@ -215,8 +211,8 @@ int main(int argc, char *argv[]) {
      << "| EXAMPLE 3: Using inclusion test methods in MultiCell                             |\n"\
      << "===============================================================================\n";
    
-   //The static member function insideReferenceCell can be used without a MultiCell instantiation
-   cout << "\nUsing static member insideReferenceCell to check if a Point is inside a reference cell: " << endl;
+   //The static member function inReferenceCell can be used without a MultiCell instantiation
+   cout << "\nUsing static member inReferenceCell to check if a Point is inside a reference cell: " << endl;
    
    // Points below illustrate using constructors that take 1,2 or 3 point coordinates 
    // and the user sets the frame kind explicitely to override the default (FRAME_PHYSICAL).
@@ -234,7 +230,7 @@ int main(int argc, char *argv[]) {
    Point<double> p_in_hex(1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
    
    // 3D point that is close to the slanted face of the reference tet cell
-   Point<double> p_in_tet(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,FRAME_REFERENCE);
+   Point<double> p_in_tet(0.5-INTREPID_EPSILON,0.5-INTREPID_EPSILON,2.0*INTREPID_EPSILON,FRAME_REFERENCE);
    
    // 3D point close to the top face of the reference prism 
    Point<double> p_in_prism(0.5,0.25,1.0-INTREPID_EPSILON,FRAME_REFERENCE);
@@ -243,33 +239,33 @@ int main(int argc, char *argv[]) {
    Point<double> p_in_pyramid(-INTREPID_EPSILON,INTREPID_EPSILON,(1.0-INTREPID_EPSILON),FRAME_REFERENCE);
    
    // Check if the points are in their respective reference cells
-   EFailCode in_edge    = MultiCell<double>::insideReferenceCell(CELL_EDGE, p_in_edge);   
-   EFailCode in_tri     = MultiCell<double>::insideReferenceCell(CELL_TRI, p_in_tri);
-   EFailCode in_quad    = MultiCell<double>::insideReferenceCell(CELL_QUAD, p_in_quad);
-   EFailCode in_tet     = MultiCell<double>::insideReferenceCell(CELL_TET, p_in_tet);
-   EFailCode in_hex     = MultiCell<double>::insideReferenceCell(CELL_HEX, p_in_hex);
-   EFailCode in_prism   = MultiCell<double>::insideReferenceCell(CELL_TRIPRISM, p_in_prism);
-   EFailCode in_pyramid = MultiCell<double>::insideReferenceCell(CELL_PYRAMID, p_in_pyramid);
+   bool in_edge    = MultiCell<double>::inReferenceCell(CELL_EDGE, p_in_edge);   
+   bool in_tri     = MultiCell<double>::inReferenceCell(CELL_TRI, p_in_tri);
+   bool in_quad    = MultiCell<double>::inReferenceCell(CELL_QUAD, p_in_quad);
+   bool in_tet     = MultiCell<double>::inReferenceCell(CELL_TET, p_in_tet);
+   bool in_hex     = MultiCell<double>::inReferenceCell(CELL_HEX, p_in_hex);
+   bool in_prism   = MultiCell<double>::inReferenceCell(CELL_TRIPRISM, p_in_prism);
+   bool in_pyramid = MultiCell<double>::inReferenceCell(CELL_PYRAMID, p_in_pyramid);
    //
-   if(in_edge == FAIL_CODE_SUCCESS) {
+   if(in_edge) {
      cout <<  p_in_edge << " is inside reference edge " << endl;
    }
-   if(in_tri == FAIL_CODE_SUCCESS) {
+   if(in_tri) {
      cout << p_in_tri << " is inside reference triangle " << endl;
    }
-   if(in_quad == FAIL_CODE_SUCCESS) {
+   if(in_quad) {
      cout << p_in_quad << " is inside reference quad " << endl;
    }
-   if(in_tet == FAIL_CODE_SUCCESS) {
+   if(in_tet) {
      cout << p_in_tet << " is inside reference tet " << endl;
    }
-   if(in_hex == FAIL_CODE_SUCCESS) {
+   if(in_hex) {
      cout << p_in_hex << " is inside reference hex " << endl;
    }
-   if(in_prism == FAIL_CODE_SUCCESS) {
+   if(in_prism) {
      cout << p_in_prism << " is inside reference prism " << endl;
    }
-   if(in_pyramid == FAIL_CODE_SUCCESS) {
+   if(in_pyramid) {
      cout << p_in_pyramid << " is inside reference pyramid " << endl;
    }
    
@@ -291,70 +287,84 @@ int main(int argc, char *argv[]) {
    
    // Now check again if the points are in their respective reference cells.
    cout << "\nChecking if the perturbed Points belongs to reference cell: " << endl;
-   in_edge    = MultiCell<double>::insideReferenceCell(CELL_EDGE, p_in_edge);
-   in_tri     = MultiCell<double>::insideReferenceCell(CELL_TRI, p_in_tri);
-   in_quad    = MultiCell<double>::insideReferenceCell(CELL_QUAD, p_in_quad);
-   in_tet     = MultiCell<double>::insideReferenceCell(CELL_TET, p_in_tet);
-   in_hex     = MultiCell<double>::insideReferenceCell(CELL_HEX, p_in_hex);
-   in_prism   = MultiCell<double>::insideReferenceCell(CELL_TRIPRISM, p_in_prism);
-   in_pyramid = MultiCell<double>::insideReferenceCell(CELL_PYRAMID, p_in_pyramid);
+   in_edge    = MultiCell<double>::inReferenceCell(CELL_EDGE, p_in_edge);
+   in_tri     = MultiCell<double>::inReferenceCell(CELL_TRI, p_in_tri);
+   in_quad    = MultiCell<double>::inReferenceCell(CELL_QUAD, p_in_quad);
+   in_tet     = MultiCell<double>::inReferenceCell(CELL_TET, p_in_tet);
+   in_hex     = MultiCell<double>::inReferenceCell(CELL_HEX, p_in_hex);
+   in_prism   = MultiCell<double>::inReferenceCell(CELL_TRIPRISM, p_in_prism);
+   in_pyramid = MultiCell<double>::inReferenceCell(CELL_PYRAMID, p_in_pyramid);
    
    //
-   if(in_edge == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_edge) {
      cout <<  p_in_edge << " is NOT inside reference edge " << endl;
    }
-   if(in_tri == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_tri) {
      cout << p_in_tri << " is NOT inside reference triangle " << endl;
    }
-   if(in_quad == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_quad) {
      cout << p_in_quad << " is NOT inside reference quad " << endl;
    }
-   if(in_tet == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_tet) {
      cout << p_in_tet << " is NOT inside reference tet " << endl;
    }
-   if(in_hex == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_hex) {
      cout << p_in_hex << " is NOT inside reference hex " << endl;
    }
-   if(in_prism == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_prism) {
      cout << p_in_prism << " is NOT inside reference prism " << endl;
    }
-   if(in_pyramid == FAIL_CODE_NOT_IN_REF_CELL) {
+   if(! in_pyramid) {
      cout << p_in_pyramid << " is NOT inside reference pyramid " << endl;
    }
    cout << "You may need at least 16 digits to see the added perturbation!" << endl;
-
 
 
    cout << "\n" \
      << "===============================================================================\n"\
      << "| EXAMPLE 4: Specialized methods of the Cell class                            |\n"\
      << "===============================================================================\n";
-
-   // Invoke a ctor that takes an array of subcell signs and the dimension of the subcell
-   Cell<double> triCell(
-      CELL_TRI,                     // generating cell type
-      triNodes,                 // array with interleaved node coordinates
-      triEdgeSigns,                 // array with edge signs
-      1);                           // dimension of the subcells for which sign data is provided
+   
+   // Construct a single CELL_TRI cell with vertices from triNodes (only the first set is used)
+   Cell<double> triCell(CELL_TRI,triNodes);                 
    
    // Display the newly created Cell
    cout << triCell << endl;         
-
-   triCell.getMySubcellSigns(1);
-   cout << "Get vertex 2:\n" << triCell.getVertex(2) << "\n\n";
-   triCell.getCell();
+   
+   //triCell.getMyEdgeSigns();
+   cout << "Get vertex 2:\n" << triCell.getCellVertex(2) << "\n\n";
+   triCell.getCellVertices();
    triCell.setAtlas();
-   triCell.getChart();
+   triCell.setChart();
    Point<double> refPt(0.4,0.4,FRAME_REFERENCE);
    cout << "Transformations based on: " << refPt << "\n";
    cout << " Jacobian:\n" << triCell.jacobian(refPt) << endl;
    cout << " Map to physical point:" << triCell.mapToPhysicalCell(refPt) << endl;
    cout << " Map back to reference point:" << triCell.mapToReferenceCell(triCell.mapToPhysicalCell(refPt)) << endl;
    cout << " Is physical point inside physical cell?";
-   if (triCell.insidePhysicalCell(triCell.mapToPhysicalCell(refPt)) == 0)
+   if (triCell.inPhysicalCell(triCell.mapToPhysicalCell(refPt)) == 0)
      cout << " YES.\n";
-   else
-     cout << " NO.\n";
-   
+  else
+    cout << " NO.\n";
+ 
+  // Using the overloaded [] operator to access the vertices of the Cell
+  cout << "Using the overloaded [] operator to access the vertices of the cell \n";
+  vertex_0 = triCell[0][0];            // vertex 0 of the cell
+  vertex_1 = triCell[0][1];            // vertex 1 of the cell
+  vertex_2 = triCell[0][2];            // vertex 2 of the cell
+  cout << "\t triCell[0][0] =" << vertex_0 << "\n";   // << is overloaded for Point objects
+  cout << "\t triCell[0][1] =" << vertex_1 << "\n";
+  cout << "\t triCell[0][2] =" << vertex_2 << "\n\n";
+  
+  // Using getCellVertex(i) to access the vertices of the cell:
+  cout << "Testing that triCell[0][j] = triCell.getCellVertex(i) \n";
+  vertex_0a = triCell.getCellVertex(0);    
+  vertex_1a = triCell.getCellVertex(1);    
+  vertex_2a = triCell.getCellVertex(2);    
+  cout << "\t triCell.getCellVertex(0) =" << vertex_0a << "\n";   
+  cout << "\t triCell.getCellVertex(1) =" << vertex_1a << "\n";   
+  cout << "\t triCell.getCellVertex(2) =" << vertex_2a << "\n\n";   
+  
+  
   return 0;
 }

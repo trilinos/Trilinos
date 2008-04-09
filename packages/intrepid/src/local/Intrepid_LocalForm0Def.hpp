@@ -55,7 +55,7 @@ LocalForm0<Scalar>::LocalForm0(Teuchos::RCP<Basis<Scalar> > basis,
   /***** Prepare the cubPoints_, cubWeights_, and numCubPoints_ arrays. *****/
 
   TEST_FOR_EXCEPTION(( ((int)cubature_.size() != 1) &&
-                       ((int)cubature_.size() != MultiCell<Scalar>::getTopologicalDim(basisCell_)) ),
+                       ((int)cubature_.size() != MultiCell<Scalar>::getCellDim(basisCell_)) ),
                      std::invalid_argument,
                      ">>> ERROR (LocalForm0): If face or edge cubatures are used, the number of groups of cubature rules must equal cell dimension!");  
   cubPoints_.resize(cubature_.size());
@@ -63,7 +63,7 @@ LocalForm0<Scalar>::LocalForm0(Teuchos::RCP<Basis<Scalar> > basis,
   for (unsigned i=0; i<cubPoints_.size(); i++) {
     if (cubPoints_[i].size() != 0) {
       TEST_FOR_EXCEPTION(((int)cubature_[i].size() !=
-                          MultiCell<Scalar>::getNumSubcells(basisCell_, MultiCell<Scalar>::getTopologicalDim(basisCell_)-i)),
+                          MultiCell<Scalar>::getNumSubcells(basisCell_, MultiCell<Scalar>::getCellDim(basisCell_)-i)),
                          std::invalid_argument,
                          ">>> ERROR (LocalForm0): Number of cubature rules per subcell dimension must equal number of subcells of that dimension!");  
     }
@@ -88,7 +88,7 @@ LocalForm0<Scalar>::LocalForm0(Teuchos::RCP<Basis<Scalar> > basis,
                          ">>> ERROR (LocalForm0): Required cubature rule was not initialized!");
       // verify that the cubature cell type matches the subcell type
       TEST_FOR_EXCEPTION((cubature_[i][j]->getCellType() !=
-                          MultiCell<Scalar>::getSubcellType(basisCell_, MultiCell<Scalar>::getTopologicalDim(basisCell_)-i, j)),
+                          MultiCell<Scalar>::getSubcellType(basisCell_, MultiCell<Scalar>::getCellDim(basisCell_)-i, j)),
                          std::invalid_argument,
                          ">>> ERROR (LocalForm0): Cubature cell type does not match subcell type!");
       cubature_[i][j]->getCubature(numCubPoints_[i][j], cubPoints_[i][j], cubWeights_[i][j]);
@@ -105,7 +105,7 @@ const VarContainer<Scalar> & LocalForm0<Scalar>::getOperator(const EOperator  pr
                                                              const int        subDim,
                                                              const int        subCellId) {
 
-  int myCellDim = MultiCell<Scalar>::getTopologicalDim(basisCell_);
+  int myCellDim = MultiCell<Scalar>::getCellDim(basisCell_);
   int dimIndex  = myCellDim - subDim;
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION(((dimIndex < 0) || (subDim < 0) || (dimIndex >= (int)cubature_.size())),
@@ -223,13 +223,13 @@ void LocalForm0<Scalar>::fillLeft(LexContainer<Scalar> &           leftValues,
                iRange[1] = numCubPoints_[0][0];
                iRange[2] = basisNumDofs_;
                leftValues.resize(iRange);
-               VarContainer<Scalar> funcVals = getOperator(leftOp, mCell.getMyTopologicalDim(), 0);
+               VarContainer<Scalar> funcVals = getOperator(leftOp, mCell.getMyCellDim(), 0);
                Teuchos::Array<int> miLV(3);
                Teuchos::Array<int> miFV(2);
                for (int cl=0; cl<iRange[0]; cl++) {
                  miLV[0] = cl;
                  for (int qp=0; qp<iRange[1]; qp++) {
-                   Matrix<Scalar> jacMat(mCell.getMyTopologicalDim());
+                   Matrix<Scalar> jacMat(mCell.getMyCellDim());
                    jacMat = mCell.jacobian(cl, cubPoints_[0][0][qp]);
                    Scalar jacDet = jacMat.det();
                    miLV[1] = qp; miFV[0] = qp;
@@ -307,7 +307,7 @@ void LocalForm0<Scalar>::fillRight(LexContainer<Scalar> &           rightValues,
                 iRange[1] = numCubPoints_[0][0];
                 iRange[2] = basisNumDofs_;
                 rightValues.resize(iRange);
-                VarContainer<Scalar> funcVals = getOperator(leftOp, mCell.getMyTopologicalDim(), 0);
+                VarContainer<Scalar> funcVals = getOperator(leftOp, mCell.getMyCellDim(), 0);
                 Teuchos::Array<int> miRV(3);
                 Teuchos::Array<int> miFV(2);
                 for (int cl=0; cl<iRange[0]; cl++) {

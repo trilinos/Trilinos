@@ -46,7 +46,7 @@ void printInfo(ECell cellType, int cubDegree) {
 
   CubatureTensor<double> tensorCub(cellType, cubDegree);
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   int numCubPoints = tensorCub.getNumPoints();
 
@@ -83,7 +83,7 @@ double computeRefCellVolume(ECell cellType, int cubDegree) {
 
   CubatureTensor<double> tensorCub(cellType, cubDegree);
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   int numCubPoints = tensorCub.getNumPoints();
 
@@ -126,7 +126,7 @@ double computeIntegral(ECell cellType, int cubDegree) {
 
   CubatureTensor<double> tensorCub(cellType, cubDegree);
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   int numCubPoints = tensorCub.getNumPoints();
 

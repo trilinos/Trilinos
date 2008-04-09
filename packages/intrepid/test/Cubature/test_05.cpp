@@ -69,7 +69,7 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg, int zD
   Teuchos::RCP< Cubature<double> > myCub;  
   double val = 0.0;
 
-  int ambientDim =  MultiCell<double>::getTopologicalDim(cellType);
+  int ambientDim =  MultiCell<double>::getCellDim(cellType);
 
   switch (cellType) {
 
