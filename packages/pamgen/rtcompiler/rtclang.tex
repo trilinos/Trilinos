@@ -1,0 +1,381 @@
+%% NOTE: this file is shared directly between the Alegra Users Manual and
+%%       the RTC writeup in alegra/toolkit/rtcompiler/writeup.tex
+
+\subsection{The RTC language}
+
+The RTC language can be thought of as a small subset of the
+C language with a couple minor modifications. 
+
+\subsubsection{Operators}
+
+The RTC language has the following operators that work exactly as they do in C
+and have the same precedence as they do in C:
+\begin{itemize}
+  \item $+$  Addition
+  \item $-$  Subtration
+  \item $-$  Negation
+  \item $*$  Multiplication
+  \item $/$  Division
+  \item $==$ Equality
+  \item $>$  Greater than
+  \item $<$  Less than
+  \item $>=$ Greater than or equal to
+  \item $<=$ Less than or equal to
+  \item $=$  Assignment
+  \item $||$ Logical or
+  \item $\&\&$ Logical and
+  \item $!=$ Inequality
+  \item $\%$ Modulo
+  \item $!$  Logical not
+\end{itemize}
+
+\noindent The following operators do not occur in the C language, but
+I added them into the RTC language for convenience:
+
+\begin{itemize}
+  \item \begin{verbatim}^ Exponentiation \end{verbatim}
+\end{itemize}
+
+
+\subsubsection{Control flow}
+
+The RTC language has the following control flow statements:
+
+\begin{itemize}
+  \item for( expr ; expr ; expr ) \{ ... \}
+  \item while( expr )  \{ ... \}
+  \item if (expr) \{...\}
+  \item else if (expr) \{...\}
+  \item else \{...\}
+\end{itemize}
+
+\noindent These control flow statements work exactly as they do in C
+except that the code blocks following a control flow statement 
+\textbf{MUST} be enclosed within braces even if the block only consists of 
+one line.
+
+\subsubsection{Line Structure}
+
+The line structure in the RTC language is the same as that of C. Expressions
+end with a semicolon unless they are inside a control flow statement.
+
+\subsubsection{Variables}
+
+Declaring scalar variables in RTC is done exactly as it is done in C except 
+that we are limited to the following types:
+
+\begin{itemize}
+  \item int
+  \item float
+  \item double
+  \item char
+\end{itemize}
+
+\noindent For scalars, variables can be declared and assigned all at once. Both of the 
+following approaches will work:
+
+{\ttfamily \begin{verbatim}
+int myVar = 9;
+
+OR
+
+int myVar;
+myVar = 9;
+\end{verbatim}
+}
+
+\noindent Arrays work a little differently in RTC than they do in C. There are
+no \emph{new} or \emph{malloc} operators, so I have allowed the user to 
+declare dynamically sized arrays in the same manner as statically sized 
+arrays. Also, in C you can initialize all the values of an array at once by
+putting the values within braces. In the RTC language, this is not supported.
+Users will have to loop through the array and assign the values one by one.
+For example:
+
+{\ttfamily \begin{verbatim}
+LEGAL:
+   int ia[x*y];  //Note: in C this would not be legal for non-const x,y
+   int ia2[3];
+
+NOT LEGAL:
+   int ia[3] = {1, 2, 3};
+\end{verbatim}
+}
+
+\noindent Indexing arrays can be done using the index operator:
+array[expr] = ...;
+
+\noindent Bounds checking is done at run time. If you go past the end of an 
+array, it will dump an error to stdout. 
+
+\subsubsection{Math}
+
+The following math.h functions are available in RTC:
+
+\begin{itemize}
+  \item asin(arg)  : returns the arc sine of arg
+  \item acos(arg)  : returns the arc cosine of arg
+  \item atan(arg)  : returns the arc tangent of arg
+  \item atan2(y, x): returns the arc tangent of y/x
+  \item sin(arg)   : returns the sine of arg
+  \item cos(arg)   : returns the cosine of arg
+  \item tan(arg)   : returns the tangent of arg
+  \item sqrt(arg)  : returns the square root of arg
+  \item exp(arg)   : returns the natural logarithm base e raised to the arg 
+                     power
+  \item sinh(arg)  : returns the hyperbolic sine of arg
+  \item cosh(arg)  : returns the hyperbolic cosine of arg
+  \item tanh(arg)  : returns the hyperbolic tangent of arg
+  \item log(arg)   : returns the natural logarithm for arg
+  \item log10(arg) : returns the base 10 logarithm for arg
+  \item rand(arg)  : returns a system-generated random integer between 0 and RAND\_MAX using seed arg
+  \item fabs(arg)  : returns the absolute value of arg
+  \item pow(b, e)  : returns b to the e power 
+                     (Note: you can use the Exponentiation operator instead)
+  \item j0(arg)    : Bessel function of order zero
+  \item j1(arg)    : Bessel function of order one
+  \item i0(arg)    : Modified Bessel function of order zero
+  \item i1(arg)    : Modified Bessel function of order one
+  \item erf(arg)   : Error function 
+  \item erfc(arg)  : Complementary error function  (1.0 - erf(x))
+  \item gamma(arg)  : returns $\Gamma(arg)$
+\end{itemize}
+
+\subsubsection{Strings}
+
+The user will now have the ability to pass quoted strings as arguments to 
+functions. Note: you might have to escape-out the double quotes so that they
+do not confuse the input-file parser. See printf section below for an example.
+
+\subsubsection{Printf}
+
+RTC now has much better output capability in its new printf method. The
+new printf method is called just like its C counterpart. This first argument
+is a quoted character string. This string will can contain the \% symbol 
+which will tell RTC to output the corresponding argument. The only difference
+between RTC's printf and C's printf is that in RTC's version, you do not have
+to provide a type character after the \%. For example, inside your RTC method
+you could do the following:
+
+{\ttfamily \begin{verbatim}
+printf(\"One:% Two:% Three:% \", 5-4, 2.0e0, 'c');\n\
+\end{verbatim} }
+
+\noindent
+Which would generate this output: One:1 Two:2 Three:c
+
+\subsubsection{Comments}
+
+The traditional C-comment mechanism is now available for use inside RTC
+functions. Use /* to begin a comment and */ to end the comment.
+
+\subsubsection{Unsupported Features}
+
+Implementing the entire C-language was well beyond the intend of RTC. We took
+the liberty of cutting corners or leaving out features if we felt they were 
+either too difficult or did not add enough value. The following is a list
+of common C features that are unsupported in RTC:
+\begin{itemize}
+  \item There are no $++$ or $--$ operators. Use $i = i + 1$ instead of $++i$
+  \item Structs
+  \item Pointers
+  \item Instant array initialization: int array[5] = {1,2,3,4,5};
+  \item Case statements
+  \item Casting
+  \item Labels and gotos
+  \item Function definition/declaration
+  \item stdio
+  \item Keywords: break, continue, const, enum, register, return, sizeof,
+    typedef, union, volatile, static.
+\end{itemize} 
+
+\subsubsection{Examples}
+
+I am going to use the following series of examples to try to illustrate the
+use of the RTC language within the context of some simple user defined initial 
+conditions.
+
+\noindent For all user defined initial conditions, you can assume that you have
+the following variables: 
+
+\begin{itemize}
+  \item coord - An array of coordinates. Use an index of zero to get the x 
+                coordinate, an index of one to get the y coordinate, and an
+                index of two to get the z coordinate (Available in 3D only).
+  \item field - This is the means by which you can return the results of your
+                function. The variable (ex: density, velocity) you specified 
+                above the function is set according to the values of the field
+                array. If you are setting a scalar variable, like density, you
+                will only want to set field[0].
+\end{itemize}
+
+\subsubsection*{Example 1}
+
+{\ttfamily \begin{verbatim}
+  USER DEFINED INITIAL CONDITION, DENSITY
+    "field[0] = 5000.0 + (1.0 / (coord[0] + atan2(2,3)));"
+  END
+\end{verbatim} }
+
+\noindent In this example, we are setting the density of every element
+equal to 5000 plus one over the x coordinate of the element plus the
+arc tangent of 2 and 3.
+
+\subsubsection*{Example 2}
+
+{\ttfamily \begin{verbatim}
+  USER DEFINED INITIAL CONDITION, DENSITY, BLOCK 5
+  "
+    double sum = coord[0] + coord[1] + coord[2];
+    field[0] = sum / 0.0001;
+  "
+  END
+\end{verbatim} }
+
+\noindent In this example, we set the initial density of elements in
+block 5 to the sum of the x, y, and z coordinates divided by 0.0001;
+
+\subsubsection*{Example 3}
+
+{\ttfamily \begin{verbatim}
+  USER DEFINED INITIAL CONDITION, DENSITY, BLOCK 5
+  "
+    double newarray[10];
+    field[0] = 0;
+    for (int i = 0; i < 10; i = i + 1) {
+      newarray[i] = -sin(-i*2) + 2;
+    }
+    for (int i = 0; i < 10; i = i + 1) {
+      field[0] = field[0] + newarray[i % 10];
+    }
+  "
+  END
+\end{verbatim} }
+
+\noindent This example shows how to use for-loops and arrays in the
+RTC language. The density of the elements in block 5 is being set to
+$\sum_{i=0}^9 (-sin(-i*2) + 2)$
+
+\subsubsection*{Example 4}
+
+{\ttfamily \begin{verbatim}
+  USER DEFINED INITIAL CONDITION, VELOCITY, BLOCK 5 10
+  "
+     if ( fabs(coord[0]) < 1.10 ) {
+       field[0] = 0.;
+       field[1] = 0.;
+       field[2] = 0.;
+     }
+     else {
+       field[0] = 100.;
+       field[1] = 200.;
+       field[2] = 300.;
+     }
+  "
+  END
+\end{verbatim} }
+
+\noindent In this example, we are taking the absolute value of the
+x-coordinate of the element. If this value is less that 1.10, we set
+velocity to zero in each direction, otherwise we set velocity to
+100,200,300.
+
+\noindent Notice in this example we are setting velocty, which is not
+a scalar value, so we must assign to several indices of the field
+array.
+
+\subsection{Using RTC and APREPRO}
+
+Frequently \textsc{alegra} users will place \texttt{aprepro} constructs into
+their input decks and then preprocess the input deck with \texttt{aprepro} by
+issuing the command:
+
+\noindent
+\texttt{Alegra -a runid.inp}
+
+A problem may exist with curly braces, \{ and \}, in the runtime compiler coding
+as in the above examples.  When the input deck is sent through \texttt{aprepro},
+the preprocessor will evaluate expressions in curly braces, and the braces
+will not appear in the processed input deck read by \textsc{alegra}.
+This will cause an error when the runtime compiler processes the coding.
+
+\noindent
+There are two solutions:
+\begin{enumerate}
+
+\item Place the following lines before after the runtime compiler coding
+      so that \texttt{aprepro} will copy the input lines to the output
+      exactly as they are written:
+
+{\ttfamily \begin{verbatim}
+${VERBATIM(ON)}
+    ... runtime compiler coding ...
+${VERBATIM(OFF)}
+\end{verbatim}
+}
+
+\item Omit the verbatim commands, but put the curly braces into string expressions
+      that will be processed by \texttt{aprepro}.  Make the following substitutions:
+
+{\ttfamily \begin{verbatim}
+{   ->   {"{"}
+}   ->   {"}"}
+\end{verbatim}
+}
+
+The outer pair of opening and closing braces will be processed by \texttt{aprepro},
+but the inner brace in quotes will be sent as a string to the output deck.
+
+\item You can also place a backslash infront of your curly braces. This will
+      tell APREPRO to ignore the curly brace. The RTC parser knows to ignore
+      the backslash but not the curly brace. This method will work regardless
+      of whether aprepro is run on the input deck or not.
+
+\end{enumerate}
+
+\noindent
+For instance, we could write,
+%
+{\ttfamily \begin{verbatim}
+${VERBATIM(ON)}
+user defined initial condition, density, block 5
+" 
+  field[0] = 100.0;
+  if(coord[0] > 0.0){
+    double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));
+    field[0] = field[0] + distance;
+  }
+"
+${VERBATIM(OFF)}
+\end{verbatim}
+}
+
+\noindent
+or it could be written as,
+%
+{\ttfamily \begin{verbatim}
+user defined initial condition, density, block 5
+" 
+  field[0] = 100.0;
+  if(coord[0] > 0.0) {"{"}
+    double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));
+    field[0] = field[0] + distance;
+   {"}"}
+"
+\end{verbatim}
+}
+
+\noindent
+or it could be written as,
+%
+{\ttfamily \begin{verbatim}
+user defined initial condition, density, block 5
+" 
+  field[0] = 100.0;
+  if(coord[0] > 0.0) \{
+    double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));
+    field[0] = field[0] + distance;
+  \}
+"
+\end{verbatim}
+}
