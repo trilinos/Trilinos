@@ -3,7 +3,7 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    TESTS= simple_test/pamgen_test_driver.exe ;
+    TESTS= test1/pamgen_test_driver.exe ;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
