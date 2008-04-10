@@ -86,6 +86,9 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 namespace ispatest {
 
+/** Compute Zoltan-style hypergraph metrics given a partitioned
+    CrsGraph and a CostDescriber (weight) object.
+ */
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl);
