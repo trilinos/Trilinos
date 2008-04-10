@@ -378,6 +378,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   if (do_timing)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
 
+
 /* UVCUVC DEBUG PRINT
   if (zz->LB.Method == PHG_REFINE) { 
       uprintf(hg->comm, 

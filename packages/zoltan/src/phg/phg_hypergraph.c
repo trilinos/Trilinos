@@ -589,6 +589,7 @@ void Zoltan_HG_HGraph_Print(
     fprintf(fp, ", %d)\n", i);
   }
   Zoltan_HG_Print(zz, hg, parts, fp, "Build");
+  fflush(fp);
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 

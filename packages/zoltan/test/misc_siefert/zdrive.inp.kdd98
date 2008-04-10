@@ -7,10 +7,11 @@ Zoltan Parameters       = num_global_partitions=5
 #Zoltan Parameters       = phg_coarsening_limit=1
 #Zoltan Parameters       = phg_output_level=1
 Zoltan Parameters       = final_output = 1
-File Type               = matrixmarket+, initial distribution = file, initial pi
-ns = file
+Zoltan Parameters       = return_lists = none
+File Type               = matrixmarket+, initial distribution = file, initial pins = file
 File Name               = kdd98
 Parallel Disk Info      = number=0
 #test generate files = 1
+number of iterations = 4
 text output = 0
 

@@ -146,7 +146,7 @@ int *rptr=NULL, *cptr=NULL;
 }
 /*****************************************************************************/
 /* This is called "Convert_To_CSR" but it also converts CSR to CSC.  The
- * conversion is symetric.
+ * conversion is symmetric.
  */
 int Zoltan_Convert_To_CSR(
     ZZ *zz, int num_pins, int *col_ptr,   /* input */
@@ -290,7 +290,7 @@ int numGID = zz->Num_GID;
           break;
         }
         else{
-         hn = hn->next;
+          hn = hn->next;
         }
       }
 

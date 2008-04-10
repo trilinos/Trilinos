@@ -25,6 +25,7 @@ extern "C" {
 /* comparison routine for bsearch */
 static int Zoltan_Compare_Ints(const void *key, const void *arg);
 
+#include "zz_sort.h"
 
 /*********************************************************************/
 /* Verify ParMetis graph structure.                                  */
@@ -76,6 +77,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
+
 
   ierr = ZOLTAN_OK;
   if (check_graph == 0) /* perform no error checking at all */
@@ -199,9 +201,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       adjncy_sort[k] = adjncy[k];
       perm[k] = k;
     }
-    for (i=0; i<num_obj; i++)
-      Zoltan_Comm_Sort_Ints(&adjncy_sort[xadj[i]], &perm[xadj[i]], 
-        xadj[i+1]-xadj[i]);
+    for (i=0; i<num_obj; i++) 
+      Zoltan_quicksort_list_inc_int(adjncy_sort, perm, xadj[i], xadj[i+1]-1);
   }
   else { /* Already sorted. */
     adjncy_sort = adjncy;
