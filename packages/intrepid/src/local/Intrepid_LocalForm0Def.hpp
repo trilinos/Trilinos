@@ -219,7 +219,7 @@ void LocalForm0<Scalar>::fillLeft(LexContainer<Scalar> &           leftValues,
            case FIELD_FORM_0: {
              if (intDomain == INTEGRATION_DOMAIN_CELL) {
                Teuchos::Array<int> iRange(3);
-               iRange[0] = 1000;
+               iRange[0] = mCell.getMyNumCells();
                iRange[1] = numCubPoints_[0][0];
                iRange[2] = basisNumDofs_;
                leftValues.resize(iRange);
@@ -303,7 +303,7 @@ void LocalForm0<Scalar>::fillRight(LexContainer<Scalar> &           rightValues,
             case FIELD_FORM_0: {
               if (intDomain == INTEGRATION_DOMAIN_CELL) {
                 Teuchos::Array<int> iRange(3);
-                iRange[0] = 1000;
+                iRange[0] = mCell.getMyNumCells();
                 iRange[1] = numCubPoints_[0][0];
                 iRange[2] = basisNumDofs_;
                 rightValues.resize(iRange);
@@ -398,7 +398,7 @@ void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
 #endif
 
   Teuchos::Array<int> iRange(3);
-  iRange[0] = 1000;
+  iRange[0] = numCells;
   iRange[1] = numLeftBfs;
   iRange[2] = numRightBfs;
   outputValues.resize(iRange);

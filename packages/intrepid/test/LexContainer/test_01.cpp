@@ -193,9 +193,14 @@ int main(int argc, char *argv[]) {
       *outStream << " Container size = " << myNewContainer.getSize() << "\n";
       *outStream << " Container rank = " << myNewContainer.getRank() << "\n";
     }
-      
+
+    myNewContainer.resize(indexRange);      
     myNewContainer.storeZero();
-    if( !(myNewContainer.getSize() == 1 && myNewContainer.getRank() == 1 && myNewContainer[0] == 0.0) ) {
+    double sum = 0.0;
+    for (int i=0; i<myNewContainer.getSize(); i++) {
+      sum += myNewContainer[i];
+    }
+    if( (sum != 0.0) ) {
       errorFlag++;
       *outStream << " Container size = " << myNewContainer.getSize() << "\n";
       *outStream << " Container rank = " << myNewContainer.getRank() << "\n";      

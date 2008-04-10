@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
 
     string basedir = "./data";
 
-    int nCells = 1000;
-    double triNodes[3*2*1000];
+    int nCells = 100;
+    double triNodes[3*2*100];
     int chunkSize = 4;
     int nChunks = nCells/chunkSize;
     int skip = 3*2*chunkSize;
@@ -155,17 +155,17 @@ int main(int argc, char *argv[]) {
       timer.stop();
       *outStream << "\n" << timer.name() << "\n";
       *outStream << "Computational engine: " << ECompEngineToString(compEng) << "\n";
-      *outStream << "Measured time in sec:     " << timer.totalElapsedTime() << "\n";
+      *outStream << "Measured time in sec: " << timer.totalElapsedTime() << "\n";
     }
 
     MultiCell<double> smallMCell(chunkSize,       // number of cells (triangles) in the multicell instance
-                                CELL_TRI,         // generating cell type
-                                triChunkNodes);   // array with interleaved node coordinates
+                                 CELL_TRI,        // generating cell type
+                                 triChunkNodes);  // array with interleaved node coordinates
 
     for (ECompEngine compEng = COMP_CPP; compEng < COMP_ENGINE_MAX; compEng++) {
       Teuchos::Time timer("Timer - Many Small Multicells");
-      for (int ex=0; ex<nCells/chunkSize; ex++) {
-        timer.start();
+      timer.start();
+      for (int ex=0; ex<nChunks; ex++) {
         for (int cubDeg=2; cubDeg<=20; cubDeg++) {
           // set cubature
           cellCub = Teuchos::rcp(new CubatureDirect<double>(CELL_TRI,cubDeg) );
@@ -178,8 +178,8 @@ int main(int argc, char *argv[]) {
       }
       timer.stop();
       *outStream << "\n" << timer.name() << "\n";
-      *outStream << "\nComputational engine: " << ECompEngineToString(compEng) << "\n";
-      *outStream << "Measured time in sec:     " << timer.totalElapsedTime() << "\n";
+      *outStream << "Computational engine: " << ECompEngineToString(compEng) << "\n";
+      *outStream << "Measured time in sec: " << timer.totalElapsedTime() << "\n";
     }
   }
   catch (std::logic_error err) {
