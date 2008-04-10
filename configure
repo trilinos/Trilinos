@@ -644,6 +644,8 @@ am__untar
 subdirs
 BUILD_TEUCHOS_TRUE
 BUILD_TEUCHOS_FALSE
+BUILD_PAMGEN_TRUE
+BUILD_PAMGEN_FALSE
 BUILD_RTOP_TRUE
 BUILD_RTOP_FALSE
 BUILD_THYRA_TRUE
@@ -727,6 +729,7 @@ ac_subst_files=''
 host_alias
 target_alias'
 ac_subdirs_all='packages/teuchos
+packages/pamgen
 packages/rtop
 packages/thyra
 packages/stratimikos
@@ -1416,6 +1419,7 @@ Optional Features:
   --enable-sundance       Build Sundance, a system for development of parallel
                           finite-element solutions of PDEs (default is no)
   --enable-teuchos        Build teuchos, a tools package (default is no)
+  --enable-pamgen         Build pamgen, a tools package (default is no)
   --enable-rtop           Build RTOp, a vector reduction/transformation
                           operator package (default is no)
   --enable-thyra          Build thyra, an abstract linear solver package
@@ -3399,6 +3403,34 @@ fi
 
 
 
+# Check whether --enable-pamgen was given.
+if test "${enable_pamgen+set}" = set; then
+  enableval=$enable_pamgen; ac_cv_use_pamgen=$enableval
+ac_cv_use_pamgen_explicit=$enableval
+else
+  ac_cv_use_pamgen=no
+ac_cv_use_pamgen_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use pamgen" >&5
+echo $ECHO_N "checking whether to use pamgen... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_pamgen" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PAMGEN
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-rtop was given.
 if test "${enable_rtop+set}" = set; then
   enableval=$enable_rtop; ac_cv_use_rtop=$enableval
@@ -3728,6 +3760,30 @@ else
   BUILD_TEUCHOS_TRUE='#'
   BUILD_TEUCHOS_FALSE=
 fi
+
+
+
+if test "X$ac_cv_use_pamgen" != "Xno" ; then
+  subdirs="$subdirs packages/pamgen"
+
+  BUILD_PAMGEN=yes
+  if test "X$ac_cv_use_pamgen_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-teuchos"
+  fi
+else
+  BUILD_PAMGEN=no
+fi
+ if test "X$BUILD_PAMGEN" != "Xno"; then
+  BUILD_PAMGEN_TRUE=
+  BUILD_PAMGEN_FALSE='#'
+else
+  BUILD_PAMGEN_TRUE='#'
+  BUILD_PAMGEN_FALSE=
+fi
+
+
+
+
 
 
 if test "X$ac_cv_use_rtop" != "Xno" ||
@@ -4633,6 +4689,13 @@ echo "$as_me: error: conditional \"BUILD_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_PAMGEN_TRUE}" && test -z "${BUILD_PAMGEN_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PAMGEN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PAMGEN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_RTOP_TRUE}" && test -z "${BUILD_RTOP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_RTOP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -5487,6 +5550,8 @@ am__untar!$am__untar$ac_delim
 subdirs!$subdirs$ac_delim
 BUILD_TEUCHOS_TRUE!$BUILD_TEUCHOS_TRUE$ac_delim
 BUILD_TEUCHOS_FALSE!$BUILD_TEUCHOS_FALSE$ac_delim
+BUILD_PAMGEN_TRUE!$BUILD_PAMGEN_TRUE$ac_delim
+BUILD_PAMGEN_FALSE!$BUILD_PAMGEN_FALSE$ac_delim
 BUILD_RTOP_TRUE!$BUILD_RTOP_TRUE$ac_delim
 BUILD_RTOP_FALSE!$BUILD_RTOP_FALSE$ac_delim
 BUILD_THYRA_TRUE!$BUILD_THYRA_TRUE$ac_delim
@@ -5517,8 +5582,6 @@ BUILD_AMESOS_TRUE!$BUILD_AMESOS_TRUE$ac_delim
 BUILD_AMESOS_FALSE!$BUILD_AMESOS_FALSE$ac_delim
 BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
 BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
-BUILD_BELOS_TRUE!$BUILD_BELOS_TRUE$ac_delim
-BUILD_BELOS_FALSE!$BUILD_BELOS_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -5560,6 +5623,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BUILD_BELOS_TRUE!$BUILD_BELOS_TRUE$ac_delim
+BUILD_BELOS_FALSE!$BUILD_BELOS_FALSE$ac_delim
 BUILD_ANASAZI_TRUE!$BUILD_ANASAZI_TRUE$ac_delim
 BUILD_ANASAZI_FALSE!$BUILD_ANASAZI_FALSE$ac_delim
 BUILD_RBGEN_TRUE!$BUILD_RBGEN_TRUE$ac_delim
@@ -5608,7 +5673,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 48; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

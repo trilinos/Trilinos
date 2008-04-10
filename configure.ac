@@ -109,6 +109,8 @@ TAC_ARG_ENABLE_FEATURE(sundance, [Build Sundance, a system for development of pa
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos, a tools package], TEUCHOS, no)
 
+TAC_ARG_ENABLE_FEATURE(pamgen, [Build pamgen, a tools package], PAMGEN, no)
+
 TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOp, a vector reduction/transformation operator package], RTOP, no)
 
 TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra, an abstract linear solver package], THYRA, no)
@@ -168,6 +170,22 @@ else
   BUILD_TEUCHOS=no
 fi
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
+
+
+if test "X$ac_cv_use_pamgen" != "Xno" ; then
+  AC_CONFIG_SUBDIRS([packages/pamgen])
+  BUILD_PAMGEN=yes
+  if test "X$ac_cv_use_pamgen_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-teuchos"
+  fi
+else
+  BUILD_PAMGEN=no
+fi
+AM_CONDITIONAL(BUILD_PAMGEN, test "X$BUILD_PAMGEN" != "Xno")
+
+
+
+
 
 if test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
