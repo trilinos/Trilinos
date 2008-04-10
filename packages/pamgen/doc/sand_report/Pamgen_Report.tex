@@ -1,0 +1,132 @@
+\documentclass[12pt,twoside]{article}
+%\usepackage[bottom]{draftcopy}
+\usepackage{fancyvrb}
+\usepackage{makeidx}      % for the index
+\usepackage{graphicx}
+%\usepackage{psfig}
+\usepackage{amsmath}
+\usepackage{eepic}        % for graphics, especially the \ellipse command
+\usepackage{longtable}    % for multi-page tables
+%\usepackage{subfigure}    % for multi-figure figures
+\usepackage{html}  % sty that comes with the latex2html program
+\usepackage{multicol}  % only used in the distribution page
+\usepackage{tabularx}
+%\usepackage[toc,page]{appendix}
+\usepackage{hyperref}  % keep this last
+
+\makeindex
+
+
+\begin{document}
+    \input{macros}
+
+    \newcommand{\thetitle}{Pamgen, a Library for Parallel Generation of Simple Finite Element Meshes}
+    \title{\thetitle}
+    
+    \newcommand{\theauthor}{ D. M. Hensinger, R. R. Drake, J. G. Foucar, T. A. Gardiner
+       \\
+       Sandia National Laboratories\\
+       P.O. Box 5800\\
+       Albuquerque, NM 87185-0378\\
+    }
+    \author{\theauthor}
+
+    \latexhtml{
+      %
+      % SANDrelease defaults to Unlimited Release
+      % use SANDsupersed if this report superseds a previous report
+      %
+      \SANDrelease{Unlimited Release}
+      %\SANDsupersed{SAND2008-6541}{January 2008}
+      \makeSANDreport{SAND2008-1933}{April 2008}
+      {
+          David M. Hensinger,
+	  Richard R. Drake,
+          James G. Foucar,
+	  Thomas A. Gardiner
+      }
+    }{
+      \makearticle
+    }
+    
+
+
+% ---------------------------------------------------------------------------- %
+    
+    % An Abstract is required for SAND reports
+    \begin{abstract}
+Generating finite-element meshes is a serious bottleneck for
+large parallel simulations. When mesh generation is limited to serial
+machines and element counts approach a billion, this bottleneck becomes
+a roadblock.  \textsc{pamgen} is a parallel mesh generation
+library that allows on{}-the{}-fly scalable generation of hexahedral and quadrilateral finite
+element meshes for several simple geometries. It has been used to
+generate more that 1.1 billion elements on 17,576 processors. 
+
+\textsc{pamgen} generates an unstructured finite element mesh on each processor at the start
+of a simulation. The mesh is specified by commands passed to the library as a {}''C{}''-programming language string.  The resulting mesh geometry, topology, and communication information can then be queried through an API. \textsc{pamgen} allows specification of boundary condition application regions using 
+sidesets (element faces) and nodesets (collections of nodes). It supports several simple geometry types. It has multiple alternatives
+for mesh grading. It has several alternatives for the initial domain decompositon. \textsc{pamgen} makes it easy to change details of the finite element mesh and is very usesful for performance studies and scoping calculations.
+    \end{abstract}
+
+
+    % An Acknowledgement section is optional.
+    % Use \section* since we don't want it in the table of context
+    \clearpage
+    \section*{Acknowledgment}
+        \input{pamgen_acknowledgment}
+    % reset
+        \setcounter{table}{0}
+
+
+    % Make sure this starts on an odd numbered page
+  %  \clearpage
+  %  \vspace*{\fill} \hspace*{\fill}
+  %    This page intentionally left blank. \hspace*{\fill} \vspace*{\fill}
+%
+    \clearpage
+    \tableofcontents
+    
+    
+    % Comment out if there are no figures or tables.
+    \clearpage
+    \listoffigures
+
+    \clearpage
+    \listoftables
+
+
+ 
+    \clearpage
+
+    % ---------------------------------------------------------------------- %
+    % This is where the body of the report begins
+    
+    \latex{\tolerance=1000}
+    
+    \input{pamgen_introduction}   
+    \input{pamgen_mesh}
+\clearpage
+\appendix
+  \input{pamgen_rtc}
+    \clearpage
+  \input{read_into_memory}
+    % ---------------------------------------------------------------------- %
+
+    % References
+    \clearpage
+    \bibliographystyle{plain}
+    \bibliography{Pamgen_Report}  % reads Pamgen_Report.bib
+    \addcontentsline{toc}{section}{References}
+
+    \footnotesize
+    \printindex
+    \normalsize
+    \addcontentsline{toc}{section}{Index}
+
+    \latex{
+      % need a distribution page for SAND reports
+      \include{pamgen_distribution} 
+    }
+
+\end{document}
