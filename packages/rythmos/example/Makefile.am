@@ -32,7 +32,7 @@ all-local:
 
 if ENABLE_RYTHMOS_STRATIMIKOS
 if ENABLE_RYTHMOS_THYRA_EPETRAEXT
-RYTHMOS_STRATIMIKOS_EXAMPLES = basicExample diagonalTransient timeDiscretizedBackwardEuler
+RYTHMOS_STRATIMIKOS_EXAMPLES = diagonalTransient timeDiscretizedBackwardEuler
 if ENABLE_RYTHMOS_NOX
 if ENABLE_RYTHMOS_NOX_EPETRA
 RYTHMOS_NOX_EXAMPLES = epetra

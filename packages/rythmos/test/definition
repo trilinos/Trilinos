@@ -10,21 +10,21 @@
 
 # Default run, Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample.exe;
+    TESTS = complicatedExample/complicatedExample.exe;
     ARGS = --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar Forward Euler
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample.exe;
+    TESTS = complicatedExample/complicatedExample.exe;
     ARGS = --method=FE --maxerror=1e-1 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos0) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
@@ -32,21 +32,21 @@
 # Scalar ImplicitBDF with forcing term
 # note:  beofulf = cs.csbsju.edu 
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1Strict) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --max-restep-error=0 --echo-command-line;
+    COMM = SERIAL, MPI(1);
+    X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov rancilio.sandia.gov cs.csbsju.edu; 
+}
+
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1Tight) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --max-restep-error=1e-12 --echo-command-line;
     COMM = SERIAL, MPI(1);
     X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov rancilio.sandia.gov; 
 }
 
-(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1Tight) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
-    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --max-restep-error=1e-12 --echo-command-line;
-    COMM = SERIAL, MPI(1);
-    X-HOST = cs.csbsju.edu; 
-}
-
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,RythmosAmesos1Loose) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
     HOST = gabriel.sandia.gov s858352.srn.sandia.gov;
@@ -54,56 +54,56 @@
 
 # Vector Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample.exe;
+    TESTS = complicatedExample/complicatedExample.exe;
     ARGS = --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Forward Euler
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample.exe;
+    TESTS = complicatedExample/complicatedExample.exe;
     ARGS = --method=FE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos3) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler using Amesos
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos4) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample_aztecoo.exe;
+    TESTS = complicatedExample/complicatedExample_aztecoo.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler using Amesos
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos5) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line --verb-level=VERB_MEDIUM;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample_aztecoo.exe;
+    TESTS = complicatedExample/complicatedExample_aztecoo.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
     COMM = SERIAL,MPI(1);
 }
 
 # Vector Backward Euler using Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
-    TESTS = ../example/basicExample/basicExample_belos.exe;
+    TESTS = complicatedExample/complicatedExample_belos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose \
       --extra-linear-solver-params="
         <ParameterList>
@@ -126,42 +126,42 @@
 
 # Vector Forward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample.exe;
+    TESTS = complicatedExample/complicatedExample.exe;
     ARGS = --numelements=100 --method=FE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
     COMM = SERIAL,MPI(1);
 }
 
 # Vector Backward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos6) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line --verb-level=VERB_MEDIUM;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Implicit BDF
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos7) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos8) {
-    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
     ARGS = --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Implicit BDF with AztecOO
 (FRAMEWORK,INSTALL) {
-    TESTS = ../example/basicExample/basicExample_aztecoo.exe;
+    TESTS = complicatedExample/complicatedExample_aztecoo.exe;
     ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
     COMM = SERIAL,MPI(1);
 }
 
 # Vector Implicit BDF with Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
-    TESTS = ../example/basicExample/basicExample_belos.exe;
+    TESTS = complicatedExample/complicatedExample_belos.exe;
     ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose \
       --extra-linear-solver-params="
         <ParameterList>

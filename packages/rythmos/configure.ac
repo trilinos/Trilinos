@@ -486,7 +486,6 @@ AC_CONFIG_FILES([
 		Makefile.export.rythmos
 		src/Makefile
 		example/Makefile
-		example/basicExample/Makefile
 		example/diagonalTransient/Makefile
 		example/timeDiscretizedBackwardEuler/Makefile
 		example/epetra/Makefile
@@ -494,6 +493,7 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
+		test/complicatedExample/Makefile
 		test/CppUnitLite/Makefile
 		test/UnitTest/Makefile
 		])
