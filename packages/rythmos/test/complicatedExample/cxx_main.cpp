@@ -468,7 +468,9 @@ int main(int argc, char *argv[])
               *out << "Master LET Value = " << stepStatusMaster.stepLETValue << endl;
               *out << " Slave LET Value = " << stepStatusSlave.stepLETValue << endl;
             }
-            TEST_FOR_EXCEPT(stepStatusMaster.order != stepStatusSlave.order);
+            TEST_FOR_EXCEPTION(stepStatusMaster.order != stepStatusSlave.order, std::logic_error,
+                "Error, stepStatusMaster.order = " << stepStatusMaster.order << 
+                " != stepStatusSlave.order = " << stepStatusSlave.order << "!");
             // We will allow a difference of some multiplier of machine epsilon:
             const double
               normLETDiff = std::abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
@@ -487,7 +489,8 @@ int main(int argc, char *argv[])
               *out << "normSolutionDiff = " << normSolutionDiff << endl;
             }
             const double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
-            TEST_FOR_EXCEPT(normSolutionDiff > eps);
+            TEST_FOR_EXCEPTION(normSolutionDiff > eps, std::logic_error,
+                "Error, normSolutionDiff = " << normSolutionDiff << " > eps = " << eps << "!");
             // Check that solution dot matches exactly
             {
 
@@ -499,7 +502,8 @@ int main(int argc, char *argv[])
               if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
                 *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;
               }
-              TEST_FOR_EXCEPT(normSolutionDotDiff > eps);
+              TEST_FOR_EXCEPTION(normSolutionDotDiff > eps, std::logic_error,
+                  "Error, normSolutionDotDiff = " << normSolutionDotDiff << " > eps = " << eps << "!");
             }
             // Do not check that the residual matches because the residual isn't stored in ImplicitBDFStepper.
           }
