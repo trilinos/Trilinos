@@ -1,0 +1,14 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL) {
+    DIRS = simple_test;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(DOCUMENTATION) {
+    TESTS = ../example/generate-sample-output.pl;
+    COMM = SERIAL;
+}
