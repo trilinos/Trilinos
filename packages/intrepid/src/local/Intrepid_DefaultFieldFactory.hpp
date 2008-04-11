@@ -27,82 +27,73 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_DefaultBasisFactory.hpp
-\brief  Header file for the abstract base class Intrepid::DefaultBasisFactory.
+/** \file   Intrepid_DefaultFieldFactory.hpp
+\brief  Header file for the abstract base class Intrepid::DefaultFieldFactory.
 \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_DEFAULT_BASIS_FACTORY_HPP
-#define INTREPID_DEFAULT_BASIS_FACTORY_HPP
+#ifndef INTREPID_DEFAULT_FIELD_FACTORY_HPP
+#define INTREPID_DEFAULT_FIELD_FACTORY_HPP
 
 #include "Intrepid_ConfigDefs.hpp"
-#include "Intrepid_Basis.hpp"
+#include "Intrepid_LocalField.hpp"
+#include "Intrepid_DefaultBasisFactory.hpp"
+#include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Teuchos_RCP.hpp"
 
 /////   list of default basis includes   /////
 
-#include "Intrepid_F0_TRI_C1_FEM_DEFAULT.hpp"
+#include "Intrepid_LocalForm0.hpp"
 
 ///// end of list of default basis includes /////
 
 
 namespace Intrepid {
   
-/** \class Intrepid::DefaultBasisFactory
-    \brief A factory class that generates specific instances of bases.
+/** \class Intrepid::DefaultFieldFactory
+    \brief A factory class that generates specific instances of forms.
 */
 template<class Scalar>
-class DefaultBasisFactory {
+class DefaultFieldFactory {
   private:
-    std::map<unsigned long, Teuchos::RCP<Basis<Scalar> > > BMap_;
 
   public:
     
   /** \brief Default constructor.
   */
-  DefaultBasisFactory() {
-    /* List all basis keys with corresponding basis classes.
-       Legend:
-       F_ - two-digit field code (see EField) - UPPER LIMIT is 40!
-       C_ - two-digit cell code (see ECell)
-       R  - one-digit reconstruction space code (see EReconstructionSpace)
-       D_ - two-digit degree
-       B  - two-digit basis code (see EBasis)
-       S  - one-digit coordinate system code (see ECoordinates)
-       If any of the leading codes are zero (00 or 0), must leave blank!
-    */
-
-    /**** F_C_RD_B_S ************************************************************/
-    BMap_[   2001000] = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>() );
-  };
+  DefaultFieldFactory() {};
 
   /** \brief Destructor.
   */
-  virtual ~DefaultBasisFactory() {};
+  virtual ~DefaultFieldFactory() {};
 
   /** \brief Factory method.
 
       \param field       [in]    - Field type (FIELD_FORM_0, etc.).
       \param cell        [in]    - Cell type (CELL_TRI, CELL_QUAD, etc.).
       \param recSpace    [in]    - Reconstruction space type (RECONSTRUCTION_SPACE_COMPLETE, etc.).
-      \param degree      [in]    - Polynomial degree.
+      \param polyDegree  [in]    - Polynomial degree.
       \param basisType   [in]    - Basis type (BASIS_FEM_DEFAULT, etc.).
       \param coordSys    [in]    - Coordinate system (BASIS_FEM_DEFAULT, etc.).
+      \param cubDegree   [in]    - Cubature accuracy; setting <var>cubDegree</var> to a nonnegative
+                                   value overrides Intrepid's default selection of cubature accuracy.
+                                   <b>Use with caution!</b>
 
       \return
-              - RCP to basis with given specifications.
+              - RCP to field with given specifications.
   */
-  Teuchos::RCP<Basis<Scalar> > create(EField field,
-                                      ECell cell,
-                                      EReconstructionSpace recSpace,
-                                      int degree,
-                                      EBasis basisType, 
-                                      ECoordinates coordSys);
+  Teuchos::RCP<LocalField<Scalar> > create(EField field,
+                                           ECell cell,
+                                           EReconstructionSpace recSpace,
+                                           int degree,
+                                           EBasis basisType, 
+                                           ECoordinates coordSys,
+                                           int cubDegree = -1);
     
 };
   
 }// namespace Intrepid
 
-#include "Intrepid_DefaultBasisFactoryDef.hpp"
+#include "Intrepid_DefaultFieldFactoryDef.hpp"
 
 #endif

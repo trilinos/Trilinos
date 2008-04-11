@@ -38,6 +38,7 @@
 #include "Intrepid_CubatureDirect.hpp"
 #include "Intrepid_MultiCell.hpp"
 #include "Intrepid_Utils.hpp"
+#include "Intrepid_DefaultFieldFactory.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -179,7 +180,6 @@ int main(int argc, char *argv[]) {
       *outStream << err.what() << "\n\n";
           errorFlag = -999;
   };
-            
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

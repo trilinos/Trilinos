@@ -64,6 +64,10 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CubatureDirectDef.hpp \
   $(srcdir)/local/Intrepid_CubatureDirect.hpp \
   $(srcdir)/local/Intrepid_Cubature.hpp \
+  $(srcdir)/local/Intrepid_DefaultCubatureFactory.hpp \
+  $(srcdir)/local/Intrepid_DefaultCubatureFactoryDef.hpp \
+  $(srcdir)/local/Intrepid_DefaultFieldFactory.hpp \
+  $(srcdir)/local/Intrepid_DefaultFieldFactoryDef.hpp \
   $(srcdir)/local/Intrepid_LocalField.hpp \
   $(srcdir)/local/Intrepid_LocalForm0Def.hpp \
   $(srcdir)/local/Intrepid_LocalForm0.hpp \

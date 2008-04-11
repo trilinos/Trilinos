@@ -42,10 +42,97 @@ Teuchos::RCP<Basis<Scalar> > DefaultBasisFactory<Scalar>::create(EField field,
                                                                  int degree,
                                                                  EBasis basisType,
                                                                  ECoordinates coordSys) {
-  // Create generic basis.
-  Teuchos::RCP<Basis<Scalar> > pickBasis;
+  unsigned long basisCode = field *     100000000 +
+                            cell *      1000000   +
+                            recSpace *  100000    +
+                            degree *    1000      +
+                            basisType * 10        +
+                            coordSys;
 
-  if (
+  TEST_FOR_EXCEPTION( (is_null(BMap_[basisCode])),
+                      std::invalid_argument,
+                      ">>> ERROR (DefaultBasisFactory): Invalid set of parameters prevents basis creation.");
+
+  return BMap_[basisCode];
+
+/*  // Create generic basis.
+  Teuchos::RCP<Basis<Scalar> > pickBasis; */
+
+/*  switch(field) {
+  
+    case FIELD_FORM_0: {
+
+      switch(cell) {
+     
+        case CELL_TRI: {
+        
+          switch(recSpace) {
+
+            case RECONSTRUCTION_SPACE_COMPLETE: {
+
+              switch(degree) {
+
+                case 1: {
+
+                  switch(basisType) {
+
+                    case BASIS_FEM_DEFAULT: {
+
+                      switch(coordSys) {
+
+                        case COORDINATES_CARTESIAN: {
+                          pickBasis = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>() );
+                        }
+                        break;
+
+                        default:
+                          TEST_FOR_EXCEPTION( (coordSys != COORDINATES_CARTESIAN),
+                                              std::invalid_argument,
+                                              ">>> ERROR (DefaultBasisFactory): Invalid coordinate system.");
+                      }
+                    }
+                    break; 
+
+                    default:
+                      TEST_FOR_EXCEPTION( (basisType != BASIS_FEM_DEFAULT),
+                                          std::invalid_argument,
+                                          ">>> ERROR (DefaultBasisFactory): Invalid basis type.");
+                  }
+                }
+                break;
+
+                default:
+                  TEST_FOR_EXCEPTION( (degree != 1),
+                                      std::invalid_argument,
+                                      ">>> ERROR (DefaultBasisFactory): Invalid polynomial degree.");
+              }
+            }
+            break;
+
+            default:
+              TEST_FOR_EXCEPTION( (recSpace != RECONSTRUCTION_SPACE_COMPLETE),
+                                  std::invalid_argument,
+                                  ">>> ERROR (DefaultBasisFactory): Invalid reconstruction space.");
+          }
+        }
+        break;
+
+        default:
+          TEST_FOR_EXCEPTION( (cell != CELL_TRI),
+                              std::invalid_argument,
+                              ">>> ERROR (DefaultBasisFactory): Invalid cell type.");
+      }
+    }
+    break;
+
+    default:
+      TEST_FOR_EXCEPTION( (field != FIELD_FORM_0),
+                          std::invalid_argument,
+                          ">>> ERROR (DefaultBasisFactory): Invalid field type.");
+  }*/
+
+
+/*  if (
        (field==FIELD_FORM_0) &&
        (cell==CELL_TRI) &&
        (recSpace==RECONSTRUCTION_SPACE_COMPLETE) &&
@@ -59,10 +146,10 @@ Teuchos::RCP<Basis<Scalar> > DefaultBasisFactory<Scalar>::create(EField field,
   else {
     TEST_FOR_EXCEPTION( (true),
                         std::invalid_argument,
-                        ">>> ERROR (Basis): Invalid set of parameters prevents basis creation.");
-  }
+                        ">>> ERROR (DefaultBasisFactory): Invalid set of parameters prevents basis creation.");
+  }*/
 
-  return pickBasis;
+  //return pickBasis;
   
 }
 

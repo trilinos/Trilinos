@@ -80,10 +80,6 @@ int main(int argc, char *argv[]) {
 #endif
   double basisvals[] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
   
-  VarContainer<double> vals;
-  DefaultBasisFactory<double> BFactory;
-  Teuchos::RCP<Basis<double> > tribasis =  BFactory.create(
-    FIELD_FORM_0, CELL_TRI, RECONSTRUCTION_SPACE_COMPLETE, 1, BASIS_FEM_DEFAULT, COORDINATES_CARTESIAN);
   Teuchos::Array< Point<double> > points01;
   Point<double> pt(2, FRAME_REFERENCE);
   points01.assign(3, pt);
@@ -96,6 +92,11 @@ int main(int argc, char *argv[]) {
   (points01[2]).setCoordinates(ptarray, 2);
 
   try{
+
+    VarContainer<double> vals;
+    DefaultBasisFactory<double> BFactory;
+    Teuchos::RCP<Basis<double> > tribasis =  BFactory.create(
+      FIELD_FORM_0, CELL_TRI, RECONSTRUCTION_SPACE_COMPLETE, 1, BASIS_FEM_DEFAULT, COORDINATES_CARTESIAN);
 
     try {
       tribasis->getValues(vals, points01, OPERATOR_DIV);
@@ -208,6 +209,10 @@ int main(int argc, char *argv[]) {
   outStream->precision(20);
 
   try{
+    VarContainer<double> vals;
+    DefaultBasisFactory<double> BFactory;
+    Teuchos::RCP<Basis<double> > tribasis =  BFactory.create(
+      FIELD_FORM_0, CELL_TRI, RECONSTRUCTION_SPACE_COMPLETE, 1, BASIS_FEM_DEFAULT, COORDINATES_CARTESIAN);
     tribasis->getValues(vals, points01, OPERATOR_VALUE);
     for (int i=0; i<vals.getSize(); i++) {
       *outStream << "  Computed value: " << vals[i] << "   Reference value: " << basisvals[i] << "\n";

@@ -86,7 +86,7 @@ class LocalForm0 : public LocalField<Scalar> {
   */
   LocalForm0(const Teuchos::RCP<Basis<Scalar> > basis,
              const Teuchos::Array<Teuchos::Array<Teuchos::RCP<Cubature<Scalar> > > > cubature, 
-             const ECompEngine compEngine);
+             const ECompEngine compEngine = COMP_CPP);
 
 
   ~LocalForm0() {}
