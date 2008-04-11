@@ -63,9 +63,9 @@ target_triplet = @target@
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.pamgen.in $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure config/config.guess config/config.sub \
-	config/depcomp config/install-sh config/missing \
-	config/mkinstalldirs
+	$(top_srcdir)/configure $(top_srcdir)/test/test1/Makefile.in \
+	config/config.guess config/config.sub config/depcomp \
+	config/install-sh config/missing config/mkinstalldirs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -86,7 +86,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Pamgen_config.h
-CONFIG_CLEAN_FILES = Makefile.export.pamgen
+CONFIG_CLEAN_FILES = Makefile.export.pamgen test/test1/Makefile
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -319,6 +319,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 Makefile.export.pamgen: $(top_builddir)/config.status $(srcdir)/Makefile.export.pamgen.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+test/test1/Makefile: $(top_builddir)/config.status $(top_srcdir)/test/test1/Makefile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 # This directory's subdirectories are mostly independent; you can cd

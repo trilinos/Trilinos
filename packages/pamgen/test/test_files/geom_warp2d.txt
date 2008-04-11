@@ -1,0 +1,33 @@
+   mesh
+    rectilinear
+      nx = 10 
+      ny = 10 
+      bx =  3
+      by =  3
+      gmin = -1.0 -1.0
+      gmax =  1.0  1.0
+    end
+   set assign
+        nodeset,ihi,1
+        nodeset,jhi,2
+        nodeset,ilo,3
+        nodeset,jlo,4
+        sideset,ihi,10
+        sideset,jhi,20
+        sideset,ilo,30
+        sideset,jlo,40
+    end
+    user defined geometry transformation
+     "
+     double r = sqrt(inxcoord*inxcoord+inycoord*inycoord);
+     double theta = atan2(inycoord,inxcoord);
+     if(r > 0.5) 
+      {
+        theta = theta + (3.14159 / 4.0)*((r-0.5)/0.5);
+        outxcoord = r*cos(theta);
+	outycoord = r*sin(theta);
+      }
+     "
+    end
+  end
+

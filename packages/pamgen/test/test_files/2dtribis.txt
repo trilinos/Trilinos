@@ -1,0 +1,28 @@
+  mesh
+   radial trisection
+    trisection blocks, 4
+    zmin -0.00075
+    numz 1
+      zblock 1 4. interval 4
+    numr 3 initial radius 3.0
+      rblock 1 2.0 interval 4
+      rblock 2 3.0 interval 4
+      rblock 3 5.0 interval 4
+    numa 1
+      ablock 1 360. interval 32
+    end
+   set assign
+        nodeset, ihi, 40
+        nodeset, khi, 10
+        nodeset, klo, 20
+        sideset, khi, 11
+        sideset, klo, 21
+        block sideset, ihi, 45, 2
+        block sideset, klo, 65, 2
+    end
+
+    decomposition strategy
+    bisection
+    end
+  end
+

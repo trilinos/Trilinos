@@ -17,7 +17,7 @@
 #@HEADER
 # ************************************************************************
 # 
-#                     New_Package Example Package
+#                     Pamgen Package
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -37,12 +37,11 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact David Hensinger(dmhensi@sandia.gov) 
 # 
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -62,6 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+noinst_PROGRAMS = pamgen_test_driver$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -83,8 +83,24 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Pamgen_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
+PROGRAMS = $(noinst_PROGRAMS)
+am_pamgen_test_driver_OBJECTS = pamgen_test_driver.$(OBJEXT) \
+	getopts.$(OBJEXT)
+pamgen_test_driver_OBJECTS = $(am_pamgen_test_driver_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(pamgen_test_driver_SOURCES)
+DIST_SOURCES = $(pamgen_test_driver_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -120,7 +136,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 GREP = @GREP@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
@@ -210,17 +226,74 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
+#run_test_script_01 \
+#	run_test_script_02 \
+#	run_test_script_03 \
+#	run_test_script_04 \
+#	run_test_script_05 \
+#	run_test_script_06 \
+#	run_test_script_07 \
+#	run_test_script_08 \
+#	run_test_script_09 \
+#	run_test_script_10 \
+#	run_test_script_11 \
+#	run_test_script_12 \
+#	run_test_script_13 \
+#	run_test_script_14 \
+#	run_test_script_15 \
+#	run_test_script_16 \
+#	run_test_script_17 \
+#	run_test_script_18 \
+#	run_test_script_19 \
+#	run_test_script_21 \
+#	run_test_script_22 \
+#	run_test_script_23 \
+#	run_test_script_24 \
+#	run_test_script_25 \
+#	run_test_script_26 \
+#	run_test_script_27 \
+#	run_test_script_28 \
+#	run_test_script_29 \
+#	run_test_script_30 \
+#	run_test_script_31 \
+#	run_test_script_32 \
+#	run_test_script_33 \
+#	run_test_script_34 \
+#	run_test_script_35 \
+#	run_test_script_36 \
+#	run_test_script_37 \
+#	run_test_script_38 \
+#	run_test_script_39 \
+#	run_test_script_40 \
+#	run_test_script_41 \
+#	run_test_script_42 
+pamgen_test_driver_SOURCES = $(srcdir)/../example/pamgen_test_driver.c $(srcdir)/../example/getopts.C
+
+#np# Specify locations of include files within Trilinos, but outside np
+#np# Add packages that np is dependent on; remove epetra if np does not need it
+AM_CPPFLAGS = $(PAMGEN_INCLUDES)
+
+#np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
+#np# optional.
+pamgen_test_driver_DEPENDENCIES = \
+	$(top_builddir)/src/libpamgen.a 
+
+
+#np# List libraries that np is dependent on.
+pamgen_test_driver_LDADD = $(PAMGEN_LIBS)
+
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
 #np# conditionally.
-#np# For packages whose tests are located in this directory, rather than
+#np# For packages whose examples are located in this directory, rather than
 #np# in a subdirectory of this directory, use the Makefile.am located in
-#np# test1/ rather than this file.
-SUBDIRS = test1
-EXTRA_DIST = definition
+#np# example1/ rather than this file.
+# SUBDIRS = example1
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:
+.SUFFIXES: .C .c .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -250,6 +323,74 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopts.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pamgen_test_driver.Po@am__quote@
+
+.C.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.C.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+getopts.o: $(srcdir)/../example/getopts.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT getopts.o -MD -MP -MF $(DEPDIR)/getopts.Tpo -c -o getopts.o `test -f '$(srcdir)/../example/getopts.C' || echo '$(srcdir)/'`$(srcdir)/../example/getopts.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/getopts.Tpo $(DEPDIR)/getopts.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../example/getopts.C' object='getopts.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o getopts.o `test -f '$(srcdir)/../example/getopts.C' || echo '$(srcdir)/'`$(srcdir)/../example/getopts.C
+
+getopts.obj: $(srcdir)/../example/getopts.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT getopts.obj -MD -MP -MF $(DEPDIR)/getopts.Tpo -c -o getopts.obj `if test -f '$(srcdir)/../example/getopts.C'; then $(CYGPATH_W) '$(srcdir)/../example/getopts.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/getopts.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/getopts.Tpo $(DEPDIR)/getopts.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../example/getopts.C' object='getopts.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o getopts.obj `if test -f '$(srcdir)/../example/getopts.C'; then $(CYGPATH_W) '$(srcdir)/../example/getopts.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/getopts.C'; fi`
+
+.c.o:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+pamgen_test_driver.o: $(srcdir)/../example/pamgen_test_driver.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pamgen_test_driver.o -MD -MP -MF $(DEPDIR)/pamgen_test_driver.Tpo -c -o pamgen_test_driver.o `test -f '$(srcdir)/../example/pamgen_test_driver.c' || echo '$(srcdir)/'`$(srcdir)/../example/pamgen_test_driver.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/pamgen_test_driver.Tpo $(DEPDIR)/pamgen_test_driver.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/../example/pamgen_test_driver.c' object='pamgen_test_driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pamgen_test_driver.o `test -f '$(srcdir)/../example/pamgen_test_driver.c' || echo '$(srcdir)/'`$(srcdir)/../example/pamgen_test_driver.c
+
+pamgen_test_driver.obj: $(srcdir)/../example/pamgen_test_driver.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pamgen_test_driver.obj -MD -MP -MF $(DEPDIR)/pamgen_test_driver.Tpo -c -o pamgen_test_driver.obj `if test -f '$(srcdir)/../example/pamgen_test_driver.c'; then $(CYGPATH_W) '$(srcdir)/../example/pamgen_test_driver.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/pamgen_test_driver.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/pamgen_test_driver.Tpo $(DEPDIR)/pamgen_test_driver.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/../example/pamgen_test_driver.c' object='pamgen_test_driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pamgen_test_driver.obj `if test -f '$(srcdir)/../example/pamgen_test_driver.c'; then $(CYGPATH_W) '$(srcdir)/../example/pamgen_test_driver.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/pamgen_test_driver.c'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -427,7 +568,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile all-local
+all-am: Makefile $(PROGRAMS) all-local
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -456,11 +597,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-recursive
 
@@ -491,12 +634,13 @@ install-ps: install-ps-recursive
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-recursive
 
@@ -512,20 +656,81 @@ uninstall-am:
 	install-strip
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am all-local check check-am clean clean-generic ctags \
-	ctags-recursive distclean distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-recursive uninstall uninstall-am
+	all all-am all-local check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags ctags-recursive distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am
 
 
-all-local:
+include $(top_builddir)/Makefile.export.pamgen
+
+# The following line helps the test harness recover from build errors.
+
+all-local: 
+
+#
+#  This is a crude but effective way to move files from the source tree to the build tree
+#  We recommend renaming files because, although we recommend against the practice, some
+#  users will configure and build in the same tree.
+#
+#  This requires at least one file to end in .exe (or whatever EXEEXT is set to).
+#  The other files can have arbitrary names. (In this case Suppressions)
+#
+
+pamgen_test_driver$(EXEEXT): $(srcdir)/test_files/run_test_script_01
+	cp ../example/pamgen_test_driver.exe .
+	cp $(srcdir)/test_files/run_test_script_01 run_test_script_01$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_02 run_test_script_02$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_03 run_test_script_03$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_04 run_test_script_04$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_05 run_test_script_05$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_06 run_test_script_06$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_07 run_test_script_07$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_08 run_test_script_08$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_09 run_test_script_09$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_10 run_test_script_10$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_11 run_test_script_11$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_12 run_test_script_12$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_13 run_test_script_13$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_14 run_test_script_14$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_15 run_test_script_15$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_16 run_test_script_16$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_17 run_test_script_17$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_18 run_test_script_18$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_19 run_test_script_19$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_20 run_test_script_20$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_21 run_test_script_21$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_22 run_test_script_22$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_23 run_test_script_23$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_24 run_test_script_24$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_25 run_test_script_25$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_26 run_test_script_26$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_27 run_test_script_27$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_28 run_test_script_28$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_29 run_test_script_29$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_30 run_test_script_30$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_31 run_test_script_31$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_32 run_test_script_32$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_33 run_test_script_33$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_34 run_test_script_34$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_35 run_test_script_35$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_36 run_test_script_36$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_37 run_test_script_37$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_38 run_test_script_38$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_39 run_test_script_39$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_40 run_test_script_40$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_41 run_test_script_41$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_42 run_test_script_42$(EXEEXT)
+	cp $(srcdir)/test_files/*.txt .
+	cp $(srcdir)/test_files/*.res .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -1,0 +1,16 @@
+mesh
+  spherical
+    ri = 0.0
+    ro = 0.2
+    theta = 2.0
+    nr = 400
+    ntheta = 1
+    br = 5
+    btheta = 1
+  end
+  set assign
+    nodeset, jlo, 1    $ $ lower theta boundary
+    nodeset, jhi, 2    $ $ upper theta boundary
+    nodeset, ilo, 3    $ $ inner radial boundary (r = 0)
+  end
+end

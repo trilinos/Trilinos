@@ -1,0 +1,37 @@
+  mesh
+   brick
+    numz 8
+      zblock 1 10.0 interval 6
+      zblock 2 10.0 interval 6
+      zblock 3 10.0 interval 6
+      zblock 4 10.0 interval 6
+      zblock 5 10.0 interval 6
+      zblock 6 10.0 interval 6
+      zblock 7 10.0 interval 6
+      zblock 8 10.0 interval 6
+    numx 3 initial radius 10.
+      xblock 1 12. interval 12
+      xblock 2 5. interval 6
+      xblock 3 5. interval 12
+    numy 5
+      yblock 1 18. interval 18
+      yblock 2 18. interval 18
+      yblock 3 18. interval 18
+      yblock 4 18. interval 18
+      yblock 5 18. interval 18
+    end
+   set assign
+      block sideset, klo, 11 4
+      block sideset, khi, 12 4
+      block sideset, klo, 21 5
+      block sideset, khi, 22 5
+      block sideset, klo, 31 6
+      block sideset, khi, 32 6
+      sideset,ilo,30
+      sideset,ihi,20
+    end
+      decomposition strategy
+      random
+      end
+  end
+

@@ -1,0 +1,18 @@
+mesh
+  radial trisection
+  trisection blocks, 2
+  zmin -0.00075
+  numz 1
+   zblock 1 1. interval 4
+  numr 3 
+   rblock 1 2.0 interval 4
+   rblock 2 3.0 interval 4
+   rblock 3 4.0 interval 4
+  numa 1
+   ablock 1 90. interval 12
+ end
+ set assign
+  nodeset, ilo, 100
+  block sideset, ihi, 45, 2
+ end
+end

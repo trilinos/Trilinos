@@ -1,0 +1,13 @@
+mesh
+ brick
+  numz 2
+  zblock 1 2. interval 5
+   zblock 2 8. interval 4
+  numx 2
+   xblock 1 5.0 interval 5
+   xblock 2 5.0 interval 5
+  numy 2
+   yblock 1 10. first size 1. last size .1
+   yblock 2 10. first size .1 last size 1.
+ end
+end

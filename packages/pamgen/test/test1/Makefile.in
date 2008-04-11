@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = pamgen_test_driver$(EXEEXT)
+noinst_PROGRAMS = pamgen_test_driver$(EXEEXT) run_test_script$(EXEEXT)
 subdir = test/test1
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -87,6 +87,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_pamgen_test_driver_OBJECTS = pamgen_test_driver.$(OBJEXT) \
 	getopts.$(OBJEXT)
 pamgen_test_driver_OBJECTS = $(am_pamgen_test_driver_OBJECTS)
+run_test_script_SOURCES = run_test_script.c
+run_test_script_OBJECTS = run_test_script.$(OBJEXT)
+run_test_script_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -99,8 +102,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(pamgen_test_driver_SOURCES)
-DIST_SOURCES = $(pamgen_test_driver_SOURCES)
+SOURCES = $(pamgen_test_driver_SOURCES) run_test_script.c
+DIST_SOURCES = $(pamgen_test_driver_SOURCES) run_test_script.c
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -240,14 +243,6 @@ pamgen_test_driver_DEPENDENCIES = \
 #np# List libraries that np is dependent on.
 pamgen_test_driver_LDADD = $(PAMGEN_LIBS)
 
-#
-#  This is a crude but effective way to move files from the source tree to the build tree
-#  We recommend renaming files because, although we recommend against the practice, some
-#  users will configure and build in the same tree.
-#
-#  This requires at least one file to end in .exe (or whatever EXEEXT is set to).
-#  The other files can have arbitrary names. (In this case Suppressions)
-#
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
 #np# conditionally.
@@ -304,6 +299,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pamgen_test_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run_test_script.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -644,6 +640,19 @@ include $(top_builddir)/Makefile.export.pamgen
 # The following line helps the test harness recover from build errors.
 
 all-local: 
+
+#
+#  This is a crude but effective way to move files from the source tree to the build tree
+#  We recommend renaming files because, although we recommend against the practice, some
+#  users will configure and build in the same tree.
+#
+#  This requires at least one file to end in .exe (or whatever EXEEXT is set to).
+#  The other files can have arbitrary names. (In this case Suppressions)
+#
+
+run_test_script$(EXEEXT): $(srcdir)/../run_test_script
+	cp $(srcdir)/../run_test_script run_test_script$(EXEEXT)
+	cp $(srcdir)/../test_files/*.txt .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

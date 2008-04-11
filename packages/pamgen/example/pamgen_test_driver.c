@@ -855,12 +855,10 @@ int nct;
     printf("num qa records %i\n",mss.num_qa_records);
 
     for(i = 0; i < mss.num_qa_records; i ++){
-      printf("\nQA Record %i\n %s\n%s\n%s\n%s\n",
+      printf("\nQA Record %i\n %s\n%s\n",
 	     i,
 	     mss.qaRecord[i][0],
-	     mss.qaRecord[i][1],
-	     mss.qaRecord[i][2],
-	     mss.qaRecord[i][3]);
+	     mss.qaRecord[i][1]);
     }
 
     printf("Num Info Records %i\n",mss.num_info_records);
