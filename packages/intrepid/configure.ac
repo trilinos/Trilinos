@@ -189,6 +189,7 @@ AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([sstream sstream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([vector vector.h], [break],)
+AC_CHECK_HEADERS([map map.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
@@ -221,6 +222,10 @@ fi
 
 if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find vector or vector.h.  Intrepid requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find map or map.h.  Intrepid requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then

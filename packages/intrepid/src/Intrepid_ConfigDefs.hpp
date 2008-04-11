@@ -152,6 +152,12 @@
 #include <vector.h>
 #endif
 
+#ifdef HAVE_MAP
+#include <map>
+#elif defined(HAVE_MAP_H)
+#include <map.h>
+#endif
+
 #ifdef HAVE_STRING
 #include <string>
 #elif defined(HAVE_STRING_H)
