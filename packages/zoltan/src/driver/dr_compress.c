@@ -12,10 +12,15 @@
  ****************************************************************************/
 
 /* #include "zoltan.h" */
+#ifndef __USE_ISOC99
+#define __USE_ISOC99
+#endif
+
+#include <stdarg.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "dr_compress_const.h"
 
@@ -50,18 +55,18 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 
   switch (type) {
   case STANDARD:
-    file->fileunc = fopen(path, mode);
-    error = (file->fileunc == NULL);
+    file->strm.fileunc = fopen(path, mode);
+    error = (file->strm.fileunc == NULL);
     break;
 #ifdef ZOLTAN_GZIP
   case GZIP:
-    file->filegz = gzopen(path, truemode);
-    error = (file->filegz == NULL);
+    file->strm.filegz = gzopen(path, truemode);
+    error = (file->strm.filegz == NULL);
     break;
 #endif
 #ifdef ZOLTAN_BZ2
   case BZIP2:
-    file->filebz2 = BZ2_bzopen(path, truemode);
+    file->strm.filebz2 = BZ2_bzopen(path, truemode);
     break;
 #endif
 #ifdef ZOLTAN_LZMA
@@ -110,7 +115,7 @@ int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
   int nbrdone = 0;
 
   if (file->type == STANDARD)
-    return fread(ptr, size, nitems, file->fileunc);
+    return fread(ptr, size, nitems, file->strm.fileunc);
 
   toread = nitems;
   do {
@@ -127,7 +132,7 @@ int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
       switch(file->type) {
 #ifdef ZOLTAN_GZIP
       case GZIP:
-	file->size = gzread(file->filegz, file->buffer, BUFF_SIZE);
+	file->size = gzread(file->strm.filegz, file->buffer, BUFF_SIZE);
 	break;
 #endif
       default:
@@ -150,7 +155,7 @@ char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
   char * end = NULL;
   int offset = 0;
 
-  if (file->type == STANDARD) return (fgets(buf, len, file->fileunc));
+  if (file->type == STANDARD) return (fgets(buf, len, file->strm.fileunc));
 
   if ((file->pos >= 0) &&( file->size > 0))
     offset = file->size - file->pos;
@@ -200,7 +205,7 @@ int ZOLTAN_FILE_getc(ZOLTAN_FILE* file)
 {
   int read;
   if (file->type == STANDARD)
-    return (fgetc(file->fileunc));
+    return (fgetc(file->strm.fileunc));
   if (ZOLTAN_FILE_read((char*)&read, 1, 1, file) == 0)
     return (EOF);
   return (read);
@@ -209,14 +214,14 @@ int ZOLTAN_FILE_getc(ZOLTAN_FILE* file)
 int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE* file)
 {
   if (file->type == STANDARD)
-    return (ungetc(c, file->fileunc));
+    return (ungetc(c, file->strm.fileunc));
 
   file->pos --;
   if (file->pos < 0) {
     file->size = 0;
 #ifdef ZOLTAN_GZIP
     if (file->type == GZIP)
-      return (gzungetc(c, file->filegz));
+      return (gzungetc(c, file->strm.filegz));
 #endif
   }
 
@@ -228,10 +233,10 @@ int ZOLTAN_FILE_flush(ZOLTAN_FILE* file)
 {
   switch (file->type) {
   case STANDARD:
-    return (fflush(file->fileunc));
+    return (fflush(file->strm.fileunc));
 #ifdef ZOLTAN_GZIP
   case GZIP:
-    return (gzflush(file->filegz, Z_SYNC_FLUSH));
+    return (gzflush(file->strm.filegz, Z_SYNC_FLUSH));
 #endif
   default:
     break;
@@ -246,12 +251,12 @@ int ZOLTAN_FILE_close(ZOLTAN_FILE* file)
   if (file == NULL)
     return (0);
   if (file->type == STANDARD)
-    retval = fclose(file->fileunc);
+    retval = fclose(file->strm.fileunc);
   else {
     switch (file->type) {
 #ifdef ZOLTAN_GZIP
     case GZIP:
-      retval = gzclose(file->filegz);
+      retval = gzclose(file->strm.filegz);
 #endif
     default:
       retval = 1;
@@ -267,37 +272,16 @@ void ZOLTAN_FILE_rewind(ZOLTAN_FILE* file)
 {
   switch (file->type) {
   case STANDARD:
-    return (rewind(file->fileunc));
+    return (rewind(file->strm.fileunc));
 #ifdef ZOLTAN_GZIP
   case GZIP:
-    gzrewind(file->filegz);
+    gzrewind(file->strm.filegz);
     file->pos = -1;
     return;
 #endif
   default:
     break;
   }
-}
-
-int ZOLTAN_FILE_scanf(ZOLTAN_FILE *stream, const char * format, ... )
-{
-  va_list argList;
-  char myformat[256];
-  char buff[1024];
-  int nbrchar;
-  int retval;
-
-  va_start( argList, format );
-  if (stream->type == STANDARD) {
-    return (fscanf(stream->fileunc, format, argList));
-  }
-
-  if (ZOLTAN_FILE_gets(buff, 1024, stream) == NULL)
-    return (0);
-  sprintf(myformat, "%s%%n", format);
-  retval = sscanf(buff, myformat, argList, &nbrchar);
-
-  return (retval);
 }
 
 

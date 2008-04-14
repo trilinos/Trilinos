@@ -64,7 +64,7 @@ typedef struct ZOLTAN_FILE_ {
 #ifdef ZOLTAN_BZ2
     BZFILE * filebz;
 #endif /* ZOLTAN_BZ2 */
-  } ;
+  } strm ;
 } ZOLTAN_FILE;
 #else /* ZOLTAN_COMPRESS */
   typedef FILE ZOLTAN_FILE;
@@ -72,7 +72,7 @@ typedef struct ZOLTAN_FILE_ {
 
 ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FILETYPE type);
 int ZOLTAN_FILE_printf(ZOLTAN_FILE* file, const char * format, ...);
-int ZOLTAN_FILE_scanf(ZOLTAN_FILE* stream, const char * format, ... );
+int ZOLTAN_FILE_scanf(int * read, ZOLTAN_FILE* stream, const char * format, ... );
 int ZOLTAN_FILE_puts(char *s, ZOLTAN_FILE* file);
 char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file);
 int ZOLTAN_FILE_putc(int c, ZOLTAN_FILE* file);
@@ -86,7 +86,7 @@ int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
 #ifndef ZOLTAN_COMPRESS
 #define ZOLTAN_FILE_open(path, mode, type) fopen(path, mode)
 #define ZOLTAN_FILE_printf(file, format ...) fprintf(file, ## format)
-#define ZOLTAN_FILE_scanf(stream, format ... ) fscanf(stream, ## format)
+#define ZOLTAN_FILE_scanf(retval, stream, format ... ) fscanf(stream, ## format)
 #define ZOLTAN_FILE_puts(s, file) fputs(s,file)
 #define ZOLTAN_FILE_gets(buf, len, file) fgets(buf, len, file)
 #define ZOLTAN_FILE_putc(c, file) fputc(c, file)
@@ -96,6 +96,19 @@ int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
 #define ZOLTAN_FILE_close(file) fclose(file)
 #define ZOLTAN_FILE_rewind(stream) rewind(stream)
 #define ZOLTAN_FILE_read(ptr, size, nitems, file) fread(ptr, size, nitems, file)
+#else /* ZOLTAN_COMPRESS */
+  /*** Implemented as a macro as "vfscanf" or "vsscanf" are C99 only ***/
+#define ZOLTAN_FILE_scanf(retval, stream, format ... )\
+do { \
+  char buff[1024]; \
+  if (stream->type == STANDARD) { \
+    *(retval) = (fscanf(stream->strm.fileunc, ## format)); \
+  } \
+  else { if (ZOLTAN_FILE_gets(buff, 1024, stream) == NULL) \
+    *(retval) = 0; \
+  *(retval) = sscanf(buff, ## format); }\
+} while(0)
+
 #endif /* ZOLTAN_COMPRESS */
 
 #ifdef __cplusplus

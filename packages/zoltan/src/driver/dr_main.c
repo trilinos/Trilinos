@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
         print_output = 0;
         goto End;
       }
-      /* 
+      /*
        *  Create a Zoltan DD for tracking elements during repartitioning.
        */
 

@@ -80,7 +80,7 @@ int read_chaco_mesh(int Proc,
   if (Proc == 0) {
 
     /* Open and read the Chaco graph file. */
-    sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);   
+    sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);
     fp = fopen(chaco_fname, "r");
     if (fp == NULL) {
       sprintf(cmesg, "fatal:  Could not open Chaco graph file %s",

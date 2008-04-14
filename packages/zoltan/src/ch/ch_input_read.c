@@ -53,7 +53,7 @@ double    read_val(
     *end_flag = 0;
 
     if (offset == 0 || offset >= break_pnt) {
-	if (offset >= break_pnt) { /* Copy rest of line back to beginning. */ 
+	if (offset >= break_pnt) { /* Copy rest of line back to beginning. */
 	    length_left = LINE_LENGTH - save_pnt - 1;
 	    ptr2 = line;
 	    ptr = &line[save_pnt];
