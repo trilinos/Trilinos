@@ -9,13 +9,13 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    TESTS= run_test_script_11.exe,run_test_script_12.exe,run_test_script_13.exe,run_test_script_14.exe,run_test_script_15.exe,run_test_script_16.exe,run_test_script_17.exe,run_test_script_18.exe,run_test_script_19.exe,run_test_script_20.exe;
+    TESTS= run_test_script_11.exe,run_test_script_12.exe,run_test_script_13.exe,run_test_script_14.exe,run_test_script_15.exe,run_test_script_19.exe,run_test_script_20.exe;
     ARGS = -v;
     COMM = SERIAL;
 }
 
 (FRAMEWORK, INSTALL) {
-    TESTS= run_test_script_21.exe,run_test_script_22.exe,run_test_script_23.exe,run_test_script_24.exe,run_test_script_25.exe,run_test_script_26.exe,run_test_script_27.exe,run_test_script_28.exe,run_test_script_29.exe,run_test_script_30.exe;
+    TESTS= run_test_script_21.exe,run_test_script_22.exe,run_test_script_23.exe,run_test_script_24.exe,run_test_script_25.exe,run_test_script_27.exe,run_test_script_28.exe,run_test_script_29.exe,run_test_script_30.exe;
     ARGS = -v;
     COMM = SERIAL;
 }
