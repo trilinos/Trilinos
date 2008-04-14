@@ -86,7 +86,7 @@ int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
 #ifndef ZOLTAN_COMPRESS
 #define ZOLTAN_FILE_open(path, mode, type) fopen(path, mode)
 #define ZOLTAN_FILE_printf(file, format ...) fprintf(file, ## format)
-#define ZOLTAN_FILE_scanf(retval, stream, format ... ) fscanf(stream, ## format)
+#define ZOLTAN_FILE_scanf(retval, stream, format ... ) *(retval) = fscanf(stream, ## format)
 #define ZOLTAN_FILE_puts(s, file) fputs(s,file)
 #define ZOLTAN_FILE_gets(buf, len, file) fgets(buf, len, file)
 #define ZOLTAN_FILE_putc(c, file) fputc(c, file)
