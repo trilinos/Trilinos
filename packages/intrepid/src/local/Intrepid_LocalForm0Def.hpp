@@ -235,7 +235,9 @@ void LocalForm0<Scalar>::fillLeft(LexContainer<Scalar> &           leftValues,
                    miLV[1] = qp; miFV[0] = qp;
                    for (int bf=0; bf<iRange[2]; bf++) {
                      miLV[2] = bf; miFV[1] = bf;
-                     leftValues.setValue(jacDet*funcVals.getValue(miFV), miLV);
+                     //leftValues.setValue(jacDet*funcVals.getValue(miFV), miLV);
+                     leftValues.getData()[cl*iRange[1]*iRange[2]+qp*iRange[2]+bf] =
+                     jacDet*funcVals.getData()[qp*iRange[2]+bf];
                    }
                  }
                }
@@ -316,7 +318,9 @@ void LocalForm0<Scalar>::fillRight(LexContainer<Scalar> &           rightValues,
                     miRV[1] = qp; miFV[0] = qp;
                     for (int bf=0; bf<iRange[2]; bf++) {
                       miRV[2] = bf; miFV[1] = bf;
-                      rightValues.setValue(cubWeights_[0][0][qp]*funcVals.getValue(miFV), miRV);
+                      //rightValues.setValue(cubWeights_[0][0][qp]*funcVals.getValue(miFV), miRV);
+                      rightValues.getData()[cl*iRange[1]*iRange[2]+qp*iRange[2]+bf] =
+                      cubWeights_[0][0][qp]*funcVals.getData()[qp*iRange[2]+bf];
                     }
                   }
                 }
@@ -422,7 +426,9 @@ void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
               miLeft[1] = qp; miRight[1] = qp;
               switch (opRank) {
                 case 3: { // scalar fields
-                  tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
+                  //tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
+                  tmpVal += leftValues.getData()[cl*numQps*numLeftBfs+qp*numLeftBfs+lbf]*
+                            rightValues.getData()[cl*numQps*numRightBfs+qp*numRightBfs+rbf];
                 }
                 break;
                 case 4: { // vector fields

@@ -38,58 +38,70 @@ template<class Scalar>
 Teuchos::Array<Teuchos::Array<Teuchos::Array<int> > > Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::tagToEnum_;
 
 
+
 template<class Scalar>
 Teuchos::Array<LocalDofTag> Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::enumToTag_;
+
 
 
 template<class Scalar>
 bool Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::isSet_ = false;
 
 
+
 template<class Scalar>
-Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::Basis_F0_TRI_C1_FEM_DEFAULT() {
-  if (!isSet_) {
-
-    /************ This section will differ depending on the basis *************/
-    ECell mycell = CELL_TRI;  // cell type
-    int numBf    = 3;         // number of basis functions
-    int tagSize  = 4;         // size of DoF tag
-    int posScId  = 1;         // position, counting from 0, of subcell id in the tag
-    int posBfId  = 2;         // position, counting from 0, of local Bf id in the tag
-
-    int tags[]  = {
-                    0, 0, 0, 1,
-                    0, 1, 0, 1,
-                    0, 2, 0, 1
-                  };
+Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::Basis_F0_TRI_C1_FEM_DEFAULT() {}
 
 
-    /************ This section is generic *************/
-    // build enumToTag array
-    enumToTag_.resize(numBf);
-    for (int i=0; i<numBf; i++)
-      for (int j=0; j<tagSize; j++)
-        enumToTag_[i].tag_[j] = tags[i*tagSize+j];
-    // build tagToEnum array
-    int maxBfId      = 0;
-    int maxScId = 0;
-    int maxDim       = MultiCell<Scalar>::getCellDim(mycell);  // max dimension for this cell type
-    for (int i=0; i<numBf; i++)  // find max local Bf id
-      if (maxBfId < tags[i*tagSize+posBfId])
-        maxBfId = tags[i*tagSize+posBfId];
-    for (int i=0; i<numBf; i++)  // find max subcell id
-      if (maxBfId < tags[i*tagSize+posScId])
-        maxScId = tags[i*tagSize+posScId];
-    Teuchos::Array<int> level1(maxBfId+1, -1);
-    Teuchos::Array<Teuchos::Array<int> > level2(maxScId+1, level1);
-    tagToEnum_.assign(maxDim+1, level2);
-    for (int i=0; i<numBf; i++)
-      tagToEnum_[tags[i*tagSize]][tags[i*tagSize+1]][tags[i*tagSize+2]] = i;
+
+template<class Scalar>
+void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
+  /************ This section will differ depending on the basis *************/
+  ECell mycell = CELL_TRI;  // cell type
+  int numBf    = 3;         // number of basis functions
+  int tagSize  = 4;         // size of DoF tag
+  int posScId  = 1;         // position, counting from 0, of subcell id in the tag
+  int posBfId  = 2;         // position, counting from 0, of local Bf id in the tag
+
+  int tags[]  = {
+                  0, 0, 0, 1,
+                  0, 1, 0, 1,
+                  0, 2, 0, 1
+                };
+
+
+  /************ This section is generic *************/
+  // build enumToTag array
+  enumToTag_.resize(numBf);
+  for (int i=0; i<numBf; i++) {
+    for (int j=0; j<tagSize; j++) {
+      enumToTag_[i].tag_[j] = tags[i*tagSize+j];
+    }
   }
-  isSet_ = true;
+  // build tagToEnum array
+  int maxBfId = 0;
+  int maxScId = 0;
+  int maxDim  = MultiCell<Scalar>::getCellDim(mycell);  // max dimension for this cell type
+  for (int i=0; i<numBf; i++) { // find max local Bf id
+    if (maxBfId < tags[i*tagSize+posBfId]) {
+      maxBfId = tags[i*tagSize+posBfId];
+    }
+  }
+  for (int i=0; i<numBf; i++) { // find max subcell id
+    if (maxBfId < tags[i*tagSize+posScId]) {
+      maxScId = tags[i*tagSize+posScId];
+    }
+  }
+  Teuchos::Array<int> level1(maxBfId+1, -1);
+  Teuchos::Array<Teuchos::Array<int> > level2(maxScId+1, level1);
+  tagToEnum_.assign(maxDim+1, level2);
+  for (int i=0; i<numBf; i++) {
+    tagToEnum_[tags[i*tagSize]][tags[i*tagSize+1]][tags[i*tagSize+2]] = i;
+  }
 }
 
-  
+
+
 template<class Scalar> 
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
@@ -216,9 +228,9 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                           std::invalid_argument,
                           ">>> ERROR (VarContainer): Invalid operator type");
   }
-
 }
   
+
   
 template<class Scalar>
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
@@ -230,22 +242,38 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 }
 
 
+
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTag dofTag) const {
+int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTag dofTag) {
+  if (!isSet_) {
+    initialize();
+    isSet_ = true;
+  }
   return tagToEnum_[dofTag.tag_[0]][dofTag.tag_[1]][dofTag.tag_[2]];
 }
 
 
+
 template<class Scalar>
-LocalDofTag Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) const {
+LocalDofTag Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) {
+  if (!isSet_) {
+    initialize();
+    isSet_ = true;
+  }
   return enumToTag_[id];
 }
 
 
+
 template<class Scalar>
-const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllLocalDofTags() const {
+const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllLocalDofTags() {
+  if (!isSet_) {
+    initialize();
+    isSet_ = true;
+  }
   return enumToTag_;
 }
+
 
 
 template<class Scalar>
@@ -254,16 +282,19 @@ ECell Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCellType() const {
 }
 
 
+
 template<class Scalar>
 EBasis Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getBasisType() const {
   return BASIS_FEM_DEFAULT;
 }
 
 
+
 template<class Scalar>
 ECoordinates Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
   return COORDINATES_CARTESIAN;
 }
+
 
 
 template<class Scalar>

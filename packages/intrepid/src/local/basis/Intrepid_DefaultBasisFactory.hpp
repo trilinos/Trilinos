@@ -63,7 +63,7 @@ class DefaultBasisFactory {
   DefaultBasisFactory() {
     /* List all basis keys with corresponding basis classes.
        Legend:
-       F_ - two-digit field code (see EField) - UPPER LIMIT is 40!
+       F_ - two-digit field code (see EField) - UPPER LIMIT is 41 due to unsigned long integer standard!
        C_ - two-digit cell code (see ECell)
        R  - one-digit reconstruction space code (see EReconstructionSpace)
        D_ - two-digit degree

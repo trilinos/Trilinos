@@ -110,7 +110,7 @@ class Basis {
       \return
               - local enumeration (Id)
   */
-  virtual int getLocalDofEnumeration(const LocalDofTag dofTag) const = 0;
+  virtual int getLocalDofEnumeration(const LocalDofTag dofTag) = 0;
 
 
   /** \brief Returns the local degree-of-freedom tag (LocalDofTag) for a given enumeration (Id).
@@ -120,14 +120,14 @@ class Basis {
       \return
               - local degree-of-freedom tag
   */
-  virtual LocalDofTag getLocalDofTag(const int id) const = 0;
+  virtual LocalDofTag getLocalDofTag(const int id) = 0;
 
 
   /** \brief Returns a Teuchos::Array containing local degree-of-freedom tags (LocalDofTag).
 
       \param dofTags  [out]  - Teuchos::Array of degree-of-freedom tags.
   */
-  virtual const Teuchos::Array<LocalDofTag> & getAllLocalDofTags() const = 0;
+  virtual const Teuchos::Array<LocalDofTag> & getAllLocalDofTags() = 0;
 
 
   /** \brief Returns cell type on which the basis is defined.

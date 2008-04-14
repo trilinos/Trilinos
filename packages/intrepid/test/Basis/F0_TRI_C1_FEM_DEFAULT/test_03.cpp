@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
       *outStream << "Computational engine: " << ECompEngineToString(compEng) << "\n";
       *outStream << "Measured time in sec: " << timer.totalElapsedTime() << "\n";
     }
+
   }
   catch (std::logic_error err) {
       *outStream << err.what() << "\n\n";

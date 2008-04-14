@@ -58,6 +58,8 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
   /** \brief Constructor.
   */
   Basis_F0_TRI_C1_FEM_DEFAULT();
+
+  void initialize();
     
   void getValues(VarContainer<Scalar>&                  outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
@@ -67,11 +69,11 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
                  const MultiCell<Scalar>&               mCell) const;
 
-  int getLocalDofEnumeration(const LocalDofTag dofTag) const;
+  int getLocalDofEnumeration(const LocalDofTag dofTag);
 
-  LocalDofTag getLocalDofTag(int id) const;
+  LocalDofTag getLocalDofTag(int id);
 
-  const Teuchos::Array<LocalDofTag> & getAllLocalDofTags() const;
+  const Teuchos::Array<LocalDofTag> & getAllLocalDofTags();
 
   ECell getCellType() const;
 
