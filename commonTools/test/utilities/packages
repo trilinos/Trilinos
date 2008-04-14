@@ -33,6 +33,7 @@ STD_NAME: moertel, DIR_NAME: moertel
 STD_NAME: moocho, DIR_NAME: moocho
 STD_NAME: new_package, DIR_NAME: new_package
 STD_NAME: nox, DIR_NAME: nox
+STD_NAME: pamgen, DIR_NAME: pamgen
 STD_NAME: pliris, DIR_NAME: pliris
 STD_NAME: pytrilinos, DIR_NAME: PyTrilinos
 STD_NAME: rbgen, DIR_NAME: rbgen 

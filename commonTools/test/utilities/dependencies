@@ -262,6 +262,11 @@ IF PACKAGE nox SUBDIRECTORY python THEN
 INSERT --disable-nox-python
 DONE
 
+# Pamgen -----------------------------------------------------------------------
+IF PACKAGE pamgen THEN
+REMOVE --enable-pamgen
+DONE
+
 # Pliris -----------------------------------------------------------------------
 IF PACKAGE pliris THEN
 REMOVE --enable-pliris
