@@ -24,13 +24,13 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
   IF(MPI_EXECUTABLE)
     IF(${MPI_EXECUTABLE} MATCHES mpiexec)
       SET(MPI_EXECUTABLE_FLAGS 
-  	    -n 1 -localonly
+  	    -n 2
 	    CACHE STRING
         "Flags for the MPI executable."
       )
     ELSE(${MPI_EXECUTABLE} MATCHES mpiexec)
       SET(MPI_EXECUTABLE_FLAGS 
-  	    -np 1
+  	    -np 2
 	    CACHE STRING
         "Flags for the MPI executable."
       )
