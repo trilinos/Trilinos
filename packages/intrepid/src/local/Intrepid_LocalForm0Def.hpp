@@ -226,10 +226,10 @@ void LocalForm0<Scalar>::fillLeft(LexContainer<Scalar> &           leftValues,
                VarContainer<Scalar> funcVals = getOperator(leftOp, mCell.getMyCellDim(), 0);
                Teuchos::Array<int> miLV(3);
                Teuchos::Array<int> miFV(2);
+               Matrix<Scalar> jacMat(mCell.getMyCellDim());
                for (int cl=0; cl<iRange[0]; cl++) {
                  miLV[0] = cl;
                  for (int qp=0; qp<iRange[1]; qp++) {
-                   Matrix<Scalar> jacMat(mCell.getMyCellDim());
                    jacMat = mCell.jacobian(cl, cubPoints_[0][0][qp]);
                    Scalar jacDet = jacMat.det();
                    miLV[1] = qp; miFV[0] = qp;
