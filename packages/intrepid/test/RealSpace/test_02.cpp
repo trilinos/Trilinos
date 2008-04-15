@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     };
 #endif
 
-    double singvec[] = {1.0, 2.0, 3.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0};
+    double singvec[] = {1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0};
     Matrix<double> mSing(singvec, 3);
 
 #ifdef HAVE_INTREPID_DEBUG
