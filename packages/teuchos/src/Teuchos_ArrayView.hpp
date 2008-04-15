@@ -309,6 +309,7 @@ void* ArrayView<T>::operator new(size_t)
 }
 
 
+#ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
 template<class T> inline
 void ArrayView<T>::operator delete(void*)
 {
@@ -317,6 +318,7 @@ void ArrayView<T>::operator delete(void*)
   TEST_FOR_EXCEPT(true);
 #endif
 }
+#endif // TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
 
 
 } // namespace Teuchos

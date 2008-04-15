@@ -344,7 +344,9 @@ private:
 
   // Disable dynamic allocation
 	static void* operator new(size_t);
+#ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
 	static void operator delete(void*);
+#endif
 
 };
 
