@@ -62,12 +62,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@echo ""
 	@echo "Trilinos package aztecoo built successfully"
-	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
-	@echo "For more details, please refer to the instructions"
-	@echo "contained in Trilinos/doc/check_installation.txt"
-	@echo ""
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -197,38 +192,3 @@ else
 AZTECOO_CHECK_COMM = serial
 endif
 
-run-examples:
-	@echo
-	@echo "==============================="
-	@echo "Running the AztecOO examples..."
-	@echo "==============================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(AZTECOO_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=AztecOOExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=aztecoo
-
-run-tests:
-	@echo
-	@echo "============================"
-	@echo "Running the AztecOO tests..."
-	@echo "============================"
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(AZTECOO_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=aztecoo
