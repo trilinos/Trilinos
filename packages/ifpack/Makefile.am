@@ -64,26 +64,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@echo 
-	@echo "        +----------------------------------------------------+"
-	@echo "        | Trilinos package IFPACK built successfully         |"
-	@echo "        |                                                    |"
-	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
-	@echo "        | verify that all the IFPACK examples run            |"
-	@echo "        | successfully. For more details, please refer to    |"
-	@echo "        | Trilinos/doc/check_installation.txt.               |"
-	@echo "        |                                                    |"
-	@echo "        | The IFPACK Users' Guide is located in              |"
-	@echo "        | Trilinos/packages/ifpack/doc/UsersGuide, or        |"
-	@echo "        | consult the IFPACK web site for more details.      |"
-	@echo "        |                                                    |"
-	@echo "        | Please send questions/comments to:                 |"
-	@echo "        | - ifpack-users@software.sandia.gov                 |"
-	@echo "        | - ifpack-developers@software.sandia.gov            |"
-	@echo "        |                                                    |"
-	@echo "        | Have fun!                                          |"
-	@echo "        +----------------------------------------------------+"
-	@echo 
+	@echo "Trilinos package IFPACK built successfully"
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -221,38 +202,3 @@ else
 ML_CHECK_COMM=serial
 endif
 
-run-examples:
-	@echo
-	@echo "=============================="
-	@echo "Running the IFPACK examples..."
-	@echo "=============================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ML_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=IFPACKExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=ifpack
-
-run-tests:
-	@echo
-	@echo "==========================="
-	@echo "Running the IFPACK tests..."
-	@echo "==========================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ML_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=ifpack
