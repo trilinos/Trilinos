@@ -15,6 +15,8 @@
 #define RefMaxwellPreconditioner ML_RMP
 //hax
 
+#define ENABLE_MS_MATRIX
+
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  
 #include "ml_common.h"
 #include "Epetra_Comm.h"
@@ -61,7 +63,9 @@ namespace ML_Epetra
     //sure the matrices last until after RefMaxwellPreconditioner does.
     RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
                              const Epetra_CrsMatrix& D0_Clean_Matrix,//T or D0 w/ nothing zero'd
+#ifdef ENABLE_MS_MATRIX
                              const Epetra_CrsMatrix& Ms_Matrix,      //M1(sigma)
+#endif
                              const Epetra_CrsMatrix& M0inv_Matrix,   //M0^{-1}
                              const Epetra_CrsMatrix& M1_Matrix,      //M1(1)
                              //                             const Epetra_CrsMatrix& TMT_Matrix,     //T' M1(sigma) T
@@ -173,8 +177,10 @@ namespace ML_Epetra
     Epetra_CrsMatrix * D0_Matrix_;
     //! Matrix: D0 w/ nothing zero'd
     const Epetra_CrsMatrix * D0_Clean_Matrix_;      
+#ifdef ENABLE_MS_MATRIX
     //! Matrix: M1(sigma)
     const Epetra_CrsMatrix * Ms_Matrix_;
+#endif
     //! Matrix: M0^{-1}
     const Epetra_CrsMatrix * M0inv_Matrix_;
     //! Matrix: M1(1)
@@ -193,7 +199,9 @@ namespace ML_Epetra
     //! Structure for compatibility between Epetra and ML column maps.    
     EpetraExt::CrsMatrix_SolverMap D0_Clean_Matrix_Trans_;
     //! Structure for compatibility between Epetra and ML column maps.    
+#ifdef ENABLE_MS_MATRIX
     EpetraExt::CrsMatrix_SolverMap Ms_Matrix_Trans_;
+#endif
     //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap M0inv_Matrix_Trans_;
     //! Structure for compatibility between Epetra and ML column maps.    
@@ -256,7 +264,6 @@ namespace ML_Epetra
     //@}
 
 
-#ifdef ML_TIMING
     //@{ \name Variables for Timing
     //! Number of applications
     int NumApplications_;
@@ -270,8 +277,6 @@ namespace ML_Epetra
     //! CPU time for construction of the preconditioner.
     double ConstructionTime_;
     //@}        
-#endif
-    
   };// end RefMaxwellPreconditioner
 }//end namespace ML_Epetra
 

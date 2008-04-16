@@ -20,6 +20,12 @@ extern void MVOUT (const Epetra_MultiVector & A, char * of);
 extern void IVOUT(const Epetra_IntVector & A, char * of);
 extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 
+#define ENABLE_FAST_PTAP
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_BlockMapOut.h"
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+/*#define KDD_DEBUG*/
 
 // ================================================ ====== ==== ==== == =
 /* This function does a "view" getrow in an ML_Operator.  This is intended to be
@@ -115,7 +121,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   print_hierarchy= List_.get("print hierarchy",false);  
   
   num_cycles  = List_.get("cycle applications",1);
-  ML_Set_PrintLevel(OutputLevel);
+  //  ML_Set_PrintLevel(OutputLevel);
 
   /* Sanity Checking*/
   int OperatorDomainPoints =  OperatorDomainMap().NumGlobalPoints();
@@ -455,14 +461,13 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 // Forms the coarse matrix, given the prolongator
 int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 {
-  ML_Operator *R= ML_Operator_Create(ml_comm_);
-  ML_Operator *P= ML_Operator_Create(ml_comm_);
-  ML_Operator *Temp_ML;
   CoarseMat_ML = ML_Operator_Create(ml_comm_);
   CoarseMat_ML->data_destroy=free;
+  ML_Operator *Temp_ML=0;
+#ifndef ENABLE_FAST_PTAP  
+  ML_Operator *R= ML_Operator_Create(ml_comm_);
+  ML_Operator *P= ML_Operator_Create(ml_comm_);
 
-
-  
   /* Build ML_Operator version of Prolongator_, Restriction Operator */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Prolongator Prewrap\n");
   ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator_,P,verbose_));
@@ -471,11 +476,14 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Prolongator Transpose\n");
   //NTS: ML_CHK_ERR won't work on this: it returns 1
   ML_Operator_Transpose_byrow(P, R);
-
+#else
+  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Running FAST_PTAP\n");
+#endif
 
   /* EXPERIMENTAL: Disable the addon */
   bool disable_addon=List_.get("refmaxwell: disable addon",false);
   const ML_RefMaxwell_11_Operator *Op11 = dynamic_cast<const ML_RefMaxwell_11_Operator*>(Operator_);
+#ifndef ENABLE_FAST_PTAP
   if(disable_addon && Op11){
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: AP (*without* addon)\n");
     ML_Operator *SM_ML = ML_Operator_Create(ml_comm_);
@@ -485,21 +493,30 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
     ML_Operator_Destroy(&SM_ML);
   }
   else{
+#endif
+#ifdef ENABLE_FAST_PTAP
+    Op11->PtAP(*Prolongator_,ml_comm_,&CoarseMat_ML);
+#else
     /* Do the A*P */
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: AP\n");
     ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
   }
-    
+#endif
+
+#ifndef ENABLE_FAST_PTAP
   /* DEBUG: output*/
 #ifndef NO_OUTPUT
   ML_Matrix_Print(Temp_ML,*Comm_,*EdgeRangeMap_,"coarse_temp.dat");
 #endif
 
+
   /* Do R * AP */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: RAP\n");
   R->num_rigid=R->num_PDEs=dim;
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
+#endif
 
+  
   /* Wrap to Epetra-land */
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix); 
   int nnz=100;
@@ -512,10 +529,28 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat0.dat");
 #endif
   
+#ifdef KDD_DEBUG
+  EpetraExt::BlockMapToMatrixMarketFile("coarsemat0_map.dat",CoarseMatrix->RowMap());
+  EpetraExt::RowMatrixToMatrixMarketFile("coarsemat0.dat",*CoarseMatrix);
+
+  ofstream opl("coarsemat0_params.dat");
+  Teuchos::ParameterList dummy, ListCoarse;
+  ListCoarse=List_.get("edge matrix free: coarse",dummy);
+  Teuchos::XMLParameterListWriter XMLR;
+  opl << XMLR.toXML(ListCoarse);
+#endif
+
+
+
   /* Cleanup */
+#ifndef ENABLE_FAST_PTAP
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&R);
-  ML_Operator_Destroy(&Temp_ML);
+#else
+  if(Temp_ML)
+#endif
+    ML_Operator_Destroy(&Temp_ML);
+
   ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;//HAX  
   return 0;
 }/*end FormCoarseMatrix*/
@@ -549,11 +584,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
 // ================================================ ====== ==== ==== == = 
 //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
 int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const{
-  static int iteration=0;  //HAQ
-  double re0=0,re1=0,rn1=0,re2=0,re3=0;
-
-
-  
   /* Sanity Checks */
   int NumVectors=B.NumVectors();
   if (!B.Map().SameAs(*EdgeDomainMap_)) ML_CHK_ERR(-1);
@@ -566,69 +596,39 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 
   for(int i=0;i<num_cycles;i++){    
     /* Pre-smoothing */
-#ifndef NO_OUTPUT
-    MVOUT2(X,"xinit11",iteration);
-#endif   
-    if(very_verbose_) re0=cms_compute_residual(Operator_,B,X);
 #ifdef HAVE_ML_IFPACK
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 #endif
-    if(very_verbose_) re1=cms_compute_residual(Operator_,B,X);
 
-#ifndef NO_OUTPUT    
-    MVOUT2(X,"sm11-1",iteration);
-#endif
     if(MaxLevels > 0){
-
-      /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
-      ML_CHK_ERR(Operator_->Apply(X,r_edge));
-      ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
-#ifndef NO_OUTPUT      
-      MVOUT2(r_edge,"re11",iteration);
-#endif      
-      /* Xfer to coarse grid (r_n = P' * r_e) */
-      ML_CHK_ERR(Prolongator_->Multiply(true,r_edge,r_node));
-#ifndef NO_OUTPUT      
-      MVOUT2(r_node,"rn11",iteration);
-#endif      
+      if(i != 0 || Smoother_){
+        /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
+        ML_CHK_ERR(Operator_->Apply(X,r_edge));
+        ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
+        
+        /* Xfer to coarse grid (r_n = P' * r_e) */
+        ML_CHK_ERR(Prolongator_->Multiply(true,r_edge,r_node));
+      }
+      else{
+        /* Xfer to coarse grid (r_n = P' * r_e) */
+        ML_CHK_ERR(Prolongator_->Multiply(true,B,r_node));
+      }
+        
       /* AMG on coarse grid  (e_n = (CoarseMatrix)^{-1} r_n) */
       ML_CHK_ERR(CoarsePC->ApplyInverse(r_node,e_node));
-#ifndef NO_OUTPUT      
-      MVOUT2(e_node,"en11",iteration);
-#endif      
-      if(very_verbose_) rn1=cms_compute_residual(CoarseMatrix,r_node,e_node);      
       
       /* Xfer back to fine grid (e_e = P * e_n) */
       ML_CHK_ERR(Prolongator_->Multiply(false,e_node,e_edge));
-#ifndef NO_OUTPUT      
-      MVOUT2(e_edge,"ee11",iteration);
-#endif      
+
       /* Add in correction (x = x + e_e) */
       ML_CHK_ERR(X.Update(1.0,e_edge,1.0));
-#ifndef NO_OUTPUT      
-      MVOUT2(X,"xup11",iteration);
-#endif      
-      if(very_verbose_) re2=cms_compute_residual(Operator_,B,X);
     }/*end if*/
     
     /* Post-Smoothing*/
 #ifdef HAVE_ML_IFPACK
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 #endif
-    if(very_verbose_) re3=cms_compute_residual(Operator_,B,X);
-    
-    if(very_verbose_ && !Comm_->MyPID())
-      printf("11 Resid Reduction: %6.4e / %6.4e / %6.4e / %6.4e\n",re1/re0,re2/re1,re3/re2,re3/re0);
-
   }/*end for*/
-
-#ifndef NO_OUTPUT
-  /* Debug - Dump Vectors */
-  MVOUT2(B,"b11",iteration);
-  MVOUT2(X,"x11",iteration);
-#endif
-  iteration++;//HAQ
-  
   return 0;
 }/*end ApplyInverse*/
 

@@ -28,8 +28,6 @@
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 namespace ML_Epetra{
 
-  //#define USE_ML_TRANSPOSE
-  
 /*! ML_RefMaxwell_11_Operator encapsulates the reformulated (1,1) block
   operator of the system described in Bochev, Hu, Siefert and Tuminaro, 2007.
   It inherits from Epetra_Operator_With_MatMat, and provides encapsulation for
@@ -85,13 +83,17 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return -1;}
 
 
-  //! Computes C= <me> * A.  OptimizeStorage *must* be called for moth A and the
+  //! Computes C= <me> * A.  OptimizeStorage *must* be called for both A and the
   //matrices in *this, before this routine can work.
   virtual int MatrixMatrix_Multiply(const Epetra_CrsMatrix & A, Epetra_CrsMatrix **C) const;
 
-  //! Computes C= <me> * A.  OptimizeStorage *must* be called for moth A and the
+  //! Computes C= <me> * A.  OptimizeStorage *must* be called for both A and the
   //matrices in *this, before this routine can work.
   virtual int MatrixMatrix_Multiply(const Epetra_CrsMatrix & A, ML_Comm *comm, ML_Operator **C) const;
+
+  //! Computes C= A^T * <me> * A.  OptimizeStorage *must* be called for both A and the
+  //matrices in *this, before this routine can work.
+  virtual int PtAP(const Epetra_CrsMatrix & A, ML_Comm *comm, ML_Operator **C) const;
   
   
   //@}
@@ -132,24 +134,10 @@ private:
   //! Matrix: M1 D0^T M0inv D0 M1
   Epetra_CrsMatrix ** Addon_Matrix_;
 
-
-#ifdef USE_CORE_MATRIX
-  //! Matrix: D0^T M0inv D0
-  Epetra_CrsMatrix * Core_Matrix_;
-
-  //! Reindexed Matrix: D0^T M0inv D0
-  Epetra_CrsMatrix * Core_Matrix_Reindex_;
-
-  //! Reindexer for Matrix: D0^T M0inv D0
-  EpetraExt::CrsMatrix_Reindex * Core_Matrix_Reindexer_;
-#else
   //! Matrix: D0^T
   Epetra_CrsMatrix * D0T_Matrix_;
   EpetraExt::RowMatrix_Transpose * D0_Matrix_Transposer_;
   EpetraExt::CrsMatrix_SolverMap D0T_Matrix_Trans_;
-#endif
-
-  
   
   //! Multi_Crs_Matrix
   Epetra_Multi_CrsMatrix *Addon_;

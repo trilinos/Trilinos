@@ -15,6 +15,9 @@
 #define BASE_IDX 0
 #define NO_OUTPUT
 
+/* Disabling this option should result in a slight speedup, but will break matvecs with the 11-Operator */
+#define MANUALLY_TRANSPOSE_D0
+
 #ifdef NO_OUTPUT
 #define MVOUT2(x,y,z) ;
 #define MVOUT(x,y) ;
@@ -36,12 +39,7 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
                                                              const Epetra_CrsMatrix& D0_Matrix,    //T or D0
                                                              const Epetra_CrsMatrix& M0inv_Matrix, //M0^{-1}
                                                              const Epetra_CrsMatrix& M1_Matrix):   //M1(1)
-  SM_Matrix_(&SM_Matrix),Addon_Matrix_(0)
-#ifdef USE_CORE_MATRIX
-  ,Core_Matrix_(0),Core_Matrix_Reindex_(0),Core_Matrix_Reindexer_(0)
-#else
-  ,D0T_Matrix_(0)
-#endif
+  SM_Matrix_(&SM_Matrix),Addon_Matrix_(0),D0T_Matrix_(0)
 {
   Label_=new char [80];
   strcpy(Label_,"ML_RefMaxwell_11_Operator");
@@ -49,56 +47,25 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
   DomainMap_ = &(SM_Matrix_->OperatorDomainMap());
   RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
 
-
-#ifdef USE_CORE_MATRIX  
-  printf("Building Core Matrix\n");
-  /* Build the DO M0 D0^T Core */
-  //  Epetra_CrsMatrix *core_temp[2] = {(Epetra_CrsMatrix*)&D0_Matrix,(Epetra_CrsMatrix*)&M0inv_Matrix};
-  //  Epetra_Multi_CrsMatrix CoreTemp(2,core_temp);
-  //  int rv=CoreTemp.MatrixMatrix_Multiply(D0_Matrix_transpose,&Core_Matrix_);a
-  //  if(rv) printf("[%d] ERROR: Core Matrix formation failed with error code %d\n",Comm_->MyPID(),rv);
-  //  else  printf("[%d] ML_RefMaxwell_11_Operator: Core Built\n",Comm_->MyPID());
-  
-  /* Build the D0 M0 D0^T Core with EpetraExt */
-  Epetra_CrsMatrix temp1(Copy,M0inv_Matrix.RangeMap(),BASE_IDX);
-  Core_Matrix_=new Epetra_CrsMatrix(Copy,*RangeMap_,BASE_IDX);
-  
-  EpetraExt::MatrixMatrix::Multiply(M0inv_Matrix,false,D0_Matrix,true,temp1);
-  EpetraExt::MatrixMatrix::Multiply(D0_Matrix,false,temp1,false,*Core_Matrix_);
-  Core_Matrix_->OptimizeStorage();
-  //NTS: For whatever reason ML's wrap routines die *horribly* when we play with
-  //the transposed matrix created by EpetraExt::RowMatrix_Transpose.  This
-  //should be fixed eventually.  As for now, we'll just use EpetraExt to build
-  //the core.
-
-  // Deal w/ reindexing garbage for the core matrix
-  Epetra_Map RangeMap_Consec(-1,DomainMap_->NumMyElements(),BASE_IDX,*Comm_);
-  Core_Matrix_Reindexer_=new EpetraExt::CrsMatrix_Reindex(RangeMap_Consec);    
-  Core_Matrix_Reindex_=&((*Core_Matrix_Reindexer_)(*Core_Matrix_));
-
-#ifndef NO_OUTPUT
-  Epetra_CrsMatrix_Print(*Core_Matrix_,"core_matrix.dat");
-#endif
-  
-  /* Build the Epetra_Multi_CrsMatrix */
-  Addon_Matrix_=new Epetra_CrsMatrix*[3];
-  Addon_Matrix_[0]=Addon_Matrix_[2]=(Epetra_CrsMatrix*)&M1_Matrix;
-  Addon_Matrix_[1]=Core_Matrix_Reindex_;  
-  Addon_=new Epetra_Multi_CrsMatrix(3,Addon_Matrix_);
-#else
-
   /* Transpose D0 */
+#ifdef MANUALLY_TRANSPOSE_D0
   D0_Matrix_Transposer_= new EpetraExt::RowMatrix_Transpose(true,(Epetra_Map*)&M0inv_Matrix.OperatorRangeMap());
   D0T_Matrix_= dynamic_cast<Epetra_CrsMatrix*>( & ((*D0_Matrix_Transposer_)((Epetra_CrsMatrix&)D0_Matrix)));
   D0T_Matrix_= dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0T_Matrix_,D0T_Matrix_Trans_,"D0T",false));
+#endif
   
   /* Build the Epetra_Multi_CrsMatrix */
   Addon_Matrix_=new Epetra_CrsMatrix*[5];
   Addon_Matrix_[0]=Addon_Matrix_[4]=(Epetra_CrsMatrix*)&M1_Matrix;
-  Addon_Matrix_[1]=(Epetra_CrsMatrix*)&D0_Matrix;Addon_Matrix_[3]=D0T_Matrix_;
+  Addon_Matrix_[1]=(Epetra_CrsMatrix*)&D0_Matrix;
+#ifdef MANUALLY_TRANSPOSE_D0
+  Addon_Matrix_[3]=D0T_Matrix_;
+#else
+  Addon_Matrix_[3]=(Epetra_CrsMatrix*)&D0_Matrix;//HAQ
+#endif
   Addon_Matrix_[2]=(Epetra_CrsMatrix*)&M0inv_Matrix;
   Addon_=new Epetra_Multi_CrsMatrix(5,Addon_Matrix_);
-#endif  
+
 }/*end Constructor*/ 
 
 // ================================================ ====== ==== ==== == = 
@@ -108,10 +75,7 @@ ML_Epetra::ML_RefMaxwell_11_Operator::~ML_RefMaxwell_11_Operator()
   if(Label_) delete [] Label_;
   if(Addon_Matrix_) delete [] Addon_Matrix_;
   if(Addon_) delete Addon_;
-#ifdef USE_CORE_MATRIX
-  if(Core_Matrix_) delete Core_Matrix_;
-  if(Core_Matrix_Reindexer_) delete Core_Matrix_Reindexer_;
-#else
+#ifdef MANUALLY_TRANSPOSE_D0
   if(D0_Matrix_Transposer_) delete D0_Matrix_Transposer_;
 #endif
 }/*end destructor*/
@@ -133,10 +97,120 @@ int ML_Epetra::ML_RefMaxwell_11_Operator::Apply(const Epetra_MultiVector& X, Epe
   return 0;
 }/*end Apply*/
 
+
+// ================================================ ====== ==== ==== == = 
+// Computes C= A^T * <me> * A.  OptimizeStorage *must* be called for both A and the
+// matrices in *this, before this routine can work.
+int ML_Epetra::ML_RefMaxwell_11_Operator::PtAP(const Epetra_CrsMatrix & P, ML_Comm *comm, ML_Operator **C) const{
+  ML_Operator *SM_ML,*P_ML,*R_ML,*PtSMP_ML,*temp1,*temp2,*opwrap,*D0_M1_P_ML;
+
+  /* General Stuff */  
+  ML_Comm* temp = global_comm;
+  P_ML  = ML_Operator_Create(comm);
+  R_ML  = ML_Operator_Create(comm);;
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&P,P_ML);  
+  ML_Operator_Transpose_byrow(P_ML,R_ML);
+
+  /* Do the SM part */
+  SM_ML = ML_Operator_Create(comm);
+  temp1 = ML_Operator_Create(comm);
+  PtSMP_ML  = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
+  ML_2matmult(SM_ML,P_ML,temp1,ML_CSR_MATRIX);
+  ML_2matmult_block(R_ML,temp1,PtSMP_ML,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&temp1);
+  ML_Operator_Destroy(&SM_ML);
+#ifdef MANUALLY_TRANSPOSE_D0
+  ML_Operator_Destroy(&R_ML);
+#endif
+  ML_Matrix_Print(PtSMP_ML,*Comm_,*RangeMap_,"ptsmp.dat");
+
+#ifdef MANUALLY_TRANSPOSE_D0
+  /* Do the Addon: Step #1: M1 * P*/
+  opwrap = ML_Operator_Create(comm);
+  temp1 = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Addon_Matrix_[4],opwrap);
+  ML_2matmult(opwrap,P_ML,temp1,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);
+  ML_Operator_Destroy(&P_ML);
+
+  /* Do the Addon: Step #2: D0^T *(M1 * P)*/
+  opwrap = ML_Operator_Create(comm);
+  D0_M1_P_ML = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Addon_Matrix_[3],opwrap);
+  ML_2matmult(opwrap,temp1,D0_M1_P_ML,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);
+  ML_Operator_Destroy(&temp1);
+  
+  /* Do the Addon: Step #3: M0^{-1} * (D0^T * M1 * P)*/
+  opwrap = ML_Operator_Create(comm);
+  temp1 = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Addon_Matrix_[2],opwrap);
+  ML_2matmult(opwrap,D0_M1_P_ML,temp1,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);  
+
+  /* Do the Addon: Step #4: Transpose (D0^T * M1 * P) & multiply by output from Step 3*/
+  opwrap = ML_Operator_Create(comm);
+  temp2 = ML_Operator_Create(comm);  
+  ML_Operator_Transpose_byrow(D0_M1_P_ML,opwrap);
+  ML_2matmult(opwrap,temp1,temp2,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);
+  ML_Operator_Destroy(&temp1);
+  ML_Operator_Destroy(&D0_M1_P_ML);
+  ML_Matrix_Print(temp2,*Comm_,*RangeMap_,"pt_add_p.dat");
+#else
+  ML_Operator *P_M1_D0_ML;
+
+  /* Do the Addon: Step #1: P^T * M1 */
+  opwrap = ML_Operator_Create(comm);
+  temp1 = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Addon_Matrix_[0],opwrap);
+  ML_2matmult_block(R_ML,opwrap,temp1,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);
+  ML_Operator_Destroy(&P_ML);
+  ML_Operator_Destroy(&R_ML);
+  
+  /* Do the Addon: Step #2: (P^T * M1) * D0*/
+  opwrap = ML_Operator_Create(comm);
+  P_M1_D0_ML = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Addon_Matrix_[1],opwrap);
+  ML_2matmult_block(temp1,opwrap,P_M1_D0_ML,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);
+  ML_Operator_Destroy(&temp1);  
+
+  /* Do the Addon: Step #3: (P^T * M1 * D0) * M0^{-1} */
+  opwrap = ML_Operator_Create(comm);
+  temp1 = ML_Operator_Create(comm);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)Addon_Matrix_[2],opwrap);
+  ML_2matmult(P_M1_D0_ML,opwrap,temp1,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);  
+
+  /* Do the Addon: Step #4: Transpose (P^T * M1 * D0) & multiply by output from Step 3*/
+  opwrap = ML_Operator_Create(comm);
+  temp2 = ML_Operator_Create(comm);  
+  ML_Operator_Transpose_byrow(P_M1_D0_ML,opwrap);
+  ML_2matmult(temp1,opwrap,temp2,ML_CSR_MATRIX);
+  ML_Operator_Destroy(&opwrap);
+  ML_Operator_Destroy(&temp1);
+  ML_Operator_Destroy(&P_M1_D0_ML);
+  ML_Matrix_Print(temp2,*Comm_,*RangeMap_,"pt_add_p_rev.dat");   
+#endif
+
+  /* Add the matrices together */
+  ML_Operator_Add(PtSMP_ML,temp2,*C,ML_CSR_MATRIX,1.0);
+  ML_Matrix_Print(*C,*Comm_,*RangeMap_,"ptap.dat");  
+
+  /* Cleanup */
+  global_comm = temp;
+  ML_Operator_Destroy(&temp2);
+  ML_Operator_Destroy(&PtSMP_ML);
+}
+
+
 // ================================================ ====== ==== ==== == = 
 // Computes C= <me> * A
 int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_CrsMatrix & A, ML_Comm *comm, ML_Operator **C) const
-{  
+{
   ML_Operator *SM_ML,*A_ML,*temp1,*temp2;
 
   /* General Stuff */  
@@ -152,7 +226,6 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   ML_2matmult(SM_ML,A_ML,temp1,ML_CSR_MATRIX);
   ML_Matrix_Print(temp1,*Comm_,*RangeMap_,"smp.dat");
 
-  //#define SANITY_CHECK
 #ifdef SANITY_CHECK
   /* DEBUG */
   Epetra_CrsMatrix C_EP3(Copy,*DomainMap_,BASE_IDX);
