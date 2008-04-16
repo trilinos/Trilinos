@@ -103,6 +103,7 @@ static int MLZ_offset;
 
 static int* MLZ_indices;
 
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -283,12 +284,11 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;
+  char value[80];
 
   /* sets the number of partitions */
-  char value[80];
   sprintf(value,"%d",N_parts);
   Zoltan_Set_Param(zz,"num_global_partitions", value);
-
 
   /*
    * Call Zoltan to compute a new decomposition. 
@@ -598,7 +598,9 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   struct Zoltan_Struct *zz;
   float version;
   int error;
-
+  MPI_Comm Zoltan_SubComm = comm->USR_comm;/*CMS*/
+  int color = MPI_UNDEFINED; /*CMS*/
+  
   /* ------------------- execution begins --------------------------------- */
 
   t0 = GetClock();
@@ -658,62 +660,74 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
     return 1;
   }
 
-  /* BEGIN OF ZOLTAN CALL */
+
+  /* Define Subcommunicator */
+  if (Nrows > 0) color = 0;
+  MPI_Comm_split(comm->USR_comm,color,comm->ML_mypid,&Zoltan_SubComm);  
+
+  if (Nrows > 0){
+    /* BEGIN OF ZOLTAN CALL */
+    
+    /*  Initialize Zoltan. It will start MPI if we haven't already. */
+    /*  Do this only once. */
+
+    if ((error = Zoltan_Initialize(0, NULL, &version)) != ZOLTAN_OK) {
+      printf("fatal(10) Zoltan_Initialize returned error code, %d", error);
+      goto End;
+    }
+
+
+
+    /*
+     *  Create a Zoltan structure.
+     */
+    if ((zz = Zoltan_Create(Zoltan_SubComm)) == NULL) {    
+      printf("fatal(11)  NULL returned from Zoltan_Create()\n");
+      goto End;
+    }
+
+    /*
+     *  Tell Zoltan what kind of local/global IDs we will use.
+     *  In our case, each GID is two ints and there are no local ids.
+     *  One can skip this step if the IDs are just single ints.
+     */
+    Zoltan_Set_Param(zz, "num_gid_entries", "1");
+    Zoltan_Set_Param(zz, "num_lid_entries", "0");
+    Zoltan_Set_Param(zz, "obj_weight_dim", "1");
+    
+    /*
+     *  Set up Zoltan query functions for our Matrix data structure.
+     */
+    
+    if (!setup_zoltan(zz, Amatrix,zoltan_type, zoltan_estimated_its,zoltan_timers,
+		      smoothing_steps, rows_per_amalgamated_row)){
+      printf("fatal(12) Error returned from setup_zoltan\n");
+      goto End;
+    }
   
-  /*  Initialize Zoltan. It will start MPI if we haven't already. */
-  /*  Do this only once. */
-
-  if ((error = Zoltan_Initialize(0, NULL, &version)) != ZOLTAN_OK) {
-    printf("fatal(10) Zoltan_Initialize returned error code, %d", error);
-    goto End;
+    /*
+     * Run Zoltan to compute a new load balance.
+     * Data migration may also happen here.
+     */
+    /* Uncomment the next line to produce debugging information.*/
+    
+    /*Zoltan_Generate_Files(zz, "ZoltanDebugging", 1, 1, 0, 0);*/
+    if (!run_zoltan(N_parts, zz, Amatrix, Nrows, graph_decomposition,
+		    comm->ML_mypid)) {
+      printf("fatal(13) Error returned from run_zoltan\n");
+      goto End;
+    }
+    
+    
+  End:
+    /* Destroy Zoltan structure */
+    Zoltan_Destroy(&zz);
+    
+    /* END OF ZOLTAN CALL */
+    /* ------------------- that's all folks --------------------------------- */
+    
   }
-
-  /*
-   *  Create a Zoltan structure.
-   */
-  if ((zz = Zoltan_Create(comm->USR_comm)) == NULL) {
-    printf("fatal(11)  NULL returned from Zoltan_Create()\n");
-    goto End;
-  }
-
-  /*
-   *  Tell Zoltan what kind of local/global IDs we will use.
-   *  In our case, each GID is two ints and there are no local ids.
-   *  One can skip this step if the IDs are just single ints.
-   */
-  Zoltan_Set_Param(zz, "num_gid_entries", "1");
-  Zoltan_Set_Param(zz, "num_lid_entries", "0");
-  Zoltan_Set_Param(zz, "obj_weight_dim", "1");
   
-  /*
-   *  Set up Zoltan query functions for our Matrix data structure.
-   */
-  if (!setup_zoltan(zz, Amatrix,zoltan_type, zoltan_estimated_its,zoltan_timers,
-                    smoothing_steps, rows_per_amalgamated_row)){
-    printf("fatal(12) Error returned from setup_zoltan\n");
-    goto End;
-  }
-
-  /*
-   * Run Zoltan to compute a new load balance.
-   * Data migration may also happen here.
-   */
-  /* Uncomment the next line to produce debugging information.*/
-
-  /*Zoltan_Generate_Files(zz, "ZoltanDebugging", 1, 1, 0, 0);*/
-  if (!run_zoltan(N_parts, zz, Amatrix, Nrows, graph_decomposition,
-                  comm->ML_mypid)) {
-    printf("fatal(13) Error returned from run_zoltan\n");
-    goto End;
-  }
-
-End:
-  /* Destroy Zoltan structure */
-  Zoltan_Destroy(&zz);
-
-  /* END OF ZOLTAN CALL */
-  /* ------------------- that's all folks --------------------------------- */
-
   t0 = GetClock() - t0;
 
   if ( mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
@@ -726,6 +740,9 @@ End:
   
   /* Cleanup */
   free(MLZ_indices);
+
+  if(Nrows > 0)
+    MPI_Comm_free(&Zoltan_SubComm);
   
   /* returns the *global* number of partitions */
   return(N_parts);
