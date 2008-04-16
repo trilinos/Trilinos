@@ -731,26 +731,6 @@ uninstall-am:
 all-local:
 	@if test ! -e $(top_builddir)/examples/XML/ml_ParameterList.xml; then cp $(top_srcdir)/examples/XML/ml_ParameterList.xml $(top_builddir)/examples/XML; fi
 	@echo "Trilinos package ml built successfully"
-	@echo 
-	@echo "        +----------------------------------------------------+"
-	@echo "        | Trilinos package ML built successfully             |"
-	@echo "        |                                                    |"
-	@echo "        | You might want to type \"$(MAKE) run-examples\" to      |"
-	@echo "        | verify that all the ML examples run                |"
-	@echo "        | successfully. For more details, please refer to    |"
-	@echo "        | Trilinos/doc/check_installation.txt.               |"
-	@echo "        |                                                    |"
-	@echo "        | The ML Users' Guide is located in                  |"
-	@echo "        | Trilinos/packages/ml/doc/mlguide.pdf. You can also |"
-	@echo "        | consult the ML web site for more details.          |"
-	@echo "        |                                                    |"
-	@echo "        | Please send questions/comments to:                 |"
-	@echo "        | - ml-users@software.sandia.gov                     |"
-	@echo "        | - ml-developers@software.sandia.gov                |"
-	@echo "        |                                                    |"
-	@echo "        | Have fun!                                          |"
-	@echo "        +----------------------------------------------------+"
-	@echo 
 
 @BUILD_TESTS_TRUE@tests: examples
 @BUILD_TESTS_TRUE@	@echo ""
@@ -815,45 +795,6 @@ install-everything:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
-
-run-examples:
-	@echo
-	@echo "=========================="
-	@echo "Running the ML examples..."
-	@echo "=========================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ML_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=MLExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=ml
-
-run-tests:
-	@echo
-	@echo "====================================================="
-	@echo "Running the ML tests in category ${TRILINOS_TEST_CATEGORY}"
-	@echo "====================================================="
-	@echo
-	@echo "To change categories, type"
-	@echo "  make run-tests TRILINOS_TEST_CATEGORY=some_test_category"
-	@echo "See ml/test/definition for your choices."
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ML_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=$(TRILINOS_TEST_CATEGORY) \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=ml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

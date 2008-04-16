@@ -63,12 +63,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
 	@echo "Trilinos package isorropia built successfully."
-	@echo "For more details, please refer to the instructions"
-	@echo "contained in Trilinos/doc/check_installation.txt"
-	@echo ""
-#	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -205,38 +200,3 @@ else
 ISORROPIA_COMM=serial
 endif
 
-run-examples:
-	@echo
-	@echo "=============================="
-	@echo "Running the Isorropia examples..."
-	@echo "=============================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ISOROPIA_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=IsorropiaExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=isorropia
-
-run-tests:
-	@echo
-	@echo "==========================="
-	@echo "Running the Isorropia tests..."
-	@echo "==========================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ISORROPIA_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=isorropia
