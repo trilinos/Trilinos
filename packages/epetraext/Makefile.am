@@ -62,9 +62,6 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 all-local:
 	if [ $(srcdir) != $(top_builddir) ]; then cp -f $(srcdir)/example/inout/matlab.h5 $(top_builddir)/example/inout/matlab.h5 ; fi
 	@echo "Trilinos package epetraext built successfully"
-	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
-	@echo "For more details, please refer to the instructions"
-	@echo "contained in Trilinos/doc/check_installation.txt"
 
 
 ## #######################################################################
@@ -200,41 +197,3 @@ else
 EPETRAEXT_CHECK_COMM=serial
 endif
 
-run-examples:
-	@echo
-	@echo "================================="
-	@echo "Running the EpetraExt examples..."
-	@echo "================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(EPETRAEXT_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=EpetraExtExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=epetraext
-
-run-tests:
-	@echo
-	@echo "=============================="
-	@echo "Running the EpetraExt tests..."
-	@echo "=============================="
-	@echo
-	@echo "You are now running the complete EpetraExt test suite (this may"
-	@echo "test the executables in the examples subdirectory)."
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(EPETRAEXT_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=epetraext
