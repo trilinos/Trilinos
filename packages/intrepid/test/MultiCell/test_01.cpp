@@ -396,11 +396,11 @@ int main(int argc, char *argv[]) {
     Point<double> randomRefPoint(2,FRAME_REFERENCE);
     
     for(int numPts = 0; numPts < 500; numPts++){
-      srand( time(NULL)*numPts );			
+      std::srand( std::time(NULL)*numPts );			
       
       // Two random numbers between 0 and 1
-      double rx = ((double)rand())/RAND_MAX;	
-      double ry = ((double)rand())/RAND_MAX;	
+      double rx = ((double)std::rand())/RAND_MAX;	
+      double ry = ((double)std::rand())/RAND_MAX;	
       
       // Make a random point inside the reference CELL_TRI
       if( rx + ry <= 1.0 ) {

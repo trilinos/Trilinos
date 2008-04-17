@@ -191,6 +191,7 @@ AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([vector vector.h], [break],)
 AC_CHECK_HEADERS([map map.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
+AC_CHECK_HEADERS([time time.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Intrepid requires at least one or the other.]])
@@ -230,6 +231,10 @@ fi
 
 if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Intrepid requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_time" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find time or time.h.  Intrepid requires at least one or the other.]])
 fi
 
 

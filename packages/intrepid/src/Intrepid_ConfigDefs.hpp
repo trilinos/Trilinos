@@ -158,6 +158,12 @@
 #include <map.h>
 #endif
 
+#ifdef HAVE_TIME
+#include <time>
+#elif defined(HAVE_TIME_H)
+#include <time.h>
+#endif
+
 #ifdef HAVE_STRING
 #include <string>
 #elif defined(HAVE_STRING_H)

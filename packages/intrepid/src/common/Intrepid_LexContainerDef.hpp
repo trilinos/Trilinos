@@ -134,6 +134,13 @@ int LexContainer<Scalar>::getIndexBound(const int whichIndex) const {
 template<class Scalar>
 int LexContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex) const {
 
+  // Check if empty multi-index.
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( multiIndex.size() == 0 ),
+                      std::invalid_argument,
+                      ">>> ERROR (LexContainer): Empty multiIndex!");
+#endif
+
   // Check if number of multi-indices matches rank of the LexContainer object
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( multiIndex.size() != indexRange_.size() ),
@@ -141,25 +148,75 @@ int LexContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex) 
                       ">>> ERROR (LexContainer): Number of multi-indices does not match rank of container.");
 #endif
     
-  // Compute address using Horner's nested scheme: intialize address to 0th index value
-  int address = multiIndex[0];
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( ( multiIndex[0] < 0) || ( multiIndex[0] >= indexRange_[0]) ),
                       std::out_of_range,
                       ">>> ERROR (LexContainer): Multi-index component out of range.");    
 #endif  
-  
+
   int rank = indexRange_.size();
-  for (int r = 0; r < rank - 1; r++){
+  int address = 0;
+  switch (rank) {
+    // the first four cases allow for somewhat faster address computations
+    case 4:
 #ifdef HAVE_INTREPID_DEBUG
-    TEST_FOR_EXCEPTION( ( (multiIndex[r+1] < 0) || (multiIndex[r+1] >= indexRange_[r+1]) ),
-                        std::out_of_range,
-                        ">>> ERROR (LexContainer): Multi-index component out of range.");    
+      TEST_FOR_EXCEPTION( ( (multiIndex[3] < 0) || (multiIndex[3] >= indexRange_[3]) ),
+                          std::out_of_range,
+                          ">>> ERROR (LexContainer): Multi-index component out of range.");    
 #endif
-    
-    // Add increment
-    address = address*indexRange_[r+1] + multiIndex[r+1];
-  }
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= indexRange_[2]) ),
+                          std::out_of_range,
+                          ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= indexRange_[1]) ),
+                          std::out_of_range,
+                          ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+      address = ((multiIndex[0]*indexRange_[1]+multiIndex[1])*indexRange_[2]+multiIndex[2])*indexRange_[3]+multiIndex[3];
+      break;
+
+    case 3:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= indexRange_[2]) ),
+                          std::out_of_range,
+                          ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= indexRange_[1]) ),
+                          std::out_of_range,
+                          ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+      address = (multiIndex[0]*indexRange_[1]+multiIndex[1])*indexRange_[2]+multiIndex[2];
+      break;
+
+    case 2:
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= indexRange_[1]) ),
+                          std::out_of_range,
+                          ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+      address = multiIndex[0]*indexRange_[1]+multiIndex[1];
+      break;
+    case 1:
+      address = multiIndex[0];
+      break;
+
+    default:
+      // Compute address using Horner's nested scheme: intialize address to 0th index value
+      address = multiIndex[0];
+      for (int r = 0; r < rank - 1; r++){
+#ifdef HAVE_INTREPID_DEBUG
+        TEST_FOR_EXCEPTION( ( (multiIndex[r+1] < 0) || (multiIndex[r+1] >= indexRange_[r+1]) ),
+                            std::out_of_range,
+                            ">>> ERROR (LexContainer): Multi-index component out of range.");    
+#endif
+        // Add increment
+        address = address*indexRange_[r+1] + multiIndex[r+1];
+      }
+  } // end switch(rank)
+
   return address;
 }
 
