@@ -33,6 +33,7 @@
 #include "Teuchos_Version.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #ifdef HAVE_TEUCHOS_EXTENDED
@@ -544,20 +545,23 @@ int main( int argc, char *argv[] )
     //-----------------------------------------------------------
     // Can we pass a pointer to a std::vector to the parameter list.
     //-----------------------------------------------------------
-    double * tempvec1 = new double[10];
-    for (int i=0; i<10; i++) { tempvec1[i] = i; }
-    PL_Main.set( "Address of Norm Vector", tempvec1 );
-    double* tempvec2 = Teuchos::getParameter<double*>( PL_Main, "Address of Norm Vector" );
-    tempvec1[4] = 2.0; tempvec1[6] = 1.0;
-    if (verbose) {
-      cout<< "Can we pass a pointer to a std::vector to a parameter list ... ";
+    Teuchos::ArrayRCP<double> tempvec1_arcp = Teuchos::arcp<double>(10);
+    {
+      double * tempvec1 = tempvec1_arcp.get();
+      for (int i=0; i<10; i++) { tempvec1[i] = i; }
+      PL_Main.set( "Address of Norm Vector", tempvec1 );
+      double* tempvec2 = Teuchos::getParameter<double*>( PL_Main, "Address of Norm Vector" );
+      tempvec1[4] = 2.0; tempvec1[6] = 1.0;
+      if (verbose) {
+        cout<< "Can we pass a pointer to a std::vector to a parameter list ... ";
+      }
+      if ((tempvec2[4]-tempvec1[4])!=0.0 || (tempvec2[6]-tempvec1[6])!=0.0) {
+        if (verbose) { cout<<"no"<<std::endl; }
+        FailedTests++;
+      } else {
+        if (verbose) { cout<<"yes"<<std::endl; }
+      }
     }
-    if ((tempvec2[4]-tempvec1[4])!=0.0 || (tempvec2[6]-tempvec1[6])!=0.0) {
-      if (verbose) { cout<<"no"<<std::endl; }
-      FailedTests++;
-    } else {
-      if (verbose) { cout<<"yes"<<std::endl; }
-    }	    
 
     //-----------------------------------------------------------
     // We can add Array<T> objects of various types T as std::string parameters!
