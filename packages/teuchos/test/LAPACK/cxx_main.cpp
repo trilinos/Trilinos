@@ -44,14 +44,14 @@ int main(int argc, char* argv[])
   Teuchos::LAPACK<int,float> M;
 #endif
 
-  double* Ad = new double[16];
-  double* xd = new double[4];
-  double* bd = new double[4];
-  float* Af = new float[16];
-  float* xf = new float[4];
-  float* bf = new float[4];
+  double Ad[16];
+  double xd[4];
+  double bd[4];
+  float Af[16];
+  float xf[4];
+  float bf[4];
 
-  int* IPIV = new int[4];
+  int IPIV[4];
   int info;
 
   int i;
