@@ -127,6 +127,20 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   */
 
   int Broadcast(long * MyVals, int Count, int Root) const;
+
+  //! Epetra_SerialComm Broadcast function.
+  /*! A no-op for a serial communicator.
+    \param MyVals InOut
+           On entry, the root processor contains the list of values.  On exit,
+	   all processors will have the same list of values.  Note that values must be
+	   allocated on all processor before the broadcast.
+    \param Count In
+           On entry, contains the length of the list of MyVals.
+    \param Root In
+           On entry, contains the processor from which all processors will receive a copy of MyVals.
+  */
+
+  int Broadcast(char * MyVals, int Count, int Root) const;
   //@}
 
   //! @name Gather Methods

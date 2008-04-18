@@ -67,6 +67,12 @@ int Epetra_MpiComm::Broadcast(long * Values, int Count, int Root) const {
   return(0);
 }
 //=============================================================================
+int Epetra_MpiComm::Broadcast(char * Values, int Count, int Root) const {
+  EPETRA_CHK_ERR(CheckInput(Values,Count));
+  EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_CHAR, Root, MpiCommData_->Comm_));
+  return(0);
+}
+//=============================================================================
 int Epetra_MpiComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(AllVals,Count));

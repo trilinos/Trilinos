@@ -131,6 +131,22 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
 
   int Broadcast(long * MyVals, int Count, int Root) const;
+
+  //! @name Broadcast Methods
+  //@{ 
+  //! Epetra_MpiSmpComm Broadcast function.
+  /*!Takes list of input values from the root processor and sends to all other processors.
+    \param Values InOut
+           On entry, the root processor contains the list of values.  On exit,
+	   all processors will have the same list of values.  Note that values must be
+	   allocated on all processor before the broadcast.
+    \param Count In
+           On entry, contains the length of the list of Values.
+    \param Root In
+           On entry, contains the processor from which all processors will receive a copy of Values.
+  */
+
+  int Broadcast(char * MyVals, int Count, int Root) const;
   //@}
 
   //! @name Gather Methods

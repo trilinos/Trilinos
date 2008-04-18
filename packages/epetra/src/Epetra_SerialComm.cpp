@@ -67,6 +67,13 @@ int Epetra_SerialComm::Broadcast(long * Values, int Count, int Root) const {
   return(0);
 }
 //=============================================================================
+int Epetra_SerialComm::Broadcast(char * Values, int Count, int Root) const {
+  (void)Values;
+  (void)Count;
+  (void)Root;
+  return(0);
+}
+//=============================================================================
 int Epetra_SerialComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
   for (int i=0; i<Count; ++i) AllVals[i] = MyVals[i];
   return(0);

@@ -59,9 +59,9 @@ int main(int argc, char* argv[]) {
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose1 = true;
 
   int ierr = 0;
-	int returnierr = 0;
-	int size = 1;
-	int rank = 0;
+  int returnierr = 0;
+  int size = 1;
+  int rank = 0;
 
   if (verbose1)
     cout << Epetra_Version() << endl << endl;
@@ -110,9 +110,9 @@ int main(int argc, char* argv[]) {
 	int size1, rank1;
 	MPI_Comm_size(MPIComm1, &size1);
 	MPI_Comm_rank(MPIComm1, &rank1);
-	if (verbose1) cout << petracomm <<  ".  Using MPI_Comm from Petra_Comm: "
-										 << "Processor " << rank1 << " of " << size1
-										 << " (should be the same)." << endl;
+	if (verbose1) cout << petracomm <<  ".  Using MPI_Comm from Petra_Comm:"
+                           << " Processor " << rank1 << " of " << size1
+                           << " (should be the same)." << endl;
 	EPETRA_TEST_ERR(!(rank1==rank),ierr);
 	EPETRA_TEST_ERR(!(size1==size),ierr);
 	checkBarrier(petracomm, verbose1, rank);
@@ -193,6 +193,9 @@ int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& N
 	int forierr = 0;
 	int ierr = 0;
 
+  verbose = (petracomm.MyPID() == 0);  // Turn verbose on; 
+                                       // it is always false in main.
+
 	// Some vars needed for the following tests
   int count = 4;
   int* iInputs = new int[count]; // General array for int type tests
@@ -229,6 +232,17 @@ int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& N
   for (i=0; i<count; i++)
     dBVals[i] = i; // if these values are changed, the values in dVals must also be changed
 
+  const char *cConst = "Heidi, do you want a cookie?";
+  int cCount = strlen(cConst)+1;
+  char* cVals = new char[cCount];
+  if (rank == 0) {
+     strcpy(cVals, cConst);        // if these values are changed, 
+     cVals[cCount-1] = '\0';       // the values in cBVals must also be changed
+  }
+  char* cBVals = new char[cCount]; // Values to be checked against the values 
+                                   // broadcast to the non root processors
+  strcpy(cBVals, cConst);          // if these values are changed, 
+  cBVals[cCount-1] = '\0';         // the values in cVals must also be changed
 
   // Values for MaxAll tests
   int* iMyGlobalMaxs = new int[count];
@@ -344,6 +358,25 @@ int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& N
 	                                                                                    //only output on one node
   petracomm.Barrier();
 
+  EPETRA_TEST_ERR(petracomm.Broadcast(cVals,cCount,0),ierr);
+  if (verbose1) {
+    if (rank == 0)
+      cout << "The values on the root processor are: " << cVals << endl;
+    else
+      cout << "The values on processor " << rank << " are: " << cVals << endl;
+  }
+  forierr = 0;
+  for (i=0; i<cCount; i++)
+    forierr += !(cVals[i] == cBVals[i]); // otherwise Broadcast didn't work.
+  EPETRA_TEST_ERR(forierr,ierr);
+  delete [] cVals;
+  delete [] cBVals;
+  petracomm.Barrier();
+  // If test gets to here the test passed, 
+  if (verbose) 
+    cout << endl << "Broadcast (type char) test passed!" << endl << endl;
+	                                                                                    //only output on one node
+  petracomm.Barrier();
 
  // Test the MaxAll functions
   int* iGlobalMaxs = new int[count];

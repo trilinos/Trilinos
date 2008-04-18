@@ -132,6 +132,20 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   */
 
   int Broadcast(long * MyVals, int Count, int Root) const;
+
+  //! Epetra_MpiComm Broadcast function.
+  /*! Take list of input values from the root processor and sends to all other processors.
+    \param Values InOut
+           On entry, the root processor contains the list of values.  On exit,
+	   all processors will have the same list of values.  Note that values must be
+	   allocated on all processor before the broadcast.
+    \param Count In
+           On entry, contains the length of the list of Values.
+    \param Root In
+           On entry, contains the processor from which all processors will receive a copy of Values.
+  */
+
+  int Broadcast(char * MyVals, int Count, int Root) const;
   //@}
 
   //! @name Gather Methods
@@ -408,6 +422,7 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int CheckInput(double * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   int CheckInput(int * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   int CheckInput(long * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
+  int CheckInput(char * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
 
   void CleanupData();
   Epetra_MpiCommData * MpiCommData_;
