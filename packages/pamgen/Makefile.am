@@ -191,7 +191,7 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
-SUBDIRS = src example $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
