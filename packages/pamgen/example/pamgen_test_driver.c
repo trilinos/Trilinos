@@ -143,10 +143,6 @@ int main(int argc, char** argv)
     { 0, NULL,      NULL,                      NULL, 0 }
   };
 
-  if(argc == 1){
-    getopts_usage(argv[0],opts);
-    return 1;
-  }
   char *args;
   int c;
   int all = FALSE;
@@ -158,9 +154,16 @@ int main(int argc, char** argv)
   int dimension = 3;
   char * file_name = NULL;
   char * out_file_name = NULL;
-  while ((c = getopts(argc, argv, opts, &args)) != 0)
-    {
-      switch(c)
+  FILE * infile = NULL;
+  long size;
+  char *file_char_array = NULL;
+
+  if(argc == 1){
+    getopts_usage(argv[0],opts);
+    return 1;
+  }
+
+  while ((c = getopts(argc, argv, opts, &args)) != 0) { switch(c)
         {
 	  /* Special Case: Recognize options that we didn't set above. */
 	case -2:
@@ -219,37 +222,36 @@ int main(int argc, char** argv)
     end_rank = start_rank+1;
   }
 
-  FILE * infile = fopen(file_name,"r");
+  infile = fopen(file_name,"r");
   if(!infile){
     printf("unable to open input file ");
     return 1;
   }
   fseek(infile, 0, SEEK_END);
-  long size = ftell(infile);
+  size = ftell(infile);
   fseek(infile, 0, SEEK_SET);
-  char *file_char_array = (char *)malloc(size + 1);
+  file_char_array = (char *)malloc(size + 1);
   file_char_array[size] = '\0';
-  size_t lRet = fread(file_char_array, sizeof(char), size, infile);
+  fread(file_char_array, sizeof(char), size, infile);
   fclose(infile);
 
   //create the out_file_name
-  int fnsz = strlen(file_name);
   out_file_name = (char*)malloc(MAX_STR_LENGTH+1);
 
   for( rank = start_rank; rank != end_rank; rank ++){
-
+    int cr_result;
     sprintf(out_file_name,"%s.exo.%i.%i\0",file_name,num_procs,rank);    
     
-    int cr_result = Create_Pamgen_Mesh(file_char_array,
-				       dimension,
+    cr_result = Create_Pamgen_Mesh(file_char_array,
+                                       dimension,
 				       rank,
 				       num_procs);
     
     
     if (cr_result == ERROR_PARSING_DEFINITION){
-      printf("PARSE ERROR\n");
       int essz = getPamgenEchoStreamSize();
       char * echo_char_array = (char *)malloc(essz+1);
+      printf("PARSE ERROR\n");
       echo_char_array[essz] = '\0';
       echo_char_array = getPamgenEchoStream(echo_char_array);
       if(echo_char_array)printf(echo_char_array);
@@ -316,8 +318,6 @@ int main(int argc, char** argv)
 void free_memory()
 /*****************************************************************************/
 {
-  
-  char *bptr[3] = {NULL, NULL, NULL};      
   int i;
   int j; 
   int b;
@@ -461,12 +461,14 @@ void free_memory()
 void read_mesh_to_memory()
 /*****************************************************************************/
 {
-  int im_exoid = 0;
   int idum = 0;
   float fdum;
   int i;
   int j;
   int b;
+  char * cdum = NULL;
+  int error = 0;
+  int id = 0;
 
   mss.bptr[0] = mss.buffer[0];      
   mss.bptr[1] = mss.buffer[1];      
@@ -476,9 +478,6 @@ void read_mesh_to_memory()
     for(j=0; j<4; j++) mss.qaRecord[i][j] = (char*)malloc(MAX_STR_LENGTH+1) ;
   
   
-  char * cdum = NULL;
-  int error = 0;
-  int id = 0;
   error += im_ex_get_init (  id,
 			     mss.title,
 			     &mss.num_dim,
@@ -601,12 +600,12 @@ void read_mesh_to_memory()
 
       error += im_ex_get_side_set_ids(id, mss.side_set_id);
       for(i = 0; i < mss.num_side_sets; i ++){
-	  
+	int ne = 0;  
 	error += im_ex_get_side_set_param(id, mss.side_set_id[i], 
 					  (int*)&mss.num_elements_in_side_set[i],
 					  (int*)&mss.num_df_in_side_set[i]);
 
-	int ne = mss.num_elements_in_side_set[i];
+	ne = mss.num_elements_in_side_set[i];
 	mss.side_set_elements[i] = (int*)malloc(ne*sizeof(int));
 	mss.side_set_faces[i] = (int*)malloc(ne*sizeof(int));
 	if(ne){
@@ -842,8 +841,9 @@ int nct;
     //side sets
     if(mss.num_side_sets){
       for(i = 0; i < mss.num_side_sets; i ++){
+        int ne = 0;
 	printf("Side set index %i id %i has %i elements\n",i,mss.side_set_id[i],mss.num_elements_in_side_set[i]);
-	int ne = mss.num_elements_in_side_set[i];
+	ne = mss.num_elements_in_side_set[i];
 	if(ne){
 	  for(j = 0; j < ne && j < 10; j ++){
 	    printf("element %i and face %i\n",mss.side_set_elements[i][j],mss.side_set_faces[i][j]);

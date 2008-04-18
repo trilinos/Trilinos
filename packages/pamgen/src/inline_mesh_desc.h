@@ -204,19 +204,19 @@ virtual  void Calc_Parallel_Info(
 
   double transition_radius;
 
-  std::list < BC_Specification * > nodeset_list; 
-  std::list < BC_Specification * > sideset_list; 
+  std::list < PG_BC_Specification * > nodeset_list; 
+  std::list < PG_BC_Specification * > sideset_list; 
 
-  BC_Specification * getSideset_by_id(int test_id){
-    std::list < BC_Specification * > :: iterator it;
+  PG_BC_Specification * getSideset_by_id(int test_id){
+    std::list < PG_BC_Specification * > :: iterator it;
     for(it = sideset_list.begin(); it != sideset_list.end(); it ++){
       if((*it)->id == test_id)return (*it);
     }
     return NULL;
   };
 
-  BC_Specification * getNodeset_by_id(int test_id){
-    std::list < BC_Specification * > :: iterator it;
+  PG_BC_Specification * getNodeset_by_id(int test_id){
+    std::list < PG_BC_Specification * > :: iterator it;
     for(it = nodeset_list.begin(); it != nodeset_list.end(); it ++){
       if((*it)->id == test_id)return (*it);
     }

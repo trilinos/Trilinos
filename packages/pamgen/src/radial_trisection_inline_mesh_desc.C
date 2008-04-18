@@ -1585,7 +1585,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 
   if(nodeset_list.size() > 0)nodeset_vectors = new std::vector <int> [nodeset_list.size()];
 
-  std::list < BC_Specification *> ::iterator setit;
+  std::list < PG_BC_Specification *> ::iterator setit;
   int nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
     LoopLimits ll = (*setit)->limits;
@@ -1773,7 +1773,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 int Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 /****************************************************************************/
 {
-  std::list < BC_Specification * > ::iterator setit;
+  std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     if((*setit)->block_boundary_set){
       int bid = (*setit)->block_id-1;
@@ -1896,7 +1896,7 @@ int Radial_Trisection_Inline_Mesh_Desc::Populate_Sideset_Info(std::map <int, int
   }
 
   int nsct = 0;
-   std::list < BC_Specification *> ::iterator setit;
+   std::list < PG_BC_Specification *> ::iterator setit;
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
 
@@ -2070,7 +2070,6 @@ int Radial_Trisection_Inline_Mesh_Desc::GetBlockBasedGlobalID(int the_el,int bct
   }
   
   //ordinal of the block
-  int the_block = bct;
   int mesh_block_id = Ibg + Jbg*inline_bx + Kbg*inline_bx*inline_by; 
   
   

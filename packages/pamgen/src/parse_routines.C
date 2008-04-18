@@ -673,7 +673,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 	ss << "Nodeset ids may not be reused " << the_id;
 	token_stream->Semantics_Error(ss.str());   
       }
-      BC_Specification * bcs = new BC_Specification(the_id,the_loc,false,0);
+      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,false,0);
       Inline_Mesh_Desc::static_storage->nodeset_list.push_back(bcs);
 
 
@@ -743,7 +743,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 	ss << "Nodeset ids may not be reused " << the_id;
 	token_stream->Semantics_Error(ss.str());   
       }
-      BC_Specification * bcs = new BC_Specification(the_id,the_loc,true,the_block);
+      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,true,the_block);
       Inline_Mesh_Desc::static_storage->nodeset_list.push_back(bcs);
       break;}
     case P_SIDESET:{
@@ -798,7 +798,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 	token_stream->Semantics_Error(ss.str());   
       }
       
-      BC_Specification * bcs = new BC_Specification(the_id,the_loc,false,0);
+      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,false,0);
 
       Inline_Mesh_Desc::static_storage->sideset_list.push_back(bcs);
       break;}
@@ -845,7 +845,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 	ss << "Sideset ids may not be reused " << the_id;
 	token_stream->Semantics_Error(ss.str());   
       }
-      BC_Specification * bcs = new BC_Specification(the_id,the_loc,true,the_block);
+      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,true,the_block);
 
       Inline_Mesh_Desc::static_storage->sideset_list.push_back(bcs);
       break;}

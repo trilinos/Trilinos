@@ -40,11 +40,7 @@ int im_ex_inquire (int   exoid,
 		   char *ret_char)
 /*****************************************************************************/
 {
-  int dimid, varid, i, tmp_num, *ids;
-  long ldum, num_sets, start[2], count[2];
-  int *stat_vals;
   char  errmsg[MAX_ERR_LENGTH];
-  int IM_EX_WARN = 1;
   
   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
   if(!ms)return -1;

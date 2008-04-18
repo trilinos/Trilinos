@@ -80,13 +80,13 @@ Inline_Mesh_Desc::~Inline_Mesh_Desc()
   if(sideset_list.size())delete [] sideset_vectors;
   if(nodeset_list.size())delete [] nodeset_vectors;
 
-  std::list < BC_Specification * > :: iterator it;
+  std::list < PG_BC_Specification * > :: iterator it;
   for(it = nodeset_list.begin(); it != nodeset_list.end(); it ++){
-    BC_Specification * bcs = *it;
+    PG_BC_Specification * bcs = *it;
     delete bcs;
   }
   for(it = sideset_list.begin(); it != sideset_list.end(); it ++){
-    BC_Specification * bcs = *it;
+    PG_BC_Specification * bcs = *it;
     delete bcs;
   }
 }
@@ -528,7 +528,7 @@ void Inline_Mesh_Desc::Populate_Nodeset_Info(int * const * node_set_nodes,
 					     std::map <int, int> & global_node_map)
 /****************************************************************************/
 {
-  std::list < BC_Specification *> ::iterator setit;
+  std::list < PG_BC_Specification *> ::iterator setit;
   int nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
     int * the_nodes = node_set_nodes[nsct];
@@ -553,7 +553,7 @@ int Inline_Mesh_Desc::Populate_Sideset_Info(std::map <int, int> & global_element
   }
 
   int nsct = 0;
-   std::list < BC_Specification *> ::iterator setit;
+   std::list < PG_BC_Specification *> ::iterator setit;
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
 
@@ -818,7 +818,7 @@ int Inline_Mesh_Desc::Check_Spans()
 int Inline_Mesh_Desc::Check_Block_BC_Sets()
 /****************************************************************************/
 {
-  std::list < BC_Specification * > ::iterator setit;
+  std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     if((*setit)->block_boundary_set){
       int bid = (*setit)->block_id;
@@ -857,7 +857,7 @@ void Inline_Mesh_Desc::Size_BC_Sets(int nnx,
 /****************************************************************************/
 {
   //Nodesets
-  std::list < BC_Specification * > ::iterator setit;
+  std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     Topo_Loc the_location = (*setit)->location;
     if((*setit)->block_boundary_set){
@@ -1922,7 +1922,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 
   if(nodeset_list.size() > 0)nodeset_vectors = new std::vector <int> [nodeset_list.size()];
 
-  std::list < BC_Specification *> ::iterator setit;
+  std::list < PG_BC_Specification *> ::iterator setit;
   int nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
     LoopLimits ll = (*setit)->limits;

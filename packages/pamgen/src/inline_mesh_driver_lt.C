@@ -4,6 +4,7 @@
 #include "uns_inline_decomp.h"
 #include <iostream>
 #include <strings.h>
+#include <time.h>
 
 /****************************************************************************/
 ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,int rank, int num_procs)
@@ -132,7 +133,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 			dim);
 
 
-  std::list < BC_Specification *> ::iterator setit;
+  std::list < PG_BC_Specification *> ::iterator setit;
   int nsct = 0;
   int the_num_side_set_nodes = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
