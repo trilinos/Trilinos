@@ -4,5 +4,11 @@
 diff temp_file_17 run_test_script_17.res >! difresults
 
 set tmp = ( `wc -c difresults` )
-if ( $tmp[1] > 0 ) exit 1
+if ( $tmp[1] > 0 ) then
+head difresults
+exit 1
+else
+echo Test passed!
+endif
 exit 0
+
