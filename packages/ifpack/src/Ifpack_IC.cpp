@@ -227,7 +227,11 @@ int Ifpack_IC::Compute() {
     Lict = new Ifpack_AIJMatrix;
     Lict_ = (void *) Lict;
   }
-  else Lict = (Ifpack_AIJMatrix *) Lict_;
+  else {
+    Lict = (Ifpack_AIJMatrix *) Lict_;
+    Ifpack_AIJMatrix_dealloc( Lict );  // Delete storage, crout_ict will allocate it again.
+  }
+  if (Ldiag_ != 0) delete [] Ldiag_; // Delete storage, crout_ict will allocate it again.
   Aict->val = val;
   Aict->col = ind;
   Aict->ptr = ptr;
