@@ -2,13 +2,14 @@
 #ifndef _IFELSEIFELSEBLOCKRTC_H
 #define _IFELSEIFELSEBLOCKRTC_H
 
-#include <string>
-#include <map>
-#include <list>
 #include "BlockRTC.hh"
 #include "ConditionalBlockRTC.hh"
 #include "NormalBlockRTC.hh"
 #include "TokenizerRTC.hh"
+
+#include <string>
+#include <map>
+#include <list>
 
 namespace PG_RuntimeCompiler {
 
@@ -48,6 +49,11 @@ class IfElseifElseBlock : public Block
    *            block, assuming there is one. 
    */
   Value* execute();
+  
+  /**
+   * operator<< -> Prints all the related blocks
+   */
+  std::ostream& operator<<(std::ostream& os) const;
 
  private:
 
@@ -57,7 +63,7 @@ class IfElseifElseBlock : public Block
 
   NormalBlock* _else; //!< the block of code following the else { statement
 };
-
+  
 }
 
 #endif

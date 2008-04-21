@@ -1,10 +1,11 @@
 #ifndef _ARRAYNUMBERRTC_H
 #define _ARRAYNUMBERRTC_H
 
-#include <iostream>
-#include <assert.h>
 #include "ValueRTC.hh"
 #include "commonRTC.hh"
+
+#include <iostream>
+#include <cassert>
 
 namespace PG_RuntimeCompiler {
 
@@ -58,11 +59,12 @@ class ArrayNumber: public Value
 
   int getSize() const {return _size;}
 
-  void print() { 
-    std::cout << "{";
+  std::ostream& operator<<(std::ostream& os) const {
+    os << "ArrayNumber:{";
     for (int i = 0; i < _size; ++i)
-      std::cout << _value[i] << ", ";
-    std::cout << "}" << std::endl;
+      os << _value[i] << ", ";
+    os << "}";
+    return os;
   }
 
  protected:

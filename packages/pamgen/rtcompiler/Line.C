@@ -1,9 +1,3 @@
-#include <string>
-#include <list>
-#include <vector>
-#include <stack>
-#include <iostream>
-#include <math.h>
 #include "BlockRTC.hh"
 #include "ObjectRTC.hh"
 #include "ScalarNumberRTC.hh"
@@ -18,6 +12,13 @@
 #include "ArrayVarRTC.hh"
 #include "LineRTC.hh"
 #include "NormalBlockRTC.hh"
+
+#include <string>
+#include <list>
+#include <vector>
+#include <stack>
+#include <iostream>
+#include <cmath>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -41,12 +42,13 @@ Line::Line(Tokenizer& tokens, Block* parent, string& errs, bool needReturn)
 Line::~Line() 
 /*****************************************************************************/
 {
-  list<Object*>::iterator itr = _postfixLine.begin();
-  if (_postfixLine.size() != 0) {
-    while(itr != _postfixLine.end()) {
+  set<Object*>::iterator itr = _objsToDelete.begin();
+  if (_objsToDelete.size() != 0) {
+    while(itr != _objsToDelete.end()) {
       if (!isVariable((*itr)->getObjectType()) && 
-          (*itr)->getObjectType() != OperatorOT)
+          (*itr)->getObjectType() != OperatorOT) {
         delete (*itr);
+      }
       ++itr;
     }
   }
@@ -74,7 +76,7 @@ void Line::stackOp(stack<Operator*>& ops, Operator* op)
 	break;
       }
       else {
-	_postfixLine.push_back(ops.top());
+	addNewObject(ops.top());
 	ops.pop();
       }
     }
@@ -92,7 +94,7 @@ void Line::stackOp(stack<Operator*>& ops, Operator* op)
           ops.top()->getPrecedence() == op->getPrecedence())
         break; 
       
-      _postfixLine.push_back(ops.top());
+      addNewObject(ops.top());
       ops.pop();
     }
     
@@ -158,7 +160,7 @@ void Line::process_function(Tokenizer& tokens, string& errs)
     funcCall->fillArg(arg);
   }
 
-  _postfixLine.push_back(funcCall);
+  addNewObject(funcCall);
 }
 
 /*****************************************************************************/
@@ -191,11 +193,11 @@ void Line::add_newvar(string& type, string& newVar, Line* sizePtr,bool isArray)
       ptr = new ScalarVar<char>(newVar, CharT);
   }
   
-  _postfixLine.push_back(ptr);
+  addNewObject(ptr);
   _parent->addVariable( (Variable*) ptr);
   
   if (isArray) 
-    _postfixLine.push_back(Operator::getOp("init"));
+    addNewObject(Operator::getOp("init"));
 }
 
 /*****************************************************************************/
@@ -251,7 +253,7 @@ void Line::process_existing_var(Tokenizer& tokens, string& errs)
   //Note: we must allow for arrays to be passed to RTBoundFuncs without
   //having to use braces [].
   if (tokens.isArg()) {
-    _postfixLine.push_back(v);
+    addNewObject(v);
     return;
   }
 
@@ -273,10 +275,10 @@ void Line::process_existing_var(Tokenizer& tokens, string& errs)
     Tokenizer tempToken(index_list);
     Line* indexPtr = new Line(tempToken, _parent, errs, true);
     ArrayIndex* ai = new ArrayIndex(v, indexPtr);
-    _postfixLine.push_back(ai);  
+    addNewObject(ai);  
   }
   else {
-    _postfixLine.push_back(v);
+    addNewObject(v);
   }
 }
 
@@ -302,7 +304,7 @@ void Line::process_number(Tokenizer& tokens)
     char value = (char) temp[1];
     ptr = new ScalarNumber<char>(CharT, value);
   }
-  _postfixLine.push_back(ptr); 
+  addNewObject(ptr); 
 }
 
 /*****************************************************************************/
@@ -355,7 +357,7 @@ void Line::infToPost(Tokenizer& tokens, string& errs)
   
   //put remaining opps at end of postfixLine
   while (!ops.empty()) {
-    _postfixLine.push_back(ops.top());
+    addNewObject(ops.top());
     ops.pop();
   }
 
@@ -423,13 +425,29 @@ void Line::performNumericOps()
 	arg2 = --itr;
 	if (((Operator*)(*op))->isUnary()) {
 	  if ( (*arg2)->getObjectType() == ScalarNumberOT ) {
-	    --_tempSize;
+	    //if we have a unary operator operating on a constant, we can
+            //precompute the result
+
+            --_tempSize; //we no longer need a temporary for this operation
+
+            //create a new constant containing the result of the operation
 	    ScalarNumber<double>* d = new ScalarNumber<double>(DoubleT, 0);
 	    ((Operator*)(*op))->performOp(((Value*)*arg2), *d);
-	    _postfixLine.insert(arg2, d);
-	    
-	    delete *arg2;
 
+            //put this new value in postfix
+	    _postfixLine.insert(arg2, d);
+
+            //put this new value in set of deletable items 
+            //(Lines delete their own constants)
+            _objsToDelete.insert(d);
+
+            //remove the old constant from set of items to delete
+            assert(_objsToDelete.find(*arg2) != _objsToDelete.end());
+            _objsToDelete.erase(*arg2);
+
+            delete *arg2; //delete old constant
+	    
+            //remove old constant and operator from postfix
 	    _postfixLine.erase(arg2);
 	    itr = _postfixLine.erase(op);
 
@@ -442,18 +460,36 @@ void Line::performNumericOps()
 	  arg1 = --itr;
 	  if ( (*arg1)->getObjectType() == ScalarNumberOT && 
                (*arg2)->getObjectType() == ScalarNumberOT) {
-	    --_tempSize;
+	    //if we have a binary operator operating on two constants, we can
+            //precompute the result
+	    
+            --_tempSize; //we no longer need a temporary for this operation
+
+            //create a new constant containing the result of the operation
 	    ScalarNumber<double>* d = new ScalarNumber<double>(DoubleT, 0);
 	    ((Operator*)(*op))->performOp(((Value*)*arg1),((Value*)*arg2),*d);
+
+            //put this new value in postfix
 	    _postfixLine.insert(arg1, d);
 
-            delete *arg1;
-	    delete *arg2;
+            //put this new value in set of deletable items 
+            _objsToDelete.insert(d);
 
+            //remove the old constants from set of items to delete
+            assert(_objsToDelete.find(*arg1) != _objsToDelete.end());
+            assert(_objsToDelete.find(*arg2) != _objsToDelete.end());
+            _objsToDelete.erase(*arg1);
+            _objsToDelete.erase(*arg2);
+
+            //delete old constant objects
+            delete *arg1;
+            delete *arg2;
+
+            //remove old constants and operator from postfix
 	    _postfixLine.erase(arg1);
 	    _postfixLine.erase(arg2);
 	    itr = _postfixLine.erase(op);
-
+            
 	    continue;
 	  }
 	  else {
@@ -467,13 +503,29 @@ void Line::performNumericOps()
     }
     else if ((*itr)->getObjectType() == FunctionOT) {
       if ( ((FunctionCall*)(*itr))->canGoEarly() ) {
-        --_tempSize;
+        //if we have an optimizable function with constant arguments, we can
+        //precompute the result
+
+        --_tempSize; //we no longer need a temporary for this operation
+
+        //create a new constant containing the result of the operation
         ScalarNumber<double>* d = 
           new ScalarNumber<double>(DoubleT,((FunctionCall*)(*itr))->execute());
+
+        //put this new value in postfix
         _postfixLine.insert(itr, d);
 
+        //put this new value in set of deletable items 
+        _objsToDelete.insert(d);
+
+        //remove the old constant from set of items to delete
+        assert(_objsToDelete.find(*itr) != _objsToDelete.end());
+        _objsToDelete.erase(*itr);
+
+        //delete the function call
         delete *itr;
-        
+                
+        //remove old constant and operator from postfix
         itr = _postfixLine.erase(itr);
 
         continue;
@@ -534,20 +586,22 @@ Value* Line::execute()
 bool Line::can_go() const 
 /*****************************************************************************/
 {
+  //jgfouca: why can't multi-argument functions be pre-computed if all the                              
+  //         arguments are constants?
   return (_postfixLine.size() == 1 && 
           _postfixLine.front()->getObjectType() == ScalarNumberOT);
 }
 
 /*****************************************************************************/
-void Line::print()
+ostream& Line::operator<<(ostream& os) const
 /*****************************************************************************/
 {
-  list<Object*>::iterator itr = _postfixLine.begin();
-
+  list<Object*>::const_iterator itr = _postfixLine.begin();
+  
   for ( ; itr != _postfixLine.end(); ++itr) {
-    (*itr)->print();
+    os << *(*itr) << " ";
   }
-  cout << endl;
+  return os;
 }
 
 /*****************************************************************************/
@@ -562,14 +616,12 @@ bool Line::indvTest(const string& line, Block* parent, double expectedResult,
 	 << " Tokenizer returned the error: " << errs << endl;
     return false;
   }
-  //tokens.print();
 
   Line lineObj(tokens, parent, errs, examineResult);
-  //lineObj.print();
 
   if (errs != "") {
     cerr << "Line: " << line << " had errors: " << errs << endl;
-    lineObj.print();
+    cerr << lineObj;
     return false;
   }
 
@@ -579,7 +631,7 @@ bool Line::indvTest(const string& line, Block* parent, double expectedResult,
     if (expectedResult != result) {
       cerr << "Line: " << line << " was expected to generate result: " 
 	   << expectedResult << " instead, it generated: " << result << endl;
-      lineObj.print();
+      cerr << lineObj;
       return false;
     }
   }
@@ -641,6 +693,16 @@ void Line::test()
   if (!indvTest("printf(\"One:% Two:% Three:% \", 5-4, 2.0e0, 'c');", 
                 &emptyBlock, 22, true)) return;
 
-
   //welcoming ideas for more
+}
+
+/*****************************************************************************/
+void Line::addNewObject(Object* newObj)
+/*****************************************************************************/
+{
+  _postfixLine.push_back(newObj);
+  if (!isVariable(newObj->getObjectType()) && 
+      newObj->getObjectType() != OperatorOT) {
+    _objsToDelete.insert(newObj);
+  }
 }

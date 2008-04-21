@@ -1,10 +1,11 @@
 #ifndef _SCALARNUMBERRTC_H
 #define _SCALARNUMBERRTC_H
 
-#include <iostream>
-#include <assert.h>
 #include "ValueRTC.hh"
 #include "commonRTC.hh"
+
+#include <iostream>
+#include <cassert>
 
 namespace PG_RuntimeCompiler {
 
@@ -44,7 +45,11 @@ class ScalarNumber: public Value
    */ 
   void setValue(double value) {_value = (T) value;}
 
-  void print() { std::cout << _value; }
+  std::ostream& operator<<(std::ostream& os) const {
+    os << "ScalarNumber:" << _value; 
+    return os;
+  }
+
  protected:
   T _value; //!< The value of this number
 };

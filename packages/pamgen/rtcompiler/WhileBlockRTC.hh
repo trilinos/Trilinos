@@ -1,12 +1,13 @@
 #ifndef _WHILEBLOCKRTC_H
 #define _WHILEBLOCKRTC_H
 
-#include <string>
-#include <map>
 #include "LineRTC.hh"
 #include "BlockRTC.hh"
 #include "ObjectRTC.hh"
 #include "TokenizerRTC.hh"
+
+#include <string>
+#include <map>
 
 namespace PG_RuntimeCompiler {
 

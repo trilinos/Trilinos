@@ -3,6 +3,7 @@
 #include "uns_inline_decomp.h"
 #include <sstream>
 #include "../asrc/fudges.h"
+#include <math.h>
 
 
 namespace PAMGEN_NEVADA {

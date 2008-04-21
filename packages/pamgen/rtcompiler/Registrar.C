@@ -1,13 +1,13 @@
-#include <map>
-#include <string>
-#include <iostream>
-#include <cmath>
-#include <cstdlib>
-
 #include "LineRTC.hh"
 #include "RegistrarRTC.hh"
 #include "ArrayVarRTC.hh"
 #include "Bessel_I.hh"
+
+#include <map>
+#include <string>
+#include <iostream>
+#include <math.h>
+#include <cstdlib>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -53,15 +53,17 @@ FixedArgFunctionCall::~FixedArgFunctionCall()
 }
 
 /*****************************************************************************/
-void FixedArgFunctionCall::print()
+ostream& FixedArgFunctionCall::operator<<(ostream& os) const
 /*****************************************************************************/
 {
-  cout << _func->name() << "(";
+  os << _func->name() << "(";
   for (int i = 0; i < _func->numArgs(); ++i) {
-    _argExpressions[i]->print();
-    if (i < _func->numArgs() - 1) cout << ", ";
+    os << *(_argExpressions[i]);
+    if (i < _func->numArgs() - 1) os << ", ";
   }
-  cout << ")";
+  os << ")";
+
+  return os;
 }
 
 /*****************************************************************************/
@@ -128,16 +130,18 @@ VariableArgFunctionCall::~VariableArgFunctionCall()
 }
 
 /*****************************************************************************/
-void VariableArgFunctionCall::print()
+ostream& VariableArgFunctionCall::operator<<(ostream& os) const
 /*****************************************************************************/
 {
-  cout << _func->name() << "(";
+  os << _func->name() << "(";
 
-  list<Line*>::iterator itr = _argExpressionList.begin();
+  list<Line*>::const_iterator itr = _argExpressionList.begin();
   for ( ; itr != _argExpressionList.end(); ++itr) 
-    (*itr)->print();
+    os << *(*itr) << ", ";
 
-  cout << ")";
+  os << ")";
+
+  return os;
 }
 
 /*****************************************************************************/
@@ -393,8 +397,7 @@ double Gamma::execute(Value** args)
 double Print::execute(Value** args) 
 /*****************************************************************************/
 {
-  args[0]->print();
-  cout << endl;
+  cout << *(args[0]) << endl;
   return 0;
 }
 
@@ -411,7 +414,7 @@ double Printf::execute(Value** args)
   for (int i = 0; i < args[0]->getSize(); ++i) {
     if ( ((char) args[0]->getArrayValue(i)) == '%') {
       assert(numVarArgsUsed+1 < _numArgs);
-      args[numVarArgsUsed+1]->print();
+      cout << *(args[numVarArgsUsed+1]);
       numVarArgsUsed++;
     }
     else {

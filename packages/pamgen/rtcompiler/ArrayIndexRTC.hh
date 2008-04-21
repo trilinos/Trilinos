@@ -1,12 +1,13 @@
 #ifndef _ARRAYINDEXRTC_H
 #define _ARRAYINDEXRTC_H
 
-#include <iostream>
-#include <assert.h>
 #include "VariableRTC.hh"
 #include "commonRTC.hh"
 #include "ExecutableRTC.hh"
 #include "ValueRTC.hh"
+
+#include <iostream>
+#include <cassert>
 
 namespace PG_RuntimeCompiler {
 
@@ -58,8 +59,9 @@ class ArrayIndex : public Value {
     _parent->setArrayValue(value, (int)_indexExpr->execute()->getValue());
   }
 
-  void print() {
-    std::cout << getValue();
+  std::ostream& operator<<(std::ostream& os) const {
+    os << "ArrayIndex:" << _parent->getName() << "[" << *_indexExpr << "]";
+    return os;
   }
 
  private:
@@ -68,5 +70,6 @@ class ArrayIndex : public Value {
 
   Executable* _indexExpr; //!< The expr that, when evaluated, will be the index
 };
+
 }
 #endif

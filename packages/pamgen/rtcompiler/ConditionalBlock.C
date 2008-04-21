@@ -1,11 +1,11 @@
-#include <string>
-#include <map>
-#include <math.h>
 #include "BlockRTC.hh"
 #include "LineRTC.hh"
 #include "commonRTC.hh"
 #include "VariableRTC.hh"
 #include "ConditionalBlockRTC.hh"
+
+#include <string>
+#include <map>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;

@@ -1,10 +1,11 @@
 #ifndef _VARIABLERTC_H
 #define _VARIABLERTC_H
 
-#include <assert.h>
-#include <string>
 #include "commonRTC.hh"
 #include "ValueRTC.hh"
+
+#include <cassert>
+#include <string>
 
 namespace PG_RuntimeCompiler {
 
@@ -28,7 +29,6 @@ class Variable: public Value
     _name    = name;
     _address = NULL;
 
-    _isSet                 = false;
     _willBeInitAtTimeOfUse = false;
   }
   
@@ -57,12 +57,6 @@ class Variable: public Value
   virtual void evaluateSizeExpr() {}
 
   /** 
-   * isSet -> This method returns _isSet. It is only used for argument 
-   *          variables.
-   */
-  bool isSet() const {return _isSet;};
-  
-  /** 
    * init -> This method sets _willBeInitAtTimeOfUse to true
    */ 
   void init() { _willBeInitAtTimeOfUse = true;}
@@ -75,11 +69,6 @@ class Variable: public Value
  protected:
 
   std::string _name; //!< The name of the variable
-
-  bool _isSet; /**!< Tells us if an argument has been set yet. If someone tries
-                *    to run a Function that has not had all its arguments set, 
-                *    it will generate an error.
-                */
 
   bool _willBeInitAtTimeOfUse; /**!< helps us find errors where the user is 
                                 *    trying to use an uninitialized variable.

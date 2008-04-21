@@ -1,9 +1,6 @@
 #ifndef _LINERTC_H
 #define _LINERTC_H
 
-#include <string>
-#include <list>
-#include <stack>
 #include "BlockRTC.hh"
 #include "ObjectRTC.hh"
 #include "commonRTC.hh"
@@ -11,6 +8,11 @@
 #include "TokenizerRTC.hh"
 #include "ScalarNumberRTC.hh"
 #include "OperatorRTC.hh"
+
+#include <string>
+#include <list>
+#include <stack>
+#include <set>
 
 namespace PG_RuntimeCompiler {
 
@@ -196,18 +198,30 @@ class Line: public Executable
 
   void static test(); //unit test
 
-  void print();
+  std::ostream& operator<<(std::ostream& os) const;
 
  private:
+  void addNewObject(Object* newObj);
+  void removeObject(Object* obj);
+  
   bool static indvTest(const std::string& line, Block* parent, 
 		       double expectedResult, bool examineResult);
 
   std::list<Object*> _postfixLine; //!< A post-fix list of operands/operators
+
+  std::set<Object*> _objsToDelete; /**!< A list of objects this obj should 
+                                    *    delete. Operators are reused, so 
+                                    *    we don't have to delete those.
+                                    *    Variables are deleted by the 
+                                    *    block that owns them, so we don't
+                                    *    have to delete those either. 
+                                    */
   
   Block* _parent; //!< The Block of code that this Line belongs to
   
   ScalarNumber<double>* _tempHolder; /**!< Used to allocate memory needed for 
-                                      *    temporaries at compile time.
+                                      *    temporaries at compile time. This
+                                      *    boosts runtime performance.
                                       */
   
   int _tempSize; //!< The size of the _tempHolder array

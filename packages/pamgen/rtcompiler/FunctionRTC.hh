@@ -1,17 +1,20 @@
 #ifndef _FUNCTIONRTC_H
 #define _FUNCTIONRTC_H
 
-#include <string>
-#include <typeinfo>
-#include <vector>
 #include "commonRTC.hh"
 #include "BlockRTC.hh"
 #include "VariableRTC.hh"
 #include "ExecutableRTC.hh"
 
+#include <string>
+#include <typeinfo>
+#include <vector>
+#include <algorithm>
+
 /**************** IMPORTANT ***********************
  * FunctionRTC.h is the only file you need to #include
- * in order to use the RTC tool. The methods below are 
+ * in order to use the RTC tool (it is the Facade class). 
+ * The methods below are 
  * the interface you will use RTC with.
  * Please read README.txt for more information.
  *************************************************/
@@ -91,17 +94,13 @@ class Function
    */  
   template <class T>
   bool varAddrFill(unsigned int index, T* address, int size = 0) {
-    if (index >= _vars.size()) {
-      _errors += "Index is too large.\n";
-      return false;
-    }
+    commonVarFill(index);
 
     checkType(index, size, address, _errors);
     if (_errors != "") return false;
-    
-    _vars[index]->setAddress(address);
-    _vars[index]->setSize(size);
-    _vars[index]->init();
+
+    _vars[index].first->setAddress(address);
+    _vars[index].first->setSize(size);
     return true; 
   }
 
@@ -141,6 +140,15 @@ class Function
    */
   bool cleanup();
 
+  /**
+   * operator<< -> This method prints the main code block of the function
+   */
+  std::ostream& operator<<(std::ostream& os) const {
+    os << "Function: " << _name << std::endl;
+    os << *_mainBlock << std::endl;
+    return os;
+  }
+
  private:
 
   /**
@@ -148,9 +156,14 @@ class Function
    */ 
   std::string type_err(unsigned int index) const {
     return "Wrong type passed to varAddrFill for variable: " +
-      _vars[index]->getName() + " at index: " + intToString(index) + " \n " 
+      _vars[index].first->getName() + " at index: " + intToString(index) + " \n " 
       "Note: both the basic type and scalar/nonscalar modifier must match up \n";
   }
+
+  /**
+   * commonVarFill - Contains shared logic executed everytime a var is filled
+   */
+  void commonVarFill(unsigned index);
 
   void checkType(unsigned int index, int size, int* addr, std::string& errs);
   void checkType(unsigned int index, int size, float* addr, std::string& errs);
@@ -165,11 +178,8 @@ class Function
                       *    execution begins.
                       */
 
-  std::vector<Variable *> _vars; //!< Vector of pointers to Variables.
-
-  bool _firstRun; /**!< A bool that tells us if the Function has been run yet 
-                   *    or not.
-                   */
+  //!< Vector of pointers to Variables. The bool is for specifying if arg has been filled.
+  std::vector<std::pair<Variable*,bool> > _vars; 
 
   bool _compiled; /**!< A bool that tells us if the Function has been 
                    *    successfully compiled. 
@@ -179,6 +189,8 @@ class Function
                 *    cleaned up yet.
                 */
 };
+
+std::ostream& operator<<(std::ostream& os, const Function& obj);
 
 }
   

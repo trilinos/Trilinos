@@ -1,9 +1,10 @@
-#include <iostream>
-#include <string>
-#include <map>
 #include "NormalBlockRTC.hh"
 #include "BlockRTC.hh"
 #include "commonRTC.hh"
+
+#include <iostream>
+#include <string>
+#include <map>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;

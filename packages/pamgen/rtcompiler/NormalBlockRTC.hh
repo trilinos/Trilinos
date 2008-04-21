@@ -1,10 +1,11 @@
 #ifndef _NORMALBLOCKRTC_H
 #define _NORMALBLOCKRTC_H
 
-#include <string>
-#include <map>
 #include "BlockRTC.hh"
 #include "TokenizerRTC.hh"
+
+#include <string>
+#include <map>
 
 namespace PG_RuntimeCompiler {
 

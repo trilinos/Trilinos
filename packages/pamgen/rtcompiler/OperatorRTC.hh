@@ -1,12 +1,14 @@
 #ifndef _OPERATORRTC_H
 #define _OPERATORRTC_H
 
-#include <string>
-#include <map>
-#include <assert.h>
 #include "commonRTC.hh"
 #include "ObjectRTC.hh"
 #include "ScalarNumberRTC.hh"
+
+#include <string>
+#include <map>
+#include <cassert>
+
 
 namespace PG_RuntimeCompiler {
 
@@ -56,7 +58,7 @@ class Operator: public Object
 
   virtual void performOp(Value* arg, ScalarNumber<double>& store) = 0;
 
-  void print();
+  std::ostream& operator<<(std::ostream& os) const;
   
   bool isUnary() const {return _isUnary;}
 
@@ -256,7 +258,6 @@ class LogicNotO : public Operator
   void performOp(Value* arg1, Value* arg2, ScalarNumber<double>& store) {assert(0);}
   void performOp(Value* arg, ScalarNumber<double>& store);
 };
-
 
 }
 

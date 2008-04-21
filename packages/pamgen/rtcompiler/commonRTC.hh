@@ -3,7 +3,7 @@
 
 #include <string>
 #include <typeinfo>
-#include <math.h>
+#include <cmath>
 
 namespace PG_RuntimeCompiler {
 

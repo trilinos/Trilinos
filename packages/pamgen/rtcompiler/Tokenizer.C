@@ -1,10 +1,11 @@
+#include "TokenizerRTC.hh"
+#include "commonRTC.hh"
+
 #include <string>
 #include <vector>
 #include <iostream>
 #include <stack>
 #include <cassert>
-#include "TokenizerRTC.hh"
-#include "commonRTC.hh"
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -406,7 +407,7 @@ Tokenizer::Tokenizer(const string& body, string& errors)
 }             
 
 /*****************************************************************************/
-bool Tokenizer::checkStack(const std::string& op)
+bool Tokenizer::checkStack(const string& op)
 /*****************************************************************************/
 {
   if (_stack.empty() && (op == ")" || op == "]" || op == "}"))

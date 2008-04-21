@@ -1,10 +1,11 @@
-#include <string>
-#include <math.h>
-#include <typeinfo>
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
 #include "commonRTC.hh"
+
+#include <string>
+#include <cmath>
+#include <typeinfo>
+#include <cstdlib>
+#include <cstdio>
+#include <iostream>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -33,7 +34,7 @@ bool PG_RuntimeCompiler::isVariable(ObjectType type)
 }
 
 /*****************************************************************************/
-bool PG_RuntimeCompiler::isInt(const std::string& str)
+bool PG_RuntimeCompiler::isInt(const string& str)
 /*****************************************************************************/
 {
   for(unsigned int i = 0; i < str.length(); ++i) {
@@ -45,7 +46,7 @@ bool PG_RuntimeCompiler::isInt(const std::string& str)
 }
 
 /*****************************************************************************/
-bool PG_RuntimeCompiler::isDouble(const std::string& str)
+bool PG_RuntimeCompiler::isDouble(const string& str)
 /*****************************************************************************/
 {
   bool afterDecimal = false, afterExponent = false;
@@ -191,4 +192,22 @@ string PG_RuntimeCompiler::typeToString(Type t)
     return "int";
   else 
     return "unknown type";
+}
+
+
+#include "ExecutableRTC.hh"
+
+using namespace std;
+
+ostream& PG_RuntimeCompiler::operator<<(ostream& os, const Executable& obj)                     
+{                                                                                                    
+  return obj.operator<<(os);                                                                         
+}
+#include "ObjectRTC.hh"
+
+using namespace std;
+
+ostream& PG_RuntimeCompiler::operator<<(ostream& os, const Object& obj)
+{
+  return obj.operator<<(os);
 }

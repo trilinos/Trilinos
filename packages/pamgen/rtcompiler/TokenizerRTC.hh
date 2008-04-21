@@ -1,11 +1,12 @@
 #ifndef _TOKENIZER_H
 #define _TOKENIZER_H
 
+#include "commonRTC.hh"
+
 #include <string>
 #include <vector>
 #include <stack>
 #include <cassert>
-#include "commonRTC.hh"
 
 namespace PG_RuntimeCompiler {
 

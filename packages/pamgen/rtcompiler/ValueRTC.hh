@@ -1,10 +1,11 @@
 #ifndef _VALUERTC_H
 #define _VALUERTC_H
 
-#include <string>
-#include <assert.h>
 #include "ObjectRTC.hh"
 #include "commonRTC.hh"
+
+#include <string>
+#include <cassert>
 
 namespace PG_RuntimeCompiler {
 

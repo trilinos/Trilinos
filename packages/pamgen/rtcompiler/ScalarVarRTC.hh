@@ -1,11 +1,12 @@
 #ifndef _SCALARVAR_HH
 #define _SCALARVAR_HH
 
-#include <assert.h>
-#include <string>
-#include <iostream>
 #include "commonRTC.hh"
 #include "ValueRTC.hh"
+
+#include <cassert>
+#include <string>
+#include <iostream>
 
 namespace PG_RuntimeCompiler {
 
@@ -34,8 +35,9 @@ class ScalarVar : public Variable
     _value = value;
   }
 
-  void print() {
-    std::cout << _value;
+  std::ostream& operator<<(std::ostream& os) const {
+    os << "ScalarVar:" << _name << "=" << _value;
+    return os;
   }
 
   /**
@@ -48,7 +50,6 @@ class ScalarVar : public Variable
     
     if (_address != NULL)
       *((T*)_address) = _value;
-    _isSet = true;
   }
 
   /**
@@ -59,7 +60,6 @@ class ScalarVar : public Variable
   void setAddress(void* addr) {
     _address = addr;
     _value   = *((T*)_address);
-    _isSet   = true;
   }
 
   /**

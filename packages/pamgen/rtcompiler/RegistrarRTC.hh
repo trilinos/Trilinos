@@ -1,14 +1,15 @@
 #ifndef _REGISTRAR_H
 #define _REGISTRAR_H
 
+#include "ValueRTC.hh"
+#include "ObjectRTC.hh"
+#include "LineRTC.hh"
+
 #include <map>
 #include <list>
 #include <string>
 #include <iostream>
-#include <assert.h>
-#include "ValueRTC.hh"
-#include "ObjectRTC.hh"
-#include "LineRTC.hh"
+#include <cassert>
 
 namespace PG_RuntimeCompiler {
 
@@ -18,12 +19,12 @@ namespace PG_RuntimeCompiler {
 class RTBoundFunc
 {
  public:
-  RTBoundFunc(const std::string& name, int args, bool isOptimizable = true,
-              bool variableNumArgs = false) { 
-    _name             = name; 
+  RTBoundFunc(const std::string& name_, int args, bool is_Optimizable = true,
+              bool variable_NumArgs = false) { 
+    _name             = name_; 
     _numArgs          = args;
-    _isOptimizable    = isOptimizable;
-    _variableNumArgs  = variableNumArgs;
+    _isOptimizable    = is_Optimizable;
+    _variableNumArgs  = variable_NumArgs;
   }
   virtual ~RTBoundFunc() {}
   virtual double execute(Value**) = 0;
@@ -58,8 +59,6 @@ class FunctionCall : public Object
   
   virtual ~FunctionCall() {}
   
-  virtual void print() = 0;
-   
   virtual double execute() = 0;
   
   virtual void fillArg(Line* l) = 0;
@@ -84,7 +83,7 @@ class FixedArgFunctionCall : public FunctionCall
 
   ~FixedArgFunctionCall();
   
-  void print();
+  std::ostream& operator<<(std::ostream& os) const;
   
   double execute();
 
@@ -110,7 +109,7 @@ class VariableArgFunctionCall : public FunctionCall
 
   ~VariableArgFunctionCall();
   
-  void print();
+  std::ostream& operator<<(std::ostream& os) const;
   
   double execute();
 

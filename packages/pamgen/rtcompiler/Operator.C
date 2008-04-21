@@ -1,14 +1,14 @@
-#include <string>
-#include <math.h>
-#include <math.h>
-#include <stdlib.h>
-#include <iostream>
-#include <assert.h>
 #include "OperatorRTC.hh"
 #include "commonRTC.hh"
 #include "VariableRTC.hh"
 #include "ObjectRTC.hh"
 #include "ScalarNumberRTC.hh"
+
+#include <string>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <cassert>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -17,12 +17,12 @@ bool Operator::ISINIT = false;
 map<string, Operator*> Operator::OPERATORS;
 
 /*****************************************************************************/
-Operator::Operator(const string& name, bool isUnary, 
+Operator::Operator(const string& name, bool is_Unary, 
                    int precedence, bool isLeftAssoc) : Object(OperatorOT)
 /*****************************************************************************/
 {
   _name            = name;
-  _isUnary         = isUnary;
+  _isUnary         = is_Unary;
   _precedence      = precedence;
   _leftAssociative = isLeftAssoc;
 }
@@ -67,10 +67,11 @@ Operator* Operator::getOp(const string& name)
 }
 
 /*****************************************************************************/
-void Operator::print()
+ostream& Operator::operator<<(ostream& os) const
 /*****************************************************************************/
 {
-  cout << getName() << endl;
+  os << getName();
+  return os;
 }
 
 /*****************************************************************************/

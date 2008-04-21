@@ -1,13 +1,13 @@
 #ifndef _CONDITIONALBLOCKRTC_H
 #define _CONDITIONALBLOCKRTC_H
 
-#include <string>
-#include <map>
-#include <math.h>
 #include "BlockRTC.hh"
 #include "LineRTC.hh"
 #include "VariableRTC.hh"
 #include "TokenizerRTC.hh"
+
+#include <string>
+#include <map>
 
 namespace PG_RuntimeCompiler {
 

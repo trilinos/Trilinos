@@ -2,11 +2,11 @@
 #define _ARRAYRTC_H
 
 #include "VariableRTC.hh"
-#include <string>
-#include <iostream>
-#include <math.h>
 #include "commonRTC.hh"
 #include "ExecutableRTC.hh"
+
+#include <string>
+#include <iostream>
 
 namespace PG_RuntimeCompiler {
 
@@ -131,17 +131,22 @@ class ArrayVar : public Variable
   {
     _isArg  = true;
     _values = (T*) addr;
-    _isSet  = true;
   }
 
-  void print() 
+  std::ostream& operator<<(std::ostream& os) const
   {
-    assert(_values != NULL);
-    std::cout << "{";
-    for (int i = 0; i < _size; ++i)
-      std::cout << _values[i] << ", ";
-    std::cout << "}" << std::endl;
+    if (_values != NULL) {
+      os << "ArrayVar:" << _name << "{";
+      for (int i = 0; i < _size; ++i)
+        os << _values[i] << ", ";
+      os << "}";
+    }
+    else {
+      os << "ArrayVar:" << _name;
+    }
+    return os;
   }
+
  private:
 
   int _size; //!< The length of the array

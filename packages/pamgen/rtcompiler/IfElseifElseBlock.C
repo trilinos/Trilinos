@@ -1,11 +1,12 @@
-#include <string>
-#include <list>
-#include <map>
 #include "IfElseifElseBlockRTC.hh"
 #include "BlockRTC.hh"
 #include "ConditionalBlockRTC.hh"
 #include "NormalBlockRTC.hh"
 #include "commonRTC.hh"
+
+#include <string>
+#include <list>
+#include <map>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -82,3 +83,20 @@ Value* IfElseifElseBlock::execute()
   
   return NULL;
 } 
+
+/*****************************************************************************/
+ostream& IfElseifElseBlock::operator<<(ostream& os) const
+/*****************************************************************************/
+{
+  os << *_if;
+
+  for (list<ConditionalBlock*>::const_iterator itr = _elseifs.begin();
+       itr != _elseifs.end(); itr++) {
+    os << *(*itr);
+  }
+  
+  if (_else != NULL) {
+    os << *_else;
+  }
+  return os;
+}

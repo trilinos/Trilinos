@@ -1,6 +1,8 @@
 #ifndef _EXECUTABLERTC_H
 #define _EXECUTABLERTC_H
 
+#include <iostream>
+
 namespace PG_RuntimeCompiler {
 
 class Value;
@@ -25,8 +27,10 @@ class Executable
    */
   virtual Value* execute() = 0;
 
-  virtual void print() = 0;
+  virtual std::ostream& operator<<(std::ostream& os) const = 0;
 };
+
+std::ostream& operator<<(std::ostream& os, const Executable& obj);
 
 }
 

@@ -3,6 +3,8 @@
 
 #include "commonRTC.hh"
 
+#include <iostream>
+
 namespace PG_RuntimeCompiler {
 
 /**
@@ -28,7 +30,8 @@ class Object
    */
   virtual ~Object() {}
 
-  virtual void print() = 0;
+  virtual std::ostream& operator<<(std::ostream& os) const = 0;
+
   /**
    * getObjectType -> Returns the type of the object
    */
@@ -37,6 +40,8 @@ class Object
  protected:
   ObjectType _objType; //!< The type of the object 
 };
+
+std::ostream& operator<<(std::ostream& os, const Object& obj);
 
 }
 

@@ -1,13 +1,14 @@
 #ifndef _BLOCKRTC_H
 #define _BLOCKRTC_H
 
-#include <string>
-#include <map>
-#include <list>
-#include <math.h>
 #include "ExecutableRTC.hh"
 #include "TokenizerRTC.hh"
 #include "VariableRTC.hh"
+
+#include <string>
+#include <map>
+#include <list>
+#include <iostream>
 
 namespace PG_RuntimeCompiler {
 
@@ -70,7 +71,7 @@ class Block: public Executable
    */
   void createSubStatements(Tokenizer& lines, std::string& errs);
   
-  void print() { } //nothing for now
+  std::ostream& operator<<(std::ostream& os) const;
 
  private:
 
@@ -78,6 +79,8 @@ class Block: public Executable
                                    *    created and therefore is responsible
                                    *    for deleting.
                                    */
+
+  static int indent;
 
  protected:
 

@@ -1,8 +1,3 @@
-#include <string>
-#include <list>
-#include <map>
-#include <iostream>
-#include <math.h>
 #include "BlockRTC.hh"
 #include "VariableRTC.hh"
 #include "LineRTC.hh"
@@ -11,8 +6,15 @@
 #include "IfElseifElseBlockRTC.hh"
 #include "TokenizerRTC.hh"
 
+#include <string>
+#include <list>
+#include <map>
+#include <iostream>
+
 using namespace std;
 using namespace PG_RuntimeCompiler;
+
+int Block::indent = 0;
 
 /*****************************************************************************/
 Block::Block(const map<string, Variable*>& vars) 
@@ -36,8 +38,9 @@ Block::~Block()
 
   //delele all owned variables
   list<Variable*>::iterator myVars = _varsIOwn.begin();
-  for ( ; myVars != _varsIOwn.end(); ++myVars)
+  for ( ; myVars != _varsIOwn.end(); ++myVars) {
     delete (*myVars);
+  }
 }
 
 /*****************************************************************************/
@@ -94,4 +97,28 @@ void Block::createSubStatements(Tokenizer& lines, string& errs)
   //move past the closing brace 
   if (!lines.eof())
     lines.nextLine();
+}
+
+/*****************************************************************************/
+ostream& Block::operator<<(ostream& os) const
+/*****************************************************************************/
+{
+  string indent_str(indent, ' ');
+  os << "PRINTING BLOCK" << endl;
+  os << indent_str << "My variables: ";
+  for (list<Variable*>::const_iterator itr = _varsIOwn.begin();
+       itr != _varsIOwn.end(); itr++) {
+    os << *(*itr) << ", ";
+  }
+  os << endl;
+
+  os << indent_str << "Block begin:" << endl;
+  for (list<Executable*>::const_iterator itr = _statements.begin();
+       itr != _statements.end(); itr++) {
+    indent += 2;
+    string new_indent(indent, ' ');
+    os << new_indent << *(*itr) << endl;
+    indent -= 2;
+  }
+  return os;
 }
