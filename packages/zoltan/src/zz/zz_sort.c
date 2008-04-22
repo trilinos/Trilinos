@@ -193,10 +193,9 @@ int  equal, larger;
 static void quickpart_list_inc_int (
   int *list, int *parlist, int start, int end, int *equal, int *larger)
 {
-int i, key, parkey, change, parchange;
+int i, key, change, parchange;
 
   key = list ? list[(end+start)/2] : 1;
-  parkey = parlist ? parlist[(end+start)/2] : 1;
 
   *equal = *larger = start;
   for (i = start; i <= end; i++)
@@ -211,8 +210,9 @@ int i, key, parkey, change, parchange;
       list[(*equal)++]  = change;
     }
     else if (list[i] == key) {
+      parchange         = parlist[i];
       parlist[i]        = parlist[*larger];
-      parlist[(*larger)]= parkey;
+      parlist[(*larger)]= parchange;
       list[i]           = list[*larger];
       list[(*larger)++] = key;
     }
