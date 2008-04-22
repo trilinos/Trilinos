@@ -196,12 +196,6 @@ operator()( OriginalTypeRef orig )
     // Create new Map based on this linear distribution.
     int numMyBalancedRows = rowDist[myPID+1]-rowDist[myPID];
 
-    if (myPID == matProc) {
-      std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;        for (int i=0; i<nGlobal; i++) {
-        std::cout << "Row " << i << " = " << origGlobalRowsPerm[ i ] << std::endl; 
-      }
-    }
-
     NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, &origGlobalRowsPerm[ rowDist[myPID] ], 0, OldMatrix_->Comm() ) );
     // Right now we do not explicitly build the column map and assume the BTF permutation is symmetric!
     //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
