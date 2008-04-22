@@ -8,6 +8,7 @@
            LexContainer,
            VarContainer,
            MultiCell,
+           Basis/F0_QUAD_I1_FEM_DEFAULT,
            Basis/F0_TRI_C1_FEM_DEFAULT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
@@ -21,6 +22,7 @@
            LexContainer,
            VarContainer,
            MultiCell,
+           Basis/F0_QUAD_I1_FEM_DEFAULT,
            Basis/F0_TRI_C1_FEM_DEFAULT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;

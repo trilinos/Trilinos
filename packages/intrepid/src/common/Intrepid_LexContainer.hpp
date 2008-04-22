@@ -165,9 +165,7 @@ namespace Intrepid {
     void empty();
     
     
-    /** \brief Resets LexContainer to a rank-1 container with upper index bound equal to 1. The
-      resulitng container of size 1 is loaded with zero. Can be used to represent multi-indexed
-      quantity whose values are all zero.
+    /** \brief Fills a LexContainer with zeroes.
       */
     void storeZero(); 
     

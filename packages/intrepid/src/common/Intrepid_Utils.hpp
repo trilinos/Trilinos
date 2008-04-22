@@ -185,6 +185,80 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
   std::cout.copyfmt(oldFormatState);
 } // end getAnalytic
 
+
+/** \brief A helper function that fills enumeration to DoF tag and DoF tag to enumeration lookup
+tables for the concrete basis classes in Intrepid.
+
+\param tagToEnum  [out]  - Lookup table for the DoF's local enumeration (DoF Id) by its local DoF tag
+\param enumToTag  [out]  - Lookup table for the DoF's local DoF tag by its local enumeration (DoF Id)
+\param tags       [in]   - a set of basis-dependent local DoF tags in flat array format.
+\param numBf      [in]   - number of basis functions in the basis set
+\param tagSize    [in]   - number of fields in the local DoF tag
+\param posScDim   [in]   - position in the tag, counting from 0, of the subcell dim 
+\param posScId    [in]   - position in the tag, counting from 0, of the subcell id
+\param posBfId    [in]   - position in the tag, counting from 0, of DoF Id relative to the subcell
+*/
+void setEnumTagData(Teuchos::Array<Teuchos::Array<Teuchos::Array<int> > > & tagToEnum,
+                    Teuchos::Array<LocalDofTag> & enumToTag,
+                    const int *tags,
+                    const int numBf,
+                    const int tagSize,
+                    const int posScDim,
+                    const int posScId,
+                    const int posBfId) {
+  
+  
+  // Build one-dimensional enumToTag array: its dimension equals the number of basis functions
+  enumToTag.resize(numBf);
+  for (int i = 0; i < numBf; i++) {
+    for (int j = 0; j < tagSize; j++) {
+      enumToTag[i].tag_[j] = tags[i*tagSize+j];
+    }
+  }
+  
+  // Build the three-dimensional tagToEnum array:   
+  // The leading dimension of tagToEnum is the max value of the 1st column + 1 (max subcell dim in the tag)
+  int maxScDim = 0; 
+  for (int i = 0; i < numBf; i++) { 
+    if (maxScDim < tags[i*tagSize + posScDim]) {
+      maxScDim = tags[i*tagSize + posScDim];
+    }
+  }
+  maxScDim += 1;
+  
+  // The 2nd dimension of tagToEnum is the max value of the 2nd column + 1 (max subcell id in the tag) 
+  int maxScId = 0;
+  for (int i = 0; i < numBf; i++) { 
+    if (maxScId < tags[i*tagSize + posScId]) {
+      maxScId = tags[i*tagSize + posScId];
+    }
+  }
+  maxScId += 1;
+  
+  // The 3rd dimension of tagToEnum is the max value of the 3rd column +1 (max subcell BfId in the tag) 
+  int maxBfId = 0;
+  for (int i = 0; i < numBf; i++) { 
+    if (maxBfId < tags[i*tagSize + posBfId]) {
+      maxBfId = tags[i*tagSize + posBfId];
+    }
+  }
+  maxBfId += 1;
+  
+  // Create 1 x maxBfId array (dimensioned by the 3rd dimension of tagToEnum) filled with -1
+  Teuchos::Array<int> level1(maxBfId, -1);
+  
+  // Create maxScId x maxBfId array (dimensioned by the 2nd and 3rd dimensions of tagToEnum)
+  Teuchos::Array<Teuchos::Array<int> > level2(maxScId, level1);
+  
+  // Create the maxScDim x maxScId x maxBfId tagToEnum array
+  tagToEnum.assign(maxScDim, level2);
+  
+  // Overwrite elements of the array corresponding to tags with local DoF Id's, leave all other = -1
+  for (int i = 0; i < numBf; i++) {
+    tagToEnum[tags[i*tagSize]][tags[i*tagSize+1]][tags[i*tagSize+2]] = i;
+  }
+}
+
 } // end namespace Intrepid
 
 #endif

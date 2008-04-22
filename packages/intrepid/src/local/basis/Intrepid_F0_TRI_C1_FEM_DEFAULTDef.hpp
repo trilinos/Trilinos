@@ -33,7 +33,11 @@
 */
 
 namespace Intrepid {
-
+    
+template<class Scalar>
+int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::numDof_ = 3;
+    
+    
 template<class Scalar>
 Teuchos::Array<Teuchos::Array<Teuchos::Array<int> > > Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::tagToEnum_;
 
@@ -56,48 +60,30 @@ Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::Basis_F0_TRI_C1_FEM_DEFAULT() {}
 
 template<class Scalar>
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
-  /************ This section will differ depending on the basis *************/
-  ECell mycell = CELL_TRI;  // cell type
+  
+  // Basis-dependent initializations
   int numBf    = 3;         // number of basis functions
   int tagSize  = 4;         // size of DoF tag
-  int posScId  = 1;         // position, counting from 0, of subcell id in the tag
-  int posBfId  = 2;         // position, counting from 0, of local Bf id in the tag
+  int posScDim = 0;         // position in the tag, counting from 0, of the subcell dim 
+  int posScId  = 1;         // position in the tag, counting from 0, of the subcell id
+  int posBfId  = 2;         // position in the tag, counting from 0, of DoF Id relative to the subcell
 
+  // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
   int tags[]  = {
                   0, 0, 0, 1,
                   0, 1, 0, 1,
                   0, 2, 0, 1
                 };
-
-
-  /************ This section is generic *************/
-  // build enumToTag array
-  enumToTag_.resize(numBf);
-  for (int i=0; i<numBf; i++) {
-    for (int j=0; j<tagSize; j++) {
-      enumToTag_[i].tag_[j] = tags[i*tagSize+j];
-    }
-  }
-  // build tagToEnum array
-  int maxBfId = 0;
-  int maxScId = 0;
-  int maxDim  = MultiCell<Scalar>::getCellDim(mycell);  // max dimension for this cell type
-  for (int i=0; i<numBf; i++) { // find max local Bf id
-    if (maxBfId < tags[i*tagSize+posBfId]) {
-      maxBfId = tags[i*tagSize+posBfId];
-    }
-  }
-  for (int i=0; i<numBf; i++) { // find max subcell id
-    if (maxBfId < tags[i*tagSize+posScId]) {
-      maxScId = tags[i*tagSize+posScId];
-    }
-  }
-  Teuchos::Array<int> level1(maxBfId+1, -1);
-  Teuchos::Array<Teuchos::Array<int> > level2(maxScId+1, level1);
-  tagToEnum_.assign(maxDim+1, level2);
-  for (int i=0; i<numBf; i++) {
-    tagToEnum_[tags[i*tagSize]][tags[i*tagSize+1]][tags[i*tagSize+2]] = i;
-  }
+  
+  // Basis-independent function sets tag and enum data in the static arrays:
+  Intrepid::setEnumTagData(tagToEnum_,
+                           enumToTag_,
+                           tags,
+                           numBf,
+                           tagSize,
+                           posScDim,
+                           posScId,
+                           posBfId);
 }
 
 
@@ -130,16 +116,26 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                      spaceDim);
 
   switch (operatorType) {
+      
     case OPERATOR_VALUE:
-      for (countPt=0; countPt<numPoints; countPt++) {
+      for (countPt = 0; countPt < numPoints; countPt++) {
+          
+          // Verify that all points are inside the TRI reference cell
+#ifdef HAVE_INTREPID_DEBUG
+          TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
+                              std::invalid_argument,
+                              ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
+#endif
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
         indexV[0] = countPt;
-
+          
         indexV[1] = 0;
         outputValues.setValue(1.0-x-y, indexV);
+        
         indexV[1] = 1;
         outputValues.setValue(x, indexV);
+        
         indexV[1] = 2;
         outputValues.setValue(y, indexV);
       }
@@ -226,7 +222,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             (operatorType != OPERATOR_D9)    &&
                             (operatorType != OPERATOR_D10) ),
                           std::invalid_argument,
-                          ">>> ERROR (VarContainer): Invalid operator type");
+                          ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Invalid operator type");
   }
 }
   
@@ -235,12 +231,17 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 template<class Scalar>
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
-                                                    const MultiCell<Scalar>&               mCell) const {
+                                                    const Cell<Scalar>&                    cell) const {
   TEST_FOR_EXCEPTION( (true),
                       std::logic_error,
-                      ">>> ERROR (VarContainer): FEM Basis calling an FV/D member function");
+                      ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): FEM Basis calling an FV/D member function");
 }
 
+
+template<class Scalar>
+int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
+    return numDof_;   
+}
 
 
 template<class Scalar>
@@ -301,6 +302,6 @@ template<class Scalar>
 int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getDegree() const {
   return 1;
 }
-  
+
 
 }// namespace Intrepid

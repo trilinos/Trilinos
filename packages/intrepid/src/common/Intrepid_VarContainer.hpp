@@ -46,12 +46,14 @@ store values of vector and scalar fields and their derivatives at a set of point
 namespace Intrepid {
   
   /** \class Intrepid::VarContainer
-  \brief Implementation of a templated variable container to store enumerated values of sets 
-         of tensor, vector and scalar fields and their derivatives, evaluated at a set of points. 
-
+  \brief Implementation of a templated variable container to store and access values of an operator 
+  applied to a <strong>set of fields</strong> (scalar, vector or tensor), evaluated at a 
+  <strong>set of points</strong>  on a <\strong>single</strong> cell. 
+  
   Provides more specialized storage option than a LexContainer by allowing access to values by point 
-  index, function index, function coordinate, and enumeration of . Values can also be accessed 
-  by their enumeration value using an overloaded [] operator. Uses LexContainer for actual storage.     
+  index, function index, function coordinate, and enumeration of derivatives of order k. 
+  Values can also be accessed by their enumeration value using an overloaded [] operator. 
+  Uses LexContainer for actual storage.     
   */
   template<class Scalar>
   class VarContainer : public LexContainer<Scalar> {

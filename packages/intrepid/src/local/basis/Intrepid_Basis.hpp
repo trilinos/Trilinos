@@ -38,12 +38,24 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_VarContainer.hpp"
 #include "Intrepid_MultiCell.hpp"
+#include "Intrepid_Cell.hpp"
 
 namespace Intrepid {
   
 /** \class Intrepid::Basis
     \brief An abstract base class that defines interface for concrete basis implementations for
-           FEM and FVD reconstructions.
+  FEM and FVD reconstructions. A FEM reconstruction approximates fields by COMPLETE or INCOMPLETE
+  polynomial spaces; an FVD reconstruction typically uses a BROKEN polynomial space. A particular
+  basis of a given reconstruction space is completely defined by a unisolvent set of linear 
+  functionals called <strong>degrees-of-freedom</strong>, or DoF, by choosing the basis set to be
+  the dual of the DoF set. Because the two sets are isomorphic, enumeration of the DoF set establishes
+  enumeration of the basis set which assigns to every basis function and DoF functional a local
+  <strong> DoF Id </strong> number. Every DoF Id is further assigned a unique <strong>DoF tag</strong>
+  which associates that DoF ID with a particular subcell and establishes the order of the DoF with
+  respect to that subcell; see LocalDofTag. Basis functions for FEM reconstructions are defined on 
+  standard <strong>reference</strong> cells and the values returned need to be further transformed 
+  to physical cells. Basis functions for FVD reconstructions are defined directly on the 
+  <strong>physical</strong> cells and values returned don't have to be transformed. 
 */
 template<class Scalar>
 class Basis {
@@ -55,27 +67,15 @@ class Basis {
   */
   virtual ~Basis() {}
     
-  /** \brief Returns multi-indexed value representing values of an operator applied to FEM basis 
-             functions, evaluated at a set of reference cell points. FEM reconstruction relies on COMPLETE   
-             or INCOMPLETE polynomial spaces defined on reference cells, i.e., smooth local spaces. As a  
-             result, admissible operators include VALUE and partial derivatives of all orders up to the  
-             maximal order admitted in Intrepid (GRAD, DIV, CURL, D1,...,D10).
-
-             This method returns multi-indexed quantity <var>outputValues</var> with
-             multi-index {p,d0,...,dk}, where the indices are as follows:
-
-             \arg p  - index of the evaluation point. Range 0 <= p < np, np = number of evaluation points
-             \arg di - order of the ith partial derivative. Range 0 <= di < 2 (the space dimension)
-             \arg k  - order of the total derivative. Range 0 <= k < 10 (upper range: VALUE = 0, D10 = 10)
-
-             Rank of the multi-indexed quantity is 1 + k and is determined from the <var>operatorType</var>.
-             Example:
-
-             \li OPERATOR_VALUE -> {p}             scalar basis function evaluated at points
-             \li OPERATOR_GRAD  -> {p,d0}          1st derivatives of scalar basis function evaluated at points
-             \li OPERATOR_D2    -> {p,d0,d1}       2nd derivatives of scalar basis functions evaluated at points
-
-             If total derivative order exceeds polynomial degree, output container is set to zero rank and zero value.
+  /** \brief Returns VarContainer with multi-indexed quantity representing the values of 
+  an operator applied to a set of FEM basis functions, evaluated at a set of points in a <strong>reference</strong>
+  cell. The rank of the return VarContainer argument depends on the number of points, number of basis, 
+  functions, their rank, and the rank of the operator applied to them; see VarContainer::getEnumeration 
+  for summary of the admissible index combinations. In particular, the admissible range of the 
+  <var>operatorType</var> argument depends on the rank of the basis functions and the space dimension.
+  Because FEM reconstruction relies on COMPLETE or INCOMPLETE polynomials, i.e., smooth local spaces,
+  the admissible range of <var>operatorType</var> always includes VALUE, D0, D1,...,D10. If derivative 
+  order exceeds polynomial degree, output container is set to zero rank and zero value.
  
       \param outputValues   [out]         - VarContainer with the computed values (see implementation
                                             for index ordering)
@@ -87,43 +87,49 @@ class Basis {
                          const EOperator                        operatorType) const = 0;
     
     
-  /** \brief Returns multi-indexed value representing values of an FVD basis function, evaluated 
-             at a set of physical cell points. FVD reconstruction relies on "basis" functions defined 
-             directly on the physical cell using BROKEN polynomial spaces, i.e., discontinuous local 
-             spaces. As a result, admissible operators are restricted to VALUE, which is the default for 
-             this method. Because this method works on actual physical cells, it needs a MultiCell argument
-             with their vertex coordinates.
+  /** \brief Returns VarContainer with multi-indexed quantity representing the values of an operator 
+  applied to a set of FVD basis functions, evaluated at a set of points in a <strong>physical</strong> cell.  
+  Because FVD reconstruction relies on "basis" functions defined directly on the physical cell using 
+  BROKEN polynomial spaces, i.e., discontinuous local spaces, the admissible range of the 
+  <var>operatorType<var> argument is restricted to VALUE. 
     
       \param outputValues   [out]         - VarContainer with the computed values 
       \param inputPoints     [in]         - evaluation points on the physical cell  
-      \param mCell           [in]         - the MultiCell containing the physical cells
+      \param cell            [in]         - the physical cell
   */    
   virtual void getValues(VarContainer<Scalar>&                  outputValues,
                          const Teuchos::Array< Point<Scalar> >& inputPoints,
-                         const MultiCell<Scalar>&               mCell) const = 0;
+                         const Cell<Scalar>&                     cell) const = 0;
 
   
-  /** \brief Returns the local enumeration (Id) of a degree of freedom with a given LocalDofTag.
-
-      \param dofTag  [in]  - LocalDofTag encoding the localization of the degree of freedom.
-
+  /** \brief Returns the number of basis functions in a basis. 
+    
       \return
-              - local enumeration (Id)
+              - number of basis funcions in a concrete basis
+  */
+  virtual int getNumLocalDof() const = 0;
+  
+  /** \brief Returns the local enumeration (DoF Id) of a degree-of-freedom with a given LocalDofTag.
+
+      \param dofTag  [in]  - The LocalDoF tag assigned to the degree-of-freedom 
+
+      \return               
+              - local enumeration (DoF Id) associated with the degree-of-freedom LocalDoFtag
   */
   virtual int getLocalDofEnumeration(const LocalDofTag dofTag) = 0;
 
 
-  /** \brief Returns the local degree-of-freedom tag (LocalDofTag) for a given enumeration (Id).
+  /** \brief Returns the local degree-of-freedom tag (LocalDofTag) for a given enumeration (DoF Id).
 
-      \param id  [in]  - Degree-of-freedom enumeration (id).
+      \param id  [in]  - The local enumeration (DoF id) assigned to the degree-of-freedom.
 
       \return
-              - local degree-of-freedom tag
+              - local degree-of-freedom tag associated with the local DoF enumeration (DoF Id)
   */
   virtual LocalDofTag getLocalDofTag(const int id) = 0;
 
 
-  /** \brief Returns a Teuchos::Array containing local degree-of-freedom tags (LocalDofTag).
+  /** \brief Returns a Teuchos::Array containing all local degree-of-freedom tags (LocalDofTag).
 
       \param dofTags  [out]  - Teuchos::Array of degree-of-freedom tags.
   */

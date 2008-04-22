@@ -292,22 +292,22 @@ namespace Intrepid {
              file also must be changed!
   */
   enum ECell{
-    CELL_NODE = 0,       // 0-simplex, i.e. node
-    CELL_EDGE,           // 1-simplex, i.e. edge
-    CELL_TRI,            // 2-simplex, i.e. triangular cell
-    CELL_QUAD,           // quadrilateral cell
-    CELL_TET,            // 3-simplex, i.e. tetrahedral cell
-    CELL_HEX,            // hexahedral cell
-    CELL_PYRAMID,        // pyramid cell
-    CELL_PENTAGON,       // polygon with 5 sides
-    CELL_HEXAGON,        // polygon with 6 sides
-    CELL_HEPTAGON,       // polygon with 7 sides
-    CELL_OCTAGON,        // polygon with 8 sides
-    CELL_NONAGON,        // polygon with 9 sides
-    CELL_DECAGON,        // polygon with 10 sides
-    CELL_TRIPRISM,       // prismatic cell with a triangle base
-    CELL_PENTAPRISM,     // prismatic polyhedron with a pentagon base
-    CELL_HEXAPRISM,      // prismatic polyhedron with a hexagon base
+    CELL_NODE = 0,       // 0-simplex, i.e. node                        value = 0
+    CELL_EDGE,           // 1-simplex, i.e. edge                        value = 1
+    CELL_TRI,            // 2-simplex, i.e. triangular cell             value = 2
+    CELL_QUAD,           // quadrilateral cell                          value = 3
+    CELL_TET,            // 3-simplex, i.e. tetrahedral cell            value = 4
+    CELL_HEX,            // hexahedral cell                             value = 5
+    CELL_PYRAMID,        // pyramid cell                                value = 6
+    CELL_PENTAGON,       // polygon with 5 sides                        value = 7
+    CELL_HEXAGON,        // polygon with 6 sides                        value = 8
+    CELL_HEPTAGON,       // polygon with 7 sides                        value = 9
+    CELL_OCTAGON,        // polygon with 8 sides                        value = 10
+    CELL_NONAGON,        // polygon with 9 sides                        value = 11
+    CELL_DECAGON,        // polygon with 10 sides                       value = 12
+    CELL_TRIPRISM,       // prismatic cell with a triangle base         value = 13
+    CELL_PENTAPRISM,     // prismatic polyhedron with a pentagon base   value = 14
+    CELL_HEXAPRISM,      // prismatic polyhedron with a hexagon base    value = 15
     CELL_CANONICAL_MAX,  // used as the maximum number of canonical types (current value = 16)
     CELL_POLY0,          // user defined cell 
     CELL_POLY1,          // user defined cell 
@@ -698,10 +698,10 @@ namespace Intrepid {
   */
   enum EReconstructionSpace
   {
-    RECONSTRUCTION_SPACE_COMPLETE = 0,
-    RECONSTRUCTION_SPACE_INCOMPLETE,
-    RECONSTRUCTION_SPACE_BROKEN,                
-    RECONSTRUCTION_SPACE_MAX                     
+    RECONSTRUCTION_SPACE_COMPLETE = 0,        // value = 0
+    RECONSTRUCTION_SPACE_INCOMPLETE,          // value = 1
+    RECONSTRUCTION_SPACE_BROKEN,              // value = 2
+    RECONSTRUCTION_SPACE_MAX                  // value = 3
   };
 
   std::string EReconstructionSpaceToString(EReconstructionSpace space) {
@@ -723,13 +723,13 @@ namespace Intrepid {
   */
   enum EBasis
   {
-    BASIS_FEM_DEFAULT = 0,            
-    BASIS_FEM_HIERARCHICAL,                 
-    BASIS_FEM_FIAT,
-    BASIS_FVD_DEFAULT,                
-    BASIS_FVD_COVOLUME,
-    BASIS_FVD_MIMETIC,
-    BASIS_MAX                     
+    BASIS_FEM_DEFAULT = 0,                // value = 0
+    BASIS_FEM_HIERARCHICAL,               // value = 1  
+    BASIS_FEM_FIAT,                       // value = 2
+    BASIS_FVD_DEFAULT,                    // value = 3
+    BASIS_FVD_COVOLUME,                   // value = 4
+    BASIS_FVD_MIMETIC,                    // value = 5
+    BASIS_MAX                             // value = 6
   };
 
   std::string EBasisToString(EBasis basis) {

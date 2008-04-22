@@ -42,6 +42,7 @@
 /////   list of default basis includes   /////
 
 #include "Intrepid_F0_TRI_C1_FEM_DEFAULT.hpp"
+#include "Intrepid_F0_QUAD_I1_FEM_DEFAULT.hpp"
 
 ///// end of list of default basis includes /////
 
@@ -74,6 +75,7 @@ class DefaultBasisFactory {
 
     /**** F_C_RD_B_S ************************************************************/
     BMap_[   2001000] = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>() );
+    BMap_[   3101000] = Teuchos::rcp( new Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>() );
   };
 
   /** \brief Destructor.
@@ -87,7 +89,7 @@ class DefaultBasisFactory {
       \param recSpace    [in]    - Reconstruction space type (RECONSTRUCTION_SPACE_COMPLETE, etc.).
       \param degree      [in]    - Polynomial degree.
       \param basisType   [in]    - Basis type (BASIS_FEM_DEFAULT, etc.).
-      \param coordSys    [in]    - Coordinate system (BASIS_FEM_DEFAULT, etc.).
+      \param coordSys    [in]    - Coordinate system (COORDINATES_CARTESIAN, etc.).
 
       \return
               - RCP to basis with given specifications.

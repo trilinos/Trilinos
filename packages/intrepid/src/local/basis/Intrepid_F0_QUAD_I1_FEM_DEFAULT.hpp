@@ -27,13 +27,13 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_F0_TRI_C1_FEM_DEFAULT.hpp
-    \brief  Header file for the Intrepid::F0_TRI_C1_FEM_DEFAULT class.
+/** \file   Intrepid_F0_QUAD_I1_FEM_DEFAULT.hpp
+    \brief  Header file for the Intrepid::F0_QUAD_I1_FEM_DEFAULT class.
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_F0_TRI_C1_FEM_DEFAULT_HPP
-#define INTREPID_F0_TRI_C1_FEM_DEFAULT_HPP
+#ifndef INTREPID_F0_QUAD_I1_FEM_DEFAULT_HPP
+#define INTREPID_F0_QUAD_I1_FEM_DEFAULT_HPP
 
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_RealSpace.hpp"
@@ -42,9 +42,9 @@
 
 namespace Intrepid {
   
-/** \class Intrepid::Basis_F0_TRI_C1_FEM_DEFAULT
-  \brief Implementation of default FEM basis functions of degree 1 for 0-forms on TRI cells. 
-  Reconstruction space type is COMPLETE, i.e., 2D linear polynomials. Definition of the DoF set 
+/** \class Intrepid::Basis_F0_QUAD_I1_FEM_DEFAULT
+  \brief Implementation of default FEM basis functions of degree 1 for 0-forms on QUAD cells. 
+  Reconstruction space type is INCOMPLETE, i.e., 2D bi-linear polynomials. Definition of the DoF set 
   for this basis, its enumeration and the associated local DoF tags are as follows,
                                                                                     
   \verbatim
@@ -58,17 +58,19 @@ namespace Intrepid {
   |    1   |     0      |     1      |     0      |     1      |         L_1(u) = u(v_1)          |
   |--------|------------|------------|------------|------------|----------------------------------|
   |    2   |     0      |     2      |     0      |     1      |         L_2(u) = u(v_2)          |
+  |--------|------------|------------|------------|------------|----------------------------------|
+  |    3   |     0      |     3      |     0      |     1      |         L_3(u) = u(v_3)          |
   |========|============|============|============|============|==================================|
   \endverbatim
-  where v_i denotes the ith vertex of the TRI cell.  The DefaultBasisFactory will select this basis
+  where v_i denotes the ith vertex of the QUAD cell. The DefaultBasisFactory will select this basis
   if the following parameters are specified:
   \verbatim
   |=======================|===================================|
   |  EField               |  FIELD_FORM_0                     |
   |-----------------------|-----------------------------------|
-  |  ECell                |  CELL_TRI                         |
+  |  ECell                |  CELL_QUAD                        |
   |-----------------------|-----------------------------------|
-  |  EReconstructionSpace |  RECONSTRUCTION_SPACE_COMPLETE    |
+  |  EReconstructionSpace |  RECONSTRUCTION_SPACE_INCOMPLETE  |
   |-----------------------|-----------------------------------|
   |  degree               |  1                                |
   |-----------------------|-----------------------------------|
@@ -76,11 +78,10 @@ namespace Intrepid {
   |-----------------------|-----------------------------------|
   |  ECoordinates         |  COORDINATES_CARTESIAN            |
   |=======================|===================================|
-  \endverbatim
-  
+\endverbatim
 */
 template<class Scalar> 
-class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
+class Basis_F0_QUAD_I1_FEM_DEFAULT: public Basis<Scalar> {
   private:
   
   /** \brief Dimension of the space spanned by the basis = number of degrees of freedom.
@@ -103,14 +104,13 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
 
   /** \brief Constructor.
   */
-  Basis_F0_TRI_C1_FEM_DEFAULT();
+  Basis_F0_QUAD_I1_FEM_DEFAULT();
   
   /** \brief Initializes static arrays needed for the lookup of the local enumeration (DoF Id) of a 
     degree-of-freedom by its local DoF tag and the reverse lookup of the DoF tag by DoF Id.
    */
   void initialize();
-  
-  
+    
   /** \brief Returns a VarContainer with the values of <var>opertorType</var> applied to the basis
     functions. Admissible <var>operatorType</var> arguments and the format of the output container 
     are as follows (see also getEnumeration for a detailed list of VarContainer shapes)
@@ -131,14 +131,14 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
     
     Legend:
         P -> point index            range: 0 <= P < numPoints = inputPoints.size()
-        F -> field index            range: 0 <= F < numFields = 3
+        F -> field index            range: 0 <= F < numFields = 4
         D -> field component index  range: 0 <= D < spaceDim  = 2
         K -> enumeration of Dk      range: 0 <= K < DkCardinality 
     \endverbatim
     
     \param outputValues   [out]         - VarContainer of rank 2 or 3 with the computed values
     \param inputPoints     [in]         - evaluation points on the reference cell  
-    \param operatorType    [in]         - the operator being applied to the basis function
+    \param operatorType    [in]         - the operator being applied to the basis function    
     
     \remarks 
     \li Enumeration of Dk (derivatives of total order k) follows the lexicographical order of 
@@ -152,11 +152,11 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
   void getValues(VarContainer<Scalar>&                  outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
                  const EOperator                        operatorType) const;
+    
   
-  
-  /** \brief This method is intended for FVD reconstructions and should not be used here. Its 
-    invocation will throw an exception. 
-  */  
+  /**  \brief This method is intended for FVD reconstructions and should not be used here. Its 
+    invocation will throw an exception.
+  */
   void getValues(VarContainer<Scalar>&                  outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
                  const Cell<Scalar>&                    cell) const;
@@ -189,6 +189,6 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
 
 }// namespace Intrepid
 
-#include "Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp"
+#include "Intrepid_F0_QUAD_I1_FEM_DEFAULTDef.hpp"
 
 #endif
