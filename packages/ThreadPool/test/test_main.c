@@ -36,7 +36,7 @@ int test_pthreads_performance( int , int * );
 int main( int argc , char ** argv )
 {
   const int concurrent = TPI_Concurrency();
-  int num_thread[] = { 2 , 4 , 8 , 12 , 16 };
+  int num_thread[] = { 2 , 4 , 8 /* , 12 , 16 */ };
   int num_test = sizeof(num_thread) / sizeof(int);
   int i ;
 
@@ -44,10 +44,12 @@ int main( int argc , char ** argv )
     fprintf(stdout,"\"%s with concurrency %d\"\n",argv[0],concurrent);
   }
 
+/*
+  test_pthreads_performance( num_test , num_thread );
+*/
+
   for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_single( num_thread[i] ); }
   for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_many( num_thread[i] ); }
-
-  test_pthreads_performance( num_test , num_thread );
 
   test_c_tpi_noop( num_test , num_thread );
 

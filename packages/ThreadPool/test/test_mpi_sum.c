@@ -49,10 +49,10 @@ static int comm_rank( COMM );
 static void comm_reduce_dsum( COMM , double * );
 static void comm_reduce_d4_sum( COMM , double * );
 
-static unsigned thread_size()
+static unsigned thread_size( int nthreads )
 {
   int size = TPI_Concurrency();
-  if ( ! size ) { TPI_Size( & size ); }
+  if ( ! size ) { size = nthreads ; }
   return size ;
 }
 
@@ -241,6 +241,7 @@ void dfill_rand_tp( unsigned seed , unsigned n , double * x , double mag )
 static
 void test_tpi_ddot_driver(
   COMM comm ,
+  const int nthreads ,
   const unsigned Mflop_target  /* Per concurrent thread */ ,
   const unsigned num_trials ,
   const unsigned num_tests ,
@@ -258,7 +259,7 @@ void test_tpi_ddot_driver(
 
   const unsigned p_rank = comm_rank( comm );
   const unsigned p_size = comm_size( comm );
-  const unsigned t_size = thread_size();
+  const unsigned t_size = thread_size( nthreads );
   const unsigned np = p_size * t_size ;
 
   const unsigned max_array = length_array[ num_tests - 1 ];
@@ -317,25 +318,33 @@ void test_tpi_ddot_driver(
       /*--------------------------------------------------------------*/
 
       for ( i = 0 ; i < num_trials ; ++i ) {
-        const unsigned n = i * d4_dot_ncycle ;
-        const double   t = TPI_Walltime();
-        for ( j = 0 ; j < d4_dot_ncycle ; ++j ) {
-          const unsigned k = ( ( j + n ) % num_array ) * local_size ;
-          val_d4_dot[i_test] = d4_dot_tp( comm , local_size , x + k , y + k );
+        TPI_Init( nthreads );
+        {
+          const unsigned n = i * d4_dot_ncycle ;
+          const double   t = TPI_Walltime();
+          for ( j = 0 ; j < d4_dot_ncycle ; ++j ) {
+            const unsigned k = ( ( j + n ) % num_array ) * local_size ;
+            val_d4_dot[i_test] = d4_dot_tp( comm , local_size , x + k , y + k );
+          }
+          dt_d4_dot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
         }
-        dt_d4_dot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
+        TPI_Finalize();
       }
 
       /*--------------------------------------------------------------*/
 
       for ( i = 0 ; i < num_trials ; ++i ) {
-        const unsigned n = i * ddot_ncycle ;
-        const double   t = TPI_Walltime();
-        for ( j = 0 ; j < ddot_ncycle ; ++j ) {
-          const unsigned k = ( ( j + n ) % num_array ) * local_size ;
-          val_ddot[i_test] = ddot_tp( comm , local_size , x + k , y + k );
+        TPI_Init( nthreads );
+        {
+          const unsigned n = i * ddot_ncycle ;
+          const double   t = TPI_Walltime();
+          for ( j = 0 ; j < ddot_ncycle ; ++j ) {
+            const unsigned k = ( ( j + n ) % num_array ) * local_size ;
+            val_ddot[i_test] = ddot_tp( comm , local_size , x + k , y + k );
+          }
+          dt_ddot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
         }
-        dt_ddot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
+        TPI_Finalize();
       }
     }
 
@@ -346,19 +355,16 @@ void test_tpi_ddot_driver(
   if ( 0 == p_rank ) {
 
     unsigned i_test , i ;
-    int thread_size ;
-    TPI_Size( & thread_size );
 
     fprintf(stdout,"\n\"DDOT and D4DOT Performance testing\"\n");
-    fprintf(stdout,"\"MPI size = %u , TPI size = %d , Bounds = %g , #Trials = %u\"\n",p_size,thread_size,mag,num_trials);
+    fprintf(stdout,"\"MPI size = %u , TPI size = %d , Bounds = %g , #Trials = %u\"\n",p_size,nthreads,mag,num_trials);
     fprintf(stdout,"\"TEST\" , \"LENGTH\" , \"VALUE\" , \"DT-MAX\" , \"DT-AVG\" , \"DT-MIN\" , \"MFLOP-MIN\" , \"MFLOP-AVG\" , \"MFLOP-MAX\"\n");
 
     for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
       const unsigned length = length_array[ i_test ];
       const unsigned ncycle =
         1 + (unsigned)( ( Mflop_target * np * 1e6 ) / ( ddot_flop * length ));
-      const double mflop = ((double)( ddot_flop * length * ncycle ) ) /
-                           ((double) 1e6 );
+      const double mflop = ((double)( ddot_flop * length ) ) / ((double) 1e6 );
 
       const double * const dt = dt_ddot + i_test * num_trials ;
       double dt_max = dt[0] ;
@@ -372,8 +378,13 @@ void test_tpi_ddot_driver(
       }
       dt_avg /= (double) num_trials ;
 
+      dt_max /= (double) ncycle ;
+      dt_avg /= (double) ncycle ;
+      dt_min /= (double) ncycle ;
+
       fprintf(stdout,"\"DDOT\"  , %8u , %9.3g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g\n",
-              length , val_ddot[i_test] , dt_max , dt_avg , dt_min ,
+              length , val_ddot[i_test] ,
+              dt_max , dt_avg , dt_min,
               ( mflop / dt_max ) , ( mflop / dt_avg ) , ( mflop / dt_min ) );
     }
 
@@ -381,13 +392,13 @@ void test_tpi_ddot_driver(
       const unsigned length = length_array[ i_test ];
       const unsigned ncycle =
         1 + (unsigned)(( Mflop_target * np * 1e6 ) / ( ddot_flop * length ));
-      const double mflop = ((double)( d4_dot_flop * length * ncycle ) ) /
+      const double mflop = ((double)( d4_dot_flop * length ) ) /
                            ((double) 1e6 );
 
       const double * const dt = dt_d4_dot + i_test * num_trials ;
       double dt_max = dt[0] ;
       double dt_min = dt[0] ;
-      double dt_avg = dt[0]  ;
+      double dt_avg = dt[0] ;
 
       for ( i = 1 ; i < num_trials ; ++i ) {
         if ( dt_max < dt[i] ) { dt_max = dt[i] ; }
@@ -396,8 +407,13 @@ void test_tpi_ddot_driver(
       }
       dt_avg /= (double) num_trials ;
 
+      dt_max /= (double) ncycle ;
+      dt_avg /= (double) ncycle ;
+      dt_min /= (double) ncycle ;
+
       fprintf(stdout,"\"D4DOT\" , %8u , %9.3g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g\n",
-              length , val_d4_dot[i_test] , dt_max , dt_avg , dt_min ,
+              length , val_d4_dot[i_test] ,
+              dt_max , dt_avg , dt_min ,
               ( mflop / dt_max ) , ( mflop / dt_avg ) , ( mflop / dt_min ) );
     }
   }
@@ -421,13 +437,9 @@ static void test_main( COMM comm , int nthreads )
   const unsigned mflop_target = 100 ;
   const double mag = 1e4 ;
 
-  TPI_Init( nthreads );
-
-  test_tpi_ddot_driver( comm ,
+  test_tpi_ddot_driver( comm , nthreads ,
                         mflop_target , num_trials ,
                         num_tests , lengths , mag );
-
-  TPI_Finalize();
 }
 
 /*--------------------------------------------------------------------*/

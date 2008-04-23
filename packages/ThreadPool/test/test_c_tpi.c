@@ -36,73 +36,67 @@ static void test_tpi_noop( void * , TPI_ThreadPool );
 int test_c_tpi_noop( int num_test , int * num_thread )
 {
   const unsigned n = 1e5 ;
-  const unsigned n_trial = 5 ;
+  const unsigned n_trial = 7 ;
   int itest ;
 
   fprintf(stdout,"\n\"TPI_Run(noop) test\"\n");
+  fprintf(stdout,"\"NUMBER OF TRIALS\" , %u\n", n_trial );
   fprintf(stdout,
-          "\"# Thread\" , \"Min microsec\" , \"Mean microsec\" , \"Max microsec\" , \"Min Use #\" , \"Mean Use #\" , \"Max Use #\"\n");
+          "\"# Thread\" , \"Min microsec\" , \"Mean microsec\" , \"Max microsec\" , \"Min Use\" , \"Mean Use\" , \"Max Use\"\n");
 
   for ( itest = 0 ; itest < num_test ; ++itest ) {
     const unsigned num = num_thread[ itest ];
-
-    int count[ num ];
+    const unsigned n_loop = n / num ;
 
     unsigned i , j ;
-    double dt ;
-    double dt_min = 0 , dt_max = 0 ;
     double use_min = 0 , use_max = 0 ;
+    double dt_min = 0 , dt_max = 0 ;
     double dt_mean = 0 , use_mean = 0 ;
-
-    TPI_Init( num );
+    double dt ;
 
     /* Time many tries and trials, get the min and max time */
 
-    TPI_Run( & test_tpi_noop , NULL );
-
-    for ( j = 0 ; j < num ; ++j ) { count[j] = 0 ; }
-
     for ( j = 0 ; j < n_trial ; ++j ) {
+      int count ;
   
-      TPI_Run_count( num , NULL );
+      TPI_Init( num );
+      TPI_Run_count( & count );
 
       dt = TPI_Walltime();
-      for ( i = 0 ; i < n ; ++i ) { TPI_Run( & test_tpi_noop , NULL ); }
+      for ( i = 0 ; i < n_loop ; ++i ) { TPI_Run( & test_tpi_noop , NULL ); }
       dt = TPI_Walltime() - dt ;
 
-      TPI_Run_count( num , count );
+      TPI_Run_count( & count );
 
       dt_mean += dt ;
 
       if ( ! j ) {
         dt_min = dt_max = dt ;
-        use_min = use_max = count[0] ;
+        use_min = use_max = count ;
       }
 
       if ( dt < dt_min ) { dt_min = dt ; }
       if ( dt > dt_max ) { dt_max = dt ; }
-      for ( i = 0 ; i < num ; ++i ) {
-        use_mean += count[i] ;
-        if ( use_min > count[i] ) { use_min = count[i] ; }
-        if ( use_max < count[i] ) { use_max = count[i] ; }
-      }
+      if ( use_min > count ) { use_min = count ; }
+      if ( use_max < count ) { use_max = count ; }
+      use_mean += count ;
+
+      TPI_Finalize();
     }
 
-    dt_min  *= 1.0e6 / n ;
-    dt_mean *= 1.0e6 / ( n * n_trial );
-    dt_max  *= 1.0e6 / n ;
+    dt_min  *= 1.0e6 / n_loop ;
+    dt_mean *= 1.0e6 / ( n_loop * n_trial );
+    dt_max  *= 1.0e6 / n_loop ;
 
-    use_min  /= n ;
-    use_mean /= n * n_trial * num ;
-    use_max  /= n ;
+    use_min  /= num * n_loop ;
+    use_mean /= num * n_loop * n_trial ;
+    use_max  /= num * n_loop ;
 
     fprintf(stdout,
             "%u , %g , %g , %g , %g , %g , %g\n",
             num, dt_min, dt_mean, dt_max, use_min, use_mean, use_max );
 
     fflush(stdout);
-
-    TPI_Finalize();
   }
 
   return 0 ;

@@ -190,7 +190,8 @@ void test_dnax_row_work( void * arg , TPI_ThreadPool pool )
  */
 
 static
-void test_tpi_dnax_driver( const unsigned Mflop_target ,
+void test_tpi_dnax_driver( const int nthread ,
+                           const unsigned Mflop_target ,
                            const unsigned num_trials ,
                            const unsigned num_test ,
                            const unsigned num_array[] ,
@@ -225,13 +226,10 @@ void test_tpi_dnax_driver( const unsigned Mflop_target ,
     for ( ; i < max_array ; ++i ) { coef[i] = 0 ; }
   }
 
-  {
-    int size ;
-    TPI_Size( & size );
-    printf("\n\"test_tpi_dnax[%d]( length_array = %u , stride_array = %u )\"\n",
-           size , length_array , stride_array );
-    printf("\"NUMBER OF THREADS\" , %d\n", size );
-  }
+  printf("\n\"test_tpi_dnax[%d]( length_array = %u , stride_array = %u )\"\n",
+         nthread , length_array , stride_array );
+  printf("\"NUMBER OF THREADS\" , %d\n" , nthread );
+  printf("\"NUMBER OF TRIALS\" , %u \n", num_trials );
 
   printf("\"NUMBER OF ARRAYS\"");
   {
@@ -271,16 +269,21 @@ void test_tpi_dnax_driver( const unsigned Mflop_target ,
       { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
 
       {
+        double dt_tmp ;
         unsigned repeat = 0 ;
+        unsigned i ;
         for ( ; repeat < num_trials ; ++repeat ) {
-          double dt_tmp = TPI_Walltime();
-          unsigned i ;
+
+          TPI_Init( nthread );
+
+          dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.offset = num * ( i % num_sets );
             TPI_Run( & test_dnax_flat_work , & data );
           }
-
           dt_tmp = TPI_Walltime() - dt_tmp ;
+
+          TPI_Finalize();
 
           if ( 0 == repeat ) {
             dt_min[ i_test ] = dt_tmp ;
@@ -366,16 +369,21 @@ void test_tpi_dnax_driver( const unsigned Mflop_target ,
       { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
 
       {
+        double dt_tmp ;
+        unsigned i ;
         unsigned repeat = 0 ;
         for ( ; repeat < num_trials ; ++repeat ) {
-          double dt_tmp = TPI_Walltime();
-          unsigned i ;
+
+          TPI_Init( nthread );
+
+          dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.offset = num * ( i % num_sets );
             TPI_Run( & test_dnax_column_work , & data );
           }
-
           dt_tmp = TPI_Walltime() - dt_tmp ;
+
+          TPI_Finalize();
 
           if ( 0 == repeat ) {
             dt_min[ i_test ] = dt_tmp ;
@@ -461,16 +469,21 @@ void test_tpi_dnax_driver( const unsigned Mflop_target ,
       { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
 
       {
+        double dt_tmp ;
+        unsigned i ;
         unsigned repeat = 0 ;
         for ( ; repeat < num_trials ; ++repeat ) {
-          double dt_tmp = TPI_Walltime();
-          unsigned i ;
+
+          TPI_Init( nthread );
+
+          dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.offset = num * ( i % num_sets );
             TPI_Run( & test_dnax_row_work , & data );
           }
-
           dt_tmp = TPI_Walltime() - dt_tmp ;
+
+          TPI_Finalize();
 
           if ( 0 == repeat ) {
             dt_min[ i_test ] = dt_tmp ;
@@ -541,18 +554,14 @@ int test_c_tpi_dnax( int nthread )
   const int concurrent = TPI_Concurrency();
   const int size = concurrent && concurrent < nthread ? concurrent : nthread ;
 
-  TPI_Init( nthread );
-
-  test_tpi_dnax_driver( Mflop_target * size ,
-                          5         /* number trials */ ,
-                          6         /* number of tests */ ,
-                          num_array /* number of arrays for each test */ ,
-                          1e6       /* array computation length */ ,
-                          1e6       /* array allocation length */ ,
-                          1000      /* chunk allocation length */ );
-
-
-  TPI_Finalize();
+  test_tpi_dnax_driver( nthread ,
+                        Mflop_target * size ,
+                        7         /* number trials */ ,
+                        6         /* number of tests */ ,
+                        num_array /* number of arrays for each test */ ,
+                        1e6       /* array computation length */ ,
+                        1e6       /* array allocation length */ ,
+                        1000      /* chunk allocation length */ );
 
   return 0 ;
 }
