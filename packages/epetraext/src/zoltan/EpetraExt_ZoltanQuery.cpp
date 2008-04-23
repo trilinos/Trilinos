@@ -139,7 +139,7 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
                                          &(nbr_edges[0]) );
     assert( flag == 0 );
     assert( NumIndices == IndiceCountReturn );
-    sort( nbr_edges.begin(), nbr_edges.end() );
+    std::sort( nbr_edges.begin(), nbr_edges.end() );
 
     bool self = false;
     for(int i = 0; i < NumIndices; ++i )
@@ -164,7 +164,7 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
       assert( tNumIndices == IndiceCountReturn );
 
       for( int i = 0; i < tNumIndices; ++i )
-        if( !binary_search( nbr_edges.begin(), nbr_edges.end(), t_nbr_edges[i] ) )
+        if( !std::binary_search( nbr_edges.begin(), nbr_edges.end(), t_nbr_edges[i] ) )
         {
           ++NumIndices;
           if( localEdgesOnly_ && !graph_.MyGRID(t_nbr_edges[i]) ) ++nonLocalEdges;
@@ -219,7 +219,7 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
 
     if( tgraph_ )
     {
-      sort( nbr_edges.begin(), nbr_edges.end() );
+      std::sort( nbr_edges.begin(), nbr_edges.end() );
 
       int tNumIndices = tgraph_->NumMyIndices( ((int) *local_id) );
       std::vector<int> t_nbr_edges( tNumIndices );
@@ -232,7 +232,7 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
       assert( tNumIndices == IndiceCountReturn );
 
       for( int i = 0; i < tNumIndices; ++i )
-        if( !binary_search( nbr_edges.begin(), nbr_edges.end(), t_nbr_edges[i] ) )
+        if( !std::binary_search( nbr_edges.begin(), nbr_edges.end(), t_nbr_edges[i] ) )
           if( !localEdgesOnly_ || graph_.MyGRID(t_nbr_edges[i]) )
           {
             neighbor_global_ids[ii] = t_nbr_edges[i];
