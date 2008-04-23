@@ -39,7 +39,6 @@ template<class Scalar>
 void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
   
   // Basis-dependent initializations
-  int numBf    = 3;         // number of basis functions
   int tagSize  = 4;         // size of DoF tag
   int posScDim = 0;         // position in the tag, counting from 0, of the subcell dim 
   int posScId  = 1;         // position in the tag, counting from 0, of the subcell id
@@ -56,7 +55,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
   Intrepid::setEnumTagData(tagToEnum_,
                            enumToTag_,
                            tags,
-                           numBf,
+                           numDof_,
                            tagSize,
                            posScDim,
                            posScId,
@@ -215,10 +214,12 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 }
 
 
+
 template<class Scalar>
 int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
     return numDof_;   
 }
+
 
 
 template<class Scalar>

@@ -28,7 +28,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-\brief  Unit tests for the Intrepid::Basis_F0_TRI_C1_FEM_DEFAULT class.
+\brief  Unit tests for the Intrepid::Basis_F0_QUAD_I1_FEM_DEFAULT class.
 \author Created by P. Bochev and D. Ridzal.
 */
 

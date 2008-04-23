@@ -103,7 +103,7 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
 
   /** \brief Constructor.
   */
-  Basis_F0_TRI_C1_FEM_DEFAULT() : numDof_(3),isSet_(false) {};
+  Basis_F0_TRI_C1_FEM_DEFAULT() : numDof_(3), isSet_(false) {};
   
   /** \brief Initializes arrays needed for the lookup of the local enumeration (DoF Id) of a 
     degree-of-freedom by its local DoF tag and the reverse lookup of the DoF tag by DoF Id.

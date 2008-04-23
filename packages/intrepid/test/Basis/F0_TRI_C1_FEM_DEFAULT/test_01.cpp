@@ -56,21 +56,22 @@ int main(int argc, char *argv[]) {
   oldFormatState.copyfmt(std::cout);
 
   *outStream \
-  << "===============================================================================\n" \
-  << "|                                                                             |\n" \
-  << "|                 Unit Test (Basis_F0_TRI_C1_FEM_DEFAULT)                     |\n" \
-  << "|                                                                             |\n" \
-  << "|     1) Basis creation, computation of basis function values                 |\n" \
-  << "|                                                                             |\n" \
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-  << "|                                                                             |\n" \
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-  << "|                                                                             |\n" \
-  << "===============================================================================\n"\
-  << "| TEST 1: Basis creation, exception testing                                   |\n"\
-  << "===============================================================================\n";
+    << "===============================================================================\n" \
+    << "|                                                                             |\n" \
+    << "|                 Unit Test (Basis_F0_TRI_C1_FEM_DEFAULT)                     |\n" \
+    << "|                                                                             |\n" \
+    << "|     1) Basis creation, conversion of Dof tags into enumeration and back     |\n" \
+    << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n" \
+    << "|                                                                             |\n" \
+    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+    << "|                                                                             |\n" \
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|                                                                             |\n" \
+    << "===============================================================================\n"\
+    << "| TEST 1: Basis creation, exception testing                                   |\n"\
+    << "===============================================================================\n";
 
   int errorFlag = 0;
   int beginThrowNumber = TestForException_getThrowNumber();
@@ -78,28 +79,27 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   endThrowNumber += 5;
 #endif
-  double basisvals[] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-  
-  Teuchos::Array< Point<double> > points01;
-  Point<double> pt(2, FRAME_REFERENCE);
-  points01.assign(3, pt);
-  double ptarray[2];
-  ptarray[0] = 0.0; ptarray[1] = 0.0;
-  (points01[0]).setCoordinates(ptarray, 2);
-  ptarray[0] = 1.0; ptarray[1] = 0.0;
-  (points01[1]).setCoordinates(ptarray, 2);
-  ptarray[0] = 0.0; ptarray[1] = 1.0;
-  (points01[2]).setCoordinates(ptarray, 2);
+
+  // Reference element points are the 4 vertices of the tri cell and the center point (0,0):
+  Teuchos::Array< Point<double> > triNodes;
+  Point<double> tempPt(2, FRAME_REFERENCE);
+  triNodes.assign(3, tempPt);  
+  triNodes[0] = Point<double>(  0.0,  0.0, FRAME_REFERENCE);
+  triNodes[1] = Point<double>(  1.0,  0.0, FRAME_REFERENCE);
+  triNodes[2] = Point<double>(  0.0,  1.0, FRAME_REFERENCE);
 
   try{
-
     VarContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
-    Teuchos::RCP<Basis<double> > tribasis =  BFactory.create(
-      FIELD_FORM_0, CELL_TRI, RECONSTRUCTION_SPACE_COMPLETE, 1, BASIS_FEM_DEFAULT, COORDINATES_CARTESIAN);
-
+    Teuchos::RCP<Basis<double> > triBasis = BFactory.create(FIELD_FORM_0, 
+                                                            CELL_TRI, 
+                                                            RECONSTRUCTION_SPACE_COMPLETE, 
+                                                            1, 
+                                                            BASIS_FEM_DEFAULT, 
+                                                            COORDINATES_CARTESIAN);
+    // Exception 1: DIV cannot be applied to scalar functions
     try {
-      tribasis->getValues(vals, points01, OPERATOR_DIV);
+      triBasis->getValues(vals, triNodes, OPERATOR_DIV);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -107,70 +107,52 @@ int main(int argc, char *argv[]) {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
 
-    tribasis->getValues(vals, points01, OPERATOR_VALUE);
-    *outStream << vals << "\n";
-    tribasis->getValues(vals, points01, OPERATOR_GRAD);
-    *outStream << vals << "\n";
-    tribasis->getValues(vals, points01, OPERATOR_CURL);
-    *outStream << vals << "\n";
-
-    for (EOperator op = OPERATOR_D1; op < OPERATOR_MAX; op++) {
-      tribasis->getValues(vals, points01, op);
-      *outStream << vals << "\n";
-    }
-
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    try {
+    // Exceptions 2-6: all tags/bd Ids below are wrong and should cause getLocalDofEnumeration() and 
+    // getLocalDofTag() to access invalid array elements thereby causing Teuchos bounds check exception
+    try {      
       LocalDofTag myTag = {{3,0,0,1}};
-      tribasis->getLocalDofEnumeration(myTag);
+      triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
-#endif
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       LocalDofTag myTag = {{1,1,1,0}};
-      tribasis->getLocalDofEnumeration(myTag);
+      triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
-#endif
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
-      LocalDofTag myTag = {{0,3,0,0}};
-      tribasis->getLocalDofEnumeration(myTag);
+      LocalDofTag myTag = {{0,4,0,0}};
+      triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
-#endif
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       int bfId = 4;
-      tribasis->getLocalDofTag(bfId);
+      triBasis -> getLocalDofTag(bfId);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
-#endif
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     try {
       int bfId = -1;
-      tribasis->getLocalDofTag(bfId);
+      triBasis -> getLocalDofTag(bfId);
     }
     catch (std::logic_error err) {
       *outStream << "Expected Error ----------------------------------------------------------------\n";
@@ -178,17 +160,6 @@ int main(int argc, char *argv[]) {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
 #endif
-
-    Teuchos::Array<LocalDofTag> allTags;
-    allTags = tribasis->getAllLocalDofTags();
-    for (unsigned i=0; i<allTags.size(); i++) {
-      LocalDofTag myTag = allTags[i];
-      int bfId = tribasis->getLocalDofEnumeration(myTag);
-      myTag = tribasis->getLocalDofTag(bfId);
-      *outStream << "Local Bf Id = " << bfId << "  -->  " << "DoF Tag = ";
-      *outStream << "{" << myTag.tag_[0] << ", " << myTag.tag_[1] << ", " << myTag.tag_[2] << ", " << myTag.tag_[3] << "}\n";
-    }
-
   }
   catch (std::logic_error err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
@@ -197,29 +168,211 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
 
-  if (TestForException_getThrowNumber() != endThrowNumber)
+  // Check if number of thrown exceptions matches the one we expect (1 + 5)
+  if (TestForException_getThrowNumber() != endThrowNumber) {
     errorFlag++;
+    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+  }
 
   *outStream \
-  << "\n"
-  << "===============================================================================\n"\
-  << "| TEST 2: correctness of basis function values                                |\n"\
-  << "===============================================================================\n";
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"\
+    << "===============================================================================\n";
 
-  outStream->precision(20);
+  try{
+    DefaultBasisFactory<double> BFactory;
+    Teuchos::RCP<Basis<double> > triBasis = BFactory.create(FIELD_FORM_0, 
+                                                            CELL_TRI, 
+                                                            RECONSTRUCTION_SPACE_COMPLETE, 
+                                                            1, 
+                                                            BASIS_FEM_DEFAULT, 
+                                                            COORDINATES_CARTESIAN);
+    Teuchos::Array<LocalDofTag> allTags;
+    allTags = triBasis -> getAllLocalDofTags();
+
+    // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
+    for (unsigned i = 0; i < allTags.size(); i++) {
+      int        bfId  = triBasis -> getLocalDofEnumeration(allTags[i]);
+      LocalDofTag myTag = triBasis -> getLocalDofTag(bfId);
+       if( !( (myTag.tag_[0] == allTags[i].tag_[0]) &&
+             (myTag.tag_[1] == allTags[i].tag_[1]) &&
+             (myTag.tag_[2] == allTags[i].tag_[2]) &&
+             (myTag.tag_[3] == allTags[i].tag_[3]) ) ) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " getLocalDofEnumeration( {" 
+          << allTags[i].tag_[0] << ", " 
+          << allTags[i].tag_[1] << ", " 
+          << allTags[i].tag_[2] << ", " 
+          << allTags[i].tag_[3] << "}) = " << bfId <<" but \n";   
+        *outStream << " getLocalDofTag(" << bfId << ") = { "
+          << myTag.tag_[0] << ", " 
+          << myTag.tag_[1] << ", " 
+          << myTag.tag_[2] << ", " 
+          << myTag.tag_[3] << "}\n";        
+      }
+    }
+
+    // Now do the same but loop over basis functions
+    for( int bfId = 0; bfId < triBasis -> getNumLocalDof(); bfId++) {
+      LocalDofTag myTag  = triBasis -> getLocalDofTag(bfId);
+      int myBfId = triBasis -> getLocalDofEnumeration(myTag);
+      if( bfId != myBfId) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " getLocalDofTag(" << bfId << ") = { "
+          << myTag.tag_[0] << ", " 
+          << myTag.tag_[1] << ", " 
+          << myTag.tag_[2] << ", " 
+          << myTag.tag_[3] << "} but getLocalDofEnumeration({" 
+          << myTag.tag_[0] << ", " 
+          << myTag.tag_[1] << ", " 
+          << myTag.tag_[2] << ", " 
+          << myTag.tag_[3] << "} ) = " << myBfId << "\n";
+      }
+    }
+  }
+  catch (std::logic_error err){
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  };
+
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 3: correctness of basis function values                                |\n"\
+    << "===============================================================================\n";
+
+  outStream -> precision(20);
+
+  // VALUE: Each row gives the 3 correct basis set values at an evaluation point
+  double basisValues[] = {
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0
+  };
+
+  // GRAD and D1: each row gives the 6 correct values of the gradients of the 3 basis functions
+  double basisGrads[] = {
+    -1.0, -1.0,    1.0,  0.0,    0.0,  1.0,
+    -1.0, -1.0,    1.0,  0.0,    0.0,  1.0,
+    -1.0, -1.0,    1.0,  0.0,    0.0,  1.0
+  };
+
+  // CURL: each row gives the 6 correct values of the curls of the 3 basis functions
+  double basisCurls[] = {
+    -1.0,  1.0,    0.0, -1.0,    1.0,  0.0,
+    -1.0,  1.0,    0.0, -1.0,    1.0,  0.0,
+    -1.0,  1.0,    0.0, -1.0,    1.0,  0.0
+  };
 
   try{
     VarContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
-    Teuchos::RCP<Basis<double> > tribasis =  BFactory.create(
-      FIELD_FORM_0, CELL_TRI, RECONSTRUCTION_SPACE_COMPLETE, 1, BASIS_FEM_DEFAULT, COORDINATES_CARTESIAN);
-    tribasis->getValues(vals, points01, OPERATOR_VALUE);
-    for (int i=0; i<vals.getSize(); i++) {
-      *outStream << "  Computed value: " << vals[i] << "   Reference value: " << basisvals[i] << "\n";
-      if (std::abs(vals[i]-basisvals[i]) > INTREPID_TOL)
+    Teuchos::RCP<Basis<double> > triBasis = BFactory.create(FIELD_FORM_0, 
+                                                            CELL_TRI, 
+                                                            RECONSTRUCTION_SPACE_COMPLETE, 
+                                                            1, 
+                                                            BASIS_FEM_DEFAULT, 
+                                                            COORDINATES_CARTESIAN);
+
+    // Check VALUE of basis functions
+    triBasis -> getValues(vals, triNodes, OPERATOR_VALUE);
+    for (int i=0; i < vals.getSize(); i++) {
+      if (std::abs(vals[i] - basisValues[i]) > INTREPID_TOL) {
         errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        // Get the multi-index of the value where the error is:
+        Teuchos::Array<int> myIndex;
+        vals.getMultiIndex(myIndex,i);
+        *outStream << " At multi-index { ";
+        for(int j = 0; j < vals.getRank(); j++) {
+          *outStream << myIndex[j] << " ";
+        }
+        *outStream << "}  computed value: " << vals[i] 
+          << " but reference value: " << basisValues[i] << "\n";
+      }
     }
+
+    // Check GRAD of basis function
+    triBasis -> getValues(vals, triNodes, OPERATOR_GRAD);
+    for (int i=0; i < vals.getSize(); i++) {
+      if (std::abs(vals[i] - basisGrads[i]) > INTREPID_TOL) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        // Get the multi-index of the value where the error is:
+        Teuchos::Array<int> myIndex;
+        vals.getMultiIndex(myIndex,i);
+        *outStream << " At multi-index { ";
+        for(int j = 0; j < vals.getRank(); j++) {
+          *outStream << myIndex[j] << " ";
+        }
+        *outStream << "}  computed grad component: " << vals[i] 
+          << " but reference grad component: " << basisGrads[i] << "\n";
+      }
+    }
+
+    // Check D1 of basis function
+    triBasis -> getValues(vals, triNodes, OPERATOR_D1);
+    for (int i=0; i < vals.getSize(); i++) {
+      if (std::abs(vals[i] - basisGrads[i]) > INTREPID_TOL) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        // Get the multi-index of the value where the error is:
+        Teuchos::Array<int> myIndex;
+        vals.getMultiIndex(myIndex,i);
+        *outStream << " At multi-index { ";
+        for(int j = 0; j < vals.getRank(); j++) {
+          *outStream << myIndex[j] << " ";
+        }
+        *outStream << "}  computed D1 component: " << vals[i] 
+          << " but reference D1 component: " << basisGrads[i] << "\n";
+      }
+    }
+
+
+    // Check CURL of basis function
+    triBasis -> getValues(vals, triNodes, OPERATOR_CURL);
+    for (int i=0; i < vals.getSize(); i++) {
+      if (std::abs(vals[i] - basisCurls[i]) > INTREPID_TOL) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        // Get the multi-index of the value where the error is:
+        Teuchos::Array<int> myIndex;
+        vals.getMultiIndex(myIndex,i);
+        *outStream << " At multi-index { ";
+        for(int j = 0; j < vals.getRank(); j++) {
+          *outStream << myIndex[j] << " ";
+        }
+        *outStream << "}  computed curl component: " << vals[i] 
+          << " but reference curl component: " << basisCurls[i] << "\n";
+      }
+    }
+
+    // Check all higher derivatives - must be zero
+    for(EOperator op = OPERATOR_D2; op < OPERATOR_MAX; op++) {
+      triBasis -> getValues(vals, triNodes, op);
+      for (int i=0; i < vals.getSize(); i++) {
+        if (std::abs(vals[i]) > INTREPID_TOL) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          // Get the multi-index of the value where the error is and the operator order
+          Teuchos::Array<int> myIndex;
+          vals.getMultiIndex(myIndex,i);
+          int ord = Intrepid::getOperatorOrder(op);
+          *outStream << " At multi-index { ";
+          for(int j = 0; j < vals.getRank(); j++) {
+            *outStream << myIndex[j] << " ";
+          }
+          *outStream << "}  computed D"<< ord <<" component: " << vals[i] 
+            << " but reference D" << ord << " component:  0 \n";
+        }
+      }
+    }
+
   }
+  // Catch unexpected errors
   catch (std::logic_error err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
