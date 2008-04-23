@@ -7270,12 +7270,6 @@ echo "$as_me: error: Cannot find iomanip or iomanip.h.  Intrepid requires at lea
    { (exit 1); exit 1; }; }
 fi
 
-if test "X$ac_cv_header_time" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find time or time.h.  Intrepid requires at least one or the other." >&5
-echo "$as_me: error: Cannot find time or time.h.  Intrepid requires at least one or the other." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics

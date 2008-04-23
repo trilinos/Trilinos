@@ -395,8 +395,11 @@ int main(int argc, char *argv[]) {
     triMcell.setAtlas();
     Point<double> randomRefPoint(2,FRAME_REFERENCE);
     
+    // set seed
+    std::srand( (long)(&randomRefPoint) );
     for(int numPts = 0; numPts < 500; numPts++){
-      std::srand( std::time(NULL)*numPts );			
+      // Use when time() becomes platform-independent.
+      // std::srand( std::time(NULL)*numPts );			
       
       // Two random numbers between 0 and 1
       double rx = ((double)std::rand())/RAND_MAX;	

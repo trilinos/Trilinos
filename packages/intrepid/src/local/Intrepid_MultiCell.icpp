@@ -254,7 +254,7 @@ namespace Intrepid {
     
     // Flag to tell us if the name was found and a temp variable for return argument
     bool nameFound = false;
-    ECell cellType;
+    ECell cellType = CELL_NODE;;
     
     for (ECell i = CELL_NODE; i < CELL_MAX; i++) {
       if (0 == strcmp(cellName, cellNames_[i])){

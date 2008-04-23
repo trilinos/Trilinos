@@ -233,10 +233,6 @@ if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" !=
   AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Intrepid requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_time" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find time or time.h.  Intrepid requires at least one or the other.]])
-fi
-
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
