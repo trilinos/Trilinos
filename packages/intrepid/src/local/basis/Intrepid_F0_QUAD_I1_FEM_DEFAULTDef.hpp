@@ -33,30 +33,6 @@
 */
 
 namespace Intrepid {
-    
-template<class Scalar>
-int Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::numDof_ = 4;
-    
-    
-  
-template<class Scalar>
-Teuchos::Array<Teuchos::Array<Teuchos::Array<int> > > Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::tagToEnum_;
-
-
-
-template<class Scalar>
-Teuchos::Array<LocalDofTag> Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::enumToTag_;
-
-
-
-template<class Scalar>
-bool Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::isSet_ = false;
-
-
-
-template<class Scalar>
-Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::Basis_F0_QUAD_I1_FEM_DEFAULT() {}
-
 
 
 template<class Scalar>

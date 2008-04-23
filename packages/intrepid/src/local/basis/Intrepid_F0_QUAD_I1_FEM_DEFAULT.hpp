@@ -86,25 +86,25 @@ class Basis_F0_QUAD_I1_FEM_DEFAULT: public Basis<Scalar> {
   
   /** \brief Dimension of the space spanned by the basis = number of degrees of freedom.
   */
-  static int numDof_;
+  int numDof_;
   
   /**\brief Lookup table for the DoF's local enumeration (DoF Id) by its local DoF tag
   */
-  static Teuchos::Array<Teuchos::Array<Teuchos::Array<int> > > tagToEnum_;
+  Teuchos::Array<Teuchos::Array<Teuchos::Array<int> > > tagToEnum_;
   
   /**\brief Lookup table for the DoF's local DoF tag by its local enumeration (DoF Id)
   */
-  static Teuchos::Array<LocalDofTag> enumToTag_;
+  Teuchos::Array<LocalDofTag> enumToTag_;
   
   /**\brief "true" if both lookup arrays have been set by initialize()
   */
-  static bool isSet_;
+  bool isSet_;
 
   public:
 
   /** \brief Constructor.
   */
-  Basis_F0_QUAD_I1_FEM_DEFAULT();
+    Basis_F0_QUAD_I1_FEM_DEFAULT() : numDof_(4), isSet_(false) { };
   
   /** \brief Initializes static arrays needed for the lookup of the local enumeration (DoF Id) of a 
     degree-of-freedom by its local DoF tag and the reverse lookup of the DoF tag by DoF Id.

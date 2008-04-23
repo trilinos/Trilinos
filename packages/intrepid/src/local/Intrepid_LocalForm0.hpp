@@ -141,7 +141,7 @@ class LocalForm0 : public LocalField<Scalar> {
       \param primOp           [in]     - Input operator (primitive).
       \param cell             [in]     - Physical cell.
   */
-  void getOperator(LexContainer<Scalar> &                  outputValues,
+  void getOperator(VarContainer<Scalar> &                  outputValues,
                    const Teuchos::Array<Point<Scalar> > &  inputPoints,
                    const EOperator                         primOp,
                    const Cell<Scalar> &                    cell);

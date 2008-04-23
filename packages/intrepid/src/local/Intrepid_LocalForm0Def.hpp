@@ -146,7 +146,7 @@ void LocalForm0<Scalar>::getOperator(VarContainer<Scalar> &                  out
 
 
 template<class Scalar>
-void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &                  outputValues,
+void LocalForm0<Scalar>::getOperator(VarContainer<Scalar> &                  outputValues,
                                      const Teuchos::Array<Point<Scalar> > &  inputPoints,
                                      const EOperator                         primOp,
                                      const Cell<Scalar> &                    cell) {

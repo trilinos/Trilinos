@@ -96,26 +96,22 @@ class LocalField {
       \param primOp           [in]     - Input operator (primitive).
       \param cell             [in]     - Physical cell.
   */
-  virtual void getOperator(LexContainer<Scalar> &                  outputValues,
+  virtual void getOperator(VarContainer<Scalar> &                  outputValues,
                            const Teuchos::Array<Point<Scalar> > &  inputPoints,
                            const EOperator                         primOp,
                            const Cell<Scalar> &                    cell) = 0;
 
 
-  /** \brief Returns discrete representation (matrix) of integral quantities (one for every
-             cell in the multicell <var>mCell</var>) involving
-             a left differential operator <var>leftOp</var> applied to basis
-             functions, external input data <var>inputData</var>, and a right
-             differential operator <var>rightOp</var> applied to basis functions,
-             where left and right basis functions belong to the same basis.
+  /** \brief Returns a LexContainer with matrices (one for every cell in the multicell <var>mCell</var>) whose 
+    elements are defined by 
+ 
+      \f$ \displaystyle \mathbf{A}_{ij} = \int_{\Omega} (leftOp\;\phi_i) (inputData) (rightOp\;{\phi_j}) d\Omega\f$
 
-      The integral to be computed is
-
-      \f$ \displaystyle \int_{\Omega} (leftOp\;\phi) (inputData) (rightOp\;\widehat{\phi}) d\Omega\f$
-
-      where \f$\Omega\f$ is any valid integration domain (line, surface, cell),
-      \f$\phi\f$ and \f$\widehat{\phi}\f$ are basis functions from the same basis,
-      and <var>inputData</var> is a data array that should be formatted as below.\n
+      where <var>leftOp</var> and <var>rightOp</var> are admissible operator types for the particular 
+      basis, \f$\Omega\f$ is any valid integration domain (line, surface, cell),
+      \f$\phi_i\f$ and \f${\phi_j}\f$ are basis functions from the same basis,
+      and <var>inputData</var> is a data array with user-defined external input data that should be 
+      formatted as below.\n
       Note:\n
       \f$s\f$ denotes a scalar quantity,\n
       \f$v_i\f$ denotes the i-th component of a vector \f$v\f$,\n
@@ -132,7 +128,7 @@ class LocalField {
         <tr> <td>\f$ value(T_{ij}, cell\_id, q_k) = inputData[cell\_id \cdot N \cdot d^2 + k \cdot d^2 + i \cdot d + j] \f$</td>
              <td>if <var>inputFormat==DATA_TENSOR</var></td> </tr>
       </table>
-
+    
       \param outputValues    [out]     - Output array.
       \param leftOp           [in]     - Left operator.
       \param rightOp          [in]     - Right operator.
