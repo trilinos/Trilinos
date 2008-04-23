@@ -17,6 +17,8 @@ OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
 FIND_LIBRARY(TRILINOS_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
 
+ADD_DEFINITIONS(-DEPETRA_ADDRESS64BIT)
+
 # Set global options that will be inserted into config.h files ...
 # Note: we should really be probing for these values, but will hard-code them in the short-term.
 # Most of these should be fine for all but ridiculously out-of-date C++ compilers, but you never know.
