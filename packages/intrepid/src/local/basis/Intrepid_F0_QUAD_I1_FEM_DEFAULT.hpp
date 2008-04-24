@@ -112,29 +112,8 @@ class Basis_F0_QUAD_I1_FEM_DEFAULT: public Basis<Scalar> {
   void initialize();
     
   /** \brief Returns a VarContainer with the values of <var>opertorType</var> applied to the basis
-    functions. Admissible <var>operatorType</var> arguments and the format of the output container 
-    are as follows (see also getEnumeration for a detailed list of VarContainer shapes)
-    \verbatim
-                |--------------------|----------------------|----------------|
-                |    operatorType    |  outputValues format | container rank |
-                |--------------------|----------------------|----------------|
-                |       VALUE        |    [P][F]            |       2        | 
-                |--------------------|----------------------|----------------|
-                |     GRAD, D1       |    [P][F][D]         |       3        |
-                |--------------------|----------------------|----------------|
-                |        CURL        |    [P][F][D]         |       3        |
-                |--------------------|----------------------|----------------|
-                |        DIV         |    undefined         |       -        | 
-                |--------------------|----------------------|----------------|
-                |    D1,D2,..,D10    |    [P][F][K]         |       3        | 
-                |--------------------|----------------------|----------------|
-    
-    Legend:
-        P -> point index            range: 0 <= P < numPoints = inputPoints.size()
-        F -> field index            range: 0 <= F < numFields = 4
-        D -> field component index  range: 0 <= D < spaceDim  = 2
-        K -> enumeration of Dk      range: 0 <= K < DkCardinality 
-    \endverbatim
+    functions. For admissible <var>operatorType</var> arguments and the format of the output container 
+    see LocalForm0::getOperator(VarContainer<Scalar>&, const Teuchos::Array<Point<Scalar> >&, const EOperator)
     
     \param outputValues   [out]         - VarContainer of rank 2 or 3 with the computed values
     \param inputPoints     [in]         - evaluation points on the reference cell  

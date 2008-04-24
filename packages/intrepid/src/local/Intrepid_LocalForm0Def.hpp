@@ -106,6 +106,8 @@ const VarContainer<Scalar> & LocalForm0<Scalar>::getOperator(const EOperator  pr
                                                              const int        subCellId) {
 
   int myCellDim = MultiCell<Scalar>::getCellDim(basisCell_);
+  
+  // The first index in basisVals_ is the cell dimension minus the subcell dimension
   int dimIndex  = myCellDim - subDim;
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION(((dimIndex < 0) || (subDim < 0) || (dimIndex >= (int)cubature_.size())),
@@ -115,22 +117,33 @@ const VarContainer<Scalar> & LocalForm0<Scalar>::getOperator(const EOperator  pr
                      std::invalid_argument,
                      ">>> ERROR (LocalForm0): Invalid subcell id or no match for subcell id within provided cubature rules!");
 #endif
-
+  
+  // basisVals_[primOp] is 2-dimensional array of VarContainers whose leading dimension must equal
+  // cubature_.size() -  the number of different subcell dimensions for which cubatures are defined
   if ((int)basisVals_[primOp].size() == 0) {
     basisVals_[primOp].resize(cubature_.size());
   }
+  
+  // basisVals_[primOp][dimIndex] is one-dimensional array of VarContainers whose length must equal
+  //  cubature_[dimIndex].size() -  the number of subcells of the specified dimension.
   if ((int)basisVals_[primOp][dimIndex].size() == 0) {
     ((basisVals_[primOp])[dimIndex]).resize(cubature_[dimIndex].size());
   }
+  
   if ((int)basisVals_[primOp][dimIndex][subCellId].getSize() == 0) {
+    
+    // If the VarContainer at basisVals_[primOp][dimIndex][subCellId] is empty, shape it accordingly
     basisVals_[primOp][dimIndex][subCellId].reset(numCubPoints_[dimIndex][subCellId],
                                                   basisNumDofs_,
                                                   FIELD_FORM_0,
                                                   primOp,
                                                   myCellDim);
-    basis_->getValues(basisVals_[primOp][dimIndex][subCellId], cubPoints_[dimIndex][subCellId], primOp);
+    
+    // Then call getValues from the native basis clas to fill the container.
+    basis_ -> getValues(basisVals_[primOp][dimIndex][subCellId], cubPoints_[dimIndex][subCellId], primOp);
   }
 
+  // Otherwise, we simply return const reference to the appropriate VarContainer:
   return basisVals_[primOp][dimIndex][subCellId];
 }
 

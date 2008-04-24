@@ -112,40 +112,19 @@ class Basis_F0_TRI_C1_FEM_DEFAULT: public Basis<Scalar> {
   
   
   /** \brief Returns a VarContainer with the values of <var>opertorType</var> applied to the basis
-    functions. Admissible <var>operatorType</var> arguments and the format of the output container 
-    are as follows (see also getEnumeration for a detailed list of VarContainer shapes)
-    \verbatim
-                |--------------------|----------------------|----------------|
-                |    operatorType    |  outputValues format | container rank |
-                |--------------------|----------------------|----------------|
-                |       VALUE        |    [P][F]            |       2        | 
-                |--------------------|----------------------|----------------|
-                |     GRAD, D1       |    [P][F][D]         |       3        |
-                |--------------------|----------------------|----------------|
-                |        CURL        |    [P][F][D]         |       3        |
-                |--------------------|----------------------|----------------|
-                |        DIV         |    undefined         |       -        | 
-                |--------------------|----------------------|----------------|
-                |    D1,D2,..,D10    |    [P][F][K]         |       3        | 
-                |--------------------|----------------------|----------------|
-    
-    Legend:
-        P -> point index            range: 0 <= P < numPoints = inputPoints.size()
-        F -> field index            range: 0 <= F < numFields = 3
-        D -> field component index  range: 0 <= D < spaceDim  = 2
-        K -> enumeration of Dk      range: 0 <= K < DkCardinality 
-    \endverbatim
+    functions. For admissible <var>operatorType</var> arguments and the format of the output container 
+    see LocalForm0::getOperator(VarContainer<Scalar>&, const Teuchos::Array<Point<Scalar> >&, const EOperator)
     
     \param outputValues   [out]         - VarContainer of rank 2 or 3 with the computed values
     \param inputPoints     [in]         - evaluation points on the reference cell  
-    \param operatorType    [in]         - the operator being applied to the basis function
+    \param operatorType    [in]         - the operator being applied to the basis function    
     
     \remarks 
     \li Enumeration of Dk (derivatives of total order k) follows the lexicographical order of 
     the partial derivatives; see getDkEnumeration() for details.
     
-    \li For bilinear basis functions all 3rd and higher derivatives are identically zero. 
-    Nevertheless, the output container for D3,...,D10 is still shaped using DkCardinality as an upper
+    \li For linear basis functions all 2nd order and higher derivatives are identically zero. 
+    Nevertheless, the output container for D2,...,D10 is still shaped using DkCardinality as an upper
     bound for the last index, i.e., the output container is filled with as many zeroes as there are
     partial derivatives of a particular order; see getDkCardinality. 
   */
