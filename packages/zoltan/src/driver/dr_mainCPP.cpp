@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   zz->Set_Param("DEBUG_MEMORY", "1");
   print_output = Output.Text;
 
-  if (!setup_zoltan(*zz, Proc, &prob, &mesh)) {
+  if (!setup_zoltan(*zz, Proc, &prob, &mesh, &pio_info)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
     error_report(Proc);
     print_output = 0;
@@ -383,7 +383,7 @@ static int read_mesh(
         
     }
   }
-  else if (pio_info->file_type == NO_FILE) {
+  else if (pio_info->file_type == NO_FILE_POINTS) {
     if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from create_random_input\n");
         return 0;

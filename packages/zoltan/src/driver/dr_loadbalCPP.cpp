@@ -93,7 +93,7 @@ ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
 /*****************************************************************************/
 
 int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
-                 MESH_INFO_PTR mesh)
+                 MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info)
 {
 /* Local declarations. */
   const char *yo = "setup_zoltan";
