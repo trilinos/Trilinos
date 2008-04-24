@@ -74,7 +74,9 @@ int test_find_rows(Epetra_Comm& Comm);
 
 Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
                                           int localProc,
-                                          int local_n);
+                                          int local_n,
+                                          bool callFillComplete = true,
+                                          bool symmetric = true);
 
 int time_matrix_matrix_multiply(Epetra_Comm& Comm,
                                 bool verbose);
@@ -169,6 +171,18 @@ int main(int argc, char** argv) {
 
   if (!input_file_specified) delete [] input_file;
   if (!path_specified) delete [] path;
+
+  Epetra_CrsMatrix* D = create_epetra_crsmatrix(Comm.NumProc(),
+                                                Comm.MyPID(), 10,
+                                                true, false);
+
+  std::cout << "D: \n"  << *D << std::endl;
+
+  EpetraExt::MatrixMatrix::Add(*D, true, 0.5, *D, 0.5);
+
+//  std::cout << "symm D: \n"  << *D << std::endl;
+
+  delete D;
 
   err = time_matrix_matrix_multiply(Comm, verbose);
 
@@ -806,7 +820,9 @@ int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
 
 Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
                                           int localProc,
-                                          int local_n)
+                                          int local_n,
+                                          bool callFillComplete,
+                                          bool symmetric)
 {
   (void)localProc;
 #ifdef EPETRA_MPI
@@ -825,6 +841,8 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
   // Add  rows one-at-a-time
   double negOne = -1.0;
   double posTwo = 2.0;
+  double val_L = symmetric ? negOne : -0.5;
+
   for (int i=0; i<local_n; i++) {
     int GlobalRow = matrix->GRID(i);
     int RowLess1 = GlobalRow - 1;
@@ -838,20 +856,22 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
     int RowLess48 = GlobalRow - 48;
     int RowPlus48 = GlobalRow + 48;
 
+//    if (!symmetric) RowLess5 -= 2;
+
     if (RowLess48>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess48);
+      matrix->InsertGlobalValues(GlobalRow, 1, &val_L, &RowLess48);
     }
     if (RowLess24>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess24);
+      matrix->InsertGlobalValues(GlobalRow, 1, &val_L, &RowLess24);
     }
     if (RowLess9>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess9);
+      matrix->InsertGlobalValues(GlobalRow, 1, &val_L, &RowLess9);
     }
     if (RowLess5>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess5);
+      matrix->InsertGlobalValues(GlobalRow, 1, &val_L, &RowLess5);
     }
     if (RowLess1>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess1);
+      matrix->InsertGlobalValues(GlobalRow, 1, &val_L, &RowLess1);
     }
     if (RowPlus1<global_num_rows) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus1);
@@ -872,10 +892,12 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
     matrix->InsertGlobalValues(GlobalRow, 1, &posTwo, &GlobalRow);
   }
 
-  int err = matrix->FillComplete();
-  if (err != 0) {
-    std::cout << "create_epetra_matrix: error in matrix.FillComplete()"
-       <<std::endl;
+  if (callFillComplete) {
+    int err = matrix->FillComplete();
+    if (err != 0) {
+      std::cout << "create_epetra_matrix: error in matrix.FillComplete()"
+         <<std::endl;
+    }
   }
 
   return(matrix);

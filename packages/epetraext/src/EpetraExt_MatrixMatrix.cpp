@@ -29,6 +29,8 @@
 #include <EpetraExt_ConfigDefs.h>
 #include <EpetraExt_MatrixMatrix.h>
 
+#include <EpetraExt_MMHelpers.h>
+
 #include <EpetraExt_Transpose_RowMatrix.h>
 
 #include <Epetra_Export.h>
@@ -78,70 +80,10 @@ double sparsedot(double* u, int* u_ind, int u_len,
   return(result);
 }
 
-//struct that holds views of the contents of a CrsMatrix. These
-//contents may be a mixture of local and remote rows of the
-//original matrix. 
-class CrsMatrixStruct {
-public:
-  CrsMatrixStruct()
-    : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
-      remote(NULL), numRemote(0), rowMap(NULL), colMap(NULL),
-      domainMap(NULL), importColMap(NULL), importMatrix(NULL)
-  {}
-
-  virtual ~CrsMatrixStruct()
-  {
-    deleteContents();
-  }
-
-  void deleteContents()
-  {
-    numRows = 0;
-    delete [] numEntriesPerRow; numEntriesPerRow = NULL;
-    delete [] indices; indices = NULL;
-    delete [] values; values = NULL;
-    delete [] remote; remote = NULL;
-    numRemote = 0;
-    delete importMatrix;
-  }
-
-  int numRows;
-  int* numEntriesPerRow;
-  int** indices;
-  double** values;
-  bool* remote;
-  int numRemote;
-  const Epetra_Map* origRowMap;
-  const Epetra_Map* rowMap;
-  const Epetra_Map* colMap;
-  const Epetra_Map* domainMap;
-  const Epetra_Map* importColMap;
-  Epetra_CrsMatrix* importMatrix;
-};
-
-int dumpCrsMatrixStruct(const CrsMatrixStruct& M)
-{
-  cout << "proc " << M.rowMap->Comm().MyPID()<<endl;
-  cout << "numRows: " << M.numRows<<endl;
-  for(int i=0; i<M.numRows; ++i) {
-    for(int j=0; j<M.numEntriesPerRow[i]; ++j) {
-      if (M.remote[i]) {
-	cout << "  *"<<M.rowMap->GID(i)<<"   "
-	     <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<endl;
-      }
-      else {
-	cout << "   "<<M.rowMap->GID(i)<<"   "
-	     <<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<endl;
-      }
-    }
-  }
-  return(0);
-}
-
 //kernel method for computing the local portion of C = A*B
 int mult_A_B(CrsMatrixStruct& Aview,
 	     CrsMatrixStruct& Bview,
-	     Epetra_CrsMatrix& C)
+	     CrsWrapper& C)
 {
   int C_firstCol = Bview.colMap->MinLID();
   int C_lastCol = Bview.colMap->MaxLID();
@@ -253,7 +195,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
 //kernel method for computing the local portion of C = A*B^T
 int mult_A_Btrans(CrsMatrixStruct& Aview,
 		  CrsMatrixStruct& Bview,
-		  Epetra_CrsMatrix& C)
+		  CrsWrapper& C)
 {
   int i, j, k;
   int returnValue = 0;
@@ -453,7 +395,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 //kernel method for computing the local portion of C = A^T*B
 int mult_Atrans_B(CrsMatrixStruct& Aview,
 		  CrsMatrixStruct& Bview,
-		  Epetra_CrsMatrix& C)
+		  CrsWrapper& C)
 {
   int C_firstCol = Bview.colMap->MinLID();
   int C_lastCol = Bview.colMap->MaxLID();
@@ -588,7 +530,7 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 //kernel method for computing the local portion of C = A^T*B^T
 int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 		       CrsMatrixStruct& Bview,
-		       Epetra_CrsMatrix& C)
+		       CrsWrapper& C)
 {
   int C_firstCol = Aview.rowMap->MinLID();
   int C_lastCol = Aview.rowMap->MaxLID();
@@ -631,8 +573,6 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
     Aview.importColMap->MyGlobalElements() : 0;
 
   const Epetra_Map* Crowmap = &(C.RowMap());
-
-  bool C_filled = C.Filled();
 
   //To form C = A^T*B^T, we're going to execute this expression:
   //
@@ -1227,20 +1167,51 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //Now import any needed remote rows and populate the Bview struct.
   EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview) );
 
-  //zero the result matrix before we start the calculations.
-  EPETRA_CHK_ERR( C.PutScalar(0.0) );
+  //If the result matrix C is not already FillComplete'd, we will do a
+  //preprocessing step to create the nonzero structure, then call FillComplete,
+  if (!C.Filled()) {
+    CrsWrapper_GraphBuilder crsgraphbuilder(C.RowMap());
 
+    //pass the graph-builder object to the multiplication kernel to fill in all
+    //the nonzero positions that will be used in the result matrix.
+    switch(scenario) {
+    case 1:    EPETRA_CHK_ERR( mult_A_B(Aview, Bview, crsgraphbuilder) );
+      break;
+    case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, crsgraphbuilder) );
+      break;
+    case 3:    EPETRA_CHK_ERR( mult_Atrans_B(Aview, Bview, crsgraphbuilder) );
+      break;
+    case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, crsgraphbuilder) );
+      break;
+    }
+
+    //now insert all of the nonzero positions into the result matrix.
+    insert_matrix_locations(crsgraphbuilder, C);
+
+    if (call_FillComplete_on_result) {
+      const Epetra_Map* domainmap =
+        transposeB ? &(B.RangeMap()) : &(B.DomainMap());
+
+      const Epetra_Map* rangemap =
+        transposeA ? &(A.DomainMap()) : &(A.RangeMap());
+
+      EPETRA_CHK_ERR( C.FillComplete(*domainmap, *rangemap) );
+      call_FillComplete_on_result = false;
+    }
+  }
 
   //Now call the appropriate method to perform the actual multiplication.
 
+  CrsWrapper_Epetra_CrsMatrix ecrsmat(C);
+
   switch(scenario) {
-  case 1:    EPETRA_CHK_ERR( mult_A_B(Aview, Bview, C) );
+  case 1:    EPETRA_CHK_ERR( mult_A_B(Aview, Bview, ecrsmat) );
     break;
-  case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, C) );
+  case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, ecrsmat) );
     break;
-  case 3:    EPETRA_CHK_ERR( mult_Atrans_B(Aview, Bview, C) );
+  case 3:    EPETRA_CHK_ERR( mult_Atrans_B(Aview, Bview, ecrsmat) );
     break;
-  case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, C) );
+  case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, ecrsmat) );
     break;
   }
 
@@ -1303,40 +1274,59 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   else
     Aprime = const_cast<Epetra_CrsMatrix*>(&A);
 
-  //Initialize if B already filled
-  if( B.Filled() )
-    EPETRA_CHK_ERR( B.Scale( scalarB ) );
-
-  //Loop over B's rows and sum into
   int MaxNumEntries = EPETRA_MAX( A.MaxNumEntries(), B.MaxNumEntries() );
-  int NumEntries;
-  int * Indices = new int[MaxNumEntries];
-  double * Values = new double[MaxNumEntries];
+  int A_NumEntries, B_NumEntries;
+  int * A_Indices = new int[MaxNumEntries];
+  double * A_Values = new double[MaxNumEntries];
+  int* B_Indices;
+  double* B_Values;
 
   int NumMyRows = B.NumMyRows();
   int Row, err;
 
   if( scalarA )
   {
+    //Loop over B's rows and sum into
     for( int i = 0; i < NumMyRows; ++i )
     {
       Row = B.GRID(i);
-      EPETRA_CHK_ERR( A.ExtractGlobalRowCopy( Row, MaxNumEntries, NumEntries, Values, Indices ) );
-      if( scalarA != 1.0 )
-        for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
+      EPETRA_CHK_ERR( Aprime->ExtractGlobalRowCopy( Row, MaxNumEntries, A_NumEntries, A_Values, A_Indices ) );
+
+      if (scalarB != 1.0) {
+        if (!B.Filled()) {
+          EPETRA_CHK_ERR( B.ExtractGlobalRowView( Row, B_NumEntries,
+                                                  B_Values, B_Indices));
+        }
+        else {
+          EPETRA_CHK_ERR( B.ExtractMyRowView( Row, B_NumEntries,
+                                              B_Values, B_Indices));
+        }
+
+        for(int jj=0; jj<B_NumEntries; ++jj) {
+          B_Values[jj] = scalarB*B_Values[jj];
+        }
+      }
+
+      if( scalarA != 1.0 ) {
+        for( int j = 0; j < A_NumEntries; ++j ) A_Values[j] *= scalarA;
+      }
+
       if( B.Filled() ) {//Sum In Values
-        err = B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+        err = B.SumIntoGlobalValues( Row, A_NumEntries, A_Values, A_Indices );
         assert( err == 0 );
       }
       else {
-        err = B.InsertGlobalValues( Row, NumEntries, Values, Indices );
+        err = B.InsertGlobalValues( Row, A_NumEntries, A_Values, A_Indices );
         assert( err == 0 || err == 1 || err == 3 );
       }
     }
   }
+  else {
+    EPETRA_CHK_ERR( B.Scale(scalarB) );
+  }
 
-  delete [] Indices;
-  delete [] Values;
+  delete [] A_Indices;
+  delete [] A_Values;
 
   if( Atrans ) delete Atrans;
 
