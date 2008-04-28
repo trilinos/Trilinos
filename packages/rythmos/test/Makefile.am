@@ -38,9 +38,10 @@ all-local:
 #np# test1/ rather than this file.
 
 SUBDIRS = ExplicitTaylorPolynomialStepper\
-					complicatedExample\
+          complicatedExample\
           CppUnitLite\
-          UnitTest
+          UnitTest \
+          simpleAdjoint
 
 EXTRA_DIST = definition
 

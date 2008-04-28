@@ -240,6 +240,7 @@ INTERFACES_OPERATOR_SOLVE_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_solve/ana/extended/Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp\

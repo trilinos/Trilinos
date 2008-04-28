@@ -9642,7 +9642,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/diagonalTransient/Makefile example/timeDiscretizedBackwardEuler/Makefile example/epetra/Makefile example/epetra/1Dfem/Makefile test/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/complicatedExample/Makefile test/CppUnitLite/Makefile test/UnitTest/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile test/CppUnitLite/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10527,18 +10527,19 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "Makefile.export.rythmos") CONFIG_FILES="$CONFIG_FILES Makefile.export.rythmos" ;;
-    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
     "example/diagonalTransient/Makefile") CONFIG_FILES="$CONFIG_FILES example/diagonalTransient/Makefile" ;;
-    "example/timeDiscretizedBackwardEuler/Makefile") CONFIG_FILES="$CONFIG_FILES example/timeDiscretizedBackwardEuler/Makefile" ;;
-    "example/epetra/Makefile") CONFIG_FILES="$CONFIG_FILES example/epetra/Makefile" ;;
     "example/epetra/1Dfem/Makefile") CONFIG_FILES="$CONFIG_FILES example/epetra/1Dfem/Makefile" ;;
-    "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+    "example/epetra/Makefile") CONFIG_FILES="$CONFIG_FILES example/epetra/Makefile" ;;
+    "example/timeDiscretizedBackwardEuler/Makefile") CONFIG_FILES="$CONFIG_FILES example/timeDiscretizedBackwardEuler/Makefile" ;;
+    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+    "test/CppUnitLite/Makefile") CONFIG_FILES="$CONFIG_FILES test/CppUnitLite/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile" ;;
-    "test/complicatedExample/Makefile") CONFIG_FILES="$CONFIG_FILES test/complicatedExample/Makefile" ;;
-    "test/CppUnitLite/Makefile") CONFIG_FILES="$CONFIG_FILES test/CppUnitLite/Makefile" ;;
+    "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/UnitTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/UnitTest/Makefile" ;;
+    "test/complicatedExample/Makefile") CONFIG_FILES="$CONFIG_FILES test/complicatedExample/Makefile" ;;
+    "test/simpleAdjoint/Makefile") CONFIG_FILES="$CONFIG_FILES test/simpleAdjoint/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

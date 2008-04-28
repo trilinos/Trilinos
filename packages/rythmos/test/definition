@@ -702,6 +702,17 @@
 
 
 #
+# simpleAdjoint.exe
+#
+
+(FRAMEWORK,INSTALL,SIMPLEADJOINT0,RythmosBelos) {
+    TESTS = ./simpleAdjoint/simpleAdjoint.exe;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON(Trilinos/packages/rythmos/test/simpleAdjoint/simpleAdjointMain.cpp:222);
+}
+
+
+#
 # timeDiscretizationBackwardEuler.exe
 #
 
@@ -716,8 +727,6 @@
     COMM = SERIAL, MPI(1);
     EXIT-STATUS = STRING-COMPARISON;
 }
-
-
 
 
 # Explicit Taylor polynomial integration on Van der Pol oscillator

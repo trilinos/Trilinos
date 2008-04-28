@@ -484,18 +484,19 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export.rythmos
-		src/Makefile
 		example/Makefile
 		example/diagonalTransient/Makefile
-		example/timeDiscretizedBackwardEuler/Makefile
-		example/epetra/Makefile
 		example/epetra/1Dfem/Makefile
-		test/Makefile
+		example/epetra/Makefile
+		example/timeDiscretizedBackwardEuler/Makefile
+		src/Makefile
+		test/CppUnitLite/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
-		test/complicatedExample/Makefile
-		test/CppUnitLite/Makefile
+		test/Makefile
 		test/UnitTest/Makefile
+		test/complicatedExample/Makefile
+		test/simpleAdjoint/Makefile
 		])
 
 AC_OUTPUT()
