@@ -7,7 +7,7 @@
 #include <string>
 #include <sstream>
 #include <ios>
-
+using namespace PAMGEN_NEVADA;
 namespace ms_lt{
 
 

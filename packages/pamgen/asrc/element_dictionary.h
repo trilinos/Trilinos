@@ -4,6 +4,8 @@
 #define element_dictionaryH
 
 #include "code_types.h"
+namespace PAMGEN_NEVADA {
+
 
 const uint MAX_ELEMENT_FACES = 24;        // for HEX27
 
@@ -71,4 +73,6 @@ extern const int wedge_side_to_node_table[5][8];
 extern const int hex_side_to_node_table[6][8];
 
 extern const char* Element_Type_Names[MAX_EL_TYPES];
+
+} // end namespace PAMGEN_NEVADA {
 #endif

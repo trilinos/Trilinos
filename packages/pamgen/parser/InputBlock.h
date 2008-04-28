@@ -6,6 +6,9 @@
 #include <list>
 #include <iostream>
 
+namespace PAMGEN_NEVADA{
+
+
 class InputBlock {
 public:
   
@@ -95,5 +98,5 @@ private:
   
   InputBlock* parent;
 };
-
+} // end namespace 
 #endif

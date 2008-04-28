@@ -226,7 +226,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   for(setit = imd->nodeset_list.begin(); setit != imd->nodeset_list.end();setit++,nsct ++){
     ns_ids_global[nsct]=(*setit)->id;
-    LoopLimits ll = (*setit)->limits;
+    PAMGEN_NEVADA::LoopLimits ll = (*setit)->limits;
     ns_cnts_global[nsct] = ll.total;
     ns_df_cnts_global[nsct] = 0;
   }
@@ -238,7 +238,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   nsct = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
     ss_ids_global[nsct]=(*setit)->id;
-    LoopLimits ll = (*setit)->limits;
+    PAMGEN_NEVADA::LoopLimits ll = (*setit)->limits;
     ss_cnts_global[nsct] = ll.total;
     ss_df_cnts_global[nsct] = 0;
   }

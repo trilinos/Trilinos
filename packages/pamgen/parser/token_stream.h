@@ -11,9 +11,9 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-class InputBlock;
 
 namespace PAMGEN_NEVADA{
+class InputBlock;
 /*****************************************************************************/
 class Token_Stream 
 /*****************************************************************************/

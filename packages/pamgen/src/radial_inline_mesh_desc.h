@@ -2,9 +2,9 @@
 #ifndef radial_inline_mesh_descH
 #define radial_inline_mesh_descH
 
-class Vector;
 namespace PAMGEN_NEVADA {
 
+class Vector;
 class Radial_Inline_Mesh_Desc : public Inline_Mesh_Desc
 {
 public:

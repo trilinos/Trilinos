@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "../asrc/code_types.h"
-
+namespace PAMGEN_NEVADA {
 
 /*****************************************************************************/
 struct Vector 
@@ -296,5 +296,5 @@ inline std::ostream& operator<<(std::ostream &str, const Vector &v)
       << ')';
   return str;
 }
-
+} // end namespace PAMGEN_NEVADA {
 #endif 

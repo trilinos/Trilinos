@@ -4,6 +4,7 @@
 #define STRLOOPLIMITS_H
 
 // LoopLimits
+namespace PAMGEN_NEVADA {
 struct LoopLimits {
   int is;  // Start of i-loop
   int ie;  // End   of i-loop
@@ -34,6 +35,6 @@ struct LoopLimits {
   {}
 
 };
-
+} // end namespace PAMGEN_NEVADA 
 
 #endif // end of STRLOOPLIMITS_H

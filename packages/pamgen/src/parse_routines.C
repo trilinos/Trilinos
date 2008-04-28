@@ -12,6 +12,7 @@
 #include "../parser/parser.h"
 #include "../parser/parse_table.h"
 #include "../parser/InputBlock.h"
+#include "../parser/token_stream.h"
 #include "parse_routines.h"
 #include <stdlib.h>
 

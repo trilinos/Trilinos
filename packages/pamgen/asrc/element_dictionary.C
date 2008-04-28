@@ -3,6 +3,9 @@
 #include "code_types.h"
 #include "element_dictionary.h"
 
+namespace PAMGEN_NEVADA {
+
+
 // if you add an element type, you must be consistant with the arrays defined
 // below and you should make sure that element_dictionary.h is in sync.
 
@@ -179,4 +182,6 @@ extern const char* Element_Type_Names[NUM_ELEMENT_TYPES] = {
                                                 "PYRAMID5",
                                                 "SEG2",
                                                 "SEG3" };
+
+} // end namespace PAMGEN_NEVADA {
 

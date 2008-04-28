@@ -4,6 +4,7 @@
 #include "StrLoopLimits.h"
 #include "topology_enum.h"
 
+
 class PG_BC_Specification{
 public:
   PG_BC_Specification(int the_id,Topo_Loc the_loc, bool is_block_boundary, unsigned the_block_id){
@@ -18,8 +19,9 @@ public:
   int id;
   unsigned block_id;
   Topo_Loc location;
-  LoopLimits limits;
+  PAMGEN_NEVADA::LoopLimits limits;
   bool block_boundary_set;
 };
+
 
 #endif

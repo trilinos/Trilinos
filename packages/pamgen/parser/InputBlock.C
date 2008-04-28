@@ -5,6 +5,9 @@
 
 using namespace std;
 
+namespace PAMGEN_NEVADA{
+
+
 InputBlock::InputBlock() : lineno(0), parent(0) {}
 
 InputBlock::~InputBlock()
@@ -236,3 +239,5 @@ void InputBlock::Display( ostream& os, int indent ) const
        itr != endInputBlocks(); ++itr)
     (*itr)->Display( os, indent+1 );
 }
+
+}// end namespace
