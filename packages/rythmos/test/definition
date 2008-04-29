@@ -708,7 +708,7 @@
 (FRAMEWORK,INSTALL,SIMPLEADJOINT0,RythmosBelos) {
     TESTS = ./simpleAdjoint/simpleAdjoint.exe;
     COMM = SERIAL, MPI(1);
-    EXIT-STATUS = STRING-COMPARISON(Trilinos/packages/rythmos/test/simpleAdjoint/simpleAdjointMain.cpp:222);
+    EXIT-STATUS = STRING-COMPARISON(rythmos/test/simpleAdjoint/simpleAdjointMain.cpp:222);
 }
 
 
