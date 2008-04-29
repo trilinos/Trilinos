@@ -16,7 +16,6 @@
 ** Include these headers if we are using a Zoltan_Timer
 */
 #include "zoltan_timer.h"
-#include "zz_const.h"
 /*
 ************************ 
 */
@@ -40,6 +39,7 @@ int main(int argc, char *argv[])
   int rc, me, nprocs;
   float ver;
   struct Zoltan_Struct *zz;
+  struct Zoltan_Timer *ZTime;
   int changes;
   int numGidEntries;
   int numLidEntries;
@@ -82,8 +82,9 @@ int main(int argc, char *argv[])
   ******************************************************************/
 
   zz = Zoltan_Create(MPI_COMM_WORLD);
+  ZTime = Zoltan_Timer_Create(ZOLTAN_TIME_WALL);
 
-  timers[rcb] = Zoltan_Timer_Init(zz->ZTime, 1, events[rcb]);
+  timers[rcb] = Zoltan_Timer_Init(ZTime, 1, events[rcb]);
 
   /* General parameters */
 
@@ -107,13 +108,13 @@ int main(int argc, char *argv[])
   Zoltan_Set_Geom_Multi_Fn(zz, exGetObjectCoords, NULL);
 
 
-  ZOLTAN_TIMER_START(zz->ZTime, timers[rcb], zz->Communicator);
+  ZOLTAN_TIMER_START(ZTime, timers[rcb], MPI_COMM_WORLD);
       
   rc = Zoltan_LB_Partition(zz, &changes, &numGidEntries, &numLidEntries,
     &numImport, &importGlobalGids, &importLocalGids, &importProcs, &importToPart,
     &numExport, &exportGlobalGids, &exportLocalGids, &exportProcs, &exportToPart);
 
-  ZOLTAN_TIMER_STOP(zz->ZTime, timers[rcb], zz->Communicator);
+  ZOLTAN_TIMER_STOP(ZTime, timers[rcb], MPI_COMM_WORLD);
 
   rc = exGlobalSuccess(rc, nprocs, me, (me == 0));
 
@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
   ** Partition it using RIB
   ******************************************************************/
 
-  timers[rib] = Zoltan_Timer_Init(zz->ZTime, 1, events[rib]);
+  timers[rib] = Zoltan_Timer_Init(ZTime, 1, events[rib]);
 
   /* General parameters */
 
@@ -167,13 +168,13 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Geom_Fn(zz, exGetObjectSize, NULL);
   Zoltan_Set_Geom_Multi_Fn(zz, exGetObjectCoords, NULL);
 
-  ZOLTAN_TIMER_START(zz->ZTime, timers[rib], zz->Communicator);
+  ZOLTAN_TIMER_START(ZTime, timers[rib], MPI_COMM_WORLD);
 
   rc = Zoltan_LB_Partition(zz, &changes, &numGidEntries, &numLidEntries,
     &numImport, &importGlobalGids, &importLocalGids, &importProcs, &importToPart,
     &numExport, &exportGlobalGids, &exportLocalGids, &exportProcs, &exportToPart);
 
-  ZOLTAN_TIMER_STOP(zz->ZTime, timers[rib], zz->Communicator);
+  ZOLTAN_TIMER_STOP(ZTime, timers[rib], MPI_COMM_WORLD);
 
   rc = exGlobalSuccess(rc, nprocs, me, (me == 0));
 
@@ -204,7 +205,7 @@ int main(int argc, char *argv[])
   ** Partition it using HSFC
   ******************************************************************/
 
-  timers[hsfc] = Zoltan_Timer_Init(zz->ZTime, 1, events[hsfc]);
+  timers[hsfc] = Zoltan_Timer_Init(ZTime, 1, events[hsfc]);
 
   /* General parameters */
 
@@ -225,13 +226,13 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Geom_Fn(zz, exGetObjectSize, NULL);
   Zoltan_Set_Geom_Multi_Fn(zz, exGetObjectCoords, NULL);
 
-  ZOLTAN_TIMER_START(zz->ZTime, timers[hsfc], zz->Communicator);
+  ZOLTAN_TIMER_START(ZTime, timers[hsfc], MPI_COMM_WORLD);
 
   rc = Zoltan_LB_Partition(zz, &changes, &numGidEntries, &numLidEntries,
     &numImport, &importGlobalGids, &importLocalGids, &importProcs, &importToPart,
     &numExport, &exportGlobalGids, &exportLocalGids, &exportProcs, &exportToPart);
 
-  ZOLTAN_TIMER_STOP(zz->ZTime, timers[hsfc], zz->Communicator);
+  ZOLTAN_TIMER_STOP(ZTime, timers[hsfc], MPI_COMM_WORLD);
 
   rc = exGlobalSuccess(rc, nprocs, me, (me == 0));
 
@@ -247,7 +248,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  Zoltan_Timer_PrintAll(zz->ZTime, 0, MPI_COMM_WORLD, stdout);
+  Zoltan_Timer_PrintAll(ZTime, 0, MPI_COMM_WORLD, stdout);
 
   /*
   ** Clean up
@@ -259,6 +260,7 @@ int main(int argc, char *argv[])
                       &exportProcs, &exportToPart);
 
   Zoltan_Destroy(&zz);
+  Zoltan_Timer_Destroy(&ZTime);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
