@@ -449,7 +449,7 @@ int ML_BuildReorderedDecomposition( int starting_decomposition[],
  function
 
  This function builds the graph of the coarser level matrix (without
- filling it with numerical values), then call ParMETIS_NodeND to compute a
+ filling it with numerical values), then calls ParMETIS_NodeND to compute a
  reordering which reduces the fill-in during LU factorizations. It is
  just a LOCAL reordering.
  
@@ -696,6 +696,14 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   /* gli aggre hanno un nodo, divido N_parts per 2, e ricomincio. Costa un  */
   /* po` in termini di CPU, ma e` sicuro. Il caso N_parts == 1 e` trattato  */
   /* separatamente.                                                         */
+/*
+ParMETIS does not seem to like the case of Nrows == 0. Therefore, I must create
+a communicator that contains only the processors with Nrows different from zero.
+The call to ParMETIS is only carried out on this subset of processors. ParMETIS
+seems also "mangiest" [sic] with regard to the number of partitions.  If any of
+the aggregates do not have a node, divide N_parts by 2 and restart. It is more
+CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
+*/
   /* ********************************************************************** */
 
 #ifdef ML_MPI
@@ -707,7 +715,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   MPI_Comm_create( orig_comm, parmetis_group, &ParMETISComm );
 #endif
   
-  /* Only processes beloning to ParMETISComm will enter this `if'           */
+  /* Only processes belonging to ParMETISComm will enter this `if'          */
 
   if( Nrows > 0 ) {
 
