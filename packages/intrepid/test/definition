@@ -9,7 +9,8 @@
            VarContainer,
            MultiCell,
            Basis/F0_QUAD_I1_FEM_DEFAULT,
-           Basis/F0_TRI_C1_FEM_DEFAULT;
+           Basis/F0_TRI_C1_FEM_DEFAULT,
+           Basis/F0_TRI_C2_FEM_DEFAULT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
@@ -23,7 +24,8 @@
            VarContainer,
            MultiCell,
            Basis/F0_QUAD_I1_FEM_DEFAULT,
-           Basis/F0_TRI_C1_FEM_DEFAULT;
+           Basis/F0_TRI_C1_FEM_DEFAULT,
+           Basis/F0_TRI_C2_FEM_DEFAULT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;

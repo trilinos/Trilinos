@@ -359,6 +359,7 @@ AC_CONFIG_FILES([
   test/VarContainer/Makefile
   test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile
   test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile
+  test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile
   example/Cubature/Makefile
   example/MultiCell/Makefile
   example/RealSpace/Makefile

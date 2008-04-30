@@ -27,7 +27,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp
+/** \file   Intrepid_F0_TRI_C2_FEM_DEFAULTDef.hpp
     \brief  Definition file for FEM basis functions of degree 1 for 0-forms on TRI cells.
     \author Created by P. Bochev and D. Ridzal.
 */
@@ -36,7 +36,7 @@ namespace Intrepid {
 
     
 template<class Scalar>
-void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
+void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::initialize() {
   
   // Basis-dependent initializations
   int tagSize  = 4;         // size of DoF tag
@@ -45,10 +45,14 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
   int posBfId  = 2;         // position in the tag, counting from 0, of DoF Id relative to the subcell
 
   // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
+  // tag: subcell dim, subcell id, local Dof id, num Dofs per subcell
   int tags[]  = {
                   0, 0, 0, 1,
                   0, 1, 0, 1,
-                  0, 2, 0, 1
+                  0, 2, 0, 1,
+                  1, 0, 0, 1,
+                  1, 1, 0, 1,
+                  1, 2, 0, 1
                 };
   
   // Basis-independent function sets tag and enum data in the static arrays:
@@ -65,15 +69,14 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
 
 
 template<class Scalar> 
-void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const EOperator                        operatorType) const {
 
   // Determine parameters to shape outputValues: number of points = size of input array
   int numPoints = inputPoints.size();
 	
-  // Complete polynomial basis of degree 1 (C1) has 3 basis functions on a triangle that are 0-forms in 2D
-  int    numFields = 3;
+  // Complete polynomial basis of degree 2 (C2) has 3 basis functions on a triangle that are 0-forms in 2D
   EField fieldType = FIELD_FORM_0;
   int    spaceDim  = 2;
 
@@ -86,7 +89,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 
   // Shape the VarContainer for the output values using these values:
   outputValues.reset(numPoints,
-                     numFields,
+                     numDof_,
                      fieldType,
                      operatorType,
                      spaceDim);
@@ -99,20 +102,29 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
         // Verify that all points are inside the TRI reference cell
         TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
                             std::invalid_argument,
-                            ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
+                            ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
         indexV[0] = countPt;
           
         indexV[1] = 0;
-        outputValues.setValue(1.0-x-y, indexV);
+        outputValues.setValue((-1.0 + x + y)*(-1.0 + 2.0*x + 2.0*y), indexV);
         
         indexV[1] = 1;
-        outputValues.setValue(x, indexV);
+        outputValues.setValue(x*(-1.0 + 2.0*x), indexV);
         
         indexV[1] = 2;
-        outputValues.setValue(y, indexV);
+        outputValues.setValue(y*(-1.0 + 2.0*y), indexV);
+
+        indexV[1] = 3;
+        outputValues.setValue(-4.0*x*(-1.0 + x + y), indexV);
+
+        indexV[1] = 4;
+        outputValues.setValue(4.0*x*y, indexV);
+
+        indexV[1] = 5;
+        outputValues.setValue(-4.0*y*(-1.0 + x + y), indexV);
       }
       break;
 
@@ -123,19 +135,21 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
         // Verify that all points are inside the TRI reference cell
         TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
                             std::invalid_argument,
-                            ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
+                            ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
+        x = (inputPoints[countPt])[0];
+        y = (inputPoints[countPt])[1];
         indexD[0] = countPt;
 
         indexD[1] = 0;
         indexD[2] = 0;
-        outputValues.setValue(-1.0, indexD);
+        outputValues.setValue(-3.0 + 4.0*x + 4.0*y, indexD);
         indexD[2] = 1;
-        outputValues.setValue(-1.0, indexD);
+        outputValues.setValue(-3.0 + 4.0*x + 4.0*y, indexD);
 
         indexD[1] = 1;
         indexD[2] = 0;
-        outputValues.setValue(1.0, indexD);
+        outputValues.setValue(-1.0 + 4.0*x, indexD);
         indexD[2] = 1;
         outputValues.setValue(0.0, indexD);
 
@@ -143,7 +157,25 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
         indexD[2] = 0;
         outputValues.setValue(0.0, indexD);
         indexD[2] = 1;
-        outputValues.setValue(1.0, indexD);
+        outputValues.setValue(-1.0 + 4.0*y, indexD);
+
+        indexD[1] = 3;
+        indexD[2] = 0;
+        outputValues.setValue(-4.0*(-1.0 + 2.0*x + y), indexD);
+        indexD[2] = 1;
+        outputValues.setValue(-4.0*x, indexD);
+
+        indexD[1] = 4;
+        indexD[2] = 0;
+        outputValues.setValue(4.0*y, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(4.0*x, indexD);
+
+        indexD[1] = 5;
+        indexD[2] = 0;
+        outputValues.setValue(-4.0*y, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(-4.0*(-1.0 + x + 2.0*y), indexD);
       }
       break;
 
@@ -153,27 +185,47 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
         // Verify that all points are inside the TRI reference cell
         TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
                             std::invalid_argument,
-                            ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
+                            ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
+        x = (inputPoints[countPt])[0];
+        y = (inputPoints[countPt])[1];
         indexD[0] = countPt;
 
         indexD[1] = 0;
         indexD[2] = 0;
-        outputValues.setValue(-1.0, indexD);
+        outputValues.setValue(-3.0 + 4.0*x + 4.0*y, indexD);
         indexD[2] = 1;
-        outputValues.setValue(1.0, indexD);
+        outputValues.setValue(3.0 - 4.0*x - 4.0*y, indexD);
 
         indexD[1] = 1;
         indexD[2] = 0;
         outputValues.setValue(0.0, indexD);
         indexD[2] = 1;
-        outputValues.setValue(-1.0, indexD);
+        outputValues.setValue(1.0 - 4.0*x, indexD);
 
         indexD[1] = 2;
         indexD[2] = 0;
-        outputValues.setValue(1.0, indexD);
+        outputValues.setValue(-1.0 + 4.0*y, indexD);
         indexD[2] = 1;
         outputValues.setValue(0.0, indexD);
+
+        indexD[1] = 3;
+        indexD[2] = 0;
+        outputValues.setValue(-4.0*x, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(4.0*(-1.0 + 2.0*x + y), indexD);
+
+        indexD[1] = 4;
+        indexD[2] = 0;
+        outputValues.setValue(4.0*x, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(-4.0*y, indexD);
+
+        indexD[1] = 5;
+        indexD[2] = 0;
+        outputValues.setValue(-4.0*(-1.0 + x + 2.0*y), indexD);
+        indexD[2] = 1;
+        outputValues.setValue(4.0*y, indexD);
       }
       break;
 
@@ -182,6 +234,65 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
       break;
 
     case OPERATOR_D2:
+      for (countPt=0; countPt<numPoints; countPt++) {
+#ifdef HAVE_INTREPID_DEBUG
+        // Verify that all points are inside the TRI reference cell
+        TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
+                            std::invalid_argument,
+                            ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
+#endif
+        indexD[0] = countPt;
+
+        indexD[1] = 0;
+        indexD[2] = 0;
+        outputValues.setValue(4.0, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(4.0, indexD);
+        indexD[2] = 2;
+        outputValues.setValue(4.0, indexD);
+
+        indexD[1] = 1;
+        indexD[2] = 0;
+        outputValues.setValue(4.0, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(0.0, indexD);
+        indexD[2] = 2;
+        outputValues.setValue(0.0, indexD);
+
+        indexD[1] = 2;
+        indexD[2] = 0;
+        outputValues.setValue(0.0, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(0.0, indexD);
+        indexD[2] = 2;
+        outputValues.setValue(4.0, indexD);
+
+        indexD[1] = 3;
+        indexD[2] = 0;
+        outputValues.setValue(-8.0, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(-4.0, indexD);
+        indexD[2] = 2;
+        outputValues.setValue(0.0, indexD);
+
+        indexD[1] = 4;
+        indexD[2] = 0;
+        outputValues.setValue(0.0, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(4.0, indexD);
+        indexD[2] = 2;
+        outputValues.setValue(0.0, indexD);
+
+        indexD[1] = 5;
+        indexD[2] = 0;
+        outputValues.setValue(0.0, indexD);
+        indexD[2] = 1;
+        outputValues.setValue(-4.0, indexD);
+        indexD[2] = 2;
+        outputValues.setValue(-8.0, indexD);
+      }
+      break;
+
     case OPERATOR_D3:
     case OPERATOR_D4:
     case OPERATOR_D5:
@@ -194,7 +305,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
         // Verify that all points are inside the TRI reference cell
         TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
                             std::invalid_argument,
-                            ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
+                            ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
      outputValues.storeZero();
      break;
@@ -215,32 +326,32 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             (operatorType != OPERATOR_D9)    &&
                             (operatorType != OPERATOR_D10) ),
                           std::invalid_argument,
-                          ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Invalid operator type");
+                          ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Invalid operator type");
   }
 }
   
 
   
 template<class Scalar>
-void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const Cell<Scalar>&                    cell) const {
   TEST_FOR_EXCEPTION( (true),
                       std::logic_error,
-                      ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): FEM Basis calling an FV/D member function");
+                      ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): FEM Basis calling an FV/D member function");
 }
 
 
 
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
+int Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
     return numDof_;   
 }
 
 
 
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTag dofTag) {
+int Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTag dofTag) {
   if (!isSet_) {
     initialize();
     isSet_ = true;
@@ -251,7 +362,7 @@ int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofEnumeration(const LocalDofTa
 
 
 template<class Scalar>
-LocalDofTag Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) {
+LocalDofTag Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) {
   if (!isSet_) {
     initialize();
     isSet_ = true;
@@ -262,7 +373,7 @@ LocalDofTag Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getLocalDofTag(int id) {
 
 
 template<class Scalar>
-const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllLocalDofTags() {
+const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getAllLocalDofTags() {
   if (!isSet_) {
     initialize();
     isSet_ = true;
@@ -273,29 +384,29 @@ const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllL
 
 
 template<class Scalar>
-ECell Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCellType() const {
+ECell Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getCellType() const {
   return CELL_TRI;
 }
 
 
 
 template<class Scalar>
-EBasis Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getBasisType() const {
+EBasis Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getBasisType() const {
   return BASIS_FEM_DEFAULT;
 }
 
 
 
 template<class Scalar>
-ECoordinates Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
+ECoordinates Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
   return COORDINATES_CARTESIAN;
 }
 
 
 
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getDegree() const {
-  return 1;
+int Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getDegree() const {
+  return 2;
 }
 
 
