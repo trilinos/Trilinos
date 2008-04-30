@@ -127,6 +127,20 @@ EXTRA_OCT = \
 	$(srcdir)/oct/output.c \
 	$(srcdir)/oct/rootlist.c
 
+if BUILD_OCTREEPARTITIONING
+
+OCT_H = $(EXTRA_OCT_H)
+
+OCT = $(EXTRA_OCT)
+
+else
+
+OCT_H =
+
+OCT =
+
+endif
+
 ORDER_H = \
 	$(srcdir)/order/order_const.h
 

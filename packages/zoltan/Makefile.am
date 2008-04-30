@@ -61,9 +61,8 @@ if SUB_TEST
 TEST_SUBDIR=
 endif
 
-#Add this later
 if SUB_EXAMPLE
-EXAMPLE_SUBDIR=
+EXAMPLE_SUBDIR=example
 endif
 
 if BUILD_TESTS
@@ -71,7 +70,7 @@ tests: examples
 	@echo ""
 	@echo "Now building zoltan tests."
 	@echo ""
-	cd $(top_builddir)/test && $(MAKE)
+	@echo "Zoltan tests use drivers and input filess; no compilation necssary."
 	@echo ""
 	@echo "Finished building zoltan tests."
 	@echo ""

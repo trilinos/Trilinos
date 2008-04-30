@@ -130,8 +130,14 @@ TAC_ARG_CHECK_MPI
 TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # ------------------------------------------------------------------------
-# Checks for special package flags - Zoltan may or may not need any of these
+# Checks for special package flags 
 # ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
+AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_zoltan_oct" != "Xno"])
+TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, no)
+TAC_ARG_WITH_PACKAGE(zoltan_parmetis, [Enable Parmetis support.  This option can be used when enabling Parmetis support for Zoltan, but not for other packages.], ZOLTAN_PARMETIS, no)
+AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno" || test "X$ac_cv_use_zoltan_parmetis" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -217,16 +223,16 @@ AC_CONFIG_FILES([
 		src/Makefile
 		src/driver/Makefile
 		Makefile.export.zoltan
+		example/lib/Makefile
+		example/Makefile
+		example/C/Makefile
+		example/C/sparse_matrix/Makefile
+		example/CPP/Makefile
 		])
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile
 #		ZoltanComponent/CCA_Wrapper/Makefile
 #		ZoltanComponent/TestComponents/Makefile
-#		examples/Makefile
-#		examples/lib/Makefile
-#		examples/CPP/Makefile
-#		examples/C/Makefile
-#		examples/C/sparse_matrix/Makefile
 
 AC_OUTPUT()
 
