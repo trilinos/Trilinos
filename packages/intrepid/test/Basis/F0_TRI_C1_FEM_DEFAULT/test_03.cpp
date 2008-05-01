@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
       
       timerLargeMCstiffTrans[0][compEng] = timer.totalElapsedTime();
       *outStream << "\n" << timer.name() << "\n";
-      *outStream << "\t Mass matrix without Jacobian reuse: Computational engine: " << ECompEngineToString(compEng) << "\n";
+      *outStream << "\t Stiffness matrix without Jacobian reuse: Computational engine: " << ECompEngineToString(compEng) << "\n";
     }
     
     //============================================================================================//

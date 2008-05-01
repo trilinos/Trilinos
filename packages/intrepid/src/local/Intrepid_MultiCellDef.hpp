@@ -700,7 +700,7 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
         weightedMeasure_[cellId][dimIndex][subcellId].assign(numCubPts,0.0);
         
         // Compute Jacobian & measure at the first cubature point
-        jacobianMat_[cellId][dimIndex][subcellId][0] = this -> jacobian(cellId, cubPoints[0]);
+        jacobianMat_[cellId][dimIndex][subcellId][0] = jacobian(cellId, cubPoints[0]);
         
         // Subcell measure function depends on cell and subcell dimensions
         switch(dimIndex) {

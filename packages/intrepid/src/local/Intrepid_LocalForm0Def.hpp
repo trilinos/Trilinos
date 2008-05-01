@@ -251,12 +251,12 @@ void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           tra
 
 
 template<class Scalar>
-void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &             transValues,
-                                              const EOperator                  primOp,
-                                              const LocalField<Scalar> &       primOpField,
-                                              MultiCell<Scalar> &              mCell,
-                                            const bool                         reuseJacobians,
-                                            const EIntegrationDomain           intDomain)
+void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           transValues,
+                                            const EOperator                  primOp,
+                                            const LocalField<Scalar> &       primOpField,
+                                            MultiCell<Scalar> &              mCell,
+                                            const bool                       reuseJacobians,
+                                            const EIntegrationDomain         intDomain)
 {
   
   // This method acts on an auxiliary LocalField: we will use transformBasisValues() from that field!
@@ -683,6 +683,7 @@ void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &          outputValue
                                      MultiCell<Scalar> &             mCell,
                                      const Teuchos::Array<Scalar> &  inputData,
                                      const EDataFormat               inputFormat,
+                                     const bool                      reuseJacobians,
                                      const EIntegrationDomain        intDomain) {
 }
 
@@ -741,6 +742,81 @@ void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &           outputValu
                                      MultiCell<Scalar> &              mCell,
                                      const Teuchos::Array<Scalar> &   inputData,
                                      const EDataFormat                inputFormat,
+                                     const bool                       reuseJacobians,
                                      const EIntegrationDomain         intDomain) {
 }
+
+
+
+template<class Scalar>
+void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &           outputValues,
+                                     const EOperator                  leftOp,
+                                     const EOperator                  rightOp,
+                                     const LocalField<Scalar> &       rightOpField,
+                                     MultiCell<Scalar> &              mCell,
+                                     const bool                       reuseJacobians,
+                                     const EIntegrationDomain         intDomain) 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  // The native LocalForm0 and the rightOpFieldLocalField must be instantiated on the same cell type
+  TEST_FOR_EXCEPTION( (basisCell_ != rightOpField.getCellType() ), std::invalid_argument,
+                      ">>> ERROR (LocalForm0): Right LocalField must be instantiated for the same cell type as the native LocalField!");
+#endif
+  LexContainer<Scalar> leftValues;
+  LexContainer<Scalar> rightValues;
+  
+  // If the user had failed to define an atlas we will use the default atlas.
+  if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {
+    mCell.setAtlas();
+  }
+  
+  // If the option to reuse Jacobian and measure data is selected, precompute and store values
+  if(reuseJacobians) {
+    if (intDomain == INTEGRATION_DOMAIN_CELL) {
+      mCell.initializeMeasures(mCell.getMyCellDim(), 0, cubPoints_[0][0], cubWeights_[0][0]); 
+      
+      // Check if the native field and the right operator field have cubature sets with matching number
+      // of cubature points on the specified integration domain. Note: this test cannot determine
+      // whether or not the two cubatures are the same! In this case, dimension of the integration domain
+      // is given by mCell.getMyCellDim(). 
+#ifdef HAVE_INTREPID_DEBUG
+      TEST_FOR_EXCEPTION( (numCubPoints_[0][0] != rightOpField.getNumCubPoints(mCell.getMyCellDim(),0) ),
+                          std::invalid_argument,
+                          ">>> ERROR (LocalForm0): Right LocalField must be instantiated with the same cubature set as the native LocalField!");
+#endif
+    }
+  }
+  
+  // Fill leftValues and rightValues with the appropriate transformed native/auxiliary basis function values
+  transformBasisVals(   leftValues, leftOp,                  mCell, reuseJacobians, intDomain);
+  transformBasisVals(  rightValues, rightOp, rightOpField,   mCell, reuseJacobians, intDomain);
+  applyWeightedMeasure(rightValues, rightValues, rightOp, mCell, reuseJacobians, intDomain); 
+  
+  // Dot product of the data assembled in leftValues and rightValues gives the desired integral
+  integrate(outputValues, leftValues, rightValues); 
+}
+
+
+
+template<class Scalar>
+int    LocalForm0<Scalar>::getNumCubPoints(const int subcellDim,
+                                           const int subcellId) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  // Subcell dimension has to be at least 1 (no cubature sets are on nodes) and <= the cell dim
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= MultiCell<Scalar>::getCellDim(basisCell_) ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (LocalForm_0): Invalid subcell dimension. ");
+  
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < MultiCell<Scalar>::getNumSubcells(basisCell_, subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+#endif
+  
+  // The first index is dimIndex = (dimension of the instantiation cell) - (dimension of the subcell)
+  // The second index is the subcellId, relative to the instantiation cell template
+  return  numCubPoints_[MultiCell<Scalar>::getCellDim(basisCell_) - subcellDim][ subcellId];
+}
+
+
 }// end namespace Intrepid

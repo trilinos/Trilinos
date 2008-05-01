@@ -348,10 +348,7 @@ Legend:
       \param inputPoints      [in]     - Array of input (physical) points.
       \param primOp           [in]     - Input operator (primitive).
       \param cell             [in]     - Physical cell.
-      \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
-                                         used to compute integrals in the MultiCell argument. Otherwise
-                                         all values are computed on the fly.
-    */
+  */
   void getOperator(VarContainer<Scalar> &                  outputValues,
                    const Teuchos::Array<Point<Scalar> > &  inputPoints,
                    const EOperator                         primOp,
@@ -364,8 +361,9 @@ Legend:
                    MultiCell<Scalar> &             mCell,
                    const Teuchos::Array<Scalar> &  inputData,
                    const EDataFormat               inputFormat,
+                   const bool                      reuseJacobians = false,
                    const EIntegrationDomain        intDomain = INTEGRATION_DOMAIN_CELL);
-
+  
   
   void getOperator(LexContainer<Scalar> &      outputValues,
                    const EOperator             leftOp,
@@ -382,10 +380,27 @@ Legend:
                    MultiCell<Scalar> &              mCell,
                    const Teuchos::Array<Scalar> &   inputData,
                    const EDataFormat                inputFormat,
+                   const bool                       reuseJacobians = false,
                    const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL);
 
   
+  void getOperator(LexContainer<Scalar> &           outputValues,
+                   const EOperator                  leftOp,
+                   const EOperator                  rightOp,
+                   const LocalField<Scalar> &       rightOpField,
+                   MultiCell<Scalar> &              mCell,
+                    const bool                      reuseJacobians = false,
+                   const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL);
+  
+  
   EField getFieldType() const {return fieldType_;}
+  
+  
+  ECell  getCellType() const  {return basisCell_;}
+  
+  
+  int    getNumCubPoints(const int subcellDim,
+                         const int subcellId) const;
 
 }; // class LocalForm0
 
