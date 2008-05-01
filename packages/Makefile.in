@@ -87,9 +87,9 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
-	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
-	belos anasazi rbgen pliris ml aristos intrepid moertel \
+DIST_SUBDIRS = teuchos rtop kokkos zoltan epetra triutils tpetra \
+	epetraext thyra isorropia aztecoo galeri amesos ifpack komplex \
+	claps belos anasazi rbgen pliris ml aristos intrepid moertel \
 	stratimikos meros fei stokhos sacado nox rythmos \
 	trilinoscouplings new_package moocho pamgen Sundance \
 	PyTrilinos ForTrilinos didasko WebTrilinos external
@@ -221,6 +221,7 @@ common/styles.css common/tag_files/keepme.txt
 @BUILD_TRILINOSCOUPLINGS_TRUE@TRILINOSCOUPLINGS_SUBDIR = trilinoscouplings
 @BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
 @BUILD_WEBTRILINOS_TRUE@WEBTRILINOS_SUBDIR = WebTrilinos
+@BUILD_ZOLTAN_TRUE@ZOLTAN_SUBDIR = zoltan
 
 #
 # This list of pacakges to be built are roughly in the order of lower-level to
@@ -236,6 +237,7 @@ PACKAGE_NAMES = \
 	$(TEUCHOS_SUBDIR)      \
 	$(RTOP_SUBDIR)         \
 	$(KOKKOS_SUBDIR)       \
+	$(ZOLTAN_SUBDIR)       \
 	$(EPETRA_SUBDIR)       \
 	$(TRIUTILS_SUBDIR)     \
 	$(TPETRA_SUBDIR)       \

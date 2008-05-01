@@ -129,6 +129,9 @@
 /* Define if want to build webtrilinos */
 #undef HAVE_WEBTRILINOS
 
+/* Define if want to build zoltan */
+#undef HAVE_ZOLTAN
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 

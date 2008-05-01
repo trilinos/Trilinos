@@ -129,6 +129,8 @@ TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri, a gallery package], GALERI, no)
 
 TAC_ARG_ENABLE_FEATURE(webtrilinos, [Build WebTrilinos, a web interface package], WEBTRILINOS, no)
 
+TAC_ARG_ENABLE_FEATURE(zoltan, [Build zoltan, a partitioning and load balancing package], ZOLTAN, no)
+
 TAC_ARG_ENABLE_FEATURE(shared, [Build shared libraries in addition to static libraries], SHARED, no)
 
 AC_ARG_ENABLE(aztecoo-teuchos,
@@ -635,6 +637,17 @@ else
   BUILD_WEBTRILINOS=no
 fi
 AM_CONDITIONAL(BUILD_WEBTRILINOS, test "X$BUILD_WEBTRILINOS" != "Xno")
+
+if test "X$ac_cv_use_zoltan" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/zoltan])
+  BUILD_ZOLTAN=yes
+  if test "X$ac_cv_use_zoltan_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-zoltan"
+  fi
+else
+  BUILD_ZOLTAN=no
+fi
+AM_CONDITIONAL(BUILD_ZOLTAN, test "X$BUILD_ZOLTAN" != "Xno")
 
 if test "X$ac_cv_use_fortrilinos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ForTrilinos])

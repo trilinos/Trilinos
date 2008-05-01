@@ -226,6 +226,10 @@ if BUILD_WEBTRILINOS
 WEBTRILINOS_SUBDIR = WebTrilinos
 endif
 
+if BUILD_ZOLTAN
+ZOLTAN_SUBDIR = zoltan
+endif
+
 ## #######################################################################
 ## Single list of configured pacakges
 ## #######################################################################
@@ -245,6 +249,7 @@ PACKAGE_NAMES = \
 	$(TEUCHOS_SUBDIR)      \
 	$(RTOP_SUBDIR)         \
 	$(KOKKOS_SUBDIR)       \
+	$(ZOLTAN_SUBDIR)       \
 	$(EPETRA_SUBDIR)       \
 	$(TRIUTILS_SUBDIR)     \
 	$(TPETRA_SUBDIR)       \
