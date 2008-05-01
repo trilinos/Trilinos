@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
     allCubs[0][0] = cellCub;
     
     // Number of time steps
-    int timeStep = 10000;
+    int timeStep = 100;
     
     //============================================================================================//
     //                                                                                            //
