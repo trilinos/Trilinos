@@ -143,7 +143,6 @@ RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 ASRC = $(srcdir)/../asrc/code_types.h \
 	$(srcdir)/../asrc/element_dictionary.C \
 	$(srcdir)/../asrc/element_dictionary.h \
-	$(srcdir)/../asrc/files \
 	$(srcdir)/../asrc/fudges.C \
 	$(srcdir)/../asrc/fudges.h 
 
