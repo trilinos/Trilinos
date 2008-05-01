@@ -272,7 +272,8 @@ int Radial_Inline_Mesh_Desc::Calc_Coord_Vectors()
     for(int j = 0; j < a_inline_nx[i]; j ++){
       if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
         Icoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i]+(Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+        sum += first_size[axis][i];
+        if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
         Icoors[nct+1] = c_block_dist[axis][i+1];
       }
       else{
@@ -290,7 +291,8 @@ int Radial_Inline_Mesh_Desc::Calc_Coord_Vectors()
     for(int j = 0; j < a_inline_ny[i]; j ++){
       if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
         Jcoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i]+(Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+        sum += first_size[axis][i];
+        if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
         Jcoors[nct+1] = c_block_dist[axis][i+1];
       }
       else{
@@ -333,7 +335,8 @@ int Radial_Inline_Mesh_Desc::Calc_Coord_Vectors()
       for(int j = 0; j < a_inline_nz[i]; j ++){
 	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
 	  Kcoors[nct] = c_block_dist[axis][i]+sum;
-	  sum += first_size[axis][i]+(Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+	  sum += first_size[axis][i];
+          if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
 	  Kcoors[nct+1] = c_block_dist[axis][i+1];
 	}
 	else{
