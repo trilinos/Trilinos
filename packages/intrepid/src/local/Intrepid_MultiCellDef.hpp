@@ -438,33 +438,32 @@ namespace Intrepid {
   
   
   
-  template<class Scalar>
-    void MultiCell<Scalar>::setAtlas(const Teuchos::Array< ShapePoints<Scalar> >& shapePoints) {
-      
-      // Resize atlas to match the number of cells
-      atlas_.resize(numCells_);
-      
-      // Compute cell charts using the provided shapePoints set and store in the atlas.
-      for(int cellID = 0; cellID < numCells_; cellID++){
-        this -> setChart(cellID, shapePoints[cellID]);
-      }
-    }
+template<class Scalar>
+void MultiCell<Scalar>::setAtlas(const Teuchos::Array< ShapePoints<Scalar> >& shapePoints) {
   
+  // Resize atlas to match the number of cells
+  atlas_.resize(numCells_);
   
+  // Compute cell charts using the provided shapePoints set and store in the atlas.
+  for(int cellID = 0; cellID < numCells_; cellID++){
+    this -> setChart(cellID, shapePoints[cellID]);
+  }
+}
 
+  
 
 template<class Scalar>
-Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID, 
+Matrix<Scalar> MultiCell<Scalar>::jacobian(const int            cellId, 
                                            const Point<Scalar>& refPoint,
-                                           double threshold) const 
+                                           double               threshold) const 
 {
-#ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (atlas_.size() == 0),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): jacobian requires an existing atlas. ");  
-  TEST_FOR_EXCEPTION( !( ( 0 <= cellID) && (cellID < numCells_ ) ),
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( !( ( 0 <= cellId) && (cellId < numCells_ ) ),
                       std::invalid_argument,
-                      ">>> ERROR (MultiCell): Invalid cellID value.");
+                      ">>> ERROR (MultiCell): Invalid cellId value.");
   TEST_FOR_EXCEPTION( ( refPoint.getFrameKind() != FRAME_REFERENCE ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Point has to be in FRAME_REFERENCE coordinate frame.");
@@ -481,7 +480,7 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID,
     
     // the EDGE chart is always affine
     case CELL_EDGE:  
-      DF[0] = atlas_[cellID].mapping_[0][0];                    
+      DF[0] = atlas_[cellId].mapping_[0][0];                    
       break;
       
       // TRI and TET charts are affine and can be computed by the same loop
@@ -489,7 +488,7 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID,
     case CELL_TET:
       for(int row = 0; row < ambientDim; row++){
         for(int col = 0; col < ambientDim; col++){
-          DF[col + row*ambientDim] = atlas_[cellID].mapping_[row][col]; 
+          DF[col + row*ambientDim] = atlas_[cellId].mapping_[row][col]; 
         }
       }
       break;
@@ -498,33 +497,33 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID,
     case CELL_QUAD:                                     
       for(int row = 0; row < ambientDim; row++){
         DF[0 + row*ambientDim] = \
-        atlas_[cellID].mapping_[row][0]*refPoint[1] + \
-        atlas_[cellID].mapping_[row][1];
+        atlas_[cellId].mapping_[row][0]*refPoint[1] + \
+        atlas_[cellId].mapping_[row][1];
         DF[1 + row*ambientDim] = \
-          atlas_[cellID].mapping_[row][0]*refPoint[0] + \
-          atlas_[cellID].mapping_[row][2];
+          atlas_[cellId].mapping_[row][0]*refPoint[0] + \
+          atlas_[cellId].mapping_[row][2];
       }
       break;
       
     case CELL_HEX:
       for(int row = 0; row < ambientDim; row++){
         DF[0 + row*ambientDim] = \
-        atlas_[cellID].mapping_[row][0]*refPoint[1]*refPoint[2] + \
-        atlas_[cellID].mapping_[row][1]*refPoint[1] + \
-        atlas_[cellID].mapping_[row][2]*refPoint[2] + \
-        atlas_[cellID].mapping_[row][4];
+        atlas_[cellId].mapping_[row][0]*refPoint[1]*refPoint[2] + \
+        atlas_[cellId].mapping_[row][1]*refPoint[1] + \
+        atlas_[cellId].mapping_[row][2]*refPoint[2] + \
+        atlas_[cellId].mapping_[row][4];
         //
         DF[1 + row*ambientDim] = \
-          atlas_[cellID].mapping_[row][0]*refPoint[0]*refPoint[2] + \
-          atlas_[cellID].mapping_[row][1]*refPoint[0] + \
-          atlas_[cellID].mapping_[row][3]*refPoint[2] + \
-          atlas_[cellID].mapping_[row][5];
+          atlas_[cellId].mapping_[row][0]*refPoint[0]*refPoint[2] + \
+          atlas_[cellId].mapping_[row][1]*refPoint[0] + \
+          atlas_[cellId].mapping_[row][3]*refPoint[2] + \
+          atlas_[cellId].mapping_[row][5];
         //
         DF[2 + row*ambientDim] = \
-          atlas_[cellID].mapping_[row][0]*refPoint[0]*refPoint[1] + \
-          atlas_[cellID].mapping_[row][2]*refPoint[0] + \
-          atlas_[cellID].mapping_[row][3]*refPoint[1] + \
-          atlas_[cellID].mapping_[row][6];
+          atlas_[cellId].mapping_[row][0]*refPoint[0]*refPoint[1] + \
+          atlas_[cellId].mapping_[row][2]*refPoint[0] + \
+          atlas_[cellId].mapping_[row][3]*refPoint[1] + \
+          atlas_[cellId].mapping_[row][6];
       }
       break;
       
@@ -549,6 +548,496 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int cellID,
   }
   Matrix<Scalar> DF_temp(DF,ambientDim);
   return DF_temp;
+}
+
+
+
+template<class Scalar>
+void MultiCell<Scalar>::initializeMeasures(const int                               subcellDim,
+                                           const int                               subcellId,
+                                           const Teuchos::Array<Point<Scalar> > &  cubPoints,
+                                           const Teuchos::Array<Scalar> &          cubWeights) 
+{
+#ifdef HAVE_INTREPID_DEBUG  
+  
+  // Subcell dimension has to be at least 1 (no cubature sets are on nodes) and <= the cell dim
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell dimension. ");
+  
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+  
+  TEST_FOR_EXCEPTION( !(0 < cubPoints.size()), std::invalid_argument,
+                      ">>> ERROR (MultiCell): Cubature points array must contain at least one point! ");
+  
+  TEST_FOR_EXCEPTION( !(cubPoints.size() == cubWeights.size() ), std::invalid_argument,
+                      ">>> ERROR (MultiCell): Number of cubature points does not match number of cubature weights! ");
+#endif 
+  
+  int numCells  = this -> getMyNumCells();
+  int myCellDim = this -> getMyCellDim();
+  int numCubPts = cubPoints.size();
+  
+  // If this is the first time the method is called, data arrays must be properly sized:
+  // The 3 leading indices are [cellId][dimIndex][subcellId], where dimIndex = myCellDim-subcellDim
+  if( jacobianMat_.size() == 0) {
+    
+    // 1st dimension is for [cellId] index and equals number of cells in the MultiCell
+    jacobianMat_.resize(numCells);
+    measure_.resize(numCells);
+    weightedMeasure_.resize(numCells);
+    
+    // Initialize some vars needed below:
+    int num3Subcells = 0;
+    int num2Subcells = 0;
+    int num1Subcells = 0;
+    
+    // Loop over all cells in the 
+    for(int cellId = 0; cellId < numCells; cellId++) {
+      
+      // 2nd and 3rd dimensions are for [dimIndex] and [subcellId] indices and depend on cell dimension
+      switch(myCellDim) {
+        case 3: {
+          // 3D cells need storage for the cell, its 2-subcells and its 1-subcells => 0 <= dimIndex < 3
+          jacobianMat_[cellId].resize(3);
+          measure_[cellId].resize(3);
+          weightedMeasure_[cellId].resize(3);
+          
+          // The 3rd dimension is the number of subcells of dimensions 3 (always 1), 2, and 1
+          num3Subcells = this -> getMyNumSubcells(3);
+          num2Subcells = this -> getMyNumSubcells(2);
+          num1Subcells = this -> getMyNumSubcells(1);
+          
+          jacobianMat_[cellId][0].resize(num3Subcells);
+          jacobianMat_[cellId][1].resize(num2Subcells);
+          jacobianMat_[cellId][2].resize(num1Subcells);
+          
+          measure_[cellId][0].resize(num3Subcells);
+          measure_[cellId][1].resize(num2Subcells);
+          measure_[cellId][2].resize(num1Subcells);
+          
+          weightedMeasure_[cellId][0].resize(num3Subcells);
+          weightedMeasure_[cellId][1].resize(num2Subcells);
+          weightedMeasure_[cellId][2].resize(num1Subcells);  
+        }
+          break;
+          
+        case 2: {
+          // 2D cells need storage for the cell and its 1-subcells => 0 <= dimIndex < 2
+          jacobianMat_[cellId].resize(2);
+          measure_[cellId].resize(2);
+          weightedMeasure_[cellId].resize(2);
+          
+          // The 3rd dimension is the number of subcells of dimensions 2 (always 1) and 1
+          num2Subcells = this -> getMyNumSubcells(2);
+          num1Subcells = this -> getMyNumSubcells(1);
+          
+          jacobianMat_[cellId][0].resize(num2Subcells);
+          jacobianMat_[cellId][1].resize(num1Subcells);
+          
+          measure_[cellId][0].resize(num2Subcells);
+          measure_[cellId][1].resize(num1Subcells);
+          
+          weightedMeasure_[cellId][0].resize(num2Subcells);
+          weightedMeasure_[cellId][1].resize(num1Subcells);
+        }
+          break;
+          
+        case 1: {
+          // 1D cells need storage for the cell only => 0 <=dimIndex < 1
+          jacobianMat_[cellId].resize(1);
+          measure_[cellId].resize(1);
+          weightedMeasure_[cellId].resize(1);
+          
+          // The 3rd dimension is the number of subcells of dimensions 1 (always 1)
+          num1Subcells = this -> getMyNumSubcells(1);
+          
+          jacobianMat_[cellId][0].resize(num1Subcells);
+          measure_[cellId][0].resize(num1Subcells);
+          weightedMeasure_[cellId][0].resize(num1Subcells);
+        }
+          break;
+          
+        default:
+          TEST_FOR_EXCEPTION(( (myCellDim != 3) && (myCellDim != 2) && (myCellDim != 1) ),
+                             std::invalid_argument,
+                             ">>> ERROR (MultiCell): Invalid cell dimension");
+      }// switch(myCellDim)
+    }// for cellId
+  }// if(jacobianMat_.size())
+  
+  
+  //  Initialization of subcell values: dimIndex for the specified subcell:
+  int dimIndex  = myCellDim - subcellDim;
+  
+  // It is possible to change cubature on an individual subcell type without changing the rest of the
+  // cubatures. In this case, the user should first call deleteSubcellMeasures to free up the space
+  // and then call this method with the new cubature rule for the specified subcell. Thus, loading
+  // of values to the array at [cellId][dimIndex][subcellId] will only be carried out if the size
+  // of that array is zero, i.e., it is free or has been freed by deleteSubcellMeasures. Because
+  // subcell values for all cells are always filled/deleted simultaneously, it suffices to check the 
+  // size of jacobianMat_ using the first cell in the multicell.
+  if( jacobianMat_[0][dimIndex][subcellId].size() == 0) {
+    
+    // Make a temp Matrix with the correct space dimension for the Jacobian
+    Matrix<Scalar> tempJac(myCellDim);
+    
+    // Loop over all cells in the MultiCell
+    for(int cellId = 0; cellId < numCells; cellId++) {
+      
+      // Affine cells are handled differently - only one Jacobian and measure values are stored
+      EMapping cellMapping = this -> getCellMappingType(cellId);
+      
+      if(cellMapping == MAPPING_AFFINE) {
+        
+        // Need a single value per Jacobian and measure because they are the same for all cub. pts.
+        jacobianMat_[cellId][dimIndex][subcellId].assign(1, tempJac);
+        measure_[cellId][dimIndex][subcellId].assign(1, 0.0);
+        
+        // These values depend on weights and we need as many values as there are cub. pts.
+        weightedMeasure_[cellId][dimIndex][subcellId].assign(numCubPts,0.0);
+        
+        // Compute Jacobian & measure at the first cubature point
+        jacobianMat_[cellId][dimIndex][subcellId][0] = this -> jacobian(cellId, cubPoints[0]);
+        
+        // Subcell measure function depends on cell and subcell dimensions
+        switch(dimIndex) {
+          
+          // If subcell dimension = cell dimension, measure function is determinant of the Jacobian
+          case 0:
+            measure_[cellId][dimIndex][subcellId][0] = jacobianMat_[cellId][dimIndex][subcellId][0].det();
+            break;
+            
+            // If subcell dimension = cell dimension - 1 we could have face (in 3D) or edge (in 2D)
+          case 1:
+            if(myCellDim == 3) {
+              // measure is surface area \todo Implement surface area!!
+              measure_[cellId][dimIndex][subcellId][0] = 0.0;
+            }
+            else {
+              // Measure is arc-length \todo Implement arc length
+              measure_[cellId][dimIndex][subcellId][0] = 0.0;
+            }
+            break;
+            
+            // If subcell dimension = cell dimension - 2 we have to be in 3D and the subcell must be an edge:   
+          case 2:
+            // Measure function is arc-length.
+            measure_[cellId][dimIndex][subcellId][0] = 0.0;
+            break;
+            
+          default:
+            TEST_FOR_EXCEPTION(( (myCellDim != 3) && (myCellDim != 2) && (myCellDim != 1) ),
+                               std::invalid_argument, ">>> ERROR (MultiCell): Invalid cell dimension");
+            
+        }// switch(dimIndex)
+        
+        // Weighted measure equals measure times the cubature weight
+        Scalar subcellMeasure = std::abs(measure_[cellId][dimIndex][subcellId][0] );
+        for(int cubPt = 0; cubPt < numCubPts; cubPt++) {
+          weightedMeasure_[cellId][dimIndex][subcellId][cubPt] = subcellMeasure*cubWeights[cubPt];
+        }// for(cubPt)
+        
+      } //if(AFFINE)
+      else {
+        
+        // Reserve space for numCubPts Jacobian, measure and weighted measure values:
+        jacobianMat_[cellId][dimIndex][subcellId].assign(numCubPts,tempJac);
+        measure_[cellId][dimIndex][subcellId].assign(numCubPts,0.0);
+        weightedMeasure_[cellId][dimIndex][subcellId].assign(numCubPts,0.0);
+        
+        for(int cubPt = 0; cubPt < numCubPts; cubPt++) {
+          jacobianMat_[cellId][dimIndex][subcellId][cubPt] = jacobian(cellId, cubPoints[cubPt]);
+          
+          switch(dimIndex) {
+            
+            case 0:
+              measure_[cellId][dimIndex][subcellId][cubPt] = jacobianMat_[cellId][dimIndex][subcellId][cubPt].det();
+              break;
+              
+            case 1:
+              if(myCellDim == 3) {
+                measure_[cellId][dimIndex][subcellId][cubPt] = 0.0;
+              }
+              else {
+                measure_[cellId][dimIndex][subcellId][cubPt] = 0.0;
+              }
+              break;
+              
+            case 2:
+              measure_[cellId][dimIndex][subcellId][cubPt] = 0.0;
+              break;
+              
+            default:
+              TEST_FOR_EXCEPTION(( (myCellDim != 3) && (myCellDim != 2) && (myCellDim != 1) ),
+                                 std::invalid_argument, ">>> ERROR (MultiCell): Invalid cell dimension");
+              
+          }// switch(dimIndex)
+          
+          weightedMeasure_[cellId][dimIndex][subcellId][cubPt] = \
+            std::abs( measure_[cellId][dimIndex][subcellId][cubPt] )*cubWeights[cubPt];
+          
+        }// for(cubPt)
+        
+      }// if(! AFFINE) 
+    }// for(cellId)
+  }// if(jacMat_size == 0)
+  
+  // In debug mode: if there are already values stored in [cellId][dimIndex][subcellId]
+  // their number must agree with the number of cubature points. The size of weightedMeasure_
+  // must equal the number of cubature points for both affine and non-affine cells, so we
+  // can use it to check if the number of cub. pts. is correct. Note that this test cannot 
+  // catch a situation where one cubature was replaced by another cubature which has exactly 
+  //the same number of points!
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( !(weightedMeasure_[0][dimIndex][subcellId].size() == cubPoints.size() ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Number of cubature points does not agree with the number of precomputed values");                      
+#endif
+}
+
+
+
+template<class Scalar>
+void MultiCell<Scalar>::deleteSubcellMeasures(const int  subcellDim,
+                                              const int  subcellId) {
+#ifdef HAVE_INTREPID_DEBUG  
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell dimension. ");
+  
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+#endif  
+  int dimIndex  = (this -> getMyCellDim() ) - subcellDim;
+  
+  // Clear storage for the specified subcell for all cells in the MultiCell
+  for(int cellId = 0; cellId < this -> getMyNumCells(); cellId++){
+    
+    // These arrays are always sized togehter so it suffices to check one of them for non-zero size
+    if(jacobianMat_.size() != 0)  {
+      jacobianMat_[cellId][dimIndex][subcellId].resize(0);
+      measure_[cellId][dimIndex][subcellId].resize(0);
+      weightedMeasure_[cellId][dimIndex][subcellId].resize(0);  
+    }
+    
+    // This array is sized separately by getJacobianTInv and has to be checked individualy for nonzero size
+    if(jacobianTInv_.size() != 0) jacobianTInv_[cellId][dimIndex][subcellId].resize(0);
+  }
+}
+
+
+
+template<class Scalar>
+void MultiCell<Scalar>::deleteAllMeasures() {
+  jacobianMat_.resize(0);
+  jacobianTInv_.resize(0);
+  measure_.resize(0);
+  weightedMeasure_.resize(0);
+}
+
+
+
+template<class Scalar>
+const Teuchos::Array<Scalar>& MultiCell<Scalar>::getWeightedMeasure(const int  cellId,
+                                                                const int  subcellDim,
+                                                                const int  subcellId) 
+{
+  // Verify arguments
+#ifdef HAVE_INTREPID_DEBUG  
+  TEST_FOR_EXCEPTION( !( (0 <= cellId) && (cellId < this -> getMyNumCells() ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid cell Id. ");
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell dimension. ");
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+#endif 
+  int dimIndex  = (this -> getMyCellDim()) - subcellDim;
+  
+  // Make sure initializeJacobian has been called to compute the discrete measures
+  TEST_FOR_EXCEPTION( (weightedMeasure_.size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Discrete measure not available: Jacobian data has not been initialized!");
+  
+  // Make sure the values have not been inadverently deleted:
+  TEST_FOR_EXCEPTION( (weightedMeasure_[cellId][dimIndex][subcellId].size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Discrete measure not available: Jacobian data for this subcell has been deleted!");
+  
+  // The requested values are at [cellId][dimIndex][subcellId].
+  return weightedMeasure_[cellId][dimIndex][subcellId];
+}
+
+
+
+template<class Scalar>
+const Teuchos::Array<Scalar>& MultiCell<Scalar>::getMeasure(const int  cellId,
+                                                            const int  subcellDim,
+                                                            const int  subcellId) 
+{
+  // Verify arguments (same as in initializeJacobian)
+#ifdef HAVE_INTREPID_DEBUG  
+  TEST_FOR_EXCEPTION( !( (0 <= cellId) && (cellId < this -> getMyNumCells() ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid cell Id. ");
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell dimension. ");
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+#endif 
+  int dimIndex  = (this -> getMyCellDim()) - subcellDim;
+  
+  // Make sure initializeJacobian has been called to compute the discrete measures
+  TEST_FOR_EXCEPTION( (measure_.size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Continuous measure not available: Jacobian data has not been initialized!");
+  
+  // Make sure the values have not been inadverently deleted:
+  TEST_FOR_EXCEPTION( (measure_[cellId][dimIndex][subcellId].size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Continuous measure not available: Jacobian data for this subcell has been deleted!");
+  
+  // The requested values are at [cellId][dimIndex][subcellId]. Get the dimIndex:
+  return measure_[cellId][dimIndex][subcellId];
+}
+
+
+template<class Scalar>
+const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobian(const int  cellId,
+                                                                      const int  subcellDim,
+                                                                      const int  subcellId) 
+{
+  // Verify arguments
+#ifdef HAVE_INTREPID_DEBUG  
+  TEST_FOR_EXCEPTION( !( (0 <= cellId) && (cellId < this -> getMyNumCells() ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid cell Id. ");
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell dimension. ");
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+#endif 
+  int dimIndex  = (this -> getMyCellDim()) - subcellDim;
+  
+  // Make sure initializeJacobian has been called to compute the Jacobians
+  TEST_FOR_EXCEPTION( (jacobianMat_.size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Jacobian not available: Jacobian data has not been initialized!");
+  
+  // Make sure the Jacobian has not been inadverently deleted:
+  TEST_FOR_EXCEPTION( (jacobianMat_[cellId][dimIndex][subcellId].size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Jacobian not available: Jacobian data for this subcell has been deleted!");
+  
+  // The requested Jacobians are at [cellId][dimIndex][subcellId]. Get the dimIndex:
+  return jacobianMat_[cellId][dimIndex][subcellId];
+}
+
+
+
+template<class Scalar>
+const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const int  cellId,
+                                                                          const int  subcellDim,
+                                                                          const int  subcellId) 
+{
+  int numCells  = this -> getMyNumCells();
+  int myCellDim = this -> getMyCellDim();
+  int dimIndex  = myCellDim - subcellDim;  
+#ifdef HAVE_INTREPID_DEBUG  
+  TEST_FOR_EXCEPTION( !( (0 <= cellId) && (cellId < this -> getMyNumCells() ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid cell Id. ");
+  TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell dimension. ");
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Invalid subcell Id. ");
+  
+  // Make sure initializeMeasures has been called
+  TEST_FOR_EXCEPTION( (jacobianMat_.size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Inverse transpose Jacobian not available: Jacobian data has not been initialized!");
+  
+  // Make sure the Jacobian has not been inadverently deleted:
+  TEST_FOR_EXCEPTION( (jacobianMat_[cellId][dimIndex][subcellId].size() == 0),
+                      std::invalid_argument,
+                      ">>> ERROR (MultiCell): Inverse transpose Jacobian not available: Jacobian data for this subcell has been deleted!");
+#endif 
+  
+  // The size of the array at weightedMeasure[cellId][dimIndex][subcellId] equals the number
+  // of cubature points for both affine and non-affine mappings:  
+  int numCubPts = weightedMeasure_[cellId][dimIndex][subcellId].size();
+  
+  if( jacobianTInv_.size() == 0) {
+    jacobianTInv_.resize(numCells);
+    for(int cellId = 0; cellId < numCells; cellId++) {
+      
+      switch(myCellDim) {
+        case 3:
+          jacobianTInv_[cellId].resize(3);
+          jacobianTInv_[cellId][0].resize(this -> getMyNumSubcells(3));
+          jacobianTInv_[cellId][1].resize(this -> getMyNumSubcells(2));
+          jacobianTInv_[cellId][2].resize(this -> getMyNumSubcells(1));
+          break;
+          
+        case 2:
+          jacobianTInv_[cellId].resize(2);
+          jacobianTInv_[cellId][0].resize(this -> getMyNumSubcells(2));
+          jacobianTInv_[cellId][1].resize(this -> getMyNumSubcells(1));
+          break;
+          
+        case 1:
+          jacobianTInv_[cellId].resize(1);
+          jacobianTInv_[cellId][0].resize(this -> getMyNumSubcells(1));
+          break;
+          
+        default:
+          TEST_FOR_EXCEPTION(( (myCellDim != 3) && (myCellDim != 2) && (myCellDim != 1) ),
+                             std::invalid_argument,  ">>> ERROR (MultiCell): Invalid cell dimension");
+      }// switch(myCellDim)
+    }// for cellId
+  }// if(jacobianTInv_.size())
+    
+  
+  if( jacobianTInv_[cellId][dimIndex][subcellId].size() == 0) {    
+    Matrix<Scalar> tempJac(myCellDim);
+    
+    // If cell mapping is affine, inverse Transpose Jacobian is same for all points
+    EMapping cellMapping = this -> getCellMappingType(cellId);
+    
+    if(cellMapping == MAPPING_AFFINE) {
+      // Need only one value for all cubature points
+      jacobianTInv_[cellId][dimIndex][subcellId].assign(1,tempJac);
+      jacobianTInv_[cellId][dimIndex][subcellId][0] = \
+        jacobianMat_[cellId][dimIndex][subcellId][0].getTranspose();
+      jacobianTInv_[cellId][dimIndex][subcellId][0].invert();
+      
+    } // if(AFFINE)
+    else {
+      for(int cubPt = 0; cubPt < numCubPts; cubPt++) {
+        
+        // Need one value per cubature point
+        jacobianTInv_[cellId][dimIndex][subcellId].assign(numCubPts,tempJac);
+        jacobianTInv_[cellId][dimIndex][subcellId][cubPt] = \
+          jacobianMat_[cellId][dimIndex][subcellId][cubPt].getTranspose();
+        jacobianTInv_[cellId][dimIndex][subcellId][cubPt].invert();
+      }
+      
+    } //if(! AFFINE)
+  } // if(size == 0)
+  
+  return jacobianTInv_[cellId][dimIndex][subcellId];
 }
 
 
@@ -686,7 +1175,7 @@ Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,
     
     // Compute Jacobian matrix at old iterate and invert in place. Use dynamic threshold!
 //    try{
-      jacobian_inv = this -> jacobian(cellID, xOld, threshold);	
+      jacobian_inv = jacobian(cellID, xOld, threshold);	
       jacobian_inv.invert();
 //    }
 //    catch (std::invalid_argument err) {

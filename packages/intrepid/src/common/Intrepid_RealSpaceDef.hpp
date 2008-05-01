@@ -120,6 +120,18 @@ Point<Scalar>::Point(const Scalar* dataPtr,
 }
 
 
+
+template<class Scalar>
+Point<Scalar>::Point(const Teuchos::Array<Scalar>& dataArray,
+                     const EFrame frameKind) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (dataArray.size() < 1) || (dataArray.size() > INTREPID_MAX_DIMENSION) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Point): The data array does not specify a point with valid dimension.");
+#endif
+  data_ = dataArray;
+}
+
   
 template<class Scalar>
 inline int Point<Scalar>::getDim() const {
@@ -525,6 +537,19 @@ void Matrix<Scalar>::setElements(const Scalar* dataPtr, const int dim){
 
 
 template<class Scalar>
+void Matrix<Scalar>::resize(const int dim){
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (dim < 1) || (dim > INTREPID_MAX_DIMENSION) ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Invalid dim argument.");
+#endif
+  Teuchos::Array<Scalar> tmp(dim);
+  elements_.assign(dim,tmp);
+}
+
+
+
+template<class Scalar>
 int Matrix<Scalar>::getDim() const {
   return elements_.size();
 }
@@ -817,6 +842,63 @@ template<class Scalar>
 void Matrix<Scalar>::invert() {
   Matrix<Scalar> tempMatrix = this -> getInverse();
   *this = tempMatrix;
+}
+
+
+template<class Scalar>
+void Matrix<Scalar>::scalarMultiply(const Scalar& scalar) {
+  int dim = elements_.size();
+  for(int i = 0; i < dim; i++) {
+    for(int j = 0; j < dim; j++){
+      elements_[i][j] *=scalar; 
+    }
+  }
+}
+
+
+template<class Scalar>
+void Matrix<Scalar>::multiplyLeft(Teuchos::Array<Scalar> &        matVec,
+                                  const Teuchos::Array<Scalar> &  vec) const {
+  int dim = vec.size();
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( elements_.size() != dim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
+#endif
+  for (int i = 0; i < dim; ++i) {
+    matVec[i] = 0.0;
+    for (int j = 0; j < dim; ++j) {
+      matVec[i] += elements_[i][j]*vec[j];
+    }
+  }
+}
+
+
+template<class Scalar>
+void Matrix<Scalar>::multiplyLeft(LexContainer<Scalar>&       matVec,
+                                  const int                   indexMatVec,
+                                  const LexContainer<Scalar>& vec,
+                                  const int                   indexVec,
+                                  const int dim) const {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (int)elements_.size() != dim ),
+                      std::invalid_argument,
+                      ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
+#endif
+  for (int i = 0; i < dim; ++i) {
+    Scalar temp = 0;
+    for (int j = 0; j < dim; ++j) {
+      temp += elements_[i][j]*vec[indexVec + j];
+    }
+    matVec.setValue(temp,indexMatVec + i);
+  }
+}
+
+
+
+template<class Scalar> 
+const Teuchos::Array<Scalar> & Matrix<Scalar>::operator [] (const int rowId) const{
+  return elements_[rowId]; 
 }
 
 

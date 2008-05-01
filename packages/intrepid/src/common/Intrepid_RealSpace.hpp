@@ -37,6 +37,7 @@
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
+#include "Intrepid_LexContainer.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -125,9 +126,15 @@ class Point {
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Create a 1-3D Point based on a Scalar pointer and dimension.
-    */
+      */
     Point(const Scalar* dataPtr, 
           const int dim, 
+          const EFrame frameKind = FRAME_PHYSICAL);
+    
+    
+    /** \brief Create a 1-3D Point based on an Array.
+      */
+    Point(const Teuchos::Array<Scalar>& dataArray, 
           const EFrame frameKind = FRAME_PHYSICAL);
     
     /** \brief Return dimension of the Point.
@@ -246,7 +253,6 @@ template<class Scalar>
 template<class Scalar>
 class Matrix{
   private:
-      //std::vector< std::vector<Scalar> > elements_;
       Teuchos::Array< Teuchos::Array<Scalar> > elements_;
 
   public:
@@ -300,6 +306,13 @@ class Matrix{
       */
       void setElements(const Scalar* dataPtr, const int dim);
       
+      /** \brief Resize an existing matrix to a <var>dim</var>-by-<var>dim</var> zero matrix.
+        
+        \param dim   [in]  - desired matrix dimension
+        */
+      void resize(const int dim);
+      
+      
       /** \brief Return matrix dimension.
       */
       int getDim() const;
@@ -341,17 +354,63 @@ class Matrix{
       */
       void invert(); // mutator
       
+      
+      /** \brief In-place multiply by scalar. This is a mutator, i.e. it will change the 
+        data of <var>*this</var>.
+        */
+      void scalarMultiply(const Scalar& scalar); // mutator
+      
+      
+      /** \brief Matrix-vector left multiply. An array, thought of as a column vector, is
+        multiplied on the left by the Matrix.  This method allows to perform matrix-vector
+        multiplication without creating a temporary Point object. 
+        
+        \param matVec       [out]         - matrix-vector product
+        \param vec          [in]          - the vector argument
+      */
+      void multiplyLeft(Teuchos::Array<Scalar>&       matVec, 
+                        const Teuchos::Array<Scalar>& vec) const;
+      
+      
+      /** \brief In-place Matrix-vector left multiply. A vector whose elements are contiguously located 
+        in a LexContainer, starting at an element with enumeration <var>indexVec</var>, is multiplied 
+        on the left by the Matrix and stored in another LexContainer, starting at an element with 
+        enumeration <var>indexMatVec</var>. This method allows to perform matrix-vector multiplication
+        directly on a LexContainer, which eliminates the need to copy vector elements from the 
+        container to a temporary array or Point.
+        
+        \param matVec       [out]         - matrix-vector product
+        \param indexMatVec  [in]          - enumeration of the first vector component for the resulr
+        \param vec          [in]          - the vector argument
+        \param indexVec     [in]          - enumeration of the first vector component of the input vector
+        \param dim          [in]          - dimension of the vectors - should equal Matrix dimension
+        */
+      void multiplyLeft(LexContainer<Scalar>&       matVec,
+                        const int                   indexMatVec,
+                        const LexContainer<Scalar>& vec,
+                        const int                   indexVec,
+                        const int dim) const;
+      
+      
+      /** \brief   Overloaded [] operator. Allows to access Matrix elements using [][].
+        */
+      const Teuchos::Array<Scalar> & operator [] (const int rowId) const;
+      
+      
       /** \brief Assignment operator <var>*this = right</var>.
       */
       Matrix& operator = (const Matrix& right);
+      
       
       /** \brief Addition <var>*this = *this + right</var>.
       */
       Matrix& operator += (const Matrix& right);
       
+      
       /** \brief Subtraction <var>*this = *this - right</var>.
       */
       Matrix& operator -= (const Matrix& right);
+      
       
       /** \brief Scalar multiplication <var>*this = left</var> * <var>(*this)</var>.
       */
@@ -383,11 +442,13 @@ template<class Scalar>
 const Matrix<Scalar> operator * (const Scalar sca, const Matrix<Scalar>& mat);
 
 /** \relates Matrix
-    Overloaded matrix-vector multiplication. Matrix is multiplied on the right by a Point
-    object thought of as a column vector.
+Overloaded matrix-vector multiplication. Matrix is multiplied on the right by a Point
+object thought of as a column vector.
 */
 template<class Scalar>
 const Point<Scalar> operator * (const Matrix<Scalar>& mat, const Point<Scalar>& vec);
+
+
 
 /** \relates Matrix
     Overloaded vector-matrix multiplication. Matrix is multiplied on the left by a Point

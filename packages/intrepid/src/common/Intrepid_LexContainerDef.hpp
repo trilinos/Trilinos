@@ -311,8 +311,31 @@ inline void LexContainer<Scalar>::resize(const Teuchos::Array<int>& newIndexRang
 
 
 template<class Scalar>
+inline void LexContainer<Scalar>::resize(const LexContainer<Scalar>& anotherContainer) {
+  
+  int anotherRank = anotherContainer.getRank();
+  Teuchos::Array<int> newIndexRange(anotherRank);
+  for(int i = 0; i < anotherRank; i++){
+    newIndexRange[i] = anotherContainer.getIndexBound(i);
+  }
+
+  // Copy upper index bounds and resize container storage to match new upper bounds.
+  indexRange_.assign(newIndexRange.begin(),newIndexRange.end());  
+  data_.resize(this->getSize());  
+}
+
+
+
+template<class Scalar>
 inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const Teuchos::Array<int>& multiIndex) {
   data_[this->getEnumeration(multiIndex)] = dataValue; 
+}
+
+
+
+template<class Scalar>
+inline void LexContainer<Scalar>::setValue(const Scalar dataValue, const int index) {
+  data_[index] = dataValue; 
 }
 
 

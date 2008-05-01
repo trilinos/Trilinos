@@ -33,6 +33,9 @@
 \author Created by P. Bochev and D. Ridzal, December 20, 2007
 */
 #include "Intrepid_MultiCell.hpp"
+#include "Intrepid_Cubature.hpp"
+#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Teuchos_Array.hpp"
 
 using namespace std;
 using namespace Intrepid;
@@ -125,10 +128,7 @@ int main(int argc, char *argv[]) {
   //triShapePoints[2].shapePoints_[0][3] = Point<double> ;
    
    */
-  
 
-  
-  
   
   // Define vertex data for 2 CELL_QUAD cells
   double quadNodes[] = {
@@ -177,6 +177,63 @@ int main(int argc, char *argv[]) {
   cout << "\tAtlas status of  triMcell is: " << triMcell.getAtlasStatusName() << "\n";
   cout << "\tAtlas status of quadMcell is: " << triMcell.getAtlasStatusName() << "\n";
   cout << "\tAtlas status of  hexMcell is: " << triMcell.getAtlasStatusName() << "\n";
+  
+  
+  cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 2: Using getJacobian to compute Jacobians at cubature point sets   |\n"\
+    << "===============================================================================\n";
+  
+  // Test getJacobian method: define cubature factory and the necesssary point/weight arrays
+  DefaultCubatureFactory<double> CFactory;
+  int numPts;
+  Teuchos::Array<Point<double> > cubPts;
+  Teuchos::Array<double> cubWeights;
+  int cellId=0;
+  int subcellDim = 2;
+  int subcellId  = 0;
+  
+  // Define cubature rule of degree 2 for a TRI cell:
+  Teuchos::RCP<Cubature<double> > triCub =  CFactory.create(CELL_TRI, 2);
+  triCub -> getCubature(numPts, cubPts,cubWeights);
+  
+  // Get Jacobians for subcDim = 2 (the tri), with cellId = 0
+  triMcell.initializeMeasures(subcellDim,
+                              subcellId,cubPts,
+                              cubWeights);
+  cout << " DF, DF^{-T} and det(DF) at all cubature points in the TRI cell with cellId = "<< cellId << "\n";
+  for(int cp = 0; cp < numPts; cp++ ){
+    cout << " At cubature point " << cp << " ---------------> \n\n";
+    cout << "\t      DF = " << triMcell.getJacobian(cellId,subcellDim,subcellId)[cp];
+    cout << "\t det(DF) = " << triMcell.getMeasure(cellId,subcellDim,subcellId)[cp]  <<"\n\n";
+    cout << "\t DF^{-T} = " << triMcell.getJacobianTInv(cellId,subcellDim,subcellId)[cp]  <<"\n";
+  }
+    
+  // Define cubature of degree 2 for a QUAD cell:
+  Teuchos::RCP<Cubature<double> > quadCub =  CFactory.create(CELL_QUAD, 2);
+  quadCub -> getCubature(numPts, cubPts,cubWeights);
+  
+  // Get Jacobians for subcDim = 2 (the QUAD), with cellId = 0
+  quadMcell.initializeMeasures(subcellDim,subcellId,cubPts,cubWeights);
+  cout << " Jacobians at all cubature points in the QUAD cell with cellId = "<< cellId << "\n";
+  for(int cp = 0; cp < numPts; cp++ ){
+    cout << " At cubature point " << cp << " ---------------> \n\n";
+    cout << "\t      DF = " << quadMcell.getJacobian(cellId,subcellDim,subcellId)[cp];
+    cout << "\t det(DF) = " << quadMcell.getMeasure(cellId,subcellDim,subcellId)[cp]  <<"\n\n";
+    cout << "\t DF^{-T} = " << quadMcell.getJacobianTInv(cellId,subcellDim,subcellId)[cp]  <<"\n";
+    cout << "\t DF*DF^{-t} = " <<
+      quadMcell.getJacobian(cellId,subcellDim,subcellId)[cp]*\
+      quadMcell.getJacobianTInv(cellId,subcellDim,subcellId)[cp] << "\n";
+   }
+  
+  
+  // This is how to access individual elements in the Jacobians
+  int i = 0; int j = 1; cellId = 0;
+  cout << "CellId = " << cellId << " Cubature Point Id = " << 0
+    << "  Jacobian["<<i<<"]["<<j<<"] = "
+    << quadMcell.getJacobian(cellId,subcellDim,subcellId)[0][i][j] <<"\n";
+
+
   
   cout << "\n" \
     << "===============================================================================\n"\
@@ -248,6 +305,8 @@ int main(int argc, char *argv[]) {
     << "| EXAMPLE 2: Using charts with hexMcell                                       |\n"\
     << "===============================================================================\n";
   
+  /*
+  
   // Using charts with the hexMcell: we will map the vertices of the reference hex
   Point<double> ref_hex_v0(-1.0,-1.0,-1.0,FRAME_REFERENCE), hex_v0(3);
   Point<double> ref_hex_v1( 1.0,-1.0,-1.0,FRAME_REFERENCE), hex_v1(3);
@@ -303,6 +362,7 @@ int main(int argc, char *argv[]) {
   cout << "\t " << hex_v6 <<" maps to " << ref_hex_v6 << endl;
   cout << "\t " << hex_v7 <<" maps to " << ref_hex_v7 << endl;
 
+   */
   
   return 0;
 }

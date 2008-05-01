@@ -216,7 +216,7 @@ class MultiCell {
       tangential components of a vector field are specified.
     */
     Teuchos::Array< Teuchos::Array<short> > faceTags_;
-      
+    
     
     /** \brief Rank-one array of charts, i.e., mappings between the cells in the MultiCell and their 
       standard reference cell. Upon construction of a MultiCell the size of this array is zero thereby 
@@ -226,8 +226,83 @@ class MultiCell {
     */
     Teuchos::Array< ChartTemplate<Scalar> >  atlas_;
     
+    //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
+    //      Private members of the MultiCell class which are used by LocalField classes to store  //
+    //      information needed to compute integrals in operator and functional methods            //                                                                                      //
+    //--------------------------------------------------------------------------------------------//
     
-    /** \brief Disable default constructor.
+    
+    /** \brief A four-dimensional array of Matrices representing cell Jacobians \f$ DF \f$  
+      evaluated at cubature point sets assigned to the subcells of each cell. The leading dimension
+      equals the number of subcells in the MultiCell. This array is filled on demand by 
+      initializeMeasure, when Jacobian values and the associated subcell measure values at a
+      particular cubature point set are requested by LocalField methods. 
+      Specifically, <var>jacobianMat_[cellId][dimIndex][subcellId][cubPt]</var>  stores the cell
+      Jacobian matrix evaluated at a cubature point:
+      
+      \li <var>cellId</var>     is the cell Id relative to the MultiCell;
+      \li <var>dimIndex</var>   is cell dimension - subcell dimension;
+      \li <var>subcellId</var>  is the local order of the subcell (remember, subcells of a given
+                                dimension are implicitely ordered in the cell template) 
+      \li <var>cubPt</var>      is the order of the cubature point from the set of points
+                                assigned to that subcell.
+      */
+    Teuchos::Array<Teuchos::Array<Teuchos::Array<Teuchos::Array<Matrix<Scalar> > > > > jacobianMat_;
+    
+    
+    /** \brief A four-dimensional array of Matrices which has the same dimensions as 
+      <var>jacobianMat_</var> and stores the inverse transposes \f$ DF^{-T}\f$ of the 
+      Jacobians in that array. Initially, <var>jacobianTInv</var> is empty and is filled  
+      on demand by getJacobianTInv. Specifically, 
+      <var>jacobianTInv_[cellId][dimIndex][subcellId][cubPt]</var>  stores the inverse 
+      transpose of the cell Jacobian matrix evaluated at a cubature point:
+      
+      \li <var>cellId</var>     is the cell Id relative to the MultiCell;
+      \li <var>dimIndex</var>   is cell dimension - subcell dimension;
+      \li <var>subcellId</var>  is the local order of the subcell (remember, subcells of a given
+                                dimension are implicitely ordered in the cell template)                                                        
+      \li <var>cubPt</var>      is the order of the cubature point from the set of points
+                                assigned to that subcell.
+      */
+    Teuchos::Array<Teuchos::Array<Teuchos::Array<Teuchos::Array<Matrix<Scalar> > > > > jacobianTInv_;
+    
+    
+    /** \brief A four-dimensional array of Scalars which has the same dimension as 
+      <var>jacobianMat_</var> and stores values of the subcell measure function at the cubature 
+      point set on the subcell. This array is filled on demand by initializeMeasure, when Jacobian 
+      values and subcell measure values for a specific subcell are requested by LocalField methods. 
+      Definition of subcell measure function depends on the generating cell dimension and the subcell 
+      dimension. In 3,2 and 1 dimensions, the contents of <var>measure_[cellId]</var> are as follows:
+      
+      3D:
+      \li [0][0][cp]      is volume function ( = Jacobian determinant) 
+      \li [1][faceId][cp] is surface area function of face with <var>faceId</var>
+      \li [2][edgeId][cp] is arclength function of edge with <var>edgeId</var>
+      
+      2D:
+      \li [0][0][cp]      is area function ( = Jacobian determinant) 
+      \li [1][edgeId][cp] is arclength function of edge with <var>edgeId</var>
+      
+      1D:
+      \li [0][0][cp]      is arclength function ( = Jacobian determinant) 
+
+      all evaluated at cubature point <var>cp</var> from a cubature point set located on the subcell.
+    */
+    Teuchos::Array<Teuchos::Array<Teuchos::Array<Teuchos::Array<Scalar> > > >  measure_;
+    
+    
+    /** \brief A four-dimensional array of Scalars which has the same dimension as 
+      <var>jacobianMat_</var> and stores values of the subcell measure function at the cubature 
+      point set on the subcell, <strong>times the associated cubature weight</strong>. This array is 
+      filled on demand by initializeMeasure, when Jacobian values and subcell measure values for a 
+      specific subcell are requested by LocalField methods. The structure of <var>weightedMeasure_</var>
+      is the same as that of <var>measure_[cellId]</var>.
+       */    
+    Teuchos::Array<Teuchos::Array<Teuchos::Array<Teuchos::Array<Scalar> > > >  weightedMeasure_;
+
+    
+    /** \brief Disable default constructor by making it private.
     */
     MultiCell();
     
@@ -253,6 +328,12 @@ class MultiCell {
     MultiCell(const int      numCells,
               const ECell    generatingCellType,
               const Scalar*  vertices);
+    
+    //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
+    //          Public methods of the MultiCell class which are defined for all cell types        //
+    //                                                                                            //
+    //--------------------------------------------------------------------------------------------//
     
     
     /** \brief Sets edge signs for 2D and 3D generating cells. 
@@ -354,7 +435,9 @@ class MultiCell {
     
     
     //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
     //                      Accessors operating on a specific MultiCell instance                  //
+    //                                                                                            //
     //--------------------------------------------------------------------------------------------//
     
     
@@ -496,9 +579,11 @@ class MultiCell {
     const Teuchos::Array< Point<Scalar> > & operator [] (const int cellID) const;
     
     
-    //-------------------------------------------------------------------------------------//
-    //   Static accessor functions: can be called without prior MultiCell instantiation    //
-    //-------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
+    //       Static accessor functions: can be called without prior MultiCell instantiation       //
+    //                                                                                            //
+    //--------------------------------------------------------------------------------------------//
     
     /** \brief Returns cell type based on its name.
       
@@ -563,9 +648,13 @@ class MultiCell {
                                   const int subcellDim,
                                   const int subcellID);
     
-    //-------------------------------------------------------------------------------------//
-    //                         Charts and atlas                                            //
-    //-------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
+    //      Public methods of the MultiCell class which require the generating cell to have       //
+    //      a reference cell, i.e., to be EDGE, TRI, QUAD, TET, HEX, TRIPRISM, or PYRAMID         //
+    //                                                                                            //
+    //--------------------------------------------------------------------------------------------//
+    
     
     /** \brief Sets a default chart into an existing atlas. 
       The atlas must have size > 0, i.e., STATUS_DEFINED, for this method to work. Admissible 
@@ -623,21 +712,180 @@ class MultiCell {
     std::string getAtlasStatusName() const;
     
     
+    /** \brief Returns the mapping type (affine, non-affine) of a cell. Will throw an exception if
+      the atlas has not been defined
+      
+      \param cellId            [in] - cell Id relative to the multicell.
+      \return
+        - type of the maping for this cell
+    */
+    const EMapping getCellMappingType(const int cellId) const;
+    
+    
     /** \brief Returns a Matrix object representing the Jacobian matrix of the maping specified by
       the chart of the cell, evaluated at a point in the reference frame. Admissible generating
       cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have 
       reference cells.
-        
+      
       \warning Not to be confused with the Jacobian determinant, the determinant of this matrix.
-       
-        \param cellID [in]     - cell ID relative to the MultiCell
-        \param refPoint [in]   - point in the reference frame where Jacobian is evaluated
-        \param threshold [in]  - "tightness" in the inclusion test carried out inside the method
-    */
-    Matrix<Scalar> jacobian(const int cellID, 
+      
+      \param cellID    [in]   - cell Id relative to the MultiCell
+      \param refPoint  [in]   - point in the reference frame where Jacobian is evaluated
+      \param threshold [in]   - "tightness" in the inclusion test carried out inside the method
+      */
+    Matrix<Scalar> jacobian(const int            cellId, 
                             const Point<Scalar>& refPoint,
-                            const double threshold = INTREPID_THRESHOLD) const;
-
+                            const double         threshold = INTREPID_THRESHOLD) const;
+    
+    
+    /** \brief Resizes the internal storage arrays <var>jacobianMat_</var>, <var>measure_</var> and
+      <var>weightedMeasure_</var> for the values of \f$DF\f$, the subcell measure function, and the
+      subcell measure function multiplied by the cubature weight. Fills these arrays with data for
+      all cells in the MultiCell as follows:
+      
+      \li Fills <var>jacobianMat_[cellId][subCellDim][subcellId]</var> with an array of <var>Matrix</var> 
+      objects representing the Jacobian of the cell with the <var>cellId</var> evaluated at a cubature 
+      point set assigned to the subcell specified by its subcell dimension <var>subcellDim</var>
+      and local order <var>subcellId</var>. For cells with AFFINE mappings stores <strong>only one value</strong>, 
+      for cells with NONAFFINE mappings stores all values.
+      
+      \li Fills <var>measure_[cellId][subCellDim][subcellId]</var> with an array of scalars representing 
+      the values of the measure function of the specified subcell, evaluated on a cubature point set
+      assigned to that subcell. For cells with AFFINE mappings stores <strong>only one value</strong>, 
+      for cells with NONAFFINE mappings stores all values
+      
+      \li  Fills <var>weightedMeasure_[cellId][subCellDim][subcellId]</var> with an array of scalars  
+      representing the values of the subcell measure function defined above, multiplied by the cubature 
+      weights. Because different cubature points can have different weights, this array <strong>always
+      stores as many values as there are cub. points<\strong>, regardless of whether the cell is AFFINE or
+      NONAFFINE.
+      
+      This method must be called before using any of getJacobian, getJacobianTInv, getMeasure and
+      getWeightedMeasure methods.
+        
+      \param subcellDim       [in]     - Dimension of subcells at whose cubature points the values are computed.
+      \param subcellId        [in]     - Subcell Id.
+      \param cubPoints        [in]     - Array of cubature points assigned to the specified subcell
+      \param cubWeights       [in]     - Array of cubature weights assigned to the points
+      
+      \warning <var>cubPoints</var> and <var>cubWeights</var> must belong to the same cubature rule!
+      */
+    void initializeMeasures(const int                              subcellDim,
+                            const int                              subcellId,
+                            const Teuchos::Array<Point<Scalar> > & cubPoints,
+                            const Teuchos::Array<Scalar>         & cubWeights);
+    
+    
+    /**\brief Deletes the values of \f$DF\f$, \f$DF^{-T}\f$, and measure functions at the cubature point
+      set assigned to the subcell with dimension <var>subcellDim</var> and local order <var>subcellId</var>
+      for all cells in the MultiCell.
+      
+      This method should be called <strong>before</strong> initializeMeasures any time the cubature
+      point set assigned to the specified subcell has been changed.
+      
+      \param subcellDim       [in]     - Dimension of subcells at whose cubature points the values are computed.
+      \param subcellId        [in]     - Subcell id.      
+      */
+    void deleteSubcellMeasures(const int  subcellDim,
+                               const int  subcellId);
+    
+    
+    /**\brief Deletes the values of \f$DF\f$, \f$DF^{-T}\f$, and measure functions for all cells in the
+      MultiCell. This method should be called before initializeMeasures, if the set of cubature rules 
+      for the generating cell has been completely changed.
+      */
+    void deleteAllMeasures();
+    
+    
+    /** \brief Returns reference to <var>jacobianMat_[cellId][subCellDim][subcellId]</var> - an array 
+      of Intrepid::Matrix objects representing the Jacobian of the cell with the <var>cellId</var>, 
+      evaluated at a set of cubature points located on a subcell with dimension <var>subcell</var> 
+      and local <var>subcellId</var>.
+      
+      \warning initializeMeasures must be called before using this method.
+      
+      \param cellId           [in]     - Cell Id relative to the MultiCell.
+      \param subcellDim       [in]     - Dimension of subcells at whose cubature points the values are computed.
+      \param subcellId        [in]     - Subcell id.
+      
+      \return
+        - reference to an array containing \f$ DF\f$ evaluated at cubature points 
+      
+      \warning If the mapping of the specified cell is AFFINE, the return array contains 
+      <strong>only one value</strong>!      
+      */
+    const Teuchos::Array<Matrix<Scalar> > & getJacobian(const int  cellId,
+                                                        const int  subcellDim,
+                                                        const int  subcellId);
+    
+    
+    /** \brief Returns reference to <var>jacobianTInv_[cellId][subCellDim][subcellId]</var>
+      - an array of Intrepid::Matrix objects representing the inverse transpose of the 
+      Jacobian of the cell with with the <var>cellId</var>, evaluated at a set of cubature points 
+      located on a subcell with dimension <var>subcell</var> and local <var>subcellId</var>.
+      
+      \warning initializeMeasures must be called before using this method.
+      
+      \param cellId           [in]     - Cell Id relative to the MultiCell.
+      \param subcellDim       [in]     - Dimension of subcells at whose cubature points the values are computed.
+      \param subcellId        [in]     - Subcell id.
+      
+      \return
+      - reference to an array containing \f$ DF^{-T}\f$ evaluated at cubature points 
+      
+      \warning If the mapping of the specified cell is AFFINE, the return array contains 
+      <strong>only one value</strong>!
+    */
+    const Teuchos::Array<Matrix<Scalar> > & getJacobianTInv(const int  cellId,
+                                                            const int  subcellDim,
+                                                            const int  subcellId);
+    
+    
+    /** \brief Returns reference to <var>measure_[cellId][subCellDim][subcellId]</var> - an array of 
+      <var>Scalar</var> values representing the measure function of the subcell with dimension 
+      <var>subcell</var> and local <var>subcellId</var>, evaluated on a cubature point set assigned 
+      to that subcell. 
+            
+      \warning initializeMeasures must be called before using this method.
+      
+      \param cellId           [in]     - Input operator (primitive).
+      \param subcellDim       [in]     - Dimension of subcells at whose cubature points the values are computed.
+      \param subcellId        [in]     - Subcell id.
+      
+      \return
+        - reference to an array containing subcell measure function evaluated at cubature points
+      
+      \warning If the mapping of the specified cell is AFFINE, the return array contains 
+      <strong>only one value</strong>!
+    */
+    const Teuchos::Array<Scalar> & getMeasure(const int  cellId,
+                                              const int  subcellDim,
+                                              const int  subcellId);
+    
+    /** \brief Returns reference to <var>weightedMeasure_[cellId][subCellDim][subcellId]</var> - an 
+      array of <var>Scalar</var> values representing the measure function of the subcell with dimension 
+      <var>subcell</var> and local <var>subcellId</var>, evaluated on a cubature point set assigned 
+      to that subcell, and multiplied by the cubature weight assigned to each cubature point.
+      
+      \warning initializeMeasures must be called before using this method.
+ 
+      \param cellId           [in]     - Input operator (primitive).
+      \param subcellDim       [in]     - Dimension of subcells at whose cubature points the values are computed.
+      \param subcellId        [in]     - Subcell id.
+      
+      \return
+      - reference to an array containing subcell measure function values at cubature points
+        times the cubature weight.
+      
+      \warning Because different cubature points can have different weights, return array <strong>always
+      stores as many values as there are cub. points<\strong>, regardless of whether the cell is AFFINE or
+      NONAFFINE.
+    */
+    const Teuchos::Array<Scalar> & getWeightedMeasure(const int  cellId,
+                                                      const int  subcellDim,
+                                                      const int  subcellId);
+    
+    
     /** \brief Returns a Point object with FRAME_PHYSICAL representing the image of a point from
       the generating reference cell in the specified physical cell (relative to the MultiCell).
       The method uses the chart of the specified cell and requires <var>atlas_</var> to have 
@@ -652,6 +900,7 @@ class MultiCell {
                                     const Point<Scalar>& refPoint,
                                     const double threshold = INTREPID_THRESHOLD) const;
 
+    
     /** \brief Returns a Point object with FRAME_REFERENCE representing the image of a point from
       the specified physical cell (relative to the MultiCell) in the generating reference cell.
       The method uses the chart of the specified cell and requires <var>atlas_</var> to have 
@@ -665,9 +914,11 @@ class MultiCell {
     Point<Scalar> mapToReferenceCell(const int cellID, 
                                      const Point<Scalar>& physPoint) const;
     
-    //-------------------------------------------------------------------------------------//
-    //                                    Inclusion tests                                  //
-    //-------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
+    //                                        Inclusion tests                                     //
+    //                                                                                            //
+    //--------------------------------------------------------------------------------------------//
     
     /** \brief Returns true if the Point argument is in the closure of the specified reference cell.
       
@@ -704,9 +955,11 @@ class MultiCell {
                         const Point<Scalar>& physPoint,
                         const double threshold = INTREPID_THRESHOLD) const;
     
-    //-------------------------------------------------------------------------------------//
-    //                                     Debugging                                       //
-    //-------------------------------------------------------------------------------------//    
+    //--------------------------------------------------------------------------------------------//
+    //                                                                                            //
+    //                                         Debugging                                          //
+    //                                                                                            //
+    //--------------------------------------------------------------------------------------------//    
     
     /** \brief Prints multicell info to <var>os</var> stream.
     */

@@ -179,6 +179,13 @@ namespace Intrepid {
     void resize(const Teuchos::Array<int>& newIndexRange);
     
     
+    /** \brief Resizes LexContainer to have the same rank and index ranges as another LexContainer
+      
+      \param anotherContainer[in]          - a LexContainer
+      */
+    void resize(const LexContainer<Scalar>& anotherContainer);
+    
+    
     /** \brief Assign value by its multi-index. Does not change rank or index ranges of the LexContainer.
       In DEBUG mode checks if number of multi-indices matches the rank of the LexContainer and  
       whether each index is within its admissible range.
@@ -188,6 +195,16 @@ namespace Intrepid {
       */
     void setValue(const Scalar               dataValue,
                   const Teuchos::Array<int>& multiIndex);
+    
+    /** \brief Assign value by its enumeration. Does not change rank or index ranges of the LexContainer.
+      In DEBUG mode checks bounds on the enumeration value.
+      
+      \param dataValue [in]             - value to be assigned
+      \param index     [in]             - enumeration of the value (its index)
+      */
+    void setValue(const Scalar  dataValue,
+                  const int     index);
+    
     
     
     /**\brief Assign values from Teuchos::Array without changing rank and index ranges of LexContainer. 

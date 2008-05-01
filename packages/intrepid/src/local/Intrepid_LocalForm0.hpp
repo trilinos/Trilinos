@@ -173,7 +173,7 @@ class LocalForm0 : public LocalField<Scalar> {
     
     \param primOp           [in]     - Input operator (primitive).
     \param subDim           [in]     - Dimension of subcells at whose cubature points the values are computed.
-    \param subCellId        [in]     - Subcell id.
+    \param subcellId        [in]     - Subcell id.
     
     \return
     - Output container of rank 2 or 3. For formatting details see documentation of the public method
@@ -181,9 +181,81 @@ class LocalForm0 : public LocalField<Scalar> {
     */
   const VarContainer<Scalar> & getOperator(const EOperator  primOp,
                                            const int        subDim,
-                                           const int        subCellId);
+                                           const int        subcellId);
   
+  
+  /** \brief Fills the Intrepid::LexContainer <var>values</var> with appropriately transformed 
+    (to physical cells) values of the specified operator applied to the <strong>native</strong> basis functions. 
+    
+    \param transVals        [out]    - Output array.
+    \param primOp           [in]     - Input operator (primitive).
+    \param mCell            [in]     - Multicell.
+    \param intDomain        [in]     - Integration domain (line, surface, cell).
+    \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
+                                       used to compute integrals in the MultiCell argument. Otherwise
+                                       all necessary for this method values are computed on the fly.
+  */
+  void transformBasisVals(LexContainer<Scalar> &      transVals,
+                          const EOperator             primOp,
+                          MultiCell<Scalar> &         mCell,
+                          const bool                  reuseJacobians,
+                          const EIntegrationDomain    intDomain);
+  
+  
+  /** \briefFills the Intrepid::LexContainer <var>values</var> with appropriately transformed 
+    (to physical cells) values of the specified operator applied to <strong>auxiliary</strong> basis 
+    functions.
+    Acts on auxiliary basis.
+    
+    \param transVals        [out]    - Output array.
+    \param primOp           [in]     - Input operator (primitive).
+    \param primOpField      [in]     - Domain of primOp - specifies the <strong>auxiliary</strong> basis 
+    \param mCell            [in]     - Multicell.
+    \param intDomain        [in]     - Integration domain (line, surface, cell).
+    \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
+                                        used to compute integrals in the MultiCell argument. Otherwise
+                                        all necessary for this method values are computed on the fly.
+  */
+  void transformBasisVals(LexContainer<Scalar> &  transVals,
+                 const EOperator                  primOp,
+                 const LocalField<Scalar> &       primOpField,
+                 MultiCell<Scalar> &              mCell, 
+                 const bool                       reuseJacobians,
+                 const EIntegrationDomain         intDomain);
+  
+  
+  /** \brief Fills the Intrepid::LexContainer <var>values</var> with appropriately transformed 
+    (to physical cells) values of the specified operator applied to the <strong>native</strong> basis functions. 
+    
+    \param finalVals        [out]    - Output array with weighted measure applied to transformed values
+    \param transVals        [in]     - Array with transformed basis function values.
+    \param primOp           [in]     - Input operator (primitive).
+    \param mCell            [in]     - Multicell.
+    \param intDomain        [in]     - Integration domain (line, surface, cell).
+    \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
+                                       used to compute integrals in the MultiCell argument. Otherwise
+                                       all necessary for this method values are computed on the fly.
+  */  
+  void applyWeightedMeasure(LexContainer<Scalar> &         finalVals,
+                            const LexContainer<Scalar> &   transVals,
+                            const EOperator                primOp,
+                            MultiCell<Scalar> &            mCell,
+                            const bool                     reuseJacobians,
+                            const EIntegrationDomain       intDomain);
+  
+  
+  /** \brief Performs numerical integration (note that geometric transformations
+    and integration weights have already been included in <var>leftValues</var>
+    and <var>rightValues</var>).
 
+  \param outputValues     [out]     - Output array.
+  \param leftValues       [out]     - Left array.
+  \param rightValues      [out]     - Right array.
+*/
+  void integrate(LexContainer<Scalar> &        outputValues,
+                 const LexContainer<Scalar> &  leftValues,
+                 const LexContainer<Scalar> &  rightValues) const;
+  
   public:
 
     
@@ -276,14 +348,16 @@ Legend:
       \param inputPoints      [in]     - Array of input (physical) points.
       \param primOp           [in]     - Input operator (primitive).
       \param cell             [in]     - Physical cell.
-  */
+      \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
+                                         used to compute integrals in the MultiCell argument. Otherwise
+                                         all values are computed on the fly.
+    */
   void getOperator(VarContainer<Scalar> &                  outputValues,
                    const Teuchos::Array<Point<Scalar> > &  inputPoints,
                    const EOperator                         primOp,
                    const Cell<Scalar> &                    cell);
 
 
-  
   void getOperator(LexContainer<Scalar> &          outputValues,
                    const EOperator                 leftOp,
                    const EOperator                 rightOp,
@@ -297,6 +371,7 @@ Legend:
                    const EOperator             leftOp,
                    const EOperator             rightOp,
                    MultiCell <Scalar> &        mCell,
+                   const bool                  reuseJacobians = false,
                    const EIntegrationDomain    intDomain = INTEGRATION_DOMAIN_CELL);
 
   
@@ -309,64 +384,7 @@ Legend:
                    const EDataFormat                inputFormat,
                    const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL);
 
-
-  /** \brief Fills the Intrepid::LexContainer <var>leftValues</var> with a discrete
-             representation of <var>leftOp</var> that is convenient for fast integration.
-
-      The discrete representation depends on <var>leftOp</var>, <var>rightOp</var>, 
-      <var>rightOpField</var>, and various other "convenience" factors.
-
-      \param leftValues      [out]     - Output array.
-      \param leftOp           [in]     - Left operator.
-      \param rightOp          [in]     - Right operator.
-      \param rightOpField     [in]     - Local field of the right operator.
-      \param mCell            [in]     - Multicell.
-      \param intDomain        [in]     - Integration domain (line, surface, cell).
-  */
-  void fillLeft(LexContainer<Scalar> &      leftValues,
-                const EOperator             leftOp,
-                const EOperator             rightOp,
-                const LocalField<Scalar> &  rightOpField,
-                MultiCell<Scalar> &         mCell,
-                const EIntegrationDomain    intDomain);
-
-
-  /** \brief Fills the Intrepid::LexContainer <var>rightValues</var> with a discrete
-             representation of <var>rightOp</var> that is convenient for fast integration.
-
-      The discrete representation depends on <var>leftOp</var>, <var>rightOp</var>, 
-      <var>rightOpField</var>, and various other "convenience" factors.
-
-      \param rightValues     [out]     - Output array.
-      \param rightOp          [in]     - Right operator.
-      \param leftOp           [in]     - Left operator.
-      \param rightOpField     [in]     - Local field of the right operator.
-      \param mCell            [in]     - Multicell.
-      \param intDomain        [in]     - Integration domain (line, surface, cell).
-  */
-  void fillRight(LexContainer<Scalar> &      leftValues,
-                 const EOperator             leftOp,
-                 const EOperator             rightOp,
-                 const LocalField<Scalar> &  rightOpField,
-                 MultiCell<Scalar> &         mCell,
-                 const EIntegrationDomain    intDomain);
-
-
-  /** \brief Performs numerical integration (note that geometric transformations
-             and integration weights have already been included in <var>leftValues</var>
-             and <var>rightValues</var>).
-
-      \param outputValues     [out]     - Output array.
-      \param leftValues       [out]     - Left array.
-      \param rightValues      [out]     - Right array.
-  */
-  void integrate(LexContainer<Scalar> &        outputValues,
-                 const LexContainer<Scalar> &  leftValues,
-                 const LexContainer<Scalar> &  rightValues) const;
-
-
-  /** \brief Returns field type.
-  */
+  
   EField getFieldType() const {return fieldType_;}
 
 }; // class LocalForm0

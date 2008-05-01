@@ -430,4 +430,18 @@ namespace Intrepid {
   }
   
   
+  
+  template<class Scalar>
+  const EMapping MultiCell<Scalar>::getCellMappingType(const int cellId) const {
+    
+    // Atlas needs to be defined before we can ask for mapping types of the cells
+    TEST_FOR_EXCEPTION(atlas_.size() == 0,
+                       std::invalid_argument,
+                       ">>> ERROR (MultiCell): Cannot get cell mapping type without a defined atlas"); 
+    
+    // The cell chart is in atlas_[cellId], the mapping type is stored in the mappingType_field:
+    return atlas_[cellId].mappingType_;
+  }
+  
+  
 } // namespace Intrepid

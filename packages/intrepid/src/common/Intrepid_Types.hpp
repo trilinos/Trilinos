@@ -117,7 +117,7 @@ namespace Intrepid {
   
   // Used as tolerance in e.g. Newton's method to invert non-affine mappings
   static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
-
+  
 
   /** \enum  Intrepid::EStatus
       \brief Indicates the status of an object.

@@ -174,6 +174,7 @@ class LocalField {
                            const EOperator             leftOp,
                            const EOperator             rightOp,
                            MultiCell <Scalar> &        mCell,
+                           const bool                  reuseJacobians = false,
                            const EIntegrationDomain    intDomain = INTEGRATION_DOMAIN_CELL) = 0;
 
 
