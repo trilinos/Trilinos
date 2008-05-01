@@ -20,14 +20,6 @@ REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
 DONE
 
-IF PACKAGE amesos SUBDIRECTORY thyra THEN
-INSERT --disable-amesos-thyra
-DONE
-
-IF PACKAGE amesos SUBDIRECTORY python THEN
-INSERT --disable-amesos-python
-DONE
-
 # Anasazi ----------------------------------------------------------------------
 IF PACKAGE anasazi THEN
 REMOVE --enable-anasazi
@@ -36,10 +28,6 @@ DONE
 
 IF PACKAGE anasazi SUBDIRECTORY thyra THEN
 INSERT --disable-anasazi-thyra
-DONE
-
-IF PACKAGE anasazi SUBDIRECTORY python THEN
-INSERT --disable-anasazi-python
 DONE
 
 # AztecOO ----------------------------------------------------------------------
@@ -56,22 +44,9 @@ REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
 DONE
 
-IF PACKAGE aztecoo SUBDIRECTORY thyra THEN
-INSERT --disable-aztecoo-thyra
-REMOVE --enable-meros
-DONE
-
-IF PACKAGE aztecoo SUBDIRECTORY python THEN
-INSERT --disable-aztecoo-python
-DONE
-
 # Belos ------------------------------------------------------------------------
 IF PACKAGE belos THEN
 REMOVE --enable-belos
-DONE
-
-IF PACKAGE belos SUBDIRECTORY thyra THEN
-INSERT --disable-belos-thyra
 DONE
 
 # Claps ------------------------------------------------------------------------
@@ -113,15 +88,6 @@ REMOVE --enable-webtrilinos
 REMOVE --enable-ml_multiple_rhs
 DONE
 
-IF PACKAGE epetra SUBDIRECTORY thyra THEN
-INSERT --disable-epetra-thyra
-REMOVE --enable-meros
-DONE
-
-IF PACKAGE epetra SUBDIRECTORY python THEN
-INSERT --disable-epetra-python
-DONE
-
 # EpetraExt --------------------------------------------------------------------
 IF PACKAGE epetraext THEN
 REMOVE --enable-epetraext
@@ -134,16 +100,6 @@ REMOVE --enable-ml_aztecoo
 REMOVE --enable-nox-epetra
 REMOVE --enable-nox-epetra-examples
 REMOVE --enable-sundance
-DONE
-
-# REMOVE --enable-thyra
-
-IF PACKAGE epetraext SUBDIRECTORY thyra THEN
-INSERT --disable-epetraext-thyra
-DONE
-
-IF PACKAGE epetraext SUBDIRECTORY python THEN
-INSERT --disable-epetraext-python
 DONE
 
 # Fei ----------------------------------------------------------------------
@@ -162,10 +118,6 @@ REMOVE --enable-galeri
 REMOVE --enable-webtrilinos
 DONE
 
-IF PACKAGE galeri SUBDIRECTORY python THEN
-INSERT --disable-galeri-python
-DONE
-
 # Ifpack -----------------------------------------------------------------------
 IF PACKAGE ifpack THEN
 REMOVE --enable-ifpack
@@ -174,14 +126,6 @@ REMOVE --enable-nox-epetra-examples
 REMOVE --with-ml_ifpack
 REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
-DONE
-
-IF PACKAGE ifpack SUBDIRECTORY thyra THEN
-INSERT --disable-ifpack-thyra
-DONE
-
-IF PACKAGE ifpack SUBDIRECTORY python THEN
-INSERT --disable-ifpack-python
 DONE
 
 # Isorropia --------------------------------------------------------------------
@@ -217,15 +161,6 @@ REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
 DONE
 
-IF PACKAGE ml SUBDIRECTORY python THEN
-INSERT --disable-ml-python
-DONE
-
-IF PACKAGE ml SUBDIRECTORY thyra THEN
-INSERT --disable-ml-thyra
-REMOVE --enable-meros
-DONE
-
 # Moertel ----------------------------------------------------------------------
 IF PACKAGE moertel THEN
 REMOVE --enable-moertel
@@ -245,10 +180,6 @@ IF PACKAGE new_package THEN
 REMOVE --enable-new_package
 DONE
 
-IF PACKAGE new_package SUBDIRECTORY python THEN
-INSERT --disable-new_package-python
-DONE
-
 # NOX --------------------------------------------------------------------------
 IF PACKAGE nox THEN
 REMOVE --enable-nox
@@ -256,10 +187,6 @@ REMOVE --enable-loca
 INSERT --disable-loca
 REMOVE --enable-ml
 REMOVE --enable-sundance
-DONE
-
-IF PACKAGE nox SUBDIRECTORY python THEN
-INSERT --disable-nox-python
 DONE
 
 # Pamgen -----------------------------------------------------------------------
@@ -376,12 +303,6 @@ REMOVE --enable-sundance
 REMOVE --enable-tpetra-thyra
 DONE
 
-# REMOVE --enable-epetra-thyra
-
-IF PACKAGE thyra SUBDIRECTORY python THEN
-INSERT --disable-thyra-python
-DONE
-
 # TrilinosCouplings ------------------------------------------------------------
 IF PACKAGE trilinoscouplings THEN
 REMOVE --enable-trilinoscouplings
@@ -401,33 +322,6 @@ REMOVE --enable-meros
 REMOVE --enable-moertel
 REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
-DONE
-
-IF PACKAGE triutils SUBDIRECTORY python THEN
-INSERT --disable-triutils-python
-DONE
-
-# TSF --------------------------------------------------------------------------
-IF PACKAGE tsf THEN
-REMOVE --enable-tsf
-DONE
-
-# TSFCore ----------------------------------------------------------------------
-IF PACKAGE tsfcore THEN
-REMOVE --enable-tsfcore
-REMOVE --enable-tsfextended
-DONE
-
-# TSFCoreUtils -----------------------------------------------------------------
-IF PACKAGE tsfcoreutils THEN
-REMOVE --enable-tsfcoreutils
-REMOVE --enable-tsfcore
-REMOVE --enable-tsfextended
-DONE
-
-# TSFExtended ------------------------------------------------------------------
-IF PACKAGE tsfextended THEN
-REMOVE --enable-tsfextended
 DONE
 
 # WebTrilinos ------------------------------------------------------------------
