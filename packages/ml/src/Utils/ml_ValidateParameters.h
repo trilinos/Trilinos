@@ -48,6 +48,12 @@ namespace ML_Epetra
 {
   //! Builds a list of "valid" parameters for parameter validation for MultiLevelPreconditioner.
   Teuchos::ParameterList * GetValidMLPParameters();
+
+  //! Builds a list of "valid" smoothing parameters for parameter validation for MultiLevelPreconditioner.
+  void SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<std::string> &smootherList);
+  //! Builds a list of "valid" aggregation parameters for parameter validation for MultiLevelPreconditioner.
+  void SetValidAggrParams(Teuchos::ParameterList *PL);
+  //void GetValidSmootherParameters(ParameterList &PL, Array<std::string> smootherList);
   
   //! Validates the parameters of inList (warning: level-specific parameters
   //! will not be validated) for MultiLevelPreconditioner.

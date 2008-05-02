@@ -3502,6 +3502,9 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
 
   Currently, only level-specific parameters that begin with "smoother:"
   or "aggregation:" are placed in sublists.
+
+  TODO: Do we want support for a non-level specific smoother or aggregation
+  sublist?  This would require modifying the parsing in MLP_Smoothers().
 */
 
 void ML_CreateSublist(ParameterList &List, ParameterList &newList,
@@ -3518,12 +3521,14 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
                                     param!=List.end() ; param++)
   {
     const string pname=List.name(param);
+    bool pnameIsList = List.isSublist(pname);
     string::size_type where = pname.find(" (level",0);
     if (where != string::npos)
     {
-      if(pname.find("smoother:",0) == 0
-         && pname.find("smoother: list") != 0)
-      {
+      // Found an ML level-specific option.  Figure out if it's a
+      // smoother or aggregation sublist.
+      if (pnameIsList && pname.find("smoother: list") == 0) {
+
         int i=-999;
         const char *s = pname.c_str()+where;
         if (sscanf(s," (level %d)",&i)) {
@@ -3536,16 +3541,17 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
           smList[i]->setEntry(subname,List.entry(param));
         }
         else {
-          cout << "Error in creating smoother sublists" << endl;
+          cout << "ML_CreateSublist(), Line " << __LINE__
+               << ". Error in creating smoother sublists" << endl;
           cout << "Offending parameter: " << pname << endl;
-#       ifdef ML_MPI
+#         ifdef ML_MPI
           MPI_Finalize();
-#       endif
+#         endif
           exit(EXIT_FAILURE);
         }
-      } else if (pname.find("aggregation:",0) == 0
-                && pname.find("aggregation: list") != 0)
-      {
+
+      } else if (pnameIsList && pname.find("aggregation: list") == 0) {
+
         int i=-999;
         const char *s = pname.c_str()+where;
         if (sscanf(s," (level %d)",&i)) {
@@ -3558,17 +3564,67 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
           aggList[i]->setEntry(subname,List.entry(param));
         }
         else {
-          cout << "Error in creating aggregation sublists" << endl;
+          cout << "ML_CreateSublist(), Line " << __LINE__
+               << ". Error in creating aggregation sublists" << endl;
           cout << "Offending parameter: " << pname << endl;
-#       ifdef ML_MPI
+#         ifdef ML_MPI
           MPI_Finalize();
-#       endif
+#         endif
+          exit(EXIT_FAILURE);
+        }
+
+      } else if (pname.find("smoother:",0) == 0) {
+
+        int i=-999;
+        const char *s = pname.c_str()+where;
+        if (sscanf(s," (level %d)",&i)) {
+          // pull out the level number and create/grab a sublist
+          sprintf(listName,"smoother: list (level %d)",i);
+          smList[i] = &(newList.sublist(listName));
+          // shove option w/o level number into sublist
+          strncpy(subname,pname.c_str(),where);
+          subname[where] = '\0';
+          smList[i]->setEntry(subname,List.entry(param));
+        }
+        else {
+          cout << "ML_CreateSublist(), Line " << __LINE__
+               << ". Error in creating smoother sublists" << endl;
+          cout << "Offending parameter: " << pname << endl;
+#         ifdef ML_MPI
+          MPI_Finalize();
+#         endif
+          exit(EXIT_FAILURE);
+        }
+
+      } else if (pname.find("aggregation:",0) == 0) {
+
+        int i=-999;
+        const char *s = pname.c_str()+where;
+        if (sscanf(s," (level %d)",&i)) {
+          // pull out the level number and create/grab a sublist
+          sprintf(listName,"aggregation: list (level %d)",i);
+          aggList[i] = &(newList.sublist(listName));
+          // shove option w/o level number into sublist
+          strncpy(subname,pname.c_str(),where);
+          subname[where] = '\0';
+          aggList[i]->setEntry(subname,List.entry(param));
+        }
+        else {
+          cout << "ML_CreateSublist(), Line " << __LINE__
+               << ". Error in creating aggregation sublists" << endl;
+          cout << "Offending parameter: " << pname << endl;
+#         ifdef ML_MPI
+          MPI_Finalize();
+#         endif
           exit(EXIT_FAILURE);
         }
       } //if (pname.find("aggregation:",0)
     } else {
       // not level-specific, so copy to new list
       newList.setEntry(pname,List.entry(param));
+      // if this is a sublist, it isn't for ML, so don't validate
+      if (pnameIsList)
+        (newList.sublist(pname)).disableRecursiveValidation();
     } //if (where != string::npos)
   } //param list iterator
 
