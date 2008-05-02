@@ -216,8 +216,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     string MySmoother = smList.get("smoother: type",Smoother);
 
     char msg[80];
-    double AddToDiag;
-    int MaxProcs;
+    double AddToDiag=1e-12;
+    int MaxProcs=-1;
 
     if (currentLevel != coarseLevel)
     {
