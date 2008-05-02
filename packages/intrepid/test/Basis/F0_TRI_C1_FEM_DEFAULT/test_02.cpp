@@ -222,6 +222,7 @@ int main(int argc, char *argv[]) {
               *outStream << std::setw(70) << " Wrong mass matrix when not reusing Jcobians" << "\n";
             }
             massfile.close();
+            massfile.clear();
           }
           else {
             errorFlag = -999;
@@ -238,6 +239,7 @@ int main(int argc, char *argv[]) {
               *outStream << std::setw(70) << " Wrong mass matrix when reusing Jcobians" << "\n";
             }
             massfile.close();
+            massfile.clear();
           }
           else {
             errorFlag = -999;
@@ -254,6 +256,7 @@ int main(int argc, char *argv[]) {
               *outStream << std::setw(70) << " Wrong mass matrix when using auxiliary LocalForm0 right field" << "\n";
             }
             massfile.close();
+            massfile.clear();
           }
           else {
             errorFlag = -999;
