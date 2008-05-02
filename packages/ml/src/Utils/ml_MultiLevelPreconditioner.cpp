@@ -805,7 +805,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   ML_CreateSublist(List_,newList,&LevelID_[0],NumLevels_);
   List_ = newList;
   // Validate Parameter List
-  int depth=List_.get("ML validate depth",0);
+  int depth=List_.get("ML validate depth",5);
   if(List_.get("ML validate parameter list",true)
      && !ValidateMLPParameters(List_,depth))
   {
@@ -1606,20 +1606,11 @@ agg_->keep_P_tentative = 1;
   InitialTime.ResetStartTime();
 
   // ====================================================================== //
-  // Now cycling over all levels                                            //
+  // Generate all smoothers and coarse grid solver.                         //
   // ====================================================================== //
 
-  if ( NumLevels_ > 1 )
-    ML_CHK_ERR(SetSmoothers());
-  /* FIXME: moved in DestroyPreconditioner()
-  // this below *must* to be here and not before the construction of the smoothers
-  if ((agg_)->aggr_info != NULL) {
-    for (int i = 0 ; i < NumLevels_ ; ++i) {
-      if ((agg_)->aggr_info[i] != NULL) 
-        ML_memory_free((void **)&((agg_)->aggr_info[i]));
-    } 
-  }
-  */
+  ML_CHK_ERR(SetSmoothers());
+  InitialTime.ResetStartTime();
 
   if (AnalyzeMemory_) {
     call2 = ML_MaxMemorySize();
@@ -1633,21 +1624,7 @@ agg_->keep_P_tentative = 1;
 #endif
   }
   
-  OutputList_.set("time: smoothers setup", InitialTime.ElapsedTime() 
-                  + OutputList_.get("time: smoothers setup", 0.0));
-  InitialTime.ResetStartTime();
-
-  // ====================================================================== //
-  // solution of the coarse problem                                         //
-  // ====================================================================== //
-
-  ML_CHK_ERR(SetCoarse());
-
   ownership_ = false;
-
-  OutputList_.set("time: coarse solver setup", InitialTime.ElapsedTime() 
-                  + OutputList_.get("time: coarse solver setup", 0.0));
-  InitialTime.ResetStartTime();
 
   // ====================================================================== //
   // Recompute complexities                                                 //
@@ -1878,25 +1855,10 @@ ReComputePreconditioner()
   Time.ResetStartTime();
 
   // ====================================================================== //
-  // Now cycling over all levels                                            //
+  // Generate all smoothers and coarse grid solver.                         //
   // ====================================================================== //
 
   ML_CHK_ERR(SetSmoothers());
-
-  OutputList_.set("time: smoothers setup", Time.ElapsedTime() 
-                  + OutputList_.get("time: smoothers setup", 0.0));
-  Time.ResetStartTime();
-
-  // ====================================================================== //
-  // solution of the coarse problem                                         //
-  // ====================================================================== //
-
-  if( NumLevels_ > 1 ) {
-    ML_CHK_ERR(SetCoarse());
-  }
-
-  OutputList_.set("time: coarse solver setup", Time.ElapsedTime() 
-                  + OutputList_.get("time: coarse solver setup", 0.0));
   Time.ResetStartTime();
 
   ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
