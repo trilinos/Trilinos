@@ -2169,6 +2169,303 @@ void Radial_Trisection_Inline_Mesh_Desc::getGlobal_Element_Block_Totals(int * to
 
 
 /****************************************************************************/
+void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(                                          
+					  std::vector <int> & element_vector,
+					  std::vector<int> & global_node_vector,   
+					  std::map <int, int> & global_node_map,                          
+					  std::list   <int> & internal_node_list,	
+					  std::list   <int> & border_nodes_list,
+					  std::list   <int> & internal_element_list,
+					  std::list   <int> & border_elements_list,
+					  std::list   <int> & node_proc_id_list,
+					  std::list   <int> & element_proc_id_list,
+					  std::vector <int> & node_neighbor_vector,
+					  std::list <int> * &  boundary_node_list,
+					  std::vector <int> & element_neighbor_vector,
+					  std::list <std::pair <int ,Topo_Loc > > * & boundary_element_list)
+  /****************************************************************************/
+{
+
+  Tel *el_array = NULL;
+  if(element_vector.size()>0){
+    el_array = new Tel[element_vector.size()];
+    for(unsigned gev = 0; gev < element_vector.size(); gev ++){
+      el_array[gev].global_id = element_vector[gev];
+      el_array[gev].real_element = true;
+    }
+  }
+  Tel * node_array = NULL;
+  if(global_node_vector.size()>0){
+    node_array = new Tel[global_node_vector.size()];
+    
+    for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
+      node_array[gnv].global_id = global_node_vector[gnv];
+    }
+  }
+
+  // walk all local elements
+  // peer through their neighboring faces and ask if that neighbor is on my processor
+  // if it is do nothing
+  // if it is not
+  //   I am a border
+  //   all nodes on that face are border nodes 
+  //   expand node_array and el_array objects with neighbor proc ids and topology directions
+
+  // walk all local elements
+
+  int nfn = 2;
+  int nfaces = 4;
+  int nen = 1;
+  
+  if(dimension == 3){
+    nfn = 4;
+    nfaces = 6;
+    nen = 2;
+  }
+
+
+
+
+  for(unsigned gev = 0; gev < element_vector.size(); gev ++){
+    int face_nodes_array[4];
+    int my_id = el_array[gev].global_id;
+    int ll,li,lj,lk;
+    get_l_i_j_k_from_element_number(my_id,ll,li,lj,lk);
+    el_array[gev].visits ++;
+    
+    for(int face_count = 0; face_count < nfaces; face_count ++){
+      Topo_Loc tl = (Topo_Loc)face_count;
+      int neighbor = get_neighbor(tl,ll,li,lj,lk);
+      if(neighbor >= 0){
+	unsigned neighbor_proc_id = Element_Proc(neighbor);
+	if(neighbor_proc_id != my_rank){
+	  std::pair < int,Topo_Loc> conn_pair(neighbor_proc_id,tl);
+	  el_array[gev].conn_connections.push_back(conn_pair);
+
+	  el_array[gev].visits ++;
+	  get_face_nodes(tl,my_id,face_nodes_array);
+     
+	  for(int fnc = 0; fnc < nfn; fnc ++){
+	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
+	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(neighbor_proc_id);
+	  }
+	}
+      }
+    }
+
+
+    // need to do edges and vertex neighbors for nodes
+    int edge_start = EDGE4;
+    int edge_end = EDGE8;
+    if(dimension == 3){
+      edge_start = EDGE0;
+      edge_end = VERTEX0;
+    }
+    for(int edge_count = edge_start; edge_count < edge_end; edge_count ++){
+      Topo_Loc tl = (Topo_Loc)edge_count;
+      int neighbor = get_neighbor(tl,ll,li,lj,lk);
+      if(neighbor >= 0){
+	unsigned neighbor_proc_id = Element_Proc(neighbor);
+	if(neighbor_proc_id != my_rank){
+	  get_face_nodes(tl,my_id,face_nodes_array);
+	  
+	  for(int fnc = 0; fnc < nen; fnc ++){
+	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
+	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(neighbor_proc_id);
+	  }
+	}
+      }
+    }
+    if(ll < trisection_blocks){
+      Topo_Loc ttl = (Topo_Loc)EDGE4;
+      if(li == 0 && lj == 0){// means we are at an apex element of transition block
+	// run through the possible apex elements
+	for(int tll = 0; tll < trisection_blocks; tll ++){
+	  int tneighbor = get_element_number_from_l_i_j_k(tll,0,0,lk);	  
+	  if(tneighbor >=0){
+	    unsigned tneighbor_proc_id = Element_Proc(tneighbor);
+
+	    if(tneighbor_proc_id != my_rank){
+
+	      get_face_nodes(ttl,my_id,face_nodes_array);
+	      for(int fnc = 0; fnc < nen; fnc ++){
+		node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
+		node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(tneighbor_proc_id);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    if(dimension == 3){
+      // need to do vertices and vertex neighbors for nodes
+      for(int vertex_count = EDGE11; vertex_count < NUM_TOPO_CONNECTIONS; vertex_count ++){
+	Topo_Loc tl = (Topo_Loc)vertex_count;
+	int neighbor = get_neighbor(tl,ll,li,lj,lk);
+	if(neighbor >= 0){
+	  unsigned neighbor_proc_id = Element_Proc(neighbor);
+	  if(neighbor_proc_id != my_rank){
+	    get_face_nodes(tl,my_id,face_nodes_array);
+	    for(int fnc = 0; fnc < 1; fnc ++){
+	      node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
+	      node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(neighbor_proc_id);
+	    }
+	  }
+	}
+      }
+    if(ll < trisection_blocks){// loop over the apex elements associated  with the two cornere nodes
+      if(li == 0 && lj == 0){// means we are at an apex element of trisection block
+	Topo_Loc tta[2];
+	tta[0] = (Topo_Loc)VERTEX0;//bottom of apex edge
+	tta[1] = (Topo_Loc)VERTEX4;//top of apex edge
+	for(int ict = 0; ict < 2; ict ++){
+	  Topo_Loc ttl = tta[ict];
+	  int tkstart = lk;
+	  int tkend = lk + 1;
+	  if(ict == 0)tkstart --;// lower node use lower and this level elements
+	  if(ict == 1)tkend ++;// upper node use this and upper level elements
+	  // run through the possible apex elements
+	  for(int tll = 0; tll < trisection_blocks; tll ++){
+	    for(int tlk = tkstart; tlk < tkend; tlk ++){
+	      int tneighbor = get_element_number_from_l_i_j_k(tll,0,0,tlk);
+	      if(tneighbor >=0){
+		unsigned tneighbor_proc_id = Element_Proc(tneighbor);		
+		if(tneighbor_proc_id != my_rank){
+		  
+		  get_face_nodes(ttl,my_id,face_nodes_array);
+		  for(int fnc = 0; fnc < 1; fnc ++){
+		    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
+		    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(tneighbor_proc_id);
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    }
+  }
+
+  for(unsigned i = 0; i < element_vector.size();i ++){
+    if(el_array[i].visits > 1){
+      // loop over all conn_connections
+      std::list < std::pair < int , Topo_Loc > > ::iterator conit;
+      for(conit  = el_array[i].conn_connections.begin();
+          conit != el_array[i].conn_connections.end();
+          conit ++){
+        element_proc_id_list.push_back((*conit).first);
+      }
+    }
+  }
+  // sort and uniq element_proc_id_list
+  element_proc_id_list.sort();
+  element_proc_id_list.unique();
+
+  if(element_proc_id_list.size()){
+    boundary_element_list = new std::list < std::pair <int ,Topo_Loc > > [element_proc_id_list.size()];
+  }
+
+  std::map <int,int> element_neighbor_proc_map; //key is proc_id value is ordinal
+  std::list <int> ::iterator listit;
+  int the_count = 0;
+  for(listit = element_proc_id_list.begin(); listit != element_proc_id_list.end(); listit++,the_count ++){
+    element_neighbor_proc_map[*listit] = the_count;
+    element_neighbor_vector.push_back(*listit);
+  }
+
+  // now populate the maps
+
+  for(unsigned i = 0; i < element_vector.size();i ++){
+    int the_element = element_vector[i];
+    if(el_array[i].visits == 1){
+      internal_element_list.push_back(the_element);
+    }
+    if(el_array[i].visits > 1){
+      // loop over all conn_connections
+      
+      border_elements_list.push_back(the_element);
+      std::list < std::pair < int , Topo_Loc > > ::iterator conit;
+      for(conit  = el_array[i].conn_connections.begin();
+          conit != el_array[i].conn_connections.end();
+          conit ++){
+	
+        int index = get_map_entry(element_neighbor_proc_map,(*conit).first);
+        boundary_element_list[index].push_back( std::pair <int ,Topo_Loc >(the_element,(*conit).second));
+      }
+    }
+  }
+
+  border_elements_list.sort();
+  border_elements_list.unique();
+
+
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
+    if(node_array[gnv].visits > 0){
+      // loop over all conn_connections
+      std::list < int > ::iterator conit;
+      for(conit  = node_array[gnv].proc_neighbors.begin();
+	  conit != node_array[gnv].proc_neighbors.end();
+	  conit ++){
+	node_proc_id_list.push_back((*conit));
+      }
+    }
+  }
+    
+  node_proc_id_list.sort();
+  node_proc_id_list.unique();
+
+  std::map <int,int> node_neighbor_proc_map; //key is proc_id value is ordinal
+  std::list <int> ::iterator nlistit;
+  the_count = 0;
+  for(nlistit = node_proc_id_list.begin(); nlistit != node_proc_id_list.end(); nlistit++,the_count ++){
+    node_neighbor_proc_map[*nlistit] = the_count;
+    node_neighbor_vector.push_back(*nlistit);
+  }
+
+  if(node_proc_id_list.size()){
+    boundary_node_list = new std::list <int> [node_proc_id_list.size()];
+  }
+
+
+
+  //node array needs global_id!!!!
+  for(unsigned i = 0;i < global_node_vector.size();i ++){
+    if(node_array[i].visits == 0){
+      int the_node = node_array[i].global_id;
+      internal_node_list.push_back(the_node);
+    }
+    else if(node_array[i].visits > 0){
+      int the_node = node_array[i].global_id;
+      // loop over all conn_connections
+      std::list < int > ::iterator conit;
+      for(conit  = node_array[i].proc_neighbors.begin();
+	  conit != node_array[i].proc_neighbors.end();
+	  conit ++){
+	int index = get_map_entry(node_neighbor_proc_map,(*conit));
+	boundary_node_list[index].push_back(the_node);
+	border_nodes_list.push_back(the_node);
+      }
+    }
+  }
+  // sort the boundary_node_list
+  for(unsigned i = 0; i < node_proc_id_list.size();i++){
+    boundary_node_list[i].sort();
+    boundary_node_list[i].unique();    
+  }
+  border_nodes_list.sort();
+  border_nodes_list.unique();
+
+  
+  
+  
+  delete [] el_array;
+  delete[] node_array;
+
+  //check number node comm_maps
+}
+
+/****************************************************************************/
 int Radial_Trisection_Inline_Mesh_Desc::GlobalNumElements()
 /****************************************************************************/
 {

@@ -115,6 +115,21 @@ public:
 			     std::map <int, int> & global_node_map,
 			     std::map <int, int> & global_element_map);
 
+virtual  void Calc_Parallel_Info(
+			 std::vector <int> & element_vector,
+			 std::vector<int> & global_node_vector,
+			 std::map <int, int> & global_node_map,                             
+			 std::list <int> & internal_node_list,
+			 std::list <int> & border_nodes_list,
+			 std::list <int> & internal_element_list,
+			 std::list <int> & border_elements_list,
+			 std::list <int> & node_proc_id_list,
+			 std::list <int> & element_proc_id_list,
+			 std::vector <int> & node_neighbor_vector,
+			 std::list <int>  * & boundary_node_list,
+			 std::vector <int> & element_neighbor_vector,
+			 std::list <std::pair <int ,Topo_Loc > > * & boundary_element_list);
+
   virtual void Populate_Connectivity(int * const * conn_array, 
 				     std::map <int, int> & global_node_map);
 
