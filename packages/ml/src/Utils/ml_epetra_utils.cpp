@@ -3523,12 +3523,11 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
     const string pname=List.name(param);
     bool pnameIsList = List.isSublist(pname);
     string::size_type where = pname.find(" (level",0);
-    if (where != string::npos)
+    if ( !pnameIsList && (where != string::npos) )
     {
-      // Found an ML level-specific option.  Figure out if it's a
-      // smoother or aggregation sublist.
-      if (pnameIsList && pname.find("smoother: list") == 0) {
-
+      // Process all ML level-specific options that aren't sublists.
+      if (!pnameIsList && pname.find("smoother:",0) == 0)
+      {
         int i=-999;
         const char *s = pname.c_str()+where;
         if (sscanf(s," (level %d)",&i)) {
@@ -3550,7 +3549,7 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
           exit(EXIT_FAILURE);
         }
 
-      } else if (pnameIsList && pname.find("aggregation: list") == 0) {
+      } else if (!pnameIsList && pname.find("aggregation:",0) == 0) {
 
         int i=-999;
         const char *s = pname.c_str()+where;
@@ -3572,60 +3571,16 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
 #         endif
           exit(EXIT_FAILURE);
         }
-
-      } else if (pname.find("smoother:",0) == 0) {
-
-        int i=-999;
-        const char *s = pname.c_str()+where;
-        if (sscanf(s," (level %d)",&i)) {
-          // pull out the level number and create/grab a sublist
-          sprintf(listName,"smoother: list (level %d)",i);
-          smList[i] = &(newList.sublist(listName));
-          // shove option w/o level number into sublist
-          strncpy(subname,pname.c_str(),where);
-          subname[where] = '\0';
-          smList[i]->setEntry(subname,List.entry(param));
-        }
-        else {
-          cout << "ML_CreateSublist(), Line " << __LINE__
-               << ". Error in creating smoother sublists" << endl;
-          cout << "Offending parameter: " << pname << endl;
-#         ifdef ML_MPI
-          MPI_Finalize();
-#         endif
-          exit(EXIT_FAILURE);
-        }
-
-      } else if (pname.find("aggregation:",0) == 0) {
-
-        int i=-999;
-        const char *s = pname.c_str()+where;
-        if (sscanf(s," (level %d)",&i)) {
-          // pull out the level number and create/grab a sublist
-          sprintf(listName,"aggregation: list (level %d)",i);
-          aggList[i] = &(newList.sublist(listName));
-          // shove option w/o level number into sublist
-          strncpy(subname,pname.c_str(),where);
-          subname[where] = '\0';
-          aggList[i]->setEntry(subname,List.entry(param));
-        }
-        else {
-          cout << "ML_CreateSublist(), Line " << __LINE__
-               << ". Error in creating aggregation sublists" << endl;
-          cout << "Offending parameter: " << pname << endl;
-#         ifdef ML_MPI
-          MPI_Finalize();
-#         endif
-          exit(EXIT_FAILURE);
-        }
-      } //if (pname.find("aggregation:",0)
+      }
     } else {
-      // not level-specific, so copy to new list
+      // either not level-specific or a sublist, so copy to new list
       newList.setEntry(pname,List.entry(param));
-      // if this is a sublist, it isn't for ML, so don't validate
-      if (pnameIsList)
+      // Don't validate any non-ML sublists
+      if ( pnameIsList
+           && pname.find("aggregation: list",0) != 0
+           && pname.find("smoother: list",0) != 0    )
         (newList.sublist(pname)).disableRecursiveValidation();
-    } //if (where != string::npos)
+    }
   } //param list iterator
 
   delete [] smList;
