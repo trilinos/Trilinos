@@ -19,7 +19,7 @@ static int c_iteration=0;//DEBUG
 #define BASE_IDX 0
 #define NO_OUTPUT
 
-void MVOUT(const Epetra_MultiVector & A, char *of){
+void MVOUT(const Epetra_MultiVector & A, const char *of){
   ofstream os(of);
   int i,j;
   int NumProc=A.Map().Comm().NumProc();
@@ -49,13 +49,13 @@ void MVOUT(const Epetra_MultiVector & A, char *of){
 }/*end MultiVectorToMatlabFile*/
 
 
-void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx){
+void MVOUT2(const Epetra_MultiVector & A,const char* pref,int idx){
   char c[80];
   sprintf(c,"%s.%d.dat",pref,idx);
   MVOUT(A,c);
 }/* end MVOUT2*/
 
-void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
+void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, const char* of) {
   if(A.Comm().NumProc()==1){
     int* Indices;
     double* Values; 
@@ -74,7 +74,7 @@ void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
     EpetraExt::RowMatrixToMatlabFile(of,A);      
 }/*end Epetra_CrsMatrix_Print*/
 
-void IVOUT(const Epetra_IntVector & A, char *of){
+void IVOUT(const Epetra_IntVector & A, const char *of){
   ofstream os(of);
   int i;
   int NumProc=A.Map().Comm().NumProc();
@@ -97,7 +97,7 @@ void IVOUT(const Epetra_IntVector & A, char *of){
 }/*end MultiVectorToMatlabFile*/
 
 
-void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
+void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, const char *fname){
   ML_Operator_Print(ML,fname);
 }
 

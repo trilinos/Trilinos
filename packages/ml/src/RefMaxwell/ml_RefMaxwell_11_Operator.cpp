@@ -204,6 +204,8 @@ int ML_Epetra::ML_RefMaxwell_11_Operator::PtAP(const Epetra_CrsMatrix & P, ML_Co
   global_comm = temp;
   ML_Operator_Destroy(&temp2);
   ML_Operator_Destroy(&PtSMP_ML);
+
+  return 0;
 }
 
 

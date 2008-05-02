@@ -163,9 +163,6 @@ namespace ML_Epetra
     //! TMT_Matrix.  Needed for nodal maps
     const Epetra_CrsMatrix * TMT_Matrix_;    
 
-    //! Nodal aggregates    
-    const ML_Aggregate* MLAggr;
-    
     //! Dirichlet edges
     const int* BCedges_;
     const int numBCedges_;

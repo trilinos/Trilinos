@@ -14,13 +14,13 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 
 
 #define NO_OUTPUT
-extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);
-extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
-extern void MVOUT (const Epetra_MultiVector & A, char * of);
-extern void IVOUT(const Epetra_IntVector & A, char * of);
-extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
+extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, const char* of);
+extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, const char *fname);
+extern void MVOUT (const Epetra_MultiVector & A, const char * of);
+extern void IVOUT(const Epetra_IntVector & A, const char * of);
+extern void MVOUT2(const Epetra_MultiVector & A,const char* pref,int idx);
 
-#define ENABLE_FAST_PTAP
+//#define ENABLE_FAST_PTAP // This has a bug.  Leave it off for now -CMS
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_BlockMapOut.h"
 #include "Teuchos_XMLObject.hpp"
