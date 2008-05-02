@@ -141,9 +141,9 @@ void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           tra
               miTV[2] = bf; 
               miBV[1] = bf;
               
-              transVals.setValue(basisVals.getValue(miBV), miTV);
+              //transVals.setValue(basisVals.getValue(miBV), miTV);
               //Use this if performance is critical: 
-              //  transVals.getData()[(cl*iRange[1]+qp)*iRange[2]+bf] =  basisVals.getData()[qp*iRange[2]+bf];
+              transVals.getData()[(cl*iRange[1]+qp)*iRange[2]+bf] =  basisVals.getData()[qp*iRange[2]+bf];
             }
           }
         }
@@ -180,23 +180,29 @@ void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           tra
         // This matrix is used if reuseJacobians = false and all Jacobian values are computed on the fly
         Matrix<Scalar> tempJacMat(myCellDim);
         
+        // We'll get the type of mapping because affine is handled differently from non-affine
+        EMapping cellMapping = MAPPING_MAX;
+
         // Loop over cells
         for (int cl = 0; cl < numCells; cl++) {
           miTV[0] = cl;
           
+          // Get the type the mapping because affine is handled differently from non-affine
+          cellMapping = mCell.getCellMappingType(cl);
+
           // Loop over cubature points
           for (int qp = 0; qp < numCubPts; qp++) {
             miTV[1] = qp; 
             miBV[0] = qp;
             
-            // Get the type the mapping because affine is handled differently from non-affine
-            EMapping cellMapping = mCell.getCellMappingType(cl);
-
             // Default is to compute jacobians on the fly
             if( reuseJacobians ){
               // For affine mappings only the first value of the inv. transp. jacobian is stored
               if(cellMapping == MAPPING_AFFINE) {
-                tempJacMat =  mCell.getJacobianTInv(cl, myCellDim, 0)[0];
+                // Access only once!
+                if( qp == 0 ) {
+                  tempJacMat =  mCell.getJacobianTInv(cl, myCellDim, 0)[0];
+                }
               }
               // For non-affine mappings all values of the inv. transpose jacobian are stored
               else{
@@ -232,7 +238,9 @@ void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           tra
               // multi-index of 1st component of reference GRAD of basis function bf at cub. pt. qp:
               miBV[2] = 0;
               int indexBV = basisVals.getEnumeration(miBV);
-              tempJacMat.multiplyLeft(transVals, indexTV, basisVals, indexBV,iRange[3]);
+              //tempJacMat.multiplyLeft(transVals, indexTV, basisVals, indexBV,iRange[3]);
+              //Use this if performance is critical: 
+              tempJacMat.multiplyLeft(&transVals.getData()[indexTV], &basisVals.getData()[indexBV]);
             }
           }
         }
@@ -326,6 +334,9 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
   Matrix<Scalar> tempJacMat(myCellDim);
   Scalar         tempJacDet = 0.0;
 
+  // If the cell has an affine mapping we will compute weighted measures once!
+  EMapping cellMapping = MAPPING_MAX;
+
   switch(primOp) {
     case OPERATOR_VALUE: {
       if(intDomain == INTEGRATION_DOMAIN_CELL) {
@@ -337,16 +348,17 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
         for (int cl = 0; cl < numCells; cl++) {
           miFTV[0] = cl;
                     
+          cellMapping = mCell.getCellMappingType(cl);
+
           // Loop over cubature points: number of cub. points is the second index of the containers
           for (int qp = 0; qp < numCubPts; qp++) {
             miFTV[1] = qp; 
             
             if(reuseJacobians) {
-              weightedMeasure = mCell.getWeightedMeasure(cl,myCellDim, 0)[qp];
+              weightedMeasure = mCell.getWeightedMeasure(cl, myCellDim, 0)[qp];
             }
             else {
               // If the cell has an affine mapping compute weighted measure once!
-              EMapping cellMapping = mCell.getCellMappingType(cl);
               if(cellMapping == MAPPING_AFFINE) {
                 if( qp == 0 ) {
                   tempJacMat = mCell.jacobian(cl, cubPoints_[0][0][qp]);
@@ -375,7 +387,7 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
         }        
       }// if(intDomain)
     }// end case OPERATOR_VALUE
-      break;
+    break;
       
     case OPERATOR_GRAD: 
     case OPERATOR_D1: {
@@ -388,6 +400,8 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
         for (int cl = 0; cl < numCells; cl++) {
           miFTV[0] = cl;
                     
+          cellMapping = mCell.getCellMappingType(cl);
+
           // Loop over cubature points: number of cub. points is the second index of the containers
           for (int qp = 0; qp < numCubPts; qp++) {
             miFTV[1] = qp; 
@@ -397,7 +411,6 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
             }
             else {
               // If the cell has an affine mapping compute weighted measure once!
-              EMapping cellMapping = mCell.getCellMappingType(cl);
               if(cellMapping == MAPPING_AFFINE) {
                 if( qp == 0 ) {
                   tempJacMat = mCell.jacobian(cl, cubPoints_[0][0][qp]);
@@ -430,7 +443,7 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
         }
       } // if(intDomain)
     }
-      break; // end case OPERTOR_GRAD & D1
+    break; // end case OPERTOR_GRAD & D1
       
     default:
       TEST_FOR_EXCEPTION((primOp != OPERATOR_VALUE) && 
@@ -510,22 +523,25 @@ void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
               
               switch (opRank) {
                 case 3: { // scalar fields
-                  tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
+                  //tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
                   //Use this if performance is critical: 
-                  //  tmpVal += leftValues.getData()[cl*numQps*numLeftBfs+qp*numLeftBfs+lbf]*
-                  //              rightValues.getData()[cl*numQps*numRightBfs+qp*numRightBfs+rbf];
+                  tmpVal += leftValues.getData()[(cl*numQps+qp)*numLeftBfs+lbf]*
+                                rightValues.getData()[(cl*numQps+qp)*numRightBfs+rbf];
                 }
-                  break;
+                break;
                   
                 case 4: { // vector fields
                   int iBound3 = leftValues.getIndexBound(3);
                   
                   for (int iVec=0; iVec<iBound3; iVec++) {
                     miLeft[3] = iVec; miRight[3] = iVec;
-                    tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
+                    //tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
+                    //Use this if performance is critical:
+                    tmpVal += leftValues.getData()[((cl*numQps+qp)*numLeftBfs+lbf)*iBound3+iVec]*
+                                  rightValues.getData()[((cl*numQps+qp)*numRightBfs+rbf)*iBound3+iVec];
                   }
                 }
-                  break;
+                break;
                   
                 case 5: { // tensor fields
                   int iBound3 = leftValues.getIndexBound(3);
@@ -538,19 +554,22 @@ void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
                     }
                   }
                 }
-                  break;
+                break;
+
                 default:
                   TEST_FOR_EXCEPTION(((opRank != 3) && (opRank != 4) && (opRank != 5)),
                                      std::invalid_argument,
                                      ">>> ERROR (LocalForm0): Invalid data rank. Only scalars, vectors, and tensors are supported!");
               }
             }
-            outputValues.setValue(tmpVal, miOut);
+            //outputValues.setValue(tmpVal, miOut);
+            //Use this if performance is critical:
+            outputValues.getData()[cl*numLeftBfs*numRightBfs+lbf*numRightBfs+rbf] = tmpVal;
           }
         }
       }
     }
-      break;
+    break;
       
     case COMP_BLAS: {
       int skipL  = numLeftBfs*numQps;
@@ -575,7 +594,7 @@ void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
                     numLeftBfs);
       }
     }
-      break;
+    break;
       
     default:
       TEST_FOR_EXCEPTION(((compEngine_ != COMP_CPP) && (compEngine_ != COMP_BLAS)),

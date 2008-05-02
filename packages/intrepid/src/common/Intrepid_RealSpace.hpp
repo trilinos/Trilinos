@@ -253,7 +253,8 @@ template<class Scalar>
 template<class Scalar>
 class Matrix{
   private:
-      Teuchos::Array< Teuchos::Array<Scalar> > elements_;
+      Teuchos::Array<Scalar> elements_;
+      int dim_;
 
   public:
       
@@ -363,6 +364,18 @@ class Matrix{
       
       /** \brief Matrix-vector left multiply. An array, thought of as a column vector, is
         multiplied on the left by the Matrix.  This method allows to perform matrix-vector
+        multiplication without creating a temporary Point object. It operates unchecked
+        on Scalar pointers. 
+        
+        \param matVec       [out]         - matrix-vector product
+        \param vec          [in]          - the vector argument
+      */
+      void multiplyLeft(Scalar*        matVec, 
+                        const Scalar*  vec) const;
+
+
+      /** \brief Matrix-vector left multiply. An array, thought of as a column vector, is
+        multiplied on the left by the Matrix.  This method allows to perform matrix-vector
         multiplication without creating a temporary Point object. 
         
         \param matVec       [out]         - matrix-vector product
@@ -392,9 +405,9 @@ class Matrix{
                         const int dim) const;
       
       
-      /** \brief   Overloaded [] operator. Allows to access Matrix elements using [][].
+      /** \brief   Overloaded () operator. Allows to access Matrix elements using (rowId,colId).
         */
-      const Teuchos::Array<Scalar> & operator [] (const int rowId) const;
+      const Scalar& operator () (const int rowId, const int colId) const;
       
       
       /** \brief Assignment operator <var>*this = right</var>.

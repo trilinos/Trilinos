@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
   int i = 0; int j = 1; cellId = 0;
   cout << "CellId = " << cellId << " Cubature Point Id = " << 0
     << "  Jacobian["<<i<<"]["<<j<<"] = "
-    << quadMcell.getJacobian(cellId,subcellDim,subcellId)[0][i][j] <<"\n";
+    << quadMcell.getJacobian(cellId,subcellDim,subcellId)[0](i,j) <<"\n";
 
 
   

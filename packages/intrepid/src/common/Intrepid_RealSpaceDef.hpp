@@ -484,6 +484,7 @@ std::ostream& operator << (std::ostream& os, const Point<Scalar>& point) {
 
 template<class Scalar>
 Matrix<Scalar>::Matrix(const Matrix<Scalar>& right){
+  dim_ = right.dim_;
   elements_.assign(right.elements_.begin(), right.elements_.end());
 }
 
@@ -496,8 +497,8 @@ Matrix<Scalar>::Matrix(const int dim){
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Invalid dim argument.");
 #endif
-  Teuchos::Array<Scalar> tmp(dim);
-  elements_.assign(dim,tmp);
+  dim_ = dim;
+  elements_.assign(dim*dim,Scalar(0));
 }
 
 
@@ -509,11 +510,11 @@ Matrix<Scalar>::Matrix(const Scalar* dataPtr, const int dim){
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Invalid dim argument.");
 #endif
-  Teuchos::Array<Scalar> tmp(dim);
-  elements_.assign(dim,tmp);
-  for(int i=0; i < dim; ++i){
-    for(int j=0; j < dim; ++j){
-      elements_[i][j]=*(dataPtr+i*dim+j);
+  dim_ = dim;
+  elements_.resize(dim_*dim_);
+  for(int i=0; i < dim_; ++i){
+    for(int j=0; j < dim_; ++j){
+      elements_[i*dim_+j]=*(dataPtr+i*dim_+j);
     }
   }
 }
@@ -523,13 +524,13 @@ Matrix<Scalar>::Matrix(const Scalar* dataPtr, const int dim){
 template<class Scalar>
 void Matrix<Scalar>::setElements(const Scalar* dataPtr, const int dim){
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this->getDim() != dim ),
+  TEST_FOR_EXCEPTION( ( dim_ != dim ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Invalid dim argument.");
 #endif
-  for(int i=0; i < dim; ++i){
-    for(int j=0; j < dim; ++j){
-      elements_[i][j]=*(dataPtr+i*dim+j);
+  for(int i=0; i < dim_; ++i){
+    for(int j=0; j < dim_; ++j){
+      elements_[i*dim_+j]=*(dataPtr+i*dim_+j);
     }
   }
 }
@@ -543,15 +544,15 @@ void Matrix<Scalar>::resize(const int dim){
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Invalid dim argument.");
 #endif
-  Teuchos::Array<Scalar> tmp(dim);
-  elements_.assign(dim,tmp);
+  dim_ = dim;
+  elements_.assign(dim_*dim_,Scalar(0));
 }
 
 
 
 template<class Scalar>
 int Matrix<Scalar>::getDim() const {
-  return elements_.size();
+  return dim_;
 }
 
 
@@ -559,14 +560,14 @@ int Matrix<Scalar>::getDim() const {
 template<class Scalar>
 Scalar Matrix<Scalar>::getElement(int rowID, int colID) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (rowID < 0) || (rowID >= (int)elements_.size()) ),
+  TEST_FOR_EXCEPTION( ( (rowID < 0) || (rowID >= dim_) ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): row ID out of range.");
-  TEST_FOR_EXCEPTION( ( (colID < 0) || (colID >= (int)elements_.size()) ),
+  TEST_FOR_EXCEPTION( ( (colID < 0) || (colID >= dim_) ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): column ID out of range.");
 #endif
-  return( elements_[rowID][colID]);
+  return elements_[rowID*dim_+colID];
 }
 
 
@@ -574,15 +575,14 @@ Scalar Matrix<Scalar>::getElement(int rowID, int colID) const {
 template<class Scalar>
 Point<Scalar> Matrix<Scalar>::getColumn(int colID) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (colID < 0) || (colID >= (int)elements_.size()) ),
+  TEST_FOR_EXCEPTION( ( (colID < 0) || (colID >= dim_) ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): column ID out of range.");
 #endif
   Scalar elVec[INTREPID_MAX_DIMENSION];
-  int myDim = getDim();
-  for (int i=0; i<myDim; i++)
-    elVec[i] = elements_[i][colID];
-  return Point<Scalar>(elVec, myDim);
+  for (int i=0; i<dim_; i++)
+    elVec[i] = elements_[i*dim_+colID];
+  return Point<Scalar>(elVec, dim_);
 }
 
 
@@ -590,27 +590,26 @@ Point<Scalar> Matrix<Scalar>::getColumn(int colID) const {
 template<class Scalar>
 Point<Scalar> Matrix<Scalar>::getRow(int rowID) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (rowID < 0) || (rowID >= (int)elements_.size()) ),
+  TEST_FOR_EXCEPTION( ( (rowID < 0) || (rowID >= dim_) ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): row ID out of range.");
 #endif
   Scalar elVec[INTREPID_MAX_DIMENSION];
-  int myDim = getDim();
-  for (int i=0; i<myDim; i++)
-    elVec[i] = elements_[rowID][i];
-  return Point<Scalar>(elVec, myDim);
+  for (int i=0; i<dim_; i++)
+    elVec[i] = elements_[rowID*dim_+i];
+  return Point<Scalar>(elVec, dim_);
 }
 
 
 
 template<class Scalar>
 Matrix<Scalar> Matrix<Scalar>::getTranspose() const {
-  Matrix<Scalar> transpose(getDim());
-  for(int i=0; i < getDim(); ++i){
-    transpose.elements_[i][i]=elements_[i][i];    // Set diagonal elements
-    for(int j=i+1; j < getDim(); ++j){
-      transpose.elements_[i][j]=elements_[j][i];  // Set off-diagonal elements
-      transpose.elements_[j][i]=elements_[i][j];
+  Matrix<Scalar> transpose(dim_);
+  for(int i=0; i < dim_; i++){
+    transpose.elements_[i*dim_+i]=elements_[i*dim_+i];    // Set diagonal elements
+    for(int j=i+1; j < dim_; j++){
+      transpose.elements_[i*dim_+j]=elements_[j*dim_+i];  // Set off-diagonal elements
+      transpose.elements_[j*dim_+i]=elements_[i*dim_+j];
     }
   }
   return transpose;
@@ -620,17 +619,16 @@ Matrix<Scalar> Matrix<Scalar>::getTranspose() const {
 
 template<class Scalar>
 Matrix<Scalar> Matrix<Scalar>::getInverse() const {
-  int dim = getDim();
   int i,j,rowID = 0, colID = 0;
   int rowperm[3]={0,1,2};
   int colperm[3]={0,1,2}; // Complete pivoting
   Scalar emax(0), determinant(0);
   
-  if (dim==3) {
+  if (dim_==3) {
     for(i=0; i < 3; ++i){
       for(j=0; j < 3; ++j){
-        if( std::abs( elements_[i][j] ) >  emax){
-          rowID = i;  colID = j; emax = std::abs( elements_[i][j] );
+        if( std::abs( elements_[i*dim_+j] ) >  emax){
+          rowID = i;  colID = j; emax = std::abs( elements_[i*dim_+j] );
         }
       }
     }
@@ -650,7 +648,7 @@ Matrix<Scalar> Matrix<Scalar>::getInverse() const {
     Scalar Inverse[3][3], B[3][3], S[2][2], Bi[3][3]; // B=rowperm elements_ colperm, S=Schur complement(Boo)
     for(i=0; i < 3; ++i){
       for(j=0; j < 3; ++j){
-        B[i][j] = elements_[rowperm[i]][colperm[j]];
+        B[i][j] = elements_[rowperm[i]*dim_+colperm[j]];
       }
     }
     B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
@@ -684,34 +682,34 @@ Matrix<Scalar> Matrix<Scalar>::getInverse() const {
           Inverse[i][j] = Bi[colperm[i]][rowperm[j]]; // return inverse in place
         }
       }
-      return Matrix<Scalar>(&Inverse[0][0],dim);
+      return Matrix<Scalar>(&Inverse[0][0],dim_);
   }
-  else if (dim==2) {
+  else if (dim_==2) {
     Scalar Inverse[2][2];
     determinant= det();
-    Inverse[0][0] =   elements_[1][1]/determinant;
-    Inverse[0][1] = - elements_[0][1]/determinant;
+    Inverse[0][0] =   elements_[3]/determinant;
+    Inverse[0][1] = - elements_[1]/determinant;
     //
-    Inverse[1][0] = - elements_[1][0]/determinant;
-    Inverse[1][1] =   elements_[0][0]/determinant;
-    return Matrix<Scalar>(&Inverse[0][0],dim);
+    Inverse[1][0] = - elements_[2]/determinant;
+    Inverse[1][1] =   elements_[0]/determinant;
+    return Matrix<Scalar>(&Inverse[0][0],dim_);
   }
   else { // dim==1
     Scalar Inverse[1][1];
     determinant= det();
-    Inverse[0][0] = (Scalar)1 / elements_[0][0];
-    return Matrix<Scalar>(&Inverse[0][0],dim);
+    Inverse[0][0] = (Scalar)1 / elements_[0];
+    return Matrix<Scalar>(&Inverse[0][0],dim_);
   }
 }
 
 template<class Scalar>
 void Matrix<Scalar>::transpose() {
   Scalar temp(0);
-  for(int i=0; i < getDim(); ++i){
-    for(int j=i+1; j < getDim(); ++j){
-      temp=elements_[i][j];
-      elements_[i][j]=elements_[j][i];            // Leave diagonal elements alone!
-      elements_[j][i]=temp;
+  for(int i=0; i < dim_; ++i){
+    for(int j=i+1; j < dim_; ++j){
+      temp=elements_[i*dim_+j];
+      elements_[i*dim_+j]=elements_[j*dim_+i];            // Leave diagonal elements alone!
+      elements_[j*dim_+i]=temp;
     }
   }
 }
@@ -726,12 +724,12 @@ Scalar Matrix<Scalar>::det() const {
   int colperm[3]={0,1,2}; // Complete pivoting
   Scalar emax(0), determinant(0);
 
-  switch (getDim()) {
+  switch (dim_) {
     case 3:
       for(i=0; i < 3; ++i){
         for(j=0; j < 3; ++j){
-          if( std::abs( elements_[i][j] ) >  emax){
-            rowID = i;  colID = j; emax = std::abs( elements_[i][j] );
+          if( std::abs( elements_[i*dim_+j] ) >  emax){
+            rowID = i;  colID = j; emax = std::abs( elements_[i*dim_+j] );
           }
         }
       }
@@ -747,7 +745,7 @@ Scalar Matrix<Scalar>::det() const {
         Scalar B[3][3], S[2][2]; // B=rowperm elements_ colperm, S=Schur complement(Boo)
         for(i=0; i < 3; ++i){
           for(j=0; j < 3; ++j){
-            B[i][j] = elements_[rowperm[i]][colperm[j]];
+            B[i][j] = elements_[rowperm[i]*dim_+colperm[j]];
           }
         }
         B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
@@ -762,14 +760,14 @@ Scalar Matrix<Scalar>::det() const {
       }
       break;
     case 2:
-      determinant = elements_[0][0]*elements_[1][1]-
-                    elements_[0][1]*elements_[1][0];
+      determinant = elements_[0]*elements_[3]-
+                    elements_[1]*elements_[2];
       break;
     case 1:
-      determinant = elements_[0][0];
+      determinant = elements_[0];
       break;
     default:
-      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+      TEST_FOR_EXCEPTION( ( (dim_ != 1) && (dim_ != 2) && (dim_ != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
@@ -780,7 +778,6 @@ Scalar Matrix<Scalar>::det() const {
 
 template<class Scalar>
 Scalar Matrix<Scalar>::norm(ENorm normType) const {
-  int dim = getDim();
   Scalar result(0);
   Scalar temp(0);
 
@@ -789,15 +786,15 @@ Scalar Matrix<Scalar>::norm(ENorm normType) const {
       // Set result equal to 1-norm of the first column
       result = this -> getColumn(0).norm(NORM_ONE);
       
-      // If dim > 1 compare 1-norm of first column with 1-norm of second column
-      if(dim > 1){
+      // If dim_ > 1 compare 1-norm of first column with 1-norm of second column
+      if(dim_ > 1){
         temp = getColumn(1).norm(NORM_ONE);
         result = (temp > result) ? temp : result;
       }
       
-      // Now result holds the larger of the 1-norms of columns 1 and 2. If dim=3 compare
+      // Now result holds the larger of the 1-norms of columns 1 and 2. If dim_=3 compare
       // this number with the 1-norm of the 3rd column:
-      if(dim == 3) {
+      if(dim_ == 3) {
         temp = getColumn(2).norm(NORM_ONE);
         result = (temp > result) ? temp : result; 
       }
@@ -806,23 +803,24 @@ Scalar Matrix<Scalar>::norm(ENorm normType) const {
       // Set result equal to 1-norm of the first row
       result = this -> getRow(0).norm(NORM_ONE);
       
-      // If dim > 1 compare 1-norm of first row with 1-norm of second row
-      if(dim > 1){
+      // If dim_ > 1 compare 1-norm of first row with 1-norm of second row
+      if(dim_ > 1){
         temp = getRow(1).norm(NORM_ONE);
         result = (temp > result) ? temp : result;
       }
       
-      // Now result holds the larger of the 1-norms of rows 1 and 2. If dim=3 compare
+      // Now result holds the larger of the 1-norms of rows 1 and 2. If dim_=3 compare
       // this number with the 1-norm of the 3rd row:
-      if(dim == 3) {
+      if(dim_ == 3) {
         temp = getRow(2).norm(NORM_ONE);
         result = (temp > result) ? temp : result; 
       }
       break;
     case NORM_FRO:  // square root of sum of all element squares 
-      for(int i = 0; i < dim; i++){
-        for(int j = 0; j < dim; j++){
-          result += elements_[i][j]*elements_[i][j];
+      for(int i = 0; i < dim_; i++){
+        for(int j = 0; j < dim_; j++){
+          Scalar tmp = elements_[i*dim_+j];
+          result += tmp*tmp;
         }
       }
       result = std::sqrt(result);
@@ -847,10 +845,21 @@ void Matrix<Scalar>::invert() {
 
 template<class Scalar>
 void Matrix<Scalar>::scalarMultiply(const Scalar& scalar) {
-  int dim = elements_.size();
-  for(int i = 0; i < dim; i++) {
-    for(int j = 0; j < dim; j++){
-      elements_[i][j] *=scalar; 
+  for(int i = 0; i < dim_; i++) {
+    for(int j = 0; j < dim_; j++){
+      elements_[i*dim_+j] *= scalar; 
+    }
+  }
+}
+
+
+template<class Scalar>
+void Matrix<Scalar>::multiplyLeft(Scalar*        matVec,
+                                  const Scalar*  vec) const {
+  for (int i = 0; i < dim_; i++) {
+    matVec[i] = 0.0;
+    for (int j = 0; j < dim_; j++) {
+      matVec[i] += elements_[i*dim_+j]*vec[j];
     }
   }
 }
@@ -861,14 +870,14 @@ void Matrix<Scalar>::multiplyLeft(Teuchos::Array<Scalar> &        matVec,
                                   const Teuchos::Array<Scalar> &  vec) const {
   int dim = vec.size();
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( elements_.size() != dim ),
+  TEST_FOR_EXCEPTION( ( dim_ != dim ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
 #endif
-  for (int i = 0; i < dim; ++i) {
+  for (int i = 0; i < dim_; i++) {
     matVec[i] = 0.0;
-    for (int j = 0; j < dim; ++j) {
-      matVec[i] += elements_[i][j]*vec[j];
+    for (int j = 0; j < dim_; j++) {
+      matVec[i] += elements_[i*dim_+j]*vec[j];
     }
   }
 }
@@ -881,14 +890,14 @@ void Matrix<Scalar>::multiplyLeft(LexContainer<Scalar>&       matVec,
                                   const int                   indexVec,
                                   const int dim) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (int)elements_.size() != dim ),
+  TEST_FOR_EXCEPTION( ( dim_ != dim ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
 #endif
-  for (int i = 0; i < dim; ++i) {
+  for (int i = 0; i < dim_; i++) {
     Scalar temp = 0;
-    for (int j = 0; j < dim; ++j) {
-      temp += elements_[i][j]*vec[indexVec + j];
+    for (int j = 0; j < dim_; j++) {
+      temp += elements_[i*dim_+j]*vec[indexVec + j];
     }
     matVec.setValue(temp,indexMatVec + i);
   }
@@ -897,8 +906,8 @@ void Matrix<Scalar>::multiplyLeft(LexContainer<Scalar>&       matVec,
 
 
 template<class Scalar> 
-const Teuchos::Array<Scalar> & Matrix<Scalar>::operator [] (const int rowId) const{
-  return elements_[rowId]; 
+const Scalar& Matrix<Scalar>::operator () (const int rowId, const int colId) const{
+  return elements_[rowId*dim_+colId]; 
 }
 
 
@@ -910,7 +919,7 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator = (const Matrix<Scalar>& right)
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Self-assignment prohibited.");
-  TEST_FOR_EXCEPTION( ( getDim() != right.getDim() ),
+  TEST_FOR_EXCEPTION( ( dim_ != right.dim_ ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Dimensions do not match in assignment statement.");
 #endif
@@ -927,36 +936,36 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator += (const Matrix<Scalar>& right
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Self-assignment prohibited.");
-  TEST_FOR_EXCEPTION( ( getDim() != right.getDim() ),
+  TEST_FOR_EXCEPTION( ( dim_ != right.dim_ ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Dimensions do not match in in-place addition.");
 #endif
-  switch (getDim()) {      
+  switch (dim_) {      
     case 3:
-      elements_[0][0] += right.elements_[0][0];
-      elements_[0][1] += right.elements_[0][1];
-      elements_[0][2] += right.elements_[0][2];
+      elements_[0] += right.elements_[0];
+      elements_[1] += right.elements_[1];
+      elements_[2] += right.elements_[2];
       //
-      elements_[1][0] += right.elements_[1][0];
-      elements_[1][1] += right.elements_[1][1];
-      elements_[1][2] += right.elements_[1][2];
+      elements_[3] += right.elements_[3];
+      elements_[4] += right.elements_[4];
+      elements_[5] += right.elements_[5];
       //
-      elements_[2][0] += right.elements_[2][0];
-      elements_[2][1] += right.elements_[2][1];
-      elements_[2][2] += right.elements_[2][2];
+      elements_[6] += right.elements_[6];
+      elements_[7] += right.elements_[7];
+      elements_[8] += right.elements_[8];
       break;
     case 2:
-      elements_[0][0] += right.elements_[0][0];
-      elements_[0][1] += right.elements_[0][1];
+      elements_[0] += right.elements_[0];
+      elements_[1] += right.elements_[1];
       //
-      elements_[1][0] += right.elements_[1][0];
-      elements_[1][1] += right.elements_[1][1];
+      elements_[2] += right.elements_[2];
+      elements_[3] += right.elements_[3];
       break;
     case 1:
-      elements_[0][0] += right.elements_[0][0];
+      elements_[0] += right.elements_[0];
       break;
     default:
-      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+      TEST_FOR_EXCEPTION( ( (dim_ != 1) && (dim_ != 2) && (dim_ != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
@@ -973,36 +982,36 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator -= (const Matrix<Scalar>& right
   TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Self-assignment prohibited.");
-  TEST_FOR_EXCEPTION( ( getDim() != right.getDim() ),
+  TEST_FOR_EXCEPTION( ( dim_ != right.dim_ ),
                       std::invalid_argument,
                       ">>> ERROR (Matrix): Dimensions do not match in in-place subtraction.");
 #endif
-  switch (getDim()) {      
+  switch (dim_) {      
     case 3:
-      elements_[0][0] -= right.elements_[0][0];
-      elements_[0][1] -= right.elements_[0][1];
-      elements_[0][2] -= right.elements_[0][2];
+      elements_[0] -= right.elements_[0];
+      elements_[1] -= right.elements_[1];
+      elements_[2] -= right.elements_[2];
       //
-      elements_[1][0] -= right.elements_[1][0];
-      elements_[1][1] -= right.elements_[1][1];
-      elements_[1][2] -= right.elements_[1][2];
+      elements_[3] -= right.elements_[3];
+      elements_[4] -= right.elements_[4];
+      elements_[5] -= right.elements_[5];
       //
-      elements_[2][0] -= right.elements_[2][0];
-      elements_[2][1] -= right.elements_[2][1];
-      elements_[2][2] -= right.elements_[2][2];
+      elements_[6] -= right.elements_[6];
+      elements_[7] -= right.elements_[7];
+      elements_[8] -= right.elements_[8];
       break;
     case 2:
-      elements_[0][0] -= right.elements_[0][0];
-      elements_[0][1] -= right.elements_[0][1];
+      elements_[0] -= right.elements_[0];
+      elements_[1] -= right.elements_[1];
       //
-      elements_[1][0] -= right.elements_[1][0];
-      elements_[1][1] -= right.elements_[1][1];
+      elements_[2] -= right.elements_[2];
+      elements_[3] -= right.elements_[3];
       break;
     case 1:
-      elements_[0][0] -= right.elements_[0][0];
+      elements_[0] -= right.elements_[0];
       break;
     default:
-      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+      TEST_FOR_EXCEPTION( ( (dim_ != 1) && (dim_ != 2) && (dim_ != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
@@ -1015,32 +1024,32 @@ inline Matrix<Scalar> & Matrix<Scalar>::operator -= (const Matrix<Scalar>& right
 template<class Scalar>
 inline Matrix<Scalar> & Matrix<Scalar>::operator *= (const Scalar left)
 {
-  switch (getDim()) {      
+  switch (dim_) {      
     case 3:
-      elements_[0][0] *= left;
-      elements_[0][1] *= left;
-      elements_[0][2] *= left;
+      elements_[0] *= left;
+      elements_[1] *= left;
+      elements_[2] *= left;
       //
-      elements_[1][0] *= left;
-      elements_[1][1] *= left;
-      elements_[1][2] *= left;
+      elements_[3] *= left;
+      elements_[4] *= left;
+      elements_[5] *= left;
       //
-      elements_[2][0] *= left;
-      elements_[2][1] *= left;
-      elements_[2][2] *= left;
+      elements_[6] *= left;
+      elements_[7] *= left;
+      elements_[8] *= left;
       break;
     case 2:
-      elements_[0][0] *= left;
-      elements_[0][1] *= left;
+      elements_[0] *= left;
+      elements_[1] *= left;
       //
-      elements_[1][0] *= left;
-      elements_[1][1] *= left;
+      elements_[2] *= left;
+      elements_[3] *= left;
       break;
     case 1:
-      elements_[0][0] *= left;
+      elements_[0] *= left;
       break;
     default:
-      TEST_FOR_EXCEPTION( ( (getDim() != 1) && (getDim() != 2) && (getDim() != 3) ),
+      TEST_FOR_EXCEPTION( ( (dim_ != 1) && (dim_ != 2) && (dim_ != 3) ),
                           std::invalid_argument,
                           ">>> ERROR (Matrix): Invalid matrix dimension.");
   }
