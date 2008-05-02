@@ -1,5 +1,13 @@
 # Note:  DESCEND_DIRS means that the test harness cd's to the directories
 #        before running.  This is useful if the examples need to read in data.
+(FRAMEWORK,ValidateParams, MLTests) {
+    DIRS = ValidateParams;
+    COMM = MPI(1,4,9);
+    EXIT-STATUS  = compareTestOutput;
+    COMMAND-FILE = evaluateCriteria;
+    ARG-MASTER-PAIRS  = input1.xml:baseline1.txt;
+}
+
 (FRAMEWORK, MLExamples) {
     DESCEND_DIRS = YES;
     DIRS = ../examples/BasicExamples,

@@ -207,7 +207,10 @@ TRILINOS_MPI_MAX_PROC=4
 TRILINOS_TEST_CATEGORY=FRAMEWORK
 
 runtests-serial :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	@echo "Running the ML tests."
+	@echo "  TRILINOS_TEST_CATEGORY = $(TRILINOS_TEST_CATEGORY)"
+	@echo ""
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=serial \
   --build-dir=$(TRILINOS_BUILD_DIR) \
@@ -217,7 +220,11 @@ runtests-serial :
   --packages=ml
 
 runtests-mpi :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	@echo "Running the ML tests."
+	@echo "  TRILINOS_TEST_CATEGORY = $(TRILINOS_TEST_CATEGORY)"
+	@echo "  TRILINOS_MPI_GO = $(TRILINOS_MPI_GO)"
+	@echo ""
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=mpi \
   --mpi-go=$(TRILINOS_MPI_GO) \

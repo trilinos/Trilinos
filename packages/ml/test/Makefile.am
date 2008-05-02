@@ -51,6 +51,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
       RefMaxwell                         \
       Miscellaneous	                 \
       Zoltan                             \
-      Zoltan_hypergraph                  
+      Zoltan_hypergraph                  \
+      ValidateParams
 
 EXTRA_DIST = definition
