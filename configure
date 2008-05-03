@@ -716,6 +716,8 @@ BUILD_DIDASKO_TRUE
 BUILD_DIDASKO_FALSE
 BUILD_WEBTRILINOS_TRUE
 BUILD_WEBTRILINOS_FALSE
+BUILD_CTRILINOS_TRUE
+BUILD_CTRILINOS_FALSE
 BUILD_ZOLTAN_TRUE
 BUILD_ZOLTAN_FALSE
 BUILD_FORTRILINOS_TRUE
@@ -767,6 +769,7 @@ packages/tpetra
 packages/trilinoscouplings
 packages/didasko
 packages/WebTrilinos
+packages/CTrilinos
 packages/zoltan
 packages/ForTrilinos
 packages/external
@@ -1381,6 +1384,8 @@ Optional Features:
                           --disable-default-packages option is used)
   --enable-fei            Build fei, a sparse linear-system assembly package
                           (default is no)
+  --enable-ctrilinos      Build CTrilinos, a package providing C wrappers for
+                          other Trilinos packages (default is no)
   --enable-fortrilinos    Build ForTrilinos, a package providing Fortran
                           wrappers for other Trilinos packages (default is
                           no)
@@ -2865,6 +2870,34 @@ echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_FEI
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+# Check whether --enable-ctrilinos was given.
+if test "${enable_ctrilinos+set}" = set; then
+  enableval=$enable_ctrilinos; ac_cv_use_ctrilinos=$enableval
+ac_cv_use_ctrilinos_explicit=$enableval
+else
+  ac_cv_use_ctrilinos=no
+ac_cv_use_ctrilinos_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use ctrilinos" >&5
+echo $ECHO_N "checking whether to use ctrilinos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_ctrilinos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CTRILINOS
 _ACEOF
 
 else
@@ -4548,6 +4581,25 @@ else
 fi
 
 
+if test "X$ac_cv_use_ctrilinos" != "Xno"; then
+  subdirs="$subdirs packages/CTrilinos"
+
+  BUILD_CTRILINOS=yes
+  if test "X$ac_cv_use_ctrilinos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-ctrilinos"
+  fi
+else
+  BUILD_CTRILINOS=no
+fi
+ if test "X$BUILD_CTRILINOS" != "Xno"; then
+  BUILD_CTRILINOS_TRUE=
+  BUILD_CTRILINOS_FALSE='#'
+else
+  BUILD_CTRILINOS_TRUE='#'
+  BUILD_CTRILINOS_FALSE=
+fi
+
+
 if test "X$ac_cv_use_zoltan" != "Xno"; then
   subdirs="$subdirs packages/zoltan"
 
@@ -4990,6 +5042,13 @@ if test -z "${BUILD_WEBTRILINOS_TRUE}" && test -z "${BUILD_WEBTRILINOS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_WEBTRILINOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_WEBTRILINOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_CTRILINOS_TRUE}" && test -z "${BUILD_CTRILINOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_CTRILINOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_CTRILINOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -5722,6 +5781,8 @@ BUILD_DIDASKO_TRUE!$BUILD_DIDASKO_TRUE$ac_delim
 BUILD_DIDASKO_FALSE!$BUILD_DIDASKO_FALSE$ac_delim
 BUILD_WEBTRILINOS_TRUE!$BUILD_WEBTRILINOS_TRUE$ac_delim
 BUILD_WEBTRILINOS_FALSE!$BUILD_WEBTRILINOS_FALSE$ac_delim
+BUILD_CTRILINOS_TRUE!$BUILD_CTRILINOS_TRUE$ac_delim
+BUILD_CTRILINOS_FALSE!$BUILD_CTRILINOS_FALSE$ac_delim
 BUILD_ZOLTAN_TRUE!$BUILD_ZOLTAN_TRUE$ac_delim
 BUILD_ZOLTAN_FALSE!$BUILD_ZOLTAN_FALSE$ac_delim
 BUILD_FORTRILINOS_TRUE!$BUILD_FORTRILINOS_TRUE$ac_delim
@@ -5734,7 +5795,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -6135,21 +6196,22 @@ echo "$as_me: $ac_file is unchanged" >&6;}
   fi
   rm -f "$tmp/out12"
 # Compute $ac_file's index in $config_headers.
+_am_arg=$ac_file
 _am_stamp_count=1
 for _am_header in $config_headers :; do
   case $_am_header in
-    $ac_file | $ac_file:* )
+    $_am_arg | $_am_arg:* )
       break ;;
     * )
       _am_stamp_count=`expr $_am_stamp_count + 1` ;;
   esac
 done
-echo "timestamp for $ac_file" >`$as_dirname -- $ac_file ||
-$as_expr X$ac_file : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X$ac_file : 'X\(//\)[^/]' \| \
-	 X$ac_file : 'X\(//\)$' \| \
-	 X$ac_file : 'X\(/\)' \| . 2>/dev/null ||
-echo X$ac_file |
+echo "timestamp for $_am_arg" >`$as_dirname -- "$_am_arg" ||
+$as_expr X"$_am_arg" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$_am_arg" : 'X\(//\)[^/]' \| \
+	 X"$_am_arg" : 'X\(//\)$' \| \
+	 X"$_am_arg" : 'X\(/\)' \| . 2>/dev/null ||
+echo X"$_am_arg" |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q

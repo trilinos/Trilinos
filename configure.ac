@@ -69,6 +69,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditione
 
 TAC_ARG_ENABLE_FEATURE(fei, [Build fei, a sparse linear-system assembly package], FEI, no)
 
+TAC_ARG_ENABLE_FEATURE(ctrilinos, [Build CTrilinos, a package providing C wrappers for other Trilinos packages], CTRILINOS, no)
+
 TAC_ARG_ENABLE_FEATURE(fortrilinos, [Build ForTrilinos, a package providing Fortran wrappers for other Trilinos packages], FORTRILINOS, no)
 
 TAC_ARG_ENABLE_FEATURE(intrepid, [Build intrepid, a discretization package], INTREPID, no)
@@ -637,6 +639,17 @@ else
   BUILD_WEBTRILINOS=no
 fi
 AM_CONDITIONAL(BUILD_WEBTRILINOS, test "X$BUILD_WEBTRILINOS" != "Xno")
+
+if test "X$ac_cv_use_ctrilinos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/CTrilinos])
+  BUILD_CTRILINOS=yes
+  if test "X$ac_cv_use_ctrilinos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-ctrilinos"
+  fi
+else
+  BUILD_CTRILINOS=no
+fi
+AM_CONDITIONAL(BUILD_CTRILINOS, test "X$BUILD_CTRILINOS" != "Xno")
 
 if test "X$ac_cv_use_zoltan" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/zoltan])

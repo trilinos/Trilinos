@@ -35,6 +35,7 @@
 #include "Thyra_LinearCombinationImpl.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Thyra
 {
@@ -65,7 +66,7 @@ namespace Thyra
   template <class Scalar> inline
   void ConstVector<Scalar>::addInto(Vector<Scalar>& acceptor, LCSign sign) const
   {
-    Scalar s = sign;
+    Scalar s = convertTo<Scalar>(sign);
     Thyra::axpy(s, *this, acceptor);
   }
 

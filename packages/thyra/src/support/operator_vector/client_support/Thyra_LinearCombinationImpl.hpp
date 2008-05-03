@@ -33,6 +33,7 @@
 #include "Thyra_LinearCombinationDecl.hpp"
 #include "Thyra_LinearOperatorImpl.hpp"
 #include "Thyra_VectorHandleOpsImpl.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Thyra
 {
@@ -71,7 +72,7 @@ namespace Thyra
   void OpTimesLC<Scalar, Node>::addInto(Thyra::Vector<Scalar>& result,
                             LCSign sign) const
   {
-    Scalar s = sign;
+    Scalar s = convertTo<Scalar>(sign);
     if (op_.constPtr().get() != 0)
       {
         Thyra::Vector<Scalar> tmp;

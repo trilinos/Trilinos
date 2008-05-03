@@ -36,6 +36,7 @@
 #include "Thyra_VecOpMacros.hpp"
 #include "RTOpPack_Types.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace Thyra
@@ -55,6 +56,17 @@ namespace Thyra
    * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
   enum LCSign {LCAdd = 1, LCSubtract = -1};
+
+  /** \brief Convert LCSign to a floating-point Scalar object.
+   *
+   * \ingroup Thyra_Op_Vec_ANA_Development_grp
+   */
+  template<class Scalar>
+  inline Scalar convertTo( const LCSign sign )
+  {
+    typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+    return Teuchos::as<ScalarMag>(sign);
+  }
 
   /** \brief Converter that defines the interface for objects that can be
    * converted to vectors.
