@@ -84,7 +84,9 @@ int main(int argc, char *argv[])
     y_coord = ttt[1];
   } else {
     if (!Comm.MyPID()) printf("Error extracting coordinate vectors\n");
+#ifdef HAVE_MPI
     MPI_Finalize();
+#endif
     exit(EXIT_FAILURE);
   }
     
