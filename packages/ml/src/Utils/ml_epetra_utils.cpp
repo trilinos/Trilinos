@@ -42,7 +42,9 @@
 
 
 using namespace std;
+#ifdef HAVE_ML_TEUCHOS
 using namespace Teuchos;
+#endif
 
 
 // ====================================================================== 
@@ -3507,6 +3509,7 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
   sublist?  This would require modifying the parsing in MLP_Smoothers().
 */
 
+#ifdef HAVE_ML_TEUCHOS
 void ML_CreateSublist(ParameterList &List, ParameterList &newList,
                       int *LevelID, int NumLevels)
 {
@@ -3587,6 +3590,7 @@ void ML_CreateSublist(ParameterList &List, ParameterList &newList,
   delete [] aggList;
 
 } //ML_CreateSublist()
+#endif
 
 /*
   // -------------------------------------------------------------------
