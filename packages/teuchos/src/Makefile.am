@@ -127,6 +127,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_SerialSymDenseMatrix.hpp \
+	$(srcdir)/Teuchos_SerialDenseSolver.hpp \
 	$(srcdir)/Teuchos_SerializationTraits.hpp \
 	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
 	$(srcdir)/Teuchos_Serializer.hpp \
