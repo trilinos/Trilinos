@@ -110,6 +110,12 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.hpp\
   $(srcdir)/ops_lib/RTOpPack_SUNDIALS_Ops.hpp
 
+RTOP_LAPACK_H = \
+  $(srcdir)/lapack/RTOpPack_LapackWrappers.hpp
+
+RTOP_LAPACK = \
+  $(srcdir)/lapack/RTOpPack_LapackWrappers.cpp
+
 #Specify locations of include files within Trilinos
 
 include $(top_builddir)/Makefile.export.rtop
@@ -133,12 +139,14 @@ RTOP_H = \
   $(RTOP_INTERFACES_H) \
   $(RTOP_SUPPORT_H) \
   $(RTOP_SUPPORT_C_H) \
-  $(RTOP_OPS_LIB_H)
+  $(RTOP_OPS_LIB_H) \
+  $(RTOP_LAPACK_H)
 
 librtop_a_SOURCES = \
   $(srcdir)/RTOpPack_version.cpp \
   $(RTOP_SUPPORT_C) \
-  $(RTOP_SUPPORT)
+  $(RTOP_SUPPORT) \
+  $(RTOP_LAPACK)
 
 #We need the following to support separate build directories
 

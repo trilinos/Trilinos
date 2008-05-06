@@ -1,8 +1,8 @@
 #@HEADER
 # ************************************************************************
 # 
-# Thyra: Interfaces and Support Code for the Interoperability of Abstract Numerical Algorithms
-#             Copyright (2004) Sandia Corporation
+#               Thyra: Interfaces and Support Code for the Interoperability of Abstract Numerical Algorithms
+#                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -26,11 +26,40 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+#
+# Actual programs
+#
 
-SUBDIRS = operator_vector operator_solve
+TEST_LINEAR_OP_WITH_SOLVE = test_linear_op_with_solve
 
-EXTRA_DIST = definition
+noinst_PROGRAMS = $(TEST_LINEAR_OP_WITH_SOLVE)
 
+test_linear_op_with_solve_SOURCES = $(srcdir)/test_linear_op_with_solve.cpp
+test_linear_op_with_solve_DEPENDENCIES = $(common_dependencies)
+test_linear_op_with_solve_LDADD = $(common_ldadd)
+
+#
+# Common stuff
+#
+
+common_dependencies = \
+  $(top_builddir)/src/libthyra.a
+
+include $(top_builddir)/Makefile.export.thyra
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(THYRA_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(THYRA_LIBS))
+else
+EXPORT_INCLUDES = $(THYRA_INCLUDES)
+EXPORT_LIBS = $(THYRA_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
+
+# This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
+LIBS =

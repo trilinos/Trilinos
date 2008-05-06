@@ -34,44 +34,7 @@
 #include "Teuchos_Version.hpp"
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
-#include "Teuchos_TestingHelpers.hpp"
-
-
-//
-// Define local macros to make defining tests easier for this particular test
-// code.
-//
-// Note, macros with these types of names should only exist in a *.cpp file
-// after all #includes are done!
-//
-
-
-#define TEST_EQUALITY_CONST( v1, v2 ) \
-  TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success )
-
-#define TEST_EQUALITY( v1, v2 ) \
-  TEUCHOS_TEST_EQUALITY( v1, v2, out, success )
-
-#define TEST_ITER_EQUALITY( iter1, iter2 ) \
-  TEUCHOS_TEST_ITER_EQUALITY( iter1, iter2, out, success )
-
-#define TEST_ARRAY_ELE_EQUALITY( a, i, val ) \
-   TEUCHOS_TEST_ARRAY_ELE_EQUALITY( a, i, val, false, out, local_success )
-
-#define TEST_COMPARE( v1, comp, v2 ) \
-  TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success )
-
-#define TEST_COMPARE_ARRAYS( a1, a2 ) \
-  { \
-    const bool result = compareArrays(a1,#a1,a2,#a2,out); \
-    if (!result) success = false; \
-  }
-
-#define TEST_THROW( code, ExceptType  ) \
-  TEUCHOS_TEST_THROW( code, ExceptType, out, success  )
-
-#define TEST_NOTHROW( code  ) \
-  TEUCHOS_TEST_NOTHROW( code, out, success  )
+#include "Teuchos_LocalTestingHelpers.hpp"
 
 
 //

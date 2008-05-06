@@ -1,9 +1,3 @@
-(FRAMEWORK,INSTALL) {
-    TESTS = spmd/runSpmdTests.exe;
-    ARGS = ;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI,SERIAL;
-}
 
 (FRAMEWORK,INSTALL) {
     TESTS = base/RTOpPack_Types_test.exe;
@@ -19,5 +13,19 @@
       --echo-command-line --num-cols=1,
       --echo-command-line --num-cols=3;
     EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI,SERIAL;
+    COMM = MPI(1), SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = spmd/runSpmdTests.exe;
+    ARGS = ;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI, SERIAL;
+}
+
+(FRAMEWORK,INSTALL,RTOPLAPACK) {
+    TESTS = lapack/testLapackWrappers.exe;
+    ARGS = --n=1, --n=2, --n=3, --n=4;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1), SERIAL;
 }

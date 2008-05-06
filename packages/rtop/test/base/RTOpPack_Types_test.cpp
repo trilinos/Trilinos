@@ -280,8 +280,7 @@ bool testSubVectorView(
 
   {
     out << "\nTest copy of elements ...\n";
-    SubVectorView<Scalar> sv2(globalOffset, subDim,
-      Teuchos::arcp<Scalar>(subDim*std::abs(stride)), stride);
+    SubVectorView<Scalar> sv2(subDim);
     RTOpPack::assign_entries<Scalar>(Teuchos::outArg(sv2), csv);
     out << "\nTest that sv2[i] == subDim-i-1 ... ";
     bool local_success = true;
@@ -562,8 +561,7 @@ bool testSubMultiVectorView(
 
   {
     out << "\nTest copy of elements ...\n";
-    SubMultiVectorView<Scalar> smv2(globalOffset, subDim, colOffset, numSubCols,
-      Teuchos::arcp<Scalar>(numSubCols*leadingDim), leadingDim);
+    SubMultiVectorView<Scalar> smv2(subDim, numSubCols);
     RTOpPack::assign_entries<Scalar>(Teuchos::outArg(smv2), csmv);
     out << "\nTest that smv2(i,j) == j + i/1000 ...\n";
     for ( int j = 0; j < numSubCols; ++j ) {

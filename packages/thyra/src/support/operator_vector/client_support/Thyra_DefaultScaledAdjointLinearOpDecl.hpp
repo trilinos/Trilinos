@@ -257,8 +257,9 @@ public:
 
   //@}
 
-  /** @name Overridden from OpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
+
   /** \brief Return the range space of the logical linear operator.
    *
    * Simply returns: \code
@@ -267,6 +268,7 @@ public:
    \endcode
    */
   RCP< const VectorSpaceBase<Scalar> > range() const;
+
   /** \brief Return the domain space of the logical linear operator.
    *
    * Simply returns: \code
@@ -275,9 +277,33 @@ public:
    \endcode
    */
   RCP< const VectorSpaceBase<Scalar> > domain() const;
+
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
-  /** Return if the operation is supported on the logical linear operator.
+
+  //@}
+
+  /** \name Overridden from ScaledAdointLinearOpBase */
+  //@{
+
+  /** \brief . */
+  Scalar overallScalar() const;
+  /** \brief . */
+  ETransp overallTransp() const;
+  /** \brief . */
+  RCP<LinearOpBase<Scalar> > getNonconstOrigOp();
+  /** \brief . */
+  RCP<const LinearOpBase<Scalar> > getOrigOp() const;
+
+  //@}
+
+protected:
+  
+  /** @name Overridden from SingleScalarLinearOpBase */
+  //@{
+
+  /** \brief Return if the operation is supported on the logical linear
+   * operator.
    *
    * Simply returns: \code
 
@@ -285,10 +311,6 @@ public:
    \endcode
    */
   bool opSupported(ETransp M_trans) const;
-  //@}
-
-  /** @name Overridden from LinearOpBase */
-  //@{
 
   /** \brief Apply the linear operator (or its transpose) to a multi-vector :
    * <tt>Y = alpha*op(M)*X + beta*Y</tt>.
@@ -305,20 +327,6 @@ public:
    const Scalar alpha,
    const Scalar beta
    ) const;
-
-  //@}
-
-  /** \name Overridden from ScaledAdointLinearOpBase */
-  //@{
-
-  /** \brief . */
-  Scalar overallScalar() const;
-  /** \brief . */
-  ETransp overallTransp() const;
-  /** \brief . */
-  RCP<LinearOpBase<Scalar> > getNonconstOrigOp();
-  /** \brief . */
-  RCP<const LinearOpBase<Scalar> > getOrigOp() const;
 
   //@}
 

@@ -63,6 +63,12 @@
     COMM = MPI,SERIAL;
 }
 
+(FRAMEWORK, INSTALL, THYRALOWS) {
+    TESTS = ./operator_solve/test_linear_op_with_solve.exe;
+    ARGS = --n=1, --n=2, --n=4;
+    COMM = MPI(1), SERIAL;
+}
+
 
 (FRAMEWORK, INSTALL) {
     TESTS = ../example/operator_vector/sillyCgSolve_serial.exe;

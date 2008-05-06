@@ -2,6 +2,7 @@
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 _RTOP_INCLUDES = \
+  -I@abs_top_srcdir@/src/lapack \
   -I@abs_top_srcdir@/src/ops_lib \
   -I@abs_top_srcdir@/src/support \
   -I@abs_top_srcdir@/src/interfaces \

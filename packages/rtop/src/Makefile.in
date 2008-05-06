@@ -106,8 +106,9 @@ librtop_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = RTOp_mpi.$(OBJEXT) RTOp_parallel_helpers.$(OBJEXT)
 am__objects_2 = RTOpPack_MPI_apply_op.$(OBJEXT) \
 	RTOpPack_SPMD_apply_op.$(OBJEXT)
+am__objects_3 = RTOpPack_LapackWrappers.$(OBJEXT)
 am_librtop_a_OBJECTS = RTOpPack_version.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
+	$(am__objects_2) $(am__objects_3)
 librtop_a_OBJECTS = $(am_librtop_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -328,6 +329,12 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.hpp\
   $(srcdir)/ops_lib/RTOpPack_SUNDIALS_Ops.hpp
 
+RTOP_LAPACK_H = \
+  $(srcdir)/lapack/RTOpPack_LapackWrappers.hpp
+
+RTOP_LAPACK = \
+  $(srcdir)/lapack/RTOpPack_LapackWrappers.cpp
+
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RTOP_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RTOP_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -341,12 +348,14 @@ RTOP_H = \
   $(RTOP_INTERFACES_H) \
   $(RTOP_SUPPORT_H) \
   $(RTOP_SUPPORT_C_H) \
-  $(RTOP_OPS_LIB_H)
+  $(RTOP_OPS_LIB_H) \
+  $(RTOP_LAPACK_H)
 
 librtop_a_SOURCES = \
   $(srcdir)/RTOpPack_version.cpp \
   $(RTOP_SUPPORT_C) \
-  $(RTOP_SUPPORT)
+  $(RTOP_SUPPORT) \
+  $(RTOP_LAPACK)
 
 @USE_ALTERNATE_AR_FALSE@librtop_a_AR = $(AR) cru
 
@@ -486,6 +495,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_LapackWrappers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_MPI_apply_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_SPMD_apply_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_version.Po@am__quote@
@@ -589,6 +599,20 @@ RTOpPack_SPMD_apply_op.obj: $(srcdir)/support/RTOpPack_SPMD_apply_op.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/RTOpPack_SPMD_apply_op.cpp' object='RTOpPack_SPMD_apply_op.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_SPMD_apply_op.obj `if test -f '$(srcdir)/support/RTOpPack_SPMD_apply_op.cpp'; then $(CYGPATH_W) '$(srcdir)/support/RTOpPack_SPMD_apply_op.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/RTOpPack_SPMD_apply_op.cpp'; fi`
+
+RTOpPack_LapackWrappers.o: $(srcdir)/lapack/RTOpPack_LapackWrappers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_LapackWrappers.o -MD -MP -MF $(DEPDIR)/RTOpPack_LapackWrappers.Tpo -c -o RTOpPack_LapackWrappers.o `test -f '$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp' || echo '$(srcdir)/'`$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RTOpPack_LapackWrappers.Tpo $(DEPDIR)/RTOpPack_LapackWrappers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp' object='RTOpPack_LapackWrappers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_LapackWrappers.o `test -f '$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp' || echo '$(srcdir)/'`$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp
+
+RTOpPack_LapackWrappers.obj: $(srcdir)/lapack/RTOpPack_LapackWrappers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_LapackWrappers.obj -MD -MP -MF $(DEPDIR)/RTOpPack_LapackWrappers.Tpo -c -o RTOpPack_LapackWrappers.obj `if test -f '$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp'; then $(CYGPATH_W) '$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RTOpPack_LapackWrappers.Tpo $(DEPDIR)/RTOpPack_LapackWrappers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp' object='RTOpPack_LapackWrappers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_LapackWrappers.obj `if test -f '$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp'; then $(CYGPATH_W) '$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/lapack/RTOpPack_LapackWrappers.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

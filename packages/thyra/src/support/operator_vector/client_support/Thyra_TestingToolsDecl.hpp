@@ -31,6 +31,7 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 
 namespace Thyra {
 
@@ -43,22 +44,28 @@ Here is some assorted C++ code to aid in testing and debugging
 
 */
 
-/** \brief Return "passed" or "failed".
+
+/** \brief .
  *
  * \ingroup Thyra_Op_Vec_test_tools_code_grp
  */
-inline
-const std::string passfail(bool pass) { return ( pass ? "passed" : "failed" ); }
+inline const std::string passfail(const bool result)
+{
+  return Teuchos::passfail(result);
+}
 
-/** \brief Return relative error of two scalars.
- *
- * ToDo: Finish documentation!
+
+/** \brief .
  *
  * \ingroup Thyra_Op_Vec_test_tools_code_grp
  */
 template <class Scalar>
+inline
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-relErr( const Scalar &s1, const Scalar &s2 );
+relErr( const Scalar &s1, const Scalar &s2 )
+{
+  return Teuchos::relErr<Scalar>(s1, s2);
+}
 
 /** \brief Return relative error of two vectors.
  *
@@ -77,18 +84,26 @@ relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
  * \ingroup Thyra_Op_Vec_test_tools_code_grp
  */
 template<class Scalar>
+inline
 bool testRelErr(
-  const std::string                                             &v1_name
-  ,const Scalar                                                 &v1
-  ,const std::string                                            &v2_name
-  ,const Scalar                                                 &v2
-  ,const std::string                                            &maxRelErr_error_name
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &maxRelErr_error
-  ,const std::string                                            &maxRelErr_warning_name
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &maxRelErr_warning
-  ,std::ostream                                                 *out
-  ,const std::string                                            &leadingIndent = std::string("")
-  );
+  const std::string &v1_name
+  ,const Scalar &v1
+  ,const std::string &v2_name
+  ,const Scalar &v2
+  ,const std::string &maxRelErr_error_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error
+  ,const std::string &maxRelErr_warning_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning
+  ,std::ostream *out
+  ,const std::string &leadingIndent = std::string("")
+  )
+{
+  // ToDo: Indent correctly!
+  return Teuchos::testRelErr(v1_name, v1, v2_name, v2,
+    maxRelErr_error_name, maxRelErr_error,
+    maxRelErr_warning_name, maxRelErr_warning,
+    Teuchos::ptr(out) );
+}
 
 /** \brief Compute, check and optionally print the relative errors in two
  * scalar arays.

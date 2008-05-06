@@ -231,6 +231,10 @@ public:
     :ConstSubVectorView<Scalar>(globalOffset, subDim, values, stride)
     {}
   /** \brief . */
+  SubVectorView(Teuchos_Index subDim)
+    :ConstSubVectorView<Scalar>(0, subDim, Teuchos::arcp<Scalar>(subDim), 1)
+    {}
+  /** \brief . */
   SubVectorView(const SubVectorView<Scalar> & sv)
     :ConstSubVectorView<Scalar>(sv)
     {}
@@ -455,6 +459,13 @@ class SubMultiVectorView : public ConstSubMultiVectorView<Scalar> {
 public:
   /** \brief . */
   SubMultiVectorView() {}
+  /** \brief . */
+  SubMultiVectorView(
+    Teuchos_Index numRows, Teuchos_Index numCols
+    )
+    :ConstSubMultiVectorView<Scalar>(0, numRows, 0, numCols,
+      Teuchos::arcp<Scalar>(numRows*numCols), numRows)
+    {}
   /** \brief . */
   SubMultiVectorView(
     Teuchos_Index globalOffset, Teuchos_Index subDim,

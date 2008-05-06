@@ -56,7 +56,7 @@ bool testRTOp(
   typedef Teuchos_Index Ordinal;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  bool success = true, result;
+  bool success = true;
 
   *out << "\n" << RTOpPack::version() << "\n";
 

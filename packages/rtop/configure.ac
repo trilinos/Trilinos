@@ -295,11 +295,12 @@ AC_SUBST(ac_aux_dir)
 # ------------------------------------------------------------------------
 
 AC_CONFIG_FILES([
-    Makefile 
+    Makefile
     Makefile.export.rtop
     src/Makefile
     test/Makefile
     test/base/Makefile
+    test/lapack/Makefile
     test/spmd/Makefile
     ])
 

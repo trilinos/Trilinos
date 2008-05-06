@@ -34,7 +34,6 @@
 
 #include "ComplexFFTLinearOp.hpp"
 #include "RealComplexFFTLinearOp.hpp"
-#include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_ListedMultiVectorRandomizer.hpp"
@@ -48,7 +47,9 @@
 //
 
 template<class RealScalar>
-class SymmetricComplexMultiVectorRandomizer : public Thyra::MultiVectorRandomizerBase< std::complex<RealScalar> > {
+class SymmetricComplexMultiVectorRandomizer
+  : public Thyra::MultiVectorRandomizerBase< std::complex<RealScalar> >
+{
 public:
 
   typedef std::complex<RealScalar> Scalar;
@@ -157,20 +158,12 @@ bool run1DFFTExample(
   result = linearOpWithSolveTester.check(*C,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out << "\nE) Creating a DefaultInverseLinearOp object invC from C and testing the LinearOpBase interface ...\n";
-
-  Teuchos::RCP<const Thyra::LinearOpBase<ComplexScalar> >
-    invC = inverse(C);
-
-  result = linearOpTester.check(*invC,out.get());
-  if(!result) success = false;
-
-  if(verbose) *out << "\nF) Constructing a 1D real-to-complex FFT linear operator R ...\n";
+  if(verbose) *out << "\nE) Constructing a 1D real-to-complex FFT linear operator R ...\n";
 
   Teuchos::RCP< const Thyra::LinearOpWithSolveBase< ComplexScalar, RealScalar > >
     R = Teuchos::rcp( new RealComplexFFTLinearOp<RealScalar>(N) );
 
-  if(verbose) *out << "\nG) Testing the LinearOpBase interface of the constructed linear operator R ...\n";
+  if(verbose) *out << "\nF) Testing the LinearOpBase interface of the constructed linear operator R ...\n";
   SymmetricComplexMultiVectorRandomizer<RealScalar> symmetricComplexMultiVectorRandomizer;
   Thyra::LinearOpTester<ComplexScalar,RealScalar> RlinearOpTester;
   RlinearOpTester.set_all_error_tol(tolerance);

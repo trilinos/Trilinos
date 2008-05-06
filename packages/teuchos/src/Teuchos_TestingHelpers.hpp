@@ -35,7 +35,7 @@
 */
 
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 
 namespace Teuchos {
@@ -45,7 +45,80 @@ namespace Teuchos {
  *
  * \ingroup teuchos_testing_grp
  */
-inline std::string passfail(const bool result);
+inline const std::string passfail(const bool result);
+
+
+/** \brief .
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template <bool hasMachineParameters, class Scalar>
+class RelErrSmallNumber {
+public:
+  static Scalar smallNumber()
+    {
+      return ScalarTraits<Scalar>::ThisShouldNotCompile();
+    }
+};
+
+
+/** \brief .
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template <class Scalar>
+class RelErrSmallNumber<false,Scalar> {
+public:
+  static Scalar smallNumber()
+    {
+      return Scalar(1e-8);
+    }
+};
+
+
+/** \brief .
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template <class Scalar>
+class RelErrSmallNumber<true,Scalar> {
+public:
+  static Scalar smallNumber()
+    {
+      return Teuchos::ScalarTraits<Scalar>::eps();
+    }
+};
+
+
+/** \brief Return relative error of two scalars.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template <class Scalar>
+typename ScalarTraits<Scalar>::magnitudeType
+relErr( const Scalar &s1, const Scalar &s2 );
+
+
+/** \brief Compute, check and optionally print the relative error in two scalars.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+template<class Scalar>
+bool testRelErr(
+  const std::string &v1_name,
+  const Scalar &v1,
+  const std::string &v2_name,
+  const Scalar &v2,
+  const std::string &maxRelErr_error_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
+  const std::string &maxRelErr_warning_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
+  const Ptr<std::ostream> &out
+  );
 
 
 /** \brief Compare if two array objects are the same or not.
@@ -100,6 +173,20 @@ bool compareArrays(
   }
 
 
+/** \brief Test if two floating point values are equal to a given tolerance.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_FLOATING_EQUALITY( v1, v2, tol, out, success ) \
+  { \
+    const bool l_result = Teuchos::testRelErr( \
+      #v1, v1, #v2, v2, "tol", tol, "tol", tol, &out ); \
+    if (!l_result) (success) = false; \
+  }
+
+
 /** \brief Test if two iterators are equal or not.
  *
  * This macro does not try to print the iterators so it is more portable (in
@@ -130,6 +217,41 @@ bool compareArrays(
     if (!l_result) (success) = false; \
     if (printPass || !(l_result)) { \
       out << #a"["<<i<<"] = " << (a)[i] << " == "#val" = " << (val) \
+          << " : " << Teuchos::passfail(l_result) << "\n"; \
+    } \
+  }
+
+
+/** \brief Test if a floating-point array element value is equal to a given
+ * constant for a given tolerance.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_MATRIX_ELE_FLOATING_EQUALITY( a, i, j, val, tol, printPass, out, success ) \
+  { \
+    std::ostringstream a_i_str; \
+    a_i_str <<#a<<"("<<i<<","<<j<<")"; \
+    const bool l_result = Teuchos::testRelErr( \
+      a_i_str.str(), (a)(i,j), #val, val, "tol", tol, "tol", tol, \
+      (printPass) ? Teuchos::outArg(out) : Teuchos::null ); \
+    if (!l_result) (success) = false; \
+  }
+
+
+/** \brief Test if a matrix element value is equal to a given constant.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_MATRIX_ELE_EQUALITY( a, i, j, val, printPass, out, success ) \
+  { \
+    const bool l_result = ( (a)(i,j) == (val) ); \
+    if (!l_result) (success) = false; \
+    if (printPass || !(l_result)) { \
+      out << #a"("<<i<<","<<j<<") = " << (a)(i,j) << " == "#val" = " << (val) \
           << " : " << Teuchos::passfail(l_result) << "\n"; \
     } \
   }
@@ -191,11 +313,70 @@ bool compareArrays(
 //
 
 
-inline std::string
+inline
+const std::string
 Teuchos::passfail(const bool result)
 {
-  if (!result) return "failed";
+  if (!result)
+    return "failed";
   return "passed";
+}
+
+
+template <class Scalar>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+Teuchos::relErr( const Scalar &s1, const Scalar &s2 )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return
+    ST::magnitude( s1 - s2 )
+    / (
+      ST::magnitude(
+        RelErrSmallNumber<ST::hasMachineParameters,Scalar>::smallNumber()
+        )
+      + std::max( ST::magnitude(s1), ST::magnitude(s1) )
+      );
+}
+
+
+template<class Scalar>
+bool Teuchos::testRelErr(
+  const std::string &v1_name,
+  const Scalar &v1,
+  const std::string &v2_name,
+  const Scalar &v2,
+  const std::string &maxRelErr_error_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
+  const std::string &maxRelErr_warning_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
+  const Ptr<std::ostream> &out
+  )
+{
+  using std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef ScalarTraits<ScalarMag> SMT;
+  const ScalarMag rel_err = relErr( v1, v2 );
+  const bool success = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error)
+    && rel_err <= maxRelErr_error );
+  if (!is_null(out)) {
+    *out
+      << endl
+      << "Check: rel_err(" << v1_name << "," << v2_name << ")\n"
+      << "       = rel_err(" << v1 << "," << v2 << ") "
+      << "= " << rel_err << endl
+      << "         <= " << maxRelErr_error_name
+      << " = " << maxRelErr_error << " : " << passfail(success) << endl;
+    if( success && rel_err >= maxRelErr_warning ) {
+      *out
+        << "Warning! rel_err(" << v1_name << "," << v2_name << ")\n"
+        << "       = rel_err(" << v1 << "," << v2 << ") "
+        << "= " << rel_err << endl
+        << "         >= " << maxRelErr_warning_name
+        << " = " << maxRelErr_warning << "!\n";
+    }
+  }
+  return success;
 }
 
 

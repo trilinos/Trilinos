@@ -292,8 +292,8 @@ public:
    * The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
    * <b>Preconditions:</b><ul>
+   * <li> <tt>!is_null(this->domain()) && !is_null(this->range())</tt>
    * <li> <tt>this->applySupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
-   * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>X.range()->isCompatible(this->domain()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->range()->isCompatible(*this->range()) == true</tt>
@@ -324,6 +324,10 @@ public:
   //@{
 
   /** \brief Determines if <tt>apply()</tt> supports this <tt>conj</tt> argument.
+   * 
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>!is_null(this->domain()) && !is_null(this->range())</tt>
+   * </ul>
    *
    * The default implementation returns <tt>true</tt> for real valued scalar types
    * or when <tt>conj==NONCONJ_ELE</tt> for complex valued types.
@@ -331,6 +335,10 @@ public:
   virtual bool applySupports( const EConj conj ) const;
 
   /** \brief Determines if <tt>applyTranspose()</tt> supports this <tt>conj</tt> argument.
+   * 
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>!is_null(this->domain()) && !is_null(this->range())</tt>
+   * </ul>
    *
    * The default implementation returns <tt>false</tt> which is consistent
    * with the below default implementation for <tt>applyTranspose()</tt>.
@@ -358,8 +366,8 @@ public:
    * The default value of <tt>beta</tt> is <tt>0.0</tt>.
    * 
    * <b>Preconditions:</b><ul>
+   * <li> <tt>!is_null(this->domain()) && !is_null(this->range())</tt>
    * <li> <tt>this->applyTransposeSupports(conj)==true</tt> (throw <tt>Exceptions::OpNotSupported</tt>)
-   * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>X.range()->isCompatible(this->range()) == true</tt>
    *      (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li> <tt>Y->range()->isCompatible(*this->domain()) == true</tt>

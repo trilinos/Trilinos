@@ -240,6 +240,7 @@ INTERFACES_OPERATOR_SOLVE_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_solve/ana/extended/Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp\
@@ -255,6 +256,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolve.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DelayedLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DelayedLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DelayedLinearOpWithSolveFactory.hpp\

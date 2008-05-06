@@ -33,36 +33,67 @@
 
 #include "Thyra_LinearOpWithSolveBaseDecl.hpp"
 #include "Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp"
-#include "Thyra_DefaultsScaledAdjointLinearOpDecl.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 
 namespace Thyra {
 
 
-/** \brief Default concreate adapter subclass for a scaled and/or adjoint
- * <tt>LinearOpWithSolveBase</tt>.
- *
+/** \brief Default concreate decorator subclass for a transpose/adjoint
+ * <tt>LinearOpWithSolveBase</tt> object.
+ * 
  * ToDo: Finish Documentation!
  */
 template<class Scalar>
-class DefaultAdjointLinearOpWithSolve :
-    virtual public LinearOpWithSolveBase<Scalar>
+class DefaultAdjointLinearOpWithSolve:
+    virtual public LinearOpWithSolveBase<Scalar>,
+    virtual protected SingleScalarLinearOpWithSolveBase<Scalar>
 {
 public:
 
   /** @name Constructors/initializers/accessors */
   //@{
 
-  /** \brief Constructs to uninitialized.
-   *
-   * Postconditions:<ul>
-   * <li><tt>this->getDiag().get()==NULL</tt>
-   * </ul>
-   */
+  /** \brief Constructs to uninitialized. */
   DefaultAdjointLinearOpWithSolve();
 
+  /** \brief Initialize with non-const LOWSB . */
+  void initialize( const RCP<LinearOpWithSolveBase<Scalar> > &lows,
+    const ETransp transp );
+
+  /** \brief Initialize with const LOWSB . */
+  void initialize( const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+    const ETransp transp );
+
+  //@}
+
+  /** @name Overridden from LinearOpBase */
+  //@{
+
+  /** \brief . */
+  RCP<const VectorSpaceBase<Scalar> > range() const;
+  /** \brief . */
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
+
+  //@}
+
 protected:
+  
+  /** @name Overridden from SingleScalarLinearOpBase */
+  //@{
+
+  /** \brief . */
+  bool opSupported(ETransp M_trans) const;
+  /** \brief . */
+ void apply(
+   const ETransp M_trans,
+   const MultiVectorBase<Scalar> &X,
+   MultiVectorBase<Scalar> *Y,
+   const Scalar alpha,
+   const Scalar beta
+   ) const;
+
+  //@}
 
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
@@ -76,10 +107,10 @@ protected:
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  SolveStatus<Scalar> solve(
+  void solve(
     const ETransp M_trans,
-    const MultiVectorBase<Scalar> &b,
-    MultiVectorBase<Scalar> *x,
+    const MultiVectorBase<Scalar> &B,
+    MultiVectorBase<Scalar> *X,
     const int numBlocks,
     const BlockSolveCriteria<Scalar> blockSolveCriteria[],
     SolveStatus<Scalar> blockSolveStatus[]
@@ -97,12 +128,58 @@ private:
   // /////////////////////////
   // Private data members
 
-  Scalar scalar_;
-  CNCLOWS origLows_;
-
-  DefaultScaledAdjointLinearOp<Scalar> scaledAdjointFwdOp_;
+  CNCLOWS lows_;
+  ETransp transp_;
 
 };
+
+
+/** \brief Nonmember constructor.
+ *
+ * \brief DefaultAdjointLinearOpWithSolve
+ */
+template<class Scalar>
+RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+defaultAdjointLinearOpWithSolve(
+  const RCP<LinearOpWithSolveBase<Scalar> > &lows,
+  const ETransp transp )
+{
+  TEST_FOR_EXCEPT(true);
+  RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+    dalows = Teuchos::rcp(new DefaultAdjointLinearOpWithSolve<Scalar>);
+  dalows->initialize(lows, transp);
+  return dalows;
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \brief DefaultAdjointLinearOpWithSolve
+ */
+template<class Scalar>
+RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+defaultAdjointLinearOpWithSolve(
+  const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+  const ETransp transp )
+{
+  RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+    dalows = Teuchos::rcp(new DefaultAdjointLinearOpWithSolve<Scalar>);
+  dalows->initialize(lows, transp);
+  return dalows;
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \brief DefaultAdjointLinearOpWithSolve
+ */
+template<class Scalar>
+RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+adjointLows( const RCP<const LinearOpWithSolveBase<Scalar> > &lows )
+{
+  return defaultAdjointLinearOpWithSolve<Scalar>(lows, CONJTRANS);
+}
+
 
 
 }	// end namespace Thyra

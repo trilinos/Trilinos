@@ -26,8 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef THYRA_LINEAR_OP_TESTER_DECL_HPP
 #define THYRA_LINEAR_OP_TESTER_DECL_HPP
+
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorRandomizerBase.hpp"
@@ -35,7 +37,9 @@
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Testing class for <tt>LinearOpBase</tt>.
  *
@@ -71,21 +75,21 @@ public:
    * construction.
    */
   LinearOpTester(
-    const bool          check_linear_properties         = true
-    ,const ScalarMag    linear_properties_warning_tol   = 1e-13
-    ,const ScalarMag    linear_properties_error_tol     = 1e-10
-    ,const bool         check_adjoint                   = true
-    ,const ScalarMag    adjoint_warning_tol             = 1e-13
-    ,const ScalarMag    adjoint_error_tol               = 1e-10
-    ,const bool         check_for_symmetry              = false
-    ,const ScalarMag    symmetry_warning_tol            = 1e-13
-    ,const ScalarMag    symmetry_error_tol              = 1e-10
-    ,const int          num_random_vectors              = 1
-    ,const bool         show_all_tests                  = false
-    ,const bool         dump_all                        = false
-    ,const int          num_rhs                         = 1
+    const bool check_linear_properties = true,
+    const ScalarMag linear_properties_warning_tol = 1e-13,
+    const ScalarMag linear_properties_error_tol = 1e-10,
+    const bool check_adjoint = true,
+    const ScalarMag adjoint_warning_tol = 1e-13,
+    const ScalarMag adjoint_error_tol = 1e-10,
+    const bool check_for_symmetry = false,
+    const ScalarMag symmetry_warning_tol = 1e-13,
+    const ScalarMag symmetry_error_tol = 1e-10,
+    const int num_random_vectors = 1,
+    const bool show_all_tests = false,
+    const bool dump_all = false,
+    const int num_rhs = 1
     );
-
+  
   /** \brief Set if to check for linear properties <tt>alpha*op*(x + y) ==
    * op(alpha*x) + op(alpha*y)</tt>
    */
@@ -181,17 +185,18 @@ public:
 
   /** \brief Check a linear operator.
    *
-   * @param  op    [in] The linear operator to check.
-   * @param  out   [in/out] If <tt>out!=NULL</tt> then trace output
-   *               about the tests performed will be sent to <tt>*out</tt>.
-   * @param  rangeRandomizer
-   *               [in] Randomizer strategy object for creating random vectors in the
-   *               range of the operator <tt>op</tt>.  If <tt>NULL</tt> then
-   *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
-   * @param  domainRandomizer
-   *               [in] Randomizer strategy object for creating random vectors in the
-   *               domain of the operator <tt>op</tt>.  If <tt>NULL</tt> then
-   *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
+   * \param op [in] The linear operator to check.
+   *
+   * \param out [in/out] If <tt>out!=NULL</tt> then trace output about the
+   * tests performed will be sent to <tt>*out</tt>.
+   *
+   * \param rangeRandomizer [in] Randomizer strategy object for creating
+   * random vectors in the range of the operator <tt>op</tt>.  If
+   * <tt>NULL</tt> then <tt>UniveralMultiVectorRandomizer</tt> is used intead.
+   *
+   * \param domainRandomizer [in] Randomizer strategy object for creating
+   * random vectors in the domain of the operator <tt>op</tt>.  If
+   * <tt>NULL</tt> then <tt>UniveralMultiVectorRandomizer</tt> is used intead.
    *
    * <b>Preconditions:</b><ul>
    * <li>[<tt>rangeRandomizer!=NULL</tt>] <tt>rangeRandomizer->isCompatible(*op.range())==true</tt>
@@ -248,32 +253,36 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool check(
-    const LinearOpBase<RangeScalar,DomainScalar>  &op
-    ,MultiVectorRandomizerBase<RangeScalar>       *rangeRandomizer
-    ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
-    ,Teuchos::FancyOStream                        *out
+    const LinearOpBase<RangeScalar,DomainScalar> &op,
+    MultiVectorRandomizerBase<RangeScalar> *rangeRandomizer,
+    MultiVectorRandomizerBase<DomainScalar> *domainRandomizer,
+    Teuchos::FancyOStream *out
     ) const;
 
   /** \brief Calls <tt>this->check(op,NULL,NULL,out,leadingIndent,indentSpacer)</tt> */
   bool check(
-    const LinearOpBase<RangeScalar,DomainScalar>  &op
-    ,Teuchos::FancyOStream                        *out
+    const LinearOpBase<RangeScalar,DomainScalar> &op,
+    Teuchos::FancyOStream *out
     ) const;
 
   /** \brief Check if two linear operators are the same or not.
    *
-   * @param  op1    [in] The first linear operator
-   * @param  op2    [in] The second linear operator
-   * @param  domainRandomizer
-   *               [in] Randomizer strategy object for creating random vectors in the
-   *               domain of the operator <tt>op</tt>.  If <tt>NULL</tt> then
-   *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
-   * @param  out    [in/out] If <tt>out!=NULL</tt> then trace output
-   *                about the tests performed will be sent to <tt>*out</tt>.
-   * @param  leadingIndent [in] All output to <tt>*out</tt> will insert this spacer
-   *                      before each new line is printed.  Default value <tt>""</tt>.
-   * @param  indentSpacer [in] All output to <tt>*out</tt> that is further indented
-   *                      will use this indentation.  Default value <tt>"  "</tt>.
+   * \param op1 [in] The first linear operator
+   *
+   * \param op2 [in] The second linear operator
+   *
+   * \param domainRandomizer [in] Randomizer strategy object for creating
+   * random vectors in the domain of the operator <tt>op</tt>.  If
+   * <tt>NULL</tt> then <tt>UniveralMultiVectorRandomizer</tt> is used intead.
+   *
+   * \param out [in/out] If <tt>out!=NULL</tt> then trace output about the
+   * tests performed will be sent to <tt>*out</tt>.
+   *
+   * \param leadingIndent [in] All output to <tt>*out</tt> will insert this
+   * spacer before each new line is printed.  Default value <tt>""</tt>.
+   *
+   * \param indentSpacer [in] All output to <tt>*out</tt> that is further
+   * indented will use this indentation.  Default value <tt>" "</tt>.
    *
    * This function checks if <tt>op1</tt> and <tt>op2</tt> are the same by
    * checking that the range and domain spaces are compatible and then
@@ -295,21 +304,25 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool compare(
-    const LinearOpBase<RangeScalar,DomainScalar>  &op1
-    ,const LinearOpBase<RangeScalar,DomainScalar> &op2
-    ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
-    ,Teuchos::FancyOStream                        *out
+    const LinearOpBase<RangeScalar,DomainScalar> &op1,
+    const LinearOpBase<RangeScalar,DomainScalar> &op2,
+    MultiVectorRandomizerBase<DomainScalar> *domainRandomizer,
+    Teuchos::FancyOStream *out
     ) const;
-  
-  /** \brief Calls <tt>this->compare(op1,op2,NULL,out,leadingIndent,indentSpacer)</tt>. */
+ 
+  /** \brief Calls
+   * <tt>this->compare(op1,op2,NULL,out,leadingIndent,indentSpacer)</tt>.
+   */
   bool compare(
-    const LinearOpBase<RangeScalar,DomainScalar>  &op1
-    ,const LinearOpBase<RangeScalar,DomainScalar> &op2
-    ,Teuchos::FancyOStream                        *out
+    const LinearOpBase<RangeScalar,DomainScalar> &op1,
+    const LinearOpBase<RangeScalar,DomainScalar> &op2,
+    Teuchos::FancyOStream *out
     ) const;
 
 }; // class LinearOpTester
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_LINEAR_OP_TESTER_DECL_HPP

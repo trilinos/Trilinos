@@ -322,6 +322,7 @@ AC_CONFIG_FILES([
     example/external/Makefile
     example/external/Makefile.external.stub
     test/Makefile
+    test/operator_solve/Makefile
     test/operator_vector/Makefile
     adapters/Makefile
     adapters/epetra/Makefile
