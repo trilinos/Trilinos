@@ -420,6 +420,33 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int* rows,
 }
 
 //----------------------------------------------------------------------------
+int Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
+                                            double* Values, int* Indices)
+{
+  return(InputGlobalValues(1, &GlobalRow,
+                           NumEntries, Indices, Values,
+                           Epetra_FECrsMatrix::ROW_MAJOR, SUMINTO));
+}
+
+//----------------------------------------------------------------------------
+int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
+                                            double* Values, int* Indices)
+{
+  return(InputGlobalValues(1, &GlobalRow,
+                           NumEntries, Indices, Values,
+                           Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
+}
+
+//----------------------------------------------------------------------------
+int Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
+                                            double* Values, int* Indices)
+{
+  return(InputGlobalValues(1, &GlobalRow,
+                           NumEntries, Indices, Values,
+                           Epetra_FECrsMatrix::ROW_MAJOR, REPLACE));
+}
+
+//----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const int* indices,
 					    const double* const* values,
 					    int format)
@@ -687,12 +714,6 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
     return(-1);
   }
 
-  Epetra_CrsMatrix* crsthis = static_cast<Epetra_CrsMatrix*>(this);
-  if (crsthis == NULL) {
-    cerr << "Epetra_FECrsMatrix::InputGlobalValues: static_cast failed."<<endl;
-    return(-1);
-  }
-
   if (format == Epetra_FECrsMatrix::COLUMN_MAJOR) {
     if (numCols > workDataLength_) {
       delete [] workData_;
@@ -721,19 +742,19 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
     if (Map().MyGID(rows[i])) {
       switch(mode) {
       case Epetra_FECrsMatrix::SUMINTO:
-        err = crsthis->SumIntoGlobalValues(rows[i], numCols,
+        err = this->Epetra_CrsMatrix::SumIntoGlobalValues(rows[i], numCols,
 					   valuesptr, (int*)cols);
 	if (err<0) return(err);
 	if (err>0) returncode = err;
 	break;
       case Epetra_FECrsMatrix::REPLACE:
-	err = crsthis->ReplaceGlobalValues(rows[i], numCols,
+	err = this->Epetra_CrsMatrix::ReplaceGlobalValues(rows[i], numCols,
 					   valuesptr, (int*)cols);
 	if (err<0) return(err);
 	if (err>0) returncode = err;
 	break;
       case Epetra_FECrsMatrix::INSERT:
-	err = crsthis->InsertGlobalValues(rows[i], numCols,
+	err = this->Epetra_CrsMatrix::InsertGlobalValues(rows[i], numCols,
 					  valuesptr, (int*)cols);
 	if (err<0) return(err);
 	if (err>0) returncode = err;

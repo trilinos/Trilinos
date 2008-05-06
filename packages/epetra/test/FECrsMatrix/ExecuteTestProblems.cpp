@@ -535,8 +535,14 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     case 1:
       nodes[0] = 1; nodes[1] = 2; nodes[2] = 5; nodes[3] = 4;
       if (preconstruct_graph) {
-	err = A->SumIntoGlobalValues(numNodesPerElem, nodes,
-				     values_2d, format);
+	err = A->SumIntoGlobalValues(nodes[0], numNodesPerElem, values_2d[0],
+                                     nodes);
+	err += A->SumIntoGlobalValues(nodes[1], numNodesPerElem, values_2d[1],
+                                     nodes);
+	err += A->SumIntoGlobalValues(nodes[2], numNodesPerElem, values_2d[2],
+                                     nodes);
+	err += A->SumIntoGlobalValues(nodes[3], numNodesPerElem, values_2d[3],
+                                     nodes);
 	if (err<0) return(err);
       }
       else {
@@ -695,7 +701,8 @@ int submatrix_formats(const Epetra_Comm& Comm, bool verbose)
     }
   }
 
-  EPETRA_CHK_ERR( A.InsertGlobalValues(epetra_indices, submatrix) );
+  EPETRA_CHK_ERR( A.InsertGlobalValues(epetra_indices, submatrix,
+                               Epetra_FECrsMatrix::COLUMN_MAJOR) );
 
   EPETRA_CHK_ERR( A.GlobalAssemble() );
 
@@ -789,7 +796,8 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   for(i=0; i<numGlobalRows; ++i) globalRows[i] = i;
 
   EPETRA_CHK_ERR( A.InsertGlobalValues(numGlobalRows, globalRows,
-                                       numcols, cols, coefs));
+                                       numcols, cols, coefs,
+                                     Epetra_FECrsMatrix::COLUMN_MAJOR));
   delete [] coefs;
   delete [] globalRows;
 

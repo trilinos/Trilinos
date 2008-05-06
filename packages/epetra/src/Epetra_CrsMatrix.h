@@ -285,7 +285,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
-  int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  virtual int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 
   //! Replace specified existing values with this list of entries for a given global row of the matrix.
   /*!
@@ -300,7 +300,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
-  int ReplaceGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  virtual int ReplaceGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 	
   //! Add this list of entries to existing values for a given global row of the matrix.
   /*!
@@ -315,7 +315,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
-  int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  virtual int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 
   //! Insert a list of elements in a given local row of the matrix.
   /*!
