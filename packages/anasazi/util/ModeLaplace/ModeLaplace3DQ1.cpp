@@ -27,6 +27,7 @@
 //**************************************************************************
 
 #include "ModeLaplace3DQ1.h"
+#include "Teuchos_TestForException.hpp"
 
 // Required for IBM, which defines hz for some reason.
 #ifdef hz
@@ -433,8 +434,9 @@ void ModeLaplace3DQ1::makeStiffness(int *elemTopo, int numEle, int *connectivity
     values[i] = 0.0;
 
   for (i=0; i<localSize; ++i) {
-    assert(K->InsertGlobalValues(Map->GID(i), numNz[i], values, 
-           connectivity+maxConnect*i) == 0);
+    int info = K->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity+maxConnect*i);
+    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+        "ModeLaplace3DQ1::makeStiffness(): InsertGlobalValues() returned error code " << info);
   }
 
   // Define the elementary matrix
@@ -493,7 +495,9 @@ void ModeLaplace3DQ1::makeStiffness(int *elemTopo, int numEle, int *connectivity
         values[numEntries] = kel[dofEle*j + k];
         numEntries += 1;
       }
-      assert(K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
+      int info = K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
+      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+          "ModeLaplace3DQ1::makeStiffness(): SumIntoGlobalValues() returned error code " << info);
     }
   }
 
@@ -501,8 +505,12 @@ void ModeLaplace3DQ1::makeStiffness(int *elemTopo, int numEle, int *connectivity
   delete[] values;
   delete[] indices;
 
-  assert(K->FillComplete()== 0);
-  assert(K->OptimizeStorage() == 0);
+  int info = K->FillComplete();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace3DQ1::makeStiffness(): FillComplete() returned error code " << info);
+  info = K->OptimizeStorage();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace3DQ1::makeStiffness(): OptimizeStorage() returned error code " << info);
 
 }
 
@@ -519,9 +527,11 @@ void ModeLaplace3DQ1::makeMass(int *elemTopo, int numEle, int *connectivity,
   double *values = new double[maxConnect];
   for (i=0; i<maxConnect; ++i) 
     values[i] = 0.0;
-  for (i=0; i<localSize; ++i) 
-    assert(M->InsertGlobalValues(Map->GID(i), numNz[i], values,
-                                   connectivity + maxConnect*i) == 0); 
+  for (i=0; i<localSize; ++i) {
+    int info = M->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity + maxConnect*i);
+    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+        "ModeLaplace3DQ1::makeMass(): InsertGlobalValues() returned error code " << info);
+  }
 
   // Define the elementary matrix
   double hx = Lx/nX;
@@ -573,7 +583,9 @@ void ModeLaplace3DQ1::makeMass(int *elemTopo, int numEle, int *connectivity,
         values[numEntries] = mel[dofEle*j + k];
         numEntries += 1;
       }
-      assert(M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
+      int info = M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
+      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+          "ModeLaplace3DQ1::makeMass(): SumIntoGlobalValues() returned error code " << info);
     }
   }
 
@@ -581,8 +593,12 @@ void ModeLaplace3DQ1::makeMass(int *elemTopo, int numEle, int *connectivity,
   delete[] values;
   delete[] indices;
 
-  assert(M->FillComplete()== 0);
-  assert(M->OptimizeStorage() == 0);
+  int info = M->FillComplete();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace3DQ1::makeMass(): FillComplete() returned error code " << info);
+  info = M->OptimizeStorage();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace3DQ1::makeMass(): OptimizeStorage() returned error code " << info);
 
 }
 

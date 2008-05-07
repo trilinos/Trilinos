@@ -38,6 +38,7 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
 
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -905,8 +906,9 @@ namespace Anasazi {
       TEST_FOR_EXCEPTION(x.NumVectors() != y.NumVectors(),std::invalid_argument,
           "Anasazi::OperatorTraits<double,Epetra_MultiVector,Epetra_Operator>::Apply(Op,x,y): x and y must have the same number of columns.");
 #endif
-      TEST_FOR_EXCEPTION( Op.Apply( x, y ) != 0, OperatorError, 
-          "Anasazi::OperatorTraits<double,Epetra_Multivector,Epetra_Operator>::Apply(): Error in Epetra_Operator::Apply()." );
+      int ret = Op.Apply(x,y);
+      TEST_FOR_EXCEPTION(ret != 0, OperatorError, 
+          "Anasazi::OperatorTraits<double,Epetra_Multivector,Epetra_Operator>::Apply(): Error in Epetra_Operator::Apply(). Code " << ret);
     }
     
   };

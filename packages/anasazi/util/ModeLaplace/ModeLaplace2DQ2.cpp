@@ -5,14 +5,14 @@
 // This software is a result of the research described in the report
 //
 // " A comparison of algorithms for modal analysis in the absence 
-//   of a sparse direct method", P. ArbenZ, R. Lehoucq, and U. Hetmaniuk,
+//   of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
 //  Sandia National Laboratories, Technical report SAND2003-1028J.
 //
 // It is based on the Epetra, AztecOO, and ML packages defined in the Trilinos
 // framework ( http://software.sandia.gov/trilinos/ ).
 //
 // The distribution of this software follows also the rules defined in Trilinos.
-// This notice shall be marked on anY reproduction of this software, in whole or
+// This notice shall be marked on any reproduction of this software, in whole or
 // in part.
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -27,6 +27,7 @@
 //**************************************************************************
 
 #include "ModeLaplace2DQ2.h"
+#include "Teuchos_TestForException.hpp"
 
 
 const int ModeLaplace2DQ2::dofEle = 9;
@@ -102,7 +103,7 @@ void ModeLaplace2DQ2::preProcess() {
 
   delete[] isTouched;
 
-  // Get the number of nonZeros per row
+  // Get the number of nonzeros per row
   int localSize = Map->NumMyElements();
   int *numNz = new int[localSize];
   int *connectivity = new int[localSize*maxConnect];
@@ -417,8 +418,9 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
     values[i] = 0.0;
 
   for (i=0; i<localSize; ++i) {
-    assert(K->InsertGlobalValues(Map->GID(i), numNz[i], values, 
-           connectivity+maxConnect*i) == 0);
+    int info = K->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity+maxConnect*i);
+    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+        "ModeLaplace2DQ2::makeStiffness(): InsertGlobalValues() returned error code " << info);
   }
 
   // Define the elementary matrix
@@ -444,7 +446,9 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
         values[numEntries] = kel[dofEle*j + k];
         numEntries += 1;
       }
-      assert(K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
+      int info = K->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
+      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+          "ModeLaplace2DQ2::makeStiffness(): SumIntoGlobalValues() returned error code " << info);
     }
   }
 
@@ -452,8 +456,12 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
   delete[] values;
   delete[] indices;
 
-  assert(K->FillComplete()== 0);
-  assert(K->OptimizeStorage() == 0);
+  int info = K->FillComplete();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace2DQ2::makeStiffness(): FillComplete() returned error code " << info);
+  info = K->OptimizeStorage();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace2DQ2::makeStiffness(): OptimizeStorage() returned error code " << info);
 
 }
 
@@ -530,9 +538,11 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
   double *values = new double[maxConnect];
   for (i=0; i<maxConnect; ++i) 
     values[i] = 0.0;
-  for (i=0; i<localSize; ++i) 
-    assert(M->InsertGlobalValues(Map->GID(i), numNz[i], values,
-                                   connectivity + maxConnect*i) == 0); 
+  for (i=0; i<localSize; ++i) {
+    int info = M->InsertGlobalValues(Map->GID(i), numNz[i], values, connectivity + maxConnect*i);
+    TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+        "ModeLaplace2DQ2::makeMass(): InsertGlobalValues() returned error code " << info);
+  }
 
   // Define the elementary matrix
   double *mel = new double[dofEle*dofEle];
@@ -557,7 +567,9 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
         values[numEntries] = mel[dofEle*j + k];
         numEntries += 1;
       }
-      assert(M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices) == 0);
+      int info = M->SumIntoGlobalValues(elemTopo[dofEle*i+j], numEntries, values, indices);
+      TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+          "ModeLaplace2DQ2::makeMass(): SumIntoGlobalValues() returned error code " << info);
     }
   }
 
@@ -565,8 +577,12 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
   delete[] values;
   delete[] indices;
 
-  assert(M->FillComplete()== 0);
-  assert(M->OptimizeStorage() == 0);
+  int info = M->FillComplete();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace2DQ2::makeMass(): FillComplete() returned error code " << info);
+  info = M->OptimizeStorage();
+  TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+      "ModeLaplace2DQ2::makeMass(): OptimizeStorage() returned error code " << info);
 
 }
 
