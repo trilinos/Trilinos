@@ -407,6 +407,11 @@ ADvari {	// implementation of an ADvar
 	ADvari *Next;
 	static ADvari *First_ADvari, **Last_ADvari;
  public:
+	inline void ADvari_padv(const IndepADVar *v) {
+		*Last_ADvari = this;
+		Last_ADvari = &this->Next;
+		this->padv = v;
+		}
 #endif //RAD_AUTO_AD_Const
 #ifdef RAD_DEBUG
 	int gcgen;
@@ -423,7 +428,7 @@ ADvari {	// implementation of an ADvar
 		rv->gcgen = gcgen_cur;
 		rv->opno = ++last_opno;
 		if (last_opno == zap_opno && gcgen_cur == zap_gcgen)
-			printf("");
+			printf("Got to opno %d\n", last_opno);
 		return rv;
 #else
 		return ADvari::adc.Memalloc(len);
@@ -541,9 +546,7 @@ ADvar1: public ADvari<Double> {	// simplest unary ops
 	ADvar1(const Double val1, const Double *a1, const ADVari *c1, const ADVar *v):
 			ADVari(val1), d(a1,this,c1) {
 		c1->padv = 0;
-		*ADVari::Last_ADvari = this;
-		ADVari::Last_ADvari = &this->Next;
-		this->padv = v;
+		this->ADvari_padv(v);
 		}
 #endif
 #endif // RAD_REININT > 0
@@ -822,13 +825,17 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
  private:
 	void ADvar_ctr(Double d) {
 #if RAD_REINIT == 0 //{
-		ADVari *x = ConstADVari::cadc.fpval_implies_const
-			? new ConstADVari(d)
+		ADVari *x;
+		if (ConstADVari::cadc.fpval_implies_const)
+			x = new ConstADVari(d);
+		else {
 #ifdef RAD_AUTO_AD_Const //{
-			: new ADVari((IndepADVar*)this, d);
+			x = new ADVari((IndepADVar*)this, d);
+			x->ADvari_padv(this);
 #else
-			: new ADVari(d);
+			x = new ADVari(d);
 #endif //}
+			}
 #else
 		RAD_REINIT_1(this->cv = 0;)
 		ADVari *x = new ADVari(d);
@@ -852,7 +859,7 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 		this->cv = x.cv ? new ADVar1(this, x) : 0;
 		RAD_REINIT_2(this->gen = this->IndepADvar_root.gen;)
 		}
-	inline ADvar(ADVari &x) { this->cv = &x; x.padv = this; }
+	inline ADvar(ADVari &x) { this->cv = &x; x.ADvari_padv(this); }
 	inline ADvar& operator=(IndepADVar &x) {
 		if (this->cv)
 			this->cv->padv = 0;
@@ -1109,9 +1116,7 @@ ADvar2: public ADvari<Double> {	// basic binary ops
 		dR.c = Rcv;
 		dL.b = dR.b = this;
 		Lcv->padv = 0;
-		*ADVari::Last_ADvari = this;
-		ADVari::Last_ADvari = &this->Next;
-		this->padv = v;
+		this->ADvari_padv(v);
 		}
 #endif
 #endif // }} RAD_REINIT
@@ -1164,9 +1169,7 @@ ADvar2q: public ADvar2<Double> { // binary ops with partials "a", "b"
 		this->dR.c = Rcv;
 		this->dL.b = this->dR.b = this;
 		Lcv->padv = 0;
-		*ADVari::Last_ADvari = this;
-		ADVari::Last_ADvari = &this->Next;
-		this->padv = v;
+		this->ADvari_padv(v);
 		}
 #endif
 #endif //}} RAD_REINIT > 0
@@ -1871,18 +1874,14 @@ ConstADvari<Double>::aval_reset()
  template<typename Double>
 ADvari<Double>::ADvari(const IndepADVar *x, Double d): Val(d), aval(0.)
 {
-	*Last_ADvari = this;
-	Last_ADvari = &Next;
-	this->padv = (IndepADVar*)x;
+	this->ADvari_padv(x);
 	Allow_noderiv(wantderiv = 1;)
 	}
 
  template<typename Double>
 ADvari<Double>::ADvari(const IndepADVar *x, Double d, Double g): Val(d), aval(g)
 {
-	*Last_ADvari = this;
-	Last_ADvari = &Next;
-	this->padv = (IndepADVar*)x;
+	this->ADvari_padv(x);
 	Allow_noderiv(wantderiv = 1;)
 	}
 
@@ -1890,18 +1889,14 @@ ADvari<Double>::ADvari(const IndepADVar *x, Double d, Double g): Val(d), aval(g)
 ADvar1<Double>::ADvar1(const IndepADVar *x, const IndepADVar &y):
 	ADVari(y.cv->Val), d((const Double*)&ADcontext<Double>::One, (ADVari*)this, y.cv)
 {
-	*ADVari::Last_ADvari = this;
-	ADVari::Last_ADvari = &this->Next;
-	this->padv = x;
+	this->ADvari_padv(x);
 	}
 
  template<typename Double>
 ADvar1<Double>::ADvar1(const IndepADVar *x, const ADVari &y):
 	ADVari(y.Val), d((const Double*)&ADcontext<Double>::One, this, &y)
 {
-	*ADVari::Last_ADvari = this;
-	ADVari::Last_ADvari = &this->Next;
-	this->padv = x;
+	this->ADvari_padv(x);
 	}
 
 #else /* !RAD_AUTO_AD_Const */
