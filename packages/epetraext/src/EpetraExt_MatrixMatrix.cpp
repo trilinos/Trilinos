@@ -1298,7 +1298,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
                                                   B_Values, B_Indices));
         }
         else {
-          EPETRA_CHK_ERR( B.ExtractMyRowView( Row, B_NumEntries,
+          EPETRA_CHK_ERR( B.ExtractMyRowView( i, B_NumEntries,
                                               B_Values, B_Indices));
         }
 
