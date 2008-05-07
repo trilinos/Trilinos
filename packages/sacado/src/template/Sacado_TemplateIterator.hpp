@@ -96,6 +96,11 @@ namespace Sacado {
       return tmp;
     }
 
+    //! Returns a reference counted pointer object
+    Teuchos::RCP<BaseT> rcp() const {
+      return *object_iterator;
+    }
+
   private:
 
     //! Underlying template manager
@@ -161,6 +166,11 @@ namespace Sacado {
       ConstTemplateIterator tmp = *this;
       ++(*this);
       return tmp;
+    }
+
+    //! Returns a reference counted pointer object
+    Teuchos::RCP<BaseT> rcp() const {
+      return *object_iterator;
     }
 
   private:
