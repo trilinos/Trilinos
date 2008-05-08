@@ -223,6 +223,27 @@ runtests-mpi :
   --verbosity=1 \
   --packages=intrepid
 
+runtests-serial-dirinfo :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/packages/intrepid/test/runtests-dirinfo \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=3 \
+  --packages=intrepid
+
+runtests-mpi-dirinfo :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/packages/intrepid/test/runtests-dirinfo \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=mpi \
+  --mpi-go=$(TRILINOS_MPI_GO) \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=3 \
+  --packages=intrepid
+
 if HAVE_MPI
 INTREPID_CHECK_COMM=mpi
 else
