@@ -412,3 +412,58 @@ RUN (bandito-nightly-serial) {
 
 }
 
+###############################################################################
+#
+# gabriel nightly tests
+#
+###############################################################################
+
+RUN (gabriel-nighly-serial-debug) {
+    BUILD-LABEL = gabriel-serial-debug;
+    BUILD-DIR = SERIAL_DEBUG;
+    COMM = serial;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6-debug;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
+
+
+
+RUN (gabriel-nighly-serial) {
+    BUILD-LABEL = gabriel-serial;
+    BUILD-DIR = SERIAL_OPT;
+    COMM = serial;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
+
+RUN (gabriel-nighly-mpi-debug) {
+    BUILD-LABEL = gabriel-mpi-debug;
+    BUILD-DIR = MPI_DEBUG;
+    COMM = mpi;
+    MAX-PROC = 4;
+    MPI-GO = /usr/local/mpi/bin/mpiexec -np ;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6-debug-mpi;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
+
+RUN (gabriel-nighly-mpi) {
+    BUILD-LABEL = gabriel-mpi;
+    BUILD-DIR = MPI_OPT;
+    COMM = mpi;
+    MAX-PROC = 4;
+    MPI-GO = /usr/local/mpi/bin/mpiexec -np ;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6-mpi;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
