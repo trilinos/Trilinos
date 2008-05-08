@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|                 Unit Test (Basis_F0_TRI_C1_FEM_DEFAULT)                     |\n" \
   << "|                                                                             |\n" \
-  << "|     1) Basis creation, computation of basis function values                 |\n" \
+  << "|     1) Correctness of Operators                                             |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -134,18 +134,21 @@ int main(int argc, char *argv[]) {
                             CELL_TRI,        // generating cell type
                             triNodes);       // array with interleaved node coordinates
     LexContainer<double> massMatrices;
+    LexContainer<double> stiffMatrices;
 
     // This MCell and container are for to test matrix assembly with Jacobian reuse.
     MultiCell<double> mCellReuse(nCells,          
                             CELL_TRI,        
                             triNodes);       
     LexContainer<double> massMatricesReuse;
+    LexContainer<double> stiffMatricesReuse;
     
     // This MCell and container are for to test matrix assembly with auxiliary "right" LocalForm0
     MultiCell<double> mCellWithRight(nCells,          
                                      CELL_TRI,        
                                      triNodes);       
     LexContainer<double> massMatricesWithRight;
+    LexContainer<double> stiffMatricesWithRight;
     
 
     for (ECompEngine compEng = COMP_CPP; compEng < COMP_ENGINE_MAX; compEng++) {
@@ -165,22 +168,25 @@ int main(int argc, char *argv[]) {
         // Create "right" local form for testing purposes using the same basis and cubature
         LocalForm0<double> rightForm0(basis, allCubs, compEng);
         
-        // compute mass matrices without Jacobian reuse
+        // compute mass and stiffness matrices without Jacobian reuse
         form0.getOperator(massMatrices, OPERATOR_VALUE, OPERATOR_VALUE, mCell);
+        form0.getOperator(stiffMatrices, OPERATOR_GRAD, OPERATOR_GRAD, mCell);
         
-        // compute mass matrices with Jacobian reuse
+        // compute mass and stiffness matrices with Jacobian reuse
         form0.getOperator(massMatricesReuse, OPERATOR_VALUE, OPERATOR_VALUE, mCellReuse, true);
+        form0.getOperator(stiffMatricesReuse, OPERATOR_GRAD, OPERATOR_GRAD, mCellReuse, true);
         
-        // compute mass matrices using an "auxiliary" right local field:
+        // compute mass and stiffness  matrices using an "auxiliary" right local field:
         form0.getOperator(massMatricesWithRight, OPERATOR_VALUE, OPERATOR_VALUE, rightForm0, mCellWithRight, true);
+        form0.getOperator(stiffMatricesWithRight, OPERATOR_GRAD, OPERATOR_GRAD, rightForm0, mCellWithRight, true);
 
          
-
         *outStream << "\nComputational engine: " << ECompEngineToString(compEng) << "\n";
         *outStream << "Cubature degree:      " << cubDeg << "\n";
 
+        // compare mass matrices to analytic
         for (int cell_id = 0; cell_id < nCells; cell_id++) {
-          *outStream << " Cell Id = " << cell_id << "\n\n";
+          *outStream << "\n Cell Id = " << cell_id << " -----------\n\n";
           stringstream namestream;
           string filename;
           namestream <<  basedir << "/mass_TRI_FEM_P1" << "_" << "0" << cell_id+1 << ".dat";
@@ -219,7 +225,7 @@ int main(int argc, char *argv[]) {
             if (compareToAnalytic<double>(cellMass, massfile, 1e-10, iprint) > 0) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << std::setw(70) << " Wrong mass matrix when not reusing Jcobians" << "\n";
+              *outStream << std::setw(70) << " Wrong mass matrix when not reusing Jacobians" << "\n";
             }
             massfile.close();
             massfile.clear();
@@ -236,7 +242,7 @@ int main(int argc, char *argv[]) {
             if (compareToAnalytic<double>(cellMassReuse, massfile, 1e-10, iprint) > 0) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << std::setw(70) << " Wrong mass matrix when reusing Jcobians" << "\n";
+              *outStream << std::setw(70) << " Wrong mass matrix when reusing Jacobians" << "\n";
             }
             massfile.close();
             massfile.clear();
@@ -262,8 +268,96 @@ int main(int argc, char *argv[]) {
             errorFlag = -999;
           }
           
+        } // for(cell_id) mass matrices
+
+#ifdef QWERTYUIO
+        // compare stiffness matrices to analytic
+        for (int cell_id = 0; cell_id < nCells; cell_id++) {
+          *outStream << "\n Cell Id = " << cell_id << " -----------\n\n";
+          stringstream namestream;
+          string filename;
+          namestream <<  basedir << "/stiff_TRI_FEM_P1" << "_" << "0" << cell_id+1 << ".dat";
+          namestream >> filename;
+
+          // Temp arrays to load stiffness matrix entries from LexContainer file
+          Teuchos::Array<Teuchos::Array<double> > cellStiff;
+          Teuchos::Array<Teuchos::Array<double> > cellStiffReuse;
+          Teuchos::Array<Teuchos::Array<double> > cellStiffWithRight;
           
-        } // for(cell_id)
+          // fill stiffness matrix for this cell
+          int numLbf = stiffMatrices.getIndexBound(1);
+          int numRbf = stiffMatrices.getIndexBound(2);
+          cellStiff.resize(numLbf);
+          cellStiffReuse.resize(numLbf);
+          cellStiffWithRight.resize(numLbf);
+          
+          for (int i=0; i<numLbf; i++) {
+            cellStiff[i].resize(numRbf);
+            cellStiffReuse[i].resize(numRbf);
+            cellStiffWithRight[i].resize(numRbf);
+            for (int j=0; j<numRbf; j++) {
+              Teuchos::Array<int> mIndex(3);
+              mIndex[0] = cell_id; mIndex[1] = i; mIndex[2] = j;
+              cellStiff[i][j]          = stiffMatrices.getValue(mIndex);
+              cellStiffReuse[i][j]     = stiffMatricesReuse.getValue(mIndex);
+              cellStiffWithRight[i][j] = stiffMatricesWithRight.getValue(mIndex);
+            }
+          }
+          
+          
+          // Compare stiffness matrix without reuse and entries from data file
+          ifstream stifffile(&filename[0]);
+          if (stifffile.is_open()) {
+            *outStream << " Stiffness matrix without Jacobian reuse:  \n";
+            if (compareToAnalytic<double>(cellStiff, stifffile, 1e-10, iprint) > 0) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              *outStream << std::setw(70) << " Wrong stiffness matrix when not reusing Jacobians" << "\n";
+            }
+            stifffile.close();
+            stifffile.clear();
+          }
+          else {
+            errorFlag = -999;
+          }
+          
+          
+          // Compare stiffness matrix with reuse and entries from data file. Need to open file again
+          stifffile.open(&filename[0]);
+          if (stifffile.is_open()) {              
+            *outStream << " Stiffness matrix with Jacobian reuse: \n";
+            if (compareToAnalytic<double>(cellStiffReuse, stifffile, 1e-10, iprint) > 0) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              *outStream << std::setw(70) << " Wrong stiffness matrix when reusing Jacobians" << "\n";
+            }
+            stifffile.close();
+            stifffile.clear();
+          }
+          else {
+            errorFlag = -999;
+          }
+          
+          
+          // Compare stiffness matrix with auxiliary right field and entries from data file. Need to open file again
+          stifffile.open(&filename[0]);
+          if (stifffile.is_open()) {              
+            *outStream << " Stiffness matrix with auxiliary right op: \n";
+            if (compareToAnalytic<double>(cellStiffWithRight, stifffile, 1e-10, iprint) > 0) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              *outStream << std::setw(70) << " Wrong stiffness matrix when using auxiliary LocalForm0 right field" << "\n";
+            }
+            stifffile.close();
+            stifffile.clear();
+          }
+          else {
+            errorFlag = -999;
+          }
+          
+        } // for(cell_id) stiffness matrices
+#endif
+
       } // for(cubDeg)
     }// for(compEngine)
   }

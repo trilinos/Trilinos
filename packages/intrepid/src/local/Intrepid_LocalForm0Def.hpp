@@ -443,7 +443,7 @@ void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(LexContainer<Scalar> &  
         }
       } // if(intDomain)
     }
-    break; // end case OPERTOR_GRAD & D1
+    break; // end case OPERATOR_GRAD & D1
       
     default:
       TEST_FOR_EXCEPTION((primOp != OPERATOR_VALUE) && 
@@ -572,9 +572,14 @@ void LocalForm0<Scalar,ArrayType>::integrate(LexContainer<Scalar> &        outpu
     break;
       
     case COMP_BLAS: {
-      int skipL  = numLeftBfs*numQps;
-      int skipR  = numRightBfs*numQps;
-      int skipOp = numLeftBfs*numRightBfs;
+      int dataSize = 1;
+      for (int i=3; i<opRank; i++) {
+        dataSize *= leftValues.getIndexBound(i);
+      }
+      int numData  = numQps*dataSize;
+      int skipL    = numLeftBfs*numData;
+      int skipR    = numRightBfs*numData;
+      int skipOp   = numLeftBfs*numRightBfs;
       for (int cl=0; cl<numCells; cl++) {
         Teuchos::BLAS<int, Scalar> myblas;
         double alpha = 1.0;
@@ -583,7 +588,7 @@ void LocalForm0<Scalar,ArrayType>::integrate(LexContainer<Scalar> &        outpu
                     Teuchos::TRANS,
                     numLeftBfs,
                     numRightBfs,
-                    numQps,
+                    numData,
                     alpha,
                     &leftValues.getData()[cl*skipL],
                     numLeftBfs,
