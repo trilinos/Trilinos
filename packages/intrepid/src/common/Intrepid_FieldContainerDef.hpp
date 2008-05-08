@@ -101,7 +101,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 3rd dimension.");
 #endif
-  dimensions_.resize(2); 
+  dimensions_.resize(3); 
   dimensions_[0] = dim0;  dim0_ = dim0; 
   dimensions_[1] = dim1;  dim1_ = dim1;
   dimensions_[2] = dim2;  dim2_ = dim2;
@@ -125,7 +125,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   TEST_FOR_EXCEPTION( (0 > dim3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 4th dimension.");  
 #endif
-  dimensions_.resize(2); 
+  dimensions_.resize(4); 
   dimensions_[0] = dim0;  dim0_ = dim0; 
   dimensions_[1] = dim1;  dim1_ = dim1;
   dimensions_[2] = dim2;  dim2_ = dim2;
@@ -153,7 +153,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   TEST_FOR_EXCEPTION( (0 > dim4), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 5th dimension.");  
 #endif
-  dimensions_.resize(2); 
+  dimensions_.resize(5); 
   dimensions_[0] = dim0;  dim0_ = dim0; 
   dimensions_[1] = dim1;  dim1_ = dim1;
   dimensions_[2] = dim2;  dim2_ = dim2;
@@ -608,47 +608,60 @@ inline void FieldContainer<Scalar>::empty() {
 
 
 template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
+void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
   
-  // Copy upper index bounds and resize container storage to match new upper bounds.
-  dimensions_.assign(newDimensions.begin(),newDimensions.end());  
-  
-  // Copy first 5 dimensions for faster access
-  unsigned int rank = dimensions_.size();
-  switch(rank) {
-    case 1:
-      dim0_ = dimensions_[0]; 
-      break;
-      
-    case 2:
-      dim0_ = dimensions_[0]; 
-      dim1_ = dimensions_[1]; 
-      break;
-      
-    case 3:
-      dim0_ = dimensions_[0]; 
-      dim1_ = dimensions_[1]; 
-      dim2_ = dimensions_[2]; 
-      break;
-      
-    case 4:
-      dim0_ = dimensions_[0]; 
-      dim1_ = dimensions_[1]; 
-      dim2_ = dimensions_[2]; 
-      dim3_ = dimensions_[3]; 
-      break;
-      
-    case 5:
-    default:
-      dim0_ = dimensions_[0]; 
-      dim1_ = dimensions_[1]; 
-      dim2_ = dimensions_[2]; 
-      dim3_ = dimensions_[3]; 
-      dim4_ = dimensions_[4]; 
+  // First handle the trivial case of zero dimensions
+  if( newDimensions.size() == 0) {
+    dimensions_.resize(0);
+    dim0_ = 0;
+    dim1_ = 0;
+    dim2_ = 0;
+    dim3_ = 0;
+    dim4_ = 0;
+    data_.resize(0);
   }
-  
-  // Resize data array
-  data_.resize(this->getSize());
+  else {
+    
+    // Copy upper index bounds and resize container storage to match new upper bounds.
+    dimensions_.assign(newDimensions.begin(),newDimensions.end());  
+    
+    // Copy first 5 dimensions for faster access
+    unsigned int rank = dimensions_.size();
+    switch(rank) {
+      case 1:
+        dim0_ = dimensions_[0]; 
+        break;
+        
+      case 2:
+        dim0_ = dimensions_[0]; 
+        dim1_ = dimensions_[1]; 
+        break;
+        
+      case 3:
+        dim0_ = dimensions_[0]; 
+        dim1_ = dimensions_[1]; 
+        dim2_ = dimensions_[2]; 
+        break;
+        
+      case 4:
+        dim0_ = dimensions_[0]; 
+        dim1_ = dimensions_[1]; 
+        dim2_ = dimensions_[2]; 
+        dim3_ = dimensions_[3]; 
+        break;
+        
+      case 5:
+      default:
+        dim0_ = dimensions_[0]; 
+        dim1_ = dimensions_[1]; 
+        dim2_ = dimensions_[2]; 
+        dim3_ = dimensions_[3]; 
+        dim4_ = dimensions_[4]; 
+    }
+    
+    // Resize data array
+    data_.resize(this->getSize());
+  }
 }
 
 

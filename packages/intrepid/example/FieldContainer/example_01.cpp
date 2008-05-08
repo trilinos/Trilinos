@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
   
   cout << "\n" \
     << "===============================================================================\n"\
-    << "| EXAMPLE 5: making trivial FieldContainers and storing a single zero           |\n"\
+    << "| EXAMPLE 5: making trivial FieldContainers and storing a single zero         |\n"\
     << "===============================================================================\n\n";
   
   // Make trivial container by resetting the index range to zero rank (no indices) and then
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
   int dim3 = 3;       // 1st space dim
   int dim4 = 3;       // 2nd space dim
   
-  FieldContainer<double> myTensorContainer(100,125,125,3,3);
+  FieldContainer<double> myTensorContainer(dim0, dim1, dim2, dim3, dim4);
   multiIndex.resize(myTensorContainer.getRank());
   double aValue;
   
