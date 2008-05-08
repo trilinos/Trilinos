@@ -8082,7 +8082,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/LexContainer/Makefile test/VarContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/LexContainer/Makefile example/VarContainer/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/LexContainer/Makefile test/VarContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/LexContainer/Makefile example/VarContainer/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8757,6 +8757,7 @@ do
     "test/Cubature/Makefile") CONFIG_FILES="$CONFIG_FILES test/Cubature/Makefile" ;;
     "test/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES test/MultiCell/Makefile" ;;
     "test/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES test/RealSpace/Makefile" ;;
+    "test/FieldContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/FieldContainer/Makefile" ;;
     "test/LexContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/LexContainer/Makefile" ;;
     "test/VarContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/VarContainer/Makefile" ;;
     "test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile" ;;
@@ -8765,6 +8766,7 @@ do
     "example/Cubature/Makefile") CONFIG_FILES="$CONFIG_FILES example/Cubature/Makefile" ;;
     "example/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES example/MultiCell/Makefile" ;;
     "example/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES example/RealSpace/Makefile" ;;
+    "example/FieldContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/FieldContainer/Makefile" ;;
     "example/LexContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/LexContainer/Makefile" ;;
     "example/VarContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/VarContainer/Makefile" ;;
 

@@ -355,6 +355,7 @@ AC_CONFIG_FILES([
   test/Cubature/Makefile
   test/MultiCell/Makefile
   test/RealSpace/Makefile
+  test/FieldContainer/Makefile
   test/LexContainer/Makefile
   test/VarContainer/Makefile
   test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile
@@ -363,6 +364,7 @@ AC_CONFIG_FILES([
   example/Cubature/Makefile
   example/MultiCell/Makefile
   example/RealSpace/Makefile
+  example/FieldContainer/Makefile
   example/LexContainer/Makefile
   example/VarContainer/Makefile
 ])

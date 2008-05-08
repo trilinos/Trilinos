@@ -43,6 +43,8 @@ INTREPID_ALL_H = \
   $(srcdir)/Intrepid_ConfigDefs.hpp
 
 INTREPID_COMMON_H = \
+  $(srcdir)/common/Intrepid_FieldContainerDef.hpp \
+  $(srcdir)/common/Intrepid_FieldContainer.hpp \
   $(srcdir)/common/Intrepid_LexContainerDef.hpp \
   $(srcdir)/common/Intrepid_LexContainer.hpp \
   $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
