@@ -41,10 +41,10 @@ namespace Intrepid {
   //                                                                           //
   //===========================================================================//
   
-template<class Scalar>
-const VarContainer<Scalar> & LocalForm0<Scalar>::getOperator(const EOperator  primOp,
-                                                             const int        subDim,
-                                                             const int        subCellId) {
+template<class Scalar, class ArrayType>
+const VarContainer<Scalar> & LocalForm0<Scalar,ArrayType>::getOperator(const EOperator  primOp,
+                                                                       const int        subDim,
+                                                                       const int        subCellId) {
 
   int myCellDim = MultiCell<Scalar>::getCellDim(basisCell_);
   
@@ -90,12 +90,12 @@ const VarContainer<Scalar> & LocalForm0<Scalar>::getOperator(const EOperator  pr
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           transVals,
-                                            const EOperator                  primOp,
-                                            MultiCell<Scalar> &              mCell,
-                                            const bool                       reuseJacobians,
-                                            const EIntegrationDomain         intDomain) {
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &           transVals,
+                                                      const EOperator                  primOp,
+                                                      MultiCell<Scalar> &              mCell,
+                                                      const bool                       reuseJacobians,
+                                                      const EIntegrationDomain         intDomain) {
   // Initializations
   int myCellDim          = mCell.getMyCellDim();
   int numCells           = mCell.getMyNumCells();
@@ -258,13 +258,13 @@ void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           tra
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           transValues,
-                                            const EOperator                  primOp,
-                                            const LocalField<Scalar> &       primOpField,
-                                            MultiCell<Scalar> &              mCell,
-                                            const bool                       reuseJacobians,
-                                            const EIntegrationDomain         intDomain)
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &           transValues,
+                                                      const EOperator                  primOp,
+                                                      const LocalField<Scalar> &       primOpField,
+                                                      MultiCell<Scalar> &              mCell,
+                                                      const bool                       reuseJacobians,
+                                                      const EIntegrationDomain         intDomain)
 {
   
   // This method acts on an auxiliary LocalField: we will use transformBasisValues() from that field!
@@ -308,13 +308,13 @@ void LocalForm0<Scalar>::transformBasisVals(LexContainer<Scalar> &           tra
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         finalVals,
-                                              const LexContainer<Scalar> &   transVals,
-                                              const EOperator                primOp,
-                                              MultiCell<Scalar> &            mCell,
-                                              const bool                     reuseJacobians,
-                                              const EIntegrationDomain       intDomain)
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(LexContainer<Scalar> &         finalVals,
+                                                        const LexContainer<Scalar> &   transVals,
+                                                        const EOperator                primOp,
+                                                        MultiCell<Scalar> &            mCell,
+                                                        const bool                     reuseJacobians,
+                                                        const EIntegrationDomain       intDomain)
 {
   
   // If finalVals is not of the same size as transVals (the input) make it the same size!
@@ -455,10 +455,10 @@ void LocalForm0<Scalar>::applyWeightedMeasure(LexContainer<Scalar> &         fin
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
-                                   const LexContainer<Scalar> &  leftValues,
-                                   const LexContainer<Scalar> &  rightValues) const {
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::integrate(LexContainer<Scalar> &        outputValues,
+                                             const LexContainer<Scalar> &  leftValues,
+                                             const LexContainer<Scalar> &  rightValues) const {
   int opRank = leftValues.getRank();
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION((opRank != rightValues.getRank()),
@@ -612,10 +612,10 @@ void LocalForm0<Scalar>::integrate(LexContainer<Scalar> &        outputValues,
 //===========================================================================//
 
 
-template<class Scalar>
-LocalForm0<Scalar>::LocalForm0(Teuchos::RCP<Basis<Scalar> > basis,
-                               Teuchos::Array<Teuchos::Array<Teuchos::RCP<Cubature<Scalar> > > > cubature,
-                               ECompEngine compEngine) :
+template<class Scalar, class ArrayType>
+LocalForm0<Scalar,ArrayType>::LocalForm0(Teuchos::RCP<Basis<Scalar> > basis,
+                                         Teuchos::Array<Teuchos::Array<Teuchos::RCP<Cubature<Scalar> > > > cubature,
+                                         ECompEngine compEngine) :
 basis_(basis), cubature_(cubature) {
   
   basisCell_        = basis_->getCellType();
@@ -677,44 +677,44 @@ basis_(basis), cubature_(cubature) {
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::getOperator(VarContainer<Scalar> &                  outputValues,
-                                     const Teuchos::Array<Point<Scalar> > &  inputPoints,
-                                     const EOperator                         primOp) {
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(VarContainer<Scalar> &                  outputValues,
+                                               const Teuchos::Array<Point<Scalar> > &  inputPoints,
+                                               const EOperator                         primOp) {
   basis_->getValues(outputValues, inputPoints, primOp);
 }
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::getOperator(VarContainer<Scalar> &                  outputValues,
-                                     const Teuchos::Array<Point<Scalar> > &  inputPoints,
-                                     const EOperator                         primOp,
-                                     const Cell<Scalar> &                    cell) {
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(VarContainer<Scalar> &                  outputValues,
+                                               const Teuchos::Array<Point<Scalar> > &  inputPoints,
+                                               const EOperator                         primOp,
+                                               const Cell<Scalar> &                    cell) {
 }
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &          outputValues,
-                                     const EOperator                 leftOp,
-                                     const EOperator                 rightOp,
-                                     MultiCell<Scalar> &             mCell,
-                                     const Teuchos::Array<Scalar> &  inputData,
-                                     const EDataFormat               inputFormat,
-                                     const bool                      reuseJacobians,
-                                     const EIntegrationDomain        intDomain) {
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &          outputValues,
+                                               const EOperator                 leftOp,
+                                               const EOperator                 rightOp,
+                                               MultiCell<Scalar> &             mCell,
+                                               const Teuchos::Array<Scalar> &  inputData,
+                                               const EDataFormat               inputFormat,
+                                               const bool                      reuseJacobians,
+                                               const EIntegrationDomain        intDomain) {
 }
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &      outputValues,
-                                     const EOperator             leftOp,
-                                     const EOperator             rightOp,
-                                     MultiCell <Scalar> &        mCell,
-                                     const bool                  reuseJacobians,
-                                     const EIntegrationDomain    intDomain)
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                 outputValues,
+                                               const EOperator             leftOp,
+                                               const EOperator             rightOp,
+                                               MultiCell <Scalar> &        mCell,
+                                               const bool                  reuseJacobians,
+                                               const EIntegrationDomain    intDomain)
 {
   LexContainer<Scalar> leftValues;
   LexContainer<Scalar> rightValues;
@@ -753,28 +753,28 @@ void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &      outputValues,
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &           outputValues,
-                                     const EOperator                  leftOp,
-                                     const EOperator                  rightOp,
-                                     const LocalField<Scalar> &       rightOpField,
-                                     MultiCell<Scalar> &              mCell,
-                                     const Teuchos::Array<Scalar> &   inputData,
-                                     const EDataFormat                inputFormat,
-                                     const bool                       reuseJacobians,
-                                     const EIntegrationDomain         intDomain) {
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &           outputValues,
+                                               const EOperator                  leftOp,
+                                               const EOperator                  rightOp,
+                                               const LocalField<Scalar> &       rightOpField,
+                                               MultiCell<Scalar> &              mCell,
+                                               const Teuchos::Array<Scalar> &   inputData,
+                                               const EDataFormat                inputFormat,
+                                               const bool                       reuseJacobians,
+                                               const EIntegrationDomain         intDomain) {
 }
 
 
 
-template<class Scalar>
-void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &           outputValues,
-                                     const EOperator                  leftOp,
-                                     const EOperator                  rightOp,
-                                     const LocalField<Scalar> &       rightOpField,
-                                     MultiCell<Scalar> &              mCell,
-                                     const bool                       reuseJacobians,
-                                     const EIntegrationDomain         intDomain) 
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &           outputValues,
+                                               const EOperator                  leftOp,
+                                               const EOperator                  rightOp,
+                                               const LocalField<Scalar> &       rightOpField,
+                                               MultiCell<Scalar> &              mCell,
+                                               const bool                       reuseJacobians,
+                                               const EIntegrationDomain         intDomain) 
 {
 #ifdef HAVE_INTREPID_DEBUG
   // The native LocalForm0 and the rightOpFieldLocalField must be instantiated on the same cell type
@@ -817,9 +817,9 @@ void LocalForm0<Scalar>::getOperator(LexContainer<Scalar> &           outputValu
 
 
 
-template<class Scalar>
-int    LocalForm0<Scalar>::getNumCubPoints(const int subcellDim,
-                                           const int subcellId) const 
+template<class Scalar, class ArrayType>
+int    LocalForm0<Scalar,ArrayType>::getNumCubPoints(const int subcellDim,
+                                                     const int subcellId) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
   // Subcell dimension has to be at least 1 (no cubature sets are on nodes) and <= the cell dim

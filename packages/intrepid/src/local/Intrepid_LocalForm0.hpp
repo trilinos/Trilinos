@@ -52,7 +52,7 @@ namespace Intrepid {
     The local field interface relies on two member functions, <var>getOperator</var>
     and <var>getFunctional</var>, with varying signatures. Detailed info here ...
 */
-template<class Scalar>
+template<class Scalar, class ArrayType = LexContainer<Scalar> >
 class LocalForm0 : public LocalField<Scalar> {
   private:
 
@@ -365,7 +365,7 @@ Legend:
                    const EIntegrationDomain        intDomain = INTEGRATION_DOMAIN_CELL);
   
   
-  void getOperator(LexContainer<Scalar> &      outputValues,
+  void getOperator(ArrayType &                 outputValues,
                    const EOperator             leftOp,
                    const EOperator             rightOp,
                    MultiCell <Scalar> &        mCell,

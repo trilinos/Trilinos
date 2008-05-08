@@ -51,7 +51,7 @@ namespace Intrepid {
     The local field interface relies on two member functions, <var>getOperator</var>
     and <var>getFunctional</var>, with varying signatures. Detailed info here ...
 */
-template<class Scalar>
+template<class Scalar, class ArrayType = LexContainer<Scalar> >
 class LocalField {
   private:
     
@@ -173,7 +173,7 @@ class LocalField {
       \param reuseJacobians   [in]     - Forces reuse of Jacobian and subcell measure values at cub. pts.
       \param intDomain        [in]     - Integration domain (line, surface, cell).
   */
-  virtual void getOperator(LexContainer<Scalar> &      outputValues,
+  virtual void getOperator(ArrayType &                 outputValues,
                            const EOperator             leftOp,
                            const EOperator             rightOp,
                            MultiCell <Scalar> &        mCell,
