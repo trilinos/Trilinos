@@ -182,6 +182,6 @@ LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
 ##############################################################################
 # Configure <PACKAGE>Config.cmake for the build tree.
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake @ONLY)
+               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
 ##############################################################################
 
