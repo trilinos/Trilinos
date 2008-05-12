@@ -31,9 +31,9 @@
 #include "Teuchos_TestForException.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
 
-template <typename BasisT> 
-Stokhos::OrthogPolyExpansion<BasisT>::
-OrthogPolyExpansion(const Teuchos::RCP<BasisT>& basis) :
+template <typename T> 
+Stokhos::OrthogPolyExpansion<T>::
+OrthogPolyExpansion(const Teuchos::RCP< Stokhos::OrthogPolyBasis<T> >& basis) :
   sz(basis->size()),
   A(2*sz,2*sz),
   B(2*sz,2),
@@ -47,11 +47,11 @@ extern "C" {
   double dlange_(char*, int*, int*, double*, int*, double*);
 }
 
-template <typename BasisT>
-typename Stokhos::OrthogPolyExpansion<BasisT>::ordinal_type
-Stokhos::OrthogPolyExpansion<BasisT>::
-solve(typename Stokhos::OrthogPolyExpansion<BasisT>::ordinal_type s,
-      typename Stokhos::OrthogPolyExpansion<BasisT>::ordinal_type nrhs)
+template <typename T>
+typename Stokhos::OrthogPolyExpansion<T>::ordinal_type
+Stokhos::OrthogPolyExpansion<T>::
+solve(typename Stokhos::OrthogPolyExpansion<T>::ordinal_type s,
+      typename Stokhos::OrthogPolyExpansion<T>::ordinal_type nrhs)
 {
   ordinal_type info;
 //   lapack.GESV(s, nrhs, A.values(), A.numRows(), &(piv[0]), b.values(), 
@@ -72,11 +72,11 @@ solve(typename Stokhos::OrthogPolyExpansion<BasisT>::ordinal_type s,
   return info;
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-unaryMinus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-	   const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+unaryMinus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+	   const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   value_type* cc = c.coeff();
   const value_type* ca = a.coeff();
@@ -86,26 +86,26 @@ unaryMinus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<Basis
     cc[i] = -ca[i];
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-plusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& val)
+Stokhos::OrthogPolyExpansion<T>::
+plusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<T>::value_type& val)
 {
   c[0] += val;
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-minusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& val)
+Stokhos::OrthogPolyExpansion<T>::
+minusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<T>::value_type& val)
 {
   c[0] -= val;
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-timesEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& val)
+Stokhos::OrthogPolyExpansion<T>::
+timesEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<T>::value_type& val)
 {
   unsigned int pc = c.size();
   value_type* cc = c.coeff();
@@ -113,10 +113,10 @@ timesEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<Basis
     cc[i] *= val;
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-divideEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& val)
+Stokhos::OrthogPolyExpansion<T>::
+divideEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, const typename Stokhos::OrthogPolyExpansion<T>::value_type& val)
 {
   unsigned int pc = c.size();
   value_type* cc = c.coeff();
@@ -124,11 +124,11 @@ divideEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<Basi
     cc[i] /= val;
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-plusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-	  const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& x)
+Stokhos::OrthogPolyExpansion<T>::
+plusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+	  const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& x)
 {
   unsigned int p = c.size();
   unsigned int xp = x.size();
@@ -145,11 +145,11 @@ plusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT
       cc[i] = xc[i];
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-minusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-	   const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& x)
+Stokhos::OrthogPolyExpansion<T>::
+minusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+	   const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& x)
 {
   unsigned int p = c.size();
   unsigned int xp = x.size();
@@ -166,11 +166,11 @@ minusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<Basis
       cc[i] = -xc[i];
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-timesEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-	   const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& x)
+Stokhos::OrthogPolyExpansion<T>::
+timesEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+	   const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& x)
 {
 #ifdef STOKHOS_DEBUG
   const char* func = "Stokhos::OrthogPolyExpansion::timesEqual()";
@@ -216,11 +216,11 @@ timesEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<Basis
   }
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-divideEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-	    const OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& x)
+Stokhos::OrthogPolyExpansion<T>::
+divideEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+	    const OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& x)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::divideEquals()";
 
@@ -282,12 +282,12 @@ divideEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<Basi
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
 #ifdef STOKHOS_DEBUG
   const char* func = "Stokhos::OrthogPolyExpansion::plus()";
@@ -323,12 +323,12 @@ plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   unsigned int pc = b.size();
   if (pc != c.size())
@@ -342,12 +342,12 @@ plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
     cc[i] = cb[i];
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-     const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+     const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   unsigned int pc = a.size();
   if (pc != c.size())
@@ -361,12 +361,12 @@ plus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
     cc[i] = ca[i];
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
 #ifdef STOKHOS_DEBUG
   const char* func = "Stokhos::OrthogPolyExpansion::minus()";
@@ -402,12 +402,12 @@ minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   unsigned int pc = b.size();
   if (pc != c.size())
@@ -421,11 +421,11 @@ minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
     cc[i] = -cb[i];
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   unsigned int pc = a.size();
   if (pc != c.size())
@@ -441,12 +441,12 @@ minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
   return c;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
 #ifdef STOKHOS_DEBUG
   const char* func = "Stokhos::OrthogPolyExpansion::times()";
@@ -495,12 +495,12 @@ times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   unsigned int pc = b.size();
   if (pc != c.size())
@@ -513,12 +513,12 @@ times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
     cc[i] = a*cb[i];
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-      const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+      const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   unsigned int pc = a.size();
   if (pc != c.size())
@@ -533,12 +533,12 @@ times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
   return c;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::divide()";
 
@@ -605,12 +605,12 @@ divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-       const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+       const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::divide()";
 
@@ -663,12 +663,12 @@ divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::
     cc[0] = a / cb[0];
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-       const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+       const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   unsigned int pc = a.size();
   if (pc != c.size())
@@ -681,11 +681,11 @@ divide(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::
     cc[i] = ca[i]/b;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-exp(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+exp(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::exp()";
 
@@ -743,11 +743,11 @@ exp(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     cc[i] = B(i-1,0) * cc[0];
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-log(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+log(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
    const char* func = "Stokhos::OrthogPolyExpansion::log()";
 
@@ -803,68 +803,68 @@ log(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     cc[i] = B(i-1,0);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-log10(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+log10(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   log(c,a);
   divide(c,a,std::log(10.0));
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-sqrt(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+sqrt(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   log(c,a);
   timesEqual(c,value_type(0.5));
   exp(c,c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-pow(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a,
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+pow(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a,
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   log(c,a);
   timesEqual(c,b);
   exp(c,c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-pow(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+pow(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   times(c,std::log(a),b);
   exp(c,c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-pow(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-    const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+pow(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+    const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   log(c,a);
   timesEqual(c,b);
   exp(c,c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-sincos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& s, 
-       Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+sincos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& s, 
+       Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::sincos()";
   unsigned int pc = a.size();
@@ -961,31 +961,31 @@ sincos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-sin(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& s, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+sin(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& s, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   OrthogPolyApprox<value_type> c(s);
   sincos(s, c, a);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-cos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+cos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   OrthogPolyApprox<value_type> s(c);
   sincos(s, c, a);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-tan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& t, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+tan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& t, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   OrthogPolyApprox<value_type> c(t);
   
@@ -993,12 +993,12 @@ tan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
   divideEqual(t,c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-sinhcosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& s, 
-	 Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-	 const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+sinhcosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& s, 
+	 Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+	 const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::sinhcosh()";
   unsigned int pc = a.size();
@@ -1093,31 +1093,31 @@ sinhcosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>
   }
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-sinh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& s, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+sinh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& s, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   OrthogPolyApprox<value_type> c(s);
   sinhcosh(s, c, a);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-cosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+cosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   OrthogPolyApprox<value_type> s(c);
   sinhcosh(s, c, a);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-tanh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& t, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+tanh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& t, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   OrthogPolyApprox<value_type> c(t);
   
@@ -1125,14 +1125,14 @@ tanh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
   divideEqual(t,c);
 }
 
-template <typename BasisT>
+template <typename T>
 template <typename OpT>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
+Stokhos::OrthogPolyExpansion<T>::
 quad(const OpT& quad_func,
-     Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a,
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+     Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a,
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   const char* func = "Stokhos::OrthogPolyExpansion::quad()";
   unsigned int pc = a.size();
@@ -1188,11 +1188,11 @@ quad(const OpT& quad_func,
     cc[i] = B(i-1,0);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-acos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+acos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   times(c,a,a);
   minus(c,value_type(1.0),c);
@@ -1201,11 +1201,11 @@ acos(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
   quad(acos_quad_func(), c, a, c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-asin(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+asin(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   times(c,a,a);
   minus(c,value_type(1.0),c);
@@ -1213,18 +1213,18 @@ asin(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
   quad(asin_quad_func(), c, a, c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-atan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+atan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   times(c,a,a);
   plusEqual(c,value_type(1.0));
   quad(atan_quad_func(), c, a, c);
 }
 
-// template <typename BasisT>
+// template <typename T>
 // Hermite<value_type>
 // atan2(const Hermite<value_type>& a,
 //       const Hermite<value_type>& b)
@@ -1233,7 +1233,7 @@ atan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
 //   c.fastAccessCoeff(0) = atan2(a.coeff(0),b.coeff(0));
 // }
 
-// template <typename BasisT>
+// template <typename T>
 // Hermite<value_type>
 // atan2(const T& a,
 //       const Hermite<value_type>& b)
@@ -1242,7 +1242,7 @@ atan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
 //   c.fastAccessCoeff(0) = atan2(a,b.coeff(0));
 // }
 
-// template <typename BasisT>
+// template <typename T>
 // Hermite<value_type>
 // atan2(const Hermite<value_type>& a,
 //       const T& b)
@@ -1251,11 +1251,11 @@ atan(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
 //   c.fastAccessCoeff(0) = atan2(a.coeff(0),b);
 // }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-acosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+acosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   times(c,a,a);
   minusEqual(c,value_type(1.0));
@@ -1263,11 +1263,11 @@ acosh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
   quad(acosh_quad_func(), c, a, c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-asinh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+asinh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   times(c,a,a);
   plusEqual(c,value_type(1.0));
@@ -1275,22 +1275,22 @@ asinh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::v
   quad(asinh_quad_func(), c, a, c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-atanh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+atanh(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+      const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   times(c,a,a);
   minus(c,value_type(1.0),c);
   quad(atanh_quad_func(), c, a, c);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-fabs(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+fabs(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   if (a[0] >= 0)
     c = a;
@@ -1298,11 +1298,11 @@ fabs(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::va
     unaryMinus(c,a);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-abs(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a)
+Stokhos::OrthogPolyExpansion<T>::
+abs(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   if (a[0] >= 0)
     c = a;
@@ -1310,12 +1310,12 @@ abs(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     unaryMinus(c,a);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a,
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a,
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   if (a[0] >= b[0])
     c = a;
@@ -1323,12 +1323,12 @@ max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     c = b;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   if (a >= b[0])
     c = OrthogPolyApprox<value_type>(b.size(), a);
@@ -1336,12 +1336,12 @@ max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     c = b;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-    const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+    const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   if (a[0] >= b)
     c = a;
@@ -1349,12 +1349,12 @@ max(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     c = OrthogPolyApprox<value_type>(a.size(), b);
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a,
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a,
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   if (a[0] <= b[0])
     return c = a;
@@ -1362,12 +1362,12 @@ min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     return c = b;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& a, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& b)
+Stokhos::OrthogPolyExpansion<T>::
+min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const typename Stokhos::OrthogPolyExpansion<T>::value_type& a, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& b)
 {
   if (a <= b[0])
     c = OrthogPolyApprox<value_type>(b.size(), a);
@@ -1375,12 +1375,12 @@ min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::val
     c = b;
 }
 
-template <typename BasisT>
+template <typename T>
 void
-Stokhos::OrthogPolyExpansion<BasisT>::
-min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& c, 
-    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<BasisT>::value_type >& a, 
-    const typename Stokhos::OrthogPolyExpansion<BasisT>::value_type& b)
+Stokhos::OrthogPolyExpansion<T>::
+min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a, 
+    const typename Stokhos::OrthogPolyExpansion<T>::value_type& b)
 {
   if (a[0] <= b)
     c = a;

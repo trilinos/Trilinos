@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     const unsigned int d = 7;
     Teuchos::RCP<basis_type> basis = 
       Teuchos::rcp(new basis_type(d));
-    Stokhos::OrthogPolyExpansion<basis_type> he(basis);
+    Stokhos::OrthogPolyExpansion<double> he(basis);
     Stokhos::OrthogPolyApprox<double> u(d+1),v(d+1),w(d+1);
     u[0] = 1.0;
     u[1] = 0.4;

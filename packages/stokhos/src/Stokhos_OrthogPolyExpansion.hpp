@@ -41,29 +41,27 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include "Stokhos_OrthogPolyApprox.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_TripleProduct.hpp"
 
 namespace Stokhos {
 
   //! Functions for Hermite polynomial chaos expansions
-  template <typename BasisT> 
+  template <typename T> 
   class OrthogPolyExpansion {
   public:
     
     //! Typename of values
-    typedef typename BasisT::value_type value_type;
-
-    //! Typename of basis
-    typedef BasisT basis_type;
+    typedef T value_type;
 
     //! Constructor
-    OrthogPolyExpansion(const Teuchos::RCP<BasisT>& basis);
+    OrthogPolyExpansion(const Teuchos::RCP< OrthogPolyBasis<T> >& basis);
 
     //! Get expansion size
     unsigned int size() const { return sz; }
 
     //! Get basis
-    const basis_type& getBasis() const {return Cijk.getBasis(); }
+    const OrthogPolyBasis<T>& getBasis() const {return Cijk.getBasis(); }
  
     // Operations
     void unaryMinus(OrthogPolyApprox<value_type>& c, 
@@ -220,7 +218,7 @@ namespace Stokhos {
     typedef Teuchos::SerialDenseMatrix<ordinal_type,value_type> matrix_type;
 
     //! Typename of TripleProduct tensor
-    typedef TripleProduct<BasisT> tp_type;
+    typedef TripleProduct< OrthogPolyBasis<T> > tp_type;
 
     //! Workspace size
     unsigned int sz;
