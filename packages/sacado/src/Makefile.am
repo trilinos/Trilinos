@@ -164,9 +164,9 @@ endif
 if ENABLE_SACADO_STOKHOS
 
 SACADO_SG_H = \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermite.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteTraits.hpp
+	$(srcdir)/pce/Sacado_PCE_OrthogPoly.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPolyImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPolyTraits.hpp
 
 endif
 

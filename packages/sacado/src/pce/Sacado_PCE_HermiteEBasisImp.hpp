@@ -154,7 +154,7 @@ Sacado::PCE::StandardPoly<T>
 Sacado::PCE::HermiteEBasis<T>::
 toStandardBasis(const T coeffs[], unsigned int n) const
 {
-   unsigned int dp = d;
+  unsigned int dp = d;
   if (n < d+1)
     dp = n-1;
   StandardPoly<T> p(dp);

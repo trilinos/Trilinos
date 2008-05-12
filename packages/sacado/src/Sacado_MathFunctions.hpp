@@ -65,9 +65,9 @@ namespace Sacado {							\
     template <typename T> class Hermite;				\
     template <typename T> Hermite<T> OP (const Hermite<T>&);		\
 									\
-    template <typename T> class UnivariateHermite;			\
+    template <typename T> class OrthogPoly;				\
     template <typename T>						\
-    UnivariateHermite<T> OP (const UnivariateHermite<T>&);		\
+    OrthogPoly<T> OP (const OrthogPoly<T>&);				\
   }									\
 									\
   namespace FlopCounterPack {						\
@@ -188,16 +188,16 @@ namespace Sacado {							\
     template <typename T> Hermite<T> OP (const Hermite<T>&,		\
 					 const T&);			\
     									\
-    template <typename T> class UnivariateHermite;			\
+    template <typename T> class OrthogPoly;				\
     template <typename T>						\
-    UnivariateHermite<T> OP (const UnivariateHermite<T>&,		\
-			     const UnivariateHermite<T>&);		\
+    OrthogPoly<T> OP (const OrthogPoly<T>&,				\
+		      const OrthogPoly<T>&);				\
     template <typename T>						\
-    UnivariateHermite<T> OP (const T&,					\
-			     const UnivariateHermite<T>&);		\
+    OrthogPoly<T> OP (const T&,						\
+		      const OrthogPoly<T>&);				\
     template <typename T>						\
-    UnivariateHermite<T> OP (const UnivariateHermite<T>&,		\
-			     const T&);					\
+    OrthogPoly<T> OP (const OrthogPoly<T>&,				\
+		      const T&);					\
   }									\
 									\
   namespace FlopCounterPack {						\

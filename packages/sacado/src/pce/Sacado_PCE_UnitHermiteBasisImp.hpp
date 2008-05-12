@@ -163,11 +163,15 @@ project(const Sacado::PCE::StandardPoly<T>& p, std::vector<T>& coeffs) const
 template <typename T>
 Sacado::PCE::StandardPoly<T>
 Sacado::PCE::UnitHermiteBasis<T>::
-toStandardBasis(const T coeffs[]) const
+toStandardBasis(const T coeffs[], unsigned int n) const
 {
-  StandardPoly<T> p(d);
+  unsigned int dp = d;
+  if (n < d+1)
+    dp = n-1;
 
-  for (unsigned int i=0; i<=d; i++)
+  StandardPoly<T> p(dp);
+
+  for (unsigned int i=0; i<=dp; i++)
     p.add(coeffs[i], basis[i], 1.0);
 
   return p;

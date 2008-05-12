@@ -198,9 +198,9 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/pce/Sacado_PCE_Hermite.hpp \
 	$(srcdir)/pce/Sacado_PCE_HermiteImp.hpp \
 	$(srcdir)/pce/Sacado_PCE_HermiteTraits.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermite.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteTraits.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPoly.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPolyImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPolyTraits.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
@@ -334,9 +334,9 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/pce/Sacado_PCE_Hermite.hpp \
 	$(srcdir)/pce/Sacado_PCE_HermiteImp.hpp \
 	$(srcdir)/pce/Sacado_PCE_HermiteTraits.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermite.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteTraits.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPoly.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPolyImp.hpp \
+	$(srcdir)/pce/Sacado_PCE_OrthogPolyTraits.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
@@ -596,9 +596,9 @@ SACADO_UTIL_H = \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
 
 @ENABLE_SACADO_STOKHOS_TRUE@SACADO_SG_H = \
-@ENABLE_SACADO_STOKHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_UnivariateHermite.hpp \
-@ENABLE_SACADO_STOKHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteImp.hpp \
-@ENABLE_SACADO_STOKHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_UnivariateHermiteTraits.hpp
+@ENABLE_SACADO_STOKHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_OrthogPoly.hpp \
+@ENABLE_SACADO_STOKHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_OrthogPolyImp.hpp \
+@ENABLE_SACADO_STOKHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_OrthogPolyTraits.hpp
 
 SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \

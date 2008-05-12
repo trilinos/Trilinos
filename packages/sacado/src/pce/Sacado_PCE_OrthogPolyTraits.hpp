@@ -29,15 +29,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_PCE_UNIVARIATEHERMITETRAITS_HPP
-#define SACADO_PCE_UNIVARIATEHERMITETRAITS_HPP
+#ifndef SACADO_PCE_ORTHOGPOLYTRAITS_HPP
+#define SACADO_PCE_ORTHOGPOLYTRAITS_HPP
 
 #include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
   namespace PCE {
-    template <typename T> class UnivariateHermite;
+    template <typename T> class OrthogPoly;
   }
 }
 
@@ -45,71 +45,71 @@ namespace Sacado {
 
   //! Specialization of %Promote to Taylor types
   template <typename T>
-  class Promote< PCE::UnivariateHermite<T>, PCE::UnivariateHermite<T> > {
+  class Promote< PCE::OrthogPoly<T>, PCE::OrthogPoly<T> > {
   public:
 
-    typedef PCE::UnivariateHermite<T> type;
+    typedef PCE::OrthogPoly<T> type;
   };
 
-  //! Specialization of %Promote to UnivariateHermite types
+  //! Specialization of %Promote to OrthogPoly types
   template <typename L, typename R>
-  class Promote< PCE::UnivariateHermite<L>, R > {
+  class Promote< PCE::OrthogPoly<L>, R > {
   public:
 
-    typedef typename ValueType< PCE::UnivariateHermite<L> >::type value_type_l;
+    typedef typename ValueType< PCE::OrthogPoly<L> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef PCE::UnivariateHermite<value_type> type;
+    typedef PCE::OrthogPoly<value_type> type;
   };
 
-  //! Specialization of %Promote to UnivariateHermite types
+  //! Specialization of %Promote to OrthogPoly types
   template <typename L, typename R>
-  class Promote< L, PCE::UnivariateHermite<R> > {
+  class Promote< L, PCE::OrthogPoly<R> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< PCE::UnivariateHermite<R> >::type value_type_r;
+    typedef typename ValueType< PCE::OrthogPoly<R> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef PCE::UnivariateHermite<value_type> type;
+    typedef PCE::OrthogPoly<value_type> type;
   };
 
-  //! Specialization of %ScalarType to UnivariateHermite types
+  //! Specialization of %ScalarType to OrthogPoly types
   template <typename T>
-  struct ScalarType< PCE::UnivariateHermite<T> > {
-    typedef T type;
+  struct ScalarType< PCE::OrthogPoly<T> > {
+    typedef typename PCE::OrthogPoly<T>::value_type type;
   };
 
-  //! Specialization of %ValueType to UnivariateHermite types
+  //! Specialization of %ValueType to OrthogPoly types
   template <typename T>
-  struct ValueType< PCE::UnivariateHermite<T> > {
-    typedef T type;
+  struct ValueType< PCE::OrthogPoly<T> > {
+    typedef typename PCE::OrthogPoly<T>::value_type type;
   };
 
-   //! Specialization of %ScalarValueType to UnivariateHermite types
+   //! Specialization of %ScalarValueType to OrthogPoly types
   template <typename T>
-  struct ScalarValueType< PCE::UnivariateHermite<T> > {
-    typedef typename ScalarValueType< T >::type type;
+  struct ScalarValueType< PCE::OrthogPoly<T> > {
+    typedef typename ScalarValueType<typename PCE::OrthogPoly<T>::value_type>::type type;
   };
 
-  //! Specialization of %IsADType to UnivariateHermite types
+  //! Specialization of %IsADType to OrthogPoly types
   template <typename T>
-  struct IsADType< PCE::UnivariateHermite<T> > {
+  struct IsADType< PCE::OrthogPoly<T> > {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to UnivariateHermite types
+  //! Specialization of %IsADType to OrthogPoly types
   template <typename T>
-  struct IsScalarType< PCE::UnivariateHermite<T> > {
+  struct IsScalarType< PCE::OrthogPoly<T> > {
     static const bool value = false;
   };
 
-  //! Specialization of %Value to UnivariateHermite types
+  //! Specialization of %Value to OrthogPoly types
   template <typename T>
-  struct Value< PCE::UnivariateHermite<T> > {
-    typedef typename ValueType< PCE::UnivariateHermite<T> >::type value_type;
-    static const value_type& eval(const PCE::UnivariateHermite<T>& x) { 
+  struct Value< PCE::OrthogPoly<T> > {
+    typedef typename ValueType< PCE::OrthogPoly<T> >::type value_type;
+    static const value_type& eval(const PCE::OrthogPoly<T>& x) { 
       return x.val(); }
   };
 

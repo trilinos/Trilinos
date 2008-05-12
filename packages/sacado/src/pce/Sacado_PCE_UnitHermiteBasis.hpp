@@ -72,7 +72,8 @@ namespace Sacado {
       void project(const StandardPoly<T>& poly, std::vector<T>& coeffs) const;
 
       //! Write polynomial in standard basis
-      StandardPoly<T> toStandardBasis(const T coeffs[]) const;
+      StandardPoly<T> toStandardBasis(const T coeffs[], 
+				      unsigned int n) const;
 
       //! Get basis polynomial
       const StandardPoly<T>& getBasisPoly(unsigned int i) const;
