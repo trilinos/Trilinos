@@ -66,9 +66,6 @@ int Zoltan_HSFC(
  int           **export_to_parts    /* partition assignments for export */
 )
    {
-   MPI_Op mpi_op;
-   MPI_User_function  Zoltan_HSFC_mpi_sum_max_min; /* simultaneous SUM,MAX,MIN */
-
    /* malloc'd arrays that need to be freed before completion */
    Dots      *dots            = NULL;
    ZOLTAN_ID_PTR  gids        = NULL;
@@ -105,7 +102,7 @@ int Zoltan_HSFC(
    Partition *p = NULL;
    int        loop;
    double     actual, desired, correction;
-   double     temp, in[9], out[9];
+   double     temp, in[6], out[6];
    int        err;
    int        final_output;
    int        param;
@@ -129,8 +126,6 @@ int Zoltan_HSFC(
    ddummy = 0.0;
    Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc);
-
-   MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
 
    if (sizeof (int) != 4)
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "HSFC tested only for 32 bit integers");
@@ -236,27 +231,26 @@ int Zoltan_HSFC(
       }
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
-   for (i =  0;              i <   dim; i++) 
-      out[i] = in[i] =  0.0;
-   for (i =   dim; i < 2*dim; i++) 
+   for (i = 0; i < dim; i++) 
       out[i] = in[i] = -HUGE_VAL;
-   for (i = 2*dim; i < 3*dim; i++) 
+   for (i = dim; i < 2*dim; i++) 
       out[i] = in[i] =  HUGE_VAL;
    for (i = 0; i < ndots; i++)
      for (j = 0; j < dim; j++) {
        /* get maximum and minimum bound box coordinates: */
-       if(dots[i].x[j]>in[j+  dim]) in[j+  dim]=dots[i].x[j];
-       if(dots[i].x[j]<in[j+2*dim]) in[j+2*dim]=dots[i].x[j];
+       if(dots[i].x[j]>in[j]) in[j]=dots[i].x[j];
+       if(dots[i].x[j]<in[j+dim]) in[j+dim]=dots[i].x[j];
        }
-   err = MPI_Allreduce(in,out,3*dim,MPI_DOUBLE,mpi_op,zz->Communicator);
+   err = MPI_Allreduce(in,out,dim,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+   err = MPI_Allreduce(in+dim,out+dim,dim,MPI_DOUBLE,MPI_MIN,zz->Communicator);
    if (err != MPI_SUCCESS)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Bounding box MPI_Allreduce error");
 
    /* Enlarge bounding box to make points on faces become interior (Andy) */
    for (i = 0; i < dim; i++) {
-      temp = (out[i+dim] - out[i+2*dim]) * HSFC_EPSILON;
-      d->bbox_hi[i] = out[i+  dim] + temp;
-      d->bbox_lo[i] = out[i+2*dim] - temp;
+      temp = (out[i] - out[i+dim]) * HSFC_EPSILON;
+      d->bbox_hi[i] = out[i] + temp;
+      d->bbox_lo[i] = out[i+dim] - temp;
       d->bbox_extent[i] = d->bbox_hi[i] - d->bbox_lo[i];
       if (d->bbox_extent[i] == 0.0)
           d->bbox_extent[i]  = 1.0; /* degenerate axis, avoid divide by zero */
@@ -315,8 +309,12 @@ int Zoltan_HSFC(
          if (dots[i].fsfc < temp_weight[p->index + 2 * pcount])
             temp_weight [p->index + pcount * 2] = dots[i].fsfc;/*local indx min*/
          }
-      err = MPI_Allreduce(temp_weight, grand_weight, 3 * pcount, MPI_DOUBLE,
-       mpi_op, zz->Communicator);
+      err = MPI_Allreduce(temp_weight, grand_weight, pcount,
+                          MPI_DOUBLE, MPI_SUM, zz->Communicator);
+      err = MPI_Allreduce(temp_weight+pcount, grand_weight+pcount, pcount,
+                          MPI_DOUBLE, MPI_MAX, zz->Communicator);
+      err = MPI_Allreduce(temp_weight+2*pcount, grand_weight+2*pcount, pcount,
+                          MPI_DOUBLE, MPI_MIN, zz->Communicator);
       if (err != MPI_SUCCESS)
          ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "MPI_Allreduce returned error");
       ZOLTAN_TRACE_DETAIL (zz, yo, "Complete main loop MPI_Allreduce");
@@ -639,7 +637,6 @@ EndReporting:
       ZOLTAN_PRINT_WARN (zz->Proc, yo, "HSFC: Imbalance exceeds user limit");
 
 End:
-   MPI_Op_free (&mpi_op);
 
    Zoltan_Multifree (__FILE__, __LINE__, 12, &dots, &gids, &lids, &partition,
     &grand_partition, &grand_weight, &temp_weight, &weights, &target, &delta,
@@ -766,25 +763,7 @@ int Zoltan_HSFC_Set_Param (char *name, char *val)
    }
 
 
-
-/* allows SUM, MAX, MIN on single array in one MPI_Allreduce call */
-void  Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len,
- MPI_Datatype *datatype)
-   {
-   int i, count = *len/3;
-
-   for (i = 0; i < count; i++)                        /* SUM */
-      ((double*) inout)[i] += ((double*) in)[i];
-
-   for (i = count; i < 2 * count; i++)                /* MAX */
-      if (((double*) inout)[i] < ((double*) in)[i])
-          ((double*) inout)[i] = ((double*) in)[i];
-
-   for (i = 2 * count; i < 3 * count; i++)            /* MIN */
-      if (((double*) inout)[i] > ((double*) in)[i])
-          ((double*) inout)[i] = ((double*) in)[i];
-   }
-
+/****************************************************************************/
 static int partition_stats(ZZ *zz, int ndots, 
                    Dots *dots, int *obj_sizes,
                    float *work_fraction, int *parts, int *new_parts)
