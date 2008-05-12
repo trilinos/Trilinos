@@ -119,7 +119,7 @@ operator=(const typename OrthogPoly<T>::value_type& val)
 {
   th.makeOwnCopy();
 
-  if (th->length() < 1) {
+  if (th->size() < 1) {
     th->resize(1);
   }
 
@@ -202,7 +202,7 @@ OrthogPoly<T>::
 operator+=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
-  expansion->plusEqual(*th, x);
+  expansion->plusEqual(*th, *x.th);
   return *this;
 }
 
@@ -212,7 +212,7 @@ OrthogPoly<T>::
 operator-=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
-  expansion->minusEqual(*th, x);
+  expansion->minusEqual(*th, *x.th);
   return *this;
 }
 
@@ -222,7 +222,7 @@ OrthogPoly<T>::
 operator*=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
-  expansion->timesEqual(*th, x);
+  expansion->timesEqual(*th, *x.th);
   return *this;
 }
 
@@ -232,7 +232,7 @@ OrthogPoly<T>::
 operator/=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
-  expansion->divideEqual(*th, x);
+  expansion->divideEqual(*th, *x.th);
   return *this;
 }
 
