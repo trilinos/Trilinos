@@ -137,7 +137,7 @@ plusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::va
     c.resize(xp);
 
   value_type* cc = c.coeff();
-  value_type* xc = x.coeff();
+  const value_type* xc = x.coeff();
   for (unsigned int i=0; i<pmin; i++)
     cc[i] += xc[i];
   if (p < xp)
@@ -158,7 +158,7 @@ minusEqual(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::v
     c.resize(xp);
 
   value_type* cc = c.coeff();
-  value_type* xc = x.coeff();
+  const value_type* xc = x.coeff();
   for (unsigned int i=0; i<pmin; i++)
     cc[i] -= xc[i];
   if (p < xp)
@@ -529,8 +529,6 @@ times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_
 
   for (unsigned int i=0; i<pc; i++)
     cc[i] = ca[i]*b;
-
-  return c;
 }
 
 template <typename T>
