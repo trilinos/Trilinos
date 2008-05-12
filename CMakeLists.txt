@@ -1,14 +1,29 @@
+# $Id$
+
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
 PROJECT(Trilinos)
-SET(TRILINOS_VERSION "9.0d")
+SET(${PROJECT_NAME}_VERSION "9.0d")
+
+SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include directories")
+SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
+SET(${PROJECT_NAME}_LIBRARIES "" CACHE INTERNAL "${PROJECT_NAME} libraries")
 
 SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Setup paqckages to include ...
+SET(${PROJECT_NAME}_PACKAGES
+ Epetra
+ Teuchos
+ Anasazi
+ RBGen
+)
+
 # Setup user options ...
+FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+  OPTION(${PROJECT_NAME}_ENABLE_${PACKAGE} "Build the ${PACKAGE} package." ON)
+ENDFOREACH(PACKAGE ${PROJECT_NAME}_PACKAGES)
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
-OPTION(TRILINOS_ENABLE_ANASAZI "Build the anasazi package." ON)
-OPTION(TRILINOS_ENABLE_EPETRA "Build the epetra package." ON)
-OPTION(TRILINOS_ENABLE_RBGEN "Build the rbgen package." ON)
-OPTION(TRILINOS_ENABLE_TEUCHOS "Build the teuchos package." ON)
 OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 #OPTION(TRILINOS_INSTALL_BLAS "Include BLAS library in installations / packages." OFF)
 #OPTION(TRILINOS_INSTALL_LAPACK "Include LAPACK library in installations / packages." OFF)
@@ -94,9 +109,9 @@ INCLUDE(CTest)
 # Handle some common installation stuff ...
 
 # This is the path where packages should install their header files.
-SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${TRILINOS_VERSION}")
+SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${${PROJECT_NAME}_VERSION}")
 # This is the path where packages should install their header configuration files ...
-SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${TRILINOS_VERSION}/include")
+SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${${PROJECT_NAME}_VERSION}/include")
 
 # Disable these two because they're problematic.  The issue is that the procedure
 # to install these libraries correctly changes radically based on platform and
@@ -118,14 +133,14 @@ ADD_SUBDIRECTORY(packages)
 
 # Setup packaging and distribution ...
 SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
-SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${TRILINOS_VERSION}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${TRILINOS_VERSION}")
-SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${TRILINOS_VERSION}")
+SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${${PROJECT_NAME}_VERSION}")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${${PROJECT_NAME}_VERSION}")
+SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${${PROJECT_NAME}_VERSION}")
 SET(CPACK_PACKAGE_NAME "trilinos")
 SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
-SET(CPACK_PACKAGE_VERSION "${TRILINOS_VERSION}")
+SET(CPACK_PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
 SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
-SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${TRILINOS_VERSION}")
+SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${${PROJECT_NAME}_VERSION}")
 
 IF(WIN32)
 	SET(CPACK_GENERATOR "NSIS")
@@ -147,15 +162,26 @@ MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 MARK_AS_ADVANCED(TRILINOS_BLAS_LIBRARY)
 MARK_AS_ADVANCED(TRILINOS_LAPACK_LIBRARY)
 
-OPTION(
-TRILINOS_DEBUG_OUTPUT 
-"Output debugging info to file and post to CDash" 
-OFF
-)
+FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+  IF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")
+    STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
+    MESSAGE(STATUS "${PROJECT_NAME}_ENABLE_${PACKAGE}=${${PROJECT_NAME}_ENABLE_${PACKAGE}}")
+    INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
+    LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
+    LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
+    LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${${PACKAGE}_LIBRARIES})
+  ENDIF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")
+ENDFOREACH(PACKAGE ${PROJECT_NAME}_PACKAGES)
 
-MARK_AS_ADVANCED(TRILINOS_DEBUG_OUTPUT)
+LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${TRILINOS_BLAS_LIBRARY} ${TRILINOS_LAPACK_LIBRARY})
 
-IF(TRILINOS_DEBUG_OUTPUT)
-  SET(CTEST_NOTES_FILES "${CMAKE_CACHEFILE_DIR}/CMakeCache.txt")
-  MESSAGE( STATUS "CTEST_NOTES_FILES: " ${CTEST_NOTES_FILES} )
-ENDIF(TRILINOS_DEBUG_OUTPUT)
+LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
+LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARY_DIRS)
+LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+
+##############################################################################
+# Configure <PACKAGE>Config.cmake for the build tree.
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake @ONLY)
+##############################################################################
+
