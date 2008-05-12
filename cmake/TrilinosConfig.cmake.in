@@ -1,16 +1,18 @@
+# $Header$
+
 #-----------------------------------------------------------------------------
 #
-# TrilinosConfig.cmake - Trilinos CMake configuration file for external projects.
+# <PACKAGE>Config.cmake - CMake configuration file for external projects.
 #
 
-# The Trilinos include file directories.
-SET(Trilinos_INCLUDE_DIRS "@Trilinos_INCLUDE_DIRS@")
+# The package include file directories.
+SET(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_INCLUDE_DIRS}")
 
-# The Trilinos library directories.
-SET(Trilinos_LIBRARY_DIRS "@Trilinos_LIBRARY_DIRS@")
+# The package library directories.
+SET(${PROJECT_NAME}_LIBRARY_DIRS "${${PROJECT_NAME}_LIBRARY_DIRS}")
 
-# The Trilinos libraries.
-SET(Trilinos_LIBRARIES "@Trilinos_LIBRARIES@")
+# The package libraries.
+SET(${PROJECT_NAME}_LIBRARIES "${${PROJECT_NAME}_LIBRARIES}")
 
-# The Trilinos version number
-SET(Trilinos_VERSION "@Trilinos_VERSION@")
+# The package version number
+SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")

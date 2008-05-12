@@ -1,3 +1,5 @@
+# $Header$
+
 PROJECT(Anasazi)
 
 SET(${PROJECT_NAME}_VERSION "2.1d")

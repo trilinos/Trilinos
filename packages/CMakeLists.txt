@@ -1,4 +1,4 @@
-# packages/CMakeLists.txt
+# $Header$
 
 FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
   IF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")

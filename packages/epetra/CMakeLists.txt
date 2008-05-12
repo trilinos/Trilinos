@@ -1,3 +1,5 @@
+# $Header$
+
 # Project name
 PROJECT(Epetra CXX C)
 

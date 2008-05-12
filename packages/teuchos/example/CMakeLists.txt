@@ -1,3 +1,4 @@
+# $Header$ 
 
 INCLUDE(Trilinos_Add_Executable)
 

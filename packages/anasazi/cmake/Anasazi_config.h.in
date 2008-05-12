@@ -1,3 +1,6 @@
+/* $Header$ */
+
+/* Copy of the following file, edited to be used with CMake */
 /* src/Anasazi_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to dummy `main' function (if any) required to link to the Fortran

@@ -1,3 +1,5 @@
+# $Header$
+
 # Use CMake module to find MPI_LIBRARY and MPI_INCLUDE_PATH
 FIND_PACKAGE(MPI)
 

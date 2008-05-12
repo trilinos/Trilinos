@@ -1,3 +1,5 @@
+# $Header$
+
 INCLUDE(Trilinos_Add_Executable)
 
 # Syntax for adding a test:

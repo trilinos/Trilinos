@@ -1,3 +1,6 @@
+/* $Header: */
+
+/* Copy of the following file, edited to be used with CMake */
 /* src/Teuchos_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define the Fortran name mangling to be used for the BLAS */

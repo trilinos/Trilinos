@@ -1,3 +1,5 @@
+# $Header$ 
+
 PROJECT(Teuchos)
 
 SET(${PROJECT_NAME}_VERSION "1.5d")

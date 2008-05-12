@@ -1,4 +1,4 @@
-# packages/anasazi/test/CMakeLists.txt
+# $Header$
 
 INCLUDE(Trilinos_Add_Executable)
 

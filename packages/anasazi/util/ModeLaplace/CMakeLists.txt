@@ -1,4 +1,5 @@
-	
+# $Header$
+
 SET(HEADERS
   BlockPCGSolver.h 
 	CheckingTools.h 

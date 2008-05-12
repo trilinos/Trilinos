@@ -1,3 +1,5 @@
+# $Header$
+
 INCLUDE(Trilinos_Add_Executable)
 
 INCLUDE_DIRECTORIES(${Anasazi_BINARY_DIR}/src)
