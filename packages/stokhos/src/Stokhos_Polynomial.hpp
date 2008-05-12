@@ -28,8 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_STANDARDPOLY_HPP
-#define STOKHOS_STANDARDPOLY_HPP
+#ifndef STOKHOS_POLYNOMIAL_HPP
+#define STOKHOS_POLYNOMIAL_HPP
 
 #include <vector>
 #include <ostream>
@@ -37,23 +37,23 @@
 namespace Stokhos {
 
   template <typename T>
-  class StandardPoly {
+  class Polynomial {
   public:
 
     //! Constructor with all zero coefficients
-    StandardPoly(unsigned int deg);
+    Polynomial(unsigned int deg);
     
     //! Constructor with specified coefficients
-    StandardPoly(const std::vector<T>& coefficients);
+    Polynomial(const std::vector<T>& coefficients);
     
     //! Copy constructor
-    StandardPoly(const StandardPoly& p);
+    Polynomial(const Polynomial& p);
     
     //! Destructor
-    ~StandardPoly();
+    ~Polynomial();
     
     //! Assignment
-    StandardPoly& operator=(const StandardPoly& p);
+    Polynomial& operator=(const Polynomial& p);
     
     //! Return degree
     unsigned int degree() const;
@@ -75,8 +75,8 @@ namespace Stokhos {
      * Sets this = alpha*a*b + beta*this
      */
     void multiply(const T& alpha, 
-		  const StandardPoly<T>& a,
-		  const StandardPoly<T>& b, 
+		  const Polynomial<T>& a,
+		  const Polynomial<T>& b, 
 		  const T& beta);
     
     //! Add two polynomials and put into this
@@ -84,7 +84,7 @@ namespace Stokhos {
      * Sets this = alpha*a* + gamma*this;
      */
     void add(const T& alpha, 
-	     const StandardPoly<T>& a,
+	     const Polynomial<T>& a,
 	     const T& gamma);
 
     //! Add two polynomials and put into this
@@ -92,9 +92,9 @@ namespace Stokhos {
      * Sets this = alpha*a* + beta*b + gamma*this;
      */
     void add(const T& alpha, 
-	     const StandardPoly<T>& a,
+	     const Polynomial<T>& a,
 	     const T& beta,
-	     const StandardPoly<T>& b, 
+	     const Polynomial<T>& b, 
 	     const T& gamma);
 
     void print(std::ostream& os) const;
@@ -104,10 +104,10 @@ namespace Stokhos {
     //! Vector of coefficients
     std::vector<T> coeffs;
     
-  }; // class StandardPoly
+  }; // class Polynomial
 
   template <typename T> 
-  std::ostream& operator << (std::ostream& os, const StandardPoly<T>& p) {
+  std::ostream& operator << (std::ostream& os, const Polynomial<T>& p) {
     p.print(os);
     return os;
   }
@@ -115,6 +115,6 @@ namespace Stokhos {
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_StandardPolyImp.hpp"
+#include "Stokhos_PolynomialImp.hpp"
 
-#endif // STOKHOS_STANDARDPOLY_HPP
+#endif // STOKHOS_POLYNOMIAL_HPP

@@ -40,15 +40,21 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Stokhos_HermiteExpansion.hpp"
+#include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_HermiteEBasis.hpp"
+#include "Stokhos_HermiteBasis.hpp"
+#include "Stokhos_UnitHermiteBasis.hpp"
+
+typedef Stokhos::HermiteEBasis<double> basis_type;
 
 int main(int argc, char **argv)
 {
   try {
     const unsigned int d = 7;
-    Stokhos::HermiteExpansion< double,Stokhos::HermiteEBasis<double> > he(d);
-    Stokhos::HermitePoly<double> u(d), v(d), w(d);
+    Teuchos::RCP<basis_type> basis = 
+      Teuchos::rcp(new basis_type(d));
+    Stokhos::OrthogPolyExpansion<basis_type> he(basis);
+    Stokhos::OrthogPolyApprox<double> u(d+1),v(d+1),w(d+1);
     u[0] = 1.0;
     u[1] = 0.4;
     u[2] = 0.06;
@@ -58,9 +64,13 @@ int main(int argc, char **argv)
     he.times(w,v,v);
     he.plusEqual(w,1.0);
     he.divide(v,1.0,w);
+    he.sinh(w,v);
 
     std::cout << "u (hermite basis) = " << u << std::endl;
-    std::cout << "v (hermite basis) = " << v << std::endl;
+    std::cout.precision(12);
+    std::cout << "w (hermite basis) = " << w << std::endl;
+    std::cout << "w (standard basis) = " << w.toStandardBasis(*basis) 
+	      << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

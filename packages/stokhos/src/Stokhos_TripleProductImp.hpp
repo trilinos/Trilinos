@@ -28,14 +28,16 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos_StandardPoly.hpp"
+#include "Stokhos_Polynomial.hpp"
 
 template <typename BasisT>
 Stokhos::TripleProduct<BasisT>::
-TripleProduct(unsigned int degree) :
-  l(degree+1),
-  basis(2*degree),
-  Cijk(l*l*l)
+TripleProduct(const Teuchos::RCP<BasisT>& basis_) :
+  l(basis_->size()),
+  basis(basis_),
+  Cijk(l*l*l),
+  Dijk(l*l*l),
+  Bij(l*l)
 {
   compute();
 }
@@ -45,7 +47,9 @@ Stokhos::TripleProduct<BasisT>::
 TripleProduct(const Stokhos::TripleProduct<BasisT>& tp) :
   l(tp.l),
   basis(tp.basis),
-  Cijk(tp.Cijk)
+  Cijk(tp.Cijk),
+  Dijk(tp.Dijk),
+  Bij(tp.Bij)
 {
 }
 
@@ -64,6 +68,8 @@ operator=(const Stokhos::TripleProduct<BasisT>& tp)
     l = tp.l;
     basis = tp.basis;
     Cijk = tp.Cijk;
+    Dijk = tp.Dijk;
+    Bij = tp.Bij;
   }
   return *this;
 }
@@ -71,7 +77,7 @@ operator=(const Stokhos::TripleProduct<BasisT>& tp)
 template <typename BasisT>
 const typename Stokhos::TripleProduct<BasisT>::value_type&
 Stokhos::TripleProduct<BasisT>::
-value(unsigned int i, unsigned int j, unsigned int k) const
+triple_value(unsigned int i, unsigned int j, unsigned int k) const
 {
   return Cijk[ l*(l*k + j) + i ];
 }
@@ -79,43 +85,54 @@ value(unsigned int i, unsigned int j, unsigned int k) const
 template <typename BasisT>
 const typename Stokhos::TripleProduct<BasisT>::value_type&
 Stokhos::TripleProduct<BasisT>::
-norm_squared(unsigned int i) const
+triple_deriv(unsigned int i, unsigned int j, unsigned int k) const
 {
-  return basis.norm_squared()[i];
+  return Dijk[ l*(l*k + j) + i ];
 }
 
 template <typename BasisT>
-void
+const typename Stokhos::TripleProduct<BasisT>::value_type&
 Stokhos::TripleProduct<BasisT>::
-resize(unsigned int degree)
+double_deriv(unsigned int i, unsigned int j) const
 {
-  if (degree+1 != l) {
-    l = degree+1;
-    basis = BasisT(2*degree);
-    Cijk.resize(l*l*l);
-    compute();
-  }
+  return Bij[ l*j + i ];
 }
 
-// Important note:  To get the correct value for <\Psi_i \Psi_j \Psi_k>,
-// we have to expand \Psi_i*\Psi_j in the full degree_i+degree_j basis, not
-// just the degree d basis.  There for the basis needs to be of size 2*d
+template <typename BasisT>
+const typename Stokhos::TripleProduct<BasisT>::value_type&
+Stokhos::TripleProduct<BasisT>::
+norm_squared(unsigned int i) const
+{
+  return basis->norm_squared()[i];
+}
+
 template <typename BasisT>
 void
 Stokhos::TripleProduct<BasisT>::
 compute()  
 {
-  const std::vector<value_type>& nrm_sq = basis.norm_squared();
-  StandardPoly<value_type> pij(2*(l-1));
+  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   std::vector<value_type> a(2*l);
   for (unsigned int i=0; i<l; i++) {
-    const StandardPoly<value_type>& pi = basis.getBasisPoly(i);
     for (unsigned int j=0; j<l; j++) {
-      const StandardPoly<value_type>& pj = basis.getBasisPoly(j);
-      pij.multiply(1.0, pi, pj, 0.0);
-      basis.project(pij, a);
+      basis->projectProduct(i, j, a);
       for (unsigned int k=0; k<l; k++)
-	Cijk[ l*(l*k+j) + i ] = a[k]*nrm_sq[k];
+	Cijk[ l*(l*k+j) + i ] = a[k];
     }
+  }
+
+  // Compute Dijk = < \Psi_i \Psi_j \Psi_k' >
+  const std::vector<value_type>& nrm_sq = basis->norm_squared();
+  for (unsigned int k=0; k<l; k++) {
+    std::vector<value_type> b(l);
+    basis->projectDerivative(k, b);
+    for (unsigned int m=0; m<l; m++)
+      Bij[ l*k+m ] = b[m]*nrm_sq[m];
+    for (unsigned int i=0; i<l; i++)
+      for (unsigned int j=0; j<l; j++) {
+	Dijk[ l*(l*k+j) + i ] = value_type(0.0);
+	for (unsigned int m=0; m<l; m++)
+	  Dijk[ l*(l*k+j) + i ] += b[m]*Cijk[ l*(l*m+j) + i ];
+      }
   }
 }

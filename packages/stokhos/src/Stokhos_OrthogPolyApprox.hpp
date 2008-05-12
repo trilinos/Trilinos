@@ -28,66 +28,69 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HERMITEPOLY_HPP
-#define STOKHOS_HERMITEPOLY_HPP
+#ifndef STOKHOS_ORTHOGPOLYAPPROX_HPP
+#define STOKHOS_ORTHOGPOLYAPPROX_HPP
 
 #include <ostream>	// for std::ostream
 
+#include "Teuchos_RCP.hpp"
+
+#include "Stokhos_Polynomial.hpp"
+
 namespace Stokhos {
 
-  //! Hermite Polynomial class
+  //! General polynomial class
   template <typename T>
-  class HermitePoly {
+  class OrthogPolyApprox {
   public:
 
+    //! Typename of values
+    typedef T value_type;
+
     //! Default constructor
-    HermitePoly();
+    OrthogPolyApprox();
     
     //! Constructor with supplied value \c x
-    HermitePoly(const T& x);
+    OrthogPolyApprox(const value_type& x);
     
-    //! Constructor with degree d and value \c x
-    HermitePoly(unsigned int d, const T & x);
+    //! Constructor with size \c sz and value \c x
+    OrthogPolyApprox(unsigned int sz, const value_type& x);
     
-    //! Constructor with degree d
-    HermitePoly(unsigned int d);
+    //! Constructor with size \c sz
+    OrthogPolyApprox(unsigned int sz);
     
-    //! Constructor with degree d and length l
-    HermitePoly(unsigned int d, unsigned int l);
+    //! Constructor with basis, size \c sz and length \c l
+    OrthogPolyApprox(unsigned int sz, unsigned int l);
     
-    //! Copy constructor (deep copy)
-    HermitePoly(const HermitePoly& x);
+    //! Copy constructor
+    OrthogPolyApprox(const OrthogPolyApprox& x);
     
     //! Destructor
-    ~HermitePoly();
+    ~OrthogPolyApprox();
     
     //! Assignment operator (deep copy)
-    HermitePoly& operator=(const HermitePoly& x);
+    OrthogPolyApprox& operator=(const OrthogPolyApprox& x);
 
-    //! Resize polynomial to degree d
-    /*!
-     * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
-     * all coefficients are reset to zero.
-     */
-    void resize(unsigned int d, bool keep_coeffs = false);
-
-    //! Reserve space for a degree d polynomial
+    //! Resize to size \c sz
     /*!
      * Coefficients are preserved.
      */
-    void reserve(unsigned int d);
+    void resize(unsigned int sz);
 
-    //! Return degree
-    unsigned int degree() const { return deg_; }
+    //! Reserve space for a size \c sz expansion
+    /*!
+     * Coefficients are preserved.
+     */
+    void reserve(unsigned int sz);
 
-    //! Return length
-    unsigned int length() const { return len_; }
+    //! Return size
+    unsigned int size() const { return coeff_.size(); }
 
     //! Return coefficient array
-    T* coeff() { return coeff_; }
+    T* coeff() { return &coeff_[0]; }
 
     //! Return coefficient array
-    const T* coeff() const { return coeff_; }
+    const T* coeff() const { return &coeff_[0]; }
 
     //! Array access
     T& operator[](unsigned int i) { return coeff_[i]; }
@@ -95,24 +98,22 @@ namespace Stokhos {
     //! Array access
     const T& operator[](unsigned int i) const { return coeff_[i]; }
 
+    //! Write polynomial approximation in standard basis
+    template <typename BasisT>
+    Polynomial<T> toStandardBasis(const BasisT& basis) const;
+
   protected:
 
-    //! Hermite polynomial coefficients
-    T* coeff_;
-
-    //! Degree of polynomial
-    unsigned int deg_;
+    //! OrthogPolyApprox coefficients
+    std::vector<T> coeff_;
     
-    //! Length of allocated polynomial array
-    unsigned int len_;
-    
-  }; // class HermitePoly
+  }; // class OrthogPolyApprox
 
   template <typename T> std::ostream& 
-  operator << (std::ostream& os, const HermitePoly<T>& a);
+  operator << (std::ostream& os, const OrthogPolyApprox<T>& a);
 
 } // namespace Stokhos
 
-#include "Stokhos_HermitePolyImp.hpp"
+#include "Stokhos_OrthogPolyApproxImp.hpp"
 
-#endif //  STOKHOS_HERMITEPOLY_HPP
+#endif //  STOKHOS_ORTHOGPOLYAPPROX_HPP

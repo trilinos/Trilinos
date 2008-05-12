@@ -31,69 +31,38 @@
 #ifndef STOKHOS_HERMITEBASIS_HPP
 #define STOKHOS_HERMITEBASIS_HPP
 
-#include <vector>
-#include <ostream>
-#include "Stokhos_StandardPoly.hpp"
+#include "Stokhos_OrthogPolyBasisBase.hpp"
 
 namespace Stokhos {
 
   template <typename T>
-  class HermiteBasis {
+  class HermiteBasis : public OrthogPolyBasisBase<T> {
   public:
 
     //! Typename of values
-    typedef T value_type;
+    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
 
     //! Constructor
-    HermiteBasis(unsigned int degree);
-      
-    //! Copy constructor
-    HermiteBasis(const HermiteBasis& b);
+    HermiteBasis(unsigned int p);
 
     //! Destructor
     ~HermiteBasis();
 
-    //! Assignment
+    //! Project a polynomial into this basis
+    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
+
+    //! Project derivative of basis polynomial into this basis
+    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
+
+  private:
+
+    // Prohibit copying
+    HermiteBasis(const HermiteBasis&);
+
+    // Prohibit Assignment
     HermiteBasis& operator=(const HermiteBasis& b);
 
-    //! Return size of basis
-    unsigned int size() const;
-
-    //! Compute norm squared of each basis element
-    const std::vector<T>& norm_squared() const;
-
-    //! Get coefficient of derivative
-    T derivCoeff(unsigned int i) const;
-
-    //! Project a polynomial into this basis
-    void project(const StandardPoly<T>& poly, std::vector<T>& coeffs) const;
-
-    //! Write polynomial in standard basis
-    StandardPoly<T> toStandardBasis(const T coeffs[], unsigned int n) const;
-
-    //! Get basis polynomial
-    const StandardPoly<T>& getBasisPoly(unsigned int i) const;
-
-    void print(std::ostream& os) const;
-    
-  protected:
-
-    //! Degree of basis
-    unsigned int d;
-
-    //! Basis polynomials
-    std::vector< StandardPoly<T> > basis;
-
-    //! Norms
-    std::vector<T> norms;
-
   }; // class HermiteBasis
-
-  template <typename T> 
-  std::ostream& operator << (std::ostream& os, const HermiteBasis<T>& b) {
-    b.print(os);
-    return os;
-  }
 
 } // Namespace Stokhos
 

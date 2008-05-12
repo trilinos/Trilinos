@@ -23,15 +23,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
 template <typename T>
-Stokhos::HermiteBasis<T>::
-HermiteBasis(unsigned int p) :
-  OrthogPolyBasisBase<T>("Hermite",p)
+Stokhos::HermiteUnitBasis<T>::
+HermiteUnitBasis(unsigned int p) :
+  OrthogPolyBasisBase<T>("Hermite Unit",p)
 {
   // Fill in basis coefficients
   this->basis[0].coeff(0) = T(1.0);
@@ -49,17 +49,24 @@ HermiteBasis(unsigned int p) :
   this->norms[0] = 2.0*std::sqrt(std::atan(1.0));  // = sqrt(pi)
   for (unsigned int k=1; k<=this->p; k++)
     this->norms[k] = T(2.0)*T(k)*(this->norms[k-1]);
+
+  // Rescale to unit norm
+  for (unsigned int k=0; k<=this->p; k++) {
+    for (unsigned int i=0; i<=this->p; i++)
+      this->basis[k].coeff(i) /= std::sqrt(this->norms[k]);
+    this->norms[k] = 1.0;
+  }
 }
 
 template <typename T>
-Stokhos::HermiteBasis<T>::
-~HermiteBasis()
+Stokhos::HermiteUnitBasis<T>::
+~HermiteUnitBasis()
 {
 }
 
 template <typename T>
 void
-Stokhos::HermiteBasis<T>::
+Stokhos::HermiteUnitBasis<T>::
 projectPoly(const Stokhos::Polynomial<T>& x, std::vector<T>& coeffs) const
 {
   // Initialize
@@ -67,7 +74,7 @@ projectPoly(const Stokhos::Polynomial<T>& x, std::vector<T>& coeffs) const
     coeffs[i] = T(0.0);
 
   unsigned int px = x.degree();
-  if (px > this->p && px != this->p*2)
+  if (px > this->p)
     px = this->p;
 
   // Handle degree 0 case
@@ -79,19 +86,23 @@ projectPoly(const Stokhos::Polynomial<T>& x, std::vector<T>& coeffs) const
   // Temporary array
   std::vector<T> h(px+1,T(0.));
 
-  coeffs[0] = x.coeff(px-1);
-  coeffs[1] = T(0.5)*x.coeff(px);
+  T pi = 4.0*std::atan(1.0);
+  T piq = std::sqrt(std::sqrt(pi));
+  T sq2 = std::sqrt(2.0);
+
+  coeffs[0] = piq*x.coeff(dp-1);
+  coeffs[1] = piq/sq2*x.coeff(dp);
   unsigned int pc = 1;
 
   for (int k=px-2; k>=0; --k) {
 
     // Multiply by t
-    h[0] = coeffs[1] + x.coeff(k);
-    for (unsigned int i=1; i<=pc-1; i++) {
-      h[i] = T(0.5)*coeffs[i-1] + T(i+1)*coeffs[i+1];
+    h[0] = coeffs[1]/sq2 + piq*x.coeff(k);
+    for (unsigned int i=1; i<pc-1; i++) {
+      h[i] = (std::sqrt(T(i))*coeffs[i-1] + std::sqrt(T(i+1))*coeffs[i+1])/sq2;
     }
-    h[pc] = T(0.5)*coeffs[pc-1];
-    h[pc+1] = T(0.5)*coeffs[pc];
+    h[pc] = std::sqrt(T(dc))/sq2*coeffs[pc-1];
+    h[pc+1] = std::sqrt(T(dc+1))/sq2*coeffs[pc];
     
     // Copy into coeffs
     for (unsigned int i=0; i<=pc+1; i++)
@@ -103,11 +114,10 @@ projectPoly(const Stokhos::Polynomial<T>& x, std::vector<T>& coeffs) const
 
 template <typename T>
 void
-Stokhos::HermiteBasis<T>::
+Stokhos::HermiteUnitBasis<T>::
 projectDerivative(unsigned int i, std::vector<T>& coeffs) const
 {
-  for (unsigned int j=0; j<coeffs.size(); j++)
-    coeffs[j] = T(0.0);
-  if (i > 0)
-    coeffs[i-1] = T(2.0*i);
+  coeffs = T(0.0);
+  coeffs[i-1] = std::sqrt(2.0*i);
 }
+

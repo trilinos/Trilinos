@@ -28,45 +28,77 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HERMITEEBASIS_HPP
-#define STOKHOS_HERMITEEBASIS_HPP
+#ifndef STOKHOS_BASIS_HPP
+#define STOKHOS_BASIS_HPP
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+#include <ostream>
+#include "Stokhos_Polynomial.hpp"
 
 namespace Stokhos {
 
   template <typename T>
-  class HermiteEBasis : public OrthogPolyBasisBase<T> {
+  class OrthogPolyBasis {
   public:
-    
+
     //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-    
+    typedef T value_type;
+
     //! Constructor
-    HermiteEBasis(unsigned int p);
-    
+    OrthogPolyBasis() {};
+
     //! Destructor
-    ~HermiteEBasis();
-    
+    virtual ~OrthogPolyBasis() {};
+
+    //! Return order of basis
+    virtual unsigned int order() const = 0;
+
+    //! Return dimension of basis
+    virtual unsigned int dimension() const = 0;
+
+    //! Return total size of basis
+    virtual unsigned int size() const = 0;
+
+    //! Compute norm squared of each basis element
+    virtual const std::vector<T>& norm_squared() const = 0;
+
     //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
+    virtual void projectPoly(const Polynomial<T>& poly, 
+			     std::vector<T>& coeffs) const = 0;
+
+    //! Project product of two basis polynomials into this basis
+    virtual void projectProduct(unsigned int i, unsigned int j,
+				std::vector<T>& coeffs) const = 0;
 
     //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
+    virtual void projectDerivative(unsigned int i, 
+				   std::vector<T>& coeffs) const = 0;
+
+    //! Write polynomial in standard basis
+    virtual Polynomial<T> toStandardBasis(const T coeffs[], 
+					  unsigned int n) const = 0;
+
+    //! Evaluate basis polynomial at zero
+    virtual T evaluateZero(unsigned int i) const = 0;
+
+    //! Print basis
+    virtual void print(std::ostream& os) const = 0;
 
   private:
 
     // Prohibit copying
-    HermiteEBasis(const HermiteEBasis&);
+    OrthogPolyBasis(const OrthogPolyBasis&);
 
     // Prohibit Assignment
-    HermiteEBasis& operator=(const HermiteEBasis& b);
-    
-  }; // class HermiteEBasis
+    OrthogPolyBasis& operator=(const OrthogPolyBasis& b);
+
+  }; // class OrthogPolyBasis
+
+  template <typename T> 
+  std::ostream& operator << (std::ostream& os, const OrthogPolyBasis<T>& b) {
+    b.print(os);
+    return os;
+  }
 
 } // Namespace Stokhos
-
-// Include template definitions
-#include "Stokhos_HermiteEBasisImp.hpp"
 
 #endif

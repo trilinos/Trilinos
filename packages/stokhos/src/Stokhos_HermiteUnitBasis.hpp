@@ -28,25 +28,25 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HERMITEEBASIS_HPP
-#define STOKHOS_HERMITEEBASIS_HPP
+#ifndef STOKHOS_HERMITEUNITBASIS_HPP
+#define STOKHOS_HERMITEUNITBASIS_HPP
 
 #include "Stokhos_OrthogPolyBasisBase.hpp"
 
 namespace Stokhos {
 
   template <typename T>
-  class HermiteEBasis : public OrthogPolyBasisBase<T> {
+  class HermiteUnitBasis : OrthogPolyBasisBase<T> {
   public:
     
     //! Typename of values
     typedef typename OrthogPolyBasisBase<T>::value_type value_type;
     
     //! Constructor
-    HermiteEBasis(unsigned int p);
+    HermiteUnitBasis(unsigned int p);
     
     //! Destructor
-    ~HermiteEBasis();
+    ~HermiteUnitBasis();
     
     //! Project a polynomial into this basis
     void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
@@ -57,16 +57,16 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    HermiteEBasis(const HermiteEBasis&);
+    HermiteUnitBasis(const HermiteUnitBasis&);
 
     // Prohibit Assignment
-    HermiteEBasis& operator=(const HermiteEBasis& b);
+    HermiteUnitBasis& operator=(const HermiteUnitBasis& b);
     
-  }; // class HermiteEBasis
+  }; // class HermiteUnitBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_HermiteEBasisImp.hpp"
+#include "Stokhos_HermiteUnitBasisImp.hpp"
 
 #endif

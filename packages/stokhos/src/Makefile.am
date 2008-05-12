@@ -45,20 +45,24 @@ all-local:
 STOKHOS_H = \
 	$(srcdir)/Stokhos_ConfigDefs.h \
 	$(srcdir)/Stokhos_Version.hpp \
-	$(srcdir)/Stokhos_StandardPoly.hpp \
-	$(srcdir)/Stokhos_StandardPolyImp.hpp \
+	$(srcdir)/Stokhos_DynamicArrayTraits.hpp \
+	$(srcdir)/Stokhos_Polynomial.hpp \
+	$(srcdir)/Stokhos_PolynomialImp.hpp \
+	$(srcdir)/Stokhos_OrthogPolyBasis.hpp \
+	$(srcdir)/Stokhos_OrthogPolyBasisBase.hpp \
+	$(srcdir)/Stokhos_OrthogPolyBasisBaseImp.hpp \
 	$(srcdir)/Stokhos_HermiteBasis.hpp \
 	$(srcdir)/Stokhos_HermiteBasisImp.hpp \
 	$(srcdir)/Stokhos_HermiteEBasis.hpp \
 	$(srcdir)/Stokhos_HermiteEBasisImp.hpp \
-	$(srcdir)/Stokhos_UnitHermiteBasis.hpp \
-	$(srcdir)/Stokhos_UnitHermiteBasisImp.hpp \
+	$(srcdir)/Stokhos_HermiteUnitBasis.hpp \
+	$(srcdir)/Stokhos_HermiteUnitBasisImp.hpp \
 	$(srcdir)/Stokhos_TripleProduct.hpp \
 	$(srcdir)/Stokhos_TripleProductImp.hpp \
-	$(srcdir)/Stokhos_HermitePoly.hpp \
-	$(srcdir)/Stokhos_HermitePolyImp.hpp \
-	$(srcdir)/Stokhos_HermiteExpansion.hpp \
-	$(srcdir)/Stokhos_HermiteExpansionImp.hpp 
+	$(srcdir)/Stokhos_OrthogPolyApprox.hpp \
+	$(srcdir)/Stokhos_OrthogPolyApproxImp.hpp \
+	$(srcdir)/Stokhos_OrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_OrthogPolyExpansionImp.hpp
 
 STOKHOS = \
 	$(srcdir)/Stokhos_Version.cpp

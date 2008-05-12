@@ -33,6 +33,8 @@
 
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
 namespace Stokhos {
 
   //! 3-tensor that stores C_{ijk} = < \Psi_i \Psi_j \Psi_k >
@@ -45,20 +47,24 @@ namespace Stokhos {
     typedef typename BasisT::value_type value_type;
     
     //! Constructor
-    TripleProduct(unsigned int degree);
-    
-    //! Copy constructor
-    TripleProduct(const TripleProduct& tp);
+    TripleProduct(const Teuchos::RCP<BasisT>& basis);
     
     //! Destructor
     ~TripleProduct();
-
-    //! Assignment
-    TripleProduct& operator=(const TripleProduct& tp);
       
     //! Get value (i,j,k)
-    const value_type& value(unsigned int i, unsigned int j, 
-			    unsigned int k) const;
+    const value_type& triple_value(unsigned int i, 
+				   unsigned int j, 
+				   unsigned int k) const;
+
+    //! Get value (i,j,k')
+    const value_type& triple_deriv(unsigned int i, 
+				   unsigned int j, 
+				   unsigned int k) const;
+
+    //! Get value (i,j')
+    const value_type& double_deriv(unsigned int i, 
+				   unsigned int j) const;
     
     //! Get norm-squared
     const value_type& norm_squared(unsigned int i) const;
@@ -67,15 +73,20 @@ namespace Stokhos {
     unsigned int size() const { return l; }
     
     //! Return basis
-    const BasisT& getBasis() const { return basis; }
-
-    //! Resize to new dimension
-    void resize(unsigned int degree);
+    const BasisT& getBasis() const { return *basis; }
 
   protected:
     
     //! Compute values
     void compute();
+
+  private:
+
+    // Prohibit copying
+    TripleProduct(const TripleProduct&);
+
+    // Prohibit Assignment
+    TripleProduct& operator=(const TripleProduct& b);
     
   protected:
 
@@ -83,10 +94,16 @@ namespace Stokhos {
     unsigned int l;
     
     //! Basis
-    BasisT basis;
+    Teuchos::RCP<BasisT> basis;
 
     //! Cijk data
     std::vector<value_type> Cijk;
+
+    //! Dijk data = Cijk'
+    std::vector<value_type> Dijk;
+
+    //! Bij' data
+    std::vector<value_type> Bij;
 
   }; // class Triple Product
 

@@ -29,36 +29,36 @@
 // @HEADER
 
 template <typename T>
-Stokhos::StandardPoly<T>::
-StandardPoly(unsigned int deg) :
+Stokhos::Polynomial<T>::
+Polynomial(unsigned int deg) :
   coeffs(deg+1, T(0.))
 {
 }
 
 template <typename T>
-Stokhos::StandardPoly<T>::
-StandardPoly(const std::vector<T>& coefficients) :
+Stokhos::Polynomial<T>::
+Polynomial(const std::vector<T>& coefficients) :
   coeffs(coefficients)
 {
 }
 
 template <typename T>
-Stokhos::StandardPoly<T>::
-StandardPoly(const Stokhos::StandardPoly<T>& p) :
+Stokhos::Polynomial<T>::
+Polynomial(const Stokhos::Polynomial<T>& p) :
   coeffs(p.coeffs)
 {
 }
 
 template <typename T>
-Stokhos::StandardPoly<T>::
-~StandardPoly()
+Stokhos::Polynomial<T>::
+~Polynomial()
 {
 }
 
 template <typename T>
-Stokhos::StandardPoly<T>&
-Stokhos::StandardPoly<T>::
-operator=(const Stokhos::StandardPoly<T>& p)
+Stokhos::Polynomial<T>&
+Stokhos::Polynomial<T>::
+operator=(const Stokhos::Polynomial<T>& p)
 {
   if (this != &p)
     coeffs = p.coeffs;
@@ -67,7 +67,7 @@ operator=(const Stokhos::StandardPoly<T>& p)
 
 template <typename T>
 unsigned int
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 degree() const
 {
   return coeffs.size()-1;
@@ -75,7 +75,7 @@ degree() const
 
 template <typename T>
 const T&
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 coeff(unsigned int i) const
 {
   return coeffs[i];
@@ -83,7 +83,7 @@ coeff(unsigned int i) const
 
 template <typename T>
 T&
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 coeff(unsigned int i)
 {
   return coeffs[i];
@@ -91,7 +91,7 @@ coeff(unsigned int i)
 
 template <typename T>
 const T&
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 operator[](unsigned int i) const
 {
   return coeffs[i];
@@ -99,7 +99,7 @@ operator[](unsigned int i) const
 
 template <typename T>
 T&
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 operator[](unsigned int i)
 {
   return coeffs[i];
@@ -107,10 +107,10 @@ operator[](unsigned int i)
 
 template <typename T>
 void
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 multiply(const T& alpha, 
-	 const Stokhos::StandardPoly<T>& a,
-	 const Stokhos::StandardPoly<T>& b, 
+	 const Stokhos::Polynomial<T>& a,
+	 const Stokhos::Polynomial<T>& b, 
 	 const T& beta)
 {
   const unsigned int d = this->degree();
@@ -199,9 +199,9 @@ multiply(const T& alpha,
 
 template <typename T>
 void
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 add(const T& alpha, 
-    const Stokhos::StandardPoly<T>& a,
+    const Stokhos::Polynomial<T>& a,
     const T& gamma)
 {
   const unsigned int d = this->degree();
@@ -220,11 +220,11 @@ add(const T& alpha,
 
 template <typename T>
 void
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 add(const T& alpha, 
-    const Stokhos::StandardPoly<T>& a,
+    const Stokhos::Polynomial<T>& a,
     const T& beta,
-    const Stokhos::StandardPoly<T>& b, 
+    const Stokhos::Polynomial<T>& b, 
     const T& gamma)
 {
   const unsigned int d = this->degree();
@@ -264,7 +264,7 @@ add(const T& alpha,
 
 template <typename T>
 void
-Stokhos::StandardPoly<T>::
+Stokhos::Polynomial<T>::
 print(std::ostream& os) const
 {
   os << "[";
