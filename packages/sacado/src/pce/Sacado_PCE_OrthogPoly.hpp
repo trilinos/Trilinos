@@ -55,15 +55,15 @@ namespace Sacado {
      * Uses a handle and a "copy-on-write" strategy for efficient copying, but
      * no expression templating.
      */
-    template <typename BasisT> 
+    template <typename T> 
     class OrthogPoly {
     public:
 
       //! Typename of values
-      typedef typename BasisT::value_type value_type;
+      typedef T value_type;
 
       //! Basis type
-      typedef BasisT basis_type;
+      typedef Stokhos::OrthogPolyBasis<T> basis_type;
 
       //! Default constructor
       OrthogPoly();
@@ -121,7 +121,7 @@ namespace Sacado {
        * Intializes static expansion data.
        */
       static void initExpansion(
-	const Teuchos::RCP< Stokhos::OrthogPolyExpansion<BasisT> >& e);
+	const Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> >& e);
 
       //! Write coefficients in standard basis
       Stokhos::Polynomial<value_type> toStandardBasis() const;
@@ -132,10 +132,10 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      OrthogPoly<BasisT>& operator=(const value_type& val);
+      OrthogPoly<T>& operator=(const value_type& val);
 
       //! Assignment with OrthogPoly right-hand-side
-      OrthogPoly<BasisT>& operator=(const OrthogPoly<BasisT>& x);
+      OrthogPoly<T>& operator=(const OrthogPoly<T>& x);
 
       //@}
 
@@ -187,34 +187,34 @@ namespace Sacado {
       //@{
 
       //! Unary-plus operator
-      OrthogPoly<BasisT> operator + () const;
+      OrthogPoly<T> operator + () const;
 
       //! Unary-minus operator
-      OrthogPoly<BasisT> operator - () const;
+      OrthogPoly<T> operator - () const;
 
       //! Addition-assignment operator with constant right-hand-side
-      OrthogPoly<BasisT>& operator += (const value_type& x);
+      OrthogPoly<T>& operator += (const value_type& x);
 
       //! Subtraction-assignment operator with constant right-hand-side
-      OrthogPoly<BasisT>& operator -= (const value_type& x);
+      OrthogPoly<T>& operator -= (const value_type& x);
 
       //! Multiplication-assignment operator with constant right-hand-side
-      OrthogPoly<BasisT>& operator *= (const value_type& x);
+      OrthogPoly<T>& operator *= (const value_type& x);
 
       //! Division-assignment operator with constant right-hand-side
-      OrthogPoly<BasisT>& operator /= (const value_type& x);
+      OrthogPoly<T>& operator /= (const value_type& x);
 
       //! Addition-assignment operator with Hermite right-hand-side
-      OrthogPoly<BasisT>& operator += (const OrthogPoly<BasisT>& x);
+      OrthogPoly<T>& operator += (const OrthogPoly<T>& x);
 
       //! Subtraction-assignment operator with Hermite right-hand-side
-      OrthogPoly<BasisT>& operator -= (const OrthogPoly<BasisT>& x);
+      OrthogPoly<T>& operator -= (const OrthogPoly<T>& x);
   
       //! Multiplication-assignment operator with Hermite right-hand-side
-      OrthogPoly<BasisT>& operator *= (const OrthogPoly<BasisT>& x);
+      OrthogPoly<T>& operator *= (const OrthogPoly<T>& x);
 
       //! Division-assignment operator with Hermite right-hand-side
-      OrthogPoly<BasisT>& operator /= (const OrthogPoly<BasisT>& x);
+      OrthogPoly<T>& operator /= (const OrthogPoly<T>& x);
 
       //@}
 
@@ -229,7 +229,7 @@ namespace Sacado {
     public:
 
       //! Expansion type
-      static Teuchos::RCP< Stokhos::OrthogPolyExpansion<BasisT> > expansion;
+      static Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> > expansion;
 
     protected:
 
@@ -238,222 +238,222 @@ namespace Sacado {
     }; // class Hermite
 
     // Operations
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator+(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator+(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator+(const typename OrthogPoly<BasisT>::value_type& a, 
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator+(const typename OrthogPoly<T>::value_type& a, 
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator+(const OrthogPoly<BasisT>& a, 
-	      const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    operator+(const OrthogPoly<T>& a, 
+	      const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator-(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator-(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator-(const typename OrthogPoly<BasisT>::value_type& a, 
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator-(const typename OrthogPoly<T>::value_type& a, 
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator-(const OrthogPoly<BasisT>& a, 
-	      const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    operator-(const OrthogPoly<T>& a, 
+	      const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator*(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator*(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator*(const typename OrthogPoly<BasisT>::value_type& a, 
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator*(const typename OrthogPoly<T>::value_type& a, 
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator*(const OrthogPoly<BasisT>& a, 
-	      const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    operator*(const OrthogPoly<T>& a, 
+	      const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator/(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator/(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator/(const typename OrthogPoly<BasisT>::value_type& a, 
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    operator/(const typename OrthogPoly<T>::value_type& a, 
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    operator/(const OrthogPoly<BasisT>& a, 
-	      const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    operator/(const OrthogPoly<T>& a, 
+	      const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    exp(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    exp(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    log(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    log(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    log10(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    log10(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    sqrt(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    sqrt(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    pow(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    pow(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    pow(const typename OrthogPoly<BasisT>::value_type& a, 
-	const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    pow(const typename OrthogPoly<T>::value_type& a, 
+	const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    pow(const OrthogPoly<BasisT>& a, 
-	const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    pow(const OrthogPoly<T>& a, 
+	const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    cos(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    cos(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    sin(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    sin(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    tan(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    tan(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    cosh(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    cosh(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT>
-    sinh(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T>
+    sinh(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    tanh(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    tanh(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    acos(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    acos(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    asin(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    asin(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    atan(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    atan(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    atan2(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    atan2(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    atan2(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    atan2(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    atan2(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    atan2(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    acosh(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    acosh(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    asinh(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    asinh(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    atanh(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    atanh(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    abs(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    abs(const OrthogPoly<T>& a);
     
-    template <typename BasisT> OrthogPoly<BasisT> 
-    fabs(const OrthogPoly<BasisT>& a);
+    template <typename T> OrthogPoly<T> 
+    fabs(const OrthogPoly<T>& a);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    max(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    max(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    max(const typename OrthogPoly<BasisT>::value_type& a, 
-	const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    max(const typename OrthogPoly<T>::value_type& a, 
+	const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    max(const OrthogPoly<BasisT>& a, 
-	const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    max(const OrthogPoly<T>& a, 
+	const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    min(const OrthogPoly<BasisT>& a, const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    min(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    min(const typename OrthogPoly<BasisT>::value_type& a, 
-	const OrthogPoly<BasisT>& b);
+    template <typename T> OrthogPoly<T> 
+    min(const typename OrthogPoly<T>::value_type& a, 
+	const OrthogPoly<T>& b);
 
-    template <typename BasisT> OrthogPoly<BasisT> 
-    min(const OrthogPoly<BasisT>& a, 
-	const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> OrthogPoly<T> 
+    min(const OrthogPoly<T>& a, 
+	const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> bool 
-    operator==(const OrthogPoly<BasisT>& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator==(const OrthogPoly<T>& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator==(const typename OrthogPoly<BasisT>::value_type& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator==(const typename OrthogPoly<T>::value_type& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator==(const OrthogPoly<BasisT>& a,
-	       const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> bool 
+    operator==(const OrthogPoly<T>& a,
+	       const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> bool 
-    operator!=(const OrthogPoly<BasisT>& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator!=(const OrthogPoly<T>& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator!=(const typename OrthogPoly<BasisT>::value_type& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator!=(const typename OrthogPoly<T>::value_type& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator!=(const OrthogPoly<BasisT>& a,
-	       const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> bool 
+    operator!=(const OrthogPoly<T>& a,
+	       const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> bool 
-    operator<=(const OrthogPoly<BasisT>& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator<=(const OrthogPoly<T>& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator<=(const typename OrthogPoly<BasisT>::value_type& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator<=(const typename OrthogPoly<T>::value_type& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator<=(const OrthogPoly<BasisT>& a,
-	       const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> bool 
+    operator<=(const OrthogPoly<T>& a,
+	       const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> bool 
-    operator>=(const OrthogPoly<BasisT>& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator>=(const OrthogPoly<T>& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator>=(const typename OrthogPoly<BasisT>::value_type& a,
-	       const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator>=(const typename OrthogPoly<T>::value_type& a,
+	       const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator>=(const OrthogPoly<BasisT>& a,
-	       const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> bool 
+    operator>=(const OrthogPoly<T>& a,
+	       const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> bool 
-    operator<(const OrthogPoly<BasisT>& a,
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator<(const OrthogPoly<T>& a,
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator<(const typename OrthogPoly<BasisT>::value_type& a,
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator<(const typename OrthogPoly<T>::value_type& a,
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator<(const OrthogPoly<BasisT>& a,
-	      const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> bool 
+    operator<(const OrthogPoly<T>& a,
+	      const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> bool 
-    operator>(const OrthogPoly<BasisT>& a,
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator>(const OrthogPoly<T>& a,
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator>(const typename OrthogPoly<BasisT>::value_type& a,
-	      const OrthogPoly<BasisT>& b);
+    template <typename T> bool 
+    operator>(const typename OrthogPoly<T>::value_type& a,
+	      const OrthogPoly<T>& b);
 
-    template <typename BasisT> bool 
-    operator>(const OrthogPoly<BasisT>& a,
-	      const typename OrthogPoly<BasisT>::value_type& b);
+    template <typename T> bool 
+    operator>(const OrthogPoly<T>& a,
+	      const typename OrthogPoly<T>::value_type& b);
 
-    template <typename BasisT> std::ostream& 
-    operator << (std::ostream& os, const OrthogPoly<BasisT>& a);
+    template <typename T> std::ostream& 
+    operator << (std::ostream& os, const OrthogPoly<T>& a);
 
   } // namespace PCE
 

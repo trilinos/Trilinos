@@ -35,87 +35,87 @@ namespace Sacado {
 namespace PCE {
 
 // Initialize static data
-template <typename BasisT> 
-Teuchos::RCP< Stokhos::OrthogPolyExpansion<BasisT> > 
-OrthogPoly<BasisT>::expansion = Teuchos::null;
+template <typename T> 
+Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> > 
+OrthogPoly<T>::expansion = Teuchos::null;
 
-template <typename BasisT> 
-OrthogPoly<BasisT>::
+template <typename T> 
+OrthogPoly<T>::
 OrthogPoly() :
   th(new Stokhos::OrthogPolyApprox<value_type>)
 {
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>::
-OrthogPoly(const typename OrthogPoly<BasisT>::value_type& x) :
+template <typename T> 
+OrthogPoly<T>::
+OrthogPoly(const typename OrthogPoly<T>::value_type& x) :
   th(new Stokhos::OrthogPolyApprox<value_type>(x))
 {
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>::
-OrthogPoly(unsigned int sz, const typename OrthogPoly<BasisT>::value_type& x) :
+template <typename T> 
+OrthogPoly<T>::
+OrthogPoly(unsigned int sz, const typename OrthogPoly<T>::value_type& x) :
   th(new Stokhos::OrthogPolyApprox<value_type>(sz, x))
 {
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>::
+template <typename T> 
+OrthogPoly<T>::
 OrthogPoly(unsigned int sz) :
   th(new Stokhos::OrthogPolyApprox<value_type>(sz))
 {
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>::
-OrthogPoly(const OrthogPoly<BasisT>& x) :
+template <typename T> 
+OrthogPoly<T>::
+OrthogPoly(const OrthogPoly<T>& x) :
   th(x.th)
 {
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>::
+template <typename T> 
+OrthogPoly<T>::
 ~OrthogPoly()
 {
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-OrthogPoly<BasisT>::
+OrthogPoly<T>::
 resize(unsigned int sz)
 {
   th->resize(sz);
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-OrthogPoly<BasisT>::
+OrthogPoly<T>::
 reserve(unsigned int sz)
 {
   th->reserve(sz);
 }
 
-template <typename BasisT> 
+template <typename T> 
 void
-OrthogPoly<BasisT>::
-initExpansion(const Teuchos::RCP< Stokhos::OrthogPolyExpansion<BasisT> >& e)
+OrthogPoly<T>::
+initExpansion(const Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> >& e)
 {
   expansion = e;
 }
 
-template <typename BasisT> 
-Stokhos::Polynomial<typename OrthogPoly<BasisT>::value_type>
-OrthogPoly<BasisT>::
+template <typename T> 
+Stokhos::Polynomial<typename OrthogPoly<T>::value_type>
+OrthogPoly<T>::
 toStandardBasis() const
 {
   return expansion->getBasis().toStandardBasis(th->coeff(), th->size());
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator=(const typename OrthogPoly<BasisT>::value_type& val) 
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator=(const typename OrthogPoly<T>::value_type& val) 
 {
   th.makeOwnCopy();
 
@@ -129,705 +129,705 @@ operator=(const typename OrthogPoly<BasisT>::value_type& val)
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator=(const OrthogPoly<BasisT>& x) 
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator=(const OrthogPoly<T>& x) 
 {
   th = x.th;
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>
-OrthogPoly<BasisT>::
+template <typename T> 
+OrthogPoly<T>
+OrthogPoly<T>::
 operator+() const
 {
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT> 
-OrthogPoly<BasisT>::
+template <typename T> 
+OrthogPoly<T> 
+OrthogPoly<T>::
 operator-() const
 {
-  OrthogPoly<BasisT> x(th->size());
+  OrthogPoly<T> x(th->size());
   expansion->unaryMinus(*(x.th), *th);
   return x;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator+=(const typename OrthogPoly<BasisT>::value_type& val)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator+=(const typename OrthogPoly<T>::value_type& val)
 {
   th.makeOwnCopy();
   expansion->plusEqual(*th, val);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator-=(const typename OrthogPoly<BasisT>::value_type& val)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator-=(const typename OrthogPoly<T>::value_type& val)
 {
   th.makeOwnCopy();
   expansion->minusEqual(*th, val);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator*=(const typename OrthogPoly<BasisT>::value_type& val)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator*=(const typename OrthogPoly<T>::value_type& val)
 {
   th.makeOwnCopy();
   expansion->timesEqual(*th, val);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator/=(const typename OrthogPoly<BasisT>::value_type& val)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator/=(const typename OrthogPoly<T>::value_type& val)
 {
   th.makeOwnCopy();
   expansion->divideEqual(*th, val);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator+=(const OrthogPoly<BasisT>& x)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator+=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
   expansion->plusEqual(*th, x);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator-=(const OrthogPoly<BasisT>& x)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator-=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
   expansion->minusEqual(*th, x);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator*=(const OrthogPoly<BasisT>& x)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator*=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
   expansion->timesEqual(*th, x);
   return *this;
 }
 
-template <typename BasisT> 
-OrthogPoly<BasisT>& 
-OrthogPoly<BasisT>::
-operator/=(const OrthogPoly<BasisT>& x)
+template <typename T> 
+OrthogPoly<T>& 
+OrthogPoly<T>::
+operator/=(const OrthogPoly<T>& x)
 {
   th.makeOwnCopy();
   expansion->divideEqual(*th, x);
   return *this;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator+(const OrthogPoly<BasisT>& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator+(const OrthogPoly<T>& a, 
+	  const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->plus(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->plus(c.getOrthogPolyApprox(), 
 				      a.getOrthogPolyApprox(), 
 				      b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator+(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator+(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->plus(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->plus(c.getOrthogPolyApprox(), a, 
 				b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator+(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+operator+(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->plus(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->plus(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox(), 
 				b);
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator-(const OrthogPoly<BasisT>& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator-(const OrthogPoly<T>& a, 
+	  const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->minus(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->minus(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox(),
 				 b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator-(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator-(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->minus(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->minus(c.getOrthogPolyApprox(), a, 
 				 b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator-(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+operator-(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->minus(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->minus(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox(),
 				 b);
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator*(const OrthogPoly<BasisT>& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator*(const OrthogPoly<T>& a, 
+	  const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->times(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->times(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox(), 
 				 b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator*(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator*(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->times(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->times(c.getOrthogPolyApprox(), a, 
 				 b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator*(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+operator*(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->times(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->times(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox(), 
 				 b);
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator/(const OrthogPoly<BasisT>& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator/(const OrthogPoly<T>& a, 
+	  const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->divide(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->divide(c.getOrthogPolyApprox(), 
 				  a.getOrthogPolyApprox(), 
 				  b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator/(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+operator/(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->divide(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->divide(c.getOrthogPolyApprox(), a, 
 				  b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-operator/(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+operator/(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->divide(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->divide(c.getOrthogPolyApprox(), 
 				  a.getOrthogPolyApprox(), 
 				  b);
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-exp(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+exp(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->exp(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->exp(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-log(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+log(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->log(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->log(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-log10(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+log10(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->log10(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->log10(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-sqrt(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+sqrt(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->sqrt(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->sqrt(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-pow(const OrthogPoly<BasisT>& a,
-    const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+pow(const OrthogPoly<T>& a,
+    const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->pow(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->pow(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
 			       b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-pow(const typename OrthogPoly<BasisT>::value_type& a,
-    const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+pow(const typename OrthogPoly<T>::value_type& a,
+    const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->pow(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->pow(c.getOrthogPolyApprox(), a, 
 			       b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-pow(const OrthogPoly<BasisT>& a,
-    const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+pow(const OrthogPoly<T>& a,
+    const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->pow(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->pow(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
 			       b);
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-sin(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+sin(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->sin(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->sin(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-cos(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+cos(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->cos(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->cos(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-tan(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+tan(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->tan(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->tan(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-sinh(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+sinh(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->sinh(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->sinh(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-cosh(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+cosh(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->cosh(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->cosh(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-tanh(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+tanh(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->tanh(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->tanh(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-acos(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+acos(const OrthogPoly<T>& a)
 {
-   OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->acos(c.getOrthogPolyApprox(), 
+   OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->acos(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-asin(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+asin(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->asin(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->asin(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-atan(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+atan(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->atan(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->atan(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-acosh(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+acosh(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->acosh(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->acosh(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-asinh(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+asinh(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->asinh(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->asinh(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-atanh(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+atanh(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->atanh(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->atanh(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-fabs(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+fabs(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->fabs(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->fabs(c.getOrthogPolyApprox(), 
 				a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-abs(const OrthogPoly<BasisT>& a)
+template <typename T>
+OrthogPoly<T>
+abs(const OrthogPoly<T>& a)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->abs(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->abs(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-max(const OrthogPoly<BasisT>& a,
-    const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+max(const OrthogPoly<T>& a,
+    const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->max(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->max(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
 			       b.getOrthogPolyApprox());
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-max(const typename OrthogPoly<BasisT>::value_type& a,
-    const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+max(const typename OrthogPoly<T>::value_type& a,
+    const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->max(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->max(c.getOrthogPolyApprox(), a, 
 			       b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-max(const OrthogPoly<BasisT>& a,
-    const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+max(const OrthogPoly<T>& a,
+    const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->max(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->max(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
 			       b);
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-min(const OrthogPoly<BasisT>& a,
-    const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+min(const OrthogPoly<T>& a,
+    const OrthogPoly<T>& b)
 {
   unsigned int da = a.size();
   unsigned int db = b.size();
   unsigned int dc = da > db ? da : db;
-  OrthogPoly<BasisT> c(dc);
-  OrthogPoly<BasisT>::expansion->min(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(dc);
+  OrthogPoly<T>::expansion->min(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
 			       b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-min(const typename OrthogPoly<BasisT>::value_type& a,
-    const OrthogPoly<BasisT>& b)
+template <typename T>
+OrthogPoly<T>
+min(const typename OrthogPoly<T>::value_type& a,
+    const OrthogPoly<T>& b)
 {
-  OrthogPoly<BasisT> c(b.size());
-  OrthogPoly<BasisT>::expansion->min(c.getOrthogPolyApprox(), a, 
+  OrthogPoly<T> c(b.size());
+  OrthogPoly<T>::expansion->min(c.getOrthogPolyApprox(), a, 
 			       b.getOrthogPolyApprox());
   return c;
 }
 
-template <typename BasisT>
-OrthogPoly<BasisT>
-min(const OrthogPoly<BasisT>& a,
-    const typename OrthogPoly<BasisT>::value_type& b)
+template <typename T>
+OrthogPoly<T>
+min(const OrthogPoly<T>& a,
+    const typename OrthogPoly<T>::value_type& b)
 {
-  OrthogPoly<BasisT> c(a.size());
-  OrthogPoly<BasisT>::expansion->min(c.getOrthogPolyApprox(), 
+  OrthogPoly<T> c(a.size());
+  OrthogPoly<T>::expansion->min(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
 			       b);
   return c;
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator==(const OrthogPoly<BasisT>& a, 
-	   const OrthogPoly<BasisT>& b)
+operator==(const OrthogPoly<T>& a, 
+	   const OrthogPoly<T>& b)
 {
   return a.coeff(0) == b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator==(const typename OrthogPoly<BasisT>::value_type& a, 
-	   const OrthogPoly<BasisT>& b)
+operator==(const typename OrthogPoly<T>::value_type& a, 
+	   const OrthogPoly<T>& b)
 {
   return a == b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator==(const OrthogPoly<BasisT>& a, 
-	   const typename OrthogPoly<BasisT>::value_type& b)
+operator==(const OrthogPoly<T>& a, 
+	   const typename OrthogPoly<T>::value_type& b)
 {
   return a.coeff(0) == b;
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator!=(const OrthogPoly<BasisT>& a, 
-	   const OrthogPoly<BasisT>& b)
+operator!=(const OrthogPoly<T>& a, 
+	   const OrthogPoly<T>& b)
 {
   return a.coeff(0) != b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator!=(const typename OrthogPoly<BasisT>::value_type& a, 
-	   const OrthogPoly<BasisT>& b)
+operator!=(const typename OrthogPoly<T>::value_type& a, 
+	   const OrthogPoly<T>& b)
 {
   return a != b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator!=(const OrthogPoly<BasisT>& a, 
-	   const typename OrthogPoly<BasisT>::value_type& b)
+operator!=(const OrthogPoly<T>& a, 
+	   const typename OrthogPoly<T>::value_type& b)
 {
   return a.coeff(0) != b;
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator<=(const OrthogPoly<BasisT>& a, 
-	   const OrthogPoly<BasisT>& b)
+operator<=(const OrthogPoly<T>& a, 
+	   const OrthogPoly<T>& b)
 {
   return a.coeff(0) <= b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator<=(const typename OrthogPoly<BasisT>::value_type& a, 
-	   const OrthogPoly<BasisT>& b)
+operator<=(const typename OrthogPoly<T>::value_type& a, 
+	   const OrthogPoly<T>& b)
 {
   return a <= b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator<=(const OrthogPoly<BasisT>& a, 
-	   const typename OrthogPoly<BasisT>::value_type& b)
+operator<=(const OrthogPoly<T>& a, 
+	   const typename OrthogPoly<T>::value_type& b)
 {
   return a.coeff(0) <= b;
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator>=(const OrthogPoly<BasisT>& a, 
-	   const OrthogPoly<BasisT>& b)
+operator>=(const OrthogPoly<T>& a, 
+	   const OrthogPoly<T>& b)
 {
   return a.coeff(0) >= b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator>=(const typename OrthogPoly<BasisT>::value_type& a, 
-	   const OrthogPoly<BasisT>& b)
+operator>=(const typename OrthogPoly<T>::value_type& a, 
+	   const OrthogPoly<T>& b)
 {
   return a >= b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator>=(const OrthogPoly<BasisT>& a, 
-	   const typename OrthogPoly<BasisT>::value_type& b)
+operator>=(const OrthogPoly<T>& a, 
+	   const typename OrthogPoly<T>::value_type& b)
 {
   return a.coeff(0) >= b;
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator<(const OrthogPoly<BasisT>& a, 
-	  const OrthogPoly<BasisT>& b)
+operator<(const OrthogPoly<T>& a, 
+	  const OrthogPoly<T>& b)
 {
   return a.coeff(0) < b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator<(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b)
+operator<(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b)
 {
   return a < b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator<(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b)
+operator<(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b)
 {
   return a.coeff(0) < b;
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator>(const OrthogPoly<BasisT>& a, 
-	  const OrthogPoly<BasisT>& b)
+operator>(const OrthogPoly<T>& a, 
+	  const OrthogPoly<T>& b)
 {
   return a.coeff(0) > b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator>(const typename OrthogPoly<BasisT>::value_type& a, 
-	  const OrthogPoly<BasisT>& b)
+operator>(const typename OrthogPoly<T>::value_type& a, 
+	  const OrthogPoly<T>& b)
 {
   return a > b.coeff(0);
 }
 
-template <typename BasisT>
+template <typename T>
 bool
-operator>(const OrthogPoly<BasisT>& a, 
-	  const typename OrthogPoly<BasisT>::value_type& b)
+operator>(const OrthogPoly<T>& a, 
+	  const typename OrthogPoly<T>::value_type& b)
 {
   return a.coeff(0) > b;
 }
 
-template <typename BasisT>
+template <typename T>
 std::ostream& 
-operator << (std::ostream& os, const OrthogPoly<BasisT>& a)
+operator << (std::ostream& os, const OrthogPoly<T>& a)
 {
   os << "[ ";
       

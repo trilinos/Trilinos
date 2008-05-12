@@ -94,15 +94,15 @@ int main(int argc, char **argv)
 #ifdef HAVE_SACADO_STOKHOS
     typedef Stokhos::HermiteEBasis<double> basis_type;
     Teuchos::RCP<basis_type> basis = Teuchos::rcp(new basis_type(d));
-    Teuchos::RCP< Stokhos::OrthogPolyExpansion<basis_type> > expansion
-      = Teuchos::rcp(new Stokhos::OrthogPolyExpansion<basis_type>(basis));
-    Sacado::PCE::OrthogPoly<basis_type>::initExpansion(expansion);
-    Sacado::PCE::OrthogPoly<basis_type> ue(d+1);
+    Teuchos::RCP< Stokhos::OrthogPolyExpansion<double> > expansion
+      = Teuchos::rcp(new Stokhos::OrthogPolyExpansion<double>(basis));
+    Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
+    Sacado::PCE::OrthogPoly<double> ue(d+1);
     for (unsigned int i=0; i<=d; i++)
       ue.fastAccessCoeff(i) = u.coeff(i);
 
-    Sacado::PCE::OrthogPoly<basis_type> we = std::log(ue);
-    Sacado::PCE::OrthogPoly<basis_type> ve = std::sinh(1.0/(we*we + 1.0));
+    Sacado::PCE::OrthogPoly<double> we = std::log(ue);
+    Sacado::PCE::OrthogPoly<double> ve = std::sinh(1.0/(we*we + 1.0));
 
     std::cout << "ue (hermite basis) = " << ue << std::endl;
     std::cout << "ue (standard basis) = " << ue.toStandardBasis() << std::endl;
