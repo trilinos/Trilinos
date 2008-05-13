@@ -112,7 +112,7 @@ SAND2006-2649
 Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed May 2006
+Printed Feb 2007
 \end{center}
 
 \vspace{0.2in}
@@ -2617,13 +2617,15 @@ computational domain. The result can be something as follows:
 \newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Using the Maxwell Solver in \ML} \label{maxwell solver}
+\section{Using the Maxwell Solvers in \ML} \label{maxwell solver}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-This section gives a brief overview of how to ML's AMG preconditioner for
+This section gives a brief overview of how to ML's two AMG preconditioners for
 the eddy current formulation of Maxwell's equations.
-The solver is intended only for equations in the time domain (real-valued),
-not the frequency domain (complex-valued).
+These first solver (Maxwell) is intended only for real-valued
+equations in the time domain.  The second solver (RefMaxwell) is also intended for
+real-valued (not complex) problems in the frequency domain.
+
 
 \subsection{Background}\label{maxwell background}
 The eddy current formulation of Maxwell's equations can be written as
@@ -2656,13 +2658,50 @@ $T$ corresponds to the null space of the \curlcurl\ term in
 (\ref{maxwell pde}).
 \Kn\ is an auxiliary nodal matrix that is described in \S\ref{Kn matrix}.
 
-\subsection{Operators that the user must supply}
+
+%%%%%%%%%%%%%%
+\subsection{Description of the discrete gradient matrix $T$}\label{T matrix}
+%%%%%%%%%%%%%%
+%
+$T$ is a rectangular, $N_e\times N_n$ matrix, where $N_e$ is the number of
+edges in the mesh (rows in \Ke) and $N_n$ is the number of nodes in the mesh
+(rows in \Kn).
+Each row of $T$ has at most two entries, a $+1$ and/or a $-1$.
+There are two ways to construct $T$.
+In the first method, 
+it's assumed that the mesh topology is available.
+$T$ can be viewed as a node-edge incidence matrix of the mesh as a
+directed graph.
+As such,
+each row of $T$ corresponds to an edge, and the $+1$/$-1$ entries in the
+row are the head/tail of the edge, respectively.
+Hence, $T$ can be built one row at a time by visiting each edge and inserting
+$+1$/$-1$ in the appropriate columns.
+The second method assumes that \Kn\ is already constructed.
+Each off-diagonal nonzero entry, $(i,j)$, in the upper triangular
+portion of \Kn\ corresponds to a row in $T$ containing
+a $1$ and a $-1$ in columns $i$ and $j$.
+%FIXME
+%boundary conditions
+
+
+
+%%%%%%%%%%%%%%
+\subsection{Solver \#1: Maxwell}\label{maxwell:maxwell}
+%%%%%%%%%%%%%%
+
+The Maxwell solver is accessed through the
+ML\_Epetra::MultiLevelPreconditioner class, which is described in more
+detail in Section \ref{sec:getting_started}.
+
+\subsubsection{Operators that the user must supply}
 The user must provide three matrices:
 \be
 \item the first-order edge element matrix \Ke.
 \item the auxiliary nodal matrix \Kn.
 \item the discrete gradient matrix $T$.
 \ee
+
 
 %%%%%%%%%%%%%%
 \subsubsection{Description of the auxiliary nodal matrix \Kn}\label{Kn matrix}
@@ -2686,35 +2725,12 @@ where we have used the fact that $ST=0$.
 %FIXME
 %note consistency in parallel of how nodes, edges are distributed
 %
+
 %%%%%%%%%%%%%%
-\subsubsection{Description of the discrete gradient matrix $T$}\label{T matrix}
-%%%%%%%%%%%%%%
-%
-$T$ is a rectangular, $N_e\times N_n$ matrix, where $N_e$ is the number of
-edges in the mesh (rows in \Ke) and $N_n$ is the number of nodes in the mesh
-(rows in \Kn).
-Each row of $T$ has at most two entries, a $+1$ and/or a $-1$.
-There are two ways to construct $T$.
-In the first method, 
-it's assumed that the mesh topology is available.
-$T$ can be viewed as a node-edge incidence matrix of the mesh as a
-directed graph.
-As such,
-each row of $T$ corresponds to an edge, and the $+1$/$-1$ entries in the
-row are the head/tail of the edge, respectively.
-Hence, $T$ can be built one row at a time by visiting each edge and inserting
-$+1$/$-1$ in the appropriate columns.
-The second method assumes that \Kn\ is already constructed.
-Each off-diagonal nonzero entry, $(i,j)$, in the upper triangular
-portion of \Kn\ corresponds to a row in $T$ containing
-a $1$ and a $-1$ in columns $i$ and $j$.
-%FIXME
-%boundary conditions
-%%%%%%%%%%%%%%
-\subsection{Smoother options}\label{maxwell smoothers}
+\subsubsection{Smoother options}\label{maxwell smoothers}
 %%%%%%%%%%%%%%
 %
-The default smoother for Maxwell's equations is a two-stage smoother that we
+The default smoother for the Maxwell solver is a two-stage smoother that we
 call Hiptmair smoothing \cite{Hiptmair_1998a}.
 This smoother consists of three steps: one step of a smoother $\mathcal S$ on
 the entire system $Kx=f$; one step of a smoother $\mathcal S$ on the
@@ -2730,6 +2746,75 @@ The Chebyshev degree for the nodal (or edge) problem can be changed with the
 options \verb!subsmoother: node sweeps!  (or \verb!subsmoother: edge sweeps!)
 and \verb!coarse: node sweeps! (or \verb!coarse: edge sweeps!) depending on
 whether the Hiptmair smoothing is done on a fine or the coarsest level.
+
+
+%%%%%%%%%%%%%%
+\subsection{Solver \#2: RefMaxwell}\label{maxwell:refmaxwell}
+%%%%%%%%%%%%%%
+
+The RefMaxwell solver is accessed through the
+{\tt ML\_Epetra::RefMaxwellPreconditioner} class, which can be found in the
+directory {\tt ml/src/RefMaxwell}.  This preconditioner handles the
+range and null space of the curl operator with a dedicated
+{\tt MultiLevelPreconditioner} object for each and has demonstrated
+excellent parallel scalability in practice. The solver algorithm is
+detailed in \cite{BHST_2007}
+
+\subsubsection{Operators that the user must supply}
+The user must provide four matrices:
+\be
+\item the first-order edge element matrix \Ke.
+\item the discrete gradient matrix $T$.
+\item the inverse of the (lumped) nodal mass matrix $\mathcal{M}_0$.
+\item the edge mass matrix $\mathcal{M}_1$.
+\ee
+
+The matrices \Ke and $T$ are identical to the matrices used in Maxwell
+(described in Section \ref{maxwell:maxwell}).  The matrix
+$\mathcal{M}_0$ is used for the algebraic gauging of the edge space
+and should include appropriate factors for the permeability ($\mu$).
+The matrix $\mathcal{M}_1$ is used only for the edge space, meaning
+that it does not include the conductivity ($\sigma$).
+
+\subsubsection{Smoother options}
+Unlike the Maxwell solver, it is not particularly advantageous to use
+the so-called Hiptmair hybrid smoother with RefMaxwell.  A more
+traditional smoother, such as Chebyshev (in parallel) or Gauss-Seidel
+(in serial should be used).
+
+\subsubsection{Setting parameter options}
+RefMaxwell uses a nested parameter list in order to logically separate
+the options for each individual solver.  Each sublist would include
+the appropriate options for that particular solver.  A full list of
+options supported by the {\tt MultiLevelPreconditioner} can be found
+in Section~\ref{all possible parameters}.
+
+In addition to the options for {\tt MultiLevelPreconditioner} (almost all
+of which are valid), the RefMaxwell solver has the following unique options:
+
+\choicebox{\tt refmaxwell: 11solver}{[{\tt string}] Sets the type of
+  solver to use on the (1,1) block (edges).  Default: {\tt edge matrix free}.}
+
+\choicebox{\tt refmaxwell: 11list}{[{\tt ParameterList}] Contains all
+  of the options for the (1,1) block preconditioner (edges).}
+
+\choicebox{\tt refmaxwell: 22solver}{[{\tt string}] Sets the type of
+  solver to use on the (2,2) block (nodes).  Default: {\tt multilevel}.}
+
+\choicebox{\tt refmaxwell: 22list}{[{\tt ParameterList}] Contains all
+  of the options for the (2,2) block preconditioner (nodes).}
+
+\choicebox{\tt refmaxwell: mode}{[{\tt string}] Sets the specific type
+  of preconditioner used.  Default: {\tt additive}.}
+
+\noindent The {\tt EdgeMatrixFreePreconditoner} for the (1,1)
+block (currently the only supported option) also has one unique
+option:
+
+\choicebox{\tt edge matrix free: coarse}{[{\tt ParameterList}] Contains all
+  of the options for the coarse (1,1) block preconditioner (edges).}
+
+
 
 
 \clearpage
