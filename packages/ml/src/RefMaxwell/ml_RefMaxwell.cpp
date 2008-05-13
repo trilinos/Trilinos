@@ -381,20 +381,28 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(Operator11_) {delete Operator11_;Operator11_=0;}
   if(Diagonal_)  {delete Diagonal_;Diagonal_=0;}
+
+  int printl=ML_Get_PrintLevel();
+  int output_level=List_.get("ML output",0);
+  output_level=List_.get("output",output_level);
+
+  ML_Set_PrintLevel(output_level);
   if(EdgePC) {delete EdgePC; EdgePC=0;}
   if(NodePC) {delete NodePC; NodePC=0;}
+  ML_Set_PrintLevel(printl);  
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
   if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
+  ML_Set_PrintLevel(output_level);  
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
   if(PostEdgeSmoother) {delete PostEdgeSmoother; PostEdgeSmoother=0;}
+  ML_Set_PrintLevel(printl);  
   if(lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
 #ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
-  int printl=ML_Get_PrintLevel();
-  ML_Set_PrintLevel(1);  
+  printl=ML_Get_PrintLevel();
   ReportTimer(ConstructionTime_ ,   "ML_RMP::ComputePreconditioner (construction  )",comm_);  
   ReportTimer(FirstApplicationTime_,"ML_RMP::ComputePreconditioner (1st iter time )",comm_);  
   ReportTimer(ApplicationTime_ ,    "ML_RMP::ComputePreconditioner (total itr cost)",comm_);
@@ -831,7 +839,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   ML_Epetra::SetDefaults("SA",List11c);
   List11c.set("cycle applications",1);
   List11c.set("smoother: type","Chebyshev");
-  List11c.set("aggregation: threshold",.01);//CMS 
+  List11c.set("aggregation: threshold",.01);
   List11c.set("coarse: type","Chebyshev");  
   List11c.set("ML label","coarse (1,1) block");
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
@@ -842,7 +850,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List11.set("aggregation: type","Uncoupled");
   List11.set("smoother: sweeps",0);
   List11.set("edge matrix free: coarse",List11c);
-  List11.set("aggregation: threshold",.01);//CMS  
+  List11.set("aggregation: threshold",.01);  
   ML_Epetra::UpdateList(List11,List11_,OverWrite);
   
   /* Build Teuchos List: (2,2) */  
@@ -850,7 +858,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List22.set("cycle applications",1);
   List22.set("smoother: type","Chebyshev");
   List22.set("aggregation: type","Uncoupled");
-  List22.set("aggregation: threshold",.01);//CMS
+  List22.set("aggregation: threshold",.01);
   List22.set("coarse: type","Chebyshev");
   List22.set("ML label","(2,2) block");
 
