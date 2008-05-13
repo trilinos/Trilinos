@@ -338,10 +338,11 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   Teuchos::ParameterList dummy;
   ParameterList * PL = GetValidMLPParameters();
 
-  /* RefMaxwell Options - This should get added to the manual */
+  /* RefMaxwell Options */
   setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<string>("edge matrix free"),PL);
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<string>("multilevel"),PL);
   setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<string>("additive","212","121"),PL);
+  PL->set("edge matrix free: coarse",dummy);
   PL->set("refmaxwell: 11list",dummy);
   PL->set("refmaxwell: 22list",dummy);
 
