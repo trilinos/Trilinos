@@ -48,6 +48,11 @@ FieldContainer<Scalar>::FieldContainer(const FieldContainer<Scalar>& right) {
   // Copy dimensions and data values from right
   dimensions_.assign(right.dimensions_.begin(),right.dimensions_.end());  
   data_.assign(right.data_.begin(),right.data_.end());
+  dim0_ = right.dim0_;
+  dim1_ = right.dim1_;
+  dim2_ = right.dim2_;
+  dim3_ = right.dim3_;
+  dim4_ = right.dim4_;
 }
 
 //--------------------------------------------------------------------------------------------//
@@ -58,22 +63,24 @@ FieldContainer<Scalar>::FieldContainer(const FieldContainer<Scalar>& right) {
 
 
 template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const int dim0) {
+FieldContainer<Scalar>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), dim2_(0), dim3_(0), dim4_(0) 
+{
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative dimension.");
 
 #endif
   dimensions_.resize(1); 
-  dimensions_[0] = dim0;  dim0_ = dim0;
-  data_.resize(dim0);
+  dimensions_[0] = dim0_;  
+  data_.resize(dim0_);
 }
 
 
 
 template<class Scalar>
 FieldContainer<Scalar>::FieldContainer(const int dim0,
-                                       const int dim1) {
+                                       const int dim1) : dim0_(dim0), dim1_(dim1), dim2_(0), dim3_(0), dim4_(0)
+{
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -82,9 +89,9 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   
 #endif
   dimensions_.resize(2); 
-  dimensions_[0] = dim0;  dim0_ = dim0; 
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  data_.resize(dim0*dim1);
+  dimensions_[0] = dim0_;   
+  dimensions_[1] = dim1_;  
+  data_.resize(dim0_*dim1_);
 }
 
 
@@ -92,7 +99,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
 template<class Scalar>
 FieldContainer<Scalar>::FieldContainer(const int dim0,
                                        const int dim1,
-                                       const int dim2) {
+                                       const int dim2) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(0), dim4_(0)
+{
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -102,10 +110,10 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 3rd dimension.");
 #endif
   dimensions_.resize(3); 
-  dimensions_[0] = dim0;  dim0_ = dim0; 
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  dimensions_[2] = dim2;  dim2_ = dim2;
-  data_.resize(dim0*dim1*dim2);
+  dimensions_[0] = dim0_;  
+  dimensions_[1] = dim1_; 
+  dimensions_[2] = dim2_;  
+  data_.resize(dim0_*dim1_*dim2_);
 }
 
 
@@ -114,7 +122,8 @@ template<class Scalar>
 FieldContainer<Scalar>::FieldContainer(const int dim0,
                                        const int dim1,
                                        const int dim2,
-                                       const int dim3) {
+                                       const int dim3) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(0)
+{
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -126,11 +135,11 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 4th dimension.");  
 #endif
   dimensions_.resize(4); 
-  dimensions_[0] = dim0;  dim0_ = dim0; 
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  dimensions_[2] = dim2;  dim2_ = dim2;
-  dimensions_[3] = dim3;  dim3_ = dim3;
-  data_.resize(dim0*dim1*dim2*dim3);
+  dimensions_[0] = dim0_;  
+  dimensions_[1] = dim1_; 
+  dimensions_[2] = dim2_;  
+  dimensions_[3] = dim3_; 
+  data_.resize(dim0_*dim1_*dim2_*dim3_);
 }
 
 
@@ -140,7 +149,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
                                        const int dim1,
                                        const int dim2,
                                        const int dim3,
-                                       const int dim4) {
+                                       const int dim4) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(dim4)
+{
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -154,12 +164,12 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 5th dimension.");  
 #endif
   dimensions_.resize(5); 
-  dimensions_[0] = dim0;  dim0_ = dim0; 
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  dimensions_[2] = dim2;  dim2_ = dim2;
-  dimensions_[3] = dim3;  dim3_ = dim3;
-  dimensions_[4] = dim4;  dim4_ = dim4;
-  data_.resize(dim0*dim1*dim2*dim3*dim4);
+  dimensions_[0] = dim0_;
+  dimensions_[1] = dim1_;
+  dimensions_[2] = dim2_;  
+  dimensions_[3] = dim3_;  
+  dimensions_[4] = dim4_;  
+  data_.resize(dim0_*dim1_*dim2_*dim3_*dim4_);
 }
 
 
@@ -182,17 +192,26 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {
   switch(rank) {
     case 1:
       dim0_ = dimensions_[0]; 
+      dim1_ = 0;
+      dim2_ = 0;
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 2:
       dim0_ = dimensions_[0]; 
       dim1_ = dimensions_[1]; 
+      dim2_ = 0;
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 3:
       dim0_ = dimensions_[0]; 
       dim1_ = dimensions_[1]; 
       dim2_ = dimensions_[2]; 
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 4:
@@ -200,6 +219,7 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {
       dim1_ = dimensions_[1]; 
       dim2_ = dimensions_[2]; 
       dim3_ = dimensions_[3]; 
+      dim4_ = 0;
       break;
       
     case 5:
@@ -230,17 +250,26 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&    dimensions,
   switch(rank) {
     case 1:
       dim0_ = dimensions_[0]; 
+      dim1_ = 0;
+      dim2_ = 0;
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 2:
       dim0_ = dimensions_[0]; 
       dim1_ = dimensions_[1]; 
+      dim2_ = 0;
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 3:
       dim0_ = dimensions_[0]; 
       dim1_ = dimensions_[1]; 
       dim2_ = dimensions_[2]; 
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 4:
@@ -248,6 +277,7 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&    dimensions,
       dim1_ = dimensions_[1]; 
       dim2_ = dimensions_[2]; 
       dim3_ = dimensions_[3]; 
+      dim4_ = 0;
       break;
       
     case 5:
@@ -261,7 +291,7 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&    dimensions,
   
     // Validate input: size of data array must match container size specified by its dimensions
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (int)data.size() != this->getSize() ),
+  TEST_FOR_EXCEPTION( ( (int)data.size() != this -> getSize() ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Size of input data does not match size of this container.");
 #endif
@@ -287,9 +317,14 @@ inline int FieldContainer<Scalar>::getRank() const {
 
 template<class Scalar>
 int FieldContainer<Scalar>::getSize() const {
+  // Important! This method is used by constructors to find out what is the needed size of data_
+  // based on the specified dimensions. Therefore, it cannot be implmented by returning data_.size
+  // and must be able to compute the size of the container based only on its specified dimensions
   
   // Size equals product of all dimensions stored in dimensions_
   int rank = dimensions_.size();
+  
+  // If container has no dimensions its size is zero
   if(rank == 0) {
     return 0;
   }
@@ -317,7 +352,7 @@ int FieldContainer<Scalar>::getSize() const {
       case 1:
         break;
         
-      // Compute size for containers with ranks hihger than 5
+        // Compute size for containers with ranks hihger than 5
       default:
         for(int r = 1; r < rank ; r++){
           size *= dimensions_[r];
@@ -339,11 +374,9 @@ inline void FieldContainer<Scalar>::getAllDimensions(Teuchos::Array<int>& dimens
 template<class Scalar>
 inline int FieldContainer<Scalar>::getDimension(const int whichDim) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > whichDim),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( (0 > whichDim), std::invalid_argument,
                       ">>> ERROR (FieldContainer): dimension order cannot be negative");
-  TEST_FOR_EXCEPTION( (whichDim >= this -> getRank() ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( (whichDim >= this -> getRank() ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): dimension order cannot exceed rank of the container");
 #endif
   return dimensions_[whichDim];
@@ -352,14 +385,27 @@ inline int FieldContainer<Scalar>::getDimension(const int whichDim) const {
 
 
 template<class Scalar>
+inline int FieldContainer<Scalar>::getEnumeration(const int i0) const {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 1), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): index is out of range.");
+#endif
+  return i0;
+}
+
+
+
+template<class Scalar>
 inline int FieldContainer<Scalar>::getEnumeration(const int i0,
                                                   const int i1) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 2), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
   return i0*dim1_ + i1;
@@ -372,14 +418,13 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
                                                   const int i1,
                                                   const int i2) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 3), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
   return (i0*dim1_ + i1)*dim2_ + i2;
@@ -393,17 +438,15 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
                                                   const int i2,
                                                   const int i3) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 4), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
   return ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3;
@@ -418,20 +461,17 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
                                                   const int i3,
                                                   const int i4) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 5), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
   return ( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4;
@@ -443,17 +483,11 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
 template<class Scalar>
 int FieldContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex) const {
 
-  // Check if empty multi-index.
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( multiIndex.size() == 0 ),
-                      std::invalid_argument,
-                      ">>> ERROR (FieldContainer): Empty multiIndex!");
-
   // Check if number of multi-indices matches rank of the FieldContainer object
   TEST_FOR_EXCEPTION( ( multiIndex.size() != dimensions_.size() ),
-                      std::length_error,
+                      std::invalid_argument,
                       ">>> ERROR (FieldContainer): Number of multi-indices does not match rank of container.");
-  
   TEST_FOR_EXCEPTION( ( ( multiIndex[0] < 0) || ( multiIndex[0] >= dim0_) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
@@ -543,6 +577,141 @@ int FieldContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex
 
 
 template<class Scalar>
+void FieldContainer<Scalar>::getMultiIndex(int & i0,
+                                           const int valueEnum) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 1), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
+#endif
+  i0 = valueEnum;
+}
+
+
+
+template<class Scalar>
+void FieldContainer<Scalar>::getMultiIndex(int & i0,
+                                           int & i1,
+                                           const int valueEnum) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 2), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
+#endif
+  
+  i0 = valueEnum/dim1_;
+  i1 = valueEnum - i0*dim1_;
+}
+
+
+
+template<class Scalar>
+void FieldContainer<Scalar>::getMultiIndex(int & i0,
+                                           int & i1,
+                                           int & i2,
+                                           const int valueEnum) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 3), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
+#endif
+  int tempDim = dim1_*dim2_;
+  int tempEnu = valueEnum;
+  i0 = tempEnu/tempDim;
+  
+  tempEnu -= i0*tempDim;
+  tempDim /= dim1_;
+  i1 = tempEnu/tempDim;
+  
+  tempEnu -= i1*tempDim;
+  tempDim /= dim2_;
+  i2 = tempEnu/tempDim;
+}
+
+
+
+template<class Scalar>
+void FieldContainer<Scalar>::getMultiIndex(int & i0,
+                                           int & i1,
+                                           int & i2,
+                                           int & i3,
+                                           const int valueEnum) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 4), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
+#endif
+  int tempDim = dim1_*dim2_*dim3_;
+  int tempEnu = valueEnum;
+  i0 = tempEnu/tempDim;
+  
+  tempEnu -= i0*tempDim;
+  tempDim /= dim1_;
+  i1 = tempEnu/tempDim;
+  
+  tempEnu -= i1*tempDim;
+  tempDim /= dim2_;
+  i2 = tempEnu/tempDim;
+  
+  tempEnu -= i2*tempDim;
+  tempDim /= dim3_;
+  i3 = tempEnu/tempDim;
+}
+
+
+
+
+template<class Scalar>
+void FieldContainer<Scalar>::getMultiIndex(int & i0,
+                                           int & i1,
+                                           int & i2,
+                                           int & i3,
+                                           int & i4,
+                                           const int valueEnum) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 5), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
+#endif
+  int tempDim = dim1_*dim2_*dim3_*dim4_;
+  int tempEnu = valueEnum;
+  i0 = tempEnu/tempDim;
+  
+  tempEnu -= i0*tempDim;
+  tempDim /= dim1_;
+  i1 = tempEnu/tempDim;
+  
+  tempEnu -= i1*tempDim;
+  tempDim /= dim2_;
+  i2 = tempEnu/tempDim;
+  
+  tempEnu -= i2*tempDim;
+  tempDim /= dim3_;
+  i3 = tempEnu/tempDim;
+
+  tempEnu -= i3*tempDim;
+  tempDim /= dim4_;
+  i4 = tempEnu/tempDim;
+}
+
+
+
+template<class Scalar>
 void FieldContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
                                            const int            valueEnum) const 
 {
@@ -551,7 +720,7 @@ void FieldContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
-                      ">>> ERROR (FieldContainer): Specified address is out of range.");    
+                      ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
   
   // make sure multiIndex has the right size to hold all multi-indices
@@ -630,17 +799,26 @@ void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
     switch(rank) {
       case 1:
         dim0_ = dimensions_[0]; 
+        dim1_ = 0;
+        dim2_ = 0;
+        dim3_ = 0;
+        dim4_ = 0;
         break;
         
       case 2:
         dim0_ = dimensions_[0]; 
         dim1_ = dimensions_[1]; 
+        dim2_ = 0;
+        dim3_ = 0;
+        dim4_ = 0;
         break;
         
       case 3:
         dim0_ = dimensions_[0]; 
         dim1_ = dimensions_[1]; 
         dim2_ = dimensions_[2]; 
+        dim3_ = 0;
+        dim4_ = 0;
         break;
         
       case 4:
@@ -648,6 +826,7 @@ void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
         dim1_ = dimensions_[1]; 
         dim2_ = dimensions_[2]; 
         dim3_ = dimensions_[3]; 
+        dim4_ = 0;
         break;
         
       case 5:
@@ -660,7 +839,7 @@ void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
     }
     
     // Resize data array
-    data_.resize(this->getSize());
+    data_.resize(this -> getSize());
   }
 }
 
@@ -668,9 +847,14 @@ void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
 
 template<class Scalar>
 inline void FieldContainer<Scalar>::resize(const int dim0) {
+  dim0_ = dim0;  
+  dim1_ = 0;  
+  dim2_ = 0;  
+  dim3_ = 0;  
+  dim4_ = 0;
   dimensions_.resize(1);  
-  dimensions_[0] = dim0;  dim0_ = dim0;
-  data_.resize(dim0); 
+  dimensions_[0] = dim0_; 
+  data_.resize(dim0_); 
 }
 
 
@@ -678,10 +862,15 @@ inline void FieldContainer<Scalar>::resize(const int dim0) {
 template<class Scalar>
 inline void FieldContainer<Scalar>::resize(const int dim0,
                                            const int dim1) {
+  dim0_ = dim0;  
+  dim1_ = dim1;  
+  dim2_ = 0;  
+  dim3_ = 0;  
+  dim4_ = 0;
   dimensions_.resize(2);  
-  dimensions_[0] = dim0;  dim0_ = dim0;
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  data_.resize(dim0*dim1); 
+  dimensions_[0] = dim0_;  
+  dimensions_[1] = dim1_;  
+  data_.resize(dim0_*dim1_); 
 }
 
 
@@ -690,11 +879,16 @@ template<class Scalar>
 inline void FieldContainer<Scalar>::resize(const int dim0,
                                            const int dim1,
                                            const int dim2) {
+  dim0_ = dim0;
+  dim1_ = dim1;
+  dim2_ = dim2;
+  dim3_ = 0;  
+  dim4_ = 0;
   dimensions_.resize(3);  
-  dimensions_[0] = dim0;  dim0_ = dim0;
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  dimensions_[2] = dim2;  dim2_ = dim2;
-  data_.resize(dim0*dim1*dim2); 
+  dimensions_[0] = dim0_; 
+  dimensions_[1] = dim1_;  
+  dimensions_[2] = dim2_;  
+  data_.resize(dim0_*dim1_*dim2_); 
 }
 
 
@@ -704,12 +898,17 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
                                            const int dim1,
                                            const int dim2,
                                            const int dim3) {
+  dim0_ = dim0;
+  dim1_ = dim1;
+  dim2_ = dim2;
+  dim3_ = dim3;
+  dim4_ = 0;
   dimensions_.resize(4);  
-  dimensions_[0] = dim0;  dim0_ = dim0;
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  dimensions_[2] = dim2;  dim2_ = dim2;
-  dimensions_[3] = dim3;  dim3_ = dim3;
-  data_.resize(dim0*dim1*dim2*dim3); 
+  dimensions_[0] = dim0_;  
+  dimensions_[1] = dim1_;  
+  dimensions_[2] = dim2_;  
+  dimensions_[3] = dim3_;  
+  data_.resize(dim0_*dim1_*dim2_*dim3_); 
 }
 
 
@@ -720,13 +919,18 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
                                            const int dim2,
                                            const int dim3,
                                            const int dim4) {
+  dim0_ = dim0;
+  dim1_ = dim1;
+  dim2_ = dim2;
+  dim3_ = dim3;
+  dim4_ = dim4;
   dimensions_.resize(5);  
-  dimensions_[0] = dim0;  dim0_ = dim0;
-  dimensions_[1] = dim1;  dim1_ = dim1;
-  dimensions_[2] = dim2;  dim2_ = dim2;
-  dimensions_[3] = dim3;  dim3_ = dim3;
-  dimensions_[4] = dim4;  dim4_ = dim4;
-  data_.resize(dim0*dim1*dim2*dim3*dim4); 
+  dimensions_[0] = dim0_;  
+  dimensions_[1] = dim1_;  
+  dimensions_[2] = dim2_;  
+  dimensions_[3] = dim3_;  
+  dimensions_[4] = dim4_;  
+  data_.resize(dim0_*dim1_*dim2_*dim3_*dim4_); 
 }
 
 
@@ -744,17 +948,26 @@ inline void FieldContainer<Scalar>::resize(const FieldContainer<Scalar>& another
   switch(newRank) {
     case 1:
       dim0_ = dimensions_[0]; 
+      dim1_ = 0;
+      dim2_ = 0;
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 2:
       dim0_ = dimensions_[0]; 
       dim1_ = dimensions_[1]; 
+      dim2_ = 0;
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 3:
       dim0_ = dimensions_[0]; 
       dim1_ = dimensions_[1]; 
       dim2_ = dimensions_[2]; 
+      dim3_ = 0;
+      dim4_ = 0;
       break;
       
     case 4:
@@ -762,6 +975,7 @@ inline void FieldContainer<Scalar>::resize(const FieldContainer<Scalar>& another
       dim1_ = dimensions_[1]; 
       dim2_ = dimensions_[2]; 
       dim3_ = dimensions_[3]; 
+      dim4_ = 0;
       break;
       
     case 5:
@@ -830,17 +1044,42 @@ void FieldContainer<Scalar>::setValues(const Teuchos::Array<Scalar>& dataArray) 
 
 
 template<class Scalar>
+inline const Scalar& FieldContainer<Scalar>::operator () (const int i0) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 1), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): index is out of range.");    
+#endif
+  return data_[i0]; 
+}
+
+
+template<class Scalar>
+inline Scalar& FieldContainer<Scalar>::operator () (const int i0)  
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 1), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): index is out of range.");    
+#endif
+  return data_[i0]; 
+}
+
+
+
+template<class Scalar>
 inline const Scalar& FieldContainer<Scalar>::operator () (const int i0,
                                                           const int i1) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> getRank() != 2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
   return data_[i0*dim1_ + i1]; 
@@ -854,11 +1093,9 @@ inline Scalar& FieldContainer<Scalar>::operator () (const int i0,
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> getRank() != 2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
   return data_[i0*dim1_ + i1]; 
@@ -874,14 +1111,11 @@ inline const Scalar& FieldContainer<Scalar>::operator () (const int i0,
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> getRank() != 3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
   return data_[(i0*dim1_ + i1)*dim2_ + i2]; 
@@ -895,14 +1129,11 @@ inline Scalar& FieldContainer<Scalar>::operator () (const int i0,
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> getRank() != 3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
   return data_[(i0*dim1_ + i1)*dim2_ + i2]; 
@@ -916,17 +1147,15 @@ inline const Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
                                                            const int i2,
                                                            const int i3) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 4), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
   return data_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
@@ -939,17 +1168,15 @@ inline Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
                                                      const int i2,
                                                      const int i3) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 4), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
   return data_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
@@ -964,20 +1191,17 @@ inline const Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
                                                            const int i3,
                                                            const int i4) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 5), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
   return data_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
@@ -990,20 +1214,17 @@ inline Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
                                                      const int i3,
                                                      const int i4) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( ( i0 < 0) || ( i0 >= dim0_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( this -> getRank() != 5), std::invalid_argument, 
+                      ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
+  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
   return data_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
@@ -1031,6 +1252,11 @@ inline FieldContainer<Scalar>& FieldContainer<Scalar>::operator = (const FieldCo
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Invalid right-hand side to '='. Self-assignment prohibited.");
 #endif
+  dim0_ = right.dim0_;
+  dim1_ = right.dim1_;
+  dim2_ = right.dim2_;
+  dim3_ = right.dim3_;
+  dim4_ = right.dim4_;
   data_ = right.data_;
   dimensions_ = right.dimensions_; 
   return *this;
@@ -1062,15 +1288,15 @@ std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar>& conta
   container.getAllDimensions(dimensions);
   
   os<< "===============================================================================\n"\
-    << "\t Container size = " << size << "   rank = " << rank << "\n" ;
+    << "\t Container size = " << size << "\n"
+    << "\t Container rank = " << rank << "\n" ;
   
   if( (rank == 0 ) && (size == 0) ) {
-    os<< "\t Index Range    = (0) \n"    
-      << "===============================================================================\n"\
+    os<< "===============================================================================\n"\
       << "|                     *** This is an empty container ****                     |\n";
   }
   else {
-    os<< "\t Index Range    = ";
+    os<< "\t Dimensions     = ";
     
     for(int r = 0; r < rank; r++){
       os << " (" << dimensions[r] <<") ";
@@ -1078,7 +1304,7 @@ std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar>& conta
     os << "\n";
     
     os<< "===============================================================================\n"\
-      << "| \t Multi-index        Address              Value                            |\n"\
+      << "| \t Multi-index        Enumeration               Value                       |\n"\
       << "===============================================================================\n";
   }
   

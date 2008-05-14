@@ -29,11 +29,11 @@
 
 
 /** \file
-\brief  Unit test of LexContainer class
+\brief  Unit test of FieldContainer class
 \author Created by P. Bochev and D. Ridzal.
 */
 
-#include "Intrepid_LexContainer.hpp"
+#include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   *outStream  \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                           Unit Test LexContainer                            |\n" \
+    << "|                           Unit Test FieldContainer                          |\n" \
     << "|                                                                             |\n" \
     << "|     1) Testing exception handling                                           |\n" \
     << "|       requires intrepid to be configured with --enable-intrepid-debug       |\n" \
@@ -75,19 +75,19 @@ int main(int argc, char *argv[]) {
   // Test initializations
   int errorFlag  = 0;
   
-  // Define variables to create and use LexContainers
-  Teuchos::Array<int> indexRange;
+  // Define variables to create and use FieldContainers
+  Teuchos::Array<int> dimensions;
   Teuchos::Array<int> multiIndex;
   
-  // Initialize indexRange for rank-4 multi-index value
-  indexRange.resize(4);
-  indexRange[0] = 5;
-  indexRange[1] = 3;
-  indexRange[2] = 2;
-  indexRange[3] = 7;
+  // Initialize dimensions for rank-4 multi-index value
+  dimensions.resize(4);
+  dimensions[0] = 5;
+  dimensions[1] = 3;
+  dimensions[2] = 2;
+  dimensions[3] = 7;
   
-  // Create a LexContainer
-  LexContainer<double> myContainer(indexRange);
+  // Create a FieldContainer
+  FieldContainer<double> myContainer(dimensions);
   
   // These tests should only run if intrepid was configured with --enable-intrepid-debug option
   // Each test is designed to cause an exception. The total number of all caught exceptions should
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     << "| TEST 1: Catching exceptions                                                 |\n"\
     << "===============================================================================\n\n";
   
-  int numTestException = 7;
+  int numTestException =16;
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + numTestException;
   
@@ -147,23 +147,23 @@ int main(int argc, char *argv[]) {
     
     try{  // catch exception (3)
       
-      // Trying to set values from array whose size is less than LexContainer's size:
+      // Trying to set values from array whose size is less than FieldContainer's size:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      <<  " Trying to set values from array whose size is less than LexContainer's size: \n";
+      <<  " Trying to set values from array whose size is less than FieldContainer's size: \n";
       
-      // Change one of the values of the indexRange to a lesser value: original value was 5 
-      indexRange[0] = 4;
+      // Change one of the values of the dimensions to a lesser value: original value was 5 
+      dimensions[0] = 4;
       
       // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
       Teuchos::Array<double> dataTeuchosArray(4*3*2*7);
       
       // Fill with data
       int counter = 0;
-      for(int i=0; i < indexRange[0]; i++){
-        for(int j=0; j < indexRange[1]; j++){
-          for(int k=0; k < indexRange[2]; k++){
-            for(int l = 0; l < indexRange[3]; l++){
+      for(int i=0; i < dimensions[0]; i++){
+        for(int j=0; j < dimensions[1]; j++){
+          for(int k=0; k < dimensions[2]; k++){
+            for(int l = 0; l < dimensions[3]; l++){
               dataTeuchosArray[counter] = (double)counter;
               counter++;
             }
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
         }
       }
       
-      // Now try to stuff this data into LexContainer
+      // Now try to stuff this data into FieldContainer
       myContainer.setValues(dataTeuchosArray);
     }
     catch (std::logic_error err) {
@@ -182,25 +182,25 @@ int main(int argc, char *argv[]) {
     
     try{  // catch exception (4)
       
-      // Trying to set values from array whose size is greater than LexContainer's size:
+      // Trying to set values from array whose size is greater than FieldContainer's size:
       *outStream << "\n" \
       << "===============================================================================\n"\
-      <<  " Trying to set values from array whose size is greater than LexContainer's size: \n";
+      <<  " Trying to set values from array whose size is greater than FieldContainer's size: \n";
       
-      // Change one of the values of the indexRange to a lesser value: restore indexRange[0] to the 
-      // value used to construct the LexArray and change indexRange[2] to a greater value
-      indexRange[0] = 5;
-      indexRange[2] = 3;
+      // Change one of the values of the dimensions to a lesser value: restore dimensions[0] to the 
+      // value used to construct the LexArray and change dimensions[2] to a greater value
+      dimensions[0] = 5;
+      dimensions[2] = 3;
       
       // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
       Teuchos::Array<double> dataTeuchosArray(5*3*3*7);
       
       // Fill with data
       int counter = 0;
-      for(int i=0; i < indexRange[0]; i++){
-        for(int j=0; j < indexRange[1]; j++){
-          for(int k=0; k < indexRange[2]; k++){
-            for(int l = 0; l < indexRange[3]; l++){
+      for(int i=0; i < dimensions[0]; i++){
+        for(int j=0; j < dimensions[1]; j++){
+          for(int k=0; k < dimensions[2]; k++){
+            for(int l = 0; l < dimensions[3]; l++){
               dataTeuchosArray[counter] = (double)counter;
               counter++;
             }
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
         }
       }
       
-      // Now try to stuff this data into LexContainer
+      // Now try to stuff this data into FieldContainer
       myContainer.setValues(dataTeuchosArray);
     }
     catch (std::logic_error err) {
@@ -247,19 +247,131 @@ int main(int argc, char *argv[]) {
     
     try{ // catch exception (7)
       
-      //Trying to self-assign LexContainer
+      //Trying to self-assign FieldContainer
       *outStream << "\n" \
       << "===============================================================================\n"\
-      << " Trying to self-assign LexContainer \n";
+      << " Trying to self-assign FieldContainer \n";
       myContainer = myContainer;
     }
     catch(std::logic_error err) {
       *outStream << err.what() << "\n"; 
     }
 
+    
+    // Container of rank-1
+    FieldContainer<double> rank1Container(3);
+    
+    // catch exception (8): method is for rank-2 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " using a method for rank-2 container \n";
+      rank1Container.getEnumeration(1,1); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    // catch exception (9): method is for rank-3 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " using a method for rank-3 container \n";
+      rank1Container.getEnumeration(1,1,1); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    // catch exception (10): method is for rank-4 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " using a method for rank-4 container \n";
+      rank1Container.getEnumeration(1,1,1,1); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    // catch exception (11): method is for rank-5 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " using a method for rank-5 container \n";
+      rank1Container.getEnumeration(1,1,1,1,1); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    // catch exception (12): 4 is out of bounds
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " The specified enumeration is out of bounds \n";
+      int i0;
+      rank1Container.getMultiIndex(i0,4); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    // catch exception (13): method for rank-2 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " Using a method for rank-2 containers \n";
+      int i0,i1;
+      rank1Container.getMultiIndex(i0,i1,2); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    // catch exception (14): method for rank-3 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " Using a method for rank-2 containers \n";
+      int i0,i1,i2;
+      rank1Container.getMultiIndex(i0,i1,i2,2); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    
+    // catch exception (15): method for rank-4 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " Using a method for rank-4 containers \n";
+      int i0,i1,i2,i3;
+      rank1Container.getMultiIndex(i0,i1,i2,i3,2); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    
+    // catch exception (16): method for rank-5 container
+    try{  
+      *outStream << "\n" \
+      << "===============================================================================\n"\
+      << " Using a method for rank-5 containers \n";
+      int i0,i1,i2,i3,i4;
+      rank1Container.getMultiIndex(i0,i1,i2,i3,i4,2); 
+    }
+    catch(std::logic_error err){
+      *outStream << err.what() << "\n";
+    }
+    
+    
     // Check if number of caught exceptions matches the expected number
     if (TestForException_getThrowNumber() != endThrowNumber) {
       errorFlag++;
+      
     }
   } // outer try block
   catch (std::logic_error err) {

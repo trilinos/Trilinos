@@ -85,10 +85,11 @@ namespace Intrepid {
     
     /** \brief Default constructor.
     */
-    FieldContainer() {
+    FieldContainer() : dim0_(0), dim1_(0), dim2_(0), dim3_(0), dim4_(0) 
+    {
       data_.resize(0);
       dimensions_.resize(0);
-    };
+    } ;
     
     
     /** \brief Copy constructor.
@@ -201,6 +202,14 @@ namespace Intrepid {
       \param whichDim     [in]      - order of the dimension we want to get
       */
     int getDimension(const int whichDim) const;
+
+    
+    /** \brief Returns enumeration of a value (its order relative to the container), based on its 
+      multi-index, for rank-1 containers. 
+      
+      \param i0         [in]        - 1st index
+      */
+    int getEnumeration(const int i0) const;
     
     
     /** \brief Returns enumeration of a value (its order relative to the container), based on its 
@@ -263,7 +272,78 @@ namespace Intrepid {
     int getEnumeration(const Teuchos::Array<int>& multiIndex) const;
     
     
-    /** \brief Returns the multi-index corresponding to the specified enumeration of a value
+    /** \brief  Returns the multi-index of a value, based on its enumeration, as a list, for
+      rank-1 containers.
+      
+      \param i0         [out]        - 1st index
+      \param valueEnum  [in]         - enumeration of the value (its order relative to the container)      
+    */
+    void getMultiIndex(int &     i0,
+                       const int valueEnum) const;
+    
+    
+    /** \brief  Returns the multi-index of a value, based on its enumeration, as a list, for
+      rank-2 containers.
+      
+      \param i0         [out]        - 1st index
+      \param i1         [out]        - 2nd index
+      \param valueEnum  [in]         - enumeration of the value (its order relative to the container)      
+    */
+    void getMultiIndex(int &     i0,
+                       int &     i1,
+                       const int valueEnum) const;
+    
+    
+    /** \brief  Returns the multi-index of a value, based on its enumeration, as a list, for
+      rank-3 containers.
+      
+      \param i0         [out]        - 1st index
+      \param i1         [out]        - 2nd index
+      \param i2         [out]        - 3rd index
+      \param valueEnum  [in]         - enumeration of the value (its order relative to the container)      
+      */
+    void getMultiIndex(int &     i0,
+                       int &     i1,
+                       int &     i2,
+                       const int valueEnum) const;
+    
+    
+    /** \brief  Returns the multi-index of a value, based on its enumeration, as a list, for
+      rank-4 containers.
+      
+      \param i0         [out]        - 1st index
+      \param i1         [out]        - 2nd index
+      \param i2         [out]        - 3rd index
+      \param i3         [out]        - 4th index
+      \param valueEnum  [in]         - enumeration of the value (its order relative to the container)      
+      */
+    void getMultiIndex(int &     i0,
+                       int &     i1,
+                       int &     i2,
+                       int &     i3,
+                       const int valueEnum) const;
+    
+    
+    /** \brief  Returns the multi-index of a value, based on its enumeration, as a list, for
+      rank-5 containers.
+      
+      \param i0         [out]        - 1st index
+      \param i1         [out]        - 2nd index
+      \param i2         [out]        - 3rd index
+      \param i3         [out]        - 4th index
+      \param i4         [out]        - 5th index
+      \param valueEnum  [in]         - enumeration of the value (its order relative to the container)      
+      */
+    void getMultiIndex(int &     i0,
+                       int &     i1,
+                       int &     i2,
+                       int &     i3,
+                       int &     i4,
+                       const int valueEnum) const;
+    
+    
+    /** \brief Returns the multi-index of a value, based on its enumeration, as an array, for
+      containers of arbitrary rank.
       
       \param multiIndex   [out]       - array containg multi-index of the specified enumeration
       \param valueEnum    [in]        - enumeration of the value (its order relative to the container)
@@ -409,6 +489,16 @@ namespace Intrepid {
       return data_;
     }    
 
+    
+    /** \brief Overloaded () operators for rank-1 containers.
+      
+      \param i0         [in]        - 1st index
+      \param i1         [in]        - 2nd index
+      */
+    const Scalar& operator () (const int i0) const;
+    
+    Scalar&       operator () (const int i0);
+    
     
     /** \brief Overloaded () operators for rank-2 containers.
       
