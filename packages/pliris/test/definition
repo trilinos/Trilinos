@@ -2,10 +2,15 @@
 # FRAMEWORK group
 #
 
-# vector_random_test.exe is hanging.  Disabling it for now.
+(FRAMEWORK, INSTALL) {
+    DIRS = vector_random;
+    ARGS = 1000 1;
+    COMM = MPI(2 3-*);
+}
 
-#(FRAMEWORK) {
-#    DIRS = vector_random;
-#    ARGS = 1000 2, 1000 1;
-#    COMM = MPI , MPI;
-#}
+(FRAMEWORK, INSTALL) {
+    DIRS = vector_random;
+    ARGS = 1000 2;
+    COMM = MPI(2 4);
+}
+
