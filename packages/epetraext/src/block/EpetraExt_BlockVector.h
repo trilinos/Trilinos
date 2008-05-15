@@ -73,6 +73,13 @@ class BlockVector: public Epetra_Vector {
 
   //! Load a single block into a Block Vector: block row is global, not a stencil value
   int LoadBlockValues(const Epetra_Vector & BaseVec, int BlockRow);
+
+  //! Load entries into BlockVector with base vector indices offset by BlockRow
+  int BlockSumIntoGlobalValues(int NumIndices, double* Values,
+                               int* Indices, int BlockRow);
+  //! Load entries into BlockVector with base vector indices offset by BlockRow
+  int BlockReplaceGlobalValues(int NumIndices, double* Values,
+                               int* Indices, int BlockRow);
 	
  protected:
 

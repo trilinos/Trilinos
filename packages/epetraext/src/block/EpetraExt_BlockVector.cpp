@@ -98,7 +98,49 @@ int BlockVector::LoadBlockValues(const Epetra_Vector & BaseVector, int GlobalBlo
    }
 
    return 0;
-}
+}   
+//=========================================================================
+int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* Values,
+                                          int* Indices, int GlobalBlockRow)
+{
+   int IndexOffset = GlobalBlockRow * Offset_;
+   int localIndex=0;
+
+   // For each entry in the base vector, translate its global ID
+   // by the IndexOffset and load into this blockVector
+   for (int i=0; i<NumIndices; i++) {
+      localIndex = this->Map().LID((IndexOffset + Indices[i]));
+      if (localIndex==-1) { 
+	     cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
+                  << " " << IndexOffset << " " << Indices[i] << endl;
+	     return -1;
+      }
+      (*this)[localIndex] += Values[i];
+   }
+
+   return 0;
+}   
+//=========================================================================
+int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
+                                          int* Indices, int GlobalBlockRow)
+{
+   int IndexOffset = GlobalBlockRow * Offset_;
+   int localIndex=0;
+
+   // For each entry in the base vector, translate its global ID
+   // by the IndexOffset and load into this blockVector
+   for (int i=0; i<NumIndices; i++) {
+      localIndex = this->Map().LID((IndexOffset + Indices[i]));
+      if (localIndex==-1) { 
+	     cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
+                  << " " << IndexOffset << " " << Indices[i] << endl;
+	     return -1;
+      }
+      (*this)[localIndex] = Values[i];
+   }
+
+   return 0;
+}   
 
 
 } //namespace EpetraExt

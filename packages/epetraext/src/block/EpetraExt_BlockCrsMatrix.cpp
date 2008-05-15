@@ -127,6 +127,44 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 }
 
 //==============================================================================
+void BlockCrsMatrix::BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
+     double* Values, const int* Indices, const int Row, const int Col)
+//All arguments could be const, except some were not set as const in CrsMatrix
+{
+  int RowOffset = RowIndices_[Row] * Offset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+
+  // Convert to BlockMatrix Global numbering scheme
+  vector<int> OffsetIndices(NumIndices);
+  for( int l = 0; l < NumIndices; ++l ) OffsetIndices[l] = Indices[l] + ColOffset;
+
+  int ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices,
+                                   Values, &OffsetIndices[0]); 
+
+  if (ierr != 0) cout << "WARNING BlockCrsMatrix::BlockSumIntoGlobalValues err = "
+     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+}
+
+//==============================================================================
+void BlockCrsMatrix::BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
+     double* Values, const int* Indices, const int Row, const int Col)
+//All arguments could be const, except some were not set as const in CrsMatrix
+{
+  int RowOffset = RowIndices_[Row] * Offset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+
+  // Convert to BlockMatrix Global numbering scheme
+  vector<int> OffsetIndices(NumIndices);
+  for( int l = 0; l < NumIndices; ++l ) OffsetIndices[l] = Indices[l] + ColOffset;
+
+  int ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices,
+                                   Values, &OffsetIndices[0]); 
+
+  if (ierr != 0) cout << "WARNING BlockCrsMatrix::BlockReplaceGlobalValues err = "
+     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+}
+
+//==============================================================================
 void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col)
 {
   int RowOffset = RowIndices_[Row] * Offset_;

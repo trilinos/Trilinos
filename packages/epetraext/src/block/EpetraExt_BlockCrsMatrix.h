@@ -89,10 +89,17 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   int RowIndex( int i = 0 ) { return RowIndices_[i]; }
 	
   //! Routine for loading a base matrices values into the large Block Matrix
-  //! For now, the row and column arguments are indices into RowStencil 
+  //! The Row and Col arguments are indices into RowStencil 
   void LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
-  void ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
 
+  //! Sum Entries into Block matrix using base-matrix numbering plus block Row and Col
+  //! The Row and Col arguments are indices into RowStencil 
+  void BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
+     double* Values, const int* Indices, const int Row, const int Col);
+  void BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
+     double* Values, const int* Indices, const int Row, const int Col);
+
+  void ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
 
  protected:
 
