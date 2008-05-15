@@ -1101,7 +1101,7 @@ void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *co
 #ifdef ML_MPI
   double *tmpptr;
 
-  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
+  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_DOUBLE, MPI_SUM,
                 comm->USR_comm);
   tmpptr = *tvals;
   *tvals = *tvals2;
