@@ -15,12 +15,14 @@
     DIRS = scripts/daily/mpi;
     COMM = CUSTOM-MPI; 
     ARGS = NightlyTest True True;      
+    X-HOST = regression.sandia.gov;
     EXIT-STATUS = STRING-COMPARISON ; 
 }
 (FRAMEWORK) {   
     DIRS = scripts/daily/serial;
     COMM = SERIAL; 
-    ARGS = NightlyTest True True;      
+    ARGS = NightlyTest True True;
+    X-HOST = regression.sandia.gov;     
     EXIT-STATUS = STRING-COMPARISON ; 
 }
 
