@@ -37,11 +37,11 @@ ML_MLMEX_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
 # way of figuring out what my mex system extension is.  Of course, this means cross-compiling
 # probably won't work.  C'est la vie.
 EXEEXT = .$(MEXEXT_VALUE)
+EXTRA_DIST = ml.m
 
 if BUILD_ML_MATLAB
 bin_PROGRAMS = mlmex 
 bin_SCRIPTS = ml.m
-EXTRA_DIST = ml.m
 
 mlmex_SOURCES      = mlmex.cpp
 mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
