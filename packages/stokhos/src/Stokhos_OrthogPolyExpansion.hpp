@@ -54,14 +54,20 @@ namespace Stokhos {
     //! Typename of values
     typedef T value_type;
 
+    //! Typename of TripleProduct tensor
+    typedef TripleProduct< OrthogPolyBasis<T> > tp_type;
+
     //! Constructor
-    OrthogPolyExpansion(const Teuchos::RCP< OrthogPolyBasis<T> >& basis);
+    OrthogPolyExpansion(const Teuchos::RCP<const OrthogPolyBasis<T> >& basis);
 
     //! Get expansion size
     unsigned int size() const { return sz; }
 
     //! Get basis
     const OrthogPolyBasis<T>& getBasis() const {return Cijk.getBasis(); }
+
+    //! Get triple product
+    const tp_type& getTripleProduct() const { return Cijk; }
  
     // Operations
     void unaryMinus(OrthogPolyApprox<value_type>& c, 
@@ -216,9 +222,6 @@ namespace Stokhos {
 
     //! Typename of matrix
     typedef Teuchos::SerialDenseMatrix<ordinal_type,value_type> matrix_type;
-
-    //! Typename of TripleProduct tensor
-    typedef TripleProduct< OrthogPolyBasis<T> > tp_type;
 
     //! Workspace size
     unsigned int sz;

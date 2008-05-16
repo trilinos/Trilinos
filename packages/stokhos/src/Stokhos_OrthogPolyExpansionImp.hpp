@@ -33,7 +33,7 @@
 
 template <typename T> 
 Stokhos::OrthogPolyExpansion<T>::
-OrthogPolyExpansion(const Teuchos::RCP< Stokhos::OrthogPolyBasis<T> >& basis) :
+OrthogPolyExpansion(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<T> >& basis) :
   sz(basis->size()),
   A(2*sz,2*sz),
   B(2*sz,2),
@@ -437,8 +437,6 @@ minus(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_
   cc[0] = ca[0] - b;
   for (unsigned int i=1; i<pc; i++)
     cc[i] = ca[i];
-
-  return c;
 }
 
 template <typename T>
@@ -489,9 +487,12 @@ times(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_
     for (unsigned int i=0; i<pc; i++)
       cc[i] = ca[i]*cb[0];
   }
-  else if (pb >= 1) {
+  else if (pb > 1) {
     for (unsigned int i=0; i<pc; i++)
       cc[i] = ca[0]*cb[i];
+  }
+  else {
+    cc[0] = ca[0]*cb[0];
   }
 }
 
@@ -808,7 +809,7 @@ log10(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_
       const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
 {
   log(c,a);
-  divide(c,a,std::log(10.0));
+  divide(c,c,std::log(10.0));
 }
 
 template <typename T>

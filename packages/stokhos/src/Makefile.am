@@ -55,8 +55,12 @@ STOKHOS_H = \
 	$(srcdir)/Stokhos_HermiteBasisImp.hpp \
 	$(srcdir)/Stokhos_HermiteEBasis.hpp \
 	$(srcdir)/Stokhos_HermiteEBasisImp.hpp \
+	$(srcdir)/Stokhos_HermiteEBasis2.hpp \
+	$(srcdir)/Stokhos_HermiteEBasis2Imp.hpp \
 	$(srcdir)/Stokhos_HermiteUnitBasis.hpp \
 	$(srcdir)/Stokhos_HermiteUnitBasisImp.hpp \
+	$(srcdir)/Stokhos_LegendreBasis.hpp \
+	$(srcdir)/Stokhos_LegendreBasisImp.hpp \
 	$(srcdir)/Stokhos_TripleProduct.hpp \
 	$(srcdir)/Stokhos_TripleProductImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApprox.hpp \

@@ -42,17 +42,21 @@
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_HermiteEBasis.hpp"
+#include "Stokhos_HermiteEBasis2.hpp"
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_UnitHermiteBasis.hpp"
+#include "Stokhos_LegendreBasis.hpp"
 
 typedef Stokhos::HermiteEBasis<double> basis_type;
+//typedef Stokhos::LegendreBasis<double> basis_type;
 
 int main(int argc, char **argv)
 {
   try {
-    const unsigned int d = 7;
+    const unsigned int d = 12;
     Teuchos::RCP<basis_type> basis = 
       Teuchos::rcp(new basis_type(d));
+    std::cout << *basis << std::endl;
     Stokhos::OrthogPolyExpansion<double> he(basis);
     Stokhos::OrthogPolyApprox<double> u(d+1),v(d+1),w(d+1);
     u[0] = 1.0;

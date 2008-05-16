@@ -32,7 +32,7 @@
 
 template <typename BasisT>
 Stokhos::TripleProduct<BasisT>::
-TripleProduct(const Teuchos::RCP<BasisT>& basis_) :
+TripleProduct(const Teuchos::RCP<const BasisT>& basis_) :
   l(basis_->size()),
   basis(basis_),
   Cijk(l*l*l),

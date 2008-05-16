@@ -47,7 +47,7 @@ namespace Stokhos {
     typedef typename BasisT::value_type value_type;
     
     //! Constructor
-    TripleProduct(const Teuchos::RCP<BasisT>& basis);
+    TripleProduct(const Teuchos::RCP<const BasisT>& basis);
     
     //! Destructor
     ~TripleProduct();
@@ -94,7 +94,7 @@ namespace Stokhos {
     unsigned int l;
     
     //! Basis
-    Teuchos::RCP<BasisT> basis;
+    Teuchos::RCP<const BasisT> basis;
 
     //! Cijk data
     std::vector<value_type> Cijk;
