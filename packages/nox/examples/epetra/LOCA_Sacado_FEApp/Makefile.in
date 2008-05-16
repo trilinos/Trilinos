@@ -150,6 +150,7 @@ am__objects_9 = brusselator-FEApp_Mesh.$(OBJEXT)
 am__objects_10 = brusselator-FEApp_InitPostOps.$(OBJEXT) \
 	brusselator-FEApp_GlobalFill.$(OBJEXT)
 am__objects_11 = brusselator-FEApp_CZeroDiscretization.$(OBJEXT) \
+	brusselator-FEApp_BlockDiscretization.$(OBJEXT) \
 	brusselator-FEApp_DiscretizationFactory.$(OBJEXT)
 am__objects_12 = brusselator-FEApp_Application.$(OBJEXT) \
 	brusselator-FEApp_ModelEvaluator.$(OBJEXT)
@@ -407,10 +408,12 @@ FILL = \
 DISC_H = \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_BlockDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp
 
 DISC = \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
+	$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 
 APP_H = \
@@ -506,6 +509,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_Application.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BlockDiscretization.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Po@am__quote@
@@ -777,6 +781,20 @@ brusselator-FEApp_CZeroDiscretization.obj: $(FEAPP_PATH)/FEApp_CZeroDiscretizati
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='brusselator-FEApp_CZeroDiscretization.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
+
+brusselator-FEApp_BlockDiscretization.o: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BlockDiscretization.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo -c -o brusselator-FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='brusselator-FEApp_BlockDiscretization.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+
+brusselator-FEApp_BlockDiscretization.obj: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BlockDiscretization.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo -c -o brusselator-FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='brusselator-FEApp_BlockDiscretization.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
 
 brusselator-FEApp_DiscretizationFactory.o: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_DiscretizationFactory.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Tpo -c -o brusselator-FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp

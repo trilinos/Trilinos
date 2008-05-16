@@ -46,21 +46,24 @@ if BUILD_EPETRA_EXAMPLES
 if ENABLE_NOX_SACADO
 if BUILD_NOX_EPETRAEXT_SUPPORT
 include $(top_builddir)/../sacado/Makefile.export.sacado
+noinst_LIBRARIES = libfeapp.a
 noinst_PROGRAMS = brusselator
 endif
 endif
 endif
 
-brusselator_SOURCES = \
-	$(srcdir)/brusselator.C \
-	$(FEAPP_H) \
-	$(FEAPP)
+AM_CPPFLAGS = -I$(FEAPP_PATH) $(NOX_INCLUDES) $(SACADO_INCLUDES)
 
-brusselator_CXXFLAGS = \
-	-I$(FEAPP_PATH) \
-	$(NOX_INCLUDES) \
-	$(SACADO_INCLUDES)
+libfeapp_a_SOURCES = $(FEAPP_H) $(FEAPP)
 
-brusselator_LDADD = \
-	$(NOX_LIBS) \
-	$(SACADO_LIBS)
+if USE_ALTERNATE_AR
+libfeapp_a_AR = $(ALTERNATE_AR)
+else
+libfeapp_a_AR = $(AR) cru
+endif
+
+brusselator_SOURCES = $(srcdir)/brusselator.C 
+
+brusselator_DEPENDENCIES = $(builddir)/libfeapp.a
+
+brusselator_LDADD = -L$(builddir) -lfeapp $(NOX_LIBS) $(SACADO_LIBS)
