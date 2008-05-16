@@ -28,10 +28,11 @@
 
 EXEEXT = .exe
 
-all-local: $(SIMPLE_ADJOINT_EXE_LINKS)
+all-local: $(SIMPLE_ADJOINT_XML_FILES) $(SIMPLE_ADJOINT_EXE_LINKS)
 	@echo ""
-	@echo "rythmos/example/simpleAdjoint built successfully."
+	@echo "rythmos/test/simpleAdjoint built successfully."
 	@echo ""
+
 
 #
 # Actual programs
@@ -51,6 +52,16 @@ simpleAdjoint_LDADD = $(common_ldadd)
 
 
 #
+# XML Files
+#
+
+SIMPLE_ADJOINT_XML_FILES = simpleAdjoint_n4.xml
+
+simpleAdjoint_n4.xml: _simpleAdjoint_n4.xml
+	cp $(srcdir)/_simpleAdjoint_n4.xml simpleAdjoint_n4.xml
+
+
+#
 # Links
 #
 
@@ -58,55 +69,11 @@ if ENABLE_RYTHMOS_STRATIMIKOS_AMESOS
 LINK_SIMPLE_ADJOINT_AMESOS=simpleAdjoint_amesos.exe
 endif
 
-if ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO
-LINK_SIMPLE_ADJOINT_AZTECOO=simpleAdjoint_aztecoo.exe
-if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
-LINK_SIMPLE_ADJOINT_AZTECOO_IFPACK=simpleAdjoint_aztecoo_ifpack.exe
-endif
-if ENABLE_RYTHMOS_STRATIMIKOS_ML
-LINK_SIMPLE_ADJOINT_AZTECOO_ML=simpleAdjoint_aztecoo_ml.exe
-endif
-endif
-
-if ENABLE_RYTHMOS_STRATIMIKOS_BELOS
-LINK_SIMPLE_ADJOINT_BELOS=simpleAdjoint_belos.exe
-if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
-LINK_SIMPLE_ADJOINT_BELOS_IFPACK=simpleAdjoint_belos_ifpack.exe
-endif
-if ENABLE_RYTHMOS_STRATIMIKOS_ML
-LINK_SIMPLE_ADJOINT_BELOS_ML=simpleAdjoint_belos_ml.exe
-endif
-endif
-
 simpleAdjoint_amesos.exe: simpleAdjoint.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
-simpleAdjoint_aztecoo.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_aztecoo_ifpack.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_aztecoo_ml.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_belos.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_belos_ifpack.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_belos_ml.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
 SIMPLE_ADJOINT_EXE_LINKS = \
-  $(LINK_SIMPLE_ADJOINT_AMESOS) \
-  $(LINK_SIMPLE_ADJOINT_AZTECOO) \
-  $(LINK_SIMPLE_ADJOINT_AZTECOO_IFPACK) \
-  $(LINK_SIMPLE_ADJOINT_AZTECOO_ML) \
-  $(LINK_SIMPLE_ADJOINT_BELOS) \
-  $(LINK_SIMPLE_ADJOINT_BELOS_IFPACK) \
-  $(LINK_SIMPLE_ADJOINT_BELOS_ML)
+  $(LINK_SIMPLE_ADJOINT_AMESOS)
 
 #
 # Common stuff
@@ -136,3 +103,7 @@ CPPFLAGS += -I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransie
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =
+
+
+# Add files to tarball that are not explictly know by autotools
+EXTRA_DIST = simpleAdjoint_n4.xml

@@ -41,6 +41,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_LocalTestingHelpers.hpp"
 
 
 namespace Thyra {
@@ -63,6 +64,7 @@ bool run_linear_op_with_solve_tests(
   using Teuchos::rcp;
   using Teuchos::OSTab;
   using Teuchos::as;
+  using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Index Index;
@@ -84,8 +86,10 @@ bool run_linear_op_with_solve_tests(
   randomize<Scalar>(-ST::one(), ST::one(), M.ptr());
 
   out << "\nC) Create DefaultSerialDenseLinearOpWithSolve object M_lows from M ...\n";
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > 
+    M_lows_nonconst = Thyra::defaultSerialDenseLinearOpWithSolve<Scalar>(M);
   RCP<const Thyra::LinearOpWithSolveBase<Scalar> > 
-    M_lows = Thyra::defaultSerialDenseLinearOpWithSolve<Scalar>(M);
+    M_lows = M_lows_nonconst;
 
   out << "\nD) Test the LOB interface of M_lows ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
@@ -131,21 +135,28 @@ bool run_linear_op_with_solve_tests(
     {
       OSTab tab(out);
       
-      out << "\nG.1.a) Testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
+      out << "\nG.1.a) Test that we can extract the underlying const M_lows ...\n";
+      {
+        OSTab tab(out);
+        TEST_EQUALITY( M_lows,
+          rcp_dynamic_cast<const Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj,true)->getOp() );
+      }
+      
+      out << "\nG.1.b) Testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
         OSTab tab(out);
         const bool result = linearOpTester.check(*M_lows_adj, &out);
         if(!result) success = false;
       }
       
-      out << "\nG.1.b) Testing LOWSB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
+      out << "\nG.1.c) Testing LOWSB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
         OSTab tab(out);
         const bool result = linearOpWithSolveTester.check(*M_lows_adj, &out);
         if(!result) success = false;
       }
       
-      out << "\nG.1.c) Testing that M_lows_adj is the adjoint of M (M_adj) ...\n";
+      out << "\nG.1.d) Testing that M_lows_adj is the adjoint of M (M_adj) ...\n";
       const RCP<const LinearOpBase<Scalar> > M_adj = Thyra::adjoint<Scalar>(M);
       {
         OSTab tab(out);
@@ -153,6 +164,30 @@ bool run_linear_op_with_solve_tests(
         if(!result) success = false;
       }
 
+    }
+
+    out << "\nG.2) Create and test DefaultAdjointLinearOpWithSolve object M_lows_adj_nonconst wrapping non-const M_lows ...\n";
+    RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+      M_lows_adj_nonconst = nonconstAdjointLows<Scalar>(M_lows_nonconst);
+
+    {
+      OSTab tab(out);
+      
+      out << "\nG.2.a) Test that we can extract the underlying non-const and const M_lows ...\n";
+      {
+        OSTab tab(out);
+        TEST_EQUALITY( M_lows,
+          rcp_dynamic_cast<Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj_nonconst,true)->getOp() );
+        TEST_EQUALITY( M_lows_nonconst,
+          rcp_dynamic_cast<Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj_nonconst,true)->getNonconstOp() );
+      }
+      
+      out << "\nG.2.b) Only testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj_nonconst ...\n";
+      {
+        OSTab tab(out);
+        const bool result = linearOpTester.check(*M_lows_adj_nonconst, &out);
+        if(!result) success = false;
+      }
     }
     
   }

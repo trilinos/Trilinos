@@ -210,6 +210,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   )
 {
   using Teuchos::arrayArg;
+  using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   if(out)
@@ -442,7 +443,29 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
-  
+
+  // Test V_VpStV
+  if(out) *out << "\nTesting V_VpStV(&*z,*v1,alpha,*v2) ...\n";
+  {
+    v1 = createMember(vecSpc);
+    v2 = createMember(vecSpc);
+    v3 = createMember(vecSpc);
+    x  = createMember(vecSpc);
+    z  = createMember(vecSpc);
+    alpha = Scalar(1.2345);
+    seed_randomize<Scalar>(12345);
+    randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v1);
+    randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v2);
+    V_VpStV(outArg(*v3), *v1, alpha, *v2);
+    V_V(&*z, *v1);
+    Vp_StV(&*z, alpha, *v2);
+    V_VmV(outArg(*x), *z, *v3);
+    if(!testMaxErr<Scalar>(
+         "norm_2(*x)",norm_2(*x)
+         ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+        )
+      ) success=false;
+  }
   // Test V_StVpStV
   if(out) *out << "\nTesting V_StVpStV(&*z,alpha,*v1,beta,*v2) ...\n";
   v1 = createMember(vecSpc);

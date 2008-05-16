@@ -463,7 +463,21 @@ void Thyra::V_StVpV( const Ptr<VectorBase<Scalar> > &z, const Scalar &alpha,
   using Teuchos::tuple; using Teuchos::ptrInArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   linear_combination<Scalar>(
-    tuple(alpha,ST::one()), tuple(ptrInArg(x),ptrInArg(y)),
+    tuple(alpha, ST::one()), tuple(ptrInArg(x),ptrInArg(y)),
+    ST::zero(), z
+    );
+}
+
+
+template<class Scalar>
+void Thyra::V_VpStV( const Ptr<VectorBase<Scalar> > &z,
+  const VectorBase<Scalar>& x,
+  const Scalar &alpha, const VectorBase<Scalar>& y )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination<Scalar>(
+    tuple(ST::one(), alpha), tuple(ptrInArg(x),ptrInArg(y)),
     ST::zero(), z
     );
 }
@@ -477,7 +491,7 @@ void Thyra::V_StVpStV( const Ptr<VectorBase<Scalar> > &z, const Scalar &alpha,
   using Teuchos::tuple; using Teuchos::ptrInArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   linear_combination<Scalar>(
-    tuple(alpha,beta), tuple(ptrInArg(x),ptrInArg(y)),
+    tuple(alpha, beta), tuple(ptrInArg(x),ptrInArg(y)),
     ST::zero(), z
     );
 }

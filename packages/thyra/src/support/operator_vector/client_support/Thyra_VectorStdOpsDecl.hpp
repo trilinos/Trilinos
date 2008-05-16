@@ -380,6 +380,14 @@ void V_StVpV( const Ptr<VectorBase<Scalar> > &z, const Scalar &alpha,
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
 
+/** \brief <tt>z(i) = x(i) + alpha*y(i), i = 0...z->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void V_VpStV( const Ptr<VectorBase<Scalar> > &z,
+  const VectorBase<Scalar>& x,
+  const Scalar &alpha, const VectorBase<Scalar>& y );
+
+
 /** \brief <tt>z(i) = alpha*x(i) + beta*y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>

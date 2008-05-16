@@ -53,7 +53,6 @@ void DefaultAdjointLinearOpWithSolve<Scalar>::initialize(
   const RCP<LinearOpWithSolveBase<Scalar> > &lows,
   const ETransp transp )
 {
-  TEST_FOR_EXCEPT(true);
   lows_ = lows;
   transp_ = transp;
 }
@@ -66,6 +65,22 @@ void DefaultAdjointLinearOpWithSolve<Scalar>::initialize(
 {
   lows_ = lows;
   transp_ = transp;
+}
+
+
+template<class Scalar>
+const RCP<LinearOpWithSolveBase<Scalar> >
+DefaultAdjointLinearOpWithSolve<Scalar>::getNonconstOp()
+{
+  return lows_.getNonconstObj();
+}
+
+
+template<class Scalar>
+const RCP<const LinearOpWithSolveBase<Scalar> >
+DefaultAdjointLinearOpWithSolve<Scalar>::getOp() const
+{
+  return lows_.getConstObj();
 }
 
 

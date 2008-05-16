@@ -875,14 +875,6 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
   ) const
 {
 
-
-
-
-
-
-
-
-
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::VerboseObjectTempState<MEB> VOTSME;
 
@@ -896,7 +888,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
   TEUCHOS_ASSERT_EQUALITY( t , t_base );
 
   if (is_null(W_tilde_)) {
-    TEST_FOR_EXCEPT("ToDo: compute W_tilde from scratch!");
+    TEST_FOR_EXCEPT_MSG(true, "ToDo: compute W_tilde from scratch!");
   }
   
   if ( is_null(DfDx_dot_) || is_null(DfDp_) ) {
@@ -932,10 +924,6 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
       DfDp_ = DfDp_compute;
   
   }
-
-
-
-
 
   TEST_FOR_EXCEPT_MSG( !is_null(stateIntegrator_),
     "ToDo: Update for using the stateIntegrator!" );
@@ -1086,9 +1074,6 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
   // time.
 
 */
-
-
-
 
 
 }

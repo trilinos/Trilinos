@@ -705,10 +705,12 @@
 # simpleAdjoint.exe
 #
 
-(FRAMEWORK,INSTALL,SIMPLEADJOINT0,RythmosBelos) {
-    TESTS = ./simpleAdjoint/simpleAdjoint.exe;
-    COMM = SERIAL, MPI(1);
-    EXIT-STATUS = STRING-COMPARISON(rythmos/test/simpleAdjoint/simpleAdjointMain.cpp:222);
+(FRAMEWORK,INSTALL,SIMPLEADJOINT,RythmosAmesos) {
+    TESTS = ./simpleAdjoint/simpleAdjoint_amesos.exe;
+    ARGS = --num-time-steps=10 --soln-verb-level=VERB_EXTREME,
+      --params-file=./simpleAdjoint/simpleAdjoint_n4.xml --num-time-steps=10 --soln-verb-level=VERB_EXTREME;
+    COMM = SERIAL, MPI(1-4);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 

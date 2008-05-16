@@ -253,23 +253,16 @@ simpleAdjoint_DEPENDENCIES = $(common_dependencies)
 simpleAdjoint_LDADD = $(common_ldadd)
 
 #
+# XML Files
+#
+SIMPLE_ADJOINT_XML_FILES = simpleAdjoint_n4.xml
+
+#
 # Links
 #
 @ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE@LINK_SIMPLE_ADJOINT_AMESOS = simpleAdjoint_amesos.exe
-@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@LINK_SIMPLE_ADJOINT_AZTECOO = simpleAdjoint_aztecoo.exe
-@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_SIMPLE_ADJOINT_AZTECOO_IFPACK = simpleAdjoint_aztecoo_ifpack.exe
-@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_SIMPLE_ADJOINT_AZTECOO_ML = simpleAdjoint_aztecoo_ml.exe
-@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@LINK_SIMPLE_ADJOINT_BELOS = simpleAdjoint_belos.exe
-@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_SIMPLE_ADJOINT_BELOS_IFPACK = simpleAdjoint_belos_ifpack.exe
-@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_SIMPLE_ADJOINT_BELOS_ML = simpleAdjoint_belos_ml.exe
 SIMPLE_ADJOINT_EXE_LINKS = \
-  $(LINK_SIMPLE_ADJOINT_AMESOS) \
-  $(LINK_SIMPLE_ADJOINT_AZTECOO) \
-  $(LINK_SIMPLE_ADJOINT_AZTECOO_IFPACK) \
-  $(LINK_SIMPLE_ADJOINT_AZTECOO_ML) \
-  $(LINK_SIMPLE_ADJOINT_BELOS) \
-  $(LINK_SIMPLE_ADJOINT_BELOS_IFPACK) \
-  $(LINK_SIMPLE_ADJOINT_BELOS_ML)
+  $(LINK_SIMPLE_ADJOINT_AMESOS)
 
 
 #
@@ -286,6 +279,9 @@ _EXPORT_LIBS = $(RYTHMOS_TEST_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
+
+# Add files to tarball that are not explictly know by autotools
+EXTRA_DIST = simpleAdjoint_n4.xml
 all: all-am
 
 .SUFFIXES:
@@ -552,30 +548,15 @@ uninstall-am:
 	uninstall-am
 
 
-all-local: $(SIMPLE_ADJOINT_EXE_LINKS)
+all-local: $(SIMPLE_ADJOINT_XML_FILES) $(SIMPLE_ADJOINT_EXE_LINKS)
 	@echo ""
-	@echo "rythmos/example/simpleAdjoint built successfully."
+	@echo "rythmos/test/simpleAdjoint built successfully."
 	@echo ""
+
+simpleAdjoint_n4.xml: _simpleAdjoint_n4.xml
+	cp $(srcdir)/_simpleAdjoint_n4.xml simpleAdjoint_n4.xml
 
 simpleAdjoint_amesos.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_aztecoo.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_aztecoo_ifpack.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_aztecoo_ml.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_belos.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_belos_ifpack.exe: simpleAdjoint.exe
-	if [ ! -x $@ ]; then ln -s $< $@; fi
-
-simpleAdjoint_belos_ml.exe: simpleAdjoint.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
 
 include $(top_builddir)/Makefile.export.rythmos

@@ -33,7 +33,9 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_PromotionTraits.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base class for all linear operators.
  *
@@ -503,6 +505,18 @@ void apply(
   const LinearOpBase<Scalar> &M,
   const ETransp M_trans,
   const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha = ScalarTraits<Scalar>::one(),
+  const Scalar beta = ScalarTraits<Scalar>::zero()
+  );
+
+
+/** \brief Deprecated. */
+template<class Scalar>
+void apply(
+  const LinearOpBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
   const Scalar alpha = ScalarTraits<Scalar>::one(),
   const Scalar beta = ScalarTraits<Scalar>::zero()
@@ -599,17 +613,31 @@ void Thyra::apply(
   const LinearOpBase<Scalar> &M,
   const ETransp M_trans,
   const MultiVectorBase<Scalar> &X,
-  MultiVectorBase<Scalar> *Y,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
   const Scalar alpha,
   const Scalar beta
   )
 {
   if(real_trans(M_trans)==NOTRANS) {
-    M.apply(transToConj(M_trans),X,Y,alpha,beta);
+    M.apply(transToConj(M_trans),X,&*Y,alpha,beta);
   }
   else {
-    M.applyTranspose(transToConj(M_trans),X,Y,alpha,beta);
+    M.applyTranspose(transToConj(M_trans),X,&*Y,alpha,beta);
   }
+}
+
+
+template<class Scalar>
+void Thyra::apply(
+  const LinearOpBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  MultiVectorBase<Scalar> *Y,
+  const Scalar alpha,
+  const Scalar beta
+  )
+{
+  apply(M, M_trans, X, Teuchos::ptr(Y), alpha, beta);
 }
 
 

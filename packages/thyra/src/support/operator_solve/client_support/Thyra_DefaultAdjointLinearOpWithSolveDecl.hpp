@@ -65,6 +65,12 @@ public:
   void initialize( const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
     const ETransp transp );
 
+  /** \brief Get the non-const underlying LOWSB object. */
+  const RCP<LinearOpWithSolveBase<Scalar> > getNonconstOp();
+
+  /** \brief Get the const underlying LOWSB object. */
+  const RCP<const LinearOpWithSolveBase<Scalar> > getOp() const;
+
   //@}
 
   /** @name Overridden from LinearOpBase */
@@ -141,24 +147,6 @@ private:
 template<class Scalar>
 RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
 defaultAdjointLinearOpWithSolve(
-  const RCP<LinearOpWithSolveBase<Scalar> > &lows,
-  const ETransp transp )
-{
-  TEST_FOR_EXCEPT(true);
-  RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
-    dalows = Teuchos::rcp(new DefaultAdjointLinearOpWithSolve<Scalar>);
-  dalows->initialize(lows, transp);
-  return dalows;
-}
-
-
-/** \brief Nonmember constructor.
- *
- * \brief DefaultAdjointLinearOpWithSolve
- */
-template<class Scalar>
-RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
-defaultAdjointLinearOpWithSolve(
   const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
   const ETransp transp )
 {
@@ -175,9 +163,38 @@ defaultAdjointLinearOpWithSolve(
  */
 template<class Scalar>
 RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+defaultAdjointLinearOpWithSolveNonconst(
+  const RCP<LinearOpWithSolveBase<Scalar> > &lows,
+  const ETransp transp )
+{
+  RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
+    dalows = Teuchos::rcp(new DefaultAdjointLinearOpWithSolve<Scalar>);
+  dalows->initialize(lows, transp);
+  return dalows;
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \brief DefaultAdjointLinearOpWithSolve
+ */
+template<class Scalar>
+RCP<const LinearOpWithSolveBase<Scalar> >
 adjointLows( const RCP<const LinearOpWithSolveBase<Scalar> > &lows )
 {
   return defaultAdjointLinearOpWithSolve<Scalar>(lows, CONJTRANS);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \brief DefaultAdjointLinearOpWithSolve
+ */
+template<class Scalar>
+RCP<LinearOpWithSolveBase<Scalar> >
+nonconstAdjointLows( const RCP<LinearOpWithSolveBase<Scalar> > &lows )
+{
+  return defaultAdjointLinearOpWithSolveNonconst<Scalar>(lows, CONJTRANS);
 }
 
 

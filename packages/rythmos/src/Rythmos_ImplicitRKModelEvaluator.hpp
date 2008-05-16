@@ -318,7 +318,7 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
 
   const RCP<const PVB> x_bar = rcp_dynamic_cast<const PVB>(inArgs_bar.get_x(), true);
   const RCP<PVB> f_bar = rcp_dynamic_cast<PVB>(outArgs_bar.get_f(), true);
-  RCP<BLWB> W_op_bar = rcp_dynamic_cast<BLWB>(outArgs_bar.get_W_op(), true);
+  const RCP<BLWB> W_op_bar = rcp_dynamic_cast<BLWB>(outArgs_bar.get_W_op(), true);
 
   //
   // B) Assemble f_bar and W_op_bar by looping over stages

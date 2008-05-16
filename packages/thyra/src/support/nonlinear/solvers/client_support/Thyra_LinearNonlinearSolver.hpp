@@ -97,6 +97,17 @@ private:
 };
 
 
+/** \biref Nonmember constructor.
+ *
+ * \relates ???
+ */
+template <class Scalar>
+RCP<LinearNonlinearSolver<Scalar> > linearNonlinearSolver()
+{
+  return Teuchos::rcp(new LinearNonlinearSolver<Scalar>());
+}
+
+
 // ////////////////////////
 // Defintions
 
