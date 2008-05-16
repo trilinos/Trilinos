@@ -445,7 +445,7 @@ pow(const OrthogPoly<T>& a,
 
 template <typename T>
 OrthogPoly<T>
-pow(const typename OrthogPoly<T>::value_type& a,
+pow(const T& a,
     const OrthogPoly<T>& b)
 {
   OrthogPoly<T> c(b.size());
@@ -457,7 +457,7 @@ pow(const typename OrthogPoly<T>::value_type& a,
 template <typename T>
 OrthogPoly<T>
 pow(const OrthogPoly<T>& a,
-    const typename OrthogPoly<T>::value_type& b)
+    const T& b)
 {
   OrthogPoly<T> c(a.size());
   OrthogPoly<T>::expansion->pow(c.getOrthogPolyApprox(), 

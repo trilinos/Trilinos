@@ -29,6 +29,9 @@
 # ************************************************************************
 # @HEADER
 
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.sacado
+
 noinst_PROGRAMS = TestSuite.exe
 
 if ENABLE_ADOLC
@@ -53,6 +56,24 @@ TAYLOR_LDADD =
 
 endif
 
+if ENABLE_SACADO_STOKHOS
+
+PCE_SOURCES = $(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp
+
+PCE_CXXFLAGS =
+
+PCE_LDADD = 
+
+else
+
+PCE_SOURCES = 
+
+PCE_CXXFLAGS =
+
+PCE_LDADD = 
+
+endif
+
 TestSuite_exe_SOURCES = \
 	$(srcdir)/DFadUnitTests.hpp \
 	$(srcdir)/DFadUnitTests.cpp \
@@ -65,22 +86,23 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/ELRSFadUnitTests.hpp \
 	$(srcdir)/ELRSFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
+	$(PCE_SOURCES) \
 	$(srcdir)/TestSuite.cpp
 
 TestSuite_exe_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mpl \
-	-I$(top_builddir)/src \
+	$(SACADO_INCLUDES) \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \
 	$(TAYLOR_CXXFLAGS) \
+	$(PCE_CXXFLAGS) \
 	$(CPPUNIT_CFLAGS)
 
 TestSuite_exe_DEPENDENCIES = \
 	$(top_builddir)/test/utils/libsacadoutils.a 
 
 TestSuite_exe_LDADD = \
-	-L$(top_builddir)/src -lsacado \
 	-L$(top_builddir)/test/utils -lsacadoutils \
 	$(TAYLOR_LDADD) \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS) $(CPPUNIT_LIBS)
+	$(PCE_LDADD) \
+	$(CPPUNIT_LIBS) \
+	$(SACADO_LIBS)

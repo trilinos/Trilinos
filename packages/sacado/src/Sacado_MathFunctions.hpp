@@ -272,6 +272,7 @@ namespace std {                                                         \
   using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
   using Sacado::Tay::OP;						\
+  using Sacado::PCE::OP;						\
   using Sacado::FlopCounterPack::OP;					\
   using Sacado::Rad::OP;						\
 }

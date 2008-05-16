@@ -98,15 +98,17 @@ am__TestSuite_exe_SOURCES_DIST = $(srcdir)/DFadUnitTests.hpp \
 	$(srcdir)/CacheTaylorUnitTests.hpp \
 	$(srcdir)/CacheTaylorUnitTests.cpp \
 	$(srcdir)/TaylorUnitTests.hpp $(srcdir)/TaylorUnitTests.cpp \
+	$(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp \
 	$(srcdir)/TestSuite.cpp
 @ENABLE_ADOLC_TRUE@am__objects_1 = TestSuite_exe-CacheTaylorUnitTests.$(OBJEXT) \
 @ENABLE_ADOLC_TRUE@	TestSuite_exe-TaylorUnitTests.$(OBJEXT)
+@ENABLE_SACADO_STOKHOS_TRUE@am__objects_2 = TestSuite_exe-HermiteUnitTests.$(OBJEXT)
 am_TestSuite_exe_OBJECTS = TestSuite_exe-DFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-CacheDFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-ELRDFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-SFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-ELRSFadUnitTests.$(OBJEXT) $(am__objects_1) \
-	TestSuite_exe-TestSuite.$(OBJEXT)
+	$(am__objects_2) TestSuite_exe-TestSuite.$(OBJEXT)
 TestSuite_exe_OBJECTS = $(am_TestSuite_exe_OBJECTS)
 am__DEPENDENCIES_1 =
 @ENABLE_ADOLC_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
@@ -259,6 +261,12 @@ top_srcdir = @top_srcdir@
 @ENABLE_ADOLC_TRUE@TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
 @ENABLE_ADOLC_FALSE@TAYLOR_LDADD = 
 @ENABLE_ADOLC_TRUE@TAYLOR_LDADD = -L$(ADOLC_LIBDIR) $(ADOLC_LIBS)
+@ENABLE_SACADO_STOKHOS_FALSE@PCE_SOURCES = 
+@ENABLE_SACADO_STOKHOS_TRUE@PCE_SOURCES = $(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp
+@ENABLE_SACADO_STOKHOS_FALSE@PCE_CXXFLAGS = 
+@ENABLE_SACADO_STOKHOS_TRUE@PCE_CXXFLAGS = 
+@ENABLE_SACADO_STOKHOS_FALSE@PCE_LDADD = 
+@ENABLE_SACADO_STOKHOS_TRUE@PCE_LDADD = 
 TestSuite_exe_SOURCES = \
 	$(srcdir)/DFadUnitTests.hpp \
 	$(srcdir)/DFadUnitTests.cpp \
@@ -271,25 +279,26 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/ELRSFadUnitTests.hpp \
 	$(srcdir)/ELRSFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
+	$(PCE_SOURCES) \
 	$(srcdir)/TestSuite.cpp
 
 TestSuite_exe_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mpl \
-	-I$(top_builddir)/src \
+	$(SACADO_INCLUDES) \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \
 	$(TAYLOR_CXXFLAGS) \
+	$(PCE_CXXFLAGS) \
 	$(CPPUNIT_CFLAGS)
 
 TestSuite_exe_DEPENDENCIES = \
 	$(top_builddir)/test/utils/libsacadoutils.a 
 
 TestSuite_exe_LDADD = \
-	-L$(top_builddir)/src -lsacado \
 	-L$(top_builddir)/test/utils -lsacadoutils \
 	$(TAYLOR_LDADD) \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS) $(CPPUNIT_LIBS)
+	$(PCE_LDADD) \
+	$(CPPUNIT_LIBS) \
+	$(SACADO_LIBS)
 
 all: all-am
 
@@ -342,6 +351,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-DFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ELRSFadUnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-HermiteUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-SFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-TaylorUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-TestSuite.Po@am__quote@
@@ -457,6 +467,20 @@ TestSuite_exe-TaylorUnitTests.obj: $(srcdir)/TaylorUnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TaylorUnitTests.cpp' object='TestSuite_exe-TaylorUnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-TaylorUnitTests.obj `if test -f '$(srcdir)/TaylorUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TaylorUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TaylorUnitTests.cpp'; fi`
+
+TestSuite_exe-HermiteUnitTests.o: $(srcdir)/HermiteUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-HermiteUnitTests.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-HermiteUnitTests.Tpo -c -o TestSuite_exe-HermiteUnitTests.o `test -f '$(srcdir)/HermiteUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/HermiteUnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-HermiteUnitTests.Tpo $(DEPDIR)/TestSuite_exe-HermiteUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HermiteUnitTests.cpp' object='TestSuite_exe-HermiteUnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-HermiteUnitTests.o `test -f '$(srcdir)/HermiteUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/HermiteUnitTests.cpp
+
+TestSuite_exe-HermiteUnitTests.obj: $(srcdir)/HermiteUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-HermiteUnitTests.obj -MD -MP -MF $(DEPDIR)/TestSuite_exe-HermiteUnitTests.Tpo -c -o TestSuite_exe-HermiteUnitTests.obj `if test -f '$(srcdir)/HermiteUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/HermiteUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HermiteUnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-HermiteUnitTests.Tpo $(DEPDIR)/TestSuite_exe-HermiteUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HermiteUnitTests.cpp' object='TestSuite_exe-HermiteUnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-HermiteUnitTests.obj `if test -f '$(srcdir)/HermiteUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/HermiteUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HermiteUnitTests.cpp'; fi`
 
 TestSuite_exe-TestSuite.o: $(srcdir)/TestSuite.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-TestSuite.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-TestSuite.Tpo -c -o TestSuite_exe-TestSuite.o `test -f '$(srcdir)/TestSuite.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuite.cpp
@@ -646,6 +670,9 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

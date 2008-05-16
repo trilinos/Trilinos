@@ -298,12 +298,12 @@ namespace Sacado {
     pow(const OrthogPoly<T>& a, const OrthogPoly<T>& b);
 
     template <typename T> OrthogPoly<T> 
-    pow(const typename OrthogPoly<T>::value_type& a, 
+    pow(const T& a, 
 	const OrthogPoly<T>& b);
 
     template <typename T> OrthogPoly<T> 
     pow(const OrthogPoly<T>& a, 
-	const typename OrthogPoly<T>::value_type& b);
+	const T& b);
 
     template <typename T> OrthogPoly<T> 
     cos(const OrthogPoly<T>& a);
