@@ -160,7 +160,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = HYPERGRAPH;
     zz->LB.LB_Fn = Zoltan_PHG;
     zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
-    zz->LB.Copy_Structure = NULL;
+    zz->LB.Copy_Structure = Zoltan_PHG_Copy_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
@@ -182,6 +182,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Method = HIER;
     zz->LB.LB_Fn = Zoltan_Hier;
     zz->LB.Free_Structure = Zoltan_Hier_Free_Structure;
+    zz->LB.Copy_Structure = Zoltan_Hier_Copy_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
 #else

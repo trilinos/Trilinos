@@ -529,15 +529,7 @@ static int refine_fm2 (ZZ *zz,
     PHGComm *hgc=hg->comm;
     int rootRank;
     
-    static int timer_refine=-1;      /* Timers; declared static to accumulate */
-    static int timer_pins=-1;       /* times over multiple runs.  */
-    static int timer_iso=-1;
-    static int timer_gain=-1;
-    static int timer_heap=-1;
-    static int timer_pass=-1;
-    static int timer_roll=-1;
-    static int timer_nonroot=-1;
-    
+    struct phg_timer_indices *timer = zz->LB.Data_Structure;
     int do_timing = (hgp->use_timers > 2);
     int detail_timing = (hgp->use_timers > 3);
 
@@ -563,25 +555,25 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
     if (do_timing) { 
-        if (timer_refine < 0) 
-            timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Ref_P_Total");
-        ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
+        if (timer->rfrefine < 0) 
+            timer->rfrefine = Zoltan_Timer_Init(zz->ZTime, 1, "Ref_P_Total");
+        ZOLTAN_TIMER_START(zz->ZTime, timer->rfrefine, hgc->Communicator);
     }
     if (detail_timing) {
-        if (timer_pins < 0) 
-            timer_pins = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Pins");
-        if (timer_iso < 0) 
-            timer_iso = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_IsolatedVert");
-        if (timer_gain < 0) 
-            timer_gain = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Gain");
-        if (timer_heap < 0) 
-            timer_heap = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Heap");
-        if (timer_pass < 0) 
-            timer_pass = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Pass");
-        if (timer_roll < 0) 
-            timer_roll = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Roll");
-        if (timer_nonroot < 0) 
-            timer_nonroot = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_NonRoot");
+        if (timer->rfpins < 0) 
+            timer->rfpins = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Pins");
+        if (timer->rfiso < 0) 
+            timer->rfiso = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_IsolatedVert");
+        if (timer->rfgain < 0) 
+            timer->rfgain = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Gain");
+        if (timer->rfheap < 0) 
+            timer->rfheap = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Heap");
+        if (timer->rfpass < 0) 
+            timer->rfpass = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Pass");
+        if (timer->rfroll < 0) 
+            timer->rfroll = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_Roll");
+        if (timer->rfnonroot < 0) 
+            timer->rfnonroot = Zoltan_Timer_Init(zz->ZTime, 0, "Ref_P_NonRoot");
     }
     
     
@@ -685,12 +677,12 @@ static int refine_fm2 (ZZ *zz,
 
     /* Initial calculation of the local pin distribution (sigma in UVC's papers)  */
     if (detail_timing)         
-        ZOLTAN_TIMER_START(zz->ZTime, timer_pins, hgc->Communicator);                        
+        ZOLTAN_TIMER_START(zz->ZTime, timer->rfpins, hgc->Communicator);                        
     for (i = 0; i < hg->nEdge; ++i)
         for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
             ++(lpins[part[hg->hvertex[j]]][i]);
     if (detail_timing)         
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_pins, hgc->Communicator);                    
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfpins, hgc->Communicator);                    
     
 
 #ifdef HANDLE_ISOLATED_VERTICES        
@@ -698,7 +690,7 @@ static int refine_fm2 (ZZ *zz,
        we use lgain and gain, as ldeg, deg.*/
     if (hg->nVtx) {
         if (detail_timing)         
-            ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);        
+            ZOLTAN_TIMER_START(zz->ZTime, timer->rfiso, hgc->Communicator);        
         ldeg = (int *) lgain;
         deg = (int *) gain; /* null for non-root but that is fine */
         for (i = 0; i < hg->nVtx; ++i)
@@ -716,7 +708,7 @@ static int refine_fm2 (ZZ *zz,
                 }
         }   
         if (detail_timing)         
-            ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);        
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfiso, hgc->Communicator);        
 
     }
 #endif
@@ -729,11 +721,11 @@ static int refine_fm2 (ZZ *zz,
         /* now compute global pin distribution */
         if (hg->nEdge) {
             if (detail_timing)         
-                ZOLTAN_TIMER_START(zz->ZTime, timer_pins, hgc->Communicator);                    
+                ZOLTAN_TIMER_START(zz->ZTime, timer->rfpins, hgc->Communicator);                    
             MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
                           hgc->row_comm);
             if (detail_timing)         
-                ZOLTAN_TIMER_STOP(zz->ZTime, timer_pins, hgc->Communicator);                    
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfpins, hgc->Communicator);                    
         }
 
         /* now we can compute actual cut */
@@ -778,7 +770,7 @@ static int refine_fm2 (ZZ *zz,
 
         /* compute only the gains of the vertices from 'from' part */
         if (detail_timing)         
-            ZOLTAN_TIMER_START(zz->ZTime, timer_gain, hgc->Communicator);                    
+            ZOLTAN_TIMER_START(zz->ZTime, timer->rfgain, hgc->Communicator);                    
         
         for (i = 0; i < hg->nVtx; ++i) {
             lgain[i] = 0.0;
@@ -798,7 +790,7 @@ static int refine_fm2 (ZZ *zz,
             MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, rootRank, 
                        hgc->col_comm);
         if (detail_timing)         
-            ZOLTAN_TIMER_STOP(zz->ZTime, timer_gain, hgc->Communicator);                    
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfgain, hgc->Communicator);                    
         
 
         if (hgp->output_level >= PHG_DEBUG_ALL) {
@@ -813,7 +805,7 @@ static int refine_fm2 (ZZ *zz,
 
 #ifdef HANDLE_ISOLATED_VERTICES
             if (detail_timing)         
-                ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);                    
+                ZOLTAN_TIMER_START(zz->ZTime, timer->rfiso, hgc->Communicator);                    
             lwadjust[0] = lwadjust[1] = 0.0;
             for (i=isocnt; i < hg->nVtx; ++i) { /* go over isolated vertices */
                 int   u=moves[i], pno=-part[u]-1;
@@ -827,11 +819,11 @@ static int refine_fm2 (ZZ *zz,
             lweights[0] += lwadjust[0];
             lweights[1] += lwadjust[1];
             if (detail_timing)         
-                ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);                    
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfiso, hgc->Communicator);                    
 #endif
 
             if (detail_timing)         
-                ZOLTAN_TIMER_START(zz->ZTime, timer_heap, hgc->Communicator);                    
+                ZOLTAN_TIMER_START(zz->ZTime, timer->rfheap, hgc->Communicator);                    
             
             /* Initialize the heaps and fill them with the gain values */
             Zoltan_Heap_Clear(&heap[from]);  
@@ -840,8 +832,8 @@ static int refine_fm2 (ZZ *zz,
                     Zoltan_Heap_Input(&heap[from], i, gain[i]);
             Zoltan_Heap_Make(&heap[from]);
             if (detail_timing) {
-                ZOLTAN_TIMER_STOP(zz->ZTime, timer_heap, hgc->Communicator);
-                ZOLTAN_TIMER_START(zz->ZTime, timer_pass, hgc->Communicator);
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfheap, hgc->Communicator);
+                ZOLTAN_TIMER_START(zz->ZTime, timer->rfpass, hgc->Communicator);
             }
 
             while ((neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
@@ -905,8 +897,8 @@ static int refine_fm2 (ZZ *zz,
 
             
             if (detail_timing) {
-                ZOLTAN_TIMER_STOP(zz->ZTime, timer_pass, hgc->Communicator);
-                ZOLTAN_TIMER_START(zz->ZTime, timer_roll, hgc->Communicator);
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfpass, hgc->Communicator);
+                ZOLTAN_TIMER_START(zz->ZTime, timer->rfroll, hgc->Communicator);
             }
 
 #ifdef _DEBUG
@@ -932,11 +924,11 @@ static int refine_fm2 (ZZ *zz,
                 mark[v] = 0;
             }
             if (detail_timing) 
-                ZOLTAN_TIMER_STOP(zz->ZTime, timer_roll, hgc->Communicator);            
+                ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfroll, hgc->Communicator);            
         }
 
         if (detail_timing) 
-            ZOLTAN_TIMER_START(zz->ZTime, timer_nonroot, hgc->Communicator);            
+            ZOLTAN_TIMER_START(zz->ZTime, timer->rfnonroot, hgc->Communicator);            
         
         /* now root bcast moves to column procs */
         MPI_Bcast(&best_cutsizeat, 1, MPI_INT, rootRank, hgc->col_comm);
@@ -949,7 +941,7 @@ static int refine_fm2 (ZZ *zz,
             }
         }
         if (detail_timing) 
-            ZOLTAN_TIMER_STOP(zz->ZTime, timer_nonroot, hgc->Communicator);            
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfnonroot, hgc->Communicator);            
 
         
 #ifdef _DEBUG
@@ -967,7 +959,7 @@ static int refine_fm2 (ZZ *zz,
 
 #ifdef HANDLE_ISOLATED_VERTICES
         if (detail_timing)         
-            ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);        
+            ZOLTAN_TIMER_START(zz->ZTime, timer->rfiso, hgc->Communicator);        
         
 #if 0
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);        
@@ -1003,7 +995,7 @@ static int refine_fm2 (ZZ *zz,
             lweights[1] += lwadjust[1];
         }
         if (detail_timing)         
-            ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);                
+            ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfiso, hgc->Communicator);                
 #endif        
         
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
@@ -1044,7 +1036,7 @@ static int refine_fm2 (ZZ *zz,
 
 #ifdef HANDLE_ISOLATED_VERTICES
     if (detail_timing)         
-        ZOLTAN_TIMER_START(zz->ZTime, timer_iso, hgc->Communicator);            
+        ZOLTAN_TIMER_START(zz->ZTime, timer->rfiso, hgc->Communicator);            
     /* now root sneds the final part no's of isolated vertices; if any */
     MPI_Bcast(&isocnt, 1, MPI_INT, rootRank, hgc->col_comm);
     if (isocnt<hg->nVtx) {
@@ -1062,7 +1054,7 @@ static int refine_fm2 (ZZ *zz,
                 part[moves[i]] = deg[i];
     }
     if (detail_timing)         
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);            
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfiso, hgc->Communicator);            
 #endif
     if (hgc->myProc_y==rootRank) { /* only root needs mark, adj, gain and heaps*/        
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
@@ -1074,7 +1066,7 @@ static int refine_fm2 (ZZ *zz,
     Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &lpins[0], &moves, &lgain);
 
     if (do_timing) 
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hgc->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfrefine, hgc->Communicator);
     
     
     ZOLTAN_TRACE_EXIT(zz, yo);

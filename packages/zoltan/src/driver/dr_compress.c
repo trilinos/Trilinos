@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "dr_compress_const.h"
+#include "dr_util_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -39,7 +40,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
   char truemode[10];
   int error = 0;
 
-  file = (ZOLTAN_FILE*) ZOLTAN_MALLOC(sizeof(ZOLTAN_FILE));
+  file = (ZOLTAN_FILE*) malloc(sizeof(ZOLTAN_FILE));
   if (file == NULL) return (NULL);
 
   file->type = type;
@@ -78,14 +79,14 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
   }
 
   if (error) {
-    ZOLTAN_FREE(&file);
+    safe_free((void **) &file);
     return (NULL);
   }
 
   if (type != STANDARD) {
-    file->buffer = (char*) ZOLTAN_MALLOC(BUFF_SIZE);
+    file->buffer = (char*) malloc(BUFF_SIZE);
     if (file->buffer == NULL) {
-      ZOLTAN_FREE(&file);
+      safe_free((void **) &file);
       return (NULL);
     }
   }
@@ -262,9 +263,9 @@ int ZOLTAN_FILE_close(ZOLTAN_FILE* file)
       retval = 1;
       break;
     }
-    ZOLTAN_FREE(&file->buffer);
+    safe_free((void **) (&file->buffer));
   }
-  ZOLTAN_FREE(&file);
+  safe_free((void **) &file);
   return (retval);
 }
 

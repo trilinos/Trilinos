@@ -575,15 +575,15 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 /* simple macro to start timer */
 #define MACRO_TIMER_START(arg, message, sync) \
   if (hgp->use_timers > 3)  {\
-    if (timer[arg] < (arg))\
-      timer[arg] = Zoltan_Timer_Init(zz->ZTime, sync, message);\
-    ZOLTAN_TIMER_START(zz->ZTime, timer[arg], hg->comm->Communicator);\
+    if (timer->matchstage[arg] < (arg))\
+      timer->matchstage[arg] = Zoltan_Timer_Init(zz->ZTime, sync, message);\
+    ZOLTAN_TIMER_START(zz->ZTime, timer->matchstage[arg], hg->comm->Communicator);\
   }   
 
 /* simple corresponding macro to stop timer */
 #define MACRO_TIMER_STOP(arg) \
   if (hgp->use_timers > 3) \
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer[arg], hg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->matchstage[arg], hg->comm->Communicator);
 
 /* convenience macro to encapsulate resizing a buffer when necessary. Note: */
 /* currently ZOLTAN_REALLOC aborts on any error and doesn't return - But... */
@@ -660,7 +660,7 @@ static int pmatching_ipm (ZZ *zz,
   int candidate_index, first_candidate_index;
   int pref, num_matches_considered = 0;
   double ipsum = 0.;
-  static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
+  struct phg_timer_indices *timer = zz->LB.Data_Structure;
   char *yo = "pmatching_ipm";
   
    
@@ -1328,7 +1328,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
   int pref;
   int replycnt;
-  static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
+  struct phg_timer_indices *timer = zz->LB.Data_Structure;
   char *yo = "pmatching_agg_ipm";
   KVHash hash;
   

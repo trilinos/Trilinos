@@ -116,6 +116,7 @@ static PARAM_VARS PHG_params[] = {
 
 /* prototypes for static functions: */
 
+static void initialize_timer_indices(struct phg_timer_indices *);
 static int Zoltan_PHG_Output_Parts(ZZ*, ZHG*, Partition);
 static int Zoltan_PHG_Return_Lists(ZZ*, ZHG*, int*, ZOLTAN_ID_PTR*, 
   ZOLTAN_ID_PTR*, int**, int**);
@@ -281,17 +282,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   Partition parts = NULL;          /* Partition assignments in 
                                       2D distribution. */
   int err = ZOLTAN_OK, p=0;
-  static int timer_all = -1;       /* Note:  this timer includes other
-                                      timers and their synchronization time,
-                                      so it will be a little high. */
-  static int timer_build=-1;       /* timers to be used in this function;
-                                      declared static so that, over multiple
-                                      runs, can accumulate times.  */
-  static int timer_retlist=-1;
-  static int timer_patoh=-1;
-  static int timer_parkway=-1;
-  static int timer_finaloutput=-1;
-  static int timer_setupvmap=-1;
+  struct phg_timer_indices *timer = NULL; 
   int do_timing = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -308,23 +299,29 @@ int **exp_to_part )         /* list of partitions to which exported objs
     goto End;
 
   if (hgp.use_timers) {
-    if (timer_all < 0) 
-      timer_all = Zoltan_Timer_Init(zz->ZTime, 1, "Zoltan_PHG");
+    if (!zz->LB.Data_Structure)  {
+      zz->LB.Data_Structure = (struct phg_timer_indices *) 
+                               ZOLTAN_MALLOC(sizeof(struct phg_timer_indices));
+      initialize_timer_indices((struct phg_timer_indices *)zz->LB.Data_Structure);
+    }
+    timer = zz->LB.Data_Structure;
+    if (timer->all < 0) 
+      timer->all = Zoltan_Timer_Init(zz->ZTime, 1, "Zoltan_PHG");
   }
 
   if (hgp.use_timers > 1) {
     do_timing = 1;
-    if (timer_build < 0) 
-      timer_build = Zoltan_Timer_Init(zz->ZTime, 1, "Build");
-    if (timer_setupvmap < 0) 
-      timer_setupvmap = Zoltan_Timer_Init(zz->ZTime, 0, "Vmaps");
+    if (timer->build < 0) 
+      timer->build = Zoltan_Timer_Init(zz->ZTime, 1, "Build");
+    if (timer->setupvmap < 0) 
+      timer->setupvmap = Zoltan_Timer_Init(zz->ZTime, 0, "Vmaps");
   }
 
   if (hgp.use_timers) 
-    ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->all, zz->Communicator);
     
   if (do_timing)
-    ZOLTAN_TIMER_START(zz->ZTime, timer_build, zz->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->build, zz->Communicator);
     
   /* build initial Zoltan hypergraph from callback functions. */
 
@@ -340,7 +337,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
     goto End;
   }
 
-  zz->LB.Data_Structure = zoltan_hg;
   hg = &zoltan_hg->HG;
   p = zz->LB.Num_Global_Parts;  
   zoltan_hg->HG.redl = MAX(hgp.redl, p);     /* redl needs to be dynamic */
@@ -376,7 +372,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   hgp.UsePrefPart |= hgp.UseFixedVtx;
 
   if (do_timing)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->build, zz->Communicator);
 
 
 /* UVCUVC DEBUG PRINT
@@ -397,28 +393,28 @@ int **exp_to_part )         /* list of partitions to which exported objs
 
   if (!strcasecmp(hgp.hgraph_pkg, "PARKWAY")){
     if (do_timing) {
-      if (timer_parkway < 0)
-        timer_parkway = Zoltan_Timer_Init(zz->ZTime, 0, "PHG_ParKway");
-      ZOLTAN_TIMER_START(zz->ZTime, timer_parkway, zz->Communicator);
+      if (timer->parkway < 0)
+        timer->parkway = Zoltan_Timer_Init(zz->ZTime, 0, "PHG_ParKway");
+      ZOLTAN_TIMER_START(zz->ZTime, timer->parkway, zz->Communicator);
     }
     err = Zoltan_PHG_ParKway(zz, hg, p,
                              parts, &hgp);
     if (err != ZOLTAN_OK) 
         goto End;
     if (do_timing)
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer->parkway, zz->Communicator);
   } else if (!strcasecmp(hgp.hgraph_pkg, "PATOH")){
     if (hgp.use_timers > 1) {
-      if (timer_patoh < 0)
-        timer_patoh = Zoltan_Timer_Init(zz->ZTime, 0, "HG_PaToH");
-      ZOLTAN_TIMER_START(zz->ZTime, timer_patoh, zz->Communicator);
+      if (timer->patoh < 0)
+        timer->patoh = Zoltan_Timer_Init(zz->ZTime, 0, "HG_PaToH");
+      ZOLTAN_TIMER_START(zz->ZTime, timer->patoh, zz->Communicator);
     }
     err = Zoltan_PHG_PaToH(zz, hg, p,
                            parts, &hgp);
     if (err != ZOLTAN_OK) 
       goto End;
     if (hgp.use_timers > 1)
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh, zz->Communicator);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer->patoh, zz->Communicator);
   }      
   else { /* it must be PHG  */
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
@@ -441,7 +437,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
         int i;
           
         if (do_timing) 
-          ZOLTAN_TIMER_START(zz->ZTime, timer_setupvmap, zz->Communicator);
+          ZOLTAN_TIMER_START(zz->ZTime, timer->setupvmap, zz->Communicator);
         /* vmap associates original vertices to sub hypergraphs */
         if (hg->nVtx && 
             !(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
@@ -453,7 +449,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
           hg->vmap[i] = i;
   
         if (do_timing) 
-          ZOLTAN_TIMER_STOP(zz->ZTime, timer_setupvmap, zz->Communicator);
+          ZOLTAN_TIMER_STOP(zz->ZTime, timer->setupvmap, zz->Communicator);
   
           
         /* partition hypergraph */
@@ -501,15 +497,15 @@ int **exp_to_part )         /* list of partitions to which exported objs
   
   /* Initialize these timers here so their output is near end of printout */
   if (do_timing)
-    if (timer_retlist < 0) 
-      timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return_Lists");
+    if (timer->retlist < 0) 
+      timer->retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return_Lists");
 
   if (hgp.use_timers)
-    if (timer_finaloutput < 0) 
-      timer_finaloutput = Zoltan_Timer_Init(zz->ZTime, 1, "Final_Output");
+    if (timer->finaloutput < 0) 
+      timer->finaloutput = Zoltan_Timer_Init(zz->ZTime, 1, "Final_Output");
 
   if (do_timing) 
-    ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->retlist, zz->Communicator);
 
   /* Build Zoltan's Output_Parts, mapped from 2D distribution 
      to input distribution. */
@@ -521,7 +517,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
    exp_lids, exp_procs, exp_to_part);
     
   if (do_timing)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->retlist, zz->Communicator);
 
 End:
   if (err == ZOLTAN_MEMERR)
@@ -550,8 +546,8 @@ End:
     
     if (hgp.use_timers) {
       /* Do not include final output time in partitioning time */
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_finaloutput, zz->Communicator);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer->all, zz->Communicator);
+      ZOLTAN_TIMER_START(zz->ZTime, timer->finaloutput, zz->Communicator);
     }
 
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
@@ -624,17 +620,21 @@ End:
     }
 
     if (hgp.use_timers) {
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_finaloutput, zz->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer->finaloutput, zz->Communicator);
+      ZOLTAN_TIMER_START(zz->ZTime, timer->all, zz->Communicator);
     }
   }
   /* KDDKDD  End of printing section. */
   
   ZOLTAN_FREE(&parts);
-  Zoltan_PHG_Free_Structure(zz);
+  //UGH
+  if (zoltan_hg != NULL) {
+    Zoltan_PHG_Free_Hypergraph_Data(zoltan_hg);
+    ZOLTAN_FREE (&zoltan_hg);
+  }
 
   if (hgp.use_timers) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->all, zz->Communicator);
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL)
       Zoltan_Timer_PrintAll(zz->ZTime, 0, hgp.globalcomm.Communicator, stdout);
   }
@@ -680,12 +680,28 @@ void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
 void Zoltan_PHG_Free_Structure(ZZ *zz)
 {
   /* frees all data associated with LB.Data_Structure for hypergraphs */
-  ZHG *zoltan_hg = (ZHG*) zz->LB.Data_Structure;
+  /* For now, that is just timing indices */
+  ZOLTAN_FREE (&zz->LB.Data_Structure);
+}
 
-  if (zoltan_hg != NULL) {
-    Zoltan_PHG_Free_Hypergraph_Data(zoltan_hg);
-    ZOLTAN_FREE (&zz->LB.Data_Structure);
+/*****************************************************************************/
+
+int Zoltan_PHG_Copy_Structure(ZZ *to, ZZ const *from)
+{
+  /* Copies all data associated with LB.Data_Structure for hypergraphs */
+  /* For now, that is just timing indices */
+  if (from->LB.Data_Structure) {
+    struct phg_timer_indices *tt, *ff;
+    ZOLTAN_FREE (&(to->LB.Data_Structure));
+    tt = to->LB.Data_Structure = (struct phg_timer_indices *) 
+                             ZOLTAN_MALLOC(sizeof(struct phg_timer_indices));
+    ff = (struct phg_timer_indices *) from->LB.Data_Structure;
+    if (to->LB.Data_Structure) 
+      *tt = *ff;
+    else 
+      return ZOLTAN_MEMERR;
   }
+  return ZOLTAN_OK;
 }
 
     
@@ -1322,6 +1338,48 @@ End:
   return ierr;
 }
 
+/*****************************************************************************/
+static void initialize_timer_indices(struct phg_timer_indices *timer)
+{
+int i;
+  timer->all = 
+  timer->build = 
+  timer->setupvmap =
+  timer->parkway =  
+  timer->patoh =  
+  timer->retlist =  
+  timer->finaloutput =  
+  timer->match =   
+  timer->coarse =  
+  timer->refine = 
+  timer->coarsepart =  
+  timer->project =    
+  timer->procred =    
+  timer->vcycle =    
+  timer->comerge =   
+  timer->coshuffle =   
+  timer->coremove =   
+  timer->cotheend =   
+  timer->rdrdivide =  
+  timer->rdbefore =   
+  timer->rdafter =    
+  timer->rdsplit =    
+  timer->rdredist =    
+  timer->rdsend =    
+  timer->rdwait =    
+  timer->rfrefine =    
+  timer->rfpins =   
+  timer->rfiso =   
+  timer->rfgain =   
+  timer->rfheap =   
+  timer->rfpass =   
+  timer->rfroll =   
+  timer->rfnonroot =   
+  timer->cpart =   
+  timer->cpgather =   
+  timer->cprefine = -1;
+  for (i = 0; i < 7; i++) timer->matchstage[i] = -1;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -205,40 +205,32 @@ int Zoltan_PHG_Partition (
   int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
 						     before any coarsening */
   char *yo = "Zoltan_PHG_Partition";
-  static int timer_match = -1,    /* Timers for various stages */
-             timer_coarse = -1,   /* Declared static so we can accumulate */
-             timer_refine = -1,   /* times over calls to Zoltan_PHG_Partition */
-             timer_cpart=-1, timer_gather=-1, timer_crefine=-1,
-             timer_coarsepart = -1,
-             timer_project = -1,
-             timer_procred = -1,
-             timer_vcycle = -1;   /* times everything in Vcycle not included
-                                     in above timers */
   int do_timing = (hgp->use_timers > 1);
   int fine_timing = (hgp->use_timers > 2);
   int vcycle_timing = (hgp->use_timers > 4 && hgp->ProRedL == 0);
   short refine = 0;
+  struct phg_timer_indices *timer = zz->LB.Data_Structure;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
   if (do_timing) {
-    if (timer_vcycle < 0) 
-      timer_vcycle = Zoltan_Timer_Init(zz->ZTime, 0, "Vcycle");
-    if (timer_procred < 0) 
-      timer_procred = Zoltan_Timer_Init(zz->ZTime, 0, "Processor Reduction");
-    if (timer_match < 0) 
-      timer_match = Zoltan_Timer_Init(zz->ZTime, 1, "Matching");
-    if (timer_coarse < 0) 
-      timer_coarse = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsening");
-    if (timer_coarsepart < 0)
-      timer_coarsepart = Zoltan_Timer_Init(zz->ZTime, 1,
+    if (timer->vcycle < 0) 
+      timer->vcycle = Zoltan_Timer_Init(zz->ZTime, 0, "Vcycle");
+    if (timer->procred < 0) 
+      timer->procred = Zoltan_Timer_Init(zz->ZTime, 0, "Processor Reduction");
+    if (timer->match < 0) 
+      timer->match = Zoltan_Timer_Init(zz->ZTime, 1, "Matching");
+    if (timer->coarse < 0) 
+      timer->coarse = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsening");
+    if (timer->coarsepart < 0)
+      timer->coarsepart = Zoltan_Timer_Init(zz->ZTime, 1,
                                            "Coarse_Partition");
-    if (timer_refine < 0) 
-      timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Refinement");
-    if (timer_project < 0) 
-      timer_project = Zoltan_Timer_Init(zz->ZTime, 1, "Project_Up");
+    if (timer->refine < 0) 
+      timer->refine = Zoltan_Timer_Init(zz->ZTime, 1, "Refinement");
+    if (timer->project < 0) 
+      timer->project = Zoltan_Timer_Init(zz->ZTime, 1, "Project_Up");
 
-    ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
   }
 
   MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,hgc->Communicator);
@@ -283,8 +275,8 @@ int Zoltan_PHG_Partition (
          "coarsening plot");
 
       if (do_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_match, hgc->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->match, hgc->Communicator);
       }
       if (vcycle_timing) {
         if (vcycle->timer_match < 0) {
@@ -315,8 +307,8 @@ int Zoltan_PHG_Partition (
                           hgc->Communicator);
 
       if (do_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_match, hgc->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_coarse, hgc->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->match, hgc->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->coarse, hgc->Communicator);
       }
 
       if (vcycle_timing) {
@@ -347,8 +339,8 @@ int Zoltan_PHG_Partition (
                           hgc->Communicator);
         
       if (do_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarse, hgc->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->coarse, hgc->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
       }
 
       ZOLTAN_FREE ((void**) &match);
@@ -364,8 +356,8 @@ int Zoltan_PHG_Partition (
 
 	if (tot_nPins < (int)(hgp->ProRedL * origVpincnt + 0.5)) {
 	  if (do_timing) {
-	    ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-	    ZOLTAN_TIMER_START(zz->ZTime, timer_procred, hgc->Communicator);
+	    ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
+	    ZOLTAN_TIMER_START(zz->ZTime, timer->procred, hgc->Communicator);
 	  }
 	  /* redistribute to half the processors */
 	  origVpincnt = tot_nPins; /* update for processor reduction test */
@@ -411,16 +403,16 @@ int Zoltan_PHG_Partition (
 	    /* I'm not in the redistributed part so I should go to uncoarsening
 	       refinement and wait */ {
 	    if (fine_timing) {
-	      if (timer_gather < 0)
-		timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
-	      if (timer_crefine < 0)
-		timer_crefine =Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
-	      if (timer_cpart < 0)
-		timer_cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
+	      if (timer->cpgather < 0)
+		timer->cpgather = Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
+	      if (timer->cprefine < 0)
+		timer->cprefine =Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
+	      if (timer->cpart < 0)
+		timer->cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
 	    }
 	    if (do_timing) {
-	      ZOLTAN_TIMER_STOP(zz->ZTime, timer_procred, hgc->Communicator);
-	      ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+	      ZOLTAN_TIMER_STOP(zz->ZTime, timer->procred, hgc->Communicator);
+	      ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
 	    }
 	    goto Refine;
 	  }
@@ -428,8 +420,8 @@ int Zoltan_PHG_Partition (
 	  hg = vcycle->hg;
 	  hg->redl = hgp->redl; /* not set with hg creation */
 	  if (do_timing) {
-	    ZOLTAN_TIMER_STOP(zz->ZTime, timer_procred, hgc->Communicator);
-	    ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+	    ZOLTAN_TIMER_STOP(zz->ZTime, timer->procred, hgc->Communicator);
+	    ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
 	  }
 	}
       }
@@ -456,8 +448,8 @@ int Zoltan_PHG_Partition (
   }
 
   if (do_timing) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-    ZOLTAN_TIMER_START(zz->ZTime, timer_coarsepart, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->coarsepart, hgc->Communicator);
   }
 
   /****** Coarse Partitioning ******/
@@ -466,8 +458,8 @@ int Zoltan_PHG_Partition (
     goto End;
 
   if (do_timing) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarsepart, hgc->Communicator);
-    ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->coarsepart, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
   }
 
 Refine:
@@ -480,8 +472,8 @@ Refine:
 
     if (refine && hgc->myProc >= 0) {
       if (do_timing) {
-	ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-	ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
+	ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
+	ZOLTAN_TIMER_START(zz->ZTime, timer->refine, hgc->Communicator);
       }
       if (vcycle_timing) {
 	if (vcycle->timer_refine < 0) {
@@ -496,8 +488,8 @@ Refine:
       err = Zoltan_PHG_Refinement (zz, hg, p, part_sizes, vcycle->Part, hgp);
         
       if (do_timing) {
-	ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hgc->Communicator);
-	ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+	ZOLTAN_TIMER_STOP(zz->ZTime, timer->refine, hgc->Communicator);
+	ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
       }
       if (vcycle_timing)
 	ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
@@ -526,8 +518,8 @@ Refine:
       if (finer->comm_plan) {
 	refine = 1;
 	if (do_timing) {
-	  ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-	  ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
+	  ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
+	  ZOLTAN_TIMER_START(zz->ZTime, timer->project, hgc->Communicator);
 	}
 	if (vcycle_timing) {
 	  if (vcycle->timer_project < 0) {
@@ -581,8 +573,8 @@ Refine:
 	Zoltan_Comm_Destroy (&finer->comm_plan);                   
 
 	if (do_timing) {
-	  ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hgc->Communicator);
-	  ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+	  ZOLTAN_TIMER_STOP(zz->ZTime, timer->project, hgc->Communicator);
+	  ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
 	}
 	if (vcycle_timing)
 	  ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project,
@@ -683,7 +675,7 @@ End:
   }
 
   if (do_timing)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
   ZOLTAN_TRACE_EXIT(zz, yo) ;
   return err;
 }

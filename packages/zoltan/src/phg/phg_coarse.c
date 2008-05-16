@@ -168,22 +168,22 @@ int Zoltan_PHG_Coarsening
   struct Zoltan_Comm_Obj *plan=NULL;
 
 
-  static int timer_merge=-1, timer_shuffle=-1, timer_remove=-1, timer_theend=-1;
+  struct phg_timer_indices *timer = zz->LB.Data_Structure;
   int time_details = (hgp->use_timers > 3);
 
   if (time_details) {
-    if (timer_merge < 0)
-      timer_merge = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Merge");
-    if (timer_shuffle < 0)
-      timer_shuffle = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Shuffle");
-    if (timer_remove < 0)
-      timer_remove = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Remove");
-    if (timer_theend < 0)
-      timer_theend = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Finish");
+    if (timer->comerge < 0)
+      timer->comerge = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Merge");
+    if (timer->coshuffle < 0)
+      timer->coshuffle = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Shuffle");
+    if (timer->coremove < 0)
+      timer->coremove = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Remove");
+    if (timer->cotheend < 0)
+      timer->cotheend = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsen_Finish");
   }
 
   if (time_details)
-    ZOLTAN_TIMER_START(zz->ZTime, timer_merge, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->comerge, hgc->Communicator);
 
 #ifdef _DEBUG1
   int    totiden, totsize1;  
@@ -518,8 +518,8 @@ int Zoltan_PHG_Coarsening
   c_hg->hindex[hg->nEdge] = c_hg->nPins = idx;
 
   if (time_details) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_merge, hgc->Communicator);
-    ZOLTAN_TIMER_START(zz->ZTime, timer_shuffle, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->comerge, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->coshuffle, hgc->Communicator);
   }
 #ifdef _DEBUG1
   MPI_Barrier(hgc->Communicator);
@@ -602,8 +602,8 @@ int Zoltan_PHG_Coarsening
 #endif
 
   if (time_details) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_shuffle, hgc->Communicator);
-    ZOLTAN_TIMER_START(zz->ZTime, timer_remove, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->coshuffle, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->coremove, hgc->Communicator);
   }
 
   /* in order to find identical nets; we're going to sort hash values and compare them */
@@ -871,8 +871,8 @@ int Zoltan_PHG_Coarsening
   c_hg->hindex[c_hg->nEdge] = idx;
 
   if (time_details) {
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_remove, hgc->Communicator);
-    ZOLTAN_TIMER_START(zz->ZTime, timer_theend, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->coremove, hgc->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->cotheend, hgc->Communicator);
   }
 
 #ifdef _DEBUG1
@@ -938,7 +938,7 @@ int Zoltan_PHG_Coarsening
   uprintf(hgc, "Terminating Coarsening ... ElapT= %.3lf Coar= %.3lf ( %.1lf%% ) RedHash= %.3lf ( %.1lf%% ) RedSize= %.3lf ( %.1lf%% ) RedIden= %.3lf ( %.1lf%% ) Suffle= %.3lf ( %.1lf%% ) Sort= %.3lf ( %.1lf%% ) Iden= %.3lf ( %.1lf%% ) Shrink= %.3lf ( %.1lf%% )  Mirror= %.3lf ( %.1lf%% ) Rest= %.3lf ( %.1lf%% )\n", t_all, t_coarse, 100.0*t_coarse/t_all, t_redhash, 100.0*t_redhash/t_all, t_redsize, 100.0*t_redsize/t_all, t_userredop, 100.0*t_userredop/t_all, t_suffle, 100.0*t_suffle/t_all, t_sort, 100.0*t_sort/t_all, t_iden, 100.0*t_iden/t_all, t_shrink, 100.0*t_shrink/t_all, t_mirror, 100.0*t_mirror/t_all, t_all-(t_coarse+t_redhash+t_redsize+t_userredop+t_suffle+t_sort+t_iden+t_shrink+t_mirror), 100.0*(t_all-(t_coarse+t_redhash+t_redsize+t_userredop+t_suffle+t_sort+t_iden+t_shrink+t_mirror))/t_all);
 #endif
   if (time_details)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_theend, hgc->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->cotheend, hgc->Communicator);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }

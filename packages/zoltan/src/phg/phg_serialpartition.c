@@ -115,7 +115,7 @@ float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
 float bal, cut, worst_cut;
 int fine_timing = (hgp->use_timers > 2);
-static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; 
+struct phg_timer_indices *timer = zz->LB.Data_Structure;
 int local_coarse_part = hgp->LocalCoarsePartition;
 
 /* Number of iterations to try coarse partitioning on each proc. */
@@ -126,14 +126,14 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (fine_timing) {
-    if (timer_gather < 0)
-      timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
-    if (timer_refine < 0)
-      timer_refine = Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
-    if (timer_cpart < 0)
-      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
+    if (timer->cpgather < 0)
+      timer->cpgather = Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
+    if (timer->cprefine < 0)
+      timer->cprefine = Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
+    if (timer->cpart < 0)
+      timer->cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
 
-    ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
+    ZOLTAN_TIMER_START(zz->ZTime, timer->cpart, phg->comm->Communicator);
   }
 
 
@@ -243,8 +243,8 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
        * serial hypergraph shg.
        */
       if (fine_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_gather, phg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->cpart, phg->comm->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->cpgather, phg->comm->Communicator);
       }
 
       ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, hgp, &scomm, &shg);
@@ -254,8 +254,8 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
       }
 
       if (fine_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_gather, phg->comm->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->cpgather, phg->comm->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->cpart, phg->comm->Communicator);
       }
 
     }
@@ -297,8 +297,8 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
 
       /* time refinement step in coarse partitioner */
       if (fine_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->cpart, phg->comm->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->cprefine, phg->comm->Communicator);
       }
 
       /* UVCUVC: Refine new candidate: only one pass is enough. */
@@ -308,8 +308,8 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
       
       /* stop refinement timer */
       if (fine_timing) {
-        ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, phg->comm->Communicator);
-        ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer->cprefine, phg->comm->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer->cpart, phg->comm->Communicator);
       }
 
       /* Decide if candidate is in the top tier or not. */
@@ -385,7 +385,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
   
 End:
   if (fine_timing) 
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer->cpart, phg->comm->Communicator);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
