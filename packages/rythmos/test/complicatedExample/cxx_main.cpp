@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
               *out << "normSolutionDiff = " << normSolutionDiff << endl;
             }
-            const double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
+            const double eps = 1.0e6*Teuchos::ScalarTraits<double>::prec();
             TEST_FOR_EXCEPTION(normSolutionDiff > eps, std::logic_error,
                 "Error, normSolutionDiff = " << normSolutionDiff << " > eps = " << eps << "!");
             // Check that solution dot matches exactly
