@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
                             CELL_TRI,        // generating cell type
                             triNodes);       // array with interleaved node coordinates
 
-    LexContainer<double> massMatrices;
+    FieldContainer<double> massMatrices;
     DefaultFieldFactory<double> FFactory;
 
     for (ECompEngine compEng = COMP_CPP; compEng < COMP_ENGINE_MAX; compEng++) {
@@ -133,15 +133,13 @@ int main(int argc, char *argv[]) {
           if (massfile.is_open()) {
             Teuchos::Array<Teuchos::Array<double> > cellMass;
             // fill mass matrix for this cell
-            int numLbf = massMatrices.getIndexBound(1);
-            int numRbf = massMatrices.getIndexBound(2);
+            int numLbf = massMatrices.getDimension(1);
+            int numRbf = massMatrices.getDimension(2);
             cellMass.resize(numLbf);
             for (int i=0; i<numLbf; i++) {
               cellMass[i].resize(numRbf);
               for (int j=0; j<numRbf; j++) {
-                Teuchos::Array<int> mIndex(3);
-                mIndex[0] = cell_id; mIndex[1] = i; mIndex[2] = j;
-                cellMass[i][j] = massMatrices.getValue(mIndex);
+                cellMass[i][j] = massMatrices(cell_id, i, j);
               }
             }
             if (compareToAnalytic<double>(cellMass, massfile, 1e-10, iprint) > 0) {

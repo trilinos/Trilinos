@@ -37,7 +37,7 @@
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
-#include "Intrepid_LexContainer.hpp"
+#include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -385,24 +385,23 @@ class Matrix{
                         const Teuchos::Array<Scalar>& vec) const;
       
       
-      /** \brief In-place Matrix-vector left multiply. A vector whose elements are contiguously located 
-        in a LexContainer, starting at an element with enumeration <var>indexVec</var>, is multiplied 
-        on the left by the Matrix and stored in another LexContainer, starting at an element with 
-        enumeration <var>indexMatVec</var>. This method allows to perform matrix-vector multiplication
-        directly on a LexContainer, which eliminates the need to copy vector elements from the 
-        container to a temporary array or Point.
+      /** \brief Returns a scalar representing product of Matrix row with the specified <var>rowId</var>
+        and a vector whose components are stored contiguously in a FieldContainer, starting at
+        position <var>vecBegin</var>. This method allows to perform matrix-vector multiplications
+        without creating temporary Point objects and should be used when performance is of importance.
         
-        \param matVec       [out]         - matrix-vector product
-        \param indexMatVec  [in]          - enumeration of the first vector component for the resulr
-        \param vec          [in]          - the vector argument
-        \param indexVec     [in]          - enumeration of the first vector component of the input vector
-        \param dim          [in]          - dimension of the vectors - should equal Matrix dimension
-        */
-      void multiplyLeft(LexContainer<Scalar>&       matVec,
-                        const int                   indexMatVec,
-                        const LexContainer<Scalar>& vec,
-                        const int                   indexVec,
-                        const int dim) const;
+        \warning This method expects that the vector has the same dimension as the Matrix object
+        whose row is being multiplied. 
+        
+        \param rowVec        [out]          -  product of Matrix row and the vector
+        \param rowId          [in]          - order of the row that is being multiplied by the vector
+        \param vec            [in]          - FieldContainer storing the vector
+        \param vecBegin       [in]          - enumeration of the first element of the vector
+      */      
+      void rowMultiply(Scalar &                       rowVec,
+                       const int                      rowId,
+                       const FieldContainer<Scalar>&  vec,
+                       const int                      vecBegin)  const;
       
       
       /** \brief   Overloaded () operator. Allows to access Matrix elements using (rowId,colId).

@@ -65,7 +65,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::initialize() {
 
 
 template<class Scalar> 
-void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(FieldContainer<Scalar>&                outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const EOperator                        operatorType) const {
 
@@ -77,22 +77,19 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
   EField fieldType = FIELD_FORM_0;
   int    spaceDim  = 2;
 
-  // temporaries
-  int countPt  = 0;               // point counter
-  Scalar x(0);                    // x coord
-  Scalar y(0);                    // y coord
-  Teuchos::Array<int> indexV(2);  // multi-index for values
-  Teuchos::Array<int> indexD(3);  // multi-index for gradients and D1's
-
-  // Shape the VarContainer for the output values using these values:
-  outputValues.reset(numPoints,
-                     numFields,
-                     fieldType,
-                     operatorType,
-                     spaceDim);
+  // Temporaries: point counter and (x,y) coordinates of the evaluation point
+  int countPt  = 0;                               
+  Scalar x(0);                                    
+  Scalar y(0);                                    
+  
+  // Shape the FieldContainer for the output values using these values:
+  outputValues.resize(numPoints,
+                      numFields,
+                      fieldType,
+                      operatorType,
+                      spaceDim);
 
   switch (operatorType) {
-      
     case OPERATOR_VALUE:
       for (countPt = 0; countPt < numPoints; countPt++) {
 #ifdef HAVE_INTREPID_DEBUG
@@ -103,16 +100,11 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 #endif
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
-        indexV[0] = countPt;
           
-        indexV[1] = 0;
-        outputValues.setValue(1.0-x-y, indexV);
-        
-        indexV[1] = 1;
-        outputValues.setValue(x, indexV);
-        
-        indexV[1] = 2;
-        outputValues.setValue(y, indexV);
+        // Output container has rank 2. The indices are (P,F)
+        outputValues(countPt, 0) = 1.0 - x - y;
+        outputValues(countPt, 1) = x;
+        outputValues(countPt, 2) = y;
       }
       break;
 
@@ -125,25 +117,15 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
-        indexD[0] = countPt;
+        // Output container has rank 3. The indices are (P,F,D)
+        outputValues(countPt, 0, 0) = -1.0;
+        outputValues(countPt, 0, 1) = -1.0;
 
-        indexD[1] = 0;
-        indexD[2] = 0;
-        outputValues.setValue(-1.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-1.0, indexD);
+        outputValues(countPt, 1, 0) = 1.0;
+        outputValues(countPt, 1, 1) = 0.0;
 
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue(1.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(0.0, indexD);
-
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(1.0, indexD);
+        outputValues(countPt, 2, 0) = 0.0;
+        outputValues(countPt, 2, 1) = 1.0;
       }
       break;
 
@@ -155,25 +137,14 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
-        indexD[0] = countPt;
-
-        indexD[1] = 0;
-        indexD[2] = 0;
-        outputValues.setValue(-1.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(1.0, indexD);
-
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-1.0, indexD);
-
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(1.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(0.0, indexD);
+        outputValues(countPt, 0, 0) = -1.0;
+        outputValues(countPt, 0, 1) =  1.0;
+          
+        outputValues(countPt, 1, 0) = 0.0;
+        outputValues(countPt, 1, 1) =-1.0;
+          
+        outputValues(countPt, 2, 0) = 1.0;
+        outputValues(countPt, 2, 1) = 0.0;
       }
       break;
 
@@ -196,6 +167,8 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_TRI_C1_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
+        
+     // Output container has rank 3. The indices are (P,F,K). All values are zero
      outputValues.storeZero();
      break;
 
@@ -222,7 +195,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 
   
 template<class Scalar>
-void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(FieldContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const Cell<Scalar>&                    cell) const {
   TEST_FOR_EXCEPTION( (true),
@@ -233,7 +206,7 @@ void Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 
 
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
+inline int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
     return numDof_;   
 }
 
@@ -273,28 +246,28 @@ const Teuchos::Array<LocalDofTag> & Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getAllL
 
 
 template<class Scalar>
-ECell Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCellType() const {
+inline ECell Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCellType() const {
   return CELL_TRI;
 }
 
 
 
 template<class Scalar>
-EBasis Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getBasisType() const {
+inline EBasis Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getBasisType() const {
   return BASIS_FEM_DEFAULT;
 }
 
 
 
 template<class Scalar>
-ECoordinates Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
+inline ECoordinates Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
   return COORDINATES_CARTESIAN;
 }
 
 
 
 template<class Scalar>
-int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getDegree() const {
+inline int Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>::getDegree() const {
   return 1;
 }
 

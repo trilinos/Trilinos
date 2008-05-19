@@ -72,7 +72,7 @@ class DefaultFieldFactory {
       \param field       [in]    - Field type (FIELD_FORM_0, etc.).
       \param cell        [in]    - Cell type (CELL_TRI, CELL_QUAD, etc.).
       \param recSpace    [in]    - Reconstruction space type (RECONSTRUCTION_SPACE_COMPLETE, etc.).
-      \param polyDegree  [in]    - Polynomial degree.
+      \param degree      [in]    - Polynomial degree.
       \param basisType   [in]    - Basis type (BASIS_FEM_DEFAULT, etc.).
       \param coordSys    [in]    - Coordinate system (BASIS_FEM_DEFAULT, etc.).
       \param cubDegree   [in]    - Cubature accuracy; setting <var>cubDegree</var> to a nonnegative
@@ -82,13 +82,13 @@ class DefaultFieldFactory {
       \return
               - RCP to field with given specifications.
   */
-  Teuchos::RCP<LocalField<Scalar> > create(EField field,
-                                           ECell cell,
+  Teuchos::RCP<LocalField<Scalar> > create(EField               field,
+                                           ECell                cell,
                                            EReconstructionSpace recSpace,
-                                           int degree,
-                                           EBasis basisType, 
-                                           ECoordinates coordSys,
-                                           int cubDegree = -1);
+                                           int                  degree,
+                                           EBasis               basisType, 
+                                           ECoordinates         coordSys,
+                                           int                  cubDegree = -1);
     
 };
   

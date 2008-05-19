@@ -68,12 +68,19 @@ namespace Intrepid {
     */
     Teuchos::Array<int> dimensions_;
     
-    /** \brief Store the first 5 dimensions explicitely for faster access operations
-    */
+    /** \brief 1st dimension of the array */
     int dim0_;
+    
+    /** \brief 2nd dimension of the array */
     int dim1_;
+    
+    /** \brief 3rd dimension of the array */
     int dim2_;
+    
+    /** \brief 4th dimension of the array */
     int dim3_;
+    
+    /** \brief 5th dimension of the array */
     int dim4_;
     
   public:
@@ -424,13 +431,58 @@ namespace Intrepid {
       \param newDimensions[in]          - new upper values for index ranges
     */
     void resize(const Teuchos::Array<int>& newDimensions);
-    
+        
     
     /** \brief Resizes FieldContainer to have the same rank and dimensions as another FieldContainer
       
       \param anotherContainer[in]          - a FieldContainer
       */
     void resize(const FieldContainer<Scalar>& anotherContainer);
+    
+    
+    /** \brief Resizes FieldContainer to a container whose rank depends on the specified field and 
+      operator types and the space dimension. The admissible combinations of these arguments, the 
+      rank of the resulitng container and its dimensions are summarized in the following table:
+      \verbatim
+      |--------------------|-------------------|-------------------|-------------------|
+      |operator/field rank |       rank 0      | rank 1 2D/3D      | rank 2 2D/3D      |
+      |--------------------|-------------------|-------------------|-------------------|
+      |       VALUE        | (P,F)             | (P,F,D)           | (P,F,D,D)         |
+      |--------------------|-------------------|-------------------|-------------------|
+      |     GRAD, D1       | (P,F,D)           | (P,F,D,D)         | (P,F,D,D,D)       |
+      |--------------------|-------------------|-------------------|-------------------|
+      |        CURL        | (P,F,D) (undef3D) | (P,F)/(P,F,D)     | (P,F,D)/(P,F,D,D) |
+      |--------------------|-------------------|-------------------|-------------------|
+      |        DIV         | (P,F,D) (only 1D) | (P,F)             | (P,F,D)           |
+      |--------------------|-------------------|-------------------|-------------------|
+      |    D1,D2,..,D10    | (P,F,K)           | (P,F,D,K)         | (P,F,D,D,K)       |
+      |--------------------|-------------------|-------------------|-------------------|
+      
+      |------|----------------------|---------------------------|
+      |      |         Index        |         Dimension         |
+      |------|----------------------|---------------------------|
+      |   P  |         point        |  0 <= P < numPoints       |
+      |   F  |         field        |  0 <= F < numFields       |
+      |   D  |   field coordinate   |  0 <= D < spaceDim        |
+      |   K  |   enumeration of Dk  |  0 <= K < DkCardinality   |
+      |------|----------------------|---------------------------|
+      \endverbatim
+      \remarks 
+      \li Enumeration of Dk (derivatives of total order k) follows the lexicographical order of 
+      the partial derivatives; see getDkEnumeration() for details.
+      
+      
+      \param numPoints       [in]        - number of evaluation points
+      \param numFields       [in]        - number of fields that will be evaluated
+      \param fieldType       [in]        - type of the field whose basis will be evaluated
+      \param operatorType    [in]        - type of the operator that will be applied to the basis
+      \param spaceDim        [in]        - dimension of the ambient space
+    */
+    void resize(const int       numPoints,
+                const int       numFields,
+                const EField    fieldType,
+                const EOperator operatorType,
+                const int       spaceDim);
     
     //--------------------------------------------------------------------------------------------//
     //                                                                                            //
@@ -490,17 +542,20 @@ namespace Intrepid {
     }    
 
     
-    /** \brief Overloaded () operators for rank-1 containers.
+    /** \brief Overloaded () operators for rank-1 containers. Data <strong>cannot</strong> be modified.
       
       \param i0         [in]        - 1st index
-      \param i1         [in]        - 2nd index
-      */
+    */
     const Scalar& operator () (const int i0) const;
     
+    /** \brief Overloaded () operators for rank-1 containers. Data <strong>can</strong> be modified.
+      
+      \param i0         [in]        - 1st index
+    */
     Scalar&       operator () (const int i0);
     
     
-    /** \brief Overloaded () operators for rank-2 containers.
+    /** \brief Overloaded () operators for rank-2 containers. Data <strong>cannot</strong> be modified.
       
       \param i0         [in]        - 1st index
       \param i1         [in]        - 2nd index
@@ -508,12 +563,16 @@ namespace Intrepid {
     const Scalar& operator () (const int i0,
                                const int i1) const;
     
+    /** \brief Overloaded () operators for rank-2 containers. Data <strong>can</strong> be modified.
+      
+      \param i0         [in]        - 1st index
+      \param i1         [in]        - 2nd index
+    */
     Scalar&       operator () (const int i0,
                                const int i1);
     
     
-    
-    /** \brief Overloaded () operator for rank-3 containers.
+    /** \brief Overloaded () operator for rank-3 containers. Data <strong>cannot</strong> be modified.
       
       \param i0         [in]        - 1st index
       \param i1         [in]        - 2nd index
@@ -523,12 +582,18 @@ namespace Intrepid {
                                const int i1,
                                const int i2) const;
     
+    /** \brief Overloaded () operator for rank-3 containers. Data <strong>can</strong> be modified.
+      
+      \param i0         [in]        - 1st index
+      \param i1         [in]        - 2nd index
+      \param i2         [in]        - 3rd index
+      */
     Scalar&       operator () (const int i0,
                                const int i1,
                                const int i2);
     
     
-    /** \brief Overloaded () operator for rank-4 containers.
+    /** \brief Overloaded () operator for rank-4 containers. Data <strong>cannot</strong> be modified.
       
       \param i0         [in]        - 1st index
       \param i1         [in]        - 2nd index
@@ -540,13 +605,20 @@ namespace Intrepid {
                                const int i2,
                                const int i3) const;
     
+    /** \brief Overloaded () operator for rank-4 containers. Data <strong>can</strong> be modified.
+      
+      \param i0         [in]        - 1st index
+      \param i1         [in]        - 2nd index
+      \param i2         [in]        - 3rd index
+      \param i3         [in]        - 4th index
+    */
     Scalar&       operator () (const int i0,
                                const int i1,
                                const int i2,
                                const int i3);
     
     
-    /** \brief Overloaded () operator for rank-5 containers.
+    /** \brief Overloaded () operator for rank-5 containers. Data <strong>cannot</strong> be modified.
       
       \param i0         [in]        - 1st index
       \param i1         [in]        - 2nd index
@@ -560,6 +632,14 @@ namespace Intrepid {
                                const int i3,
                                const int i4) const;
     
+    /** \brief Overloaded () operator for rank-5 containers. Data <strong>can</strong> be modified.
+      
+      \param i0         [in]        - 1st index
+      \param i1         [in]        - 2nd index
+      \param i2         [in]        - 3rd index
+      \param i3         [in]        - 4th index
+      \param i4         [in]        - 5th index
+    */
     Scalar&       operator () (const int i0,
                                const int i1,
                                const int i2,
@@ -590,6 +670,148 @@ namespace Intrepid {
   */
   template<class Scalar>
     std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar>& container);
+ 
+  
+  
+  
+  
+  /** \relates VarContainer
+    Field rank is defined as the number of indices needed to specify the value. Intrepid provides
+    three basic types of fields: scalar, vectors and tensors with ranks 0,1, and 2 respectively. 
+    The scalar field types are FIELD_FORM_0 and FIELD _FORM_3. The vector field types are 
+    FIELD_FORM_1, FIELD_FORM_2 and FIELD_VECTOR. The tensor field type is FIELD_TENSOR.
+    
+    \param fieldType         [in]     - field type whose rank we want to know
+    */
+  int getFieldRank(const EField fieldType); 
+  
+  
+  
+  /**\relates varContainer
+    Returns rank of an operator. When an operator acts on a field with a certain rank, the result
+    is a field with another rank. Operator rank is defined as the difference between the ranks of
+    the output field and the input field:
+    
+    Rank(OPERATOR) = Rank(OPERATOR(FIELD)) - Rank(FIELD)
+    
+    This function is used by VarContainer class to determine how many indices are needed to store
+    the values of OPERATOR(FIELD). By knowing the rank of the operator and the rank of the field we
+    can figure out the rank of the result:
+    
+    Rank(OPERATOR(FIELD)) = Rank(OPERATOR) + Rank(FIELD)
+    
+    Operator ranks are defined in the following table: (X denotes undefined, below slash means 3D).
+    By default, in 1D any operator other than VALUE has rank 1, i.e., GRAD, CURL and DIV default to
+  d/dx and Dk are the higher-order derivatives d^k/dx^k. Only scalar functions are allowed in 1D.
+    
+    \verbatim
+    |--------|------|--------------------------|----------|----------|----------|----------|
+    | field  | rank |  field type ENUM         |   VALUE  | GRAD, Dk |   CURL   |    DIV   |
+    |--------|------|--------------------------|----------|----------|----------|----------|
+    | scalar |   0  |  FORM_0, FORM_3          |     0    |     1    | 3-dim/X  |     X    |
+    | vector |   1  |  FORM_1, FORM_2, VECTOR  |     0    |     1    | dim - 3  |    -1    |
+    | tensor |   2  |  TENSOR                  |     0    |     1    | dim - 3  |    -1    |
+    |--------|------|--------------------------|----------|----------|----------|----------|
+    |   1D   |   0  |  FORM_0, FORM_3 only     |     0    |     1    |     1    |     1    |
+    |--------|------|--------------------------|----------|----------|----------|----------|
+    \endverbatim
+    
+    \param operatorType     [in]    - the operator acting on the field
+    \param fieldRank        [in]    - rank of the field being acted upon (use getFieldRank)
+    \param spaceDim         [in]    - dimension of the space where all happens (1,2 or 3)
+    */
+  int getOperatorRank(const EOperator operatorType,
+                      const int       fieldRank,
+                      const int       spaceDim);
+  
+  
+  
+  /**\relates VarContainer 
+    Returns order of an operator: ranges from 0 (for OPERATOR_VALUE) to 10 (OPERATOR_D10)
+    
+    \param operatorType       [in]    - type of the operator whose order we want to know
+    */
+  int getOperatorOrder(const EOperator operatorType);
+  
+  
+  
+  /** \relates VarContainer
+    Returns enumeration of a partial derivative of order k based on multiplicities of the partial
+    derivatives dx, dy and dz. Enumeration follows the lexicographical order of the partial 
+    derivatives multiplicities. For example, the 10 derivatives of order 3 in 3D are enumerated as:
+    
+    D3 = {(3,0,0), (2,1,0), (2,0,1), (1,2,0), (1,1,1), (1,0,2), (0,3,0), (0,2,1), (0,1,2), (0,0,3)}
+  
+  Enumeration formula for lexicographically ordered partial derivatives of order k is given by
+    
+    <table>   
+    <tr> <td>\f$i(xMult)               = 0\f$</td>              <td>in 1D (only 1 derivative)</td> </tr>
+    <tr> <td>\f$i(xMult, yMult)        = yMult\f$</td>                              <td>in 2D</td> </tr>
+    <tr> <td>\f$i(xMult, yMult, zMult) = zMult + \displaystyle\sum_{r = 0}^{k - xMult} r\f$</td> <td>in 3D</td> </tr>
+    </table>
+    
+    where the order k of Dk is implicitly defined by xMult + yMult + zMult. Space dimension is
+    implicitly defined by the default values of the multiplicities of y and z derivatives.
+  
+  \param xMult            [in]    - multiplicity of the partial derivative in x
+    \param yMult            [in]    - multiplicity of the partial derivative in y (default = -1)
+  \param zMult            [in]    - multiplicity of the partial derivative in z (default = -1)
+  */
+  int getDkEnumeration(const int xMult,
+                       const int yMult = -1,
+                       const int zMult = -1);
+  
+  
+  
+  /** \relates VarContainer
+    Returns multiplicities of the partials in x, y, and z based on the enumeration of the partial
+    derivative, its order and the space dimension. Inverse of the getDkEnumeration() method.
+    
+    \param partialMult      [out]    - array with partial derivative multiplicities
+    \param derivativeEnum   [in]     - enumeration of the partial derivative
+    \param derivativeOrder  [in]     - order of Dk
+    \param spaceDim         [in]     - space dimension
+    */
+  void getDkMultiplicities(Teuchos::Array<int>& partialMult,
+                           const int derivativeEnum,
+                           const int derivativeOrder,
+                           const int spaceDim);
+  
+  
+  
+  /** \relates VarContainer
+    Returns cardinality of Dk, i.e., the number of all derivatives of order k. The set of all 
+    partial derivatives of order k is isomorphic to the set of all multisets of cardinality k with 
+    elements taken from the sets {x}, {x,y}, and {x,y,z} in 1D, 2D, and 3D respectively. 
+    For example, the partial derivative
+    
+    \f$\displaystyle D\{1,2,1\}f = \frac{d^4 f}{dx dy^2 dz}\f$   maps to multiset
+    \f$\{x, y, z\}\f$ with multiplicities \f$\{1,2,1\}\f$ 
+    
+    The number of all such multisets is given by the binomial coefficient
+    
+    \f$
+    \begin{pmatrix}
+  spaceDim + k - 1 \\
+    spaceDim - 1
+    \end{pmatrix}
+  \f$
+    
+1D: cardinality = 1\n
+2D: cardinality = k + 1\n
+3D: cardinality = (k + 1)*(k + 2)/2
+    
+    \param derivativeOrder  [in]     - order of Dk
+    \param spaceDim         [in]     - space dimension
+    */
+  int getDkCardinality(const int derivativeOrder,
+                       const int spaceDim);
+  
+  //===========================================================================//
+  //                                                                           //
+  //              End Function declarations related to VarContainer            //
+  //                                                                           //
+  //===========================================================================//
   
 } // end namespace Intrepid
 

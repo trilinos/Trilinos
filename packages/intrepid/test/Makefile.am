@@ -43,8 +43,6 @@ SUBDIRS = \
   Cubature \
   MultiCell \
   RealSpace \
-  FieldContainer \
-  LexContainer \
-  VarContainer
+  FieldContainer
 
 EXTRA_DIST = definition

@@ -133,23 +133,22 @@ int main(int argc, char *argv[]) {
     MultiCell<double> mCell(nCells,          // number of cells (triangles) in the multicell instance
                             CELL_TRI,        // generating cell type
                             triNodes);       // array with interleaved node coordinates
-    LexContainer<double> massMatrices;
-    LexContainer<double> stiffMatrices;
+    FieldContainer<double> massMatrices;
+    FieldContainer<double> stiffMatrices;
 
     // This MCell and container are for to test matrix assembly with Jacobian reuse.
     MultiCell<double> mCellReuse(nCells,          
                             CELL_TRI,        
                             triNodes);       
-    LexContainer<double> massMatricesReuse;
-    LexContainer<double> stiffMatricesReuse;
+    FieldContainer<double> massMatricesReuse;
+    FieldContainer<double> stiffMatricesReuse;
     
     // This MCell and container are for to test matrix assembly with auxiliary "right" LocalForm0
     MultiCell<double> mCellWithRight(nCells,          
                                      CELL_TRI,        
                                      triNodes);       
-    LexContainer<double> massMatricesWithRight;
-    LexContainer<double> stiffMatricesWithRight;
-    
+    FieldContainer<double> massMatricesWithRight;
+    FieldContainer<double> stiffMatricesWithRight;
 
     for (ECompEngine compEng = COMP_CPP; compEng < COMP_ENGINE_MAX; compEng++) {
       for (int cubDeg=2; cubDeg<=20; cubDeg++) {
@@ -157,11 +156,11 @@ int main(int argc, char *argv[]) {
         // Delete precomputed measures before changing cubature rule!!
         mCellReuse.deleteSubcellMeasures(2,0);
         mCellWithRight.deleteSubcellMeasures(2,0);
-        
+
         // set cubature
         cellCub = Teuchos::rcp(new CubatureDirect<double>(CELL_TRI,cubDeg) );
         allCubs[0][0] = cellCub;
-        
+
         // create local form
         LocalForm0<double> form0(basis, allCubs, compEng);
         
@@ -179,27 +178,26 @@ int main(int argc, char *argv[]) {
         // compute mass and stiffness  matrices using an "auxiliary" right local field:
         form0.getOperator(massMatricesWithRight, OPERATOR_VALUE, OPERATOR_VALUE, rightForm0, mCellWithRight, true);
         form0.getOperator(stiffMatricesWithRight, OPERATOR_GRAD, OPERATOR_GRAD, rightForm0, mCellWithRight, true);
-
          
         *outStream << "\nComputational engine: " << ECompEngineToString(compEng) << "\n";
         *outStream << "Cubature degree:      " << cubDeg << "\n";
 
         // compare mass matrices to analytic
-        for (int cell_id = 0; cell_id < nCells; cell_id++) {
-          *outStream << "\n Cell Id = " << cell_id << " -----------\n\n";
+        for (int cellId = 0; cellId < nCells; cellId++) {
+          *outStream << "\n Cell Id = " << cellId << " -----------\n\n";
           stringstream namestream;
           string filename;
-          namestream <<  basedir << "/mass_TRI_FEM_P1" << "_" << "0" << cell_id+1 << ".dat";
+          namestream <<  basedir << "/mass_TRI_FEM_P1" << "_" << "0" << cellId+1 << ".dat";
           namestream >> filename;
 
-          // Temp arrays to load mass matrix entries from LexContainer file
+          // Temp arrays to load mass matrix entries from FieldContainer file
           Teuchos::Array<Teuchos::Array<double> > cellMass;
           Teuchos::Array<Teuchos::Array<double> > cellMassReuse;
           Teuchos::Array<Teuchos::Array<double> > cellMassWithRight;
           
           // fill mass matrix for this cell
-          int numLbf = massMatrices.getIndexBound(1);
-          int numRbf = massMatrices.getIndexBound(2);
+          int numLbf = massMatrices.getDimension(1);
+          int numRbf = massMatrices.getDimension(2);
           cellMass.resize(numLbf);
           cellMassReuse.resize(numLbf);
           cellMassWithRight.resize(numLbf);
@@ -209,14 +207,11 @@ int main(int argc, char *argv[]) {
             cellMassReuse[i].resize(numRbf);
             cellMassWithRight[i].resize(numRbf);
             for (int j=0; j<numRbf; j++) {
-              Teuchos::Array<int> mIndex(3);
-              mIndex[0] = cell_id; mIndex[1] = i; mIndex[2] = j;
-              cellMass[i][j]          = massMatrices.getValue(mIndex);
-              cellMassReuse[i][j]     = massMatricesReuse.getValue(mIndex);
-              cellMassWithRight[i][j] = massMatricesWithRight.getValue(mIndex);
+              cellMass[i][j]          = massMatrices(cellId, i, j);
+              cellMassReuse[i][j]     = massMatricesReuse(cellId, i, j);
+              cellMassWithRight[i][j] = massMatricesWithRight(cellId, i, j);
             }
           }
-          
           
           // Compare mass matrix without reuse and entries from data file
           ifstream massfile(&filename[0]);
@@ -234,7 +229,6 @@ int main(int argc, char *argv[]) {
             errorFlag = -999;
           }
           
-          
           // Compare mass matrix with reuse and entries from data file. Need to open file again
           massfile.open(&filename[0]);
           if (massfile.is_open()) {              
@@ -250,7 +244,6 @@ int main(int argc, char *argv[]) {
           else {
             errorFlag = -999;
           }
-          
           
           // Compare mass matrix with auxiliary right field and entries from data file. Need to open file again
           massfile.open(&filename[0]);
@@ -268,25 +261,25 @@ int main(int argc, char *argv[]) {
             errorFlag = -999;
           }
           
-        } // for(cell_id) mass matrices
+        } // for(cellId) mass matrices
 
-#ifdef QWERTYUIO
+//#ifdef QWERTYUIO
         // compare stiffness matrices to analytic
-        for (int cell_id = 0; cell_id < nCells; cell_id++) {
-          *outStream << "\n Cell Id = " << cell_id << " -----------\n\n";
+        for (int cellId = 0; cellId < nCells; cellId++) {
+          *outStream << "\n Cell Id = " << cellId << " -----------\n\n";
           stringstream namestream;
           string filename;
-          namestream <<  basedir << "/stiff_TRI_FEM_P1" << "_" << "0" << cell_id+1 << ".dat";
+          namestream <<  basedir << "/stiff_TRI_FEM_P1" << "_" << "0" << cellId+1 << ".dat";
           namestream >> filename;
 
-          // Temp arrays to load stiffness matrix entries from LexContainer file
+          // Temp arrays to load stiffness matrix entries from FieldContainer file
           Teuchos::Array<Teuchos::Array<double> > cellStiff;
           Teuchos::Array<Teuchos::Array<double> > cellStiffReuse;
           Teuchos::Array<Teuchos::Array<double> > cellStiffWithRight;
           
           // fill stiffness matrix for this cell
-          int numLbf = stiffMatrices.getIndexBound(1);
-          int numRbf = stiffMatrices.getIndexBound(2);
+          int numLbf = stiffMatrices.getDimension(1);
+          int numRbf = stiffMatrices.getDimension(2);
           cellStiff.resize(numLbf);
           cellStiffReuse.resize(numLbf);
           cellStiffWithRight.resize(numLbf);
@@ -297,13 +290,11 @@ int main(int argc, char *argv[]) {
             cellStiffWithRight[i].resize(numRbf);
             for (int j=0; j<numRbf; j++) {
               Teuchos::Array<int> mIndex(3);
-              mIndex[0] = cell_id; mIndex[1] = i; mIndex[2] = j;
-              cellStiff[i][j]          = stiffMatrices.getValue(mIndex);
-              cellStiffReuse[i][j]     = stiffMatricesReuse.getValue(mIndex);
-              cellStiffWithRight[i][j] = stiffMatricesWithRight.getValue(mIndex);
+              cellStiff[i][j]          = stiffMatrices(cellId, i, j);
+              cellStiffReuse[i][j]     = stiffMatricesReuse(cellId, i, j);
+              cellStiffWithRight[i][j] = stiffMatricesWithRight(cellId, i, j);
             }
           }
-          
           
           // Compare stiffness matrix without reuse and entries from data file
           ifstream stifffile(&filename[0]);
@@ -320,7 +311,6 @@ int main(int argc, char *argv[]) {
           else {
             errorFlag = -999;
           }
-          
           
           // Compare stiffness matrix with reuse and entries from data file. Need to open file again
           stifffile.open(&filename[0]);
@@ -355,8 +345,8 @@ int main(int argc, char *argv[]) {
             errorFlag = -999;
           }
           
-        } // for(cell_id) stiffness matrices
-#endif
+        } // for(cellId) stiffness matrices
+//#endif
 
       } // for(cubDeg)
     }// for(compEngine)

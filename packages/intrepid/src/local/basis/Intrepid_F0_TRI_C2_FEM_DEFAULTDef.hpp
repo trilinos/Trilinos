@@ -28,7 +28,7 @@
 // @HEADER
 
 /** \file   Intrepid_F0_TRI_C2_FEM_DEFAULTDef.hpp
-    \brief  Definition file for FEM basis functions of degree 1 for 0-forms on TRI cells.
+    \brief  Definition file for FEM basis functions of degree 2 for 0-forms on TRI cells.
     \author Created by P. Bochev and D. Ridzal.
 */
 
@@ -69,7 +69,7 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::initialize() {
 
 
 template<class Scalar> 
-void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(FieldContainer<Scalar>&                outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const EOperator                        operatorType) const {
 
@@ -80,19 +80,17 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
   EField fieldType = FIELD_FORM_0;
   int    spaceDim  = 2;
 
-  // temporaries
-  int countPt  = 0;               // point counter
-  Scalar x(0);                    // x coord
-  Scalar y(0);                    // y coord
-  Teuchos::Array<int> indexV(2);  // multi-index for values
-  Teuchos::Array<int> indexD(3);  // multi-index for gradients and D1's
-
-  // Shape the VarContainer for the output values using these values:
-  outputValues.reset(numPoints,
-                     numDof_,
-                     fieldType,
-                     operatorType,
-                     spaceDim);
+  // Temporaries: point counter and (x,y) coordinates of the evaluation point
+  int countPt  = 0;                               
+  Scalar x(0);                                    
+  Scalar y(0);                                    
+  
+  // Shape the FieldContainer for the output values using these values:
+  outputValues.resize(numPoints,
+                      numDof_,
+                      fieldType,
+                      operatorType,
+                      spaceDim);
 
   switch (operatorType) {
       
@@ -106,25 +104,14 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 #endif
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
-        indexV[0] = countPt;
-          
-        indexV[1] = 0;
-        outputValues.setValue((-1.0 + x + y)*(-1.0 + 2.0*x + 2.0*y), indexV);
         
-        indexV[1] = 1;
-        outputValues.setValue(x*(-1.0 + 2.0*x), indexV);
-        
-        indexV[1] = 2;
-        outputValues.setValue(y*(-1.0 + 2.0*y), indexV);
-
-        indexV[1] = 3;
-        outputValues.setValue(-4.0*x*(-1.0 + x + y), indexV);
-
-        indexV[1] = 4;
-        outputValues.setValue(4.0*x*y, indexV);
-
-        indexV[1] = 5;
-        outputValues.setValue(-4.0*y*(-1.0 + x + y), indexV);
+        // Output container has rank 2. The indices are (P,F)
+        outputValues(countPt, 0) =  (-1.0 + x + y)*(-1.0 + 2.0*x + 2.0*y);
+        outputValues(countPt, 1) =  x*(-1.0 + 2.0*x);
+        outputValues(countPt, 2) =  y*(-1.0 + 2.0*y);
+        outputValues(countPt, 3) = -4.0*x*(-1.0 + x + y);
+        outputValues(countPt, 4) =  4.0*x*y;
+        outputValues(countPt, 5) = -4.0*y*(-1.0 + x + y);
       }
       break;
 
@@ -139,43 +126,25 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 #endif
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
-        indexD[0] = countPt;
+        
+        // Output container has rank 3. The indices are (P,F,D)
+        outputValues(countPt, 0, 0) = -3.0 + 4.0*x + 4.0*y;
+        outputValues(countPt, 0, 1) = -3.0 + 4.0*x + 4.0*y;
+        
+        outputValues(countPt, 1, 0) = -1.0 + 4.0*x;
+        outputValues(countPt, 1, 1) =  0.0;
+        
+        outputValues(countPt, 2, 0) =  0.0;
+        outputValues(countPt, 2, 1) = -1.0 + 4.0*y;
+        
+        outputValues(countPt, 3, 0) = -4.0*(-1.0 + 2.0*x + y);
+        outputValues(countPt, 3, 1) = -4.0*x;
+        
+        outputValues(countPt, 4, 0) = 4.0*y;
+        outputValues(countPt, 4, 1) = 4.0*x;
 
-        indexD[1] = 0;
-        indexD[2] = 0;
-        outputValues.setValue(-3.0 + 4.0*x + 4.0*y, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-3.0 + 4.0*x + 4.0*y, indexD);
-
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue(-1.0 + 4.0*x, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(0.0, indexD);
-
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-1.0 + 4.0*y, indexD);
-
-        indexD[1] = 3;
-        indexD[2] = 0;
-        outputValues.setValue(-4.0*(-1.0 + 2.0*x + y), indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-4.0*x, indexD);
-
-        indexD[1] = 4;
-        indexD[2] = 0;
-        outputValues.setValue(4.0*y, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(4.0*x, indexD);
-
-        indexD[1] = 5;
-        indexD[2] = 0;
-        outputValues.setValue(-4.0*y, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-4.0*(-1.0 + x + 2.0*y), indexD);
+        outputValues(countPt, 5, 0) = -4.0*y;
+        outputValues(countPt, 5, 1) = -4.0*(-1.0 + x + 2.0*y);
       }
       break;
 
@@ -189,43 +158,25 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 #endif
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
-        indexD[0] = countPt;
 
-        indexD[1] = 0;
-        indexD[2] = 0;
-        outputValues.setValue(-3.0 + 4.0*x + 4.0*y, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(3.0 - 4.0*x - 4.0*y, indexD);
-
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(1.0 - 4.0*x, indexD);
-
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(-1.0 + 4.0*y, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(0.0, indexD);
-
-        indexD[1] = 3;
-        indexD[2] = 0;
-        outputValues.setValue(-4.0*x, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(4.0*(-1.0 + 2.0*x + y), indexD);
-
-        indexD[1] = 4;
-        indexD[2] = 0;
-        outputValues.setValue(4.0*x, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-4.0*y, indexD);
-
-        indexD[1] = 5;
-        indexD[2] = 0;
-        outputValues.setValue(-4.0*(-1.0 + x + 2.0*y), indexD);
-        indexD[2] = 1;
-        outputValues.setValue(4.0*y, indexD);
+        // Output container has rank 3. The indices are (P,F,K)
+        outputValues(countPt, 0, 0) = -3.0 + 4.0*x + 4.0*y;
+        outputValues(countPt, 0, 1) =  3.0 - 4.0*x - 4.0*y;
+        
+        outputValues(countPt, 1, 0) =  0.0;
+        outputValues(countPt, 1, 1) =  1.0 - 4.0*x;
+        
+        outputValues(countPt, 2, 0) = -1.0 + 4.0*y;
+        outputValues(countPt, 2, 1) =  0.0;
+        
+        outputValues(countPt, 3, 0) = -4.0*x;
+        outputValues(countPt, 3, 1) =  4.0*(-1.0 + 2.0*x + y);
+        
+        outputValues(countPt, 4, 0) =  4.0*x;
+        outputValues(countPt, 4, 1) = -4.0*y;
+        
+        outputValues(countPt, 5, 0) = -4.0*(-1.0 + x + 2.0*y);
+        outputValues(countPt, 5, 1) =  4.0*y;
       }
       break;
 
@@ -241,55 +192,30 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
-        indexD[0] = countPt;
+        // Output container has rank 3. The indices are (P,F,K) 
+        outputValues(countPt, 0, 0) =  4.0;
+        outputValues(countPt, 0, 1) =  4.0;
+        outputValues(countPt, 0, 2) =  4.0;
+        
+        outputValues(countPt, 1, 0) =  4.0;
+        outputValues(countPt, 1, 1) =  0.0;
+        outputValues(countPt, 1, 2) =  0.0;
+        
+        outputValues(countPt, 2, 0) =  0.0;
+        outputValues(countPt, 2, 1) =  0.0;
+        outputValues(countPt, 2, 2) =  4.0;
+        
+        outputValues(countPt, 3, 0) = -8.0;
+        outputValues(countPt, 3, 1) = -4.0;
+        outputValues(countPt, 3, 2) =  0.0;
 
-        indexD[1] = 0;
-        indexD[2] = 0;
-        outputValues.setValue(4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(4.0, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(4.0, indexD);
-
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue(4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(0.0, indexD);
-
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(4.0, indexD);
-
-        indexD[1] = 3;
-        indexD[2] = 0;
-        outputValues.setValue(-8.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-4.0, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(0.0, indexD);
-
-        indexD[1] = 4;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(4.0, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(0.0, indexD);
-
-        indexD[1] = 5;
-        indexD[2] = 0;
-        outputValues.setValue(0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(-4.0, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(-8.0, indexD);
+        outputValues(countPt, 4, 0) =  0.0;
+        outputValues(countPt, 4, 1) =  4.0;
+        outputValues(countPt, 4, 2) =  0.0;
+        
+        outputValues(countPt, 5, 0) =  0.0;
+        outputValues(countPt, 5, 1) = -4.0;
+        outputValues(countPt, 5, 2) = -8.0;
       }
       break;
 
@@ -307,6 +233,8 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_TRI_C2_FEM_DEFAULT): Evaluation point is outside the TRI reference cell");
 #endif
+      
+     // Output container has rank 3. The indices are (P,F,K). All values are zero
      outputValues.storeZero();
      break;
 
@@ -333,7 +261,7 @@ void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&       
 
   
 template<class Scalar>
-void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>::getValues(FieldContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const Cell<Scalar>&                    cell) const {
   TEST_FOR_EXCEPTION( (true),

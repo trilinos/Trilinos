@@ -49,8 +49,7 @@ Teuchos::RCP<Basis<Scalar> > DefaultBasisFactory<Scalar>::create(EField field,
                             basisType * 10        +
                             coordSys;
 
-  TEST_FOR_EXCEPTION( (is_null(BMap_[basisCode])),
-                      std::invalid_argument,
+  TEST_FOR_EXCEPTION( (is_null(BMap_[basisCode])), std::invalid_argument,
                       ">>> ERROR (DefaultBasisFactory): Invalid set of parameters prevents basis creation.");
 
   return BMap_[basisCode];

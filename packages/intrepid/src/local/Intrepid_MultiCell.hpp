@@ -667,9 +667,9 @@ class MultiCell {
     
     /** \brief Sets a chart of degree 1, 2 or 3 into the MultiCell atlas. 
       The atlas must have size > 0, i.e., STATUS_DEFINED, for this method to work. If 
-      <var>shapePoints<var> has size zero, i.e., there are no additional shape points provided, the 
+      <var>shapePoints</var> has size zero, i.e., there are no additional shape points provided, the 
       method sets the default chart of degree 1. To define a chart of degree 2 or 3, the user must 
-      provide a <var>shapePoints<var> argument with properly filled additional shape points. The 
+      provide a <var>shapePoints</var> argument with properly filled additional shape points. The 
       number and allocation of these points to the subcells must be consistent with the generating 
       cell type and the desired chart degree. Admissible generating cell types are EDGE, TRI, QUAD, 
       TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have reference cells.
@@ -690,9 +690,9 @@ class MultiCell {
     
     /** \brief Fills an undefined atlas with cell charts based on the provided array of shapePoints, 
       or overwrites the cell charts in an existing atlas by these charts. The user is responsible for
-      populating the array with <var>ShapePoints<var> structs consistent with the desired chart types  
+      populating the array with <var>ShapePoints</var> structs consistent with the desired chart types  
       for each cell. The shape point sets can correspond to any valid chart degree, i.e., the charts 
-      of the individual cells are not required to be of  the same degree. If a <var>ShapePoints<var>
+      of the individual cells are not required to be of  the same degree. If a <var>ShapePoints</var>
       set of a cell has zero size, the default chart will be set for that cell. Admissible generating
       cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and PYRAMID, i.e., cells that have 
       reference cells. 
@@ -729,7 +729,7 @@ class MultiCell {
       
       \warning Not to be confused with the Jacobian determinant, the determinant of this matrix.
       
-      \param cellID    [in]   - cell Id relative to the MultiCell
+      \param cellId    [in]   - cell Id relative to the MultiCell
       \param refPoint  [in]   - point in the reference frame where Jacobian is evaluated
       \param threshold [in]   - "tightness" in the inclusion test carried out inside the method
       */
@@ -757,7 +757,7 @@ class MultiCell {
       \li  Fills <var>weightedMeasure_[cellId][subCellDim][subcellId]</var> with an array of scalars  
       representing the values of the subcell measure function defined above, multiplied by the cubature 
       weights. Because different cubature points can have different weights, this array <strong>always
-      stores as many values as there are cub. points<\strong>, regardless of whether the cell is AFFINE or
+      stores as many values as there are cub. points</strong>, regardless of whether the cell is AFFINE or
       NONAFFINE.
       
       This method must be called before using any of getJacobian, getJacobianTInv, getMeasure and
@@ -878,7 +878,7 @@ class MultiCell {
         times the cubature weight.
       
       \warning Because different cubature points can have different weights, return array <strong>always
-      stores as many values as there are cub. points<\strong>, regardless of whether the cell is AFFINE or
+      stores as many values as there are cub. points</strong>, regardless of whether the cell is AFFINE or
       NONAFFINE.
     */
     const Teuchos::Array<Scalar> & getWeightedMeasure(const int  cellId,

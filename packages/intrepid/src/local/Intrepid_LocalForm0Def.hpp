@@ -42,13 +42,12 @@ namespace Intrepid {
   //===========================================================================//
   
 template<class Scalar, class ArrayType>
-const VarContainer<Scalar> & LocalForm0<Scalar,ArrayType>::getOperator(const EOperator  primOp,
-                                                                       const int        subDim,
-                                                                       const int        subCellId) {
+const FieldContainer<Scalar> & LocalForm0<Scalar,ArrayType>::getOperator(const EOperator  primOp,
+                                                                         const int        subDim,
+                                                                         const int        subCellId) {
 
+  // Initialize dimIndex = cell dimension - subcell dimension
   int myCellDim = MultiCell<Scalar>::getCellDim(basisCell_);
-  
-  // The first index in basisVals_ is the cell dimension minus the subcell dimension
   int dimIndex  = myCellDim - subDim;
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION(((dimIndex < 0) || (subDim < 0) || (dimIndex >= (int)cubature_.size())),
@@ -58,124 +57,82 @@ const VarContainer<Scalar> & LocalForm0<Scalar,ArrayType>::getOperator(const EOp
                      std::invalid_argument,
                      ">>> ERROR (LocalForm0): Invalid subcell id or no match for subcell id within provided cubature rules!");
 #endif
-  
-  // basisVals_[primOp] is 2-dimensional array of VarContainers whose leading dimension must equal
-  // cubature_.size() -  the number of different subcell dimensions for which cubatures are defined
-  if ((int)basisVals_[primOp].size() == 0) {
+
+  // basisVals_ is 3-dimensional ragged array of FieldContainer objects with indices [primOp][dimIndex][subcellId]
+  // 1st dim. = number of operator types (not all can be applied though) and is set by the constructor.
+  // 2nd and 3rd dims. are the same as the 1st and 2nd dims of cubature_ array. This ensures that 
+  // basisVals_ has the minimal dimensions needed to store values for all cubatures that were specified in cubature_
+   if ((int)basisVals_[primOp].size() == 0) {
     basisVals_[primOp].resize(cubature_.size());
   }
-  
-  // basisVals_[primOp][dimIndex] is one-dimensional array of VarContainers whose length must equal
-  //  cubature_[dimIndex].size() -  the number of subcells of the specified dimension.
   if ((int)basisVals_[primOp][dimIndex].size() == 0) {
     ((basisVals_[primOp])[dimIndex]).resize(cubature_[dimIndex].size());
   }
   
+   // If the FieldContainer at basisVals_[primOp][dimIndex][subCellId] is empty, resize it accordingly
   if ((int)basisVals_[primOp][dimIndex][subCellId].getSize() == 0) {
-    
-    // If the VarContainer at basisVals_[primOp][dimIndex][subCellId] is empty, shape it accordingly
-    basisVals_[primOp][dimIndex][subCellId].reset(numCubPoints_[dimIndex][subCellId],
-                                                  basisNumDofs_,
-                                                  FIELD_FORM_0,
-                                                  primOp,
-                                                  myCellDim);
+    basisVals_[primOp][dimIndex][subCellId].resize(numCubPoints_[dimIndex][subCellId],
+                                                   basisNumDofs_,
+                                                   FIELD_FORM_0,
+                                                   primOp,
+                                                   myCellDim);
     
     // Then call getValues from the native basis clas to fill the container.
-    basis_ -> getValues(basisVals_[primOp][dimIndex][subCellId], cubPoints_[dimIndex][subCellId], primOp);
+    basis_ -> getValues(basisVals_[primOp][dimIndex][subCellId], 
+                        cubPoints_[dimIndex][subCellId], 
+                        primOp);
   }
 
-  // Otherwise, we simply return const reference to the appropriate VarContainer:
+  // Otherwise, we simply return const reference to the appropriate FieldContainer:
   return basisVals_[primOp][dimIndex][subCellId];
 }
 
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &           transVals,
+void LocalForm0<Scalar,ArrayType>::transformBasisVals(FieldContainer<Scalar> &         transVals,
                                                       const EOperator                  primOp,
                                                       MultiCell<Scalar> &              mCell,
                                                       const bool                       reuseJacobians,
                                                       const EIntegrationDomain         intDomain) {
   // Initializations
-  int myCellDim          = mCell.getMyCellDim();
-  int numCells           = mCell.getMyNumCells();
+  int myCellDim = mCell.getMyCellDim();
+  int numCells  = mCell.getMyNumCells();
   
-  // Primitive operator always acts on the native (to the LocalForm0) basis
+  // In this method primitive operator always acts on the native (to the LocalForm0) basis
   switch(primOp) { 
     
     // Admissible operators for LocalForm0: VALUE, GRAD, CURL, D1,...,D10
     case OPERATOR_VALUE: {
       if (intDomain == INTEGRATION_DOMAIN_CELL) {
+        
+        // for OPERATOR_VALUE transVals is a rank-3 FieldContainer with multi-index (C,P,F)
         int numCubPts = numCubPoints_[0][0];
-         
-        // for OPERATOR_VALUE transVals is a rank-3 LexContainer where:
-        // - 1st index is the number of integration domains, in this case = number of cells in mCell;
-        // - 2nd index is the number of cubature points per integration domain;
-        // - 3rd index is the number of basis functions in the native basis:
-        Teuchos::Array<int> iRange(3);
-        iRange[0] = numCells;
-        iRange[1] = numCubPts;
-        iRange[2] = basisNumDofs_;
-        transVals.resize(iRange);
+        transVals.resize(numCells, numCubPts, basisNumDofs_);
         
         // The appropriate basis values are computed on-demand by this private member function
-        VarContainer<Scalar> basisVals = getOperator(primOp, myCellDim, 0);
+        FieldContainer<Scalar> basisVals = getOperator(primOp, myCellDim, 0);
         
-        // Multi-index to access transVals which is rank 3 for value: [cellId][cubPt][bfId]
-        Teuchos::Array<int> miTV(3);
-        
-        // Multi-index to access basisVals which is rank 2 for VALUE: [cubPt][bfId]
-        Teuchos::Array<int> miBV(2);
-        
-        // Loop over cells
+        // Loop over cells, cubature points and basis functions:
         for (int cl = 0; cl < numCells; cl++) {
-          miTV[0] = cl;
-          
-          // Loop over cubature points
           for (int qp = 0; qp < numCubPts; qp++) {
-            miTV[1] = qp; 
-            miBV[0] = qp;
-            
-            // Loop over basis functions
             for (int bf = 0; bf < basisNumDofs_; bf++) {
-              miTV[2] = bf; 
-              miBV[1] = bf;
-              
-              //transVals.setValue(basisVals.getValue(miBV), miTV);
-              //Use this if performance is critical: 
-              transVals.getData()[(cl*iRange[1]+qp)*iRange[2]+bf] =  basisVals.getData()[qp*iRange[2]+bf];
-            }
-          }
-        }
-      } //if integration domain
-    }
-      break; // end case OPERATOR VALUE
+              transVals(cl, qp, bf) = basisVals(qp, bf);
+            } // F-loop
+          } // P-loop
+        } // C-loop
+      } //if(integration domain)
+    } // case OPERATOR_VALUE
+      break;
       
     case OPERATOR_GRAD: 
     case OPERATOR_D1: {
       if (intDomain == INTEGRATION_DOMAIN_CELL) {
+        
+        // for OPERATOR_GRAD and D1 transVals is a rank-4 FieldContainer with multi-index (C,P,D,F)
         int numCubPts = numCubPoints_[0][0];
-        
-        // for OPERATOR_GRAD/D1 transVals is a rank-4 LexContainer where:
-        // - 1st index < number of integration domains. Range: number of cells in mCell;
-        // - 2nd index < number of cubature points per integration domain. Upper bound numCubPoints_[0][0]
-        // - 3rd index < number of basis functions in the native basis;
-        // - 4th index < dimension of the generating cell type
-        Teuchos::Array<int> iRange(4);
-        iRange[0] = numCells;
-        iRange[1] = numCubPts;
-        iRange[2] = basisNumDofs_;
-        iRange[3] = myCellDim;
-        transVals.resize(iRange);
-        
-        // The appropriate basis values are computed on-demand by this private member function
-        VarContainer<Scalar> basisVals = getOperator(primOp, myCellDim, 0);
-        
-        // Multi-index to access transVals which is rank 4 for GRAD/D1: [cellId][cubPt][bfId][coord]
-        Teuchos::Array<int> miTV(4);
-        
-        // Multi-index to access basisVals which is rank 3 for GRAD/D1: [cubPt][bfId][coord]
-        Teuchos::Array<int> miBV(3);
+        transVals.resize(numCells, numCubPts, myCellDim, basisNumDofs_);
+        FieldContainer<Scalar> basisVals = getOperator(primOp, myCellDim, 0);
         
         // This matrix is used if reuseJacobians = false and all Jacobian values are computed on the fly
         Matrix<Scalar> tempJacMat(myCellDim);
@@ -183,28 +140,20 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &    
         // We'll get the type of mapping because affine is handled differently from non-affine
         EMapping cellMapping = MAPPING_MAX;
 
-        // Loop over cells
-        for (int cl = 0; cl < numCells; cl++) {
-          miTV[0] = cl;
-          
-          // Get the type the mapping because affine is handled differently from non-affine
+        // Loop over cells, cubature points, partial derivatives and basis functions:
+        for (int cl = 0; cl < numCells; cl++) {          
           cellMapping = mCell.getCellMappingType(cl);
-
-          // Loop over cubature points
           for (int qp = 0; qp < numCubPts; qp++) {
-            miTV[1] = qp; 
-            miBV[0] = qp;
             
             // Default is to compute jacobians on the fly
             if( reuseJacobians ){
-              // For affine mappings only the first value of the inv. transp. jacobian is stored
               if(cellMapping == MAPPING_AFFINE) {
-                // Access only once!
+                // For affine mappings only the first value of the inv. transp. Jacobian is stored: access only once!
                 if( qp == 0 ) {
                   tempJacMat =  mCell.getJacobianTInv(cl, myCellDim, 0)[0];
                 }
               }
-              // For non-affine mappings all values of the inv. transpose jacobian are stored
+              // For non-affine mappings all values of the inv. transpose Jacobian are stored
               else{
                 tempJacMat =  mCell.getJacobianTInv(cl, myCellDim, 0)[qp];
               }
@@ -226,40 +175,33 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &    
               }
             }
             
-            // Loop over basis functions
-            for (int bf = 0; bf < basisNumDofs_; bf++) {
-              miTV[2] = bf; 
-              miBV[1] = bf;
-              
-              // multi-index of 1st component of the transformed GRAD of basis funct. bf at cub. pt. qp:
-              miTV[3] = 0;
-              int indexTV = transVals.getEnumeration(miTV);
-              
-              // multi-index of 1st component of reference GRAD of basis function bf at cub. pt. qp:
-              miBV[2] = 0;
-              int indexBV = basisVals.getEnumeration(miBV);
-              //tempJacMat.multiplyLeft(transVals, indexTV, basisVals, indexBV,iRange[3]);
-              //Use this if performance is critical: 
-              tempJacMat.multiplyLeft(&transVals.getData()[indexTV], &basisVals.getData()[indexBV]);
-            }
-          }
-        }
-      }//if integration domain
-    }
-      break; // end case OPERATOR_GRAD
+            // Loop over gradient components
+            for(int dim = 0; dim < myCellDim; dim++) {
+              for (int bf = 0; bf < basisNumDofs_; bf++) {
+                tempJacMat.rowMultiply(transVals(cl, qp, dim, bf),            // result goes here 
+                                       dim,                                   // select row dim of DF^{-T}
+                                       basisVals,                             // untransformed basis grad vals
+                                       basisVals.getEnumeration(qp, bf, 0));  // begin index of the gradient
+              } // F-loop
+            } // D-loop
+          } // P-loop
+        } // C-loop
+      } // if(integration domain)
+    } // case OPERATOR_GRAD
+      break; 
       
     default:
       TEST_FOR_EXCEPTION((primOp != OPERATOR_VALUE) && 
                          (primOp != OPERATOR_GRAD),
                          std::invalid_argument,
                          ">>> ERROR (LocalForm0): Invalid primitive operator!");
-  } // end switch(primOp)
-} // end fillLeft
+  } // switch(primOp)
+} // transformBasisVals
 
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &           transValues,
+void LocalForm0<Scalar,ArrayType>::transformBasisVals(FieldContainer<Scalar> &         transValues,
                                                       const EOperator                  primOp,
                                                       const LocalField<Scalar> &       primOpField,
                                                       MultiCell<Scalar> &              mCell,
@@ -270,13 +212,13 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &    
   // This method acts on an auxiliary LocalField: we will use transformBasisValues() from that field!
   EField primFieldType = primOpField.getFieldType();
   
-  // primOpField is of the abstract type LocalField which does not have transformBasisvals method
-  // Downcast to the concrete type of the primOpField argument by using it field type:
+  // primOpField is of the abstract type LocalField which does not have transformBasisVals method
+  // Downcast to the concrete type of the primOpField argument by using its field type:
   switch( primFieldType ) {
     
     case FIELD_FORM_0:
-      (dynamic_cast<LocalForm0<Scalar>& > (const_cast<LocalField<Scalar>& >(primOpField) ) ).\
-           transformBasisVals(transValues,primOp,mCell,reuseJacobians, intDomain)  ;
+      (dynamic_cast<LocalForm0<Scalar,ArrayType>& > (const_cast<LocalField<Scalar, ArrayType>& >(primOpField) ) ).\
+           transformBasisVals(transValues, primOp, mCell, reuseJacobians, intDomain)  ;
       break;
       
     case FIELD_FORM_1:
@@ -309,51 +251,41 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(LexContainer<Scalar> &    
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(LexContainer<Scalar> &         finalVals,
-                                                        const LexContainer<Scalar> &   transVals,
+void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(FieldContainer<Scalar> &       finalVals,
+                                                        const FieldContainer<Scalar> &   transVals,
                                                         const EOperator                primOp,
                                                         MultiCell<Scalar> &            mCell,
                                                         const bool                     reuseJacobians,
                                                         const EIntegrationDomain       intDomain)
 {
-  
   // If finalVals is not of the same size as transVals (the input) make it the same size!
   if(finalVals.getSize() != transVals.getSize() ) {
     finalVals.resize(transVals);
   }
   
   // Initializations:
-  int indexFTV           = 0;
   Scalar weightedMeasure = 0.0;
+  int tempEnum           = 0;
   int myCellDim          = mCell.getMyCellDim();
-  int numCells           = transVals.getIndexBound(0);
-  int numCubPts          = transVals.getIndexBound(1);
-  int numBf              = transVals.getIndexBound(2);
-  
-  // Temp matrix needed if reuseJacobians = false and all measure data is computed on the fly
+  int numCells           = 0;
+  int numCubPts          = 0;
+  int numBf              = 0;
+  EMapping cellMapping   = MAPPING_MAX;  
   Matrix<Scalar> tempJacMat(myCellDim);
-  Scalar         tempJacDet = 0.0;
-
-  // If the cell has an affine mapping we will compute weighted measures once!
-  EMapping cellMapping = MAPPING_MAX;
+  Scalar      tempJacDet = 0.0;
 
   switch(primOp) {
     case OPERATOR_VALUE: {
       if(intDomain == INTEGRATION_DOMAIN_CELL) {
-         
-        // Multi-index for transVals and finalVals which are rank 3 for VALUE: [cellId][cubPt][bfId]
-        Teuchos::Array<int> miFTV(3);
         
-        // Loop over cells: number of cells is the 1st index of the containers
+        // for OPERATOR_VALUE transVals is a rank-3 FieldContainer with multi-index (C,P,F): 
+        numCells           = transVals.getDimension(0);     // C-dimension
+        numCubPts          = transVals.getDimension(1);     // P-dimension
+        numBf              = transVals.getDimension(2);     // F-dimension
+        
         for (int cl = 0; cl < numCells; cl++) {
-          miFTV[0] = cl;
-                    
           cellMapping = mCell.getCellMappingType(cl);
-
-          // Loop over cubature points: number of cub. points is the second index of the containers
           for (int qp = 0; qp < numCubPts; qp++) {
-            miFTV[1] = qp; 
-            
             if(reuseJacobians) {
               weightedMeasure = mCell.getWeightedMeasure(cl, myCellDim, 0)[qp];
             }
@@ -372,40 +304,29 @@ void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(LexContainer<Scalar> &  
               weightedMeasure = tempJacDet*cubWeights_[0][0][qp];
             } // if(! reuseJacobians)
             
-            // Loop over basis functions: number of basis functions is the third index of the containers
-            for (int bf = 0; bf < numBf; bf++) {
-              miFTV[2] = bf; 
-              
-              // Precompute enumeration to avoid computing it twice by each container:
-              indexFTV = transVals.getEnumeration(miFTV);
-              
-              // Apply the weighted measure (Jacobian at cub. pt. times cub. weight) uisng access by enumeration 
-              finalVals.setValue(transVals[indexFTV]*weightedMeasure, indexFTV);
-              
-            }
-          }
-        }        
+            for (int bf = 0; bf < numBf; bf++) {    
+              // This saves computing the value enumeration twice
+              tempEnum = transVals.getEnumeration(cl, qp, bf);
+              finalVals.setValue(transVals[tempEnum]*weightedMeasure,tempEnum);
+            } // F-loop
+          } // P-loop
+        }  // C-loop       
       }// if(intDomain)
-    }// end case OPERATOR_VALUE
+    }// case OPERATOR_VALUE
     break;
       
     case OPERATOR_GRAD: 
     case OPERATOR_D1: {
       if (intDomain == INTEGRATION_DOMAIN_CELL) {
         
-        // Multi-index for transVals and finalVals which are rank 3 for VALUE: [cellId][cubPt][bfId][coord]
-        Teuchos::Array<int> miFTV(4);
+        // for OPERATOR_GRAD transVals is a rank-4 FieldContainer with multi-index (C,P,D,F): 
+        numCells           = transVals.getDimension(0);     // C-dimension
+        numCubPts          = transVals.getDimension(1);     // P-dimension
+        numBf              = transVals.getDimension(3);     // F-dimension
         
-        // Loop over cells: number of cells is the 1st index of the containers
         for (int cl = 0; cl < numCells; cl++) {
-          miFTV[0] = cl;
-                    
           cellMapping = mCell.getCellMappingType(cl);
-
-          // Loop over cubature points: number of cub. points is the second index of the containers
           for (int qp = 0; qp < numCubPts; qp++) {
-            miFTV[1] = qp; 
-            
             if(reuseJacobians) {
               weightedMeasure = mCell.getWeightedMeasure(cl,myCellDim, 0)[qp];
             }
@@ -424,26 +345,18 @@ void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(LexContainer<Scalar> &  
               weightedMeasure = tempJacDet*cubWeights_[0][0][qp];
             } // if(! reuseJacobians)
             
-            // Loop over basis functions: number of basis functions is the third index of the containers
-            for (int bf = 0; bf < numBf; bf++) {
-              miFTV[2] = bf; 
-              
-              //Unroll the dimension loop: get enumeration of the first GRAD component:
-              miFTV[3] = 0;
-              indexFTV = transVals.getEnumeration(miFTV);
-              
-              // The 1st component is always there:
-              finalVals.setValue(transVals[indexFTV]*weightedMeasure, indexFTV);
-
-              // Set 2nd and 3rd components depending on the space dimension:
-              if(myCellDim == 2) finalVals.setValue(transVals[indexFTV + 1]*weightedMeasure, indexFTV + 1);
-              if(myCellDim == 3) finalVals.setValue(transVals[indexFTV + 2]*weightedMeasure, indexFTV + 2);
-             }
-          }
-        }
+            for(int dim = 0; dim < myCellDim; dim++){
+              for (int bf = 0; bf < numBf; bf++) {
+                // This saves computing the value enumeration twice
+                tempEnum = transVals.getEnumeration(cl, qp, dim, bf);
+                finalVals.setValue(transVals[tempEnum]*weightedMeasure, tempEnum);
+              } // F-loop
+            } // D-loop
+          } // P-loop
+        } // C-loop
       } // if(intDomain)
-    }
-    break; // end case OPERATOR_GRAD & D1
+    } // case OPERATOR_GRAD & D1
+    break; 
       
     default:
       TEST_FOR_EXCEPTION((primOp != OPERATOR_VALUE) && 
@@ -456,134 +369,114 @@ void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(LexContainer<Scalar> &  
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::integrate(LexContainer<Scalar> &        outputValues,
-                                             const LexContainer<Scalar> &  leftValues,
-                                             const LexContainer<Scalar> &  rightValues) const {
-  int opRank = leftValues.getRank();
+void LocalForm0<Scalar,ArrayType>::integrate(FieldContainer<Scalar> &        outputValues,
+                                             const FieldContainer<Scalar> &  leftValues,
+                                             const FieldContainer<Scalar> &  rightValues) const {
+  
+  // leftValues and rightValues can have ranks 3,4,5 and their ranks must be the same!
+  // 1st dim. is number of cells; 2nd dim. is number of points.
+  int lrRank   = leftValues.getRank();
+  int numCells = leftValues.getDimension(0);
+  int numQps   = leftValues.getDimension(1);
+  
+  // outputValues is rank-3 with multi-index (C, L, R). L and R dims are always the last dims in left/rightValues
+  int numLeftBfs  = leftValues.getDimension(lrRank  - 1);
+  int numRightBfs = rightValues.getDimension(lrRank - 1);
+  outputValues.resize(numCells, numLeftBfs, numRightBfs);
+  
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION((opRank != rightValues.getRank()),
-                     std::invalid_argument,
+  TEST_FOR_EXCEPTION((lrRank != rightValues.getRank()), std::invalid_argument,
                      ">>> ERROR (LocalForm0): Ranks of leftValues and rightValues do not match!");
-#endif
-  
-  int numCells = leftValues.getIndexBound(0);
-#ifdef HAVE_INTREPID_DEBUG
-  int numRightCells = rightValues.getIndexBound(0);
-  TEST_FOR_EXCEPTION((numCells != numRightCells),
-                     std::invalid_argument,
+  int numRightCells = rightValues.getDimension(0);
+  TEST_FOR_EXCEPTION((numCells != numRightCells), std::invalid_argument,
                      ">>> ERROR (LocalForm0): Numbers of cells in leftValues and rightValues do not agree!");
-#endif
-  
-  int numQps = leftValues.getIndexBound(1);
-#ifdef HAVE_INTREPID_DEBUG
-  int numRightQps = rightValues.getIndexBound(1);
-  TEST_FOR_EXCEPTION((numQps != numRightQps),
-                     std::invalid_argument,
+  int numRightQps = rightValues.getDimension(1);
+  TEST_FOR_EXCEPTION((numQps != numRightQps), std::invalid_argument,
                      ">>> ERROR (LocalForm0): Numbers of integration points in leftValues and rightValues do not agree!");
 #endif
   
-  int numLeftBfs  = leftValues.getIndexBound(2);
-  int numRightBfs = rightValues.getIndexBound(2);
-  
-#ifdef HAVE_INTREPID_DEBUG
-  for (int i=3; i<opRank; i++) {
-    TEST_FOR_EXCEPTION((leftValues.getIndexBound(i) != rightValues.getIndexBound(i)),
-                       std::invalid_argument,
-                       ">>> ERROR (LocalForm0): Field sizes in leftValues and rightValues do not agree!");
-  }
-#endif
-  
-  Teuchos::Array<int> iRange(3);
-  iRange[0] = numCells;
-  iRange[1] = numLeftBfs;
-  iRange[2] = numRightBfs;
-  outputValues.resize(iRange);
-  
   switch(compEngine_) {
-    
     case COMP_CPP: {
-      Teuchos::Array<int> miOut(3);
-      Teuchos::Array<int> miLeft;
-      Teuchos::Array<int> miRight;
-      leftValues.getIndexRange(miLeft);
-      rightValues.getIndexRange(miRight);
       
       for (int cl=0; cl<numCells; cl++) {
-        miOut[0] = cl; miLeft[0] = cl; miRight[0] = cl;
-        
         for (int lbf=0; lbf<numLeftBfs; lbf++) {
-          miOut[1] = lbf; miLeft[2] = lbf;
-          
           for (int rbf=0; rbf<numRightBfs; rbf++) {
-            miOut[2] = rbf; miRight[2] = rbf;
             Scalar tmpVal(0);
-            
             for (int qp=0; qp<numQps; qp++) {
-              miLeft[1] = qp; miRight[1] = qp;
               
-              switch (opRank) {
-                case 3: { // scalar fields
-                  //tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
-                  //Use this if performance is critical: 
-                  tmpVal += leftValues.getData()[(cl*numQps+qp)*numLeftBfs+lbf]*
-                                rightValues.getData()[(cl*numQps+qp)*numRightBfs+rbf];
+              switch (lrRank) {
+                case 3: { // scalar fields: multi-index is (C,P,F)
+                  tmpVal += leftValues(cl, qp, lbf)*rightValues(cl, qp, rbf);
                 }
                 break;
                   
-                case 4: { // vector fields
-                  int iBound3 = leftValues.getIndexBound(3);
-                  
-                  for (int iVec=0; iVec<iBound3; iVec++) {
-                    miLeft[3] = iVec; miRight[3] = iVec;
-                    //tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
-                    //Use this if performance is critical:
-                    tmpVal += leftValues.getData()[((cl*numQps+qp)*numLeftBfs+lbf)*iBound3+iVec]*
-                                  rightValues.getData()[((cl*numQps+qp)*numRightBfs+rbf)*iBound3+iVec];
+                case 4: { // vector fields: multi-index is (C,P,D,F), loop over (D) subindex
+                  int vecDim = leftValues.getDimension(2);
+                  for (int iVec = 0; iVec < vecDim; iVec++) {
+                    tmpVal += leftValues(cl, qp, iVec, lbf)*rightValues(cl, qp, iVec, rbf);
                   }
                 }
                 break;
                   
-                case 5: { // tensor fields
-                  int iBound3 = leftValues.getIndexBound(3);
-                  int iBound4 = leftValues.getIndexBound(4);
-                  for (int iTens1=0; iTens1<iBound3; iTens1++) {
-                    miLeft[3] = iTens1; miRight[3] = iTens1;
-                    for (int iTens2=0; iTens2<iBound4; iTens2++) {
-                      miLeft[4] = iTens2; miRight[4] = iTens2;
-                      tmpVal += leftValues.getValue(miLeft)*rightValues.getValue(miRight);
+                case 5: { // tensor fields: multi-index is (C,P,D,D,F), loop over (D,D) subindex
+                  int tenDim0 = leftValues.getDimension(2);
+                  int tenDim1 = leftValues.getDimension(3);
+                  for (int iTens1 = 0; iTens1 < tenDim0; iTens1++) {
+                    for (int iTens2 =0; iTens2 < tenDim1; iTens2++) {
+                      tmpVal += leftValues(cl, qp, iTens1, iTens2, lbf)*rightValues(cl, qp, iTens1, iTens2, rbf);
                     }
                   }
                 }
                 break;
 
                 default:
-                  TEST_FOR_EXCEPTION(((opRank != 3) && (opRank != 4) && (opRank != 5)),
+                  TEST_FOR_EXCEPTION(((lrRank != 3) && (lrRank != 4) && (lrRank != 5)),
                                      std::invalid_argument,
                                      ">>> ERROR (LocalForm0): Invalid data rank. Only scalars, vectors, and tensors are supported!");
-              }
-            }
-            //outputValues.setValue(tmpVal, miOut);
-            //Use this if performance is critical:
-            outputValues.getData()[cl*numLeftBfs*numRightBfs+lbf*numRightBfs+rbf] = tmpVal;
-          }
-        }
-      }
+              } // switch(lrRank)
+            } // P-loop
+            
+            outputValues(cl, lbf, rbf) = tmpVal;
+            
+          } // R-loop
+        } // L-loop
+      } // C-loop
     }
     break;
       
     case COMP_BLAS: {
+      
+      // Data size is defined by the rank of the data containers (left and right must have same rank)
+      // rank 3: (C,P,F)      -> dataSize = 1 
+      // rank 4: (C,P,D,F)    -> dataSize = D     = leftValues.getDimension(2);
+      // rank 5: (C,P,D,D,F)  -> dataSize = D*D   = leftValues.getDimension(2)*leftValues.getDimension(3)
       int dataSize = 1;
-      for (int i=3; i<opRank; i++) {
-        dataSize *= leftValues.getIndexBound(i);
-      }
-      int numData  = numQps*dataSize;
-      int skipL    = numLeftBfs*numData;
-      int skipR    = numRightBfs*numData;
-      int skipOp   = numLeftBfs*numRightBfs;
+      if(lrRank == 4) dataSize = leftValues.getDimension(2);
+      if(lrRank == 5) dataSize = leftValues.getDimension(2)*leftValues.getDimension(3);
+
+      // GEMM parameters and their values:
+      // TRANSA   NO_TRANS
+      // TRANSB   TRANS
+      // M        #rows(A)               = numLeftBfs
+      // N        #cols(B^T)             = numRightBfs
+      // K        #cols(A)               = numData = numQps * dataSize
+      // ALPHA    1.0
+      // A        left data for cell cl  = leftValues.getData()[cl*skipL]
+      // LDA      #rows(A)               = numLeftBfs
+      // B        right data for cell cl = rightValues.getData()[cl*skipR]
+      // LDB      #rows(B)               = numRightBfs
+      // BETA     0.0
+      // C        result for cell cl     = outputValues.getData()[cl*skipOp]
+      // LDC      #rows(C)               = numLeftBfs
+      int numData  = numQps*dataSize;       
+      int skipL    = numLeftBfs*numData;        // size of the left data chunk per cell
+      int skipR    = numRightBfs*numData;       // size of the right data chunk per cell
+      int skipOp   = numLeftBfs*numRightBfs;    // size of the output data chunk per cell
+      double alpha = 1.0;                       // these are left unchanged by GEMM 
+      double beta  = 0.0;
+
       for (int cl=0; cl<numCells; cl++) {
         Teuchos::BLAS<int, Scalar> myblas;
-        double alpha = 1.0;
-        double beta  = 0.0;
         myblas.GEMM(Teuchos::NO_TRANS,
                     Teuchos::TRANS,
                     numLeftBfs,
@@ -606,9 +499,9 @@ void LocalForm0<Scalar,ArrayType>::integrate(LexContainer<Scalar> &        outpu
                          std::invalid_argument,
                          ">>> ERROR (LocalForm0): Computational engine not defined!");
       
-  } // end switch(compEngine_)
+  } // switch(compEngine_)
   
-} // end integrate
+} // integrate
 
 //===========================================================================//
 //                                                                           //
@@ -683,16 +576,17 @@ basis_(basis), cubature_(cubature) {
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::getOperator(VarContainer<Scalar> &                  outputValues,
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                             outputValues,
                                                const Teuchos::Array<Point<Scalar> > &  inputPoints,
                                                const EOperator                         primOp) {
-  basis_->getValues(outputValues, inputPoints, primOp);
+  // here need to copy to the array type
+  //basis_->getValues(outputValues, inputPoints, primOp);
 }
 
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::getOperator(VarContainer<Scalar> &                  outputValues,
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                             outputValues,
                                                const Teuchos::Array<Point<Scalar> > &  inputPoints,
                                                const EOperator                         primOp,
                                                const Cell<Scalar> &                    cell) {
@@ -701,12 +595,11 @@ void LocalForm0<Scalar,ArrayType>::getOperator(VarContainer<Scalar> &           
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &          outputValues,
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                     outputValues,
                                                const EOperator                 leftOp,
                                                const EOperator                 rightOp,
                                                MultiCell<Scalar> &             mCell,
-                                               const Teuchos::Array<Scalar> &  inputData,
-                                               const EDataFormat               inputFormat,
+                                               const ArrayType &               inputData,
                                                const bool                      reuseJacobians,
                                                const EIntegrationDomain        intDomain) {
 }
@@ -721,8 +614,8 @@ void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                 outpu
                                                const bool                  reuseJacobians,
                                                const EIntegrationDomain    intDomain)
 {
-  LexContainer<Scalar> leftValues;
-  LexContainer<Scalar> rightValues;
+  FieldContainer<Scalar> leftValues;
+  FieldContainer<Scalar> rightValues;
   
   // If the user had failed to define an atlas we will use the default atlas.
   if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {
@@ -759,13 +652,12 @@ void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                 outpu
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &           outputValues,
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                      outputValues,
                                                const EOperator                  leftOp,
                                                const EOperator                  rightOp,
                                                const LocalField<Scalar> &       rightOpField,
                                                MultiCell<Scalar> &              mCell,
-                                               const Teuchos::Array<Scalar> &   inputData,
-                                               const EDataFormat                inputFormat,
+                                               const ArrayType &                inputData,
                                                const bool                       reuseJacobians,
                                                const EIntegrationDomain         intDomain) {
 }
@@ -773,7 +665,7 @@ void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &           
 
 
 template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &           outputValues,
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                      outputValues,
                                                const EOperator                  leftOp,
                                                const EOperator                  rightOp,
                                                const LocalField<Scalar> &       rightOpField,
@@ -786,8 +678,8 @@ void LocalForm0<Scalar,ArrayType>::getOperator(LexContainer<Scalar> &           
   TEST_FOR_EXCEPTION( (basisCell_ != rightOpField.getCellType() ), std::invalid_argument,
                       ">>> ERROR (LocalForm0): Right LocalField must be instantiated for the same cell type as the native LocalField!");
 #endif
-  LexContainer<Scalar> leftValues;
-  LexContainer<Scalar> rightValues;
+  FieldContainer<Scalar> leftValues;
+  FieldContainer<Scalar> rightValues;
   
   // If the user had failed to define an atlas we will use the default atlas.
   if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {

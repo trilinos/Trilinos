@@ -36,13 +36,13 @@ namespace Intrepid {
 
 // create method
 template<class Scalar>
-Teuchos::RCP<LocalField<Scalar> > DefaultFieldFactory<Scalar>::create(EField field,
-                                                                      ECell cell,
-                                                                      EReconstructionSpace recSpace,
-                                                                      int polyDegree,
-                                                                      EBasis basisType,
-                                                                      ECoordinates coordSys,
-                                                                      int cubDegree) {
+Teuchos::RCP<LocalField<Scalar> > DefaultFieldFactory<Scalar>::create(EField                field,
+                                                                      ECell                 cell,
+                                                                      EReconstructionSpace  recSpace,
+                                                                      int                   polyDegree,
+                                                                      EBasis                basisType,
+                                                                      ECoordinates          coordSys,
+                                                                      int                   cubDegree) {
   // Create basis.
   DefaultBasisFactory<Scalar> BFactory;
   Teuchos::RCP<Basis<Scalar> > basis =  BFactory.create(

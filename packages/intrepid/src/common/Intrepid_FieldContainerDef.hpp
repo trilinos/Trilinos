@@ -752,7 +752,6 @@ void FieldContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
   }
 }
 
-
 //--------------------------------------------------------------------------------------------//
 //                                                                                            //
 //                          Methods to shape (resize) a field container                       //
@@ -991,6 +990,97 @@ inline void FieldContainer<Scalar>::resize(const FieldContainer<Scalar>& another
   data_.resize(this->getSize());  
 }
 
+
+template<class Scalar>
+void FieldContainer<Scalar>::resize(const int       numPoints,
+                                    const int       numFields,
+                                    const EField    fieldType,
+                                    const EOperator operatorType,
+                                    const int       spaceDim) {  
+  // Validate input
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( numPoints < 0),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Number of points cannot be negative!");  
+  TEST_FOR_EXCEPTION( ( numFields < 0),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Number of fields cannot be negative!");  
+  TEST_FOR_EXCEPTION( !( (1 <=  spaceDim ) && ( spaceDim <= 3  ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Invalid space dimension.");  
+#endif  
+  
+  // Find out field and operator ranks
+  int fieldRank    = getFieldRank(fieldType);
+  int operatorRank = getOperatorRank(operatorType,fieldRank,spaceDim);
+  
+  // Compute rank of the container = 1(numPoints) + 1(numFields) + fieldRank + operatorRank
+  int rank = 1 + 1 + fieldRank + operatorRank;
+  
+  // Define temp array for the dimensions
+  Teuchos::Array<int> newDimensions(rank);
+  
+  // Dimensions 0 and 1 are number of points and number of fields, resp.
+  newDimensions[0] = numPoints;
+  newDimensions[1] = numFields;
+  
+  // The rest of the dimensions depend on whether we had VALUE, GRAD (D1), CURL, DIV or Dk, k>1
+  switch(operatorType) {
+    
+    case OPERATOR_VALUE:
+    case OPERATOR_GRAD:
+    case OPERATOR_D1:
+    case OPERATOR_CURL:
+    case OPERATOR_DIV:
+      
+      // For these operators all dimensions from 2 to 2 + fieldRank + OperatorRank are bounded by spaceDim
+      for(int i = 0; i < fieldRank + operatorRank; i++){
+        newDimensions[2 + i] = spaceDim; 
+      }
+      break;
+      
+    case OPERATOR_D2:
+    case OPERATOR_D3:
+    case OPERATOR_D4:
+    case OPERATOR_D5:
+    case OPERATOR_D6:
+    case OPERATOR_D7:
+    case OPERATOR_D8:
+    case OPERATOR_D9:
+    case OPERATOR_D10:
+      
+      // All dimensions from 2 to 2 + fieldRank, if any, are bounded by spaceDim
+      for(int i = 0; i < fieldRank; i++){
+        newDimensions[2 + i] = spaceDim; 
+      }
+      
+      // We know that for Dk operatorRank = 1 and so there's just one more dimension left
+      // given by the cardinality of the set of all derivatives of order k
+      newDimensions[2 + fieldRank] = getDkCardinality(getOperatorOrder(operatorType),spaceDim);
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
+                            (operatorType != OPERATOR_GRAD)  && 
+                            (operatorType != OPERATOR_CURL)  && 
+                            (operatorType != OPERATOR_DIV)   &&
+                            (operatorType != OPERATOR_D1)    && 
+                            (operatorType != OPERATOR_D2)    && 
+                            (operatorType != OPERATOR_D3)    && 
+                            (operatorType != OPERATOR_D4)    && 
+                            (operatorType != OPERATOR_D5)    && 
+                            (operatorType != OPERATOR_D6)    && 
+                            (operatorType != OPERATOR_D7)    && 
+                            (operatorType != OPERATOR_D8)    && 
+                            (operatorType != OPERATOR_D9)    && 
+                            (operatorType != OPERATOR_D10) ),
+                          std::invalid_argument,
+                          ">>> ERROR (FieldContainer): Invalid operator type");    
+  }
+  
+  // Resize FieldContainer using the newDimensions in the array
+  this -> resize(newDimensions);
+}
 
 //--------------------------------------------------------------------------------------------//
 //                                                                                            //
@@ -1325,6 +1415,409 @@ std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar>& conta
 
   return os;
 }
+
+
+//===========================================================================//
+//                                                                           //
+//         Global functions for field and operator rank, Dk enumeration,     //
+//         cardinality, and conversion of enumertion to multiplicities       //
+//                                                                           //
+//===========================================================================//
+
+
+int getFieldRank(const EField fieldType) {
+  int fieldRank = -1;
+  
+  switch(fieldType){
+    
+    case FIELD_FORM_0:
+    case FIELD_FORM_3:
+      fieldRank = 0;
+      break;
+      
+    case FIELD_FORM_1:
+    case FIELD_FORM_2:
+    case FIELD_VECTOR:
+      fieldRank = 1;
+      break;
+      
+    case FIELD_TENSOR:
+      fieldRank = 2;
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (fieldType != FIELD_FORM_0) &&
+                            (fieldType != FIELD_FORM_1) && 
+                            (fieldType != FIELD_FORM_2) && 
+                            (fieldType != FIELD_FORM_3) &&
+                            (fieldType != FIELD_VECTOR) && 
+                            (fieldType != FIELD_TENSOR) ),
+                          std::invalid_argument,
+                          ">>> ERROR (getFieldRank): Invalid field type");
+  }
+  return fieldRank;
+}
+
+
+
+int getOperatorOrder(const EOperator operatorType) {
+  int opOrder = -1;
+  
+  switch(operatorType){
+    
+    case OPERATOR_VALUE:
+      opOrder = 0;
+      break;
+      
+    case OPERATOR_GRAD:
+    case OPERATOR_CURL:
+    case OPERATOR_DIV:
+    case OPERATOR_D1:
+      opOrder = 1;
+      break;
+      
+    case OPERATOR_D2:
+    case OPERATOR_D3:
+    case OPERATOR_D4:
+    case OPERATOR_D5:
+    case OPERATOR_D6:
+    case OPERATOR_D7:
+    case OPERATOR_D8:
+    case OPERATOR_D9:
+    case OPERATOR_D10:
+      opOrder = (int)operatorType - (int)OPERATOR_D1 + 1;
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
+                            (operatorType != OPERATOR_GRAD)  && 
+                            (operatorType != OPERATOR_CURL)  && 
+                            (operatorType != OPERATOR_DIV)   &&
+                            (operatorType != OPERATOR_D1)    && 
+                            (operatorType != OPERATOR_D2)    && 
+                            (operatorType != OPERATOR_D3)    && 
+                            (operatorType != OPERATOR_D4)    && 
+                            (operatorType != OPERATOR_D5)    && 
+                            (operatorType != OPERATOR_D6)    && 
+                            (operatorType != OPERATOR_D7)    && 
+                            (operatorType != OPERATOR_D8)    && 
+                            (operatorType != OPERATOR_D9)    && 
+                            (operatorType != OPERATOR_D10) ),
+                          std::invalid_argument,
+                          ">>> ERROR (getOperatorOrder): Invalid operator type");
+  }
+  return opOrder;
+}    
+
+
+
+int getOperatorRank(const EOperator operatorType,
+                    const int       fieldRank,
+                    const int       spaceDim) {
+  
+  // Verify arguments: field rank can be 0,1, or 2, spaceDim can be 1,2, or 3.
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( !( (0 <= fieldRank) && (fieldRank <= 2) ),
+                      std::invalid_argument,
+                      ">>> ERROR (getOperatorRank): Invalid field rank");
+  TEST_FOR_EXCEPTION( !( (1 <= spaceDim ) && (spaceDim  <= 3) ),
+                      std::invalid_argument,
+                      ">>> ERROR (getOperatorRank): Invalid space dimension");
+#endif
+  int operatorRank = -999;
+  
+  // In 1D GRAD, CURL, and DIV default to d/dx; Dk defaults to d^k/dx^k, no casing needed.
+  if(spaceDim == 1) {
+    if(fieldRank == 0) {
+      
+      // By default, in 1D any operator other than VALUE has rank 1
+      if(operatorType == OPERATOR_VALUE) {
+        operatorRank = 0;
+      }
+      else {
+        operatorRank = 1;
+      }
+    }
+    
+    // Only scalar fields are allowed in 1D
+    else {
+      TEST_FOR_EXCEPTION( ( fieldRank > 0 ),
+                          std::invalid_argument,
+                          ">>> ERROR (getOperatorRank): Only scalar fields are allowed in 1D");  
+    } // fieldRank == 0
+  } // spaceDim == 1
+  
+  // We are either in 2D or 3D
+  else {  
+    switch(operatorType) {
+      case OPERATOR_VALUE:
+        operatorRank = 0;
+        break;
+        
+      case OPERATOR_GRAD:
+      case OPERATOR_D1:
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+        operatorRank = 1;
+        break;
+        
+      case OPERATOR_CURL:
+        
+        // operator rank for vector and tensor fields equals spaceDim - 3 (-1 in 2D and 0 in 3D)   
+        if(fieldRank > 0) {
+          operatorRank = spaceDim - 3;
+        }
+        else {
+          
+          // CURL can be applied to scalar functions (rank = 0) in 2D and gives a vector (rank = 1)
+          if(spaceDim == 2) {
+            operatorRank = 3 - spaceDim;
+          }
+          
+          // If we are here, fieldRank=0, spaceDim=3: CURL is undefined for 3D scalar functions
+          else {
+            TEST_FOR_EXCEPTION( ( (spaceDim == 3) && (fieldRank == 0) ),
+                                std::invalid_argument,
+                                ">>> ERROR (getOperatorRank): CURL cannot be applied to scalar fields in 3D");  
+          }
+        }
+        break;
+        
+      case OPERATOR_DIV:
+        
+        // DIV can be applied to vectors and tensors and has rank -1 in 2D and 3D
+        if(fieldRank > 0) {
+          operatorRank = -1; 
+        }
+        
+        // DIV cannot be applied to scalar fields except in 1D where it defaults to d/dx
+        else {
+          TEST_FOR_EXCEPTION( ( (spaceDim > 1) && (fieldRank == 0) ),
+                              std::invalid_argument,
+                              ">>> ERROR (getOperatorRank): DIV cannot be applied to scalar fields in 2D and 3D");  
+        }
+        break;
+        
+      default:
+        TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
+                              (operatorType != OPERATOR_GRAD)  && 
+                              (operatorType != OPERATOR_CURL)  && 
+                              (operatorType != OPERATOR_DIV)   &&
+                              (operatorType != OPERATOR_D1)    && 
+                              (operatorType != OPERATOR_D2)    && 
+                              (operatorType != OPERATOR_D3)    && 
+                              (operatorType != OPERATOR_D4)    && 
+                              (operatorType != OPERATOR_D5)    && 
+                              (operatorType != OPERATOR_D6)    && 
+                              (operatorType != OPERATOR_D7)    && 
+                              (operatorType != OPERATOR_D8)    && 
+                              (operatorType != OPERATOR_D9)    && 
+                              (operatorType != OPERATOR_D10) ),
+                            std::invalid_argument,
+                            ">>> ERROR (getOperatorRank): Invalid operator type");
+    } // switch
+  }// 2D and 3D
+  
+  return operatorRank; 
+}
+
+
+
+int getDkEnumeration(const int xMult,
+                     const int yMult,
+                     const int zMult) {
+  
+  if( (yMult < 0) && (zMult < 0)) {
+    
+#ifdef HAVE_INTREPID_DEBUG
+    // We are in 1D: verify input - xMult is non-negative  and total order <= 10:
+    TEST_FOR_EXCEPTION( !( (0 <= xMult) && (xMult <= INTREPID_MAX_DERIVATIVE) ),
+                        std::out_of_range,
+                        ">>> ERROR (getDkEnumeration): Derivative order out of range");
+#endif
+    
+    // there's only one derivative of order xMult
+    return 0;
+  }
+  else {
+    if( zMult < 0 ) {
+      
+#ifdef HAVE_INTREPID_DEBUG
+      // We are in 2D: verify input - xMult and yMult are non-negative and total order <= 10:
+      TEST_FOR_EXCEPTION( !( (0 <= xMult) && (0 <= yMult) && 
+                             ( (xMult + yMult) <= INTREPID_MAX_DERIVATIVE) ),
+                          std::out_of_range,
+                          ">>> ERROR (getDkEnumeration): Derivative order out of range");
+#endif
+      
+      // enumeration is the value of yMult
+      return yMult;
+    }
+    
+    // We are in 3D: verify input - xMult, yMult and zMult are non-negative and total order <= 10:
+    else {
+      int order = xMult + yMult + zMult;
+      
+#ifdef HAVE_INTREPID_DEBUG
+      // Verify input:  total order cannot exceed 10:
+      TEST_FOR_EXCEPTION(  !( (0 <= xMult) && (0 <= yMult) && (0 <= zMult) && 
+                              (order <= INTREPID_MAX_DERIVATIVE) ),
+                           std::out_of_range,
+                           ">>> ERROR (getDkEnumeration): Derivative order out of range");
+#endif
+      int enumeration = zMult;
+      for(int i = 0; i < order - xMult + 1; i++){
+        enumeration += i; 
+      }
+      return enumeration;
+    }
+  }
+}
+
+
+
+void getDkMultiplicities(Teuchos::Array<int>& partialMult,
+                         const int derivativeEnum,
+                         const int derivativeOrder,
+                         const int spaceDim) {
+  
+  /* Hash table to convert enumeration of partial derivative to multiplicities of dx,dy,dz in 3D.
+  Multiplicities {mx,my,mz} are arranged lexicographically in bins numbered from 0 to 10. 
+  The size of bins is an arithmetic progression, i.e., 1,2,3,4,5,...,11. Conversion formula is:
+  \verbatim
+  mx = derivativeOrder - binNumber
+  mz = derivativeEnum  - binBegin
+  my = derivativeOrder - mx - mz = binNumber + binBegin - derivativeEnum
+  \endverbatim
+  where binBegin is the enumeration of the first element in the bin. Bin numbers and binBegin 
+  values are stored in hash tables for quick access by derivative enumeration value. 
+  */ 
+  
+  // Returns the bin number for the specified derivative enumeration
+  static const int binNumber[66] = { 
+    0,
+    1, 1,
+    2, 2, 2,
+    3, 3, 3, 3,
+    4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7, 7, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8,
+    9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+    10,10,10,10,10,10,10,10,10,10,10
+  };
+  
+  // Returns the binBegin value for the specified derivative enumeration 
+  static const int binBegin[66] ={ 
+    0,
+    1, 1,
+    3, 3 ,3,
+    6, 6, 6, 6,
+    10,10,10,10,10,
+    15,15,15,15,15,15,
+    21,21,21,21,21,21,21,
+    28,28,28,28,28,28,28,28,
+    36,36,36,36,36,36,36,36,36,
+    45,45,45,45,45,45,45,45,45,45,
+    55,55,55,55,55,55,55,55,55,55,55
+  };
+  
+  // Verify derivativeOrder and derivativeEnum values, spaceDim is verified in switch statement
+#ifdef HAVE_INTREPID_DEBUG
+  
+  // Derivative order must be between 1 and 10
+  TEST_FOR_EXCEPTION( !( (1 <= derivativeOrder) && (derivativeOrder <= INTREPID_MAX_DERIVATIVE) ),
+                      std::invalid_argument,
+                      ">>> ERROR (getDkMultiplicities): Invalid derivative order");
+  
+  // Enumeration value must be between 0 and the cardinality of the derivative set
+  TEST_FOR_EXCEPTION( !( (0 <= derivativeEnum) && (derivativeEnum < getDkCardinality(derivativeOrder,spaceDim) ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (getDkMultiplicities): Invalid derivative enumeration value for this order and space dimension");
+#endif
+  switch(spaceDim) {
+    
+    case 1:
+      
+      // Resize return array for multiplicity of {dx}
+      partialMult.resize(1);
+      
+      // Multiplicity of dx equals derivativeOrder
+      partialMult[0] = derivativeOrder;
+      break;
+      
+    case 2:
+      
+      // Resize array for multiplicities of {dx,dy}
+      partialMult.resize(2);
+      
+      // Multiplicity of dy equals the enumeration of the derivative; of dx - the complement
+      partialMult[1] = derivativeEnum;
+      partialMult[0] = derivativeOrder - derivativeEnum;
+      break;
+      
+    case 3:
+      
+      // Resize array for multiplicities of {dx,dy,dz}
+      partialMult.resize(3);
+      
+      // Recover multiplicities
+      partialMult[0] = derivativeOrder - binNumber[derivativeEnum];
+      partialMult[1] = binNumber[derivativeEnum] + binBegin[derivativeEnum] - derivativeEnum;
+      partialMult[2] = derivativeEnum  -  binBegin[derivativeEnum];
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( !( (0 < spaceDim ) && (spaceDim < 4) ),
+                          std::invalid_argument,
+                          ">>> ERROR (getDkMultiplicities): Invalid space dimension");          
+  }
+}
+
+
+
+int getDkCardinality(const int derivativeOrder,
+                     const int spaceDim) {
+  
+  // Verify derivativeOrder value, spaceDim is verified in switch statement
+#ifdef HAVE_INTREPID_DEBUG
+  
+  // Derivative order must be between 1 and 10
+  TEST_FOR_EXCEPTION( !( (1 <= derivativeOrder) && (derivativeOrder <= INTREPID_MAX_DERIVATIVE) ),
+                      std::invalid_argument,
+                      ">>> ERROR (getDkCardinality): Invalid derivative order");
+#endif
+  int cardinality = -999;
+  switch(spaceDim) {
+    
+    case 1:
+      cardinality = 1;
+      break;
+      
+    case 2:
+      cardinality = derivativeOrder + 1;
+      break;
+      
+    case 3:
+      cardinality = (derivativeOrder + 1)*(derivativeOrder + 2)/2;
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( !( (0 < spaceDim ) && (spaceDim < 4) ),
+                          std::invalid_argument,
+                          ">>> ERROR (getDkcardinality): Invalid space dimension");          
+  }
+  return cardinality;
+}
+
 
 // End member, friend, and related function definitions of class FieldContainer.
 

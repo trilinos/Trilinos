@@ -866,6 +866,27 @@ void Matrix<Scalar>::multiplyLeft(Scalar*        matVec,
 
 
 template<class Scalar>
+void Matrix<Scalar>::rowMultiply(Scalar &                       rowVec,
+                                 const int                      rowId,
+                                 const FieldContainer<Scalar>&  vec,
+                                 const int                      vecBegin) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (rowId < 0) || (dim_ < rowId) ), std::invalid_argument,
+                      ">>> ERROR (Matrix): Invalid row number.");
+  // vecIndex must be at least 0 and such that there are at least dim more values left in the container
+  TEST_FOR_EXCEPTION( ( (vecBegin < 0) || ( (vec.getSize() - dim_) < vecBegin) ), std::invalid_argument,
+                      ">>> ERROR (Matrix): Invalid index for the first vector element.");
+#endif
+  rowVec = 0;
+  for (int j = 0; j < dim_; j++) {
+    rowVec += elements_[rowId*dim_ + j]*vec[vecBegin + j];
+  }
+}
+
+
+
+template<class Scalar>
 void Matrix<Scalar>::multiplyLeft(Teuchos::Array<Scalar> &        matVec,
                                   const Teuchos::Array<Scalar> &  vec) const {
   int dim = vec.size();
@@ -879,27 +900,6 @@ void Matrix<Scalar>::multiplyLeft(Teuchos::Array<Scalar> &        matVec,
     for (int j = 0; j < dim_; j++) {
       matVec[i] += elements_[i*dim_+j]*vec[j];
     }
-  }
-}
-
-
-template<class Scalar>
-void Matrix<Scalar>::multiplyLeft(LexContainer<Scalar>&       matVec,
-                                  const int                   indexMatVec,
-                                  const LexContainer<Scalar>& vec,
-                                  const int                   indexVec,
-                                  const int dim) const {
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( dim_ != dim ),
-                      std::invalid_argument,
-                      ">>> ERROR (Matrix): Matrix and vector dimensions do not match.");
-#endif
-  for (int i = 0; i < dim_; i++) {
-    Scalar temp = 0;
-    for (int j = 0; j < dim_; j++) {
-      temp += elements_[i*dim_+j]*vec[indexVec + j];
-    }
-    matVec.setValue(temp,indexMatVec + i);
   }
 }
 

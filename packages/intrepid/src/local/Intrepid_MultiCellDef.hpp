@@ -597,13 +597,14 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
     // Loop over all cells in the 
     for(int cellId = 0; cellId < numCells; cellId++) {
       
-      // 2nd and 3rd dimensions are for [dimIndex] and [subcellId] indices and depend on cell dimension
+      // 2nd dimension = the cell dimension (storage needed for values on all but the 0-dimensional subcells)
+      jacobianMat_[cellId].resize(myCellDim);
+      measure_[cellId].resize(myCellDim);
+      weightedMeasure_[cellId].resize(myCellDim);
+      
+      // 3rd dimension is for the number of subcells with a given subcellDim and depends on the cell dimension
       switch(myCellDim) {
         case 3: {
-          // 3D cells need storage for the cell, its 2-subcells and its 1-subcells => 0 <= dimIndex < 3
-          jacobianMat_[cellId].resize(3);
-          measure_[cellId].resize(3);
-          weightedMeasure_[cellId].resize(3);
           
           // The 3rd dimension is the number of subcells of dimensions 3 (always 1), 2, and 1
           num3Subcells = this -> getMyNumSubcells(3);
@@ -625,10 +626,6 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
           break;
           
         case 2: {
-          // 2D cells need storage for the cell and its 1-subcells => 0 <= dimIndex < 2
-          jacobianMat_[cellId].resize(2);
-          measure_[cellId].resize(2);
-          weightedMeasure_[cellId].resize(2);
           
           // The 3rd dimension is the number of subcells of dimensions 2 (always 1) and 1
           num2Subcells = this -> getMyNumSubcells(2);
@@ -646,10 +643,6 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
           break;
           
         case 1: {
-          // 1D cells need storage for the cell only => 0 <=dimIndex < 1
-          jacobianMat_[cellId].resize(1);
-          measure_[cellId].resize(1);
-          weightedMeasure_[cellId].resize(1);
           
           // The 3rd dimension is the number of subcells of dimensions 1 (always 1)
           num1Subcells = this -> getMyNumSubcells(1);
@@ -974,11 +967,7 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const 
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Inverse transpose Jacobian not available: Jacobian data for this subcell has been deleted!");
 #endif 
-  
-  // The size of the array at weightedMeasure[cellId][dimIndex][subcellId] equals the number
-  // of cubature points for both affine and non-affine mappings:  
-  int numCubPts = weightedMeasure_[cellId][dimIndex][subcellId].size();
-  
+    
   if( jacobianTInv_.size() == 0) {
     jacobianTInv_.resize(numCells);
     for(int cellId = 0; cellId < numCells; cellId++) {
@@ -1009,14 +998,14 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const 
     }// for cellId
   }// if(jacobianTInv_.size())
     
-  
+
   if( jacobianTInv_[cellId][dimIndex][subcellId].size() == 0) {    
     Matrix<Scalar> tempJac(myCellDim);
     
-    // If cell mapping is affine, inverse Transpose Jacobian is same for all points
+    // If cell mapping is affine, inverse Transpose Jacobian will be the same for all points
     EMapping cellMapping = this -> getCellMappingType(cellId);
-    
     if(cellMapping == MAPPING_AFFINE) {
+      
       // Need only one value for all cubature points
       jacobianTInv_[cellId][dimIndex][subcellId].assign(1,tempJac);
       jacobianTInv_[cellId][dimIndex][subcellId][0] = \
@@ -1025,6 +1014,10 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const 
       
     } // if(AFFINE)
     else {
+      
+      // The size of the array at weightedMeasure[cellId][dimIndex][subcellId] equals the number
+      // of cubature points for both affine and non-affine mappings:  
+      int numCubPts = weightedMeasure_[cellId][dimIndex][subcellId].size();
       for(int cubPt = 0; cubPt < numCubPts; cubPt++) {
         
         // Need one value per cubature point
@@ -1033,7 +1026,6 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const 
           jacobianMat_[cellId][dimIndex][subcellId][cubPt].getTranspose();
         jacobianTInv_[cellId][dimIndex][subcellId][cubPt].invert();
       }
-      
     } //if(! AFFINE)
   } // if(size == 0)
   

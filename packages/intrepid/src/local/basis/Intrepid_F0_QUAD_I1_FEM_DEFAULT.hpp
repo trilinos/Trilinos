@@ -62,8 +62,11 @@ namespace Intrepid {
   |    3   |     0      |     3      |     0      |     1      |         L_3(u) = u(v_3)          |
   |========|============|============|============|============|==================================|
   \endverbatim
-  where v_i denotes the ith vertex of the QUAD cell. The DefaultBasisFactory will select this basis
-  if the following parameters are specified:
+  
+  \remarks
+  \li v_i is the ith vertex of the QUAD cell;
+  \li DefaultBasisFactory will select this class if the following parameters are specified:
+  
   \verbatim
   |=======================|===================================|
   |  EField               |  FIELD_FORM_0                     |
@@ -111,11 +114,11 @@ class Basis_F0_QUAD_I1_FEM_DEFAULT: public Basis<Scalar> {
    */
   void initialize();
     
-  /** \brief Returns a VarContainer with the values of <var>opertorType</var> applied to the basis
+  /** \brief Returns a FieldContainer with the values of <var>opertorType</var> applied to the basis
     functions. For admissible <var>operatorType</var> arguments and the format of the output container 
-    see LocalForm0::getOperator(VarContainer<Scalar>&, const Teuchos::Array<Point<Scalar> >&, const EOperator)
+    see LocalForm0::getOperator(FieldContainer<Scalar>&, const Teuchos::Array<Point<Scalar> >&, const EOperator)
     
-    \param outputValues   [out]         - VarContainer of rank 2 or 3 with the computed values
+    \param outputValues   [out]         - FieldContainer of rank 2 or 3 with the computed values
     \param inputPoints     [in]         - evaluation points on the reference cell  
     \param operatorType    [in]         - the operator being applied to the basis function    
     
@@ -128,7 +131,7 @@ class Basis_F0_QUAD_I1_FEM_DEFAULT: public Basis<Scalar> {
     bound for the last index, i.e., the output container is filled with as many zeroes as there are
     partial derivatives of a particular order; see getDkCardinality. 
   */
-  void getValues(VarContainer<Scalar>&                  outputValues,
+  void getValues(FieldContainer<Scalar>&                outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
                  const EOperator                        operatorType) const;
     
@@ -136,7 +139,7 @@ class Basis_F0_QUAD_I1_FEM_DEFAULT: public Basis<Scalar> {
   /**  \brief This method is intended for FVD reconstructions and should not be used here. Its 
     invocation will throw an exception.
   */
-  void getValues(VarContainer<Scalar>&                  outputValues,
+  void getValues(FieldContainer<Scalar>&                outputValues,
                  const Teuchos::Array< Point<Scalar> >& inputPoints,
                  const Cell<Scalar>&                    cell) const;
 

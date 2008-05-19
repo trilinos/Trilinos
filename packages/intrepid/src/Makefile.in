@@ -256,14 +256,10 @@ INTREPID_ALL_H = \
 INTREPID_COMMON_H = \
   $(srcdir)/common/Intrepid_FieldContainerDef.hpp \
   $(srcdir)/common/Intrepid_FieldContainer.hpp \
-  $(srcdir)/common/Intrepid_LexContainerDef.hpp \
-  $(srcdir)/common/Intrepid_LexContainer.hpp \
   $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
   $(srcdir)/common/Intrepid_RealSpace.hpp \
   $(srcdir)/common/Intrepid_Types.hpp \
-  $(srcdir)/common/Intrepid_Utils.hpp \
-  $(srcdir)/common/Intrepid_VarContainerDef.hpp \
-  $(srcdir)/common/Intrepid_VarContainer.hpp
+  $(srcdir)/common/Intrepid_Utils.hpp
 
 INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/Intrepid_Basis.hpp \

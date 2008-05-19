@@ -161,12 +161,11 @@ class Cell : public Intrepid::MultiCell<Scalar> {
       STATUS_DEFINED. Admissible generating cell types  are EDGE, TRI, QUAD, TET, HEX, TRIPRISM, and 
       PYRAMID, i.e., cells that have reference cells.
       
-      \param  cellID [in]    - cell ID relative to the MultiCell
-      \param  refPoint [in]  - point in the reference cell, must have FRAME_REFERENCE type
+      \param  refPoint  [in]  - point in the reference cell, must have FRAME_REFERENCE type
       \param  threshold [in] - "tightness" of the inclusion test carried out inside the method
       */
-    Point<Scalar> mapToPhysicalCell(const Point<Scalar>& refPoint,
-                                    const double threshold = INTREPID_THRESHOLD) const;
+    Point<Scalar> mapToPhysicalCell(const Point<Scalar>&  refPoint,
+                                    const double          threshold = INTREPID_THRESHOLD) const;
 
     /** \brief Returns a Point object with FRAME_REFERENCE representing the image of a point from
       the physical cell in the generating reference cell.

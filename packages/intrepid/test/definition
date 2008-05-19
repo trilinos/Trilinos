@@ -5,8 +5,6 @@
 (FRAMEWORK, INSTALL) {
     DIRS = Cubature,
            RealSpace,
-           LexContainer,
-           VarContainer,
            FieldContainer,
            MultiCell,
            Basis/F0_QUAD_I1_FEM_DEFAULT,
@@ -21,8 +19,6 @@
 (FRAMEWORK, INSTALL) {
     DIRS = Cubature,
            RealSpace,
-           LexContainer,
-           VarContainer,
            FieldContainer,
            MultiCell,
            Basis/F0_QUAD_I1_FEM_DEFAULT,

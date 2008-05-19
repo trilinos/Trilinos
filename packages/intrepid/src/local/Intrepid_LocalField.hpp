@@ -39,8 +39,7 @@
 #include "Intrepid_Types.hpp"
 #include "Intrepid_MultiCell.hpp"
 #include "Intrepid_Cell.hpp"
-#include "Intrepid_LexContainer.hpp"
-#include "Intrepid_VarContainer.hpp"
+#include "Intrepid_FieldContainer.hpp"
 
 
 namespace Intrepid {
@@ -51,7 +50,7 @@ namespace Intrepid {
     The local field interface relies on two member functions, <var>getOperator</var>
     and <var>getFunctional</var>, with varying signatures. Detailed info here ...
 */
-template<class Scalar, class ArrayType = LexContainer<Scalar> >
+template<class Scalar, class ArrayType = FieldContainer<Scalar> >
 class LocalField {
   private:
     
@@ -59,11 +58,10 @@ class LocalField {
 
   virtual ~LocalField() {}
 
-
-  /** \brief Returns VarContainer with a multi-indexed quantity representing the values of a 
+  /** \brief Returns <var>ArrayType</var> with a multi-indexed quantity representing the values of a 
   (primitive) operator <var>primOp</var> applied to FEM basis functions, evaluated at the array 
-  <var>inputPoints</var> of <strong>reference</strong> points. The rank of the output VarContainer
-  and its index range vary depending on the type of <var>primOp</var> and the concrete field; see
+  <var>inputPoints</var> of <strong>reference</strong> points. The rank of the output <var>ArrayType</var>
+  and its dimensions vary depending on the type of <var>primOp</var> and the concrete field; see
   implementation for details.
 
   The context in which this interface function can be called is limited to FEM reconstructions 
@@ -74,15 +72,15 @@ class LocalField {
       \param inputPoints      [in]     - Array of input (reference) points.
       \param primOp           [in]     - Input operator (primitive).
   */
-  virtual void getOperator(VarContainer<Scalar> &                  outputValues,
+  virtual void getOperator(ArrayType &                             outputValues,
                            const Teuchos::Array<Point<Scalar> > &  inputPoints,
                            const EOperator                         primOp) = 0;
 
 
-  /** \brief Returns VarContainer with a multi-indexed quantity representing the values of a 
+  /** \brief Returns <var>ArrayType</var> with a multi-indexed quantity representing the values of a 
   (primitive) operator <var>primOp</var> applied to FEM or FVD basis functions, evaluated at the 
-  array <var>inputPoints</var> of <strong>physical</strong> points. The rank of the output VarContainer
-  and its index range vary depending on the type of <var>primOp</var> and the concrete field; see
+  array <var>inputPoints</var> of <strong>physical</strong> points. The rank of the output <var>ArrayType</var>
+  and its dimensions vary depending on the type of <var>primOp</var> and the concrete field; see
   implementation for details.  
 
   The context in which this interface function can be called is two-fold. For FEM reconstructions 
@@ -96,75 +94,67 @@ class LocalField {
       \param primOp           [in]     - Input operator (primitive).
       \param cell             [in]     - Physical cell.
   */
-  virtual void getOperator(VarContainer<Scalar> &                  outputValues,
+  virtual void getOperator(ArrayType &                             outputValues,
                            const Teuchos::Array<Point<Scalar> > &  inputPoints,
                            const EOperator                         primOp,
                            const Cell<Scalar> &                    cell) = 0;
 
 
-  /** \brief Returns a rank-3 LexContainer such that <var>outputValues{c,l,r}</var> = \f$\mathbf{A}^c_{lr}\f$
-    where:
+  /** \brief Returns a rank-3 <var>ArrayType</var> such that <var>outputValues(C,L,R)</var> = \f$\mathbf{A}^C_{LR}\f$ where:
     
-    \li \f$ \displaystyle \mathbf{A}^c_{lr} = \int_{\Omega_c} (leftOp\;\phi_l) (inputData) (rightOp\;{\phi_r}) d\Omega \f$    
-    \li  \f$\phi_l\f$ and \f${\phi_r}\f$ are basis functions from the <strong>native</strong> local field \f$\mathcal{F}\f$;
-    \li  <var>leftOp</var> and <var>rightOp</var> are admissible operator types for \f$\mathcal{F}\f$;
-    \li  <var>inputData</var> is a user-supplied data array;
-    \li  \f$\Omega_c\f$ is a subcell that represents a valid integration domain for the resulting expression.
+    \li \f$ \displaystyle \mathbf{A}^C_{LR} = \int_{\Omega_C} (leftOp\;\phi_L) (inputData) (rightOp\;{\phi_R}) d\Omega \f$    
+    \li \f$\phi_L\f$ and \f${\phi_R}\f$ are basis functions from the <strong><strong>native</strong></strong> local field \f$\mathcal{F}\f$;
+    \li <var>leftOp</var> and <var>rightOp</var> are admissible operator types for \f$\mathcal{F}\f$;
+    \li <var>inputData</var> is a user-supplied data container;
+    \li \f$\Omega_C\f$ is a subcell that represents a valid integration domain for the resulting expression.
     
-    The multi-index <var>{c,l,r}</var> has the following upper bounds:
-    \li \f$ 0 \le c < \f$ number of integration domains (default is number of cells in the multicell)
-    \li \f$ 0 \le l,r < \dim \mathcal{F} \f$, i.e., the number of basis functions in the basis.
+    Dimensions of the <var>outputValues</var> container are as follows:
     
-    The user-supplied data array should be formatted as follows:\n
+    \li \f$ 0 \le C < \f$ the number of integration domains (default is number of cells in the multicell)
+    \li \f$ 0 \le L,R < \dim \mathcal{F} \f$, i.e., the number of basis functions in the <strong>native</strong> basis.
+    
+    The user-supplied data container should be formatted as follows:
+    
+    \li \f$ inputData(C,P)     = s(q_P)     |_{\Omega_C} \f$ if <var>s</var> is a rank-0 field (scalar function)
+    \li \f$ inputData(C,P,I)   = v_I(q_P)   |_{\Omega_C} \f$ if <var>v</var> is a rank-1 field (vector function)
+    \li \f$ inputData(C,P,I,J) = T_{IJ}(q_P)|_{\Omega_C} \f$ if <var>T</var> is a rank-2 field (tensor function)
+        
+    The rank of the user-supplied field is implicitly determined from the rank of <var>inputData</var>.
+    Dimensions of the <var>inputData</var> are as follows:
 
-      <table>
-        <tr> <td>\f$ value(s, cell\_id, q_k) = inputData[cell\_id \cdot N + k] \f$</td>
-             <td>if <var>inputFormat==DATA_SCALAR</var></td> </tr>
-        <tr> <td>\f$ value(v_i, cell\_id, q_k) = inputData[cell\_id \cdot N \cdot d + k \cdot d + i] \f$</td>
-             <td>if <var>inputFormat==DATA_VECTOR</var></td> </tr>
-        <tr> <td>\f$ value(T_{ij}, cell\_id, q_k) = inputData[cell\_id \cdot N \cdot d^2 + k \cdot d^2 + i \cdot d + j] \f$</td>
-             <td>if <var>inputFormat==DATA_TENSOR</var></td> </tr>
-      </table>
-    
-    where \n
-    \li   \f$s\f$ denotes a scalar quantity,\n
-    \li   \f$v_i\f$ denotes the i-th component of a vector \f$v\f$,\n
-    \li   \f$T_{ij}\f$ denotes the ij-th component of a tensor \f$T\f$,\n
-    \li   \f$q_k\f$ denotes the k-th integration point,\n
-    \li   \f$N\f$ denotes the number of integration points,\n
-    \li   \f$d\f$ denotes the space dimension
-    
+    \li \f$ 0 \le C < \f$ the number of integration domains (default is number of cells in the multicell)
+    \li \f$ 0 \le P < \f$ the number of cubature points on the reference integration domain
+    \li \f$ 0 \le I,J < d \f$ the dimension of the admissible cell type of the LocalField (the space dimensions)    
     
       \param outputValues    [out]     - Output array.
       \param leftOp           [in]     - Left operator.
       \param rightOp          [in]     - Right operator.
       \param mCell            [in]     - Multicell.
       \param inputData        [in]     - Input data.
-      \param inputFormat      [in]     - Format of input data (scalar, vector, etc.).
       \param reuseJacobians   [in]     - Forces reuse of Jacobian and subcell measure values at cub. pts.
       \param intDomain        [in]     - Integration domain (line, surface, cell).
   */
-  virtual void getOperator(LexContainer<Scalar> &          outputValues,
-                           const EOperator                 leftOp,
-                           const EOperator                 rightOp,
-                           MultiCell<Scalar> &             mCell,
-                           const Teuchos::Array<Scalar> &  inputData,
-                           const EDataFormat               inputFormat,
-                           const bool                      reuseJacobians = false,
-                           const EIntegrationDomain        intDomain = INTEGRATION_DOMAIN_CELL) = 0;
+  virtual void getOperator(ArrayType &              outputValues,
+                           const EOperator          leftOp,
+                           const EOperator          rightOp,
+                           MultiCell<Scalar> &      mCell,
+                           const ArrayType &        inputData,
+                           const bool               reuseJacobians = false,
+                           const EIntegrationDomain intDomain = INTEGRATION_DOMAIN_CELL) = 0;
 
 
-  /** \brief A simpler version of the previous method which does not take user specified data. Returns 
-    a rank-3 LexContainer such that <var>outputValues{c,l,r}</var> = \f$\mathbf{A}^c_{lr}\f$ where:
+  /** \brief A simpler version of the previous method which does not take user-specified data. Returns 
+    a rank-3 <var>ArrayType</var> such that <var>outputValues(C,L,R)</var> = \f$\mathbf{A}^C_{LR}\f$ where:
     
-    \li \f$ \displaystyle \mathbf{A}^c_{lr} = \int_{\Omega_c} (leftOp\;\phi_l) (rightOp\;{\phi_r}) d\Omega \f$    
-    \li  \f$\phi_l\f$ and \f${\phi_r}\f$ are basis functions from the <strong>native</strong> local field \f$\mathcal{F}\f$;
+    \li \f$ \displaystyle \mathbf{A}^C_{LR} = \int_{\Omega_C} (leftOp\;\phi_L) (rightOp\;{\phi_R}) d\Omega \f$    
+    \li  \f$\phi_L\f$ and \f${\phi_R}\f$ are basis functions from the <strong><strong>native</strong></strong> local field \f$\mathcal{F}\f$;
     \li  <var>leftOp</var> and <var>rightOp</var> are admissible operator types for \f$\mathcal{F}\f$;
-    \li  \f$\Omega_c\f$ is a subcell that represents a valid integration domain for the resulting expression.
+    \li  \f$\Omega_C\f$ is a subcell that represents a valid integration domain for the resulting expression.
     
-    The multi-index <var>{c,l,r}</var> has the following upper bounds:
-    \li \f$ 0 \le c < \f$ number of integration domains (number of cells in the multicell is the default)
-    \li \f$ 0 \le l,r < \dim \mathcal{F} \f$, i.e., the number of basis functions in the basis.
+    Dimensions of the <var>outputValues</var> container are as follows:
+    
+    \li \f$ 0 \le C < \f$ the number of integration domains (default is number of cells in the multicell)
+    \li \f$ 0 \le L,R < \dim \mathcal{F} \f$, i.e., the number of basis functions in the <strong>native</strong> basis.
     
       \param outputValues    [out]     - Output array.
       \param leftOp           [in]     - Left operator.
@@ -181,47 +171,40 @@ class LocalField {
                            const EIntegrationDomain    intDomain = INTEGRATION_DOMAIN_CELL) = 0;
 
 
-  /** \brief Returns a rank-3 LexContainer such that <var>outputValues{c,l,r}</var> = \f$\mathbf{A}^c_{lr}\f$
-  where:
+  /** \brief Returns a rank-3 <var>ArrayType</var> such that <var>outputValues(C,L,R)</var> = \f$\mathbf{A}^C_{LR}\f$ where:
     
-    \li \f$ \displaystyle \mathbf{A}^c_{lr} = \int_{\Omega_c} (leftOp\;\phi_l) (inputData) (rightOp\;{\varphi_r}) d\Omega \f$    
-    \li  \f$\phi_l\f$ is basis function from the <strong>native</strong> local field \f$\mathcal{F}_l\f$
-    \li  \f$\varphi_r\f$ is basis function from an <strong>auxiliary</strong> local field \f$\mathcal{F}_r\f$
-    \li  <var>leftOp</var> is an admissible operator for functions from \f$\mathcal{F}_l\f$
-    \li  <var>rightOp</var> is an admissible operator for functions from \f$\mathcal{F}_r\f$
+    \li \f$ \displaystyle \mathbf{A}^C_{LR} = \int_{\Omega_C} (leftOp\;\phi_L) (inputData) (rightOp\;{\varphi_R}) d\Omega \f$    
+    \li  \f$\phi_L\f$ is basis function from the <strong><strong>native</strong></strong> local field \f$\mathcal{F}_L\f$
+    \li  \f$\varphi_R\f$ is basis function from an <strong>auxiliary</strong> local field \f$\mathcal{F}_R\f$
+    \li  <var>leftOp</var> is an admissible operator for functions from \f$\mathcal{F}_L\f$
+    \li  <var>rightOp</var> is an admissible operator for functions from \f$\mathcal{F}_R\f$
     \li  <var>inputData</var> is a user-supplied data array;
-    \li  \f$\Omega_c\f$ is a subcell that represents a valid integration domain for the resulting expression.
+    \li  \f$\Omega_C\f$ is a subcell that represents a valid integration domain for the resulting expression.
     
-    Note that the domain of <var>leftOp</var> is always the parent local field. The domain, i.e. the 
+    Note that the domain of <var>leftOp</var> is always the <strong>native</strong> local field. The domain, i.e. the 
     local field for <var>rightOp</var> must be specified via <var>rightOpField</var>.\n
     
-    The multi-index <var>{c,l,r}</var> has the following upper bounds:
+    Dimensions of the <var>outputValues</var> container are as follows:
     
-    \li \f$ 0 \le c < \f$ number of integration domains (number of cells in the multicell is the default)
-    \li \f$ 0 \le l < \dim \mathcal{F}_l \f$, i.e., the number of basis functions in the native (left) local field.
-    \li \f$ 0 \le r < \dim \mathcal{F}_r \f$, i.e., the number of basis functions in the auxiliary (right) local field.
+    \li \f$ 0 \le C < \f$ number of integration domains (number of cells in the multicell is the default)
+    \li \f$ 0 \le L < \dim \mathcal{F}_L \f$, i.e., the number of basis functions in the <strong>native</strong> (left) local field.
+    \li \f$ 0 \le R < \dim \mathcal{F}_R \f$, i.e., the number of basis functions in the <strong>auxiliary</strong> (right) local field.
     
-    \warning The <strong>native</strong> and <strong>auxiliary</strong> LocalField objects 
+    \warning The <strong><strong>native</strong></strong> and <strong>auxiliary</strong> LocalField objects 
     <strong>must be instantiated with identical cell types and cubature sets!</strong> 
     
-    The user-supplied data array should be formatted as follows:\n
+    The user-supplied data container should be formatted as follows:
     
-    <table>
-    <tr> <td>\f$ value(s, cell\_id, q_k) = inputData[cell\_id \cdot N + k] \f$</td>
-    <td>if <var>inputFormat==DATA_SCALAR</var></td> </tr>
-    <tr> <td>\f$ value(v_i, cell\_id, q_k) = inputData[cell\_id \cdot N \cdot d + k \cdot d + i] \f$</td>
-    <td>if <var>inputFormat==DATA_VECTOR</var></td> </tr>
-    <tr> <td>\f$ value(T_{ij}, cell\_id, q_k) = inputData[cell\_id \cdot N \cdot d^2 + k \cdot d^2 + i \cdot d + j] \f$</td>
-    <td>if <var>inputFormat==DATA_TENSOR</var></td> </tr>
-    </table>
+    \li \f$ inputData(C,P)     = s(q_P)     |_{\Omega_C} \f$ if <var>s</var> is a rank-0 field (scalar function)
+    \li \f$ inputData(C,P,I)   = v_I(q_P)   |_{\Omega_C} \f$ if <var>v</var> is a rank-1 field (vector function)
+    \li \f$ inputData(C,P,I,J) = T_{IJ}(q_P)|_{\Omega_C} \f$ if <var>T</var> is a rank-2 field (tensor function)
     
-    where \n
-    \li   \f$s\f$ denotes a scalar quantity,\n
-    \li   \f$v_i\f$ denotes the i-th component of a vector \f$v\f$,\n
-    \li   \f$T_{ij}\f$ denotes the ij-th component of a tensor \f$T\f$,\n
-    \li   \f$q_k\f$ denotes the k-th integration point,\n
-    \li   \f$N\f$ denotes the number of integration points,\n
-    \li   \f$d\f$ denotes the space dimension
+    The rank of the user-supplied field is implicitly determined from the rank of <var>inputData</var>.
+    Dimensions of the <var>inputData</var> are as follows:
+    
+    \li \f$ 0 \le C < \f$ the number of integration domains (default is number of cells in the multicell)
+    \li \f$ 0 \le P < \f$ the number of cubature points on the reference integration domain
+    \li \f$ 0 \le I,J < d \f$ the dimension of the admissible cell type of the LocalField (the space dimensions)    
     
     \param outputValues    [out]     - Output array.
     \param leftOp           [in]     - Left operator.
@@ -229,62 +212,56 @@ class LocalField {
     \param rightOpField     [in]     - Local field of the right operator.
     \param mCell            [in]     - Multicell.
     \param inputData        [in]     - Input data.
-    \param inputFormat      [in]     - Format of input data (scalar, vector, etc.).
     \param reuseJacobians   [in]     - Forces reuse of Jacobian and subcell measure values at cub. pts.
     \param intDomain        [in]     - Integration domain (line, surface, cell).
     */
-  virtual void getOperator(LexContainer<Scalar> &           outputValues,
-                           const EOperator                  leftOp,
-                           const EOperator                  rightOp,
-                           const LocalField<Scalar> &       rightOpField,
-                           MultiCell<Scalar> &              mCell,
-                           const Teuchos::Array<Scalar> &   inputData,
-                           const EDataFormat                inputFormat,
-                           const bool                       reuseJacobians = false,
-                           const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL) = 0;
+  virtual void getOperator(ArrayType &                outputValues,
+                           const EOperator            leftOp,
+                           const EOperator            rightOp,
+                           const LocalField<Scalar> & rightOpField,
+                           MultiCell<Scalar> &        mCell,
+                           const ArrayType &          inputData,
+                           const bool                 reuseJacobians = false,
+                           const EIntegrationDomain   intDomain = INTEGRATION_DOMAIN_CELL) = 0;
   
   
-  /** \brief A simpler version of the previous method which does not take user specified data. 
-    Returns a rank-3 LexContainer such that <var>outputValues{c,l,r}</var> = \f$\mathbf{A}^c_{lr}\f$ where:
+  /** \brief A simpler version of the previous method which does not take user specified data. Returns 
+    a rank-3 <var>ArrayType</var> such that <var>outputValues(C,L,R)</var> = \f$\mathbf{A}^C_{LR}\f$ where:
     
-    \li \f$ \displaystyle \mathbf{A}^c_{lr} = \int_{\Omega_c} (leftOp\;\phi_l) (inputData) (rightOp\;{\varphi_r}) d\Omega \f$    
-    \li  \f$\phi_l\f$ is basis function from the <strong>native</strong> local field \f$\mathcal{F}_l\f$
-    \li  \f$\varphi_r\f$ is basis function from an <strong>auxiliary</strong> local field \f$\mathcal{F}_r\f$
-    \li  <var>leftOp</var> is an admissible operator for functions from \f$\mathcal{F}_l\f$
-    \li  <var>rightOp</var> is an admissible operator for functions from \f$\mathcal{F}_r\f$
-    \li  <var>inputData</var> is a user-supplied data array;
-    \li  \f$\Omega_c\f$ is a subcell that represents a valid integration domain for the resulting expression.
+    \li \f$ \displaystyle \mathbf{A}^C_{LR} = \int_{\Omega_C} (leftOp\;\phi_L) (inputData) (rightOp\;{\varphi_R}) d\Omega \f$    
+    \li  \f$\phi_L\f$ is basis function from the <strong><strong>native</strong></strong> local field \f$\mathcal{F}_L\f$
+    \li  \f$\varphi_R\f$ is basis function from an <strong>auxiliary</strong> local field \f$\mathcal{F}_R\f$
+    \li  <var>leftOp</var> is an admissible operator for functions from \f$\mathcal{F}_L\f$
+    \li  <var>rightOp</var> is an admissible operator for functions from \f$\mathcal{F}_R\f$
+    \li  \f$\Omega_C\f$ is a subcell that represents a valid integration domain for the resulting expression.
     
-    Note that the domain of <var>leftOp</var> is always the parent local field. The domain, i.e. the 
+    Note that the domain of <var>leftOp</var> is always the <strong>native</strong> local field. The domain, i.e. the 
     local field for <var>rightOp</var> must be specified via <var>rightOpField</var>.\n
     
-    The multi-index <var>{c,l,r}</var> has the following upper bounds:
+    Dimensions of the <var>outputValues</var> container are as follows:
     
-    \li \f$ 0 \le c < \f$ number of integration domains (number of cells in the multicell is the default)
-    \li \f$ 0 \le l < \dim \mathcal{F}_l \f$, i.e., the number of basis functions in the native (left) local field.
-    \li \f$ 0 \le r < \dim \mathcal{F}_r \f$, i.e., the number of basis functions in the auxiliary (right) local field.
+    \li \f$ 0 \le C < \f$ number of integration domains (number of cells in the multicell is the default)
+    \li \f$ 0 \le L < \dim \mathcal{F}_L \f$, i.e., the number of basis functions in the <strong>native</strong> (left) local field.
+    \li \f$ 0 \le R < \dim \mathcal{F}_R \f$, i.e., the number of basis functions in the <strong>auxiliary</strong> (right) local field.
     
-    \warning The <strong>native</strong> and <strong>auxiliary</strong> LocalField objects 
+    \warning The <strong><strong>native</strong></strong> and <strong>auxiliary</strong> LocalField objects 
     <strong>must be instantiated with identical cell types and cubature sets!</strong> 
 
-        
     \param outputValues    [out]     - Output array.
     \param leftOp           [in]     - Left operator.
     \param rightOp          [in]     - Right operator.
     \param rightOpField     [in]     - Local field of the right operator.
     \param mCell            [in]     - Multicell.
-    \param inputData        [in]     - Input data.
-    \param inputFormat      [in]     - Format of input data (scalar, vector, etc.).
     \param reuseJacobians   [in]     - Forces reuse of Jacobian and subcell measure values at cub. pts.
     \param intDomain        [in]     - Integration domain (line, surface, cell).
     */
-  virtual void getOperator(LexContainer<Scalar> &           outputValues,
-                           const EOperator                  leftOp,
-                           const EOperator                  rightOp,
-                           const LocalField<Scalar> &       rightOpField,
-                           MultiCell<Scalar> &              mCell,
-                           const bool                       reuseJacobians = false,
-                           const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL) = 0;
+  virtual void getOperator(ArrayType &                  outputValues,
+                           const EOperator              leftOp,
+                           const EOperator              rightOp,
+                           const LocalField<Scalar> &   rightOpField,
+                           MultiCell<Scalar> &          mCell,
+                           const bool                   reuseJacobians = false,
+                           const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL) = 0;
   
 
   /** \brief Returns field type.

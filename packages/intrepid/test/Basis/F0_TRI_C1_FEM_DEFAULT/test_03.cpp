@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
                                  CELL_TRI,        // generating cell type
                                  triNodes);       // array with interleaved node coordinates
 
-    LexContainer<double> matrixContainer;
+    FieldContainer<double> matrixContainer;
     
     // Row 0 = without reuse of DF; Row 1 = with reuse of DF; Col 0 = C++ engine; Col 1 = BLAS engine
     double timerLargeMCmass[2][2];
@@ -151,6 +151,7 @@ int main(int argc, char *argv[]) {
     //                      Mass matrix: large MCell without Jacobian reuse                       //
     //                                                                                            //
     //============================================================================================//
+
     
     for (ECompEngine compEng = COMP_CPP; compEng < COMP_ENGINE_MAX; compEng++) {
       Teuchos::Time timer("Timer - One Large Multicell");
@@ -201,7 +202,7 @@ int main(int argc, char *argv[]) {
       *outStream << "\n" << timer.name() << "\n";
       *outStream << "\t Mass matrix with Jacobian reuse: Computational engine: " << ECompEngineToString(compEng) << "\n";
     }
-
+    
     //============================================================================================//
     //                                                                                            //
     //                  Stiffness matrix: large MCell without Jacobian reuse                      //
@@ -216,7 +217,6 @@ int main(int argc, char *argv[]) {
 
       timer.start();
       for (int cubDeg=2; cubDeg<=20; cubDeg++) {
-        
         cellCub = Teuchos::rcp(new CubatureDirect<double>(CELL_TRI,cubDeg) );
         allCubs[0][0] = cellCub;
         LocalForm0<double> form0(basis, allCubs, compEng);

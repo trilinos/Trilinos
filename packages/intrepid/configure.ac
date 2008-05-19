@@ -356,8 +356,6 @@ AC_CONFIG_FILES([
   test/MultiCell/Makefile
   test/RealSpace/Makefile
   test/FieldContainer/Makefile
-  test/LexContainer/Makefile
-  test/VarContainer/Makefile
   test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile
   test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile
   test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile
@@ -365,8 +363,6 @@ AC_CONFIG_FILES([
   example/MultiCell/Makefile
   example/RealSpace/Makefile
   example/FieldContainer/Makefile
-  example/LexContainer/Makefile
-  example/VarContainer/Makefile
 ])
 
 AC_OUTPUT()

@@ -66,30 +66,26 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::initialize() {
 
 
 template<class Scalar> 
-void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                 outputValues,
+void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(FieldContainer<Scalar>&               outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const EOperator                        operatorType) const {
 
   // Number of evaluation points =  size of outputValues
   int numPoints = inputPoints.size();             
   
-  // Shape the VarContainer for the output:
-  outputValues.reset(numPoints,                   // number of evaluation points
-                     numDof_,                     // number of fields = number of DoFs in the basis
-                     FIELD_FORM_0,                // field type of the basis functions
-                     operatorType,                // operator type that is applied to basis functions
-                     2);                          // space dimension for QUAD cell is 2
+  // Shape the FieldContainer for the output:
+  outputValues.resize(numPoints,                   // number of evaluation points
+                      numDof_,                     // number of fields = number of DoFs in the basis
+                      FIELD_FORM_0,                // field type of the basis functions
+                      operatorType,                // operator type that is applied to basis functions
+                      2);                          // space dimension for QUAD cell is 2
   
-  // Temporaries
-  int countPt  = 0;                               // point counter
-  Scalar x(0);                                    // x coord
-  Scalar y(0);                                    // y coord
-  Teuchos::Array<int> indexV(2);                  // multi-index for rank 2 output (operator = VALUE)
-  Teuchos::Array<int> indexD(3);                  // multi-index for rank 2 output (operator = GRAD, CURL, D1,...,D10)
+  // Temporaries: point counter and (x,y) coordinates of the evaluation point
+  int countPt  = 0;                               
+  Scalar x(0);                                    
+  Scalar y(0);                                    
   
   switch (operatorType) {
-    
-    // For VALUE outputValues has rank 2: the multi-index is [point][field]; use indexV
     case OPERATOR_VALUE:
       for (countPt=0; countPt<numPoints; countPt++) {
 #ifdef HAVE_INTREPID_DEBUG 
@@ -101,25 +97,14 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
         
-        // indexV[0] = point number
-        indexV[0] = countPt;
-        
-        // indexV[1] = basis function number:
-        indexV[1] = 0;
-        outputValues.setValue( (1.0 - x)*(1.0 - y)/4.0, indexV);
-        
-        indexV[1] = 1;
-        outputValues.setValue( (1.0 + x)*(1.0 - y)/4.0, indexV);
-        
-        indexV[1] = 2;
-        outputValues.setValue( (1.0 + x)*(1.0 + y)/4.0, indexV);
-        
-        indexV[1] = 3;
-        outputValues.setValue( (1.0 - x)*(1.0 + y)/4.0, indexV);
+        // Output container has rank 2. The indices are (P,F)
+        outputValues(countPt, 0) = (1.0 - x)*(1.0 - y)/4.0;
+        outputValues(countPt, 1) = (1.0 + x)*(1.0 - y)/4.0;
+        outputValues(countPt, 2) = (1.0 + x)*(1.0 + y)/4.0;
+        outputValues(countPt, 3) = (1.0 - x)*(1.0 + y)/4.0;
       }
       break;
       
-    // For GRAD and D1 outputValues has rank 3: the multi-index is [point][field][GRAD coordinate]; use indexD
     case OPERATOR_GRAD:
     case OPERATOR_D1:
       for (countPt=0; countPt<numPoints; countPt++) {
@@ -132,39 +117,21 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
         
-        // indexD[0] = point number
-        indexD[0] = countPt;
+        // Output container has rank 3. The indices are (P,F,D)
+        outputValues(countPt, 0, 0) = -(1.0 - y)/4.0;
+        outputValues(countPt, 0, 1) = -(1.0 - x)/4.0;
         
-        // indexD[1] = basis function number:
-        indexD[1] = 0;
+        outputValues(countPt, 1, 0) =  (1.0 - y)/4.0;
+        outputValues(countPt, 1, 1) = -(1.0 + x)/4.0;
         
-        // indexD[2] = partial derivative direction (0 -> d/dx; 1 -> d/dy):
-        indexD[2] = 0;
-        outputValues.setValue( -(1.0 - y)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue( -(1.0 - x)/4.0, indexD);
-        
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue(  (1.0 - y)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue( -(1.0 + x)/4.0, indexD);
-        
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(  (1.0 + y)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(  (1.0 + x)/4.0, indexD);
-        
-        indexD[1] = 3;
-        indexD[2] = 0;
-        outputValues.setValue( -(1.0 + y)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(  (1.0 - x)/4.0, indexD);
+        outputValues(countPt, 2, 0) =  (1.0 + y)/4.0;
+        outputValues(countPt, 2, 1) =  (1.0 + x)/4.0;
+  
+        outputValues(countPt, 3, 0) = -(1.0 + y)/4.0;
+        outputValues(countPt, 3, 1) =  (1.0 - x)/4.0;
       }
       break;
       
-    // For CURL outputValues has rank 3: the multi-index is [point][field][CURL coordinate]; use indexD      
     case OPERATOR_CURL:
       for (countPt=0; countPt<numPoints; countPt++) {
 #ifdef HAVE_INTREPID_DEBUG 
@@ -176,35 +143,18 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
         x = (inputPoints[countPt])[0];
         y = (inputPoints[countPt])[1];
         
-        // indexD[0] = point number
-        indexD[0] = countPt;
+        // Output container has rank 3. The indices are (P,F,D)
+        outputValues(countPt, 0, 0) = -(1.0 - x)/4.0;
+        outputValues(countPt, 0, 1) =  (1.0 - y)/4.0;
         
-        // indexD[1] = basis function number:
-        indexD[1] = 0;
+        outputValues(countPt, 1, 0) = -(1.0 + x)/4.0;
+        outputValues(countPt, 1, 1) = -(1.0 - y)/4.0;
         
-        // indexD[2] = CURL component: (0 -> d/dy; 1 -> -d/dx):
-        indexD[2] = 0;
-        outputValues.setValue( -(1.0 - x)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(  (1.0 - y)/4.0, indexD);
+        outputValues(countPt, 2, 0) =  (1.0 + x)/4.0;
+        outputValues(countPt, 2, 1) = -(1.0 + y)/4.0;
         
-        indexD[1] = 1;
-        indexD[2] = 0;
-        outputValues.setValue( -(1.0 + x)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue( -(1.0 - y)/4.0, indexD);
-        
-        indexD[1] = 2;
-        indexD[2] = 0;
-        outputValues.setValue(  (1.0 + x)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue( -(1.0 + y)/4.0, indexD);
-        
-        indexD[1] = 3;
-        indexD[2] = 0;
-        outputValues.setValue(  (1.0 - x)/4.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(  (1.0 + y)/4.0, indexD);
+        outputValues(countPt, 3, 0) =  (1.0 - x)/4.0;
+        outputValues(countPt, 3, 1) =  (1.0 + y)/4.0;
       }
       break;
       
@@ -212,7 +162,6 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
       // should have been caught already as an exception by outputValues.reset(...)
       break;
       
-    // For D2 outputValues has rank 3: the multi-index is [point][field][Dk enumeration]; use indexD      
     case OPERATOR_D2:
       for (countPt=0; countPt<numPoints; countPt++) {
 #ifdef HAVE_INTREPID_DEBUG 
@@ -221,48 +170,25 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_QUAD_I1_FEM_DEFAULT): Evaluation point is outside the QUAD reference cell");
 #endif
-        
-        // indexD[0] = point number
-        indexD[0] = countPt;
-        
-        // indexD[1] = basis function number:
-        indexD[1] = 0;
-        
-        // indexD[2] = Dk enumeration (0 -> {2,0}; 1 -> {1,1}; 2 -> {0,2}):
-        indexD[2] = 0;
-        outputValues.setValue(  0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(  0.25, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(  0.0, indexD);
+        // Output container has rank 3. The indices are (P,F,K) 
+        outputValues(countPt, 0, 0) =  0.0;
+        outputValues(countPt, 0, 1) =  0.25;
+        outputValues(countPt, 0, 2) =  0.0;
 
-        indexD[1] = 1;        
-        indexD[2] = 0;
-        outputValues.setValue(  0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue( -0.25, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(  0.0, indexD);
+        outputValues(countPt, 1, 0) =  0.0;
+        outputValues(countPt, 1, 1) = -0.25;
+        outputValues(countPt, 1, 2) =  0.0;
         
-        indexD[1] = 2;        
-        indexD[2] = 0;
-        outputValues.setValue(  0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue(  0.25, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(  0.0, indexD);    
+        outputValues(countPt, 2, 0) =  0.0;
+        outputValues(countPt, 2, 1) =  0.25;
+        outputValues(countPt, 2, 2) =  0.0;
         
-        indexD[1] = 3;        
-        indexD[2] = 0;
-        outputValues.setValue(  0.0, indexD);
-        indexD[2] = 1;
-        outputValues.setValue( -0.25, indexD);
-        indexD[2] = 2;
-        outputValues.setValue(  0.0, indexD);
+        outputValues(countPt, 3, 0) =  0.0;
+        outputValues(countPt, 3, 1) = -0.25;
+        outputValues(countPt, 3, 2) =  0.0;
       }
       break;
       
-      // For all 3rd and higher order derivatives, basis functions are zero  
     case OPERATOR_D3:
     case OPERATOR_D4:
     case OPERATOR_D5:
@@ -271,6 +197,8 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
+      
+      // Output container has rank 3. The indices are (P,F,K). All values are zero
       outputValues.storeZero();
       break;
       
@@ -297,7 +225,7 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
 
   
 template<class Scalar>
-void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&                  outputValues,
+void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(FieldContainer<Scalar>&                  outputValues,
                                                     const Teuchos::Array< Point<Scalar> >& inputPoints,
                                                     const Cell<Scalar>&                    cell) const {
   TEST_FOR_EXCEPTION( (true),
@@ -307,7 +235,7 @@ void Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getValues(VarContainer<Scalar>&      
 
 
 template<class Scalar>
-int Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
+inline int Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getNumLocalDof() const {
     return numDof_;   
 }
 
@@ -346,28 +274,28 @@ const Teuchos::Array<LocalDofTag> & Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getAll
 
 
 template<class Scalar>
-ECell Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getCellType() const {
+inline ECell Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getCellType() const {
   return CELL_QUAD;
 }
 
 
 
 template<class Scalar>
-EBasis Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getBasisType() const {
+inline EBasis Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getBasisType() const {
   return BASIS_FEM_DEFAULT;
 }
 
 
 
 template<class Scalar>
-ECoordinates Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
+inline ECoordinates Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getCoordinateSystem() const {
   return COORDINATES_CARTESIAN;
 }
 
 
 
 template<class Scalar>
-int Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getDegree() const {
+inline int Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>::getDegree() const {
   return 1;
 }
 

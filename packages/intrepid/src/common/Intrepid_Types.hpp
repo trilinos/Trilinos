@@ -774,10 +774,12 @@ namespace Intrepid {
 
 
 
-  /** \enum  Intrepid::EDataFormat
+  /** \todo Remove when sure not needed!
+    \enum  Intrepid::EDataFormat
       \brief Data format used when, e.g., calling getOperator
              and getFunctional methods of the Intrepid::LocalField interface.
   */
+  /*
   enum EDataFormat
   {
     DATA_SCALAR = 0,             
@@ -797,6 +799,7 @@ namespace Intrepid {
     }
     return retString;
   }
+   */
 
 
 

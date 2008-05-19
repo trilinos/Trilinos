@@ -52,7 +52,7 @@ namespace Intrepid {
     The local field interface relies on two member functions, <var>getOperator</var>
     and <var>getFunctional</var>, with varying signatures. Detailed info here ...
 */
-template<class Scalar, class ArrayType = LexContainer<Scalar> >
+template<class Scalar, class ArrayType = FieldContainer<Scalar> >
 class LocalForm0 : public LocalField<Scalar> {
   private:
 
@@ -60,66 +60,90 @@ class LocalForm0 : public LocalField<Scalar> {
   */
   const static EField                                                      fieldType_ = FIELD_FORM_0;
 
-  
   /** \brief Refcount pointer to a basis class for the native field (the <strong>native</strong> basis)
   */
   Teuchos::RCP<Basis<Scalar> >                                             basis_;
   
-  
-  /** \brief Type of the cell for which the native basis is defined
+  /** \brief Type of the cell for which the native basis is defined, i.e, the native cell type
   */
   ECell                                                                    basisCell_;
-  
   
   /** \brief The coordinate system for the native basis functions
   */
   ECoordinates                                                             basisCoordSystem_;
   
-  
   /** \brief Type of the native basis (FEM_DEFAULT, FVD_DEFAULT, etc)
   */
   EBasis                                                                   basisType_;
-  
   
   /** \brief Degree of the native basis functions
   */
   int                                                                      basisDegree_;
   
-  
   /** \brief Array, indexed by basis function Id, containing the DoF tags assigned to each basis function 
   */
   Teuchos::Array<LocalDofTag>                                              basisDofTags_;
-  
   
   /** \brief Dimension of the native basis, i.e., the number of basis functions
   */
   int                                                                      basisNumDofs_;
   
-  /** \brief A three-dimensional array of VarContainers whose leading dimension equals the number of
-    operator types in Intrepid. Initially the array is empty and is filled by values on demand, i.e.,
-    only when a particular set of values on particular subcells is requested by invocation of a method.
-    Specifically: <var>basisVals_[operatorType][subcellDim][subcellId]</var>  is a VarContainer that
-    stores basis functions evaluated at a set of cubature points such that
+  /** \brief A 3-dimensional ragged array of FieldContainer objects whose leading dimension equals the 
+    number of operator types in Intrepid and the 2nd and 3rd dimensions are the same as the 1st and 
+    2nd dimensions of the cubature_ array. The first dimension of this array is resized by the
+    constructor, the 2nd and 3rd are resized when the private getOperator(EOperator,int,int) is called
+    for a first time, by copying the dimensions from cubature_ array. In this way, basisVals_ has the
+    minimal dimensions needed to store basis values at the specified cubature poits. The FieldContainer
+    at <var>basisVals_[operatorType][dimIndex][subcellId]</var> is always empty after the above
+    resizings take place and is sized and filled with data only when this data is requested for a first
+    time. After such an event, this FieldContainer will contain values of the <strong>native</strong> 
+    basis functions evaluated at a set of cubature points where
     
     \li <var>operatorType</var> is the operator applied to the basis functions;
-    \li <var>subcellDim</var> is subcell dimension where the cubature points are located;
+    \li <var>dimIndex</var> is cell dim. minus dimension of the subcell with the cubature points;
     \li <var>subcellId</var> is the local order of the subcell (remember, subcells of a given
         dimension are implicitely ordered in the cell template)                                                        
     
-    Depending on <var>operatorType</var> the rank of the VarContainer at 
-    <var>basisVals_[operatorType][subcellDim][subcellId]</var> is 2 or 3
+    Depending on <var>operatorType</var> the rank of the FieldContainer at 
+    <var>basisVals_[operatorType][dimIndex][subcellId]</var> is 2 or 3
   */
-  Teuchos::Array<Teuchos::Array<Teuchos::Array<VarContainer<Scalar> > > >  basisVals_;
+  Teuchos::Array<Teuchos::Array<Teuchos::Array<FieldContainer<Scalar> > > >  basisVals_;
 
   
-  /** \brief Two-dimensional array of refcount pointers to cubature classes, one per subcell, i.e.,
+  /** \brief Two-dimensional ragged array of refcount pointers to subcell cubature classes. This array is
+    an input argument to the LocalForm0 constructor and should be filled according to the following rules:
     
-    \li <var>cubature_[0][0]</var> is the cell cubature class;
-    \li <var>cubature_[1][faceId]</var> is the cubature on the face with local <var>faceId</var>;
-    \li <var>cubature_[2][edgeId]</var> is the cubature on the edge with local <var>edgeId</var>.
-
-    For two-dimensional cells only the first two sets of cubatures are initialized because edges and
-    faces are the same 1-subcells.
+     - every subcell in the native cell can have its own cubature;
+     - if cell dimension is 3 and cubatures are provided for all subcells, including the native cell itself,  
+      -#  <var>cubature_[0][0]</var> is the cell cubature;
+      -# <var>cubature_[1][faceId]</var> is the cubature on the face with local <var>faceId</var>;
+      -# <var>cubature_[2][edgeId]</var> is the cubature on the edge with local <var>edgeId</var>;
+    
+    - if cell dimension is 2 and cubatures are provided for all subcells, including the native cell itself,  
+      -# <var>cubature_[0][0]</var> is the cell cubature;
+      -# <var>cubature_[1][subcellId]</var> is the cubature on 1-subcell with local <var>subcellId</var>;
+  
+    - cubatures can be provided only for selected subcell dimensions, e.g., faces. In this case, 
+      cubature_ array is always shaped using the <strong>minimal</strong> dimensions needed to store them.
+    
+    Examples: dimensions of cubature_ assuming  CELL_TET and different cubature allocations
+    
+    - if only native cell cubature is specified: <var>cubature_</var> has dimensions (1,1)
+      -#  <var>cubature_[0][0]</var> contains the cell cubature
+    
+    - if only edge cubatures are specified: <var>cubature_</var> has dimension 3;
+      -# <var>cubature_[0]</var> has dimension 0 (is empty);
+      -# <var>cubature_[1]</var> has dimension 0 (is empty)
+      -# <var>cubature_[2]</var> has dimension 6 and contains RCP's to 6 possibly different edge cubatures: \n
+         <var>cubature_[2][edgeId]</var> is a valid CELL_EDGE cubature for the edge with the specified edgeId 
+    
+    - if cell and edge cubatures are specified: <var>cubature_</var> has dimension 3;
+      -# <var>cubature_[0]</var> has dimension 1 and contains the cell cubature: \n
+         <var>cubature_[0][0]</var> is any valid CEL_TRI cubature;
+      -# <var>cubature_[1]</var> has dimension 0 (is empty)
+      -# <var>cubature_[2]</var> has dimension 6 and contains RCP's to 6 possibly different edge cubatures: \n
+         <var>cubature_[2][edgeId]</var> is a valid CELL_EDGE cubature for the edge with the specified edgeId  
+    
   */
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<Cubature<Scalar> > > >        cubature_;
   
@@ -165,11 +189,12 @@ class LocalForm0 : public LocalField<Scalar> {
   ECompEngine                                                              compEngine_;
   
     
-  /** \brief Returns const reference to the VarContainer at <var>basisVals_[primOp][subDim][subcellId]</var>. 
+  /** \brief Returns const reference to the FieldContainer at <var>basisVals_[primOp][dimIndex][subcellId]</var>. 
     This is a helper function which implements the logic for the on-demand computation of basis function
-    values at (preset) subcell cubature points. If the VarContainer at <var>basisVals_[primOp][subDim][subcellId]</var>
+    values at (preset) subcell cubature points. If the FieldContainer at <var>basisVals_[primOp][dimIndex][subcellId]</var>
     is empty it is filled with the appropriate values, otherwise, a const reference to that
-    VarContainer is returned directly without computing the values again.
+    FieldContainer is returned directly without computing the values again. Note that <var>basisVals_</var>
+    stores values using <var>dimIndex</var> defined as cell dimension - subcell dimension.
     
     \param primOp           [in]     - Input operator (primitive).
     \param subDim           [in]     - Dimension of subcells at whose cubature points the values are computed.
@@ -177,84 +202,122 @@ class LocalForm0 : public LocalField<Scalar> {
     
     \return
     - Output container of rank 2 or 3. For formatting details see documentation of the public method
-      getOperator(VarContainer<Scalar> &, const Teuchos::Array<Point<Scalar> > &, const EOperator)
+      getOperator(FieldContainer<Scalar> &, const Teuchos::Array<Point<Scalar> > &, const EOperator)
     */
-  const VarContainer<Scalar> & getOperator(const EOperator  primOp,
-                                           const int        subDim,
-                                           const int        subcellId);
+  const FieldContainer<Scalar> & getOperator(const EOperator  primOp,
+                                             const int        subDim,
+                                             const int        subcellId);
   
   
-  /** \brief Fills the Intrepid::LexContainer <var>values</var> with appropriately transformed 
-    (to physical cells) values of the specified operator applied to the <strong>native</strong> basis functions. 
+  /** \brief Returns a FieldContainer of rank 3,4 or 5 with properly transformed (to the physical cells of the 
+    <var>mCell</var> argument) reference values from <var>basisVals_[primOp][subcellDim][subcellId]</var>.
+    Recall that <var>basisVals_[primOp][subcellDim][subcellId]</var> stores values of the specified operator 
+    applied to the <strong>native</strong> basis functions and evaluated at the cubature point set
+    associated with the subcell with <var>subcellDim</var> and <var>subcellId</var>.
+    The rank of the output container, its dimensions and its multi-index are as follows:
+    \verbatim
+    |------------------|----------|-------------------|------------------------------|
+    |   output field   | its rank |   container rank  |     container multi-index    |
+    |------------------|----------|-------------------|------------------------------|
+    |      scalar      |     0    |         3         |     (C, P, F)                |
+    |------------------|----------|-------------------|------------------------------|
+    |      vector      |     1    |         4         |     (C, P, D, F)             |
+    |------------------|----------|-------------------|------------------------------|
+    |      tensor      |     2    |         5         |     (C, P, D, D, F)          |
+    |------------------|----------|-------------------|------------------------------|
+
+    |------|----------------------|--------------------------------------------------|
+    |      |         Index        |                        Dimension                 |
+    |------|----------------------|--------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains               |
+    |   P  |         point        |  0 <= P < num. cubature points on the subcell    |
+    |   D  |   field coordinate   |  0 <= D < dim. of the cell of the LocalField0    |
+    |   F  |         field        |  0 <= F < dim. of the native basis               |
+    |------|----------------------|--------------------------------------------------|
+    \endverbatim
+    \remarks
+    \li The type of <var>intDomain</var> implicitly defines the value of <var>subcellDim</var>. 
+    \li Number of cubature points for the specified subcell is  <var>numCubPoints_[dimIndex][subcellId]</var>
+    \li The field coordinate index (D) in this container preceedes the field index (F) in order to enable
+        utilization of BLAS. This index order corresponds to a column-major storage, per cell, of
+        the basis function values needed to form the integrals.
     
     \param transVals        [out]    - Output array.
     \param primOp           [in]     - Input operator (primitive).
     \param mCell            [in]     - Multicell.
-    \param intDomain        [in]     - Integration domain (line, surface, cell).
-    \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
+    \param reuseJacobians   [in]     - if true forces method to store Jacobian and integration measure values
                                        used to compute integrals in the MultiCell argument. Otherwise
-                                       all necessary for this method values are computed on the fly.
+                                       all necessary values for this method are computed on the fly.
+    \param intDomain        [in]     - Integration domain (line, surface, cell).
   */
-  void transformBasisVals(LexContainer<Scalar> &      transVals,
+  void transformBasisVals(FieldContainer<Scalar> &    transVals,
                           const EOperator             primOp,
                           MultiCell<Scalar> &         mCell,
                           const bool                  reuseJacobians,
                           const EIntegrationDomain    intDomain);
   
   
-  /** \briefFills the Intrepid::LexContainer <var>values</var> with appropriately transformed 
-    (to physical cells) values of the specified operator applied to <strong>auxiliary</strong> basis 
-    functions.
-    Acts on auxiliary basis.
+  /** \brief Returns a FieldContainer with the same type of values as the previous method but using 
+    reference values of the <strong>auxiliary</strong> basis from the specified <var>primOpField</var>.
     
     \param transVals        [out]    - Output array.
     \param primOp           [in]     - Input operator (primitive).
     \param primOpField      [in]     - Domain of primOp - specifies the <strong>auxiliary</strong> basis 
     \param mCell            [in]     - Multicell.
-    \param intDomain        [in]     - Integration domain (line, surface, cell).
     \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
                                         used to compute integrals in the MultiCell argument. Otherwise
                                         all necessary for this method values are computed on the fly.
+    \param intDomain        [in]     - Integration domain (line, surface, cell)
   */
-  void transformBasisVals(LexContainer<Scalar> &  transVals,
-                 const EOperator                  primOp,
-                 const LocalField<Scalar> &       primOpField,
-                 MultiCell<Scalar> &              mCell, 
-                 const bool                       reuseJacobians,
-                 const EIntegrationDomain         intDomain);
+  void transformBasisVals(FieldContainer<Scalar> &    transVals,
+                          const EOperator             primOp,
+                          const LocalField<Scalar> &  primOpField,
+                          MultiCell<Scalar> &         mCell, 
+                          const bool                  reuseJacobians,
+                          const EIntegrationDomain    intDomain);
   
   
-  /** \brief Fills the Intrepid::LexContainer <var>values</var> with appropriately transformed 
-    (to physical cells) values of the specified operator applied to the <strong>native</strong> basis functions. 
+  /** \brief Returns FieldContainer of the same rank as the input <var>transValues</var> container
+    with the weighted integration measure applied to the already transformed reference basis values.
     
     \param finalVals        [out]    - Output array with weighted measure applied to transformed values
     \param transVals        [in]     - Array with transformed basis function values.
     \param primOp           [in]     - Input operator (primitive).
     \param mCell            [in]     - Multicell.
-    \param intDomain        [in]     - Integration domain (line, surface, cell).
     \param reuseJacobians   [in]     - if true forces method to store Jacobian and measure values
                                        used to compute integrals in the MultiCell argument. Otherwise
                                        all necessary for this method values are computed on the fly.
+    \param intDomain        [in]     - Integration domain (line, surface, cell).
   */  
-  void applyWeightedMeasure(LexContainer<Scalar> &         finalVals,
-                            const LexContainer<Scalar> &   transVals,
-                            const EOperator                primOp,
-                            MultiCell<Scalar> &            mCell,
-                            const bool                     reuseJacobians,
-                            const EIntegrationDomain       intDomain);
+  void applyWeightedMeasure(FieldContainer<Scalar> &         finalVals,
+                            const FieldContainer<Scalar> &   transVals,
+                            const EOperator                  primOp,
+                            MultiCell<Scalar> &              mCell,
+                            const bool                       reuseJacobians,
+                            const EIntegrationDomain         intDomain);
   
   
-  /** \brief Performs numerical integration (note that geometric transformations
-    and integration weights have already been included in <var>leftValues</var>
-    and <var>rightValues</var>).
+  /** \brief Performs numerical integration (note that geometric transformations and integration weights 
+    have already been included in <var>leftValues</var> and <var>rightValues</var>). The output
+    is rank-3 FieldContainer representing discrete cell operators (matrices), one per cell. The
+    multi-index is (C,L,R) where
+    \verbatim
+    |-----|-------------------------|-----------------------------------------------|
+    |     |         Index           |                        Dimension              |
+    |-----|-------------------------|-----------------------------------------------|
+    |  C  |         cell            | 0 <= C < num. integration domains             |
+    |  L  | left basis (native)     | 0 <= L < dim. of the native LocalField0 basis |
+    |  R  | right basis (auxiliary) | 0 <= R < dim. of the auxiliary field basis    |
+    |-----|-------------------------|---`-------------------------------------------|
+    \endverbatim
 
-  \param outputValues     [out]     - Output array.
-  \param leftValues       [out]     - Left array.
-  \param rightValues      [out]     - Right array.
-*/
-  void integrate(LexContainer<Scalar> &        outputValues,
-                 const LexContainer<Scalar> &  leftValues,
-                 const LexContainer<Scalar> &  rightValues) const;
+    \param outputValues     [out]     - Output array: rank-3 container with multi-index (C,LBF,RBF)
+    \param leftValues       [in]      - Left array.
+    \param rightValues      [in]      - Right array.
+ */
+  void integrate(FieldContainer<Scalar> &        outputValues,
+                 const FieldContainer<Scalar> &  leftValues,
+                 const FieldContainer<Scalar> &  rightValues) const;
   
   public:
 
@@ -284,59 +347,66 @@ class LocalForm0 : public LocalField<Scalar> {
   */
   ~LocalForm0() {}
 
-
-  /** \brief Returns a VarContainer with the values of <var>primOp</var> applied to the FEM basis
-    functions, evaluated at the array <var>inputPoints</var> of <strong>reference</strong> points.
+  /** \brief Returns <var>ArrayType</var> with a multi-indexed quantity representing the values of a 
+    (primitive) operator <var>primOp</var> applied to FEM basis functions, evaluated at the array 
+    <var>inputPoints</var> of <strong>reference</strong> points. 
+    
     The context in which this interface function can be called is limited to FEM reconstructions 
     (i.e. via a reference cell). The function returns operator values <strong>decoupled from the 
-    geometry of a particular cell</strong> (untransformed values). 
+    geometry of a particular cell</strong> (untransformed values).  
     
-    Admissible <var>primOp</var> arguments and the format of the output container are as follows 
-    (see also VarContainer::getEnumeration for a detailed list of VarContainer shapes)
+    Admissible <var>primOp</var> arguments, rank and format of the output container are as follows 
+    (see FieldContainer::resize(int,int,EField,EOperator,int) for a full list of field/operator combination)
     \verbatim
     |--------------------|----------------------|----------------|
     |       primOp       |  outputValues format | container rank |
     |--------------------|----------------------|----------------|
-    |       VALUE        |    [P][F]            |       2        | 
+    |       VALUE        |      (P,F)           |       2        | 
     |--------------------|----------------------|----------------|
-    |     GRAD, D1       |    [P][F][D]         |       3        |
+    |     GRAD, D1       |      (P,F,D)         |       3        |
     |--------------------|----------------------|----------------|
-    |        CURL        |    [P][F][D]         |       3        |
+    |        CURL        |      (P,F,D)         |       3        |
     |--------------------|----------------------|----------------|
-    |        DIV         |    undefined         |       -        | 
+    |        DIV         |      undefined       |       -        | 
     |--------------------|----------------------|----------------|
-    |    D1,D2,..,D10    |    [P][F][K]         |       3        | 
+    |    D1,D2,..,D10    |      (P,F,K)         |       3        | 
     |--------------------|----------------------|----------------|
     
-Legend:
-    P -> point index            range: 0 <= P < numPoints = inputPoints.size()
-    F -> field index            range: 0 <= F < numFields = 4
-    D -> field component index  range: 0 <= D < spaceDim  = 2
-    K -> enumeration of Dk      range: 0 <= K < DkCardinality 
+    |------|----------------------|---------------------------|
+    |      |         Index        |         Dimension         |
+    |------|----------------------|---------------------------|
+    |   P  |         point        |  0 <= P < numPoints       |
+    |   F  |         field        |  0 <= F < numFields       |
+    |   D  |   field coordinate   |  0 <= D < spaceDim (= 2)  |
+    |   K  |   enumeration of Dk  |  0 <= K < DkCardinality   |
+    |------|----------------------|---------------------------|
     \endverbatim
     
-    \param outputValues   [out]         - VarContainer of rank 2 or 3 with the computed values
-    \param inputPoints     [in]         - evaluation points on the reference cell  
-    \param operatorType    [in]         - the operator being applied to the basis function    
-    
     \remarks 
+    \li The field index (F) in this container preceeded the field coordinate index (F). This choice
+    places field coordinates in a contiguous order and facilitates application of transformations.
     \li Enumeration of Dk (derivatives of total order k) follows the lexicographical order of 
     the partial derivatives; see getDkEnumeration() for details.
     
     \li For a particular FEM basis all Dk values may be zero for all k greater than some fixed
     integer value. Nevertheless, the output container for such Dk is still shaped using DkCardinality
     as an upper bound for the last index, i.e., the output container is filled with as many zeroes as 
-    there are partial derivatives of order k; see getDkCardinality. 
+    there are partial derivatives of order k; see getDkCardinality.     
+    
+    \param outputValues   [out]         - FieldContainer of rank 2 or 3 with the computed values
+    \param inputPoints     [in]         - evaluation points on the reference cell  
+    \param primOp          [in]         - the (primitive) operator being applied to the basis function    
   */
-  void getOperator(VarContainer<Scalar> &                  outputValues,
+  void getOperator(ArrayType &                             outputValues,
                    const Teuchos::Array<Point<Scalar> > &  inputPoints,
                    const EOperator                         primOp);
 
 
-  /** \brief  Returns a VarContainer with the values of <var>primOp</var>  applied to FEM or FVD 
-    basis functions, evaluated at the array <var>inputPoints</var> of <strong>physical</strong> points.
-    Admissible <var>primOp</var> arguments and the format of the output container are as in 
-    getOperator(VarContainer<Scalar> &, const Teuchos::Array<Point<Scalar> > &, const EOperator).
+  /** \brief  Returns <var>ArrayType</var> with a multi-indexed quantity representing the values of a 
+    (primitive) operator <var>primOp</var> applied to FEM or FVD basis functions, evaluated at the 
+    array <var>inputPoints</var> of <strong>physical</strong> points. Admissible <var>primOp</var> 
+    arguments and the format of the output container are as in 
+    getOperator(ArrayType &, const Teuchos::Array<Point<Scalar> > &, const EOperator).
     
     The context in which this interface function can be called is two-fold. For FEM reconstructions 
     (i.e. those based on a reference cell), the function returns the values of the operator applied 
@@ -349,48 +419,46 @@ Legend:
       \param primOp           [in]     - Input operator (primitive).
       \param cell             [in]     - Physical cell.
   */
-  void getOperator(VarContainer<Scalar> &                  outputValues,
-                   const Teuchos::Array<Point<Scalar> > &  inputPoints,
-                   const EOperator                         primOp,
-                   const Cell<Scalar> &                    cell);
+  void getOperator(ArrayType &                            outputValues,
+                   const Teuchos::Array<Point<Scalar> > & inputPoints,
+                   const EOperator                        primOp,
+                   const Cell<Scalar> &                   cell);
 
 
-  void getOperator(LexContainer<Scalar> &          outputValues,
-                   const EOperator                 leftOp,
-                   const EOperator                 rightOp,
-                   MultiCell<Scalar> &             mCell,
-                   const Teuchos::Array<Scalar> &  inputData,
-                   const EDataFormat               inputFormat,
-                   const bool                      reuseJacobians = false,
-                   const EIntegrationDomain        intDomain = INTEGRATION_DOMAIN_CELL);
+  void getOperator(ArrayType &                  outputValues,
+                   const EOperator              leftOp,
+                   const EOperator              rightOp,
+                   MultiCell<Scalar> &          mCell,
+                   const ArrayType &            inputData,
+                   const bool                   reuseJacobians = false,
+                   const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL);
   
   
-  void getOperator(ArrayType &                 outputValues,
-                   const EOperator             leftOp,
-                   const EOperator             rightOp,
-                   MultiCell <Scalar> &        mCell,
-                   const bool                  reuseJacobians = false,
-                   const EIntegrationDomain    intDomain = INTEGRATION_DOMAIN_CELL);
+  void getOperator(ArrayType &                  outputValues,
+                   const EOperator              leftOp,
+                   const EOperator              rightOp,
+                   MultiCell <Scalar> &         mCell,
+                   const bool                   reuseJacobians = false,
+                   const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL);
 
   
-  void getOperator(LexContainer<Scalar> &           outputValues,
-                   const EOperator                  leftOp,
-                   const EOperator                  rightOp,
-                   const LocalField<Scalar> &       rightOpField,
-                   MultiCell<Scalar> &              mCell,
-                   const Teuchos::Array<Scalar> &   inputData,
-                   const EDataFormat                inputFormat,
-                   const bool                       reuseJacobians = false,
-                   const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL);
+  void getOperator(ArrayType &                  outputValues,
+                   const EOperator              leftOp,
+                   const EOperator              rightOp,
+                   const LocalField<Scalar> &   rightOpField,
+                   MultiCell<Scalar> &          mCell,
+                   const ArrayType &            inputData,
+                   const bool                   reuseJacobians = false,
+                   const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL);
 
   
-  void getOperator(LexContainer<Scalar> &           outputValues,
-                   const EOperator                  leftOp,
-                   const EOperator                  rightOp,
-                   const LocalField<Scalar> &       rightOpField,
-                   MultiCell<Scalar> &              mCell,
-                    const bool                      reuseJacobians = false,
-                   const EIntegrationDomain         intDomain = INTEGRATION_DOMAIN_CELL);
+  void getOperator(ArrayType &                  outputValues,
+                   const EOperator              leftOp,
+                   const EOperator              rightOp,
+                   const LocalField<Scalar> &   rightOpField,
+                   MultiCell<Scalar> &          mCell,
+                    const bool                  reuseJacobians = false,
+                   const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL);
   
   
   EField getFieldType() const {return fieldType_;}

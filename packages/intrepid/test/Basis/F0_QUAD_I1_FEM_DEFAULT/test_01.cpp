@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   quadNodes[4] = Point<double>(  0.0,  0.0, FRAME_REFERENCE);
   
   try{
-    VarContainer<double> vals;
+    FieldContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
     Teuchos::RCP<Basis<double> > quadBasis = BFactory.create(FIELD_FORM_0, 
                                                              CELL_QUAD, 
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
   };
   
   try{
-    VarContainer<double> vals;
+    FieldContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
     Teuchos::RCP<Basis<double> > quadBasis = BFactory.create(FIELD_FORM_0, 
                                                              CELL_QUAD, 

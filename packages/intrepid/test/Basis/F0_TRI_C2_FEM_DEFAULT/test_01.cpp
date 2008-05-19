@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   triNodes[5] = Point<double>(  0.0,  0.5, FRAME_REFERENCE);
 
   try{
-    VarContainer<double> vals;
+    FieldContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
     Teuchos::RCP<Basis<double> > triBasis = BFactory.create(FIELD_FORM_0, 
                                                             CELL_TRI, 
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
   }; // courtesy of Mathematica
 
   try{
-    VarContainer<double> vals;
+    FieldContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
     Teuchos::RCP<Basis<double> > triBasis = BFactory.create(FIELD_FORM_0, 
                                                             CELL_TRI, 
