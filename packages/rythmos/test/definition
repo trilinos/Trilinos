@@ -709,7 +709,7 @@
     TESTS = ./simpleAdjoint/simpleAdjoint_amesos.exe;
     ARGS = --num-time-steps=10 --soln-verb-level=VERB_EXTREME,
       --params-file=./simpleAdjoint/simpleAdjoint_n4.xml --num-time-steps=10 --soln-verb-level=VERB_EXTREME;
-    COMM = SERIAL, MPI(1-4);
+    COMM = SERIAL, MPI(1);
     EXIT-STATUS = STRING-COMPARISON;
 }
 
