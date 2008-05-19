@@ -1,5 +1,7 @@
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialSpdDenseSolver.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
@@ -62,8 +64,28 @@ int main(int argc, char* argv[])
   std::cout << "|| My_Matrix ||_Inf = " << norm_inf << std::endl;
   std::cout << "|| My_Matrix ||_F = " << norm_fro << std::endl << std::endl;
 
+  // A matrix can be factored and solved using Teuchos::SerialDenseSolver.
+  Teuchos::SerialSpdDenseSolver<int,double> My_Solver;
+  Teuchos::SerialSymDenseMatrix<int,double> My_Matrix2( 3 );
+  My_Matrix2.random();
+  Teuchos::SerialDenseMatrix<int,double> X(3,1), B(3,1);
+  X.putScalar(1.0);
+  B.multiply( Teuchos::LEFT_SIDE, 1.0, My_Matrix2, X, 0.0 );
+  X.putScalar(0.0);  // Make sure the computed answer is correct.
+
+  int info = 0;
+  My_Solver.setMatrix( Teuchos::rcp( &My_Matrix2, false ) );
+  My_Solver.setVectors( Teuchos::rcp( &X, false ), Teuchos::rcp( &B, false ) );
+  info = My_Solver.factor();
+  if (info != 0)
+    std::cout << "Teuchos::SerialSpdDenseSolver::factor() returned : " << info << std::endl;
+  info = My_Solver.solve();
+  if (info != 0)
+    std::cout << "Teuchos::SerialSpdDenseSolver::solve() returned : " << info << std::endl;
+
   // A matrix can be sent to the output stream:
   std::cout<< My_Matrix << std::endl;
+  std::cout<< X << std::endl;
 
   return 0;
 }

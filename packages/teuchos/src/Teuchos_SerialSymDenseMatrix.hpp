@@ -313,12 +313,6 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
   */
   SerialSymDenseMatrix<OrdinalType, ScalarType>& operator-= (const SerialSymDenseMatrix<OrdinalType, ScalarType>& Source);
 
-  //! Scale \c this matrix by \c alpha; \c *this = \c alpha*\c *this.
-  /*!
-    \param alpha Scalar to multiply \e this by.
-    \return Integer error code, set to 0 if successful.
-  */
-
   //@}
 
   //! @name Comparison methods.
