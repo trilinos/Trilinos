@@ -8,6 +8,19 @@
     ARG-MASTER-PAIRS  = input1.xml:baseline1.txt;
 }
 
+(INSTALL) {
+    DESCEND_DIRS = YES;
+    DIRS = ../examples/BasicExamples,
+           ../examples/XML,
+           AztecSimple,
+           Communicator,
+           RefMaxwell,
+           MultiLevelPreconditioner_NonSym,
+           MultiLevelPreconditioner_Sym,
+           ML_Operator2Epetra_RowMatrix;
+    COMM = SERIAL, MPI(1-4);
+}
+
 (FRAMEWORK, MLExamples) {
     DESCEND_DIRS = YES;
     DIRS = ../examples/BasicExamples,
