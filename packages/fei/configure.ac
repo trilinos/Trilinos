@@ -403,12 +403,12 @@ fi
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#  #np# - These options can disable the tests and examples of a package.
-#  #np# - Packages that do not have tests or examples should #-out the
-#  #np# - option(s) that does (do) not apply.
+#  These options can disable the tests and examples of a package.
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for FEI package], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for FEI package], EXAMPLES, yes)
 
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+AM_CONDITIONAL(BUILD_EXAMPLES, example "X$ac_cv_use_examples" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories

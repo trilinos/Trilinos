@@ -38,8 +38,14 @@ else
 PETSC_DIR=
 endif
 
+if BUILD_EXAMPLES
+EXAMPLES=example
+else
+EXAMPLES=
+endif
+
 if BUILD_TESTS
-TESTS=test_utils test example utest_cases utest \
+TESTS=test_utils test utest_cases utest \
 	test/elemDOF_Aztec \
 	test/cr_lagrange_20quad \
 	test/cr_lagrange_20quad_AZLSC \
@@ -49,7 +55,7 @@ else
 TESTS=
 endif
 
-SUBDIRS=base $(TRILINOS_DIR) $(PETSC_DIR) $(TESTS)
+SUBDIRS=base $(TRILINOS_DIR) $(PETSC_DIR) $(TESTS) $(EXAMPLES)
 
 EXTRA_DIST = \
 	RELEASE_NOTES.txt

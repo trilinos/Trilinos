@@ -29,6 +29,9 @@
 /* Define to build with fei-epetra support enabled */
 #undef HAVE_EPETRA
 
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
