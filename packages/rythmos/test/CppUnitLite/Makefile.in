@@ -358,7 +358,7 @@ lib_LIBRARIES = $(CPPUNITLITE_LIB)
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
-include_HEADERS = $(RYTHMOS_H) 
+include_HEADERS = $(CPPUNITLITE_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
