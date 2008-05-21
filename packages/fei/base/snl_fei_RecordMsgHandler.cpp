@@ -259,7 +259,8 @@ int snl_fei::RecordMsgHandler::mergeMaskIDs(int srcProc, std::vector<int>& msg)
 	if (fieldMasks_[fm]->getMaskID() == maskID) mask = fieldMasks_[fm];
       }
       if (mask == NULL) {
-	FEI_CERR << "mergeMaskIDs didn't find mask" << FEI_ENDL;
+	FEI_CERR << "mergeMaskIDs didn't find mask for maskID="
+           << maskID<<FEI_ENDL;
 	ERReturn(-1);
       }
 

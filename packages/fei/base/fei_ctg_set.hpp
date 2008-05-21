@@ -285,11 +285,11 @@ class ctg_set {
 	  else {
 	    //insert a new range at insertPoint
 	    int nmove = len_-insertPoint;
-	    len_ += 2;
-	    if (len_ > highwatermark_) {
+	    if (len_+2 > highwatermark_) {
 	      highwatermark_ += alloc_incr_;
 	      expand_dataptr(highwatermark_);
 	    }
+	    len_ += 2;
 	    if (nmove > 0) {
 	      T* dest = dataptr_+insertPoint+2;
 	      T* src = dest - 2;
@@ -309,11 +309,11 @@ class ctg_set {
 
     //If we get to here, insertPoint >= len_, meaning we need to append
     //a new range.
-    len_ += 2;
-    if (len_ > highwatermark_) {
+    if (len_+2 > highwatermark_) {
       highwatermark_ += alloc_incr_;
       expand_dataptr(highwatermark_);
     }
+    len_ += 2;
     dataptr_[insertPoint] = item;
     dataptr_[insertPoint+1] = item+1;
 
@@ -374,11 +374,11 @@ class ctg_set {
           default: {// insert new range for item
             //insert a new range at insertPoint
             int nmove = len_-insertPoint;
-            len_ += 2;
-            if (len_ > highwatermark_) {
+            if (len_+2 > highwatermark_) {
               highwatermark_ += alloc_incr_;
               expand_dataptr(highwatermark_);
             }
+            len_ += 2;
 
             T* dest = dataptr_+insertPoint+2;
             T* src = dest - 2;
@@ -415,13 +415,13 @@ class ctg_set {
 
     //If we get to here, insertPoint >= len_, meaning we need to append
     //a new range.
-    len_ += 2;
-    if (len_ > highwatermark_) {
+    if (len_+2 > highwatermark_) {
       highwatermark_ += alloc_incr_;
       expand_dataptr(highwatermark_);
     }
     dataptr_[insertPoint] = item;
     dataptr_[insertPoint+1] = item+1;
+    len_ += 2;
   }
 
   /** insert2_dense_group -- not really implemented correctly */
@@ -503,9 +503,13 @@ class ctg_set {
  private:
   void expand_dataptr(int newlen)
   {
+    //on entry to this function, dataptr_ has length 'len_'.
+    //we assume newlen is greater than len_.
+    //after we create newptr with length 'newlen', we copy
+    //len_ positions from dataptr_ to newptr.
+
     T* newptr = new T[newlen];
     for(int i=0; i<len_; ++i) newptr[i] = dataptr_[i];
-//    memset(newptr+len_, 0, sizeof(T)*(newlen-len_));
     delete [] dataptr_;
     dataptr_ = newptr;
   }

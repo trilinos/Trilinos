@@ -587,7 +587,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
     int inoffset = 0;
     int incol = incols[inoffset];
-    if (incol == row) {
+    while (incol == row) {
       val[localRow] += coefs_i[indirect[inoffset++]];
       if (inoffset >= numCols) continue;
       incol = incols[inoffset];
@@ -602,6 +602,8 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     }
 
     rowCoefs[rowOffset++] += coefs_i[indirect[inoffset++]];
+
+    if (incols[inoffset] == tmp_array_[rowOffset-1]) --rowOffset;
 
     while(inoffset < numCols) {
       incol = incols[inoffset];
@@ -621,6 +623,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
       }
 
       rowCoefs[rowOffset++] += coefs_i[indirect[inoffset++]];
+      if (incols[inoffset] == tmp_array_[rowOffset-1]) --rowOffset;
     }
   }
 
@@ -683,6 +686,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
     }
 
     rowCoefs[offset++] += dtmp_array_[ioffset++];
+    if (incols[ioffset] == tmp_array_[offset-1]) --offset;
 
     while(ioffset < doffs) {
       int incol = incols[ioffset];
@@ -696,6 +700,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
         }
       }
       rowCoefs[offset++] += dtmp_array_[ioffset++];
+      if (incols[ioffset] == tmp_array_[offset-1]) --offset;
     }
 
     return(0);

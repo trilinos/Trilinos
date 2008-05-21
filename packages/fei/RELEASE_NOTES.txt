@@ -406,21 +406,27 @@ July 7 2005: version 2.14.00
  Jan 28 2008 minor version 2.22.01
   - add a missing end-quote for line 44 of fei_iostream.hpp. This was causing a
     compile error on just one platform surprisingly (intel 8.1).
-  - fixed a compile error that only showed up on Mac OS X, where fei_Pool_alloc.hpp
-    was missing a templated member 'construct'.
+  - fixed a compile error that only showed up on Mac OS X, where
+    fei_Pool_alloc.hpp was missing a templated member 'construct'.
 
  Feb 21 2008 minor version 2.22.02
-  - fixed a bug where the hasSlaveDof_ member of fei::Record wasn't initialized in
-    the constructor. This was causing some erroneous is_slave() queries in the
-    Aria application.
-  - added a call to AZ_manage_memory(AZ_CLEAR_ALL) in fei_Solver_AztecOO's destructor,
-    to make sure that Aztec cleans up any memory allocated with AZ_keep_info=1. This
-    cured some memory leaks seen by the Aria application.
-  - Fixed a compile-error in fei_Pool_alloc.hpp where the max_size() function was
-    not defined.
+  - fixed a bug where the hasSlaveDof_ member of fei::Record wasn't initialized
+    in the constructor. This was causing some erroneous is_slave() queries in
+    the Aria application.
+  - added a call to AZ_manage_memory(AZ_CLEAR_ALL) in fei_Solver_AztecOO's
+    destructor, to make sure that Aztec cleans up any memory allocated with
+    AZ_keep_info=1. This cured some memory leaks seen by the Aria application.
+  - Fixed a compile-error in fei_Pool_alloc.hpp where the max_size() function
+    was not defined.
 
- ??? ?? ???? minor version 2.22.03
-  - Fixed a few method signatures in fei::Matrix and derived classes for const-ness.
-    (Some methods which could have been const, weren't.) Also fixed similar issues
-    in fei::Vector and derived classes.
+ May 5 2008 minor version 2.22.03
+  - Fixed a few method signatures in fei::Matrix and derived classes for
+    const-ness. (Some methods which could have been const, weren't.) Also
+    fixed similar issues in fei::Vector and derived classes.
+  - Fixed some array-bounds-read errors in fei::ctg_set.
+
+ ??? ?? ???? minor version 2.22.04
+  - Fixed a bug in fei_AztecDMSR_Matrix.cpp where sumIntoRow wasn't handling
+    the case where an incoming list of column-indices contains repeated
+    indices.
 
