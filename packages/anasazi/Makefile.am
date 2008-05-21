@@ -58,7 +58,11 @@ EXTRA_DIST = bootstrap \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
        config/token-replace.pl doc/build_docs doc/Doxyfile doc/index.doc \
-       doc/groups.doc
+       doc/groups.doc \
+       util/ModeLaplace/CMakeLists.txt util/CMakeLists.txt \
+       CMakeLists.txt cmake/AnasaziConfig.cmake.in \
+       cmake/Anasazi_config.h.in test/CMakeLists.txt \
+       src/CMakeLists.txt example/CMakeLists.txt
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
