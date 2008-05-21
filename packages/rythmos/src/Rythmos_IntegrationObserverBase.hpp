@@ -2,7 +2,7 @@
 #ifndef RYTHMOS_INTEGRATION_OBSERVER_BASE_HPP
 #define RYTHMOS_INTEGRATION_OBSERVER_BASE_HPP
 
-#include "Rythmos_ConfigDefs.h"
+#include "Rythmos_Types.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
