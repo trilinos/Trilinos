@@ -65,6 +65,7 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CellTemplates.hpp \
   $(srcdir)/local/Intrepid_CubatureDirectDef.hpp \
   $(srcdir)/local/Intrepid_CubatureDirect.hpp \
+  $(srcdir)/local/Intrepid_CubatureTensor.hpp \
   $(srcdir)/local/Intrepid_Cubature.hpp \
   $(srcdir)/local/Intrepid_DefaultCubatureFactory.hpp \
   $(srcdir)/local/Intrepid_DefaultCubatureFactoryDef.hpp \
