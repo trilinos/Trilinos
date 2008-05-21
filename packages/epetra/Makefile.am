@@ -43,7 +43,11 @@ ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
-       config/token-replace.pl
+       config/token-replace.pl \
+       CMakeLists.txt cmake/Epetra_config.h.in \
+       cmake/EpetraConfig.cmake.in test/CMakeLists.txt \
+       src/CMakeLists.txt example/CMakeLists.txt
+
 
 ## #######################################################################
 ## Tools in the auxillary directory 
