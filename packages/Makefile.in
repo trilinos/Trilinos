@@ -169,7 +169,7 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = common/Doxyfile common/header.html common/footer.html \
-common/styles.css common/tag_files/keepme.txt
+common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 
 
 #AUX_DIST = config/install-sh config/missing config/mkinstalldirs

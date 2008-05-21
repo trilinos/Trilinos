@@ -44,7 +44,7 @@ ACLOCAL_AMFLAGS = -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = common/Doxyfile common/header.html common/footer.html \
-common/styles.css common/tag_files/keepme.txt
+common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 
 ## #######################################################################
 ## Tools in the auxillary directory 
