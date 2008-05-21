@@ -107,7 +107,11 @@ EXTRA_DIST = \
 	commonTools/refactoring/token-replace-r \
 	commonTools/refactoring/replace-tabs-with-spaces-r \
 	commonTools/refactoring/update-copyright-header.pl \
-	commonTools/refactoring/source_file_stats.py
+	commonTools/refactoring/source_file_stats.py \
+	CMakeLists.txt \
+	cmake/Trilinos_Add_Executable.cmake \
+	cmake/TrilinosConfig.cmake.in \
+	cmake/ConfigureMPI.cmake
 
 ## #######################################################################
 ## Tools in the auxillary directory 
