@@ -64,7 +64,10 @@ EXTRA_DIST = bootstrap \
 	refactoring/standard-C-CXX-header-upgrade.20070628.string-list \
 	refactoring/standard-C-CXX-header-upgrade.20070628.token-list \
 	refactoring/standard-C-CXX-header-upgrade-all-files.20070628.sh \
-	refactoring/standard-C-CXX-header-upgrade-single-file.20070628.sh
+	refactoring/standard-C-CXX-header-upgrade-single-file.20070628.sh \
+	CMakeLists.txt cmake/TeuchosConfig.cmake.in \
+	cmake/Teuchos_config.h.in test/CMakeLists.txt \
+	src/CMakeLists.txt example/CMakeLists.txt
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
