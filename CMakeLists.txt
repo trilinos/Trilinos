@@ -13,8 +13,8 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Setup paqckages to include ...
 SET(${PROJECT_NAME}_PACKAGES
- Epetra
  Teuchos
+ Epetra
  Anasazi
  RBGen
 )
