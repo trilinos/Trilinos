@@ -106,4 +106,4 @@ LIBS =
 
 
 # Add files to tarball that are not explictly know by autotools
-EXTRA_DIST = simpleAdjoint_n4.xml
+EXTRA_DIST = _simpleAdjoint_n4.xml
