@@ -630,7 +630,7 @@ template<class T>
 ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
 
 
-/* \brief Create an RCP with and also put in an embedded object.
+/** \brief Create an ArrayRCP with and also put in an embedded object.
  *
  * In this case the embedded object is destroyed (by setting to Embedded())
  * before the object at <tt>*p</tt> is destroyed.
@@ -638,7 +638,7 @@ ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
  * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
  * <tt>getNonconstEmbeddedObject()</tt>.
  *
- * \relates RCP
+ * \relates ArrayRCP
  */
 template<class T, class Embedded>
 ArrayRCP<T>
@@ -651,7 +651,7 @@ arcpWithEmbeddedObjPreDestroy(
   );
 
 
-/* \brief Create an RCP with and also put in an embedded object.
+/** \brief Create an ArrayRCP with and also put in an embedded object.
  *
  * In this case the embedded object is destroyed (by setting to Embedded())
  * after the object at <tt>*p</tt> is destroyed.
@@ -659,7 +659,7 @@ arcpWithEmbeddedObjPreDestroy(
  * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
  * <tt>getNonconstEmbeddedObject()</tt>.
  *
- * \relates RCP
+ * \relates ArrayRCP
  */
 template<class T, class Embedded>
 ArrayRCP<T>
@@ -672,7 +672,7 @@ arcpWithEmbeddedObjPostDestroy(
   );
 
 
-/* \brief Create an RCP with and also put in an embedded object.
+/** \brief Create an ArrayRCP with and also put in an embedded object.
  *
  * This function should be called when it is not important when the embedded
  * object is destroyed (by setting to Embedded()) with respect to when
@@ -681,7 +681,7 @@ arcpWithEmbeddedObjPostDestroy(
  * The embedded object can be extracted using <tt>getEmbeddedObj()</tt> and
  * <tt>getNonconstEmbeddedObject()</tt>.
  *
- * \relates RCP
+ * \relates ArrayRCP
  */
 template<class T, class Embedded>
 ArrayRCP<T>
@@ -1131,7 +1131,7 @@ Dealloc_T* get_optional_nonconst_dealloc( const ArrayRCP<T>& p );
  * <tt>arcpWithEmbeddedObjPreDestroy()</tt>,
  * <tt>arcpWithEmbeddedObjPostDestory()</tt>, or <tt>arcpWithEmbeddedObj()</tt>.
  *
- * \relates RCP
+ * \relates ArrayRCP
  */
 template<class TOrig, class Embedded, class T>
 const Embedded& getEmbeddedObj( const ArrayRCP<T>& p );
@@ -1141,7 +1141,7 @@ const Embedded& getEmbeddedObj( const ArrayRCP<T>& p );
  * <tt>arcpWithEmbeddedObjPreDestroy()</tt>,
  * <tt>arcpWithEmbeddedObjPostDestory()</tt>, or <tt>arcpWithEmbeddedObj()</tt>.
  *
- * \relates RCP
+ * \relates ArrayRCP
  */
 template<class TOrig, class Embedded, class T>
 Embedded& getNonconstEmbeddedObj( const ArrayRCP<T>& p );
