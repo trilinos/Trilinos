@@ -328,6 +328,19 @@ partial-clean:
 	find . -name "*.a" -exec rm {} \;
 	find . -name "*.exe" -exec rm {} \; 
 	find . -name "*.xml" -exec rm {} \; 
+	find . -name "*.pl" -exec rm {} \; 
+	find . -name "*.csh" -exec rm {} \; 
+	find . -name "*.sh" -exec rm {} \; 
+	find . -name "*.cua" -exec rm {} \; 
+	find . -name "*.rua" -exec rm {} \; 
+	find . -name "*.hb" -exec rm {} \; 
+	find . -name "*.mtx" -exec rm {} \; 
+	find . -name "*.mm" -exec rm {} \; 
+	find . -name "*.triU" -exec rm {} \; 
+	find . -name "*.triS" -exec rm {} \; 
+	find . -name "*.dat" -exec rm {} \; 
+	find . -name "*.m" -exec rm {} \; 
+	find . -name "*.grid" -exec rm {} \; 
 
 # 2007/07/18: rabartl: Above, a simple script makeall has to be used since a
 # for loop with shell variables is employed.  I tried to put the for look
