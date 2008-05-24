@@ -112,7 +112,7 @@ protected:
   //@{
 
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
 
   //@}
 
@@ -121,7 +121,7 @@ protected:
 
   /** \brief . */
   void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const VectorBase<Scalar> &x,
     VectorBase<Scalar> *y,
     const Scalar alpha,
@@ -134,11 +134,11 @@ protected:
   //@{
 
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
 
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
 
   //@}
@@ -148,7 +148,7 @@ protected:
 
   /** \brief . */
   SolveStatus<Scalar> solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const VectorBase<Scalar> &b,
     VectorBase<Scalar> *x,
     const SolveCriteria<Scalar> *solveCriteria

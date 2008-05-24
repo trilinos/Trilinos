@@ -36,7 +36,7 @@ template<class Scalar>
 void Thyra::unwrap(
   const LinearOpBase<Scalar>      &Op
   ,Scalar                         *scalar
-  ,ETransp                        *transp
+  ,EOpTransp                        *transp
   ,const LinearOpBase<Scalar>*    *origOp
   )
 {
@@ -64,7 +64,7 @@ template<class Scalar>
 void Thyra::unwrap(
   const Teuchos::RCP<const LinearOpBase<Scalar> >     &Op
   ,Scalar                                                     *scalar
-  ,ETransp                                                    *transp
+  ,EOpTransp                                                    *transp
   ,Teuchos::RCP<const LinearOpBase<Scalar> >          *origOp
   )
 {

@@ -78,7 +78,7 @@ void LinearOpScalarProd<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, 
 template<class Scalar>
 void LinearOpScalarProd<Scalar>::apply(
   const EuclideanLinearOpBase<Scalar>   &M
-  ,const ETransp                        M_trans
+  ,const EOpTransp                        M_trans
   ,const MultiVectorBase<Scalar>        &X
   ,MultiVectorBase<Scalar>              *Y
   ,const Scalar                         alpha

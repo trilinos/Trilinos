@@ -251,7 +251,7 @@ void DefaultInverseLinearOp<Scalar>::describe(
 
 
 template<class Scalar>
-bool DefaultInverseLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultInverseLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   assertInitialized();
   return solveSupports(*lows_.getConstObj(),M_trans);
@@ -260,7 +260,7 @@ bool DefaultInverseLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultInverseLinearOp<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
   const Scalar alpha,

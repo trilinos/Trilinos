@@ -132,7 +132,7 @@ public:
    */
   virtual void apply(
     const EuclideanLinearOpBase<Scalar>   &M
-    ,const ETransp                        M_trans
+    ,const EOpTransp                        M_trans
     ,const MultiVectorBase<Scalar>        &X
     ,MultiVectorBase<Scalar>              *Y
     ,const Scalar                         alpha

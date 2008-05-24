@@ -131,7 +131,7 @@ bool run_composite_linear_ops_tests(
 
     if(out.get()) *out << "\nUnwrapping origA to get non-persisting pointer to origA_1, scalar and transp ...\n";
     Scalar  scalar;
-    Thyra::ETransp transp;
+    Thyra::EOpTransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_1 = NULL;
     unwrap( *origA, &scalar, &transp, &origA_1 );
     TEST_FOR_EXCEPT( origA_1 == NULL );
@@ -157,7 +157,7 @@ bool run_composite_linear_ops_tests(
 
     if(out.get()) *out << "\nUnwrapping A1 to get non-persisting pointer to origA_2 ...\n";
     Scalar  scalar;
-    Thyra::ETransp transp;
+    Thyra::EOpTransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_2 = NULL;
     unwrap( *A1, &scalar, &transp, &origA_2 );
     TEST_FOR_EXCEPT( origA_2 == NULL );

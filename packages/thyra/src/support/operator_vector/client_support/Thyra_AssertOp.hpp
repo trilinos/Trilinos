@@ -112,7 +112,7 @@ enum EM_VS { VS_RANGE, VS_DOMAIN };
 template<class Scalar>
 const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
   const Thyra::LinearOpBase<Scalar>& M,
-  Thyra::ETransp M_trans,
+  Thyra::EOpTransp M_trans,
   EM_VS M_VS
   )
 {
@@ -257,12 +257,12 @@ namespace Thyra {
 template<class Scalar>
 void assertLinearOpPlusLinearOpNames(
   const std::string &funcName,
-  const LinearOpBase<Scalar> &M1, const ETransp M1_trans_in, const std::string &M1_name,
-  const LinearOpBase<Scalar> &M2, const ETransp M2_trans_in, const std::string &M2_name
+  const LinearOpBase<Scalar> &M1, const EOpTransp M1_trans_in, const std::string &M1_name,
+  const LinearOpBase<Scalar> &M2, const EOpTransp M2_trans_in, const std::string &M2_name
   )
 {
-  const ETransp M1_trans = real_trans(M1_trans_in);
-  const ETransp M2_trans = real_trans(M2_trans_in);
+  const EOpTransp M1_trans = real_trans(M1_trans_in);
+  const EOpTransp M2_trans = real_trans(M2_trans_in);
   std::ostringstream headeross;
   headeross
     << funcName << ":\n\n"
@@ -296,12 +296,12 @@ void assertLinearOpPlusLinearOpNames(
 template<class Scalar>
 void assertLinearOpTimesLinearOpNames(
   const std::string &funcName,
-  const LinearOpBase<Scalar> &M1, const ETransp M1_trans_in, const std::string &M1_name,
-  const LinearOpBase<Scalar> &M2, const ETransp M2_trans_in, const std::string &M2_name
+  const LinearOpBase<Scalar> &M1, const EOpTransp M1_trans_in, const std::string &M1_name,
+  const LinearOpBase<Scalar> &M2, const EOpTransp M2_trans_in, const std::string &M2_name
   )
 {
-  const ETransp M1_trans = real_trans(M1_trans_in);
-  const ETransp M2_trans = real_trans(M2_trans_in);
+  const EOpTransp M1_trans = real_trans(M1_trans_in);
+  const EOpTransp M2_trans = real_trans(M2_trans_in);
   std::ostringstream headeross;
   headeross
     << funcName << ":\n\n"

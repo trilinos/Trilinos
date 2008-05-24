@@ -52,7 +52,7 @@ public:
 
   /** \brief . */
   void euclideanApply(
-    const ETransp                     M_trans
+    const EOpTransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
     ,MultiVectorBase<Scalar>          *Y
     ,const Scalar                     alpha
@@ -70,7 +70,7 @@ protected:
    * arguments.
    */
   virtual void euclideanApply(
-    const ETransp                M_trans
+    const EOpTransp                M_trans
     ,const VectorBase<Scalar>    &x
     ,VectorBase<Scalar>          *y
     ,const Scalar                alpha

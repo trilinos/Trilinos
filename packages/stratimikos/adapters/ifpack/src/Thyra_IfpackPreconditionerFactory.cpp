@@ -80,7 +80,7 @@ bool IfpackPreconditionerFactory::isCompatible(
   ) const
 {
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp                                     epetraFwdOpTransp;
+  EOpTransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;
@@ -146,7 +146,7 @@ void IfpackPreconditionerFactory::initializePrec(
   // Unwrap and get the forward Epetra_Operator object
   //
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp                                     epetraFwdOpTransp;
+  EOpTransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;

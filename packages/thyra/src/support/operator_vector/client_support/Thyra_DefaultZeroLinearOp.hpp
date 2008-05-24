@@ -113,14 +113,14 @@ std::string DefaultZeroLinearOp<Scalar>::description() const
 // Overridden from SingleScalarLinearOpBase
 
 template<class Scalar>
-bool DefaultZeroLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultZeroLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return true;
 }
 
 template<class Scalar>
 void DefaultZeroLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha

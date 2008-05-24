@@ -44,7 +44,7 @@ namespace Thyra {
 template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::initialize(
   const Scalar &scalar
-  ,const ETransp &transp
+  ,const EOpTransp &transp
   ,const Teuchos::RCP<LinearOpBase<Scalar> > &Op
   )
 {
@@ -55,7 +55,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::initialize(
 template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::initialize(
   const Scalar &scalar
-  ,const ETransp &transp
+  ,const EOpTransp &transp
   ,const Teuchos::RCP<const LinearOpBase<Scalar> > &Op
   )
 {
@@ -202,7 +202,7 @@ Scalar DefaultScaledAdjointLinearOp<Scalar>::overallScalar() const
 
 
 template<class Scalar>
-ETransp DefaultScaledAdjointLinearOp<Scalar>::overallTransp() const
+EOpTransp DefaultScaledAdjointLinearOp<Scalar>::overallTransp() const
 {
   return overallTransp_;
 }
@@ -231,7 +231,7 @@ DefaultScaledAdjointLinearOp<Scalar>::getOrigOp() const
 
 
 template<class Scalar>
-bool DefaultScaledAdjointLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultScaledAdjointLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   assertInitialized();
   return Thyra::opSupported(
@@ -241,7 +241,7 @@ bool DefaultScaledAdjointLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::apply(
-  const ETransp M_trans
+  const EOpTransp M_trans
   ,const MultiVectorBase<Scalar> &X
   ,MultiVectorBase<Scalar> *Y
   ,const Scalar alpha
@@ -262,7 +262,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::apply(
 template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
   const Scalar &scalar
-  ,const ETransp &transp
+  ,const EOpTransp &transp
   ,const Teuchos::RCP<const LinearOpBase<Scalar> > &Op
   ,const bool isConst
   )
@@ -315,7 +315,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
       label << "adj";
       break;
     default:
-      TEST_FOR_EXCEPT("Invalid ETransp value!");
+      TEST_FOR_EXCEPT("Invalid EOpTransp value!");
   }
   label << "(" << Op_label << ")";
   this->setObjectLabel(label.str());

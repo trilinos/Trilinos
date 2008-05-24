@@ -373,7 +373,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
 
 template<class Scalar>
 bool DefaultBlockedLinearOp<Scalar>::opSupported(
-  ETransp M_trans
+  EOpTransp M_trans
   ) const
 {
   bool opSupported = true;
@@ -391,7 +391,7 @@ bool DefaultBlockedLinearOp<Scalar>::opSupported(
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::apply(
-  const ETransp M_trans
+  const EOpTransp M_trans
   ,const MultiVectorBase<Scalar> &X_in
   ,MultiVectorBase<Scalar> *Y_inout
   ,const Scalar alpha

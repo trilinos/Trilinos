@@ -51,7 +51,7 @@ public:
   void getEpetraOpView(
     const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
     ,Teuchos::RCP<Epetra_Operator>              *epetraOp
-    ,ETransp                                            *epetraOpTransp
+    ,EOpTransp                                            *epetraOpTransp
     ,EApplyEpetraOpAs                                   *epetraOpApplyAs
     ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
     ,double                                             *epetraOpScalar
@@ -60,7 +60,7 @@ public:
   void getEpetraOpView(
     const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
     ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
-    ,ETransp                                                  *epetraOpTransp
+    ,EOpTransp                                                  *epetraOpTransp
     ,EApplyEpetraOpAs                                         *epetraOpApplyAs
     ,EAdjointEpetraOp                                         *epetraOpAdjointSupport
     ,double                                                   *epetraOpScalar

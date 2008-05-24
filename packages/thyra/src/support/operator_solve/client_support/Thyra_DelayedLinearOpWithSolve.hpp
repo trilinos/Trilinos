@@ -181,7 +181,7 @@ void DelayedLinearOpWithSolve<Scalar>::informUpdatedVerbosityState() const
 
  
 template <class Scalar>
-bool DelayedLinearOpWithSolve<Scalar>::opSupported(ETransp M_trans) const
+bool DelayedLinearOpWithSolve<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return Thyra::opSupported(*fwdOp_,M_trans);
 }
@@ -189,7 +189,7 @@ bool DelayedLinearOpWithSolve<Scalar>::opSupported(ETransp M_trans) const
 
 template <class Scalar>
 void DelayedLinearOpWithSolve<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
     MultiVectorBase<Scalar> *Y,
   const Scalar alpha,
@@ -202,7 +202,7 @@ void DelayedLinearOpWithSolve<Scalar>::apply(
 
 template <class Scalar>
 bool DelayedLinearOpWithSolve<Scalar>::solveSupportsTrans(
-  ETransp M_trans
+  EOpTransp M_trans
   ) const
 {
   updateSolver();
@@ -212,7 +212,7 @@ bool DelayedLinearOpWithSolve<Scalar>::solveSupportsTrans(
 
 template <class Scalar>
 bool DelayedLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
   updateSolver();
@@ -222,7 +222,7 @@ bool DelayedLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
 
 template <class Scalar>
 void DelayedLinearOpWithSolve<Scalar>::solve(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B,
   MultiVectorBase<Scalar> *X,
   const int numBlocks,

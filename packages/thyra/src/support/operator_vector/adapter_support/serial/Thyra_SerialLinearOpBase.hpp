@@ -55,7 +55,7 @@ SerialLinearOpBase<Scalar>::domainScalarProdVecSpc() const
 
 template<class Scalar>
 void SerialLinearOpBase<Scalar>::euclideanApply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha
@@ -111,7 +111,7 @@ void SerialLinearOpBase<Scalar>::setDimensions(
 
 template<class Scalar>
 void SerialLinearOpBase<Scalar>::euclideanApply(
-  const ETransp                                     M_trans
+  const EOpTransp                                     M_trans
   ,const RTOpPack::ConstSubMultiVectorView<Scalar>          &X
   ,const RTOpPack::SubMultiVectorView<Scalar>   *Y
   ,const Scalar                                     alpha

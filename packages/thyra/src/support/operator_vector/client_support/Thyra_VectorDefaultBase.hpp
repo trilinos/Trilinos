@@ -453,7 +453,7 @@ void VectorDefaultBase<Scalar>::setSubVectorImpl( const RTOpPack::SparseSubVecto
 
 
 template<class Scalar>
-bool VectorDefaultBase<Scalar>::opSupported(ETransp M_trans) const
+bool VectorDefaultBase<Scalar>::opSupported(EOpTransp M_trans) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return ( ST::isComplex ? ( M_trans==NOTRANS || M_trans==CONJTRANS ) : true );
@@ -462,7 +462,7 @@ bool VectorDefaultBase<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void VectorDefaultBase<Scalar>::apply(
-  const ETransp                M_trans
+  const EOpTransp                M_trans
   ,const VectorBase<Scalar>    &x
   ,VectorBase<Scalar>          *y
   ,const Scalar                alpha

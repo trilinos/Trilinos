@@ -67,14 +67,14 @@ protected:
   /** @name Overridden from SingleScalarLinearOpBase */
   //@{
   /** \brief . */
-  bool opSupported(Thyra::ETransp M_trans) const;
+  bool opSupported(Thyra::EOpTransp M_trans) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpBase */
   //@{
   /** \brief . */
   void apply(
-    const Thyra::ETransp                                    M_trans
+    const Thyra::EOpTransp                                    M_trans
     ,const Thyra::VectorBase< std::complex<RealScalar> >    &x
     ,Thyra::VectorBase< std::complex<RealScalar> >          *y
     ,const std::complex<RealScalar>                         alpha
@@ -85,10 +85,10 @@ protected:
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(Thyra::ETransp M_trans) const;
+  bool solveSupportsTrans(Thyra::EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType
+    Thyra::EOpTransp M_trans, const Thyra::SolveMeasureType& solveMeasureType
     ) const;
   //@}
 
@@ -96,7 +96,7 @@ protected:
   //@{
   /** \brief . */
   Thyra::SolveStatus< std::complex<RealScalar> > solve(
-    const Thyra::ETransp                                             M_trans
+    const Thyra::EOpTransp                                             M_trans
     ,const Thyra::VectorBase< std::complex<RealScalar> >             &b
     ,Thyra::VectorBase< std::complex<RealScalar> >                   *x
     ,const Thyra::SolveCriteria< std::complex<RealScalar> >          *solveCriteria
@@ -141,7 +141,7 @@ ComplexFFTLinearOp<RealScalar>::domain() const
 // Overridden from SingleScalarLinearOpBase
 
 template<class RealScalar>
-bool ComplexFFTLinearOp<RealScalar>::opSupported(Thyra::ETransp M_trans) const
+bool ComplexFFTLinearOp<RealScalar>::opSupported(Thyra::EOpTransp M_trans) const
 {
   return ( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS );
 }
@@ -150,7 +150,7 @@ bool ComplexFFTLinearOp<RealScalar>::opSupported(Thyra::ETransp M_trans) const
 
 template<class RealScalar>
 void ComplexFFTLinearOp<RealScalar>::apply(
-  const Thyra::ETransp                                    M_trans
+  const Thyra::EOpTransp                                    M_trans
   ,const Thyra::VectorBase< std::complex<RealScalar> >    &x
   ,Thyra::VectorBase< std::complex<RealScalar> >          *y
   ,const std::complex<RealScalar>                         alpha
@@ -188,14 +188,14 @@ void ComplexFFTLinearOp<RealScalar>::apply(
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 template<class RealScalar>
-bool ComplexFFTLinearOp<RealScalar>::solveSupportsTrans(Thyra::ETransp M_trans) const
+bool ComplexFFTLinearOp<RealScalar>::solveSupportsTrans(Thyra::EOpTransp M_trans) const
 {
   return ( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS );
 }
 
 template<class RealScalar>
 bool ComplexFFTLinearOp<RealScalar>::solveSupportsSolveMeasureType(
-  Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType
+  Thyra::EOpTransp M_trans, const Thyra::SolveMeasureType& solveMeasureType
   ) const
 {
   return ( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS );
@@ -206,7 +206,7 @@ bool ComplexFFTLinearOp<RealScalar>::solveSupportsSolveMeasureType(
 template<class RealScalar>
 Thyra::SolveStatus< std::complex<RealScalar> >
 ComplexFFTLinearOp<RealScalar>::solve(
-  const Thyra::ETransp                                             M_trans
+  const Thyra::EOpTransp                                             M_trans
   ,const Thyra::VectorBase< std::complex<RealScalar> >             &b
   ,Thyra::VectorBase< std::complex<RealScalar> >                   *x
   ,const Thyra::SolveCriteria< std::complex<RealScalar> >          *solveCriteria

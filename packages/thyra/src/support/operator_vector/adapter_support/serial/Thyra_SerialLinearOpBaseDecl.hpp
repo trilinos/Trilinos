@@ -75,7 +75,7 @@ public:
 protected:
   // Override of the version of euclideanApply() that takes explicit vector data
   void euclideanApply(
-    const ETransp                                M_trans
+    const EOpTransp                                M_trans
     ,const RTOpPack::ConstSubVectorView<Scalar>          &x_in
     ,const RTOpPack::SubVectorView<Scalar>   *y_out
     ,const Scalar                                alpha
@@ -115,7 +115,7 @@ public:
 protected:
   // Override of the version of euclideanApply() that takes explicit vector data
   void euclideanApply(
-    const ETransp                                M_trans
+    const EOpTransp                                M_trans
     ,const RTOpPack::ConstSubVectorView<double>          &x_in
     ,const RTOpPack::SubVectorView<double>   *y_out
     ,const double                                alpha
@@ -177,7 +177,7 @@ public:
    * \anchor apply_multi_vec
    */
   void euclideanApply(
-    const ETransp                     M_trans
+    const EOpTransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
     ,MultiVectorBase<Scalar>          *Y
     ,const Scalar                     alpha
@@ -269,7 +269,7 @@ protected:
    * Instead, this function is called by the vector version of \ref apply_vec "euclideanApply()".
    */
   virtual void euclideanApply(
-    const ETransp                                M_trans
+    const EOpTransp                                M_trans
     ,const RTOpPack::ConstSubVectorView<Scalar>          &x
     ,const RTOpPack::SubVectorView<Scalar>   *y
     ,const Scalar                                alpha
@@ -297,7 +297,7 @@ protected:
    * override for this function in an attempt to improve performance.
    */
   virtual void euclideanApply(
-    const ETransp                                     M_trans
+    const EOpTransp                                     M_trans
     ,const RTOpPack::ConstSubMultiVectorView<Scalar>          &X
     ,const RTOpPack::SubMultiVectorView<Scalar>   *Y
     ,const Scalar                                     alpha

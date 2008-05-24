@@ -235,7 +235,7 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
 
 
 template<class Scalar>
-bool DefaultMultipliedLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultMultipliedLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   bool opSupported = true;
   for( int k = 0; k < static_cast<int>(Ops_.size()); ++k )
@@ -247,7 +247,7 @@ bool DefaultMultipliedLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha

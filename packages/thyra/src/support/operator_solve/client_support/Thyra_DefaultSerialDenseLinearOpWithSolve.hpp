@@ -98,7 +98,7 @@ DefaultSerialDenseLinearOpWithSolve<Scalar>::domain() const
 
 template<class Scalar>
 bool DefaultSerialDenseLinearOpWithSolve<Scalar>::opSupported(
-  ETransp M_trans) const
+  EOpTransp M_trans) const
 {
   return Thyra::opSupported(*M_, M_trans);
 }
@@ -106,7 +106,7 @@ bool DefaultSerialDenseLinearOpWithSolve<Scalar>::opSupported(
 
 template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolve<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
   const Scalar alpha,
@@ -122,7 +122,7 @@ void DefaultSerialDenseLinearOpWithSolve<Scalar>::apply(
 
 template<class Scalar>
 bool DefaultSerialDenseLinearOpWithSolve<Scalar>::solveSupportsTrans(
-  ETransp M_trans) const
+  EOpTransp M_trans) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return ( ST::isComplex ? ( M_trans!=CONJ ) : true );
@@ -131,7 +131,7 @@ bool DefaultSerialDenseLinearOpWithSolve<Scalar>::solveSupportsTrans(
 
 template<class Scalar>
 bool DefaultSerialDenseLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType) const
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   // We support all solve measures since we are a direct solver
   return this->solveSupportsTrans(M_trans);
@@ -140,7 +140,7 @@ bool DefaultSerialDenseLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
 
 template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolve<Scalar>::solve(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B,
   MultiVectorBase<Scalar> *X,
   const int numBlocks,
@@ -189,7 +189,7 @@ template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolve<Scalar>::backsolve(
   const RTOpPack::ConstSubMultiVectorView<Scalar> &LU,
   const ArrayView<const int> ipiv,
-  const ETransp transp,
+  const EOpTransp transp,
   const MultiVectorBase<Scalar> &B,
   const Ptr<MultiVectorBase<Scalar> > &X
   )

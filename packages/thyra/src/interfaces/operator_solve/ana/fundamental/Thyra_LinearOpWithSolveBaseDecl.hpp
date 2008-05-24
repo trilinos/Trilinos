@@ -523,7 +523,7 @@ public:
 template<class Scalar>
 bool solveSupports(
   const LinearOpWithSolveBase<Scalar>   &A
-  ,const ETransp                        A_trans
+  ,const EOpTransp                        A_trans
   )
 {
   if( real_trans(A_trans) == NOTRANS ) {
@@ -545,7 +545,7 @@ bool solveSupports(
 template<class Scalar>
 bool solveSupportsSolveMeasureType(
   const LinearOpWithSolveBase<Scalar> &A,
-  const ETransp A_trans,
+  const EOpTransp A_trans,
   const SolveMeasureType &solveMeasureType
   )
 {
@@ -570,7 +570,7 @@ bool solveSupportsSolveMeasureType(
 template<class Scalar>
 void solve(
   const LinearOpWithSolveBase<Scalar> &M,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B,
   MultiVectorBase<Scalar> *X,
   const int numBlocks,
@@ -603,7 +603,7 @@ template<class Scalar>
 SolveStatus<Scalar>
 solve(
   const LinearOpWithSolveBase<Scalar>   &A
-  ,const ETransp                        A_trans
+  ,const EOpTransp                        A_trans
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
   ,const SolveCriteria<Scalar>          *solveCriteria = NULL

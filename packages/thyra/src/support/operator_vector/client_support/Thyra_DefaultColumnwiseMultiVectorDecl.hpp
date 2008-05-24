@@ -168,7 +168,7 @@ protected:
    * <tt>NOTRANS</tt> and <tt>CONJTRANS</tt> and for real types returns true
    * for all values of <tt>M_trans</tt>.
    */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
 
   /** \brief This function is implemented in terms of the multi-vector
    * <tt>applyOp()</tt> function.
@@ -187,7 +187,7 @@ protected:
    * to be with a little work.
    */
   void apply(
-    const ETransp                M_trans
+    const EOpTransp                M_trans
     ,const VectorBase<Scalar>    &x
     ,VectorBase<Scalar>          *y
     ,const Scalar                alpha

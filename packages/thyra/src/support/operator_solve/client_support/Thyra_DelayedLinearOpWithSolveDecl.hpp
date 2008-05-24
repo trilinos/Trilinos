@@ -118,10 +118,10 @@ protected:
   //@{
 
   /** \brief . */
-  virtual bool opSupported(ETransp M_trans) const;
+  virtual bool opSupported(EOpTransp M_trans) const;
   /** \brief . */
   virtual void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     MultiVectorBase<Scalar> *Y,
     const Scalar alpha,
@@ -134,14 +134,14 @@ protected:
   //@{
 
   /** \brief . */
-  virtual bool solveSupportsTrans(ETransp M_trans) const;
+  virtual bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
   virtual bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
   /** \brief . */
   virtual void solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &B,
     MultiVectorBase<Scalar> *X,
     const int numBlocks,

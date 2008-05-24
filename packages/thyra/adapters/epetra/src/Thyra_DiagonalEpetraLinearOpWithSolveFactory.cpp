@@ -50,7 +50,7 @@ bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
   if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(&*fwdOp)) )
     return false;
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp                                     epetraFwdOpTransp;
+  EOpTransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   eFwdOp->getEpetraOpView(
@@ -79,7 +79,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
   const EpetraLinearOpBase &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp                                     epetraFwdOpTransp;
+  EOpTransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   eFwdOp.getEpetraOpView(

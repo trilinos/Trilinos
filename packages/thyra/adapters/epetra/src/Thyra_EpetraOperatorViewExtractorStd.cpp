@@ -38,7 +38,7 @@ namespace Thyra {
 bool EpetraOperatorViewExtractorStd::isCompatible( const LinearOpBase<double> &fwdOp ) const
 {
   double                     wrappedScalar = 0.0;
-  ETransp                    wrappedTransp = NOTRANS;
+  EOpTransp                    wrappedTransp = NOTRANS;
   const LinearOpBase<double> *wrappedFwdOp = NULL;
   ::Thyra::unwrap(fwdOp,&wrappedScalar,&wrappedTransp,&wrappedFwdOp);
   const EpetraLinearOpBase *eFwdOp = NULL;
@@ -50,7 +50,7 @@ bool EpetraOperatorViewExtractorStd::isCompatible( const LinearOpBase<double> &f
 void EpetraOperatorViewExtractorStd::getEpetraOpView(
   const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
   ,Teuchos::RCP<Epetra_Operator>              *epetraOp
-  ,ETransp                                            *epetraOpTransp
+  ,EOpTransp                                            *epetraOpTransp
   ,EApplyEpetraOpAs                                   *epetraOpApplyAs
   ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
   ,double                                             *epetraOpScalar
@@ -64,7 +64,7 @@ void EpetraOperatorViewExtractorStd::getEpetraOpView(
 void EpetraOperatorViewExtractorStd::getEpetraOpView(
   const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
   ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
-  ,ETransp                                                  *epetraOpTransp
+  ,EOpTransp                                                  *epetraOpTransp
   ,EApplyEpetraOpAs                                         *epetraOpApplyAs
   ,EAdjointEpetraOp                                         *epetraOpAdjointSupport
   ,double                                                   *epetraOpScalar
@@ -77,12 +77,12 @@ void EpetraOperatorViewExtractorStd::getEpetraOpView(
   TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
 #endif // TEUCHOS_DEBUG
   double                                              wrappedFwdOpScalar = 0.0;
-  ETransp                                             wrappedFwdOpTransp = NOTRANS;
+  EOpTransp                                             wrappedFwdOpTransp = NOTRANS;
   Teuchos::RCP<const LinearOpBase<double> >   wrappedFwdOp; 
   unwrap(fwdOp,&wrappedFwdOpScalar,&wrappedFwdOpTransp,&wrappedFwdOp);
   Teuchos::RCP<const EpetraLinearOpBase>
     epetraFwdOp = Teuchos::rcp_dynamic_cast<const EpetraLinearOpBase>(wrappedFwdOp,true);
-  ETransp epetra_epetraOpTransp;
+  EOpTransp epetra_epetraOpTransp;
   epetraFwdOp->getEpetraOpView(epetraOp,&epetra_epetraOpTransp,epetraOpApplyAs,epetraOpAdjointSupport);
   *epetraOpTransp = trans_trans(real_trans(epetra_epetraOpTransp),wrappedFwdOpTransp);
   *epetraOpScalar = wrappedFwdOpScalar;

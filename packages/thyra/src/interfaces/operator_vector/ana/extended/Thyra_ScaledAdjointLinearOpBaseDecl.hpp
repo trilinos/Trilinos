@@ -47,7 +47,7 @@ operator <tt>M</tt> of the form:
 
 where <tt>Op</tt> is another <tt>LinearOpBase</tt> object, <tt>scalar</tt> is
 a <tt>Scalar</tt>, and the operation <tt>op(Op)</tt> is specified by a
-<tt>ETransp</tt> and is given as <tt>op(Op) = Op</tt> (<tt>NOTRANS</tt>), or
+<tt>EOpTransp</tt> and is given as <tt>op(Op) = Op</tt> (<tt>NOTRANS</tt>), or
 <tt>op(Op) = Op^T</tt> (<tt>TRANS</tt>), or <tt>op(Op) = Op^H</tt>
 (<tt>CONJTRANS</tt>).
 
@@ -70,7 +70,7 @@ public:
 
   /** \brief Return the overall transpose (adjoint) enum.
    */
-  virtual ETransp overallTransp() const = 0;
+  virtual EOpTransp overallTransp() const = 0;
 
   /** \brief Return the non-const original linear operator <tt>origOp</tt>.
    *
@@ -122,7 +122,7 @@ template<class Scalar>
 void unwrap(
   const LinearOpBase<Scalar>      &Op
   ,Scalar                         *scalar
-  ,ETransp                        *transp
+  ,EOpTransp                        *transp
   ,const LinearOpBase<Scalar>*    *origOp
   );
 
@@ -162,7 +162,7 @@ template<class Scalar>
 void unwrap(
   const Teuchos::RCP<const LinearOpBase<Scalar> >     &Op
   ,Scalar                                                     *scalar
-  ,ETransp                                                    *transp
+  ,EOpTransp                                                    *transp
   ,Teuchos::RCP<const LinearOpBase<Scalar> >          *origOp
   );
 

@@ -132,7 +132,7 @@ public:
    */
   void initialize(
     const RCP<Epetra_Operator> &op,
-    ETransp opTrans = NOTRANS,
+    EOpTransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
     EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
     const RCP<const VectorSpaceBase<Scalar> > &range = Teuchos::null,
@@ -191,7 +191,7 @@ public:
     const RCP<const VectorSpaceBase<Scalar> > &range,
     const RCP<const VectorSpaceBase<Scalar> > &domain,
     const RCP<Epetra_Operator> &op,
-    ETransp opTrans = NOTRANS,
+    EOpTransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
     EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED
     );
@@ -215,7 +215,7 @@ public:
    */
   void uninitialize(
     RCP<Epetra_Operator> *op= NULL,
-    ETransp *opTrans = NULL,
+    EOpTransp *opTrans = NULL,
     EApplyEpetraOpAs *applyAs = NULL,
     EAdjointEpetraOp *adjointSupport = NULL,
     RCP<const VectorSpaceBase<Scalar> > *range = NULL,
@@ -256,14 +256,14 @@ public:
   /** \brief . */
   void getEpetraOpView(
     RCP<Epetra_Operator> *epetraOp,
-    ETransp *epetraOpTransp,
+    EOpTransp *epetraOpTransp,
     EApplyEpetraOpAs *epetraOpApplyAs,
     EAdjointEpetraOp *epetraOpAdjointSupport
     );
   /** \brief . */
   void getEpetraOpView(
     RCP<const Epetra_Operator> *epetraOp,
-    ETransp *epetraOpTransp,
+    EOpTransp *epetraOpTransp,
     EApplyEpetraOpAs *epetraOpApplyAs,
     EAdjointEpetraOp *epetraOpAdjointSupport
     ) const;
@@ -274,7 +274,7 @@ public:
   //@{
 
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   
   //@}
   
@@ -287,7 +287,7 @@ public:
   RCP< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief . */
   void euclideanApply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     MultiVectorBase<Scalar> *Y,
     const Scalar alpha,
@@ -335,7 +335,7 @@ protected:
   virtual RCP< const SpmdVectorSpaceBase<Scalar> > 
   allocateDomain(
     const RCP<Epetra_Operator> &op, 
-    ETransp op_trans 
+    EOpTransp op_trans 
     ) const; 
   
   /** \brief Allocate the range space of the operator.
@@ -351,7 +351,7 @@ protected:
   virtual RCP< const SpmdVectorSpaceBase<Scalar> >
   allocateRange( 
     const RCP<Epetra_Operator> &op, 
-    ETransp op_trans 
+    EOpTransp op_trans 
     ) const; 
 
   //@}
@@ -363,7 +363,7 @@ private:
 
   bool isFullyInitialized_;
   RCP<Epetra_Operator> op_;
-  ETransp opTrans_;
+  EOpTransp opTrans_;
   EApplyEpetraOpAs applyAs_;
   EAdjointEpetraOp adjointSupport_;
   RCP< const SpmdVectorSpaceBase<Scalar> > range_;
@@ -401,7 +401,7 @@ partialNonconstEpetraLinearOp(
   const RCP<const VectorSpaceBase<double> > &range,
   const RCP<const VectorSpaceBase<double> > &domain,
   const RCP<Epetra_Operator> &op,
-  ETransp opTrans = NOTRANS,
+  EOpTransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED
   )
@@ -423,7 +423,7 @@ inline
 RCP<EpetraLinearOp>
 nonconstEpetraLinearOp(
   const RCP<Epetra_Operator> &op,
-  ETransp opTrans = NOTRANS,
+  EOpTransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP< const VectorSpaceBase<double> > &range = Teuchos::null,
@@ -447,7 +447,7 @@ inline
 RCP<const EpetraLinearOp>
 epetraLinearOp(
   const RCP<const Epetra_Operator> &op,
-  ETransp opTrans = NOTRANS,
+  EOpTransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
@@ -473,7 +473,7 @@ RCP<EpetraLinearOp>
 nonconstEpetraLinearOp(
   const RCP<Epetra_Operator> &op,
   const std::string &label,
-  ETransp opTrans = NOTRANS,
+  EOpTransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
@@ -499,7 +499,7 @@ RCP<const EpetraLinearOp>
 epetraLinearOp(
   const RCP<const Epetra_Operator> &op,
   const std::string &label,
-  ETransp opTrans = NOTRANS,
+  EOpTransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP< const SpmdVectorSpaceBase<double> > &range = Teuchos::null,

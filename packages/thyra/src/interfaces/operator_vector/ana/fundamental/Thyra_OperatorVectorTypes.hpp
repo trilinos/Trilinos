@@ -76,11 +76,14 @@ using Teuchos::TypeNameTraits;
 // Basic types
 //
 
+
 /// Type for the dimension of a vector space
 typedef Teuchos::Range1D::Index  Index;
 
+
 /// Type for a range of indices
 typedef Teuchos::Range1D   Range1D;
+
 
 /** \brief Enumeration for determining how a linear operator is applied.
  */
@@ -89,7 +92,8 @@ enum EConj {
   ,CONJ_ELE       ///< Use the linear operator with conjugate elements.
 };
 
-/** \brief Return a string name for a <tt>ETransp</tt> value.
+
+/** \brief Return a string name for a <tt>EOpTransp</tt> value.
  */
 inline
 const char* toString(EConj conj)
@@ -102,20 +106,33 @@ const char* toString(EConj conj)
   return "BAD"; // Should never be called!
 }
 
-/** \brief Enumeration for determining how a linear operator (with a single
-    scalar * type) is applied.
-*/
-enum ETransp {
-  NOTRANS     ///< Use the non-transposed operator
-  ,CONJ       ///< Use the non-transposed operator with complex-conjugate elements (same as <tt>NOTRANS</tt> for real scalar types)
-  ,TRANS      ///< Use the transposed operator 
-  ,CONJTRANS  ///< Use the transposed operator with complex-conjugate clements (same as <tt>TRANS</tt> for real scalar types)
+
+/** \brief Enumeration for determining how a linear operator is applied.
+ */
+enum EOpTransp {
+  /** \brief Use the non-transposed operator. */
+  NOTRANS,
+  /** \brief Use the non-transposed operator with complex-conjugate elements
+   * (same as <tt>NOTRANS</tt> for real scalar types).
+   */
+  CONJ,
+  /** \brief Use the transposed operator. */ 
+  TRANS,
+  /** \brief Use the transposed operator with complex-conjugate clements (same
+   * as <tt>TRANS</tt> for real scalar types).
+   */
+  CONJTRANS
 };
 
-/** \brief Return a string name for a <tt>ETransp</tt> value.
+
+/** \brief Deprecated. */
+typedef EOpTransp ETransp;
+
+
+/** \brief Return a string name for a <tt>EOpTransp</tt> value.
  */
 inline
-const char* toString(ETransp transp)
+const char* toString(EOpTransp transp)
 {
   switch(transp) {
     case NOTRANS:    return "NOTRANS";
@@ -127,11 +144,12 @@ const char* toString(ETransp transp)
   return "BAD"; // Should never be called!
 }
 
+
 /** \brief Return <tt>NOTRANS</tt> or <tt>TRANS</tt> for real scalar valued
  * operators and this also is used for determining structural transpose.
  */
 inline
-ETransp real_trans(ETransp transp)
+EOpTransp real_trans(EOpTransp transp)
 {
   switch(transp) {
     case NOTRANS:    return NOTRANS;
@@ -143,10 +161,11 @@ ETransp real_trans(ETransp transp)
   return NOTRANS; // Will never be called!
 }
 
-/** \brief Perform a not operation on an ETransp value
+
+/** \brief Perform a not operation on an EOpTransp value
  */
 inline 
-ETransp not_trans( ETransp transp )
+EOpTransp not_trans( EOpTransp transp )
 {
   switch(transp) {
     case NOTRANS:    return TRANS;
@@ -158,10 +177,11 @@ ETransp not_trans( ETransp transp )
   return NOTRANS; // Will never be called!
 }
 
+
 /** \brief Combine two transpose arguments
  */
 inline
-ETransp trans_trans( ETransp trans1, ETransp trans2 )
+EOpTransp trans_trans( EOpTransp trans1, EOpTransp trans2 )
 {
   if( trans1 == trans2 )
     return NOTRANS;
@@ -180,10 +200,11 @@ ETransp trans_trans( ETransp trans1, ETransp trans2 )
   return NOTRANS; // Will never be executed!
 }
 
-/** \brief Convert from <tt>ETransp</tt> to <tt>EConj</tt>.
+
+/** \brief Convert from <tt>EOpTransp</tt> to <tt>EConj</tt>.
  */
 inline
-EConj transToConj( ETransp trans )
+EConj transToConj( EOpTransp trans )
 {
   switch(trans) {
     case NOTRANS:    return NONCONJ_ELE;
@@ -195,10 +216,10 @@ EConj transToConj( ETransp trans )
   return NONCONJ_ELE; // Will never be called!
 }
 
-/** \brief Convert from <tt>EConj</tt> to <tt>ETransp</tt> for forward apply.
+/** \brief Convert from <tt>EConj</tt> to <tt>EOpTransp</tt> for forward apply.
  */
 inline
-ETransp applyConjToTrans( EConj conj ) {
+EOpTransp applyConjToTrans( EConj conj ) {
   switch(conj) {
     case NONCONJ_ELE: return NOTRANS;
     case CONJ_ELE:    return CONJ;
@@ -207,10 +228,11 @@ ETransp applyConjToTrans( EConj conj ) {
   return NOTRANS; // Will never be called!
 }
 
-/** \brief Convert from <tt>EConj</tt> to <tt>ETransp</tt> for forward apply.
+
+/** \brief Convert from <tt>EConj</tt> to <tt>EOpTransp</tt> for forward apply.
  */
 inline
-ETransp applyTransposeConjToTrans( EConj conj ) {
+EOpTransp applyTransposeConjToTrans( EConj conj ) {
   switch(conj) {
     case NONCONJ_ELE: return TRANS;
     case CONJ_ELE:    return CONJTRANS;
@@ -227,24 +249,30 @@ enum EViewType {
   ,VIEW_TYPE_DETACHED  ///< The view is a detached copy of the data.
 };
 
+
 /** \brief Determine if data is unit stride or non-unit stride. */
 enum EStrideType {
   STRIDE_TYPE_UNIT      ///< The stride between elements in an array is one.
   ,STRIDE_TYPE_NONUNIT   ///< The stride between elements in an array is greater than or equal to one.
 };
 
+
 //@}
 
+
 namespace Exceptions {
+
 
 /** \defgroup Thyra_Op_Vec_Exceptions_grp Basic Thyra exception types.
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 //@{
 
+
 /// Thrown if any member functions are called before initialize() has been called.
 class UnInitialized : public std::logic_error
 {public: UnInitialized(const std::string& what_arg) : std::logic_error(what_arg) {}};
+
 
 /// Thrown if vector spaces are incompatible
 class IncompatibleVectorSpaces : public std::logic_error
@@ -253,22 +281,29 @@ class IncompatibleVectorSpaces : public std::logic_error
 //	IncompatibleVectorSpaces(const IncompatibleVectorSpaces& ivs) : std::logic_error(ivs.what()) {}
 };
 
+
 /// Thrown if the argument <tt>M_trans</tt> is not supported,
 class OpNotSupported : public std::logic_error
 {public: OpNotSupported(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
+
 //@}
+
 
 } // namespace Exceptions
 
+
 // Fundamental ANA operator/vector interface classes
 
-template<class Scalar>                                        class VectorSpaceFactoryBase;
-template<class Scalar>                                        class VectorSpaceBase;
+
+template<class Scalar> class VectorSpaceFactoryBase;
+template<class Scalar> class VectorSpaceBase;
 template<class RangeScalar, class DomainScalar = RangeScalar> class LinearOpBase;
-template<class Scalar>                                        class MultiVectorBase;
-template<class Scalar>                                        class VectorBase;
+template<class Scalar> class MultiVectorBase;
+template<class Scalar> class VectorBase;
+
 
 } // end namespace Thyra
+
 
 #endif // THYRA_OPERATOR_VECTOR_TYPES_HPP

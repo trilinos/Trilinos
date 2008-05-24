@@ -56,13 +56,13 @@ DefaultDiagonalLinearOpWithSolve<Scalar>::DefaultDiagonalLinearOpWithSolve(
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 template<class Scalar>
-bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_trans) const
+bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsTrans(EOpTransp M_trans) const
 {
   return true; // ToDo: Update this!
 }
 
 template<class Scalar>
-bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
+bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   return true;
 }
@@ -71,7 +71,7 @@ bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETr
 
 template<class Scalar>
 SolveStatus<Scalar> DefaultDiagonalLinearOpWithSolve<Scalar>::solve(
-  const ETransp                         M_trans
+  const EOpTransp                         M_trans
   ,const VectorBase<Scalar>             &b
   ,VectorBase<Scalar>                   *x
   ,const SolveCriteria<Scalar>          *solveCriteria

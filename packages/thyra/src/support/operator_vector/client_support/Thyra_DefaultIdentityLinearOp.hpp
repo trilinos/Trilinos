@@ -108,14 +108,14 @@ std::string DefaultIdentityLinearOp<Scalar>::description() const
 // Overridden from SingleScalarLinearOpBase
 
 template<class Scalar>
-bool DefaultIdentityLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultIdentityLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return true;
 }
 
 template<class Scalar>
 void DefaultIdentityLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha

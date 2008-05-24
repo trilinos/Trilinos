@@ -38,7 +38,7 @@ namespace Thyra {
 
 template <class Scalar>
 void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
-  const ETransp                         M_trans
+  const EOpTransp                         M_trans
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
   ,const int                            numBlocks

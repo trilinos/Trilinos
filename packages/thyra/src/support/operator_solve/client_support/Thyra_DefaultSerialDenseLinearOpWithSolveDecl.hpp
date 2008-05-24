@@ -40,7 +40,7 @@ namespace Thyra {
 
 
 /* \brief . */
-inline RTOpPack::ETransp convertToRTOpPackETransp( const ETransp transp )
+inline RTOpPack::ETransp convertToRTOpPackETransp( const EOpTransp transp )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(transp == CONJ);
@@ -108,10 +108,10 @@ protected:
   //@{
 
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   /** \brief . */
  void apply(
-   const ETransp M_trans,
+   const EOpTransp M_trans,
    const MultiVectorBase<Scalar> &X,
    MultiVectorBase<Scalar> *Y,
    const Scalar alpha,
@@ -124,13 +124,13 @@ protected:
   //@{
 
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const;
   /** \brief . */
   void solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &B,
     MultiVectorBase<Scalar> *X,
     const int numBlocks,
@@ -161,7 +161,7 @@ private:
   static void backsolve(
     const RTOpPack::ConstSubMultiVectorView<Scalar> &LU,
     const ArrayView<const int> ipiv,
-    const ETransp transp,
+    const EOpTransp transp,
     const MultiVectorBase<Scalar> &B,
     const Ptr<MultiVectorBase<Scalar> > &X
     );

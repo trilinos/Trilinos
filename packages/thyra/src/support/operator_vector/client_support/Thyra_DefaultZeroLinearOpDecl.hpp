@@ -140,11 +140,11 @@ protected:
   //@{
 
   /** \brief Returns <tt>true</tt> . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
 
   /** \brief . */
   void apply(
-    const ETransp                     M_trans
+    const EOpTransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
     ,MultiVectorBase<Scalar>          *Y
     ,const Scalar                     alpha

@@ -47,7 +47,7 @@ public:
 
   /** \brief . */
   void solve(
-    const ETransp                         M_trans
+    const EOpTransp                         M_trans
     ,const MultiVectorBase<Scalar>        &B
     ,MultiVectorBase<Scalar>              *X
     ,const int                            numBlocks
@@ -64,7 +64,7 @@ protected:
 
   /** \brief . */
   virtual SolveStatus<Scalar> solve(
-    const ETransp                         M_trans
+    const EOpTransp                         M_trans
     ,const VectorBase<Scalar>             &b
     ,VectorBase<Scalar>                   *x
     ,const SolveCriteria<Scalar>          *solveCriteria

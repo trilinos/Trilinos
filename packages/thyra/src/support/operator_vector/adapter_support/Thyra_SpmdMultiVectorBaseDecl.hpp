@@ -221,7 +221,7 @@ public:
    * <tt>apply()</tt>
    */
   void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     MultiVectorBase<Scalar> *Y,
     const Scalar alpha,
@@ -275,7 +275,7 @@ protected:
    * <tt>NOTRANS</tt>, <tt>TRANS</tt>, and <tt>CONJTRANS</tt> and for real
    * types returns <tt>true</tt> for all values of <tt>M_trans</tt>.
    */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
 
   /** \brief Uses <tt>GEMM()</tt> and <tt>Teuchos::reduceAll()</tt> to
    * implement.
@@ -283,7 +283,7 @@ protected:
    * ToDo: Finish documentation!
    */
   void euclideanApply(
-    const ETransp                     M_trans
+    const EOpTransp                     M_trans
     ,const MultiVectorBase<Scalar>    &X
     ,MultiVectorBase<Scalar>          *Y
     ,const Scalar                     alpha

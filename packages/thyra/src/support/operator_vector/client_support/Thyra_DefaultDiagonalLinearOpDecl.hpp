@@ -212,14 +212,14 @@ protected:
   /** @name Overridden from SingleScalarLinearOpBase */
   //@{
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpBase */
   //@{
   /** \brief . */
   void apply(
-    const ETransp                M_trans
+    const EOpTransp                M_trans
     ,const VectorBase<Scalar>    &x
     ,VectorBase<Scalar>          *y
     ,const Scalar                alpha

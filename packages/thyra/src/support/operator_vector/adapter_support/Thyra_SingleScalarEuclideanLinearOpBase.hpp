@@ -78,7 +78,7 @@ void SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApplyTranspose(
 
 template<class Scalar>
 void SingleScalarEuclideanLinearOpBase<Scalar>::single_scalar_euclidean_apply_impl(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha

@@ -67,7 +67,7 @@ EpetraLinearOp::EpetraLinearOp()
 
 void EpetraLinearOp::initialize(
   const RCP<Epetra_Operator> &op,
-  ETransp opTrans,
+  EOpTransp opTrans,
   EApplyEpetraOpAs applyAs,
   EAdjointEpetraOp adjointSupport,
   const RCP< const VectorSpaceBase<Scalar> > &range,
@@ -123,7 +123,7 @@ void EpetraLinearOp::partiallyInitialize(
   const RCP<const VectorSpaceBase<Scalar> > &range,
   const RCP<const VectorSpaceBase<Scalar> > &domain,
   const RCP<Epetra_Operator> &op,
-  ETransp opTrans,
+  EOpTransp opTrans,
   EApplyEpetraOpAs applyAs,
   EAdjointEpetraOp adjointSupport
   )
@@ -177,7 +177,7 @@ void EpetraLinearOp::setFullyInitialized(bool isFullyInitialized)
 
 void EpetraLinearOp::uninitialize(
   RCP<Epetra_Operator> *op,
-  ETransp *opTrans,
+  EOpTransp *opTrans,
   EApplyEpetraOpAs *applyAs,
   EAdjointEpetraOp *adjointSupport,
   RCP<const VectorSpaceBase<Scalar> > *range,
@@ -238,7 +238,7 @@ EpetraLinearOp::epetra_op() const
 
 void EpetraLinearOp::getEpetraOpView(
   RCP<Epetra_Operator> *epetraOp,
-  ETransp *epetraOpTransp,
+  EOpTransp *epetraOpTransp,
   EApplyEpetraOpAs *epetraOpApplyAs,
   EAdjointEpetraOp *epetraOpAdjointSupport
   )
@@ -258,7 +258,7 @@ void EpetraLinearOp::getEpetraOpView(
 
 void EpetraLinearOp::getEpetraOpView(
   RCP<const Epetra_Operator> *epetraOp,
-  ETransp *epetraOpTransp,
+  EOpTransp *epetraOpTransp,
   EApplyEpetraOpAs *epetraOpApplyAs,
   EAdjointEpetraOp *epetraOpAdjointSupport
   ) const
@@ -279,7 +279,7 @@ void EpetraLinearOp::getEpetraOpView(
 // Overridden from SingleScalarLinearOpBase
 
 
-bool EpetraLinearOp::opSupported(ETransp M_trans) const
+bool EpetraLinearOp::opSupported(EOpTransp M_trans) const
 {
   if (!isFullyInitialized_)
     return false;
@@ -306,7 +306,7 @@ EpetraLinearOp::domainScalarProdVecSpc() const
 
 
 void EpetraLinearOp::euclideanApply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X_in,
   MultiVectorBase<Scalar> *Y_inout,
   const Scalar alpha,
@@ -318,7 +318,7 @@ void EpetraLinearOp::euclideanApply(
   TEUCHOS_FUNC_TIME_MONITOR("Thyra::EpetraLinearOp::euclideanApply");
 #endif
 
-  const ETransp real_M_trans = real_trans(M_trans);
+  const EOpTransp real_M_trans = real_trans(M_trans);
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!isFullyInitialized_);
@@ -561,7 +561,7 @@ void EpetraLinearOp::describe(
 RCP< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> > 
 EpetraLinearOp::allocateDomain(
   const RCP<Epetra_Operator> &op,
-  ETransp op_trans
+  EOpTransp op_trans
   ) const
 {
   return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(
@@ -574,7 +574,7 @@ EpetraLinearOp::allocateDomain(
 RCP<const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> > 
 EpetraLinearOp::allocateRange(
   const RCP<Epetra_Operator> &op,
-  ETransp op_trans
+  EOpTransp op_trans
   ) const
 {
   return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(

@@ -42,7 +42,7 @@ namespace {
 
 
 inline
-Teuchos::ETransp convert( Thyra::ETransp trans_in )
+Teuchos::ETransp convert( Thyra::EOpTransp trans_in )
 {
   Teuchos::ETransp  trans_out;
   switch(trans_in) {
@@ -426,7 +426,7 @@ void AztecOOLinearOpWithSolve::describe(
 // Overridden from SingleScalarLinearOpBase
 
 
-bool AztecOOLinearOpWithSolve::opSupported(ETransp M_trans) const
+bool AztecOOLinearOpWithSolve::opSupported(EOpTransp M_trans) const
 {
   return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
@@ -436,7 +436,7 @@ bool AztecOOLinearOpWithSolve::opSupported(ETransp M_trans) const
 
 
 void AztecOOLinearOpWithSolve::apply(
-  const ETransp                M_trans
+  const EOpTransp                M_trans
   ,const VectorBase<double>    &x
   ,VectorBase<double>          *y
   ,const double                alpha
@@ -450,7 +450,7 @@ void AztecOOLinearOpWithSolve::apply(
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 
-bool AztecOOLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
+bool AztecOOLinearOpWithSolve::solveSupportsTrans(EOpTransp M_trans) const
 {
   if(real_trans(M_trans)==NOTRANS) return true;
   return (aztecAdjSolver_.get()!=NULL);
@@ -458,7 +458,7 @@ bool AztecOOLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
 
 
 bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
   if(real_trans(M_trans)==NOTRANS) {
@@ -531,7 +531,7 @@ bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
 
 
 void AztecOOLinearOpWithSolve::solve(
-  const ETransp                         M_trans,
+  const EOpTransp                         M_trans,
   const MultiVectorBase<double>        &B,
   MultiVectorBase<double>              *X,
   const int                            numBlocks,
@@ -567,7 +567,7 @@ void AztecOOLinearOpWithSolve::solve(
   //
   // Get the transpose argument
   //
-  const ETransp aztecOpTransp = real_trans(M_trans);
+  const EOpTransp aztecOpTransp = real_trans(M_trans);
   //
   // Get the solver, operator, and preconditioner that we will use
   //

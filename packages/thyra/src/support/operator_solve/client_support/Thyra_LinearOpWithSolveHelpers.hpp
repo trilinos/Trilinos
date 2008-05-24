@@ -46,7 +46,7 @@ namespace Thyra {
 template<class Scalar>
 void assertSupportsSolveMeasureType(
   const LinearOpWithSolveBase<Scalar> &lows,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const SolveMeasureType &solveMeasureType
   );
 
@@ -62,7 +62,7 @@ void assertSupportsSolveMeasureType(
 template<class Scalar>
 void Thyra::assertSupportsSolveMeasureType(
   const LinearOpWithSolveBase<Scalar> &lows,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const SolveMeasureType &solveMeasureType
   )
 {

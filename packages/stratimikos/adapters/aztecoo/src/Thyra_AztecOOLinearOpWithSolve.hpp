@@ -248,14 +248,14 @@ protected:
   /** @name Overridden from SingleScalarLinearOpBase */
   //@{
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpBase */
   //@{
   /** \brief . */
   void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const VectorBase<double> &x,
     VectorBase<double> *y,
     const double alpha,
@@ -266,14 +266,14 @@ protected:
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
   /** \brief . */
   void solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<double> &B,
     MultiVectorBase<double> *X,
     const int numBlocks,

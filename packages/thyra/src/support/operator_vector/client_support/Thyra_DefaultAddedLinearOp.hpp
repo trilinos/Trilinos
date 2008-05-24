@@ -219,7 +219,7 @@ void DefaultAddedLinearOp<Scalar>::describe(
 // Overridden from SingleScalarLinearOpBase
 
 template<class Scalar>
-bool DefaultAddedLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultAddedLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   bool opSupported = true;
   for( int k = 0; k < static_cast<int>(Ops_.size()); ++k )
@@ -230,7 +230,7 @@ bool DefaultAddedLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha

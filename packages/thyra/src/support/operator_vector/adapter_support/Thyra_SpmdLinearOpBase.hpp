@@ -55,7 +55,7 @@ SpmdLinearOpBase<Scalar>::domainScalarProdVecSpc() const
 
 template<class Scalar>
 void SpmdLinearOpBase<Scalar>::euclideanApply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha
@@ -136,7 +136,7 @@ void SpmdLinearOpBase<Scalar>::setLocalDimensions(
 
 template<class Scalar>
 void SpmdLinearOpBase<Scalar>::euclideanApply(
-  const ETransp                                     M_trans
+  const EOpTransp                                     M_trans
   ,const RTOpPack::ConstSubMultiVectorView<Scalar>  &local_X
   ,const RTOpPack::SubMultiVectorView<Scalar>       *local_Y
   ,const Scalar                                     alpha

@@ -138,7 +138,7 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::clone() const
 
 template<class Scalar>
 bool DefaultMultiVectorLinearOpWithSolve<Scalar>::opSupported(
-  ETransp M_trans
+  EOpTransp M_trans
   ) const
 {
   return Thyra::opSupported(*lows_.getConstObj(),M_trans);
@@ -150,7 +150,7 @@ bool DefaultMultiVectorLinearOpWithSolve<Scalar>::opSupported(
 
 template<class Scalar>
 void DefaultMultiVectorLinearOpWithSolve<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const VectorBase<Scalar> &x,
   VectorBase<Scalar> *y,
   const Scalar alpha,
@@ -181,7 +181,7 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::apply(
 
 template<class Scalar>
 bool DefaultMultiVectorLinearOpWithSolve<Scalar>::solveSupportsTrans(
-  ETransp M_trans
+  EOpTransp M_trans
   ) const
 {
   return Thyra::solveSupports(*lows_.getConstObj(),M_trans);
@@ -190,7 +190,7 @@ bool DefaultMultiVectorLinearOpWithSolve<Scalar>::solveSupportsTrans(
 
 template<class Scalar>
 bool DefaultMultiVectorLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
   return Thyra::solveSupportsSolveMeasureType(
@@ -204,7 +204,7 @@ bool DefaultMultiVectorLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
 template<class Scalar>
 SolveStatus<Scalar>
 DefaultMultiVectorLinearOpWithSolve<Scalar>::solve(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const VectorBase<Scalar> &b,
   VectorBase<Scalar> *x,
   const SolveCriteria<Scalar> *solveCriteria

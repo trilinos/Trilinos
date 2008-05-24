@@ -51,7 +51,7 @@ DefaultAdjointLinearOpWithSolve<Scalar>::DefaultAdjointLinearOpWithSolve()
 template<class Scalar>
 void DefaultAdjointLinearOpWithSolve<Scalar>::initialize(
   const RCP<LinearOpWithSolveBase<Scalar> > &lows,
-  const ETransp transp )
+  const EOpTransp transp )
 {
   lows_ = lows;
   transp_ = transp;
@@ -61,7 +61,7 @@ void DefaultAdjointLinearOpWithSolve<Scalar>::initialize(
 template<class Scalar>
 void DefaultAdjointLinearOpWithSolve<Scalar>::initialize(
   const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
-  const ETransp transp )
+  const EOpTransp transp )
 {
   lows_ = lows;
   transp_ = transp;
@@ -112,7 +112,7 @@ DefaultAdjointLinearOpWithSolve<Scalar>::domain() const
 
 
 template<class Scalar>
-bool DefaultAdjointLinearOpWithSolve<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultAdjointLinearOpWithSolve<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return Thyra::opSupported(*lows_(), trans_trans(transp_, M_trans));
 }
@@ -120,7 +120,7 @@ bool DefaultAdjointLinearOpWithSolve<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultAdjointLinearOpWithSolve<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
   const Scalar alpha,
@@ -136,7 +136,7 @@ void DefaultAdjointLinearOpWithSolve<Scalar>::apply(
 
 
 template<class Scalar>
-bool DefaultAdjointLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_trans) const
+bool DefaultAdjointLinearOpWithSolve<Scalar>::solveSupportsTrans(EOpTransp M_trans) const
 {
   return Thyra::solveSupports(*lows_(), trans_trans(transp_, M_trans));
 }
@@ -144,7 +144,7 @@ bool DefaultAdjointLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_trans
 
 template<class Scalar>
 bool DefaultAdjointLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType) const
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   return Thyra::solveSupportsSolveMeasureType(*lows_(),
     trans_trans(transp_, M_trans), solveMeasureType );
@@ -156,7 +156,7 @@ bool DefaultAdjointLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
 
 template<class Scalar>
 void DefaultAdjointLinearOpWithSolve<Scalar>::solve(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B,
   MultiVectorBase<Scalar> *X,
   const int numBlocks,

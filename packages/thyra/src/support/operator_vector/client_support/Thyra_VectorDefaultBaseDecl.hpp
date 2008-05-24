@@ -250,11 +250,11 @@ protected:
    * <tt>NOTRANS</tt> and <tt>CONJTRANS</tt> and for real types returns true
    * for all values of <tt>M_trans</tt>.
    */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
 
   /** \brief. Applies vector or its adjoint (transpose) as a linear operator. */
   void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const VectorBase<Scalar> &x,
     VectorBase<Scalar> *y,
     const Scalar alpha,

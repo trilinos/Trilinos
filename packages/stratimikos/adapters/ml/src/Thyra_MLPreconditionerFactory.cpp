@@ -97,7 +97,7 @@ bool MLPreconditionerFactory::isCompatible(
   ) const
 {
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp epetraFwdOpTransp;
+  EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
   double epetraFwdOpScalar;
@@ -168,7 +168,7 @@ void MLPreconditionerFactory::initializePrec(
   // Unwrap and get the forward Epetra_Operator object
   //
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp epetraFwdOpTransp;
+  EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
   double epetraFwdOpScalar;

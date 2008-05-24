@@ -80,7 +80,7 @@ SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::apply(
-  const ETransp M_trans
+  const EOpTransp M_trans
   ,const MultiVectorBase<Scalar> &X
   ,MultiVectorBase<Scalar> *Y
   ,const Scalar alpha
@@ -344,7 +344,7 @@ void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::euclideanApply(
-  const ETransp M_trans
+  const EOpTransp M_trans
   ,const MultiVectorBase<Scalar> &X
   ,MultiVectorBase<Scalar> *Y
   ,const Scalar alpha
@@ -614,7 +614,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 
 
 template<class Scalar>
-bool SpmdMultiVectorBase<Scalar>::opSupported(ETransp M_trans) const
+bool SpmdMultiVectorBase<Scalar>::opSupported(EOpTransp M_trans) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return ( ST::isComplex ? ( M_trans!=CONJ ) : true );

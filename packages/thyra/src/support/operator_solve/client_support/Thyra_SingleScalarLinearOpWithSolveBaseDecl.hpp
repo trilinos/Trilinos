@@ -83,12 +83,12 @@ protected:
   //@{
 
   /** \brief . */
-  virtual bool solveSupportsTrans(ETransp M_trans) const = 0;
+  virtual bool solveSupportsTrans(EOpTransp M_trans) const = 0;
   /** \brief . */
-  virtual bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const = 0;
+  virtual bool solveSupportsSolveMeasureType(EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const = 0;
   /** \brief . */
   virtual void solve(
-    const ETransp                         M_trans
+    const EOpTransp                         M_trans
     ,const MultiVectorBase<Scalar>        &B
     ,MultiVectorBase<Scalar>              *X
     ,const int                            numBlocks

@@ -103,16 +103,16 @@ protected:
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
+  bool solveSupportsSolveMeasureType(EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpWithSolveBase */
   //@{
   /** \brief . */
   SolveStatus<Scalar> solve(
-    const ETransp                         M_trans
+    const EOpTransp                         M_trans
     ,const VectorBase<Scalar>             &b
     ,VectorBase<Scalar>                   *x
     ,const SolveCriteria<Scalar>          *solveCriteria

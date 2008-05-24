@@ -51,7 +51,7 @@ AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
   const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
   const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
   const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
-  const ETransp amesosSolverTransp,
+  const EOpTransp amesosSolverTransp,
   const double amesosSolverScalar
   )
 {
@@ -65,7 +65,7 @@ void AmesosLinearOpWithSolve::initialize(
   const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
   const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
   const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
-  const ETransp amesosSolverTransp,
+  const EOpTransp amesosSolverTransp,
   const double amesosSolverScalar
   )
 {
@@ -104,7 +104,7 @@ void AmesosLinearOpWithSolve::uninitialize(
   Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
   Teuchos::RCP<Epetra_LinearProblem> *epetraLP,
   Teuchos::RCP<Amesos_BaseSolver> *amesosSolver,
-  ETransp *amesosSolverTransp,
+  EOpTransp *amesosSolverTransp,
   double *amesosSolverScalar
   )
 {
@@ -208,14 +208,14 @@ void AmesosLinearOpWithSolve::describe(
 // Overridden from SingleScalarLinearOpBase
 
 
-bool AmesosLinearOpWithSolve::opSupported(ETransp M_trans) const
+bool AmesosLinearOpWithSolve::opSupported(EOpTransp M_trans) const
 {
   return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
 
 
 void AmesosLinearOpWithSolve::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<double> &X,
   MultiVectorBase<double> *Y,
   const double alpha,
@@ -229,14 +229,14 @@ void AmesosLinearOpWithSolve::apply(
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 
-bool AmesosLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
+bool AmesosLinearOpWithSolve::solveSupportsTrans(EOpTransp M_trans) const
 {
   return true; // ToDo: Determine if the solver supports adjoints or not!
 }
 
 
 bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
   return true; // I am a direct solver so I should be able to do it all!
@@ -247,7 +247,7 @@ bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(
 
 
 void AmesosLinearOpWithSolve::solve(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<double> &B,
   MultiVectorBase<double> *X,
   const int numBlocks,
@@ -275,7 +275,7 @@ void AmesosLinearOpWithSolve::solve(
   //
   // Get the op(...) range and domain maps
   //
-  const ETransp amesosOpTransp = real_trans(trans_trans(amesosSolverTransp_,M_trans));
+  const EOpTransp amesosOpTransp = real_trans(trans_trans(amesosSolverTransp_,M_trans));
   const Epetra_Operator *amesosOp = epetraLP_->GetOperator();
   const Epetra_Map
     &opRangeMap  = ( amesosOpTransp == NOTRANS

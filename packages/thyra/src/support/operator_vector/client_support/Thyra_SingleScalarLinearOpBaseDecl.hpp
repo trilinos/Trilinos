@@ -92,7 +92,7 @@ protected:
    * of <tt>ETrans</tt> (i.e. the transposed or the non-transposed
    * operations must be supported, both can not be unsupported)
    */
-  virtual bool opSupported(ETransp M_trans) const = 0;
+  virtual bool opSupported(EOpTransp M_trans) const = 0;
 
   /** \brief Apply the linear operator (or its transpose).
    *
@@ -103,7 +103,7 @@ protected:
    * </ul>
    */
   virtual void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     MultiVectorBase<Scalar> *Y,
     const Scalar alpha,

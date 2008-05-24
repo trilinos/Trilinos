@@ -59,11 +59,11 @@ public:
 
   /** \brief Initialize with non-const LOWSB . */
   void initialize( const RCP<LinearOpWithSolveBase<Scalar> > &lows,
-    const ETransp transp );
+    const EOpTransp transp );
 
   /** \brief Initialize with const LOWSB . */
   void initialize( const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
-    const ETransp transp );
+    const EOpTransp transp );
 
   /** \brief Get the non-const underlying LOWSB object. */
   const RCP<LinearOpWithSolveBase<Scalar> > getNonconstOp();
@@ -89,10 +89,10 @@ protected:
   //@{
 
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   /** \brief . */
  void apply(
-   const ETransp M_trans,
+   const EOpTransp M_trans,
    const MultiVectorBase<Scalar> &X,
    MultiVectorBase<Scalar> *Y,
    const Scalar alpha,
@@ -104,17 +104,17 @@ protected:
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const;
   //@}
 
   /** @name Overridden from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
   void solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &B,
     MultiVectorBase<Scalar> *X,
     const int numBlocks,
@@ -135,7 +135,7 @@ private:
   // Private data members
 
   CNCLOWS lows_;
-  ETransp transp_;
+  EOpTransp transp_;
 
 };
 
@@ -148,7 +148,7 @@ template<class Scalar>
 RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
 defaultAdjointLinearOpWithSolve(
   const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
-  const ETransp transp )
+  const EOpTransp transp )
 {
   RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
     dalows = Teuchos::rcp(new DefaultAdjointLinearOpWithSolve<Scalar>);
@@ -165,7 +165,7 @@ template<class Scalar>
 RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
 defaultAdjointLinearOpWithSolveNonconst(
   const RCP<LinearOpWithSolveBase<Scalar> > &lows,
-  const ETransp transp )
+  const EOpTransp transp )
 {
   RCP<DefaultAdjointLinearOpWithSolve<Scalar> >
     dalows = Teuchos::rcp(new DefaultAdjointLinearOpWithSolve<Scalar>);

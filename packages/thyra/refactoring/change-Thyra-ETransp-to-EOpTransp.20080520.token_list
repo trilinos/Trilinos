@@ -1,0 +1,3 @@
+ETransp    EOpTransp
+Teuchos::EOpTransp    Teuchos::ETransp
+RTOpPack::EOpTransp    RTOpPack::ETransp

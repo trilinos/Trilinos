@@ -128,7 +128,7 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
   RCP<const LinearOpBase<double> >
     fwdOp = fwdOpSrc.getOp();
   RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp                                     epetraFwdOpTransp;
+  EOpTransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;
@@ -163,7 +163,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   // Unwrap and get the forward Epetra_Operator object
   //
   RCP<const Epetra_Operator> epetraFwdOp;
-  ETransp                                     epetraFwdOpTransp;
+  EOpTransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;

@@ -239,14 +239,14 @@ void BelosLinearOpWithSolve<Scalar>::describe(
 // Overridden from SingleScalarLinearOpBase
 
 template<class Scalar>
-bool BelosLinearOpWithSolve<Scalar>::opSupported(ETransp M_trans) const
+bool BelosLinearOpWithSolve<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return ::Thyra::opSupported(*lp_->getOperator(),M_trans);
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::apply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
   ,const Scalar                     alpha
@@ -259,14 +259,14 @@ void BelosLinearOpWithSolve<Scalar>::apply(
 // Overridden from SingleScalarLinearOpWithSolveBase
 
 template<class Scalar>
-bool BelosLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_trans) const
+bool BelosLinearOpWithSolve<Scalar>::solveSupportsTrans(EOpTransp M_trans) const
 {
   if(real_trans(M_trans)==NOTRANS) return true;
   return false; // ToDo: Support adjoint solves!
 }
 
 template<class Scalar>
-bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
+bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   if(real_trans(M_trans)==NOTRANS) {
     return (
@@ -283,7 +283,7 @@ bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_tra
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::solve(
-  const ETransp                         M_trans
+  const EOpTransp                         M_trans
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
   ,const int                            numBlocks

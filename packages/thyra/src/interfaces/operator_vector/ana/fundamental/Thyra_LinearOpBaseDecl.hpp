@@ -451,7 +451,7 @@ bool isFullyInitialized( const LinearOpBase<Scalar> &M );
  */
 template<class Scalar>
 inline
-bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans );
+bool opSupported( const LinearOpBase<Scalar> &M, EOpTransp M_trans );
 
 
 /** \brief Call <tt>LinearOpBase::apply()</tt> as a non-member function call.
@@ -503,7 +503,7 @@ void applyTranspose(
 template<class Scalar>
 void apply(
   const LinearOpBase<Scalar> &M,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   const Ptr<MultiVectorBase<Scalar> > &Y,
   const Scalar alpha = ScalarTraits<Scalar>::one(),
@@ -515,7 +515,7 @@ void apply(
 template<class Scalar>
 void apply(
   const LinearOpBase<Scalar> &M,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
   const Scalar alpha = ScalarTraits<Scalar>::one(),
@@ -570,7 +570,7 @@ bool Thyra::isFullyInitialized( const LinearOpBase<Scalar> &M )
 
 template<class Scalar>
 inline
-bool Thyra::opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
+bool Thyra::opSupported( const LinearOpBase<Scalar> &M, EOpTransp M_trans )
 {
   if(real_trans(M_trans)==NOTRANS)
     return M.applySupports(transToConj(M_trans));
@@ -611,7 +611,7 @@ void Thyra::applyTranspose(
 template<class Scalar>
 void Thyra::apply(
   const LinearOpBase<Scalar> &M,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   const Ptr<MultiVectorBase<Scalar> > &Y,
   const Scalar alpha,
@@ -630,7 +630,7 @@ void Thyra::apply(
 template<class Scalar>
 void Thyra::apply(
   const LinearOpBase<Scalar> &M,
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
   const Scalar alpha,

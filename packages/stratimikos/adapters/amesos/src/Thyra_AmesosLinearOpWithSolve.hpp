@@ -70,7 +70,7 @@ public:
     const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
     const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
     const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
-    const ETransp amesosSolverTransp,
+    const EOpTransp amesosSolverTransp,
     const double amesosSolverScalar
     );
 
@@ -119,7 +119,7 @@ public:
     const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
     const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
     const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
-    const ETransp amesosSolverTransp,
+    const EOpTransp amesosSolverTransp,
     const double amesosSolverScalar
     );
 
@@ -145,7 +145,7 @@ public:
   Teuchos::RCP<Amesos_BaseSolver> get_amesosSolver() const;
 
   /** \brief . */
-  ETransp get_amesosSolverTransp() const;
+  EOpTransp get_amesosSolverTransp() const;
 
   /** \brief . */
   double get_amesosSolverScalar() const;
@@ -157,7 +157,7 @@ public:
     Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
     Teuchos::RCP<Epetra_LinearProblem> *epetraLP = NULL,
     Teuchos::RCP<Amesos_BaseSolver> *amesosSolver = NULL,
-    ETransp *amesosSolverTransp = NULL,
+    EOpTransp *amesosSolverTransp = NULL,
     double *amesosSolverScalar = NULL
     );
   
@@ -189,10 +189,10 @@ protected:
   /** @name Overridden protected functions from SingleScalarLinearOpBase */
   //@{
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   /** \brief . */
   void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<double> &X,
     MultiVectorBase<double> *Y,
     const double alpha,
@@ -203,14 +203,14 @@ protected:
   /** @name Overridden protected functions from SingleScalarLinearOpWithSolveBase */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
   /** \brief . */
   void solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<double> &B,
     MultiVectorBase<double> *X,
     const int numBlocks,
@@ -225,7 +225,7 @@ private:
   Teuchos::RCP<const LinearOpSourceBase<double> > fwdOpSrc_;
   Teuchos::RCP<Epetra_LinearProblem> epetraLP_;
   Teuchos::RCP<Amesos_BaseSolver> amesosSolver_;
-  ETransp amesosSolverTransp_;
+  EOpTransp amesosSolverTransp_;
   double amesosSolverScalar_;
 
   void assertInitialized() const;
@@ -264,7 +264,7 @@ AmesosLinearOpWithSolve::get_amesosSolver() const
 }
 
 inline
-ETransp AmesosLinearOpWithSolve::get_amesosSolverTransp() const
+EOpTransp AmesosLinearOpWithSolve::get_amesosSolverTransp() const
 {
   return amesosSolverTransp_;
 }

@@ -219,7 +219,7 @@ public:
   //@{
 
   /** \brief . */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
   
   //@}
   
@@ -238,7 +238,7 @@ public:
 
   /** \brief . */
   void euclideanApply(
-    const ETransp                     M_trans
+    const EOpTransp                     M_trans
     ,const VectorBase<Scalar>         &x
     ,VectorBase<Scalar>               *y
     ,const Scalar                     alpha
@@ -465,7 +465,7 @@ void TpetraLinearOp<Ordinal,Scalar>::getTpetraOpView(
 // Overridden from SingleScalarLinearOpBase
 
 template<class Ordinal, class Scalar>
-bool TpetraLinearOp<Ordinal,Scalar>::opSupported(ETransp M_trans) const
+bool TpetraLinearOp<Ordinal,Scalar>::opSupported(EOpTransp M_trans) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   switch(M_trans) {
@@ -509,7 +509,7 @@ TpetraLinearOp<Ordinal,Scalar>::domainScalarProdVecSpc() const
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::euclideanApply(
-  const ETransp                     M_trans
+  const EOpTransp                     M_trans
   ,const VectorBase<Scalar>         &x_in
   ,VectorBase<Scalar>               *y_inout
   ,const Scalar                     alpha
@@ -517,7 +517,7 @@ void TpetraLinearOp<Ordinal,Scalar>::euclideanApply(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  const ETransp real_M_trans = real_trans(M_trans);
+  const EOpTransp real_M_trans = real_trans(M_trans);
 #ifdef TEUCHOS_DEBUG
   // ToDo: Assert vector spaces!
   TEST_FOR_EXCEPTION(

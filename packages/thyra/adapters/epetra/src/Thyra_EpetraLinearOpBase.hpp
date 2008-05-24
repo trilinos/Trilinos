@@ -100,7 +100,7 @@ public:
    */
   virtual void getEpetraOpView(
     Teuchos::RCP<Epetra_Operator>   *epetraOp
-    ,ETransp                                *epetraOpTransp
+    ,EOpTransp                                *epetraOpTransp
     ,EApplyEpetraOpAs                       *epetraOpApplyAs
     ,EAdjointEpetraOp                       *epetraOpAdjointSupport
     ) = 0;
@@ -153,7 +153,7 @@ public:
    */
   virtual void getEpetraOpView(
     Teuchos::RCP<const Epetra_Operator>   *epetraOp
-    ,ETransp                                      *epetraOpTransp
+    ,EOpTransp                                      *epetraOpTransp
     ,EApplyEpetraOpAs                             *epetraOpApplyAs
     ,EAdjointEpetraOp                             *epetraOpAdjointSupport
     ) const = 0;

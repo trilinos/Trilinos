@@ -601,7 +601,7 @@ void DefaultProductMultiVector<Scalar>::commitNonconstDetachedMultiVectorViewImp
 
 
 template<class Scalar>
-bool DefaultProductMultiVector<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultProductMultiVector<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return true; // We can do it all!
 }
@@ -609,7 +609,7 @@ bool DefaultProductMultiVector<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X_in,
   MultiVectorBase<Scalar> *Y_inout,
   const Scalar alpha,

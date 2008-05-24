@@ -250,13 +250,13 @@ protected:
   //@{
 
   /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
+  bool solveSupportsTrans(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(
-    ETransp M_trans, const SolveMeasureType& solveMeasureType ) const;
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType ) const;
   /** \brief . */
   void solve(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &B,
     MultiVectorBase<Scalar> *X,
     const int numBlocks,
@@ -272,11 +272,11 @@ protected:
   /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
-  bool opSupported(ETransp M_trans) const;
+  bool opSupported(EOpTransp M_trans) const;
 
   /** \brief . */
   void apply(
-    const ETransp M_trans,
+    const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
     MultiVectorBase<Scalar> *Y,
     const Scalar alpha,

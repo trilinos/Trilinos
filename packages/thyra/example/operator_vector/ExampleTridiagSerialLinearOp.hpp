@@ -128,12 +128,12 @@ protected:
 
   // Overridden from SingleScalarEuclideanLinearOpBase
 
-  bool opSupported(Thyra::ETransp M_trans) const { return true; }  // This class supports everything!
+  bool opSupported(Thyra::EOpTransp M_trans) const { return true; }  // This class supports everything!
 
   // Overridden from SpmdLinearOpBase
 
   void euclideanApply(
-    const Thyra::ETransp                         M_trans
+    const Thyra::EOpTransp                         M_trans
     ,const RTOpPack::ConstSubVectorView<Scalar>  &x_in
     ,const RTOpPack::SubVectorView<Scalar>       *y_out
     ,const Scalar                                alpha

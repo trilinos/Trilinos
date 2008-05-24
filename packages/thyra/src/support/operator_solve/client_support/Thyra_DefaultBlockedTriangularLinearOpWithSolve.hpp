@@ -389,7 +389,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::describe(
 
 template<class Scalar>
 bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsTrans(
-  ETransp M_trans
+  EOpTransp M_trans
   ) const
 {
   assertBlockFillIsActive(false);
@@ -407,7 +407,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsTrans(
 template<class Scalar>
 bool
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
-  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
   using Thyra::solveSupportsSolveMeasureType;
@@ -432,7 +432,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B_in,
   MultiVectorBase<Scalar> *X_inout,
   const int numBlocks,
@@ -504,7 +504,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
 
 template<class Scalar>
 bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::opSupported(
-  ETransp M_trans
+  EOpTransp M_trans
   ) const
 {
   using Thyra::opSupported;
@@ -522,7 +522,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::opSupported(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(
-  const ETransp M_trans,
+  const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X_in,
   MultiVectorBase<Scalar> *Y_inout,
   const Scalar alpha,

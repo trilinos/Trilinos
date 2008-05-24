@@ -496,7 +496,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   // Unwrap and get the forward operator or matrix
   //
   Teuchos::RCP<const Epetra_Operator> epetra_epetraFwdOp;
-  ETransp epetra_epetraFwdOpTransp;
+  EOpTransp epetra_epetraFwdOpTransp;
   EApplyEpetraOpAs epetra_epetraFwdOpApplyAs;
   EAdjointEpetraOp epetra_epetraFwdOpAdjointSupport;
   double epetra_epetraFwdOpScalar;
@@ -567,14 +567,14 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     }
   }
   double wrappedPrecOpScalar = 0.0;
-  ETransp wrappedPrecOpTransp = NOTRANS;
+  EOpTransp wrappedPrecOpTransp = NOTRANS;
   RCP<const LinearOpBase<double> > wrappedPrecOp = null;
   RCP<const EpetraLinearOpBase> epetraPrecOp;
   Teuchos::RCP<const Epetra_Operator> epetra_epetraPrecOp;
-  ETransp epetra_epetraPrecOpTransp;
+  EOpTransp epetra_epetraPrecOpTransp;
   EApplyEpetraOpAs epetra_epetraPrecOpApplyAs;
   EAdjointEpetraOp epetra_epetraPrecOpAdjointSupport;
-  ETransp overall_epetra_epetraPrecOpTransp;
+  EOpTransp overall_epetra_epetraPrecOpTransp;
   if(rightPrecOp.get()) {
     RCP<const LinearOpBase<double> > tmpWrappedPrecOp;
     unwrap(

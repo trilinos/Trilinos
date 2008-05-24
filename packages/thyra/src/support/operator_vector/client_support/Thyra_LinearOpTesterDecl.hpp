@@ -216,7 +216,7 @@ public:
    *     should first create an implicit adjoint using <tt>adjoint()</tt>
    *     (or transpose using <tt>transpose()</tt>) which wraps the operation in
    *     a <tt>DefaultScaledAdjointLinearOp</tt>.  Using this method a client can check
-   *     all the various values of the enum <tt>ETransp</tt>.
+   *     all the various values of the enum <tt>EOpTransp</tt>.
    *
    * <li>If <tt>this->check_adjoint()==true</tt> then, checks that the non-transposed
    *     operator and the adjoint operator agree.

@@ -170,7 +170,7 @@ DefaultDiagonalLinearOp<Scalar>::clone() const
 
 
 template<class Scalar>
-bool DefaultDiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DefaultDiagonalLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 {
   return true;
 }
@@ -181,7 +181,7 @@ bool DefaultDiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
 
 template<class Scalar>
 void DefaultDiagonalLinearOp<Scalar>::apply(
-  const ETransp M_trans
+  const EOpTransp M_trans
   ,const VectorBase<Scalar> &x
   ,VectorBase<Scalar> *y
   ,const Scalar alpha

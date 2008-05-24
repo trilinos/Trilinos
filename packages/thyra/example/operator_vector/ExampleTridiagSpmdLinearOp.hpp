@@ -210,7 +210,7 @@ protected:
 
   // Overridden from SingleScalarEuclideanLinearOpBase
 
-  bool opSupported( Thyra::ETransp M_trans ) const
+  bool opSupported( Thyra::EOpTransp M_trans ) const
     {
       typedef Teuchos::ScalarTraits<Scalar> ST;
       return (M_trans == Thyra::NOTRANS || (!ST::isComplex && M_trans == Thyra::CONJ) );
@@ -219,7 +219,7 @@ protected:
   // Overridden from SerialLinearOpBase
 
   void euclideanApply(
-    const Thyra::ETransp                         M_trans
+    const Thyra::EOpTransp                         M_trans
     ,const RTOpPack::ConstSubVectorView<Scalar>  &local_x_in
     ,const RTOpPack::SubVectorView<Scalar>       *local_y_out
     ,const Scalar                                alpha
