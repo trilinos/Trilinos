@@ -340,12 +340,14 @@ bool Rythmos::getCurrentPoints(
       // them into temp arrays
       Array<RCP<const Thyra::VectorBase<Scalar> > > current_x_vec;
       Array<RCP<const Thyra::VectorBase<Scalar> > > current_xdot_vec;
-      interpBuffer.getPoints(
-        current_time_vec,
-        x_vec ? &current_x_vec : 0,
-        xdot_vec ? &current_xdot_vec : 0,
-        0 // accuracy_vec
-        );
+      if (x_vec || xdot_vec) {
+        interpBuffer.getPoints(
+          current_time_vec,
+          x_vec ? &current_x_vec : 0,
+          xdot_vec ? &current_xdot_vec : 0,
+          0 // accuracy_vec
+          );
+      }
 
       // Copy the gotten x and xdot vectors from the temp arrays to the output
       // arrays.
