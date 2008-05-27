@@ -255,6 +255,8 @@ CORE_H = \
 	$(srcdir)/BelosOutputManager.hpp \
 	$(srcdir)/BelosPseudoBlockGmresIter.hpp \
 	$(srcdir)/BelosPseudoBlockGmresSolMgr.hpp \
+	$(srcdir)/BelosRCGIter.hpp \
+	$(srcdir)/BelosRCGSolMgr.hpp \
 	$(srcdir)/BelosSolverManager.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \
