@@ -258,6 +258,10 @@ test_02_SOURCES = test_02.cpp
 test_02_LDADD = $(EXPORT_LIBS)
 test_02_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
+EXTRA_DIST = \
+mass_TRI_FEM_P2_01.dat  mass_TRI_FEM_P2_02.dat  \
+mass_TRI_FEM_P2_03.dat  mass_TRI_FEM_P2_04.dat
+
 all: all-am
 
 .SUFFIXES:

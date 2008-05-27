@@ -73,7 +73,8 @@ Dummy_SOURCES = Dummy
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
 
-EXTRA_DIST = data/mass_TRI_FEM_P1_01.dat data/mass_TRI_FEM_P1_02.dat \
+EXTRA_DIST = \
+data/mass_TRI_FEM_P1_01.dat data/mass_TRI_FEM_P1_02.dat \
 data/mass_TRI_FEM_P1_03.dat data/mass_TRI_FEM_P1_04.dat \
 data/stiff_TRI_FEM_P1_01.dat data/stiff_TRI_FEM_P1_02.dat \
 data/stiff_TRI_FEM_P1_03.dat data/stiff_TRI_FEM_P1_04.dat
