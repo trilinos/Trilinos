@@ -20,6 +20,7 @@ FFLAGS="-g -O0" \
 --enable-amesos-tests \
 --enable-amesos-mumps \
 --disable-amesos-mumps_mpi_c2f \
+--enable-amesos-old_mumps \
 --enable-amesos-scalapack \
 --enable-anasazi \
 --enable-aztecoo \
