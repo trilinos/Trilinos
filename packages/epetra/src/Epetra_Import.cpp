@@ -144,18 +144,22 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
         if( NumRemoteIDs_-cnt ) {
           int * NewRemoteGIDs = new int[NumRemoteIDs_-cnt];
           int * NewRemotePIDs = new int[NumRemoteIDs_-cnt];
+          int * NewRemoteLIDs = new int[NumRemoteIDs_-cnt];
           cnt = 0;
           for( i = 0; i < NumRemoteIDs_; ++i )
             if( RemotePIDs[i] != -1 ) {
               NewRemoteGIDs[cnt] = RemoteGIDs[i];
               NewRemotePIDs[cnt] = RemotePIDs[i];
+              NewRemoteLIDs[cnt] = TargetMap.LID(RemoteGIDs[i]);
               ++cnt;
             }
           NumRemoteIDs_ = cnt;
           delete [] RemoteGIDs;
           delete [] RemotePIDs;
+          delete [] RemoteLIDs_;
           RemoteGIDs = NewRemoteGIDs;
           RemotePIDs = NewRemotePIDs;
+          RemoteLIDs_ = NewRemoteLIDs;
           ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
         }
         else { //valid RemoteIDs empty

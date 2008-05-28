@@ -46,6 +46,8 @@
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
 
+int special_submap_import_test(Epetra_Comm& Comm);
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
@@ -479,6 +481,14 @@ int main(int argc, char *argv[])
     else cout << "SubMap Import/Export Check Failed" << endl << endl;
   }
 
+  forierr = special_submap_import_test(Comm);
+  EPETRA_TEST_ERR(forierr, ierr);
+
+  if (verbose) {
+    if (forierr==0) cout << "Special SubMap Import Check OK" << endl << endl;
+    else cout << "Special SubMap Import Check Failed" << endl << endl;
+  }
+
   // Release all objects
 
   delete [] SourceMyGlobalElements;
@@ -497,3 +507,64 @@ int main(int argc, char *argv[])
 */
 return ierr ;
 }
+
+int special_submap_import_test(Epetra_Comm& Comm)
+{
+  int localProc = Comm.MyPID();
+
+  //set up ids_source and ids_target such that ids_source are only
+  //a subset of ids_target, and furthermore that ids_target are ordered
+  //such that the LIDs don't match up. In other words, even if gid 2 does
+  //exist in both ids_source and ids_target, it will correspond to different
+  //LIDs on at least 1 proc.
+  //
+  //This is to test a certain bug-fix in Epetra_Import where the 'RemoteLIDs'
+  //array wasn't being calculated correctly on all procs.
+
+  int ids_source[1];
+  ids_source[0] = localProc*2+2;
+
+  int ids_target[3];
+  ids_target[0] = localProc*2+2;
+  ids_target[1] = localProc*2+1;
+  ids_target[2] = localProc*2+0;
+
+  Epetra_Map map_source(-1, 1, &ids_source[0], 0, Comm);
+  Epetra_Map map_target(-1, 3, &ids_target[0], 0, Comm);
+
+  Epetra_Import importer(map_target, map_source);
+
+  Epetra_IntVector vec_source(map_source);
+  Epetra_IntVector vec_target(map_target);
+
+  vec_target.PutValue(0);
+
+  //set vec_source's contents so that entry[i] == GID[i].
+  int* GIDs = map_source.MyGlobalElements();
+  for(int i=0; i<map_source.NumMyElements(); ++i) {
+    vec_source[i] = GIDs[i];
+  }
+
+  //Import vec_source into vec_target. This should result in the contents
+  //of vec_target remaining 0 for the entries that don't exist in vec_source,
+  //and other entries should be equal to the corresponding GID in the map.
+
+  vec_target.Import(vec_source, importer, Insert);
+
+  GIDs = map_target.MyGlobalElements();
+  int test_failed = 0;
+
+  //the test passes if the i-th entry in vec_target equals either 0 or
+  //GIDs[i].
+  for(int i=0; i<vec_target.MyLength(); ++i) {
+    if (vec_target[i] != GIDs[i] && vec_target[i] != 0) test_failed = 1;
+  }
+
+  int global_result;
+  Comm.MaxAll(&test_failed, &global_result, 1);
+
+  //If test didn't fail on any procs, global_result should be 0.
+  //If test failed on any proc, global_result should be 1.
+  return global_result;
+}
+
