@@ -140,8 +140,9 @@ int ML_Epetra::ReadXML(const string &FileName, ParameterList &List,
     ao = 1;
 
   string xxx = ListToAdd.get("SetDefaults", "not-set");
-  if (xxx != "not-set")
-    ML_Epetra::SetDefaults(xxx, ListToAdd);
+  if (xxx != "not-set") {
+    ML_Epetra::SetDefaults(xxx, ListToAdd,0,0,false);
+  }
 
   AddSubList(List, ListToAdd);
 
