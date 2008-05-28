@@ -69,6 +69,7 @@ Teuchos::ParameterList Build_Teuchos_List(int stride,double *coord_ptr,char *str
   
   /* Setup basic list structure */
   List11.set("edge matrix free: coarse",List11c);
+  RMList.setName("refmaxwell list");
   RMList.set("refmaxwell: 11list",List11);
   RMList.set("refmaxwell: 22list",List22);
   if(int_tag) RMList.set(int_tag,int_val);
@@ -183,7 +184,6 @@ void matrix_read(Epetra_ActiveComm &Comm){
   int N;
   double *coord_ptr;
   Epetra_MultiVector *coords;
-  coords = new Epetra_MultiVector(NodeMap,2);
   MatlabFileToMultiVector("coord_node.dat",NodeMap,dim,coords);
   coords->ExtractView(&coord_ptr,&N);
   
