@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   MLList.set("x-coordinates", x_coord);
   MLList.set("y-coordinates", y_coord);
   MLList.set("z-coordinates", z_coord);
-  MLList.set("ML output",14);
+  MLList.set("ML output",10);
 
   ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);

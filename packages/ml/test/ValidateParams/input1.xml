@@ -5,10 +5,7 @@
   <Parameter name="ML output" type="int" value="10"/>
   <Parameter name="max levels" type="int" value="10"/>
   <Parameter name="ML validate depth" type="int" value="5"/>
-
-  <ParameterList name="sublist for some other package">
-    <Parameter name="other package option" type="int" value="1"/>
-  </ParameterList>
+  <Parameter name="SetDefaults" type="string" value="SA"/>
 
   <!-- aggregation -->
   <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
