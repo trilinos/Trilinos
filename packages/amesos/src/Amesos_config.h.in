@@ -53,6 +53,9 @@
 /* Define if want to build amesos-mumps */
 #undef HAVE_AMESOS_MUMPS
 
+/* Define if want to build amesos-old_mumps */
+#undef HAVE_AMESOS_OLD_MUMPS
+
 /* Define if want to build amesos-paraklete */
 #undef HAVE_AMESOS_PARAKLETE
 

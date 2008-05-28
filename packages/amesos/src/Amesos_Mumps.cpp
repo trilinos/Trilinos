@@ -407,13 +407,21 @@ int Amesos_Mumps::SymbolicFactorization()
     MPI_Comm_group(MPI_COMM_WORLD, &OrigGroup);
     MPI_Group_incl(OrigGroup, MaxProcs_, &ProcsInGroup[0], &MumpsGroup);
     MPI_Comm_create(MPI_COMM_WORLD, MumpsGroup, &MUMPSComm_);
+#ifndef HAVE_AMESOS_OLD_MUMPS
+    MDS.comm_fortran = (DMUMPS_INT) MPI_Comm_c2f( MUMPSComm_);
+#else
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MUMPSComm_);
+#endif
   } 
   else 
   {
     const Epetra_MpiComm* MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
     assert (MpiComm != 0);
+#ifndef HAVE_AMESOS_OLD_MUMPS
+    MDS.comm_fortran = (DMUMPS_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
+#else
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
+#endif
   }
 #else
   // only thing I can do, use MPI_COMM_WORLD. This will work in serial as well

@@ -1481,6 +1481,11 @@ Optional Features:
   --enable-amesos-mumps_mpi_c2f
                           Enable conversion from C++ MPI commnicator to
                           FORTRAN MPI communicator. (default is yes)
+  --enable-amesos-old_mumps
+                          Enable support for versions of MUMPS prior to 4.6.4
+                          (fixes an error related to a change from F_INT to
+                          DMUMPS_INT). Requires --enable-mumps. (default is
+                          no)
   --enable-amesos-pardiso Enable Amesos interface support for the
                           double-precision version of PARDISO (default is
                           no)
@@ -16011,6 +16016,32 @@ echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_AMESOS_MPI_C2F
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+# Check whether --enable-amesos-old_mumps was given.
+if test "${enable_amesos_old_mumps+set}" = set; then
+  enableval=$enable_amesos_old_mumps; ac_cv_use_amesos_old_mumps=$enableval
+else
+  ac_cv_use_amesos_old_mumps=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use amesos-old_mumps" >&5
+echo $ECHO_N "checking whether to use amesos-old_mumps... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos_old_mumps" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_OLD_MUMPS
 _ACEOF
 
 else

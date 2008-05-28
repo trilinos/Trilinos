@@ -429,6 +429,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for 
 
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, old_mumps, [Enable support for versions of MUMPS prior to 4.6.4 (fixes an error related to a change from F_INT to DMUMPS_INT).  Requires --enable-mumps.],
+                AMESOS_OLD_MUMPS, no)
+		
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, pardiso, [Enable Amesos interface support for the double-precision version of PARDISO], 
 		AMESOS_PARDISO, no)
 
