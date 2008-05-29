@@ -133,7 +133,6 @@ int i;
         }
       }
     }
-    ZOLTAN_FREE(&objSizes);
   }
 
   ierr = initialize_dot(zz, *global_ids, *local_ids, parts, *dots,
@@ -143,6 +142,7 @@ int i;
                    "Error returned from user function initialize_dot.");
     goto End;
   }
+  ZOLTAN_FREE(&objSizes);
 
 End:
 
