@@ -137,7 +137,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
-  if (ml_comm_ != 0) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }
 
   if (TMatrixML_ != 0) {
     ML_Operator_Destroy(&TMatrixML_);
@@ -190,8 +189,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     CurlCurlMatrix_array = 0;
   }
 
-
-
   // These should be destroyed after all the individual operators, as the
   // communicator may be used in profiling some of the individual ML_Operators
   // in the hierarchy at when they are destroyed.
@@ -222,6 +219,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     delete RowMatrix_;
     RowMatrix_ = NULL;
   }
+
+  if (ml_comm_ != 0) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }
   
   int min[ML_MEM_SIZE], max[ML_MEM_SIZE], sum[ML_MEM_SIZE];
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) sum[i] = 0;
@@ -799,10 +798,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_EXIT(EXIT_FAILURE);
     }
 
-  // Uncomment next three lines to create new master list in which smoother
-  // and aggregation level-specific options are now in sublists.
+  // Creates new master list in which level-specific smoother,
+  // level-specific aggregation, and coarse options are now in
+  // sublists.
   ParameterList newList;
-  ML_CreateSublist(List_,newList,&LevelID_[0],NumLevels_);
+  ML_CreateSublists(List_,newList,NumLevels_);
   List_ = newList;
   // Validate Parameter List
   int depth=List_.get("ML validate depth",5);
@@ -810,7 +810,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
      && !ValidateMLPParameters(List_,depth))
   {
     if (Comm_->MyPID() == 0)
-      cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<endl;
+      cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!\n"<<endl;
+      cout << endl << "** IMPORTANT **" << endl << endl;
+      cout << "ML internally copies your parameter list, and modifies the copy like so:" << endl
+           << "   1) Level-specific smoother and aggregation options are placed in sublists" << endl
+           << "      called \"smoother: list (level XX)\" and \"aggregation: list (level XX)\"," << endl
+           << "      respectively." << endl
+           << "   2) Coarse options are placed in a sublist called \"coarse: list\"." << endl
+           << "   3) In \"coarse: list\", any option that started with \"coarse:\" now starts" << endl
+           << "      with \"smoother:\"."
+           << endl << endl;
 #   ifdef HAVE_MPI
     MPI_Finalize();
 #   endif
@@ -1304,7 +1313,10 @@ agg_->keep_P_tentative = 1;
   ML_Aggregate_Set_Threshold(agg_,Threshold);
    
   int MaxCoarseSize = 128;
-  MaxCoarseSize = List_.get("coarse: max size", MaxCoarseSize);
+  if (List_.isSublist("coarse: list")) {
+    ParameterList &coarseList = List_.sublist("coarse: list");
+    MaxCoarseSize = coarseList.get("smoother: max size", MaxCoarseSize);
+  }
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
   int ReqAggrePerProc = 128;

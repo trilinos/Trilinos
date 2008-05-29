@@ -88,6 +88,8 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   setIntParameter("smoother: self overlap",0,"experimental option",PL,intParam);
   /* Unlisted Options that should probably be listed */
   PL->set("smoother: self list",dummy);
+  PL->sublist("smoother: self list").disableRecursiveValidation();
+  setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL,intParam);
   setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL,intParam);
@@ -96,6 +98,7 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   setDoubleParameter("smoother: ParaSails load balancing",0,"Unlisted option",PL,dblParam);
   setIntParameter("smoother: ParaSails factorized",0,"Unlisted option",PL,intParam);
   PL->set("smoother: ifpack list",dummy); 
+  PL->sublist("smoother: ifpack list").disableRecursiveValidation();
   PL->set("smoother: ifpack type",string(""));
   setIntParameter("smoother: ifpack overlap",0,"Unlisted option",PL,intParam);
   setDoubleParameter("smoother: ifpack level-of-fill",0.0,"Unlisted option",PL,dblParam);
@@ -104,6 +107,46 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   /* Unlisted options that should probably go away */
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL,intParam);
   setIntParameter("smoother: MLS polynomial order",2,"Unlisted option",PL,intParam);  
+  setIntParameter("coarse: polynomial order",2,"Unlisted option",PL,intParam);
+  setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL,intParam);
+
+  /*
+     Coarse grid options.
+
+     NOTE:  "inList" has already been run through ML_CreateSublist().  In
+     particular, all coarse level options are now in a sublist called "coarse:
+     list".  Furthermore, in the coares list any coarse level option, i.e.,
+     starts with "coarse:", has been converted to a smoother option of the
+     same name.  So for example, "coarse: type" is now "smoother: type".
+     Admittedly, this does create some peculiar options, such as
+     "smoother: max size".
+
+     The upshot is that all valid coarse level options from this point in the
+     code execution start with "smoother:".
+  */
+  
+  /* Coarsest Grid Options (Section 6.4.5) */
+  setIntParameter("smoother: max size",75,"Max coarse grid size",PL,intParam);
+  //setStringToIntegralParameter<int>("smoother: type","Chebyshev","Coarse solver algorithm",smoothers,PL);
+  //setStringToIntegralParameter<int>("smoother: pre or post","post","When to smooth on coarse grid",tuple<string>("pre","post","both"),PL);
+  //setIntParameter("smoother: sweeps",2,"Number of coarse sweeps",PL,intParam);  
+  //PL->set("smoother: user-defined function",(int(*)(ML_Smoother*,int,double*,int,double*))0);
+  //PL->set("smoother: user-defined name",string("User-defined"));
+  //setDoubleParameter("smoother: damping factor",1.0,"Coarse smoother damping factor",PL,dblParam); 
+  setStringToIntegralParameter<int>("smoother: subsmoother type","Chebyshev","Coarse grid subsmoother (Maxwell)",tuple<string>("Chebyshev","symmetric Gauss-Seidel","MLS"),PL);
+  setIntParameter("smoother: edge sweeps",4,"Number of coarse edge smoothing sweeps",PL,intParam);
+  setIntParameter("smoother: node sweeps",4,"Number of coarse node smoothing sweeps",PL,intParam);
+  //setDoubleParameter("smoother: Chebyshev alpha",2.0,"Damping radius for Chebshev",PL,dblParam);
+  //setDoubleParameter("smoother: MLS alpha",2.0,"Damping radius for Chebshev",PL,dblParam);
+  setIntParameter("smoother: max processes",-1,"Maximum number of procs for coarse solve (Superludist/MUMPS)",PL,intParam);  
+
+  /* Coarse IFPACK Solvers - experimental */
+  //PL->set("smoother: ifpack list",dummy);
+  //PL->set("smoother: ifpack type",std::string(""));
+  //setIntParameter("smoother: ifpack overlap",0,"Unlisted option",PL,intParam);
+  //setDoubleParameter("smoother: ifpack level-of-fill",0.0,"Unlisted option",PL,dblParam);
+  //setDoubleParameter("smoother: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
+  //setDoubleParameter("smoother: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
 
 } //SetValidSmooParams()
 
@@ -200,21 +243,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
     sprintf(param,"smoother: list (level %d)",i); 
     SetValidSmooParams(&(PL->sublist(param)),smoothers);
   }
-  
-  /* Coarsest Grid Options (Section 6.4.5) */
-  setIntParameter("coarse: max size",75,"Max coarse grid size",PL,intParam);
-  setStringToIntegralParameter<int>("coarse: type","Chebyshev","Coarse solver algorithm",smoothers,PL);
-  setStringToIntegralParameter<int>("coarse: pre or post","post","When to smooth on coarse grid",tuple<string>("pre","post","both"),PL);
-  setIntParameter("coarse: sweeps",2,"Number of coarse sweeps",PL,intParam);  
-  PL->set("coarse: user-defined function",(int(*)(ML_Smoother*,int,double*,int,double*))0);
-  PL->set("coarse: user-defined name",string("User-defined"));
-  setDoubleParameter("coarse: damping factor",1.0,"Coarse smoother damping factor",PL,dblParam); 
-  setStringToIntegralParameter<int>("coarse: subsmoother type","Chebyshev","Coarse grid subsmoother (Maxwell)",tuple<string>("Chebyshev","symmetric Gauss-Seidel","MLS"),PL);
-  setIntParameter("coarse: edge sweeps",4,"Number of coarse edge smoothing sweeps",PL,intParam);
-  setIntParameter("coarse: node sweeps",4,"Number of coarse node smoothing sweeps",PL,intParam);
-  setDoubleParameter("coarse: Chebyshev alpha",2.0,"Damping radius for Chebshev",PL,dblParam);
-  setDoubleParameter("coarse: MLS alpha",2.0,"Damping radius for Chebshev",PL,dblParam);
-  setIntParameter("coarse: max processes",-1,"Maximum number of procs for coarse solve (Superludist/MUMPS)",PL,intParam);  
+  SetValidSmooParams(&(PL->sublist("coarse: list")),smoothers);
 
   /* Load-balancing Options (Section 6.4.6) */
   setIntParameter("repartition: enable",0,"Enable repartitioning",PL,intParam);
@@ -272,25 +301,14 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);
   setDoubleParameter("subsmoother: edge alpha",20.0,"alpha for edge Chebyshev polynomial in Hiptmair",PL,dblParam); 
   setDoubleParameter("subsmoother: node alpha",20.0,"alpha for node Chebyshev polynomial in Hiptmair",PL,dblParam); 
-  setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
   
   /* Unlisted options that should probably go away */
   setIntParameter("output",0,"Output Level",PL,intParam);
-  setIntParameter("coarse: polynomial order",2,"Unlisted option",PL,intParam);
-  setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL,intParam);
 
   /* Hightly experimental */
   PL->set("repartition: output timings",false);
   setIntParameter("repartition: estimated iterations",0,"Estimated number of iterations",PL,intParam);
   setStringToIntegralParameter<int>("repartition: Zoltan type","RCB","Type of repartitioner to use",tuple<string>("RCB","hypergraph","fast hypergraph"),PL);
-
-  /* Coarse IFPACK Solvers - experimental */
-  PL->set("coarse: ifpack list",dummy);
-  PL->set("coarse: ifpack type",std::string(""));
-  setIntParameter("coarse: ifpack overlap",0,"Unlisted option",PL,intParam);
-  setDoubleParameter("coarse: ifpack level-of-fill",0.0,"Unlisted option",PL,dblParam);
-  setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
-  setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
 
   return PL;
 }
@@ -305,11 +323,14 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   bool rv=true;
   
   /* Build a list with level-specific stuff stripped */
+  //TODO this should be fixed
   for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
     const string pname=inList.name(param);
     if(pname.find("(level",0) == string::npos)
       List.setEntry(pname,inList.entry(param));
   }
+
+  List.setName(inList.name());
 
   /* Get Defaults + Validate */
   try{
@@ -325,9 +346,9 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what()<<endl;}
+  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what();}
+  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what();}
+  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what();}
   catch(...) {rv=false;}
   delete validList;
   return rv;

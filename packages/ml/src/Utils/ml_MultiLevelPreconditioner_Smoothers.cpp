@@ -199,7 +199,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     // general parameters for more than one smoother
 
-    sprintf(smListName,"smoother: list (level %d)",currentLevel);
+    if (currentLevel != coarseLevel)
+      sprintf(smListName,"smoother: list (level %d)",currentLevel);
+    else
+      sprintf(smListName,"coarse: list");
     ParameterList &smList = List_.sublist(smListName);
 
     int Mynum_smoother_steps = smList.get("smoother: sweeps",num_smoother_steps);
@@ -216,7 +219,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     string MySmoother = smList.get("smoother: type",Smoother);
 
     char msg[80];
-    double AddToDiag=1e-12;
+    double AddToDiag = smList.get("smoother: add to diag", 1e-12);
     int MaxProcs=-1;
 
     if (currentLevel != coarseLevel)
@@ -240,14 +243,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     } else {
       // coarse grid solver
       sprintf(msg,"Coarse solve (level %d) : ", currentLevel);
-      MySmoother = List_.get("coarse: type", "Amesos-KLU");
-      Mynum_smoother_steps =  List_.get("coarse: sweeps", 2);
-      Myomega = List_.get("coarse: damping factor", 1.0);
-      AddToDiag = List_.get("coarse: add to diag", 1e-12);
-      MyPreOrPostSmoother = List_.get("coarse: pre or post","post");
+/*
+      MyPreOrPostSmoother = smList.get("smoother: pre or post","post");
       if      (MyPreOrPostSmoother == "post") pre_or_post = ML_POSTSMOOTHER;
       else if (MyPreOrPostSmoother == "pre")  pre_or_post = ML_PRESMOOTHER;
       else if (MyPreOrPostSmoother == "both") pre_or_post = ML_BOTH;
+      MySmoother = smList.get("smoother: type", "Amesos-KLU");
+      AddToDiag = smList.get("smoother: add to diag", 1e-12);
+      Mynum_smoother_steps =  List_.get("coarse: sweeps", 2);
+      Myomega = List_.get("coarse: damping factor", 1.0);
+      AddToDiag = List_.get("coarse: add to diag", 1e-12);
 
       ChebyshevAlpha = List_.get("coarse: MLS alpha",-2.0);
       if ( ChebyshevAlpha == -2.)
@@ -255,6 +260,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       ChebyshevPolyOrder = List_.get("coarse: MLS polynomial order",-7);
       if (ChebyshevPolyOrder == -7) ChebyshevPolyOrder = Mynum_smoother_steps;
       MaxProcs = List_.get("coarse: max processes", -1);
+*/
 /*
 //TODO Still need to fix user-defined coarse grid solver
       userSmootherPtr = List_.get("coarse: user-defined function",
@@ -267,6 +273,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 //TODO coarse: damping factor
 */
     }
+
+
+
 
     if( MySmoother == "Jacobi" ) {
 
@@ -393,7 +402,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ========= //
 
       int thisLevel = currentLevel;     // current level
-      int nextLevel = LevelID_[level+1];   // next coarser level
+      int nextLevel = 0;                // next coarser level
+      if (currentLevel != coarseLevel)
+        nextLevel = LevelID_[level+1];
       int MyChebyshevPolyOrder = smList.get("smoother: MLS polynomial order",ChebyshevPolyOrder);
       if (MyChebyshevPolyOrder == -97)
          MyChebyshevPolyOrder = smList.get("smoother: polynomial order",MyChebyshevPolyOrder);
@@ -717,7 +728,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       char *SmInfo=0;
 
       int thisLevel = currentLevel;   // current level
-      int nextLevel = LevelID_[level+1]; // next coarser level
+      int nextLevel = 0;                // next coarser level
+      if (currentLevel != coarseLevel)
+        nextLevel = LevelID_[level+1];
       void *edge_smoother = 0, *nodal_smoother = 0;
       double edge_coarsening_rate=0.0, node_coarsening_rate=0.0;
 

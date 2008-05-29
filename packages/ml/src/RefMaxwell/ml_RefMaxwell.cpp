@@ -179,6 +179,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #endif
 
   /* Validate List */
+  Teuchos::ParameterList newList;
+  ML_CreateSublists(List_,newList,0);
+  List_ = newList;
+  //TODO check for failure of validation, and print a helpful message,
+  //     just like in MultiLevelPreconditioner
   ValidateRefMaxwellParameters(List_);
   
   /* Pull Solver Mode, verbosity, matrix output */
@@ -324,6 +329,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* Build the (1,1) Block Preconditioner */ 
   string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
+  if (List11.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
   if(solver11=="edge matrix free")
     EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,BCrows,numBCrows,List11,true);
   else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
@@ -336,6 +342,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(!HasOnlyDirichletNodes){
     string solver22=List_.get("refmaxwell: 22solver","multilevel");
     Teuchos::ParameterList List22=List_.get("refmaxwell: 22list",dummy);
+    if (List22.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
     SetDefaults("SA",List22,0,0,false);
     if(solver22=="multilevel") NodePC=new MultiLevelPreconditioner(*TMT_Matrix_,List22);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (2,2) block preconditioner\n");return -1;}
@@ -471,6 +478,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   if(smoother == "Hiptmair"){
     /* Setup Teuchos Lists - Hiptmair */
     Teuchos::ParameterList PreList;
+    PreList.setName("refmaxwell: edge presmoother");
     PreList.set("coarse: type",smoother);
     PreList.set("coarse: sweeps",1);
     PreList.set("coarse: edge sweeps",smoother_sweeps*edge_sweeps);
@@ -484,6 +492,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("max levels",1);
     
     Teuchos::ParameterList PostList(PreList);
+    PostList.setName("refmaxwell: edge postsmoother");
     PreList.set("coarse: pre or post","pre");
     PreList.set("smoother: pre or post","pre");
     PreList.set("zero starting solution", true);
@@ -512,6 +521,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   else{
     /* Setup Teuchos Lists - Chebyshev / SGS */
     Teuchos::ParameterList PreList;
+    PreList.setName("refmaxwell: edge presmoother");
     PreList.set("coarse: type",List.get("smoother: type","symmetric Gauss-Seidel"));
     PreList.set("coarse: sweeps",List.get("smoother: sweeps",2));
     PreList.set("coarse: Chebyshev alpha",List.get("smoother: Chebyshev alpha",30.0));
@@ -521,6 +531,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("max levels",1);    
 
     Teuchos::ParameterList PostList(PreList);
+    PostList.setName("refmaxwell: edge postsmoother");
     PreList.set("coarse: pre or post","pre");
     PreList.set("smoother: pre or post","pre");
     PreList.set("zero starting solution", false);

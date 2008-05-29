@@ -73,6 +73,8 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   
 }
 
+void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List,bool OverWrite);
+
 // ============================================================================
 /*! Set default values for classical smoothed aggregation.
 <br>
@@ -122,12 +124,11 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-
 } //ML_Epetra::SetDefaultsSA()
 
 // ============================================================================
@@ -189,13 +190,11 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
 
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
-
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-
 } //ML_Epetra::SetDefaultsDD()
 
 // ============================================================================
@@ -260,13 +259,11 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
   
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
-  
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-
 } //ML_Epetra::SetDefaultsDD_3Levels()
 
 // ============================================================================
@@ -332,13 +329,11 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
   // direct solver on coarse problem
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
-
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-  
 } //ML_Epetra::SetDefaultsMaxwell()
 
 // ============================================================================
@@ -390,13 +385,11 @@ int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
 
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",256);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-
-  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-
 } //ML_Epetra::SetDefaultsNSSA()
 
 // ============================================================================
@@ -459,14 +452,11 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
 
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-
-  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
-
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-
 } //ML_Epetra::SetDefaultsDD_LU()
 
 
@@ -528,14 +518,30 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
 #endif
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
+  List.set("coarse: pre or post","post");
+  List.set("coarse: sweeps",1);
 
-  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
-    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
-      inList.setEntry( inList.name(param) , inList.entry(param) );
-  
+  ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
-
 } //ML_Epetra::SetDefaultsDD_3Levels_LU()
+
+void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List, bool OverWrite)
+{
+  ParameterList *coarseList=0;
+  //Don't create the coarse list if it doesn't already exist!
+  if (inList.isSublist("coarse: list"))
+    coarseList = &(inList.sublist("coarse: list"));
+  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++) {
+    string pname = List.name(param);
+    if (coarseList && pname.find("coarse: ",0) != string::npos) {
+      if (!coarseList->isParameter(pname) || OverWrite)
+        coarseList->setEntry(pname , List.entry(param));
+    }
+    else if ( !inList.isParameter(pname) || OverWrite ) {
+      inList.setEntry( pname , List.entry(param) );
+    }
+  }
+} //ML_OverwriteDefaults()
 
 
 

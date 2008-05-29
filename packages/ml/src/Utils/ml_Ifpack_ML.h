@@ -76,9 +76,16 @@ public:
   }
 
   //! Sets all the parameters for the preconditioner from the list.
-  virtual int SetParameters(Teuchos::ParameterList& MLList)
+  virtual int SetParameters(Teuchos::ParameterList& List)
   {
-    MLList_ = MLList;
+    string listName = List.get("ML sublist name","ML list");
+    try{MLList_ = List.sublist(listName,true);}
+    catch(...) {
+      if (A_->Comm().MyPID()==0)
+        cout << "Did not find sublist \"" << listName
+             << "\" for ML subdomain solver.  Setting \"SA\" defaults." << endl;
+      SetDefaults("SA",MLList_);
+    };
     return(0);
   }
 

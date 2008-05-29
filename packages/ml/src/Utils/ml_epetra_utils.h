@@ -158,9 +158,9 @@ int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
 int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatrix);
 
 #ifdef HAVE_ML_TEUCHOS
-void ML_CreateSublist(Teuchos::ParameterList &List,
+void ML_CreateSublists(Teuchos::ParameterList &List,
                       Teuchos::ParameterList &newList,
-                      int *LevelID,int NumLevels);
+                      int NumLevels);
 #endif
 
 #ifndef ML_CPP
