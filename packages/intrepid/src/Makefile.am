@@ -54,6 +54,7 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/Intrepid_Basis.hpp \
   $(srcdir)/local/basis/Intrepid_DefaultBasisFactoryDef.hpp \
   $(srcdir)/local/basis/Intrepid_DefaultBasisFactory.hpp \
+  $(srcdir)/local/basis/Intrepid_Tabulate.hpp \
   $(srcdir)/local/basis/Intrepid_F0_QUAD_I1_FEM_DEFAULTDef.hpp \
   $(srcdir)/local/basis/Intrepid_F0_QUAD_I1_FEM_DEFAULT.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp \
