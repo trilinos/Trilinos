@@ -663,10 +663,6 @@ static int rib_fn(
 
 EndReporting:
 
-  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME))
-    Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, 
-                part_sizes, timers, counters, stats, NULL, NULL, FALSE);
-
   /* update calling routine parameters */
 
   start_time = Zoltan_Time(zz->Timer);
@@ -751,6 +747,10 @@ EndReporting:
 
   end_time = Zoltan_Time(zz->Timer);
   lb_time[0] += (end_time - start_time);
+
+  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME))
+    Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, 
+                part_sizes, timers, counters, stats, NULL, NULL, FALSE);
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
     if (zz->Proc == zz->Debug_Proc)
