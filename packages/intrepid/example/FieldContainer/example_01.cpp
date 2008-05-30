@@ -39,7 +39,7 @@ using namespace std;
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
-  cout \
+  std::cout \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
   << "|                  Example use of the FieldContainer class                    |\n" \
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   Teuchos::Array<int> dimension;
   Teuchos::Array<int> multiIndex;
   
-  cout \
+  std::cout \
     << "===============================================================================\n"\
     << "| EXAMPLE 1: rank 2 multi-index: {u(p,i) | 0 <= p < 5; 0 <= i < 3 }           |\n"\
     << "===============================================================================\n\n";
@@ -90,23 +90,23 @@ int main(int argc, char *argv[]) {
   }
   
   // Show container contents
-  cout << myContainer;
+  std::cout << myContainer;
   
   // Access by overloaded (), multiindex and []:
   multiIndex[0] = 3; 
   multiIndex[1] = 1;
   int enumeration = myContainer.getEnumeration(multiIndex);
 
-  cout << "Access by ():          myContainer(" << 3 <<"," << 1 << ") = " << myContainer(3,1) << "\n";  
-  cout << "Access by multi-index: myContainer{" << multiIndex[0] << multiIndex[1] << "} = "<< myContainer.getValue(multiIndex) <<"\n";
-  cout << "Access by enumeration: myContainer[" << enumeration << "] = " << myContainer[enumeration] <<"\n";
+  std::cout << "Access by ():          myContainer(" << 3 <<"," << 1 << ") = " << myContainer(3,1) << "\n";  
+  std::cout << "Access by multi-index: myContainer{" << multiIndex[0] << multiIndex[1] << "} = "<< myContainer.getValue(multiIndex) <<"\n";
+  std::cout << "Access by enumeration: myContainer[" << enumeration << "] = " << myContainer[enumeration] <<"\n";
   
-  cout << "Assigning value by (): \n old value at (3,1) = " << myContainer(3,1) <<"\n";
+  std::cout << "Assigning value by (): \n old value at (3,1) = " << myContainer(3,1) <<"\n";
   myContainer(3,1) = 999.99;
-  cout << " new value at (3,1) = " << myContainer(3,1) <<"\n";
+  std::cout << " new value at (3,1) = " << myContainer(3,1) <<"\n";
       
   
-  cout << "\n" \
+  std::cout << "\n" \
   << "===============================================================================\n"\
   << "| EXAMPLE 2: rank 3 multi-index: {u(p,i,j) | 0 <=p< 5; 0 <= i<2, 0<=j<3       |\n"\
   << "===============================================================================\n\n";
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   }
   
   // Display contents
-  cout << myContainer;
+  std::cout << myContainer;
   
   // Access by overloaded (), multiindex and []:
   multiIndex[0] = 3; 
@@ -148,16 +148,16 @@ int main(int argc, char *argv[]) {
   multiIndex[2] = 2;
   enumeration = myContainer.getEnumeration(multiIndex);
     
-  cout << "Access by ():          myContainer(" << 3 <<"," << 1 << "," << 2 << ") = " << myContainer(3,1,2) << "\n";  
-  cout << "Access by multi-index: myContainer{" << multiIndex[0] << multiIndex[1] << multiIndex[2] << "} = "<< myContainer.getValue(multiIndex) <<"\n";
-  cout << "Access by enumeration: myContainer[" << enumeration << "] = " << myContainer[enumeration] <<"\n";
+  std::cout << "Access by ():          myContainer(" << 3 <<"," << 1 << "," << 2 << ") = " << myContainer(3,1,2) << "\n";  
+  std::cout << "Access by multi-index: myContainer{" << multiIndex[0] << multiIndex[1] << multiIndex[2] << "} = "<< myContainer.getValue(multiIndex) <<"\n";
+  std::cout << "Access by enumeration: myContainer[" << enumeration << "] = " << myContainer[enumeration] <<"\n";
 
-  cout << "Assigning value by (): \n old value at (3,1,2) = " << myContainer(3,1,2) <<"\n";
+  std::cout << "Assigning value by (): \n old value at (3,1,2) = " << myContainer(3,1,2) <<"\n";
   myContainer(3,1,2) = -999.999;
-  cout << " new value at (3,1,2) = " << myContainer(3,1,2) <<"\n";
+  std::cout << " new value at (3,1,2) = " << myContainer(3,1,2) <<"\n";
   
   
-  cout << "\n" \
+  std::cout << "\n" \
   << "===============================================================================\n"\
   << "| EXAMPLE 4: making rank-5 FieldContainer from data array and index range array |\n"\
   << "===============================================================================\n\n";
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   
   // Create FieldContainer from data array and index array and show it
   FieldContainer<double> myNewContainer(dimension, dataTeuchosArray);
-  cout << myNewContainer;
+  std::cout << myNewContainer;
 
   // Access by overloaded (), multiindex and []:
   multiIndex.resize(myNewContainer.getRank());
@@ -200,16 +200,16 @@ int main(int argc, char *argv[]) {
   multiIndex[4] = 5;
   enumeration = myNewContainer.getEnumeration(multiIndex);
     
-  cout << "Access by ():          myNewContainer(" << 3 <<"," << 1 << "," << 2 << "," << 2 << "," << 5 << ") = " << myNewContainer(3,1,2,2,5) << "\n";  
-  cout << "Access by multi-index: myNewContainer{" << multiIndex[0] << multiIndex[1] << multiIndex[2] << multiIndex[3] << multiIndex[4] << "} = "<< myNewContainer.getValue(multiIndex) <<"\n";
-  cout << "Access by enumeration: myNewContainer[" << enumeration << "] = " << myNewContainer[enumeration] <<"\n";
+  std::cout << "Access by ():          myNewContainer(" << 3 <<"," << 1 << "," << 2 << "," << 2 << "," << 5 << ") = " << myNewContainer(3,1,2,2,5) << "\n";  
+  std::cout << "Access by multi-index: myNewContainer{" << multiIndex[0] << multiIndex[1] << multiIndex[2] << multiIndex[3] << multiIndex[4] << "} = "<< myNewContainer.getValue(multiIndex) <<"\n";
+  std::cout << "Access by enumeration: myNewContainer[" << enumeration << "] = " << myNewContainer[enumeration] <<"\n";
 
-  cout << "Assigning value by (): \n old value at (3,1,2,2,5) = " << myNewContainer(3,1,2,2,5) <<"\n";
+  std::cout << "Assigning value by (): \n old value at (3,1,2,2,5) = " << myNewContainer(3,1,2,2,5) <<"\n";
   myNewContainer(3,1,2,2,5) = -888.888;
-  cout << " new value at (3,1,2,2,5) = " << myNewContainer(3,1,2,2,5) <<"\n";
+  std::cout << " new value at (3,1,2,2,5) = " << myNewContainer(3,1,2,2,5) <<"\n";
   
   
-  cout << "\n" \
+  std::cout << "\n" \
     << "===============================================================================\n"\
     << "| EXAMPLE 5: making trivial FieldContainers and storing a single zero         |\n"\
     << "===============================================================================\n\n";
@@ -220,8 +220,8 @@ int main(int argc, char *argv[]) {
   myContainer.resize(dimension);
   std::cout << myContainer;
   
-  // Make trivial container by using empty method:
-  myNewContainer.empty();
+  // Make trivial container by using clear method:
+  myNewContainer.clear();
   std::cout << myNewContainer;
   
   // Now use storeZero() to reset the container to hold a single zero
@@ -229,17 +229,17 @@ int main(int argc, char *argv[]) {
   std::cout << myNewContainer;
   
   
-  cout << "\n" \
+  std::cout << "\n" \
     << "===============================================================================\n"\
     << "| EXAMPLE 6: Timing read and write operations using () and getValue           |\n"\
     << "===============================================================================\n\n";
   
   // Initialize dimensions for rank-5 multi-index value
-  int dim0 = 100;     // number of cells
-  int dim1 = 125;     // number of points
-  int dim2 = 125;     // number of functions
-  int dim3 = 3;       // 1st space dim
-  int dim4 = 3;       // 2nd space dim
+  int dim0 = 10;     // number of cells
+  int dim1 = 50;     // number of points
+  int dim2 = 27;     // number of functions
+  int dim3 = 3;      // 1st space dim
+  int dim4 = 3;      // 2nd space dim
   
   FieldContainer<double> myTensorContainer(dim0, dim1, dim2, dim3, dim4);
   multiIndex.resize(myTensorContainer.getRank());
@@ -288,6 +288,11 @@ int main(int argc, char *argv[]) {
   timerRound.stop();
   std::cout << " Time to read and write from container using (): " << timerRound.totalElapsedTime() <<"\n";
     
+  std::cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 6: Specialized methods of FieldContainer                            |\n"\
+    << "===============================================================================\n\n";
+  
    return 0;
 }
 

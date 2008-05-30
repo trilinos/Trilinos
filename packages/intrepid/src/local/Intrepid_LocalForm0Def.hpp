@@ -2,7 +2,7 @@
 // ************************************************************************
 //
 //                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//                 Copytest (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -68,8 +68,7 @@ const FieldContainer<Scalar> & LocalForm0<Scalar,ArrayType>::getOperator(const E
   if ((int)basisVals_[primOp][dimIndex].size() == 0) {
     ((basisVals_[primOp])[dimIndex]).resize(cubature_[dimIndex].size());
   }
-  
-   // If the FieldContainer at basisVals_[primOp][dimIndex][subCellId] is empty, resize it accordingly
+  // If the FieldContainer at basisVals_[primOp][dimIndex][subCellId] is empty, resize it accordingly
   if ((int)basisVals_[primOp][dimIndex][subCellId].getSize() == 0) {
     basisVals_[primOp][dimIndex][subCellId].resize(numCubPoints_[dimIndex][subCellId],
                                                    basisNumDofs_,
@@ -82,7 +81,6 @@ const FieldContainer<Scalar> & LocalForm0<Scalar,ArrayType>::getOperator(const E
                         cubPoints_[dimIndex][subCellId], 
                         primOp);
   }
-
   // Otherwise, we simply return const reference to the appropriate FieldContainer:
   return basisVals_[primOp][dimIndex][subCellId];
 }
@@ -175,7 +173,8 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(FieldContainer<Scalar> &  
               }
             }
             
-            // Loop over gradient components
+            // Loop over gradient components. transVals dimensions are (C,P,D,F) instead of (C,P,F,D)
+            // in order to enable application of BLAS GEMM routine which assumes column-major storage
             for(int dim = 0; dim < myCellDim; dim++) {
               for (int bf = 0; bf < basisNumDofs_; bf++) {
                 tempJacMat.rowMultiply(transVals(cl, qp, dim, bf),            // result goes here 
@@ -208,7 +207,6 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(FieldContainer<Scalar> &  
                                                       const bool                       reuseJacobians,
                                                       const EIntegrationDomain         intDomain)
 {
-  
   // This method acts on an auxiliary LocalField: we will use transformBasisValues() from that field!
   EField primFieldType = primOpField.getFieldType();
   
@@ -246,7 +244,7 @@ void LocalForm0<Scalar,ArrayType>::transformBasisVals(FieldContainer<Scalar> &  
                           std::invalid_argument,
                           ">>> ERROR (LocalForm0): Invalid auxiliary primitive operator field!");
   }
-} // end fillRight 
+} // end fillTest 
 
 
 
@@ -366,149 +364,11 @@ void LocalForm0<Scalar,ArrayType>::applyWeightedMeasure(FieldContainer<Scalar> &
   }// switch(primOp)
 }
 
-
-
-template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::integrate(FieldContainer<Scalar> &        outputValues,
-                                             const FieldContainer<Scalar> &  leftValues,
-                                             const FieldContainer<Scalar> &  rightValues) const {
-  
-  // leftValues and rightValues can have ranks 3,4,5 and their ranks must be the same!
-  // 1st dim. is number of cells; 2nd dim. is number of points.
-  int lrRank   = leftValues.getRank();
-  int numCells = leftValues.getDimension(0);
-  int numQps   = leftValues.getDimension(1);
-  
-  // outputValues is rank-3 with multi-index (C, L, R). L and R dims are always the last dims in left/rightValues
-  int numLeftBfs  = leftValues.getDimension(lrRank  - 1);
-  int numRightBfs = rightValues.getDimension(lrRank - 1);
-  outputValues.resize(numCells, numLeftBfs, numRightBfs);
-  
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION((lrRank != rightValues.getRank()), std::invalid_argument,
-                     ">>> ERROR (LocalForm0): Ranks of leftValues and rightValues do not match!");
-  int numRightCells = rightValues.getDimension(0);
-  TEST_FOR_EXCEPTION((numCells != numRightCells), std::invalid_argument,
-                     ">>> ERROR (LocalForm0): Numbers of cells in leftValues and rightValues do not agree!");
-  int numRightQps = rightValues.getDimension(1);
-  TEST_FOR_EXCEPTION((numQps != numRightQps), std::invalid_argument,
-                     ">>> ERROR (LocalForm0): Numbers of integration points in leftValues and rightValues do not agree!");
-#endif
-  
-  switch(compEngine_) {
-    case COMP_CPP: {
-      
-      for (int cl=0; cl<numCells; cl++) {
-        for (int lbf=0; lbf<numLeftBfs; lbf++) {
-          for (int rbf=0; rbf<numRightBfs; rbf++) {
-            Scalar tmpVal(0);
-            for (int qp=0; qp<numQps; qp++) {
-              
-              switch (lrRank) {
-                case 3: { // scalar fields: multi-index is (C,P,F)
-                  tmpVal += leftValues(cl, qp, lbf)*rightValues(cl, qp, rbf);
-                }
-                break;
-                  
-                case 4: { // vector fields: multi-index is (C,P,D,F), loop over (D) subindex
-                  int vecDim = leftValues.getDimension(2);
-                  for (int iVec = 0; iVec < vecDim; iVec++) {
-                    tmpVal += leftValues(cl, qp, iVec, lbf)*rightValues(cl, qp, iVec, rbf);
-                  }
-                }
-                break;
-                  
-                case 5: { // tensor fields: multi-index is (C,P,D,D,F), loop over (D,D) subindex
-                  int tenDim0 = leftValues.getDimension(2);
-                  int tenDim1 = leftValues.getDimension(3);
-                  for (int iTens1 = 0; iTens1 < tenDim0; iTens1++) {
-                    for (int iTens2 =0; iTens2 < tenDim1; iTens2++) {
-                      tmpVal += leftValues(cl, qp, iTens1, iTens2, lbf)*rightValues(cl, qp, iTens1, iTens2, rbf);
-                    }
-                  }
-                }
-                break;
-
-                default:
-                  TEST_FOR_EXCEPTION(((lrRank != 3) && (lrRank != 4) && (lrRank != 5)),
-                                     std::invalid_argument,
-                                     ">>> ERROR (LocalForm0): Invalid data rank. Only scalars, vectors, and tensors are supported!");
-              } // switch(lrRank)
-            } // P-loop
-            
-            outputValues(cl, lbf, rbf) = tmpVal;
-            
-          } // R-loop
-        } // L-loop
-      } // C-loop
-    }
-    break;
-      
-    case COMP_BLAS: {
-      
-      // Data size is defined by the rank of the data containers (left and right must have same rank)
-      // rank 3: (C,P,F)      -> dataSize = 1 
-      // rank 4: (C,P,D,F)    -> dataSize = D     = leftValues.getDimension(2);
-      // rank 5: (C,P,D,D,F)  -> dataSize = D*D   = leftValues.getDimension(2)*leftValues.getDimension(3)
-      int dataSize = 1;
-      if(lrRank == 4) dataSize = leftValues.getDimension(2);
-      if(lrRank == 5) dataSize = leftValues.getDimension(2)*leftValues.getDimension(3);
-
-      // GEMM parameters and their values:
-      // TRANSA   NO_TRANS
-      // TRANSB   TRANS
-      // M        #rows(A)               = numLeftBfs
-      // N        #cols(B^T)             = numRightBfs
-      // K        #cols(A)               = numData = numQps * dataSize
-      // ALPHA    1.0
-      // A        left data for cell cl  = leftValues.getData()[cl*skipL]
-      // LDA      #rows(A)               = numLeftBfs
-      // B        right data for cell cl = rightValues.getData()[cl*skipR]
-      // LDB      #rows(B)               = numRightBfs
-      // BETA     0.0
-      // C        result for cell cl     = outputValues.getData()[cl*skipOp]
-      // LDC      #rows(C)               = numLeftBfs
-      int numData  = numQps*dataSize;       
-      int skipL    = numLeftBfs*numData;        // size of the left data chunk per cell
-      int skipR    = numRightBfs*numData;       // size of the right data chunk per cell
-      int skipOp   = numLeftBfs*numRightBfs;    // size of the output data chunk per cell
-      double alpha = 1.0;                       // these are left unchanged by GEMM 
-      double beta  = 0.0;
-
-      for (int cl=0; cl<numCells; cl++) {
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::NO_TRANS,
-                    Teuchos::TRANS,
-                    numLeftBfs,
-                    numRightBfs,
-                    numData,
-                    alpha,
-                    &leftValues.getData()[cl*skipL],
-                    numLeftBfs,
-                    &rightValues.getData()[cl*skipR],
-                    numRightBfs,
-                    beta,
-                    &outputValues.getData()[cl*skipOp],
-                    numLeftBfs);
-      }
-    }
-    break;
-      
-    default:
-      TEST_FOR_EXCEPTION(((compEngine_ != COMP_CPP) && (compEngine_ != COMP_BLAS)),
-                         std::invalid_argument,
-                         ">>> ERROR (LocalForm0): Computational engine not defined!");
-      
-  } // switch(compEngine_)
-  
-} // integrate
-
 //===========================================================================//
 //                                                                           //
-//                         Public methods of LocalForm0                      //
+//            Public methods of LocalForm0: constructors                     //
 //                                                                           //
 //===========================================================================//
-
 
 template<class Scalar, class ArrayType>
 LocalForm0<Scalar,ArrayType>::LocalForm0(Teuchos::RCP<Basis<Scalar> > basis,
@@ -573,14 +433,46 @@ basis_(basis), cubature_(cubature) {
   }
 }
 
-
+//===========================================================================//
+//                                                                           //
+//            Public methods of LocalForm0: getOperator methods              //
+//                                                                           //
+//===========================================================================//
 
 template<class Scalar, class ArrayType>
 void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                             outputValues,
                                                const Teuchos::Array<Point<Scalar> > &  inputPoints,
-                                               const EOperator                         primOp) {
-  // here need to copy to the array type
-  //basis_->getValues(outputValues, inputPoints, primOp);
+                                               const EOperator                         primOp) 
+{  
+  // This method can only be called in the FEM context. Check the basis type of this LocalForm0 object
+  if( (BASIS_FEM_DEFAULT <= basisType_) && (basisType_ < BASIS_FVD_DEFAULT) ) {
+    
+    // Define FieldContainer for getValues method of the basis class to return the values. 
+    FieldContainer<Scalar> basisValues;
+    basis_ -> getValues(basisValues, inputPoints, primOp);
+    
+    // basisValues is of rank-2 or rank-3; resize outputValues to match basisvalues dimensions
+    if(basisValues.getRank() == 2) {
+      outputValues.resize(basisValues.getDimension(0), 
+                          basisValues.getDimension(1) );
+    }
+    else {
+      outputValues.resize(basisValues.getDimension(0), 
+                          basisValues.getDimension(1), 
+                          basisValues.getDimension(2) );
+    }
+    // For simplicity copy basisValues to outputValues using enumeration instead of nested loops and (i,j,k..) methods.
+    int dataSize = basisValues.getSize();
+    for(int i = 0; i < dataSize; i++) {
+      outputValues[i] = basisValues[i]; 
+    }
+  }
+  // Throw an exception because in the FVD context we need a physical cell in order to compute values.
+  else {
+    TEST_FOR_EXCEPTION( ( (BASIS_FVD_DEFAULT <= basisType_ ) && (basisType_ <= BASIS_MAX) ), 
+                        std::invalid_argument,
+                        ">>> ERROR (LocalForm0): This method is undefined for FVD bases.");
+  }
 }
 
 
@@ -589,35 +481,115 @@ template<class Scalar, class ArrayType>
 void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                             outputValues,
                                                const Teuchos::Array<Point<Scalar> > &  inputPoints,
                                                const EOperator                         primOp,
-                                               const Cell<Scalar> &                    cell) {
+                                               const Cell<Scalar> &                    cell) 
+{
+  int numPts = inputPoints.size();
+  
+  // Reconstruction of values on physical cells depends on the context. These are the FEM contexts:
+  if( (BASIS_FEM_DEFAULT <= basisType_) && (basisType_ < BASIS_FVD_DEFAULT) ) {
+    
+    // In the FEM context we first map physical points to reference points
+    Teuchos::Array<Point<Scalar> > refPoints( inputPoints.size() );
+    for(int pt = 0; pt < numPts; pt++){
+      refPoints[pt] = cell.mapToReferenceCell( inputPoints[pt] ); 
+    }    
+    // Then we compute reference values using the previous getOperator method. 
+    this -> getOperator(outputValues, inputPoints, primOp);
+    
+    // Finaly, we transform the reference values back to the physical cell.
+    switch(primOp) {
+      case OPERATOR_VALUE: 
+        // Values of LocalForm0 fields don't need any further transformations
+        break;
+        
+        // Gradients of LocalForm0 fields must be properly transformed by DF^{-T}.
+      case OPERATOR_GRAD:
+      case OPERATOR_D1: {
+        
+        int myCellDim = cell.getMyCellDim();
+        Matrix<Scalar> tempJacMat(myCellDim);
+        EMapping cellMapping = cell.getCellMappingType();
+        
+        for(int pt = 0; pt < numPts; pt++) {
+          
+          // If the cell is affine, Jacobian can be computed once
+          if(cellMapping == MAPPING_AFFINE) {
+            if( pt == 0 ) {
+              tempJacMat = cell.jacobian(refPoints[pt]);
+              tempJacMat.transpose();
+              tempJacMat.invert();
+            }
+          }
+          // Otherwise, we have to compute them at every cubature point
+          else {
+            tempJacMat = cell.jacobian(refPoints[pt]);
+            tempJacMat.transpose();
+            tempJacMat.invert();
+          }
+          // Loop over basis functions and transform their gradient components
+          for (int bf = 0; bf < basisNumDofs_; bf++) {
+              tempJacMat.multiplyLeft(&outputValues(pt, bf, 0),             // result goes here 
+                                      &outputValues(pt, bf, 0) );
+          } // F-loop
+        }//P-loop
+      }
+        break;
+        
+      default:
+        TEST_FOR_EXCEPTION((primOp != OPERATOR_VALUE) && 
+                           (primOp != OPERATOR_GRAD),
+                           std::invalid_argument,
+                           ">>> ERROR (LocalForm0): Invalid primitive operator!");
+    }// switch(primOp)
+  }// if(basisType_)
+  // And these are the FVD contexts:
+  else if( (BASIS_FVD_DEFAULT <= basisType_) && (basisType_ < BASIS_MAX) ){
+    TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (LocalForm0): Method not implemented");
+  }
+  else {
+    TEST_FOR_EXCEPTION( !( (BASIS_FEM_DEFAULT <= basisType_) && (basisType_ < BASIS_MAX) ),
+                        std::invalid_argument,
+                        ">>> ERROR (LocalForm0): This object has an invalid basis type.");
+  }
 }
 
 
 
 template<class Scalar, class ArrayType>
 void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                     outputValues,
-                                               const EOperator                 leftOp,
-                                               const EOperator                 rightOp,
+                                               const EOperator                 trialOp,
+                                               const EOperator                 testOp,
                                                MultiCell<Scalar> &             mCell,
                                                const ArrayType &               inputData,
                                                const bool                      reuseJacobians,
-                                               const EIntegrationDomain        intDomain) {
-}
-
-
-
-template<class Scalar, class ArrayType>
-void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                 outputValues,
-                                               const EOperator             leftOp,
-                                               const EOperator             rightOp,
-                                               MultiCell <Scalar> &        mCell,
-                                               const bool                  reuseJacobians,
-                                               const EIntegrationDomain    intDomain)
+                                               const EIntegrationDomain        intDomain) 
 {
-  FieldContainer<Scalar> leftValues;
-  FieldContainer<Scalar> rightValues;
+  /*This method computes a discrete operator acting on the native basis set and whose range has the 
+  same dimension as the native basis set, i.e., a square matrix with dimensions equal the number
+  of the native basis functions. The elements of this matrix are computed by contracting two  
+  ("trial" and "test") FieldContainers with properly transformed native basis values, and a third
+  container (inputData) with user-supplied data. The admissible combinations of containers are as follows:
+  ==================================================================================================
+  | trialValues | inputData  | testValues|outputVals. | signature |    discrete operator           |
+  =============|============|============|============|===========|=================================
+  | (C,P,F)    | (C,P)      | (C,P,F)    |  (C,F,F)   | 323 = 88  | mass + scalar data             |
+  | (C,P,D,F)  | (C,P)      | (C,P,D,F)  |  (C,F,F)   | 424 = 114 | stiffness + scalar data        |
+  | (C,P,D,F)  | (C,P,D)    | (C,P,D,F)  |  (C,F,F)   | 434 = 119 | stiffness + diag. tensor data  |
+  | (C,P,D,F)  | (C,P,D,D)  | (C,P,D,F)  |  (C,F,F)   | 444 = 124 | stiffness + full tensor data   |
+  | (C,P,F)    | (C,P,D)    | (C,P,D,F)  |  (C,F,F)   | 334 = 94  | advection + vector data        |
+  | (C,P,D,F)  | (C,P,D)    | (C,P,F)    |  (C,F,F)   | 433 = 118 | advection + vector data        |
+  ==================================================================================================
+  The trial signature is a base (5) value, the test signature is the equivalent decimal value
+  C -> number of integration domains
+  P -> number of integration points on the reference integration domain
+  D -> space dimension, i.e., number of vector and tensor function components
+  F -> number of native basis functions
   
-  // If the user had failed to define an atlas we will use the default atlas.
+  trialOp and testOp must be such that "trial" and "test" FieldContainers and inputData are in
+  one of the admissible combinations above. 
+  */
+  
+  // This method is called in the FEM context and requires an atlas. Use default atlas if user failed to define one
   if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {
     mCell.setAtlas();
   }
@@ -631,31 +603,140 @@ void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                 outpu
     }
   }
   
-  // Fill leftValues with the appropriate transformed native basis function values
-  transformBasisVals(leftValues,   leftOp,   mCell, reuseJacobians, intDomain);
-
-  // If left and right operators are the same, right values are left values time the measure:
-  if(leftOp == rightOp) {
-    applyWeightedMeasure(rightValues, leftValues, leftOp, mCell, reuseJacobians, intDomain); 
-  }
+  // Containers for properly transformed values of trialOp and testOp applied to the same native basis set:
+  FieldContainer<Scalar> trialValues;
+  FieldContainer<Scalar> testValues;
   
-  // Otherwise, rightValues must be computed on their own and then the  measure is applied:
+  // Fill trialValues with the appropriate transformed native basis function values
+  transformBasisVals(trialValues,   trialOp,   mCell, reuseJacobians, intDomain);
+  
+  // If trialOp=testOp, testValues = trialValues times the measure; otherwise compute separately
+  if(trialOp == testOp) {
+    applyWeightedMeasure(testValues, trialValues, trialOp, mCell, reuseJacobians, intDomain); 
+  }
   else {    
-    transformBasisVals(rightValues,   rightOp,   mCell, reuseJacobians, intDomain);
-    applyWeightedMeasure(rightValues, rightValues, rightOp, mCell, reuseJacobians, intDomain); 
+    transformBasisVals(testValues,   testOp,   mCell, reuseJacobians, intDomain);
+    applyWeightedMeasure(testValues, testValues, testOp, mCell, reuseJacobians, intDomain); 
   }
+
+  // Compute the signature of the three containers
+  int signature = trialValues.getRank()*25 + inputData.getRank()*5 + testValues.getRank();
+  switch(signature) {
+    
+    case 88:{        // (scalar)(scalar)(scalar)
+      testValues.multiplyScalarData(inputData);
+      testValues.contractScalar( outputValues, trialValues, compEngine_);
+    }
+      break;
+      
+    case 114: {      // (vector)(scalar)(vector)
+      testValues.multiplyScalarData(inputData);
+      testValues.contractVector( outputValues, trialValues, compEngine_);
+    }
+      break;
+      
+    case 119: {      // (vector)(diag tensor)(vector)
+    }
+      break;
+      
+    case 124: {      // (vector)(full tensor)(vector)
+    }
+      break;
+      
+    case 94: {       // (scalar)(vector)(vector)
+      
+    }
+      break;
+      
+    case 118: {      // (vector)(vector)(scalar)
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( !( (signature == 88 ) ||
+                             (signature == 114) ||
+                             (signature == 119) ||
+                             (signature == 124) ||
+                             (signature == 94 ) ||
+                             (signature == 118) ), std::invalid_argument,
+                          ">>> ERROR (LocalForm0): specified trial and test operators are incompatible with the data array");        
+  }// signature
   
-  // Dot product of the data assembled in leftValues and rightValues gives the desired integral
-  integrate(outputValues, leftValues, rightValues); 
+}
+
+
+
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                 outputValues,
+                                               const EOperator             trialOp,
+                                               const EOperator             testOp,
+                                               MultiCell <Scalar> &        mCell,
+                                               const bool                  reuseJacobians,
+                                               const EIntegrationDomain    intDomain)
+{
+  /*
+   This method computes a discrete operator acting on the native basis set and whose range has the 
+   same dimension as the native basis set, i.e., a square NxN matrix where N is the number of the
+   native basis functions. The elements of this matrix are computed by contracting the "point" index P
+   of a "trial" and a "test" FieldContainer holding properly transformed native basis values. The ranks of 
+   the fields in these containers must match and can be either 0 (scalars) or 1 (vectors)
+   ================================================================================================
+   | field type/rank| trialValues rank/dims |   testValues rank/dims  | outputValues rank/dims    |
+   ================================================================================================ 
+   |  scalar -> 0   |    3 -> (C,P,N)       |       3 -> (C,P,N)      |       2 -> (C,N,N)        |
+   |  vector -> 1   |    4 -> (C,P,D,N)     |       4 -> (C,P,D,N)    |       2 -> (C,N,N)        |
+   ================================================================================================ 
+        C -> number of integration domains
+        P -> number of integration points on the reference integration domain
+        N -> number of native basis functions
+   
+   trialOp and testOp must be such that their action on native basis functions results in fields
+   with identical ranks, i.e., either scalars or vectors. 
+   */
+  
+  // This method is called in the FEM context and requires an atlas. Use default atlas if user failed to define one
+  if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {
+    mCell.setAtlas();
+  }
+  // If the option to reuse Jacobian and measure data is selected, precompute and store values
+  if(reuseJacobians) {
+    if (intDomain == INTEGRATION_DOMAIN_CELL) {
+      mCell.initializeMeasures(mCell.getMyCellDim(), 0, 
+                               cubPoints_[0][0], 
+                               cubWeights_[0][0]); 
+    }
+  }
+  // Containers for properly transformed values of trialOp and testOp applied to the native basis set:
+  FieldContainer<Scalar> trialValues;
+  FieldContainer<Scalar> testValues;
+  
+  // Fill trialValues
+  transformBasisVals( trialValues,   trialOp,   mCell, reuseJacobians, intDomain );
+  
+  //If trialOp==testOp set testValues = trialValues*integration measure, otherwise compute testValues separately 
+  if(trialOp == testOp) {
+    applyWeightedMeasure( testValues, trialValues, testOp, mCell, reuseJacobians, intDomain ); 
+  }
+  else {    
+    transformBasisVals( testValues,  testOp,   mCell, reuseJacobians, intDomain );
+    applyWeightedMeasure( testValues, testValues, testOp, mCell, reuseJacobians, intDomain ); 
+  }
+  // Contract containers with the native basis values. Ranks will be checked by contract methods.
+  if( testValues.getRank() == 3) {
+    testValues.contractScalar( outputValues, trialValues, compEngine_ );
+  }
+  else{
+    testValues.contractVector( outputValues, trialValues, compEngine_ );
+  }
 }
 
 
 
 template<class Scalar, class ArrayType>
 void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                      outputValues,
-                                               const EOperator                  leftOp,
-                                               const EOperator                  rightOp,
-                                               const LocalField<Scalar> &       rightOpField,
+                                               const EOperator                  trialOp,
+                                               const EOperator                  testOp,
+                                               const LocalField<Scalar> &       testOpField,
                                                MultiCell<Scalar> &              mCell,
                                                const ArrayType &                inputData,
                                                const bool                       reuseJacobians,
@@ -666,53 +747,147 @@ void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                      
 
 template<class Scalar, class ArrayType>
 void LocalForm0<Scalar,ArrayType>::getOperator(ArrayType &                      outputValues,
-                                               const EOperator                  leftOp,
-                                               const EOperator                  rightOp,
-                                               const LocalField<Scalar> &       rightOpField,
+                                               const EOperator                  trialOp,
+                                               const EOperator                  testOp,
+                                               const LocalField<Scalar> &       testOpField,
                                                MultiCell<Scalar> &              mCell,
                                                const bool                       reuseJacobians,
                                                const EIntegrationDomain         intDomain) 
 {
-#ifdef HAVE_INTREPID_DEBUG
-  // The native LocalForm0 and the rightOpFieldLocalField must be instantiated on the same cell type
-  TEST_FOR_EXCEPTION( (basisCell_ != rightOpField.getCellType() ), std::invalid_argument,
-                      ">>> ERROR (LocalForm0): Right LocalField must be instantiated for the same cell type as the native LocalField!");
-#endif
-  FieldContainer<Scalar> leftValues;
-  FieldContainer<Scalar> rightValues;
+  /*
+   This method computes a discrete operator acting on the native basis set and whose range has the 
+   same dimension as the basis set of the specified auxiliary LocalField, i.e., a rectangular 
+   AxN matrix where N and A are the numbers of the native and auxiliary basis functions, respectively.
+   The elements of this matrix are computed by contracting the "point" index P
+   of a "trial" and a "test" FieldContainer holding properly transformed native basis values. The ranks of 
+   the fields in these containers must match and can be either 0 (scalars) or 1 (vectors)
+   ================================================================================================
+   | field type/rank| trialValues rank/dims |   testValues rank/dims  | outputValues rank/dims    |
+   ================================================================================================ 
+   |  scalar -> 0   |    3 -> (C,P,N)       |       3 -> (C,P,A)      |       2 -> (C,A,N)        |
+   |  vector -> 1   |    4 -> (C,P,D,N)     |       4 -> (C,P,D,A)    |       2 -> (C,A,N)        |
+   ================================================================================================ 
+        C -> number of integration domains
+        P -> number of integration points on the reference integration domain
+        N -> number of native (trial) basis functions (number of matrix columns)
+        A -> number of auxiliary (test) basis functions (number of matrix rows)
+   
+   trialOp and testOp must be such that their action on native and auxiliary basis functions 
+   results in fields with identical ranks, i.e., either scalars or vectors. 
+   */
   
-  // If the user had failed to define an atlas we will use the default atlas.
+#ifdef HAVE_INTREPID_DEBUG
+  // The native LocalForm0 and the testOpFieldLocalField must be instantiated on the same cell type
+  TEST_FOR_EXCEPTION( (basisCell_ != testOpField.getCellType() ), std::invalid_argument,
+                      ">>> ERROR (LocalForm0): Auxiliary (test) LocalField must be instantiated for the same cell type as the native (trial) LocalField!");
+#endif
+  // This method is called in the FEM context and requires an atlas. Use default atlas if user failed to define one
   if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {
     mCell.setAtlas();
   }
-  
   // If the option to reuse Jacobian and measure data is selected, precompute and store values
   if(reuseJacobians) {
     if (intDomain == INTEGRATION_DOMAIN_CELL) {
       mCell.initializeMeasures(mCell.getMyCellDim(), 0, cubPoints_[0][0], cubWeights_[0][0]); 
       
-      // Check if the native field and the right operator field have cubature sets with matching number
-      // of cubature points on the specified integration domain. Note: this test cannot determine
-      // whether or not the two cubatures are the same! In this case, dimension of the integration domain
-      // is given by mCell.getMyCellDim(). 
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( (numCubPoints_[0][0] != rightOpField.getNumCubPoints(mCell.getMyCellDim(),0) ),
+      /* Cubature sets of the native (trial) and auxiliary (test) fields must be the same for the
+      specified integration domain. However, we can only check if they have the same number of points, 
+      which does not tell us if they are really the same cubature. For INTEGRATION_DOMAIN_CELL
+      dimension of the integration domain is the cell dimension: mCell.getMyCellDim().             
+      */
+      TEST_FOR_EXCEPTION( (numCubPoints_[0][0] != testOpField.getNumCubPoints(mCell.getMyCellDim(),0) ),
                           std::invalid_argument,
-                          ">>> ERROR (LocalForm0): Right LocalField must be instantiated with the same cubature set as the native LocalField!");
+                          ">>> ERROR (LocalForm0): Auxiliary (test) LocalField must be instantiated with the same cubature set as the native LocalField!");
 #endif
     }
   }
+  // Containers for trial and test values
+  FieldContainer<Scalar> trialValues;
+  FieldContainer<Scalar> testValues;
   
-  // Fill leftValues and rightValues with the appropriate transformed native/auxiliary basis function values
-  transformBasisVals(   leftValues, leftOp,                  mCell, reuseJacobians, intDomain);
-  transformBasisVals(  rightValues, rightOp, rightOpField,   mCell, reuseJacobians, intDomain);
-  applyWeightedMeasure(rightValues, rightValues, rightOp, mCell, reuseJacobians, intDomain); 
+  // Fill trialValues and testValues with appropriately transformed native/auxiliary basis function values
+  transformBasisVals(   trialValues, trialOp,               mCell, reuseJacobians, intDomain);
+  transformBasisVals(   testValues,  testOp, testOpField,   mCell, reuseJacobians, intDomain);
+  applyWeightedMeasure( testValues,  testValues, testOp,    mCell, reuseJacobians, intDomain); 
   
-  // Dot product of the data assembled in leftValues and rightValues gives the desired integral
-  integrate(outputValues, leftValues, rightValues); 
+  // contract methods will check that trial and test values have matching ranks that are either 3 or 4
+  if( testValues.getRank() == 3) {
+    testValues.contractScalar( outputValues, trialValues, compEngine_);
+  }
+  else{
+    testValues.contractVector( outputValues, trialValues, compEngine_);
+  }
 }
 
 
+//===========================================================================//
+//                                                                           //
+//            Public methods of LocalForm0: getFunctional methods            //
+//                                                                           //
+//===========================================================================//
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::getFunctional(ArrayType &              outputValues,
+                                                 const ArrayType &        inputData,
+                                                 const EOperator          testOp,
+                                                 MultiCell<Scalar> &      mCell,
+                                                 const bool               reuseJacobians,
+                                                 const EIntegrationDomain intDomain)
+{
+  /*
+   This method computes a discrete functional acting on the native basis set, i.e., a vector whose 
+   length equals the number of native basis functions. The elements of this vector are computed by
+   contracting a "trial" trialData container, representing a user-supplied field, with a "test" 
+   FieldContainer with the properly transformed native basis values. The ranks of the fields in these 
+   containers must match, i.e., they can be either scalar (rank 0) or vector (rank 1) fields. 
+   ============================================================================================
+   |  field/rank    |  dataArray rank   |     testValues rank      |    outputValues rank     |
+   ============================================================================================ 
+   |  scalar -> 0   |   2 -> (C,P)      |       3 -> (C,P,F)       |       2 -> (C,F)         |
+   |  vector -> 1   |   3 -> (C,P,D)    |       4 -> (C,P,D,F)     |       2 -> (C,F)         |
+   ============================================================================================ 
+   C -> number of integration domains
+   P -> number of integration points on the reference integration domain
+   F -> number of native basis functions
+   
+   testOp must be such that when applied to the native basis the rank of the resulting field matches
+   the rank of the user-supplied field in dataArray.
+   */
+  
+  // This method is called in the FEM context and requires an atlas. Use default atlas if user failed to define one
+  if (mCell.getAtlasStatus() == STATUS_UNDEFINED) {
+    mCell.setAtlas();
+  }
+  // If the option to reuse Jacobian and measure data is selected, precompute and store values
+  if(reuseJacobians) {
+    if (intDomain == INTEGRATION_DOMAIN_CELL) {
+      mCell.initializeMeasures(mCell.getMyCellDim(), 0, 
+                               cubPoints_[0][0], 
+                               cubWeights_[0][0]); 
+    }
+  }
+  // Container for the transformed native basis values
+  FieldContainer<Scalar> testValues;
+  
+  // Transform the basis values and apply the cubature weights
+  transformBasisVals(  testValues,   testOp,   mCell, reuseJacobians, intDomain);
+  applyWeightedMeasure(testValues, testValues, testOp, mCell, reuseJacobians, intDomain); 
+  
+  // Contract native basis values with user-supplied data. Ranks will be checked by contract methods
+  if( testValues.getRank() == 3) {
+    testValues.contractScalarData( outputValues, inputData, compEngine_);
+  }
+  else{
+    testValues.contractVectorData( outputValues, inputData, compEngine_);
+  }
+}
+
+
+//===========================================================================//
+//                                                                           //
+//            Public methods of LocalForm0: other methods                    //
+//                                                                           //
+//===========================================================================//
 
 template<class Scalar, class ArrayType>
 int    LocalForm0<Scalar,ArrayType>::getNumCubPoints(const int subcellDim,
@@ -733,6 +908,149 @@ int    LocalForm0<Scalar,ArrayType>::getNumCubPoints(const int subcellDim,
   // The second index is the subcellId, relative to the instantiation cell template
   return  numCubPoints_[MultiCell<Scalar>::getCellDim(basisCell_) - subcellDim][ subcellId];
 }
+
+
+// ====== OBSOLETE ===
+
+
+
+template<class Scalar, class ArrayType>
+void LocalForm0<Scalar,ArrayType>::integrate(FieldContainer<Scalar> &        outputValues,
+                                             const FieldContainer<Scalar> &  trialValues,
+                                             const FieldContainer<Scalar> &  testValues) const {
+  
+  // This method provides a key functionality needed to compute linear operators and functionals
+  // by getOperator and getFunctional methods. These two methods reduce numerical integration to 
+  // a dot product of two vectors with "trial" and "test" values, which are stored as multi-dimensional arrays.
+  
+  // trialValues and testValues can have ranks 3,4,5 and their ranks must be the same!
+  // 1st dim. is number of cells; 2nd dim. is number of points.
+  int lrRank   = testValues.getRank();
+  int numCells = testValues.getDimension(0);
+  int numQps   = testValues.getDimension(1);
+  
+  // outputValues is rank-3 with multi-index (C, L, R). L and R dims are always the last dims in trial/testValues
+  int numTrialBfs  = trialValues.getDimension(lrRank  - 1);
+  int numTestBfs = testValues.getDimension(lrRank - 1);
+  outputValues.resize(numCells, numTrialBfs, numTestBfs);
+  
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION((lrRank != testValues.getRank()), std::invalid_argument,
+                     ">>> ERROR (LocalForm0): Ranks of trialValues and testValues do not match!");
+  int numTestCells = testValues.getDimension(0);
+  TEST_FOR_EXCEPTION((numCells != numTestCells), std::invalid_argument,
+                     ">>> ERROR (LocalForm0): Numbers of cells in trialValues and testValues do not agree!");
+  int numTestQps = testValues.getDimension(1);
+  TEST_FOR_EXCEPTION((numQps != numTestQps), std::invalid_argument,
+                     ">>> ERROR (LocalForm0): Numbers of integration points in trialValues and testValues do not agree!");
+#endif
+  
+  switch(compEngine_) {
+    case COMP_CPP: {
+      for (int cl=0; cl<numCells; cl++) {
+        for (int lbf=0; lbf<numTrialBfs; lbf++) {
+          for (int rbf=0; rbf<numTestBfs; rbf++) {
+            Scalar tmpVal(0);
+            for (int qp=0; qp<numQps; qp++) {
+              
+              switch (lrRank) {
+                case 3: { // scalar fields: multi-index is (C,P,F)
+                  tmpVal += trialValues(cl, qp, lbf)*testValues(cl, qp, rbf);
+                }
+                  break;
+                  
+                case 4: { // vector fields: multi-index is (C,P,D,F), loop over (D) subindex
+                  int vecDim = trialValues.getDimension(2);
+                  for (int iVec = 0; iVec < vecDim; iVec++) {
+                    tmpVal += trialValues(cl, qp, iVec, lbf)*testValues(cl, qp, iVec, rbf);
+                  }
+                }
+                  break;
+                  
+                case 5: { // tensor fields: multi-index is (C,P,D,D,F), loop over (D,D) subindex
+                  int tenDim0 = trialValues.getDimension(2);
+                  int tenDim1 = trialValues.getDimension(3);
+                  for (int iTens1 = 0; iTens1 < tenDim0; iTens1++) {
+                    for (int iTens2 =0; iTens2 < tenDim1; iTens2++) {
+                      tmpVal += trialValues(cl, qp, iTens1, iTens2, lbf)*testValues(cl, qp, iTens1, iTens2, rbf);
+                    }
+                  }
+                }
+                  break;
+                  
+                default:
+                  TEST_FOR_EXCEPTION(((lrRank != 3) && (lrRank != 4) && (lrRank != 5)),
+                                     std::invalid_argument,
+                                     ">>> ERROR (LocalForm0): Invalid data rank. Only scalars, vectors, and tensors are supported!");
+              } // switch(lrRank)
+            } // P-loop
+            
+            outputValues(cl, lbf, rbf) = tmpVal;
+            
+          } // R-loop
+        } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      
+      // Data size is defined by the rank of the data containers (trial and test must have same rank)
+      // rank 3: (C,P,F)      -> dataSize = 1 
+      // rank 4: (C,P,D,F)    -> dataSize = D     = trialValues.getDimension(2);
+      // rank 5: (C,P,D,D,F)  -> dataSize = D*D   = trialValues.getDimension(2)*trialValues.getDimension(3)
+      int dataSize = 1;
+      if(lrRank == 4) dataSize = trialValues.getDimension(2);
+      if(lrRank == 5) dataSize = trialValues.getDimension(2)*trialValues.getDimension(3);
+      
+      // GEMM parameters and their values:
+      // TRANSA   NO_TRANS
+      // TRANSB   TRANS
+      // M        #rows(A)               = numTrialBfs
+      // N        #cols(B^T)             = numTestBfs
+      // K        #cols(A)               = numData = numQps * dataSize
+      // ALPHA    1.0
+      // A        trial data for cell cl  = trialValues.getData()[cl*skipL]
+      // LDA      #rows(A)               = numTrialBfs
+      // B        test data for cell cl = testValues.getData()[cl*skipR]
+      // LDB      #rows(B)               = numTestBfs
+      // BETA     0.0
+      // C        result for cell cl     = outputValues.getData()[cl*skipOp]
+      // LDC      #rows(C)               = numTrialBfs
+      int numData  = numQps*dataSize;       
+      int skipL    = numTrialBfs*numData;        // size of the trial data chunk per cell
+      int skipR    = numTestBfs*numData;       // size of the test data chunk per cell
+      int skipOp   = numTrialBfs*numTestBfs;    // size of the output data chunk per cell
+      double alpha = 1.0;                       // these are trial unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl=0; cl<numCells; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    numTrialBfs,
+                    numTestBfs,
+                    numData,
+                    alpha,
+                    &trialValues.getData()[cl*skipL],
+                    numTrialBfs,
+                    &testValues.getData()[cl*skipR],
+                    numTestBfs,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    numTrialBfs);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION(((compEngine_ != COMP_CPP) && (compEngine_ != COMP_BLAS)),
+                         std::invalid_argument,
+                         ">>> ERROR (LocalForm0): Computational engine not defined!");
+  } // switch(compEngine_)  
+                                             } // integrate
+
+
 
 
 }// end namespace Intrepid

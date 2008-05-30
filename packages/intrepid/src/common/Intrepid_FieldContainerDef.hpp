@@ -72,7 +72,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), 
 #endif
   dimensions_.resize(1); 
   dimensions_[0] = dim0_;  
-  data_.resize(dim0_);
+  data_.assign(dim0_, 0);
 }
 
 
@@ -91,7 +91,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_.resize(2); 
   dimensions_[0] = dim0_;   
   dimensions_[1] = dim1_;  
-  data_.resize(dim0_*dim1_);
+  data_.assign(dim0_*dim1_, 0);
 }
 
 
@@ -113,7 +113,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_[0] = dim0_;  
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
-  data_.resize(dim0_*dim1_*dim2_);
+  data_.assign(dim0_*dim1_*dim2_, 0);
 }
 
 
@@ -139,7 +139,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_; 
-  data_.resize(dim0_*dim1_*dim2_*dim3_);
+  data_.assign(dim0_*dim1_*dim2_*dim3_, 0);
 }
 
 
@@ -169,7 +169,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_;  
   dimensions_[4] = dim4_;  
-  data_.resize(dim0_*dim1_*dim2_*dim3_*dim4_);
+  data_.assign(dim0_*dim1_*dim2_*dim3_*dim4_, 0);
 }
 
 
@@ -232,7 +232,7 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {
   }
 
   // resize data array according to specified dimensions
-  data_.resize( this -> getSize());
+  data_.assign( this -> getSize(), 0);
   
 }
 
@@ -759,7 +759,7 @@ void FieldContainer<Scalar>::getMultiIndex(Teuchos::Array<int>& multiIndex,
 //--------------------------------------------------------------------------------------------//
 
 template<class Scalar>
-inline void FieldContainer<Scalar>::empty() {
+inline void FieldContainer<Scalar>::clear() {
   dimensions_.resize(0);
   
   // Reset first five dimensions:
@@ -769,8 +769,8 @@ inline void FieldContainer<Scalar>::empty() {
   dim3_ = 0;
   dim4_ = 0;
   
-  // Resize data array to zero length
-  data_.resize(0);
+  // Clears data array and sets to zero length
+  data_.clear();
 }
 
 
@@ -937,11 +937,9 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
 template<class Scalar>
 inline void FieldContainer<Scalar>::resize(const FieldContainer<Scalar>& anotherContainer) {
   
-  int newRank = anotherContainer.getRank();
-  dimensions_.resize(newRank);
-  for(int i = 0; i < newRank; i++){
-    dimensions_[i] = anotherContainer.getDimension(i);
-  }
+  // Copy dimensions from the specified container
+  anotherContainer.getAllDimensions(dimensions_);
+  int newRank = dimensions_.size();
   
   // Copy first 5 dimensions for faster access
   switch(newRank) {
@@ -1129,6 +1127,747 @@ void FieldContainer<Scalar>::setValues(const Teuchos::Array<Scalar>& dataArray) 
                       ">>> ERROR (FieldContainer): Size of argument does not match size of container.");  
 #endif  
   data_.assign(dataArray.begin(),dataArray.end());
+}
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::contractScalar(ArrayType &                     outputValues,
+                                            const FieldContainer<Scalar> &  rightValues,
+                                            const ECompEngine               compEngine) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (this -> dimensions_.size() != 3 ), std::invalid_argument,
+                       ">>> ERROR (FieldContainer): Rank of the calling object must equal 3");
+  TEST_FOR_EXCEPTION( (rightValues.getRank() != 3 ), std::invalid_argument,
+                     ">>> ERROR (FieldContainer): Rank of input container must equal 3!");
+  TEST_FOR_EXCEPTION( (dim0_ != rightValues.getDimension(0) ), std::invalid_argument,
+                     ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != rightValues.getDimension(1) ), std::invalid_argument,
+                     ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+#endif
+  /*
+   Contracts the "point" dimension P of two rank-3 containers with dimensions (C,P,L) and (C,P,R), resp.
+   and returns the result in a rank-3 container with dimensions (C,L,R). The "left" container is
+   the calling FieldContainer object; the "right" container is the input argument. For a fixed 
+   dimension "C", (C,L,R) represents a rectangular L X R matrix where L and R may be different.
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        L - num. "left" fields             dim2_ in "left" (calling) container
+        R - num. "right" fields            dim2_ in "right" (input) container
+  */
+  // resize output container
+  int numRightBfs  = rightValues.getDimension(2);
+  outputValues.resize(dim0_, dim2_, numRightBfs);
+  
+  switch(compEngine) {
+    case COMP_CPP: {
+      for (int cl = 0; cl < dim0_; cl++) {
+        for (int lbf = 0; lbf < dim2_; lbf++) {          
+          for (int rbf = 0; rbf < numRightBfs; rbf++) {
+            Scalar tmpVal(0);
+            for (int qp = 0; qp < dim1_; qp++) {
+              tmpVal += (*this)(cl, qp, lbf)*rightValues(cl, qp, rbf);
+            } // P-loop
+            outputValues(cl, lbf, rbf) = tmpVal;
+          } // R-loop
+        } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values:
+       TRANSA   NO_TRANS
+       TRANSB   TRANS
+       M        #rows(A)                              = dim2_ of calling (left) container
+       N        #cols(B^T)             = numRightBfs  = dim2_ of input (right) container
+       K        #cols(A)                              = dim1_ of both containers
+       ALPHA    1.0
+       A        left data for cell cl  = &this->.getData()[cl*skipL]
+       LDA      #rows(A)                              = dim2_ of calling (left) container
+       B        right data for cell cl = &rightValues.getData()[cl*skipR]
+       LDB      #rows(B)               = numRightBfs  = dim2_ of input (right) container
+       BETA     0.0
+       C        result for cell cl     = outputValues.getData()[cl*skipOp]
+       LDC      #rows(C)                              = dim2_ of input (right) container
+      */
+      int skipL    = dim2_*dim1_;               // size of the left data chunk per cell
+      int skipR    = numRightBfs*dim1_;         // size of the right data chunk per cell
+      int skipOp   = dim2_*numRightBfs;         // size of the output data chunk per cell
+      double alpha = 1.0;                       // these are left unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl=0; cl < dim0_; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    dim2_,
+                    numRightBfs,
+                    dim1_,
+                    alpha,
+                    &this -> getData()[cl*skipL],
+                    dim2_,
+                    &rightValues.getData()[cl*skipR],
+                    numRightBfs,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    dim2_);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (compEngine != COMP_CPP) && (compEngine != COMP_BLAS) ), std::invalid_argument,
+                         ">>> ERROR (FieldContainer): Computational engine not defined!");
+  } // switch(compEngine)  
+} // contractScalar
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::contractVector(ArrayType &                     outputValues,
+                                            const FieldContainer<Scalar> &  rightValues,
+                                            const ECompEngine               compEngine) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (this -> dimensions_.size() != 4 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of the calling object must equal 4");
+  TEST_FOR_EXCEPTION( (rightValues.getRank() != 4 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of input container must equal 4!");
+  TEST_FOR_EXCEPTION( (dim0_ != rightValues.getDimension(0) ), std::invalid_argument,
+                     ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != rightValues.getDimension(1) ), std::invalid_argument,
+                     ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim2_ != rightValues.getDimension(2) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Third dimensions (vector length) of the calling and input containers must agree!");
+#endif
+  /*
+   Contracts the "point" and "space" dimensions P and D1 of two rank-4 containers with 
+   dimensions (C,P,D1,L) and (C,P,D1,R), resp. and returns the result in a rank-3 container 
+   with dimensions (C,L,R). The "left" container is the calling FieldContainer object; the 
+   "right" container is the input argument. For a fixed index "C", (C,L,R) represents 
+   a rectangular L x R matrix where L and R may be different.
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        D1- vector dimension               dim2_ in both containers
+        L - num. "left" fields             dim3_ in "left" (calling) container
+        R - num. "right" fields            dim3_ in "right" (input) container
+   */
+  // resize output container
+  int numRightBfs  = rightValues.getDimension(3);
+  outputValues.resize(dim0_, dim3_, numRightBfs);
+  
+  switch(compEngine) {
+    case COMP_CPP: {
+      for (int cl = 0; cl < dim0_; cl++) {
+        for (int lbf = 0; lbf < dim3_; lbf++) {
+          for (int rbf = 0; rbf < numRightBfs; rbf++) {
+            Scalar tmpVal(0);
+            for (int qp = 0; qp < dim1_; qp++) {
+              for (int iVec = 0; iVec < dim2_; iVec++) {
+                tmpVal += (*this)(cl, qp, iVec, lbf)*rightValues(cl, qp, iVec, rbf);
+              } //D-loop
+            } // P-loop
+            outputValues(cl, lbf, rbf) = tmpVal;
+          } // R-loop
+        } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values:
+       TRANSA   NO_TRANS
+       TRANSB   TRANS
+       M        #rows(A)                              = dim3_ of calling (left) container
+       N        #cols(B^T)             = numRightBfs  = dim3_ of input (right) container
+       K        #cols(A)               = numData      = dim1_*dim2_
+       ALPHA    1.0
+       A        left data for cell cl  = &this->.getData()[cl*skipL]
+       LDA      #rows(A)                              = dim3_ of calling (left) container
+       B        right data for cell cl = &rightValues.getData()[cl*skipR]
+       LDB      #rows(B)               = numRightBfs  = dim3_ of input (right) container
+       BETA     0.0
+       C        result for cell cl     = outputValues.getData()[cl*skipOp]
+       LDC      #rows(C)                              = dim3_ of input (right) container
+       numData = num. points * vector field dimension = dim1_ * dim2_
+      */
+      int numData  = dim1_*dim2_;       
+      int skipL    = dim3_*numData;             // size of the left data chunk per cell
+      int skipR    = numRightBfs*numData;       // size of the right data chunk per cell
+      int skipOp   = numRightBfs*dim3_;         // size of the output data chunk per cell
+      double alpha = 1.0;                       // these are left unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl = 0; cl < dim0_; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    dim3_,
+                    numRightBfs,
+                    numData,
+                    alpha,
+                    &this -> getData()[cl*skipL],
+                    dim3_,
+                    &rightValues.getData()[cl*skipR],
+                    numRightBfs,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    dim3_);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (compEngine != COMP_CPP) && (compEngine != COMP_BLAS) ), std::invalid_argument,
+                         ">>> ERROR (FieldContainer): Computational engine not defined!");
+  } // switch(compEngine)  
+} // contractVector
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::contractTensor(ArrayType &                     outputValues,
+                                            const FieldContainer<Scalar> &  rightValues,
+                                            ECompEngine                     compEngine) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (this -> dimensions_.size() != 5 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of the calling object must equal 5");
+  TEST_FOR_EXCEPTION( (rightValues.getRank() != 5 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of input container must equal 5!");
+  TEST_FOR_EXCEPTION( (dim0_ != rightValues.getDimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != rightValues.getDimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim2_ != rightValues.getDimension(2) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Third dimensions (1st tensor dim) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim3_ != rightValues.getDimension(3) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Fourth dimensions (2nd tensor dim) of the calling and input containers must agree!");
+#endif
+  /*
+   Contracts the "point" and "space" dimensions P, D1 and D2 of two rank-5 containers with
+   dimensions (C,P,D1,D2,L) and (C,P,D1,D2,R), resp. and returns the result in a rank-3 
+   container with dimensions (C,L,R).  The "left" container is the calling FieldContainer 
+   object; the "right" container is the input argument. For a fixed index "C", (C,L,R) 
+   represents a rectangular L x R matrix where L and R may be different.
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        D1- 1st tensor dimension           dim2_ in both containers
+        D2- 2nd tensor dimension           dim3_ in both containers
+        L - num. "left" fields             dim4_ in "left" (calling) container
+        R - num. "right" fields            dim4_ in "right" (input) container
+  */
+  // resize output container
+  int numRightBfs  = rightValues.getDimension(4);
+  outputValues.resize(dim0_, dim4_, numRightBfs);
+  
+  switch(compEngine) {
+    case COMP_CPP: {
+      for (int cl = 0; cl < dim0_; cl++) {
+        for (int lbf = 0; lbf < dim4_; lbf++) {
+          for (int rbf = 0; rbf < numRightBfs; rbf++) {
+            Scalar tmpVal(0);
+            for (int qp = 0; qp < dim1_; qp++) {
+              for (int iTens1 = 0; iTens1 < dim2_; iTens1++) {
+                for (int iTens2 =0; iTens2 < dim3_; iTens2++) {
+                  tmpVal += (*this)(cl, qp, iTens1, iTens2, lbf)*rightValues(cl, qp, iTens1, iTens2, rbf);
+                } // D2-loop
+              } // D1-loop
+            } // P-loop
+            outputValues(cl, lbf, rbf) = tmpVal;
+          } // R-loop
+        } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values:
+       TRANSA   NO_TRANS
+       TRANSB   TRANS
+       M        #rows(A)                              = dim4_ of calling (left) container
+       N        #cols(B^T)             = numRightBfs  = dim4_ of input (right) container
+       K        #cols(A)               = numData      = dim1_*dim2_*dim3_
+       ALPHA    1.0
+       A        left data for cell cl  = &this->.getData()[cl*skipL]
+       LDA      #rows(A)                              = dim4_ of calling (left) container
+       B        right data for cell cl = &rightValues.getData()[cl*skipR]
+       LDB      #rows(B)               = numRightBfs  = dim4_ of input (right) container
+       BETA     0.0
+       C        result for cell cl     = outputValues.getData()[cl*skipOp]
+       LDC      #rows(C)                              = dim4_ of input (right) container
+       numData = num. points * num. tensor field components = dim1_ * (dim2_ * dim3_)
+      */
+      int numData  = dim1_*dim2_*dim3_;       
+      int skipL    = dim4_*numData;             // size of the left data chunk per cell
+      int skipR    = numRightBfs*numData;       // size of the right data chunk per cell
+      int skipOp   = numRightBfs*dim4_;         // size of the output data chunk per cell
+      double alpha = 1.0;                       // these are left unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl=0; cl < dim0_; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    dim4_,
+                    numRightBfs,
+                    numData,
+                    alpha,
+                    &this -> getData()[cl*skipL],
+                    dim4_,
+                    &rightValues.getData()[cl*skipR],
+                    numRightBfs,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    dim4_);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (compEngine != COMP_CPP) && (compEngine != COMP_BLAS) ), std::invalid_argument,
+                         ">>> ERROR (FieldContainer): Computational engine not defined!");
+  } // switch(compEngine)  
+} // contractTensor
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::contractScalarData(ArrayType &         outputValues,
+                                                const ArrayType &   inputData,
+                                                const ECompEngine   compEngine) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (this -> dimensions_.size() != 3 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of the calling object must equal 3");
+  TEST_FOR_EXCEPTION( (inputData.getRank() != 2 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of data array must equal 2!");
+  TEST_FOR_EXCEPTION( (dim0_ != inputData.getDimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != inputData.getDimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+#endif
+  /*
+   Contracts the "point" dimensions of a rank-3 (calling) and  rank-2 (input) containers with dimensions 
+   (C,P,F) and (C,P), respectively and returns a rank-2 container with dimensions (C,F). For a fixed index "C",
+   (C,F) represents a (column) vector of length F.  The "left" container is the calling FieldContainer 
+   object; the "right" container is the input data array.  
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        F - num. "left" fields             dim2_ in "left" (calling) container
+  */
+  // resize output container
+  outputValues.resize(dim0_, dim2_);
+  
+  switch(compEngine) {
+    case COMP_CPP: {
+      for (int cl = 0; cl < dim0_; cl++) {
+        for (int lbf = 0; lbf < dim2_; lbf++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < dim1_; qp++) {
+            tmpVal += (*this)(cl, qp, lbf)*inputData(cl, qp);
+          } // P-loop
+          outputValues(cl, lbf) = tmpVal;
+        } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values:
+       TRANSA   NO_TRANS
+       TRANSB   TRANS
+       M        #rows(A)               = dim2_ of calling container
+       N        #cols(B^T)             = 1
+       K        #cols(A)               = dim1_ of both containers (num points - contraction dimension)
+       ALPHA    1.0
+       A        left data for cell cl  = &this -> getData()[cl*skipL]
+       LDA      #rows(A)               = dim2_
+       B        right data for cell cl = &inputData.getData()[cl*skipR]
+       LDB      #rows(B)               = 1
+       BETA     0.0
+       C        result for cell cl     = outputValues.getData()[cl*skipOp]
+       LDC      #rows(C)               = dim2_ of caling container
+      */
+      int skipL    = dim2_*dim1_;       // size of the left data chunk per cell
+      int skipR    = dim1_;             // size of the right data chunk per cell
+      int skipOp   = dim2_;             // size of the output data chunk per cell
+      double alpha = 1.0;               // these are left unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl=0; cl < dim0_; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    dim2_,
+                    1,
+                    dim1_,
+                    alpha,
+                    &this -> getData()[cl*skipL],
+                    dim2_,
+                    &inputData.getData()[cl*skipR],
+                    1,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    dim2_);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (compEngine != COMP_CPP) && (compEngine != COMP_BLAS) ), std::invalid_argument,
+                         ">>> ERROR (FieldContainer): Computational engine not defined!");
+  } // switch(compEngine)  
+} // contractScalarData
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::contractVectorData(ArrayType &        outputValues,
+                                                const ArrayType &  inputData,
+                                                const ECompEngine  compEngine) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (this -> dimensions_.size() != 4 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of the calling object must equal 4");
+  TEST_FOR_EXCEPTION( (inputData.getRank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of data array must equal 3!");
+  TEST_FOR_EXCEPTION( (dim0_ != inputData.getDimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != inputData.getDimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim2_ != inputData.getDimension(2) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Third dimensions (vector length) of the calling and input containers must agree!");
+#endif
+  /*
+   Contracts the "point" and "space" dimensions P and D1 of rank-4 (calling) and rank-3 (input) containers 
+   with dimensions (C,P,D1,F) and (C,P,D1), resp. and returns the result in a rank-2 container with 
+   dimensions (C,F). The "left" container is the calling FieldContainer object; the "right" container 
+   is the input argument. For a fixed index "C", (C,F) represents a (row) vector of length F. 
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        D1- vector dimension               dim2_ in both containers
+        F - num. "left" fields             dim3_ in "left" (the calling) container
+  */
+  // resize output container
+  outputValues.resize(dim0_, dim3_);
+  
+  switch(compEngine) {
+    case COMP_CPP: {
+      for (int cl = 0; cl < dim0_; cl++) {
+          for (int lbf = 0; lbf < dim3_; lbf++) {
+            Scalar tmpVal(0);
+            for (int qp = 0; qp < dim1_; qp++) {
+              for (int iVec = 0; iVec < dim2_; iVec++) {
+                tmpVal += (*this)(cl, qp, iVec, lbf)*inputData(cl, qp, iVec);
+              } //D-loop
+            } // P-loop
+            outputValues(cl, lbf) = tmpVal;
+          } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values:
+       TRANSA   NO_TRANS
+       TRANSB   TRANS
+       M        #rows(A)               = dim3_ of calling container
+       N        #cols(B^T)             = 1
+       K        #cols(A)               = numData        = dim1_*dim2_
+       ALPHA    1.0
+       A        left data for cell cl  = &this -> getData()[cl*skipL]
+       LDA      #rows(A)               = dim3_
+       B        right data for cell cl = &inputData.getData()[cl*skipR]
+       LDB      #rows(B)               = 1
+       BETA     0.0
+       C        result for cell cl     = outputValues.getData()[cl*skipOp]
+       LDC      #rows(C)               = dim3_ of caling container
+       numData = num. points * vector field dimension = dim1_ * dim2_
+      */
+      int numData  = dim1_*dim2_;       
+      int skipL    = numData*dim3_;       // size of the left data chunk per cell
+      int skipR    = numData;             // size of the right data chunk per cell
+      int skipOp   = dim3_;               // size of the output data chunk per cell
+      double alpha = 1.0;                 // these are left unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl = 0; cl < dim0_; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    dim3_,
+                    1,
+                    numData,
+                    alpha,
+                    &this -> getData()[cl*skipL],
+                    dim3_,
+                    &inputData.getData()[cl*skipR],
+                    1,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    dim3_);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (compEngine != COMP_CPP) && (compEngine != COMP_BLAS) ), std::invalid_argument,
+                          ">>> ERROR (FieldContainer): Computational engine not defined!");
+  } // switch(compEngine)  
+} // contractVectorData
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::contractTensorData(ArrayType &                     outputValues,
+                                                const ArrayType &               inputData,
+                                                ECompEngine                     compEngine) const 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (this -> dimensions_.size() != 5 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of the calling object must equal 5");
+  TEST_FOR_EXCEPTION( (inputData.getRank() != 4 ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Rank of data array must equal 4!");
+  TEST_FOR_EXCEPTION( (dim0_ != inputData.getDimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != inputData.getDimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim2_ != inputData.getDimension(2) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Third dimensions (1st tensor dim) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim3_ != inputData.getDimension(3) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Fourth dimensions (2nd tensor dim) of the calling and input containers must agree!");
+#endif
+  /*
+   Contracts the "point" and "space" dimensions P, D1 and D2 of a rank-5 (calling) and rank-5 (input)  
+   containers with dimensions (C,P,D1,D2,F) and (C,P,D1,D2), resp. and returns the result in a rank-2 
+   container with dimensions (C,F). The "left" container is the calling FieldContainer object; the "right" 
+   container is the input argument. For a fixed index "C", (C,F) represents a (row) vector of length F. 
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        D1- 1st tensor dimension           dim2_ in both containers
+        D2- 2nd tensor dimension           dim3_ in both containers
+        F - num. "left" fields             dim4_ in "left" (calling) container
+   */
+  // resize output container
+  outputValues.resize(dim0_, dim4_);
+  
+  switch(compEngine) {
+    case COMP_CPP: {
+      for (int cl = 0; cl < dim0_; cl++) {
+          for (int lbf = 0; lbf < dim4_; lbf++) {
+            Scalar tmpVal(0);
+            for (int qp = 0; qp < dim1_; qp++) {
+              for (int iTens1 = 0; iTens1 < dim2_; iTens1++) {
+                for (int iTens2 =0; iTens2 < dim3_; iTens2++) {
+                  tmpVal += (*this)(cl, qp, iTens1, iTens2, lbf)*inputData(cl, qp, iTens1, iTens2);
+                } // D2-loop
+              } // D1-loop
+            } // P-loop
+            outputValues(cl, lbf) = tmpVal;
+          } // L-loop
+      } // C-loop      
+    }
+      break;
+      
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values:
+       TRANSA   NO_TRANS
+       TRANSB   TRANS
+       M        #rows(A)               = dim4_ of calling container
+       N        #cols(B^T)             = 1
+       K        #cols(A)               = numData        = dim1_*dim2_*dim3_
+       ALPHA    1.0
+       A        left data for cell cl  = &this -> getData()[cl*skipL]
+       LDA      #rows(A)               = dim4_
+       B        right data for cell cl = &inputData.getData()[cl*skipR]
+       LDB      #rows(B)               = 1
+       BETA     0.0
+       C        result for cell cl     = outputValues.getData()[cl*skipOp]
+       LDC      #rows(C)               = dim4_ of caling container
+       numData = num. points * num. tensor field components = dim1_ * (dim2_ * dim3_)
+      */
+      int numData  = dim1_*dim2_*dim3_;       
+      int skipL    = numData*dim4_;             // size of the left data chunk per cell
+      int skipR    = numData;                   // size of the right data chunk per cell
+      int skipOp   = dim4_;                     // size of the output data chunk per cell
+      double alpha = 1.0;                       // these are left unchanged by GEMM 
+      double beta  = 0.0;
+      
+      for (int cl=0; cl < dim0_; cl++) {
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::NO_TRANS,
+                    Teuchos::TRANS,
+                    dim4_,
+                    1,
+                    numData,
+                    alpha,
+                    &this -> getData()[cl*skipL],
+                    dim4_,
+                    &inputData.getData()[cl*skipR],
+                    1,
+                    beta,
+                    &outputValues.getData()[cl*skipOp],
+                    dim4_);
+      }
+    }
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION( ( (compEngine != COMP_CPP) && (compEngine != COMP_BLAS) ), std::invalid_argument,
+                          ">>> ERROR (FieldContainer): Computational engine not defined!");
+  } // switch(compEngine)  
+} // contractTensorData
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::multiplyScalarData(const ArrayType &  inputData)
+{
+  /*
+   Multiplies the calling rank-3,4, or 5 FieldContainer with dimensions (C,P,F), (C,P,D1,F) or (C,P,D1,D2,F),
+   representing values of a scalar, vector or a tensor set of fields, by the values in a user-specified  
+   rank-2 container (C,P) representing values of a single scalar field.
+        C - num. integration domains       dim0_ in both containers
+        P - num. integration points        dim1_ in both containers
+        Di- vector/tensor dimension        none,  dim2_,  (dim2_,dim3_)  in the calling container
+        F - number of fields               dim2_, dim3_,  dim4_          in the calling container
+  */
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inputData.getRank() != 2), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Data array has an invalid rank.");  
+  TEST_FOR_EXCEPTION( (dim0_ != inputData.getDimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != inputData.getDimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+#endif
+  
+  int myRank = this -> getRank();
+  Scalar tempData(0);
+  for(int cl = 0; cl < dim0_; cl++) {
+    for(int pt = 0; pt < dim1_; pt++) {
+      tempData = inputData(cl, pt);
+      
+      switch(myRank) {
+        case 3: {
+          for(int bf = 0; bf < dim2_; bf++) {
+            (*this)(cl, pt, bf) *= tempData;
+          } //F-loop
+        }// case 3
+          break;
+          
+        case 4: {
+          for(int bf = 0; bf < dim2_; bf++) {
+            for( int iVec = 0; iVec < dim2_; iVec++) {
+              (*this)(cl, pt, iVec, bf) *= tempData;
+            } // D1-loop
+          }// F-loop
+        }// case 4
+          break;
+        case 5: {
+          for(int bf = 0; bf < dim2_; bf++) {
+            for( int iTens1 = 0; iTens1 < dim2_; iTens1++) {
+              for( int iTens2 = 0; iTens2 < dim3_; iTens2++) {
+                (*this)(cl, pt, iTens1, iTens2, bf) *= tempData;
+              }// D2-loop
+            } // D1-loop
+          }// F-loop          
+        }// case 5
+          break;
+        default:
+          TEST_FOR_EXCEPTION( !( (myRank == 3) || (myRank ==4) || (myRank == 5) ), std::invalid_argument,
+                              ">>> ERROR (FieldContainer): This method is defined only for rank-3,4 or 5 containers");  
+      }// myRank
+    } // P-loop
+  }// C-loop
+}// multiplyScalarData
+
+
+
+template<class Scalar>
+template<class ArrayType>
+void FieldContainer<Scalar>::multiplyVectorData(FieldContainer<Scalar> outputValues, 
+                                                const ArrayType &      inputData)
+{
+  /* 
+   Contracts the "D1" dimension of the calling rank-4 or 5 FieldContainer, with dimensions 
+   (C,P,D1,F) or (C,P,D1,D2,F), with a user-specified rank-3 container (C,P,D1). This operation is 
+   equivalent to a left (row) vector multiplication of the vector or tensor field set in the calling container
+   by the vector field in the user-specified container. The result is a container whose rank is one
+   less than the rank of the calling container, i.e., (C,P,F) or (C,P,D2,F)
+        C  - num. integration domains       dim0_ in both containers
+        P  - num. integration points        dim1_ in both containers
+        D1 - contracting dimension          dim2_ in both containers
+        D2 - 2nd tensor dimension           dim3_ in the calling container, if its rank equals 5;
+        F - number of fields                dim3_ for rank-4 and dim4_ for rank-5 calling containers
+  */
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inputData.getRank() != 3), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Data array has an invalid rank.");  
+  TEST_FOR_EXCEPTION( (dim0_ != inputData.getDimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): First dimensions (number of integration domains) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim1_ != inputData.getDimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Second dimensions (numbers of integration points) of the calling and input containers must agree!");
+  TEST_FOR_EXCEPTION( (dim2_ != inputData.getDimension(2) ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Contracting dimensions in data array and the calling object do not agree!");
+#endif
+  
+  int myRank = this -> getRank();
+  Scalar temp(0);
+  
+  for(int cl = 0; cl < dim0_; cl++) {
+    for(int pt = 0; pt < dim1_; pt++) {
+      
+      switch(myRank) {
+        case 4: {
+          
+          // All but the contracting dimension (dim2_) are the same as in the calling container
+          outputValues.resize(dim0_, dim1_, dim3_); 
+          for(int bf = 0; bf < dim3_; bf++) {
+            temp = 0.0;
+            for( int iVec = 0; iVec < dim2_; iVec++) {
+              temp += inputData(cl, pt, iVec)*(*this)(cl, pt, iVec, bf);
+            } // D1-loop
+            outputValues(cl, pt, bf) = temp;
+          }// F-loop
+        }// case 4
+          
+          break;
+        case 5: {
+          
+          // All but the contracting dimension (dim2_) are the same as in the calling container
+          outputValues.resize(dim0_, dim1_, dim3_, dim4_);
+          for(int bf = 0; bf < dim4_; bf++) {
+            for(int iTens2 = 0; iTens2 < dim3_; iTens2++) {
+              temp = 0;
+              for( int iTens1 = 0; iTens1 < dim2_; iTens1++) {
+                temp += inputData(cl, pt, iTens1)*(*this)(cl, pt, iTens1, iTens2, bf);
+              } // D1-loop
+              outputValues(cl, pt, iTens2, bf) =  temp;
+            }// D2-loop
+          }// F-loop          
+        }// case 5
+          break;
+        default:
+          TEST_FOR_EXCEPTION( !( (myRank ==4) || (myRank == 5) ), std::invalid_argument,
+                              ">>> ERROR (FieldContainer): This method is defined only for rank-4 or 5 containers");  
+      }// myRank
+    } // P-loop
+  }// C-loop
 }
 
 
@@ -1331,7 +2070,19 @@ const Scalar& FieldContainer<Scalar>::operator [] (const int address) const {
 #endif
   return data_[address];
 }
-  
+
+
+
+template<class Scalar>
+Scalar& FieldContainer<Scalar>::operator [] (const int address) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
+                      std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Specified address is out of range.");
+#endif
+  return data_[address];
+}
+
 
 
 template<class Scalar>

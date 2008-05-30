@@ -74,7 +74,7 @@ class DefaultFieldFactory {
       \param recSpace    [in]    - Reconstruction space type (RECONSTRUCTION_SPACE_COMPLETE, etc.).
       \param degree      [in]    - Polynomial degree.
       \param basisType   [in]    - Basis type (BASIS_FEM_DEFAULT, etc.).
-      \param coordSys    [in]    - Coordinate system (BASIS_FEM_DEFAULT, etc.).
+      \param coordSys    [in]    - Coordinate system (COORDINATES_CARTESIAN, etc.).
       \param cubDegree   [in]    - Cubature accuracy; setting <var>cubDegree</var> to a nonnegative
                                    value overrides Intrepid's default selection of cubature accuracy.
                                    <b>Use with caution!</b>

@@ -2,7 +2,7 @@
 // ************************************************************************
 //
 //                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
+//                 Copytest (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -143,7 +143,6 @@ class LocalForm0 : public LocalField<Scalar> {
       -# <var>cubature_[1]</var> has dimension 0 (is empty)
       -# <var>cubature_[2]</var> has dimension 6 and contains RCP's to 6 possibly different edge cubatures: \n
          <var>cubature_[2][edgeId]</var> is a valid CELL_EDGE cubature for the edge with the specified edgeId  
-    
   */
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<Cubature<Scalar> > > >        cubature_;
   
@@ -188,7 +187,12 @@ class LocalForm0 : public LocalField<Scalar> {
   */
   ECompEngine                                                              compEngine_;
   
-    
+  //===========================================================================//
+  //                                                                           //
+  //                         Private methods of LocalForm0                     //
+  //                                                                           //
+  //===========================================================================//
+  
   /** \brief Returns const reference to the FieldContainer at <var>basisVals_[primOp][dimIndex][subcellId]</var>. 
     This is a helper function which implements the logic for the on-demand computation of basis function
     values at (preset) subcell cubature points. If the FieldContainer at <var>basisVals_[primOp][dimIndex][subcellId]</var>
@@ -297,31 +301,17 @@ class LocalForm0 : public LocalField<Scalar> {
                             const EIntegrationDomain         intDomain);
   
   
-  /** \brief Performs numerical integration (note that geometric transformations and integration weights 
-    have already been included in <var>leftValues</var> and <var>rightValues</var>). The output
-    is rank-3 FieldContainer representing discrete cell operators (matrices), one per cell. The
-    multi-index is (C,L,R) where
-    \verbatim
-    |-----|-------------------------|-----------------------------------------------|
-    |     |         Index           |                        Dimension              |
-    |-----|-------------------------|-----------------------------------------------|
-    |  C  |         cell            | 0 <= C < num. integration domains             |
-    |  L  | left basis (native)     | 0 <= L < dim. of the native LocalField0 basis |
-    |  R  | right basis (auxiliary) | 0 <= R < dim. of the auxiliary field basis    |
-    |-----|-------------------------|---`-------------------------------------------|
-    \endverbatim
-
+  /** \brief Obsolete
     \param outputValues     [out]     - Output array: rank-3 container with multi-index (C,LBF,RBF)
-    \param leftValues       [in]      - Left array.
-    \param rightValues      [in]      - Right array.
+    \param trialValues       [in]      - Trial array.
+    \param testValues      [in]      - Test array.
  */
   void integrate(FieldContainer<Scalar> &        outputValues,
-                 const FieldContainer<Scalar> &  leftValues,
-                 const FieldContainer<Scalar> &  rightValues) const;
+                 const FieldContainer<Scalar> &  trialValues,
+                 const FieldContainer<Scalar> &  testValues) const;
   
   public:
 
-    
   /** brief  Creates a LocalForm0 from a basis, cubature and computational engine. 
 
       \param basis         [in]     - Refcount pointer to an Intrepid::Basis object.
@@ -347,16 +337,14 @@ class LocalForm0 : public LocalField<Scalar> {
   */
   ~LocalForm0() {}
 
-  /** \brief Returns <var>ArrayType</var> with a multi-indexed quantity representing the values of a 
-    (primitive) operator <var>primOp</var> applied to FEM basis functions, evaluated at the array 
-    <var>inputPoints</var> of <strong>reference</strong> points. 
-    
+  /** \brief  Fills <var>outputValues</var> with values of <var>primOp</var>, acting on a set of FEM 
+    basis functions, at a set of <strong>reference cell</strong> points <var>inputPoints</var>.     
     The context in which this interface function can be called is limited to FEM reconstructions 
     (i.e. via a reference cell). The function returns operator values <strong>decoupled from the 
     geometry of a particular cell</strong> (untransformed values).  
     
-    Admissible <var>primOp</var> arguments, rank and format of the output container are as follows 
-    (see FieldContainer::resize(int,int,EField,EOperator,int) for a full list of field/operator combination)
+    Admissible <var>primOp</var> arguments, rank, format and dimensions of <var>outputValues</var>
+    are as follows (see FieldContainer::resize(int,int,EField,EOperator,int) for a complete list)
     \verbatim
     |--------------------|----------------------|----------------|
     |       primOp       |  outputValues format | container rank |
@@ -383,7 +371,7 @@ class LocalForm0 : public LocalField<Scalar> {
     \endverbatim
     
     \remarks 
-    \li The field index (F) in this container preceeded the field coordinate index (F). This choice
+    \li The field index (F) in this container preceeded the field coordinate index (D). This choice
     places field coordinates in a contiguous order and facilitates application of transformations.
     \li Enumeration of Dk (derivatives of total order k) follows the lexicographical order of 
     the partial derivatives; see getDkEnumeration() for details.
@@ -402,11 +390,10 @@ class LocalForm0 : public LocalField<Scalar> {
                    const EOperator                         primOp);
 
 
-  /** \brief  Returns <var>ArrayType</var> with a multi-indexed quantity representing the values of a 
-    (primitive) operator <var>primOp</var> applied to FEM or FVD basis functions, evaluated at the 
-    array <var>inputPoints</var> of <strong>physical</strong> points. Admissible <var>primOp</var> 
-    arguments and the format of the output container are as in 
-    getOperator(ArrayType &, const Teuchos::Array<Point<Scalar> > &, const EOperator).
+  /** \brief  Fills <var>outputValues</var> with values of a (primitive) operator <var>primOp</var> 
+    acting on FEM or FVD basis functions, at a set of <strong>physical cell</strong> points 
+    <var>inputPoints</var>. Admissible <var>primOp</var> arguments and the format of the output container 
+    are as in  getOperator(ArrayType &, const Teuchos::Array<Point<Scalar> > &, const EOperator).
     
     The context in which this interface function can be called is two-fold. For FEM reconstructions 
     (i.e. those based on a reference cell), the function returns the values of the operator applied 
@@ -426,8 +413,8 @@ class LocalForm0 : public LocalField<Scalar> {
 
 
   void getOperator(ArrayType &                  outputValues,
-                   const EOperator              leftOp,
-                   const EOperator              rightOp,
+                   const EOperator              trialOp,
+                   const EOperator              testOp,
                    MultiCell<Scalar> &          mCell,
                    const ArrayType &            inputData,
                    const bool                   reuseJacobians = false,
@@ -435,17 +422,17 @@ class LocalForm0 : public LocalField<Scalar> {
   
   
   void getOperator(ArrayType &                  outputValues,
-                   const EOperator              leftOp,
-                   const EOperator              rightOp,
+                   const EOperator              trialOp,
+                   const EOperator              testOp,
                    MultiCell <Scalar> &         mCell,
                    const bool                   reuseJacobians = false,
                    const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL);
 
   
   void getOperator(ArrayType &                  outputValues,
-                   const EOperator              leftOp,
-                   const EOperator              rightOp,
-                   const LocalField<Scalar> &   rightOpField,
+                   const EOperator              trialOp,
+                   const EOperator              testOp,
+                   const LocalField<Scalar> &   testOpField,
                    MultiCell<Scalar> &          mCell,
                    const ArrayType &            inputData,
                    const bool                   reuseJacobians = false,
@@ -453,12 +440,20 @@ class LocalForm0 : public LocalField<Scalar> {
 
   
   void getOperator(ArrayType &                  outputValues,
-                   const EOperator              leftOp,
-                   const EOperator              rightOp,
-                   const LocalField<Scalar> &   rightOpField,
+                   const EOperator              trialOp,
+                   const EOperator              testOp,
+                   const LocalField<Scalar> &   testOpField,
                    MultiCell<Scalar> &          mCell,
                     const bool                  reuseJacobians = false,
                    const EIntegrationDomain     intDomain = INTEGRATION_DOMAIN_CELL);
+  
+  
+  void getFunctional(ArrayType &              outputValues,
+                     const ArrayType &        trialData,
+                     const EOperator          testOp,
+                     MultiCell<Scalar> &      mCell,
+                     const bool               reuseJacobians = false,
+                     const EIntegrationDomain intDomain = INTEGRATION_DOMAIN_CELL);
   
   
   EField getFieldType() const {return fieldType_;}

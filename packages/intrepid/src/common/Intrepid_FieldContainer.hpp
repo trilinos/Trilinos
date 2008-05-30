@@ -38,6 +38,8 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_TestForException.hpp"
 
@@ -109,14 +111,14 @@ namespace Intrepid {
     //                                                                                            //
     //--------------------------------------------------------------------------------------------//
     
-    /** \brief Creates an empty rank-1 FieldContainer with the specified dimension.
+    /** \brief Creates a rank-1 FieldContainer with the specified dimension, initialized by 0.
       
       \param dim0    [in]      - dimension for the only index 
       */
     FieldContainer(const int dim0);
     
     
-    /** \brief Creates an empty rank-2 FieldContainer with the specified dimensions.
+    /** \brief Creates a rank-2 FieldContainer with the specified dimensions, initialized by 0.
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -125,7 +127,7 @@ namespace Intrepid {
                    const int dim1);
 
     
-    /** \brief Creates an empty rank-3 FieldContainer with the specified dimensions.
+    /** \brief Creates a rank-3 FieldContainer with the specified dimensions, initialized by 0.
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -136,7 +138,7 @@ namespace Intrepid {
                    const int dim2);
 
     
-    /** \brief Creates an empty rank-4 FieldContainer with the specified dimensions.
+    /** \brief Creates a rank-4 FieldContainer with the specified dimensions, initialized by 0.
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -149,7 +151,7 @@ namespace Intrepid {
                    const int dim3);
     
     
-    /** \brief Creates an empty rank-5 FieldContainer with the specified dimensions.
+    /** \brief Creates a rank-5 FieldContainer with the specified dimensions, initialized by 0.
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -164,9 +166,9 @@ namespace Intrepid {
                    const int dim4);
     
     
-    /** \brief Creates an empty FieldContainer of arbitrary rank, using dimensions specified in an
-      array. The size of the input array implicitely defines the rank of the container and its
-      capacity is defined by the specified dimensions. 
+    /** \brief Creates a  FieldContainer of arbitrary rank,, initialized by 0, using dimensions 
+      specified in an array. The size of the input array implicitely defines the rank of the 
+      container and its capacity is defined by the specified dimensions. 
       
       \param dimensions[in]           - array with container dimensions
       */
@@ -365,19 +367,19 @@ namespace Intrepid {
     //--------------------------------------------------------------------------------------------//
     
     
-    /** \brief Resets FieldContainer to trivial container (one with rank = 0 and size = 0)
+    /** \brief Clears FieldContainer to trivial container (one with rank = 0 and size = 0)
     */
-    void empty();
+    void clear();
     
     
-    /** \brief Resizes FieldContainer to a rank-1 container with the specified dimension. 
+    /** \brief Resizes FieldContainer to a rank-1 container with the specified dimension, initialized by 0. 
       
       \param dim0    [in]      - dimension for the 1st index 
     */
     void resize(const int dim0);
     
     
-    /** \brief Resizes FieldContainer to a rank-2 container with specified dimensions. 
+    /** \brief Resizes FieldContainer to a rank-2 container with specified dimensions, initialized by 0. 
 
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -386,7 +388,7 @@ namespace Intrepid {
                 const int dim1);
     
     
-    /** \brief Resizes FieldContainer to a rank-3 container with specified dimensions. 
+    /** \brief Resizes FieldContainer to a rank-3 container with specified dimensions, initialized by 0. 
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -397,7 +399,7 @@ namespace Intrepid {
                 const int dim2);
 
     
-    /** \brief Resizes FieldContainer to a rank-4 container with specified dimensions. 
+    /** \brief Resizes FieldContainer to a rank-4 container with specified dimensions, initialized by 0. 
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -410,7 +412,7 @@ namespace Intrepid {
                 const int dim3);
     
     
-    /** \brief Resizes FieldContainer to a rank-5 container with specified dimensions. 
+    /** \brief Resizes FieldContainer to a rank-5 container with specified dimensions, initialized by 0. 
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
@@ -425,15 +427,16 @@ namespace Intrepid {
                 const int dim4);
     
     
-    /** \brief Resizes FieldContainer to arbitrary rank container with dimensions specified in the
-      input array. The size of this array implicitely defined the rank of the FieldContainer.
+    /** \brief Resizes FieldContainer to arbitrary rank container, initialized by 0, with dimensions 
+      specified in the input array. The size of this array implicitely defined the rank of the FieldContainer.
       
       \param newDimensions[in]          - new upper values for index ranges
     */
     void resize(const Teuchos::Array<int>& newDimensions);
         
     
-    /** \brief Resizes FieldContainer to have the same rank and dimensions as another FieldContainer
+    /** \brief Resizes FieldContainer to have the same rank and dimensions as another FieldContainer,
+      and initializes by 0.
       
       \param anotherContainer[in]          - a FieldContainer
       */
@@ -441,8 +444,8 @@ namespace Intrepid {
     
     
     /** \brief Resizes FieldContainer to a container whose rank depends on the specified field and 
-      operator types and the space dimension. The admissible combinations of these arguments, the 
-      rank of the resulitng container and its dimensions are summarized in the following table:
+      operator types and the space dimension, initialized by 0. The admissible combinations of these 
+      arguments, the rank of the resulitng container and its dimensions are summarized in the following table:
       \verbatim
       |--------------------|-------------------|-------------------|-------------------|
       |operator/field rank |       rank 0      | rank 1 2D/3D      | rank 2 2D/3D      |
@@ -541,6 +544,51 @@ namespace Intrepid {
       return data_;
     }    
 
+    template<class ArrayType>
+    void contractScalar(ArrayType &                     outputValues,
+                        const FieldContainer<Scalar> &  leftValues,
+                        const ECompEngine               compEngine) const;
+    
+    
+    template<class ArrayType>
+    void contractVector(ArrayType &                     outputValues,
+                        const FieldContainer<Scalar> &  leftValues,
+                        const ECompEngine               compEngine) const;
+
+    
+    template<class ArrayType>
+    void contractTensor(ArrayType &                     outputValues,
+                        const FieldContainer<Scalar> &  leftValues,
+                        const ECompEngine               compEngine) const;
+    
+    
+    template<class ArrayType>
+    void contractScalarData(ArrayType &        outputValues,
+                            const ArrayType &  inputData,
+                            const ECompEngine  compEngine) const;
+ 
+    
+    
+    template<class ArrayType>
+    void contractVectorData(ArrayType &        outputValues,
+                            const ArrayType &  inputData,
+                            const ECompEngine  compEngine) const;
+
+    
+    template<class ArrayType>
+    void contractTensorData(ArrayType &        outputValues,
+                            const ArrayType &  inputData,
+                            const ECompEngine  compEngine) const;
+    
+    template<class ArrayType>
+    void multiplyScalarData(const ArrayType &  inputData);
+    
+    
+    template<class ArrayType>
+    void multiplyVectorData(FieldContainer<Scalar> outputValues,
+                            const ArrayType &  inputData);
+
+    
     
     /** \brief Overloaded () operators for rank-1 containers. Data <strong>cannot</strong> be modified.
       
@@ -647,9 +695,16 @@ namespace Intrepid {
                                const int i4);
     
         
-    /** \brief   Overloaded [] operator. Returns value based on its enumeration
+    /** \brief   Overloaded [] operator. Returns value based on its enumeration.
+      Data <strong>cannot</strong> be modified.
     */
     const Scalar & operator [] (const int address) const;
+
+    
+    /** \brief   Overloaded [] operator. Returns value based on its enumeration.
+      Data <strong>can</strong> be modified.
+      */
+    Scalar &       operator [] (const int address);
     
     
     /** \brief Assignment operator <var>*this = right</var>.

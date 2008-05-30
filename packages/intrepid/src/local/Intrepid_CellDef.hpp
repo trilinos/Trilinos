@@ -129,5 +129,12 @@ bool Cell<Scalar>::inPhysicalCell(const Point<Scalar>& physPoint,
                                       const double threshold) const {
   return this->MultiCell<Scalar>::inPhysicalCell(0, physPoint, threshold);
 }
+
+
+template<class Scalar>
+const EMapping Cell<Scalar>::getCellMappingType() const {
+  return this -> MultiCell<Scalar>::getCellMappingType(0);
+}
+
   
 } // namespace Intrepid

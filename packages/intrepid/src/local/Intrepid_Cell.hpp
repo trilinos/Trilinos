@@ -142,6 +142,16 @@ class Cell : public Intrepid::MultiCell<Scalar> {
       \param shapePoints      [in]  - a set of additional shape points to compute higher degree chart.
     */
     void setAtlas(const ShapePoints<Scalar> & shapePoints);
+    
+    
+    /** \brief Returns the mapping type (affine, non-affine) of a cell. Will throw an exception if
+      the atlas has not been defined
+      
+      \param cellId            [in] - cell Id relative to the multicell.
+      \return
+      - type of the maping for this cell
+    */
+    const EMapping getCellMappingType() const;    
         
     
     /** \brief Returns Matrix object containing the Jacobian matrix of the chart mapping for

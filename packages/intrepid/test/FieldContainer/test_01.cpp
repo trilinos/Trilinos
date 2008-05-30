@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
       *outStream << " Container rank = " << rank1Container.getRank() << "\n";      
     }
     
-    rank1Container.empty();
+    rank1Container.clear();
     if( !(rank1Container.getSize() == 0 && rank1Container.getRank() == 0)) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -452,7 +452,7 @@ int main(int argc, char *argv[]) {
       *outStream << " Container rank = " << rank2Container.getRank() << "\n";      
     }
     
-    rank2Container.empty();
+    rank2Container.clear();
     if( !(rank2Container.getSize() == 0 && rank2Container.getRank() == 0)) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -654,7 +654,7 @@ int main(int argc, char *argv[]) {
       *outStream << " Container rank = " << rank3Container.getRank() << "\n";      
     }
     
-    rank3Container.empty();
+    rank3Container.clear();
     if( !(rank3Container.getSize() == 0 && rank3Container.getRank() == 0)) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -864,7 +864,7 @@ int main(int argc, char *argv[]) {
       *outStream << " Container rank = " << rank4Container.getRank() << "\n";      
     }
     
-    rank4Container.empty();
+    rank4Container.clear();
     if( !(rank4Container.getSize() == 0 && rank4Container.getRank() == 0)) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -1081,7 +1081,7 @@ int main(int argc, char *argv[]) {
       *outStream << " Container rank = " << rank5Container.getRank() << "\n";      
     }
     
-    rank5Container.empty();
+    rank5Container.clear();
     if( !(rank5Container.getSize() == 0 && rank5Container.getRank() == 0)) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -1095,6 +1095,38 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
   
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 6: Resize container based on another container                         |\n"\
+    << "===============================================================================\n";
+  
+  try{
+    FieldContainer<double> myContainer(1,2,3);
+    FieldContainer<double> hisContainer(5,4,3,2);
+    
+    hisContainer.resize(myContainer);
+    if ( hisContainer.getRank() != myContainer.getRank() ) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << " Rank of target container   = " << hisContainer.getRank() << "\n";
+      *outStream << " Rank of argument container = " << myContainer.getRank() << "\n";
+    }
+    
+    for(int dim = 0; dim < myContainer.getRank(); dim++){
+      if ( hisContainer.getDimension(dim) != myContainer.getDimension(dim) ) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " Dimension " << dim << " of target container   = " << hisContainer.getDimension(dim) << "\n";
+        *outStream << " Dimension " << dim << " of argument container = " << myContainer.getDimension(dim) << "\n";
+      }
+    }
+  }// try
+    
+    catch (std::logic_error err) {
+      *outStream << err.what() << "\n";
+      errorFlag = -1000;
+    };
   
   
   

@@ -67,31 +67,38 @@ class Basis {
   */
   virtual ~Basis() {}
     
-  /** \brief Returns FieldContainer with multi-indexed quantity with the values of an operator 
-  applied to a set of FEM basis functions, evaluated at a set of points in a <strong>reference</strong>
-  cell. The rank of the return FieldContainer argument depends on the number of points, number of basis, 
-  functions, their rank, and the rank of the operator applied to them; see 
-  FieldContainer::resize(int,int,EField,EOperator,int) for summary of the admissible index combinations. 
-  In particular, the admissible range of the <var>operatorType</var> argument depends on the rank of 
-  the basis functions and the space dimension.Because FEM reconstruction relies on COMPLETE or INCOMPLETE 
-  polynomials, i.e., smooth local spaces, the admissible range of <var>operatorType</var> always includes 
-  VALUE, D0, D1,...,D10. If derivative order exceeds polynomial degree, output container is filled with 0.
+  /** \brief Fills <var>outputValues</var> with values of <var>primOp</var>, acting on a set of FEM 
+  basis functions, at a set of <strong>reference cell</strong> points <var>inputPoints</var>. Rank of the
+  output FieldContainer depends on the ranks of the basis fields and the specified operator and
+  ranges from 2 to 5. The first two dimensions are always the number of points in <var>inputPoints</var> 
+  and the number of basis functions in the basis set. See FieldContainer::resize(int,int,EField,EOperator,int)
+  for a complete list of the admissible combinations of primitive operators and fields and the 
+  resulting container configurations.
+  
+  \remarks
+  Because FEM reconstruction relies on COMPLETE or INCOMPLETE polynomials which are smooth functions,
+  the admissible <var>primOp</var> always include VALUE, D0, D1,...,D10. When derivative order exceeds
+  the polynomial degree, <var>outputValues</var> is filled with the appropriate number of zeros. 
  
       \param outputValues   [out]         - FieldContainer with the computed values (see implementation
                                             for index ordering)
       \param inputPoints     [in]         - evaluation points on the reference cell  
-      \param operatorType    [in]         - the operator being applied to the basis function
+      \param primOp          [in]         - primitive operator acting on the basis function
   */    
   virtual void getValues(FieldContainer<Scalar>&                outputValues,
                          const Teuchos::Array< Point<Scalar> >& inputPoints,
-                         const EOperator                        operatorType) const = 0;
+                         const EOperator                        primOp) const = 0;
   
     
-  /** \brief Returns FieldContainer with multi-indexed quantity representing the values of an operator 
-  applied to a set of FVD basis functions, evaluated at a set of points in a <strong>physical</strong> cell.  
-  Because FVD reconstruction relies on "basis" functions defined directly on the physical cell using 
-  BROKEN polynomial spaces, i.e., discontinuous local spaces, the admissible range of the 
-  <var>operatorType</var> argument is restricted to VALUE. 
+  /** \brief Fills <var>outputValues</var> with values of a set of FVD basis functions, at a set of 
+  <strong>physical cell</strong> points <var>inputPoints</var>. Rank of the output FieldContainer 
+  equals 2 + rank of the basis field and ranges from 2 to 4. The first two dimensions are always 
+  the number of points in <var>inputPoints</var> and the number of basis functions in the basis set.  
+  
+  \remarks
+  In this method the range of the admissible primitive operators is restricted to VALUE because FVD
+  FVD reconstruction relies on "basis" functions defined directly on the physical cell using 
+  BROKEN polynomial spaces, i.e., discontinuous functions.
     
       \param outputValues   [out]         - FieldContainer with the computed values 
       \param inputPoints     [in]         - evaluation points on the physical cell  
@@ -108,6 +115,7 @@ class Basis {
               - number of basis funcions in a concrete basis
   */
   virtual int getNumLocalDof() const = 0;
+  
   
   /** \brief Returns the local enumeration (DoF Id) of a degree-of-freedom with a given LocalDofTag.
 

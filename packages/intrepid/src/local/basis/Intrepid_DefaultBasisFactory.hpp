@@ -60,7 +60,7 @@ namespace Intrepid {
 template<class Scalar>
 class DefaultBasisFactory {
   private:
-    std::map<unsigned long, Teuchos::RCP<Basis<Scalar> > > BMap_;
+    std::map<unsigned long, Teuchos::RCP<Basis<Scalar> > > basisMap_;
 
   public:
     
@@ -79,9 +79,9 @@ class DefaultBasisFactory {
     */
 
     /**** F_C_RD_B_S ************************************************************/
-    BMap_[   2001000] = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>() );
-    BMap_[   2002000] = Teuchos::rcp( new Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>() );
-    BMap_[   3101000] = Teuchos::rcp( new Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>() );
+    basisMap_[   2001000] = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>() );
+    basisMap_[   2002000] = Teuchos::rcp( new Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>() );
+    basisMap_[   3101000] = Teuchos::rcp( new Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>() );
 
     // begin FIAT-generated bases
 

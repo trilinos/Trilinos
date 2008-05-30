@@ -214,9 +214,9 @@ namespace Intrepid {
 
   
   /** \enum  Intrepid::EOperator
-      \brief Enumeration of primitive operators available in Intrepid. Primitive operators act on
-             reconstructed functions. Pairs of primitive operators are used to specify what kind of local
-             weak operator should be constructed.
+    \brief Enumeration of primitive operators available in Intrepid. Primitive operators act on
+    reconstructed functions or basis functions. Pairs of primitive operators are used to 
+    specify what kind of local weak operator should be constructed.
   */
   enum EOperator{
     OPERATOR_VALUE = 0,
