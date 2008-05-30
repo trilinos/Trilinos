@@ -24,9 +24,6 @@
 /* Define if want to build with octreepartitioning enabled */
 #undef HAVE_ZOLTAN_OCT
 
-/* Define if want to build with zoltan_parmetis enabled */
-#undef HAVE_ZOLTAN_PARMETIS
-
 /* Define if want to build zoltan-tests */
 #undef HAVE_ZOLTAN_TESTS
 

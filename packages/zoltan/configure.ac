@@ -137,10 +137,9 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
-AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_zoltan_oct" != "Xno"])
+AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
 TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, no)
-TAC_ARG_WITH_PACKAGE(zoltan_parmetis, [Enable Parmetis support.  This option can be used when enabling Parmetis support for Zoltan, but not for other packages.], ZOLTAN_PARMETIS, no)
-AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno" || test "X$ac_cv_use_zoltan_parmetis" != "Xno"])
+AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
