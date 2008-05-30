@@ -47,6 +47,10 @@
 
 ///// end of list of default basis includes /////
 
+///// FIAT-generated element includes here
+
+///// end FIAT-generated element includes
+
 
 namespace Intrepid {
   
@@ -78,6 +82,11 @@ class DefaultBasisFactory {
     BMap_[   2001000] = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_DEFAULT<Scalar>() );
     BMap_[   2002000] = Teuchos::rcp( new Basis_F0_TRI_C2_FEM_DEFAULT<Scalar>() );
     BMap_[   3101000] = Teuchos::rcp( new Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>() );
+
+    // begin FIAT-generated bases
+
+    // end FIAT-generated bases
+
   };
 
   /** \brief Destructor.
