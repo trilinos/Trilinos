@@ -80,6 +80,9 @@ AC_PREREQ(2.61)
 
 ac_cv_use_fortran90=yes
 
+#This can be removed after we retire the old build system
+AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
+
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------

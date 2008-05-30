@@ -37,6 +37,47 @@ extern "C" {
 /* 2.102 is update for Steensland; improve partition remapping to consider
    previous remapping vector. */
 
+/* This block should only be executed for an Autotools build. */
+#ifdef TRILINOS_CONFIG_H
+
+/*
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
+ * be undef'd here to avoid warnings when this file is included from another package.
+ * KL 11/25/02
+ */
+#ifdef PACKAGE
+#undef PACKAGE
+#endif
+
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
+#endif
+
+#ifdef PACKAGE_BUGREPORT
+#undef PACKAGE_BUGREPORT
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#ifdef VERSION
+#undef VERSION
+#endif
+
+/* This file passes values from configure to the source code. */
+#include "Zoltan_config.h"
+
+#endif /* TRILINOS_NO_CONFIG_H */
+
 /*****************************************************************************
  *  Data types and functions describing the interface between the
  *  application and Zoltan.

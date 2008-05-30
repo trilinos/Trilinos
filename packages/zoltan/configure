@@ -2593,6 +2593,13 @@ echo "${ECHO_T}$am_cv_prog_tar_ustar" >&6; }
 
 ac_cv_use_fortran90=yes
 
+#This can be removed after we retire the old build system
+
+cat >>confdefs.h <<\_ACEOF
+#define TRILINOS_CONFIG_H
+_ACEOF
+
+
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
