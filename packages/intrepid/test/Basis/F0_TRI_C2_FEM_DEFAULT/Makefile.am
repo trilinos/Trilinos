@@ -69,5 +69,5 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
 
 EXTRA_DIST = \
-mass_TRI_FEM_P2_01.dat  mass_TRI_FEM_P2_02.dat  \
-mass_TRI_FEM_P2_03.dat  mass_TRI_FEM_P2_04.dat
+data/mass_TRI_FEM_P2_01.dat  data/mass_TRI_FEM_P2_02.dat  \
+data/mass_TRI_FEM_P2_03.dat  data/mass_TRI_FEM_P2_04.dat
