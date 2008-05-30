@@ -384,6 +384,7 @@ ZOLTAN_H = \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(PARMETIS_H) \
+	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
 	$(REFTREE_H) \
@@ -404,6 +405,7 @@ libzoltan_a_SOURCES = \
 	$(PAR) \
 	$(PARAMS) \
 	$(PARMETIS) \
+	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
 	$(REFTREE) \

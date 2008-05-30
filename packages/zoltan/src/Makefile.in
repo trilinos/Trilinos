@@ -121,23 +121,25 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/parmetis/preprocessing.c \
 	$(srcdir)/parmetis/scatter_graph.c \
 	$(srcdir)/parmetis/third_library.c \
-	$(srcdir)/parmetis/verify_graph.c $(srcdir)/phg/phg_build.c \
-	$(srcdir)/phg/phg_build_calls.c $(srcdir)/phg/phg.c \
-	$(srcdir)/phg/phg_coarse.c $(srcdir)/phg/phg_comm.c \
-	$(srcdir)/phg/phg_distrib.c $(srcdir)/phg/phg_finegrain.c \
-	$(srcdir)/phg/phg_gather.c $(srcdir)/phg/phg_hypergraph.c \
-	$(srcdir)/phg/phg_match.c $(srcdir)/phg/phg_order.c \
-	$(srcdir)/phg/phg_parkway.c $(srcdir)/phg/phg_patoh.c \
-	$(srcdir)/phg/phg_plot.c $(srcdir)/phg/phg_rdivide.c \
-	$(srcdir)/phg/phg_refinement.c $(srcdir)/phg/phg_scale.c \
-	$(srcdir)/phg/phg_serialpartition.c $(srcdir)/phg/phg_util.c \
-	$(srcdir)/phg/phg_Vcycle.c $(srcdir)/rcb/box_assign.c \
-	$(srcdir)/rcb/create_proc_list.c $(srcdir)/rcb/inertial1d.c \
-	$(srcdir)/rcb/inertial2d.c $(srcdir)/rcb/inertial3d.c \
-	$(srcdir)/rcb/point_assign.c $(srcdir)/rcb/rcb_box.c \
-	$(srcdir)/rcb/rcb.c $(srcdir)/rcb/rcb_util.c \
-	$(srcdir)/rcb/rib.c $(srcdir)/rcb/rib_util.c \
-	$(srcdir)/rcb/shared.c $(srcdir)/reftree/reftree_build.c \
+	$(srcdir)/parmetis/verify_graph.c \
+	$(srcdir)/parmetis/parmetis_interface.c \
+	$(srcdir)/phg/phg_build.c $(srcdir)/phg/phg_build_calls.c \
+	$(srcdir)/phg/phg.c $(srcdir)/phg/phg_coarse.c \
+	$(srcdir)/phg/phg_comm.c $(srcdir)/phg/phg_distrib.c \
+	$(srcdir)/phg/phg_finegrain.c $(srcdir)/phg/phg_gather.c \
+	$(srcdir)/phg/phg_hypergraph.c $(srcdir)/phg/phg_match.c \
+	$(srcdir)/phg/phg_order.c $(srcdir)/phg/phg_parkway.c \
+	$(srcdir)/phg/phg_patoh.c $(srcdir)/phg/phg_plot.c \
+	$(srcdir)/phg/phg_rdivide.c $(srcdir)/phg/phg_refinement.c \
+	$(srcdir)/phg/phg_scale.c $(srcdir)/phg/phg_serialpartition.c \
+	$(srcdir)/phg/phg_util.c $(srcdir)/phg/phg_Vcycle.c \
+	$(srcdir)/rcb/box_assign.c $(srcdir)/rcb/create_proc_list.c \
+	$(srcdir)/rcb/inertial1d.c $(srcdir)/rcb/inertial2d.c \
+	$(srcdir)/rcb/inertial3d.c $(srcdir)/rcb/point_assign.c \
+	$(srcdir)/rcb/rcb_box.c $(srcdir)/rcb/rcb.c \
+	$(srcdir)/rcb/rcb_util.c $(srcdir)/rcb/rib.c \
+	$(srcdir)/rcb/rib_util.c $(srcdir)/rcb/shared.c \
+	$(srcdir)/reftree/reftree_build.c \
 	$(srcdir)/reftree/reftree_coarse_path.c \
 	$(srcdir)/reftree/reftree_hash.c \
 	$(srcdir)/reftree/reftree_part.c $(srcdir)/simple/block.c \
@@ -213,7 +215,9 @@ am__objects_13 = build_graph.$(OBJEXT) parmetis_jostle.$(OBJEXT) \
 	postprocessing.$(OBJEXT) preprocessing.$(OBJEXT) \
 	scatter_graph.$(OBJEXT) third_library.$(OBJEXT) \
 	verify_graph.$(OBJEXT)
-am__objects_14 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
+am__objects_14 = parmetis_interface.$(OBJEXT)
+@BUILD_PARMETIS_TRUE@am__objects_15 = $(am__objects_14)
+am__objects_16 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg.$(OBJEXT) phg_coarse.$(OBJEXT) phg_comm.$(OBJEXT) \
 	phg_distrib.$(OBJEXT) phg_finegrain.$(OBJEXT) \
 	phg_gather.$(OBJEXT) phg_hypergraph.$(OBJEXT) \
@@ -222,16 +226,16 @@ am__objects_14 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg_refinement.$(OBJEXT) phg_scale.$(OBJEXT) \
 	phg_serialpartition.$(OBJEXT) phg_util.$(OBJEXT) \
 	phg_Vcycle.$(OBJEXT)
-am__objects_15 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
+am__objects_17 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
 	inertial1d.$(OBJEXT) inertial2d.$(OBJEXT) inertial3d.$(OBJEXT) \
 	point_assign.$(OBJEXT) rcb_box.$(OBJEXT) rcb.$(OBJEXT) \
 	rcb_util.$(OBJEXT) rib.$(OBJEXT) rib_util.$(OBJEXT) \
 	shared.$(OBJEXT)
-am__objects_16 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
+am__objects_18 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
 	reftree_hash.$(OBJEXT) reftree_part.$(OBJEXT)
-am__objects_17 = block.$(OBJEXT) random.$(OBJEXT)
-am__objects_18 = timer_params.$(OBJEXT)
-am__objects_19 = comm_exchange_sizes.$(OBJEXT) \
+am__objects_19 = block.$(OBJEXT) random.$(OBJEXT)
+am__objects_20 = timer_params.$(OBJEXT)
+am__objects_21 = comm_exchange_sizes.$(OBJEXT) \
 	comm_invert_map.$(OBJEXT) comm_do.$(OBJEXT) \
 	comm_do_reverse.$(OBJEXT) comm_info.$(OBJEXT) \
 	comm_create.$(OBJEXT) comm_resize.$(OBJEXT) \
@@ -246,7 +250,7 @@ am__objects_19 = comm_exchange_sizes.$(OBJEXT) \
 	DD_Set_Hash_Fn.$(OBJEXT) DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) \
 	mem_main.$(OBJEXT) mem.$(OBJEXT) zoltan_align.$(OBJEXT) \
 	zoltan_id.$(OBJEXT)
-am__objects_20 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
+am__objects_22 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 	zz_hash.$(OBJEXT) zz_heap.$(OBJEXT) zz_init.$(OBJEXT) \
 	zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) zz_set_fn.$(OBJEXT) \
 	zz_sort.$(OBJEXT) zz_struct.$(OBJEXT) zz_util.$(OBJEXT)
@@ -254,9 +258,9 @@ am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
-	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
-	$(am__objects_16) $(am__objects_17) $(am__objects_18) \
-	$(am__objects_19) $(am__objects_20)
+	$(am__objects_13) $(am__objects_15) $(am__objects_16) \
+	$(am__objects_17) $(am__objects_18) $(am__objects_19) \
+	$(am__objects_20) $(am__objects_21) $(am__objects_22)
 libzoltan_a_OBJECTS = $(am_libzoltan_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -311,6 +315,7 @@ am__include_HEADERS_DIST = $(srcdir)/all/all_allo_const.h \
 	$(srcdir)/parmetis/third_library_const.h \
 	$(srcdir)/parmetis/third_library.h \
 	$(srcdir)/parmetis/third_library_tools.h \
+	$(srcdir)/parmetis/parmetis_interface.h \
 	$(srcdir)/phg/phg_comm.h $(srcdir)/phg/phg_const.h \
 	$(srcdir)/phg/phg_distrib.h $(srcdir)/phg/phg.h \
 	$(srcdir)/phg/phg_hypergraph.h $(srcdir)/phg/phg_util.h \
@@ -805,6 +810,7 @@ ZOLTAN_H = \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(PARMETIS_H) \
+	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
 	$(REFTREE_H) \
@@ -825,6 +831,7 @@ libzoltan_a_SOURCES = \
 	$(PAR) \
 	$(PARAMS) \
 	$(PARMETIS) \
+	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
 	$(REFTREE) \
@@ -2072,6 +2079,20 @@ verify_graph.obj: $(srcdir)/parmetis/verify_graph.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.obj `if test -f '$(srcdir)/parmetis/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/verify_graph.c'; fi`
 
+parmetis_interface.o: $(srcdir)/parmetis/parmetis_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/parmetis/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_interface.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_interface.Tpo $(DEPDIR)/parmetis_interface.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_interface.c' object='parmetis_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.o `test -f '$(srcdir)/parmetis/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_interface.c
+
+parmetis_interface.obj: $(srcdir)/parmetis/parmetis_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.obj -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.obj `if test -f '$(srcdir)/parmetis/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_interface.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_interface.Tpo $(DEPDIR)/parmetis_interface.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_interface.c' object='parmetis_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.obj `if test -f '$(srcdir)/parmetis/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_interface.c'; fi`
+
 phg_build.o: $(srcdir)/phg/phg_build.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_build.o -MD -MP -MF $(DEPDIR)/phg_build.Tpo -c -o phg_build.o `test -f '$(srcdir)/phg/phg_build.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_build.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/phg_build.Tpo $(DEPDIR)/phg_build.Po
@@ -3205,20 +3226,6 @@ zz_util.obj: $(srcdir)/zz/zz_util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_util.c' object='zz_util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_util.obj `if test -f '$(srcdir)/zz/zz_util.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_util.c'; fi`
-
-parmetis_interface.o: $(srcdir)/parmetis/parmetis_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/parmetis/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_interface.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_interface.Tpo $(DEPDIR)/parmetis_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_interface.c' object='parmetis_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.o `test -f '$(srcdir)/parmetis/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_interface.c
-
-parmetis_interface.obj: $(srcdir)/parmetis/parmetis_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.obj -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.obj `if test -f '$(srcdir)/parmetis/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_interface.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_interface.Tpo $(DEPDIR)/parmetis_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_interface.c' object='parmetis_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.obj `if test -f '$(srcdir)/parmetis/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_interface.c'; fi`
 
 scotch_interface.o: $(srcdir)/parmetis/scotch_interface.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.o -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
