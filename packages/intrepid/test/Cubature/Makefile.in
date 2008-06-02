@@ -308,6 +308,11 @@ test_06_SOURCES = test_06.cpp
 test_06_LDADD = $(EXPORT_LIBS)
 test_06_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
+EXTRA_DIST = \
+data/HEX_integrals.dat       data/TET_integrals.dat \
+data/TRIPRISM_integrals.dat  data/EDGE_integrals.dat \
+data/QUAD_integrals.dat      dataTRI_integrals.dat
+
 all: all-am
 
 .SUFFIXES:
