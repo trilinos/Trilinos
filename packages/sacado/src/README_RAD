@@ -240,7 +240,11 @@ memory than RAD_REINIT=1).  On a simple bilinear form evaluation
 probably stay in cache, the new schemes take perhaps 2 or 2.5 time as
 long as the older ones; on larger computations, the relative time
 difference is much smaller.  The relative times for RAD_REINIT=1
-versus RAD_REINIT=2 depend on the computation.
+versus RAD_REINIT=2 depend on the computation.  With recent versions
+of g++, RAD_INIT=1 and RAD_INIT=2 elicit warnings about breaking
+strict-aliasing rules; simply ignore these warnings, which in this
+case are harmless.  The rules of C++ make it hard to banish these
+warnings.
 
 Unless RAD_DISALLOW_WANTDERIV is #defined, the RAD_INIT schemes just
 described introduce a new type, ADvar_nd, for ADvar values whose
