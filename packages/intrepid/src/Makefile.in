@@ -289,7 +289,11 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_LocalForm0.hpp \
   $(srcdir)/local/Intrepid_MultiCellDef.hpp \
   $(srcdir)/local/Intrepid_MultiCell.hpp \
-  $(srcdir)/local/Intrepid_MultiCell.icpp
+  $(srcdir)/local/Intrepid_MultiCell.icpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIATDef.hpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp
