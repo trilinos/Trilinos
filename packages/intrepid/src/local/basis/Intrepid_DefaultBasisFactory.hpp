@@ -48,7 +48,6 @@
 ///// end of list of default basis includes /////
 
 ///// FIAT-generated element includes here
-
 ///// end FIAT-generated element includes
 
 
@@ -84,7 +83,6 @@ class DefaultBasisFactory {
     basisMap_[   3101000] = Teuchos::rcp( new Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>() );
 
     // begin FIAT-generated bases
-
     // end FIAT-generated bases
 
   };
