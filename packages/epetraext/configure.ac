@@ -115,8 +115,8 @@ TAC_ARG_CONFIG_MPI
 # ------------------------------------------------------------------------
 
 #TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
-TAC_ARG_ENABLE_OPTION(fortran90, [enable Fortran 90 support (automatically enables Fortran support)], FORTRAN90_SUPPORT, no)
-AM_CONDITIONAL(FORTRAN90_DISABLED, [test "X$ac_cv_use_fortran90" != "Xyes"])
+#TAC_ARG_ENABLE_OPTION(fortran90, [enable Fortran 90 support (automatically enables Fortran support)], FORTRAN90_SUPPORT, no)
+#AM_CONDITIONAL(FORTRAN90_DISABLED, [test "X$ac_cv_use_fortran90" != "Xyes"])
 #AM_CONDITIONAL(FORTRAN_DISABLED, [test "X$ac_cv_use_fortran" != "Xyes" && test "X$ac_cv_use_fortran90" != "Xyes"])
                                                                           
 # ------------------------------------------------------------------------
@@ -125,9 +125,9 @@ AM_CONDITIONAL(FORTRAN90_DISABLED, [test "X$ac_cv_use_fortran90" != "Xyes"])
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-if test "X$ac_cv_use_fortran90" != "Xno"; then
- AC_PROG_FC(gfortran f90 xlf90 f95)
-fi
+#if test "X$ac_cv_use_fortran90" != "Xno"; then
+# AC_PROG_FC(gfortran f90 xlf90 f95)
+#fi
 #elif test "X$ac_cv_use_fortran" != "Xno"; then
  AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 #fi
@@ -510,7 +510,6 @@ AC_CONFIG_FILES([
 		src/Makefile
 		test/BTF/Makefile
 		test/Composite/Makefile
-		test/FortranCppInterface/Makefile
 		test/Makefile
 		test/MapColoring/Makefile
 		test/Matlab/Makefile

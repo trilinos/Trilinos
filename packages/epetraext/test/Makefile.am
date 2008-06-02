@@ -84,7 +84,7 @@ endif
 endif
 
 SUBDIRS = \
-  MatrixMatrix FortranCppInterface \
+  MatrixMatrix \
   $(TRANSFORM_SUBDIRS) $(BTF_SUBDIRS) \
   $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(COLORING_SUBDIRS) \
   $(MATLAB_SUBDIRS)
