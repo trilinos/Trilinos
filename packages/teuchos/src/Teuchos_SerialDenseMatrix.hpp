@@ -344,6 +344,9 @@ public:
 
   //! Returns the stride between the columns of this matrix in memory.
   OrdinalType stride() const { return(stride_); }
+
+  //! Returns whether this matrix is empty.
+  bool empty() const { return(numRows_ == 0 || numCols_ == 0); }
   //@}
 
   //! @name Norm methods.

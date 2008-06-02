@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
   // default constructor test
   DMatrix DefConTest;
   if (verbose) std::cout <<"default constructor -- construct empty matrix ";
-  if ( DefConTest.values()!=NULL || DefConTest.numCols()!=0 || DefConTest.numRows()!=0 ||DefConTest.stride()!=0 ) {
+  if ( DefConTest.values()!=NULL || DefConTest.numCols()!=0 || DefConTest.numRows()!=0 ||DefConTest.stride()!=0 ||DefConTest.empty()!=true ) {
 	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
   } else {
