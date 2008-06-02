@@ -100,3 +100,8 @@ test_06_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
+
+EXTRA_DIST = \
+data/HEX_integrals.dat       data/TET_integrals.dat \
+data/TRIPRISM_integrals.dat  data/EDGE_integrals.dat \
+data/QUAD_integrals.dat      dataTRI_integrals.dat
