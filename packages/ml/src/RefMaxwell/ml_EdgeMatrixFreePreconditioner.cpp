@@ -601,7 +601,11 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 #endif
 
     if(MaxLevels > 0){
-      if(i != 0 || Smoother_){
+      if(i != 0
+#ifdef HAVE_ML_IFPACK
+         || Smoother_
+#endif
+         ){
         /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
         ML_CHK_ERR(Operator_->Apply(X,r_edge));
         ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
