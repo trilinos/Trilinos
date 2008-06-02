@@ -1550,7 +1550,7 @@ ADcontext<Double>::Gradcomp()
 					d->c->opno, d->b->opno, d->c->aval, *d->a, d->b->aval);
 				d->c->aval += *d->a * d->b->aval;
 				fprintf(ADVari::debug_file, " = %g\n", d->c->aval);
-				} while(d = d->next);
+				} while((d = d->next));
 		else
 #endif
 		do d->c->aval += *d->a * d->b->aval;
@@ -1688,7 +1688,7 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 					d->c->opno, d->b->opno, d->c->aval, *d->a, d->b->aval);
 				d->c->aval += *d->a * d->b->aval;
 				fprintf(ADVari::debug_file, " = %g\n", d->c->aval);
-				} while(d = d->next);
+				} while((d = d->next));
 		else
 #endif
 		do d->c->aval += *d->a * d->b->aval;
