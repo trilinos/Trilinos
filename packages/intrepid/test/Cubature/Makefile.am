@@ -104,4 +104,4 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 EXTRA_DIST = \
 data/HEX_integrals.dat       data/TET_integrals.dat \
 data/TRIPRISM_integrals.dat  data/EDGE_integrals.dat \
-data/QUAD_integrals.dat      dataTRI_integrals.dat
+data/QUAD_integrals.dat      data/TRI_integrals.dat
