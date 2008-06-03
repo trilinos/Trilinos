@@ -216,7 +216,7 @@ ADcontext {	// A singleton class: one instance in radops.c
 		ADMemblock DFirst0;
 		} DPedantry;
 #endif
-	union {
+  struct {
 		double First0d[(sizeof(ADMemblock) + sizeof(double) - 1) / sizeof(double)];
 		ADMemblock First0;
 		} Pedantry;
