@@ -44,6 +44,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <cstdlib>
 
 #include "mrtr_function.H"
 
