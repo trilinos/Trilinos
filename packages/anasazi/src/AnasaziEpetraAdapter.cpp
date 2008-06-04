@@ -140,7 +140,7 @@ namespace Anasazi {
       const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
   {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
-    Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
+    Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
     
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");

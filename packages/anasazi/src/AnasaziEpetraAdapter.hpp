@@ -693,7 +693,7 @@ namespace Anasazi {
                                  double beta, Epetra_MultiVector& mv )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(::Copy, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
 
       TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
