@@ -140,7 +140,7 @@ void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double
 				       const Teuchos::SerialDenseMatrix<int,double>& B, const double beta ) 
 {
   Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
-  Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
+  Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
   
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
   
