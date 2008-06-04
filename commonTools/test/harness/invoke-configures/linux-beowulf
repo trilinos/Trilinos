@@ -20,7 +20,6 @@ FFLAGS=-O3 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
---enable-fortrilinos \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
