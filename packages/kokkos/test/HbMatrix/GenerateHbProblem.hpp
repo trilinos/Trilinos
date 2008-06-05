@@ -31,6 +31,7 @@
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_DenseMultiVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
+#include <cstdlib>
 
 namespace KokkosTest {
 
