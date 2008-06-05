@@ -46,7 +46,7 @@ void Basis_F0_TRI_C1_FEM_FIAT<Scalar>::initialize() {
   int posBfId  = 2;         // position in the tag, counting from 0, of DoF Id relative to the subcell
 
   // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
-  int tags[] = { 0.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 2.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 };
+  int tags[] = { 0 , 0 , 0 , 1 , 0 , 1 , 0 , 1 , 0 , 2 , 0 , 1 };
   
   // Basis-independent function sets tag and enum data in the static arrays:
   Intrepid::setEnumTagData(tagToEnum_,

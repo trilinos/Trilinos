@@ -3,13 +3,15 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature,
+                DIRS = Cubature,
            RealSpace,
            FieldContainer,
            MultiCell,
            Basis/F0_QUAD_I1_FEM_DEFAULT,
            Basis/F0_TRI_C1_FEM_DEFAULT,
-           Basis/F0_TRI_C2_FEM_DEFAULT;
+           Basis/F0_TRI_C2_FEM_DEFAULT,
+           Basis/F0_TRI_C1_FEM_FIAT,
+           Basis/F0_TRI_C2_FEM_FIAT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
@@ -17,15 +19,21 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Cubature,
+                DIRS = Cubature,
            RealSpace,
            FieldContainer,
            MultiCell,
            Basis/F0_QUAD_I1_FEM_DEFAULT,
            Basis/F0_TRI_C1_FEM_DEFAULT,
-           Basis/F0_TRI_C2_FEM_DEFAULT;
+           Basis/F0_TRI_C2_FEM_DEFAULT,
+           Basis/F0_TRI_C1_FEM_FIAT,
+           Basis/F0_TRI_C2_FEM_FIAT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = CUSTOM-MPI;
 }
+
+
+
+
