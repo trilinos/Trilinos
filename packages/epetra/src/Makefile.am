@@ -295,6 +295,26 @@ EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPISMP_H) \
 	$(EXTRA_FORTRAN_KERNELS)
 
+# ------------------------------------------------------------------------
+# Parts of the code that are not ready to be included in nightly release
+# ------------------------------------------------------------------------
+
+
+if BUILD_PRERELEASE
+
+nodist_include_HEADERS = \
+	$(srcdir)/Epetra_OskiUtils.h \
+	$(srcdir)/Epetra_OskiMultiVector.h \
+	$(srcdir)/Epetra_OskiMatrix.h 
+
+
+nodist_libepetra_a_SOURCES = \
+	$(srcdir)/Epetra_OskiUtils.cpp \
+	$(srcdir)/Epetra_OskiMultiVector.cpp \
+	$(srcdir)/Epetra_OskiMatrix.cpp
+
+endif
+
 include $(top_builddir)/Makefile.export.epetra
 
 if USING_GNUMAKE

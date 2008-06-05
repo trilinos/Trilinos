@@ -165,6 +165,7 @@ SHELL = @SHELL@
 STRIP = @STRIP@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
+WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -224,7 +225,7 @@ top_srcdir = @top_srcdir@
 SUBDIRS = src BlockMap CrsGraph CrsMatrix RowMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
-MultiVector Object RowMatrixTransposer SerialDense SerialSpdDense \
+MultiVector Object OSKI RowMatrixTransposer SerialDense SerialSpdDense \
 VbrMatrix Vector Comm BasicPerfTest
 
 TESTS = \
@@ -245,6 +246,7 @@ Map/Map_test.exe \
 MapColoring/MapColoring_test.exe \
 MultiVector/MultiVector_test.exe \
 Object/Object_test.exe \
+OSKI/OSKI_test.exe \
 RowMatrixTransposer/RowMatrixTransposer_test.exe \
 SerialDense/SerialDense_test.exe \
 SerialSpdDense/SerialSpdDense_test.exe \

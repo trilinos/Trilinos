@@ -754,6 +754,9 @@ FLIBS
 BLAS_LIBS
 LAPACK_LIBS
 TRILINOS_TEMPLATE_OBJS
+BUILD_PRERELEASE_TRUE
+BUILD_PRERELEASE_FALSE
+WITH_PRERELEASE_SUBST
 ac_aux_dir
 EPETRA_BUILD_DIRECTORY
 LIBOBJS
@@ -1396,6 +1399,11 @@ Optional Features:
                           and LAPACK. Cannot be disabled unless tests and
                           examples are also disabled. Cannot be disabled when
                           fortran is disabled. (default is yes)
+  --enable-prerelease     Enable compilation and documentation of prerelease
+                          code. Prerelease code is code under development that
+                          we restrict from release to the public. It is
+                          avaliable to developers with no support - use at
+                          your own risk.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -15468,6 +15476,44 @@ fi
 
 
 # ------------------------------------------------------------------------
+# Should we compile 'predevelopment'  versions of the code
+# ------------------------------------------------------------------------
+# Check whether --enable-prerelease was given.
+if test "${enable_prerelease+set}" = set; then
+  enableval=$enable_prerelease; WITH_PRERELEASE=$enableval
+else
+  WITH_PRERELEASE=no
+fi
+
+
+if test X${WITH_PRERELEASE} = Xyes; then
+   CPPFLAGS="${CPPFLAGS} -DWITH_PRERELEASE"
+fi
+
+if test X${WITH_PRERELEASE} = Xyes; then
+  WITH_PRERELEASE_SUBST=WITH_PRERELEASE
+else
+  WITH_PRERELEASE_SUBST=
+fi
+
+ if test X${WITH_PRERELEASE} = Xyes; then
+  BUILD_PRERELEASE_TRUE=
+  BUILD_PRERELEASE_FALSE='#'
+else
+  BUILD_PRERELEASE_TRUE='#'
+  BUILD_PRERELEASE_FALSE=
+fi
+
+
+
+{ echo "$as_me:$LINENO: checking whether or not we should build prerelease code" >&5
+echo $ECHO_N "checking whether or not we should build prerelease code... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: result: $WITH_PRERELEASE" >&5
+echo "${ECHO_T}$WITH_PRERELEASE" >&6; }
+
+
+
+# ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
 
@@ -15478,7 +15524,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/RowMatrix/Makefile test/RowMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/RowMatrix/Makefile test/RowMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/OSKI/Makefile test/OSKI/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -15693,6 +15739,13 @@ if test -z "${SUB_EXAMPLE_TRUE}" && test -z "${SUB_EXAMPLE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"SUB_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PRERELEASE_TRUE}" && test -z "${BUILD_PRERELEASE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PRERELEASE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PRERELEASE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16206,6 +16259,8 @@ do
     "test/MultiVector/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/MultiVector/Makefile.include" ;;
     "test/Object/Makefile") CONFIG_FILES="$CONFIG_FILES test/Object/Makefile" ;;
     "test/Object/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/Object/Makefile.include" ;;
+    "test/OSKI/Makefile") CONFIG_FILES="$CONFIG_FILES test/OSKI/Makefile" ;;
+    "test/OSKI/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/OSKI/Makefile.include" ;;
     "test/RowMatrixTransposer/Makefile") CONFIG_FILES="$CONFIG_FILES test/RowMatrixTransposer/Makefile" ;;
     "test/RowMatrixTransposer/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/RowMatrixTransposer/Makefile.include" ;;
     "test/SerialDense/Makefile") CONFIG_FILES="$CONFIG_FILES test/SerialDense/Makefile" ;;
@@ -16465,13 +16520,16 @@ FLIBS!$FLIBS$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 LAPACK_LIBS!$LAPACK_LIBS$ac_delim
 TRILINOS_TEMPLATE_OBJS!$TRILINOS_TEMPLATE_OBJS$ac_delim
+BUILD_PRERELEASE_TRUE!$BUILD_PRERELEASE_TRUE$ac_delim
+BUILD_PRERELEASE_FALSE!$BUILD_PRERELEASE_FALSE$ac_delim
+WITH_PRERELEASE_SUBST!$WITH_PRERELEASE_SUBST$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 EPETRA_BUILD_DIRECTORY!$EPETRA_BUILD_DIRECTORY$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 49; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

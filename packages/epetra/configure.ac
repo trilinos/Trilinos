@@ -346,6 +346,32 @@ fi
 AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 
 # ------------------------------------------------------------------------
+# Should we compile 'predevelopment'  versions of the code
+# ------------------------------------------------------------------------
+AC_ARG_ENABLE(prerelease,
+[AC_HELP_STRING([--enable-epetra-prerelease],[Enable compilation and documentation of prerelease code.  Prerelease code is code under development that we restrict from release to the public.  It is avaliable to developers with no support - use at your own risk.])],
+[WITH_PRERELEASE=$enableval],
+[WITH_PRERELEASE=no])
+
+if test X${WITH_PRERELEASE} = Xyes; then
+   CPPFLAGS="${CPPFLAGS} -DWITH_PRERELEASE"
+fi
+
+if test X${WITH_PRERELEASE} = Xyes; then
+  WITH_PRERELEASE_SUBST=WITH_PRERELEASE
+else
+  WITH_PRERELEASE_SUBST=
+fi
+
+AM_CONDITIONAL(BUILD_PRERELEASE, test X${WITH_PRERELEASE} = Xyes)
+AC_SUBST(WITH_PRERELEASE_SUBST)
+
+AC_MSG_CHECKING([whether or not we should build prerelease code])
+AC_MSG_RESULT($WITH_PRERELEASE)
+
+
+
+# ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
 
@@ -398,6 +424,8 @@ AC_CONFIG_FILES([
 		test/MultiVector/Makefile.include
 		test/Object/Makefile
 		test/Object/Makefile.include
+		test/OSKI/Makefile
+		test/OSKI/Makefile.include
 		test/RowMatrixTransposer/Makefile
 		test/RowMatrixTransposer/Makefile.include
 		test/SerialDense/Makefile

@@ -33,7 +33,7 @@ all-local:
 SUBDIRS = src BlockMap CrsGraph CrsMatrix RowMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
-MultiVector Object RowMatrixTransposer SerialDense SerialSpdDense \
+MultiVector Object OSKI RowMatrixTransposer SerialDense SerialSpdDense \
 VbrMatrix Vector Comm BasicPerfTest
 
 TESTS = \
@@ -54,6 +54,7 @@ Map/Map_test.exe \
 MapColoring/MapColoring_test.exe \
 MultiVector/MultiVector_test.exe \
 Object/Object_test.exe \
+OSKI/OSKI_test.exe \
 RowMatrixTransposer/RowMatrixTransposer_test.exe \
 SerialDense/SerialDense_test.exe \
 SerialSpdDense/SerialSpdDense_test.exe \
