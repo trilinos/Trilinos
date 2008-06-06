@@ -293,7 +293,13 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_FIAT.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_FIATDef.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIATDef.hpp
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C3_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C3_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C4_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C4_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C5_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C5_FEM_FIATDef.hpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp

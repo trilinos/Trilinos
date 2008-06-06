@@ -97,7 +97,7 @@ namespace Intrepid {
 
       // recurrence in q
       for (int p=0;p<n-1;p++) {
-	for (int q=1;q<n;q++) {
+	for (int q=1;q<n-p;q++) {
 	  int idxpqp1=idx2d(p,q+1);
 	  int idxpq=idx2d(p,q);
 	  int idxpqm1=idx2d(p,q-1);

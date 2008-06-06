@@ -365,6 +365,9 @@ AC_CONFIG_FILES([
   example/FieldContainer/Makefile
   test/Basis/F0_TRI_C1_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C2_FEM_FIAT/Makefile
+  test/Basis/F0_TRI_C3_FEM_FIAT/Makefile
+  test/Basis/F0_TRI_C4_FEM_FIAT/Makefile
+  test/Basis/F0_TRI_C5_FEM_FIAT/Makefile
 ])
 
 AC_OUTPUT()
@@ -372,6 +375,23 @@ AC_OUTPUT()
 echo "------------------------------------------"
 echo "Finished Running Intrepid Configure Script"
 echo "------------------------------------------"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

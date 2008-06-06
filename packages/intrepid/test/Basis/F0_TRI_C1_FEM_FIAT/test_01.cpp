@@ -80,16 +80,16 @@ int main(int argc, char *argv[]) {
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 1;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  endThrowNumber += 5;
+  endThrowNumber += 4;
 #endif
 
   // Reference element points are the standard equispaced lattice of degree 1
   Teuchos::Array< Point<double> > elNodes;
   Point<double> tempPt(2, FRAME_REFERENCE);
   elNodes.assign(3, tempPt);  
-  elNodes[0] = Point<double>( 0.0 , 0.0 , FRAME_REFERENCE);
-  elNodes[1] = Point<double>( 1.0 , 0.0 , FRAME_REFERENCE);
-  elNodes[2] = Point<double>( 0.0 , 1.0 , FRAME_REFERENCE);
+  elNodes[0] = Point<double>( 0.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[1] = Point<double>( 1.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[2] = Point<double>( 0.0000000000000000e+00 , 1.0000000000000000e+00 , FRAME_REFERENCE);
 
   try{
     FieldContainer<double> vals;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
       triBasis->getValues(vals, elNodes, OPERATOR_DIV);
     }
     catch (std::logic_error err) {
-      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << "Expected Error 1----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
@@ -118,37 +118,28 @@ int main(int argc, char *argv[]) {
       triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
-      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << "Expected Error 2----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
 
+
     try {
-      LocalDofTag myTag = {{1,1,1,0}};
+      LocalDofTag myTag = {{0,3,0,0}};
       triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
-      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << "Expected Error 4----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-    };
+    }; 
 
     try {
-      LocalDofTag myTag = {{0,4,0,0}};
-      triBasis -> getLocalDofEnumeration(myTag);
-    }
-    catch (std::logic_error err) {
-      *outStream << "Expected Error ----------------------------------------------------------------\n";
-      *outStream << err.what() << '\n';
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-    };
-
-    try {
-      int bfId = 4;
+      int bfId = 3;
       triBasis -> getLocalDofTag(bfId);
     }
     catch (std::logic_error err) {
-      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << "Expected Error 5----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
@@ -158,7 +149,7 @@ int main(int argc, char *argv[]) {
       triBasis -> getLocalDofTag(bfId);
     }
     catch (std::logic_error err) {
-      *outStream << "Expected Error ----------------------------------------------------------------\n";
+      *outStream << "Expected Error 6----------------------------------------------------------------\n";
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
@@ -355,8 +346,8 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
     triBasis -> getValues(vals, elNodes, OPERATOR_D1);
     for (int i=0; i < vals.getSize(); i++) {
       bool fail = false;
-      if (std::abs(basisD1s[i]) < INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > INTREPID_FIAT_TOL ) {
+      if (std::abs(basisD1s[i]) < pow(10.0,1) * INTREPID_FIAT_TOL ) {
+        if (std::abs(vals[i]-basisD1s[i]) > pow(10.0,1) * INTREPID_FIAT_TOL ) {
           fail = true;
         }
       }
