@@ -31,6 +31,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <cstdlib>
 
 #include "Sacado_Random.hpp"
 
