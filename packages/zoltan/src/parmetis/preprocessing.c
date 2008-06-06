@@ -475,7 +475,7 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
 			   num_gid_entries, num_lid_entries, gr->num_obj,
 			   *global_ids, *local_ids, vsp->vsize, &ierr);
   }
-  else {
+  else if (zz->Get_Obj_Size) {
     ZOLTAN_ID_PTR lid;
     for (i=0; i<gr->num_obj; i++){
       lid = (num_lid_entries ? &((*local_ids)[i*num_lid_entries]) : NULL);
@@ -484,6 +484,11 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
 				  &((*global_ids)[i*num_gid_entries]),
 				  lid, &ierr);
     }
+  }
+  else {
+    /* Assume uniform sizes if no Obj_Size callbacks are registered. */
+    for (i = 0; i < gr->num_obj; i++)
+    vsp->vsize[i] = 1;
   }
   memcpy(vsp->vsizeBACKUP, vsp->vsize, sizeof(indextype)*gr->num_obj);
   return (ierr);
