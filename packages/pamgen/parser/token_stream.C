@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 using namespace std;
 namespace PAMGEN_NEVADA{

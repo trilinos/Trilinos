@@ -7,7 +7,7 @@
 #include "token.h"
 #include <strings.h>
 #include "token_stream.h"
-
+#include <cstring>
 
 // This file supports the keyword model of a token stream.  Under this
 // model, the token stream is a sequence of keywords (of type TK_IDENTIFIER)

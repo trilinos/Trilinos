@@ -5,6 +5,7 @@
 #include "token.h"
 #include <algorithm>
 #include <string>
+#include <cstring>
 
 using namespace std;
 namespace PAMGEN_NEVADA {

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <strings.h>
 #include <time.h>
+#include <cstring>
 
 /****************************************************************************/
 ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,int rank, int num_procs)

@@ -9,7 +9,7 @@
 #include <search.h>
 #include <stdarg.h>
 #include <assert.h>
-
+#include <cstdlib>
 #include <iostream>
 using namespace std;
 

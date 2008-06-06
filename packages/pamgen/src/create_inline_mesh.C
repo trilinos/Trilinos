@@ -2,7 +2,7 @@
 #include "inline_mesh_desc.h"
 #include <iostream>
 #include <strings.h>
-
+#include <cstring>
 
 #include "../mesh_spec_lt/mesh_specification.h" 
 #include "inline_mesh_desc.h"

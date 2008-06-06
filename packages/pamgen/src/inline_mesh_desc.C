@@ -8,6 +8,7 @@
 #include "Random.h"
 #include <iostream>
 #include <algorithm>
+#include <limits.h>
 //#pragma warning(disable:981)
 //#pragma warning(disable:383)
 namespace PAMGEN_NEVADA {

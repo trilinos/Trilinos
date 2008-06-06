@@ -19,6 +19,7 @@
 #include <stack>
 #include <iostream>
 #include <cmath>
+#include <cstdlib>
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
