@@ -224,6 +224,8 @@ TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output],
                    FORMAT_IO, yes)
 TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
 
+TAC_ARG_WITH_PACKAGE(oski, [Enable OSKI interface support.  You must also use the configure option "--enable-epetra-prerelease" and specify the location of the OSKI library and headers.], OSKI, no)
+
 # ------------------------------------------------------------------------
 # Checks for package dependencies
 # ------------------------------------------------------------------------
@@ -348,13 +350,13 @@ AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 # ------------------------------------------------------------------------
 # Should we compile 'predevelopment'  versions of the code
 # ------------------------------------------------------------------------
-AC_ARG_ENABLE(prerelease,
+AC_ARG_ENABLE(epetra-prerelease,
 [AC_HELP_STRING([--enable-epetra-prerelease],[Enable compilation and documentation of prerelease code.  Prerelease code is code under development that we restrict from release to the public.  It is avaliable to developers with no support - use at your own risk.])],
 [WITH_PRERELEASE=$enableval],
 [WITH_PRERELEASE=no])
 
 if test X${WITH_PRERELEASE} = Xyes; then
-   CPPFLAGS="${CPPFLAGS} -DWITH_PRERELEASE"
+   CPPFLAGS="${CPPFLAGS} -DWITH_EPETRA_PRERELEASE"
 fi
 
 if test X${WITH_PRERELEASE} = Xyes; then

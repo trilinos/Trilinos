@@ -27,6 +27,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_EPETRA_PRERELEASE
+#ifdef HAVE_OSKI
 #include "Epetra_OskiMultiVector.h"
 
 //=============================================================================
@@ -72,4 +74,5 @@ bool Epetra_OskiMultiVector::Copy_Created () const {
 oski_vecview_t Epetra_OskiMultiVector::Oski_View () const {
   return Oski_View_;
 }
-
+#endif
+#endif

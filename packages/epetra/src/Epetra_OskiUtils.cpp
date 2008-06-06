@@ -27,6 +27,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_EPETRA_PRERELEASE
+#ifdef HAVE_OSKI
 #include "Epetra_OskiUtils.h"
 
 //=========================================================================
@@ -38,3 +40,5 @@ void Epetra_OskiUtils::Init() {
 void Epetra_OskiUtils::Close() {
   oski_Close ();
 }
+#endif
+#endif

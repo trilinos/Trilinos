@@ -27,6 +27,8 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_EPETRA_PRERELEASE
+#ifdef HAVE_OSKI
 #include "Epetra_OskiMatrix.h"
 
 
@@ -226,3 +228,5 @@ char* Epetra_OskiMatrix::GetMatrixTransforms() const {
 int Epetra_OskiMatrix::ApplyMatrixTransforms(const char* Transforms) {
 
 }
+#endif
+#endif

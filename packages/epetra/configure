@@ -1447,6 +1447,10 @@ Optional Packages:
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
   --with-zoltan           Enable Zoltan interface support (default is no)
+  --with-oski             Enable OSKI interface support. You must also use the
+                          configure option "--enable-epetra-prerelease" and
+                          specify the location of the OSKI library and
+                          headers. (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -7453,6 +7457,33 @@ echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZOLTAN
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+
+# Check whether --with-oski was given.
+if test "${with_oski+set}" = set; then
+  withval=$with_oski; ac_cv_use_oski=$withval
+else
+  ac_cv_use_oski=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use oski" >&5
+echo $ECHO_N "checking whether to use oski... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_oski" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_OSKI
 _ACEOF
 
 else
@@ -15479,16 +15510,16 @@ fi
 # ------------------------------------------------------------------------
 # Should we compile 'predevelopment'  versions of the code
 # ------------------------------------------------------------------------
-# Check whether --enable-prerelease was given.
-if test "${enable_prerelease+set}" = set; then
-  enableval=$enable_prerelease; WITH_PRERELEASE=$enableval
+# Check whether --enable-epetra-prerelease was given.
+if test "${enable_epetra_prerelease+set}" = set; then
+  enableval=$enable_epetra_prerelease; WITH_PRERELEASE=$enableval
 else
   WITH_PRERELEASE=no
 fi
 
 
 if test X${WITH_PRERELEASE} = Xyes; then
-   CPPFLAGS="${CPPFLAGS} -DWITH_PRERELEASE"
+   CPPFLAGS="${CPPFLAGS} -DWITH_EPETRA_PRERELEASE"
 fi
 
 if test X${WITH_PRERELEASE} = Xyes; then
