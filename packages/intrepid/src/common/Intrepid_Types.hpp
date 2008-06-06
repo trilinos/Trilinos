@@ -118,6 +118,8 @@ namespace Intrepid {
   // Used as tolerance in e.g. Newton's method to invert non-affine mappings
   static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
   
+  // Used as tolerance in testing FIAT elements
+  static const double INTREPID_FIAT_TOL  = 10.0 * INTREPID_TOL;
 
   /** \enum  Intrepid::EStatus
       \brief Indicates the status of an object.

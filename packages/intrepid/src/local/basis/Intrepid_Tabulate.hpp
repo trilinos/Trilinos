@@ -37,13 +37,14 @@ namespace Intrepid {
       const int num_pts = xin.size();
 
       // transformation from Pavel's element
-      Teuchos::Array<Point<Scalar> > x( xin.size() );
-      Scalar xcur[2];
+      Teuchos::Array<Point<Scalar> > x;
+      Scalar xcur_arr[2];
 
       for (int i=0;i<num_pts;i++) {
-	xcur[0] = 2.0 * xin[i][0] - 1.0;
-	xcur[1] = 2.0 * xin[i][1] - 1.0;
-	x[i] = Point<Scalar>( xcur[0],xcur[1] );
+	xcur_arr[0] = 2.0 * xin[i][0] - 1.0;
+	xcur_arr[1] = 2.0 * xin[i][1] - 1.0;
+	Point<Scalar> xcur( xcur_arr[0],xcur_arr[1] );
+        x.append( xcur );
       }
 
       // set up constant term

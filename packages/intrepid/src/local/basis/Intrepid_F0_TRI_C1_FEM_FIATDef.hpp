@@ -90,6 +90,7 @@ void Basis_F0_TRI_C1_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     TEST_FOR_EXCEPTION( !MultiCell<Scalar>::inReferenceCell(CELL_TRI, inputPoints[countPt]),
                         std::invalid_argument,
                         ">>> ERROR (Basis_F0_TRI_C1_FEM_FIAT): Evaluation point is outside the TRI reference cell");
+  }
 #endif
   switch(operatorType) {
     case OPERATOR_VALUE:
