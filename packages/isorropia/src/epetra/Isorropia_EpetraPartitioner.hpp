@@ -50,19 +50,16 @@ class Epetra_CrsMatrix;
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
-/** The Epetra namespace contains Isorropia's Epetra-specific
-  classes and functions.
-*/
 namespace Epetra {
   class CostDescriber;
 
-/** An Epetra-specific implementation of the Partitioner interface.
- */
+/** An implementation of the Partitioner interface that operates on
+    Epetra matrices and linear systems.
+
+*/
+
 class Partitioner : public Isorropia::Partitioner {
 public:
   /**

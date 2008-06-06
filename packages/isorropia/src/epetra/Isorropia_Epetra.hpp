@@ -49,14 +49,8 @@ class Epetra_CrsMatrix;
 class Epetra_LinearProblem;
 #endif
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
-/** The Epetra namespace contains Isorropia's Epetra-specific
-  classes and functions.
-*/
 namespace Epetra {
 
   class Partitioner;
@@ -567,12 +561,12 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
 
   The caller is responsible for deleting the returned object.
 
-  @param input_matrix Source/input object.
+  param input_matrix Source/input object.
 
-  @param target_rowmap Target rowmap, required to be compatible with
+  param target_rowmap Target rowmap, required to be compatible with
      input_matrix.RowMap() in terms of number-of-elements, etc.
 
-  @param importer Optional argument. If importer is supplied, it will be
+  param importer Optional argument. If importer is supplied, it will be
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
@@ -586,12 +580,12 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 
   The caller is responsible for deleting the returned object.
 
-  @param input_matrix Source/input object.
+  param input_matrix Source/input object.
 
-  @param target_rowmap Target rowmap, required to be compatible with
+  param target_rowmap Target rowmap, required to be compatible with
      input_matrix.RowMatrixRowMap() in terms of number-of-elements, etc.
 
-  @param importer Optional argument. If importer is supplied, it will be
+  param importer Optional argument. If importer is supplied, it will be
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
@@ -603,12 +597,12 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 /** Return a new Epetra_CrsGraph object constructed with target_rowmap,
   and with the contents of input_graph imported into it.
 
-  @param input_graph Source/input object.
+  param input_graph Source/input object.
 
-  @param target_rowmap Target rowmap, required to be compatible with
+  param target_rowmap Target rowmap, required to be compatible with
      input_graph.RowMap() in terms of number-of-elements, etc.
 
-  @param importer Optional argument. If importer is supplied, it will be
+  param importer Optional argument. If importer is supplied, it will be
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
@@ -620,12 +614,12 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 /** Return a new Epetra_MultiVector object constructed with target_map,
   and with the contents of 'input' imported into it.
 
-  @param input Source/input object.
+  param input Source/input object.
 
-  @param target_map Target map, required to be compatible with
+  param target_map Target map, required to be compatible with
      input.Map() in terms of number-of-elements, etc.
 
-  @param importer Optional argument. If importer is supplied, it will be
+  param importer Optional argument. If importer is supplied, it will be
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
@@ -637,12 +631,12 @@ Teuchos::RefCountPtr<Epetra_MultiVector>
 /** Return a new Epetra_Vector object constructed with target_map,
   and with the contents of 'input' imported into it.
 
-  @param input Source/input object.
+  param input Source/input object.
 
-  @param target_map Target map, required to be compatible with
+  param target_map Target map, required to be compatible with
      input.RowMap() in terms of number-of-elements, etc.
 
-  @param importer Optional argument. If importer is supplied, it will be
+  param importer Optional argument. If importer is supplied, it will be
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
@@ -703,6 +697,8 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
                                     std::vector<int>& all_proc_offsets);
 
 
+/** to do
+ */
 double compute_imbalance(int nprocs, std::vector<int> &offsets, 
                          double *wgts, double target);
 

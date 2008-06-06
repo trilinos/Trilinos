@@ -43,26 +43,24 @@ class Epetra_BlockMap;
 class Epetra_CrsGraph;
 class Epetra_RowMatrix;
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
-/** The Epetra namespace contains Isorropia's Epetra-specific
-  classes and functions.
-*/
 namespace Epetra {
+
   class CostDescriber;
 
-/** The ZoltanLib namespace within the Epetra namespace contains the 
+/** The ZoltanLib namespace within the Epetra namespace contains the
     classes and functions that use the Zoltan library to partition an
     Epetra object.
 */
+
+
+
 namespace ZoltanLib {
 
 /** QueryObject is a class that contains the query functions required
     by the Zoltan library.  These fuctions, when called by Zoltan,
-    provide the objects to be balanced (rows), the graph or hypergraph 
+    provide the objects to be balanced (the row IDs), the graph or hypergraph 
     edges, and object and edge weights.
  */
 class QueryObject
@@ -115,12 +113,20 @@ class QueryObject
                int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
                int weight_dim, float * edge_weights, int * ierr );
 
+  /** to do
+   */
   void My_HG_Size_CS (int* num_lists, int* num_pins, int* format, 
                           int * ierr );
+  /** to do
+   */
   void My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins, 
            int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
                                        int * ierr );
+  /** to do
+   */
   void My_HG_Size_Edge_Weights(int* num_edges, int* ierr);
+  /** to do
+   */
   void My_HG_Edge_Weights(int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
         ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);
 
@@ -143,6 +149,8 @@ class QueryObject
    */
   virtual ~QueryObject();
 
+  /** to do
+   */
   const Epetra_BlockMap &RowMap(void){ return *rowMap_;};
 
   /** Return true if any of the processes in the application have defined
@@ -161,27 +169,43 @@ class QueryObject
   bool haveHypergraphEdgeWeights();
 
   // General query functions
+  /** to do
+   */
   static int Number_Objects(void *data, int *ierr);
+  /** to do
+   */
   static void Object_List  ( void * data, int num_gid_entries, int num_lid_entries,
                      ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                      int weight_dim, float * object_weights, int * ierr );
 
   // Query functions for graph partitioning only
+  /** to do
+   */
   static void Number_Edges_Multi  ( void * data, int num_gid_entries, int num_lid_entries,
                int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                int *num_edges, int * ierr );
+  /** to do
+   */
   static void Edge_List_Multi( void * data, int num_gid_entries, int num_lid_entries, 
                int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
                int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
                int weight_dim, float * edge_weights, int * ierr );
 
   // Query functions for hypergraph partitioning only
+  /** to do
+   */
   static void HG_Size_CS ( void * data, int* num_lists, int* num_pins, int* format, 
                           int * ierr );
+  /** to do
+   */
   static void HG_CS ( void * data, int num_gid_entries, int num_row_or_col, int num_pins, 
            int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
                                        int * ierr );
+  /** to do
+   */
   static void HG_Size_Edge_Weights(void * data, int* num_edges, int* ierr);
+  /** to do
+   */
   static void HG_Edge_Weights(void * data,
         int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
         ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);

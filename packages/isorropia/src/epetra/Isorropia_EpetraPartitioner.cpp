@@ -51,11 +51,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #endif
 
-
-
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
 #ifdef HAVE_EPETRA

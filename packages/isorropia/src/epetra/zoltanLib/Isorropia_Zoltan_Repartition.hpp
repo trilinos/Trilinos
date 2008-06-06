@@ -57,7 +57,12 @@ class Isorropia::Epetra::CostDescriber;
 
 namespace Isorropia{
 
-namespace Epetra{
+namespace Epetra {
+
+/** The ZoltanLib namespace within the Epetra namespace contains the
+    classes and functions that use the Zoltan library to partition an
+    Epetra object.
+*/
 
 namespace ZoltanLib{
 
@@ -75,7 +80,7 @@ namespace ZoltanLib{
     under the new partitioning to the process that currently owns it.
 
     Isorropia::Epetra::ZoltanLib::repartition() is called by the
-    Isorropia::Epetra::Partition constructor when Zoltan is available.
+    Isorropia::Epetra::Partitioner constructor when Zoltan is available.
 */
 int
 repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
@@ -97,7 +102,7 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     under the new partitioning to the process that currently owns it.
 
     Isorropia::Epetra::ZoltanLib::repartition() is called by the
-    Isorropia::Epetra::Partition constructor when Zoltan is available.
+    Isorropia::Epetra::Partitioner constructor when Zoltan is available.
 */
 int
 repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,

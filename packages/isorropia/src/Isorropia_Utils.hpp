@@ -34,10 +34,13 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_ConfigDefs.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
+
+/** Utils is the namespace within the Isorropia namespace that defines
+    general definitions of utilities that may be of use to any specific 
+    partitioner.
+*/
+
 namespace Utils {
 
 /** Internal Isorropia implementation utility.
@@ -45,7 +48,7 @@ namespace Utils {
   offsets into a global element list, and another vector that
   specifies all processors' new or desired offsets into a global
   element list, fill a send_info and recv_info vector with data that
-  can be unpacked/interpretted as follows.
+  can be unpacked/interpreted as follows.
 
   while(i<send_info.size()) {
     send_info[i]   == proc to send data to

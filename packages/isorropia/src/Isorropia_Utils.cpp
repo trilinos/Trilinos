@@ -29,13 +29,11 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#include <Isorropia_ConfigDefs.hpp>
+#include <Isorropia_Utils.hpp>
 #include <Isorropia_Exception.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
+
 namespace Utils {
 
 void create_comm_plan(int myPID,

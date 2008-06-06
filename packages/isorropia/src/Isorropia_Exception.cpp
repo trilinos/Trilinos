@@ -31,9 +31,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_Exception.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
 Exception::Exception(const char* msg) throw()

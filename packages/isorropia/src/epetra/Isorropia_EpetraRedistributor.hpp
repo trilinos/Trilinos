@@ -32,6 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _Isorropia_EpetraRedistributor_hpp_
 #define _Isorropia_EpetraRedistributor_hpp_
 
+#include <Isorropia_Redistributor.hpp>
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -58,7 +59,8 @@ namespace Epetra {
      provides several methods for redistributing Epetra objects
      given the partitioning computed by the Partitioner object.
 */
-class Redistributor {
+
+class Redistributor : public Isorropia::Redistributor {
 public:
   /** Constructor.
       This constructor calls partitioner.compute_partitioning() if it
@@ -116,6 +118,8 @@ public:
      redistribute(const Epetra_MultiVector& input_vector);
 
 private:
+  /** to do
+   */
   void create_importer(const Epetra_BlockMap& src_map);
 
   Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner_;

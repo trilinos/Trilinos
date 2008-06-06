@@ -56,7 +56,9 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #define DEBUG_PROC   1
 
 namespace Isorropia {
+
 namespace Epetra {
+
 namespace ZoltanLib {
 
 static int me = 0;

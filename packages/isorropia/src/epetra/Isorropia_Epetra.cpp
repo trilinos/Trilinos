@@ -55,10 +55,8 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <mpi.h>
 #endif
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
+
 namespace Epetra {
 
 #ifdef HAVE_EPETRA

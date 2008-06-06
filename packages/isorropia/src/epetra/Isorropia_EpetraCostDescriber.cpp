@@ -39,6 +39,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_CrsMatrix.h>
 
 namespace Isorropia {
+
 namespace Epetra {
 
 CostDescriber::CostDescriber()
@@ -64,6 +65,11 @@ void CostDescriber::setParameters(const Teuchos::ParameterList& paramlist)
   paramlist_ = paramlist;
 }
 
+/** Supply a vector of vertex (row) weights.  If rows are distributed, then
+    each process must supply a weight for each of its rows.  (Alternatively
+    the application can supply no vertex weights at all.)  The weights should
+    be in the same order as the rows in the Epetra object being partitioned.
+*/
 void CostDescriber::setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> vwts)
 {
   if (vertex_weights_.get() != 0){

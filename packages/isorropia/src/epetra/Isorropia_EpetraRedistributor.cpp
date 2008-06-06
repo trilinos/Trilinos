@@ -46,9 +46,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_LinearProblem.h>
 #endif
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
 namespace Epetra {

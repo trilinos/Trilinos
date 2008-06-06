@@ -35,9 +35,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
 
 /** Interface (abstract base class) for computing a new partitioning and

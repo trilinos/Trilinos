@@ -35,26 +35,23 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
+/** Isorropia is the namespace that contains general definitions that
+    apply to all partitioners and that contains abstract classes that 
+    declare the methods and data to be supplied by specific partitioners.
 */
+
 namespace Isorropia {
 
 /** Interface (abstract base class) for describing the weights/costs
   associated with the vertices and/or edges of the object to be
   repartitioned and redistributed.
 
-  This interface is intended to be queried by the partitioner.
+  The CostDescriber object is created by the application and then is
+  queried by the partitioner.  If no CostDescriber is supplied by the
+  application, sensible default weights should be used.
 
-  In many cases, a user may provide some weights but not others. E.g.,
-  they may provide vertex weights but not edge weights, etc. Any weights
-  which are not provided are assumed to have a default value of 1.0.
-  The caller which needs the weights (i.e., the partitioner) can
-  save time/work by querying whether "non-default" weights are
-  specified, and if not, then simply use weights of 1.0 rather than
-  making the call to obtain the weights arrays. The queries for
-  whether weights are provided are the methods haveVertexWeights(),
-  haveGraphEdgeWeights() and haveHypergraphEdgeWeights().
+  The queries for whether weights are provided are the methods 
+  haveVertexWeights(), haveGraphEdgeWeights() and haveHypergraphEdgeWeights().
 */
 class CostDescriber {
 public:

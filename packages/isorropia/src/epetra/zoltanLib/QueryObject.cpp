@@ -43,7 +43,9 @@
 #define DEBUG_PROC 1
 
 namespace Isorropia{
-namespace Epetra{
+
+namespace Epetra {
+
 namespace ZoltanLib{
 
 QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,

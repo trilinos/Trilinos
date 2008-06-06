@@ -35,14 +35,11 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
-*/
 namespace Isorropia {
   class Partitioner;
 
 /** Abstract base class for classes which are constructed with a 
- ** Partitioner instance, and define methods redistribute their objects.
+ ** Partitioner instance, and define methods to redistribute their objects.
 */
 class Redistributor {
 public:
