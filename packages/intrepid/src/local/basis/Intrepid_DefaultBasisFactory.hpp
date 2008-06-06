@@ -50,14 +50,6 @@
 ///// FIAT-generated element includes here
 #include "Intrepid_F0_TRI_C1_FEM_FIAT.hpp"
 #include "Intrepid_F0_TRI_C2_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C1_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C2_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C1_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C2_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C1_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C2_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C1_FEM_FIAT.hpp"
-#include "Intrepid_F0_TRI_C2_FEM_FIAT.hpp"
 ///// end FIAT-generated element includes
 
 
