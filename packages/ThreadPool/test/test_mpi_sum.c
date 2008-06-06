@@ -131,7 +131,7 @@ double d4_dot_tp( COMM comm, unsigned n, const double * x, const double * y )
 
     for ( i = 0 ; i < n_tmp ; ++i ) { tmp[i] = 0 ; }
 
-    TPI_Run( task_d4_dot_tp , & data );
+    TPI_Run( task_d4_dot_tp , & data , 0 );
 
     val[0] = tmp[0] ;
     val[1] = tmp[1] ;
@@ -184,7 +184,7 @@ double ddot_tp( COMM comm, unsigned n, const double * x, const double * y )
 
     for ( i = 0 ; i < n_tmp ; ++i ) { tmp[i] = 0 ; }
 
-    TPI_Run( task_ddot_tp , & data );
+    TPI_Run( task_ddot_tp , & data , 0 );
 
     for ( i = 1 ; i < size ; ++i ) { tmp[0] += tmp[i] ; }
 
@@ -233,7 +233,7 @@ static void task_dfill_rand( void * arg , TPI_ThreadPool pool )
 void dfill_rand_tp( unsigned seed , unsigned n , double * x , double mag )
 {
   struct FillWork data = { mag , x , n , seed };
-  TPI_Run( & task_dfill_rand , & data );
+  TPI_Run( & task_dfill_rand , & data , 0 );
 }
 
 /*--------------------------------------------------------------------*/

@@ -86,11 +86,13 @@ typedef void (*TPI_parallel_subprogram)( void * shared_data ,
  *    (*subprogram)( shared_data , pool )
  *
  *  The thread pool must be in the 'paused' state when this
- *  function is called.  Thus recursive calls to TPI_Run or
- *  TPI_Run_many are illegal.
+ *  function is called.  Thus a recursive call to TPI_Run is illegal.
+ *  If the work size is zero then the number of allocated threads
+ *  is used.
  */
 int TPI_Run( TPI_parallel_subprogram /* subprogram  */ ,
-             void *                  /* shared data */ );
+             void *                  /* shared data */ ,
+             int                     /* work size   */ );
 
 /** Query the subprogram's execution "rank within size."
  *  The suprogram is called 'size' number of times where the
@@ -102,33 +104,6 @@ int TPI_Run( TPI_parallel_subprogram /* subprogram  */ ,
  *  a TPI_parallel_subprogram.
  */
 int TPI_Rank( TPI_ThreadPool , int * /* rank */ , int * /* size */ );
-
-/*--------------------------------------------------------------------*/
-/** Run many possibly different thread pool parallel subprograms.
- *  Each subprogram is called within its own pool of the given size.
- *  If the sum of pool sizes is larger than the number of created
- *  threads then the threads use work-stealing to call 
- *  'subprogram[i]' 'size[i]' times.
- *
- *  The thread pool must be in the 'paused' state when this
- *  function is called.  Thus recursive calls to TPI_Run or
- *  TPI_Run_many are illegal.
- */
-int TPI_Run_many( const int                  /* Number of groups */ ,
-                  TPI_parallel_subprogram [] /* group of subprograms  */ ,
-                  void * []                  /* group of subprograms' data */ ,
-                  const int []               /* group of pool sizes   */ );
-
-/** Query the current thread's "rank within size of group of pools."
- *  The 'TPI_Run_many' executes multiple subprograms within defined
- *  groups of a given size.  This method queries in which group the
- *  current call is taking place.
- *
- *  The thread pool must be in the active state.
- *  Thus this method may only be called from within
- *  a TPI_parallel_subprogram.
- */
-int TPI_Group_rank( TPI_ThreadPool , int * /* rank */ , int * /* size */ );
 
 /*--------------------------------------------------------------------*/
 /** Query accumulated run counts for each created thread and then
@@ -169,7 +144,7 @@ int TPI_Unlock( TPI_ThreadPool , int );
 /** Initialize the root thread pool to the specified size.
  *  The thread pool is transitioned from 'uninitialized' to 'paused' state.
  */
-int TPI_Init( int /* size */ );
+int TPI_Init( int /* thread pool size */ );
 
 /** Query the number of threads created.
  *  The thread pool must be in the 'paused' state.

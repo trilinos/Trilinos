@@ -279,7 +279,7 @@ void test_tpi_dnax_driver( const int nthread ,
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.offset = num * ( i % num_sets );
-            TPI_Run( & test_dnax_flat_work , & data );
+            TPI_Run( & test_dnax_flat_work , & data , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
 
@@ -379,7 +379,7 @@ void test_tpi_dnax_driver( const int nthread ,
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.offset = num * ( i % num_sets );
-            TPI_Run( & test_dnax_column_work , & data );
+            TPI_Run( & test_dnax_column_work , & data , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
 
@@ -479,7 +479,7 @@ void test_tpi_dnax_driver( const int nthread ,
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.offset = num * ( i % num_sets );
-            TPI_Run( & test_dnax_row_work , & data );
+            TPI_Run( & test_dnax_row_work , & data , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
 

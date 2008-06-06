@@ -36,11 +36,11 @@
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
+enum { MAXIMUM_WORK_LOCKS = 256 };
+
 typedef struct TPI_ThreadPool_Private {
   pthread_mutex_t * m_lock ;
   int               m_lock_size ;
-  int               m_group_size ;
-  int               m_group_rank ;
   int               m_size ;
   int               m_rank ;
 } ThreadWork ;
@@ -50,14 +50,11 @@ typedef struct ThreadPool_Data {
   pthread_mutex_t           m_pool_lock_run ;
   pthread_cond_t            m_pool_cond ;
   pthread_cond_t            m_pool_cond_run ;
-  TPI_parallel_subprogram * m_work_group_routine ;
-  void                   ** m_work_group_argument ;
-  const int               * m_work_group_number ;
+  TPI_parallel_subprogram   m_work_routine ;
+  void                    * m_work_argument ;
   pthread_mutex_t         * m_work_lock ;
   int                       m_work_lock_size ;
-  int                       m_work_group_size ;
   int                       m_number_threads ;
-  int                       m_thread_blocking ;
   int                       m_work_size ;
   int                       m_thread_work ;
   int                       m_work_begin_count ;
@@ -66,28 +63,6 @@ typedef struct ThreadPool_Data {
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
-
-int TPI_Group_rank( TPI_ThreadPool local , int * rank , int * size )
-{
-  const int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( rank ) { *rank = local->m_group_rank ; }
-    if ( size ) { *size = local->m_group_size ; }
-  }
-  return result ;
-}
-
-int TPI_Rank( TPI_ThreadPool local , int * rank , int * size )
-{
-  const int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( rank ) { *rank = local->m_rank ; }
-    if ( size ) { *size = local->m_size ; }
-  }
-  return result ;
-}
 
 int TPI_Partition( int Thread_Rank ,
                    int Thread_Size ,
@@ -112,6 +87,17 @@ int TPI_Partition( int Thread_Rank ,
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
+
+int TPI_Rank( TPI_ThreadPool local , int * rank , int * size )
+{
+  const int result = NULL == local ? TPI_ERROR_NULL : 0 ;
+
+  if ( ! result ) {
+    if ( rank ) { *rank = local->m_rank ; }
+    if ( size ) { *size = local->m_size ; }
+  }
+  return result ;
+}
 
 int TPI_Lock( TPI_ThreadPool local , int i )
 {
@@ -151,83 +137,50 @@ int TPI_Unlock( TPI_ThreadPool local , int i )
 static void local_thread_pool_run_work( ThreadPool * const pool ,
                                         const int am_worker )
 {
-  const int blocking = am_worker && pool->m_thread_blocking ;
   pthread_mutex_t * const lock = & pool->m_pool_lock_run ;
 
-  int working = 1 ;
   int work_n = 0 ;
 
-  while ( working ) {
-    int work_end_count = pool->m_work_end_count ;
+  while ( ( am_worker ? 0 <= pool->m_work_end_count :
+                        0 <  pool->m_work_end_count ) ) {
 
-    if ( ( 0 >  work_end_count ) ||
-         ( 0 == work_end_count && ! am_worker ) ) {
-      working = 0 ;
+    pthread_mutex_lock( lock );
+
+    /* Note the work that I did in the previous iteration */
+    if ( work_n ) { --( pool->m_work_end_count ); }
+
+    if ( am_worker &&
+         0 <= pool->m_work_end_count &&
+         0 == pool->m_work_begin_count ) {
+      work_n = 0 ;
+      pthread_cond_wait( & pool->m_pool_cond_run , lock );
     }
-    else if ( ! blocking && 0 == work_end_count ) {
-      /* Spinning with nothing to do, don't even pause to trylock. */ ;
+
+    if ( 0 < pool->m_work_begin_count ) {
+
+      /* If the first time I have obtained work from the current
+       * pool of work then increment the working thread counter.
+       */
+      if ( ! work_n ) { ++( pool->m_thread_work ); }
+
+      work_n = ( pool->m_work_begin_count )-- ; /* Claim some work */
     }
-    else if ( ! pthread_mutex_trylock( lock ) ) {
+    else {
+      work_n = 0 ;
+    }
 
-      work_end_count = pool->m_work_end_count ;
+    pthread_mutex_unlock( lock );
 
-      /* Note the work that I did in the previous iteration */
-      if ( work_n ) { pool->m_work_end_count = --work_end_count ; }
+    /*----------------------*/
 
-      if ( blocking ) {
-        if ( 0 <= work_end_count && 0 == pool->m_work_begin_count ) {
-          /* I must have the lock to block */
-          pthread_cond_wait( & pool->m_pool_cond_run , lock );
+    if ( work_n ) { /* Have work to do */
+      ThreadWork work = {
+        /*  m_lock       */  pool->m_work_lock ,
+        /*  m_lock_size  */  pool->m_work_lock_size ,
+        /*  m_size       */  pool->m_work_size ,
+        /*  m_rank       */  pool->m_work_size - work_n };
 
-          /*  Now running and have the lock; however, 'pool' has changed */
-          work_end_count = pool->m_work_end_count ;
-          work_n = 0 ;
-        }
-      }
-
-      if ( 0 < work_end_count && 0 < pool->m_work_begin_count ) {
-        /* If the first time I have obtained work from the current
-         * pool of work then increment the working thread counter.
-         */
-        if ( ! work_n ) { ++( pool->m_thread_work ); }
-
-        work_n = ( pool->m_work_begin_count )-- ; /* Claim some work */
-      }
-      else {
-        work_n = 0 ;
-      }
-
-      pthread_mutex_unlock( lock );
-
-      /*----------------------*/
-
-      if ( work_n ) { /* Have work to do */
-        const int         work_group_size   = pool->m_work_group_size ;
-        const int * const work_group_number = pool->m_work_group_number ;
-        int i = pool->m_work_size - work_n ;
-        int j = 0 ;
-        while ( j < work_group_size && work_group_number[j] <= i ) {
-          i -= work_group_number[j] ;
-          ++j ;
-        }
-
-        {
-          const TPI_parallel_subprogram work_routine =
-            pool->m_work_group_routine[j] ;
-          void * const work_argument =
-            pool->m_work_group_argument[j] ;
-
-          ThreadWork work = {
-            /*  m_lock       */  pool->m_work_lock ,
-            /*  m_lock_size  */  pool->m_work_lock_size ,
-            /*  m_group_size */  pool->m_work_group_size ,
-            /*  m_group_rank */  j ,
-            /*  m_size       */  pool->m_work_group_number[j] ,
-            /*  m_rank       */  i };
-
-          (*work_routine)( work_argument , & work );
-        }
-      }
+      (* pool->m_work_routine)( pool->m_work_argument , & work );
     }
   }
 
@@ -256,13 +209,9 @@ static void * local_thread_pool_driver( void * arg )
   local_thread_pool_run_work( pool , 1 );
 
   /*------------------------------*/
-  /* Termination:
-   *   Remove myself from the pool.
-   *   Signal the pool when it is empty.
-   */
+  /* Termination */
 
   pthread_mutex_lock( & pool->m_pool_lock );
-
   if ( ! --( pool->m_number_threads ) ) {
     pthread_cond_signal( & pool->m_pool_cond );
   }
@@ -273,23 +222,21 @@ static void * local_thread_pool_driver( void * arg )
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
-/* The work queue shared by all threads */
 
 static ThreadPool * local_thread_pool()
 {
+  static pthread_mutex_t locks[ MAXIMUM_WORK_LOCKS ];
+
   static ThreadPool pool = {
     /* m_pool_lock           */  PTHREAD_MUTEX_INITIALIZER ,
     /* m_pool_lock_run       */  PTHREAD_MUTEX_INITIALIZER ,
     /* m_pool_cond           */  PTHREAD_COND_INITIALIZER ,
     /* m_pool_cond_run       */  PTHREAD_COND_INITIALIZER ,
-    /* m_work_group_routine  */  NULL ,
-    /* m_work_group_argument */  NULL ,
-    /* m_work_group_number   */  NULL ,
-    /* m_work_lock           */  NULL ,
+    /* m_work_routine        */  NULL ,
+    /* m_work_argument       */  NULL ,
+    /* m_work_lock           */  locks ,
     /* m_work_lock_size      */  0 ,
-    /* m_work_group_size     */  0 ,
     /* m_number_threads      */  0 ,
-    /* m_thread_blocking     */  0 ,
     /* m_work_size           */  0 ,
     /* m_thread_work         */  0 ,
     /* m_work_begin_count    */  0 ,
@@ -297,104 +244,44 @@ static ThreadPool * local_thread_pool()
 
   /* Guard against recursive call */
 
-  return pool.m_work_group_routine ? NULL : & pool ;
+  return pool.m_work_routine ? NULL : & pool ;
 }
 
 /*--------------------------------------------------------------------*/
 
-int TPI_Run_many( const int number_routine ,
-                  TPI_parallel_subprogram routine[] ,
-                  void * routine_data[] ,
-                  const int number[] )
+int TPI_Run( TPI_parallel_subprogram routine ,
+             void * routine_data ,
+             int number )
 {
   ThreadPool * const pool = local_thread_pool();
 
-  int i , nwork ;
-
-  int result =
-    ( NULL == routine ||
-      NULL == routine_data ||
-      NULL == number ? TPI_ERROR_NULL :
-    ( NULL == pool ? TPI_ERROR_ACTIVE : 0 ) );  
-
-  for ( nwork = i = 0 ; ! result && i < number_routine ; ++i ) {
-    if ( ! routine[i] ) {
-      result = TPI_ERROR_NULL ;
-    }
-    else if ( number[i] <= 0 ) {
-      result = TPI_ERROR_SIZE ;
-    }
-    else {
-      nwork += number[i] ;
-    }
-  }
+  int result = ( NULL == routine ||
+                 NULL == routine_data ? TPI_ERROR_NULL :
+               ( NULL == pool ? TPI_ERROR_ACTIVE : 0 ) );
 
   if ( ! result ) {
 
-    const int number_total = nwork ;
-    const int number_locks = pool->m_work_lock_size ;
+    if ( number <= 0 ) { number = pool->m_number_threads ; }
 
-    pthread_mutex_t lock[ number_locks ];
+    pool->m_work_routine      = routine ;
+    pool->m_work_argument     = routine_data ;
+    pool->m_work_size         = number ;
+    pool->m_work_begin_count  = number ;
+    pool->m_work_end_count    = number ; /* Trigger to start */
 
-    int nlocks = 0 ;
+    pthread_cond_broadcast( & pool->m_pool_cond_run );
 
-    while ( nlocks < number_locks && ! result ) {
-      if ( pthread_mutex_init( lock + nlocks , NULL ) ) {
-        result = TPI_ERROR_INTERNAL ;
-      }
-      else {
-        ++nlocks ;
-      }
-    }
+    local_thread_pool_run_work(pool,0); /* Participate in the work */
 
-    if ( ! result ) {
-
-      pool->m_work_group_routine  = routine ;
-      pool->m_work_group_argument = routine_data ;
-      pool->m_work_lock           = lock ;
-      pool->m_work_lock_size      = number_locks ;
-      pool->m_work_group_size     = number_routine ;
-      pool->m_work_group_number   = number ;
-      pool->m_work_size           = number_total ;
-      pool->m_work_begin_count    = number_total ;
-      pool->m_work_end_count      = number_total ; /* Trigger to start */
-
-      if ( pool->m_thread_blocking ) {
-        pthread_cond_broadcast( & pool->m_pool_cond_run );
-      }
-
-      local_thread_pool_run_work(pool,0); /* Participate in the work */
-
-      pool->m_work_size           = 0 ;
-      pool->m_work_group_routine  = NULL ;
-      pool->m_work_group_argument = NULL ;
-      pool->m_work_lock           = NULL ;
-      pool->m_work_lock_size      = 0 ;
-      pool->m_work_group_size     = 0 ;
-      pool->m_work_group_number   = 0 ;
-    }
-
-    while ( nlocks-- ) { pthread_mutex_destroy( lock + nlocks ); }
+    pool->m_work_routine    = NULL ;
+    pool->m_work_argument   = NULL ;
+    pool->m_work_size       = 0 ;
   }
 
   return result ;
 }
 
-/* Run one routine on all allocated threads. */
-
-int TPI_Run( TPI_parallel_subprogram routine , void * routine_data )
-{
-  ThreadPool * const pool = local_thread_pool();
-
-  int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
-
-  if ( ! result ) {
-    const int number = pool->m_number_threads ;
-    result = TPI_Run_many( 1 , & routine , & routine_data , & number );
-  }
-
-  return result ;
-}
+/*--------------------------------------------------------------------*/
 
 int TPI_Set_lock_size( int number )
 {
@@ -402,9 +289,27 @@ int TPI_Set_lock_size( int number )
 
   int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
 
-  if ( ! result && number < 0 ) { result = TPI_ERROR_SIZE ; }
+  if ( ! result && ( number < 0 || MAXIMUM_WORK_LOCKS < number ) ) {
+    result = TPI_ERROR_SIZE ;
+  }
 
-  if ( ! result ) { pool->m_work_lock_size = number ; }
+  while ( ! result && pool->m_work_lock_size < number ) {
+    pthread_mutex_t * lock = pool->m_work_lock + pool->m_work_lock_size ;
+    if ( pthread_mutex_init( lock , NULL ) ) {
+      result = TPI_ERROR_INTERNAL ;
+    }
+    else {
+      ++( pool->m_work_lock_size );
+    }
+  }
+
+  if ( ! number ) {
+    while ( 0 < pool->m_work_lock_size ) {
+      pthread_mutex_t * lock = pool->m_work_lock + pool->m_work_lock_size ;
+      pthread_mutex_destroy( lock );
+      --( pool->m_work_lock_size );
+    }
+  }
 
   return result ;
 }
@@ -452,7 +357,6 @@ int TPI_Init( int n )
       {
         int n_thread = 1 ; /* Count myself among the threads */
 
-        pool->m_thread_blocking = TPI_Concurrency() < n ;
         pool->m_number_threads = n_thread ;
 
         for ( ; n_thread < n && ! result ; ++n_thread ) {
@@ -498,12 +402,9 @@ int TPI_Finalize()
 
       pool->m_work_end_count = -1 ; /* Trigger to terminate */
 
-      if ( pool->m_thread_blocking ) {
-        /* Make sure workers are waiting for signal before signaling */
-        pthread_mutex_lock(     & pool->m_pool_lock_run );
-        pthread_cond_broadcast( & pool->m_pool_cond_run );
-        pthread_mutex_unlock(   & pool->m_pool_lock_run );
-      }
+      pthread_mutex_lock(     & pool->m_pool_lock_run );
+      pthread_cond_broadcast( & pool->m_pool_cond_run );
+      pthread_mutex_unlock(   & pool->m_pool_lock_run );
 
       pthread_cond_wait(    & pool->m_pool_cond , & pool->m_pool_lock );
       pthread_mutex_unlock( & pool->m_pool_lock );
@@ -513,7 +414,8 @@ int TPI_Finalize()
     pool->m_work_begin_count = 0 ;
     pool->m_work_end_count = 0 ;
     pool->m_number_threads = 0 ;
-    pool->m_thread_blocking = 0 ;
+
+    TPI_Set_lock_size( 0 );
   }
 
   return result ;

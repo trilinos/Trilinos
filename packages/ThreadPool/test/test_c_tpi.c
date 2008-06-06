@@ -63,7 +63,7 @@ int test_c_tpi_noop( int num_test , int * num_thread )
       TPI_Run_count( & count );
 
       dt = TPI_Walltime();
-      for ( i = 0 ; i < n_loop ; ++i ) { TPI_Run( & test_tpi_noop , NULL ); }
+      for ( i = 0 ; i < n_loop ; ++i ) { TPI_Run( & test_tpi_noop, NULL, 0 ); }
       dt = TPI_Walltime() - dt ;
 
       TPI_Run_count( & count );
@@ -173,7 +173,7 @@ int test_c_tpi_single( int size )
       if ( ( result = TPI_Set_lock_size( 1 ) ) ) {
         fprintf(stderr,"\n%s: TPI_Set_lock_size = %d\n",name,result);
       }
-      if ( ( result = TPI_Run( & test_tpi_loop , & data ) ) ) {
+      if ( ( result = TPI_Run( & test_tpi_loop , & data , 0 ) ) ) {
         fprintf(stderr,"\n%s: TPI_Run = %d\n",name,result);
       }
       else {
@@ -187,30 +187,6 @@ int test_c_tpi_single( int size )
 
   /*--------------------------------*/
 
-  {
-    TPI_parallel_subprogram func = & test_tpi_loop ;
-    void * ptr = & data ;
-    int n ;
-    for ( n = 1 ; n < 64 ; ++n ) {
-      data.count = 0 ;
-
-      if ( ( result = TPI_Set_lock_size( 1 ) ) ) {
-        fprintf(stderr,"\n%s: TPI_Set_lock_size = %d\n",name,result);
-      }
-      if ( ( result = TPI_Run_many( 1 , & func , & ptr , & n ) ) ) {
-        fprintf(stderr,"\n%s: TPI_Run_many[%d] = %d\n",name,n,result);
-      }
-      else {
-        if ( ( result = data.count != data.total ) ) {
-          fprintf(stderr,"\n%s: test_tpi_loop[%d] : %d != %d\n",name,n,
-                  data.count , data.total );
-        }
-      }
-    }
-  }
-
-  /*--------------------------------*/
-
   fprintf(stdout,"completed successfully\"\n");
   fflush(stdout);
 
@@ -220,147 +196,5 @@ int test_c_tpi_single( int size )
 }
 
 /*--------------------------------------------------------------------*/
-/*--------------------------------------------------------------------*/
-
-struct TestTPIMany {
-  int * flag ;
-  int size ;
-};
-
-static void test_tpi_many_one( void * arg , TPI_ThreadPool pool )
-{
-  struct TestTPIMany * const data = (struct TestTPIMany *) arg ;
-
-  int rank ;
-  int size ;
-  int result ;
-
-  if ( ( result = TPI_Rank( pool , & rank , & size ) ) ) {
-    fprintf(stderr,"\ntest_tpi_many_one failed TPI_Rank = %d\n",result);
-  }
-  else if ( rank < 0 || size <= rank || size != data->size ) {
-    fprintf(stderr,"\ntest_tpi_many_one failed rank = %d, size = %d, data->size = %d\n",
-           rank , size , data->size );
-  }
-  else {
-    data->flag[rank] += 1 ;
-  }
-}
-
-static void test_tpi_many_two( void * arg , TPI_ThreadPool pool )
-{
-  struct TestTPIMany * const data = (struct TestTPIMany *) arg ;
-
-  int rank ;
-  int size ;
-  int result ;
-
-  if ( ( result = TPI_Rank( pool , & rank , & size ) ) ) {
-    fprintf(stderr,"\ntest_tpi_many_two failed TPI_Rank = %d\n",result);
-  }
-  else if ( rank < 0 || size <= rank || size != data->size ) {
-    fprintf(stderr,"\ntest_tpi_many_two failed rank = %d, size = %d, data->size = %d\n",
-           rank , size , data->size );
-  }
-  else {
-    data->flag[rank] += 2 ;
-  }
-}
-
-static void test_tpi_many_three( void * arg , TPI_ThreadPool pool )
-{
-  struct TestTPIMany * const data = (struct TestTPIMany *) arg ;
-
-  int rank ;
-  int size ;
-  int result ;
-
-  if ( ( result = TPI_Rank( pool , & rank , & size ) ) ) {
-    fprintf(stderr,"\ntest_tpi_many_three failed TPI_Rank = %d\n",result);
-  }
-  else if ( rank < 0 || size <= rank || size != data->size ) {
-    fprintf(stderr,"\ntest_tpi_many_three failed rank = %d, size = %d, data->size = %d\n",
-           rank , size , data->size );
-  }
-  else {
-    data->flag[rank] += 3 ;
-  }
-}
-
-int test_c_tpi_many( int size )
-{
-  enum { N = 100 };
-  static const char name[] = "test_c_tpi_many" ;
-
-  struct TestTPIMany data[ 3 ] ;
-
-  void * pointers[3] = { & data[0] , & data[1] , & data[2] };
-
-  TPI_parallel_subprogram func[3] =
-    { & test_tpi_many_one , & test_tpi_many_two , & test_tpi_many_three };
-
-  int length[ 3 ] = { 0 , 0 , 0 };
-
-  int flags[ N ];
-
-  int result = 0 ;
-
-  int i , j ;
-
-  fprintf(stdout,"\"%s[%d] starting...",name,size);
-  fflush(stdout);
-
-  TPI_Init( size );
-
-  for ( i = 1 ; i < N - 1 ; ++i ) {
-
-    const int two_begin   = i ;
-    const int three_begin = i + ( N - i ) / 2 ;
-
-    const int one_length   = two_begin ;
-    const int two_length   = three_begin - two_begin ;
-    const int three_length = N - three_begin ;
-
-    for ( j = 0 ; j < N ; ++j ) { flags[j] = 0 ; }
-
-    data[0].size = length[0] = one_length ;
-    data[1].size = length[1] = two_length ;
-    data[2].size = length[2] = three_length ;
-
-    data[0].flag = flags ;
-    data[1].flag = flags + two_begin ;
-    data[2].flag = flags + three_begin ;
-
-    if ( ( result = TPI_Run_many( 3 , func , pointers , length ) ) ) {
-      fprintf(stderr,"\n%s: TPI_Run_many(%d,%d,%d) = %d\n",
-              name,length[0],length[1],length[2],result);
-    }
-    else {
-      for ( j = 0 ; j < two_begin ; ++j ) {
-        if ( flags[j] != 1 ) {
-          printf("test_tpi_many failed at = %d\n",j);
-        }
-      }
-      for ( ; j < three_begin ; ++j ) {
-        if ( flags[j] != 2 ) {
-          printf("test_tpi_many failed at = %d\n",j);
-        }
-      }
-      for ( ; j < N ; ++j ) {
-        if ( flags[j] != 3 ) {
-          printf("test_tpi_many failed at = %d\n",j);
-        }
-      }
-    }
-  }
-
-  TPI_Finalize();
-
-  fprintf(stdout,"completed successfully\"\n");
-  fflush(stdout);
-
-  return result ;
-}
-
 /*--------------------------------------------------------------------*/
 

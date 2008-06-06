@@ -112,16 +112,6 @@ void test_tpi_cpp( int np )
   test_8.verify();
   test_16.verify();
 
-  TPI::Run( test_1 , & TEST<1>::flag , 1 ,
-            test_2 , & TEST<2>::flag , 2 ,
-            test_4 , & TEST<4>::flag , 4 ,
-            test_8 , & TEST<8>::flag , 8 );
-
-  test_1.verify();
-  test_2.verify();
-  test_4.verify();
-  test_8.verify();
-
   TPI::Finalize();
 }
 
