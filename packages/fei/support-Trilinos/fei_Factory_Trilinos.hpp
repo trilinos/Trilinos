@@ -102,7 +102,7 @@ class Factory_Trilinos : public fei::Factory {
 
   fei::SharedPtr<fei::Solver> createSolver(const char* name=0);
 
-  int getOutputLevel() { return(outputLevel_); }
+  int getOutputLevel() const { return(outputLevel_); }
 
  private:
   void create_LinProbMgr(bool replace_if_already_created=false);

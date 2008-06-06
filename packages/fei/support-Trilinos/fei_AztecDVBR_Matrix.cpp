@@ -541,8 +541,8 @@ void AztecDVBR_Matrix::loadComplete() {
 
    MPI_Barrier(thisComm);
 
-   int thisProc = 0;
 #ifndef FEI_SER
+   int thisProc = 0;
    MPI_Comm_rank(thisComm, &thisProc);
 #endif
 

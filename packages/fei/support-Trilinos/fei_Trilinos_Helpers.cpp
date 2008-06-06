@@ -51,9 +51,8 @@ create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
     throw fei::Exception("create_Epetra_Map needs non-null fei::VectorSpace");
   }
 
-  MPI_Comm comm = vecspace->getCommUtils()->getCommunicator();
-
 #ifndef FEI_SER
+  MPI_Comm comm = vecspace->getCommUtils()->getCommunicator();
   Epetra_MpiComm EComm(comm);
 #else
   Epetra_SerialComm EComm;

@@ -62,8 +62,8 @@ namespace fei {
     //of debug-output code... Don't do it!
     NONE = 0,
     STATS = 1,
-    BRIEF_LOGS = 2,
-    MATRIX_FILES = 3,
+    MATRIX_FILES = 2,
+    BRIEF_LOGS = 3,
     FULL_LOGS = 4,
     ALL = 5
   };

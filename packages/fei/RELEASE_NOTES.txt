@@ -429,4 +429,15 @@ July 7 2005: version 2.14.00
   - Fixed a bug in fei_AztecDMSR_Matrix.cpp where sumIntoRow wasn't handling
     the case where an incoming list of column-indices contains repeated
     indices.
+  - Minor change in fei::Matrix_Impl::writeToFile to sort column-indices (and
+    corresponding coefficients) in each row before writing to file. This
+    ensures that matrix entries will be written out in the same order for
+    the "old" Aztec DMSR structure as for the Epetra_CrsMatrix. It simply makes
+    the resulting matrix-market files diff-able against each other.
+  - Re-arranged the OutputLevel enums in fei_fwd.hpp to put MATRIX_FILES
+    below BRIEF_LOGS. This changes slightly the debug-output-logging behavior
+    in some cases, producing fewer and smaller files when matrix files are all
+    that is really wanted.
+  - Corrected fei_macros.hpp so that non-MPI builds work correctly. (Respond
+    correctly if HAVE_MPI is not set.)
 

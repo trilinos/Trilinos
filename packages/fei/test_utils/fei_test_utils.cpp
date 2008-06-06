@@ -195,8 +195,9 @@ void read_input_file(const char* filename,
 		      MPI_Comm comm,
 		      std::vector<std::string>& file_contents)
 {
-  int localProc =0, numProcs = 1;
+  int localProc =0;
 #ifndef FEI_SER
+  int numProcs = 1;
   MPI_Comm_rank(comm, &localProc);
   MPI_Comm_size(comm, &numProcs);
 #endif
