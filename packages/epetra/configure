@@ -1399,7 +1399,8 @@ Optional Features:
                           and LAPACK. Cannot be disabled unless tests and
                           examples are also disabled. Cannot be disabled when
                           fortran is disabled. (default is yes)
-  --enable-prerelease     Enable compilation and documentation of prerelease
+  --enable-epetra-prerelease
+                          Enable compilation and documentation of prerelease
                           code. Prerelease code is code under development that
                           we restrict from release to the public. It is
                           avaliable to developers with no support - use at
@@ -15524,7 +15525,12 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6; }
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/RowMatrix/Makefile test/RowMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/OSKI/Makefile test/OSKI/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/RowMatrix/Makefile test/RowMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile"
+
+
+
+#		test/OSKI/Makefile
+#		test/OSKI/Makefile.include
 
 
 cat >confcache <<\_ACEOF
@@ -16259,8 +16265,6 @@ do
     "test/MultiVector/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/MultiVector/Makefile.include" ;;
     "test/Object/Makefile") CONFIG_FILES="$CONFIG_FILES test/Object/Makefile" ;;
     "test/Object/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/Object/Makefile.include" ;;
-    "test/OSKI/Makefile") CONFIG_FILES="$CONFIG_FILES test/OSKI/Makefile" ;;
-    "test/OSKI/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/OSKI/Makefile.include" ;;
     "test/RowMatrixTransposer/Makefile") CONFIG_FILES="$CONFIG_FILES test/RowMatrixTransposer/Makefile" ;;
     "test/RowMatrixTransposer/Makefile.include") CONFIG_FILES="$CONFIG_FILES test/RowMatrixTransposer/Makefile.include" ;;
     "test/SerialDense/Makefile") CONFIG_FILES="$CONFIG_FILES test/SerialDense/Makefile" ;;

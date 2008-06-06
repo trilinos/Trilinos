@@ -33,8 +33,10 @@ all-local:
 SUBDIRS = src BlockMap CrsGraph CrsMatrix RowMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
-MultiVector Object OSKI RowMatrixTransposer SerialDense SerialSpdDense \
+MultiVector Object RowMatrixTransposer SerialDense SerialSpdDense \
 VbrMatrix Vector Comm BasicPerfTest
+
+# Removed directory OSKI
 
 TESTS = \
 BlockMap/BlockMap_test.exe \

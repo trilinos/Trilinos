@@ -97,7 +97,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" \
-	"$(DESTDIR)$(execincludedir)" "$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(execincludedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
@@ -188,12 +188,7 @@ am_libepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_10) \
 	$(am__objects_12)
-@BUILD_PRERELEASE_TRUE@nodist_libepetra_a_OBJECTS =  \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiUtils.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiMultiVector.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiMatrix.$(OBJEXT)
-libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS) \
-	$(nodist_libepetra_a_OBJECTS)
+libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -210,8 +205,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libepetra_a_SOURCES) $(EXTRA_libepetra_a_SOURCES) \
-	$(nodist_libepetra_a_SOURCES)
+SOURCES = $(libepetra_a_SOURCES) $(EXTRA_libepetra_a_SOURCES)
 DIST_SOURCES = $(am__libepetra_a_SOURCES_DIST) \
 	$(EXTRA_libepetra_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
@@ -257,9 +251,7 @@ am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
 	$(srcdir)/Epetra_MpiDistributor.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-nodist_includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS) \
-	$(nodist_include_HEADERS)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -616,20 +608,6 @@ EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPISMP_H) \
 	$(EXTRA_FORTRAN_KERNELS)
 
-
-# ------------------------------------------------------------------------
-# Parts of the code that are not ready to be included in nightly release
-# ------------------------------------------------------------------------
-@BUILD_PRERELEASE_TRUE@nodist_include_HEADERS = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiUtils.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMultiVector.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.h 
-
-@BUILD_PRERELEASE_TRUE@nodist_libepetra_a_SOURCES = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiUtils.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMultiVector.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.cpp
-
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -801,9 +779,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_Object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OffsetIndex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiMatrix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiMultiVector.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_RowMatrixTransposer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialComm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialCommData.Po@am__quote@
@@ -1505,48 +1480,6 @@ Epetra_MpiDistributor.obj: $(srcdir)/Epetra_MpiDistributor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_MpiDistributor.obj `if test -f '$(srcdir)/Epetra_MpiDistributor.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_MpiDistributor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_MpiDistributor.cpp'; fi`
 
-Epetra_OskiUtils.o: $(srcdir)/Epetra_OskiUtils.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiUtils.o -MD -MP -MF $(DEPDIR)/Epetra_OskiUtils.Tpo -c -o Epetra_OskiUtils.o `test -f '$(srcdir)/Epetra_OskiUtils.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiUtils.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiUtils.Tpo $(DEPDIR)/Epetra_OskiUtils.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiUtils.cpp' object='Epetra_OskiUtils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiUtils.o `test -f '$(srcdir)/Epetra_OskiUtils.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiUtils.cpp
-
-Epetra_OskiUtils.obj: $(srcdir)/Epetra_OskiUtils.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiUtils.obj -MD -MP -MF $(DEPDIR)/Epetra_OskiUtils.Tpo -c -o Epetra_OskiUtils.obj `if test -f '$(srcdir)/Epetra_OskiUtils.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiUtils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiUtils.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiUtils.Tpo $(DEPDIR)/Epetra_OskiUtils.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiUtils.cpp' object='Epetra_OskiUtils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiUtils.obj `if test -f '$(srcdir)/Epetra_OskiUtils.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiUtils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiUtils.cpp'; fi`
-
-Epetra_OskiMultiVector.o: $(srcdir)/Epetra_OskiMultiVector.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiMultiVector.o -MD -MP -MF $(DEPDIR)/Epetra_OskiMultiVector.Tpo -c -o Epetra_OskiMultiVector.o `test -f '$(srcdir)/Epetra_OskiMultiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiMultiVector.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiMultiVector.Tpo $(DEPDIR)/Epetra_OskiMultiVector.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiMultiVector.cpp' object='Epetra_OskiMultiVector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiMultiVector.o `test -f '$(srcdir)/Epetra_OskiMultiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiMultiVector.cpp
-
-Epetra_OskiMultiVector.obj: $(srcdir)/Epetra_OskiMultiVector.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiMultiVector.obj -MD -MP -MF $(DEPDIR)/Epetra_OskiMultiVector.Tpo -c -o Epetra_OskiMultiVector.obj `if test -f '$(srcdir)/Epetra_OskiMultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiMultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiMultiVector.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiMultiVector.Tpo $(DEPDIR)/Epetra_OskiMultiVector.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiMultiVector.cpp' object='Epetra_OskiMultiVector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiMultiVector.obj `if test -f '$(srcdir)/Epetra_OskiMultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiMultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiMultiVector.cpp'; fi`
-
-Epetra_OskiMatrix.o: $(srcdir)/Epetra_OskiMatrix.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiMatrix.o -MD -MP -MF $(DEPDIR)/Epetra_OskiMatrix.Tpo -c -o Epetra_OskiMatrix.o `test -f '$(srcdir)/Epetra_OskiMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiMatrix.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiMatrix.Tpo $(DEPDIR)/Epetra_OskiMatrix.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiMatrix.cpp' object='Epetra_OskiMatrix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiMatrix.o `test -f '$(srcdir)/Epetra_OskiMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiMatrix.cpp
-
-Epetra_OskiMatrix.obj: $(srcdir)/Epetra_OskiMatrix.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiMatrix.obj -MD -MP -MF $(DEPDIR)/Epetra_OskiMatrix.Tpo -c -o Epetra_OskiMatrix.obj `if test -f '$(srcdir)/Epetra_OskiMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiMatrix.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiMatrix.Tpo $(DEPDIR)/Epetra_OskiMatrix.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiMatrix.cpp' object='Epetra_OskiMatrix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiMatrix.obj `if test -f '$(srcdir)/Epetra_OskiMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiMatrix.cpp'; fi`
-
 .f.o:
 	$(F77COMPILE) -c -o $@ $<
 
@@ -1609,23 +1542,6 @@ uninstall-nodist_execincludeHEADERS:
 	  f=$(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(execincludedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(execincludedir)/$$f"; \
-	done
-install-nodist_includeHEADERS: $(nodist_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
-	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(nodist_includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-	  $(nodist_includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
-
-uninstall-nodist_includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
 	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -1706,7 +1622,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) Epetra_config.h all-local
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1754,7 +1670,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS install-nodist_includeHEADERS
+install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-am
 
@@ -1791,8 +1707,7 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS \
-	uninstall-nodist_includeHEADERS
+	uninstall-nodist_execincludeHEADERS
 
 .MAKE: install-am install-strip
 
@@ -1804,21 +1719,38 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-includeHEADERS install-info \
 	install-info-am install-libLIBRARIES install-man \
-	install-nodist_execincludeHEADERS \
-	install-nodist_includeHEADERS install-pdf install-pdf-am \
+	install-nodist_execincludeHEADERS install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS \
-	uninstall-nodist_includeHEADERS
+	uninstall-nodist_execincludeHEADERS
 
 
 all-local:
 	@echo ""
 	@echo "Trilinos package epetra subdirectory src built successfully."
 	@echo ""
+
+# ------------------------------------------------------------------------
+# Parts of the code that are not ready to be included in nightly release
+# ------------------------------------------------------------------------
+
+#if BUILD_PRERELEASE
+#
+#nodist_include_HEADERS = \
+#	$(srcdir)/Epetra_OskiUtils.h \
+#	$(srcdir)/Epetra_OskiMultiVector.h \
+#	$(srcdir)/Epetra_OskiMatrix.h 
+#
+#
+#nodist_libepetra_a_SOURCES = \
+#	$(srcdir)/Epetra_OskiUtils.cpp \
+#	$(srcdir)/Epetra_OskiMultiVector.cpp \
+#	$(srcdir)/Epetra_OskiMatrix.cpp
+#
+#endif
 
 include $(top_builddir)/Makefile.export.epetra
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
