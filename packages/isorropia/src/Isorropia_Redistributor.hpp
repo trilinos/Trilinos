@@ -46,7 +46,7 @@ public:
 
   /** Destructor
    */
-  virtual ~Redistributor();
+  virtual ~Redistributor() {}
 
 }; //class Redistributor
 
