@@ -282,7 +282,7 @@ int SSMat::getMinCol()
   if (numrows < 1) return(-1);
 
   SSVec** rows = rows_->dataPtr();
-  int mincol = INT_MAX;
+  int mincol = std::numeric_limits<int>::max();
 
   for(int i=0; i<numrows; ++i) {
     int rowlen = rows[i]->length();
@@ -302,7 +302,7 @@ int SSMat::getMaxCol()
   if (numrows < 1) return(-1);
 
   SSVec** rows = rows_->dataPtr();
-  int maxcol = INT_MIN;
+  int maxcol = std::numeric_limits<int>::min();
 
   for(int i=0; i<numrows; ++i) {
     int rowlen = rows[i]->length();
