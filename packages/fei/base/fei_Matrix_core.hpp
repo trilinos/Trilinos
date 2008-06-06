@@ -86,6 +86,8 @@ class Matrix_core : protected fei::Logger {
   void setEqnComm(fei::SharedPtr<fei::EqnComm> eqnComm);
 
  protected:
+  void parameters(const fei::ParameterSet& paramset);
+
   virtual int parameters(int numParams,
 			 const char* const* paramStrings);
 

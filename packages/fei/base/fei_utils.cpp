@@ -55,6 +55,28 @@ double fei::utils::cpu_time()
 }
 
 //----------------------------------------------------------------------------
+fei::OutputLevel fei::utils::string_to_output_level(const std::string& str)
+{
+  if (str == "STATS" || str == "fei::STATS") {
+    return fei::STATS;
+  }
+  else if (str == "BRIEF_LOGS" || str == "fei::BRIEF_LOGS") {
+    return fei::BRIEF_LOGS;
+  }
+  else if (str == "MATRIX_FILES" || str == "fei::MATRIX_FILES") {
+    return fei::MATRIX_FILES;
+  }
+  else if (str == "FULL_LOGS" || str == "fei::FULL_LOGS") {
+    return fei::FULL_LOGS;
+  }
+  else if (str == "ALL" || str == "fei::ALL") {
+    return fei::ALL;
+  }
+
+  return fei::NONE;
+}
+
+//----------------------------------------------------------------------------
 LinearSystemCore*
 fei::utils::get_LinearSystemCore(fei::Matrix* matrix)
 {

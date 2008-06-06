@@ -50,6 +50,10 @@ namespace fei {
 
     /** Method for supplying parameters
      */
+    virtual int parameters(const fei::ParameterSet& paramset) = 0;
+
+    /** Method for supplying parameters
+     */
     virtual int parameters(int numParams,
 			   const char* const* paramStrings) = 0;
 

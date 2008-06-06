@@ -16,7 +16,7 @@
 #include "fei_iostream.hpp"
 #include "fei_fstream.hpp"
 #include "fei_sstream.hpp"
-
+#include <snl_fei_ArrayUtils.hpp>
 #include <snl_fei_MatrixTraits.hpp>
 #include <snl_fei_MatrixTraits_LinProbMgr.hpp>
 #include <snl_fei_MatrixTraits_LinSysCore.hpp>
@@ -75,6 +75,10 @@ namespace fei {
 	  return(snl_fei::MatrixTraits<T>::typeName());
 	}
       }
+
+    /** Parameters method
+     */
+    int parameters(const fei::ParameterSet& paramset);
 
     /** Parameters method
      */
@@ -436,6 +440,14 @@ fei::Matrix_Impl<T>::Matrix_Impl(fei::SharedPtr<T> matrix,
 template<typename T>
 fei::Matrix_Impl<T>::~Matrix_Impl()
 {
+}
+
+//----------------------------------------------------------------------------
+template<typename T>
+int fei::Matrix_Impl<T>::parameters(const fei::ParameterSet& paramset)
+{
+  Matrix_core::parameters(paramset);
+  return 0;
 }
 
 //----------------------------------------------------------------------------
@@ -1204,6 +1216,9 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
       double* coefPtr = &work_data1D_[0];
 
       CHK_ERR( copyOutRow(i, rowLength, coefPtr, indPtr) );
+
+      snl_fei::insertion_sort_with_companions<double>(rowLength,
+                                            indPtr, coefPtr);
 
       for(int j=0; j<rowLength; ++j) {
         if (matrixMarketFormat) {

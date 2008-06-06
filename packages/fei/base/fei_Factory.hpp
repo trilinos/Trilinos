@@ -76,7 +76,7 @@ namespace fei {
     /** Query screen output-level (set by parameter-string "outputLevel n"
 	via parameters())
      */
-    virtual int getOutputLevel() = 0;
+    virtual int getOutputLevel() const = 0;
 
    private:
     Factory();

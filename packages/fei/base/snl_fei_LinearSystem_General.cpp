@@ -117,6 +117,11 @@ int snl_fei::LinearSystem_General::parameters(int numParams,
     BCenforcement_no_column_mod_ = true;
   }
 
+  param = snl_fei::getParam("FEI_OUTPUT_LEVEL",numParams,paramStrings);
+  if (param != NULL) {
+    setOutputLevel(fei::utils::string_to_output_level(param));
+  }
+
   if (matrix_.get() != NULL) {
     fei::Matrix* matptr = matrix_.get();
     fei::MatrixReducer* matred = dynamic_cast<fei::MatrixReducer*>(matptr);
@@ -236,9 +241,6 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
     std::string opath = fei::LogManager::getLogManager().getOutputPath();
     if (opath == "") opath = ".";
 
-    const char* matname = matrix_->typeName();
-    const char* vecname = rhs_->typeName();
-
     FEI_OSTRINGSTREAM Aname;
     FEI_OSTRINGSTREAM bname;
     FEI_OSTRINGSTREAM xname;
@@ -246,11 +248,9 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
     bname << opath << "/";
     xname << opath << "/";
 
-    Aname << "A_" << matname << "." << name_ << ".preBC.np" << numProcs_
-	  << ".slv" << counter << ".mtx";
+    Aname << "A_"<<name_<<".preBC.np"<<numProcs_<<".slv"<<counter<< ".mtx";
 
-    bname << "b_" << vecname << "." << name_ << ".preBC.np" << numProcs_
-	  << ".slv" << counter << ".vec";
+    bname << "b_"<<name_<<".preBC.np"<<numProcs_<<".slv"<<counter<< ".vec";
 
     std::string Aname_str = Aname.str();
     const char* Aname_c_str = Aname_str.c_str();
@@ -292,9 +292,6 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
     std::string opath = fei::LogManager::getLogManager().getOutputPath();
     if (opath == "") opath = ".";
 
-    const char* matname = matrix_->typeName();
-    const char* vecname = rhs_->typeName();
-
     FEI_OSTRINGSTREAM Aname;
     FEI_OSTRINGSTREAM bname;
     FEI_OSTRINGSTREAM xname;
@@ -302,14 +299,11 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
     bname << opath << "/";
     xname << opath << "/";
 
-    Aname << "A_" << matname << "." << name_ << ".np" << numProcs_
-	  << ".slv" << counter << ".mtx";
+    Aname << "A_" <<name_<<".np"<<numProcs_<< ".slv" << counter << ".mtx";
 
-    bname << "b_" << vecname << "." << name_ << ".np" << numProcs_
-	  << ".slv" << counter << ".vec";
+    bname << "b_" <<name_<<".np"<<numProcs_<< ".slv" << counter << ".vec";
 
-    xname << "x0_" << vecname << "." << name_ << ".np" << numProcs_
-	  << ".slv" << counter << ".vec";
+    xname << "x0_" <<name_<<".np"<<numProcs_<< ".slv" << counter << ".vec";
 
     std::string Aname_str = Aname.str();
     const char* Aname_c_str = Aname_str.c_str();

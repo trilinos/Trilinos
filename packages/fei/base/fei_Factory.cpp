@@ -5,8 +5,6 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef _fei_Factory_cpp_
-#define _fei_Factory_cpp_
 
 #include <fei_macros.hpp>
 
@@ -83,5 +81,4 @@ fei::Factory::createFEI(MPI_Comm comm)
 }
 
 //----------------------------------------------------------------------------
-#endif
 

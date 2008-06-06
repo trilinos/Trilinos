@@ -39,6 +39,12 @@
 
 #ifndef FEI_BYPASS_CONFIG_H
 #include "FEI_config.h"
+#else
+
+#ifndef HAVE_NO_MPI
+#define HAVE_MPI
+#endif
+
 #endif
 
 //
@@ -113,7 +119,7 @@
 //see fei_iostream.hpp
 #endif
 
-#ifdef HAVE_NO_MPI
+#ifndef HAVE_MPI
 #define FEI_SER
 //if FEI_SER is defined, don't try to include <mpi.h>
 #endif

@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_ParameterSet.hpp>
 #include "fei_MatrixReducer.hpp"
 #include "fei_EqnComm.hpp"
 #include "fei_Matrix_core.hpp"
@@ -37,6 +38,12 @@ MatrixReducer::MatrixReducer(fei::SharedPtr<fei::Reducer> reducer,
 
 MatrixReducer::~MatrixReducer()
 {
+}
+
+int
+MatrixReducer::parameters(const fei::ParameterSet& paramset)
+{
+  return(target_->parameters(paramset));
 }
 
 int

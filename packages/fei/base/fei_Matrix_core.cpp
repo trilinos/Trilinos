@@ -9,6 +9,7 @@
 
 #include <fei_utils.hpp>
 
+#include <fei_ParameterSet.hpp>
 #include <fei_Matrix_core.hpp>
 #include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
@@ -88,17 +89,27 @@ fei::Matrix_core::~Matrix_core()
   }
 }
 
+void
+fei::Matrix_core::parameters(const fei::ParameterSet& paramset)
+{
+  const fei::Param* param = paramset.get("name");
+  fei::Param::ParamType ptype = param != NULL ?
+    param->getType() : fei::Param::BAD_TYPE;
+  if (ptype == fei::Param::STRING) {
+    setName(param->getStringValue().c_str());
+  }
+}
+
 int fei::Matrix_core::parameters(int numParams,
 				     const char* const* paramStrings)
 {
   if (numParams == 0 || paramStrings == NULL) return(0);
 
-  const char* param = snl_fei::getParam("name", numParams, paramStrings);
-  if (param != NULL) {
-    if (strlen(param) < 6) ERReturn(-1);
-
-    setName(&(param[5]));
-  }
+  std::vector<std::string> stdstrings;
+  fei::utils::char_ptrs_to_strings(numParams, paramStrings, stdstrings);
+  fei::ParameterSet paramset;
+  fei::utils::parse_strings(stdstrings, " ", paramset);
+  parameters(paramset);
 
   return(0);
 }

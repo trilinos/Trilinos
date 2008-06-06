@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_ParameterSet.hpp>
 #include "fei_Matrix_Local.hpp"
 #include "fei_Matrix_core.hpp"
 #include "fei_sstream.hpp"
@@ -44,8 +45,16 @@ const char*
 Matrix_Local::typeName()
 { return( "fei::Matrix_Local" ); }
 
+//----------------------------------------------------------------------------
 int
-Matrix_Local::parameters(int numParams, const char* const* paramStrings)
+Matrix_Local::parameters(const fei::ParameterSet& /*paramset*/)
+{
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int
+Matrix_Local::parameters(int /*numParams*/, const char* const* /*paramStrings*/)
 {
   return(0);
 }

@@ -44,6 +44,10 @@ namespace fei {
 
     /** Parameters method
      */
+    int parameters(const fei::ParameterSet& paramset);
+
+    /** Parameters method
+     */
     int parameters(int numParams, const char* const* paramStrings);
 
     fei::SharedPtr<fei::MatrixGraph> getMatrixGraph()

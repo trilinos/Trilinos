@@ -55,6 +55,12 @@ const char* version()
 */
 double cpu_time();
 
+/** Convert a string to an fei::OutputLevel enum value.
+   Valid string values are strings that match one of the enum names 
+   in fei_fwd.hpp.
+*/
+fei::OutputLevel string_to_output_level(const std::string& str);
+
 /** Attempt to extract a LinearSystemCore from a fei::Matrix.
    Returns NULL if unsuccessful.
 */

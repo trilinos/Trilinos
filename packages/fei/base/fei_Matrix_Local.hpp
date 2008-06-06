@@ -32,6 +32,10 @@ class Matrix_Local : public fei::Matrix {
 
   /** Method for supplying parameters
   */
+  int parameters(const fei::ParameterSet& paramset);
+
+  /** Method for supplying parameters
+  */
   int parameters(int numParams, const char* const* paramStrings);
 
     /** Obtain the fei::MatrixGraph associated with this matrix */

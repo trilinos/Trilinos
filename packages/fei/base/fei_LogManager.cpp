@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_utils.hpp>
 #include <fei_LogManager.hpp>
 #include <fei_Logger.hpp>
 #include <fei_LogFile.hpp>
@@ -56,25 +57,7 @@ void fei::LogManager::setOutputLevel(fei::OutputLevel olevel)
 
 void fei::LogManager::setOutputLevel(const char* olevel)
 {
-  std::string olvl(olevel);
-  if (olvl == "NONE") {
-    setOutputLevel(fei::NONE);
-  }
-  else if (olvl == "STATS") {
-    setOutputLevel(fei::STATS);
-  }
-  else if (olvl == "BRIEF_LOGS") {
-    setOutputLevel(fei::BRIEF_LOGS);
-  }
-  else if (olvl == "MATRIX_FILES") {
-    setOutputLevel(fei::MATRIX_FILES);
-  }
-  else if (olvl == "FULL_LOGS") {
-    setOutputLevel(fei::FULL_LOGS);
-  }
-  else if (olvl == "ALL") {
-    setOutputLevel(fei::ALL);
-  }
+  setOutputLevel(fei::utils::string_to_output_level(olevel));
 }
 
 void fei::LogManager::setOutputPath(const std::string& opath)
