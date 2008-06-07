@@ -54,6 +54,7 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.amesos.xml FourByFour.amesos.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.np.xml FourByFour.aztecoo.np.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.ifpack.xml FourByFour.aztecoo.ifpack.xml
+	cp  $(srcdir)/_FourByFour.aztecoo.ifpack.adjoint.xml FourByFour.aztecoo.ifpack.adjoint.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.ml.xml FourByFour.aztecoo.ml.xml
 	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
@@ -133,6 +134,7 @@ EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp \
 	$(srcdir)/_FourByFour.xml \
 	$(srcdir)/_FourByFour.amesos.xml \
 	$(srcdir)/_FourByFour.aztecoo.ifpack.xml \
+        $(srcdir)/_FourByFour.aztecoo.ifpack.adjoint.xml \
 	$(srcdir)/_FourByFour.aztecoo.ml.xml \
 	$(srcdir)/_FourByFour.aztecoo.np.xml \
 	$(srcdir)/_FourByFour.belos.ifpack.xml \

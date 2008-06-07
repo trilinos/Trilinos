@@ -26,8 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+
 #ifndef THYRA_LINEAR_OP_WITH_SOLVE_TESTER_HPP
 #define THYRA_LINEAR_OP_WITH_SOLVE_TESTER_HPP
+
 
 #include "Thyra_LinearOpWithSolveTesterDecl.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
@@ -37,125 +39,144 @@
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_Time.hpp"
 
+
 namespace Thyra {
 
+
+// Constructors/initializers
+
+
 template<class RangeScalar, class DomainScalar>
-LinearOpWithSolveTester<RangeScalar,DomainScalar>::LinearOpWithSolveTester(
-  const bool                 check_forward_default
-  ,const RangeScalarMag      forward_default_residual_warning_tol
-  ,const RangeScalarMag      forward_default_residual_error_tol
-  ,const DomainScalarMag     forward_default_solution_error_warning_tol
-  ,const DomainScalarMag     forward_default_solution_error_error_tol
-  ,const bool                check_forward_residual
-  ,const RangeScalarMag      forward_residual_solve_tol
-  ,const RangeScalarMag      forward_residual_slack_warning_tol
-  ,const RangeScalarMag      forward_residual_slack_error_tol
-  ,const bool                check_forward_solution_error
-  ,const RangeScalarMag      forward_solution_error_solve_tol
-  ,const RangeScalarMag      forward_solution_error_slack_warning_tol
-  ,const RangeScalarMag      forward_solution_error_slack_error_tol
-  ,const bool                check_adjoint_default
-  ,const DomainScalarMag     adjoint_default_residual_warning_tol
-  ,const DomainScalarMag     adjoint_default_residual_error_tol
-  ,const RangeScalarMag      adjoint_default_solution_error_warning_tol
-  ,const RangeScalarMag      adjoint_default_solution_error_error_tol
-  ,const bool                check_adjoint_residual
-  ,const DomainScalarMag     adjoint_residual_solve_tol
-  ,const DomainScalarMag     adjoint_residual_slack_warning_tol
-  ,const DomainScalarMag     adjoint_residual_slack_error_tol
-  ,const bool                check_adjoint_solution_error
-  ,const DomainScalarMag     adjoint_solution_error_solve_tol
-  ,const DomainScalarMag     adjoint_solution_error_slack_warning_tol
-  ,const DomainScalarMag     adjoint_solution_error_slack_error_tol
-  ,const int                 num_random_vectors
-  ,const bool                show_all_tests
-  ,const bool                dump_all
-  ,const int                 num_rhs
-  )
-  :check_forward_default_(check_forward_default)
-  ,forward_default_residual_warning_tol_(forward_default_residual_warning_tol)
-  ,forward_default_residual_error_tol_(forward_default_residual_error_tol)
-  ,forward_default_solution_error_warning_tol_(forward_default_solution_error_warning_tol)
-  ,forward_default_solution_error_error_tol_(forward_default_solution_error_error_tol)
-  ,check_forward_residual_(check_forward_residual)
-  ,forward_residual_solve_tol_(forward_residual_solve_tol)
-  ,forward_residual_slack_warning_tol_(forward_residual_slack_warning_tol)
-  ,forward_residual_slack_error_tol_(forward_residual_slack_error_tol)
-  ,check_forward_solution_error_(check_forward_solution_error)
-  ,forward_solution_error_solve_tol_(forward_solution_error_solve_tol)
-  ,forward_solution_error_slack_warning_tol_(forward_solution_error_slack_warning_tol)
-  ,forward_solution_error_slack_error_tol_(forward_solution_error_slack_error_tol)
-  ,check_adjoint_default_(check_adjoint_default)
-  ,adjoint_default_residual_warning_tol_(adjoint_default_residual_warning_tol)
-  ,adjoint_default_residual_error_tol_(adjoint_default_residual_error_tol)
-  ,adjoint_default_solution_error_warning_tol_(adjoint_default_solution_error_warning_tol)
-  ,adjoint_default_solution_error_error_tol_(adjoint_default_solution_error_error_tol)
-  ,check_adjoint_residual_(check_adjoint_residual)
-  ,adjoint_residual_solve_tol_(adjoint_residual_solve_tol)
-  ,adjoint_residual_slack_warning_tol_(adjoint_residual_slack_warning_tol)
-  ,adjoint_residual_slack_error_tol_(adjoint_residual_slack_error_tol)
-  ,check_adjoint_solution_error_(check_adjoint_solution_error)
-  ,adjoint_solution_error_solve_tol_(adjoint_solution_error_solve_tol)
-  ,adjoint_solution_error_slack_warning_tol_(adjoint_solution_error_slack_warning_tol)
-  ,adjoint_solution_error_slack_error_tol_(adjoint_solution_error_slack_error_tol)
-  ,num_random_vectors_(num_random_vectors)
-  ,show_all_tests_(show_all_tests)
-  ,dump_all_(dump_all)
-  ,num_rhs_(num_rhs)
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::LinearOpWithSolveTester()
+  :check_forward_default_(check_forward_default_default_),
+   forward_default_residual_warning_tol_(warning_tol_default_),
+   forward_default_residual_error_tol_(error_tol_default_),
+   forward_default_solution_error_warning_tol_(warning_tol_default_),
+   forward_default_solution_error_error_tol_(error_tol_default_),
+   check_forward_residual_(check_forward_residual_default_),
+   forward_residual_solve_tol_(solve_tol_default_),
+   forward_residual_slack_warning_tol_(slack_warning_tol_default_),
+   forward_residual_slack_error_tol_(slack_error_tol_default_),
+   check_adjoint_default_(check_adjoint_default_default_),
+   adjoint_default_residual_warning_tol_(warning_tol_default_),
+   adjoint_default_residual_error_tol_(error_tol_default_),
+   adjoint_default_solution_error_warning_tol_(warning_tol_default_),
+   adjoint_default_solution_error_error_tol_(error_tol_default_),
+   check_adjoint_residual_(check_adjoint_residual_default_),
+   adjoint_residual_solve_tol_(solve_tol_default_),
+   adjoint_residual_slack_warning_tol_(slack_warning_tol_default_),
+   adjoint_residual_slack_error_tol_(slack_error_tol_default_),
+   num_random_vectors_(num_random_vectors_default_),
+   show_all_tests_(show_all_tests_default_),
+   dump_all_(dump_all_default_),
+   num_rhs_(num_rhs_default_)
 {}
+
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveTester<RangeScalar,DomainScalar>::turn_off_all_tests()
 {
-  check_forward_default_         = false;
-  check_forward_residual_        = false;
-  check_forward_solution_error_  = false;
-  check_adjoint_default_         = false;
-  check_adjoint_residual_        = false;
-  check_adjoint_solution_error_  = false;
+  check_forward_default_ = false;
+  check_forward_residual_ = false;
+  check_adjoint_default_ = false;
+  check_adjoint_residual_ = false;
 }
 
+
 template<class RangeScalar, class DomainScalar>
-void LinearOpWithSolveTester<RangeScalar,DomainScalar>::set_all_solve_tol( const ScalarMag solve_tol )
+void
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::set_all_solve_tol(
+  const ScalarMag solve_tol )
 {
   forward_residual_solve_tol_ = solve_tol;
   forward_residual_solve_tol_ = solve_tol;
-  forward_solution_error_solve_tol_ = solve_tol;
   adjoint_residual_solve_tol_ = solve_tol;
-  adjoint_solution_error_solve_tol_ = solve_tol;
 }
 
+
 template<class RangeScalar, class DomainScalar>
-void LinearOpWithSolveTester<RangeScalar,DomainScalar>::set_all_slack_warning_tol( const ScalarMag slack_warning_tol )
+void
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::set_all_slack_warning_tol(
+  const ScalarMag slack_warning_tol )
 {
   forward_default_residual_warning_tol_ = slack_warning_tol;
   forward_default_solution_error_warning_tol_ = slack_warning_tol;
   forward_residual_slack_warning_tol_ = slack_warning_tol;
-  forward_solution_error_slack_warning_tol_ = slack_warning_tol;
   adjoint_default_residual_warning_tol_ = slack_warning_tol;
   adjoint_default_solution_error_warning_tol_ = slack_warning_tol;
   adjoint_residual_slack_warning_tol_ = slack_warning_tol;
-  adjoint_solution_error_slack_warning_tol_ = slack_warning_tol;
 }
 
+
 template<class RangeScalar, class DomainScalar>
-void LinearOpWithSolveTester<RangeScalar,DomainScalar>::set_all_slack_error_tol( const ScalarMag slack_error_tol )
+void
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::set_all_slack_error_tol(
+  const ScalarMag slack_error_tol )
 {
   forward_default_residual_error_tol_ = slack_error_tol;
   forward_default_solution_error_error_tol_ = slack_error_tol;
   forward_residual_slack_error_tol_ = slack_error_tol;
-  forward_solution_error_slack_error_tol_ = slack_error_tol;
   adjoint_default_residual_error_tol_ = slack_error_tol;
   adjoint_default_solution_error_error_tol_ = slack_error_tol;
   adjoint_residual_slack_error_tol_ = slack_error_tol;
-  adjoint_solution_error_slack_error_tol_ = slack_error_tol;
 }
-  
+
+
+// Overridden from ParameterListAcceptor
+
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveTester<RangeScalar,DomainScalar>::setParameterList(
+  const RCP<ParameterList>& paramList )
+{
+  using Teuchos::getParameter;
+  ParameterList &pl = *paramList;
+  this->setMyParamList(paramList);
+  paramList->validateParametersAndSetDefaults(*getValidParameters());
+  set_all_solve_tol(getParameter<ScalarMag>(pl, AllSolveTol_name_));
+  set_all_slack_warning_tol(getParameter<ScalarMag>(pl, AllSlackWarningTol_name_));
+  set_all_slack_error_tol(getParameter<ScalarMag>(pl, AllSlackErrorTol_name_));
+  show_all_tests(getParameter<bool>(pl, ShowAllTests_name_));
+  dump_all(getParameter<bool>(pl, DumpAll_name_));
+  // ToDo: Add more parameters as you need them
+}
+
+
+template<class RangeScalar, class DomainScalar>
+RCP<const ParameterList>
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::getValidParameters() const
+{
+  static RCP<const ParameterList> validPL;
+  if (is_null(validPL) ) {
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->set(AllSolveTol_name_, solve_tol_default_,
+      "Sets all of the solve tolerances to the same value.  Note: This option\n"
+      "is applied before any specific tolerance which may override it.");
+    pl->set(AllSlackWarningTol_name_, slack_warning_tol_default_,
+      "Sets all of the slack warning values to the same value.  Note: This option\n"
+      "is applied before any specific tolerance which may override it.");
+    pl->set(AllSlackErrorTol_name_, slack_error_tol_default_,
+      "Sets all of the slack error values to the same value.  Note: This option\n"
+      "is applied before any specific tolerance which may override it.");
+    pl->set(ShowAllTests_name_, false,
+      "If true, then all tests be traced to the output stream.");
+    pl->set(DumpAll_name_, false,
+      "If true, then all qualtities will be dumped to the output stream.  Warning!\n"
+      "only do this to debug smaller problems as this can create a lot of output");
+    // ToDo: Add more parameters as you need them (don't forget to test them)
+    validPL = pl;
+  }
+  return validPL;
+}
+
+
+// LOWS testing
+
+
 template<class RangeScalar, class DomainScalar>
 bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
-  const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &op
-  ,Teuchos::FancyOStream                                  *out_arg
-  ) const
+  const LinearOpWithSolveBase<RangeScalar,DomainScalar> &op,
+  Teuchos::FancyOStream *out_arg ) const
 {
 
   using std::endl;
@@ -652,10 +673,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0]
-          ,"adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()", RangeScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol())
-          ,"adjoint_residual_solve_tol()_slack_warning_tol()", RangeScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol())
-          ,&*oss
+          num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0],
+          "adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()",
+          RangeScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()),
+          "adjoint_residual_solve_tol()_slack_warning_tol()",
+          RangeScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol()),
+          &*oss
           );
         if(!result) these_results = false;
 
@@ -669,7 +692,8 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
 
   }
   else {
-    if(out.get()) *out <<endl<< "this->check_adjoint_residual()==false: Skipping the check of the adjoint solve with a tolerance on the residual!\n";
+    if(out.get())
+      *out <<endl<< "this->check_adjoint_residual()==false: Skipping the check of the adjoint solve with a tolerance on the residual!\n";
   }
   
   if(out.get()) {
@@ -684,6 +708,50 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   
 }
 
+
+// private static members
+
+
+// Define local macros used in the next few lines and then undefined
+
+#define LOWST_DEFINE_RAW_STATIC_MEMBER( DATA_TYPE, MEMBER_NAME, DEFAULT_VALUE ) \
+template<class RangeScalar, class DomainScalar> \
+const DATA_TYPE \
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::MEMBER_NAME = DEFAULT_VALUE
+
+#define LOWST_DEFINE_MTD_STATIC_MEMBER( DATA_TYPE, MEMBER_NAME, DEFAULT_VALUE ) \
+template<class RangeScalar, class DomainScalar> \
+const typename LinearOpWithSolveTester<RangeScalar,DomainScalar>::DATA_TYPE \
+LinearOpWithSolveTester<RangeScalar,DomainScalar>::MEMBER_NAME = DEFAULT_VALUE
+
+LOWST_DEFINE_RAW_STATIC_MEMBER(bool, check_forward_default_default_, true);
+LOWST_DEFINE_RAW_STATIC_MEMBER(bool, check_forward_residual_default_, true);
+LOWST_DEFINE_RAW_STATIC_MEMBER(bool, check_adjoint_default_default_, true);
+LOWST_DEFINE_RAW_STATIC_MEMBER(bool, check_adjoint_residual_default_, true);
+
+LOWST_DEFINE_MTD_STATIC_MEMBER(ScalarMag, warning_tol_default_, 1e-6);
+LOWST_DEFINE_MTD_STATIC_MEMBER(ScalarMag, error_tol_default_, 1e-5);
+LOWST_DEFINE_MTD_STATIC_MEMBER(ScalarMag, solve_tol_default_, 1e-5);
+LOWST_DEFINE_MTD_STATIC_MEMBER(ScalarMag, slack_warning_tol_default_, 1e-6);
+LOWST_DEFINE_MTD_STATIC_MEMBER(ScalarMag, slack_error_tol_default_, 1e-5);
+
+LOWST_DEFINE_RAW_STATIC_MEMBER(int, num_random_vectors_default_, 1);
+LOWST_DEFINE_RAW_STATIC_MEMBER(bool, show_all_tests_default_, false);
+LOWST_DEFINE_RAW_STATIC_MEMBER(bool, dump_all_default_, false);
+LOWST_DEFINE_RAW_STATIC_MEMBER(int, num_rhs_default_, 1);
+
+LOWST_DEFINE_RAW_STATIC_MEMBER(std::string, AllSolveTol_name_, "All Solve Tol");
+LOWST_DEFINE_RAW_STATIC_MEMBER(std::string, AllSlackWarningTol_name_, "All Slack Warning Tol");
+LOWST_DEFINE_RAW_STATIC_MEMBER(std::string, AllSlackErrorTol_name_, "All Slack Error Tol");
+LOWST_DEFINE_RAW_STATIC_MEMBER(std::string, ShowAllTests_name_, "Show All Tests");
+LOWST_DEFINE_RAW_STATIC_MEMBER(std::string, DumpAll_name_, "Dump All");
+
+#undef LOWST_DEFINE_MTD_STATIC_MEMBER
+
+#undef LOWST_DEFINE_RAW_STATIC_MEMBER
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_LINEAR_OP_WITH_SOLVE_TESTER_HPP

@@ -146,10 +146,6 @@ bool Thyra::test_single_amesos_thyra_solver(
   linearOpWithSolveTester.forward_residual_solve_tol(maxResid);
   linearOpWithSolveTester.forward_residual_slack_error_tol(1e-1*maxResid);
   linearOpWithSolveTester.forward_residual_slack_warning_tol(maxResid);
-  linearOpWithSolveTester.check_forward_solution_error(true);
-  linearOpWithSolveTester.forward_solution_error_solve_tol(maxError);
-  linearOpWithSolveTester.forward_solution_error_slack_error_tol(1e-1*maxError);
-  linearOpWithSolveTester.forward_solution_error_slack_warning_tol(maxError);
   if(testTranspose) {
     linearOpWithSolveTester.check_adjoint_default(true);
     linearOpWithSolveTester.adjoint_default_residual_error_tol(1.1*maxResid);
@@ -158,10 +154,6 @@ bool Thyra::test_single_amesos_thyra_solver(
     linearOpWithSolveTester.adjoint_residual_solve_tol(maxResid);
     linearOpWithSolveTester.adjoint_residual_slack_error_tol(1e-1*maxResid);
     linearOpWithSolveTester.adjoint_residual_slack_warning_tol(maxResid);
-    linearOpWithSolveTester.check_adjoint_solution_error(true);
-    linearOpWithSolveTester.adjoint_solution_error_solve_tol(maxError);
-    linearOpWithSolveTester.adjoint_solution_error_slack_error_tol(1e-1*maxError);
-    linearOpWithSolveTester.adjoint_solution_error_slack_warning_tol(maxError);
   }
   linearOpWithSolveTester.num_random_vectors(numRandomVectors);
   linearOpWithSolveTester.show_all_tests(showAllTests);

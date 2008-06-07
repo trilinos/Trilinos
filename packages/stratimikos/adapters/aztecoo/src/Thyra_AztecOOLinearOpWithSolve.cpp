@@ -531,12 +531,12 @@ bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
 
 
 void AztecOOLinearOpWithSolve::solve(
-  const EOpTransp                         M_trans,
-  const MultiVectorBase<double>        &B,
-  MultiVectorBase<double>              *X,
-  const int                            numBlocks,
-  const BlockSolveCriteria<double>     blockSolveCriteria[],
-  SolveStatus<double>                  blockSolveStatus[]
+  const EOpTransp M_trans,
+  const MultiVectorBase<double> &B,
+  MultiVectorBase<double> *X,
+  const int numBlocks,
+  const BlockSolveCriteria<double> blockSolveCriteria[],
+  SolveStatus<double> blockSolveStatus[]
   ) const
 {
   using Teuchos::OSTab;
@@ -548,7 +548,7 @@ void AztecOOLinearOpWithSolve::solve(
   totalTimer.start(true);
 
   RCP<Teuchos::FancyOStream>  out = this->getOStream();
-  Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\nSolving block system using AztecOO ...\n\n";

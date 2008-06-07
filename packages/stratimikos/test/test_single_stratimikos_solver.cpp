@@ -29,7 +29,10 @@
 #include "test_single_stratimikos_solver.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_LinearOpTester.hpp"
+#include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Teuchos_ParameterList.hpp"
 
@@ -51,7 +54,9 @@ bool Thyra::test_single_stratimikos_solver(
   using Teuchos::OSTab;
   using Teuchos::ParameterList;
   using Teuchos::getParameter;
-  bool success = true;
+  typedef double Scalar;
+
+  bool success = true, result = false;
 
   try {
 
@@ -68,18 +73,19 @@ bool Thyra::test_single_stratimikos_solver(
     // Create list of valid parameter sublists
     Teuchos::ParameterList validParamList("test_single_stratimikos_solver");
     validParamList.set("Matrix File","fileName");
-    validParamList.sublist("Linear Solver Builder");
-    validParamList.sublist("LinearOpTester");
-    validParamList.sublist("LinearOpWithSolveTester");
+    validParamList.set("Solve Adjoint",false);
+    validParamList.sublist("Linear Solver Builder").disableRecursiveValidation();
+    validParamList.sublist("LinearOpWithSolveTester").disableRecursiveValidation();
     
     if(out) *out << "\nValidating top-level input parameters ...\n";
-    paramList->validateParameters(validParamList,0);
+    paramList->validateParametersAndSetDefaults(validParamList);
 
     const std::string
       &matrixFile = getParameter<std::string>(*paramList,"Matrix File");
+    const bool
+      solveAdjoint = getParameter<bool>(*paramList,"Solve Adjoint");
     RCP<ParameterList>
       solverBuilderSL  = sublist(paramList,"Linear Solver Builder",true),
-      loTesterSL       = sublist(paramList,"LinearOpTester",true),
       lowsTesterSL     = sublist(paramList,"LinearOpWithSolveTester",true);
 
     if(out) *out << "\nReading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
@@ -112,14 +118,28 @@ bool Thyra::test_single_stratimikos_solver(
       lowsFactory = createLinearSolveStrategy(*linearSolverBuilder);
     if(out) *out << "\nlowsFactory described as:\n" << describe(*lowsFactory,Teuchos::VERB_MEDIUM) << std::endl;
 
-    if(out) *out << "\nRunning example use cases ...\n";
-    
+    if(out) *out << "\nRunning example use cases for not externally preconditioned ...\n";
     nonExternallyPreconditionedLinearSolveUseCases(
-      *A,*lowsFactory,false,*out
+      *A, *lowsFactory, solveAdjoint, *out
       );
-    
-    // ToDo: Finish tests!
 
+    Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
+    linearOpWithSolveTester.setParameterList(lowsTesterSL);
+    linearOpWithSolveTester.turn_off_all_tests();
+    linearOpWithSolveTester.check_forward_default(true);
+    linearOpWithSolveTester.check_forward_residual(true);
+    if (solveAdjoint) {
+      linearOpWithSolveTester.check_adjoint_default(true);
+      linearOpWithSolveTester.check_adjoint_residual(true);
+    }
+    // ToDo: Use parameter lists for the above
+
+    if(out) *out << "\nChecking the LOWSB interface ...\n";
+    RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+      lowsA = Thyra::linearOpWithSolve<Scalar>(*lowsFactory, A);
+    result = linearOpWithSolveTester.check(*lowsA, out);
+    if (!result) success = false;
+    
     if(out) {
       *out << "\nPrinting the parameter list (showing what was used) ...\n";
       paramList->print(*out,1,true,true);

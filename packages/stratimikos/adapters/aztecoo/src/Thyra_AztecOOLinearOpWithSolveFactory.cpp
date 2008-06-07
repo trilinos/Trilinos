@@ -1040,7 +1040,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   // Initialize the AztecOOLinearOpWithSolve object and set its options
   //
-  if(aztecAdjSolver.get()) {
+  if(aztecAdjSolver.get() && aztecAdjSolver->GetPrecOperator()) {
     aztecOp->initialize(
       fwdOp, fwdOpSrc,precUsed, prec.get()!=NULL, approxFwdOpSrc,
       aztecFwdSolver, true, aztecAdjSolver, true, epetra_epetraFwdOpScalar

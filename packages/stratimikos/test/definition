@@ -48,25 +48,34 @@
 
 (FRAMEWORK, INSTALL, StratimikosAmesos) {
     TESTS = ./test_single_stratimikos_solver_driver_amesos.exe;
-    ARGS = --input-file=FourByFour.xml;
-    COMM = MPI(1),SERIAL;
-}
-
-(FRAMEWORK, INSTALL, StratimikosAmesos) {
-    TESTS = ./test_single_stratimikos_solver_driver_amesos.exe;
-    ARGS = --input-file=FourByFour.amesos.xml;
+    ARGS = --input-file=FourByFour.xml,
+      --input-file=FourByFour.amesos.xml;
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
     TESTS = ./test_single_stratimikos_solver_driver_aztecoo_ifpack.exe;
-    ARGS = --input-file=FourByFour.aztecoo.np.xml;
+    ARGS = --input-file=FourByFour.aztecoo.np.xml,
+      --input-file=FourByFour.aztecoo.ifpack.xml,
+      --input-file=FourByFour.aztecoo.ifpack.adjoint.xml;
     COMM = MPI(1),SERIAL;
 }
 
-(FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
-    TESTS = ./test_single_stratimikos_solver_driver_aztecoo_ifpack.exe;
-    ARGS = --input-file=FourByFour.aztecoo.ifpack.xml;
+(FRAMEWORK, INSTALL, StratimikosAztecOOML) {
+    TESTS = ./test_single_stratimikos_solver_driver_aztecoo_ml.exe;
+    ARGS = --input-file=FourByFour.aztecoo.np.xml, --input-file=FourByFour.aztecoo.ml.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosBelosIfpack) {
+    TESTS = ./test_single_stratimikos_solver_driver_belos_ifpack.exe;
+    ARGS = --input-file=FourByFour.aztecoo.np.xml, --input-file=FourByFour.aztecoo.ml.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosBelosML) {
+    TESTS = ./test_single_stratimikos_solver_driver_belos_ml.exe;
+    ARGS = --input-file=FourByFour.belos.np.xml, --input-file=FourByFour.belos.ml.xml;
     COMM = MPI(1),SERIAL;
 }
 

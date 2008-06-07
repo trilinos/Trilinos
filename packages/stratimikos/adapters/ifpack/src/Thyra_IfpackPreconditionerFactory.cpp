@@ -260,7 +260,7 @@ void IfpackPreconditionerFactory::initializePrec(
     ifpack_precOp
     ,epetraFwdOpTransp
     ,EPETRA_OP_APPLY_APPLY_INVERSE
-    ,EPETRA_OP_ADJOINT_UNSUPPORTED  // ToDo: Look into adjoints again.
+    ,EPETRA_OP_ADJOINT_SUPPORTED
     );
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_MEDIUM)) {
     *out << "\nDescription of created preconditioner:\n";

@@ -4,9 +4,6 @@
     <Parameter name="Linear Solver Type" type="string" value="Belos"/>
     <Parameter name="Preconditioner Type" type="string" value="None"/>
   </ParameterList>
-  <ParameterList name="LinearOpTester">
-  </ParameterList>
-  <ParameterList name="LinearOpWithSolveTester">
-  </ParameterList>
+  <ParameterList name="LinearOpWithSolveTester"/>
 </ParameterList>
 

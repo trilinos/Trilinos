@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     
     success
       = Thyra::test_single_stratimikos_solver(
-        &paramList,dumpAll,verbose?&*out:0
+        &paramList, dumpAll, verbose?&*out:0
         );
     
   }

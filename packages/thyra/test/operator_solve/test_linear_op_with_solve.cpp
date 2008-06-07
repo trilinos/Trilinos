@@ -65,6 +65,8 @@ bool run_linear_op_with_solve_tests(
   using Teuchos::OSTab;
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Index Index;
@@ -105,11 +107,15 @@ bool run_linear_op_with_solve_tests(
 
   out << "\nE) Test the LOWSB interface of M_lows ...\n";
   Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
-  linearOpWithSolveTester.set_all_solve_tol(maxRelErr);
-  linearOpWithSolveTester.set_all_slack_error_tol(1e+1*maxRelErr);
-  linearOpWithSolveTester.set_all_slack_warning_tol(maxRelErr);
-  linearOpWithSolveTester.show_all_tests(showAllTests);
-  linearOpWithSolveTester.dump_all(dumpAll);
+  {
+    RCP<ParameterList> pl = parameterList();
+    pl->set("All Solve Tol", maxRelErr);
+    pl->set("All Slack Error Tol", 1e+1*maxRelErr);
+    pl->set("All Slack Warning Tol", maxRelErr);
+    pl->set("Show All Tests", showAllTests);
+    pl->set("Dump All", dumpAll);
+    linearOpWithSolveTester.setParameterList(pl);
+  }
   {
     OSTab tab(out);
     const bool result = linearOpWithSolveTester.check(*M_lows, &out);
