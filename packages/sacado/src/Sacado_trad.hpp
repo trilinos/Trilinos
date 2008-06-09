@@ -211,15 +211,9 @@ ADcontext {	// A singleton class: one instance in radops.c
 #if RAD_REINIT > 0
 	ADMemblock *DBusy, *DFree;
 	size_t DMleft, nderps;
-	union {
-		double DFirst0d[(sizeof(ADMemblock) + sizeof(double) - 1) / sizeof(double)];
-		ADMemblock DFirst0;
-		} DPedantry;
+	double DFirst0[(sizeof(ADMemblock) + sizeof(double) - 1) / sizeof(double)];
 #endif
-  struct {
-		double First0d[(sizeof(ADMemblock) + sizeof(double) - 1) / sizeof(double)];
-		ADMemblock First0;
-		} Pedantry;
+	double First0[(sizeof(ADMemblock) + sizeof(double) - 1) / sizeof(double)];
 	void *new_ADmemblock(size_t);
 	typedef ADvari<Double> ADVari;
 	typedef ADvar<Double> ADVar;
@@ -1344,7 +1338,7 @@ template<typename Double> FILE *ADvari<Double>::debug_file;
 
 template<typename Double> ADcontext<Double>::ADcontext()
 {
-	First = &Pedantry.First0;
+	First = (ADMemblock*)First0;
 	First->next = 0;
 	Busy = First;
 	Free = 0;
@@ -1357,7 +1351,7 @@ template<typename Double> ADcontext<Double>::ADcontext()
 	rad_Oldcurmb = 0;
 #endif
 #if RAD_REINIT > 0
-	DBusy = &DPedantry.DFirst0;
+	DBusy = (ADMemblock*)DFirst0;
 	DBusy->next = 0;
 	DFree = 0;
 	DMleft = nderps = sizeof(DBusy->memblk)/sizeof(DErp);
@@ -1387,7 +1381,7 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 				/sizeof(typename Sacado::ValueType<Double>::type));
 		if (mb = Busy->next) {
 			if (!(mb0 = rad_Oldcurmb))
-				mb0 = (ADMemblock*)Pedantry.First0;
+				mb0 = (ADMemblock*)First0;
 			for(;; mb = mb->next) {
 				_uninit_f2c(mb->memblk,
 					UninitType<Double>::utype,
@@ -1401,7 +1395,7 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 		if (rad_busy_blocks >= RAD_DEBUG_BLOCKKEEP) {
 			rad_busy_blocks = 0;
 			rad_Oldcurmb = 0;
-			mb0 = (ADMemblock*)Pedantry.First0;
+			mb0 = (ADMemblock*)First0;
 			mbf =  Free;
 			for(mb = Busy; mb != mb0; mb = mb1) {
 				mb1 = mb->next;
@@ -1430,7 +1424,7 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 #endif /*RAD_DEBUG_BLOCKKEEP*/
 #if RAD_REINIT > 0 //{
 		mb = mb0 = DBusy;
-		while((mb1 = mb->next)) {
+		while(mb1 = mb->next) {
 			mb->next = mb0;
 			mb0 = mb;
 			mb = mb1;
