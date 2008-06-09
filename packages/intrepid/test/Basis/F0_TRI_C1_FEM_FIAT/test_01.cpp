@@ -292,12 +292,12 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
     triBasis -> getValues(vals, elNodes, OPERATOR_GRAD);
     for (int i=0; i < vals.getSize(); i++) {
       bool fail = false;
-      if (std::abs(basisD1s[i]) < INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > INTREPID_FIAT_TOL ) {
+      if (std::abs(basisD1s[i]) < 10.0 * INTREPID_FIAT_TOL ) {
+        if (std::abs(vals[i]-basisD1s[i]) > 10.0 * INTREPID_FIAT_TOL ) {
           fail = true;
         }
       }
-      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > INTREPID_FIAT_TOL ) {
+      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > 10.0 * INTREPID_FIAT_TOL ) {
         fail = true;
       }
       if (fail) {
@@ -319,12 +319,12 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
     triBasis -> getValues(vals, elNodes, OPERATOR_CURL);
     for (int i=0; i < vals.getSize(); i++) {
       bool fail = false;
-      if (std::abs(basisCurls[i]) < INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisCurls[i]) > INTREPID_FIAT_TOL ) {
+      if (std::abs(basisCurls[i]) < 10.0 * INTREPID_FIAT_TOL ) {
+        if (std::abs(vals[i]-basisCurls[i]) > 10.0 * INTREPID_FIAT_TOL ) {
           fail = true;
         }
       }
-      else if (std::abs(vals[i] - basisCurls[i]) / std::abs(basisCurls[i] ) > INTREPID_FIAT_TOL ) {
+      else if (std::abs(vals[i] - basisCurls[i]) / std::abs(basisCurls[i] ) > 10.0 * INTREPID_FIAT_TOL ) {
         fail = true;
       }
       if (fail) {
@@ -346,12 +346,12 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
     triBasis -> getValues(vals, elNodes, OPERATOR_D1);
     for (int i=0; i < vals.getSize(); i++) {
       bool fail = false;
-      if (std::abs(basisD1s[i]) < pow(10.0,1) * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > pow(10.0,1) * INTREPID_FIAT_TOL ) {
+      if (std::abs(basisD1s[i]) < pow(15.0,1) * INTREPID_FIAT_TOL ) {
+        if (std::abs(vals[i]-basisD1s[i]) > pow(15.0,1) * INTREPID_FIAT_TOL ) {
           fail = true;
         }
       }
-      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > INTREPID_FIAT_TOL ) {
+      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > pow(15.0,1) * INTREPID_FIAT_TOL ) {
         fail = true;
       }
       if (fail) {
@@ -372,7 +372,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D2 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D2);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 2 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -390,7 +390,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D3 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D3);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 3 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -408,7 +408,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D4 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D4);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 4 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -426,7 +426,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D5 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D5);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 5 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -444,7 +444,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D6 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D6);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 6 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -462,7 +462,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D7 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D7);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 7 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -480,7 +480,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D8 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D8);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 8 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -498,7 +498,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D9 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D9);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 9 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -516,7 +516,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       // Check D10 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D10);
       for (int i=0; i < vals.getSize(); i++) {
-        if (std::abs(vals[i]) > INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > pow( 15.0 , 10 ) * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
