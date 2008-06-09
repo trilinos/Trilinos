@@ -30,48 +30,19 @@
 /*--------------------------------------------------------------------*/
 
 typedef struct TPI_ThreadPool_Private {
-  TPI_parallel_subprogram  m_routine ;
-  void                   * m_argument ;
-  int                    * m_lock ;
-  int                      m_lock_size ;
-  int                      m_size ;
-  int                      m_rank ;
-  int                      m_group_size ;
-  int                      m_group_rank ;
+  int * m_lock ;
+  int   m_lock_size ;
+  int   m_size ;
+  int   m_rank ;
 } ThreadWork ;
 
 typedef struct ThreadPool_Data {
-  ThreadWork    * m_work_begin ;
-  int             m_work_size ;
-  int             m_number_threads ;
-  int             m_number_locks ;
-  int             m_work_count ;
+  int  m_work_size ;
+  int  m_number_locks ;
 } ThreadPool ;
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
-
-int TPI_Group_rank( TPI_ThreadPool local , int * rank , int * size )
-{
-  const int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( rank ) { *rank = local->m_group_rank ; }
-    if ( size ) { *size = local->m_group_size ; }
-  }
-  return result ;
-}
-
-int TPI_Rank( TPI_ThreadPool local , int * rank , int * size )
-{
-  const int result = NULL == local ? TPI_ERROR_NULL : 0 ;
-
-  if ( ! result ) {
-    if ( rank ) { *rank = local->m_rank ; }
-    if ( size ) { *size = local->m_size ; }
-  }
-  return result ;
-}
 
 int TPI_Partition( int Thread_Rank ,
                    int Thread_Size ,
@@ -96,6 +67,17 @@ int TPI_Partition( int Thread_Rank ,
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
+
+int TPI_Rank( TPI_ThreadPool local , int * rank , int * size )
+{
+  const int result = NULL == local ? TPI_ERROR_NULL : 0 ;
+
+  if ( ! result ) {
+    if ( rank ) { *rank = local->m_rank ; }
+    if ( size ) { *size = local->m_size ; }
+  }
+  return result ;
+}
 
 int TPI_Lock( TPI_ThreadPool local , int i )
 {
@@ -175,40 +157,23 @@ static int local_thread_pool_run_work( ThreadWork * const work ,
 static ThreadPool * local_thread_pool()
 {
   static ThreadPool pool = {
-    /* m_work_begin     */  NULL ,
     /* m_work_size      */  0 ,
-    /* m_number_threads */  0 ,
-    /* m_number_locks   */  0 ,
-    /* m_work_count     */  0 };
+    /* m_number_locks   */  0 };
 
   /* Guard against recursive call */
 
-  return pool.m_work_begin ? NULL : & pool ;
+  return pool.m_work_size ? NULL : & pool ;
 }
 
 /*--------------------------------------------------------------------*/
 
-int TPI_Run_many( const int number_routine ,
-                  TPI_parallel_subprogram routine[] ,
-                  void * routine_data[] ,
-                  const int number[] )
+int TPI_Run( TPI_parallel_subprogram routine ,
+             void * routine_data ,
+             int number )
 {
   int i , nwork ;
 
-  int result =
-    ! number || ! routine || ! routine_data || ! number ? TPI_ERROR_NULL : 0 ;
-
-  for ( nwork = i = 0 ; ! result && i < number_routine ; ++i ) {
-    if ( ! routine[i] ) {
-      result = TPI_ERROR_NULL ;
-    }
-    else if ( number[i] <= 0 ) {
-      result = TPI_ERROR_SIZE ;
-    }
-    else {
-      nwork += number[i] ;
-    }
-  }
+  int result = ! routine || ! routine_data ? TPI_ERROR_NULL : 0 ;
 
   if ( ! result ) {
 
@@ -218,7 +183,6 @@ int TPI_Run_many( const int number_routine ,
 
     if ( ! result ) {
 
-      const int number_total = nwork ;
       const int number_locks = pool->m_number_locks ;
 
       int lock[ number_locks ];
@@ -231,54 +195,19 @@ int TPI_Run_many( const int number_routine ,
       }
 
       if ( ! result ) {
+        if ( number <= 0 ) { number = 1 ; }
 
-        ThreadWork work[ number_total ];
+        ThreadWork work = { lock , number_locks , number , 0 };
 
-        { /* Fill the work queue */
-          ThreadWork * w = work ;
+        pool->m_work_size = number ;
 
-          for ( i = 0 ; i < number_routine ; ++i ) {
-            int k = 0 ;
-            for ( ; k < number[i] ; ++k , ++w ) {
-              w->m_routine   = routine[i] ;
-              w->m_argument  = routine_data[i] ;
-              w->m_lock      = lock ;
-              w->m_lock_size = number_locks ;
-              w->m_size      = number[i] ;
-              w->m_rank      = k ;
-              w->m_group_rank = i ;
-              w->m_group_size = number_routine ;
-            }
-          }
+        for ( i = 0 ; i < number ; ++i ) {
+          work.m_rank = i ;
+          (*routine)( routine_data , & work );
         }
-
-        pool->m_work_begin = work ;
-        pool->m_work_size  = number_total ;
-
-        /* Participate in the work */
-        pool->m_work_count += local_thread_pool_run_work(work,number_total);
-
-        pool->m_work_begin = NULL ;
-        pool->m_work_size  = 0 ;
-        pool->m_number_locks = 0 ;
+        pool->m_work_size = 0 ;
       }
     }
-  }
-
-  return result ;
-}
-
-/* Run one routine on all allocated threads. */
-
-int TPI_Run( TPI_parallel_subprogram routine , void * routine_data )
-{
-  ThreadPool * const pool = local_thread_pool();
-
-  int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
-
-  if ( ! result ) {
-    const int number = pool->m_number_threads ;
-    result = TPI_Run_many( 1 , & routine , & routine_data , & number );
   }
 
   return result ;
@@ -295,25 +224,6 @@ int TPI_Set_lock_size( int number )
   if ( ! result ) { pool->m_number_locks = number ; }
 
   return result ;
-}
-
-int TPI_Run_count( int number , int * count )
-{
-  ThreadPool * const pool = local_thread_pool();
-
-  int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
-
-  if ( ! result && ! count ) { result = TPI_ERROR_NULL ; }
-
-  if ( ! result ) {
-
-    if ( number ) {
-      *count = pool->m_work_count ;
-      while ( --number ) { *++count = 0 ; }
-    }
-
-    pool->m_work_count = 0 ;
-  }
 }
 
 /*--------------------------------------------------------------------*/

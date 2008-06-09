@@ -42,44 +42,34 @@ int test_c_tpi_noop( int num_test , int * num_thread )
   fprintf(stdout,"\n\"TPI_Run(noop) test\"\n");
   fprintf(stdout,"\"NUMBER OF TRIALS\" , %u\n", n_trial );
   fprintf(stdout,
-          "\"# Thread\" , \"Min microsec\" , \"Mean microsec\" , \"Max microsec\" , \"Min Use\" , \"Mean Use\" , \"Max Use\"\n");
+          "\"# Thread\" , \"Min microsec\" , \"Mean microsec\" , \"Max microsec\"\n");
 
   for ( itest = 0 ; itest < num_test ; ++itest ) {
     const unsigned num = num_thread[ itest ];
     const unsigned n_loop = n / num ;
 
     unsigned i , j ;
-    double use_min = 0 , use_max = 0 ;
-    double dt_min = 0 , dt_max = 0 ;
-    double dt_mean = 0 , use_mean = 0 ;
+    double dt_min = 0 , dt_max = 0 , dt_mean = 0 ;
     double dt ;
 
     /* Time many tries and trials, get the min and max time */
 
     for ( j = 0 ; j < n_trial ; ++j ) {
-      int count ;
   
       TPI_Init( num );
-      TPI_Run_count( & count );
 
       dt = TPI_Walltime();
       for ( i = 0 ; i < n_loop ; ++i ) { TPI_Run( & test_tpi_noop, NULL, 0 ); }
       dt = TPI_Walltime() - dt ;
 
-      TPI_Run_count( & count );
-
       dt_mean += dt ;
 
       if ( ! j ) {
         dt_min = dt_max = dt ;
-        use_min = use_max = count ;
       }
 
       if ( dt < dt_min ) { dt_min = dt ; }
       if ( dt > dt_max ) { dt_max = dt ; }
-      if ( use_min > count ) { use_min = count ; }
-      if ( use_max < count ) { use_max = count ; }
-      use_mean += count ;
 
       TPI_Finalize();
     }
@@ -88,13 +78,7 @@ int test_c_tpi_noop( int num_test , int * num_thread )
     dt_mean *= 1.0e6 / ( n_loop * n_trial );
     dt_max  *= 1.0e6 / n_loop ;
 
-    use_min  /= num * n_loop ;
-    use_mean /= num * n_loop * n_trial ;
-    use_max  /= num * n_loop ;
-
-    fprintf(stdout,
-            "%u , %g , %g , %g , %g , %g , %g\n",
-            num, dt_min, dt_mean, dt_max, use_min, use_mean, use_max );
+    fprintf(stdout, "%u , %g , %g , %g\n", num, dt_min, dt_mean, dt_max );
 
     fflush(stdout);
   }

@@ -203,14 +203,13 @@ static void test_run( pthread_attr_t * thread_attr ,
 
     --( data.m_thread_count );
 
-    pthread_mutex_lock( & data.m_lock_run );
-    data.m_work_size = -1 ;
-    pthread_mutex_unlock( & data.m_lock_run );
-
     if ( data.m_thread_count ) {
+      pthread_mutex_lock( & data.m_lock_run );
+      data.m_work_size = -1 ;
       if ( data.m_blocking ) {
         pthread_cond_broadcast( & data.m_cond_run );
       }
+      pthread_mutex_unlock( & data.m_lock_run );
       pthread_cond_wait( & data.m_cond , & data.m_lock );
     }
 

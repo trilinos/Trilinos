@@ -56,7 +56,6 @@ typedef struct ThreadPool_Data {
   int                       m_work_lock_size ;
   int                       m_number_threads ;
   int                       m_work_size ;
-  int                       m_thread_work ;
   int                       m_work_begin_count ;
   volatile int              m_work_end_count ;
 } ThreadPool ;
@@ -149,24 +148,16 @@ static void local_thread_pool_run_work( ThreadPool * const pool ,
     /* Note the work that I did in the previous iteration */
     if ( work_n ) { --( pool->m_work_end_count ); }
 
+    work_n = 0 ;
+
     if ( am_worker &&
          0 <= pool->m_work_end_count &&
          0 == pool->m_work_begin_count ) {
-      work_n = 0 ;
       pthread_cond_wait( & pool->m_pool_cond_run , lock );
     }
 
     if ( 0 < pool->m_work_begin_count ) {
-
-      /* If the first time I have obtained work from the current
-       * pool of work then increment the working thread counter.
-       */
-      if ( ! work_n ) { ++( pool->m_thread_work ); }
-
       work_n = ( pool->m_work_begin_count )-- ; /* Claim some work */
-    }
-    else {
-      work_n = 0 ;
     }
 
     pthread_mutex_unlock( lock );
@@ -238,7 +229,6 @@ static ThreadPool * local_thread_pool()
     /* m_work_lock_size      */  0 ,
     /* m_number_threads      */  0 ,
     /* m_work_size           */  0 ,
-    /* m_thread_work         */  0 ,
     /* m_work_begin_count    */  0 ,
     /* m_work_end_count      */  0 };
 
@@ -309,22 +299,6 @@ int TPI_Set_lock_size( int number )
       pthread_mutex_destroy( lock );
       --( pool->m_work_lock_size );
     }
-  }
-
-  return result ;
-}
-
-int TPI_Run_count( int * count )
-{
-  ThreadPool * const pool = local_thread_pool();
-
-  int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
-
-  if ( ! result && ! count ) { result = TPI_ERROR_NULL ; }
-
-  if ( ! result ) {
-    *count = pool->m_thread_work ;
-    pool->m_thread_work = 0 ;
   }
 
   return result ;

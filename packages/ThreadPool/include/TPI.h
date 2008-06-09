@@ -105,21 +105,6 @@ int TPI_Run( TPI_parallel_subprogram /* subprogram  */ ,
  */
 int TPI_Rank( TPI_ThreadPool , int * /* rank */ , int * /* size */ );
 
-/*--------------------------------------------------------------------*/
-/** Query accumulated run counts for each created thread and then
- *  reset the counts to zero.  The run count is the number of
- *  times that a thread performed work since the thread was created
- *  or since the previous call to 'TPI_Run_count'.
- *
- *  This provides a measure of parallelism in that the work
- *  requested by 'TPI_Run' or 'TPI_Run_many' may be completed 
- *  by fewer threads than have been created.  This will occur
- *  if a thread fails to unblock before another created thread
- *  'steals' the blocked thread's work.
- */
-int TPI_Run_count( int * /* count */ );
-
-/*--------------------------------------------------------------------*/
 /** Set the lock size for the next call to TPI_Run or TPI_Run_many.
  *  The thread pool must be in the 'paused' state.
  */
