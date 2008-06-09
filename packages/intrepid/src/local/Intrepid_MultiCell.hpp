@@ -318,16 +318,44 @@ class MultiCell {
         \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
                                           or a custom, i.e. user-defined type.
         \param vertices [in]            - Physical coordinates of the vertices for all cells of the
-                                          multicell, in an interleaved format, e.g., for a 
-                                          two-cell multicell consisting of cells \f$A\f$ and \f$B\f$, 
-                                          the order is:\n\n
-                                          \f$\{x^A_1, y^A_1, z^A_1, x^A_2, y^A_2, z^A_2, ..., x^A_n, y^A_n, z^A_n,
-                                          x^B_1, y^B_1, z^B_1, x^B_2, y^B_2, z^B_2, ..., x^B_n, y^B_n, z^B_n\}\f$,\n\n
-                                          where \f$n\f$ is the number of nodes (points) in the cell.
+                                          multicell.
+      
+      \remarks Physical coordinates must be stored in an interleaved format, e.g., for a two-cell
+      multicell in 3D consisting of cells \f$A\f$ and \f$B\f$, the order is:
+      \f[ \{
+        \bf{v}^{A,1}_1, \bf{v}^{A,1}_2, \bf{v}^{A,1}_3, 
+        \bf{v}^{A,2}_1, \bf{v}^{A,2}_2, \bf{v}^{A,2}_3,\ldots, 
+        \bf{v}^{A,n}_1, \bf{v}^{A,n}_2, \bf{v}^{A,n}_3,
+        \bf{v}^{B,1}_1, \bf{v}^{B,2}_2, \bf{v}^{B,1}_3, 
+        \bf{v}^{B,2}_1, \bf{v}^{B,2}_2, \bf{v}^{B,2}_3,\ldots, 
+        \bf{v}^{B,n}_1, \bf{v}^{B,n}_2, \bf{v}^{B,n}_3
+        \}\f],\n\n
+      where \f$\bf{v}^{A,p}_d\f$ is the <var>d</var>th coordinate of <var>p</var>th point in cell
+      <var>A</var> and \f$n\f$ is the number of vertices in the cell.
     */
     MultiCell(const int      numCells,
               const ECell    generatingCellType,
               const Scalar*  vertices);
+    
+    
+    /** \brief Creates a MultiCell from an array of vertices and a generating cell type. 
+      
+      \param generatingCellType [in]  - Generating cell type: can be a canonical (TET, HEX, etc.). 
+                                        or a custom, i.e. user-defined type.
+      \param vertices [in]            - Physical coordinates of the vertices for all cells of the
+                                        multicell.
+      
+      \remarks Physical coordinates must be stored in a rank-3 array with dimensions <var>(C,P,D)</var> where
+      \li <var>C</var> is the number of cells
+      \li <var>P</var> is the number of nodes per cell
+      \li <var>D</var> is the number of coordinates, i.e., the space dimension
+      Therefore, \f$ x^{c,p}_d =  vertices(c,p,d) \f$ where \f$c\f$ is the cell number, \f$p\f$ is 
+      the vertex number and \f$d\f$ is the coordinate of the point. 
+    */
+    template<class ArrayType>
+    MultiCell(const ECell       generatingCellType,
+              const ArrayType & vertices);
+    
     
     //--------------------------------------------------------------------------------------------//
     //                                                                                            //
@@ -441,6 +469,11 @@ class MultiCell {
     //--------------------------------------------------------------------------------------------//
     
     
+    /** \brief returns the number of cells in the multicell.
+      */
+    int getMyNumCells() const;
+    
+    
     /** \brief Returns the type of the generating cell of the MultiCell object.
     */
     ECell getMyCellType() const;
@@ -456,21 +489,11 @@ class MultiCell {
     int getMyCellDim() const;
     
     
-    /** \brief Returns the number of nodes of the generating cell of the MultiCell object.
-    */
-    int getMyCellNumNodes() const;
-    
-    
-    /** \brief returns the number of cells in the multicell.
-      */
-    int getMyNumCells() const;
-    
-    
     /** \brief Returns number of subcells of specified dimension for the generating cell of the MultiCell object.
       
-        \param subcellDim [in] - dimension of the subcells whose number we want to find      
-    */
-    int getMyNumSubcells(const int subcellDim) const;
+      \param subcellDim [in] - dimension of the subcells whose number we want to find      
+      */
+    int getMyCellNumSubcells(const int subcellDim) const;
     
     
     /** \brief Returns the subcell type of a particular dimension, based on its local ID, for the 
@@ -503,18 +526,18 @@ class MultiCell {
       For example, if the generating cell type is CELL_PYRAMID, then
 
       \code
-        getMySubcellNodeIDs(subcellNodeIDs,2,0)
+        getMySubcellVertexIDs(subcellNodeIDs,2,0)
       \endcode
       loads <tt>{0,3,2,1}</tt> into subcellNodeIDs (the nodes of the first 2-subcell (face) of the pyramid
       in the cell template).
      
       \code 
-        getMySubcellNodeIDs(subcellNodeIDs,1,2)
+        getMySubcellVertexIDs(subcellNodeIDs,1,2)
       \endcode
       loads <tt>{2,3}</tt> into subcellNodeIDs (the nodes of the third 1-subcell (edge) of the pyramid
       in the cell template), etc.
     */
-    void getMySubcellNodeIDs(Teuchos::Array<int> & subcellNodeIDs,
+    void getMySubcellVertexIDs(Teuchos::Array<int> & subcellNodeIDs,
                              const int subcellDim,
                              const int subcellID) const;
     
@@ -606,20 +629,13 @@ class MultiCell {
     static int getCellDim(const ECell cellType);
     
     
-    /** \brief Returns number of nodes per cell for a specified cell type.
-
-        \param cellType [in] - target cell type 
-    */
-    static int getCellNumNodes(const ECell cellType);
-    
-    
     /** \brief Returns number of subcells of a particular dimension for a given cell type.
       
         \param parentCellType   [in] - parent cell type
         \param subcellDim       [in] - dimension of the subcells whose number we want to get 
     */
-    static int getNumSubcells(const ECell parentCellType, 
-                              const int   subcellDim);
+    static int getCellNumSubcells(const ECell parentCellType, 
+                                  const int   subcellDim);
     
     
     /** \brief Returns type of subcell of a particular dimension, based on its index, for a given cell type.
@@ -643,7 +659,7 @@ class MultiCell {
         \param subcellID        [in]  - local ID of the desired subcell, relative to the parent cell \n
                                         (remember: they are implicitly indexed in the cell template, starting with 0)
     */
-    static void getSubcellNodeIDs(Teuchos::Array<int> & subcellNodeIDs,
+    static void getSubcellVertexIDs(Teuchos::Array<int> & subcellNodeIDs,
                                   const ECell parentCellType,
                                   const int subcellDim,
                                   const int subcellID);

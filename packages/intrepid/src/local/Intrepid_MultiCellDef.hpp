@@ -92,11 +92,11 @@ namespace Intrepid {
 #endif
     
     // Find out how many nodes does the generating cell have
-    int numNodesPerCell = this -> getMyCellNumNodes();
-    int ambientDim      = this -> getMyCellDim();
+    int numNodesPerCell = this -> getMyCellNumSubcells(0);
+    int spaceDim      = this -> getMyCellDim();
     
     // Array of points sized to hold as many points as there are vertices in the generating cell
-    Point<Scalar> tempPoint(ambientDim);
+    Point<Scalar> tempPoint(spaceDim);
     Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
     
     // Resize data member to hold as many such arrays as there are cells in the MultiCell
@@ -107,8 +107,49 @@ namespace Intrepid {
       for (int j=0; j < numNodesPerCell; j++) {
         
         // do some pointer arithmetic to extract vertex coordinates (they are interleaved)
-        Point<Scalar> workPoint(vertices + (i*numNodesPerCell+j)*ambientDim, ambientDim);
-        vertices_[i][j] = workPoint;
+        vertices_[i][j] = Point<Scalar>(vertices + (i*numNodesPerCell+j)*spaceDim, spaceDim);
+      }
+    }
+  }
+  
+  
+  
+  template<class Scalar>
+  template<class ArrayType>
+  MultiCell<Scalar>::MultiCell(const ECell       generatingCellType,
+                               const ArrayType & vertices) :  myCellType_(generatingCellType) 
+  {
+  // Find out how many nodes does the generating cell have
+    int numNodesPerCell = this -> getMyCellNumSubcells(0);
+    int spaceDim        = this -> getMyCellDim();
+    numCells_           = vertices.getDimension(0);
+    
+#ifdef HAVE_INTREPID_DEBUG
+    // Verify that ArrayType has correct rank and "P" and "D" dimensions (recall that it has to be dimensioned by (C,P,D))
+    TEST_FOR_EXCEPTION( (vertices.getRank() != 3), std::invalid_argument,
+                        ">>> ERROR (MultiCell): input array has incorrect rank.")
+    TEST_FOR_EXCEPTION( (vertices.getDimension(1) != numNodesPerCell), std::invalid_argument,  
+                        ">>> ERROR (MultiCell): The number of vertices per cell specified in the input array does not match the generating cell type.")
+    TEST_FOR_EXCEPTION( (vertices.getDimension(2) != spaceDim), std::invalid_argument,  
+                        ">>> ERROR (MultiCell): The space dimension specified in the input array does not match the dimension of the generating cell type.")
+      
+    // Admissible generating cell types start with CELL_EDGE and end with CELL_MAX
+    TEST_FOR_EXCEPTION( !( (CELL_EDGE <= generatingCellType) && (generatingCellType < CELL_MAX) ),
+                        std::invalid_argument, ">>> ERROR (MultiCell): Invalid generating cell type");  
+#endif
+    // Array of points sized to hold as many points as there are vertices in the generating cell
+    Point<Scalar> tempPoint(spaceDim);
+    Teuchos::Array< Point<Scalar> > tempPointArray(numNodesPerCell, tempPoint);
+      
+    // Resize data member to hold as many such arrays as there are cells in the MultiCell
+    vertices_.assign(numCells_, tempPointArray);
+      
+    // fill in the coordinate info
+    for (int i=0; i < numCells_; i++) {
+      for (int j=0; j < numNodesPerCell; j++) {
+          
+        // do some pointer arithmetic to extract vertex coordinates (they are interleaved)
+        vertices_[i][j] = Point<Scalar>( &vertices[0] + (i*numNodesPerCell+j)*spaceDim, spaceDim);
       }
     }
   }
@@ -119,14 +160,14 @@ namespace Intrepid {
   void MultiCell<Scalar>::setEdgeSigns(const short*  edgeSigns) {
     
     int numEdgesPerCell = 0;
-    int ambientDim      = this -> getMyCellDim();
+    int spaceDim      = this -> getMyCellDim();
 
     // Edge signs are not meaningful unless dimension of the generating cell is 2 or 3
-    if(ambientDim == 2 || ambientDim == 3) {
-      numEdgesPerCell = this -> getMyNumSubcells(1);
+    if(spaceDim == 2 || spaceDim == 3) {
+      numEdgesPerCell = this -> getMyCellNumSubcells(1);
     }
     else {
-      TEST_FOR_EXCEPTION( (ambientDim == 1), 
+      TEST_FOR_EXCEPTION( (spaceDim == 1), 
                           std::invalid_argument,
                           ">>> ERROR (MultiCell): Edge signs cannot be defined for 1-dimensional cells");  
     }
@@ -147,23 +188,23 @@ namespace Intrepid {
   void  MultiCell<Scalar>::setFaceSigns(const short*   faceSigns) {
     
     int numFacesPerCell = 0;
-    int ambientDim      = this -> getMyCellDim();
+    int spaceDim      = this -> getMyCellDim();
 
-    if(ambientDim == 3) {
+    if(spaceDim == 3) {
       
       // in 3D cell "faces" are 2 dimensional subcells of the cell (true faces)
-      numFacesPerCell = this -> getMyNumSubcells(2);
+      numFacesPerCell = this -> getMyCellNumSubcells(2);
     }
     else {
-      if(ambientDim == 2) {
+      if(spaceDim == 2) {
         
         // In 2D "faces" are 1-dimensional subcells (edges)
-        numFacesPerCell = this -> getMyNumSubcells(1);
+        numFacesPerCell = this -> getMyCellNumSubcells(1);
       }
       else {
         
         // Face signs are not meaningful unless dimension of the generating cell is 2 or 3
-        TEST_FOR_EXCEPTION( (ambientDim == 1), 
+        TEST_FOR_EXCEPTION( (spaceDim == 1), 
                             std::invalid_argument,
                             ">>> ERROR (MultiCell): Face signs cannot be defined for 1-dimensional cells"); 
       }
@@ -185,14 +226,14 @@ namespace Intrepid {
     void MultiCell<Scalar>::setEdgeTags(const short*  edgeTags) {
       
       int numEdgesPerCell = 0;
-      int ambientDim      = this -> getMyCellDim();
+      int spaceDim      = this -> getMyCellDim();
       
       // Edge tags are not meaningful unless dimension of the generating cell is 2 or 3
-      if(ambientDim == 2 || ambientDim == 3) {
-        numEdgesPerCell = this -> getMyNumSubcells(1);
+      if(spaceDim == 2 || spaceDim == 3) {
+        numEdgesPerCell = this -> getMyCellNumSubcells(1);
       }
       else {
-        TEST_FOR_EXCEPTION( (ambientDim == 1), 
+        TEST_FOR_EXCEPTION( (spaceDim == 1), 
                             std::invalid_argument,
                             ">>> ERROR (MultiCell): Edge tags cannot be defined for 1-dimensional cells");  
       }
@@ -213,23 +254,23 @@ namespace Intrepid {
     void  MultiCell<Scalar>::setFaceTags(const short*   faceTags) {
       
       int numFacesPerCell = 0;
-      int ambientDim      = this -> getMyCellDim();
+      int spaceDim      = this -> getMyCellDim();
       
-      if(ambientDim == 3) {
+      if(spaceDim == 3) {
         
         // in 3D cell "faces" are 2 dimensional subcells of the cell (true faces)
-        numFacesPerCell = this -> getMyNumSubcells(2);
+        numFacesPerCell = this -> getMyCellNumSubcells(2);
       }
       else {
-        if(ambientDim == 2) {
+        if(spaceDim == 2) {
           
           // In 2D "faces" are 1-dimensional subcells (edges)
-          numFacesPerCell = this -> getMyNumSubcells(1);
+          numFacesPerCell = this -> getMyCellNumSubcells(1);
         }
         else {
           
           // Face tags are not meaningful unless dimension of the generating cell is 2 or 3
-          TEST_FOR_EXCEPTION( (ambientDim == 1), 
+          TEST_FOR_EXCEPTION( (spaceDim == 1), 
                               std::invalid_argument,
                               ">>> ERROR (MultiCell): Face tags cannot be defined for 1-dimensional cells"); 
         }
@@ -280,7 +321,7 @@ namespace Intrepid {
                         std::invalid_argument,
                         ">>> ERROR (MultiCell): Invalid cellID value.");
 #endif   
-    int ambientDim = this -> getMyCellDim();
+    int spaceDim = this -> getMyCellDim();
     
     // Set the default chart of degree 1 for admissible generating cell types.
     switch(myCellType_) {
@@ -298,7 +339,7 @@ namespace Intrepid {
         
       case CELL_TRI:
         atlas_[cellID].refCellType_     = myCellType_;        
-        for(int dim=0; dim < ambientDim; dim++){
+        for(int dim=0; dim < spaceDim; dim++){
           Scalar v0 = this -> getCellVertex(cellID,0)[dim];
           Scalar v1 = this -> getCellVertex(cellID,1)[dim];
           Scalar v2 = this -> getCellVertex(cellID,2)[dim];
@@ -312,7 +353,7 @@ namespace Intrepid {
         
       case CELL_QUAD:
         atlas_[cellID].refCellType_     = myCellType_;                
-        for(int dim=0; dim < ambientDim; dim++){
+        for(int dim=0; dim < spaceDim; dim++){
           Scalar v0 = this -> getCellVertex(cellID,0)[dim];
           Scalar v1 = this -> getCellVertex(cellID,1)[dim];
           Scalar v2 = this -> getCellVertex(cellID,2)[dim];
@@ -328,7 +369,7 @@ namespace Intrepid {
         
       case CELL_TET:
         atlas_[cellID].refCellType_ = myCellType_;        
-        for(int dim=0; dim < ambientDim; dim++){
+        for(int dim=0; dim < spaceDim; dim++){
           Scalar v0 = this -> getCellVertex(cellID,0)[dim];
           Scalar v1 = this -> getCellVertex(cellID,1)[dim];
           Scalar v2 = this -> getCellVertex(cellID,2)[dim];
@@ -344,7 +385,7 @@ namespace Intrepid {
         
       case CELL_HEX:
         atlas_[cellID].refCellType_ = myCellType_;        
-        for(int dim=0; dim < ambientDim; dim++){
+        for(int dim=0; dim < spaceDim; dim++){
           Scalar v0 = this -> getCellVertex(cellID,0)[dim];
           Scalar v1 = this -> getCellVertex(cellID,1)[dim];
           Scalar v2 = this -> getCellVertex(cellID,2)[dim];
@@ -403,7 +444,7 @@ namespace Intrepid {
                           std::invalid_argument,
                           ">>> ERROR (MultiCell): Invalid cellID value.");
 #endif   
-    int ambientDim = this -> getMyCellDim();
+    int spaceDim = this -> getMyCellDim();
                        
     // If size of shapePoints = 0 there are no additional shape points provided, set default chart.
     if( shapePoints.shapePoints_.size() == 0 ) {
@@ -472,7 +513,7 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int            cellId,
                       ">>> ERROR (MultiCell): Point is not inside its reference cell.");
 #endif
   
-  int ambientDim = this -> getMyCellDim();
+  int spaceDim = this -> getMyCellDim();
   
   // Temp storage for the Matrix coefficients by row
   Scalar DF[9];                                   
@@ -486,40 +527,40 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int            cellId,
       // TRI and TET charts are affine and can be computed by the same loop
     case CELL_TRI:
     case CELL_TET:
-      for(int row = 0; row < ambientDim; row++){
-        for(int col = 0; col < ambientDim; col++){
-          DF[col + row*ambientDim] = atlas_[cellId].mapping_[row][col]; 
+      for(int row = 0; row < spaceDim; row++){
+        for(int col = 0; col < spaceDim; col++){
+          DF[col + row*spaceDim] = atlas_[cellId].mapping_[row][col]; 
         }
       }
       break;
       
       // For QUAD and HEX rows contain grad of row-th coordinate function evaluated at refPoint
     case CELL_QUAD:                                     
-      for(int row = 0; row < ambientDim; row++){
-        DF[0 + row*ambientDim] = \
+      for(int row = 0; row < spaceDim; row++){
+        DF[0 + row*spaceDim] = \
         atlas_[cellId].mapping_[row][0]*refPoint[1] + \
         atlas_[cellId].mapping_[row][1];
-        DF[1 + row*ambientDim] = \
+        DF[1 + row*spaceDim] = \
           atlas_[cellId].mapping_[row][0]*refPoint[0] + \
           atlas_[cellId].mapping_[row][2];
       }
       break;
       
     case CELL_HEX:
-      for(int row = 0; row < ambientDim; row++){
-        DF[0 + row*ambientDim] = \
+      for(int row = 0; row < spaceDim; row++){
+        DF[0 + row*spaceDim] = \
         atlas_[cellId].mapping_[row][0]*refPoint[1]*refPoint[2] + \
         atlas_[cellId].mapping_[row][1]*refPoint[1] + \
         atlas_[cellId].mapping_[row][2]*refPoint[2] + \
         atlas_[cellId].mapping_[row][4];
         //
-        DF[1 + row*ambientDim] = \
+        DF[1 + row*spaceDim] = \
           atlas_[cellId].mapping_[row][0]*refPoint[0]*refPoint[2] + \
           atlas_[cellId].mapping_[row][1]*refPoint[0] + \
           atlas_[cellId].mapping_[row][3]*refPoint[2] + \
           atlas_[cellId].mapping_[row][5];
         //
-        DF[2 + row*ambientDim] = \
+        DF[2 + row*spaceDim] = \
           atlas_[cellId].mapping_[row][0]*refPoint[0]*refPoint[1] + \
           atlas_[cellId].mapping_[row][2]*refPoint[0] + \
           atlas_[cellId].mapping_[row][3]*refPoint[1] + \
@@ -546,7 +587,7 @@ Matrix<Scalar> MultiCell<Scalar>::jacobian(const int            cellId,
                           ">>> ERROR (MultiCell): Jacobian not available for this cell type. ");
       break;
   }
-  Matrix<Scalar> DF_temp(DF,ambientDim);
+  Matrix<Scalar> DF_temp(DF,spaceDim);
   return DF_temp;
 }
 
@@ -565,7 +606,7 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell dimension. ");
   
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyCellNumSubcells(subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
   
@@ -607,9 +648,9 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
         case 3: {
           
           // The 3rd dimension is the number of subcells of dimensions 3 (always 1), 2, and 1
-          num3Subcells = this -> getMyNumSubcells(3);
-          num2Subcells = this -> getMyNumSubcells(2);
-          num1Subcells = this -> getMyNumSubcells(1);
+          num3Subcells = this -> getMyCellNumSubcells(3);
+          num2Subcells = this -> getMyCellNumSubcells(2);
+          num1Subcells = this -> getMyCellNumSubcells(1);
           
           jacobianMat_[cellId][0].resize(num3Subcells);
           jacobianMat_[cellId][1].resize(num2Subcells);
@@ -628,8 +669,8 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
         case 2: {
           
           // The 3rd dimension is the number of subcells of dimensions 2 (always 1) and 1
-          num2Subcells = this -> getMyNumSubcells(2);
-          num1Subcells = this -> getMyNumSubcells(1);
+          num2Subcells = this -> getMyCellNumSubcells(2);
+          num1Subcells = this -> getMyCellNumSubcells(1);
           
           jacobianMat_[cellId][0].resize(num2Subcells);
           jacobianMat_[cellId][1].resize(num1Subcells);
@@ -645,7 +686,7 @@ void MultiCell<Scalar>::initializeMeasures(const int                            
         case 1: {
           
           // The 3rd dimension is the number of subcells of dimensions 1 (always 1)
-          num1Subcells = this -> getMyNumSubcells(1);
+          num1Subcells = this -> getMyCellNumSubcells(1);
           
           jacobianMat_[cellId][0].resize(num1Subcells);
           measure_[cellId][0].resize(num1Subcells);
@@ -801,7 +842,7 @@ void MultiCell<Scalar>::deleteSubcellMeasures(const int  subcellDim,
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell dimension. ");
   
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyCellNumSubcells(subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
 #endif  
@@ -847,7 +888,7 @@ const Teuchos::Array<Scalar>& MultiCell<Scalar>::getWeightedMeasure(const int  c
   TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell dimension. ");
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyCellNumSubcells(subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
 #endif 
@@ -882,7 +923,7 @@ const Teuchos::Array<Scalar>& MultiCell<Scalar>::getMeasure(const int  cellId,
   TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell dimension. ");
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyCellNumSubcells(subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
 #endif 
@@ -916,7 +957,7 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobian(const int 
   TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell dimension. ");
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyCellNumSubcells(subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
 #endif 
@@ -953,7 +994,7 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const 
   TEST_FOR_EXCEPTION( !( (0 < subcellDim) && (subcellDim <= this -> getMyCellDim()) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell dimension. ");
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyNumSubcells(subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < this -> getMyCellNumSubcells(subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
   
@@ -975,20 +1016,20 @@ const Teuchos::Array<Matrix<Scalar> >& MultiCell<Scalar>::getJacobianTInv(const 
       switch(myCellDim) {
         case 3:
           jacobianTInv_[cellId].resize(3);
-          jacobianTInv_[cellId][0].resize(this -> getMyNumSubcells(3));
-          jacobianTInv_[cellId][1].resize(this -> getMyNumSubcells(2));
-          jacobianTInv_[cellId][2].resize(this -> getMyNumSubcells(1));
+          jacobianTInv_[cellId][0].resize(this -> getMyCellNumSubcells(3));
+          jacobianTInv_[cellId][1].resize(this -> getMyCellNumSubcells(2));
+          jacobianTInv_[cellId][2].resize(this -> getMyCellNumSubcells(1));
           break;
           
         case 2:
           jacobianTInv_[cellId].resize(2);
-          jacobianTInv_[cellId][0].resize(this -> getMyNumSubcells(2));
-          jacobianTInv_[cellId][1].resize(this -> getMyNumSubcells(1));
+          jacobianTInv_[cellId][0].resize(this -> getMyCellNumSubcells(2));
+          jacobianTInv_[cellId][1].resize(this -> getMyCellNumSubcells(1));
           break;
           
         case 1:
           jacobianTInv_[cellId].resize(1);
-          jacobianTInv_[cellId][0].resize(this -> getMyNumSubcells(1));
+          jacobianTInv_[cellId][0].resize(this -> getMyCellNumSubcells(1));
           break;
           
         default:
@@ -1051,7 +1092,7 @@ Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID,
                       ">>> ERROR (MultiCell): Point is not inside its reference cell.");
 #endif
   
-  int ambientDim = getMyCellDim();
+  int spaceDim = getMyCellDim();
   
   // Temp array for the image of refPoint
   Scalar physCoords[3];                                    
@@ -1064,7 +1105,7 @@ Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID,
       break;
       
     case CELL_TRI:
-      for(int dim = 0;dim < ambientDim; dim++){
+      for(int dim = 0;dim < spaceDim; dim++){
         physCoords[dim] = \
         atlas_[cellID].mapping_[dim][0]*refPoint[0] + \
         atlas_[cellID].mapping_[dim][1]*refPoint[1] + \
@@ -1073,7 +1114,7 @@ Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID,
       break;
       
     case CELL_QUAD:
-      for(int dim = 0; dim < ambientDim; dim++){
+      for(int dim = 0; dim < spaceDim; dim++){
         physCoords[dim] = \
         atlas_[cellID].mapping_[dim][0]*refPoint[0]*refPoint[1] + \
         atlas_[cellID].mapping_[dim][1]*refPoint[0] + \
@@ -1083,7 +1124,7 @@ Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID,
       break;
       
     case CELL_TET:
-      for(int dim = 0; dim < ambientDim; dim++){
+      for(int dim = 0; dim < spaceDim; dim++){
         physCoords[dim] = \
         atlas_[cellID].mapping_[dim][0]*refPoint[0] + \
         atlas_[cellID].mapping_[dim][1]*refPoint[1] + \
@@ -1093,7 +1134,7 @@ Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID,
       break;
       
     case CELL_HEX:
-      for(int dim = 0; dim < ambientDim; dim++){
+      for(int dim = 0; dim < spaceDim; dim++){
         physCoords[dim] = \
         atlas_[cellID].mapping_[dim][0]*refPoint[0]*refPoint[1]*refPoint[2]+\
         atlas_[cellID].mapping_[dim][1]*refPoint[0]*refPoint[1] + \
@@ -1127,7 +1168,7 @@ Point<Scalar> MultiCell<Scalar>::mapToPhysicalCell(const int cellID,
   }
   
   // The return point is in PHYSICAL space, set its type accordingly:
-  Point<Scalar> physPoint(physCoords,ambientDim,FRAME_PHYSICAL);
+  Point<Scalar> physPoint(physCoords,spaceDim,FRAME_PHYSICAL);
   return physPoint;
 }
 
@@ -1153,8 +1194,8 @@ Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,
                       ">>> ERROR (MultiCell): The atlas of this MultiCell has not been defined.");
   
   // Initialize old (xOld=0) and new (refPoint) Newton iterates. Must be FRAME_REFERENCE type
-  int ambientDim = getMyCellDim();
-  Point<Scalar> xOld(ambientDim,FRAME_REFERENCE);         
+  int spaceDim = getMyCellDim();
+  Point<Scalar> xOld(spaceDim,FRAME_REFERENCE);         
   Point<Scalar> refPoint = xOld;                                         
   
   // Newton method to compute the inverse of the mapping between reference and physicall HEX
@@ -1163,7 +1204,7 @@ Point<Scalar> MultiCell<Scalar>::mapToReferenceCell(const int cellID,
     // First iterates may fail the inclusion tests using the tighter INTREPID_THRESHOLD value.
     // Define a dynamic threshold value that decreases as the iteration count grows:
     double threshold = (1.0 + 10.0 * exp(-(double)iter))*INTREPID_TOL;	
-    Matrix<Scalar> jacobian_inv(ambientDim);
+    Matrix<Scalar> jacobian_inv(spaceDim);
     
     // Compute Jacobian matrix at old iterate and invert in place. Use dynamic threshold!
 //    try{
@@ -1359,7 +1400,7 @@ bool MultiCell<Scalar>::inPhysicalCell(const int cellID,
       out << "Cell vertices:\n\n";
       
       // Print the vertices of all cells in the MultiCell
-      int numNodesPerCell = this -> getMyCellNumNodes();
+      int numNodesPerCell = this -> getMyCellNumSubcells(0);
       for (int i=0; i < numCells_; i++) {
         out << std::setw(16) << "CELL ID = " << i << "\n";
         for (int j=0; j < numNodesPerCell; j++) {
@@ -1369,10 +1410,10 @@ bool MultiCell<Scalar>::inPhysicalCell(const int cellID,
       
       // Print edge connectivities
       out << "Edge template:\n";
-      int numEdgesPerCell = this -> getMyNumSubcells(1);
+      int numEdgesPerCell = this -> getMyCellNumSubcells(1);
       for (int i=0; i < numEdgesPerCell; i++) {
         Teuchos::Array<int> tempNodes;
-        this -> getMySubcellNodeIDs(tempNodes, 1, i);
+        this -> getMySubcellVertexIDs(tempNodes, 1, i);
         out << "  " << std::setw(3) << i << " -> {" <<  tempNodes[0] << ", " << tempNodes[1] << "}" << "\n";
       }
       
@@ -1400,13 +1441,13 @@ bool MultiCell<Scalar>::inPhysicalCell(const int cellID,
       
       // Print face connectivities
       out << "Face template:\n";
-      int numFacesPerCell = this -> getMyNumSubcells(2);
+      int numFacesPerCell = this -> getMyCellNumSubcells(2);
       for (int i=0; i < numFacesPerCell; i++) {
         Teuchos::Array<int> tempNodes;
         ECell tempType = this -> getMySubcellType(2, i);
-        this -> getMySubcellNodeIDs(tempNodes, 2, i);
+        this -> getMySubcellVertexIDs(tempNodes, 2, i);
         out << "    " << i << " -> " << std::setw(13) << getCellName(tempType) << ": ";
-        for (int j=0; j < this -> getCellNumNodes(tempType); j++) {
+        for (int j=0; j < this -> getCellNumSubcells(tempType, 0); j++) {
           out << std::setw(4) << tempNodes[j];
         }
         out << "\n";

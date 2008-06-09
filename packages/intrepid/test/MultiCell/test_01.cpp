@@ -102,23 +102,24 @@ int main(int argc, char *argv[]) {
 
     // Multicell consisting of 3 CELL_TRI cells with vertices specified in triNodes:
     MultiCell<double> triMcell(3,CELL_TRI,triNodes);    
+
+    
     
     //============================================================================================//
-    //  Testing getMySubcellNodeIDs                                                               //
+    //  Testing getMySubcellVertexIDs                                                               //
     //============================================================================================//
     Teuchos::Array<int> subcellNodeIDs;
     int correctSubcellNodeID = -1;
     for(int cellID = 0; cellID < triMcell.getMyNumCells(); cellID++) {
       for(int subcellDim = 0; subcellDim < triMcell.getMyCellDim(); subcellDim++) {
-        for(int subcellID = 0; subcellID < triMcell.getMyNumSubcells(subcellDim); subcellID++){
+        for(int subcellID = 0; subcellID < triMcell.getMyCellNumSubcells(subcellDim); subcellID++){
           
-          triMcell.getMySubcellNodeIDs(subcellNodeIDs,subcellDim,subcellID);
+          triMcell.getMySubcellVertexIDs(subcellNodeIDs,subcellDim,subcellID);
           
           ECell subcellType = triMcell.getMySubcellType(subcellDim,subcellID);
-          int numSubcellNodes = MultiCell<double>::getCellNumNodes(subcellType);
+          int numSubcellNodes = MultiCell<double>::getCellNumSubcells(subcellType, 0);
           
           for(int subcellNode = 0; subcellNode < numSubcellNodes; subcellNode++){
-            
             
             // Hardcode correct subcell node IDs for a triangle generating cell
             if(subcellDim == 0) {
@@ -161,7 +162,7 @@ int main(int argc, char *argv[]) {
             if(correctSubcellNodeID != subcellNodeIDs[subcellNode] ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << " Subcell Node ID retrived by getMySubcellNodeIDs = " << subcellNodeIDs[subcellNode] << "\n";
+              *outStream << " Subcell Node ID retrived by getMySubcellVertexIDs = " << subcellNodeIDs[subcellNode] << "\n";
               *outStream << "                         Correct subcell node ID = " << correctSubcellNodeID << "\n";
               
             }
@@ -181,10 +182,10 @@ int main(int argc, char *argv[]) {
     triMcell.setFaceTags(triFaceTags);
     
     for(int cellID = 0; cellID < triMcell.getMyNumCells(); cellID++) {
-      for(int edgeID = 0; edgeID < triMcell.getMyNumSubcells(1); edgeID++) {
+      for(int edgeID = 0; edgeID < triMcell.getMyCellNumSubcells(1); edgeID++) {
         
         // Compute the flat index of the edge/face sign for the given cellID and edgeID
-        int flatIndex = triMcell.getMyNumSubcells(1)*cellID + edgeID;
+        int flatIndex = triMcell.getMyCellNumSubcells(1)*cellID + edgeID;
         
         // Check edge signs
         if(triEdgeSigns[flatIndex] != triMcell.getCellEdgeSigns(cellID)[edgeID]) {
@@ -269,23 +270,7 @@ int main(int argc, char *argv[]) {
     }
     
     //============================================================================================//
-    //  Test getMyCellNumNodes and getCellNumNodes                                                //
-    //============================================================================================//
-    if(triMcell.getMyCellNumNodes() != 3 ) {
-      errorFlag++;
-      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-      *outStream << " # nodes of generating cell by getMyCellNumNodes = " << triMcell.getMyCellNumNodes() << "\n";
-      *outStream << "              Correct # nodes of generating cell = 3\n";
-    }
-    if(MultiCell<double>::getCellNumNodes(triMcell.getMyCellType()) != 3 ) {
-      errorFlag++;
-      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-      *outStream << " # nodes of generating cell by getCellNumNodes   = " << MultiCell<double>::getCellNumNodes(triMcell.getMyCellType()) << "\n";
-      *outStream << "              Correct # nodes of generating cell = 3\n";
-    }
-    
-    //============================================================================================//
-    //  Test getMyNumSubcells and getNumSubcells                                                  //
+    //  Test getMyCellNumSubcells and getCellNumSubcells                                                  //
     //============================================================================================//
     for(int subcellDim = 0; subcellDim < triMcell.getMyCellDim(); subcellDim++){
       int numSubcells=-1;
@@ -299,16 +284,16 @@ int main(int argc, char *argv[]) {
         numSubcells = 1;
       }
       
-      if(triMcell.getMyNumSubcells(subcellDim) != numSubcells ) {
+      if(triMcell.getMyCellNumSubcells(subcellDim) != numSubcells ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << " # of " << subcellDim << "-subcells by getMyNumSubcells = " << triMcell.getMyNumSubcells(subcellDim) << "\n";
+        *outStream << " # of " << subcellDim << "-subcells by getMyCellNumSubcells = " << triMcell.getMyCellNumSubcells(subcellDim) << "\n";
         *outStream << " # of " << subcellDim << "-subcells should be           = " << numSubcells << "\n";
       }
-      if(MultiCell<double>::getNumSubcells(CELL_TRI,subcellDim) != numSubcells ) {
+      if(MultiCell<double>::getCellNumSubcells(CELL_TRI,subcellDim) != numSubcells ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << " # of " << subcellDim << "-subcells by getNumSubcells   = " << MultiCell<double>::getNumSubcells(CELL_TRI,subcellDim) << "\n";
+        *outStream << " # of " << subcellDim << "-subcells by getCellNumSubcells   = " << MultiCell<double>::getCellNumSubcells(CELL_TRI,subcellDim) << "\n";
         *outStream << " # of " << subcellDim << "-subcells should be           = " << numSubcells << "\n";
       }
     }
@@ -319,7 +304,7 @@ int main(int argc, char *argv[]) {
     for(int subcellDim = 0; subcellDim <= triMcell.getMyCellDim(); subcellDim++) {
       
       // Loop over subcell ID
-      for(int subcellID = 0; subcellID < triMcell.getMyNumSubcells(subcellDim); subcellID++) {
+      for(int subcellID = 0; subcellID < triMcell.getMyCellNumSubcells(subcellDim); subcellID++) {
         
         ECell subcellType = CELL_NODE;
         if(subcellDim == 0 ){
@@ -352,7 +337,7 @@ int main(int argc, char *argv[]) {
     //============================================================================================//
     Teuchos::Array< Point<double> > cellVertices;
     int numCells     = triMcell.getMyNumCells();
-    int cellNumNodes = triMcell.getMyCellNumNodes();
+    int cellNumNodes = triMcell.getMyCellNumSubcells(0);
     int cellDim      = triMcell.getMyCellDim();
     
     for(int cellID = 0; cellID < numCells; cellID++) {
@@ -386,6 +371,49 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+    
+    // Same test but for a MultiCell defined by a ctor that takes FieldContainer of vertices:
+    FieldContainer<double> triNodesFC(3, 3, 2);
+    triNodesFC.setValues(triNodes, 18);
+    MultiCell<double> triMcellFC(CELL_TRI, triNodesFC);   
+    
+    numCells     = triMcellFC.getMyNumCells();
+    cellNumNodes = triMcellFC.getMyCellNumSubcells(0);
+    cellDim      = triMcellFC.getMyCellDim();
+    
+    for(int cellID = 0; cellID < numCells; cellID++) {
+      for(int vertexID = 0; vertexID < cellNumNodes; vertexID++) {
+        
+        Point<double> vertex = triMcellFC.getCellVertex(cellID,vertexID);
+        for(int dim = 0; dim < cellDim; dim++ ) {
+          
+          // Compute index of the dim-th coordinate of the node with vertexID in the cell with cellID
+          int flatIndex = cellID*(cellNumNodes*cellDim) + vertexID*cellDim + dim;
+          
+          if(triMcellFC.getCellVertex(cellID, vertexID)[dim] != triNodes[flatIndex]) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Node coordinate by getCellVertex  = " << triMcellFC.getCellVertex(cellID,vertexID)[dim]<< "\n";
+            *outStream << "          Correct node coordinate  = " << triNodes[flatIndex] << "\n";
+          }
+          cellVertices = triMcellFC.getCellVertices(cellID);
+          if(cellVertices[vertexID][dim] != triNodes[flatIndex]) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Node coordinate by getCellVertices  = " << cellVertices[vertexID][dim]<< "\n";
+            *outStream << "            Correct node coordinate  = " << triNodes[flatIndex] << "\n";
+          }
+          if(triMcellFC[cellID][vertexID][dim] != triNodes[flatIndex]) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Node coordinate by overloaded []  = " << triMcellFC[cellID][vertexID][dim]<< "\n";
+            *outStream << "          Correct node coordinate  = " << triNodes[flatIndex] << "\n";
+          }          
+        }
+      }
+    }
+    
+    
     
     //============================================================================================//
     //  Test mapToPhysicalCell and mapToReferenceCell (implicit test of setAtlas() and jacobian)  //

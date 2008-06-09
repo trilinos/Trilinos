@@ -1124,11 +1124,24 @@ void FieldContainer<Scalar>::setValues(const Teuchos::Array<Scalar>& dataArray) 
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (dataArray.size() != (data_.size()) ),
                       std::invalid_argument,
-                      ">>> ERROR (FieldContainer): Size of argument does not match size of container.");  
+                      ">>> ERROR (FieldContainer): Size of argument does not match the size of container.");  
 #endif  
   data_.assign(dataArray.begin(),dataArray.end());
 }
 
+
+
+template<class Scalar>
+void FieldContainer<Scalar>::setValues(const Scalar* dataPtr, 
+                                       const int numData) 
+{
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (numData != this -> getSize() ), std::invalid_argument,
+                      ">>> ERROR (FieldContainer): Number of data does not match the size of container.");  
+
+#endif
+  data_.assign(dataPtr, dataPtr + numData);  
+}
 
 
 template<class Scalar>

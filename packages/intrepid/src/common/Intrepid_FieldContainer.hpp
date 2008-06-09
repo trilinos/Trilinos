@@ -523,14 +523,24 @@ namespace Intrepid {
                   const int     order);
     
     
-    /**\brief Assign values from Teuchos::Array without changing rank and index ranges of FieldContainer. 
-      Size of the input array must match the size of the container
+    /**\brief Fills an existing FieldContainer with Scalars stored in a Teuchos::Array without changing 
+      rank and dimensions of the container. Size of the input array must match the size of the container.
       
       \param dataArray[in]               - new values
-      */
+    */
     void setValues(const Teuchos::Array<Scalar>& dataArray);
-
-
+    
+    
+    /** \brief Fills an existing FieldContainer with Scalars referenced by <var>dataPtr</var> without
+      changing rank and dimensions of the container. Number of data must match the size of the container.
+      
+      \param dataPtr  [in]               - new values
+      \param numData  [in]               - number of values
+    */
+    void setValues(const Scalar* dataPtr, 
+                   const int     numData); 
+    
+    
     /** \brief Exposes data of FieldContainer, data can be modified.
     */
     Teuchos::Array<Scalar> & getData() {

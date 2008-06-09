@@ -32,6 +32,7 @@
 \brief  Example of the MultiCell class.
 \author Created by P. Bochev and D. Ridzal
 */
+#include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_MultiCell.hpp"
 #include "Intrepid_Cell.hpp"
 
@@ -82,18 +83,27 @@ int main(int argc, char *argv[]) {
    triMcell.setEdgeSigns(triEdgeSigns);                  
    
    // Display the newly created MultiCell
-   cout << triMcell << endl;         
+   cout << triMcell << endl;     
+   
+   
+   // Uisng MultiCell constructor with ArrayType
+   FieldContainer<double> triNodesFC(3, 3, 2);
+   triNodesFC.setValues(triNodes, 18);
+   
+   MultiCell<double> triMcellFC(CELL_TRI, triNodesFC);
+   cout << triMcellFC << endl;
+   
+   
 
    cout << "Testing multicell interface for the generating cell type...\n\n";
    cout << "\t # of cells in MCell    = " << triMcell.getMyNumCells() << "\n"; 
    cout << "\t generating cell type   = " << triMcell.getMyCellType() << "\n";
    cout << "\t generating cell name   = " << triMcell.getMyCellName() << "\n";
    cout << "\t generating cell dim    = " << triMcell.getMyCellDim() <<"\n";
-   cout << "\t # of nodes             = " << triMcell.getMyCellNumNodes() << "\n"; 
-   cout << "\t # of 0-subcells        = " << triMcell.getMyNumSubcells(0) << "\n";
-   cout << "\t # of 1-subcells        = " << triMcell.getMyNumSubcells(1) << "\n";
-   cout << "\t # of 2-subcells        = " << triMcell.getMyNumSubcells(2) << "\n";
-   cout << "\t # of 3-subcells        = " << triMcell.getMyNumSubcells(3) << "\n";
+   cout << "\t # of 0-subcells        = " << triMcell.getMyCellNumSubcells(0) << "\n";
+   cout << "\t # of 1-subcells        = " << triMcell.getMyCellNumSubcells(1) << "\n";
+   cout << "\t # of 2-subcells        = " << triMcell.getMyCellNumSubcells(2) << "\n";
+   cout << "\t # of 3-subcells        = " << triMcell.getMyCellNumSubcells(3) << "\n";
    cout << "\t 1-subcell with index 0 = " << triMcell.getCellName(triMcell.getMySubcellType(1,0)) <<"\n";
    cout << "\t 1-subcell with index 1 = " << triMcell.getCellName(triMcell.getMySubcellType(1,1)) <<"\n";
    cout << "\t 1-subcell with index 2 = " << triMcell.getCellName(triMcell.getMySubcellType(1,2)) <<"\n";
@@ -101,7 +111,7 @@ int main(int argc, char *argv[]) {
    
    // Space for the node connectivities of subcells
    Teuchos::Array<int> subcellNodeConn;               
-   triMcell.getMySubcellNodeIDs(subcellNodeConn,      // output - contains list of local node IDs
+   triMcell.getMySubcellVertexIDs(subcellNodeConn,      // output - contains list of local node IDs
                                 1,                    // dimension of the subcell whose nodes we want
                                 0);                   // local order (relative to cell template) of the subcell
    
@@ -179,11 +189,10 @@ int main(int argc, char *argv[]) {
    cout << "\t generating cell type   = " << prismMcell.getMyCellType() << "\n";
    cout << "\t generating cell name   = " << prismMcell.getMyCellName() << "\n";
    cout << "\t ambient dimension      = " << prismMcell.getMyCellDim() <<"\n";
-   cout << "\t # of nodes             = " << prismMcell.getMyCellNumNodes() << "\n"; 
-   cout << "\t # of 0-subcells        = " << prismMcell.getMyNumSubcells(0) << "\n";
-   cout << "\t # of 1-subcells        = " << prismMcell.getMyNumSubcells(1) << "\n";
-   cout << "\t # of 2-subcells        = " << prismMcell.getMyNumSubcells(2) << "\n";
-   cout << "\t # of 3-subcells        = " << prismMcell.getMyNumSubcells(3) << "\n";
+   cout << "\t # of 0-subcells        = " << prismMcell.getMyCellNumSubcells(0) << "\n";
+   cout << "\t # of 1-subcells        = " << prismMcell.getMyCellNumSubcells(1) << "\n";
+   cout << "\t # of 2-subcells        = " << prismMcell.getMyCellNumSubcells(2) << "\n";
+   cout << "\t # of 3-subcells        = " << prismMcell.getMyCellNumSubcells(3) << "\n";
    cout << "\t 2-subcell with index 0 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,0)) <<"\n";
    cout << "\t 2-subcell with index 1 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,1)) <<"\n";
    cout << "\t 2-subcell with index 2 = " << prismMcell.getCellName(prismMcell.getMySubcellType(2,2)) <<"\n";
@@ -192,7 +201,7 @@ int main(int argc, char *argv[]) {
    cout << "\t 3-subcell with index 0 = " << prismMcell.getCellName(prismMcell.getMySubcellType(3,0)) <<"\n\n";
    
    // Accessing local node IDs (node lists) of the subcells
-   prismMcell.getMySubcellNodeIDs(subcellNodeConn,    // output - contains list of local node IDs
+   prismMcell.getMySubcellVertexIDs(subcellNodeConn,    // output - contains list of local node IDs
                                   2,                  // dimension of the subcell whose nodes we want
                                   3);                  // local order (relative to cell template) of the subcell
    
@@ -202,7 +211,7 @@ int main(int argc, char *argv[]) {
    
    // Using overloaded [] to access vertex coordinates
    cout << "Accessing vertex coordinates of cell with cellID = 1 ...\n";
-   for(int i=0; i<prismMcell.getMyNumSubcells(0); i++){
+   for(int i=0; i<prismMcell.getMyCellNumSubcells(0); i++){
      cout << "prismMcell[1]["<< i <<"] = " << prismMcell[1][i] << "\n";
    }
    

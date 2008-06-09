@@ -62,8 +62,8 @@ Teuchos::RCP<LocalField<Scalar> > DefaultFieldFactory<Scalar>::create(EField    
   int cDim = MultiCell<Scalar>::getCellDim(cell);
   switch (cDim) {
     case 3: {
-      int numFaces = MultiCell<Scalar>::getNumSubcells(cell, 2);
-      int numEdges = MultiCell<Scalar>::getNumSubcells(cell, 1);
+      int numFaces = MultiCell<Scalar>::getCellNumSubcells(cell, 2);
+      int numEdges = MultiCell<Scalar>::getCellNumSubcells(cell, 1);
       allCubs.resize(3);
       // set cell cubature
       Teuchos::RCP<Cubature<Scalar> > cellCub =  CFactory.create(cell, cubDegree);
@@ -85,7 +85,7 @@ Teuchos::RCP<LocalField<Scalar> > DefaultFieldFactory<Scalar>::create(EField    
     break;
 
     case 2: {
-      int numEdges = MultiCell<Scalar>::getNumSubcells(cell,1);
+      int numEdges = MultiCell<Scalar>::getCellNumSubcells(cell,1);
       allCubs.resize(2);
       // set cell cubature
       Teuchos::RCP<Cubature<Scalar> > cellCub =  CFactory.create(cell, cubDegree);

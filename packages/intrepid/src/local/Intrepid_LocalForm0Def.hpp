@@ -398,7 +398,7 @@ basis_(basis), cubature_(cubature) {
   for (unsigned i=0; i<cubPoints_.size(); i++) {
     if (cubPoints_[i].size() != 0) {
       TEST_FOR_EXCEPTION(((int)cubature_[i].size() !=
-                          MultiCell<Scalar>::getNumSubcells(basisCell_, MultiCell<Scalar>::getCellDim(basisCell_)-i)),
+                          MultiCell<Scalar>::getCellNumSubcells(basisCell_, MultiCell<Scalar>::getCellDim(basisCell_)-i)),
                          std::invalid_argument,
                          ">>> ERROR (LocalForm0): Number of cubature rules per subcell dimension must equal number of subcells of that dimension!");  
     }
@@ -899,7 +899,7 @@ int    LocalForm0<Scalar,ArrayType>::getNumCubPoints(const int subcellDim,
                       std::invalid_argument,
                       ">>> ERROR (LocalForm_0): Invalid subcell dimension. ");
   
-  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < MultiCell<Scalar>::getNumSubcells(basisCell_, subcellDim)) ),
+  TEST_FOR_EXCEPTION( !( (0 <= subcellId) && (subcellId < MultiCell<Scalar>::getCellNumSubcells(basisCell_, subcellDim)) ),
                       std::invalid_argument,
                       ">>> ERROR (MultiCell): Invalid subcell Id. ");
 #endif
