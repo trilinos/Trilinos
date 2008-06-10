@@ -11,7 +11,7 @@
 
 #include <fei_macros.hpp>
 #include <snl_fei_CommUtils.hpp>
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 
 namespace fei {
   class FieldMask;

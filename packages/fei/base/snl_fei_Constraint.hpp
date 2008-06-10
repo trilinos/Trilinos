@@ -10,7 +10,7 @@
 #define _snl_fei_Constraint_hpp_
 
 #include <fei_macros.hpp>
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 #include <fei_VectorSpace.hpp>
 #include <snl_fei_RecordCollection.hpp>
 #include <fei_Exception.hpp>

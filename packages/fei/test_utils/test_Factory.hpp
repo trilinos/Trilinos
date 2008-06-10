@@ -14,7 +14,7 @@
 #include <test_utils/tester.hpp>
 #include <fei_SharedPtr.hpp>
 
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 
 /** Tester for fei::Factory.
     The runtests() method constructs and tests a couple of factory 

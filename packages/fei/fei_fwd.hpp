@@ -85,6 +85,22 @@ namespace fei {
   template<typename T> class Vector_Impl;
 }//namespace fei
 
+//
+//Finally the symbols that are still in the soon-to-be-eliminated
+//snl_fei namespace.
+//
+namespace snl_fei {
+  template<class T> class CommUtils;
+  template<class RecordType,class RecordType_COMPARE=lessthan<int> > class Constraint;
+  class RecordCollection;
+
+  class BlockDescriptor;
+  class PointBlockMap;
+
+  class Broker;
+  class Factory;
+}
+
 #undef FEI_OSTREAM
 
 #ifdef FEI_HAVE_IOSFWD

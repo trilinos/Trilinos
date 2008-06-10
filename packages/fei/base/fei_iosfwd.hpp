@@ -9,7 +9,7 @@
 #ifndef _fei_iosfwd_hpp_
 #define _fei_iosfwd_hpp_
 
-#include <fei_macros.hpp>
+#include <fei_fwd.hpp>
 
 #undef FEI_OSTREAM
 

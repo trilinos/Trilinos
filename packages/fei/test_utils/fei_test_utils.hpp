@@ -13,7 +13,7 @@
 
 #include <fei_mpi.h>
 
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 
 #include <fei_SSMat.hpp>
 

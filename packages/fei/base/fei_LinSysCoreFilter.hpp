@@ -11,7 +11,7 @@
 
 #include "fei_macros.hpp"
 #include "fei_defs.h"
-#include "snl_fei_fwd.hpp"
+#include "fei_fwd.hpp"
 #include "fei_Filter.hpp"
 
 /**

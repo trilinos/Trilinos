@@ -61,54 +61,6 @@ const char* snl_fei::getParamValue(const char* key,
 }
 
 //----------------------------------------------------------------------------
-char* snl_fei::getParamValueCopy(const char* key,
-				  int numParams,
-				  const char* const* paramStrings,
-				  char separator)
-{
-  const char* param = getParam(key, numParams, paramStrings);
-  if (param == NULL) {
-    return(NULL);
-  }
-
-  const char* paramvalue = skipSeparator(param, separator);
-  char* returnvalue = new char[strlen(paramvalue)+1];
-  strcpy(returnvalue, paramvalue);
-  return(returnvalue);
-}
-
-//----------------------------------------------------------------------------
-char* snl_fei::getParamValueCopy(const char* key,
-				 std::vector<std::string>& params,
-				 char separator)
-{
-  int offset;
-  const char* param = getParam(key, params, offset);
-  const char* paramvalue = skipSeparator(param, separator);
-  char* returnvalue = new char[strlen(paramvalue)+1];
-  strcpy(returnvalue, paramvalue);
-  return(returnvalue);
-}
-
-//----------------------------------------------------------------------------
- char* snl_fei::getParamValueCopy(const char* key,
-				  int numParams,
-				  const char* const* paramStrings,
-				  int& foundOffset,
-				  char separator)
-{
-  const char* param = getParam(key, numParams, paramStrings, foundOffset);
-  if (param == NULL) {
-    return(NULL);
-  }
-
-  const char* paramvalue = skipSeparator(param, separator);
-  char* returnvalue = new char[strlen(paramvalue)+1];
-  strcpy(returnvalue, paramvalue);
-  return(returnvalue);
-}
-
-//----------------------------------------------------------------------------
 int snl_fei::getIntParamValue(const char* key,
 			      int numParams,
 			      const char*const* params,

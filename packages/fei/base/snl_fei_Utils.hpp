@@ -9,7 +9,7 @@
 #ifndef _snl_fei_Utils_hpp_
 #define _snl_fei_Utils_hpp_
 
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 #include <fei_mpi.h>
 #include <feiArray.hpp>
 #include <fei_SharedPtr.hpp>
@@ -103,64 +103,6 @@ namespace snl_fei {
 			    const char* const* paramStrings,
 			    int& foundOffset,
 			    char separator=' ');
-
-  /** Given a search key, and a list of strings containing key-value pairs,
-      search the list of strings looking for one that starts with the search
-      key. i.e., a string such that key is a leading substring. If found,
-      return a copy of the value portion of that key-value pair.<br>
-
-      @param key String to be searched for.
-      @param numParams Number of strings to be searched.
-      @param paramStrings List of strings to be searched.
-      @param separator Optional argument, defaults to ' ' (space). This is
-      the character that is the separator between keys and values in the
-      parameter strings.
-      @return search-result Copy of the entry in paramStrings that has key
-      as a leading substring, or NULL if key is not found.
-  */
-  char* getParamValueCopy(const char* key,
-			  int numParams,
-			  const char* const* paramStrings,
-			  char separator=' ');
-
-  /** Given a search key, and a list of strings containing key-value pairs,
-      search the list of strings looking for one that starts with the search
-      key. i.e., a string such that key is a leading substring. If found,
-      return a copy of the value portion of that key-value pair.<br>
-
-      @param key String to be searched for.
-      @param paramStrings List of strings to be searched.
-      @param separator Optional argument, defaults to ' ' (space). This is
-      the character that is the separator between keys and values in the
-      parameter strings.
-      @return search-result Copy of the entry in paramStrings that has key
-      as a leading substring, or NULL if key is not found.
-  */
-  char* getParamValueCopy(const char* key,
-			  std::vector<std::string>& paramStrings,
-			  char separator=' ');
-
-  /** Given a search key, and a list of strings containing key-value pairs,
-      search the list of strings looking for one that starts with the search
-      key. i.e., a string such that key is a leading substring. If found,
-      return a copy of the value portion of that key-value pair.<br>
-
-      @param key String to be searched for.
-      @param numParams Number of strings to be searched.
-      @param paramStrings List of strings to be searched.
-      @param foundOffset offset at which key was found in paramStrings. If not
-      found, then this parameter is set to -1.
-      @param separator Optional argument, defaults to ' ' (space). This is
-      the character that is the separator between keys and values in the
-      parameter strings.
-      @return search-result Copy of the entry in paramStrings that has key
-      as a leading substring, or NULL if key is not found.
-  */
-  char* getParamValueCopy(const char* key,
-			  int numParams,
-			  const char* const* paramStrings,
-			  int& foundOffset,
-			  char separator=' ');
 
   /** Get the integer value of a named key-value pair from an array of strings.
    */
@@ -283,7 +225,7 @@ namespace snl_fei {
 		 std::vector<int>& intdata,
 		 std::vector<double>& doubledata);
 
-  /** unpack a pair of feiArray objects into an SSMat object. The std::vector
+  /** unpack a pair of std::vector objects into an SSMat object. The std::vector
      objects are assumed to have been produced by the function
      snl_fei::packSSMat.
   */

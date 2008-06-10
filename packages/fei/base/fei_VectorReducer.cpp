@@ -11,7 +11,6 @@
 #include <fei_Vector_core.hpp>
 #include <fei_Vector.hpp>
 #include <snl_fei_CommUtils.hpp>
-#include <snl_fei_fwd.hpp>
 
 #undef fei_file
 #define fei_file "fei_VectorReducer.cpp"

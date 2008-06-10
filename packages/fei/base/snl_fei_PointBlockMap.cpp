@@ -9,7 +9,6 @@
 #include <fei_macros.hpp>
 
 #include <snl_fei_PointBlockMap.hpp>
-#include <feiArray.hpp>
 #include <fei_ctg_set.hpp>
 #undef fei_file
 #define fei_file "snl_fei_PointBlockMap.cpp"

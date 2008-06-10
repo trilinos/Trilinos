@@ -14,7 +14,7 @@
 #include <fei_LinearSystem.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_Vector.hpp>
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 #include <fei_Logger.hpp>
 
 namespace snl_fei {

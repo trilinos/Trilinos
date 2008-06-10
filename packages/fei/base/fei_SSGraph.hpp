@@ -10,7 +10,7 @@
 
 
 #include <fei_macros.hpp>
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 #include <feiArray.hpp>
 
 /** SSGraph stands for Super-Sparse Graph. It is a data structure that can

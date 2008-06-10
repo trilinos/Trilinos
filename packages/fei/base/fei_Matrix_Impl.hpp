@@ -9,7 +9,7 @@
 #ifndef _fei_Matrix_Impl_hpp_
 #define _fei_Matrix_Impl_hpp_
 
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 #include <fei_mpi.h>
 #include <feiArray.hpp>
 #include <fei_defs.h>

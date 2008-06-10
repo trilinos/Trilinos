@@ -9,7 +9,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "snl_fei_fwd.hpp"
+#include "fei_fwd.hpp"
 #include "feiArray.hpp"
 
 class SSVec;

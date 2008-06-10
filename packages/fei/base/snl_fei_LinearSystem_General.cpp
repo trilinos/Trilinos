@@ -117,7 +117,7 @@ int snl_fei::LinearSystem_General::parameters(int numParams,
     BCenforcement_no_column_mod_ = true;
   }
 
-  param = snl_fei::getParam("FEI_OUTPUT_LEVEL",numParams,paramStrings);
+  param = snl_fei::getParamValue("FEI_OUTPUT_LEVEL",numParams,paramStrings);
   if (param != NULL) {
     setOutputLevel(fei::utils::string_to_output_level(param));
   }

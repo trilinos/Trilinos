@@ -12,7 +12,7 @@
 #include <fei_macros.hpp>
 #include <fei_mpi.h>
 #include <fei_EqnComm.hpp>
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 #include <fei_Vector.hpp>
 #include <snl_fei_CommUtils.hpp>
 #include <fei_SSVec.hpp>

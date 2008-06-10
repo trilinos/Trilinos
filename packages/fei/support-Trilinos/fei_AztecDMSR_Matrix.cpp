@@ -943,7 +943,6 @@ void AztecDMSR_Matrix::fillComplete() {
 
     int *proc_config = amap_.getProcConfig();
     int *dummy = 0;
-    MPI_Comm thisComm = amap_.getCommunicator();
 
    //before we turn Aztec loose on the matrix, lets do a quick check on the
    //indices to try to make sure none of them are garbage...
@@ -952,12 +951,12 @@ void AztecDMSR_Matrix::fillComplete() {
       if (bindx[i] < 0 || bindx[i] >= globalSize) {
          FEI_CERR << "AztecDMSR_Matrix: ERROR, bindx["<<i<<"]: " << bindx[i]
               << ", globalSize: " << globalSize << FEI_ENDL;
+#ifndef FEI_SER
+         MPI_Comm thisComm = amap_.getCommunicator();
          MPI_Abort(thisComm, -1);
+#endif
       }
    }
-
-//  Sync processors.
-//  MPI_Barrier(thisComm);
 
     AZ_transform(proc_config, &external_, bindx, val, update_, &update_index_,
                  &extern_index_, &data_org_, N_update_,
@@ -1122,11 +1121,11 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
   int thisProc = amap_.getProcConfig()[AZ_node];
   int masterRank = 0;
 
-  MPI_Comm thisComm = amap_.getCommunicator();
 
   int localNNZ = nnzeros_;
   int globalNNZ = localNNZ;
 #ifndef FEI_SER
+  MPI_Comm thisComm = amap_.getCommunicator();
   MPI_Allreduce(&localNNZ, &globalNNZ, 1, MPI_INT, MPI_SUM, thisComm);
 #endif
 

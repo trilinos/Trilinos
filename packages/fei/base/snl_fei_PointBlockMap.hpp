@@ -10,7 +10,6 @@
 #define _snl_fei_PointBlockMap_hpp_
 
 #include <fei_macros.hpp>
-#include <snl_fei_fwd.hpp>
 
 #include <map>
 

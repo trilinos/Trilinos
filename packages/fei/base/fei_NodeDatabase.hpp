@@ -10,7 +10,7 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_macros.hpp"
-#include "snl_fei_fwd.hpp"
+#include "fei_fwd.hpp"
 #include "fei_defs.h"
 #include "feiArray.hpp"
 #include "fei_NodeDescriptor.hpp"

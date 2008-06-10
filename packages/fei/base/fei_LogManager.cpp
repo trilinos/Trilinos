@@ -50,9 +50,9 @@ void fei::LogManager::setOutputLevel(fei::OutputLevel olevel)
                                                   numProcs_, localProc_);
   }
 
-  for(unsigned i=0; i<loggers_.size(); ++i) {
-    loggers_[i]->setOutputLevel(output_level_);
-  }
+//  for(unsigned i=0; i<loggers_.size(); ++i) {
+//    loggers_[i]->setOutputLevel(output_level_);
+//  }
 }
 
 void fei::LogManager::setOutputLevel(const char* olevel)

@@ -17,7 +17,7 @@
 #include <test_utils/DataReader.hpp>
 #include <feiArray.hpp>
 
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 
 class snl_fei_tester : public feitester {
  public:

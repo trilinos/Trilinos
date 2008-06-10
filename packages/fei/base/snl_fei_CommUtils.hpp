@@ -9,7 +9,7 @@
 #ifndef _snl_fei_CommUtils_hpp_
 #define _snl_fei_CommUtils_hpp_
 
-#include "snl_fei_fwd.hpp"
+#include "fei_fwd.hpp"
 #include "fei_mpi.h"
 #include "snl_fei_Utils.hpp"
 #include "fei_CommUtilsBase.hpp"

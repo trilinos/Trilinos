@@ -54,8 +54,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_IndexTable.hpp \
 	$(top_srcdir)/base/fei_iosfwd.hpp \
 	$(top_srcdir)/base/fei_iostream.hpp \
-	$(top_srcdir)/base/fei_hash_map.hpp \
-	$(top_srcdir)/base/fei_hash_set.hpp \
 	$(top_srcdir)/base/fei_LinearProblemManager.hpp \
 	$(top_srcdir)/base/fei_LinearSystem.hpp \
 	$(top_srcdir)/base/fei_LogFile.hpp \
@@ -117,7 +115,6 @@ CORE_H = \
 	$(top_srcdir)/base/snl_fei_FEVectorTraits_FED.hpp \
 	$(top_srcdir)/base/snl_fei_FEVectorTraits.hpp \
 	$(top_srcdir)/base/fei_FieldMask.hpp \
-	$(top_srcdir)/base/snl_fei_fwd.hpp \
 	$(top_srcdir)/base/fei_Graph.hpp \
 	$(top_srcdir)/base/fei_GraphReducer.hpp \
 	$(top_srcdir)/base/fei_Graph_Impl.hpp \

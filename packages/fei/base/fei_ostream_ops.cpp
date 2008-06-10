@@ -6,7 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <snl_fei_fwd.hpp>
+#include <fei_macros.hpp>
 #include <fei_ostream_ops.hpp>
 
 #include <fei_Vector.hpp>
@@ -14,7 +14,6 @@
 #include <fei_SSMat.hpp>
 #include <fei_SSVec.hpp>
 
-#include <fei_macros.hpp>
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec)
 {

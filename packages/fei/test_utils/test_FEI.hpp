@@ -16,7 +16,7 @@
 
 #include <test_utils/tester.hpp>
 
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 
 #include <fei_SharedPtr.hpp>
 

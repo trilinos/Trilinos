@@ -16,7 +16,7 @@
 #include <snl_fei_CommUtils.hpp>
 #include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
-#include <snl_fei_fwd.hpp>
+#include <fei_fwd.hpp>
 
 namespace snl_fei {
   /** implementation of fei::LinearSystem specialized for
