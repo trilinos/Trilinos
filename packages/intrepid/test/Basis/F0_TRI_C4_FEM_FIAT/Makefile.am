@@ -60,5 +60,6 @@ Dummy_SOURCES = Dummy
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
 
-EXTRA_DIST = 
+EXTRA_DIST = \
+data/foo.dat
 

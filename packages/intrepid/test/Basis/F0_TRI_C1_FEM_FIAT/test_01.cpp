@@ -87,9 +87,12 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Point<double> > elNodes;
   Point<double> tempPt(2, FRAME_REFERENCE);
   elNodes.assign(3, tempPt);  
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   elNodes[0] = Point<double>( 0.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
   elNodes[1] = Point<double>( 1.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
   elNodes[2] = Point<double>( 0.0000000000000000e+00 , 1.0000000000000000e+00 , FRAME_REFERENCE);
+#endif
+
 
   try{
     FieldContainer<double> vals;
@@ -241,14 +244,20 @@ int main(int argc, char *argv[]) {
   outStream -> precision(20);
 
   // VALUE: Each correct basis function at each correct point (point increasing fastest)
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   double basisValues[] = { 1.0000000000000000e+00 , 2.7755575615628914e-17 , 0.0000000000000000e+00 , 2.7755575615628914e-17 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 5.5511151231257827e-17 , 5.5511151231257827e-17 , 1.0000000000000000e+00 };
+#endif
 
   // DERIVS: Components of derivatives increasing fastest, followed by points, then basis functions
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 double basisD1s[] = { -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 };
+#endif
 
 
   // CURL: each correct values of the curls of the basis functions at the points (point increasing fastest
-double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 };
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 };
+#endif
 
 
   try{
@@ -342,6 +351,7 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
       }
     }
 
+
     // Check D1 of basis function
     triBasis -> getValues(vals, elNodes, OPERATOR_D1);
     for (int i=0; i < vals.getSize(); i++) {
@@ -402,132 +412,6 @@ double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.000
           }
           *outStream << "}  computed D3 component: " << vals[i] 
             << " but reference D3 component:  0 \n";
-        }
-      }
-
-      // Check D4 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D4);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 4 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D4 component: " << vals[i] 
-            << " but reference D4 component:  0 \n";
-        }
-      }
-
-      // Check D5 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D5);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 5 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D5 component: " << vals[i] 
-            << " but reference D5 component:  0 \n";
-        }
-      }
-
-      // Check D6 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D6);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 6 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D6 component: " << vals[i] 
-            << " but reference D6 component:  0 \n";
-        }
-      }
-
-      // Check D7 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D7);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 7 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D7 component: " << vals[i] 
-            << " but reference D7 component:  0 \n";
-        }
-      }
-
-      // Check D8 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D8);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 8 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D8 component: " << vals[i] 
-            << " but reference D8 component:  0 \n";
-        }
-      }
-
-      // Check D9 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D9);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 9 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D9 component: " << vals[i] 
-            << " but reference D9 component:  0 \n";
-        }
-      }
-
-      // Check D10 of basis function: should be zero 
-      triBasis -> getValues(vals, elNodes, OPERATOR_D10);
-      for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 10 ) * INTREPID_FIAT_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          // Get the multi-index of the value where the error is and the operator order
-          Teuchos::Array<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.getRank(); j++) {
-            *outStream << myIndex[j] << " ";
-          }
-          *outStream << "}  computed D10 component: " << vals[i] 
-            << " but reference D10 component:  0 \n";
         }
       }
 

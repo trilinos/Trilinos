@@ -247,7 +247,9 @@ test_01_SOURCES = test_01.cpp
 test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
-EXTRA_DIST = 
+EXTRA_DIST = \
+data/foo.dat
+
 all: all-am
 
 .SUFFIXES:
