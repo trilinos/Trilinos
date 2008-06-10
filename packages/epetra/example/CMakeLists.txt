@@ -2,9 +2,6 @@
 
 INCLUDE(Trilinos_Add_Executable)
 
-# Syntax for adding a test:
-#   TRILINOS_ADD_EXECUTABLE(<TEST_DIR_NAME> SOURCES <SOURCE1> <SOURCE2> ... ARGS <ARG1> <ARG2> ...)
-
 INCLUDE_DIRECTORIES(${Epetra_BINARY_DIR}/src)
 INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/src)
 

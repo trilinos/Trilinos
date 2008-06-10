@@ -10,6 +10,9 @@ INCLUDE_DIRECTORIES(${Teuchos_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${Epetra_BINARY_DIR}/src)
 INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/src)
 
+# 2008/06/09: rabartl: Above: This is exactly the same list of include
+# directories in ../test/CMakeLists.txt (see comment there).
+
 LINK_LIBRARIES(anasazi teuchos epetra ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
 
 IF(TRILINOS_ENABLE_MPI)

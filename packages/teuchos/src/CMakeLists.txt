@@ -235,8 +235,14 @@ IF(TRILINOS_ENABLE_MPI)
   
 ENDIF(TRILINOS_ENABLE_MPI)
 
+# 2008/06/09: rabartl: Above: We need to change all of this to use file
+# (GLOB...) and then use ifdefs in the files to control what gets built.
+
 ADD_LIBRARY(teuchos ${HEADERS} ${SOURCES})
 LIST(APPEND LIBRARIES teuchos)
+
+# 2008/06/09: rabartl: Above: Why are the headers being listed in
+# ADD_LIBRARY(...)?  Can't Cmake figure out what the headers are?
 
 IF(TRILINOS_ENABLE_MPI)
   TARGET_LINK_LIBRARIES(teuchos ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})

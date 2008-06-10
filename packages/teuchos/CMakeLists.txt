@@ -8,6 +8,15 @@ SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include dire
 SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
 SET(${PROJECT_NAME}_LIBRARIES "" CACHE INTERNAL "${PROJECT_NAME} libraries")
 
+# 2008/06/09: rabartl: Above: At the package level, I would prefer that you
+# *not* use ${PROJECT_NAME} and instead just use Teuchos, or Epetra etc.
+# Using the real package name makes greps more powerful and the concept of a
+# PROJECT equating to a package is confusing.
+
+# 2008/06/09: rabartl: I don't understand how a 'PROJECT' 'Trilinos' can be
+# defined at the top Trilinos level and then redefined in each Trilinos
+# package.
+
 OPTION(${PROJECT_NAME}_ENABLE_TESTS
 	"Build Teuchos tests."
 	OFF

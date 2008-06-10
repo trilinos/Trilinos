@@ -1,5 +1,14 @@
 # $Header$
 
+# 2008/06/09: rabartl: Below: I removed these comment blocks from other
+# CMakeLists.txt files.  Which comment is correct?
+
+# From epetra/test/CMakeLists.txt: Syntax for adding an executable:
+#   TRILINOS_ADD_EXECUTABLE(<SOURCE_DIR> [TEST] [MPITEST] [EXAMPLE] [INSTALL] SOURCES <SOURCE1> <SOURCE2> ... ARGS <ARG1> <ARG2> ...)
+
+# From epetra/test/CMakeLists.txt: Syntax for adding a test:
+#   TRILINOS_ADD_EXECUTABLE(<TEST_DIR_NAME> SOURCES <SOURCE1> <SOURCE2> ... ARGS <ARG1> <ARG2> ...)
+
 MACRO(TRILINOS_ADD_EXECUTABLE EXECUTABLE_DIR)
 
   SET(KEYWORD )

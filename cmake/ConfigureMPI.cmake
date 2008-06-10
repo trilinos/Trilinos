@@ -12,6 +12,9 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
   ADD_DEFINITIONS(-DMPICH_IGNORE_CXX_SEEK)
 # The following should be set when HAVE_MPI is set
   ADD_DEFINITIONS(-DEPETRA_MPI)
+  # 2008/06/09: rabartl: Above, EPETRA_MPI gets set up in Epetra_ConfigDefs.h.
+  # It should not be set here and this top-level file should not refer to
+  # a specific package like Epetra.
 
   # Find MPI executable (mpiexec or mpirun)
   FIND_PROGRAM(MPI_EXECUTABLE

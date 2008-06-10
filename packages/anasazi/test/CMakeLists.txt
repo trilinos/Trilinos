@@ -11,7 +11,14 @@ INCLUDE_DIRECTORIES(${Teuchos_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${Epetra_BINARY_DIR}/src)
 INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/src)
 
+# 2008/06/09: rabartl: Above: You should not be listing include directories
+# for your or any other package.  This just creates a maintainance problem and
+# is not scalable.  NO DUPLICATION!
+
 LINK_LIBRARIES(anasazi-mode-laplace anasazi teuchos epetra ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
+
+# 2008/06/09: rabartl: Above: epetra already lists LAPACK and BLAS as link
+# libraries, why do you have to list them again?
 
 IF(TRILINOS_ENABLE_MPI)
 	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})

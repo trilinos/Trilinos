@@ -70,10 +70,17 @@ SET(HAVE_VECTOR TRUE)
 # MPI related configuration
 IF(TRILINOS_ENABLE_MPI)
   SET(HAVE_MPI TRUE)
+  # 2008/06/09: rabartl: Above, HAVE_MPI gets set in ConfigureMPI.cmake!
+  # You should not have to set it up again.
   INCLUDE(ConfigureMPI)
 ENDIF(TRILINOS_ENABLE_MPI)
 
 # Setup Fortran name mangling
+
+# 2008/06/09: rabartl: The details of the Fortran name mangling should
+# be copied off to a separate file and loaded as needed.  This is clutter
+# here.
+
 IF(CYGWIN)
 	SET(F77_FUNC "(name,NAME) name ## _")
 	SET(F77_FUNC_ "(name,NAME) name ## __")
@@ -162,9 +169,16 @@ MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 MARK_AS_ADVANCED(TRILINOS_BLAS_LIBRARY)
 MARK_AS_ADVANCED(TRILINOS_LAPACK_LIBRARY)
 
+# 2008/06/09: rabartl: Above: I would not make the options for the BLAS and
+# LAPACK libraries advanced since you almost always have to specify these and
+# we don't want to hide that from users.
+
 FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
   IF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")
     STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
+    # 2008/06/09: rabartl: Above, you can not assume that all package names are lower
+    #   case.  This will not work for PyTrilinos, ForTrilinos, ThreadPool, etc.  You should
+    #   just name the packages with their directory names!
     MESSAGE(STATUS "${PROJECT_NAME}_ENABLE_${PACKAGE}=${${PROJECT_NAME}_ENABLE_${PACKAGE}}")
     INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
     LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
@@ -173,11 +187,21 @@ FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
   ENDIF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")
 ENDFOREACH(PACKAGE ${PROJECT_NAME}_PACKAGES)
 
+# 2008/06/09: rabartl: Above: Why is this look not moved to
+# ./packages/CMakeLists.txt which has a similar to this loop.  There is some
+# duplication (like assuming that all package directories are lower case which
+# is not true in general).
+
 LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${TRILINOS_BLAS_LIBRARY} ${TRILINOS_LAPACK_LIBRARY})
 
 LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
 LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARY_DIRS)
 LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+
+# 2008/06/09: rabartl: Above: What version of CMake do you need to have in
+# order to use the REMOVE_DUPLICATES option with the list command?  The
+# REMOVE_DUPLICATES option is not mentioned in "Matering CMake: Fourth
+# Edition".
 
 ##############################################################################
 # Configure <PACKAGE>Config.cmake for the build tree.
@@ -185,3 +209,13 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
                ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
 ##############################################################################
 
+# 2008/06/09: rabartl: General Comment: A lot of the logic that is duplicated
+# in the autotools system is aggregated here at the base level.  What this
+# means is that packages are not really independent entities but instead must
+# be delt with at the top Trilinos level.  This is a shift in the logical
+# relationship between packages and the Trilinos framework but I suspect that
+# this is a more accurate description of what is really going on.  However, it
+# is very dangerous to have this logic at the top level and then letting
+# individual package developers modify it or not letting them change it.  A
+# top-heavy build model is what SIERRA has and it does not provide enough
+# freedom at the package level (i.e. product level for SIERRA).
