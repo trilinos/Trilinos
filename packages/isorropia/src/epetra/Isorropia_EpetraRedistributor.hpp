@@ -20,7 +20,7 @@ Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+Foundation, Inc, 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
 Questions? Contact Alan Williams (william@sandia.gov)
                 or Erik Boman    (egboman@sandia.gov)
@@ -62,7 +62,8 @@ namespace Epetra {
 
 class Redistributor : public Isorropia::Redistributor {
 public:
-  /** Constructor.
+  /** This constructor is part of the Isorropia API.
+
       This constructor calls partitioner.compute_partitioning() if it
       has not already been called.
    */
@@ -72,14 +73,18 @@ public:
    */
   virtual ~Redistributor();
 
-  /** Method to redistribute a Epetra_SrcDistObject into a
+  /** This method, part of the Isorropia API, is used to redistribute an Epetra object.
+
+      Method to redistribute a Epetra_SrcDistObject into a
       Epetra_DistObject. The caller is required to have constructed
       the target object using the correct target map.
   */
   void redistribute(const Epetra_SrcDistObject& src,
 		    Epetra_DistObject& target);
 
-  /** Method to accept a Epetra_CrsGraph object, and
+  /** This method is part of the Isorropia API, used to redistribute an Epetra object.
+
+      Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
 
       Note that the 'input_graph' argument may be a
@@ -89,7 +94,10 @@ public:
   Teuchos::RefCountPtr<Epetra_CrsGraph>
      redistribute(const Epetra_CrsGraph& input_graph);
 
-  /** Method to accept a Epetra_CrsMatrix object, and
+  /** This method is part of the Isorropia API, used
+      to redistribute an Epetra object.
+
+      Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
       Note that the 'input_matrix' argument may be a
@@ -99,26 +107,35 @@ public:
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
      redistribute(const Epetra_CrsMatrix& input_matrix);
 
-  /** Method to accept a Epetra_RowMatrix object, and
+  /** This method is part of the Isorropia API, used
+      to redistribute an Epetra object.
+
+      Method to accept a Epetra_RowMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
   */
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
      redistribute(const Epetra_RowMatrix& input_matrix);
 
-  /** Method to accept a Epetra_Vector object, and
+  /** This method is part of the Isorropia API, used
+      to redistribute an Epetra object.
+
+      Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
   */
   Teuchos::RefCountPtr<Epetra_Vector>
      redistribute(const Epetra_Vector& input_vector);
 
-  /** Method to accept a Epetra_MultiVector object, and
+  /** This method is part of the Isorropia API, used
+      to redistribute an Epetra object.
+
+      Method to accept a Epetra_MultiVector object, and
       return a redistributed Epetra_MultiVector object.
   */
   Teuchos::RefCountPtr<Epetra_MultiVector>
      redistribute(const Epetra_MultiVector& input_vector);
 
 private:
-  /** to do
+  /** This is an internal method of the Redistributor class.
    */
   void create_importer(const Epetra_BlockMap& src_map);
 

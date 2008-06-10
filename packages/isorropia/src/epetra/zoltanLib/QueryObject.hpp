@@ -59,9 +59,14 @@ namespace Epetra {
 namespace ZoltanLib {
 
 /** QueryObject is a class that contains the query functions required
-    by the Zoltan library.  These fuctions, when called by Zoltan,
+    by the Zoltan library.  
+
+    These fuctions (actually QueryObject methods), when called by Zoltan,
     provide the objects to be balanced (the row IDs), the graph or hypergraph 
     edges, and object and edge weights.
+
+    These methods are not part of the Isorropia API (except to Zoltan). 
+    They are called by Isorropia itself and by Zoltan.
  */
 class QueryObject
 {

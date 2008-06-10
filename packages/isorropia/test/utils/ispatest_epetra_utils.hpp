@@ -39,10 +39,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
-/** ispatest is the namespace that contains isorropia's test-utilities.
-  These test-utilities are for internal testing, and are not generally
-  expected to be seen or used by external users.
-*/
 namespace ispatest {
 
 /** Fill a matrix with the specified number of nonzeros per row, using

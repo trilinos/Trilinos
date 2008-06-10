@@ -43,11 +43,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_LinearProblem.h>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-/** ispatest is the namespace that contains isorropia's test-utilities.
-  These test-utilities are for internal testing, and are not generally
-  expected to be seen or used by external users.
-
-  Load balance evaluation (As calculated in Zoltan_LB_Eval)
+/*  Load balance evaluation (As calculated in Zoltan_LB_Eval)
 
   Given an Epetra graph and possible vertex and hyperedge weights,
   calculate the hypergraph balance, cutn and cutl.  We think of
@@ -93,10 +89,16 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl);
 
+/** Compute Zoltan-style hypergraph metrics given a partitioned
+    RowMatrix and a CostDescriber (weight) object.
+ */
 int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
             double &balance, double &cutn, double &cutl);
 
+/** Compute Zoltan-style hypergraph metrics given a partitioned
+    RowMatrix and a CostDescriber (weight) object.
+ */
 int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
             const Epetra_BlockMap &colmap,
             int numGlobalColumns,
@@ -127,19 +129,19 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
 
 
 /** Print out a distributed RowMatrix.  This only works for small test
-    matrices and 10 or fewer processes.
+    matrices of 1s and 0s, and 10 or fewer processes.
   */
 
 void show_matrix(const char *txt, const Epetra_RowMatrix &matrix, const Epetra_Comm &comm);
 
 /** Print out a distributed CrsGraph.  This only works for small test
-    matrices and 10 or fewer processes.
+    matrices of 1s and 0s and 10 or fewer processes.
   */
 
 void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Comm &comm);
 
 /** Print out a distributed LinearProblem.  This only works for small test
-    matrices and 10 or fewer processes.
+    matrices of 1s and 0s and 10 or fewer processes.
   */
 
 void show_matrix(const char *txt, const Epetra_LinearProblem &problem, const Epetra_Comm &comm);

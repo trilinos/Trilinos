@@ -62,8 +62,8 @@ namespace Epetra {
 
 class Partitioner : public Isorropia::Partitioner {
 public:
-  /**
-     Constructor that accepts an Epetra_CrsGraph object.
+  /** Constructor that accepts an Epetra_CrsGraph object, called by
+        API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
         is to be computed. A Teuchos::RefCountPtr is used here because a
@@ -89,8 +89,8 @@ public:
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
-  /**
-     Constructor that accepts an Epetra_CrsGraph object and a CostDescriber.
+  /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
+        API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
         is to be computed. A Teuchos::RefCountPtr is used here because a
@@ -121,7 +121,8 @@ public:
               bool compute_partitioning_now=true);
 
   /**
-     Constructor that accepts an Epetra_RowMatrix object.
+     Constructor that accepts an Epetra_RowMatrix object, called by
+       API function create_partitioner().
 
      \param input_matrix Matrix object for which a new partitioning is
         to be computed. A Teuchos::RefCountPtr is used here because a
@@ -149,7 +150,7 @@ public:
 
   /**
      Constructor that accepts an Epetra_RowMatrix object and a
-     CostDescriber.
+     CostDescriber, called by API function create_partitioner(). 
 
      \param input_matrix Matrix object for which a new partitioning is
         to be computed. A Teuchos::RefCountPtr is used here because a
@@ -182,7 +183,10 @@ public:
   /** Destructor */
   virtual ~Partitioner();
 
-  /** Set parameters from a Teuchos::ParameterList object. The input
+  /** setParameters() is an internal Partitioner method which handles
+      the parameters from a Teuchos::ParameterList object. 
+
+      The input
       ParameterList object is copied into an internal ParameterList
       attribute, and no reference to the input object is held after
       this function returns. (Thus, the input paramlist object may be
@@ -197,7 +201,8 @@ public:
    */
   void setParameters(const Teuchos::ParameterList& paramlist);
 
-  /** Compute a rebalanced partitioning for the data in the object
+  /**  compute_partitioning is an internal method that computes 
+       a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
       \param force_repartitioning Optional argument defaults to false. By
@@ -209,23 +214,26 @@ public:
    */
   void compute_partitioning(bool force_repartitioning=false);
 
-  /** Query whether the method compute_partitioning() has already been
+  /** An internal method which determines whether the 
+      method compute_partitioning() has already been
       called on this class instance.
   */
   bool partitioning_already_computed() const;
 
-  /** Return the new partition ID for a given element that
+  /** An internal method which returns the new partition ID for a given element that
      resided locally in the old partitioning.
   */
   int newPartitionNumber(int myElem) const;
 
-  /** Return the number of elements in a given partition.
+  /** An internal method which returns the number of elements in a given partition.
+
       (Currently only implemented for the case where 'partition' is local.)
   */
   int numElemsInPartition(int partition) const;
 
-  /** Fill user-allocated list (of length len) with the
+  /** An internal method which fills caller-allocated list (of length len) with the
       global element ids to be located in the given partition.
+
       (Currently only implemented for the case where 'partition' is local.)
   */
   void elemsInPartition(int partition, int* elementList, int len) const;

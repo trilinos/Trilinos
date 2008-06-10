@@ -34,10 +34,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_ConfigDefs.hpp>
 
-/** ispatest is the namespace that contains isorropia's test-utilities.
-  These test-utilities are for internal testing, and are not generally
-  expected to be seen or used by external users.
-*/
 namespace ispatest {
 
 /** Read a matrix distribution from a file. The file is expected to

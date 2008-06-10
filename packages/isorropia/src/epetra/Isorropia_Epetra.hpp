@@ -58,7 +58,11 @@ namespace Epetra {
 
 #ifdef HAVE_EPETRA
 
-/** Given an input matrix-graph that is to be repartitioned, and a parameter-
+/** create_partitioner(), a function which is part of the Isorropia API, 
+    creates a Partitioner object that can be used to
+    instantiate a Redistributor object.
+
+    Given an input matrix-graph that is to be repartitioned, and a parameter-
     list (possibly specifying things such as the partitioning package/method),
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
@@ -79,7 +83,11 @@ Teuchos::RefCountPtr<Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist);
 
-/** Given an input matrix-graph that is to be repartitioned, and a parameter-
+/** create_partitioner(), a function which is part of the Isorropia API, 
+    creates a Partitioner object that can be used to
+    instantiate a Redistributor object.
+
+    Given an input matrix-graph that is to be repartitioned, and a parameter-
     list (possibly specifying the partitioning package/method etc.),
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
@@ -101,7 +109,11 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		   Teuchos::RefCountPtr<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
 
-/** Given an input row-matrix that is to be repartitioned, and a parameter-
+/** create_partitioner(), a function which is part of the Isorropia API, 
+    creates a Partitioner object that can be used to
+    instantiate a Redistributor object.
+
+    Given an input row-matrix that is to be repartitioned, and a parameter-
     list (possibly specifying the partitioning package/method etc.),
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
@@ -122,7 +134,11 @@ Teuchos::RefCountPtr<Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		   const Teuchos::ParameterList& paramlist);
 
-/** Given an input row-matrix that is to be repartitioned, and a parameter-
+/** create_partitioner(), a function which is part of the Isorropia API, 
+    creates a Partitioner object that can be used to
+    instantiate a Redistributor object.
+
+    Given an input row-matrix that is to be repartitioned, and a parameter-
     list (possibly specifying the partitioning package/method etc.),
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
@@ -144,7 +160,9 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		   Teuchos::RefCountPtr<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
 
-/** Given a Partitioner object, create a target map representing the
+/** create_target_map() is an internal function used by Isorropia.
+
+   Given a Partitioner object, create a target map representing the
    new partitioning.
    This function calls partitioner.compute_partitioning() if it has not
    already been called.
@@ -152,7 +170,8 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 Teuchos::RefCountPtr<Epetra_Map>
 create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
-/** Create a balanced copy of an input Epetra_CrsMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -160,7 +179,7 @@ create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
   It will assign unit weight to each row (vertex), and unit weight to each 
-  column (hypergraph).  It will attempt to balance row weights while 
+  column (hyperedge).  It will attempt to balance row weights while 
   minimizing cuts in the hyperedges.
 
   The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
@@ -172,7 +191,8 @@ create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix);
 
-/** Create a balanced copy of an input Epetra_CrsMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -182,7 +202,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   weights provided for the matrix rows.
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
-  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
   to balance row weights while minimizing cuts in the hyperedges.
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
@@ -191,7 +211,8 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                        const Epetra_Vector &row_weights);
 
-/** Create a balanced copy of an input Epetra_CrsMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -212,7 +233,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 
   If no Zoltan parameters are provided, Zoltan will perform hypergraph
   partitioning using its own PHG method.  It will assign unit weight to
-  each row (vertex), and unit weight to each column (hypergraph).  It will
+  each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
@@ -220,7 +241,9 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
                      const Teuchos::ParameterList& paramlist);
 
 
-/** Create a balanced copy of an input Epetra_CrsMatrix.
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -245,7 +268,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   partitioning using its own PHG method.  
 
   If an empty CostDescriber is supplied, we will assign unit weight to each 
-  row (vertex), and unit weight to each column (hypergraph), in the case of 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
@@ -254,7 +277,9 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
 
-/** Create a balanced copy of an input Epetra_RowMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -262,7 +287,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
   It will assign unit weight to each row (vertex), and unit weight to each 
-  column (hypergraph).  It will attempt to minimize cuts in the hyperedges.
+  column (hyperedge).  It will attempt to minimize cuts in the hyperedges.
 
   The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -273,7 +298,8 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 Teuchos::RefCountPtr<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix);
 
-/** Create a balanced copy of an input Epetra_RowMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -283,7 +309,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
   weights provided for the matrix rows.
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
-  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
   to balance row weights while minimizing cuts in the hyperedges.
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
@@ -292,7 +318,9 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                        const Epetra_Vector &row_weights);
 
-/** Create a balanced copy of an input Epetra_RowMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -313,14 +341,16 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
 
   If no Zoltan parameters are provided, Zoltan will perform hypergraph
   partitioning using its own PHG method.  It will assign unit weight to
-  each row (vertex), and unit weight to each column (hypergraph).  It will
+  each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
 Teuchos::RefCountPtr<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      const Teuchos::ParameterList& paramlist);
 
-/** Create a balanced copy of an input Epetra_RowMatrix.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -345,7 +375,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
   partitioning using its own PHG method.  
 
   If an empty CostDescriber is supplied, we will assign unit weight to each 
-  row (vertex), and unit weight to each column (hypergraph), in the case of 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
@@ -354,7 +384,9 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
 
-/** Create a balanced copy of an input Epetra_Graph.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -362,7 +394,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
   It will assign unit weight to each row (vertex), and unit weight to each 
-  column (hypergraph).  It will attempt to minimize cuts in the hyperedges.
+  column (hyperedge).  It will attempt to minimize cuts in the hyperedges.
 
   The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -373,7 +405,9 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
 Teuchos::RefCountPtr<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph);
 
-/** Create a balanced copy of an input Epetra_CrsGraph.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -383,7 +417,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
   weights provided for the matrix rows.
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
-  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
   to balance row weights while minimizing cuts in the hyperedges.
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
@@ -392,7 +426,8 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_matrix,
                        const Epetra_Vector &row_weights);
 
-/** Create a balanced copy of an input Epetra_CrsGraph.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -413,14 +448,16 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 
   If no Zoltan parameters are provided, Zoltan will perform hypergraph
   partitioning using its own PHG method.  It will assign unit weight to
-  each row (vertex), and unit weight to each column (hypergraph).  It will
+  each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
 Teuchos::RefCountPtr<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      const Teuchos::ParameterList& paramlist);
 
-/** Create a balanced copy of an input Epetra_CrsGraph.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -444,7 +481,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
   partitioning using its own PHG method.  
 
   If an empty CostDescriber is supplied, we will assign unit weight to each 
-  row (vertex), and unit weight to each column (hypergraph), in the case of 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
@@ -453,7 +490,9 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
 
-/** Create a balanced copy of an input Epetra_LinearProblem.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -461,7 +500,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
   It will assign unit weight to each row (vertex), and unit weight to each 
-  column (hypergraph).  It will attempt to minimize cuts in the hyperedges.
+  column (hyperedge).  It will attempt to minimize cuts in the hyperedges.
 
   The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -473,7 +512,8 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 Teuchos::RefCountPtr<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem & input_problem);
 
-/** Create a balanced copy of an input Epetra_LinearProblem.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia will use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -483,7 +523,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
   weights provided for the matrix rows.
 
   Zoltan will perform hypergraph partitioning using its own PHG method.  
-  It will assign a unit weight to each column (hypergraph).  It will attempt 
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
   to balance row weights while minimizing cuts in the hyperedges.
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
@@ -492,7 +532,8 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_matrix,
                        const Epetra_Vector &row_weights);
 
-/** Create a balanced copy of an input Epetra_LinearProblem.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -513,7 +554,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
 
   If no Zoltan parameters are provided, Zoltan will perform hypergraph
   partitioning using its own PHG method.  It will assign unit weight to
-  each row (vertex), and unit weight to each column (hypergraph).  It will
+  each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
 
@@ -521,7 +562,8 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      const Teuchos::ParameterList& paramlist);
 
-/** Create a balanced copy of an input Epetra_LinearProblem.
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
 
   Isorropia can use Zoltan to perform partitioning if it has been
   configured with Zoltan support.  If Zoltan is not available, it will
@@ -546,7 +588,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
   partitioning using its own PHG method.  
 
   If an empty CostDescriber is supplied, we will assign unit weight to each 
-  row (vertex), and unit weight to each column (hypergraph), in the case of 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
@@ -555,8 +597,10 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
 
+/** redistribute_rows() is an internal Isorropia function, not part
+    of the API.
 
-/** Return a new Epetra_CrsMatrix object constructed with target_rowmap,
+  Return a new Epetra_CrsMatrix object constructed with target_rowmap,
   and with the contents of input_matrix imported into it.
 
   The caller is responsible for deleting the returned object.
@@ -575,7 +619,10 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
                     const Epetra_Map& target_rowmap,
                     Epetra_Import* importer=0);
 
-/** Return a new Epetra_CrsMatrix object constructed with target_rowmap,
+/** redistribute_rows() is an internal Isorropia function, not part
+    of the API.
+
+    Return a new Epetra_CrsMatrix object constructed with target_rowmap,
   and with the contents of input_matrix imported into it.
 
   The caller is responsible for deleting the returned object.
@@ -611,7 +658,10 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
                     const Epetra_Map& target_rowmap,
                     Epetra_Import* importer=0);
 
-/** Return a new Epetra_MultiVector object constructed with target_map,
+/** redistribute() is an internal Isorropia function(), not part
+    of the Isorropia API.
+
+    Return a new Epetra_MultiVector object constructed with target_map,
   and with the contents of 'input' imported into it.
 
   param input Source/input object.
@@ -628,7 +678,10 @@ Teuchos::RefCountPtr<Epetra_MultiVector>
                const Epetra_BlockMap& target_map,
                Epetra_Import* importer=0);
 
-/** Return a new Epetra_Vector object constructed with target_map,
+/** redistribute() is an internal Isorropia function(), not part
+    of the Isorropia API.
+
+    Return a new Epetra_Vector object constructed with target_map,
   and with the contents of 'input' imported into it.
 
   param input Source/input object.
@@ -647,19 +700,28 @@ Teuchos::RefCountPtr<Epetra_Vector>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-/** Return a vector containing weights that are equal to the number of
+/**  create_row_weights_nnz() is an internal Isorropia function, not
+     part of the API.
+
+  Return a vector containing weights that are equal to the number of
   nonzeros per row in the input_matrix. The returned vector will have
   the same size and distribution as input_matrix's row-map.
 */
 Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
 
-/** Return a vector containing weights that are equal to the number of
+/**  create_row_weights_nnz() is an internal Isorropia function, not
+     part of the API.
+
+    Return a vector containing weights that are equal to the number of
   nonzeros per row in the input_graph. The returned vector will have
   the same size and distribution as input_graph's row-map.
 */
 Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 
-/** Calculate a new partitioning, and fill output containers with new
+/**  repartition() is an internal Isorropia function, not
+     part of the API.
+
+    Calculate a new partitioning, and fill output containers with new
     elements for the local partition, as well as export and import lists.
     This is a simple linear partitioning that does not use Zoltan.
 
@@ -688,7 +750,10 @@ repartition(const Epetra_BlockMap& input_map,
             std::map<int,int>& exports,
             std::map<int,int>& imports);
 
-/** Given an Epetra_BlockMap object, fill a vector of length numprocs+1
+/**  gather_all_proc_global_offsets() is an internal Isorropia function, not
+     part of the API.
+
+    Given an Epetra_BlockMap object, fill a vector of length numprocs+1
   with each processor's starting offset into the Epetra_BlockMap's global
   set of elements (the last position will contain num-global-elements).
   Gather the vector of offsets onto all processors.
@@ -697,8 +762,14 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
                                     std::vector<int>& all_proc_offsets);
 
 
-/** to do
- */
+/**  compute_imbalance() is an internal Isorropia function, not
+     part of the API.
+
+     This function is used by Isorropia to compute the global imbalance
+     of an initial partitioning and a new partitioning, to ensure the
+     new computed partitioning is better.
+*/
+
 double compute_imbalance(int nprocs, std::vector<int> &offsets, 
                          double *wgts, double target);
 
