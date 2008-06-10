@@ -2623,8 +2623,8 @@ computational domain. The result can be something as follows:
 This section gives a brief overview of how to ML's two AMG preconditioners for
 the eddy current formulation of Maxwell's equations.
 These first solver (Maxwell) is intended only for real-valued
-equations in the time domain.  The second solver (RefMaxwell) is also intended for
-real-valued (not complex) problems in the frequency domain.
+equations in the time domain.  The second solver (RefMaxwell) is intended for
+real-valued (not complex) problems in the time or frequency domains.
 
 
 \subsection{Background}\label{maxwell background}
@@ -2747,6 +2747,23 @@ options \verb!subsmoother: node sweeps!  (or \verb!subsmoother: edge sweeps!)
 and \verb!coarse: node sweeps! (or \verb!coarse: edge sweeps!) depending on
 whether the Hiptmair smoothing is done on a fine or the coarsest level.
 
+%%%%%%%%%%%%%%
+\subsubsection{Sample Usage}\label{maxwell:maxwell example}
+%%%%%%%%%%%%%%
+\begin{verbatim}
+#include "ml_MultiLevelPreconditioner.h"
+
+// Allocate Matrices
+Epetra_CrsMatrix CurlCurlMatrix(...);
+Epetra_CrsMatrix TMatrix(...);
+Epetra_CrsMatrix KnMatrix(...);
+
+// Fill Matrices Here
+
+// Build Maxwell Preconditioner
+ML_Epetra::MultiLevelPreconditioner(CurlCurlMatrix, TMatrix, KnMatrix);
+\end{verbatim}
+
 
 %%%%%%%%%%%%%%
 \subsection{Solver \#2: RefMaxwell}\label{maxwell:refmaxwell}
@@ -2815,7 +2832,24 @@ option:
   of the options for the coarse (1,1) block preconditioner (edges).}
 
 
+%%%%%%%%%%%%%
+\subsubsection{Sample Usage}\label{maxwell:refmaxwell example}
+%%%%%%%%%%%%%%
+\begin{verbatim}
+#include "ml_RefMaxwell.h"
 
+// Allocate Matrices
+Epetra_CrsMatrix CurlCurlMatrix(...);
+Epetra_CrsMatrix TMatrix(...);
+Epetra_CrsMatrix M0invMatrix(...);
+Epetra_CrsMatrix M1Matrix(...);
+
+// Fill Matrices Here
+
+// Build RefMaxwell Preconditioner
+ML_Epetra::RefMaxwellPreconditioner(CurlCurlMatrix, TMatrix,
+                                    M0invMatrix, M1Matrix);
+\end{verbatim}
 
 \clearpage
 \newpage
