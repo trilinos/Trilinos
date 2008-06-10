@@ -58,6 +58,9 @@
 #include "Intrepid_F0_TRI_C8_FEM_FIAT.hpp"
 #include "Intrepid_F0_TRI_C9_FEM_FIAT.hpp"
 #include "Intrepid_F0_TRI_C10_FEM_FIAT.hpp"
+#include "Intrepid_F0_TET_C1_FEM_FIAT.hpp"
+#include "Intrepid_F0_TET_C2_FEM_FIAT.hpp"
+#include "Intrepid_F0_TET_C3_FEM_FIAT.hpp"
 ///// end FIAT-generated element includes
 
 
@@ -103,6 +106,9 @@ class DefaultBasisFactory {
     basisMap_[   2006020] = Teuchos::rcp( new Basis_F0_TRI_C6_FEM_FIAT<Scalar>() );
     basisMap_[   2010020] = Teuchos::rcp( new Basis_F0_TRI_C10_FEM_FIAT<Scalar>() );
     basisMap_[   2009020] = Teuchos::rcp( new Basis_F0_TRI_C9_FEM_FIAT<Scalar>() );
+    basisMap_[   4002020] = Teuchos::rcp( new Basis_F0_TET_C2_FEM_FIAT<Scalar>() );
+    basisMap_[   4001020] = Teuchos::rcp( new Basis_F0_TET_C1_FEM_FIAT<Scalar>() );
+    basisMap_[   4003020] = Teuchos::rcp( new Basis_F0_TET_C3_FEM_FIAT<Scalar>() );
     // end FIAT-generated bases
 
   };
@@ -137,6 +143,8 @@ class DefaultBasisFactory {
 #include "Intrepid_DefaultBasisFactoryDef.hpp"
 
 #endif
+
+
 
 
 

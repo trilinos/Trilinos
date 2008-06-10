@@ -146,32 +146,7 @@ namespace Intrepid {
 	f5[i] = f4[i] * f4[i];
       }
 
-      cout << "f1\n";
-      for (int i=0;i<num_points;i++) {
-	cout << f1[i] << " ";
-      }
-      cout << endl;
-      cout << "f2\n";
-      for (int i=0;i<num_points;i++) {
-	cout << f1[i] << " ";
-      }
-      cout << endl;
-      cout << "f3\n";
-      for (int i=0;i<num_points;i++) {
-	cout << f1[i] << " ";
-      }
-      cout << endl;
-      cout << "f4\n";
-      for (int i=0;i<num_points;i++) {
-	cout << f1[i] << " ";
-      }
-      cout << endl;
-      cout << "f5\n";
-      for (int i=0;i<num_points;i++) {
-	cout << f1[i] << " ";
-      }
-      cout << endl;
-      
+     
       // constant term
       idxcur = idx3d(0,0,0);
       for (int i=0;i<num_pts;i++) {
