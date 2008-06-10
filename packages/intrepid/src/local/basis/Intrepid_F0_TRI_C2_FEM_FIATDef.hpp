@@ -97,7 +97,7 @@ void Basis_F0_TRI_C2_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(6,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> result(6,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,2,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,2,inputPoints,expansions);
       result.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,*vdm_,expansions,0);
       for (countPt=0;countPt<numPoints;countPt++) {
         for (int i=0;i<6;i++) {
@@ -111,7 +111,7 @@ void Basis_F0_TRI_C2_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     case OPERATOR_D1:
       {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(6,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,2,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,2,inputPoints,expansions);
       Teuchos::SerialDenseMatrix<int,Scalar> result(6,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> Dres(6,numPoints);
 
@@ -143,7 +143,7 @@ void Basis_F0_TRI_C2_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     case OPERATOR_D2:
       {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(6,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,2,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,2,inputPoints,expansions);
       Teuchos::SerialDenseMatrix<int,Scalar> result(6,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> dtmp0(6,6);
       Teuchos::SerialDenseMatrix<int,Scalar> dtmp1(6,6);
@@ -202,7 +202,7 @@ void Basis_F0_TRI_C2_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     case OPERATOR_CURL:
       {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(6,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,2,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,2,inputPoints,expansions);
       Teuchos::SerialDenseMatrix<int,Scalar> result(6,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> Dres(6,numPoints);
       Dres.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1,*dmats1_,expansions,0);

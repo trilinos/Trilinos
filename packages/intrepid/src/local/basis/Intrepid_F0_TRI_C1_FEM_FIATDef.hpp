@@ -97,7 +97,7 @@ void Basis_F0_TRI_C1_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(3,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> result(3,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,1,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,1,inputPoints,expansions);
       result.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,*vdm_,expansions,0);
       for (countPt=0;countPt<numPoints;countPt++) {
         for (int i=0;i<3;i++) {
@@ -111,7 +111,7 @@ void Basis_F0_TRI_C1_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     case OPERATOR_D1:
       {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(3,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,1,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,1,inputPoints,expansions);
       Teuchos::SerialDenseMatrix<int,Scalar> result(3,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> Dres(3,numPoints);
 
@@ -155,7 +155,7 @@ void Basis_F0_TRI_C1_FEM_FIAT<Scalar>::getValues(FieldContainer<Scalar>&        
     case OPERATOR_CURL:
       {
       Teuchos::SerialDenseMatrix<int,Scalar> expansions(3,numPoints);
-      OrthogonalExpansions<Scalar>::tabulate(2,1,inputPoints,expansions);
+      OrthogonalExpansions<Scalar>::tabulate(CELL_TRI,1,inputPoints,expansions);
       Teuchos::SerialDenseMatrix<int,Scalar> result(3,numPoints);
       Teuchos::SerialDenseMatrix<int,Scalar> Dres(3,numPoints);
       Dres.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1,*dmats1_,expansions,0);

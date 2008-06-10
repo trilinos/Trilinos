@@ -78,7 +78,8 @@ class Basis_F0_TRI_C1_FEM_FIAT: public Basis<Scalar> {
 
 /* \brief Static data array that provides the Vandermonde and derivative matrices.  They need to
      be static data members because of the templating w.r.t type */
-    static Scalar *get_vdm_data() {
+  #ifndef DOXYGEN_SHOULD_SKIP_THIS
+  static Scalar *get_vdm_data() {
     static Scalar vdm_data[] = { 3.3333333333333337e-01 , 3.3333333333333337e-01 , 3.3333333333333331e-01 , -5.0000000000000000e-01 , 5.0000000000000000e-01 , 0.0000000000000000e+00 , -1.6666666666666666e-01 , -1.6666666666666666e-01 , 3.3333333333333331e-01 };
     return vdm_data;
   }
@@ -92,6 +93,7 @@ class Basis_F0_TRI_C1_FEM_FIAT: public Basis<Scalar> {
     static Scalar dmats1_data[] = { 0.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 3.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 };
     return dmats1_data;
   }
+#endif
 
 
   public:

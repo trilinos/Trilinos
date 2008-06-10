@@ -3,6 +3,9 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_Array.hpp"
 
+using std::cout;
+using std::endl;
+
 namespace Intrepid {
 
   template<class Scalar>
@@ -143,6 +146,32 @@ namespace Intrepid {
 	f5[i] = f4[i] * f4[i];
       }
 
+      cout << "f1\n";
+      for (int i=0;i<num_points;i++) {
+	cout << f1[i] << " ";
+      }
+      cout << endl;
+      cout << "f2\n";
+      for (int i=0;i<num_points;i++) {
+	cout << f1[i] << " ";
+      }
+      cout << endl;
+      cout << "f3\n";
+      for (int i=0;i<num_points;i++) {
+	cout << f1[i] << " ";
+      }
+      cout << endl;
+      cout << "f4\n";
+      for (int i=0;i<num_points;i++) {
+	cout << f1[i] << " ";
+      }
+      cout << endl;
+      cout << "f5\n";
+      for (int i=0;i<num_points;i++) {
+	cout << f1[i] << " ";
+      }
+      cout << endl;
+      
       // constant term
       idxcur = idx3d(0,0,0);
       for (int i=0;i<num_pts;i++) {
@@ -162,6 +191,7 @@ namespace Intrepid {
 	int idxp = idx3d(p,0,0);
 	int idxpp1 = idx3d(p+1,0,0);
 	int idxpm1 = idx3d(p-1,0,0);
+	//cout << idxpm1 << " " << idxp << " " << idxpp1 << endl;
 	for (int i=0;i<num_pts;i++) {
 	  results(idxpp1,i) = a1 * f1[i] * results(idxp,i) - a2 * f2[i] * results(idxpm1,i);
 	}
@@ -176,12 +206,11 @@ namespace Intrepid {
 	}
       }
 
-
       // q recurrence
       for (int p=0;p<n-1;p++) {
 	for (int q=1;q<n-p;q++) {
 	  Scalar aq,bq,cq;
-	  jrc(2.0+p+1.0,0,q,aq,bq,cq);
+	  jrc(2.0*p+1.0,0,q,aq,bq,cq);
 	  int idxpqp1 = idx3d(p,q+1,0);
 	  int idxpq = idx3d(p,q,0);
 	  int idxpqm1 = idx3d(p,q-1,0);
@@ -225,10 +254,14 @@ namespace Intrepid {
 
 
   public:
-    static void tabulate( int dim , int n , const Teuchos::Array<Point<Scalar> > &x ,
+    static void tabulate( ECell cell , int n , const Teuchos::Array<Point<Scalar> > &x ,
 	      Teuchos::SerialDenseMatrix<int,Scalar> &results ) {
-      if ( dim == 2 ) {
+      if ( cell == CELL_TRI ) {
 	tabulate_triangle( n , x , results );
+      }
+      else if ( cell == CELL_TET ) {
+	tabulate_tetrahedron( n , x , results );
+	//std::cout << results << std::endl;
       }
       
     }
