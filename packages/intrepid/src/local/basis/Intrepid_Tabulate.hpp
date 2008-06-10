@@ -191,7 +191,7 @@ namespace Intrepid {
 	  int idxpqm1 = idx3d(p,q-1,0);
 	  for (int i=0;i<num_pts;i++) {
 	    results(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * results(idxpq,i) 
-	      - ( cq * f5[i] ) * results(idxpqm1,0);
+	      - ( cq * f5[i] ) * results(idxpqm1,i);
 	  }
 	}
       }
