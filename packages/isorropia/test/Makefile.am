@@ -54,5 +54,5 @@ utest/utest.exe \
 rebalance_1d_default/rebalance_1d_default.exe \
 $(ZOLTAN_TEST) $(MTX_TESTS)
 
-EXTRA_DIST = definition
+EXTRA_DIST = definition 
 

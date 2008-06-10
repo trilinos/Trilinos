@@ -742,10 +742,10 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  if (getenv("DEBUGME")){
-    std::cout << localProc << " gdb test_create_balanced_copy.exe " << getpid() << std::endl;
-    sleep(15);
-  }
+  // if (getenv("DEBUGME")){
+  //  std::cout << localProc << " gdb test_create_balanced_copy.exe " << getpid() << std::endl;
+  //  sleep(15);
+  // }
 
   Teuchos::CommandLineProcessor clp(false,true);
 

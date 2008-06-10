@@ -333,7 +333,6 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Block
   int nProcs = comm.NumProc();
   int myProc = comm.MyPID();
   int myRows = rowmap.NumMyElements();
-  int rc;
   int *vgid = NULL;
   float *vwgt = NULL;
 
@@ -465,10 +464,11 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Block
       
     }
 #ifdef HAVE_MPI
-    rc = MPI_Reduce(colLocal, colTotals, ncols, MPI_INT, MPI_SUM, i, mcomm);
+    int rc = MPI_Reduce(colLocal, colTotals, ncols, MPI_INT, MPI_SUM, i, mcomm);
     if (totalHEWeights > 0){
       rc = MPI_Reduce(localWeights, colWeights, ncols, MPI_DOUBLE, MPI_SUM, i, mcomm);
     }
+    // TODO handle possible MPI error
 #else
     memcpy(colTotals, colLocal, ncols * sizeof(int));
     if (totalHEWeights > 0){

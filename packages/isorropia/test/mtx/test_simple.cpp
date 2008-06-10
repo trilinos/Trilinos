@@ -184,7 +184,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 {
   int rc=0, fail = 0;  
 #ifdef HAVE_EPETRAEXT
-  int numProcs = 1;
   int localProc = 0;
   double balance1, balance2, cutn1, cutn2, cutl1, cutl2;
   double cutWgt1, cutWgt2; 
@@ -193,7 +192,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 #ifdef HAVE_MPI
   const Epetra_MpiComm &Comm = dynamic_cast<const Epetra_MpiComm &>(matrix->Comm());
   localProc = Comm.MyPID();
-  numProcs = Comm.NumProc();
 #else
   const Epetra_SerialComm &Comm = dynamic_cast<const Epetra_SerialComm &>(matrix->Comm());
 #endif
@@ -529,7 +527,6 @@ int main(int argc, char** argv) {
   bool verbose = false;
   int numProcs = 1;
   int localProc = 0;
-  std::string *fstr;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -540,10 +537,10 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  if (getenv("DEBUGME")){
-    std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
-    sleep(15);
-  }
+  // if (getenv("DEBUGME")){
+  //   std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
+  //   sleep(15);
+  // }
 
   Teuchos::CommandLineProcessor clp(false,true);
 
