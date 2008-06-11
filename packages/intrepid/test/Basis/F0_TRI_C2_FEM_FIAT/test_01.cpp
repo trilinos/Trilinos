@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 1;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  endThrowNumber += 4;
+  endThrowNumber += 5;
 #endif
 
   // Reference element points are the standard equispaced lattice of degree 2
@@ -129,7 +129,15 @@ int main(int argc, char *argv[]) {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
 
-
+    try {
+      LocalDofTag myTag = {{1,1,2,0}};
+      triBasis -> getLocalDofEnumeration(myTag);
+    }
+    catch (std::logic_error err) {
+      *outStream << "Expected Error 3----------------------------------------------------------------\n";
+      *outStream << err.what() << '\n';
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    };
     try {
       LocalDofTag myTag = {{0,3,0,0}};
       triBasis -> getLocalDofEnumeration(myTag);
