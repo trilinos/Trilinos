@@ -47,7 +47,7 @@ LOCA::Epetra::Interface::xyzt::
 xyzt( const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> &interface_,
        const Epetra_MultiVector &splitMultiVec_, 
        const Teuchos::RCP<Epetra_RowMatrix> &splitJac_,
-       const Teuchos::RCP<EpetraExt::MultiMpiComm> &globalComm_,
+       const Teuchos::RCP<EpetraExt::MultiComm> &globalComm_,
        const Epetra_Vector &initialCondVec_, 
        double dt_,
        Teuchos::ParameterList *precPrintParams_,

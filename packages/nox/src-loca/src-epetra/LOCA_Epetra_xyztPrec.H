@@ -45,7 +45,11 @@
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
 #include "NOX_Epetra_Vector.H"
+#ifdef HAVE_MPI
 #include "EpetraExt_MultiMpiComm.h"
+#else
+#include "EpetraExt_MultiSerialComm.h"
+#endif
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "Epetra_Operator.h"
@@ -121,7 +125,7 @@ namespace LOCA {
 	       Epetra_Import &overlapImporter,
 	       Teuchos::ParameterList& precPrintParams, 
 	       Teuchos::ParameterList& precLSParams, 
-	       const Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm_);
+	       const Teuchos::RCP<EpetraExt::MultiComm> globalComm_);
       
       //! Destructor
       virtual ~xyztPrec();
@@ -208,7 +212,7 @@ namespace LOCA {
       Teuchos::ParameterList& lsParams;
       
       //! Reference to global communicator for global XYZT operator.
-      const Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm;
+      const Teuchos::RCP<EpetraExt::MultiComm> globalComm;
       
       //! Pointer to global XYZT linear system to be solved.
       std::vector<NOX::Epetra::LinearSystemAztecOO *> linSys;

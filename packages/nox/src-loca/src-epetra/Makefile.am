@@ -78,7 +78,8 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Factory.C \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 
-if HAVE_MPI
+if BUILD_NOX_EPETRAEXT_SUPPORT
+
 LOCA_EPETRA_XYZT_H =  \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
 	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.H \
@@ -90,9 +91,6 @@ LOCA_EPETRA_XYZT = \
 	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.C \
 	$(srcdir)/LOCA_Epetra_xyztPrec.C \
 	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
-endif
-
-if BUILD_NOX_EPETRAEXT_SUPPORT
 
 EPETRAEXT_TLS_H = \
 	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H

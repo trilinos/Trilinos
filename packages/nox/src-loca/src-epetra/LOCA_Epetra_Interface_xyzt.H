@@ -58,11 +58,12 @@
 #include "Epetra_Import.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#include "EpetraExt_MultiMpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
+#include "EpetraExt_MultiSerialComm.h"
 #endif
 
-#include "EpetraExt_MultiMpiComm.h"
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 
@@ -119,7 +120,7 @@ namespace LOCA {
 	     &interface,
 	     const Epetra_MultiVector &splitMultiVec,
 	     const Teuchos::RCP<Epetra_RowMatrix> &splitJac,
-	     const Teuchos::RCP<EpetraExt::MultiMpiComm> &globalComm,
+	     const Teuchos::RCP<EpetraExt::MultiComm> &globalComm,
 	     const Epetra_Vector &initialCondVec,
              double dt,
 	     Teuchos::ParameterList *precPrintParams = 0, 
@@ -186,7 +187,7 @@ namespace LOCA {
 	Teuchos::RCP<Epetra_RowMatrix> splitJac;
 	
 	//! Pointer to the global (full XYZT) communicator.
-	Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm;
+	Teuchos::RCP<EpetraExt::MultiComm> globalComm;
 	
 	//! Split (spatial) input vector.
 	Epetra_Vector splitVec;

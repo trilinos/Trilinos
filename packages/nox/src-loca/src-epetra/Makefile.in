@@ -173,10 +173,10 @@ am__objects_1 = LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.$(OBJE
 	LOCA_BorderedSolver_EpetraAugmented.$(OBJEXT) \
 	LOCA_Epetra_Factory.$(OBJEXT) \
 	LOCA_Epetra_ShiftInvertOperator.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_2 = LOCA_Epetra_Interface_xyzt.$(OBJEXT) \
-@HAVE_MPI_TRUE@	LOCA_Epetra_Interface_MultiPoint.$(OBJEXT) \
-@HAVE_MPI_TRUE@	LOCA_Epetra_xyztPrec.$(OBJEXT) \
-@HAVE_MPI_TRUE@	LOCA_Epetra_AnasaziOperator_Floquet.$(OBJEXT)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_2 = LOCA_Epetra_Interface_xyzt.$(OBJEXT) \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	LOCA_Epetra_Interface_MultiPoint.$(OBJEXT) \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	LOCA_Epetra_xyztPrec.$(OBJEXT) \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	LOCA_Epetra_AnasaziOperator_Floquet.$(OBJEXT)
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_3 = LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.$(OBJEXT)
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_4 = LOCA_Epetra_ModelEvaluatorInterface.$(OBJEXT)
 am__objects_5 =
@@ -408,17 +408,17 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Factory.C \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 
-@HAVE_MPI_TRUE@LOCA_EPETRA_XYZT_H = \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.H \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_xyztPrec.H \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@LOCA_EPETRA_XYZT_H = \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.H \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_xyztPrec.H \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H
 
-@HAVE_MPI_TRUE@LOCA_EPETRA_XYZT = \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.C \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_xyztPrec.C \
-@HAVE_MPI_TRUE@	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@LOCA_EPETRA_XYZT = \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.C \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_xyztPrec.C \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
 
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@EPETRAEXT_TLS_H = \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H

@@ -46,7 +46,7 @@ MultiPoint(
        const Teuchos::RCP< NOX::Epetra::Interface::Jacobian> &iJac_,
        const Epetra_MultiVector &splitMultiVec_, 
        const Teuchos::RCP<Epetra_RowMatrix> &splitJac_,
-       const Teuchos::RCP<EpetraExt::MultiMpiComm> &globalComm_) :
+       const Teuchos::RCP<EpetraExt::MultiComm> &globalComm_) :
   iReq(iReq_),
   iJac(iJac_),
   splitJac(splitJac_), 

@@ -114,6 +114,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 
     xyztInterface->finishFloquetOperatorApplication(eV);
   }
+
 // Was this needed?
 
 // TESTING:  Doubling the call to this routine resulted in the
@@ -169,15 +170,6 @@ LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient(
   double mag = evec_r.innerProduct(evec_r) +  evec_i.innerProduct(evec_i) ;
   rq_r = (Ax.innerProduct(evec_r) +  Ay.innerProduct(evec_i)) / mag ;
   rq_i = (Ay.innerProduct(evec_r) -  Ax.innerProduct(evec_i)) / mag ;
-
-  double xAx = Ax.innerProduct(evec_r);
-  double yAy = Ay.innerProduct(evec_i);
-  double yAx = Ax.innerProduct(evec_i);
-  double xAy = Ay.innerProduct(evec_r);
-
-  cout << "RQ  mag " << mag 
-     << "\n\t rq_r  " << rq_r << "  xAx " << xAx << "  yAy " << yAy
-     << "\n\t rq_i  " << rq_i << "  yAx " << yAx << "  xAy " << xAy << endl;
 
   return NOX::Abstract::Group::Ok; 
 }

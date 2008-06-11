@@ -52,7 +52,7 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 	 Epetra_Import &overlapImporter_,
 	 Teuchos::ParameterList &precPrintParams_, 
 	 Teuchos::ParameterList &precLSParams_, 
-	 const Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm_) :  
+	 const Teuchos::RCP<EpetraExt::MultiComm> globalComm_) :  
   jacobian(jacobian_),
   splitJac(splitJac_),
   solution(solution_),
