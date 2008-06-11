@@ -44,7 +44,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
-# The XYZT tests require epetraext and mpi
+# The XYZT tests require epetraext
 if BUILD_NOX_EPETRAEXT_SUPPORT
 BRUSSXYZT = brussXYZT_ifpack brussXYZT_global brussXYZT_sequential brussXYZT_sequential_IPS brussXYZT_sequential_OPS brussXYZT_parallel brussXYZT_blockdiagonal brussXYZT_bdsdt # brussXYZT_parareal
 else
@@ -52,9 +52,7 @@ BRUSSXYZT =
 endif
 
 if BUILD_LOCA_EPETRA_TESTS
-if HAVE_MPI
 noinst_PROGRAMS = $(BRUSSXYZT)
-endif
 endif
 
 brussXYZT_ifpack_SOURCES = \

@@ -68,7 +68,6 @@
 #include "NOX_TestCompare.H"
 
 // Trilinos Objects
-#include "Epetra_MpiComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_Vector.h"
@@ -91,7 +90,11 @@
 #include "Brusselator.H"              
 
 // XYZT-specific headers
+#ifdef HAVE_MPI
 #include "EpetraExt_MultiMpiComm.h"
+#else
+#include "EpetraExt_MultiSerialComm.h"
+#endif
 #include "LOCA_Epetra_Interface_xyzt.H"              
 
 using namespace std;
@@ -119,7 +122,9 @@ int main(int argc, char *argv[])
   try {
 
     // Initialize MPI
+#ifdef HAVE_MPI
     MPI_Init(&argc,&argv);
+#endif
 
     // Check for verbose output
     bool verbose = false;
@@ -146,10 +151,15 @@ int main(int argc, char *argv[])
       numTimeSteps = atoi(argv[3]);
 
     // MPI MANIPULATION FOR XYZT PROBLEMS
+#ifdef HAVE_MPI
     Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm = 
       Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, 
 					       spatialProcs, numTimeSteps));
-    Epetra_MpiComm& Comm = globalComm->SubDomainComm();
+#else
+    Teuchos::RCP<EpetraExt::MultiSerialComm> globalComm = 
+      Teuchos::rcp(new EpetraExt::MultiSerialComm(numTimeSteps));
+#endif
+    Epetra_Comm& Comm = globalComm->SubDomainComm();
     MyPID = globalComm->MyPID();
 
     // Get the total number of processors
@@ -411,7 +421,9 @@ int main(int argc, char *argv[])
       std::cout << ierr << " test(s) failed!" << std::endl;
   }
 
+#ifdef HAVE_MPI
   MPI_Finalize() ;
+#endif
 
   return ierr;
 }

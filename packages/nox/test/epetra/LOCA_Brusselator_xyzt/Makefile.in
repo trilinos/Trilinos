@@ -65,8 +65,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BUILD_LOCA_EPETRA_TESTS_TRUE@@HAVE_MPI_TRUE@noinst_PROGRAMS =  \
-@BUILD_LOCA_EPETRA_TESTS_TRUE@@HAVE_MPI_TRUE@	$(am__EXEEXT_1)
+@BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = test/epetra/LOCA_Brusselator_xyzt
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -315,7 +314,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = $(TEST_INCLUDES)
 @BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@BRUSSXYZT = 
 
-# The XYZT tests require epetraext and mpi
+# The XYZT tests require epetraext
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@BRUSSXYZT = brussXYZT_ifpack brussXYZT_global brussXYZT_sequential brussXYZT_sequential_IPS brussXYZT_sequential_OPS brussXYZT_parallel brussXYZT_blockdiagonal brussXYZT_bdsdt # brussXYZT_parareal
 brussXYZT_ifpack_SOURCES = \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
