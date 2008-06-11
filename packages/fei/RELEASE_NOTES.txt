@@ -440,4 +440,7 @@ July 7 2005: version 2.14.00
     that is really wanted.
   - Corrected fei_macros.hpp so that non-MPI builds work correctly. (Respond
     correctly if HAVE_MPI is not set.)
+  - Alter the logging behavior so that if multiple linear systems are being
+    used, output of matrix files can be specified for some of them rather than
+    all or none.
 
