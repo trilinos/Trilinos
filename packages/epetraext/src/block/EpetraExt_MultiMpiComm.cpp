@@ -33,9 +33,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 namespace EpetraExt {
 
 MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTimeSteps_) :
-        Epetra_MpiComm(globalMpiComm), subComm(0), numSubDomains(-1),
-        subDomainRank(-1), numTimeSteps(-1),
-	numTimeStepsOnDomain(-1), firstTimeStepOnDomain(-1)
+        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
+        subComm(0)
 {
   //Need to construct subComm for each sub domain, compute subDomainRank,
   //and check that all integer arithmatic works out correctly.
@@ -71,21 +70,29 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 // This constructor is for just one subdomain, so only adds the info
 // for multiple time steps on the domain. No two-level parallelism.
 MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeSteps_) :
-        Epetra_MpiComm(EpetraMpiComm_), subComm(0), numSubDomains(1),
-        subDomainRank(0), numTimeSteps(numTimeSteps_),
-	numTimeStepsOnDomain(numTimeSteps_), firstTimeStepOnDomain(0)
+        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_MpiComm(EpetraMpiComm_))),
+        subComm(0)
 {
-   subComm = new Epetra_MpiComm(EpetraMpiComm_);
+
+  numSubDomains = 1;
+  subDomainRank = 0;
+  numTimeSteps = numTimeSteps_;
+  numTimeStepsOnDomain = numTimeSteps_;
+  firstTimeStepOnDomain = 0;
+ 
+  subComm = new Epetra_MpiComm(EpetraMpiComm_);
 }
   
 //Copy Constructor
 MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :
-        Epetra_MpiComm(MMC), subComm(new Epetra_MpiComm(*(MMC.subComm))),
-        numSubDomains(MMC.numSubDomains), subDomainRank(MMC.subDomainRank),
-	numTimeSteps(MMC.numTimeSteps), 
-	numTimeStepsOnDomain(MMC.numTimeStepsOnDomain), 
-	firstTimeStepOnDomain(MMC.firstTimeStepOnDomain) 
+        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_MpiComm(dynamic_cast<const Epetra_MpiComm&>(MMC)))),
+        subComm(new Epetra_MpiComm(*(MMC.subComm)))
 {
+  numSubDomains = MMC.numSubDomains;
+  subDomainRank = MMC.subDomainRank;
+  numTimeSteps = MMC.numTimeSteps;
+  numTimeStepsOnDomain = MMC.numTimeStepsOnDomain;
+  firstTimeStepOnDomain = MMC.firstTimeStepOnDomain;
 }
 
 MultiMpiComm::~MultiMpiComm()

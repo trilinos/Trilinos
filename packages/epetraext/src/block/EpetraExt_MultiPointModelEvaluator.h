@@ -5,7 +5,11 @@
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockMultiVector.h"
+#ifdef HAVE_MPI
 #include "EpetraExt_MultiMpiComm.h"
+#else
+#include "EpetraExt_MultiSerialComm.h"
+#endif
 
 /** \brief Epetra-based Model Evaluator subclass for Charon!
  *
@@ -28,7 +32,7 @@ namespace EpetraExt {
   /** \brief . */
   MultiPointModelEvaluator(
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
-    const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
+    const Teuchos::RefCountPtr<EpetraExt::MultiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec,
     Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec,
     Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec = Teuchos::null
@@ -70,7 +74,7 @@ namespace EpetraExt {
    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME;
 
    //! Pointer to the global (full XYZT) communicator.
-   Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
+   Teuchos::RefCountPtr<EpetraExt::MultiComm> globalComm;
 
    //! Array of parameter vectors that define the multi-point problem
    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > > q_vec;

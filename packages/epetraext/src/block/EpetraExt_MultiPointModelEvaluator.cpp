@@ -2,7 +2,7 @@
 
 EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
-    const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
+    const Teuchos::RefCountPtr<EpetraExt::MultiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec_,
     Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec_,
     Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec_
