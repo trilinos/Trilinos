@@ -425,7 +425,7 @@ July 7 2005: version 2.14.00
     fixed similar issues in fei::Vector and derived classes.
   - Fixed some array-bounds-read errors in fei::ctg_set.
 
- ??? ?? ???? minor version 2.22.04
+ June 12 2008 minor version 2.22.04
   - Fixed a bug in fei_AztecDMSR_Matrix.cpp where sumIntoRow wasn't handling
     the case where an incoming list of column-indices contains repeated
     indices.
