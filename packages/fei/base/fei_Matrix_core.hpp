@@ -15,7 +15,6 @@
 #include <fei_fwd.hpp>
 #include <fei_Vector.hpp>
 #include <snl_fei_CommUtils.hpp>
-#include <fei_SSVec.hpp>
 #include <fei_SSMat.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_Logger.hpp>

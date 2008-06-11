@@ -18,6 +18,7 @@
 
 #include <feiArray.hpp>
 #include <fei_Pattern.hpp>
+#include <fei_LogManager.hpp>
 #include <snl_fei_CommUtils.hpp>
 #include <snl_fei_Utils.hpp>
 #include <fei_FieldMask.hpp>
@@ -167,6 +168,14 @@ void fei::MatrixGraph_Impl2::setParameters(const fei::ParameterSet& params)
 {
   const fei::Param* param = 0;
   fei::Param::ParamType ptype = fei::Param::BAD_TYPE;
+
+  param = params.get("FEI_OUTPUT_LEVEL");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype == fei::Param::STRING) {
+    fei::LogManager& log_manager = fei::LogManager::getLogManager();
+    log_manager.setOutputLevel(param->getStringValue().c_str());
+    setOutputLevel(fei::utils::string_to_output_level(param->getStringValue()));
+  }
 
   param = params.get("FEI_LOG_EQN");
   ptype =  param != NULL ? param->getType() : fei::Param::BAD_TYPE;  

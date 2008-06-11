@@ -12,6 +12,7 @@
 #include <fei_ParameterSet.hpp>
 #include <fei_Matrix_core.hpp>
 #include <feiArray.hpp>
+#include <fei_SSVec.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <snl_fei_CommUtils.hpp>
 

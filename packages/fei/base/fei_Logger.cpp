@@ -18,7 +18,7 @@ fei::Logger::Logger()
 {
   fei::LogManager& log_manager = fei::LogManager::getLogManager();
   log_manager.registerLogger(this);
-  output_level_ = log_manager.getOutputLevel();
+//  output_level_ = log_manager.getOutputLevel();
 
   fei::LogFile& log_file = fei::LogFile::getLogFile();
   output_stream_ = log_file.getOutputStream();

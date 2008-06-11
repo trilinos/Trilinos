@@ -210,6 +210,14 @@ void fei::VectorSpace::setParameters(const fei::ParameterSet& paramset)
     setName(param->getStringValue().c_str());
   }
 
+  param = paramset.get("FEI_OUTPUT_LEVEL");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype == fei::Param::STRING) {
+    fei::LogManager& log_manager = fei::LogManager::getLogManager();
+    log_manager.setOutputLevel(param->getStringValue().c_str());
+    setOutputLevel(fei::utils::string_to_output_level(param->getStringValue()));
+  }
+
   param = paramset.get("FEI_LOG_EQN");
   ptype =  param != NULL ? param->getType() : fei::Param::BAD_TYPE;  
   if (ptype == fei::Param::INT) {
