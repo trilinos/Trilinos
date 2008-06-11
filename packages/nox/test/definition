@@ -91,7 +91,7 @@
     DIRS = epetra/LOCA_Brusselator_xyzt;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
-    COMM = MPI(1-6);
+    COMM = SERIAL, MPI(1-6);
 }
 
 # NOX LAPACK examples
