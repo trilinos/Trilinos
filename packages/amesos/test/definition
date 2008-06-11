@@ -56,8 +56,8 @@
 # 
 (FRAMEWORK ) {   
    DIRS = TestOptions;
-    X-HOST = atlantis;
-    COMM = SERIAL, MPI(1-4); 
+   X-HOST = regression.sandia.gov;
+   COMM = SERIAL, MPI(1-4); 
 }
 
 #
