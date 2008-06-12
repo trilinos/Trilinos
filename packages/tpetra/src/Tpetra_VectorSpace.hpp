@@ -34,7 +34,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
-#include "Tpetra_BlockElementSpace.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Comm.hpp"
 
@@ -47,10 +46,9 @@ namespace Tpetra {
 
   //! Tpetra::VectorSpace
   /*! VectorSpace serves two purposes. In addition to creating Tpetra::Vectors,
-      it acts as an "insulating" class between Vectors and ElementSpace/BlockElementSpace.
+      it acts as an "insulating" class between Vectors and ElementSpace.
     Through this mechanism, Vectors can be created and manipulated using one nonambiguous
-    set of vector indices, regardless of if it uses an ElementSpace or a BlockElementSpace
-    for distribution.
+    set of vector indices.
   */
 
   template<typename OrdinalType, typename ScalarType>
@@ -65,28 +63,13 @@ namespace Tpetra {
       : Object("Tpetra::VectorSpace")
       , VectorSpaceData_()
     {
-      VectorSpaceData_ = Teuchos::rcp(new VectorSpaceData<OrdinalType, ScalarType>(false, 
+      VectorSpaceData_ = Teuchos::rcp(new VectorSpaceData<OrdinalType, ScalarType>( //false, 
                                              elementSpace.getIndexBase(), 
                                              elementSpace.getNumMyElements(),
                                              elementSpace.getNumGlobalElements(),
                                              platform));
     
       VectorSpaceData_->ElementSpace_ = Teuchos::rcp(new ElementSpace<OrdinalType>(elementSpace));
-    };
-  
-    //! Tpetra::VectorSpace constructor taking a BlockElementSpace object.
-    VectorSpace(BlockElementSpace<OrdinalType> const& blockElementSpace, Platform<OrdinalType, ScalarType> const& platform)
-      : Object("Tpetra::VectorSpace")
-      , VectorSpaceData_()
-    {
-      VectorSpaceData_ = Teuchos::rcp(new VectorSpaceData<OrdinalType, ScalarType>(true,
-                                             blockElementSpace.elementSpace().getIndexBase(),
-                                             blockElementSpace.getNumMyPoints(),
-                                             blockElementSpace.getNumGlobalPoints(),
-                                             platform));
-    
-      VectorSpaceData_->BlockElementSpace_ = Teuchos::rcp(new BlockElementSpace<OrdinalType>(blockElementSpace));
-      VectorSpaceData_->ElementSpace_ = Teuchos::rcp(blockElementSpace.generateCompatibleElementSpace());
     };
   
     //! Tpetra::VectorSpace shallow copy constructor.
@@ -119,17 +102,11 @@ namespace Tpetra {
     OrdinalType getMaxGlobalIndex() const {return(getIndexBase() + getNumGlobalEntries());};
   
     //! Return the local index for a given global index
-    /*! If this VectorSpace was created using a BlockElementSpace,
-      LIDs and GIDs from the compatible ElementSpace will be used.
-    */
     OrdinalType getLocalIndex(OrdinalType globalIndex) const {
       return(elementSpace().getLID(globalIndex));
     };
   
     //! Return the global index for a given local index
-    /*! If this VectorSpace was created using a BlockElementSpace,
-      LIDs and GIDs from the compatible ElementSpace will be used.
-    */
     OrdinalType getGlobalIndex(OrdinalType localIndex) const {
       return(elementSpace().getGID(localIndex));
     };
@@ -172,10 +149,7 @@ namespace Tpetra {
   
     //! Returns true if the VectorSpace passed in is identical to this VectorSpace. Also implemented through the == and != operators.
     bool isSameAs(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {
-      if(isBlockSpace())
-        return(blockElementSpace().isSameAs(vectorSpace.blockElementSpace())); // compare BlockElementSpaces
-      else
-        return(elementSpace().isSameAs(vectorSpace.elementSpace())); // compare ElementSpaces
+      return(elementSpace().isSameAs(vectorSpace.elementSpace())); // compare ElementSpaces
     };
     bool operator==(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {return(isSameAs(vectorSpace));};
     bool operator!=(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {return(!isSameAs(vectorSpace));};
@@ -203,22 +177,11 @@ namespace Tpetra {
         }
         comm().barrier();
       }
-      if(isBlockSpace()) {
-        if(myImageID == 0)
-          os << "Built on a BlockElementSpace" << endl;
-        blockElementSpace().print(os);
-        comm().barrier();
-        if(myImageID == 0)
-          os << "Compatible ElementSpace:" << endl;
-        elementSpace().print(os);
-        comm().barrier();
+      if (myImageID == 0) {
+        os << "Built on an ElementSpace" << endl;
       }
-      else {
-        if(myImageID == 0)
-          os << "Built on an ElementSpace" << endl;
-        elementSpace().print(os);
-        comm().barrier();
-      }
+      elementSpace().print(os);
+      comm().barrier();
     };
   
   
@@ -239,9 +202,6 @@ namespace Tpetra {
   
   private:
   
-    BlockElementSpace<OrdinalType> const& blockElementSpace() const {return(*VectorSpaceData_->BlockElementSpace_);};
-    bool isBlockSpace() const {return(VectorSpaceData_->blockspace_);};
-    
     Teuchos::RCP< VectorSpaceData<OrdinalType, ScalarType> > VectorSpaceData_;
 
   }; // VectorSpace class

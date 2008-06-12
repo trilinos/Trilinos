@@ -31,6 +31,7 @@
 
 namespace Tpetra {
 
+  /*! class CisMatrixData */
   template<typename OrdinalType, typename ScalarType>
   class CisMatrixData : public Object {
     friend class CisMatrix<OrdinalType, ScalarType>;

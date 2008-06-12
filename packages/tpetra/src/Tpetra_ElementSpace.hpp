@@ -44,8 +44,8 @@ namespace Tpetra {
   template<typename OrdinalType> class ElementSpaceData;
   
   //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
-  /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented 
-        in Tpetra::BlockElementSpace. Some ElementSpace methods throw exceptions, and should be enclosed 
+  /*! ElementSpace objects are defined to have an element size of 1. 
+        Some ElementSpace methods throw exceptions, and should be enclosed 
         in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Platform object. 
     Local IDs (LIDs) are always in the range [0, numMyElements).
       

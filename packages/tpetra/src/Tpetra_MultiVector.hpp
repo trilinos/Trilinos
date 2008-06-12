@@ -10,6 +10,7 @@
 
 namespace Tpetra {
 
+  /*! multivector */
   template<class OrdinalType, class ScalarType>
   class MultiVector {
 

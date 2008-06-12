@@ -29,686 +29,627 @@
 #ifndef TPETRA_VECTOR_HPP
 #define TPETRA_VECTOR_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Object.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_OutputObject.hpp" // for STL vector, algorithm, numeric
+#include "Tpetra_VectorDecl.hpp"
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 #ifdef HAVE_TPETRA_TBB
 #include "Tpetra_TBB_TaskScheduler.hpp"
 #include "Tpetra_TBB_Vec_Kernels.hpp"
 #endif
 
-#include "Tpetra_VectorSpace.hpp"
-#include <Teuchos_CompObject.hpp>
-#include <Teuchos_BLAS.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-
 namespace Tpetra {
 
-  // forward declaration of VectorData, needed to prevent circular inclusions
-  // actual #include statement is at the end of this file
-  template<typename OrdinalType, typename ScalarType> class VectorData;
-
-  //! Tpetra::Vector: A class for constructing and using sparse vectors.
-
-  /*! Vector is templated on ScalarType for the vector entries, and on OrdinalType 
-      for the vector indices. A VectorSpace object is needed for all Vector objects.
-
-    Vector entries can only be accessed through their local index values. (This 
-    is due to the fact that a VectorSpace can be created with either an ElementSpace
-    or a BlockElementSpace, and there is no way to globally access a BES Point.)
-    Global index values can be converted to local indices by using the 
-    VectorSpace::getLocalIndex method.
-
-    Note that for most of the mathematical methods that set \e this to the result of
-    an operation on vectors passed as parameters, the \e this vector can be used 
-    as one of the parameters (unless otherwise specified).
-    
-    Vector error codes (positive for non-fatal, negative for fatal):
-    <ol>
-    <li> +1  Specified vector index not found on this image.
-    <li> +2  Vector sizes do not match.
-    <li> +3  Cannot perform that operation on an empty vector.
-    <li> -1  Invalid number of entries passed to constructor.
-    <li> -99 Internal Vector error. Contact developer.
-    </ol>
-  */
-  
   template<typename OrdinalType, typename ScalarType>
-  class Vector : public Teuchos::CompObject, public DistObject<OrdinalType, ScalarType>, public virtual OutputObject {
-
-  public:
-  
-    //@{ \name Constructor/Destructor Methods
-
-    //! Sets all vector entries to zero.
-    Vector(VectorSpace<OrdinalType, ScalarType> const& VectorSpace) 
-      : DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), 
-                          VectorSpace.platform().createScalarComm(),
-                          "Tpetra::Vector")
+  Vector<OrdinalType,ScalarType>::Vector(VectorSpace<OrdinalType, ScalarType> const& VectorSpace) 
+    : DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), 
+        VectorSpace.platform().createScalarComm(), "Tpetra::Vector")
       , VectorData_()
-    {
-      ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-      //OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero(); // *WARNING-UNUSED*
-      OrdinalType const length = VectorSpace.getNumMyEntries();
+  {
+    ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
+    //OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero(); // *WARNING-UNUSED*
+    OrdinalType const length = VectorSpace.getNumMyEntries();
 
-      VectorData_ = Teuchos::rcp(new VectorData<OrdinalType, ScalarType>(VectorSpace, length, scalarZero));
-    }
-  
-    //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
-                // MS: added a `const' qualifier
-    Vector(const ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
-      : DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), 
-                          VectorSpace.platform().createScalarComm(),
-                          "Tpetra::Vector")
+    VectorData_ = Teuchos::rcp(new VectorData<OrdinalType, ScalarType>(VectorSpace, length, scalarZero));
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  Vector<OrdinalType,ScalarType>::Vector(
+        const ScalarType* vectorEntries, OrdinalType numEntries
+      , VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
+    : DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace()
+      , VectorSpace.platform().createScalarComm(), "Tpetra::Vector")
       , VectorData_()
-    {
-      ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      OrdinalType const length = VectorSpace.getNumMyEntries();
+  {
+    ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const length = VectorSpace.getNumMyEntries();
 
-      VectorData_ = Teuchos::rcp(new VectorData<OrdinalType, ScalarType>(VectorSpace, length, scalarZero));
+    VectorData_ = Teuchos::rcp(new VectorData<OrdinalType, ScalarType>(VectorSpace, length, scalarZero));
 
-      if(numEntries != length)
-        throw reportError("numEntries = " + toString(numEntries) + ".  Should be = " + toString(length) + ".", -1);
-      for(OrdinalType i = ordinalZero; i < length; i++)
-        VectorData_->scalarArray_[i] = vectorEntries[i];
-    }
+    if(numEntries != length)
+      throw reportError("numEntries = " + toString(numEntries) + ".  Should be = " + toString(length) + ".", -1);
+    for(OrdinalType i = ordinalZero; i < length; i++)
+      VectorData_->scalarArray_[i] = vectorEntries[i];
+  }
 
-    //! Copy constructor.
-    Vector(Vector<OrdinalType, ScalarType> const& Source)
-      : DistObject<OrdinalType, ScalarType>(Source)
+  template<typename OrdinalType, typename ScalarType>
+  Vector<OrdinalType,ScalarType>::Vector(Vector<OrdinalType, ScalarType> const& Source)
+    : DistObject<OrdinalType, ScalarType>(Source)
       , VectorData_(Source.VectorData_)
-    {};
+  {}
 
-    //! Destructor.  
-    ~Vector() {};
+  template<typename OrdinalType, typename ScalarType>
+  Vector<OrdinalType,ScalarType>::~Vector() {}
 
-    //@}
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::submitEntries(OrdinalType numEntries, OrdinalType const* indices, ScalarType const* values) {
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    for(OrdinalType i = ordinalZero; i < numEntries; i++)
+      VectorData_->scalarArray_[indices[i]] += values[i];
+  }
 
-    //@{ \name Post-Construction Modification Routines
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::setAllToScalar(ScalarType const value) {
+    OrdinalType const max = getNumMyEntries();
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    for(OrdinalType i = ordinalZero; i < max; i++)
+      VectorData_->scalarArray_[i] = value;
+  }
 
-    //! Submit entries. Values submitted will be summed with existing values.
-    void submitEntries(OrdinalType numEntries, OrdinalType const* indices, ScalarType const* values) {
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      for(OrdinalType i = ordinalZero; i < numEntries; i++)
-        VectorData_->scalarArray_[indices[i]] += values[i];
-    }
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::setAllToRandom() {
+    OrdinalType const max = getNumMyEntries();
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    for(OrdinalType i = ordinalZero; i < max; i++)
+      VectorData_->scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::random();
+  }
 
-    //! Set all entries to scalarValue.
-    void setAllToScalar(ScalarType const value) {
-      OrdinalType const max = getNumMyEntries();
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      for(OrdinalType i = ordinalZero; i < max; i++)
-        VectorData_->scalarArray_[i] = value;
-    }
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::extractCopy(ScalarType* userArray) const {
+    OrdinalType const max = getNumMyEntries();
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    for(OrdinalType i = ordinalZero; i < max; i++)
+      userArray[i] = VectorData_->scalarArray_[i];
+  }
 
-    //! Set all entries to random values.
-    void setAllToRandom() {
-      OrdinalType const max = getNumMyEntries();
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      for(OrdinalType i = ordinalZero; i < max; i++)
-        VectorData_->scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::random();
-    }
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::extractView(ScalarType** userPointerArray) const {
+    OrdinalType const max = getNumMyEntries();
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    for(OrdinalType i = ordinalZero; i < max; i++)
+      userPointerArray[i] = &VectorData_->scalarArray_[i];
+  }
 
-    //@}
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::dotProduct(Vector<OrdinalType, ScalarType> const& x) const {
+    if(! vectorSpace().isCompatible(x.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
 
-
-    //@{ \name Extraction Methods
-
-    //! Put vector entries into user array (copy)
-    void extractCopy(ScalarType* userArray) const {
-      OrdinalType const max = getNumMyEntries();
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      for(OrdinalType i = ordinalZero; i < max; i++)
-        userArray[i] = VectorData_->scalarArray_[i];
-    }
-
-    //! Put pointers to vector entries into user array (view)
-    void extractView(ScalarType** userPointerArray) const {
-      OrdinalType const max = getNumMyEntries();
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      for(OrdinalType i = ordinalZero; i < max; i++)
-        userPointerArray[i] = &VectorData_->scalarArray_[i];
-    }
-
-    //@}
-
-
-    //@{ \name Mathematical Methods
-
-    //! Returns result of dot product, \e result = this.x
-    ScalarType dotProduct(Vector<OrdinalType, ScalarType> const& x) const {
-      if(! vectorSpace().isCompatible(x.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-    
-      OrdinalType length = getNumMyEntries();
-      OrdinalType ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType length = getNumMyEntries();
+    OrdinalType ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 
 #ifdef HAVE_TPETRA_TBB
-      ScalarType localDP = task_scheduler_is_alive() ?
-         threaded_vector_dot(length, scalarPointer(), x.scalarPointer()) :
-         BLAS().DOT(length, scalarPointer(), ordinalOne, x.scalarPointer(), ordinalOne);
+    ScalarType localDP = task_scheduler_is_alive() ?
+      threaded_vector_dot(length, scalarPointer(), x.scalarPointer()) :
+      BLAS().DOT(length, scalarPointer(), ordinalOne, x.scalarPointer(), ordinalOne);
 #else 
-      // call BLAS routine to calculate local dot product
-      ScalarType localDP = BLAS().DOT(length, scalarPointer(), ordinalOne, x.scalarPointer(), ordinalOne);
+    // call BLAS routine to calculate local dot product
+    ScalarType localDP = BLAS().DOT(length, scalarPointer(), ordinalOne, x.scalarPointer(), ordinalOne);
 #endif
-    
-      // use Comm call to sum all local dot products
-      ScalarType globalDP;
-      vectorSpace().comm().sumAll(&localDP, &globalDP, ordinalOne);
-        
-      // update flops counter: 2n-1
-      updateFlops(length + length - ordinalOne);
-    
-      return(globalDP);
+
+    // use Comm call to sum all local dot products
+    ScalarType globalDP;
+    vectorSpace().comm().sumAll(&localDP, &globalDP, ordinalOne);
+
+    // update flops counter: 2n-1
+    updateFlops(length + length - ordinalOne);
+
+    return(globalDP);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::absoluteValue(Vector<OrdinalType, ScalarType> const& x) {
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const length = getNumMyEntries();
+
+    for(OrdinalType i = ordinalZero; i < length; i++)
+      VectorData_->scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(x[i]);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::reciprocal(Vector<OrdinalType, ScalarType> const& x) {
+    if(! vectorSpace().isCompatible(x.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
+
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    ScalarType const scalarOne = Teuchos::ScalarTraits<ScalarType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    for(OrdinalType i = ordinalZero; i < length; i++)
+      VectorData_->scalarArray_[i] = scalarOne / x[i];
+
+    // update flops counter: n
+    updateFlops(length);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::scale(ScalarType scalarThis) {
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
+
+    // update flops counter: n
+    updateFlops(length);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::scale(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x) {
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // this = x
+    scalarArray() = x.scalarArray();
+    // this = this * scalarX
+    BLAS().SCAL(length, scalarX, scalarPointer(), ordinalOne);
+
+    // update flops counter: n
+    updateFlops(length);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis) {
+    if(! vectorSpace().isCompatible(x.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
+
+    OrdinalType const length = getNumMyEntries();
+
+    //If we have Intel TBB thread support enabled, call the threaded_vector_update
+    //otherwise, use a combination of BLAS.SCAL and BLAS.AXPY.
+
+#     ifdef HAVE_TPETRA_TBB
+    if (task_scheduler_is_alive()) {
+      threaded_vector_update(length, scalarThis, scalarPointer(), scalarX, x.scalarPointer());
     }
-
-    //! Changes this vector to elementwise absolute values of x.
-    void absoluteValue(Vector<OrdinalType, ScalarType> const& x) {
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      OrdinalType const length = getNumMyEntries();
-    
-      for(OrdinalType i = ordinalZero; i < length; i++)
-        VectorData_->scalarArray_[i] = Teuchos::ScalarTraits<ScalarType>::magnitude(x[i]);
-    }
-
-    //! Changes this vector to element-wise reciprocal values of x.
-    void reciprocal(Vector<OrdinalType, ScalarType> const& x) {
-      if(! vectorSpace().isCompatible(x.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      ScalarType const scalarOne = Teuchos::ScalarTraits<ScalarType>::one();
-      OrdinalType const length = getNumMyEntries();
-
-      for(OrdinalType i = ordinalZero; i < length; i++)
-        VectorData_->scalarArray_[i] = scalarOne / x[i];
-        
-      // update flops counter: n
-      updateFlops(length);
-    }
-
-    //! Scale the current values of a vector, \e this = scalarThis*\e this.
-    void scale(ScalarType scalarThis) {
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-    
-      BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-      
-      // update flops counter: n
-      updateFlops(length);
-    }
-
-    //! Replace vector values with scaled values of x, \e this = scalarX*x.
-    void scale(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x) {
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-    
-      // this = x
-      scalarArray() = x.scalarArray();
-      // this = this * scalarX
-      BLAS().SCAL(length, scalarX, scalarPointer(), ordinalOne);
-      
-      // update flops counter: n
-      updateFlops(length);
-    }
-
-    //! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
-    void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis) {
-      if(! vectorSpace().isCompatible(x.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-    
-      OrdinalType const length = getNumMyEntries();
-
-//If we have Intel TBB thread support enabled, call the threaded_vector_update
-//otherwise, use a combination of BLAS.SCAL and BLAS.AXPY.
-
-#ifdef HAVE_TPETRA_TBB
-      if (task_scheduler_is_alive()) {
-        threaded_vector_update(length, scalarThis, scalarPointer(), scalarX, x.scalarPointer());
-      }
-      else {
-        OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-        // calculate this *= scalarThis
-        BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-    
-        // calculate this += scalarX * x
-        BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
-      }
-#else
+    else {
       OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
       // calculate this *= scalarThis
       BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-    
+
       // calculate this += scalarX * x
       BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
-#endif
-      
-      // update flops counter: 3n
-      updateFlops(length + length + length);
+    }
+#     else
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    // calculate this *= scalarThis
+    BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
+
+    // calculate this += scalarX * x
+    BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
+#     endif
+
+    // update flops counter: 3n
+    updateFlops(length + length + length);
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarY, 
+      Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
+    if(!vectorSpace().isCompatible(x.vectorSpace()) ||
+        !vectorSpace().isCompatible(y.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
+
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // calculate this *= scalarThis
+    BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
+    // calculate this += scalarX * x
+    BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
+    // calculate this += scalarY * y
+    BLAS().AXPY(length, scalarY, y.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
+
+    // update flops counter: 5n
+    updateFlops(length + length + length + length + length);
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::norm1() const {
+    // 1-norm = sum of abs. values of vector entries
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // compute local 1-norm
+    ScalarType localNorm = BLAS().ASUM(length, scalarPointer(), ordinalOne);
+
+    // call comm's sumAll method to compute global 1-norm
+    ScalarType globalNorm;
+    vectorSpace().comm().sumAll(&localNorm, &globalNorm, ordinalOne);
+
+    // update flops counter: n-1
+    updateFlops(length - ordinalOne);
+
+    return(globalNorm);
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::norm2() const {
+    // 2-norm = square root of the sum of the squares of the abs. values of vector entries
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // add up squares of entries
+    ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
+    for(OrdinalType i = ordinalZero; i < length; i++)
+      // the general (complex) case requires the
+      // conjugate of the first term, which is not
+      // needed for real numbers.
+      //localSum += scalarArray()[i] * scalarArray()[i];
+      localSum += Teuchos::ScalarTraits<ScalarType>::conjugate(scalarArray()[i]) * scalarArray()[i];
+
+    // calculate global sum
+    ScalarType globalSum;
+    vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
+
+    // update flops counter: 2n
+    updateFlops(length + length);
+
+    // return square root of global sum
+    return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::normInf() const {
+    // inf-norm = abs. value of the max value
+    return(Teuchos::ScalarTraits<ScalarType>::magnitude(maxValue()));
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::normWeighted(Vector<OrdinalType, ScalarType> const& weights) const {
+    if(!vectorSpace().isCompatible(weights.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
+
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // add up this[i] * weights[i]
+    ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
+    for(OrdinalType i = ordinalZero; i < length; i++) {
+      ScalarType temp = scalarArray()[i] * weights[i];
+      localSum += temp * temp;
     }
 
-    //! Update vector with scaled values of x and y, \e this = scalarThis*\e this + scalarX*x + scalarY*y.
-    void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarY, 
-          Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
-      if(!vectorSpace().isCompatible(x.vectorSpace()) ||
-         !vectorSpace().isCompatible(y.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-    
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-      
-      // calculate this *= scalarThis
-      BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-      // calculate this += scalarX * x
-      BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
-      // calculate this += scalarY * y
-      BLAS().AXPY(length, scalarY, y.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
-    
-      // update flops counter: 5n
-      updateFlops(length + length + length + length + length);
-    }
+    // get global sum
+    ScalarType globalSum;
+    vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
 
-    //! Compute 1-norm of vector.
-    ScalarType norm1() const {
-      // 1-norm = sum of abs. values of vector entries
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-    
-      // compute local 1-norm
-      ScalarType localNorm = BLAS().ASUM(length, scalarPointer(), ordinalOne);
+    // divide by global length, and then take square root of that
+    globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
 
-      // call comm's sumAll method to compute global 1-norm
-      ScalarType globalNorm;
-      vectorSpace().comm().sumAll(&localNorm, &globalNorm, ordinalOne);
-    
-      // update flops counter: n-1
-      updateFlops(length - ordinalOne);
-        
-      return(globalNorm);
-    }
+    // update flops counter: 3n
+    updateFlops(3 * getNumGlobalEntries());
 
-    //! Compute 2-norm of vector.
-    ScalarType norm2() const {
-      // 2-norm = square root of the sum of the squares of the abs. values of vector entries
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-    
-      // add up squares of entries
-      ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
-      for(OrdinalType i = ordinalZero; i < length; i++)
-                                // the general (complex) case requires the
-                                // conjugate of the first term, which is not
-                                // needed for real numbers.
-        //localSum += scalarArray()[i] * scalarArray()[i];
-                                localSum += Teuchos::ScalarTraits<ScalarType>::conjugate(scalarArray()[i]) * scalarArray()[i];
-    
-      // calculate global sum
-      ScalarType globalSum;
-      vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
-        
-      // update flops counter: 2n
-      updateFlops(length + length);
-    
-      // return square root of global sum
-      return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
-    }
-
-    //! Compute Infinity-norm of vector.
-    ScalarType normInf() const {
-      // inf-norm = abs. value of the max value
-      return(Teuchos::ScalarTraits<ScalarType>::magnitude(maxValue()));
-    }
-
-    //! Compute Weighted 2-norm (RMS Norm) of vector.
-    ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const {
-      if(!vectorSpace().isCompatible(weights.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-    
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-    
-      // add up this[i] * weights[i]
-      ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
-      for(OrdinalType i = ordinalZero; i < length; i++) {
-        ScalarType temp = scalarArray()[i] * weights[i];
-        localSum += temp * temp;
-      }
-    
-      // get global sum
-      ScalarType globalSum;
-      vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
-    
-      // divide by global length, and then take square root of that
-      globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
-        
-      // update flops counter: 3n
-      updateFlops(3 * getNumGlobalEntries());
-    
-      return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
-    }
-
-                struct less_mag : public binary_function<ScalarType, ScalarType, bool> {
-                  bool operator()(ScalarType x, ScalarType y) { 
-                    return Teuchos::ScalarTraits<ScalarType>::magnitude(x) < 
-                           Teuchos::ScalarTraits<ScalarType>::magnitude(y); 
-                  }
-                };
-
-                struct greater_mag : public binary_function<ScalarType, ScalarType, bool> {
-                  bool operator()(ScalarType x, ScalarType y) { 
-                    return Teuchos::ScalarTraits<ScalarType>::magnitude(x) > 
-                           Teuchos::ScalarTraits<ScalarType>::magnitude(y); 
-                  }
-                };
-
-    //! Compute minimum value of vector.
-    ScalarType minValue() const {
-                  ScalarType localMin, globalMin;
-                  localMin = *(max_element(scalarArray().begin(), scalarArray().end(), less_mag())); // use STL max_element, takes constant time
-
-                  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-                  vectorSpace().comm().sumAll(&localMin, &globalMin, ordinalOne);
-                  return(globalMin);
-    }
-
-    //! Compute maximum value of vector.
-    ScalarType maxValue() const {
-                  ScalarType localMax, globalMax;
-                  localMax = *(max_element(scalarArray().begin(), scalarArray().end(), greater_mag())); // use STL max_element, takes constant time
-
-                  OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-                  vectorSpace().comm().maxAll(&localMax, &globalMax, ordinalOne);
-                  return(globalMax);
-    }
-
-    //! Compute mean (average) value of vector.
-    ScalarType meanValue() const {
-      ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-      // use STL accumulate, takes linear time
-      ScalarType localTotal = accumulate(scalarArray().begin(), scalarArray().end(), scalarZero); 
-
-      ScalarType globalTotal;
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      vectorSpace().comm().sumAll(&localTotal, &globalTotal, ordinalOne);
-        
-      // update flops counter: n
-      updateFlops(getNumGlobalEntries());
-        
-      return(globalTotal / static_cast<ScalarType>(getNumGlobalEntries()));
-    }
-
-    //! Vector multiplication (elementwise) 
-    /*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
-    void elementwiseMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
-                 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
-      if(!vectorSpace().isCompatible(x.vectorSpace()) ||
-         !vectorSpace().isCompatible(y.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
-
-      // calculate x@y into temp vector
-      vector<ScalarType> xytemp(length);
-      transform(x.scalarArray().begin(), x.scalarArray().end(), 
-            y.scalarArray().begin(), xytemp.begin(), multiplies<ScalarType>());
-        
-      // calculate this *= scalarThis
-      BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-
-      // calculate this = scalarXY * temp + this
-      BLAS().AXPY(length, scalarXY, &xytemp[ordinalZero], 
-            ordinalOne, scalarPointer(), ordinalOne);
-        
-      // update flops counter: n
-      updateFlops(length);
-    }
-
-    //! Reciprocal multiply (elementwise)
-    /*! \e this = scalarThis*\e this + scalarXY*y@x, where @ represents elementwise division. */
-    void elementwiseReciprocalMultiply(ScalarType scalarXY, 
-                       Vector<OrdinalType, ScalarType> const& x, 
-                       Vector<OrdinalType, ScalarType> const& y, 
-                       ScalarType scalarThis) {
-      if(!vectorSpace().isCompatible(x.vectorSpace()) ||
-         !vectorSpace().isCompatible(y.vectorSpace()))
-        throw Object::reportError("Vector sizes do not match.", 2);
-    
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      OrdinalType const length = getNumMyEntries();
+    return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
+  }
   
-      // calculate y@x into temp vector
-      vector<ScalarType> xytemp(length);
-      transform(y.scalarArray().begin(), y.scalarArray().end(), 
-            x.scalarArray().begin(), xytemp.begin(), divides<ScalarType>());
-        
-      // calculate this *= scalarThis
-      BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-    
-      // calculate this += scalarXY * temp
-      BLAS().AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, 
-            scalarPointer(), ordinalOne);
-        
-      // update flops counter: 2n
-      updateFlops(length + length);
+  // finish: move these somewhere?
+  template<typename OrdinalType, typename ScalarType>
+  struct less_mag : public binary_function<ScalarType, ScalarType, bool> {
+    bool operator()(ScalarType x, ScalarType y) { 
+      return Teuchos::ScalarTraits<ScalarType>::magnitude(x) < 
+        Teuchos::ScalarTraits<ScalarType>::magnitude(y); 
     }
+  };
 
-    //@}
-
-
-    //@{ \name Random number utilities
-
-    //! Get seed
-    ScalarType getSeed() const {
-      return(VectorData_->seed_);
+  template<typename OrdinalType, typename ScalarType>
+  struct greater_mag : public binary_function<ScalarType, ScalarType, bool> {
+    bool operator()(ScalarType x, ScalarType y) { 
+      return Teuchos::ScalarTraits<ScalarType>::magnitude(x) > 
+        Teuchos::ScalarTraits<ScalarType>::magnitude(y); 
     }
-
-    //! Set seed
-    void setSeed(ScalarType seed) {
-      VectorData_->seed_ = seed;
-    }
-
-    //@}
+  };
 
 
-    //@{ \name Element access methods
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::minValue() const {
+    ScalarType localMin, globalMin;
+    localMin = *(max_element(scalarArray().begin(), scalarArray().end(), less_mag<OrdinalType,ScalarType>())); // use STL max_element, takes constant time
 
-    //! [] operator, nonconst version
-    ScalarType& operator[](OrdinalType index) {
-      return(VectorData_->scalarArray_[index]);
-    }
-
-    //! [] operator, const version
-    ScalarType const& operator[](OrdinalType index) const {
-      return(VectorData_->scalarArray_[index]);
-    }
-
-    //@}
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    vectorSpace().comm().sumAll(&localMin, &globalMin, ordinalOne);
+    return(globalMin);
+  }
 
 
-    //@{ \name Attribute access methods
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::maxValue() const {
+    ScalarType localMax, globalMax;
+    localMax = *(max_element(scalarArray().begin(), scalarArray().end(), greater_mag<OrdinalType,ScalarType>())); // use STL max_element, takes constant time
 
-    //! Returns number of vector entries owned by this image.
-    OrdinalType getNumMyEntries() const {
-      return(vectorSpace().getNumMyEntries());
-    }
-
-    //! Returns number of vector entries across all images.
-    OrdinalType getNumGlobalEntries() const {
-      return(vectorSpace().getNumGlobalEntries());
-    }
-
-    //@}
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    vectorSpace().comm().maxAll(&localMax, &globalMax, ordinalOne);
+    return(globalMax);
+  }
 
 
-    //@{ \name I/O methods
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::meanValue() const {
+    ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
+    // use STL accumulate, takes linear time
+    ScalarType localTotal = accumulate(scalarArray().begin(), scalarArray().end(), scalarZero); 
 
-    //! Print method, used by overloaded << operator.
-    void print(ostream& os) const {
-      OrdinalType const myImageID = vectorSpace().comm().getMyImageID();
-      OrdinalType const numImages = vectorSpace().comm().getNumImages();
-      OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    
-      for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
-        if (myImageID == imageCtr) {
-          if (myImageID == ordinalZero) {
-            os << Object::label() << endl;
-            os << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
-          }
-          os <<   "ImageID = " << myImageID << endl;
-          os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
-          os <<           "Contents: ";
-          printValues(os);
+    ScalarType globalTotal;
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    vectorSpace().comm().sumAll(&localTotal, &globalTotal, ordinalOne);
+
+    // update flops counter: n
+    updateFlops(getNumGlobalEntries());
+
+    return(globalTotal / static_cast<ScalarType>(getNumGlobalEntries()));
+  }
+
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::elementwiseMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
+      Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
+    if(!vectorSpace().isCompatible(x.vectorSpace()) ||
+        !vectorSpace().isCompatible(y.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
+
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // calculate x@y into temp vector
+    vector<ScalarType> xytemp(length);
+    transform(x.scalarArray().begin(), x.scalarArray().end(), 
+        y.scalarArray().begin(), xytemp.begin(), multiplies<ScalarType>());
+
+    // calculate this *= scalarThis
+    BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
+
+    // calculate this = scalarXY * temp + this
+    BLAS().AXPY(length, scalarXY, &xytemp[ordinalZero], 
+        ordinalOne, scalarPointer(), ordinalOne);
+
+    // update flops counter: n
+    updateFlops(length);
+  }
+
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::elementwiseReciprocalMultiply(ScalarType scalarXY, 
+      Vector<OrdinalType, ScalarType> const& x, 
+      Vector<OrdinalType, ScalarType> const& y, 
+      ScalarType scalarThis) {
+    if(!vectorSpace().isCompatible(x.vectorSpace()) ||
+        !vectorSpace().isCompatible(y.vectorSpace()))
+      throw Object::reportError("Vector sizes do not match.", 2);
+
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+    OrdinalType const length = getNumMyEntries();
+
+    // calculate y@x into temp vector
+    vector<ScalarType> xytemp(length);
+    transform(y.scalarArray().begin(), y.scalarArray().end(), 
+        x.scalarArray().begin(), xytemp.begin(), divides<ScalarType>());
+
+    // calculate this *= scalarThis
+    BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
+
+    // calculate this += scalarXY * temp
+    BLAS().AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, 
+        scalarPointer(), ordinalOne);
+
+    // update flops counter: 2n
+    updateFlops(length + length);
+  }
+
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType Vector<OrdinalType,ScalarType>::getSeed() const {
+    return(VectorData_->seed_);
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::setSeed(ScalarType seed) {
+    VectorData_->seed_ = seed;
+  }
+
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType& Vector<OrdinalType,ScalarType>::operator[](OrdinalType index) {
+    return(VectorData_->scalarArray_[index]);
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType const& Vector<OrdinalType,ScalarType>::operator[](OrdinalType index) const {
+    return(VectorData_->scalarArray_[index]);
+  }
+
+
+
+  template<typename OrdinalType, typename ScalarType>
+  OrdinalType Vector<OrdinalType,ScalarType>::getNumMyEntries() const {
+    return(vectorSpace().getNumMyEntries());
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
+  OrdinalType Vector<OrdinalType,ScalarType>::getNumGlobalEntries() const {
+    return(vectorSpace().getNumGlobalEntries());
+  }
+
+
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::print(ostream& os) const {
+    OrdinalType const myImageID = vectorSpace().comm().getMyImageID();
+    OrdinalType const numImages = vectorSpace().comm().getNumImages();
+    OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+
+    for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
+      if (myImageID == imageCtr) {
+        if (myImageID == ordinalZero) {
+          os << Object::label() << endl;
+          os << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
         }
-        vectorSpace().comm().barrier();
+        os <<   "ImageID = " << myImageID << endl;
+        os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
+        os <<           "Contents: ";
+        printValues(os);
       }
+      vectorSpace().comm().barrier();
     }
-  
-    void printValues(ostream& os) const {
-      for(typename std::vector<ScalarType>::const_iterator i = scalarArray().begin(); 
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void Vector<OrdinalType,ScalarType>::printValues(ostream& os) const {
+    for(typename std::vector<ScalarType>::const_iterator i = scalarArray().begin(); 
         i != scalarArray().end(); i++)
-        os << *i << " ";
-      os << endl;
-    }
-    //@}
+      os << *i << " ";
+    os << endl;
+  }
 
-    //@{ \name Misc. 
 
-    //! Returns a const reference to the VectorSpace this Vector belongs to.
-    VectorSpace<OrdinalType, ScalarType> const& vectorSpace() const {
-      return(VectorData_->VectorSpace_);
-    }
+  template<typename OrdinalType, typename ScalarType>
+  VectorSpace<OrdinalType, ScalarType> const& Vector<OrdinalType,ScalarType>::vectorSpace() const {
+    return(VectorData_->VectorSpace_);
+  }
 
-    //! Assignment Operator
-    Vector<OrdinalType, ScalarType>& operator = (Vector<OrdinalType, ScalarType> const& Source) {
-      VectorData_ = Source.VectorData_;
-      return(*this);
-    }
 
-    //@}
+  template<typename OrdinalType, typename ScalarType>
+  Vector<OrdinalType, ScalarType>& Vector<OrdinalType,ScalarType>::operator = (Vector<OrdinalType, ScalarType> const& Source) {
+    VectorData_ = Source.VectorData_;
+    return(*this);
+  }
 
-    //@{ \name Expert/Developer Use Only.
 
-    // Returns pointer to ScalarType array inside of scalarArray
-    ScalarType* scalarPointer() {
-      if(VectorData_->scalarArray_.empty())
-        return(0);
-      else
-        return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
-    }
-    ScalarType const* scalarPointer() const {
-      if(VectorData_->scalarArray_.empty())
-        return(0);
-      else
-        return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
-    }
 
-    //@}
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType* Vector<OrdinalType,ScalarType>::scalarPointer() {
+    if(VectorData_->scalarArray_.empty())
+      return(0);
+    else
+      return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+  }
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType const* Vector<OrdinalType,ScalarType>::scalarPointer() const {
+    if(VectorData_->scalarArray_.empty())
+      return(0);
+    else
+      return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+  }
 
-  private:
+  template<typename OrdinalType, typename ScalarType>
+  Teuchos::BLAS<OrdinalType, ScalarType> const& Vector<OrdinalType,ScalarType>::BLAS() const {
+    return(VectorData_->BLAS_);
+  }
 
-    // Accessor for BLAS
-    Teuchos::BLAS<OrdinalType, ScalarType> const& BLAS() const {
-      return(VectorData_->BLAS_);
-    }
+  template<typename OrdinalType, typename ScalarType>
+  std::vector<ScalarType>& Vector<OrdinalType,ScalarType>::scalarArray() {
+    return(VectorData_->scalarArray_);
+  }
+  template<typename OrdinalType, typename ScalarType>
+  std::vector<ScalarType>const & Vector<OrdinalType,ScalarType>::scalarArray() const{
+    return(VectorData_->scalarArray_);
+  }
 
-    // Accessors for scalarArray
-    std::vector<ScalarType>& scalarArray() {
-      return(VectorData_->scalarArray_);
-    }
-    std::vector<ScalarType>const & scalarArray() const{
-      return(VectorData_->scalarArray_);
-    }
-
-    Teuchos::RCP< VectorData<OrdinalType, ScalarType> > VectorData_;
-
-    // four functions needed for DistObject derivation
-    bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) {
-      // first check that sourceObj is actually a Vector, and not some other kind of DistObject
-      /*try {
-        Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+  template<typename OrdinalType, typename ScalarType>
+  bool Vector<OrdinalType,ScalarType>::checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) {
+    // first check that sourceObj is actually a Vector, and not some other kind of DistObject
+    /*try {
+      Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
       }
       catch(std::bad_cast bc) {
-        return(false);
+      return(false);
       }*/
 
-      // ???
-      
-      return(true);
+    // ???
+
+    return(true);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  int Vector<OrdinalType,ScalarType>::copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
+      OrdinalType const numSameIDs,
+      OrdinalType const numPermuteIDs,
+      std::vector<OrdinalType> const& permuteToLIDs,
+      std::vector<OrdinalType> const& permuteFromLIDs) {
+    // cast sourceObj to a Tpetra::Vector so we can actually do something with it
+    Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+
+    std::vector<ScalarType> const& sourceArray = sourceVector.scalarArray();
+    std::vector<ScalarType>& destArray = scalarArray();
+
+    // the first numImportIDs GIDs are the same between source and target,
+    // we can just copy them
+    for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numSameIDs; i++)
+      destArray[i] = sourceArray[i];
+
+    // next, do permutations
+    for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numPermuteIDs; i++)
+      destArray[permuteToLIDs[i]] = sourceArray[permuteFromLIDs[i]];
+
+    return(0);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  int Vector<OrdinalType,ScalarType>::packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
+      OrdinalType const numExportIDs,
+      std::vector<OrdinalType> const& exportLIDs,
+      std::vector<ScalarType>& exports,
+      OrdinalType& packetSize,
+      Distributor<OrdinalType> const& distor) {
+    // cast sourceObj to a Tpetra::Vector so we can actually do something with it
+    Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
+
+    // For a vector, we only need to send the value
+    exports.clear();
+    for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numExportIDs; i++)
+      exports.push_back(sourceVector[exportLIDs[i]]);
+
+    // packetSize = 1
+    packetSize = Teuchos::OrdinalTraits<OrdinalType>::one();
+
+    return(0);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  int Vector<OrdinalType,ScalarType>::unpackAndCombine(OrdinalType const numImportIDs,
+      std::vector<OrdinalType> const& importLIDs,
+      std::vector<ScalarType> const& imports,
+      Distributor<OrdinalType> const& distor,
+      CombineMode const CM) {
+    if(CM == Insert || CM == Replace) {
+      // copy values from scalarExports
+      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
+        scalarArray().at(importLIDs[i]) = imports[i];
     }
-
-    int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
-               OrdinalType const numSameIDs,
-               OrdinalType const numPermuteIDs,
-               std::vector<OrdinalType> const& permuteToLIDs,
-               std::vector<OrdinalType> const& permuteFromLIDs) {
-      // cast sourceObj to a Tpetra::Vector so we can actually do something with it
-      Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
-      
-      std::vector<ScalarType> const& sourceArray = sourceVector.scalarArray();
-      std::vector<ScalarType>& destArray = scalarArray();
-
-      // the first numImportIDs GIDs are the same between source and target,
-      // we can just copy them
-      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numSameIDs; i++)
-          destArray[i] = sourceArray[i];
-
-      // next, do permutations
-      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numPermuteIDs; i++)
-          destArray[permuteToLIDs[i]] = sourceArray[permuteFromLIDs[i]];
-      
-      return(0);
+    else if(CM == Add) {
+      // sum values from scalarExports
+      submitEntries(numImportIDs, &importLIDs.front(), &imports.front());
     }
+    else
+      throw Object::reportError("Unknown CombineMode", -99);
 
-    int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
-               OrdinalType const numExportIDs,
-               std::vector<OrdinalType> const& exportLIDs,
-               std::vector<ScalarType>& exports,
-               OrdinalType& packetSize,
-               Distributor<OrdinalType> const& distor) {
-      // cast sourceObj to a Tpetra::Vector so we can actually do something with it
-      Vector<OrdinalType, ScalarType> const& sourceVector = dynamic_cast<Vector<OrdinalType, ScalarType> const&>(sourceObj);
-
-      // For a vector, we only need to send the value
-      exports.clear();
-      for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numExportIDs; i++)
-        exports.push_back(sourceVector[exportLIDs[i]]);
-
-      // packetSize = 1
-      packetSize = Teuchos::OrdinalTraits<OrdinalType>::one();
-      
-      return(0);
-    }
-  
-    int unpackAndCombine(OrdinalType const numImportIDs,
-               std::vector<OrdinalType> const& importLIDs,
-               std::vector<ScalarType> const& imports,
-               Distributor<OrdinalType> const& distor,
-               CombineMode const CM) {
-      if(CM == Insert || CM == Replace) {
-        // copy values from scalarExports
-        for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numImportIDs; i++)
-          scalarArray().at(importLIDs[i]) = imports[i];
-      }
-      else if(CM == Add) {
-        // sum values from scalarExports
-        submitEntries(numImportIDs, &importLIDs.front(), &imports.front());
-      }
-      else
-        throw Object::reportError("Unknown CombineMode", -99);
-
-      return(0);
-    }
-
-  }; // class Vector
+    return(0);
+  }
 
 } // namespace Tpetra
 

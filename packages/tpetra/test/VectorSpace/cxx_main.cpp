@@ -111,14 +111,14 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	OrdinalType const indexBase = intToOrdinal<OrdinalType>(2);
 	OrdinalType const numPoints = intToOrdinal<OrdinalType>(3);
 	Tpetra::ElementSpace<OrdinalType> es(numGlobalElements, indexBase, platformE);
-	Tpetra::BlockElementSpace<OrdinalType> bes(es, numPoints);
+	// Tpetra::BlockElementSpace<OrdinalType> bes(es, numPoints);
 
 	// constructors
 	if(verbose) cout << "VectorSpace constructor (taking an ElementSpace)..." << endl;
 	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(es, platformV);
  
-	if(verbose) cout << "VectorSpace constructor (taking a BlockElementSpace)..." << endl;
-	Tpetra::VectorSpace<OrdinalType, ScalarType> blockvectorspace(bes, platformV);
+	// if(verbose) cout << "VectorSpace constructor (taking a BlockElementSpace)..." << endl;
+	// Tpetra::VectorSpace<OrdinalType, ScalarType> blockvectorspace(bes, platformV);
 
 	if(verbose) cout << "VectorSpace copy constructor..." << endl;
 	Tpetra::VectorSpace<OrdinalType, ScalarType> v2(vectorspace);

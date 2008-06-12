@@ -30,13 +30,13 @@ include $(top_builddir)/Makefile.export.tpetra
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = BlockElementSpace_test
+noinst_PROGRAMS = # BlockElementSpace_test
 
-BlockElementSpace_test_SOURCES = $(srcdir)/cxx_main.cpp
-
-BlockElementSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-BlockElementSpace_test_CXXFLAGS = $(TPETRA_INCLUDES)
-
-BlockElementSpace_test_LDADD = $(TPETRA_LIBS)
+# BlockElementSpace_test_SOURCES = $(srcdir)/cxx_main.cpp
+# 
+# BlockElementSpace_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+# 	$(top_builddir)/../teuchos/src/libteuchos.a
+# 
+# BlockElementSpace_test_CXXFLAGS = $(TPETRA_INCLUDES)
+# 
+# BlockElementSpace_test_LDADD = $(TPETRA_LIBS)

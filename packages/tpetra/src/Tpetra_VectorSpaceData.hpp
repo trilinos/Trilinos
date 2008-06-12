@@ -36,34 +36,32 @@ namespace Tpetra {
 		friend class VectorSpace<OrdinalType, ScalarType>;
 	public:
 		// default constructor
-		VectorSpaceData(bool blockspace, 
+		VectorSpaceData(
 						OrdinalType indexBase, 
 						OrdinalType numMyEntries, 
 						OrdinalType numGlobalEntries, 
 						Platform<OrdinalType, ScalarType> const& platform) 
 			: Object("Tpetra::VectorSpaceData")
-			, blockspace_(blockspace)
+			// , blockspace_(blockspace)
 			, indexBase_(indexBase)
 			, numMyEntries_(numMyEntries)
 			, numGlobalEntries_(numGlobalEntries)
 			, Platform_(platform.clone())
 			, Comm_(platform.createScalarComm())
 			, ElementSpace_()
-			, BlockElementSpace_()
 		{};
 
 		// destructor. no heap-data, so no need to override
 		~VectorSpaceData() {};
 
 	protected:
-		bool blockspace_;
+		// bool blockspace_;
 		OrdinalType const indexBase_;
 		OrdinalType const numMyEntries_;
 		OrdinalType const numGlobalEntries_;
 		Teuchos::RCP< Platform<OrdinalType, ScalarType> const > Platform_;
 		Teuchos::RCP< Comm<OrdinalType, ScalarType> const > Comm_; // Comm is <ST, OT> because ST represents PT
 		Teuchos::RCP< ElementSpace<OrdinalType> const > ElementSpace_;
-		Teuchos::RCP< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
 
 	private:
 		//! Copy constructor (declared but not defined, do not use)

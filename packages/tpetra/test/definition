@@ -9,7 +9,6 @@
            Directory,
            DistObject,
            ElementSpace,
-           BlockElementSpace,
            ImportExport,
            VectorSpace,
            Vector,

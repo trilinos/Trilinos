@@ -110,8 +110,6 @@ LANG_WRAPS =
 DIST_H = \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
 	$(srcdir)/Tpetra_ElementSpaceData.hpp \
-	$(srcdir)/Tpetra_BlockElementSpace.hpp \
-	$(srcdir)/Tpetra_BlockElementSpaceData.hpp \
 	$(srcdir)/Tpetra_VectorSpace.hpp \
 	$(srcdir)/Tpetra_VectorSpaceData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
@@ -122,7 +120,9 @@ DIST_H = \
 DIST = 
 
 COMP_H = \
+	$(srcdir)/Tpetra_VectorDecl.hpp \
 	$(srcdir)/Tpetra_Vector.hpp \
+	$(srcdir)/Tpetra_VectorDataDecl.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
