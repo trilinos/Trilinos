@@ -1,27 +1,18 @@
 # $Header$
 
+# Required modules
 INCLUDE(Trilinos_Add_Executable)
 
-INCLUDE_DIRECTORIES(${Epetra_BINARY_DIR}/src)
-INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/src)
+# Setup include directories and library dependencies
+INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
+LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
 
-LINK_LIBRARIES(epetra ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
-
-IF(TRILINOS_ENABLE_MPI)
-	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-	LINK_LIBRARIES(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
-ENDIF(TRILINOS_ENABLE_MPI)
-
+# Example definitions
 TRILINOS_ADD_EXECUTABLE(petra_power_method EXAMPLE SOURCES cxx_main.cpp ARGS 100)
-
 TRILINOS_ADD_EXECUTABLE(verySimple EXAMPLE SOURCES cxx_main.cpp)
-
 TRILINOS_ADD_EXECUTABLE(UG_Ex1 EXAMPLE SOURCES cxx_main.cpp power_method.cpp ARGS 100)
-
 TRILINOS_ADD_EXECUTABLE(UG_ExMaps EXAMPLE SOURCES cxx_main.cpp ARGS 100)
-
 TRILINOS_ADD_EXECUTABLE(my_example EXAMPLE SOURCES cxx_main.cpp ARGS -v)
-
 
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 

@@ -1,5 +1,6 @@
 # $Header$ 
 
+# Package-specific configuration options
 IF(${PROJECT_NAME}_ENABLE_COMPLEX)
   SET(HAVE_TEUCHOS_COMPLEX TRUE)
 ENDIF(${PROJECT_NAME}_ENABLE_COMPLEX)
@@ -8,17 +9,22 @@ IF(${PROJECT_NAME}_ENABLE_EXTENDED)
   SET(HAVE_TEUCHOS_EXTENDED TRUE)
 ENDIF(${PROJECT_NAME}_ENABLE_EXTENDED)
 
-CONFIGURE_FILE(${Teuchos_SOURCE_DIR}/cmake/${PROJECT_NAME}_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_config.h)
+# Create <PACKAGE>_config.h
+CONFIGURE_FILE(
+  ${${PROJECT_NAME}_SOURCE_DIR}/cmake/${PROJECT_NAME}_config.h.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_config.h)
 INSTALL(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_config.h
   DESTINATION ${TRILINOS_INSTALL_LIB_INCLUDE_DIR}
   COMPONENT ${PROJECT_NAME}
   )
 
+# Setup directories based on current directory
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+# Set headers
 SET(HEADERS
 	Teuchos_AbstractFactory.hpp 
 	Teuchos_AbstractFactoryStd.hpp 
@@ -129,6 +135,7 @@ SET(HEADERS
 	Teuchos_oblackholestream.hpp
 	)
 
+# Set sources
 SET(SOURCES
 	Teuchos_BLAS.cpp 
 	Teuchos_CTimeMonitor.cpp 
@@ -171,6 +178,8 @@ SET(SOURCES
 	Teuchos_exit.cpp
 	)
 
+# Set addition headers and source based on package-specific 
+# configuration options
 IF(${PROJECT_NAME}_ENABLE_EXTENDED)
 	SET(HEADERS
 		${HEADERS}
@@ -238,14 +247,27 @@ ENDIF(TRILINOS_ENABLE_MPI)
 # 2008/06/09: rabartl: Above: We need to change all of this to use file
 # (GLOB...) and then use ifdefs in the files to control what gets built.
 
+# 2008/06/11: dmdunla: file globbing will work if the directories contain
+# only those files that should be built. Currently, though, there are 
+# extraneous files (e.g., Teuchos_FloatingPointTrap.cpp)
+
+# Target library setup
 ADD_LIBRARY(teuchos ${HEADERS} ${SOURCES})
-LIST(APPEND LIBRARIES teuchos)
+LIST(APPEND TARGET_LIBS teuchos)
+LIST(APPEND LIB_DEPS ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
+TARGET_LINK_LIBRARIES(teuchos ${LIB_DEPS})
 
 # 2008/06/09: rabartl: Above: Why are the headers being listed in
 # ADD_LIBRARY(...)?  Can't Cmake figure out what the headers are?
 
+# 2008/06/11: dmdunla: The addition of headers in the targets
+# enables access to headers from within MS VisualStudio
+
+# MPI setup
 IF(TRILINOS_ENABLE_MPI)
-  TARGET_LINK_LIBRARIES(teuchos ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
+  LIST(APPEND LIB_DEPS ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
+  INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIRS})
+  TARGET_LINK_LIBRARIES(teuchos ${LIB_DEPS})
 ENDIF(TRILINOS_ENABLE_MPI)
 
 INSTALL(
@@ -262,9 +284,9 @@ INSTALL(
   COMPONENT ${PROJECT_NAME}
   )
 
-# Info for ${PROJECT_NAME}Config.cmake
+# Define current package dependency variables
 GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT INCLUDE_DIRECTORIES)
 SET(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${INCLUDE_DIRS_CURRENT} CACHE INTERNAL "${PROJECT_NAME} include directories")
 GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT LINK_DIRECTORIES)
 SET(${PROJECT_NAME}_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS}  ${LIBRARY_DIRS_CURRENT} CACHE INTERNAL "${PROJECT_NAME} library directories")
-SET(${PROJECT_NAME}_LIBRARIES ${${PROJECT_NAME}_LIBRARIES} ${LIBRARIES} CACHE INTERNAL "${PROJECT_NAME} libraries")
+SET(${PROJECT_NAME}_LIBRARIES ${${PROJECT_NAME}_LIBRARIES} ${TARGET_LIBS} ${LIB_DEPS} CACHE INTERNAL "${PROJECT_NAME} libraries")

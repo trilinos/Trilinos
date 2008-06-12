@@ -6,10 +6,6 @@ PROJECT(Epetra CXX C)
 # Setup package version
 SET(${PROJECT_NAME}_VERSION "3.7d")
 
-SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include directories")
-SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
-SET(${PROJECT_NAME}_LIBRARIES "" CACHE INTERNAL "${PROJECT_NAME} libraries")
-
 # Flag to enable tests
 OPTION(${PROJECT_NAME}_ENABLE_TESTS
        "Build ${PROJECT_NAME} tests."
@@ -59,6 +55,6 @@ LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
 ##############################################################################
 # Configure <PACKAGE>Config.cmake for the build tree.
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake @ONLY)
+               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
 ##############################################################################
 

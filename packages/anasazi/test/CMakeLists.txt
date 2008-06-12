@@ -1,33 +1,20 @@
 # $Header$
 
+# Required modules
 INCLUDE(Trilinos_Add_Executable)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MVOPTester)
-INCLUDE_DIRECTORIES(${Anasazi_BINARY_DIR}/src)
-INCLUDE_DIRECTORIES(${Anasazi_SOURCE_DIR}/src)
-INCLUDE_DIRECTORIES(${Anasazi_SOURCE_DIR}/util/ModeLaplace)
-INCLUDE_DIRECTORIES(${Teuchos_BINARY_DIR}/src)
-INCLUDE_DIRECTORIES(${Teuchos_SOURCE_DIR}/src)
-INCLUDE_DIRECTORIES(${Epetra_BINARY_DIR}/src)
-INCLUDE_DIRECTORIES(${Epetra_SOURCE_DIR}/src)
+# Setup include directories and library dependencies
+INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
+LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
 
-# 2008/06/09: rabartl: Above: You should not be listing include directories
-# for your or any other package.  This just creates a maintainance problem and
-# is not scalable.  NO DUPLICATION!
-
-LINK_LIBRARIES(anasazi-mode-laplace anasazi teuchos epetra ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
-
-# 2008/06/09: rabartl: Above: epetra already lists LAPACK and BLAS as link
-# libraries, why do you have to list them again?
-
+# Test arguments for MPI
 IF(TRILINOS_ENABLE_MPI)
-	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-	LINK_LIBRARIES(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
 	SET(TEST_ARGUMENTS TEST MPITEST)
 ELSE(TRILINOS_ENABLE_MPI)
 	SET(TEST_ARGUMENTS TEST)
 ENDIF(TRILINOS_ENABLE_MPI)
 
+# Test definitions
 TRILINOS_ADD_EXECUTABLE(ARPACKExamples NAME ARPACKDDriver ${TEST_ARGUMENTS} SOURCES ddriver.cpp)
 TRILINOS_ADD_EXECUTABLE(BlockDavidson NAME BlockDavidson ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(BlockDavidson NAME BlockDavidsonSolver ${TEST_ARGUMENTS} SOURCES cxx_main_solvertest.cpp)

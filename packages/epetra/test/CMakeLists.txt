@@ -1,68 +1,45 @@
 # $Header$
 
+# Required modules
 INCLUDE(Trilinos_Add_Executable)
 
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_BINARY_DIR}/src)
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_SOURCE_DIR}/src)
+# Setup include directories and library dependencies
+INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
+LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
 
-LINK_LIBRARIES(epetra ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY})
-
+# Test arguments for MPI
 IF(TRILINOS_ENABLE_MPI)
-	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-	LINK_LIBRARIES(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
 	SET(TEST_ARGUMENTS TEST MPITEST)
 ELSE(TRILINOS_ENABLE_MPI)
 	SET(TEST_ARGUMENTS TEST)
 ENDIF(TRILINOS_ENABLE_MPI)
 
+# Test definitions
 TRILINOS_ADD_EXECUTABLE(BlockMap ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
-
-# Problem setting up MPI version due to argument requirements
+# Problem setting up MPI version of following test due to argument requirements
 TRILINOS_ADD_EXECUTABLE(BasicPerfTest TEST INSTALL SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
-
 TRILINOS_ADD_EXECUTABLE(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(CrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(RowMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(CrsRectMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(FECrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-
-# Not building on Windows
+# Following test is not building on Windows
 #TRILINOS_ADD_EXECUTABLE(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(FEVbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-
-# Not building on Windows
+# Following test is not building on Windows
 #TRILINOS_ADD_EXECUTABLE(FEVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(ImportExport ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(IntSerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(Map ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
-
 # This test was commented out in the AUTOTOOLS configuration:
 TRILINOS_ADD_EXECUTABLE(MapColoring ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(MultiVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(Object ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(RowMatrixTransposer ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(SerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(SerialSpdDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
-# Not building on Windows
+# Following test is not building on Windows
 #TRILINOS_ADD_EXECUTABLE(VbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-
 TRILINOS_ADD_EXECUTABLE(Vector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
-
