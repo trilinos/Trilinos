@@ -30,6 +30,7 @@
 #define TPETRA_VECTOR_HPP
 
 #include "Tpetra_VectorDecl.hpp"
+#include "Tpetra_VectorData.hpp"
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 
@@ -652,7 +653,5 @@ namespace Tpetra {
   }
 
 } // namespace Tpetra
-
-#include "Tpetra_VectorData.hpp"
 
 #endif // TPETRA_VECTOR_HPP

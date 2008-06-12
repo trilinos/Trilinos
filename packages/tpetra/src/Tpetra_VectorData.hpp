@@ -41,10 +41,10 @@ namespace Tpetra {
       , VectorSpace_(VectorSpace)
       , scalarArray_(length, Teuchos::ScalarTraits<ScalarType>::zero())
       , seed_(seed)
-  {};
+  {}
 
   template<typename OrdinalType, typename ScalarType>
-  VectorData<OrdinalType,ScalarType>::~VectorData() {};
+  VectorData<OrdinalType,ScalarType>::~VectorData() {}
 
 } // namespace Tpetra
 
