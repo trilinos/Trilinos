@@ -27,6 +27,7 @@ Factory_Trilinos::Factory_Trilinos(MPI_Comm comm)
     useAmesos_(false),
     use_feiMatrixLocal_(false),
     blockEntryMatrix_(false),
+    orderRowsWithLocalColsFirst_(false),
     outputLevel_(0)
 {
 }
@@ -79,6 +80,9 @@ void Factory_Trilinos::parameters(const fei::ParameterSet& parameterset)
   }
 
   parameterset.getBoolParamValue("USE_FEI_MATRIX_LOCAL", use_feiMatrixLocal_);
+
+  parameterset.getBoolParamValue("ORDER_ROWS_WITH_LOCAL_COLS_FIRST",
+                                 orderRowsWithLocalColsFirst_);
 }
 
 fei::SharedPtr<fei::MatrixGraph>
@@ -322,7 +326,8 @@ Factory_Trilinos::createMatrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
   return(
       Trilinos_Helpers::create_from_Epetra_Matrix(matrixGraph,
                                                   blockEntryMatrix_,
-                                                  reducer_)
+                                                  reducer_,
+                                                  orderRowsWithLocalColsFirst_)
   );
 }
 

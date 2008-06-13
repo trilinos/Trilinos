@@ -20,6 +20,7 @@
 #include <fei_Matrix_Impl.hpp>
 #include <fei_MatrixReducer.hpp>
 #include <fei_LinProbMgr_EpetraBasic.hpp>
+//#include <EpetraExt_BlockMapOut.h>
 
 namespace Trilinos_Helpers {
 Epetra_Map
@@ -88,7 +89,7 @@ create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
 Epetra_CrsGraph
 create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
                        const fei::SharedPtr<fei::Reducer>& reducer,
-		       bool blockEntries)
+		       bool blockEntries, bool orderRowsWithLocalColsFirst)
 {
   fei::SharedPtr<fei::SparseRowGraph> localSRGraph =
     matgraph->createGraph(blockEntries);
@@ -104,8 +105,41 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
   fei::SharedPtr<fei::VectorSpace> vecspace = matgraph->getRowSpace();
   MPI_Comm comm = vecspace->getCommUtils()->getCommunicator();
   std::vector<int>& local_eqns = localSRGraph->rowNumbers;
+
   Epetra_BlockMap emap = blockEntries ?
     create_Epetra_BlockMap(vecspace) : create_Epetra_Map(comm, local_eqns);
+
+  if (orderRowsWithLocalColsFirst == true &&
+      emap.Comm().NumProc() > 2 && !blockEntries) {
+    bool* used_row = new bool[local_eqns.size()];
+    for(unsigned ii=0; ii<local_eqns.size(); ++ii) used_row[ii] = false;
+
+    int offset = 0;
+    std::vector<int> ordered_local_eqns(local_eqns.size());
+    for(unsigned ii=0; ii<local_eqns.size(); ++ii) {
+      bool row_has_off_proc_cols = false;
+      for(int j=rowOffsets[ii]; j<rowOffsets[ii+1]; ++j) {
+        if (emap.MyGID(packedColumnIndices[j]) == false) {
+          row_has_off_proc_cols = true;
+          break;
+        }
+      }
+
+      if (row_has_off_proc_cols == false) {
+        ordered_local_eqns[offset++] = rowNumbers[ii];
+        used_row[ii] = true;
+      }
+    }
+
+    for(unsigned ii=0; ii<local_eqns.size(); ++ii) {
+      if (used_row[ii] == true) continue;
+      ordered_local_eqns[offset++] = rowNumbers[ii];
+    }
+
+    emap = create_Epetra_Map(comm, ordered_local_eqns);
+  }
+
+//  EpetraExt::BlockMapToMatrixMarketFile("EBMap.np12.mm",emap,"AriaTest");
 
   std::vector<int> rowLengths(numLocallyOwnedRows);
   for(int ii=0; ii<numLocallyOwnedRows; ++ii) {
@@ -148,7 +182,8 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
 fei::SharedPtr<fei::Matrix>
 create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                           bool blockEntryMatrix,
-                          fei::SharedPtr<fei::Reducer> reducer)
+                          fei::SharedPtr<fei::Reducer> reducer,
+                          bool orderRowsWithLocalColsFirst)
 {
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph->getRowSpace();
   int localSize;
@@ -164,7 +199,8 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   try {
     Epetra_CrsGraph egraph =
       Trilinos_Helpers::create_Epetra_CrsGraph(matrixGraph, reducer,
-                                               blockEntryMatrix);
+                                               blockEntryMatrix,
+                                               orderRowsWithLocalColsFirst);
 
     if (blockEntryMatrix) {
       fei::SharedPtr<Epetra_VbrMatrix>

@@ -115,6 +115,7 @@ class Factory_Trilinos : public fei::Factory {
   bool useAmesos_;
   bool use_feiMatrixLocal_;
   bool blockEntryMatrix_;
+  bool orderRowsWithLocalColsFirst_;
 
   int outputLevel_;
 };

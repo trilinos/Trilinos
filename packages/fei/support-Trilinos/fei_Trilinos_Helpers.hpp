@@ -42,12 +42,14 @@ namespace Trilinos_Helpers {
   Epetra_CrsGraph
     create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
                            const fei::SharedPtr<fei::Reducer>& reducer,
-                           bool blockEntries);
+                           bool blockEntries,
+                           bool orderRowsWithLocalColsFirst=false);
 
   fei::SharedPtr<fei::Matrix>
     create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                               bool blockEntryMatrix,
-                              fei::SharedPtr<fei::Reducer> reducer);
+                              fei::SharedPtr<fei::Reducer> reducer,
+                              bool orderRowsWithLocalColsFirst=false);
 
   fei::SharedPtr<fei::Matrix>
     create_from_LPM_EpetraBasic(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
