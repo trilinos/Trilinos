@@ -77,10 +77,16 @@ namespace Tpetra {
     //! Returns the index base for this VectorSpace.
     OrdinalType getIndexBase() const;
 
-    //! Min/Max Indices
+    //! Returns minimum local index
     OrdinalType getMinLocalIndex() const;
+
+    //! Returns maximum local index
     OrdinalType getMaxLocalIndex() const;
+
+    //! Returns minimum global index
     OrdinalType getMinGlobalIndex() const;
+
+    //! Returns maximum global index
     OrdinalType getMaxGlobalIndex() const;
 
     //! Return the local index for a given global index
@@ -114,17 +120,16 @@ namespace Tpetra {
 
     //@{ \name Boolean Tests
 
-    //! Returns true if the Map passed in is compatible with this Map.
+    //! Returns true if \c map is compatible with this Map.
     bool isCompatible (const Map< OrdinalType> &map) const;
 
-    //! Returns true if the Map passed in is identical to this Map.
+    //! Returns true if \c map is identical to this Map.
     bool isSameAs (const Map<OrdinalType> &map) const;
 
-    //! Returns true if the Map passed in is identical to this Map. Implemented in isSameAs().
+    //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
     bool operator== (const Map< OrdinalType > &map) const;
 
-
-    //! Returns true if the Map passed is not identical to this Map. Implemented in isSameAs().
+    //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
     bool operator!= (const Map< OrdinalType > &map) const;
 
     //@}

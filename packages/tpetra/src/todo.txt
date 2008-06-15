@@ -1,0 +1,4 @@
+* kill Tpetra::Object, replace with Teuchos::Object
+* ask mike first: kill Tpetra::Comm and replace with Teuchos::Comm
+* ask mike: start organizing tpetra for explicit instantiation
+* get ready to do multivector
