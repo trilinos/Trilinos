@@ -56,6 +56,13 @@ namespace Sacado {							\
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
   }									\
 									\
+  namespace LFad {							\
+    template <typename T> class FADOP;					\
+    template <typename T> class Expr;					\
+    template <typename T>						\
+    Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
+  }									\
+									\
   namespace Tay {							\
     template <typename T> class Taylor;					\
     template <typename T> Taylor<T> OP (const Taylor<T>&);		\
@@ -88,6 +95,7 @@ namespace std {                                                         \
   using Sacado::Fad::OP;						\
   using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
+  using Sacado::LFad::OP;						\
   using Sacado::Tay::OP;						\
   using Sacado::PCE::OP;						\
   using Sacado::FlopCounterPack::OP;					\
@@ -166,6 +174,23 @@ namespace Sacado {							\
 									\
     template <typename T>						\
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >	\
+    OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
+  }									\
+									\
+  namespace LFad {							\
+    template <typename T1, typename T2> class FADOP;			\
+    template <typename T> class Expr;					\
+									\
+    template <typename T1, typename T2>					\
+    Expr< FADOP< Expr<T1>, Expr<T2> > >					\
+    OP (const Expr<T1>&, const Expr<T2>&);				\
+									\
+    template <typename T>						\
+    Expr< FADOP< typename Expr<T>::value_type, Expr<T> > >		\
+    OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
+									\
+    template <typename T>						\
+    Expr< FADOP< Expr<T>, typename Expr<T>::value_type > >		\
     OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
   }									\
 									\
@@ -271,6 +296,7 @@ namespace std {                                                         \
   using Sacado::Fad::OP;						\
   using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
+  using Sacado::LFad::OP;						\
   using Sacado::Tay::OP;						\
   using Sacado::PCE::OP;						\
   using Sacado::FlopCounterPack::OP;					\

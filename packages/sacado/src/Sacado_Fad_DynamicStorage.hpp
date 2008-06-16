@@ -40,7 +40,7 @@ namespace Sacado {
   namespace Fad {
 
     //! Derivative array storage class using dynamic memory allocation
-    template <typename T> 
+    template <typename T, typename S = T> 
     class DynamicStorage {
 
     public:
@@ -55,19 +55,19 @@ namespace Sacado {
        */
       DynamicStorage(const int sz, const T & x) : 
 	val_(x), sz_(sz), len_(sz) {
-	dx_ = ds_array<T>::get_and_fill(sz_);
+	dx_ = ds_array<S>::get_and_fill(sz_);
       }
 
       //! Copy constructor
       DynamicStorage(const DynamicStorage& x) : 
 	val_(x.val_), sz_(x.sz_), len_(x.sz_) {
-	dx_ = ds_array<T>::get_and_fill(x.dx_, sz_);
+	dx_ = ds_array<S>::get_and_fill(x.dx_, sz_);
       }
       
       //! Destructor
       ~DynamicStorage() {
 	if (len_ != 0)
-	  ds_array<T>::destroy_and_release(dx_, len_);
+	  ds_array<S>::destroy_and_release(dx_, len_);
       }
 
       //! Assignment
@@ -77,15 +77,15 @@ namespace Sacado {
 	  sz_ = x.sz_;
 	  if (x.sz_ > len_) {
 	    if (len_ != 0)
-	      ds_array<T>::destroy_and_release(dx_, len_);
+	      ds_array<S>::destroy_and_release(dx_, len_);
 	    len_ = x.sz_;
-	    dx_ = ds_array<T>::get_and_fill(x.dx_, sz_);
+	    dx_ = ds_array<S>::get_and_fill(x.dx_, sz_);
 	  }
 	  else 
-	    ds_array<T>::copy(x.dx_, dx_, sz_);
+	    ds_array<S>::copy(x.dx_, dx_, sz_);
 	}
 	else 
-	  ds_array<T>::copy(x.dx_, dx_, sz_);
+	  ds_array<S>::copy(x.dx_, dx_, sz_);
 
 	return *this; 
       } 
@@ -97,8 +97,8 @@ namespace Sacado {
       void resize(int sz) { 
 	if (sz > len_) {
 	  if (len_ != 0)
-	    ds_array<T>::destroy_and_release(dx_, len_);
-	  dx_ = ds_array<T>::get_and_fill(sz);
+	    ds_array<S>::destroy_and_release(dx_, len_);
+	  dx_ = ds_array<S>::get_and_fill(sz);
 	  len_ = sz;
 	}
 	sz_ = sz;
@@ -106,7 +106,7 @@ namespace Sacado {
 
       //! Zero out derivative array
       void zero() { 
-	ds_array<T>::zero(dx_, sz_);
+	ds_array<S>::zero(dx_, sz_);
       }
 
     public:
@@ -121,7 +121,7 @@ namespace Sacado {
       int len_;
 
       //! Derivative array
-      T* dx_;
+      S* dx_;
 
     }; // class DynamicStorage
 

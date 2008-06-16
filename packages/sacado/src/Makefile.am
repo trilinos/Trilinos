@@ -80,6 +80,12 @@ SACADO_ELRFAD_H = \
 	$(srcdir)/Sacado_ELRFad_SFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_SFadTraits.hpp
 
+SACADO_LFAD_H = \
+	$(srcdir)/Sacado_LFad_LogicalSparse.hpp \
+	$(srcdir)/Sacado_LFad_LogicalSparseImp.hpp \
+	$(srcdir)/Sacado_LFad_LogicalSparseOps.hpp \
+	$(srcdir)/Sacado_LFad_LogicalSparseTraits.hpp
+
 SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_CacheFad_GeneralFadImp.hpp \
@@ -206,6 +212,7 @@ SACADO_H = \
 	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_ELRFAD_H) \
+	$(SACADO_LFAD_H) \
 	$(SACADO_CACHEFAD_H) \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \
