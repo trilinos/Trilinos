@@ -100,7 +100,7 @@ noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	trad_example$(EXEEXT) trad_dfad_example$(EXEEXT) \
 	taylor_example$(EXEEXT) dfad_taylor_example$(EXEEXT) \
 	dfad_sfc_example$(EXEEXT) trad_sfc_example$(EXEEXT) \
-	pce_example$(EXEEXT)
+	pce_example$(EXEEXT) sparse_example$(EXEEXT)
 DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = example
@@ -165,6 +165,10 @@ am_sfad_example_OBJECTS = sfad_example-sfad_example.$(OBJEXT)
 sfad_example_OBJECTS = $(am_sfad_example_OBJECTS)
 sfad_example_LINK = $(CXXLD) $(sfad_example_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_sparse_example_OBJECTS = sparse_example-sparse_example.$(OBJEXT)
+sparse_example_OBJECTS = $(am_sparse_example_OBJECTS)
+sparse_example_LINK = $(CXXLD) $(sparse_example_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_taylor_example_OBJECTS = taylor_example-taylor_example.$(OBJEXT)
 taylor_example_OBJECTS = $(am_taylor_example_OBJECTS)
 taylor_example_LINK = $(CXXLD) $(taylor_example_CXXFLAGS) $(CXXFLAGS) \
@@ -195,14 +199,16 @@ SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
 	$(dfad_example_SOURCES) $(dfad_sfc_example_SOURCES) \
 	$(dfad_taylor_example_SOURCES) $(dmfad_example_SOURCES) \
 	$(pce_example_SOURCES) $(sfad_example_SOURCES) \
-	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
-	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES)
+	$(sparse_example_SOURCES) $(taylor_example_SOURCES) \
+	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES) \
+	$(trad_sfc_example_SOURCES)
 DIST_SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
 	$(dfad_example_SOURCES) $(dfad_sfc_example_SOURCES) \
 	$(dfad_taylor_example_SOURCES) $(dmfad_example_SOURCES) \
 	$(pce_example_SOURCES) $(sfad_example_SOURCES) \
-	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
-	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES)
+	$(sparse_example_SOURCES) $(taylor_example_SOURCES) \
+	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES) \
+	$(trad_sfc_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -375,6 +381,10 @@ pce_example_SOURCES = $(srcdir)/pce_example.cpp
 pce_example_CXXFLAGS = $(dfad_example_CXXFLAGS) -I$(top_srcdir)/src/pce
 pce_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 pce_example_LDADD = $(dfad_example_LDADD)
+sparse_example_SOURCES = $(srcdir)/sparse_example.cpp
+sparse_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+sparse_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+sparse_example_LDADD = $(dfad_example_LDADD)
 FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
 ELEMENT_H = \
 	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
@@ -398,6 +408,7 @@ SOURCE_H = \
 	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ExponentialSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp
 
@@ -562,6 +573,9 @@ pce_example$(EXEEXT): $(pce_example_OBJECTS) $(pce_example_DEPENDENCIES)
 sfad_example$(EXEEXT): $(sfad_example_OBJECTS) $(sfad_example_DEPENDENCIES) 
 	@rm -f sfad_example$(EXEEXT)
 	$(sfad_example_LINK) $(sfad_example_OBJECTS) $(sfad_example_LDADD) $(LIBS)
+sparse_example$(EXEEXT): $(sparse_example_OBJECTS) $(sparse_example_DEPENDENCIES) 
+	@rm -f sparse_example$(EXEEXT)
+	$(sparse_example_LINK) $(sparse_example_OBJECTS) $(sparse_example_LDADD) $(LIBS)
 taylor_example$(EXEEXT): $(taylor_example_OBJECTS) $(taylor_example_DEPENDENCIES) 
 	@rm -f taylor_example$(EXEEXT)
 	$(taylor_example_LINK) $(taylor_example_OBJECTS) $(taylor_example_LDADD) $(LIBS)
@@ -589,6 +603,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dmfad_example-dmfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pce_example-pce_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sfad_example-sfad_example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparse_example-sparse_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/taylor_example-taylor_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad_dfad_example-trad_dfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad_example-trad_example.Po@am__quote@
@@ -719,6 +734,20 @@ sfad_example-sfad_example.obj: $(srcdir)/sfad_example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sfad_example.cpp' object='sfad_example-sfad_example.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sfad_example_CXXFLAGS) $(CXXFLAGS) -c -o sfad_example-sfad_example.obj `if test -f '$(srcdir)/sfad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/sfad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sfad_example.cpp'; fi`
+
+sparse_example-sparse_example.o: $(srcdir)/sparse_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sparse_example_CXXFLAGS) $(CXXFLAGS) -MT sparse_example-sparse_example.o -MD -MP -MF $(DEPDIR)/sparse_example-sparse_example.Tpo -c -o sparse_example-sparse_example.o `test -f '$(srcdir)/sparse_example.cpp' || echo '$(srcdir)/'`$(srcdir)/sparse_example.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/sparse_example-sparse_example.Tpo $(DEPDIR)/sparse_example-sparse_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sparse_example.cpp' object='sparse_example-sparse_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sparse_example_CXXFLAGS) $(CXXFLAGS) -c -o sparse_example-sparse_example.o `test -f '$(srcdir)/sparse_example.cpp' || echo '$(srcdir)/'`$(srcdir)/sparse_example.cpp
+
+sparse_example-sparse_example.obj: $(srcdir)/sparse_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sparse_example_CXXFLAGS) $(CXXFLAGS) -MT sparse_example-sparse_example.obj -MD -MP -MF $(DEPDIR)/sparse_example-sparse_example.Tpo -c -o sparse_example-sparse_example.obj `if test -f '$(srcdir)/sparse_example.cpp'; then $(CYGPATH_W) '$(srcdir)/sparse_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sparse_example.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/sparse_example-sparse_example.Tpo $(DEPDIR)/sparse_example-sparse_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sparse_example.cpp' object='sparse_example-sparse_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sparse_example_CXXFLAGS) $(CXXFLAGS) -c -o sparse_example-sparse_example.obj `if test -f '$(srcdir)/sparse_example.cpp'; then $(CYGPATH_W) '$(srcdir)/sparse_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sparse_example.cpp'; fi`
 
 taylor_example-taylor_example.o: $(srcdir)/taylor_example.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(taylor_example_CXXFLAGS) $(CXXFLAGS) -MT taylor_example-taylor_example.o -MD -MP -MF $(DEPDIR)/taylor_example-taylor_example.Tpo -c -o taylor_example-taylor_example.o `test -f '$(srcdir)/taylor_example.cpp' || echo '$(srcdir)/'`$(srcdir)/taylor_example.cpp

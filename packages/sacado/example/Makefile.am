@@ -58,7 +58,8 @@ noinst_PROGRAMS = \
 	dfad_taylor_example \
 	dfad_sfc_example \
 	trad_sfc_example \
-	pce_example
+	pce_example \
+	sparse_example
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
@@ -119,6 +120,11 @@ pce_example_SOURCES = $(srcdir)/pce_example.cpp
 pce_example_CXXFLAGS = $(dfad_example_CXXFLAGS) -I$(top_srcdir)/src/pce
 pce_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 pce_example_LDADD = $(dfad_example_LDADD)
+
+sparse_example_SOURCES = $(srcdir)/sparse_example.cpp
+sparse_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
+sparse_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+sparse_example_LDADD = $(dfad_example_LDADD)
 
 include FEApp/MakefileFEAppStub.am
 EXTRA_DIST = $(FEAPP_H) $(FEAPP)
