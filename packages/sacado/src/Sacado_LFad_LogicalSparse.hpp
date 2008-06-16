@@ -29,10 +29,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_LOGICALSPARSE_HPP
-#define SACADO_FAD_LOGICALSPARSE_HPP
+#ifndef SACADO_LFAD_LOGICALSPARSE_HPP
+#define SACADO_LFAD_LOGICALSPARSE_HPP
 
 #include "Sacado_LFad_LogicalSparseTraits.hpp"
+#include "Sacado_LFad_ExpressionTraits.hpp"
 #include "Sacado_Fad_DynamicStorage.hpp"
 
 namespace Sacado {

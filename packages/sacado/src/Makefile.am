@@ -84,7 +84,8 @@ SACADO_LFAD_H = \
 	$(srcdir)/Sacado_LFad_LogicalSparse.hpp \
 	$(srcdir)/Sacado_LFad_LogicalSparseImp.hpp \
 	$(srcdir)/Sacado_LFad_LogicalSparseOps.hpp \
-	$(srcdir)/Sacado_LFad_LogicalSparseTraits.hpp
+	$(srcdir)/Sacado_LFad_LogicalSparseTraits.hpp \
+	$(srcdir)/Sacado_LFad_ExpressionTraits.hpp
 
 SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_GeneralFad.hpp \
