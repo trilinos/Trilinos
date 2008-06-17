@@ -121,7 +121,9 @@ void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>
     std::vector<int> index2( numvecs );
     for(int i=0; i<numvecs; i++)
       index2[i] = i;
-    EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(tmp_vec!=NULL);
+    EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+    TEST_FOR_EXCEPTION(tmp_vec==NULL, EpetraMultiVecFailure,
+                       "Belos::EpetraMultiVec::SetBlock cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
     EpetraMultiVec A_vec(View, *tmp_vec, index2);
     temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
   }
@@ -142,7 +144,9 @@ void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double
   Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
   Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
   
-  EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+  TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
+                     "Belos::EpetraMultiVec::MvTimesMatAddMv cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   
   int info = Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta );
   TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
@@ -159,8 +163,12 @@ void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double
 void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A, 
 			       const double beta, const MultiVec<double>& B) 
 {
-  EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-  EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
+  EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
+  TEST_FOR_EXCEPTION( A_vec==NULL, EpetraMultiVecFailure,
+                     "Belos::EpetraMultiVec::MvAddMv cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
+  EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B));
+  TEST_FOR_EXCEPTION( B_vec==NULL, EpetraMultiVecFailure,
+                     "Belos::EpetraMultiVec::MvAddMv cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   
   int info = Update( alpha, *A_vec, beta, *B_vec, 0.0 );
   TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
@@ -176,13 +184,15 @@ void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
 {
   // Check to make sure the vector is as long as the multivector has columns.
   int numvecs = this->NumVectors();
-  assert( (int)alpha.size() == numvecs );
+  TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale scaling vector (alpha) not same size as number of input vectors (mv).");
   int ret = 0;
   std::vector<int> tmp_index( 1, 0 );
   for (int i=0; i<numvecs; i++) {
     Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
     ret = temp_vec.Scale( alpha[i] );
-    assert (ret == 0);
+    TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+                      "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
     tmp_index[0]++;
   }
 }
@@ -216,7 +226,9 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
 
 void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const
 {
-  EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+  TEST_FOR_EXCEPTION(A_vec==NULL, EpetraMultiVecFailure,
+                     "Belos::EpetraMultiVec::MvDot cast from Belos::MultiVec<> to Belos::EpetraMultiVec failed.");
   if (A_vec && ( (int)b.size() >= A_vec->NumVectors() ) ) {
      int info = this->Dot( *A_vec, &b[0] );
      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 

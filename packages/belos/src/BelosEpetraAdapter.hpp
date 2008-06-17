@@ -125,7 +125,9 @@ namespace Belos {
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
-    void MvScale ( double alpha ) { int ret = this->Scale( alpha ); assert(ret == 0); }
+    void MvScale ( double alpha ) { 
+      TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure, 
+			  "Belos::EpetraMultiVec::MvInit() call to Scale() returned a nonzero value."); }
 
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
@@ -289,7 +291,8 @@ namespace Belos {
      */
     static void MvScale ( Epetra_MultiVector& mv, double alpha )
     { int ret = mv.Scale( alpha );
-      assert( ret == 0 );
+      TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
     }
 
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
@@ -298,14 +301,16 @@ namespace Belos {
     {
       // Check to make sure the vector is as long as the multivector has columns.
       int numvecs = mv.NumVectors();
-      assert( (int)alpha.size() == numvecs );
+      TEST_FOR_EXCEPTION((int)alpha.size() != numvecs, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale scaling vector (alpha) not same size as number of input vectors (mv).");
 
       int ret = 0;
       std::vector<int> tmp_index( 1, 0 );
       for (int i=0; i<numvecs; i++) {
         Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
         ret = temp_vec.Scale( alpha[i] );
-        assert (ret == 0);
+        TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
+	                   "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");
         tmp_index[0]++;
       }
     }
