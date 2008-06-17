@@ -3068,18 +3068,13 @@ int Zoltan_RCB_Box(
  *    num_lid_entries     --  number of entries of type ZOLTAN_ID_TYPE
  *                            in a local ID
  *
- *    rank                --  rank[i] is the rank of gids[i] produced by 
+ *    rank                --  rank[i] is the rank of gids[i] produced by
  *                            the ordering. This defines a permutation.
- *
- *    iperm               --  the inverse permutation of rank. 
- *
- *    order_info          --  pointer to an "order struct" that contains
- *                            additional information about an ordering
+ *                            rank is between 0 and N-1.
  *
  *  Returned value:       --  Error code
  */
 
-struct Zoltan_Order_Struct; /* Structure defined in order/order_const.h */
 
 extern int Zoltan_Order(
   struct Zoltan_Struct *zz,
@@ -3088,11 +3083,102 @@ extern int Zoltan_Order(
   int num_obj,
   ZOLTAN_ID_PTR global_ids,
   ZOLTAN_ID_PTR local_ids,
-  int *rank,
-  int *iperm,
-  struct Zoltan_Order_Struct *order_info  /* Currently not used. */
+  int *rank
 );
 
+/*****************************************************************************/
+/*
+ *  Function to return the number of blocks in ordering.
+ *  Input:
+ *    zz                  --  The zoltan struct with ordering info.
+ *  Returned value:       --  The number of blocks in ordering.
+ */
+
+extern int Zoltan_Order_Get_Block_nbr(
+  struct Zoltan_Struct *zz  /* Info about ordering */
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the description of an ordering block
+ *  Input:
+ *    zz                  --  The zoltan struct with ordering info.
+ *    block_num           --  The id of the block to take care of.
+ *  Output:
+ *    first               --  Number of the first element of the block.
+ *    last                --  Number of the last element of the block.
+ *  For both, number means an indice between 0 and N-1, not in the GID domain.
+ *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_Order_Get_Block_Bounds(
+  struct Zoltan_Struct *zz,          /* Info about ordering */
+  int                   block_num,   /* Number of the wanted block */
+  int                  *first,       /* First element in block */
+  int                  *last         /* Last element in block */
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the number of elements within a block
+ *  Input:
+ *    zz                  --  The zoltan struct with ordering info.
+ *    block_num           --  The id of the block to take care of.
+ *  Returned value:       --  Number of elements in the block.
+ */
+
+extern int Zoltan_Order_Get_Block_Size(
+  struct Zoltan_Struct *zz,          /* Info about ordering */
+  int                   block_num   /* Number of the wanted block */
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the indice of the parent block in the elimination tree.
+ *  Input:
+ *    zz                  --  The zoltan struct with ordering info.
+ *    block_num           --  The id of the block to take care of.
+ *  Returned value:       --  Indice of the father, -1 if block is the root.
+ */
+
+extern int Zoltan_Order_Get_Block_Parent(
+  struct Zoltan_Struct *zz,          /* Info about ordering */
+  int                   block_num   /* Number of the wanted block */
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the list of the leaves in the elimination tree
+ *  Input:
+ *    zz                  --  The zoltan struct with ordering info.
+ *  Ouput:
+ *    leaves              --  List of block indices that are leaves in the
+ *                            elimination tree. -1 marks the end of the list.
+ *  Returned value:       --  Number of leaves in the elimination tree.
+ */
+
+extern int Zoltan_Order_Get_Block_Leaves(
+  struct Zoltan_Struct *zz,          /* Info about ordering */
+  int                  *leaves
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the ordering on the GID
+ *  Input:
+ *    zz                  --  The Zoltan structure containing
+ *                            info for this load-balancing invocation.
+ *    gids                --  List of global ids.
+ *  Ouput:
+ *    order_ids           --  New ordering of the gids.
+ *  Returned value:       --  Error Code.
+ */
+
+extern int Zoltan_Order_Get_GID_Order(
+  struct Zoltan_Struct *zz,
+  ZOLTAN_ID_PTR        global_ids,
+  ZOLTAN_ID_PTR        order_ids
+);
 
 
 /**********************************************************/

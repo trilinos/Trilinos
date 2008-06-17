@@ -57,7 +57,7 @@ int Zoltan_Order_Create(ZOS **order_info, ZZ *zz)
   }
 
   /* Initialize ordering struct */
-  (*order_info)->zz = zz;
+/*   (*order_info)->zz = zz; */
   (*order_info)->num_objects = 0;
   (*order_info)->gids = NULL;
   (*order_info)->lids = NULL;

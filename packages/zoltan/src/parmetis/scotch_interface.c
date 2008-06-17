@@ -54,9 +54,7 @@ int Zoltan_Scotch_Order(
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 /* The application must allocate enough space */
   int *rank,		/* rank[i] is the rank of gids[i] */
-  int *iperm,		/* inverse permutation of rank */
-  ZOOS *order_opt, 	/* Ordering options, parsed by Zoltan_Order */
-  ZOS *order_info       /* Ordering info for this particular ordering */
+  ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
 )
 {
   static char *yo = "Zoltan_Scotch_Order";
@@ -92,7 +90,7 @@ int Zoltan_Scotch_Order(
     return(ierr);
   }
 
-  ord.order_info = order_info;
+  ord.order_info = &(zz->Order);
   ord.order_opt = order_opt;
 
   if (!order_opt){

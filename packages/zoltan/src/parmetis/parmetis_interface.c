@@ -579,9 +579,7 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 /* The application must allocate enough space */
   int *rank,		/* rank[i] is the rank of gids[i] */
-  int *iperm,		/* inverse permutation of rank */
-  ZOOS *order_opt, 	/* Ordering options, parsed by Zoltan_Order */
-  ZOS *order_info       /* Ordering info for this particular ordering */
+  ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
 )
 {
   static char *yo = "Zoltan_ParMetis_Order";
@@ -606,7 +604,6 @@ int Zoltan_ParMetis_Order(
   memset(&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
-  ord.order_info = order_info;
   ord.order_opt = order_opt;
 
   if (!order_opt){
@@ -735,7 +732,8 @@ int Zoltan_ParMetis_Order(
 
 
   memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
-  memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+/*   if (ord.iperm != NULL) */
+/*     memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype)); */
   ZOLTAN_FREE(&ord.iperm);
   ZOLTAN_FREE(&ord.rank);
   Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
