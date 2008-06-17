@@ -44,11 +44,11 @@ Epetra_Object::Epetra_Object(int TracebackModeIn, bool set_label)
 }
 
 //=============================================================================
-Epetra_Object::Epetra_Object(const char * const Label, 
+Epetra_Object::Epetra_Object(const char * const Label_in, 
 			     int TracebackModeIn) 
   : Label_(0)
 {
-  SetLabel(Label);
+  SetLabel(Label_in);
   TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
 }
 //=============================================================================
@@ -118,14 +118,14 @@ const char * Epetra_Object::Label() const {
   return(Label_);
 }
 //=============================================================================
-void Epetra_Object::SetLabel(const char * const Label)
+void Epetra_Object::SetLabel(const char * const Label_in)
 { 
   if (Label_!=0) {
     delete [] Label_;
     Label_ = 0;
   }
-  if (Label==0) return;
-  Label_ = new char[strlen(Label)+1];
-  strcpy(Label_,Label);
+  if (Label_in==0) return;
+  Label_ = new char[strlen(Label_in)+1];
+  strcpy(Label_,Label_in);
   return;
 }

@@ -78,13 +78,13 @@ class Epetra_Flops {
  protected:
   mutable double Flops_;
   //! Increment Flop count for \e this object from an int
-  void UpdateFlops(int Flops) const {Flops_ += (double) Flops;};
+  void UpdateFlops(int Flops_in) const {Flops_ += (double) Flops_in;};
   //! Increment Flop count for \e this object from a long int
-  void UpdateFlops(long int Flops) const {Flops_ += (double) Flops;};
+  void UpdateFlops(long int Flops_in) const {Flops_ += (double) Flops_in;};
   //! Increment Flop count for \e this object from a double
-  void UpdateFlops(double Flops) const {Flops_ += Flops;};
+  void UpdateFlops(double Flops_in) const {Flops_ += Flops_in;};
   //! Increment Flop count for \e this object from a float
-  void UpdateFlops(float Flops) const {Flops_ +=(double) Flops;};
+  void UpdateFlops(float Flops_in) const {Flops_ +=(double) Flops_in;};
   
 
  private:

@@ -78,8 +78,8 @@ unsigned int Epetra_Util::Seed() const {
 }
 
 //=========================================================================
-int Epetra_Util::SetSeed(unsigned int Seed) {
-	Seed_ = Seed;
+int Epetra_Util::SetSeed(unsigned int Seed_in) {
+	Seed_ = Seed_in;
 	return(0);
 }
 
