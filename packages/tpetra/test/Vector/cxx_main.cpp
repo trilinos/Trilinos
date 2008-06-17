@@ -231,16 +231,22 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	if(verbose) cout << "Checking to see that default constructor initializes to zeros... ";
 	Tpetra::Vector<OrdinalType, ScalarType> testVector1(vectorspace);
 	OrdinalType length = testVector1.getNumMyEntries();
-	for(OrdinalType i = 0; i < length; i++)
-		if(testVector1[i] != 0) {
-			if(debug) cout << "element " << i << " = " << testVector1[i] << ", should be zero" << endl;
-			ierr++;
-		}
-	if(verbose)
-		if(ierr == 0) 
+  for(OrdinalType i = 0; i < length; i++) {
+    if (testVector1[i] != 0) {
+      if(debug) {
+        cout << "element " << i << " = " << testVector1[i] << ", should be zero" << endl;
+      }
+      ierr++;
+    }
+  }
+	if(verbose) {
+		if(ierr == 0) {
 			cout << "Passed" << endl;
-		else
+    }
+		else {
 			cout << "Failed" << endl;
+    }
+  }
 	returnierr += ierr;
 	ierr = 0;
 	
@@ -250,11 +256,14 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	for(OrdinalType i = 0; i < length; i++)
 		if(vector1a[i] != scalarArray[i])
 			ierr++;
-	if(verbose)
-		if(ierr == 0) 
+	if(verbose) {
+		if(ierr == 0) {
 			cout << "Passed" << endl;
-		else
+    }
+		else {
 			cout << "Failed" << endl;
+    }
+  }
 	returnierr += ierr;
 	ierr = 0;
 	
@@ -289,11 +298,14 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 		}
 	}
 	
-	if(verbose)
-		if(ierr == 0) 
-			cout << "Passed" << endl;
-		else
-			cout << "Failed" << endl;
+  if (verbose) {
+    if (ierr == 0) {
+      cout << "Passed" << endl;
+    }
+    else {
+      cout << "Failed" << endl;
+    }
+  }
 	returnierr += ierr;
 	ierr = 0;
 	
@@ -352,15 +364,18 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	}
 	
 	// finish up
-	if(verbose)
-		if(returnierr == 0)
+	if (verbose) {
+		if(returnierr == 0) {
 			cout << "VectorTest <" 
 			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
 			     << Teuchos::ScalarTraits<ScalarType>::name() << "> passed." << endl;
-		else
+    }
+		else {
 			cout << "VectorTest <" 
 			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
 			     << Teuchos::ScalarTraits<ScalarType>::name() << "> failed." << endl;
+    }
+  }
 	return(returnierr);
 }
 

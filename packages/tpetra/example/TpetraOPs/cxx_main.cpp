@@ -83,7 +83,6 @@ int main(int argc, char *argv[]) {
 #endif
  
   int myPID = comm.MyPID();
-  int numProc = comm.NumProc();
 
   bool verbose = false;
   if(myPID == 0) verbose = true; // verbose is true only on the root node
@@ -108,7 +107,7 @@ int main(int argc, char *argv[]) {
   char processor_name[MPI_MAX_PROCESSOR_NAME];
   int namelen;
   MPI_Get_processor_name(processor_name,&namelen);
-  for(int i = 0; i < numProc; i++) {
+  for(int i = 0; i < comm.NumProc(); i++) {
     if(i == myPID) {
       cout << "Image " << i << " is " << processor_name << endl;
     }

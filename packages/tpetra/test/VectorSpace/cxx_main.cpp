@@ -109,7 +109,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	// create ElementSpace and BlockElementSpace
 	OrdinalType const numGlobalElements = intToOrdinal<OrdinalType>(10);
 	OrdinalType const indexBase = intToOrdinal<OrdinalType>(2);
-	OrdinalType const numPoints = intToOrdinal<OrdinalType>(3);
+	// OrdinalType const numPoints = intToOrdinal<OrdinalType>(3);
 	Tpetra::ElementSpace<OrdinalType> es(numGlobalElements, indexBase, platformE);
 	// Tpetra::BlockElementSpace<OrdinalType> bes(es, numPoints);
 
