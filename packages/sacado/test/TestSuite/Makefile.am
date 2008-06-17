@@ -87,6 +87,8 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/ELRSFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
 	$(PCE_SOURCES) \
+	$(srcdir)/LogicalSparseUnitTests.hpp \
+	$(srcdir)/LogicalSparseUnitTests.cpp \
 	$(srcdir)/TestSuite.cpp
 
 TestSuite_exe_CXXFLAGS = \

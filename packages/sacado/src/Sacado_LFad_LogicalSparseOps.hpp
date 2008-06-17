@@ -171,7 +171,7 @@ FAD_UNARYOP_MACRO(fabs,
 
 #undef FAD_UNARYOP_MACRO
 
-#define FAD_BINARYOP_MACRO(OPNAME,OP,VALUE,VAL_CONST_DX_1,VAL_CONST_DX_2) \
+#define FAD_BINARYOP_MACRO(OPNAME,OP,VALUE,DX,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {							\
   namespace LFad {							\
 									\
@@ -212,11 +212,11 @@ namespace Sacado {							\
       }									\
 									\
       const logical_type dx(int i) const {				\
-	return expr1.dx(i) || expr2.dx(i);				\
+	return DX;							\
       }									\
 									\
       const logical_type fastAccessDx(int i) const {			\
-	return expr1.fastAccessDx(i) || expr2.fastAccessDx(i);		\
+	return FASTACCESSDX;						\
       }									\
       									\
     protected:								\
@@ -256,11 +256,11 @@ namespace Sacado {							\
       }									\
 									\
       const logical_type dx(int i) const {				\
-	return expr1.dx(i);						\
+	return CONST_DX_2;						\
       }									\
 									\
       const logical_type fastAccessDx(int i) const {			\
-	return expr1.fastAccessDx(i);					\
+	return CONST_FASTACCESSDX_2;					\
       }									\
 									\
     protected:								\
@@ -299,11 +299,11 @@ namespace Sacado {							\
       }									\
 									\
       const logical_type dx(int i) const {				\
-	return expr2.dx(i);						\
+	return CONST_DX_1;						\
       }									\
 									\
       const logical_type fastAccessDx(int i) const {			\
-	return expr2.fastAccessDx(i);					\
+	return CONST_FASTACCESSDX_1;					\
       }									\
       									\
     protected:								\
@@ -349,43 +349,93 @@ namespace Sacado {							\
 FAD_BINARYOP_MACRO(operator+,
 		   AdditionOp, 
 		   expr1.val() + expr2.val(),
+		   expr1.dx(i) || expr2.dx(i),
+		   expr1.fastAccessDx(i) || expr2.fastAccessDx(i),
 		   c + expr2.val(),
-		   expr1.val() + c)
+		   expr1.val() + c,
+		   expr2.dx(i),
+		   expr1.dx(i),
+		   expr2.fastAccessDx(i),
+		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(operator-,
 		   SubtractionOp, 
 		   expr1.val() - expr2.val(),
+		   expr1.dx(i) || expr2.dx(i),
+		   expr1.fastAccessDx(i) || expr2.fastAccessDx(i),
 		   c - expr2.val(),
-		   expr1.val() - c)
+		   expr1.val() - c,
+		   expr2.dx(i),
+		   expr1.dx(i),
+		   expr2.fastAccessDx(i),
+		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(operator*,
 		   MultiplicationOp, 
 		   expr1.val() * expr2.val(),
+		   expr1.dx(i) || expr2.dx(i),
+		   expr1.fastAccessDx(i) || expr2.fastAccessDx(i),
 		   c * expr2.val(),
-		   expr1.val() * c)
+		   expr1.val() * c,
+		   expr2.dx(i),
+		   expr1.dx(i),
+		   expr2.fastAccessDx(i),
+		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(operator/,
 		   DivisionOp, 
 		   expr1.val() / expr2.val(),
+		   expr1.dx(i) || expr2.dx(i),
+		   expr1.fastAccessDx(i) || expr2.fastAccessDx(i),
 		   c / expr2.val(),
-		   expr1.val() / c)
+		   expr1.val() / c,
+		   expr2.dx(i),
+		   expr1.dx(i),
+		   expr2.fastAccessDx(i),
+		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(atan2,
 		   Atan2Op,
 		   std::atan2(expr1.val(), expr2.val()),
+		   expr1.dx(i) || expr2.dx(i),
+		   expr1.fastAccessDx(i) || expr2.fastAccessDx(i),
 		   std::atan2(c, expr2.val()),
-		   std::atan2(expr1.val(), c))
+		   std::atan2(expr1.val(), c),
+		   expr2.dx(i),
+		   expr1.dx(i),
+		   expr2.fastAccessDx(i),
+		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   std::pow(expr1.val(), expr2.val()),
+		   expr1.dx(i) || expr2.dx(i),
+		   expr1.fastAccessDx(i) || expr2.fastAccessDx(i),
 		   std::pow(c, expr2.val()),
-		   std::pow(expr1.val(), c))
+		   std::pow(expr1.val(), c),
+		   expr2.dx(i),
+		   expr1.dx(i),
+		   expr2.fastAccessDx(i),
+		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    std::max(expr1.val(), expr2.val()),
+		   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+                   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+                                                expr2.fastAccessDx(i),
                    std::max(c, expr2.val()),
-		   std::max(expr1.val(), c))
+		   std::max(expr1.val(), c),
+                   c >= expr2.val() ? logical_type(0) : expr2.dx(i),
+                   expr1.val() >= c ? expr1.dx(i) : logical_type(0),
+                   c >= expr2.val() ? logical_type(0) : expr2.fastAccessDx(i),
+                   expr1.val() >= c ? expr1.fastAccessDx(i) : logical_type(0))
 FAD_BINARYOP_MACRO(min,
                    MinOp,
                    std::min(expr1.val(), expr2.val()),
+		   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+                   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+                                                expr2.fastAccessDx(i),
                    std::min(c, expr2.val()),
-		   std::min(expr1.val(), c))
+		   std::min(expr1.val(), c),
+		   c <= expr2.val() ? logical_type(0) : expr2.dx(i),
+                   expr1.val() <= c ? expr1.dx(i) : logical_type(0),
+                   c <= expr2.val() ? logical_type(0) : expr2.fastAccessDx(i),
+                   expr1.val() <= c ? expr1.fastAccessDx(i) : logical_type(0))
 
 #undef FAD_BINARYOP_MACRO
 

@@ -195,14 +195,23 @@ operator += (const Sacado::LFad::Expr<S>& x)
 #endif
 
   if (xsz) {
-    if (!sz)
+    if (sz) {
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+    }
+    else {
       s_.resize(xsz);
-    if (x.hasFastAccess())
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
-    else
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.dx(i);
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.dx(i);
+    }
   }
 
   s_.val_ += x.val();
@@ -224,14 +233,23 @@ operator -= (const Sacado::LFad::Expr<S>& x)
 #endif
 
   if (xsz) {
-    if (!sz)
+    if (sz) {
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+    }
+    else {
       s_.resize(xsz);
-    if (x.hasFastAccess())
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
-    else
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.dx(i);
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.dx(i);
+    }
   }
 
   s_.val_ -= x.val();
@@ -254,14 +272,23 @@ operator *= (const Sacado::LFad::Expr<S>& x)
 #endif
 
   if (xsz) {
-    if (!sz)
+    if (sz) {
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+    }
+    else {
       s_.resize(xsz);
-    if (x.hasFastAccess())
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
-    else
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.dx(i);
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.dx(i);
+    }
   }
 
   s_.val_ *= x.val();
@@ -283,14 +310,23 @@ operator /= (const Sacado::LFad::Expr<S>& x)
 #endif
 
   if (xsz) {
-    if (!sz)
+    if (sz) {
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+    }
+    else {
       s_.resize(xsz);
-    if (x.hasFastAccess())
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
-    else
-      for (int i=0; i<sz; ++i)
-	s_.dx_[i] = s_.dx_[i] || x.dx(i);
+      if (x.hasFastAccess())
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.fastAccessDx(i);
+      else
+	for (int i=0; i<xsz; ++i)
+	  s_.dx_[i] = x.dx(i);
+    }
   }
 
   s_.val_ /= x.val();

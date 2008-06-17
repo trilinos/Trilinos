@@ -99,7 +99,8 @@ am__TestSuite_exe_SOURCES_DIST = $(srcdir)/DFadUnitTests.hpp \
 	$(srcdir)/CacheTaylorUnitTests.cpp \
 	$(srcdir)/TaylorUnitTests.hpp $(srcdir)/TaylorUnitTests.cpp \
 	$(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp \
-	$(srcdir)/TestSuite.cpp
+	$(srcdir)/LogicalSparseUnitTests.hpp \
+	$(srcdir)/LogicalSparseUnitTests.cpp $(srcdir)/TestSuite.cpp
 @ENABLE_ADOLC_TRUE@am__objects_1 = TestSuite_exe-CacheTaylorUnitTests.$(OBJEXT) \
 @ENABLE_ADOLC_TRUE@	TestSuite_exe-TaylorUnitTests.$(OBJEXT)
 @ENABLE_SACADO_STOKHOS_TRUE@am__objects_2 = TestSuite_exe-HermiteUnitTests.$(OBJEXT)
@@ -108,7 +109,9 @@ am_TestSuite_exe_OBJECTS = TestSuite_exe-DFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-ELRDFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-SFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-ELRSFadUnitTests.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2) TestSuite_exe-TestSuite.$(OBJEXT)
+	$(am__objects_2) \
+	TestSuite_exe-LogicalSparseUnitTests.$(OBJEXT) \
+	TestSuite_exe-TestSuite.$(OBJEXT)
 TestSuite_exe_OBJECTS = $(am_TestSuite_exe_OBJECTS)
 am__DEPENDENCIES_1 =
 @ENABLE_ADOLC_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
@@ -280,6 +283,8 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/ELRSFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
 	$(PCE_SOURCES) \
+	$(srcdir)/LogicalSparseUnitTests.hpp \
+	$(srcdir)/LogicalSparseUnitTests.cpp \
 	$(srcdir)/TestSuite.cpp
 
 TestSuite_exe_CXXFLAGS = \
@@ -352,6 +357,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ELRDFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ELRSFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-HermiteUnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-SFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-TaylorUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-TestSuite.Po@am__quote@
@@ -481,6 +487,20 @@ TestSuite_exe-HermiteUnitTests.obj: $(srcdir)/HermiteUnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HermiteUnitTests.cpp' object='TestSuite_exe-HermiteUnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-HermiteUnitTests.obj `if test -f '$(srcdir)/HermiteUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/HermiteUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HermiteUnitTests.cpp'; fi`
+
+TestSuite_exe-LogicalSparseUnitTests.o: $(srcdir)/LogicalSparseUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-LogicalSparseUnitTests.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Tpo -c -o TestSuite_exe-LogicalSparseUnitTests.o `test -f '$(srcdir)/LogicalSparseUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/LogicalSparseUnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Tpo $(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LogicalSparseUnitTests.cpp' object='TestSuite_exe-LogicalSparseUnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-LogicalSparseUnitTests.o `test -f '$(srcdir)/LogicalSparseUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/LogicalSparseUnitTests.cpp
+
+TestSuite_exe-LogicalSparseUnitTests.obj: $(srcdir)/LogicalSparseUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-LogicalSparseUnitTests.obj -MD -MP -MF $(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Tpo -c -o TestSuite_exe-LogicalSparseUnitTests.obj `if test -f '$(srcdir)/LogicalSparseUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/LogicalSparseUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LogicalSparseUnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Tpo $(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LogicalSparseUnitTests.cpp' object='TestSuite_exe-LogicalSparseUnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-LogicalSparseUnitTests.obj `if test -f '$(srcdir)/LogicalSparseUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/LogicalSparseUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LogicalSparseUnitTests.cpp'; fi`
 
 TestSuite_exe-TestSuite.o: $(srcdir)/TestSuite.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-TestSuite.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-TestSuite.Tpo -c -o TestSuite_exe-TestSuite.o `test -f '$(srcdir)/TestSuite.cpp' || echo '$(srcdir)/'`$(srcdir)/TestSuite.cpp
