@@ -93,16 +93,16 @@ class DefaultBasisFactory {
     basisMap_[   3101000] = Teuchos::rcp( new Basis_F0_QUAD_I1_FEM_DEFAULT<Scalar>() );
 
     // begin FIAT-generated bases
-    basisMap_[   2002020] = Teuchos::rcp( new Basis_F0_TRI_C2_FEM_FIAT<Scalar>() );
     basisMap_[   2001020] = Teuchos::rcp( new Basis_F0_TRI_C1_FEM_FIAT<Scalar>() );
-    basisMap_[   2005020] = Teuchos::rcp( new Basis_F0_TRI_C5_FEM_FIAT<Scalar>() );
-    basisMap_[   2004020] = Teuchos::rcp( new Basis_F0_TRI_C4_FEM_FIAT<Scalar>() );
+    basisMap_[   2002020] = Teuchos::rcp( new Basis_F0_TRI_C2_FEM_FIAT<Scalar>() );
     basisMap_[   2003020] = Teuchos::rcp( new Basis_F0_TRI_C3_FEM_FIAT<Scalar>() );
-    basisMap_[   2008020] = Teuchos::rcp( new Basis_F0_TRI_C8_FEM_FIAT<Scalar>() );
-    basisMap_[   2007020] = Teuchos::rcp( new Basis_F0_TRI_C7_FEM_FIAT<Scalar>() );
+    basisMap_[   2004020] = Teuchos::rcp( new Basis_F0_TRI_C4_FEM_FIAT<Scalar>() );
+    basisMap_[   2005020] = Teuchos::rcp( new Basis_F0_TRI_C5_FEM_FIAT<Scalar>() );
     basisMap_[   2006020] = Teuchos::rcp( new Basis_F0_TRI_C6_FEM_FIAT<Scalar>() );
-    basisMap_[   2010020] = Teuchos::rcp( new Basis_F0_TRI_C10_FEM_FIAT<Scalar>() );
+    basisMap_[   2007020] = Teuchos::rcp( new Basis_F0_TRI_C7_FEM_FIAT<Scalar>() );
+    basisMap_[   2008020] = Teuchos::rcp( new Basis_F0_TRI_C8_FEM_FIAT<Scalar>() );
     basisMap_[   2009020] = Teuchos::rcp( new Basis_F0_TRI_C9_FEM_FIAT<Scalar>() );
+    basisMap_[   2010020] = Teuchos::rcp( new Basis_F0_TRI_C10_FEM_FIAT<Scalar>() );
     // end FIAT-generated bases
 
   };
