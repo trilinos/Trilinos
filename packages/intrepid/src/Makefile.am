@@ -50,7 +50,7 @@ INTREPID_COMMON_H = \
   $(srcdir)/common/Intrepid_Types.hpp \
   $(srcdir)/common/Intrepid_Utils.hpp
 
-INTREPID_LOCAL_H = \
+INTREPID_LOCAL_H =  \
   $(srcdir)/local/basis/Intrepid_Basis.hpp \
   $(srcdir)/local/basis/Intrepid_DefaultBasisFactoryDef.hpp \
   $(srcdir)/local/basis/Intrepid_DefaultBasisFactory.hpp \
@@ -98,7 +98,27 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C9_FEM_FIAT.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C9_FEM_FIATDef.hpp \
   $(srcdir)/local/basis/Intrepid_F0_TRI_C10_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C10_FEM_FIATDef.hpp
+  $(srcdir)/local/basis/Intrepid_F0_TRI_C10_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C1_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C1_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C2_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C2_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C3_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C3_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C4_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C4_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C5_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C5_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C6_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C6_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C7_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C7_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C8_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C8_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C9_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C9_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C10_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_TET_C10_FEM_FIATDef.hpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp
@@ -143,3 +163,4 @@ include_HEADERS = \
 # All Intrepid headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
 nodist_execinclude_HEADERS = Intrepid_config.h
+
