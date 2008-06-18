@@ -169,6 +169,7 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ExponentialSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp \
 	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
@@ -420,6 +421,7 @@ SOURCE_H = \
 	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ExponentialSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp
 
