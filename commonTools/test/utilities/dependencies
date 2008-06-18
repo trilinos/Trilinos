@@ -59,6 +59,11 @@ IF PACKAGE claps THEN
 REMOVE --enable-claps
 DONE
 
+# CTrilinos --------------------------------------------------------------------
+IF PACKAGE CTrilinos THEN
+REMOVE --enable-ctrilinos
+DONE
+
 # Didasko ----------------------------------------------------------------------
 IF PACKAGE didasko THEN
 REMOVE --enable-didasko
@@ -108,6 +113,11 @@ REMOVE --enable-nox-epetra-examples
 REMOVE --enable-sundance
 DONE
 
+# External ---------------------------------------------------------------------
+IF PACKAGE external THEN
+REMOVE --enable-external
+DONE
+
 # Fei ----------------------------------------------------------------------
 IF PACKAGE fei THEN
 REMOVE --enable-fei
@@ -132,6 +142,11 @@ REMOVE --enable-nox-epetra-examples
 REMOVE --with-ml_ifpack
 REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
+DONE
+
+# Intrepid ---------------------------------------------------------------------
+IF PACKAGE intrepid THEN
+REMOVE --enable-intrepid
 DONE
 
 # Isorropia --------------------------------------------------------------------
@@ -219,6 +234,11 @@ REMOVE --enable-python
 REMOVE --enable-shared
 DONE
 
+# Rbgen ------------------------------------------------------------------------
+IF PACKAGE rbgen THEN
+REMOVE --enable-rbgen
+END
+
 # RTOp -------------------------------------------------------------------------
 IF PACKAGE rtop THEN
 REMOVE --enable-rtop
@@ -239,6 +259,11 @@ DONE
 IF PACKAGE sacado THEN
 REMOVE --enable-sacado
 REMOVE --enable-sacado-alltests
+DONE
+
+# Stokhos ----------------------------------------------------------------------
+IF PACKAGE stokhos THEN
+REMOVE --enable-stokhos
 DONE
 
 # Stratimikos ------------------------------------------------------------------
@@ -266,6 +291,7 @@ REMOVE --enable-aristos
 REMOVE --enable-epetraext
 REMOVE --enable-ifpack
 REMOVE --with-ml_ifpack
+REMOVE --enable-intrepid
 REMOVE --enable-isorropia
 REMOVE --enable-moertel
 REMOVE --enable-meros
@@ -274,10 +300,12 @@ REMOVE --enable-anasazi
 REMOVE --with-loca-anasazi
 REMOVE --enable-galeri
 REMOVE --enable-nox
+REMOVE --enable-rbgen
 REMOVE --enable-rythmos
 REMOVE --enable-rtop
 REMOVE --enable-thyra
 REMOVE --enable-sacado
+REMOVE --enable-stokhos
 REMOVE --enable-stratimikos
 REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
