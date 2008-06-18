@@ -161,7 +161,7 @@ void ModeLaplace3DQ2::makeMap() {
 
   int numProc = MyComm.NumProc();
   int globalSize = (2*nX - 1)*(2*nY - 1)*(2*nZ - 1);
-  assert(globalSize > numProc);
+  TEST_FOR_EXCEPTION(globalSize <= numProc,std::logic_error,"Parameter error in ModeLaplace2DQ1.");
 
 #ifdef _USE_CHACO
   // Use the partitioner Chaco to distribute the unknowns

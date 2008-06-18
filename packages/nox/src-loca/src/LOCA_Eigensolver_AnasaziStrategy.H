@@ -164,7 +164,7 @@ namespace LOCA {
       bool isSymmetric;
 
       //! Sorting manager to handle the sorting of eigenvalues
-      Teuchos::RCP< Anasazi::SortManager<double, MV, OP> > locaSort;
+      Teuchos::RCP< Anasazi::SortManager<double> > locaSort;
 
     }; // Class AnasaziStrategy
 

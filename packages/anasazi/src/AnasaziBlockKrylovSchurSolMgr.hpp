@@ -208,7 +208,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > _problem;
-  Teuchos::RCP<SortManager<ScalarType,MV,OP> > _sort;
+  Teuchos::RCP<SortManager<MagnitudeType> > _sort;
 
   std::string _whch, _ortho; 
   MagnitudeType _ortho_kappa;
@@ -297,13 +297,13 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
 
   // get the sort manager
   if (pl.isParameter("Sort Manager")) {
-    _sort = Teuchos::getParameter<Teuchos::RCP<Anasazi::SortManager<ScalarType,MV,OP> > >(pl,"Sort Manager");
+    _sort = Teuchos::getParameter<Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > >(pl,"Sort Manager");
   } else {
     // which values to solve for
     _whch = pl.get("Which",_whch);
     TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR" && _whch != "SI" && _whch != "LI",
                        std::invalid_argument, "Invalid sorting string.");
-    _sort = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
+    _sort = Teuchos::rcp( new BasicSort<MagnitudeType>(_whch) );
   }
 
   // which orthogonalization to use

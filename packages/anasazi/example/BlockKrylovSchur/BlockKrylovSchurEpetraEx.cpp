@@ -238,8 +238,8 @@ int main(int argc, char *argv[]) {
   // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
   // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
   //      so you can also pass in the parameter "Which", instead of a sort manager.
-  Teuchos::RCP<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
-    Teuchos::rcp( new Anasazi::BasicSort<ScalarType,MV,OP>( which ) );
+  Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > MySort =     
+    Teuchos::rcp( new Anasazi::BasicSort<MagnitudeType>( which ) );
 
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;

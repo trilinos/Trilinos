@@ -156,7 +156,7 @@ void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullorth
 void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
                  RCP< OutputManager<ScalarType> > printer,
                  RCP< MatOrthoManager<ScalarType,MV,OP> > ortho,
-                 RCP< SortManager<ScalarType,MV,OP> > sorter,
+                 RCP< SortManager<MagnitudeType> > sorter,
                  ParameterList &pls,bool invalid=false)
 {
   // create a status tester to run for one iteration
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
   RCP< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
   RCP< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
   // create the sort manager
-  RCP< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LM") );
+  RCP< SortManager<MagnitudeType> > sorter = rcp( new BasicSort<MagnitudeType>("LM") );
   // create the parameter list specifying blocksize > nev and full orthogonalization
   ParameterList pls;
 

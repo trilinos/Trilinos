@@ -35,11 +35,10 @@
 */
 
 /*!    \class Anasazi::SortManager
-       \brief Anasazi's templated pure virtual class for managing the sorting of 
-       approximate eigenvalues computed by the eigensolver.
 
-       A concrete implementation of this class is necessary.  The user can create
-       their own implementation if those supplied are not suitable for their needs.
+       \brief Anasazi's templated pure virtual class for managing the sorting
+       of approximate eigenvalues computed by the eigensolver. A concrete
+       implementation of this class is necessary. 
 
        \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
@@ -47,6 +46,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 
 
@@ -62,53 +62,54 @@ namespace Anasazi {
 
   //@}
 
-  template<class ScalarType, class MV, class OP>
-  class Eigensolver;
-
-  template<class ScalarType, class MV, class OP>
+  template<class MagnitudeType>
   class SortManager {
     
   public:
-    
-    //! Default Constructor
+
+    //! Default constructor.
     SortManager() {};
+    
+    //! Constructor accepting a Teuchos::ParameterList. This is the default mode for instantiating a SortManager.
+    SortManager(Teuchos::ParameterList &pl) {};
 
     //! Destructor
-    virtual ~SortManager() {};
+    ~SortManager() {};
 
-    //! Sort the vector of eigenvalues, optionally returning the permutation vector.
-    /**
-       @param solver [in] Eigensolver that is calling the sorting routine
+    /*! \brief Sort real eigenvalues, optionally returning the permutation vector.
 
-       @param n [in] Number of values in evals to be sorted.
+       @param evals [in/out] Vector of length at least \c n containing the eigenvalues to be sorted.  <br>
+                     On output, the first \c n eigenvalues will be sorted. The rest will be unchanged.
 
-       @param evals [in/out] Vector of length n containing the eigenvalues to be sorted
+       @param perm [out] Vector of length at least \c n to store the permutation index (optional).  <br>
+       If specified, on output the first \c n eigenvalues will contain the permutation indices, in the range <tt>[0,n-1]</tt>, such that <tt>evals_out[i] = evals_in[perm[i]]</tt>
 
-       @param perm [out] Vector of length n to store the permutation index (optional)
+       @param n [in] Number of values in evals to be sorted. If <tt>n == -1</tt>, all values will be sorted.
     */
-    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm = 0) const = 0;
+    virtual void sort(std::vector<MagnitudeType> &evals, Teuchos::RCP<std::vector<int> > perm = Teuchos::null, int n = -1) const = 0;
 
-    /*! \brief Sort the vectors of eigenpairs, optionally returning the permutation vector.
+    /*! \brief Sort complex eigenvalues, optionally returning the permutation vector.
 
        This routine takes two vectors, one for each part of a complex
        eigenvalue. This is helpful for solving real, non-symmetric eigenvalue
        problems.
 
-       @param solver [in] Eigensolver that is calling the sorting routine
+       @param r_evals [in/out] Vector of length at least \c n containing the real part of the eigenvalues to be sorted.  <br>
+                     On output, the first \c n eigenvalues will be sorted. The rest will be unchanged.
 
-       @param n [in] Number of values in r_evals,i_evals to be sorted.
+       @param i_evals [in/out] Vector of length at least \c n containing the imaginary part of the eigenvalues to be sorted.  <br>
+                     On output, the first \c n eigenvalues will be sorted. The rest will be unchanged.
 
-       @param r_evals [in/out] Vector of length n containing the real part of the eigenvalues to be sorted 
+       @param perm [out] Vector of length at least \c n to store the permutation index (optional).  <br>
+       If specified, on output the first \c n eigenvalues will contain the permutation indices, in the range <tt>[0,n-1]</tt>, such that <tt>r_evals_out[i] = r_evals_in[perm[i]]</tt>
+       and similarly for \c i_evals.
 
-       @param i_evals [in/out] Vector of length n containing the imaginary part of the eigenvalues to be sorted 
-
-       @param perm [out] Vector of length n to store the permutation index (optional)
+       @param n [in] Number of values in \c r_evals, \c i_evals to be sorted. If <tt>n == -1</tt>, all values will be sorted.
     */
-    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, 
-                      const int n,
-                      std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
-                      std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
-                      std::vector<int> *perm = 0) const = 0;
+    virtual void sort(std::vector<MagnitudeType> &r_evals, 
+                      std::vector<MagnitudeType> &i_evals, 
+                      Teuchos::RCP<std::vector<int> > perm = Teuchos::null,
+                      int n = -1) const = 0;
     
   };
   

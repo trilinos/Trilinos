@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 
     int size = 11;
     int nev  = 7;
-    Anasazi::BasicSort<double,MV,OP> sorter("SR");
+    Anasazi::BasicSort<double> sorter("SR");
 
     // form random eigenvalues
     std::vector<double> lambda1(nev);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     // this will order the eigenvalues and give us a random permutation 
     // to use below
     std::vector<int> rperm(nev);
-    sorter.sort(NULL,nev,lambda1,&rperm);
+    sorter.sort(lambda1,Teuchos::rcp(&rperm,false),nev);
 
     // step one: eigenvalues of diag(k) are k
     {

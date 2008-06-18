@@ -390,7 +390,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
+  Teuchos::RCP<BasicSort<MagnitudeType> > sorter = Teuchos::rcp( new BasicSort<MagnitudeType>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
@@ -828,7 +828,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           Teuchos::BLAS<int,ScalarType> blas;
           std::vector<int> order(rank);
           // sort
-          sorter->sort( lobpcg_solver.get(), rank, theta, &order );   // don't catch exception
+          sorter->sort( theta, Teuchos::rcp(&order,false),rank );   // don't catch exception
           // Sort the primitive ritz vectors
           Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,rank,rank);
           msutils::permuteVectors(order,curS);
@@ -922,7 +922,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // sort the eigenvalues and permute the eigenvectors appropriately
       {
         std::vector<int> order(sol.numVecs);
-        sorter->sort( lobpcg_solver.get(), sol.numVecs, vals, &order );
+        sorter->sort( vals, Teuchos::rcp(&order,false), sol.numVecs);
         // store the values in the Eigensolution
         for (int i=0; i<sol.numVecs; i++) {
           sol.Evals[i].realpart = vals[i];

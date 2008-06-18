@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
   typedef MultiVecTraits<ST,MV>    MVT;
   typedef OperatorTraits<ST,MV,OP> OPT;
   typedef ScalarTraits<ST>         SCT;
+  typedef SCT::magnitudeType        MT;
 
   //
   // Create an output manager
@@ -114,8 +115,8 @@ int main(int argc, char *argv[])
   printer->setVerbosity( verbosity );
   // 
   // Create a sort manager
-  RCP< SortManager<ST,MV,OP> > sorter = 
-    rcp( new BasicSort<ST,MV,OP>("LM") );
+  RCP< SortManager<MT> > sorter = 
+    rcp( new BasicSort<MT>("LM") );
   //
   // Create an orthogonalization manager
   RCP< MatOrthoManager<ST,MV,OP> > ortho = 

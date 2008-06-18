@@ -68,9 +68,7 @@ namespace Anasazi {
    * collection of common sorting techniques.
    */
   class LOCASort : 
-    public Anasazi::SortManager< double,
-				 NOX::Abstract::MultiVector,
-				 LOCA::AnasaziOperator::AbstractStrategy > {
+    public Anasazi::SortManager< double > {
 
     //! Anasazi::Multivec typedef
     typedef NOX::Abstract::MultiVector MV;
@@ -100,10 +98,7 @@ namespace Anasazi {
      * \return Returns the status of the sorting routine 
      */
     virtual void
-    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,
-	                     Anasazi::LOCASort::OP>* solver, 
-	 const int n, std::vector<double>& evals, 
-	 std::vector<int>* perm = 0) const;
+    sort(std::vector<double>& evals, Teuchos::RCP<std::vector<int> > perm = Teuchos::null, int n = -1) const;
       
     /*! 
      * \brief Sort the vectors of eigenpairs with respect to the chosen 
@@ -120,10 +115,7 @@ namespace Anasazi {
      * \return Returns the status of the sorting routine 
      */
     virtual void
-    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,
-	                      Anasazi::LOCASort::OP>* solver, 
-	 const int n, std::vector<double>& r_evals, 
-	 std::vector<double>& i_evals, std::vector<int>* perm = 0) const;
+    sort(std::vector<double>& r_evals, std::vector<double>& i_evals, Teuchos::RCP<std::vector<int> > perm = Teuchos::null, int n = -1) const;
       
   protected: 
 

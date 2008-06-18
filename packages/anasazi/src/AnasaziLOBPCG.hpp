@@ -220,7 +220,7 @@ namespace Anasazi {
      *   - "Full Ortho" - a \c bool specifying whether the solver should employ a full orthogonalization technique. This can also be specified using the setFullOrtho() method.
      */
     LOBPCG( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-            const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+            const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
             const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -517,7 +517,7 @@ namespace Anasazi {
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
+    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
@@ -610,7 +610,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   LOBPCG<ScalarType,MV,OP>::LOBPCG(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
         const Teuchos::RCP<OutputManager<ScalarType> > &printer,
         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
         const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -1148,7 +1148,7 @@ namespace Anasazi {
         std::vector<int> order(blockSize_);
         // 
         // sort the first blockSize_ values in theta_
-        sm_->sort( this, blockSize_, theta_, &order );   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcp(&order,false), blockSize_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
@@ -1574,7 +1574,7 @@ namespace Anasazi {
         std::vector<int> order(nevLocal_);
         // 
         // Sort the first nevLocal_ values in theta_
-        sm_->sort( this, nevLocal_, theta_, &order );   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcp(&order,false), nevLocal_);   // don't catch exception
         //
         // Sort the primitive ritz vectors
         Utils::permuteVectors(order,lclS);

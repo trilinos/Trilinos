@@ -160,10 +160,10 @@ namespace Anasazi {
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
      *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis.
      */
-    BlockDavidson( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                   const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
-                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+    BlockDavidson( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+                   const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+                   const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
                    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
                    Teuchos::ParameterList &params 
                  );
@@ -452,9 +452,9 @@ namespace Anasazi {
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
+    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >             tester_;
     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
     //
     // Information obtained from the eigenproblem
@@ -538,10 +538,10 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   BlockDavidson<ScalarType,MV,OP>::BlockDavidson(
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
-        const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+        const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
+        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
         const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList &params
         ) :
@@ -1099,7 +1099,7 @@ namespace Anasazi {
         std::vector<int> order(curDim_);
         //
         // sort the first curDim_ values in theta_
-        sm_->sort( this, curDim_, theta_, &order );   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcp(&order,false), curDim_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
@@ -1395,7 +1395,7 @@ namespace Anasazi {
         std::vector<int> order(curDim_);
         // 
         // sort the first curDim_ values in theta_
-        sm_->sort( this, curDim_, theta_, &order );   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcp(&order,false), curDim_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,curDim_,curDim_);

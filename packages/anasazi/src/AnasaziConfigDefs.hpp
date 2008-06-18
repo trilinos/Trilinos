@@ -107,6 +107,12 @@
 #    include <vector.h>
 #  endif
 
+#  ifdef HAVE_CCTYPE
+#    include <cctype>
+#  else
+#    include <cctype.h>
+#  endif
+
 #  ifdef HAVE_NUMERIC
 #    include <numeric>
 #  else

@@ -452,7 +452,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
+  Teuchos::RCP<BasicSort<MagnitudeType> > sorter = Teuchos::rcp( new BasicSort<MagnitudeType>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
@@ -714,7 +714,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // sort the eigenvalues (so that we can order the eigenvectors)
           {
             std::vector<int> order(curdim);
-            sorter->sort(bd_solver.get(),curdim,theta,&order);
+            sorter->sort(theta,Teuchos::rcp(&order,false),curdim);
             //
             // apply the same ordering to the primitive ritz vectors
             msutils::permuteVectors(order,S);
@@ -926,7 +926,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             // 
             // sort the eigenvalues (so that we can order the eigenvectors)
             std::vector<int> order(curdim);
-            sorter->sort(bd_solver.get(),curdim,theta,&order);
+            sorter->sort(theta,Teuchos::rcp(&order,false),curdim);
             //
             // apply the same ordering to the primitive ritz vectors
             msutils::permuteVectors(order,S);
@@ -1230,7 +1230,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       // sort the eigenvalues and permute the eigenvectors appropriately
       {
         std::vector<int> order(sol.numVecs);
-        sorter->sort(bd_solver.get(), sol.numVecs, vals, &order );
+        sorter->sort(vals,Teuchos::rcp(&order,false),sol.numVecs);
         // store the values in the Eigensolution
         for (int i=0; i<sol.numVecs; i++) {
           sol.Evals[i].realpart = vals[i];

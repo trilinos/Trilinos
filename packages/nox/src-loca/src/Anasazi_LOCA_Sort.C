@@ -57,27 +57,28 @@ Anasazi::LOCASort::~LOCASort()
 }
 
 void
-Anasazi::LOCASort::sort(Anasazi::Eigensolver<double,
-			                     Anasazi::LOCASort::MV,
-			                     Anasazi::LOCASort::OP>* solver, 
-			int n, std::vector<double>& evals, 
-			std::vector<int>* perm) const
+Anasazi::LOCASort::sort(std::vector<double>& evals, 
+			                  Teuchos::RCP<std::vector<int> > perm, 
+                        int n) const
 {
-  NOX::Abstract::Group::ReturnType res = strategy->sort(n, &evals[0], perm);
-  globalData->locaErrorCheck->checkReturnType(res,
-					      "Anasazi::LOCASort::sort()");
+  if (n == -1) {
+    n = evals.size();
+  }
+  NOX::Abstract::Group::ReturnType res = strategy->sort(n, &evals[0], perm.get());
+  globalData->locaErrorCheck->checkReturnType(res, "Anasazi::LOCASort::sort()");
 }
 
 void
-Anasazi::LOCASort::sort(Anasazi::Eigensolver<double,
-			                     Anasazi::LOCASort::MV,
-			                     Anasazi::LOCASort::OP>* solver, 
-			int n, std::vector<double>& r_evals, 
-			std::vector<double>& i_evals, 
-			std::vector<int>* perm) const
+Anasazi::LOCASort::sort(std::vector<double>& r_evals, 
+			                  std::vector<double>& i_evals, 
+			                  Teuchos::RCP<std::vector<int> > perm, 
+                        int n) const
 {
+  if (n == -1) {
+    n = r_evals.size();
+  }
   NOX::Abstract::Group::ReturnType res = 
-    strategy->sort(n, &r_evals[0], &i_evals[0], perm);
+    strategy->sort(n, &r_evals[0], &i_evals[0], perm.get());
   globalData->locaErrorCheck->checkReturnType(res,
 					      "Anasazi::LOCASort::sort()");
 }

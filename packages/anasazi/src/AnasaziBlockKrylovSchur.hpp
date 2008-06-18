@@ -148,12 +148,12 @@ namespace Anasazi {
      *   - "Print Number of Ritz Values" - an \c int specifying how many Ritz values are printed on calls to currentStatus(). Default: "Block Size"
      */
     BlockKrylovSchur( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                   const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
-                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                   const Teuchos::RCP<OrthoManager<ScalarType,MV> > &ortho,
-                   Teuchos::ParameterList &params 
-                 );
+                      const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+                      const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                      const Teuchos::RCP<OrthoManager<ScalarType,MV> > &ortho,
+                      Teuchos::ParameterList &params 
+                    );
     
     //! %BlockKrylovSchur destructor.
     virtual ~BlockKrylovSchur() {};
@@ -454,7 +454,7 @@ namespace Anasazi {
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
+    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> >             tester_;
     const Teuchos::RCP<OrthoManager<ScalarType,MV> >        orthman_;
@@ -543,7 +543,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   BlockKrylovSchur<ScalarType,MV,OP>::BlockKrylovSchur(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
         const Teuchos::RCP<OutputManager<ScalarType> > &printer,
         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
         const Teuchos::RCP<OrthoManager<ScalarType,MV> > &ortho,
@@ -1516,7 +1516,7 @@ namespace Anasazi {
             if (problem_->isHermitian()) {
               //
               // Sort using just the real part of the Ritz values.
-              sm_->sort( this, curDim_, tmp_rRitzValues, &ritzOrder_ ); // don't catch exception
+              sm_->sort(tmp_rRitzValues, Teuchos::rcp(&ritzOrder_,false), curDim_); // don't catch exception
               ritzIndex_.clear();
               while ( i < curDim_ ) {
                 // The Ritz value is not complex.
@@ -1528,7 +1528,7 @@ namespace Anasazi {
             else {
               //
               // Sort using both the real and imaginary parts of the Ritz values.
-              sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
+              sm_->sort(tmp_rRitzValues, tmp_iRitzValues, Teuchos::rcp(&ritzOrder_,false) , curDim_);
               HelperTraits<ScalarType>::sortRitzValues( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
             }
             //

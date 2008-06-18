@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
       Indices[1] = nx;
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if (MyGlobalElements[i] == nx*(nx-1))
     {
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
       Indices[1] = nx*(nx-2);
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if (MyGlobalElements[i] == nx-1)
     {
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       assert( info==0 );
       Indices[0] = 2*nx-1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if (MyGlobalElements[i] == NumGlobalElements-1)
     {
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
       assert( info==0 );
       Indices[0] = nx*(nx-1)-1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if (MyGlobalElements[i] < nx)
     {
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
       Indices[2] = MyGlobalElements[i]+nx;
       NumEntries = 3;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if (MyGlobalElements[i] > nx*(nx-1))
     {
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
       Indices[2] = MyGlobalElements[i]-nx;
       NumEntries = 3;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if (MyGlobalElements[i]%nx == 0)
     {
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
       Indices[2] = MyGlobalElements[i]+nx;
       NumEntries = 3;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else if ((MyGlobalElements[i]+1)%nx == 0)
     {
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
       Indices[0] = MyGlobalElements[i]-1;
       NumEntries = 1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     else
     {
@@ -201,11 +201,11 @@ int main(int argc, char *argv[]) {
       Indices[3] = MyGlobalElements[i]+nx;
       NumEntries = 4;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
     }
     // Put in the diagonal entry
     int info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diag, &MyGlobalElements[i]);
-    assert( info==0 );
+    TEST_FOR_EXCEPTION( info != 0, std::runtime_error, "Failure in InsertGlobalValues()" );
   }
 
   // Finish up

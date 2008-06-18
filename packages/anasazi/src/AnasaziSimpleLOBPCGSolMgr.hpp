@@ -199,7 +199,7 @@ ReturnType
 SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // sort manager
-  Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
+  Teuchos::RCP<BasicSort<MagnitudeType> > sorter = Teuchos::rcp( new BasicSort<MagnitudeType>(whch_) );
   // output manager
   Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verb_) );
   // status tests
@@ -362,7 +362,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // sort the eigenvalues and permute the eigenvectors appropriately
   if (numfound > 0) {
     std::vector<int> order(sol.numVecs);
-    sorter->sort( lobpcg_solver.get(), sol.numVecs, vals, &order );
+    sorter->sort(vals,Teuchos::rcp(&order,false),sol.numVecs);
     // store the values in the Eigensolution
     for (int i=0; i<sol.numVecs; i++) {
       sol.Evals[i].realpart = vals[i];

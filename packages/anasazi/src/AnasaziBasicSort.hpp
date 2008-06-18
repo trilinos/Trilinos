@@ -44,421 +44,482 @@
 #include "AnasaziSortManager.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Anasazi {
 
-  template<class ScalarType, class MV, class OP>
-  class BasicSort : public SortManager<ScalarType,MV,OP> {
+  template<class MagnitudeType>
+  class BasicSort : public SortManager<MagnitudeType> {
     
   public:
     
-    //! Constructor
-    /**
-       @param which [in] The eigenvalues of interest for this eigenproblem.
-       <ul>
-       <li> "LM" - Largest Magnitude [ default ]
-       <li> "SM" - Smallest Magnitude
-       <li> "LR" - Largest Real 
-       <li> "SR" - Smallest Real 
-       <li> "LI" - Largest Imaginary 
-       <li> "SI" - Smallest Imaginary 
-       </ul>
+    /*! \brief Parameter list driven constructor
+
+        This constructor accepts a paramter list with the following options:
+       - \c "Sort Strategy" - a \c string specifying the desired sorting strategy. See setSortType() for valid options.
     */
-    BasicSort( const std::string which = "LM" ) {
-      setSortType(which);
-    }
+    BasicSort( Teuchos::ParameterList &pl );
+
+    /*! \brief String driven constructor
+
+        Directly pass the string specifying sort strategy. See setSortType() for valid options.
+    */
+    BasicSort( const std::string &which = "LM" );
 
     //! Destructor
-    virtual ~BasicSort() {};
+    virtual ~BasicSort();
 
     //! Set sort type
     /**
        @param which [in] The eigenvalues of interest for this eigenproblem.
-       <ul>
-       <li> "LM" - Largest Magnitude [ default ]
-       <li> "SM" - Smallest Magnitude
-       <li> "LR" - Largest Real 
-       <li> "SR" - Smallest Real 
-       <li> "LI" - Largest Imaginary 
-       <li> "SI" - Smallest Imaginary 
-       </ul>
+       - \c "LM" - Largest Magnitude [ default ]
+       - \c "SM" - Smallest Magnitude
+       - \c "LR" - Largest Real 
+       - \c "SR" - Smallest Real 
+       - \c "LI" - Largest Imaginary 
+       - \c "SI" - Smallest Imaginary 
     */
-    void setSortType( const std::string which ) { 
-      which_ = which; 
-      TEST_FOR_EXCEPTION(which_.compare("LM") && which_.compare("SM") &&
-                         which_.compare("LR") && which_.compare("SR") &&
-                         which_.compare("LI") && which_.compare("SI"), std::invalid_argument, 
-                         "Anasazi::BasicSort::sort(): sorting order is not valid");
-    };
+    void setSortType( const std::string &which );
     
-    //! Sort the vector of eigenvalues, optionally returning the permutation vector.
-    /**
-       @param solver [in] Eigensolver that is calling the sorting routine
+    /*! \brief Sort real eigenvalues, optionally returning the permutation vector.
 
-       @param n [in] Number of values in evals to be sorted.
+       \note This method is not valid when the sort manager is configured for "LI" or "SI" sorting 
+       (i.e., sorting by the imaginary components). Calling this method in that scenario will result
+       in a SortManagerError exception.
 
-       @param evals [in/out] Vector of length n containing the eigenvalues to be sorted
+       @param evals [in/out] Vector of length at least \c n containing the eigenvalues to be sorted.  <br>
+                     On output, the first \c n eigenvalues will be sorted. The rest will be unchanged.
 
-       @param perm [out] Vector of length n to store the permutation index (optional)
+       @param perm [out] Vector of length at least \c n to store the permutation index (optional).  <br>
+       If specified, on output the first \c n eigenvalues will contain the permutation indices, in the range <tt>[0,n-1]</tt>, such that <tt>evals_out[i] = evals_in[perm[i]]</tt>
+
+       @param n [in] Number of values in evals to be sorted. If <tt>n == -1</tt>, all values will be sorted.
     */
-    void sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm = 0) const;
+    void sort(std::vector<MagnitudeType> &evals, Teuchos::RCP<std::vector<int> > perm = Teuchos::null, int n = -1) const;
 
-    /*! \brief Sort the vectors of eigenpairs, optionally returning the permutation vector.
+    /*! \brief Sort complex eigenvalues, optionally returning the permutation vector.
 
        This routine takes two vectors, one for each part of a complex
        eigenvalue. This is helpful for solving real, non-symmetric eigenvalue
        problems.
 
-       @param solver [in] Eigensolver that is calling the sorting routine
+       @param r_evals [in/out] Vector of length at least \c n containing the real part of the eigenvalues to be sorted.  <br>
+                     On output, the first \c n eigenvalues will be sorted. The rest will be unchanged.
 
-       @param n [in] Number of values in r_evals,i_evals to be sorted.
+       @param i_evals [in/out] Vector of length at least \c n containing the imaginary part of the eigenvalues to be sorted.  <br>
+                     On output, the first \c n eigenvalues will be sorted. The rest will be unchanged.
 
-       @param r_evals [in/out] Vector of length n containing the real part of the eigenvalues to be sorted 
+       @param perm [out] Vector of length at least \c n to store the permutation index (optional).  <br>
+       If specified, on output the first \c n eigenvalues will contain the permutation indices, in the range <tt>[0,n-1]</tt>, such that <tt>r_evals_out[i] = r_evals_in[perm[i]]</tt>
+       and similarly for \c i_evals.
 
-       @param i_evals [in/out] Vector of length n containing the imaginary part of the eigenvalues to be sorted 
-
-       @param perm [out] Vector of length n to store the permutation index (optional)
+       @param n [in] Number of values in \c r_evals, \c i_evals to be sorted. If <tt>n == -1</tt>, all values will be sorted, as decided by the minimum of the length of \c r_evals and the length of \c i_evals.
     */
-    void sort(Eigensolver<ScalarType,MV,OP>* solver, 
-              const int n,
-              std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
-              std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
-              std::vector<int> *perm = 0) const;
+    void sort(std::vector<MagnitudeType> &r_evals, 
+              std::vector<MagnitudeType> &i_evals, 
+              Teuchos::RCP<std::vector<int> > perm = Teuchos::null,
+              int n = -1) const;
     
   protected: 
     
-    //! Sorting type
-    /*! \note Sorting choices:
-       <ul>
-       <li> "LM" - Largest Magnitude [ default ]
-       <li> "SM" - Smallest Magnitude
-       <li> "LR" - Largest Real 
-       <li> "SR" - Smallest Real 
-       <li> "LI" - Largest Imaginary 
-       <li> "SI" - Smallest Imaginary 
-       </ul>
-    */
-    std::string which_;
+    // enum for sort type
+    enum SType {
+      LM, SM,
+      LR, SR,
+      LI, SI
+    };
+    SType which_;
 
+    // sorting methods
+    template <class LTorGT>
+    struct compMag {
+      // for real-only LM,SM
+      bool operator()(MagnitudeType, MagnitudeType);
+      // for real-only LM,SM with permutation
+      template <class First, class Second>
+        bool operator()(std::pair<First,Second>, std::pair<First,Second>);
+    };
+
+    template <class LTorGT>
+    struct compMag2 {
+      // for real-imag LM,SM
+      bool operator()(std::pair<MagnitudeType,MagnitudeType>, std::pair<MagnitudeType,MagnitudeType>);
+      // for real-imag LM,SM with permutation
+      template <class First, class Second>
+        bool operator()(std::pair<First,Second>, std::pair<First,Second>);
+    };
+
+    template <class LTorGT>
+    struct compAlg {
+      // for real-imag LR,SR,LI,SI
+      bool operator()(MagnitudeType, MagnitudeType);
+      template <class First, class Second>
+        bool operator()(std::pair<First,Second>, std::pair<First,Second>);
+    };
+
+    template <typename pair_type>
+    struct sel1st 
+    {
+      const typename pair_type::first_type &operator()(const pair_type &v) const;
+    };
+
+    template <typename pair_type>
+    struct sel2nd 
+    {
+      const typename pair_type::second_type &operator()(const pair_type &v) const;
+    };
   };
 
-  template<class ScalarType, class MV, class OP>
-  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, 
-                              std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, 
-                              std::vector<int> *perm) const
-  {
-    int i=0,j=0;
 
+  ////////////////////////////////////////////////////////////////////////
+  //  IMPLEMENTATION
+  ////////////////////////////////////////////////////////////////////////
+
+  template<class MagnitudeType>
+  BasicSort<MagnitudeType>::BasicSort(Teuchos::ParameterList &pl) 
+  {
+    std::string which = "LM";
+    which = pl.get("Sort Strategy",which);
+    setSortType(which);
+  }
+
+  template<class MagnitudeType>
+  BasicSort<MagnitudeType>::BasicSort(const std::string &which) 
+  {
+    setSortType(which);
+  }
+
+  template<class MagnitudeType>
+  BasicSort<MagnitudeType>::~BasicSort() 
+  {}
+
+  template<class MagnitudeType>
+  void BasicSort<MagnitudeType>::setSortType(const std::string &which) 
+  { 
+    // make upper case
+    std::string whichlc(which);
+    std::transform(which.begin(),which.end(),whichlc.begin(),(int(*)(int)) std::toupper);
+    if (whichlc == "LM") {
+      which_ = LM;
+    }
+    else if (whichlc == "SM") {
+      which_ = SM;
+    }
+    else if (whichlc == "LR") {
+      which_ = LR;
+    }
+    else if (whichlc == "SR") {
+      which_ = SR;
+    }
+    else if (whichlc == "LI") {
+      which_ = LI;
+    }
+    else if (whichlc == "SI") {
+      which_ = SI;
+    }
+    else {
+      TEST_FOR_EXCEPTION(true, std::invalid_argument, "Anasazi::BasicSort::setSortType(): sorting order is not valid");
+    }
+  }
+
+  template<class MagnitudeType>
+  void BasicSort<MagnitudeType>::sort(std::vector<MagnitudeType> &evals, Teuchos::RCP<std::vector<int> > perm, int n) const
+  {
+    TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r): n must be n >= 0 or n == -1.");
+    if (n == -1) {
+      n = evals.size();
+    }
     TEST_FOR_EXCEPTION(evals.size() < (unsigned int) n,
-                       std::invalid_argument, "Anasazi::BasicSort:sort(): eigenvalue vector size isn't consistent with n.");
-    if (perm) {
+                       std::invalid_argument, "Anasazi::BasicSort::sort(r): eigenvalue vector size isn't consistent with n.");
+    if (perm != Teuchos::null) {
       TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
-                         std::invalid_argument, "Anasazi::BasicSort:sort(): permutation vector size isn't consistent with n.");
+                         std::invalid_argument, "Anasazi::BasicSort::sort(r): permutation vector size isn't consistent with n.");
     }
 
-    // Temp integer for swapping the index of the permutation, used in all sorting types.
-    int tempord=0;
+    typedef std::greater<MagnitudeType> greater_mt;
+    typedef std::less<MagnitudeType>    less_mt;
 
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+    if (perm == Teuchos::null) {
+      //
+      // if permutation index is not required, just sort using the values
+      //
+      switch (which_) {
+        case LM:
+          std::sort(evals.begin(),evals.begin()+n,compMag<greater_mt>());
+          break;
+        case SM:
+          std::sort(evals.begin(),evals.begin()+n,compMag<less_mt>());
+          break;
+        case LR:
+          std::sort(evals.begin(),evals.begin()+n,compAlg<greater_mt>());
+          break;
+        case SR:
+          std::sort(evals.begin(),evals.begin()+n,compAlg<less_mt>());
+          break;
+        case SI:
+        case LI:
+          TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
+          break;
+      }
+    }
+    else {
+      // 
+      // if permutation index is required, we must sort the two at once
+      // in this case, we arrange a pair structure: <value,index>
+      // default comparison operator for pair<t1,t2> is lexographic:
+      //    compare first t1, then t2
+      // this works fine for us here.
+      //
 
-    // Temp variable for swapping the eigenvalue used in all sorting types.
-    MagnitudeType temp;
+      // copy the values and indices into the pair structure
+      std::vector< std::pair<MagnitudeType,int> > pairs(n);
+      for (int i=0; i<n; i++) {
+        pairs[i] = std::make_pair(evals[i],i);
+      }
 
-    Teuchos::LAPACK<int,MagnitudeType> lapack;
+      // sort the pair structure
+      switch (which_) {
+        case LM:
+          std::sort(pairs.begin(),pairs.begin()+n,compMag<greater_mt>());
+          break;
+        case SM:
+          std::sort(pairs.begin(),pairs.begin()+n,compMag<less_mt>());
+          break;
+        case LR:
+          std::sort(pairs.begin(),pairs.begin()+n,compAlg<greater_mt>());
+          break;
+        case SR:
+          std::sort(pairs.begin(),pairs.begin()+n,compAlg<less_mt>());
+          break;
+        case SI:
+        case LI:
+          TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
+          break;
+      }
 
-    //
-    // Reset the permutation if it is required.
-    //
-    if (perm) {
-      for (i=0; i < n; i++) {
-        (*perm)[i] = i;
-      }
+      // copy the values and indices out of the pair structure
+      std::transform(pairs.begin(),pairs.end(),evals.begin(),sel1st< std::pair<MagnitudeType,int> >());
+      std::transform(pairs.begin(),pairs.end(),perm->begin(),sel2nd< std::pair<MagnitudeType,int> >());
     }
-    //
-    // These methods use an insertion sort method to circumvent recursive calls.
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of magnitude
-    //---------------------------------------------------------------
-    if (!which_.compare("SM")) {
-      for (j=1; j < n; j++) {
-        temp = evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        MagnitudeType temp2 = MT::magnitude(evals[j]);
-        for (i=j-1; i >=0 && MT::magnitude(evals[i]) > temp2; i--) {
-          evals[i+1] = evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        evals[i+1] = temp; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of real part
-    //---------------------------------------------------------------
-    if (!which_.compare("SR")) {
-      for (j=1; j < n; j++) {
-        temp = evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        for (i=j-1; i >= 0 && evals[i] > temp; i--) {
-          evals[i+1]=evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        evals[i+1] = temp; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of imaginary part
-    // NOTE:  There is no implementation for this since this sorting
-    // method assumes only real eigenvalues.
-    //---------------------------------------------------------------
-    TEST_FOR_EXCEPTION(!which_.compare("SI"), SortManagerError, 
-                       "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of magnitude
-    //---------------------------------------------------------------
-    if (!which_.compare("LM")) {
-      for (j=1; j < n; j++) {
-        temp = evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        MagnitudeType temp2 = MT::magnitude(evals[j]);
-        for (i=j-1; i >= 0 && MT::magnitude(evals[i]) < temp2; i--) {
-          evals[i+1]=evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        evals[i+1] = temp; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of real part
-    //---------------------------------------------------------------
-    if (!which_.compare("LR")) {
-      for (j=1; j < n; j++) {
-        temp = evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        for (i=j-1; i >= 0 && evals[i]<temp; i--) {
-          evals[i+1]=evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        evals[i+1] = temp; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of imaginary part
-    // NOTE:  There is no implementation for this since this templating
-    // assumes only real eigenvalues.
-    //---------------------------------------------------------------
-    TEST_FOR_EXCEPTION(!which_.compare("LI"), SortManagerError, 
-                       "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
-    
-    // The character string held by this class is not valid.  
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
-                       "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
 
 
-  template<class ScalarType, class MV, class OP>
-  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, 
-                                         const int n,
-                                         std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
-                                         std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
-                                         std::vector<int> *perm) const 
+  template<class MagnitudeType>
+  void BasicSort<MagnitudeType>::sort(std::vector<MagnitudeType> &r_evals, 
+                                      std::vector<MagnitudeType> &i_evals, 
+                                      Teuchos::RCP< std::vector<int> > perm,
+                                      int n) const 
   {
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-
+    TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r,i): n must be n >= 0 or n == -1.");
+    if (n == -1) {
+      n = r_evals.size() < i_evals.size() ? r_evals.size() : i_evals.size();
+    }
     TEST_FOR_EXCEPTION(r_evals.size() < (unsigned int) n || i_evals.size() < (unsigned int) n,
-                       std::invalid_argument, "Anasazi::BasicSort:sort(): real and imaginary vector sizes aren't consistent with n.");
-    if (perm) {
+                       std::invalid_argument, "Anasazi::BasicSort::sort(r,i): eigenvalue vector size isn't consistent with n.");
+    if (perm != Teuchos::null) {
       TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
-                         std::invalid_argument, "Anasazi::BasicSort:sort(): permutation vector size isn't consistent with n.");
-    }
-    int i=0,j=0;
-    int tempord=0;
-
-    MagnitudeType temp, tempr, tempi;
-    Teuchos::LAPACK<int,MagnitudeType> lapack;
-    //
-    // Reset the index
-    //
-    if (perm) {
-      for (i=0; i < n; i++) {
-        (*perm)[i] = i;
-      }
-    }
-    //
-    // These methods use an insertion sort method to circumvent recursive calls.
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of magnitude
-    //---------------------------------------------------------------
-    if (!which_.compare("SM")) {
-      for (j=1; j < n; j++) {
-        tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        temp=lapack.LAPY2(r_evals[j],i_evals[j]);
-        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i]) > temp; i--) {
-          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of real part
-    //---------------------------------------------------------------
-    if (!which_.compare("SR")) {
-      for (j=1; j < n; j++) {
-        tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        for (i=j-1; i>=0 && r_evals[i]>tempr; i--) {
-          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of imaginary part
-    //---------------------------------------------------------------
-    if (!which_.compare("SI")) {
-      for (j=1; j < n; j++) {
-        tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        for (i=j-1; i>=0 && i_evals[i]>tempi; i--) {
-          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of magnitude
-    //---------------------------------------------------------------
-    if (!which_.compare("LM")) {
-      for (j=1; j < n; j++) {
-        tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        temp=lapack.LAPY2(r_evals[j],i_evals[j]);
-        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; i--) {
-          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }        
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of real part
-    //---------------------------------------------------------------
-    if (!which_.compare("LR")) {
-      for (j=1; j < n; j++) {
-        tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        for (i=j-1; i>=0 && r_evals[i]<tempr; i--) {
-          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }        
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of imaginary part
-    //---------------------------------------------------------------
-    if (!which_.compare("LI")) {
-      for (j=1; j < n; j++) {
-        tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        for (i=j-1; i>=0 && i_evals[i]<tempi; i--) {
-          r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm) {
-            (*perm)[i+1]=(*perm)[i];
-          }
-        }
-        r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm) {
-          (*perm)[i+1] = tempord;
-        }
-      }
-      return;
+                         std::invalid_argument, "Anasazi::BasicSort::sort(r,i): permutation vector size isn't consistent with n.");
     }
 
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
-                       "Anasazi::BasicSort::sort(): sorting order is not valid");
+    typedef std::greater<MagnitudeType> greater_mt;
+    typedef std::less<MagnitudeType>    less_mt;
+
+    //
+    // put values into pairs
+    //
+    if (perm == Teuchos::null) {
+      //
+      // not permuting, so we don't need indices in the pairs
+      // 
+      std::vector< std::pair<MagnitudeType,MagnitudeType> > pairs(n);
+      // for LM,SM, the order doesn't matter
+      // for LI,SI, the imaginary goes first
+      // for LR,SR, the real goes in first
+      switch (which_) {
+        case LR:
+        case SR:
+        case LM:
+        case SM:
+          std::transform(r_evals.begin(),r_evals.begin()+n,
+                         i_evals.begin(),pairs.begin(),
+                         std::make_pair<MagnitudeType,MagnitudeType>);
+          break;
+        case LI:
+        case SI:
+          std::transform(i_evals.begin(),i_evals.begin()+n,
+                         r_evals.begin(),pairs.begin(),
+                         std::make_pair<MagnitudeType,MagnitudeType>);
+          break;
+      }
+
+      switch (which_) {
+        case LR:
+        case LI:
+          std::sort(pairs.begin(),pairs.end(),compAlg<greater_mt>());
+          break;
+        case SR:
+        case SI:
+          std::sort(pairs.begin(),pairs.end(),compAlg<less_mt>());
+          break;
+        case LM:
+          std::sort(pairs.begin(),pairs.end(),compMag2<greater_mt>());
+          break;
+        case SM:
+          std::sort(pairs.begin(),pairs.end(),compMag2<less_mt>());
+          break;
+      }
+
+      // extract the values
+      // for LM,SM,LR,SR: order is (real,imag)
+      // for LI,SI: order is (imag,real)
+      switch (which_) {
+        case LR:
+        case SR:
+        case LM:
+        case SM:
+          std::transform(pairs.begin(),pairs.end(),r_evals.begin(),sel1st< std::pair<MagnitudeType,MagnitudeType> >());
+          std::transform(pairs.begin(),pairs.end(),i_evals.begin(),sel2nd< std::pair<MagnitudeType,MagnitudeType> >());
+          break;
+        case LI:
+        case SI:
+          std::transform(pairs.begin(),pairs.end(),r_evals.begin(),sel2nd< std::pair<MagnitudeType,MagnitudeType> >());
+          std::transform(pairs.begin(),pairs.end(),i_evals.begin(),sel1st< std::pair<MagnitudeType,MagnitudeType> >());
+          break;
+      }
+    }
+    else {
+      //
+      // permuting, we need indices in the pairs
+      // 
+      std::vector< std::pair< std::pair<MagnitudeType,MagnitudeType>, int > > pairs(n);
+      // for LM,SM, the order doesn't matter
+      // for LI,SI, the imaginary goes first
+      // for LR,SR, the real goes in first
+      switch (which_) {
+        case LR:
+        case SR:
+        case LM:
+        case SM:
+          for (int i=0; i<n; i++) {
+            pairs[i] = std::make_pair(std::make_pair(r_evals[i],i_evals[i]),i);
+          }
+          break;
+        case LI:
+        case SI:
+          for (int i=0; i<n; i++) {
+            pairs[i] = std::make_pair(std::make_pair(i_evals[i],r_evals[i]),i);
+          }
+          break;
+      }
+
+      switch (which_) {
+        case LR:
+        case LI:
+          std::sort(pairs.begin(),pairs.end(),compAlg<greater_mt>());
+          break;
+        case SR:
+        case SI:
+          std::sort(pairs.begin(),pairs.end(),compAlg<less_mt>());
+          break;
+        case LM:
+          std::sort(pairs.begin(),pairs.end(),compMag2<greater_mt>());
+          break;
+        case SM:
+          std::sort(pairs.begin(),pairs.end(),compMag2<less_mt>());
+          break;
+      }
+
+      // extract the values
+      // for LM,SM,LR,SR: order is (real,imag)
+      // for LI,SI: order is (imag,real)
+      switch (which_) {
+        case LR:
+        case SR:
+        case LM:
+        case SM:
+          for (int i=0; i<n; i++) {
+            r_evals[i] = pairs[i].first.first;
+            i_evals[i] = pairs[i].first.second;
+            (*perm)[i] = pairs[i].second;
+          }
+          break;
+        case LI:
+        case SI:
+          for (int i=0; i<n; i++) {
+            i_evals[i] = pairs[i].first.first;
+            r_evals[i] = pairs[i].first.second;
+            (*perm)[i] = pairs[i].second;
+          }
+          break;
+      }
+    }
   }
-  
-  
+
+
+  template<class MagnitudeType>
+  template<class LTorGT>
+  bool BasicSort<MagnitudeType>::compMag<LTorGT>::operator()(MagnitudeType v1, MagnitudeType v2)
+  {
+    typedef Teuchos::ScalarTraits<MagnitudeType> MTT;
+    LTorGT comp;
+    return comp( MTT::magnitude(v1), MTT::magnitude(v2) );
+  }
+
+  template<class MagnitudeType>
+  template<class LTorGT>
+  bool BasicSort<MagnitudeType>::compMag2<LTorGT>::operator()(std::pair<MagnitudeType,MagnitudeType> v1, std::pair<MagnitudeType,MagnitudeType> v2)
+  {
+    MagnitudeType m1 = v1.first*v1.first + v1.second*v1.second;
+    MagnitudeType m2 = v2.first*v2.first + v2.second*v2.second;
+    LTorGT comp;
+    return comp( m1, m2 );
+  }
+
+  template<class MagnitudeType>
+  template<class LTorGT>
+  bool BasicSort<MagnitudeType>::compAlg<LTorGT>::operator()(MagnitudeType v1, MagnitudeType v2) 
+  {
+    LTorGT comp;
+    return comp( v1, v2 );
+  }
+
+  template<class MagnitudeType>
+  template<class LTorGT>
+  template<class First, class Second>
+  bool BasicSort<MagnitudeType>::compMag<LTorGT>::operator()(std::pair<First,Second> v1, std::pair<First,Second> v2) {
+    return (*this)(v1.first,v2.first);
+  }
+
+  template<class MagnitudeType>
+  template<class LTorGT>
+  template<class First, class Second>
+  bool BasicSort<MagnitudeType>::compMag2<LTorGT>::operator()(std::pair<First,Second> v1, std::pair<First,Second> v2) {
+    return (*this)(v1.first,v2.first);
+  }
+
+  template<class MagnitudeType>
+  template<class LTorGT>
+  template<class First, class Second>
+  bool BasicSort<MagnitudeType>::compAlg<LTorGT>::operator()(std::pair<First,Second> v1, std::pair<First,Second> v2) {
+    return (*this)(v1.first,v2.first);
+  }
+
+  template <class MagnitudeType>
+  template <typename pair_type>
+  const typename pair_type::first_type &
+  BasicSort<MagnitudeType>::sel1st<pair_type>::operator()(const pair_type &v) const 
+  {
+    return v.first;
+  }
+
+  template <class MagnitudeType>
+  template <typename pair_type>
+  const typename pair_type::second_type &
+  BasicSort<MagnitudeType>::sel2nd<pair_type>::operator()(const pair_type &v) const 
+  {
+    return v.second;
+  }
+
 } // namespace Anasazi
 
 #endif // ANASAZI_BASIC_SORT_HPP

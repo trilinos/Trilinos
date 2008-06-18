@@ -67,7 +67,7 @@ class Eigensolver {
     four arguments are sufficient enough for constructing any Anasazi::Eigensolver object.
   */
   Eigensolver( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-               const Teuchos::RCP<SortManager<ScalarType,MV,OP> >  &sorter,
+               const Teuchos::RCP<SortManager<ScalarType> >        &sorter,
                const Teuchos::RCP<OutputManager<ScalarType> >      &printer,
                const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >   &tester,
                const Teuchos::RCP<OrthoManager<ScalarType,MV> >    &ortho,

@@ -722,7 +722,6 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
                    RCP<const MV> X1, RCP<const MV> X2) {
 
   const ST ONE = SCT::one();
-  const MT ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
