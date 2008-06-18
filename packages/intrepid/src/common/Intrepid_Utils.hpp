@@ -93,7 +93,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
         chunkstream >> num1;
         chunkstream >> num2;
         testentry = (Scalar)(num1)/(Scalar)(num2);
-        abstol = ( testentry == 0.0 ? reltol : std::fabs(reltol*testentry) );
+        abstol = ( std::fabs(testentry) < reltol ? reltol : std::fabs(reltol*testentry) );
         absdiff = std::fabs(testentry - testMat[i][j]);
         if (absdiff > abstol) {
           err++;
@@ -111,7 +111,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
         }
         else if (analyticDataType == INTREPID_UTILS_SCALAR)
           chunkstream >> testentry;
-        abstol = ( testentry == 0.0 ? reltol : std::fabs(reltol*testentry) );
+        abstol = ( std::fabs(testentry) < reltol ?reltol : std::fabs(reltol*testentry) );
         absdiff = std::fabs(testentry - testMat[i][j]);
         if (absdiff > abstol) {
           err++;
