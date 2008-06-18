@@ -3,7 +3,7 @@
 #
 
 (FRAMEWORK, INSTALL) {
-         DIRS = Cubature,
+        DIRS = Cubature,
            RealSpace,
            FieldContainer,
            MultiCell,
@@ -27,7 +27,7 @@
 }
 
 (FRAMEWORK, INSTALL) {
-         DIRS = Cubature,
+        DIRS = Cubature,
            RealSpace,
            FieldContainer,
            MultiCell,
@@ -49,6 +49,7 @@
     EXIT-STATUS = STRING-COMPARISON;
     COMM = CUSTOM-MPI;
 }
+
 
 
 

@@ -88,12 +88,12 @@ int main(int argc, char *argv[]) {
   Point<double> tempPt(2, FRAME_REFERENCE);
   elNodes.assign(6, tempPt);  
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  elNodes[0] = Point<double>( 0.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
-  elNodes[1] = Point<double>( 5.0000000000000000e-01 , 0.0000000000000000e+00 , FRAME_REFERENCE);
-  elNodes[2] = Point<double>( 1.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
-  elNodes[3] = Point<double>( 0.0000000000000000e+00 , 5.0000000000000000e-01 , FRAME_REFERENCE);
-  elNodes[4] = Point<double>( 5.0000000000000000e-01 , 5.0000000000000000e-01 , FRAME_REFERENCE);
-  elNodes[5] = Point<double>( 0.0000000000000000e+00 , 1.0000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[0] = Point<double>( 0.000000000000000e+00 , 0.000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[1] = Point<double>( 5.000000000000000e-01 , 0.000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[2] = Point<double>( 1.000000000000000e+00 , 0.000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[3] = Point<double>( 0.000000000000000e+00 , 5.000000000000000e-01 , FRAME_REFERENCE);
+  elNodes[4] = Point<double>( 5.000000000000000e-01 , 5.000000000000000e-01 , FRAME_REFERENCE);
+  elNodes[5] = Point<double>( 0.000000000000000e+00 , 1.000000000000000e+00 , FRAME_REFERENCE);
 #endif
 
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
     try {
-      LocalDofTag myTag = {{0,3,0,0}};
+      LocalDofTag myTag = {{0,27,0,0}};
       triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
@@ -254,25 +254,6 @@ int main(int argc, char *argv[]) {
 
   outStream -> precision(20);
 
-  // VALUE: Each correct basis function at each correct point (point increasing fastest)
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  double basisValues[] = { 1.0000000000000000e+00 , -2.7755575615628914e-17 , 0.0000000000000000e+00 , 1.3877787807814457e-17 , 2.7755575615628914e-17 , 5.5511151231257827e-17 , 1.2490009027033011e-16 , 1.3877787807814457e-17 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , 2.7755575615628914e-17 , 2.7755575615628914e-17 , 8.3266726846886741e-17 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 1.3877787807814457e-17 , 5.5511151231257827e-17 , 2.7755575615628914e-17 , 9.7144514654701197e-17 , 2.7755575615628914e-17 , -4.1633363423443370e-17 , -6.9388939039072284e-18 , -2.7755575615628914e-17 , 1.0000000000000002e+00 , 1.3877787807814457e-16 , -1.3877787807814457e-17 , -4.1633363423443370e-17 , -6.9388939039072284e-18 , 1.0000000000000002e+00 , -2.7755575615628914e-17 , 1.6653345369377348e-16 , 5.5511151231257827e-17 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 };
-#endif
-
-  // DERIVS: Components of derivatives increasing fastest, followed by points, then basis functions
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-double basisD1s[] = { -3.0000000000000000e+00 , -2.9999999999999991e+00 , -1.0000000000000009e+00 , 3.3306690738754696e-16 , 0.0000000000000000e+00 , -1.0000000000000009e+00 , 4.0000000000000009e+00 , 1.4432899320127035e-15 , -1.7763568394002505e-15 , -1.7763568394002505e-15 , 1.7763568394002505e-15 , 4.0000000000000000e+00 , -1.0000000000000000e+00 , -1.0000000000000002e+00 , 1.0000000000000000e+00 , -1.1102230246251565e-16 , 0.0000000000000000e+00 , -1.0000000000000004e+00 , 5.1810407815841009e-17 , -2.0000000000000004e+00 , 5.5511151231257827e-16 , 2.0000000000000009e+00 , -5.5511151231257827e-16 , 2.0000000000000004e+00 , 1.0000000000000009e+00 , 9.9999999999999978e-01 , 3.0000000000000009e+00 , -3.3306690738754696e-16 , 0.0000000000000000e+00 , -9.9999999999999978e-01 , -4.0000000000000018e+00 , -4.0000000000000000e+00 , 1.7763568394002505e-15 , 4.0000000000000018e+00 , -1.7763568394002505e-15 , -8.8817841970012523e-16 , -9.9999999999999967e-01 , -9.9999999999999978e-01 , -9.9999999999999967e-01 , -5.5511151231257827e-17 , 0.0000000000000000e+00 , 1.0000000000000007e+00 , 1.9999999999999993e+00 , -4.1633363423443370e-16 , 2.0000000000000009e+00 , 4.4408920985006262e-16 , -2.0000000000000009e+00 , -6.1062266354383610e-16 , 1.0000000000000009e+00 , 1.0000000000000004e+00 , 9.9999999999999956e-01 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 9.9999999999999978e-01 , -2.0000000000000004e+00 , -1.9999999999999984e+00 , 1.9999999999999982e+00 , 1.9999999999999980e+00 , -1.9999999999999982e+00 , -2.0000000000000000e+00 , 1.0000000000000013e+00 , 1.0000000000000009e+00 , -1.0000000000000004e+00 , 3.3306690738754696e-16 , 0.0000000000000000e+00 , 2.9999999999999991e+00 , -9.8439774850097100e-16 , 2.2204460492503131e-16 , 4.0000000000000018e+00 , 4.4408920985006262e-16 , -4.0000000000000018e+00 , -4.0000000000000009e+00 };
-
-double basisD2s[] = { 3.9999999999999911e+00 , 3.9999999999999925e+00 , 3.9999999999999898e+00 , 3.9999999999999956e+00 , 6.2172489379008766e-15 , -2.2204460492503131e-16 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 4.0000000000000000e+00 , -7.9999999999999867e+00 , -3.9999999999999987e+00 , -6.6613381477509392e-15 , 5.6843418860808042e-15 , 3.9999999999999991e+00 , 5.3290705182007514e-15 , -5.6843418860808042e-15 , -3.9999999999999991e+00 , -7.9999999999999876e+00 , 4.0000000000000027e+00 , 4.0000000000000018e+00 , 4.0000000000000018e+00 , 4.0000000000000044e+00 , 1.5543122344752192e-15 , 2.2204460492503131e-16 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 4.0000000000000062e+00 , -8.0000000000000071e+00 , -4.0000000000000036e+00 , 1.9984014443252818e-15 , 3.5527136788004997e-15 , 3.9999999999999973e+00 , -4.4408920985006262e-15 , -3.5527136788004997e-15 , -3.9999999999999973e+00 , -8.0000000000000053e+00 , 4.0000000000000080e+00 , 4.0000000000000053e+00 , 4.0000000000000089e+00 , 4.0000000000000062e+00 , -2.2204460492503131e-15 , 2.2204460492503131e-16 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 4.0000000000000044e+00 , -8.0000000000000142e+00 , -4.0000000000000036e+00 , 9.5479180117763462e-15 , 1.4210854715201945e-15 , 3.9999999999999889e+00 , -1.2878587085651816e-14 , -1.4210854715201945e-15 , -3.9999999999999889e+00 , -8.0000000000000107e+00 , 4.0000000000000009e+00 , 4.0000000000000018e+00 , 4.0000000000000018e+00 , 3.9999999999999991e+00 , 1.3322676295501878e-15 , 2.2204460492503131e-16 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 4.0000000000000018e+00 , -8.0000000000000000e+00 , -4.0000000000000036e+00 , -8.8817841970012523e-16 , -4.2632564145606025e-15 , 4.0000000000000036e+00 , 1.7763568394002505e-15 , 4.2632564145606025e-15 , -4.0000000000000036e+00 , -8.0000000000000036e+00 , 3.9999999999999960e+00 , 3.9999999999999964e+00 , 3.9999999999999987e+00 , 3.9999999999999916e+00 , -2.8865798640254070e-15 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 3.9999999999999916e+00 , -7.9999999999999876e+00 , -3.9999999999999933e+00 , 7.5495165674510645e-15 , -6.3948846218408979e-15 , 3.9999999999999862e+00 , -6.6613381477509392e-15 , 6.3948846218408979e-15 , -3.9999999999999862e+00 , -7.9999999999999911e+00 , 4.0000000000000009e+00 , 4.0000000000000000e+00 , 4.0000000000000009e+00 , 3.9999999999999933e+00 , 0.0000000000000000e+00 , 6.6613381477509392e-16 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 3.9999999999999880e+00 , -7.9999999999999938e+00 , -4.0000000000000000e+00 , 1.5543122344752192e-15 , -1.4210854715202010e-14 , 3.9999999999999933e+00 , 1.7763568394002505e-15 , 1.4210854715202010e-14 , -3.9999999999999933e+00 , -7.9999999999999929e+00 };
-#endif
-
-
-  // CURL: each correct values of the curls of the basis functions at the points (point increasing fastest
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  double basisCurls[] = { -2.9999999999999991e+00 , 3.0000000000000000e+00 , 3.3306690738754696e-16 , 1.0000000000000009e+00 , -1.0000000000000009e+00 , -0.0000000000000000e+00 , 1.4432899320127035e-15 , -4.0000000000000009e+00 , -1.7763568394002505e-15 , 1.7763568394002505e-15 , 4.0000000000000000e+00 , -1.7763568394002505e-15 , -1.0000000000000002e+00 , 1.0000000000000000e+00 , -1.1102230246251565e-16 , -1.0000000000000000e+00 , -1.0000000000000004e+00 , -0.0000000000000000e+00 , -2.0000000000000004e+00 , -5.1810407815841009e-17 , 2.0000000000000009e+00 , -5.5511151231257827e-16 , 2.0000000000000004e+00 , 5.5511151231257827e-16 , 9.9999999999999978e-01 , -1.0000000000000009e+00 , -3.3306690738754696e-16 , -3.0000000000000009e+00 , -9.9999999999999978e-01 , -0.0000000000000000e+00 , -4.0000000000000000e+00 , 4.0000000000000018e+00 , 4.0000000000000018e+00 , -1.7763568394002505e-15 , -8.8817841970012523e-16 , 1.7763568394002505e-15 , -9.9999999999999978e-01 , 9.9999999999999967e-01 , -5.5511151231257827e-17 , 9.9999999999999967e-01 , 1.0000000000000007e+00 , -0.0000000000000000e+00 , -4.1633363423443370e-16 , -1.9999999999999993e+00 , 4.4408920985006262e-16 , -2.0000000000000009e+00 , -6.1062266354383610e-16 , 2.0000000000000009e+00 , 1.0000000000000004e+00 , -1.0000000000000009e+00 , 0.0000000000000000e+00 , -9.9999999999999956e-01 , 9.9999999999999978e-01 , -0.0000000000000000e+00 , -1.9999999999999984e+00 , 2.0000000000000004e+00 , 1.9999999999999980e+00 , -1.9999999999999982e+00 , -2.0000000000000000e+00 , 1.9999999999999982e+00 , 1.0000000000000009e+00 , -1.0000000000000013e+00 , 3.3306690738754696e-16 , 1.0000000000000004e+00 , 2.9999999999999991e+00 , -0.0000000000000000e+00 , 2.2204460492503131e-16 , 9.8439774850097100e-16 , 4.4408920985006262e-16 , -4.0000000000000018e+00 , -4.0000000000000009e+00 , 4.0000000000000018e+00 };
-#endif
-
-
   try{
     FieldContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
@@ -285,144 +266,134 @@ double basisD2s[] = { 3.9999999999999911e+00 , 3.9999999999999925e+00 , 3.999999
 
     // Check VALUE of basis functions
     triBasis -> getValues(vals, elNodes, OPERATOR_VALUE);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisValues[i]) < INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisValues[i]) > INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream VALfile("data/0.dat");
+    if (VALfile.is_open()) {
+      *outStream << "  Basis value: \n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	VALfile >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 3.569833e+00 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 3.569833e+00 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 3.569833e+00 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 3.569833e+00 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisValues[i]) / std::abs(basisValues[i] ) > INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed value: " << vals[i] 
-          << " but reference value: " << basisValues[i] << "\n";
-      }
+      VALfile.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
-    // Check GRAD of basis function
+    // Check GRAD of basis functions
     triBasis -> getValues(vals, elNodes, OPERATOR_GRAD);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisD1s[i]) < 10.0 * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > 10.0 * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream GRADfile("data/1.dat");
+    if (GRADfile.is_open()) {
+      *outStream << "  Basis gradients: \n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	GRADfile >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.186038e+01 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.186038e+01 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.186038e+01 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.186038e+01 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > 10.0 * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed grad component: " << vals[i] 
-          << " but reference grad component: " << basisD1s[i] << "\n";
-      }
+      GRADfile.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
     // Check CURL of basis function
     triBasis -> getValues(vals, elNodes, OPERATOR_CURL);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisCurls[i]) < 10.0 * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisCurls[i]) > 10.0 * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream CURLfile("data/CURL.dat");
+    if (CURLfile.is_open()) {
+      *outStream << " CURL:\n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	CURLfile >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.186038e+01 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.186038e+01 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.186038e+01 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.186038e+01 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisCurls[i]) / std::abs(basisCurls[i] ) > 10.0 * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed curl component: " << vals[i] 
-          << " but reference curl component: " << basisCurls[i] << "\n";
-      }
+      CURLfile.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
 
     // Check D1 of basis function
     triBasis -> getValues(vals, elNodes, OPERATOR_D1);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisD1s[i]) < pow(15.0,1) * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > pow(15.0,1) * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream D1file("data/1.dat");
+    if (D1file.is_open()) {
+      *outStream << " Derivative order 1 :\n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	D1file >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.186038e+01 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.186038e+01 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.186038e+01 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.186038e+01 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > pow(15.0,1) * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed D1 component: " << vals[i] 
-          << " but reference D1 component: " << basisD1s[i] << "\n";
-      }
+      D1file.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
     // Check D2 of basis function
     triBasis -> getValues(vals, elNodes, OPERATOR_D2);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisD2s[i]) < pow(15.0,2) * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD2s[i]) > pow(15.0,2) * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream D2file("data/2.dat");
+    if (D2file.is_open()) {
+      *outStream << " Derivative order 2 :\n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	D2file >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 3.940483e+01 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 3.940483e+01 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 3.940483e+01 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 3.940483e+01 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisD2s[i]) / std::abs(basisD2s[i] ) > pow(15.0,2) * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed D2 component: " << vals[i] 
-          << " but reference D2 component: " << basisD2s[i] << "\n";
-      }
+      D2file.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
       // Check D3 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D3);
       for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 3 ) * INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > 1.309183e+02 * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order

@@ -88,9 +88,9 @@ int main(int argc, char *argv[]) {
   Point<double> tempPt(2, FRAME_REFERENCE);
   elNodes.assign(3, tempPt);  
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  elNodes[0] = Point<double>( 0.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
-  elNodes[1] = Point<double>( 1.0000000000000000e+00 , 0.0000000000000000e+00 , FRAME_REFERENCE);
-  elNodes[2] = Point<double>( 0.0000000000000000e+00 , 1.0000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[0] = Point<double>( 0.000000000000000e+00 , 0.000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[1] = Point<double>( 1.000000000000000e+00 , 0.000000000000000e+00 , FRAME_REFERENCE);
+  elNodes[2] = Point<double>( 0.000000000000000e+00 , 1.000000000000000e+00 , FRAME_REFERENCE);
 #endif
 
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
     try {
-      LocalDofTag myTag = {{0,3,0,0}};
+      LocalDofTag myTag = {{0,27,0,0}};
       triBasis -> getLocalDofEnumeration(myTag);
     }
     catch (std::logic_error err) {
@@ -251,23 +251,6 @@ int main(int argc, char *argv[]) {
 
   outStream -> precision(20);
 
-  // VALUE: Each correct basis function at each correct point (point increasing fastest)
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  double basisValues[] = { 1.0000000000000000e+00 , 2.7755575615628914e-17 , 0.0000000000000000e+00 , 2.7755575615628914e-17 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 5.5511151231257827e-17 , 5.5511151231257827e-17 , 1.0000000000000000e+00 };
-#endif
-
-  // DERIVS: Components of derivatives increasing fastest, followed by points, then basis functions
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-double basisD1s[] = { -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 , -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , 0.0000000000000000e+00 , 1.0000000000000000e+00 };
-#endif
-
-
-  // CURL: each correct values of the curls of the basis functions at the points (point increasing fastest
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  double basisCurls[] = { -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , 0.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000000000000000e+00 , -0.0000000000000000e+00 };
-#endif
-
-
   try{
     FieldContainer<double> vals;
     DefaultBasisFactory<double> BFactory;
@@ -280,117 +263,109 @@ double basisD1s[] = { -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000
 
     // Check VALUE of basis functions
     triBasis -> getValues(vals, elNodes, OPERATOR_VALUE);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisValues[i]) < INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisValues[i]) > INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream VALfile("data/0.dat");
+    if (VALfile.is_open()) {
+      *outStream << "  Basis value: \n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	VALfile >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.732051e+00 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.732051e+00 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.732051e+00 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.732051e+00 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisValues[i]) / std::abs(basisValues[i] ) > INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed value: " << vals[i] 
-          << " but reference value: " << basisValues[i] << "\n";
-      }
+      VALfile.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
-    // Check GRAD of basis function
+    // Check GRAD of basis functions
     triBasis -> getValues(vals, elNodes, OPERATOR_GRAD);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisD1s[i]) < 10.0 * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > 10.0 * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream GRADfile("data/1.dat");
+    if (GRADfile.is_open()) {
+      *outStream << "  Basis gradients: \n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	GRADfile >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.732051e+00 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.732051e+00 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.732051e+00 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.732051e+00 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > 10.0 * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed grad component: " << vals[i] 
-          << " but reference grad component: " << basisD1s[i] << "\n";
-      }
+      GRADfile.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
     // Check CURL of basis function
     triBasis -> getValues(vals, elNodes, OPERATOR_CURL);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisCurls[i]) < 10.0 * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisCurls[i]) > 10.0 * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream CURLfile("data/CURL.dat");
+    if (CURLfile.is_open()) {
+      *outStream << " CURL:\n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	CURLfile >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.732051e+00 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.732051e+00 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.732051e+00 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.732051e+00 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisCurls[i]) / std::abs(basisCurls[i] ) > 10.0 * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed curl component: " << vals[i] 
-          << " but reference curl component: " << basisCurls[i] << "\n";
-      }
+      CURLfile.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
 
     // Check D1 of basis function
     triBasis -> getValues(vals, elNodes, OPERATOR_D1);
-    for (int i=0; i < vals.getSize(); i++) {
-      bool fail = false;
-      if (std::abs(basisD1s[i]) < pow(15.0,1) * INTREPID_FIAT_TOL ) {
-        if (std::abs(vals[i]-basisD1s[i]) > pow(15.0,1) * INTREPID_FIAT_TOL ) {
-          fail = true;
-        }
+    ifstream D1file("data/1.dat");
+    if (D1file.is_open()) {
+      *outStream << " Derivative order 1 :\n";
+      for (int i=0;i<vals.getSize();i++) {
+	double cur, fabscur;
+	D1file >> cur;
+	fabscur = std::fabs(cur);
+	if ( ( (fabscur < 1.732051e+00 * INTREPID_FIAT_TOL)
+	       && (std::fabs(vals[i]) > 1.732051e+00 * INTREPID_FIAT_TOL ) ) 
+	     || ( ( fabscur >= 1.732051e+00 * INTREPID_FIAT_TOL )
+		  && ( std::fabs( vals[i] - cur ) / fabscur ) >= 1.732051e+00 * INTREPID_FIAT_TOL  ) ) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  *outStream << std::setw(70) << " Wrong basis values" << "\n";
+	  *outStream << i << " " << vals[i] << " " << cur << "\n";
+	}
       }
-      else if (std::abs(vals[i] - basisD1s[i]) / std::abs(basisD1s[i] ) > pow(15.0,1) * INTREPID_FIAT_TOL ) {
-        fail = true;
-      }
-      if (fail) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        // Get the multi-index of the value where the error is:
-        Teuchos::Array<int> myIndex;
-        vals.getMultiIndex(myIndex,i);
-        *outStream << " At multi-index { ";
-        for(int j = 0; j < vals.getRank(); j++) {
-          *outStream << myIndex[j] << " ";
-        }
-        *outStream << "}  computed D1 component: " << vals[i] 
-          << " but reference D1 component: " << basisD1s[i] << "\n";
-      }
+      D1file.close();
+    }
+    else {
+      errorFlag = -999;
     }
 
       // Check D2 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D2);
       for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 2 ) * INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > 1.732051e+00 * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
@@ -408,7 +383,7 @@ double basisD1s[] = { -1.0000000000000000e+00 , -1.0000000000000000e+00 , 1.0000
       // Check D3 of basis function: should be zero 
       triBasis -> getValues(vals, elNodes, OPERATOR_D3);
       for (int i=0; i < vals.getSize(); i++) {
-        if ( std::abs(vals[i])  > pow( 15.0 , 3 ) * INTREPID_FIAT_TOL) {
+        if ( std::abs(vals[i])  > 1.732051e+00 * INTREPID_FIAT_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Get the multi-index of the value where the error is and the operator order
