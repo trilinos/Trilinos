@@ -30,6 +30,11 @@ IF PACKAGE anasazi SUBDIRECTORY thyra THEN
 INSERT --disable-anasazi-thyra
 DONE
 
+# Aristos ----------------------------------------------------------------------
+IF PACKAGE aristos THEN
+REMOVE --enable-aristos
+DONE
+
 # AztecOO ----------------------------------------------------------------------
 IF PACKAGE aztecoo THEN
 REMOVE --enable-aztecoo
@@ -65,6 +70,7 @@ REMOVE --enable-epetra
 REMOVE --enable-amesos
 REMOVE --enable-anasazi
 REMOVE --with-loca-anasazi
+REMOVE --enable-aristos
 REMOVE --enable-aztecoo
 REMOVE --enable-belos
 REMOVE --enable-claps
@@ -251,14 +257,12 @@ IF PACKAGE teuchos THEN
 REMOVE --enable-teuchos
 REMOVE --with-ml_teuchos
 REMOVE --enable-tpetra
-REMOVE --enable-tsfcoreutils
-REMOVE --enable-tsfcore
-REMOVE --enable-tsfextended
 REMOVE --enable-loca
 INSERT --disable-loca
 REMOVE --enable-belos
 REMOVE --enable-amesos
 REMOVE --with-ml_amesos
+REMOVE --enable-aristos
 REMOVE --enable-epetraext
 REMOVE --enable-ifpack
 REMOVE --with-ml_ifpack
