@@ -36,7 +36,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #include "Epetra_MultiVector.h"
 extern "C" {
-#include <oski/oski.h>
+#include "oski.h"
 }
 
 //class Epetra_MultiVector;

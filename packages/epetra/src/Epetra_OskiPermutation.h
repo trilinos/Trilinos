@@ -37,7 +37,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_OskiMatrix.h"
 #include "Epetra_OskiMultiVector.h"
 extern "C" {
-#include <oski/oski.h>
+#include "oski.h"
 }
 
 class Epetra_OskiMultiVector;

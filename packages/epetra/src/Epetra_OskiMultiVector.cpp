@@ -27,6 +27,8 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
+
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
 #include "Epetra_OskiMultiVector.h"

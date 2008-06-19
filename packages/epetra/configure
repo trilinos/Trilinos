@@ -1403,7 +1403,7 @@ Optional Features:
                           Enable compilation and documentation of prerelease
                           code. Prerelease code is code under development that
                           we restrict from release to the public. It is
-                          avaliable to developers with no support - use at
+                          available to developers with no support - use at
                           your own risk.
 
 Optional Packages:

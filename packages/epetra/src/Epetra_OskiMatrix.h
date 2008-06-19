@@ -40,7 +40,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_OskiPermutation.h"
 #include "Teuchos_ParameterList.hpp"
 extern "C" {
-  #include <oski/oski.h>
+  #include "oski.h"
 }
 
 class Epetra_OskiVector;

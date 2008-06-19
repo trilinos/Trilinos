@@ -351,7 +351,7 @@ AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 # Should we compile 'predevelopment'  versions of the code
 # ------------------------------------------------------------------------
 AC_ARG_ENABLE(epetra-prerelease,
-[AC_HELP_STRING([--enable-epetra-prerelease],[Enable compilation and documentation of prerelease code.  Prerelease code is code under development that we restrict from release to the public.  It is avaliable to developers with no support - use at your own risk.])],
+[AC_HELP_STRING([--enable-epetra-prerelease],[Enable compilation and documentation of prerelease code.  Prerelease code is code under development that we restrict from release to the public.  It is available to developers with no support - use at your own risk.])],
 [WITH_PRERELEASE=$enableval],
 [WITH_PRERELEASE=no])
 
