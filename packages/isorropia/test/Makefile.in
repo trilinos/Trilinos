@@ -232,7 +232,7 @@ top_srcdir = @top_srcdir@
 # Note: utils must be built first, before the other subdirs
 #
 SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
-EXTRA_DIST = definition
+EXTRA_DIST = definition 
 all: all-recursive
 
 .SUFFIXES:
