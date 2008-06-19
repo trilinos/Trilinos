@@ -51,6 +51,11 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #endif
 
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <string>
+
 namespace Isorropia {
 
 #ifdef HAVE_EPETRA
@@ -164,6 +169,7 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
 
   const Epetra_Comm &comm = input_map_->Comm();
   int localProc = comm.MyPID();
+  int nprocs = comm.NumProc();
 
   //if Isorropia was configured with Zoltan support, then we will use
   //Zoltan unless the user specified "PARTITIONING_METHOD" = "SIMPLE_LINEAR".
@@ -201,8 +207,6 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     //     matrix can be any shape, need not be symmetric
     //     this is the default if LB_METHOD is not set
      
-  
-
     std::string lb_method_str("LB_METHOD");
     if (sublist.isParameter(lb_method_str)){
       std::string lb_meth = sublist.get(lb_method_str, "HYPERGRAPH");
@@ -240,6 +244,103 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     else{
       sublist.set("LB_METHOD", "HYPERGRAPH");  // default is to do hypergraph partitioning
     }
+
+    // Checks for Zoltan parameters NUM_GLOBAL_PARTITIONS and NUM_LOCAL_PARTITIONS.
+
+    std::string gparts_str("NUM_GLOBAL_PARTITIONS");
+    std::string lparts_str("NUM_LOCAL_PARTITIONS");
+    std::string gparts("0");
+    std::string lparts("0");
+
+    if (sublist.isParameter(gparts_str)){
+      gparts = sublist.get<std::string>(gparts_str);
+    }
+    if (sublist.isParameter(lparts_str)){
+      lparts = sublist.get<std::string>(lparts_str);
+    }
+ 
+    int myGparts = atoi(gparts.c_str());
+    int myLparts = atoi(lparts.c_str());
+    int maxGparts, maxLparts, sumLparts;
+    int fixGparts = -1;
+    int fixLparts = -1;
+    int numrows = input_map_->NumGlobalElements();
+
+    comm.MaxAll(&myGparts, &maxGparts, 1);
+    comm.MaxAll(&myLparts, &maxLparts, 1);
+
+    // Fix problem if the number of rows is less than the number
+    // of processes.  We need to set NUM_GLOBAL_PARTITIONS to
+    // the number of rows, unless it was already set to something
+    // greater than 0 but less than the number of rows.
+
+    if (numrows < nprocs){
+      if ((maxGparts == 0) || (maxGparts > numrows)){
+        maxGparts = numrows;
+      }
+    }
+
+    if (maxLparts > 0)
+      comm.SumAll(&myLparts, &sumLparts, 1);
+    else
+      sumLparts = 0;
+
+    if ((maxGparts > 0) || (maxLparts > 0)){
+      // One or more processes set NGP or NLP so we need to check
+      // them for validity.
+
+      if (maxGparts != myGparts){
+        fixGparts = maxGparts;    // all procs should have same NGP
+      }
+
+      if (maxGparts > 0){
+
+        if (maxGparts > numrows){
+          // This is an error because we can't split rows among partitions
+
+          str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
+          throw Isorropia::Exception(str1+str2);
+        }
+
+        if ((sumLparts > 0) && (sumLparts != maxGparts)){
+          // This is an error because local partitions must sum to number of global
+
+          str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
+          throw Isorropia::Exception(str1+str2);
+        }
+
+        if ((sumLparts == 0) && (maxGparts < nprocs)){
+          // Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
+          // a partition across 2 or more processes when the number of
+          // partitions is less than the number of processes.  This doesn't
+          // work for Epetra matrices, where rows are not owned by more than
+          // one process.
+
+          fixLparts = (localProc < maxGparts) ? 1 : 0;
+        }
+      }
+      else if (maxLparts > 0){
+
+        // Set NUM_GLOBAL_PARTITIONS to sum of local partitions.  It's possible
+        // that Zoltan does this already, but just to be safe...
+
+        fixGparts = sumLparts;
+      }
+
+      if (fixGparts > 0){
+        std::ostringstream os;
+        os << fixGparts;
+        std::string s = os.str();
+        sublist.set(gparts_str, s);
+      }
+      if (fixLparts > 0){
+        std::ostringstream os;
+        os << fixLparts;
+        std::string s = os.str();
+        sublist.set(lparts_str, s);
+      }
+    }
+
     // If vertex/edge costs have been set, do a global operation to find
     // out how many weights were given.  Some processes may provide no
     // weights - they need to be informed that weights are being provided
