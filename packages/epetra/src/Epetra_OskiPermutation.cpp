@@ -31,22 +31,42 @@
 
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
-#include "Epetra_OskiUtils.h"
+#include "Epetra_OskiPermutation.h"
 
-//=========================================================================
-Epetra_OskiUtils::Epetra_OskiUtils () {}
+//=============================================================================
 
-//=========================================================================
-Epetra_OskiUtils::~Epetra_OskiUtils () {}
 
-//=========================================================================
-void Epetra_OskiUtils::Init() {
-  oski_Init ();
+Epetra_OskiPermutation::Epetra_OskiPermutation() : Permutation_(NULL) {}
+
+Epetra_OskiPermutation::Epetra_OskiPermutation(const Epetra_OskiPermutation& Source) : Permutation_(Source.Permutation_){
 }
 
-//=========================================================================
-void Epetra_OskiUtils::Close() {
-  oski_Close ();
+Epetra_OskiPermutation::Epetra_OskiPermutation(bool RowPerm, const Epetra_OskiMatrix& Source){
+  if(RowPerm)
+    *this = Source.ViewRowPermutation();
+  else
+    *this = Source.ViewColumnPermutation();
 }
+
+Epetra_OskiPermutation::~Epetra_OskiPermutation () {
+  if(Permutation_ != NULL)
+    delete this;
+}
+
+void Epetra_OskiPermutation::ReplacePermutation (const oski_perm_t& InPerm) {
+  Permutation_ = &InPerm;
+}
+
+int Epetra_OskiPermutation::PermuteVector(const bool TransA, Epetra_OskiMultiVector& Vector) const {
+  int ReturnVal;
+  if(TransA)
+    ReturnVal = oski_PermuteVecView(*Permutation_, OP_TRANS, Vector.Oski_View());
+  else
+    ReturnVal = oski_PermuteVecView(*Permutation_, OP_NORMAL, Vector.Oski_View());
+  if(ReturnVal)
+    std::cerr << "Error in PermuteVector.\n";
+  return ReturnVal;
+}
+
 #endif
 #endif

@@ -36,24 +36,26 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #include "Epetra_OskiMultiVector.h"
 #include "Epetra_Vector.h"
+#include "Teuchos_ParameterList.hpp"
 extern "C" {
-#include "oski.h"
+#include <oski/oski.h>
 }
 
 class Epetra_Vector;
 class Epetra_OskiMultiVector;
+class Teuchos_ParameterList;
 
 //! Epetra_OskiVector: A class for constructing and using dense OSKI vectors on a single processor or a single core of a multi-processor.
 
 /*! The Epetra_OskiVector class enables the construction and use of real-valued,
   double-precision dense vectors in a serial environment.  The dimensions of the dense vectors comes
-  from the inherited Epetra_Vector object.  All values and data layouts are kept the
+  from the inherated Epetra_Vector object.  All values and data layouts are kept the
   same and the vector is wrapped for use with OSKI.
 */
 
 
 //=========================================================================
-class Epetra_OskiVector: public Epetra_OskiMultiVector {
+class Epetra_OskiVector: public Epetra_OskiMultiVector, public Epetra_Vector {
 
   public:
 
@@ -64,25 +66,22 @@ class Epetra_OskiVector: public Epetra_OskiMultiVector {
 
    //! Constructor creates and Epetra_OskiVector from an Epetra_Vector
    /*! \param Source (In) An Epetra_Vector that is to be wrapped as an Epetra_OskiVector.
+       \param List (In) Any options or data wanted or needed for the conversion.
        \return Pointer to an Epetra_OskiVector.
    */
-   Epetra_OskiVector (const Epetra_Vector& Source);
+   Epetra_OskiVector (const Epetra_Vector& Source, const Teuchos::ParameterList& List);
 
-   //! Destructor
+   //! Destuctor
    virtual ~Epetra_OskiVector ();
    //@}
 
-   //! @name Extraction Method
-   //@{
-   //! Returns a view to the Epetra Object
-   const Epetra_Vector* Epetra_View () const;
-   //@}
 
  protected:
 
  private:
-   
-    const Epetra_Vector* Epetra_View_;
+ 
+   //! Convert function from Epetra vector to OSKI vector
+   void ConvertEpetraToOski(const Epetra_Vector& Source);
 
 };
 

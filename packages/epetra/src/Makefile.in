@@ -191,6 +191,9 @@ am_libepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 @BUILD_PRERELEASE_TRUE@nodist_libepetra_a_OBJECTS =  \
 @BUILD_PRERELEASE_TRUE@	Epetra_OskiUtils.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	Epetra_OskiMultiVector.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	Epetra_OskiVector.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	Epetra_OskiError.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	Epetra_OskiPermutation.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	Epetra_OskiMatrix.$(OBJEXT)
 libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS) \
 	$(nodist_libepetra_a_OBJECTS)
@@ -623,12 +626,18 @@ EXTRA_libepetra_a_SOURCES = \
 @BUILD_PRERELEASE_TRUE@nodist_include_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiUtils.h \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMultiVector.h \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiVector.h \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiError.h \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiPermutation.h \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.h 
 
 @BUILD_PRERELEASE_TRUE@nodist_libepetra_a_SOURCES = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiUtils.cpp \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMultiVector.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.cpp
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiVector.cpp \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiError.cpp \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiPermutation.cpp \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.cpp 
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
@@ -801,9 +810,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_Object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OffsetIndex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiError.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiMultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiPermutation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OskiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_RowMatrixTransposer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialComm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialCommData.Po@am__quote@
@@ -1532,6 +1544,48 @@ Epetra_OskiMultiVector.obj: $(srcdir)/Epetra_OskiMultiVector.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiMultiVector.cpp' object='Epetra_OskiMultiVector.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiMultiVector.obj `if test -f '$(srcdir)/Epetra_OskiMultiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiMultiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiMultiVector.cpp'; fi`
+
+Epetra_OskiVector.o: $(srcdir)/Epetra_OskiVector.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiVector.o -MD -MP -MF $(DEPDIR)/Epetra_OskiVector.Tpo -c -o Epetra_OskiVector.o `test -f '$(srcdir)/Epetra_OskiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiVector.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiVector.Tpo $(DEPDIR)/Epetra_OskiVector.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiVector.cpp' object='Epetra_OskiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiVector.o `test -f '$(srcdir)/Epetra_OskiVector.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiVector.cpp
+
+Epetra_OskiVector.obj: $(srcdir)/Epetra_OskiVector.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiVector.obj -MD -MP -MF $(DEPDIR)/Epetra_OskiVector.Tpo -c -o Epetra_OskiVector.obj `if test -f '$(srcdir)/Epetra_OskiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiVector.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiVector.Tpo $(DEPDIR)/Epetra_OskiVector.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiVector.cpp' object='Epetra_OskiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiVector.obj `if test -f '$(srcdir)/Epetra_OskiVector.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiVector.cpp'; fi`
+
+Epetra_OskiError.o: $(srcdir)/Epetra_OskiError.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiError.o -MD -MP -MF $(DEPDIR)/Epetra_OskiError.Tpo -c -o Epetra_OskiError.o `test -f '$(srcdir)/Epetra_OskiError.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiError.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiError.Tpo $(DEPDIR)/Epetra_OskiError.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiError.cpp' object='Epetra_OskiError.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiError.o `test -f '$(srcdir)/Epetra_OskiError.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiError.cpp
+
+Epetra_OskiError.obj: $(srcdir)/Epetra_OskiError.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiError.obj -MD -MP -MF $(DEPDIR)/Epetra_OskiError.Tpo -c -o Epetra_OskiError.obj `if test -f '$(srcdir)/Epetra_OskiError.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiError.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiError.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiError.Tpo $(DEPDIR)/Epetra_OskiError.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiError.cpp' object='Epetra_OskiError.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiError.obj `if test -f '$(srcdir)/Epetra_OskiError.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiError.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiError.cpp'; fi`
+
+Epetra_OskiPermutation.o: $(srcdir)/Epetra_OskiPermutation.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiPermutation.o -MD -MP -MF $(DEPDIR)/Epetra_OskiPermutation.Tpo -c -o Epetra_OskiPermutation.o `test -f '$(srcdir)/Epetra_OskiPermutation.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiPermutation.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiPermutation.Tpo $(DEPDIR)/Epetra_OskiPermutation.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiPermutation.cpp' object='Epetra_OskiPermutation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiPermutation.o `test -f '$(srcdir)/Epetra_OskiPermutation.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiPermutation.cpp
+
+Epetra_OskiPermutation.obj: $(srcdir)/Epetra_OskiPermutation.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiPermutation.obj -MD -MP -MF $(DEPDIR)/Epetra_OskiPermutation.Tpo -c -o Epetra_OskiPermutation.obj `if test -f '$(srcdir)/Epetra_OskiPermutation.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiPermutation.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiPermutation.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Epetra_OskiPermutation.Tpo $(DEPDIR)/Epetra_OskiPermutation.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_OskiPermutation.cpp' object='Epetra_OskiPermutation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OskiPermutation.obj `if test -f '$(srcdir)/Epetra_OskiPermutation.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_OskiPermutation.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_OskiPermutation.cpp'; fi`
 
 Epetra_OskiMatrix.o: $(srcdir)/Epetra_OskiMatrix.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_OskiMatrix.o -MD -MP -MF $(DEPDIR)/Epetra_OskiMatrix.Tpo -c -o Epetra_OskiMatrix.o `test -f '$(srcdir)/Epetra_OskiMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OskiMatrix.cpp

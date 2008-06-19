@@ -29,49 +29,40 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
-// Author: Ian Karlin ikarlin@sandia.gov 05-22-2008
+// Author: Ian Karlin ikarlin@sandia.gov 06-18-2008
 
-#ifndef EPETRA_OSKIUTILS_H
-#define EPETRA_OSKIUTILS_H
+#ifndef EPETRA_OSKIERROR_H
+#define EPETRA_OSKIERROR_H
 
 extern "C" {
-#include "oski.h"
+#include <oski.h>
 }
 
-//! Epetra_OskiUtils:  The Epetra OSKI Class to handle all operations that do not involve the use of a matrix, vector, error or permutation object.
-/*! The Epetra_OskiUtils class is a helper class used to call OSKI functions that do not use matrix, vector, error or permutation objects.
-	  It provides an interface to access the initialization and finalize routines of OSKI.
+//! Epetra_OskiError:  The Epetra OSKI Class to provide access to get and set error handling routines in OSKI.
 
-		All functions are public to allow access to methods needed by programs using OSKI.
-		There are no data members of the class as all data is kept in the matrix, vector, 
-		multi-vector, error and permutation classes.
-*/
-
-class Epetra_OskiUtils {
+class Epetra_OskiError {
   public:
 	//! @name Constructors/Destructor
         //@{        
 	//! Default Constructor
-	Epetra_OskiUtils ();
+	Epetra_OskiError ();
 
 	//! Destructor
-	virtual ~Epetra_OskiUtils ();
+	virtual ~Epetra_OskiError ();
  	//@}
 
-	//! @name Start/End
+	//! @name Set/Get
 	//@{
-        //! Initializes OSKI
-	/*! Calls the OSKI routine to initialize the use of OSKI.  This routine is required before
-	    OSKI can be used.
-	*/	
-  	void Init ();
+        //! Gets a pointer to the current error handler routine being used by OSKI.
+	Epetra_OskiError OskiGetErrorHandler ();
 
-	//! Finalizes the use of OSKI
-	/*! When done using OSKI this routine performs cleanup operations.  While not strictly required
-	    it is highly recommended to be called when OSKI is no longer being used.
-	*/
-	void Close ();
+	//! Sets the error handling routine to be used by OSKI to NewErrorHandler.
+	void OskiSetErrorHandler (Epetra_OskiError& NewErrorHandler); 
 	//@}
+
+  private:
+	oski_errhandler_t ErrorHandler_;
+
 };
 
-#endif /* EPETRA_OSKIUTILS_H */
+#endif /* EPETRA_OSKIERROR_H */

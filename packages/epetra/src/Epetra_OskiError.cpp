@@ -31,22 +31,22 @@
 
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
-#include "Epetra_OskiUtils.h"
+#include "Epetra_OskiError.h"
 
 //=========================================================================
-Epetra_OskiUtils::Epetra_OskiUtils () {}
+Epetra_OskiError::Epetra_OskiError () {}
 
 //=========================================================================
-Epetra_OskiUtils::~Epetra_OskiUtils () {}
+Epetra_OskiError::~Epetra_OskiError () {}
 
 //=========================================================================
-void Epetra_OskiUtils::Init() {
-  oski_Init ();
+Epetra_OskiError Epetra_OskiError::OskiGetErrorHandler () {
+  ErrorHandler_ = oski_GetErrorHandler ();
 }
 
 //=========================================================================
-void Epetra_OskiUtils::Close() {
-  oski_Close ();
+void Epetra_OskiError::OskiSetErrorHandler (Epetra_OskiError& NewErrorHandler) {
+  oski_SetErrorHandler(ErrorHandler_); 
 }
 #endif
 #endif

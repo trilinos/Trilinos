@@ -37,7 +37,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_OskiMatrix.h"
 #include "Epetra_OskiMultiVector.h"
 extern "C" {
-#include "oski.h"
+#include <oski/oski.h>
 }
 
 class Epetra_OskiMultiVector;
@@ -54,31 +54,13 @@ class Epetra_OskiPermutation{
 
   public:
 
-   //! @name Constructor/Destructor
+   //! @name Constructor
    //@{
-   
-   //!Default Constructor
-   Epetra_OskiPermutation ();
-   
-   //!Copy Constructor
-   Epetra_OskiPermutation (const Epetra_OskiPermutation& Source);
    //! Constructor creates an Epetra_OskiPermutation from an Epetra_OskiMatrix.
-   /*! Acquires the permutation from the passed in matrix and stores it within the object.
-       If RowPerm is true this is a row permutation and if RowPerm is false this is a 
-       column permutation.
+   /*! Aquires the permutation from the passed in matrix and stores it within the object.
    */
-   Epetra_OskiPermutation (bool RowPerm, const Epetra_OskiMatrix& Source);
-
-   //! Destructor
-   virtual ~Epetra_OskiPermutation ();
+   Epetra_OskiPermutation (const Epetra_OskiMatrix& Source);
    //@}
-   
-   //! @name Replace Method
-   //@{
-   //! Stores a permutation in the data structure.
-   void ReplacePermutation (const oski_perm_t& InPerm);
-   //@}
-
 
    //! @name Apply
    //@{
@@ -98,7 +80,7 @@ class Epetra_OskiPermutation{
 
  private:
 
- const oski_perm_t* Permutation_; //this might need to be const and a pointer
+ oski_perm_t permutation_; //this might need to be const and a pointer
 
 };
 

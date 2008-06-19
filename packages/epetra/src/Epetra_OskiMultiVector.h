@@ -58,7 +58,7 @@ class Epetra_OskiMultiVector: public Epetra_MultiVector{
    //! @name Constructors/Destructor
    //@{
    //! Copy constructor
-//   Epetra_OskiMultiVector (const Epetra_OskiMultiVector& Source); //not in use for now
+   Epetra_OskiMultiVector (const Epetra_OskiMultiVector& Source);
 
    //! Constructor creates and Epetra_OskiMultiVector from an Epetra_MultiVector
    /*! \param Source (In) An Epetra_MultiVector that is wrapped as an Epetra_OskiMultiVector.
@@ -72,13 +72,16 @@ class Epetra_OskiMultiVector: public Epetra_MultiVector{
    virtual ~Epetra_OskiMultiVector ();
    //@}
    
-   //! @Extraction Methods
+   //! @name Extraction Methods
    //@{
    //! Returns true if a deep copy of the multi-vector was created by the constructor.
    bool Copy_Created () const;
    
    //! Returns the Oski portion of the Multi-Vector.
    oski_vecview_t Oski_View () const;
+   
+   //! Returns the Epetra portion of the Multi-Vector.
+   const Epetra_MultiVector* Epetra_View () const;
    //@}
   
  protected:

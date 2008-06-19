@@ -32,15 +32,14 @@
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
 #include "Epetra_OskiMatrix.h"
-
+#include <stdio.h>
+#include <string.h>
 
 //=============================================================================
 
-// Epetra_BlockMap Constructor
-
-/*Epetra_OskiMultiVector::Epetra_Matrix(const Epetra_Matrix& Source) {
-
-}*/
+Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_OskiMatrix& Source) : Epetra_CrsMatrix(Source), Copy_Created_(true), Epetra_View_(Source.Epetra_View_) {
+  A_tunable_ = oski_CopyMat(Source.A_tunable_);
+}
 
 //need to read in autotune or not.  Input mode.  Any overridden params.
 Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, const Teuchos::ParameterList& List) : Epetra_CrsMatrix(Source), Epetra_View_(&Source) {
@@ -62,7 +61,7 @@ Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, const Teuch
   int* IndPtr;
   double* ValPtr;
   if(List.isParameter("autotune")) 
-    AutoTune = List.get<bool>("autotune");
+    AutoTune = Teuchos::getParameter<bool>(List, "autotune");
   if(List.isParameter("deepcopy")) 
     DeepCopy = Teuchos::getParameter<bool>(List, "deepcopy");
   
@@ -137,30 +136,99 @@ Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, const Teuch
 }
 
 Epetra_OskiMatrix::~Epetra_OskiMatrix (){
+  if(oski_DestroyMat(A_tunable_))
+    std::cerr << "Destroy Matrix failed.\n";
 }
 
 int Epetra_OskiMatrix::ReplaceMyValues(int MyRow, int NumEntries, double* Values, int* Indices) {
-
+  int ReturnVal = 0;
+  if (Copy_Created_) {
+    for(int i = 0; i < NumEntries; i++) {
+      ReturnVal = oski_SetMatEntry(A_tunable_, MyRow, Indices[i], Values[i]);
+      if(ReturnVal)
+	break;
+    }
+    if(!ReturnVal)
+      ReturnVal = const_cast <Epetra_CrsMatrix*> (Epetra_View_)->ReplaceMyValues(MyRow, NumEntries, Values, Indices);
+  }
+  else
+    ReturnVal = const_cast <Epetra_CrsMatrix*> (Epetra_View_)->ReplaceMyValues(MyRow, NumEntries, Values, Indices);
+  if(ReturnVal)
+    std::cerr << "Error in ReplaceMyValues\n";
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::SumIntoMyValues(int MyRow, int NumEntries, double* Values, int* Indices) {
-
+  int ReturnVal = 0;
+  if (Copy_Created_) {
+    for(int i = 0; i < NumEntries; i++) {
+      ReturnVal = oski_SetMatEntry(A_tunable_, MyRow, Indices[i], oski_GetMatEntry(A_tunable_, MyRow, Indices[i]));
+      if(ReturnVal)
+	break;
+    }
+    if(!ReturnVal)
+      ReturnVal = const_cast <Epetra_CrsMatrix*> (Epetra_View_)->SumIntoMyValues(MyRow, NumEntries, Values, Indices);
+  }
+  else
+    ReturnVal = const_cast <Epetra_CrsMatrix*> (Epetra_View_)->SumIntoMyValues(MyRow, NumEntries, Values, Indices);
+  if(ReturnVal)
+    std::cerr << "Error in SumIntoMyValues\n";
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::ExtractDiagonalCopy(Epetra_OskiVector& Diagonal) const {
-
+  int ReturnValue = 0;
+  ReturnValue = Epetra_View_->ExtractDiagonalCopy(*(const_cast <Epetra_Vector*> (Diagonal.Epetra_View())));
+  if (ReturnValue)
+    std::cerr << "Error in ExtractDiagonalCopy\n";
+  return ReturnValue;  
 }
 
 int Epetra_OskiMatrix::ReplaceDiagonalValues(const Epetra_OskiVector& Diagonal) {
-
+  int ReturnVal = 0;
+  if (Copy_Created_) {
+    ReturnVal = oski_SetMatDiagValues(A_tunable_, 0, Diagonal.Oski_View());
+    if(!ReturnVal)
+      ReturnVal = const_cast <Epetra_CrsMatrix*> (Epetra_View_)->ReplaceDiagonalValues(*Diagonal.Epetra_View());
+  }
+  else
+    ReturnVal = const_cast <Epetra_CrsMatrix*> (Epetra_View_)->ReplaceDiagonalValues(*Diagonal.Epetra_View());
+  if(ReturnVal)
+    std::cerr << "Error in ReplaceDiagonalValues\n";
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vector& y, double Alpha, double Beta) const {
-
+  Epetra_OskiVector* xCast;
+  Epetra_OskiVector* yCast;
+  bool xCreate = false;
+  bool yCreate = false;
+  int ReturnVal;
+  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
+  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if (yCast == NULL) {
+    yCast = new Epetra_OskiVector(y);
+    yCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatMult(A_tunable_, OP_TRANS, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View());
+  else
+    ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector multiply error\n";
+  if(xCreate)
+    delete xCast;
+  if(yCreate)
+    delete yCast;
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, double Alpha, double Beta) const {
-  const Epetra_OskiMultiVector* XCast;
+  Epetra_OskiMultiVector* XCast;
   Epetra_OskiMultiVector* YCast;
   bool XCreate = false;
   bool YCreate = false;
@@ -179,32 +247,610 @@ int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra
     ReturnVal = oski_MatMult(A_tunable_, OP_TRANS, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View());
   else
     ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiMultiVector multiply error\n";
   if(XCreate)
     delete XCast;
   if(YCreate)
     delete YCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::Solve(bool TransA, Epetra_Vector& x, double Alpha) const {
+  Epetra_OskiVector* xCast;
+  bool xCreate = false;
+  int ReturnVal;
+  xCast = dynamic_cast<Epetra_OskiVector*>(&x);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatTrisolve(A_tunable_, OP_TRANS, Alpha, (*xCast).Oski_View());
+  else
+    ReturnVal = oski_MatTrisolve(A_tunable_, OP_NORMAL, Alpha, (*xCast).Oski_View());
   if(ReturnVal)
-    std::cerr << "MultiVector multiply error\n";
+    std::cerr << "OskiVector Solve error\n";
+  if(xCreate)
+    delete xCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::Solve(bool TransA, Epetra_MultiVector& X, double Alpha) const {
+  Epetra_OskiMultiVector* XCast;
+  bool XCreate = false;
+  int ReturnVal;
+  XCast = dynamic_cast<Epetra_OskiMultiVector*>(&X);
+  if (XCast == NULL) {
+    XCast = new Epetra_OskiMultiVector(X);
+    XCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatTrisolve(A_tunable_, OP_TRANS, Alpha, (*XCast).Oski_View());
+  else
+    ReturnVal = oski_MatTrisolve(A_tunable_, OP_NORMAL, Alpha, (*XCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiMultiVector Solve error\n";
+  if(XCreate)
+    delete XCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector& x, Epetra_Vector& y, Epetra_Vector& t, double Alpha, double Beta) const {
+  Epetra_OskiVector* xCast;
+  Epetra_OskiVector* yCast;
+  Epetra_OskiVector* tCast;
+  bool xCreate = false;
+  bool yCreate = false;
+  bool tCreate = false;
+  int ReturnVal;
+  if((&t) != NULL)
+    tCast = dynamic_cast<Epetra_OskiVector*>(&t);
+  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
+  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if (yCast == NULL) {
+    yCast = new Epetra_OskiVector(y);
+    yCreate = true;
+  }
+  if (tCast == NULL && (&t) != NULL) {
+    tCast = new Epetra_OskiVector(t);
+    tCreate = true;
+  }
+  if((&t) == NULL)
+    if(ATA)
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), INVALID_VEC);
+    else
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), INVALID_VEC);
+  else
+    if(ATA)
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
+    else
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector MatTransMatMultiply error\n";
+  if(xCreate)
+    delete xCast;
+  if(yCreate)
+    delete yCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, Epetra_MultiVector& T, double Alpha, double Beta) const {
+  Epetra_OskiMultiVector* XCast;
+  Epetra_OskiMultiVector* YCast;
+  Epetra_OskiMultiVector* TCast;
+  bool XCreate = false;
+  bool YCreate = false;
+  bool TCreate = false;
+  int ReturnVal;
+  if((&T) != NULL)
+    TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
+  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
+  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
+  if (XCast == NULL) {
+    XCast = new Epetra_OskiMultiVector(X);
+    XCreate = true;
+  }
+  if (YCast == NULL) {
+    YCast = new Epetra_OskiMultiVector(Y);
+    YCreate = true;
+  }
+  if (TCast == NULL && (&T) != NULL) {
+    TCast = new Epetra_OskiMultiVector(T);
+    TCreate = true;
+  }
+  if((&T) == NULL)
+    if(ATA)
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), INVALID_VEC);
+    else
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), INVALID_VEC);
+  else
+    if(ATA)
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+    else
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiMultiVector MatTransMatMultiply error\n";
+  if(XCreate)
+    delete XCast;
+  if(YCreate)
+    delete YCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MultiplyAndMatTransMultiply (bool TransA, const Epetra_Vector& x, Epetra_Vector& y, const Epetra_Vector& w, Epetra_Vector& z, double Alpha, double Beta, double Omega, double Zeta) const {
+  Epetra_OskiVector* xCast;
+  Epetra_OskiVector* yCast;
+  Epetra_OskiVector* wCast;
+  Epetra_OskiVector* zCast;
+  bool xCreate = false;
+  bool yCreate = false;
+  bool wCreate = false;
+  bool zCreate = false;
+  int ReturnVal;
+  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
+  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
+  wCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&w));
+  zCast = dynamic_cast<Epetra_OskiVector*>(&z);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if (yCast == NULL) {
+    yCast = new Epetra_OskiVector(y);
+    yCreate = true;
+  }
+  if (wCast == NULL) {
+    wCast = new Epetra_OskiVector(w);
+    wCreate = true;
+  }
+  if (zCast == NULL) {
+    zCast = new Epetra_OskiVector(z);
+    zCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_TRANS, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
+  else
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_NORMAL, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector multiply error\n";
+  if(xCreate)
+    delete xCast;
+  if(yCreate)
+    delete yCast;
+  if(wCreate)
+    delete wCast;
+  if(zCreate)
+    delete zCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MultiplyAndMatTransMultiply (bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, const Epetra_MultiVector& W, Epetra_MultiVector& Z, double Alpha, double Beta, double Omega, double Zeta) const {
+  Epetra_OskiMultiVector* XCast;
+  Epetra_OskiMultiVector* YCast;
+  Epetra_OskiMultiVector* WCast;
+  Epetra_OskiMultiVector* ZCast;
+  bool XCreate = false;
+  bool YCreate = false;
+  bool WCreate = false;
+  bool ZCreate = false;
+  int ReturnVal;
+  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
+  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
+  WCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&W));
+  ZCast = dynamic_cast<Epetra_OskiMultiVector*>(&Z);
+  if (XCast == NULL) {
+    XCast = new Epetra_OskiMultiVector(X);
+    XCreate = true;
+  }
+  if (YCast == NULL) {
+    YCast = new Epetra_OskiMultiVector(Y);
+    YCreate = true;
+  }
+  if (WCast == NULL) {
+    WCast = new Epetra_OskiMultiVector(W);
+    WCreate = true;
+  }
+  if (ZCast == NULL) {
+    ZCast = new Epetra_OskiMultiVector(Z);
+    ZCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), OP_TRANS, Omega, (*WCast).Oski_View(), Zeta, (*ZCast).Oski_View());
+  else
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), OP_NORMAL, Omega, (*WCast).Oski_View(), Zeta, (*ZCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector multiply error\n";
+  if(XCreate)
+    delete XCast;
+  if(YCreate)
+    delete YCast;
+  if(WCreate)
+    delete WCast;
+  if(ZCreate)
+    delete ZCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatPowMultiply (bool TransA, const Epetra_Vector& x, Epetra_Vector& y, int Power, Epetra_MultiVector& T, double Alpha, double Beta) const {
+  Epetra_OskiVector* xCast;
+  Epetra_OskiVector* yCast;
+  Epetra_OskiMultiVector* TCast;
+  bool xCreate = false;
+  bool yCreate = false;
+  bool TCreate = false;
+  int ReturnVal;
+  if((&T) != NULL)
+    TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
+  else
+    TCast = NULL;
+  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
+  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if (yCast == NULL) {
+    yCast = new Epetra_OskiVector(y);
+    yCreate = true;
+  }
+  if (TCast == NULL && (&T) != NULL) {
+    TCast = new Epetra_OskiMultiVector(T);
+    TCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*TCast).Oski_View());
+  else
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*TCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector multiply error\n";
+  if(xCreate)
+    delete xCast;
+  if(yCreate)
+    delete yCast;
+  if(TCreate)
+    delete TCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatPowMultiply (bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, int Power, Epetra_MultiVector& T, double Alpha, double Beta) const {
+  Epetra_OskiMultiVector* XCast;
+  Epetra_OskiMultiVector* YCast;
+  Epetra_OskiMultiVector* TCast;
+  bool XCreate = false;
+  bool YCreate = false;
+  bool TCreate = false;
+  int ReturnVal;
+  if((&T) != NULL)
+    TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
+  else
+    TCast = NULL;
+  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
+  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
+  if (XCast == NULL) {
+    XCast = new Epetra_OskiMultiVector(X);
+    XCreate = true;
+  }
+  if (YCast == NULL) {
+    YCast = new Epetra_OskiMultiVector(Y);
+    YCreate = true;
+  }
+  if (TCast == NULL && (&T) != NULL) {
+    TCast = new Epetra_OskiMultiVector(T);
+    TCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+  else
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector multiply error\n";
+  if(XCreate)
+    delete XCast;
+  if(YCreate)
+    delete YCast;
+  if(TCreate)
+    delete TCast;
   return ReturnVal;
 }
 
 int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List){
+  int* ArgArray;
+  int Blocks;
+  int Diags;
+  char Number[10];
+  char Row[20];
+  char Col[20];
+  char Diag[20];
+  if(List.isParameter("randompattern"))
+    if(Teuchos::getParameter<bool>(List, "randompattern"))
+      if(oski_SetHint(A_tunable_, HINT_RANDOM_PATTERN))
+        std::cerr << "Error setting hint random pattern.\n";
+  if(List.isParameter("correlatedpattern"))
+    if(Teuchos::getParameter<bool>(List, "correlatedpattern"))
+      if(oski_SetHint(A_tunable_, HINT_CORREL_PATTERN))
+        std::cerr << "Error setting hint correlated pattern.\n";
+  if(List.isParameter("symmetricpattern"))
+    if(Teuchos::getParameter<bool>(List, "symmetricpattern"))
+      if(oski_SetHint(A_tunable_, HINT_SYMM_PATTERN))
+        std::cerr << "Error setting hint symmetric pattern.\n";
+  if(List.isParameter("nonsymmetricpattern"))
+    if(Teuchos::getParameter<bool>(List, "nonsymmetricpattern"))
+      if(oski_SetHint(A_tunable_, HINT_NONSYMM_PATTERN))
+        std::cerr << "Error setting hint nonsymmetric pattern.\n";
+  if(List.isParameter("alignedblocks"))
+    if(Teuchos::getParameter<bool>(List, "alignedblocks"))
+      if(oski_SetHint(A_tunable_, HINT_ALIGNED_BLOCKS))
+        std::cerr << "Error setting hint aligned blocks.\n";
+  if(List.isParameter("unalignedblocks"))
+    if(Teuchos::getParameter<bool>(List, "unalignedblocks"))
+      if(oski_SetHint(A_tunable_, HINT_UNALIGNED_BLOCKS))
+        std::cerr << "Error setting hint unaligned blocks.\n";
+  if(List.isParameter("nodiags"))
+    if(Teuchos::getParameter<bool>(List, "nodiags"))
+      if(oski_SetHint(A_tunable_, HINT_NO_DIAGS))
+        std::cerr << "Error setting hint no diags.\n";
+  if(List.isParameter("noblocks"))
+    if(Teuchos::getParameter<bool>(List, "noblocks"))
+      if(oski_SetHint(A_tunable_, HINT_NO_BLOCKS))
+        std::cerr << "Error setting hint no blocks.\n";
+  if(List.isParameter("singleblocksize"))
+    if(Teuchos::getParameter<bool>(List, "singleblocksize")) {
+      ArgArray = new int[2];
+      if(List.isParameter("row"))
+        ArgArray[0] = Teuchos::getParameter<int>(List, "row");
+      if(List.isParameter("col"))
+        ArgArray[1] = Teuchos::getParameter<int>(List, "col");
+      if(oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
+        std::cerr << "Error setting hint no blocks.\n";
+    }
+  if(List.isParameter("multipleblocksize"))
+    if(Teuchos::getParameter<bool>(List, "multipleblocksize"))
+      if(List.isParameter("blocks")) {
+        Blocks = Teuchos::getParameter<int>(List, "blocks");
+        ArgArray = new int[2*Blocks+1];
+	ArgArray[0] = Blocks;
+        for(int i = 0; i < Blocks; i++) {
+	  sprintf(Number, "%d", i+1);
+	  strcpy(Row, "row");
+	  strcpy(Col, "col");
+	  strcat(Row, Number);
+	  strcat(Col, Number);
+          if(List.isParameter(Row))
+            ArgArray[i*2 + 1] = Teuchos::getParameter<int>(List, Row);
+          if(List.isParameter(Col))
+            ArgArray[i*2 + 2] = Teuchos::getParameter<int>(List, Col);
+        }
+        if(oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
+          std::cerr << "Error setting hint no blocks.\n";
+      }
+      else
+        std::cerr << "The number of blocks is not set.\n";
+  if(List.isParameter("diags"))
+    if(Teuchos::getParameter<bool>(List, "diags"))
+      if(List.isParameter("numdiags")) {
+        Diags = Teuchos::getParameter<int>(List, "numdiags");
+        ArgArray = new int[Blocks+1];
+	ArgArray[0] = Blocks;
+        for(int i = 0; i < Blocks; i++) {
+	  sprintf(Number, "%d", i + 1);
+	  strcpy(Diag, "diag");
+	  strcat(Diag, Number);
+          if(List.isParameter(Diag))
+            ArgArray[i + 1] = Teuchos::getParameter<int>(List, Diag);
+        }
+        if(oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
+          std::cerr << "Error setting hint no blocks.\n";
+      }
+      else
+        std::cerr << "The number of blocks is not set.\n";
 }
 
-int Epetra_OskiMatrix::SetHintMatrixMultiply(bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, int NumCalls, const Teuchos::ParameterList& List){
-/*  int ReturnVal;
-  
-  if(Trans)
-    ReturnVal = oski_SetHintMatMult(A_tunable_, OP_TRANS, Alpha, some invec might be symbolic, Beta, some outvec might be symbolic, numcalls might be symbolic);
+int Epetra_OskiMatrix::SetHintMultiply(bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, int NumCalls, const Teuchos::ParameterList& List) {
+  int ReturnVal;
+  oski_vecview_t InView;
+  oski_vecview_t OutView;
+  InView = InVec.Oski_View();
+  OutView = OutVec.Oski_View();
+  if(List.isParameter("tune"))
+    if(Teuchos::getParameter<bool>(List, "tune"))
+      NumCalls = ALWAYS_TUNE;
+  if(List.isParameter("tuneaggressive"))
+    if(Teuchos::getParameter<bool>(List, "tuneaggressive"))
+      NumCalls = ALWAYS_TUNE_AGGRESSIVELY;
+  if(List.isParameter("symminvec"))
+    if(Teuchos::getParameter<bool>(List, "symminvec"))
+      InView = SYMBOLIC_VEC;
+  if(List.isParameter("symminmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symminmultivec"))
+      InView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmoutvec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutvec"))
+      OutView = SYMBOLIC_VEC;
+  if(List.isParameter("symmoutmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutmultivec"))
+      OutView = SYMBOLIC_MULTIVEC;
+  if(TransA)
+    ReturnVal = oski_SetHintMatMult(A_tunable_, OP_TRANS, Alpha, InView, Beta, OutView, NumCalls);
   else
-    ReturnVal = oski_SetHintMatMult(A_tunable_, OP_NORMAL, Alpha, some invec might be symbolic, Beta, some outvec might be symbolic, numcalls might be symbolic);
+    ReturnVal = oski_SetHintMatMult(A_tunable_, OP_NORMAL, Alpha, InView, Beta, OutView, NumCalls);
   if(ReturnVal)
     std::cerr << "Set hint multivector multiply error\n";
-  return ReturnVal;*/
+  return ReturnVal;
 }
 
+int Epetra_OskiMatrix::SetHintSolve (bool TransA, double Alpha, const Epetra_OskiMultiVector Vector, int NumCalls, const Teuchos::ParameterList& List) {
+  int ReturnVal;
+  oski_vecview_t VecView;
+  VecView = Vector.Oski_View();
+  if(List.isParameter("tune"))
+    if(Teuchos::getParameter<bool>(List, "tune"))
+      NumCalls = ALWAYS_TUNE;
+  if(List.isParameter("tuneaggressive"))
+    if(Teuchos::getParameter<bool>(List, "tuneaggressive"))
+      NumCalls = ALWAYS_TUNE_AGGRESSIVELY;
+  if(List.isParameter("symmvec"))
+    if(Teuchos::getParameter<bool>(List, "symmvec"))
+      VecView = SYMBOLIC_VEC;
+  if(List.isParameter("symmmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symmmultivec"))
+      VecView = SYMBOLIC_MULTIVEC;
+  if(TransA)
+    ReturnVal = oski_SetHintMatTrisolve(A_tunable_, OP_TRANS, Alpha, VecView, NumCalls);
+  else
+    ReturnVal = oski_SetHintMatTrisolve(A_tunable_, OP_NORMAL, Alpha, VecView, NumCalls);
+  if(ReturnVal)
+    std::cerr << "Set hint solve error\n";
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::SetHintMatTransMatMultiply (bool ATA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, const Epetra_OskiMultiVector Intermediate, int NumCalls, const Teuchos::ParameterList& List) {
+  int ReturnVal;
+  oski_vecview_t InView;
+  oski_vecview_t OutView;
+  oski_vecview_t IntermediateView = NULL;
+  InView = InVec.Oski_View();
+  OutView = OutVec.Oski_View();
+  if(&Intermediate != NULL)
+    IntermediateView = Intermediate.Oski_View();
+  if(List.isParameter("tune"))
+    if(Teuchos::getParameter<bool>(List, "tune"))
+      NumCalls = ALWAYS_TUNE;
+  if(List.isParameter("tuneaggressive"))
+    if(Teuchos::getParameter<bool>(List, "tuneaggressive"))
+      NumCalls = ALWAYS_TUNE_AGGRESSIVELY;
+  if(List.isParameter("symminvec"))
+    if(Teuchos::getParameter<bool>(List, "symminvec"))
+      InView = SYMBOLIC_VEC;
+  if(List.isParameter("symminmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symminmultivec"))
+      InView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmoutvec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutvec"))
+      OutView = SYMBOLIC_VEC;
+  if(List.isParameter("symmoutmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutmultivec"))
+      OutView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmintervec"))
+    if(Teuchos::getParameter<bool>(List, "symmintervec"))
+      IntermediateView = SYMBOLIC_VEC;
+  if(List.isParameter("symmintermultivec"))
+    if(Teuchos::getParameter<bool>(List, "symmintermultivec"))
+      IntermediateView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("invalidinter"))
+    if(Teuchos::getParameter<bool>(List, "invalidinter"))
+      IntermediateView = NULL;
+  if(ATA)
+    ReturnVal = oski_SetHintMatTransMatMult(A_tunable_, OP_AT_A, Alpha, InView, Beta, OutView, IntermediateView, NumCalls);
+  else
+    ReturnVal = oski_SetHintMatTransMatMult(A_tunable_, OP_A_AT, Alpha, InView, Beta, OutView, IntermediateView, NumCalls);
+  if(ReturnVal)
+    std::cerr << "Set hint mattransmat multiply error\n";
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply (bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, double Omega, const Epetra_OskiMultiVector InVec2, double Zeta, const Epetra_OskiMultiVector OutVec2, int NumCalls, const Teuchos::ParameterList& List) {
+  int ReturnVal;
+  oski_vecview_t InView;
+  oski_vecview_t OutView;
+  oski_vecview_t InView2;
+  oski_vecview_t OutView2;
+  InView = InVec.Oski_View();
+  OutView = OutVec.Oski_View();
+  InView2 = InVec2.Oski_View();
+  OutView2 = OutVec2.Oski_View();
+  if(List.isParameter("tune"))
+    if(Teuchos::getParameter<bool>(List, "tune"))
+      NumCalls = ALWAYS_TUNE;
+  if(List.isParameter("tuneaggressive"))
+    if(Teuchos::getParameter<bool>(List, "tuneaggressive"))
+      NumCalls = ALWAYS_TUNE_AGGRESSIVELY;
+  if(List.isParameter("symminvec"))
+    if(Teuchos::getParameter<bool>(List, "symminvec"))
+      InView = SYMBOLIC_VEC;
+  if(List.isParameter("symminmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symminmultivec"))
+      InView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmoutvec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutvec"))
+      OutView = SYMBOLIC_VEC;
+  if(List.isParameter("symmoutmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutmultivec"))
+      OutView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symminvec2"))
+    if(Teuchos::getParameter<bool>(List, "symminvec2"))
+      InView2 = SYMBOLIC_VEC;
+  if(List.isParameter("symminmultivec2"))
+    if(Teuchos::getParameter<bool>(List, "symminmultivec2"))
+      InView2 = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmoutvec2"))
+    if(Teuchos::getParameter<bool>(List, "symmoutvec2"))
+      OutView2 = SYMBOLIC_VEC;
+  if(List.isParameter("symmoutmultivec2"))
+    if(Teuchos::getParameter<bool>(List, "symmoutmultivec2"))
+      OutView2 = SYMBOLIC_MULTIVEC;
+  if(TransA)
+    ReturnVal = oski_SetHintMatMultAndMatTransMult(A_tunable_, Alpha, InView, Beta, OutView, OP_TRANS, Omega, InView2, Zeta, OutView2, NumCalls);
+  else
+    ReturnVal = oski_SetHintMatMultAndMatTransMult(A_tunable_, Alpha, InView, Beta, OutView, OP_NORMAL, Omega, InView2, Zeta, OutView2, NumCalls);
+  if(ReturnVal)
+    std::cerr << "Set hint multivector multiply and mattransmultiply error\n";
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::SetHintPowMultiply(bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, const Epetra_OskiMultiVector Intermediate, int Power, int NumCalls, const Teuchos::ParameterList& List) {
+  int ReturnVal;
+  oski_vecview_t InView;
+  oski_vecview_t OutView;
+  oski_vecview_t IntermediateView = NULL;
+  InView = InVec.Oski_View();
+  OutView = OutVec.Oski_View();
+  if(&Intermediate != NULL)
+    IntermediateView = Intermediate.Oski_View();
+  if(List.isParameter("tune"))
+    if(Teuchos::getParameter<bool>(List, "tune"))
+      NumCalls = ALWAYS_TUNE;
+  if(List.isParameter("tuneaggressive"))
+    if(Teuchos::getParameter<bool>(List, "tuneaggressive"))
+      NumCalls = ALWAYS_TUNE_AGGRESSIVELY;
+  if(List.isParameter("symminvec"))
+    if(Teuchos::getParameter<bool>(List, "symminvec"))
+      InView = SYMBOLIC_VEC;
+  if(List.isParameter("symminmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symminmultivec"))
+      InView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmoutvec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutvec"))
+      OutView = SYMBOLIC_VEC;
+  if(List.isParameter("symmoutmultivec"))
+    if(Teuchos::getParameter<bool>(List, "symmoutmultivec"))
+      OutView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("symmintervec"))
+    if(Teuchos::getParameter<bool>(List, "symmintermultivec"))
+      IntermediateView = SYMBOLIC_MULTIVEC;
+  if(List.isParameter("invalidinter"))
+    if(Teuchos::getParameter<bool>(List, "invalidinter"))
+      IntermediateView = NULL;
+  if(TransA)
+    ReturnVal = oski_SetHintMatPowMult(A_tunable_, OP_TRANS, Power, Alpha, InView, Beta, OutView, IntermediateView, NumCalls);
+  else
+    ReturnVal = oski_SetHintMatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, InView, Beta, OutView, IntermediateView, NumCalls);
+  if(ReturnVal)
+    std::cerr << "Set hint matpow multiply error\n";
+  return ReturnVal;
+}
+
+
 int Epetra_OskiMatrix::TuneMatrix() {
-  return oski_TuneMat(A_tunable_);
+  int ReturnVal;
+  ReturnVal = oski_TuneMat(A_tunable_);
+  if(IsMatrixTransformed())
+    Copy_Created_ = true;
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::IsMatrixTransformed() const {
@@ -212,23 +858,40 @@ int Epetra_OskiMatrix::IsMatrixTransformed() const {
 }
 
 const Epetra_OskiMatrix& Epetra_OskiMatrix::ViewTransformedMat() const {
-
+  //might need a more efficient way to do this
+  Epetra_OskiMatrix Transformed(*this); //should be some lightweight copy
+  Transformed.A_tunable_ = const_cast <oski_matrix_t> (oski_ViewPermutedMat(A_tunable_));
+  //return Transformed;
 }
 
 const Epetra_OskiPermutation& Epetra_OskiMatrix::ViewRowPermutation() const {
-
+  Epetra_OskiPermutation* RowPerm;
+  RowPerm = new Epetra_OskiPermutation[1];
+  (*RowPerm).ReplacePermutation(const_cast <oski_perm_t> (oski_ViewPermutedMatRowPerm(A_tunable_)));
+  return *RowPerm;
 }
 
 const Epetra_OskiPermutation& Epetra_OskiMatrix::ViewColumnPermutation() const {
-
+  Epetra_OskiPermutation* ColPerm;
+  ColPerm = new Epetra_OskiPermutation[1];
+  (*ColPerm).ReplacePermutation(const_cast <oski_perm_t> (oski_ViewPermutedMatColPerm(A_tunable_)));
+  return *ColPerm;
 }
 
 char* Epetra_OskiMatrix::GetMatrixTransforms() const {
-
+  char* ReturnVal;
+  ReturnVal = oski_GetMatTransforms(A_tunable_);
+  if(ReturnVal == NULL)
+    std::cerr << "Error in GetMatrixTransforms\n";
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::ApplyMatrixTransforms(const char* Transforms) {
-
+  int ReturnVal;
+  ReturnVal = oski_ApplyMatTransforms(A_tunable_, Transforms);
+  if(ReturnVal)
+    std::cerr << "Error in ApplyMatrixTransforms\n";
+  return ReturnVal;
 }
 #endif
 #endif

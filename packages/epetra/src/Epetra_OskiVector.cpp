@@ -31,22 +31,22 @@
 
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
-#include "Epetra_OskiUtils.h"
+#include "Epetra_OskiVector.h"
 
-//=========================================================================
-Epetra_OskiUtils::Epetra_OskiUtils () {}
+//=============================================================================
 
-//=========================================================================
-Epetra_OskiUtils::~Epetra_OskiUtils () {}
+Epetra_OskiVector::Epetra_OskiVector(const Epetra_OskiVector& Source) : Epetra_OskiMultiVector(Source), Epetra_View_(Source.Epetra_View_) {
 
-//=========================================================================
-void Epetra_OskiUtils::Init() {
-  oski_Init ();
 }
 
-//=========================================================================
-void Epetra_OskiUtils::Close() {
-  oski_Close ();
+Epetra_OskiVector::Epetra_OskiVector(const Epetra_Vector& Source) : Epetra_OskiMultiVector(Source), Epetra_View_(&Source) {
 }
+
+Epetra_OskiVector::~Epetra_OskiVector (){}
+
+const Epetra_Vector* Epetra_OskiVector::Epetra_View () const {
+  return Epetra_View_;
+}
+
 #endif
 #endif

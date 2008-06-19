@@ -35,11 +35,9 @@
 
 //=============================================================================
 
-// Epetra_BlockMap Constructor
-
-/*Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_OskiMultiVector& Source) {
-
-}*/
+Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_OskiMultiVector& Source) :Epetra_MultiVector(Source), Epetra_View_(Source.Epetra_View_), Copy_Created_(Source.Copy_Created_) {
+  Oski_View_ = oski_CopyVecView(Source.Oski_View_);
+}
 
 Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source) : Epetra_MultiVector(Source), Epetra_View_(&Source), Copy_Created_(false){
   double* A;
@@ -47,7 +45,9 @@ Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source)
   int LDA;
   int* LDAptr;
 //  Epetra_View_ = &Source;
-  if(Source.ConstantStride()) {
+  LDAptr = new int[1];
+  Aptr = new double*[1];
+  if(Source.ConstantStride() || (Source.NumVectors() == 1)) {
     if(Source.ExtractView(Aptr, LDAptr))
       std::cerr << "Extract view failed\n";
     else
@@ -76,5 +76,10 @@ bool Epetra_OskiMultiVector::Copy_Created () const {
 oski_vecview_t Epetra_OskiMultiVector::Oski_View () const {
   return Oski_View_;
 }
+
+const Epetra_MultiVector* Epetra_OskiMultiVector::Epetra_View () const {
+  return Epetra_View_;
+}
+
 #endif
 #endif
