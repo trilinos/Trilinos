@@ -14,7 +14,7 @@ STD_NAME: aristos, DIR_NAME: aristos
 STD_NAME: aztecoo, DIR_NAME: aztecoo
 STD_NAME: belos, DIR_NAME: belos
 STD_NAME: claps, DIR_NAME: claps
-STD_NAME: cmmlib, DIR_NAME: cmmlib
+STD_NAME: ctrilinos, DIR_NAME: CTrilinos
 STD_NAME: didasko, DIR_NAME: didasko
 STD_NAME: epetra, DIR_NAME: epetra
 STD_NAME: epetraext, DIR_NAME: epetraext
@@ -23,6 +23,7 @@ STD_NAME: fei, DIR_NAME: fei
 STD_NAME: fortrilinos, DIR_NAME: ForTrilinos
 STD_NAME: galeri, DIR_NAME: galeri
 STD_NAME: ifpack, DIR_NAME: ifpack
+STD_NAME: intrepid, DIR_NAME: intrepid
 STD_NAME: isorropia, DIR_NAME: isorropia
 STD_NAME: jpetra, DIR_NAME: jpetra
 STD_NAME: kokkos, DIR_NAME: kokkos
@@ -40,6 +41,7 @@ STD_NAME: rbgen, DIR_NAME: rbgen
 STD_NAME: rtop, DIR_NAME: rtop
 STD_NAME: rythmos, DIR_NAME: rythmos
 STD_NAME: sacado, DIR_NAME: sacado 
+STD_NAME: stokhos, DIR_NAME: stokhos
 STD_NAME: stratimikos, DIR_NAME: stratimikos 
 STD_NAME: sundance, DIR_NAME: Sundance
 STD_NAME: teuchos, DIR_NAME: teuchos
