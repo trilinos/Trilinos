@@ -52,10 +52,10 @@ class Epetra_OskiUtils {
 	//! @name Constructors/Destructor
         //@{        
 	//! Default Constructor
-	Epetra_OskiUtils ();
+	Epetra_OskiUtils();
 
 	//! Destructor
-	virtual ~Epetra_OskiUtils ();
+	virtual ~Epetra_OskiUtils();
  	//@}
 
 	//! @name Start/End
@@ -64,13 +64,13 @@ class Epetra_OskiUtils {
 	/*! Calls the OSKI routine to initialize the use of OSKI.  This routine is required before
 	    OSKI can be used.
 	*/	
-  	void Init ();
+  	void Init();
 
 	//! Finalizes the use of OSKI
 	/*! When done using OSKI this routine performs cleanup operations.  While not strictly required
 	    it is highly recommended to be called when OSKI is no longer being used.
 	*/
-	void Close ();
+	void Close();
 	//@}
 };
 

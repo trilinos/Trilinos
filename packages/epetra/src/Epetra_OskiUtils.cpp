@@ -34,19 +34,19 @@
 #include "Epetra_OskiUtils.h"
 
 //=========================================================================
-Epetra_OskiUtils::Epetra_OskiUtils () {}
+Epetra_OskiUtils::Epetra_OskiUtils() {}
 
 //=========================================================================
-Epetra_OskiUtils::~Epetra_OskiUtils () {}
+Epetra_OskiUtils::~Epetra_OskiUtils() {}
 
 //=========================================================================
 void Epetra_OskiUtils::Init() {
-  oski_Init ();
+  oski_Init();
 }
 
 //=========================================================================
 void Epetra_OskiUtils::Close() {
-  oski_Close ();
+  oski_Close();
 }
 #endif
 #endif

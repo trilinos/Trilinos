@@ -34,18 +34,18 @@
 #include "Epetra_OskiError.h"
 
 //=========================================================================
-Epetra_OskiError::Epetra_OskiError () {}
+Epetra_OskiError::Epetra_OskiError() {}
 
 //=========================================================================
-Epetra_OskiError::~Epetra_OskiError () {}
+Epetra_OskiError::~Epetra_OskiError() {}
 
 //=========================================================================
 Epetra_OskiError Epetra_OskiError::OskiGetErrorHandler () {
-  ErrorHandler_ = oski_GetErrorHandler ();
+  ErrorHandler_ = oski_GetErrorHandler();
 }
 
 //=========================================================================
-void Epetra_OskiError::OskiSetErrorHandler (Epetra_OskiError& NewErrorHandler) {
+void Epetra_OskiError::OskiSetErrorHandler(Epetra_OskiError& NewErrorHandler) {
   oski_SetErrorHandler(ErrorHandler_); 
 }
 #endif

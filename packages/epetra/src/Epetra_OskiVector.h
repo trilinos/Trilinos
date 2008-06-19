@@ -60,22 +60,22 @@ class Epetra_OskiVector: public Epetra_OskiMultiVector {
    //! @name Constructors/Destructor
    //@{
    //! Copy constructor
-   Epetra_OskiVector (const Epetra_OskiVector& Source); //not in use for now
+   Epetra_OskiVector(const Epetra_OskiVector& Source);
 
    //! Constructor creates and Epetra_OskiVector from an Epetra_Vector
    /*! \param Source (In) An Epetra_Vector that is to be wrapped as an Epetra_OskiVector.
        \return Pointer to an Epetra_OskiVector.
    */
-   Epetra_OskiVector (const Epetra_Vector& Source);
+   Epetra_OskiVector(const Epetra_Vector& Source);
 
    //! Destructor
-   virtual ~Epetra_OskiVector ();
+   virtual ~Epetra_OskiVector();
    //@}
 
    //! @name Extraction Method
    //@{
    //! Returns a view to the Epetra Object
-   const Epetra_Vector* Epetra_View () const;
+   const Epetra_Vector* Epetra_View() const;
    //@}
 
  protected:

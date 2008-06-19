@@ -32,8 +32,6 @@
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
 #include "Epetra_OskiMatrix.h"
-#include <stdio.h>
-#include <string.h>
 
 //=============================================================================
 

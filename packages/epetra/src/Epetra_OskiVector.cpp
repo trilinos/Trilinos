@@ -35,16 +35,17 @@
 
 //=============================================================================
 
-Epetra_OskiVector::Epetra_OskiVector(const Epetra_OskiVector& Source) : Epetra_OskiMultiVector(Source), Epetra_View_(Source.Epetra_View_) {
+Epetra_OskiVector::Epetra_OskiVector(const Epetra_OskiVector& Source) 
+  : Epetra_OskiMultiVector(Source), 
+  Epetra_View_(Source.Epetra_View_) {}
 
-}
+Epetra_OskiVector::Epetra_OskiVector(const Epetra_Vector& Source) 
+  : Epetra_OskiMultiVector(Source), 
+  Epetra_View_(&Source) {}
 
-Epetra_OskiVector::Epetra_OskiVector(const Epetra_Vector& Source) : Epetra_OskiMultiVector(Source), Epetra_View_(&Source) {
-}
+Epetra_OskiVector::~Epetra_OskiVector() {}
 
-Epetra_OskiVector::~Epetra_OskiVector (){}
-
-const Epetra_Vector* Epetra_OskiVector::Epetra_View () const {
+const Epetra_Vector* Epetra_OskiVector::Epetra_View() const {
   return Epetra_View_;
 }
 

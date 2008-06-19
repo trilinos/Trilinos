@@ -35,49 +35,54 @@
 
 //=============================================================================
 
-Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_OskiMultiVector& Source) :Epetra_MultiVector(Source), Epetra_View_(Source.Epetra_View_), Copy_Created_(Source.Copy_Created_) {
-  Oski_View_ = oski_CopyVecView(Source.Oski_View_);
+Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_OskiMultiVector& Source) 
+  : Epetra_MultiVector(Source), 
+  Epetra_View_(Source.Epetra_View_), 
+  Copy_Created_(Source.Copy_Created_) {
+    Oski_View_ = oski_CopyVecView(Source.Oski_View_);
 }
 
-Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source) : Epetra_MultiVector(Source), Epetra_View_(&Source), Copy_Created_(false){
-  double* A;
-  double** Aptr;
-  int LDA;
-  int* LDAptr;
-//  Epetra_View_ = &Source;
-  LDAptr = new int[1];
-  Aptr = new double*[1];
-  if(Source.ConstantStride() || (Source.NumVectors() == 1)) {
-    if(Source.ExtractView(Aptr, LDAptr))
-      std::cerr << "Extract view failed\n";
-    else
-      Oski_View_ = oski_CreateMultiVecView(*Aptr, Source.MyLength(), Source.NumVectors(), LAYOUT_COLMAJ, *LDAptr);
-  }
-  else {
-    Copy_Created_ = true;
-    LDA = Source.MyLength();
-    A = new double[LDA*Source.NumVectors()];
-    if(Source.ExtractCopy(A, LDA))
-      std::cerr << "Extract copy failed\n";
-    else
-      Oski_View_ = oski_CreateMultiVecView(A, Source.MyLength(), Source.NumVectors(), LAYOUT_COLMAJ, LDA);
-  }
+Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source) 
+  : Epetra_MultiVector(Source),
+  Epetra_View_(&Source), 
+  Copy_Created_(false) {
+    double* A;
+    double** Aptr;
+    int LDA;
+    int* LDAptr;
+    LDAptr = new int[1];
+    Aptr = new double*[1];
+    if(Source.ConstantStride() || (Source.NumVectors() == 1)) {
+      if(Source.ExtractView(Aptr, LDAptr))
+        std::cerr << "Extract view failed\n";
+      else
+        Oski_View_ = oski_CreateMultiVecView(*Aptr, Source.MyLength(), Source.NumVectors(), LAYOUT_COLMAJ, *LDAptr);
+    }
+    else {
+      Copy_Created_ = true;
+      LDA = Source.MyLength();
+      A = new double[LDA*Source.NumVectors()];
+      if(Source.ExtractCopy(A, LDA))
+        std::cerr << "Extract copy failed\n";
+      else
+        Oski_View_ = oski_CreateMultiVecView(A, Source.MyLength(), Source.NumVectors(), LAYOUT_COLMAJ, LDA);
+    }
 }
 
-Epetra_OskiMultiVector::~Epetra_OskiMultiVector (){
+Epetra_OskiMultiVector::~Epetra_OskiMultiVector() {
   if(oski_DestroyVecView(Oski_View_))
     std::cerr << "Vector destroy failed\n";
 }
 
-bool Epetra_OskiMultiVector::Copy_Created () const {
+bool Epetra_OskiMultiVector::Copy_Created() const {
   return Copy_Created_;
 }
 
-oski_vecview_t Epetra_OskiMultiVector::Oski_View () const {
+oski_vecview_t Epetra_OskiMultiVector::Oski_View() const {
   return Oski_View_;
 }
 
-const Epetra_MultiVector* Epetra_OskiMultiVector::Epetra_View () const {
+const Epetra_MultiVector* Epetra_OskiMultiVector::Epetra_View() const {
   return Epetra_View_;
 }
 

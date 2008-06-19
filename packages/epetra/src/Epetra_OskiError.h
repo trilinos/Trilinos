@@ -45,19 +45,19 @@ class Epetra_OskiError {
 	//! @name Constructors/Destructor
         //@{        
 	//! Default Constructor
-	Epetra_OskiError ();
+	Epetra_OskiError();
 
 	//! Destructor
-	virtual ~Epetra_OskiError ();
+	virtual ~Epetra_OskiError();
  	//@}
 
 	//! @name Set/Get
 	//@{
         //! Gets a pointer to the current error handler routine being used by OSKI.
-	Epetra_OskiError OskiGetErrorHandler ();
+	Epetra_OskiError OskiGetErrorHandler();
 
 	//! Sets the error handling routine to be used by OSKI to NewErrorHandler.
-	void OskiSetErrorHandler (Epetra_OskiError& NewErrorHandler); 
+	void OskiSetErrorHandler(Epetra_OskiError& NewErrorHandler); 
 	//@}
 
   private:

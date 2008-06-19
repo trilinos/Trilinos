@@ -58,7 +58,7 @@ class Epetra_OskiPermutation{
    //@{
    
    //!Default Constructor
-   Epetra_OskiPermutation ();
+   Epetra_OskiPermutation();
    
    //!Copy Constructor
    Epetra_OskiPermutation (const Epetra_OskiPermutation& Source);
@@ -67,16 +67,16 @@ class Epetra_OskiPermutation{
        If RowPerm is true this is a row permutation and if RowPerm is false this is a 
        column permutation.
    */
-   Epetra_OskiPermutation (bool RowPerm, const Epetra_OskiMatrix& Source);
+   Epetra_OskiPermutation(bool RowPerm, const Epetra_OskiMatrix& Source);
 
    //! Destructor
-   virtual ~Epetra_OskiPermutation ();
+   virtual ~Epetra_OskiPermutation();
    //@}
    
    //! @name Replace Method
    //@{
    //! Stores a permutation in the data structure.
-   void ReplacePermutation (const oski_perm_t& InPerm);
+   void ReplacePermutation(const oski_perm_t& InPerm);
    //@}
 
 

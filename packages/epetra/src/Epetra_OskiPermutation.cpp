@@ -36,19 +36,20 @@
 //=============================================================================
 
 
-Epetra_OskiPermutation::Epetra_OskiPermutation() : Permutation_(NULL) {}
+Epetra_OskiPermutation::Epetra_OskiPermutation() 
+  : Permutation_(NULL) {}
 
-Epetra_OskiPermutation::Epetra_OskiPermutation(const Epetra_OskiPermutation& Source) : Permutation_(Source.Permutation_){
-}
+Epetra_OskiPermutation::Epetra_OskiPermutation(const Epetra_OskiPermutation& Source) 
+  : Permutation_(Source.Permutation_) {}
 
-Epetra_OskiPermutation::Epetra_OskiPermutation(bool RowPerm, const Epetra_OskiMatrix& Source){
+Epetra_OskiPermutation::Epetra_OskiPermutation(bool RowPerm, const Epetra_OskiMatrix& Source) {
   if(RowPerm)
     *this = Source.ViewRowPermutation();
   else
     *this = Source.ViewColumnPermutation();
 }
 
-Epetra_OskiPermutation::~Epetra_OskiPermutation () {
+Epetra_OskiPermutation::~Epetra_OskiPermutation() {
   if(Permutation_ != NULL)
     delete this;
 }
