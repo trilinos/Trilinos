@@ -52,9 +52,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <QueryObject.hpp>
 
-#define DEBUG_YES "yes"
-#define DEBUG_PROC   1
-
 namespace Isorropia {
 
 namespace Epetra {
@@ -219,13 +216,6 @@ load_balance(MPI_Comm &comm,
     zz->Set_Edge_List_Multi_Fn(QueryObject::Edge_List_Multi, (void *)&queryObject);
   }
 
-#ifdef DEBUG_YES
-  if (me == DEBUG_PROC)
-  {
-    std::cout << paramlist << std::endl;
-  }
-#endif
-
   //Generate Load Balance
   int changes, num_gid_entries, num_lid_entries, num_import, num_export;
   ZOLTAN_ID_PTR import_global_ids, import_local_ids;
@@ -241,14 +231,6 @@ load_balance(MPI_Comm &comm,
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
     return -1;
   }
-
-#ifdef DEBUG_YES
-  if (me == DEBUG_PROC)
-  {
-    std::cout << "num imports " << num_import << std::endl;
-    std::cout << "num exports " << num_export << std::endl;
-  }
-#endif
 
   //Generate New Element List
   int numMyElements = queryObject.RowMap().NumMyElements();
