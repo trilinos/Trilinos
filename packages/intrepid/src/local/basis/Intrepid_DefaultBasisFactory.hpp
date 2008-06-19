@@ -47,6 +47,7 @@
 
 ///// end of list of default basis includes /////
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 ///// FIAT-generated element includes here
 #include "Intrepid_F0_TRI_C1_FEM_FIAT.hpp"
 #include "Intrepid_F0_TRI_C2_FEM_FIAT.hpp"
@@ -69,7 +70,7 @@
 #include "Intrepid_F0_TET_C9_FEM_FIAT.hpp"
 #include "Intrepid_F0_TET_C10_FEM_FIAT.hpp"
 ///// end FIAT-generated element includes
-
+#endif
 
 namespace Intrepid {
   
@@ -114,23 +115,14 @@ class DefaultBasisFactory {
     basisMap_[   2009020] = Teuchos::rcp( new Basis_F0_TRI_C9_FEM_FIAT<Scalar>() );
     basisMap_[   2010020] = Teuchos::rcp( new Basis_F0_TRI_C10_FEM_FIAT<Scalar>() );
     basisMap_[   4001020] = Teuchos::rcp( new Basis_F0_TET_C1_FEM_FIAT<Scalar>() );
-
     basisMap_[   4002020] = Teuchos::rcp( new Basis_F0_TET_C2_FEM_FIAT<Scalar>() );
-
     basisMap_[   4003020] = Teuchos::rcp( new Basis_F0_TET_C3_FEM_FIAT<Scalar>() );
-
     basisMap_[   4004020] = Teuchos::rcp( new Basis_F0_TET_C4_FEM_FIAT<Scalar>() );
-
     basisMap_[   4005020] = Teuchos::rcp( new Basis_F0_TET_C5_FEM_FIAT<Scalar>() );
-
     basisMap_[   4006020] = Teuchos::rcp( new Basis_F0_TET_C6_FEM_FIAT<Scalar>() );
-
     basisMap_[   4007020] = Teuchos::rcp( new Basis_F0_TET_C7_FEM_FIAT<Scalar>() );
-
     basisMap_[   4008020] = Teuchos::rcp( new Basis_F0_TET_C8_FEM_FIAT<Scalar>() );
-
     basisMap_[   4009020] = Teuchos::rcp( new Basis_F0_TET_C9_FEM_FIAT<Scalar>() );
-
     basisMap_[   4010020] = Teuchos::rcp( new Basis_F0_TET_C10_FEM_FIAT<Scalar>() );
     // end FIAT-generated bases
 
