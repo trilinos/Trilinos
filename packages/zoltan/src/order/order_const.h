@@ -38,6 +38,7 @@ struct Zoltan_Order_Struct {
   ZOLTAN_ID_PTR gids;           /* ptr to list of global ids */
   ZOLTAN_ID_PTR lids;           /* ptr to list of local ids */
   int *rank;        		/* rank[i] is the rank of gids[i] */
+  int *iperm;
   char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
 
   /* Elimination Tree */
@@ -76,7 +77,7 @@ typedef struct Zoltan_Order_Options ZOOS;
 
 typedef int ZOLTAN_ORDER_FN(  struct Zoltan_Struct *zz, int, 
                          ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
-                         int *, ZOOS *);
+                         int *, int *, ZOOS *);
 
 /*****************************************************************************/
 /* PROTOTYPES */

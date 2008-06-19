@@ -52,7 +52,8 @@ int Zoltan_Order(
                         /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
                         /* The application must allocate enough space */
-  int *rank             /* rank[i] is the rank of gids[i] */
+  int *rank,            /* rank[i] is the rank of gids[i] */
+  int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
 )
 {
 /*
@@ -73,7 +74,7 @@ int Zoltan_Order(
 
   char *yo = "Zoltan_Order";
   int ierr;
-/*   int *vtxdist; */
+  int *vtxdist;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
   char msg[256];
@@ -199,7 +200,7 @@ int Zoltan_Order(
    * Call the actual ordering function.
    */
 
-  ierr = (*Order_fn)(zz, num_obj, gids, lids, rank, &opt);
+  ierr = (*Order_fn)(zz, num_obj, gids, lids, rank, iperm, &opt);
 
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
@@ -214,25 +215,25 @@ int Zoltan_Order(
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 
-  /* Compute inverse permutation if necessary */
-/*   ierr = Zoltan_Get_Distribution(zz, &vtxdist); */
-/*   if (ierr){ */
-/*     /\* Error *\/ */
-/*     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Get_Distribution.\n"); */
-/*     return (ierr); */
-/*   } */
+/*   Compute inverse permutation if necessary */
+  ierr = Zoltan_Get_Distribution(zz, &vtxdist);
+  if (ierr){
+    /* Error */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Get_Distribution.\n");
+    return (ierr);
+  }
 
-/*   if (!(opt.return_args & RETURN_RANK)){ */
-/*     /\* Compute rank from iperm *\/ */
-/*     ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation"); */
-/*     Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, opt.order_type, opt.start_index); */
-/*   } */
-/*   else if (!(opt.return_args & RETURN_IPERM)){ */
-/*     /\* Compute iperm from rank *\/ */
-/*     ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation"); */
-/*     Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, opt.order_type, opt.start_index); */
-/*   } */
-/*   ZOLTAN_FREE(&vtxdist); */
+  if (!(opt.return_args & RETURN_RANK)){
+    /* Compute rank from iperm */
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
+    Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, opt.order_type, opt.start_index);
+  }
+  else if (!(opt.return_args & RETURN_IPERM)){
+    /* Compute iperm from rank */
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
+    Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, opt.order_type, opt.start_index);
+  }
+  ZOLTAN_FREE(&vtxdist);
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 

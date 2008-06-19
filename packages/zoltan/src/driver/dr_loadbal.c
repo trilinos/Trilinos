@@ -787,7 +787,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
         printf("Turn off \"test dynamic graph\".\n");
       }
       
-      order = (int *) malloc ((mesh->num_elems) * sizeof(int));
+      order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
       order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
       order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
 
@@ -809,7 +809,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     if (Zoltan_Order(zz, &num_gid_entries, &num_lid_entries,
         mesh->num_elems, order_gids, order_lids,
-        order) == ZOLTAN_FATAL) {
+        order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
       return 0;
     }
@@ -824,7 +824,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     for (i = 0; i < mesh->num_elems; i++){
       int lid = order_lids[num_lid_entries * i + (num_lid_entries - 1)];
       mesh->elements[lid].perm_value = order[i];
-/*       mesh->elements[lid].invperm_value = order[(mesh->num_elems)+i]; */
+      mesh->elements[lid].invperm_value = order[(mesh->num_elems)+i];
     }
 
     /* Free order data */

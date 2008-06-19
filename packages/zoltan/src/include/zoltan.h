@@ -3071,6 +3071,8 @@ int Zoltan_RCB_Box(
  *    rank                --  rank[i] is the rank of gids[i] produced by
  *                            the ordering. This defines a permutation.
  *                            rank is between 0 and N-1.
+ *    iperm               --  in a sequential (local) call, iperm[rank[i]]=i
+ *                            can be NULL if you want to ignore.
  *
  *  Returned value:       --  Error code
  */
@@ -3083,7 +3085,8 @@ extern int Zoltan_Order(
   int num_obj,
   ZOLTAN_ID_PTR global_ids,
   ZOLTAN_ID_PTR local_ids,
-  int *rank
+  int *rank,
+  int *iperm
 );
 
 /*****************************************************************************/
