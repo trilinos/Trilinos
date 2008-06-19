@@ -31,11 +31,11 @@
 
 #include <mpi.h>
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_MpiData.hpp"
 #include "Tpetra_Distributor.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
@@ -54,7 +54,7 @@ namespace Tpetra {
   */
 
   template<typename OrdinalType, typename PacketType>
-  class MpiComm : public Object, public virtual Comm<OrdinalType, PacketType> {
+  class MpiComm : public Teuchos::Object, public virtual Comm<OrdinalType, PacketType> {
   public:
     
     //@{ \name Constructor/Destructor Methods
@@ -65,7 +65,7 @@ namespace Tpetra {
              MPI_Comm communicator we will use.
     */
     MpiComm(MPI_Comm Comm) 
-      : Object("Tpetra::MpiComm") 
+      : Teuchos::Object("Tpetra::MpiComm") 
       , MpiData_()
       , tag_(-1)
     {
@@ -75,7 +75,7 @@ namespace Tpetra {
 
     //! copy constructor
     MpiComm(MpiComm<OrdinalType, PacketType> const& comm) 
-      : Object(comm.label())
+      : Teuchos::Object(comm.label())
       , MpiData_(Teuchos::rcp(new MpiData(comm.MpiData_->getMpiComm())))
       , tag_(MpiData_->getMpiTag())
     {

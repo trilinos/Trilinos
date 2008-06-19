@@ -26,36 +26,45 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_MAP_DECL_DECL_HPP
-#define TPETRA_MAP_DECL_DECL_HPP
+#ifndef TPETRA_MAP_DECL_HPP
+#define TPETRA_MAP_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
-#include "Tpetra_Comm.hpp"
+#include <Teuchos_Object.hpp>
+
+// TODO: Map needs to take a Platform
 
 namespace Tpetra {
 
   template<typename OrdinalType> class MapData;
-  template<typename OrdinalType, typename ScalarType> class Vector;
-  template<typename OrdinalType, typename ScalarType> class MultiVector;
 
   //! Tpetra::Map
 
   template<typename OrdinalType>
-  class Map : public Object {
+  class Map : public Teuchos::Object {
 
   public:
 
     //@{ \name Constructor/Destructor Methods
 
-    //! Map constructor with Tpetra-defined contiguous uniform distribution.
-    Map (OrdinalType numGlobalElements, OrdinalType indexBase);
+    /*! \brief Map constructor with Tpetra-defined contiguous uniform distribution.
+     *   The entries are distributed among nodes so that the subsets of global entries
+     *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
+     *   possible.
+     */
+    // TODO: is it possible that the default Map should vary according to Platform? 
+    // If so, then how do we give platform input into this process?
+    Map (OrdinalType numGlobalEntries, OrdinalType indexBase);
 
-    //! Map constructor with user-defined contiguous distribution.
-    Map (OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase);
+    /*! \brief Map constructor with a user-defined contiguous distribution.
+     *  The entries are distributed among the nodes that the subsets of global entries
+     *  are non-overlapping and contiguous 
+     */
+    Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, OrdinalType indexBase);
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    Map (OrdinalType numGlobalElements, OrdinalType numMyElements, std::vector< OrdinalType > const &elementList, OrdinalType indexBase);
+    Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, 
+         std::vector< OrdinalType > const &entryList, OrdinalType indexBase);
 
     //! Map copy constructor.
     Map (const Map<OrdinalType> &Map);
@@ -106,18 +115,6 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Vector Creation
-
-    //! Creates a Tpetra::Vector, with all entries set to 0.
-    template<typename ScalarType>
-    Teuchos::RCP< Vector< OrdinalType, ScalarType > > createVector () const;
-
-    //! Creates a Tpetra::MultiVector, with all entries set to 0.
-    template<typename ScalarType>
-    Teuchos::RCP< MultiVector< OrdinalType, ScalarType > > createVectors (int numVectors) const;
-
-    //@}
-
     //@{ \name Boolean Tests
 
     //! Returns true if \c map is compatible with this Map.
@@ -136,22 +133,15 @@ namespace Tpetra {
 
     //@{ Misc. 
 
-    // TODO: not sure what to do here
-    //! Access functions for the Tpetra::Platform and Tpetra::Comm communicators.
-    // Comm<OrdinalType, ScalarType> const& comm() const {return(*VectorSpaceData_->Comm_);}; 
-
     //! Assignment operator
-    VectorSpace<OrdinalType, ScalarType>& operator = (VectorSpace<OrdinalType, ScalarType> const& Source) {
-      VectorSpaceData_ = Source.VectorSpaceData_;
-      return(*this);
-    }
+    Map<OrdinalType>& operator = (Map<OrdinalType> const& Source);
 
     //@}
 
-    //@{ Implements Tpetra::Object 
+    //@{ Implements Teuchos::Object 
 
     //! Prints the VectorSpace object to the output stream.
-    /*! An << operator is inherited from Tpetra::Object, which uses the print method.*/
+    /*! An << operator is inherited from Teuchos::Object, which uses the print method.*/
     void print(ostream& os) const;
 
     //@}
@@ -159,7 +149,7 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP< VectorSpaceData<OrdinalType, ScalarType> > VectorSpaceData_;
+    Teuchos::RCP< VectorSpaceData<OrdinalType> > MapData_;
 
   }; // VectorSpace class
 

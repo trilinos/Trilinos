@@ -31,7 +31,6 @@
 
 #include <mpi.h>
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
 
 #ifdef HAVE_TPETRA_TBB
@@ -40,6 +39,7 @@
 #include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_MpiData.hpp"
 #include "Tpetra_Distributor.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
@@ -58,7 +58,7 @@ namespace Tpetra {
   */
 
   template<typename OrdinalType, typename PacketType>
-  class TBB_MpiComm : public Object, public virtual Comm<OrdinalType, PacketType> {
+  class TBB_MpiComm : public Teuchos::Object, public virtual Comm<OrdinalType, PacketType> {
   public:
     
     //@{ \name Constructor/Destructor Methods
@@ -69,7 +69,7 @@ namespace Tpetra {
              MPI_Comm communicator we will use.
     */
     TBB_MpiComm(MPI_Comm Comm, int num_threads = 0) 
-      : Object("Tpetra::TBB_MpiComm") 
+      : Teuchos::Object("Tpetra::TBB_MpiComm") 
       , MpiData_()
       , tag_(-1)
     {
@@ -86,7 +86,7 @@ namespace Tpetra {
              MpiData inner data class passed in by MpiPlatform.
     */
     TBB_MpiComm(Teuchos::RCP<MpiData> const& mpidata, int num_threads = 0)
-      : Object("Tpetra::TBB_MpiComm")
+      : Teuchos::Object("Tpetra::TBB_MpiComm")
       , MpiData_(mpidata)
          //, tag_(-1)
       , tag_(data().getMpiTag())
@@ -97,7 +97,7 @@ namespace Tpetra {
 
     //! copy constructor
     TBB_MpiComm(TBB_MpiComm<OrdinalType, PacketType> const& comm) 
-      : Object(comm.label())
+      : Teuchos::Object(comm.label())
       , MpiData_(comm.MpiData_)
          //, tag_(-1)
       , tag_(data().getMpiTag())

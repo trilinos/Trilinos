@@ -29,7 +29,7 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
@@ -40,7 +40,7 @@ namespace Tpetra {
    * vectors.
    */
   template<typename OrdinalType, typename ScalarType>
-	class Operator : virtual public Object {
+	class Operator : virtual public Teuchos::Object {
 	public:
   
 		/** \name Pure virtual functions to be overridden by subclasses. */

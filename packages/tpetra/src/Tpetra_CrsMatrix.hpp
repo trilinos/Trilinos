@@ -29,6 +29,8 @@
 #ifndef TPETRA_CRSMATRIX_HPP
 #define TPETRA_CRSMATRIX_HPP
 
+#include <Teuchos_Object.hpp>
+
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #ifdef TPETRA_MPI
@@ -39,7 +41,6 @@
 #include "Tpetra_SerialComm.hpp"
 #endif
 #include "Teuchos_ScalarTraits.hpp"
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Import.hpp"
 
 namespace Tpetra 
@@ -67,7 +68,7 @@ namespace Tpetra
    * \warning Class Tpetra::CisMatrix should be preferred to Tpetra::CrsMatrix. This class has been little tested.
    */
   template<class OrdinalType, class ScalarType>
-  class CrsMatrix : public Object, public Teuchos::CompObject
+  class CrsMatrix : public Teuchos::Object, public Teuchos::CompObject
   {
     public:
       //@{ \name Constructor/Destructor Methods

@@ -31,7 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 #include "Tpetra_OmniPlatformData.hpp"
 #include "Tpetra_SerialComm.hpp"
 #ifdef TPETRA_MPI
@@ -66,7 +66,7 @@ namespace Tpetra {
 		Platform::getGeneric method.
 	*/
 
-	class OmniPlatform : public Object {
+	class OmniPlatform : public Teuchos::Object {
 	public:
 
 		enum CommType { GENERIC, SERIAL, MPI, THREADED_MPI };
@@ -75,7 +75,7 @@ namespace Tpetra {
 		
 		//! Constructor (serial)
 		OmniPlatform() 
-			: Object("Tpetra::OmniPlatform(Serial)")
+			: Teuchos::Object("Tpetra::OmniPlatform(Serial)")
 			, OmniPlatformData_()
 		{
 			OmniPlatformData_ = Teuchos::rcp(new OmniPlatformData());
@@ -84,7 +84,7 @@ namespace Tpetra {
 #ifdef TPETRA_MPI
 		//! Constructor (MPI)
 		OmniPlatform(MPI_Comm Comm)
-			: Object("Tpetra::OmniPlatform(MPI)")
+			: Teuchos::Object("Tpetra::OmniPlatform(MPI)")
 		    , OmniPlatformData_()
 		{
 			OmniPlatformData_ = Teuchos::rcp(new OmniPlatformData(Comm));
@@ -97,7 +97,7 @@ namespace Tpetra {
 
 		//! Copy constructor
 		OmniPlatform(OmniPlatform const& rhs)
-			: Object(rhs.label())
+			: Teuchos::Object(rhs.label())
 			, OmniPlatformData_(rhs.OmniPlatformData_)
 		{}
 
@@ -189,7 +189,7 @@ namespace Tpetra {
 	
 		//@{ \name I/O Methods
 
-		//! print - implements Tpetra::Object virtual print method.
+		//! print - implements Teuchos::Object virtual print method.
 		void print(ostream& os) const {
 			// ..
 		}

@@ -31,8 +31,8 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Object.hpp>
 #include "Tpetra_ConfigDefs.hpp" // for STL map and vector
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Directory.hpp"
 #include "Tpetra_Util.hpp" // for toString
@@ -62,7 +62,7 @@ namespace Tpetra {
   
   
   template<typename OrdinalType>
-  class ElementSpace : public Object {
+  class ElementSpace : public Teuchos::Object {
     
   public:
     
@@ -71,7 +71,7 @@ namespace Tpetra {
     //! Tpetra::ElementSpace constructor with Tpetra-defined contiguous uniform distribution.
     ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, 
            const Platform<OrdinalType, OrdinalType>& platform)
-      : Object("Tpetra::ElementSpace")
+      : Teuchos::Object("Tpetra::ElementSpace")
       , ElementSpaceData_()
     {
       const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -121,7 +121,7 @@ namespace Tpetra {
     //! Tpetra::ElementSpace constructor with user-defined contiguous distribution.
     ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, 
            OrdinalType indexBase, const Platform<OrdinalType, OrdinalType>& platform)
-      : Object("Tpetra::ElementSpace")
+      : Teuchos::Object("Tpetra::ElementSpace")
       , ElementSpaceData_()
     {
       const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -181,7 +181,7 @@ namespace Tpetra {
     ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, 
            std::vector<OrdinalType> const& elementList, OrdinalType indexBase, 
            const Platform<OrdinalType, OrdinalType>& platform)
-      : Object("Tpetra::ElementSpace")
+      : Teuchos::Object("Tpetra::ElementSpace")
       , ElementSpaceData_()
     {
       const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -249,7 +249,7 @@ namespace Tpetra {
     
     //! Tpetra::ElementSpace copy constructor.
     ElementSpace(ElementSpace<OrdinalType> const& ElementSpace)
-      : Object(ElementSpace.label())
+      : Teuchos::Object(ElementSpace.label())
       , ElementSpaceData_(ElementSpace.ElementSpaceData_)
     {}
     
@@ -448,7 +448,7 @@ namespace Tpetra {
     //@{ \name Misc.
     
     //! Prints the ElementSpace object to the output stream.
-    /*! An << operator is inherited from Tpetra::Object, which uses the print method.*/
+    /*! An << operator is inherited from Teuchos::Object, which uses the print method.*/
     void print(ostream& os) const {
       OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
       OrdinalType const nME = getNumMyElements();

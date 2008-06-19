@@ -33,10 +33,14 @@
 #include <Teuchos_RCP.hpp>
 #include "Tpetra_Comm.hpp"
 
+// TODO: Platform should not be templated on ScalarType 
+// It doesn't need to, since we switch to Teuchos::Comm, which is not.
+// First, switch to Teuchos::Comm
+
 namespace Tpetra {
 
 	template<typename OrdinalType> class ElementSpace;
-	// Comm, Directory, and Distributor are not forward declared because they are used as return types. 
+	// Directory, and Distributor are not forward declared because they are used as return types. 
 
 	//! Tpetra::Platform: The Tpetra Platform Abstract Base Class
 	/*! Platform is an abstract base class. It should never be called directly.
@@ -73,8 +77,8 @@ namespace Tpetra {
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		virtual Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const = 0;
-		virtual Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
+    virtual Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const = 0;
+    virtual Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
 
 		//@}
 	

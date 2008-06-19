@@ -32,7 +32,6 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
@@ -71,7 +70,7 @@ namespace Tpetra {
   */
 
   template<typename OrdinalType, typename ScalarType>
-  class DistObject: public Object {
+  class DistObject: public Teuchos::Object {
 
   public:
 
@@ -80,7 +79,7 @@ namespace Tpetra {
     //! constructor
     DistObject(const ElementSpace<OrdinalType>& elementspace, 
            Teuchos::RCP< Comm<OrdinalType, ScalarType> > comm)
-      : Object("Tpetra::DistObject")
+      : Teuchos::Object("Tpetra::DistObject")
       , ElementSpace_(elementspace)
       , Comm_(comm)
       , imports_()
@@ -91,8 +90,8 @@ namespace Tpetra {
     //! constructor, taking label
     DistObject(const ElementSpace<OrdinalType>& elementspace, 
            Teuchos::RCP< Comm<OrdinalType, ScalarType> > comm,
-           std::string const& label)
-      : Object(label)
+           const std::string & label)
+      : Teuchos::Object(label.c_str())
       , ElementSpace_(elementspace)
       , Comm_(comm)
       , imports_()
@@ -102,7 +101,7 @@ namespace Tpetra {
 
     //! copy constructor
     DistObject(const DistObject<OrdinalType, ScalarType>& DistObject)
-      : Object(DistObject.label())
+      : Teuchos::Object(DistObject.label())
       , ElementSpace_(DistObject.ElementSpace_)
       , Comm_(DistObject.Comm_)
       , imports_(DistObject.imports_)

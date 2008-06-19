@@ -578,7 +578,7 @@ PACKAGE_VERSION='1.1d'
 PACKAGE_STRING='tpetra 1.1d'
 PACKAGE_BUGREPORT='maherou@sandia.gov'
 
-ac_unique_file="src/Tpetra_Object.hpp"
+ac_unique_file="src/Tpetra_Version.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

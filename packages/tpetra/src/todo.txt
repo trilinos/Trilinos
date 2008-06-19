@@ -1,4 +1,8 @@
-* kill Tpetra::Object, replace with Teuchos::Object
-* ask mike first: kill Tpetra::Comm and replace with Teuchos::Comm
-* ask mike: start organizing tpetra for explicit instantiation
-* get ready to do multivector
+* kill Tpetra::Comm and replace with Teuchos::Comm, same with MpiComm and SerialComm
+* remove ScalarType template from Tpetra::Platform 
+* switch ElementSpace,VectorSpace with Map
+* write multivector, move vector to subclass
+* write CrsMatrix, kill CisMatrix
+* explicit instantiation
+
+* think about Platform and Node

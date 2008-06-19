@@ -31,8 +31,8 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Util.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 	
@@ -47,14 +47,14 @@ namespace Tpetra {
 	*/
   
 	template<typename OrdinalType>
-	class Distributor : public Object {
+	class Distributor : public Teuchos::Object {
 	public:
     
 		//@{ \name Constructor/Destructor
     
 		//! Comm Constuctor (default ctr)
 		Distributor(Teuchos::RCP< Comm<OrdinalType, OrdinalType> > const& comm) 
-			: Object("Tpetra::Distributor")
+			: Teuchos::Object("Tpetra::Distributor")
 			, Comm_(comm)
 			, numExports_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, selfMessage_(Teuchos::OrdinalTraits<OrdinalType>::zero())
@@ -68,7 +68,7 @@ namespace Tpetra {
     
 		//! Copy Constructor
 		Distributor(Distributor<OrdinalType> const& distributor) 
-			: Object(distributor.label())
+			: Teuchos::Object(distributor.label())
 			, Comm_(distributor.Comm_)
 			, numExports_(distributor.numExports_)
 			, selfMessage_(distributor.selfMessage_)
@@ -376,7 +376,7 @@ namespace Tpetra {
 
 		//@{ \name I/O Methods
 
-		//! print method inherited from Object
+		//! print method inherited from Teuchos::Object
 		void print(ostream& os) const {
 			int const myImageID = comm().getMyImageID();
 			int const numImages = comm().getNumImages();

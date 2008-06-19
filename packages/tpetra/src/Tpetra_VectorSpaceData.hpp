@@ -29,10 +29,12 @@
 #ifndef TPETRA_VECTORSPACEDATA_HPP
 #define TPETRA_VECTORSPACEDATA_HPP
 
+#include <Teuchos_Object.hpp>
+
 namespace Tpetra {
 
 	template<typename OrdinalType, typename ScalarType>
-	class VectorSpaceData : public Object {
+	class VectorSpaceData : public Teuchos::Object {
 		friend class VectorSpace<OrdinalType, ScalarType>;
 	public:
 		// default constructor
@@ -41,7 +43,7 @@ namespace Tpetra {
 						OrdinalType numMyEntries, 
 						OrdinalType numGlobalEntries, 
 						Platform<OrdinalType, ScalarType> const& platform) 
-			: Object("Tpetra::VectorSpaceData")
+			: Teuchos::Object("Tpetra::VectorSpaceData")
 			// , blockspace_(blockspace)
 			, indexBase_(indexBase)
 			, numMyEntries_(numMyEntries)

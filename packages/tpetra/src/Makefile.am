@@ -41,7 +41,6 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_DistObject.hpp \
 	$(srcdir)/Tpetra_OutputObject.hpp \
 	$(srcdir)/Tpetra_OutputManager.hpp \
@@ -108,6 +107,10 @@ LANG_WRAPS_H =
 LANG_WRAPS = 
 
 DIST_H = \
+	$(srcdir)/Tpetra_Map.hpp \
+	$(srcdir)/Tpetra_MapData.hpp \
+	$(srcdir)/Tpetra_MapDecl.hpp \
+	$(srcdir)/Tpetra_MapDataDecl.hpp \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
 	$(srcdir)/Tpetra_ElementSpaceData.hpp \
 	$(srcdir)/Tpetra_VectorSpace.hpp \

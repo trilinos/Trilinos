@@ -30,7 +30,7 @@
 #define TPETRA_SERIALPLATFORM_HPP
 
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
 
@@ -42,17 +42,17 @@ namespace Tpetra {
 	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
 
 	template<typename OrdinalType, typename ScalarType>
-	class SerialPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
+	class SerialPlatform : public Teuchos::Object, public virtual Platform<OrdinalType, ScalarType> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
 
 		//! Constructor
-		SerialPlatform() : Object("Tpetra::SerialPlatform") {};
+		SerialPlatform() : Teuchos::Object("Tpetra::SerialPlatform") {};
 
 		//! Copy constructor
 		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) 
-			: Object(platform.label()) 
+			: Teuchos::Object(platform.label()) 
 		{};
 
 		//! Destructor
@@ -85,7 +85,7 @@ namespace Tpetra {
 
 		//@{ \name I/O Methods
 
-		//! print - implements Tpetra::Object virtual print method.
+		//! print - implements Teuchos::Object virtual print method.
 		void print(ostream& os) const {};
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.

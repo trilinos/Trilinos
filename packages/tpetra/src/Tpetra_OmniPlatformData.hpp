@@ -30,7 +30,6 @@
 #define TPETRA_OMNIPLATFORMDATA_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Object.hpp"
 //#include "Tpetra_OmniPlatform.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
@@ -38,15 +37,16 @@
 #ifdef TPETRA_THREADED_MPI
 // -- includes for a threaded MPI would go here --
 #endif
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
-	class OmniPlatformData : public Object {
+	class OmniPlatformData : public Teuchos::Object {
 		friend class OmniPlatform;
 	public:
 		// serial constructor
 		OmniPlatformData() 
-			: Object("Tpetra::OmniPlatformData")
+			: Teuchos::Object("Tpetra::OmniPlatformData")
 			, serialEnabled_(true)
 			, mpiEnabled_(false)
 			, threadedMpiEnabled_(false)
@@ -55,7 +55,7 @@ namespace Tpetra {
 #ifdef TPETRA_MPI
 		// MPI constructor
 		OmniPlatformData(MPI_Comm comm)
-			: Object("Tpetra::OmniPlatformData")
+			: Teuchos::Object("Tpetra::OmniPlatformData")
 			, serialEnabled_(true)
 			, mpiEnabled_(true)
 			, threadedMpiEnabled_(false)

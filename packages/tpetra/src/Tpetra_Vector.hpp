@@ -39,6 +39,8 @@
 #include "Tpetra_TBB_Vec_Kernels.hpp"
 #endif
 
+#include <Teuchos_Object.hpp>
+
 namespace Tpetra {
 
   template<typename OrdinalType, typename ScalarType>
@@ -125,7 +127,7 @@ namespace Tpetra {
   template<typename OrdinalType, typename ScalarType>
   ScalarType Vector<OrdinalType,ScalarType>::dotProduct(Vector<OrdinalType, ScalarType> const& x) const {
     if(! vectorSpace().isCompatible(x.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType length = getNumMyEntries();
     OrdinalType ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -161,7 +163,7 @@ namespace Tpetra {
   template<typename OrdinalType, typename ScalarType>
   void Vector<OrdinalType,ScalarType>::reciprocal(Vector<OrdinalType, ScalarType> const& x) {
     if(! vectorSpace().isCompatible(x.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     ScalarType const scalarOne = Teuchos::ScalarTraits<ScalarType>::one();
@@ -202,7 +204,7 @@ namespace Tpetra {
   template<typename OrdinalType, typename ScalarType>
   void Vector<OrdinalType,ScalarType>::update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis) {
     if(! vectorSpace().isCompatible(x.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType const length = getNumMyEntries();
 
@@ -240,7 +242,7 @@ namespace Tpetra {
       Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
     if(!vectorSpace().isCompatible(x.vectorSpace()) ||
         !vectorSpace().isCompatible(y.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
     OrdinalType const length = getNumMyEntries();
@@ -315,7 +317,7 @@ namespace Tpetra {
   template<typename OrdinalType, typename ScalarType>
   ScalarType Vector<OrdinalType,ScalarType>::normWeighted(Vector<OrdinalType, ScalarType> const& weights) const {
     if(!vectorSpace().isCompatible(weights.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -404,7 +406,7 @@ namespace Tpetra {
       Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis) {
     if(!vectorSpace().isCompatible(x.vectorSpace()) ||
         !vectorSpace().isCompatible(y.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -435,7 +437,7 @@ namespace Tpetra {
       ScalarType scalarThis) {
     if(!vectorSpace().isCompatible(x.vectorSpace()) ||
         !vectorSpace().isCompatible(y.vectorSpace()))
-      throw Object::reportError("Vector sizes do not match.", 2);
+      throw Teuchos::Object::reportError("Vector sizes do not match.", 2);
 
     OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -507,7 +509,7 @@ namespace Tpetra {
     for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
       if (myImageID == imageCtr) {
         if (myImageID == ordinalZero) {
-          os << Object::label() << endl;
+          os << Teuchos::Object::label() << endl;
           os << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
         }
         os <<   "ImageID = " << myImageID << endl;
@@ -647,7 +649,7 @@ namespace Tpetra {
       submitEntries(numImportIDs, &importLIDs.front(), &imports.front());
     }
     else
-      throw Object::reportError("Unknown CombineMode", -99);
+      throw Teuchos::Object::reportError("Unknown CombineMode", -99);
 
     return(0);
   }

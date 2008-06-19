@@ -31,11 +31,12 @@
 
 #include <Teuchos_BLAS.hpp>
 #include <Tpetra_VectorSpace.hpp>
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
   template<typename OrdinalType, typename ScalarType>
-  class VectorData : public Object {
+  class VectorData : public Teuchos::Object {
 
   friend class Vector<OrdinalType, ScalarType>;
 

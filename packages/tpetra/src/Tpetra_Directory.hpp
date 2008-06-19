@@ -31,9 +31,9 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Distributor.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
@@ -48,14 +48,14 @@ namespace Tpetra {
   */
   
   template<typename OrdinalType>
-  class Directory : public Object {
+  class Directory : public Teuchos::Object {
   public:
     
     //@{ \name Constructors/Destructor.
     
     //! constructor
     Directory(ElementSpace<OrdinalType> const& ElementSpace)  
-      : Object("Tpetra::Directory") 
+      : Teuchos::Object("Tpetra::Directory") 
       , ElementSpace_(ElementSpace) 
     {
       // initialize Comm instance
@@ -82,7 +82,7 @@ namespace Tpetra {
  private:
     //! copy constructor
     Directory(Directory<OrdinalType> const& Directory)
-      : Object(Directory.label()) 
+      : Teuchos::Object(Directory.label()) 
       , ElementSpace_(Directory.ElementSpace_) 
       , Comm_(Directory.Comm_)
       , allMinGIDs_(Directory.allMinGIDs_)

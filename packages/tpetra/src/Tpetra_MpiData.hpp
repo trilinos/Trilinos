@@ -30,7 +30,7 @@
 #define TPETRA_MPIDATA_HPP
 
 #include <mpi.h>
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
   
@@ -39,11 +39,11 @@ namespace Tpetra {
         among multiple Tpetra objects.
   */
 
-  class MpiData : public Object {
+  class MpiData : public Teuchos::Object {
   public:
     // default constructor
     MpiData(MPI_Comm Comm)
-      : Object("Tpetra::MpiData")
+      : Teuchos::Object("Tpetra::MpiData")
       , MpiComm_(Comm)
       , curTag_(minTag_)
     {

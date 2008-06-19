@@ -30,9 +30,9 @@
 #define TPETRA_IMPORT_HPP
 
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Util.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 	
@@ -55,13 +55,13 @@ namespace Tpetra {
 	*/
   
 	template <typename OrdinalType>
-	class Import: public Object {
+	class Import: public Teuchos::Object {
     
 	public:
     
 		//! Constructs a Import object from the source and target ElementSpaces.
 		Import(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
-			: Object("Tpetra::Import")
+			: Teuchos::Object("Tpetra::Import")
 			, ImportData_()
 		{
 			ImportData_ = Teuchos::rcp(new ImportData<OrdinalType>(source, target));
@@ -74,7 +74,7 @@ namespace Tpetra {
     
 		//! copy constructor. 
 		Import(Import<OrdinalType> const& import)
-			: Object(import.label())
+			: Teuchos::Object(import.label())
 			, ImportData_(import.ImportData_)
 		{}
     
@@ -123,7 +123,7 @@ namespace Tpetra {
 		}
     
 		//@{ \name I/O Methods
-		//! print method inherited from Object
+		//! print method inherited from Teuchos::Object
 		virtual void print(ostream& os) const {
 			os << "Import Data Members:" << endl;
 			os << "permuteToLIDs_: " << toString(getPermuteToLIDs()) << endl;;

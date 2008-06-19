@@ -31,8 +31,8 @@
 
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Comm.hpp"
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Distributor.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
@@ -42,7 +42,7 @@ namespace Tpetra {
 	*/
 
 	template<typename OrdinalType, typename PacketType>
-	class SerialComm : public Object, public virtual Comm<OrdinalType, PacketType> {
+	class SerialComm : public Teuchos::Object, public virtual Comm<OrdinalType, PacketType> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
@@ -53,12 +53,12 @@ namespace Tpetra {
 			will execute in serial.  The access functions return the number of
 			memory images to be 1 and the image ID to be 0.
 		*/
-		SerialComm() : Object("Tpetra::SerialComm") {}
+		SerialComm() : Teuchos::Object("Tpetra::SerialComm") {}
   
 		//! Copy constructor
 		/*! Makes an exact copy of an existing SerialComm instance.
 		 */
-		SerialComm(SerialComm<OrdinalType, PacketType> const& comm) : Object(comm.label()) {}
+		SerialComm(SerialComm<OrdinalType, PacketType> const& comm) : Teuchos::Object(comm.label()) {}
   
 		//! Destructor.
 		/*! Completely deletes a SerialComm object.  

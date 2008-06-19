@@ -35,7 +35,6 @@
 #include <Kokkos_DenseVector.hpp>
 #include <Kokkos_BaseSparseMultiply.hpp>
 #include "Tpetra_Operator.hpp"
-#include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
 
@@ -118,7 +117,7 @@ namespace Tpetra {
   
     //! Constructor specifying the primary distribution only.
     CisMatrix(VectorSpace<OrdinalType, ScalarType> const& primaryDist, bool rowOriented = true)
-      : Object("Tpetra::CisMatrix")
+      : Teuchos::Object("Tpetra::CisMatrix")
       , CisMatrixData_()
     {
       CisMatrixData_ = Teuchos::rcp(new CisMatrixData<OrdinalType, ScalarType>(primaryDist, rowOriented));
@@ -128,7 +127,7 @@ namespace Tpetra {
     CisMatrix(VectorSpace<OrdinalType, ScalarType> const& primaryDist, 
           VectorSpace<OrdinalType, ScalarType> const& secondaryDist, 
           bool rowOriented = true)
-      : Object("Tpetra::CisMatrix")
+      : Teuchos::Object("Tpetra::CisMatrix")
       , CisMatrixData_()
     {
       CisMatrixData_ = Teuchos::rcp(new CisMatrixData<OrdinalType, ScalarType>(primaryDist, secondaryDist, rowOriented));
@@ -136,7 +135,7 @@ namespace Tpetra {
   
     //! copy constructor.
     CisMatrix(CisMatrix<OrdinalType, ScalarType> const& Source)
-      : Object(Source.label())
+      : Teuchos::Object(Source.label())
       , CisMatrixData_(Source.CisMatrixData_)
     {}
   
@@ -549,7 +548,7 @@ namespace Tpetra {
       int const numImages = comm().getNumImages();
       for(int i = 0; i < numImages; i++) {
         if(i == myImageID) {
-          os << Object::label() << " [Image " << i << "]" << endl;
+          os << Teuchos::Object::label() << " [Image " << i << "]" << endl;
           os << "Orientation: " << (data().rowOriented_ ? "Row" : "Column") << "-oriented" << endl;
           os << "State: " << (isFillCompleted() ? "Post-fillComplete" : "Pre-fillComplete") << endl;
           os << "Secondary distribution defined? " << (data().haveSecondary_ ? "yes" : "no") << endl;

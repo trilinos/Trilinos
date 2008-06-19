@@ -32,6 +32,9 @@
 #include "Tpetra_ConfigDefs.hpp" // for iostream and string
 #include "Tpetra_OutputManager.hpp"
 #include "Teuchos_RCP.hpp"
+#include <Teuchos_Object.hpp>
+
+// TODO: remove this class?
 
 namespace Tpetra
 {

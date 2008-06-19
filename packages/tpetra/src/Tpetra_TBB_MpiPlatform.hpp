@@ -31,7 +31,7 @@
 
 #include <mpi.h>
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 #include "Tpetra_Platform.hpp"
 
 #ifdef HAVE_TPETRA_TBB
@@ -46,14 +46,14 @@ namespace Tpetra {
   //  produce instances of the TBB-capable TBB_MpiComm object.
 
   template<typename OrdinalType, typename ScalarType>
-  class TBB_MpiPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
+  class TBB_MpiPlatform : public Teuchos::Object, public virtual Platform<OrdinalType, ScalarType> {
   public:
 
     //@{ \name Constructor/Destructor Methods
 
     //! Constructor
     TBB_MpiPlatform(MPI_Comm Comm, int num_threads = 0) 
-      : Object("Tpetra::MpiPlatform")
+      : Teuchos::Object("Tpetra::MpiPlatform")
       , MpiData_()
       , num_threads_(num_threads)
     {
@@ -62,7 +62,7 @@ namespace Tpetra {
 
     //! Copy Constructor
     TBB_MpiPlatform(TBB_MpiPlatform<OrdinalType, ScalarType> const& platform) 
-      : Object(platform.label())
+      : Teuchos::Object(platform.label())
       , MpiData_(platform.MpiData_)
       , num_threads_(platform.num_threads_)
     {};
@@ -97,7 +97,7 @@ namespace Tpetra {
 
     //@{ \name I/O Methods
 
-    //! print - implements Tpetra::Object virtual print method.
+    //! print - implements Teuchos::Object virtual print method.
     void print(ostream& os) const {};
 
     //! printInfo - implements Tpetra::Platform virtual printInfo method.

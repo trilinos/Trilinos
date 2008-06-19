@@ -35,11 +35,12 @@
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Directory.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
   
   template<typename OrdinalType>
-  class ElementSpaceData : public Object {
+  class ElementSpaceData : public Teuchos::Object {
     friend class ElementSpace<OrdinalType>;
   public:
     ElementSpaceData(OrdinalType const indexBase, 
@@ -54,7 +55,7 @@ namespace Tpetra {
              bool const contiguous,
              Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
              Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm)
-      : Object("Tpetra::ElementSpaceData")
+      : Teuchos::Object("Tpetra::ElementSpaceData")
       , Platform_(platform)
       , Comm_(comm)
       , numGlobalElements_(numGlobalElements)

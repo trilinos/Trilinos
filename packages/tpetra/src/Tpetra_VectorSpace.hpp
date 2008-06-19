@@ -32,7 +32,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Comm.hpp"
@@ -52,7 +52,7 @@ namespace Tpetra {
   */
 
   template<typename OrdinalType, typename ScalarType>
-  class VectorSpace : public Object {
+  class VectorSpace : public Teuchos::Object {
 
   public:
   
@@ -60,7 +60,7 @@ namespace Tpetra {
   
     //! Tpetra::VectorSpace constructor taking an ElementSpace object.
     VectorSpace(ElementSpace<OrdinalType> const& elementSpace, Platform<OrdinalType, ScalarType> const& platform)
-      : Object("Tpetra::VectorSpace")
+      : Teuchos::Object("Tpetra::VectorSpace")
       , VectorSpaceData_()
     {
       VectorSpaceData_ = Teuchos::rcp(new VectorSpaceData<OrdinalType, ScalarType>( //false, 
@@ -74,7 +74,7 @@ namespace Tpetra {
   
     //! Tpetra::VectorSpace shallow copy constructor.
     VectorSpace(VectorSpace<OrdinalType, ScalarType> const& vectorSpace)
-      : Object(vectorSpace.label())
+      : Teuchos::Object(vectorSpace.label())
       , VectorSpaceData_(vectorSpace.VectorSpaceData_)
     {}
 
@@ -159,7 +159,7 @@ namespace Tpetra {
     //@{ \name Misc.
   
     //! Prints the VectorSpace object to the output stream.
-    /*! An << operator is inherited from Tpetra::Object, which uses the print method.*/
+    /*! An << operator is inherited from Teuchos::Object, which uses the print method.*/
     void print(ostream& os) const {
       OrdinalType myImageID = comm().getMyImageID();
       OrdinalType numImages = comm().getNumImages();

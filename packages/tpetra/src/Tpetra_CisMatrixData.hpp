@@ -33,12 +33,12 @@ namespace Tpetra {
 
   /*! class CisMatrixData */
   template<typename OrdinalType, typename ScalarType>
-  class CisMatrixData : public Object {
+  class CisMatrixData : public Teuchos::Object {
     friend class CisMatrix<OrdinalType, ScalarType>;
   public:
     // default constructor
     CisMatrixData(VectorSpace<OrdinalType, ScalarType> primaryDist, bool rowOriented)
-      : Object("Tpetra::CisMatrixData")
+      : Teuchos::Object("Tpetra::CisMatrixData")
       , primary_(primaryDist)
       , secondary_(primaryDist)
       , domain_(primaryDist)
@@ -66,7 +66,7 @@ namespace Tpetra {
     CisMatrixData(VectorSpace<OrdinalType, ScalarType> primaryDist, 
             VectorSpace<OrdinalType, ScalarType> secondaryDist, 
             bool rowOriented)
-      : Object("Tpetra::CisMatrixData")
+      : Teuchos::Object("Tpetra::CisMatrixData")
       , primary_(primaryDist)
       , secondary_(secondaryDist)
       , domain_(primaryDist)

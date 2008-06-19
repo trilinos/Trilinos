@@ -32,18 +32,18 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
-#include "Tpetra_Object.hpp"
 #include "Tpetra_Export.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
   
 	template<typename OrdinalType>
-	class ExportData : public Object {
+	class ExportData : public Teuchos::Object {
 		friend class Export<OrdinalType>;
 	public:
 		// default constructor
 		ExportData(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
-			: Object("Tpetra::ExportData")
+			: Teuchos::Object("Tpetra::ExportData")
 			// permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, remoteGIDs_, exportLIDs_, exportGIDs_, 
 			// and exportImageIDs_ don't need/use a member initialization. (These are all STL vectors.)
 			, numSameIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())

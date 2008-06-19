@@ -31,7 +31,7 @@
 
 #include <mpi.h>
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Object.hpp"
+#include <Teuchos_Object.hpp>
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #include "Tpetra_ElementSpace.hpp"
@@ -41,21 +41,21 @@ namespace Tpetra {
   //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
 
   template<typename OrdinalType, typename ScalarType>
-  class MpiPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
+  class MpiPlatform : public Teuchos::Object, public virtual Platform<OrdinalType, ScalarType> {
   public:
 
     //@{ \name Constructor/Destructor Methods
 
     //! Constructor
     MpiPlatform(MPI_Comm Comm) 
-      : Object("Tpetra::MpiPlatform")
+      : Teuchos::Object("Tpetra::MpiPlatform")
       , MpiComm_(Comm)
     {
     }
 
     //! Copy Constructor
     MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) 
-      : Object(platform.label())
+      : Teuchos::Object(platform.label())
       , MpiComm_(platform.MpiComm_)
     {}
 
@@ -89,7 +89,7 @@ namespace Tpetra {
 
     //@{ \name I/O Methods
 
-    //! print - implements Tpetra::Object virtual print method.
+    //! print - implements Teuchos::Object virtual print method.
     void print(ostream& os) const {};
 
     //! printInfo - implements Tpetra::Platform virtual printInfo method.

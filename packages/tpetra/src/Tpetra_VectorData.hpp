@@ -30,13 +30,14 @@
 #define TPETRA_VECTORDATA_HPP
 
 #include "Tpetra_VectorDataDecl.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
   template<typename OrdinalType, typename ScalarType>
   VectorData<OrdinalType,ScalarType>::VectorData(VectorSpace<OrdinalType, ScalarType> const& VectorSpace, 
         OrdinalType length, ScalarType seed) 
-    : Object("Tpetra::VectorData")
+    : Teuchos::Object("Tpetra::VectorData")
       , BLAS_()
       , VectorSpace_(VectorSpace)
       , scalarArray_(length, Teuchos::ScalarTraits<ScalarType>::zero())

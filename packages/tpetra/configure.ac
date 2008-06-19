@@ -50,7 +50,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR([src/Tpetra_Object.hpp])
+AC_CONFIG_SRCDIR([src/Tpetra_Version.cpp])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
