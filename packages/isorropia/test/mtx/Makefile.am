@@ -33,29 +33,15 @@ EXEEXT = .exe
 
 AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
 
-test_simple_DEPENDENCIES = \
-        $(top_builddir)/src/libisorropia.a \
-        $(top_builddir)/test/utils/libisorropia_test_utils.a
-
-test_create_balanced_copy_DEPENDENCIES = \
-        $(top_builddir)/src/libisorropia.a \
-        $(top_builddir)/test/utils/libisorropia_test_utils.a
+LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
-
-test_simple_LDADD = \
-   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
-
+test_num_partitions_SOURCES = $(srcdir)/test_num_partitions.cpp
 test_create_balanced_copy_SOURCES = $(srcdir)/test_create_balanced_copy.cpp
 
-test_create_balanced_copy_LDADD = \
-   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
-
-noinst_PROGRAMS = test_simple test_create_balanced_copy
+noinst_PROGRAMS = test_simple test_create_balanced_copy test_num_partitions
 
 EXTRA_DIST = simple.mtx simple_rectangular.mtx small.mtx
 
 all-local:
-	@if test -e small.mtx; then : ; else cp $(srcdir)/small.mtx .; fi
-	@if test -e simple.mtx; then : ; else cp $(srcdir)/simple.mtx .; fi
-	@if test -e simple_rectangular.mtx; then : ; else cp $(srcdir)/simple_rectangular.mtx .; fi
+	@if test -e *.mtx; then : ; else cp $(srcdir)/*.mtx .; fi

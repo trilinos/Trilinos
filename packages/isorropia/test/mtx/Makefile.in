@@ -63,7 +63,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = test_simple$(EXEEXT) \
-	test_create_balanced_copy$(EXEEXT)
+	test_create_balanced_copy$(EXEEXT) \
+	test_num_partitions$(EXEEXT)
 subdir = test/mtx
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -97,8 +98,16 @@ am_test_create_balanced_copy_OBJECTS =  \
 	test_create_balanced_copy.$(OBJEXT)
 test_create_balanced_copy_OBJECTS =  \
 	$(am_test_create_balanced_copy_OBJECTS)
+test_create_balanced_copy_LDADD = $(LDADD)
+test_create_balanced_copy_DEPENDENCIES =
+am_test_num_partitions_OBJECTS = test_num_partitions.$(OBJEXT)
+test_num_partitions_OBJECTS = $(am_test_num_partitions_OBJECTS)
+test_num_partitions_LDADD = $(LDADD)
+test_num_partitions_DEPENDENCIES =
 am_test_simple_OBJECTS = test_simple.$(OBJEXT)
 test_simple_OBJECTS = $(am_test_simple_OBJECTS)
+test_simple_LDADD = $(LDADD)
+test_simple_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -107,9 +116,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(test_create_balanced_copy_SOURCES) $(test_simple_SOURCES)
+SOURCES = $(test_create_balanced_copy_SOURCES) \
+	$(test_num_partitions_SOURCES) $(test_simple_SOURCES)
 DIST_SOURCES = $(test_create_balanced_copy_SOURCES) \
-	$(test_simple_SOURCES)
+	$(test_num_partitions_SOURCES) $(test_simple_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -226,22 +236,10 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
-test_simple_DEPENDENCIES = \
-        $(top_builddir)/src/libisorropia.a \
-        $(top_builddir)/test/utils/libisorropia_test_utils.a
-
-test_create_balanced_copy_DEPENDENCIES = \
-        $(top_builddir)/src/libisorropia.a \
-        $(top_builddir)/test/utils/libisorropia_test_utils.a
-
+LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
-test_simple_LDADD = \
-   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
-
+test_num_partitions_SOURCES = $(srcdir)/test_num_partitions.cpp
 test_create_balanced_copy_SOURCES = $(srcdir)/test_create_balanced_copy.cpp
-test_create_balanced_copy_LDADD = \
-   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
-
 EXTRA_DIST = simple.mtx simple_rectangular.mtx small.mtx
 all: all-am
 
@@ -282,6 +280,9 @@ clean-noinstPROGRAMS:
 test_create_balanced_copy$(EXEEXT): $(test_create_balanced_copy_OBJECTS) $(test_create_balanced_copy_DEPENDENCIES) 
 	@rm -f test_create_balanced_copy$(EXEEXT)
 	$(CXXLINK) $(test_create_balanced_copy_OBJECTS) $(test_create_balanced_copy_LDADD) $(LIBS)
+test_num_partitions$(EXEEXT): $(test_num_partitions_OBJECTS) $(test_num_partitions_DEPENDENCIES) 
+	@rm -f test_num_partitions$(EXEEXT)
+	$(CXXLINK) $(test_num_partitions_OBJECTS) $(test_num_partitions_LDADD) $(LIBS)
 test_simple$(EXEEXT): $(test_simple_OBJECTS) $(test_simple_DEPENDENCIES) 
 	@rm -f test_simple$(EXEEXT)
 	$(CXXLINK) $(test_simple_OBJECTS) $(test_simple_LDADD) $(LIBS)
@@ -293,6 +294,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_create_balanced_copy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_num_partitions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_simple.Po@am__quote@
 
 .cpp.o:
@@ -322,6 +324,20 @@ test_create_balanced_copy.obj: $(srcdir)/test_create_balanced_copy.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_create_balanced_copy.cpp' object='test_create_balanced_copy.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_create_balanced_copy.obj `if test -f '$(srcdir)/test_create_balanced_copy.cpp'; then $(CYGPATH_W) '$(srcdir)/test_create_balanced_copy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_create_balanced_copy.cpp'; fi`
+
+test_num_partitions.o: $(srcdir)/test_num_partitions.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_num_partitions.o -MD -MP -MF $(DEPDIR)/test_num_partitions.Tpo -c -o test_num_partitions.o `test -f '$(srcdir)/test_num_partitions.cpp' || echo '$(srcdir)/'`$(srcdir)/test_num_partitions.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_num_partitions.Tpo $(DEPDIR)/test_num_partitions.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_num_partitions.cpp' object='test_num_partitions.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_num_partitions.o `test -f '$(srcdir)/test_num_partitions.cpp' || echo '$(srcdir)/'`$(srcdir)/test_num_partitions.cpp
+
+test_num_partitions.obj: $(srcdir)/test_num_partitions.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_num_partitions.obj -MD -MP -MF $(DEPDIR)/test_num_partitions.Tpo -c -o test_num_partitions.obj `if test -f '$(srcdir)/test_num_partitions.cpp'; then $(CYGPATH_W) '$(srcdir)/test_num_partitions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_num_partitions.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_num_partitions.Tpo $(DEPDIR)/test_num_partitions.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_num_partitions.cpp' object='test_num_partitions.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_num_partitions.obj `if test -f '$(srcdir)/test_num_partitions.cpp'; then $(CYGPATH_W) '$(srcdir)/test_num_partitions.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_num_partitions.cpp'; fi`
 
 test_simple.o: $(srcdir)/test_simple.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_simple.o -MD -MP -MF $(DEPDIR)/test_simple.Tpo -c -o test_simple.o `test -f '$(srcdir)/test_simple.cpp' || echo '$(srcdir)/'`$(srcdir)/test_simple.cpp
@@ -515,9 +531,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.isorropia
 
 all-local:
-	@if test -e small.mtx; then : ; else cp $(srcdir)/small.mtx .; fi
-	@if test -e simple.mtx; then : ; else cp $(srcdir)/simple.mtx .; fi
-	@if test -e simple_rectangular.mtx; then : ; else cp $(srcdir)/simple_rectangular.mtx .; fi
+	@if test -e *.mtx; then : ; else cp $(srcdir)/*.mtx .; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
